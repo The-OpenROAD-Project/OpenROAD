@@ -69,6 +69,12 @@
 
 namespace drt {
 
+constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
+constexpr int GRSUPPLYSIZE = 8;
+constexpr int GRDEMANDSIZE = 16;
+constexpr int GRFRACSIZE = 1;
+  
+
 namespace cg = cooperative_groups;
 
 #define cudaCheckError()                                                   \
@@ -109,6 +115,16 @@ enum Directions2D {
   DIR_LEFT  = 3,
   DIR_NONE  = 255
 };
+
+
+
+
+
+
+
+
+
+
 
 
 struct NodeData2D {
@@ -215,314 +231,149 @@ int locToIdx_2D(int x, int y, int xDim) {
 }
 
 
-
-__global__
-void initNodeData2D__kernel(
-  NodeData2D* d_nodes,
-  int* d_pins, int pinIterStart, int numPins,  // Pin related variables
-  int* d_doneFlag, int* d_meetId,
-  int LLX, int LLY, int URX, int URY, // Bounding box
-  int xDim, int pinIter)
-{ 
-}
-
-
-
-/*
-__global__
-void initNodeData2D__kernel(
-  NodeData2D* d_nodes,
-  int* d_pins, int pinIterStart, int numPins,  // Pin related variables
-  int* d_doneFlag, int* d_meetId,
-  int LLX, int LLY, int URX, int URY, // Bounding box
-  int xDim, int pinIter)
-{ 
-  int local_idx = blockDim.x * blockIdx.x + threadIdx.x;
-  int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
-  if (local_idx > numNodes) {
-    return;
-  }
-
-  int xDimTemp = URX - LLX + 1;
-  int x = local_idx % xDimTemp + LLX;
-  int y = local_idx / xDimTemp + LLY;
-  int idx = locToIdx_2D(x, y, xDim);
-
-  if (idx == 0) {
-    d_doneFlag[netId] = 0;
-    d_meetId[netId] = 0x7FFFFFFF;
-  }
-
-  int2 xy = idxToLoc_2D(idx, xDim);
-  int2 src = idxToLoc_2D(d_pins[pinIterStart + pinIter - 1], xDim);
-  int2 dst = idxToLoc_2D(d_pins[pinIterStart + pinIter], xDim);
-  
-  d_nodes[idx].forward_h_cost = (abs(xy.x - dst.x) + abs(xy.y - dst.y)) * avgCost;
-  d_nodes[idx].backward_h_cost = (abs(xy.x - src.x) + abs(xy.y - src.y)) * avgCost;
-  //d_nodes[idx].forward_h_cost = 0;
-  //d_nodes[idx].backward_h_cost = 0;
-
-  if (d_nodes[idx].flags.src_flag) {
-    d_nodes[idx].forward_g_cost = 0;
-    d_nodes[idx].forward_g_cost_prev = 0;
-  } else {
-    d_nodes[idx].forward_g_cost = INF32;
-    d_nodes[idx].forward_g_cost_prev = INF32;
-  }
-
-  if (d_nodes[idx].flags.dst_flag) {
-    d_nodes[idx].backward_g_cost = 0;
-    d_nodes[idx].backward_g_cost_prev = 0;
-  } else {
-    d_nodes[idx].backward_g_cost = INF32;
-    d_nodes[idx].backward_g_cost_prev = INF32;
-  }
-
-  d_nodes[idx].forward_direction = DIR_NONE;
-  d_nodes[idx].backward_direction = DIR_NONE;
-  d_nodes[idx].forward_direction_prev = DIR_NONE;
-  d_nodes[idx].backward_direction_prev = DIR_NONE;
-  d_nodes[idx].flags.forward_update_flag = false;
-  d_nodes[idx].flags.backward_update_flag = false;
-  d_nodes[idx].flags.forward_visited_flag = false;
-  d_nodes[idx].flags.backward_visited_flag = false;
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Kernel or device function that uses a grid-wide cooperative group:
-////////////////////////////////////////////////////////////////////////////////
-__device__
-void runBiBellmanFord2D__device(
-  cooperative_groups::grid_group& g,   // grid-level cooperative group
-  NodeData2D* nodes,
-  int* costMap, 
-  int* d_dX,
-  int* d_dY,
-  int* d_doneFlag,
-  int LLX, int LLY, int URX, int URY,
-  int netId,
-  int xDim, int yDim,
-  int TURNCOST,
-  int maxIters)
+// Bit related functions
+__host__ __device__ __forceinline__
+bool getBit(const uint64_t* cmap, unsigned idx, unsigned pos)
 {
-  // This need to be updated later 
+  return (cmap[idx] >> pos) & 1;
 }
-
-
-
-// Kernel to find the meetId and launch traceback kernels
-// We always work on the entire grid
-__global__
-void findMeetIdAndTraceBack__kernel(
-  NodeData2D* nodes,
-  int* d_meetId, int netId, 
-  int xDim,
-  int LLX, int LLY, int URX, int URY)
-{ 
-  int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  int numNodes = (URX - LLX + 1) * (URY - LLY + 1);  
-  int xDimTemp = URX - LLX + 1;
-  auto& meetId = d_meetId[netId];
-  if (idx < numNodes) {
-    int x = idx % xDimTemp + LLX;
-    int y = idx / xDimTemp + LLY;
-    int nodeIdx = locToIdx_2D(x, y, xDim);    
-    if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag) {
-      atomicMin(&meetId, idx); // Ensure only the smallest meetId is stored
-    }
-  }
-
-  // Synchronize threads to ensure meetId is updated
-  __syncthreads();
-}
-
-
-// Kernel for forward traceback  
-// Please note that this is only called by single thread
-__global__
-void forwardTraceBack__single_thread__kernel(
-  NodeData2D* nodes, 
-  int* d_meetId, int netId, 
-  int* d_dX, int* d_dY,
-  int xDim,
-  int LLX, int LLY, int URX, int URY)
+ 
+__host__ __device__ __forceinline__
+unsigned getBits(const uint64_t* cmap, unsigned idx, unsigned pos, unsigned length)
 {
-  auto& meetId = d_meetId[netId];  
-  if (meetId == 0x7FFFFFFF) {
-    return; // No meetId found
-  }
-  
-  int curId = meetId;
-  int maxIterations = (URX - LLX + 1) * (URY - LLY + 1);
-  int iteration = 0;
-  while (nodes[curId].flags.src_flag == 0 && iteration < maxIterations) {
-    uint8_t forwardDirection = nodes[curId].forward_direction;
-    nodes[curId].flags.src_flag = 1;
-    int2 xy = idxToLoc_2D(curId, xDim);
-    int nx = xy.x + d_dX[forwardDirection];
-    int ny = xy.y + d_dY[forwardDirection];
-    if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
-      break;
-    }  
-    
-    nodes[curId].golden_parent_x = nx;
-    nodes[curId].golden_parent_y = ny;
-    curId = locToIdx_2D(nx, ny, xDim);
-    iteration++;
-  }
-
-  if (iteration >= maxIterations) {
-    printf("Warning: Forward traceback exceeded maximum iterations.\n");
-  }
+  auto tmp = cmap[idx] & (((1ull << length) - 1) << pos);
+  return tmp >> pos;
 }
+ 
 
-
-// Kernel for backward traceback
-__global__
-void backwardTraceBack__single__thread__kernel(
-  NodeData2D* nodes, 
-  int* d_meetId, int netId, 
-  int* d_dX, int* d_dY,
-  int xDim,
-  int LLX, int LLY, int URX, int URY)
-{  
-  auto& meetId = d_meetId[netId];
-  if (meetId == 0x7FFFFFFF) {
-    return; // No meetId found
-  }
-  
-  int curId = meetId;
-  if (nodes[curId].flags.dst_flag == 1) { 
-    nodes[curId].flags.dst_flag = 0; // change the dst flag to 0
-    nodes[curId].flags.src_flag = 1;
-    return;
-  }
-  
-  int maxIterations = (URX - LLX + 1) * (URY - LLY + 1);
-  int iteration = 0;
-
-  while (iteration < maxIterations) {
-    int2 xy = idxToLoc_2D(curId, xDim);
-    uint8_t backwardDirection = nodes[curId].backward_direction;
-    int nx = xy.x + d_dX[backwardDirection];
-    int ny = xy.y + d_dY[backwardDirection];
-    if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
-      break;
-    }  
-    
-    curId = locToIdx_2D(nx, ny, xDim);
-    nodes[curId].flags.src_flag = 1;
-    nodes[curId].golden_parent_x = xy.x;
-    nodes[curId].golden_parent_y = xy.y;
-    if (nodes[curId].flags.dst_flag == 1) {
-      nodes[curId].flags.dst_flag = 0; // change the dst flag to 0
-      break;
-    }
-    iteration++;
-  }
-
-  if (iteration >= maxIterations) {
-    printf("Warning: Backward traceback exceeded maximum iterations.\n");
-  }
-}
-
-
-// Kernel function for each thread
-__global__
-void runMSMCMazeRoute__kernel(
-  int numNets,
-  int CGThreadsPerBlock,
-  int CGNumBlocks,
-  int* d_netHPWL,
-  int* d_netPtr,
-  Rect2D_CUDA* d_netBBox,
-  int* d_pins,
-  int* d_costMap,
-  NodeData2D* d_nodes,
-  int* d_dX,
-  int* d_dY,
-  int* d_doneFlags,
-  int* d_meetIds,
-  int xDim, int yDim,
-  int BLOCKCOST,
-  int TURNCOST,
-  int CONGCOST,
-  int HISTCOST)
+__host__ __device__ __forceinline__
+unsigned getHistoryCost(const uint64_t* cmap, int idx)
 {
-  int netId = blockIdx.x * blockDim.x + threadIdx.x;
-  if (netId >= numNets) {
-    return;
+  return getBits(cmap, idx, 8, GRGRIDGRAPHHISTCOSTSIZE);
+}
+
+
+__host__ __device__ __forceinline__
+float getCongCost(unsigned supply, unsigned demand)
+{
+  float exp_val = exp(std::min(10.0f, static_cast<float>(supply) - demand));  
+  float factor = 4.0f / (1.0f + exp_val); 
+  float congCost = demand * (1.0f + factor) / (supply + 1.0f);
+  return congCost;  
+}
+
+
+
+__host__ __device__
+unsigned getRawDemand2D(const uint64_t* cmap, int idx, Directions2D dir)
+{
+  unsigned demand = 0;
+  switch (dir) {
+    case Directions2D::RIGHT:
+      demand = getBits(cmap, idx, 48, CMAPDEMANDSIZE);
+      break;
+    case Directions2D::NORTH:
+      demand = getBits(cmap, idx, 32, CMAPDEMANDSIZE);
+      break;
+    default:;
   }
+  return demand;
+}
 
-  int pinIdxStart = d_netPtr[netId];
-  int pinIdxEnd = d_netPtr[netId + 1];
-  int numPins = pinIdxEnd - pinIdxStart;
-  int maxIters = d_netHPWL[netId];
 
-  Rect2D_CUDA netBBox = d_netBBox[netId];
-  int LLX = netBBox.xMin;
-  int LLY = netBBox.yMin;
-  int URX = netBBox.xMax;
-  int URY = netBBox.yMax;
+__host__ __device__
+unsigned getRawSupply2D(const uint64_t* cmap, int idx, Directions2D dir)
+{
+  unsigned supply = 0;
+  switch (dir) {
+    case Directions2D::RIGHT:
+      supply = getBits(cmap, idx, 24, CMAPSUPPLYSIZE);
+      break;
+    case Directions2D::NORTH:
+      supply = getBits(cmap, idx, 16, CMAPSUPPLYSIZE);
+      break;
+    default:;
+  }
+  return supply << CMAPFRACSIZE;
+}
 
-  // Each net has its own doneFlag and meetId
-  int* d_doneFlag = d_doneFlags + netId;
-  int* d_meetId = d_meetIds + netId;
 
-  // Run the Bellman Ford algorithm
-  void* kerneArgs[] = {
-    (void*)&d_nodes,
-    (void*)&d_costMap,
-    (void*)&d_dX,
-    (void*)&d_dY,
-    (void*)&d_doneFlag,
-    (void*)&d_meetId,
-    (void*)&LLX,
-    (void*)&LLY,
-    (void*)&URX,
-    (void*)&URY,
-    (void*)&xDim,
-    (void*)&yDim,
-    (void*)&BLOCKCOST,
-    (void*)&TURNCOST,
-    (void*)&CONGCOST,
-    (void*)&HISTCOST,
-    (void*)&maxIters
-  };
+__host__ __device__
+bool hasBlock2D(const uint64_t* cmap, int idx, Directions2D dir)
+{
+  bool sol = false;
+  switch (dir) {
+    case Directions2D::RIGHT:
+      sol = getBit(cmap, idx, 3);
+      break;
+    case Directions2D::NORTH:
+      sol = getBit(cmap, idx, 2);
+      break;
+    default:;
+  }
+  return sol;
+}
 
-  
-  for (int pinIter = 1; pinIter < numPins; pinIter++) {
-    // Initialize the nodes
-    initNodeData2D__kernel<<<1, 256>>>(
-      d_nodes,
-      d_pinIdxVec, pinIdxStart, numPins, 
-      d_doneFlag, d_meetId,
-      LLX, LLY, URX, URY, 
-      xDim, pinIter);
-    
-    // Run parallel routing
-    cudaLaunchCooperativeKernel(
-      (void*)biwaveBellmanFord2D__kernel,
-      CGNumBlocks,
-      CGThreadsPerBlock,
-      kernelArgs);      
 
-    // Find the meetId
-    findMeetIdAndTraceBack__kernel<<<1, 256>>>(
-      d_nodes, d_meetId, xDim, LLX, LLY, URX, URY);
+__host__ __device__
+bool hasEdge2D(const uint64_t* bits, int idx, Directions2D dir)
+{
+  switch (dir) {
+    case Directions2D::RIGHT:
+      return getBit(bits, idx, 0);
+    case Directions2D::NORTH:
+      return getBit(bits, idx, 1);
+    default:;
+  }  
+}
 
-    // Traceback
-    forwardTraceBack__single_thread__kernel<<<1, 1>>>(
-      d_nodes, d_meetId, d_dX, d_dY, xDim, LLX, LLY, URX, URY);
-      
-    backwardTraceBack__single__thread__kernel<<<1, 1>>>(
-      d_nodes, d_meetId, d_dX, d_dY, xDim, LLX, LLY, URX, URY);
+
+__host__ __device__
+unsigned getEdgeLength2D(const int* xCoords, const int* yCoords, 
+  int x, int y, Directions2D dir)
+{
+  switch (dir) {
+    case Directions2D::RIGHT:
+      return xCoords[x + 1] - xCoords[x];
+    case Directions2D::NORTH:
+      return yCoords[y + 1] - yCoords[y];
+    default:
+      return 0;
   }
 }
-*/
 
+
+
+// We do not consider bending cost in this version
+__host__ __device__
+uint32_t getEdgeCost2D(
+  const uint64_t* d_costMap,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
+  unsigned BLOCKCOST,
+  unsigned OVERFLOWCOST,
+  unsigned HISTCOST,
+  int idx, int x, int y,
+  Directions2D dir)
+{
+  bool blockCost = hasBlock2D(d_costMap, idx, dir);
+  unsigned histCost = getHistoryCost(d_costMap, idx, dir);
+  unsigned rawDemand = getRawDemand2D(d_costMap, idx, dir) * congThreshold;
+  unsigned rawSupply = getRawSupply2D(d_costMap, idx, dir);
+  bool overflowCost = (rawDemand >= rawSupply);
+  float congCost = getCongCost(rawSupply, rawDemand);
+  unsigned edgeLength = getEdgeLength2D(d_xCoords, d_yCoords, x, y, dir);
+
+  // cost 
+  uint32_t edgeCost = edgeLength
+    + edgeLength * congCost
+    + (histCost ? HISTCOST * edgeLength * congCost * HISTCOST : 0)
+    + (blockCost ? BLOCKCOST * edgeLength : 0)
+    + (overflowCost ? OVERFLOWCOST * edgeLength : 0);
+
+  return edgeCost;
+}
 
 
 // Define the device function for node initialization
@@ -551,17 +402,25 @@ void initNodeData2D__device(
     if (d_nodes[idx].flags.src_flag) {
       d_nodes[idx].forward_g_cost = 0;
       d_nodes[idx].forward_g_cost_prev = 0;
+      d_nodes[idx].forward_visited_flag = true;
+      d_nodes[idx].forward_visited_flag_prev = true;
     } else {
       d_nodes[idx].forward_g_cost = INF32;
       d_nodes[idx].forward_g_cost_prev = INF32;
+      d_nodes[idx].forward_visited_flag = false;
+      d_nodes[idx].forward_visited_flag_prev = false;
     }
 
     if (d_nodes[idx].flags.dst_flag) {
       d_nodes[idx].backward_g_cost = 0;
       d_nodes[idx].backward_g_cost_prev = 0;
+      d_nodes[idx].backward_visited_flag = true;
+      d_nodes[idx].backward_visited_flag_prev = true;
     } else {
       d_nodes[idx].backward_g_cost = INF32;
       d_nodes[idx].backward_g_cost_prev = INF32;
+      d_nodes[idx].backward_visited_flag = false;
+      d_nodes[idx].backward_visited_flag_prev = false;
     }
 
     d_nodes[idx].forward_direction = DIR_NONE;
@@ -578,6 +437,39 @@ void initNodeData2D__device(
 }
 
 
+__device__ __forceinline__
+uint32_t getNeighorCost2D(
+  const uint64_t* d_costMap,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
+  unsigned BLOCKCOST,
+  unsigned OVERFLOWCOST,
+  unsigned HISTCOST,
+  int idx, int x, int y,
+  int nbrIdx, int nr, int ny)
+{
+  uint32_t newG = 0;
+  if (nx == x && ny == y - 1) {
+    newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
+      congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
+      nbrIdx, nx, ny, Directions2D::NORTH);
+  } else if (nx == x && ny == y + 1) {
+    newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
+      congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
+      idx, x, y, Directions2D::NORTH);
+  } else if (nx == x - 1 && ny == y) {
+    newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
+      congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
+      nbrIdx, nx, ny, Directions2D::RIGHT);
+  } else if (nx == x + 1 && ny == y) {
+    newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
+      congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
+      idx, x, y, Directions2D::RIGHT);
+  }
+
+  return newG;
+}
 
 
 // Define the device function for the biwaveBellmanFord2D
@@ -589,7 +481,13 @@ void runBiBellmanFord_2D__device(
   int* d_dX, int* d_dY,
   int& d_doneFlag,
   int LLX, int LLY, int URX, int URY,
-  int xDim, int maxIters)
+  int xDim, int maxIters,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
+  unsigned BLOCKCOST,
+  unsigned OVERFLOWCOST,
+  unsigned HISTCOST)
 {
   // A typical 1D decomposition over the entire 2D domain
   int total = (URX - LLX + 1) * (URY - LLY + 1);
@@ -634,9 +532,11 @@ void runBiBellmanFord_2D__device(
             continue;
           }
           
-          // TODO: to be updated
-          // For tesing purposes, we use the average of the two nodes
-          uint32_t newG = neighborCost + 100;
+          uint32_t newG = neighborCost +
+            getNeighorCost2D(d_costMap, d_xCoords, d_yCoords,
+              congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
+              idx, x, y, nbrIdx, nr, ny);
+
           // Check if we found a better cost
           if (newG < bestCost) {
             bestCost = newG;
@@ -669,9 +569,12 @@ void runBiBellmanFord_2D__device(
           if (neighborCost == 0xFFFFFFFF) {
             continue;
           }
-
-          // TODO: to be updated
-          uint32_t newG = neighborCost + 100;  // For testing, use cost=100
+          
+          uint32_t newG = neighborCost +
+          getNeighorCost2D(d_costMap, d_xCoords, d_yCoords,
+            congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
+            idx, x, y, nbrIdx, nr, ny);
+          
           if (newG < bestCost) {
             bestCost = newG;
             bestD    = d;
@@ -695,7 +598,7 @@ void runBiBellmanFord_2D__device(
       int local_x = localIdx % xDimTemp + LLX;
       int local_y = localIdx / xDimTemp + LLY;
       int idx = locToIdx_2D(local_x, local_y, xDim);
-      NodeData &nd = nodes[idx];
+      NodeData2D &nd = nodes[idx];
       // If forward_update_flag is set, copy forward_g_cost -> forward_g_cost_prev
       if (nd.flags.forward_update_flag) {
         nd.flags.forward_update_flag = false;
@@ -732,6 +635,10 @@ void runBiBellmanFord_2D__device(
         continue;
       }
 
+      // Check the visited flag
+      bool localForwardMin = true;
+      bool localBackwardMin = true;
+
       int2 xy = idxToLoc_2D(idx, xDim);
       int  x  = xy.x;
       int  y  = xy.y;
@@ -744,11 +651,24 @@ void runBiBellmanFord_2D__device(
         }
         
         int nbrIdx = locToIdx_2D(nx, ny, xDim);
-        if (nodes[nbrIdx].forward_g_cost_prev + nodes[nbrIdx].forward_h_cost >= nd.forward_g_cost_prev + nd.forward_h_cost_prev &&
-            nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost >= nd.backward_g_cost_prev + nd.backward_h_cost_prev) {
-          nd.flags.forward_visited_flag = true;
-          nd.flags.backward_visited_flag = true;
-        }
+        // check forward case
+        if ((nodes[nbrIdx].forward_visited_flag_prev == false) && 
+            (nodes[nbrIdx].forward_g_cost_prev + nodes[nbrIdx].forward_h_cost < nd.forward_g_cost_prev + nd.forward_h_cost_prev)) {
+          localForwardMin = false;
+        } 
+
+        if ((nodes[nbrIdx].backward_visited_flag_prev == false) &&
+            (nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost >= nd.backward_g_cost_prev + nd.backward_h_cost_prev)) {
+          localBackwardMin = false;
+        }      
+      }
+
+      if (localForwardMin == true) {
+        nd.forward_visited_flag = true;
+      }
+
+      if (localBackwardMin == true) {
+        nd.backward_visited_flag = true;
       }
     } // end “for each node”
     
@@ -779,12 +699,6 @@ void runBiBellmanFord_2D__device(
     }
   } // end for (iter)
 }
-
-
-
-
-
-
 
 
 // Define the device function for the meetId check
@@ -909,6 +823,9 @@ void biwaveBellmanFord2D__kernel(
   int* d_doneFlags,
   int* d_meetIds,
   int xDim, int yDim,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
   int BLOCKCOST,
   int CONGCOST, 
   int HISTCOST)
@@ -949,7 +866,9 @@ void biwaveBellmanFord2D__kernel(
     // Run the Bellman Ford algorithm
     runBiBellmanFord_2D__device(
       grid, d_nodes, d_costMap, d_dX, d_dY, 
-      d_doneFlag, LLX, LLY, URX, URY, xDim, maxIters);  
+      d_doneFlag, LLX, LLY, URX, URY, xDim, maxIters,
+      d_xCoords, d_yCoords, congThreshold,
+      BLOCKCOST, OVERFLOWCOST, HISTCOST);  
 
     grid.sync();
 
@@ -991,6 +910,9 @@ void launchMazeRouteStream(
   int* d_doneFlag,
   int* d_meetId,
   int xDim, int yDim,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
   int BLOCKCOST,
   int CONGCOST,
   int HISTCOST,
@@ -1012,6 +934,9 @@ void launchMazeRouteStream(
     &d_meetId,
     &xDim, 
     &yDim,
+    &d_xCoords,
+    &d_yCoords,
+    &congThreshold,
     &BLOCKCOST, 
     &CONGCOST, 
     &HISTCOST
@@ -1053,7 +978,10 @@ void launchMazeRouteStream(
 void FlexGR::GPUAccelerated2DMazeRoute(
   std::vector<grNet*>& nets,
   std::vector<uint64_t>& h_costMap,
+  std::vector<int>& h_xCoords,
+  std::vector<int>& h_yCoords,
   RouterConfiguration* router_cfg,
+  float congThreshold,
   int xDim, int yDim)
 {
   std::cout << "[INFO] GPU accelerated 2D Maze Routing" << std::endl;
@@ -1108,6 +1036,8 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   
   // For the design specific variables
   uint64_t* d_costMap = nullptr;
+  int* d_xCoords = nullptr;
+  int* d_yCoords = nullptr;
   int* d_pinIdxVec = nullptr;
   int* d_nodes = nullptr;
   int* d_netHPWL = nullptr;
@@ -1120,13 +1050,17 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaMalloc(&d_dY, 4 * sizeof(int));
   cudaMalloc(&d_doneFlag, nets.size() * sizeof(int));
   cudaMalloc(&d_meetId, nets.size() * sizeof(int));
-
   cudaMalloc(&d_costMap, numGrids * sizeof(uint64_t));
+  cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
+  cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
   cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
 
   cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords * sizeof(int), cudaMemcpyHostToDevice);
+
   cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_nodes, nodes.data(), numGrids * sizeof(NodeData2D), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netHPWL, netHWPL.data(), netHWPL.size() * sizeof(int), cudaMemcpyHostToDevice);
@@ -1134,7 +1068,6 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
 
   cudaCheckError();
-
 
   // Unfortunately, the cooperative kernel launch is not supported
   // by the dynamic parallelism.
@@ -1147,6 +1080,11 @@ void FlexGR::GPUAccelerated2DMazeRoute(
     cudaStreamCreate(&netStreams[i]);
   }
 
+  // According to the original code
+  unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
+  unsigned OVERFLOWCOST = 128;
+  unsigned HISTCOST = 4;
+
   // launch one cooperative kernel per net concurrently using different streams
   // the d_netHPWL is used to determine the maximum iterations
   for (int netId = 0; netId < numNets; netId++) {
@@ -1156,9 +1094,12 @@ void FlexGR::GPUAccelerated2DMazeRoute(
       d_pinIdxVec, d_costMap, d_nodes, 
       d_dX, d_dY, d_doneFlag, d_meetId,
       xDim, yDim, 
-      router_cfg->BLOCKCOST, 
-      router_cfg->CONGCOST, 
-      router_cfg->HISTCOST,
+      d_xCoords,
+      d_yCoords,
+      congThreshold,
+      BLOCKCOST,
+      OVERFLOWCOST,
+      HISTCOST,
       netId, 
       (netBBox.xMax - netBBox.xMin + 1) * (netBBox.yMax - netBBox.yMin + 1),
       netStreams[netId]);
