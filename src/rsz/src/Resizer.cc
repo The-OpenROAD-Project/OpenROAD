@@ -1573,7 +1573,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                0.0,
                                0.0,
                                0.0,
-                               false,
+                               true,
                                repaired_net_count,
                                slew_violations,
                                cap_violations,
