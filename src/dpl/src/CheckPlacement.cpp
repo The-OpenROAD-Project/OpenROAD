@@ -51,7 +51,9 @@ using utl::DPL;
 
 using utl::format_as;
 
-void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
+void Opendp::checkPlacement(const bool verbose,
+                            const bool disallow_one_site_gaps,
+                            const string& report_file_name)
 {
   importDb();
 
@@ -103,7 +105,7 @@ void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
   // Thus, the one site gap check needs to be done after the overlap check
   // Otherwise, this check will miss the pixels that could have resulted in
   // one-site gap violations as null
-  if (disallow_one_site_gaps_) {
+  if (disallow_one_site_gaps) {
     for (Cell& cell : cells_) {
       // One site gap check
       if (checkOneSiteGaps(cell)) {
@@ -140,7 +142,7 @@ void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
 
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
           + site_align_failures.size()
-          + (disallow_one_site_gaps_ ? one_site_gap_failures.size() : 0)
+          + (disallow_one_site_gaps ? one_site_gap_failures.size() : 0)
           + region_placement_failures.size() + edge_spacing_failures.size()
       > 0) {
     logger_->error(DPL, 33, "detailed placement checks failed.");
