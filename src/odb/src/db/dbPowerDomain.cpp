@@ -177,6 +177,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   return stream;
 }
 
+void _dbPowerDomain::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["elements"].add(_elements);
+  info.children_["power_switch"].add(_power_switch);
+  info.children_["isolation"].add(_isolation);
+  info.children_["levelshifters"].add(_levelshifters);
+  // User Code End collectMemInfo
+}
+
 _dbPowerDomain::~_dbPowerDomain()
 {
   if (_name) {

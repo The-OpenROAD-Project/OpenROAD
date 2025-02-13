@@ -83,6 +83,7 @@ void RepairHold::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 bool RepairHold::repairHold(
@@ -286,7 +287,9 @@ bool RepairHold::repairHold(VertexSeq& ends,
                      setup_margin,
                      hold_margin,
                      allow_setup_violations,
-                     max_buffer_count);
+                     max_buffer_count,
+                     verbose,
+                     pass);
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
@@ -295,7 +298,6 @@ bool RepairHold::repairHold(VertexSeq& ends,
                  inserted_buffer_count_ - hold_buffer_count_before);
       sta_->findRequireds();
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
-      pass++;
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }
     if (verbose) {
@@ -362,19 +364,26 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 const double setup_margin,
                                 const double hold_margin,
                                 const bool allow_setup_violations,
-                                const int max_buffer_count)
+                                const int max_buffer_count,
+                                bool verbose,
+                                int& pass)
 {
   resizer_->updateParasitics();
   sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
   for (Vertex* end_vertex : hold_failures) {
+    if (verbose) {
+      printProgress(pass, false, false);
+    }
+
     resizer_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
                   hold_margin,
                   allow_setup_violations);
+    pass++;
     if (inserted_buffer_count_ > max_buffer_count) {
       break;
     }
@@ -409,7 +418,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                             ? network_->net(network_->term(path_pin))
                             : network_->net(path_pin);
         dbNet* db_path_net = db_network_->staToDb(path_net);
-        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_net)
+        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
             && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
@@ -671,6 +680,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // hook up loads to buffer
   for (const Pin* load_pin : load_pins) {
+    if (resizer_->dontTouch(load_pin)) {
+      continue;
+    }
+
     Net* load_net = network_->isTopLevelPort(load_pin)
                         ? network_->net(network_->term(load_pin))
                         : network_->net(load_pin);
@@ -746,11 +759,11 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
 
   if (start) {
     logger_->report(
-        "Iteration | Resized | Buffers | Cloned Gates |   WNS   |   TNS   | "
-        "Endpoint");
+        "Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   "
+        "|   TNS   | Endpoint");
     logger_->report(
         "----------------------------------------------------------------------"
-        "-----");
+        "----------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -764,12 +777,17 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
       itr_field = "final";
     }
 
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
     logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >12d} | {: >7s} | {: >7s} | {}",
+        "{: >9s} | {: >7d} | {: >7d} | {: >12d} | {: >+7.1f}% | {: >7s} | {: "
+        ">7s} | {}",
         itr_field,
         resize_count_,
         inserted_buffer_count_,
         cloned_gate_count_,
+        area_growth / initial_design_area_ * 1e3,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 3),
         worst_vertex->name(network_));
@@ -778,7 +796,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
   if (end) {
     logger_->report(
         "----------------------------------------------------------------------"
-        "-----");
+        "----------------");
   }
 }
 

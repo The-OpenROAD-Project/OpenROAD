@@ -586,4 +586,28 @@ dbMTerm* dbMTerm::getMTerm(dbMaster* master_, uint dbid_)
   return (dbMTerm*) master->_mterm_tbl->getPtr(dbid_);
 }
 
+void _dbMTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+
+  // These fields have unusal pointer ownship semantics relative to
+  // the rest of odb (not a table but a vector of owning pointers).
+  // Should be just by value.
+  info.children_["_par_met_area"].add(_par_met_area);
+  info.children_["_par_met_area"].size
+      += _par_met_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_par_met_sidearea"].add(_par_met_sidearea);
+  info.children_["_par_met_sidearea"].size
+      += _par_met_sidearea.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_par_cut_area"].add(_par_cut_area);
+  info.children_["_par_cut_area"].size
+      += _par_cut_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_diffarea"].add(_diffarea);
+  info.children_["_diffarea"].size
+      += _diffarea.size() * sizeof(_dbTechAntennaAreaElement);
+}
+
 }  // namespace odb

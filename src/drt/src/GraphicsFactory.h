@@ -55,9 +55,6 @@ class GraphicsFactory : public AbstractGraphicsFactory
              Logger* logger,
              RouterConfiguration* router_cfg) override;
   bool guiActive() override;
-  AbstractDRGraphics* getDRGraphics() override;
-  AbstractTAGraphics* getTAGraphics() override;
-  AbstractPAGraphics* getPAGraphics() override;
   std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() override;
   std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() override;
   std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() override;
@@ -68,9 +65,6 @@ class GraphicsFactory : public AbstractGraphicsFactory
   odb::dbDatabase* db_;
   Logger* logger_;
   RouterConfiguration* router_cfg_;
-  std::unique_ptr<AbstractDRGraphics> dr_graphics_;
-  std::unique_ptr<AbstractPAGraphics> pa_graphics_;
-  std::unique_ptr<AbstractTAGraphics> ta_graphics_;
 };
 
 }  // namespace drt

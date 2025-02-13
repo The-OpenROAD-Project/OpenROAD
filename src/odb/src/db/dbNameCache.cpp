@@ -113,6 +113,14 @@ void _dbName::out(dbDiff& diff, char side, const char* field) const
   DIFF_END
 }
 
+void _dbName::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbName& name)
 {
   stream << name._name;
@@ -251,6 +259,15 @@ dbIStream& operator>>(dbIStream& stream, _dbNameCache& cache)
   stream >> cache._name_hash;
   stream >> *cache._name_tbl;
   return stream;
+}
+
+void _dbNameCache::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  _name_tbl->collectMemInfo(info.children_["name_tbl"]);
+  info.children_["name_hash"].add(_name_hash);
 }
 
 }  // namespace odb

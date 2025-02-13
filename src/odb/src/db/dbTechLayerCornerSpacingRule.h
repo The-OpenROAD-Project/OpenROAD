@@ -83,6 +83,7 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCornerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCornerSpacingRuleFlags flags_;
   int within_;

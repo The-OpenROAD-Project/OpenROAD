@@ -95,6 +95,7 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutSpacingTableDefRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutSpacingTableDefRuleFlags flags_;
   int default_;

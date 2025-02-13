@@ -48,11 +48,6 @@ void GraphicsFactory::reset(frDebugSettings* settings,
   db_ = db;
   logger_ = logger;
   router_cfg_ = router_cfg;
-  dr_graphics_ = std::make_unique<FlexDRGraphics>(settings, design, db, logger);
-  ta_graphics_ = std::make_unique<FlexTAGraphics>(settings, design, db);
-  pa_graphics_ = std::make_unique<FlexPAGraphics>(
-      settings, design, db, logger, router_cfg);
-  dr_graphics_->init();
 }
 
 bool GraphicsFactory::guiActive()
@@ -60,34 +55,17 @@ bool GraphicsFactory::guiActive()
   return gui::Gui::enabled();
 }
 
-AbstractDRGraphics* GraphicsFactory::getDRGraphics()
-{
-  if (!guiActive()) {
-    return nullptr;
-  }
-  return dr_graphics_.get();
-}
-AbstractTAGraphics* GraphicsFactory::getTAGraphics()
-{
-  if (!guiActive()) {
-    return nullptr;
-  }
-  return ta_graphics_.get();
-}
-AbstractPAGraphics* GraphicsFactory::getPAGraphics()
-{
-  if (!guiActive()) {
-    return nullptr;
-  }
-  return pa_graphics_.get();
-}
 std::unique_ptr<AbstractDRGraphics> GraphicsFactory::makeUniqueDRGraphics()
 {
   if (!guiActive()) {
     return nullptr;
   }
-  return std::make_unique<FlexDRGraphics>(settings_, design_, db_, logger_);
+  auto dr_graphics
+      = std::make_unique<FlexDRGraphics>(settings_, design_, db_, logger_);
+  dr_graphics->init();
+  return std::move(dr_graphics);
 }
+
 std::unique_ptr<AbstractTAGraphics> GraphicsFactory::makeUniqueTAGraphics()
 {
   if (!guiActive()) {
@@ -95,6 +73,7 @@ std::unique_ptr<AbstractTAGraphics> GraphicsFactory::makeUniqueTAGraphics()
   }
   return std::make_unique<FlexTAGraphics>(settings_, design_, db_);
 }
+
 std::unique_ptr<AbstractPAGraphics> GraphicsFactory::makeUniquePAGraphics()
 {
   if (!guiActive()) {

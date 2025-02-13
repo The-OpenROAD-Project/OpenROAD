@@ -187,6 +187,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   return stream;
 }
 
+void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["class_name"].add(class_name_);
+  // User Code End collectMemInfo
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerEolKeepOutRule - Methods

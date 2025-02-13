@@ -66,6 +66,7 @@ class _dbName : public _dbObject
   bool operator<(const _dbName& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbName& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbName& n);

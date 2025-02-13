@@ -53,9 +53,6 @@ class AbstractGraphicsFactory
                      RouterConfiguration* router_cfg)
       = 0;
   virtual bool guiActive() = 0;
-  virtual AbstractDRGraphics* getDRGraphics() = 0;
-  virtual AbstractTAGraphics* getTAGraphics() = 0;
-  virtual AbstractPAGraphics* getPAGraphics() = 0;
   virtual std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() = 0;
   virtual std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() = 0;
   virtual std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() = 0;
