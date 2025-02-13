@@ -57,7 +57,7 @@ namespace gpl2 {
 class PlacerBaseCommon;
 class PlacerBase;
 
-typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
+using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
 // Classes related to Initial Placement
 // Compare to the original implementation,

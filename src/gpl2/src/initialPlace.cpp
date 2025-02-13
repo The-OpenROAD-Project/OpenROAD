@@ -59,8 +59,8 @@ namespace gpl2 {
 using Eigen::BiCGSTAB;
 using Eigen::IdentityPreconditioner;
 
-typedef Eigen::Triplet<float> T;
-typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
+using T = Eigen::Triplet<float>;
+using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
 struct ResidualError
 {

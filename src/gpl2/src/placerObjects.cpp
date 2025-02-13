@@ -51,18 +51,14 @@ using utl::GPL2;
 ///////////////////////////////////////////////////////////////
 // Instance
 Instance::Instance()
-    : inst_(nullptr),
-      instId_(-1),
-      cx_(0.0),
+    : cx_(0.0),
       cy_(0.0),
       dx_(0.0),
       dy_(0.0),
       dDx_(0.0),
       dDy_(0.0),
       densityScale_(0.0),
-      haloWidth_(0),
-      type_(InstanceType::FILLER),
-      isFixed_(false)
+      type_(InstanceType::FILLER)
 {
 }
 
@@ -82,8 +78,8 @@ Instance::Instance(odb::dbInst* inst,
   int lx = 0.0;
   int ly = 0.0;
   inst->getLocation(lx, ly);
-  int ux = lx + floor(bbox->getDX() / 2) * 2;
-  int uy = ly + floor(bbox->getDY() / 2) * 2;
+  int ux = lx + (floor(double(bbox->getDX()) / 2) * 2);
+  int uy = ly + (floor(double(bbox->getDY()) / 2) * 2);
 
   isFixed_ = isFixedOdbInst(inst);
   if (isPlaceInstance()) {
@@ -174,7 +170,7 @@ void Instance::dbSetPlaced()
   }
 }
 
-void Instance::dbSetPlacementStatus(odb::dbPlacementStatus ps)
+void Instance::dbSetPlacementStatus(const odb::dbPlacementStatus& ps)
 {
   if (inst_ != nullptr) {
     inst_->setPlacementStatus(ps);
@@ -210,16 +206,13 @@ void Instance::setDensitySize(int dDx, int dDy, float densityScale)
 ////////////////////////////////////////////////////////
 // Pin
 Pin::Pin()
-    : pin_(nullptr),
-      pinId_(-1),
-      inst_(nullptr),
+    : inst_(nullptr),
       net_(nullptr),
       cx_(0),
       cy_(0),
       offsetCx_(0),
       offsetCy_(0),
       iTermField_(false),
-      bTermField_(false),
       minPinXField_(false),
       minPinYField_(false),
       maxPinXField_(false),

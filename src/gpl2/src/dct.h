@@ -42,8 +42,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include <Kokkos_Core.hpp>
 
-void dct_2d_fft(const int M,
-                const int N,
+void dct_2d_fft(int M,
+                int N,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkM,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkN,
                 const Kokkos::View<const float*>& input,
@@ -51,8 +51,8 @@ void dct_2d_fft(const int M,
                 const Kokkos::View<Kokkos::complex<float>*>& fft,
                 const Kokkos::View<float*>& post);
 
-void idct_2d_fft(const int M,
-                 const int N,
+void idct_2d_fft(int M,
+                 int N,
                  const Kokkos::View<const Kokkos::complex<float>*>& expkM,
                  const Kokkos::View<const Kokkos::complex<float>*>& expkN,
                  const Kokkos::View<const Kokkos::complex<float>*>& expkMN1,
@@ -62,8 +62,8 @@ void idct_2d_fft(const int M,
                  const Kokkos::View<float*>& ifft,
                  const Kokkos::View<float*>& post);
 
-void idxst_idct(const int M,
-                const int N,
+void idxst_idct(int M,
+                int N,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkM,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkN,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkMN1,
@@ -75,8 +75,8 @@ void idxst_idct(const int M,
                 const Kokkos::View<float*>& workSpaceReal3,
                 const Kokkos::View<float*>& output);
 
-void idct_idxst(const int M,
-                const int N,
+void idct_idxst(int M,
+                int N,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkM,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkN,
                 const Kokkos::View<const Kokkos::complex<float>*>& expkMN1,
