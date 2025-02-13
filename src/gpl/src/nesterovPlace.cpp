@@ -473,8 +473,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       auto block = pbc_->db()->getChip()->getBlock();
       uint total_gcells_before_td = nbc_->getNbcGCells().size();
+      for (auto& nesterov : nbVec_) {
+        log_->report("NB region #gcells before TD: {}", nesterov->gCells().size());
+      }
+      
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
 
+      for (auto& nesterov : nbVec_) {
+        log_->report("NB region #gcells after TD: {}", nesterov->gCells().size());
+      }
       if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
