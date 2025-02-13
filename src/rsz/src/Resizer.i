@@ -596,11 +596,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 bool
-recover_power(float recover_power_percent, bool match_cell_footprint)
+recover_power(float recover_power_percent, bool match_cell_footprint, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->recoverPower(recover_power_percent, match_cell_footprint);
+  return resizer->recoverPower(recover_power_percent, match_cell_footprint, verbose);
 }
 
 ////////////////////////////////////////////////////////////////

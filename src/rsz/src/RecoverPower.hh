@@ -79,7 +79,7 @@ class RecoverPower : public sta::dbStaState
 {
  public:
   RecoverPower(Resizer* resizer);
-  bool recoverPower(float recover_power_percent);
+  bool recoverPower(float recover_power_percent, bool verbose);
   // For testing.
   Vertex* recoverPower(const Pin* end_pin);
 
@@ -114,6 +114,8 @@ class RecoverPower : public sta::dbStaState
   Slack slackPenalized(BufferedNetPtr bnet);
   Slack slackPenalized(BufferedNetPtr bnet, int index);
 
+  void printProgress(int iteration, bool force, bool end) const;
+
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
@@ -132,10 +134,16 @@ class RecoverPower : public sta::dbStaState
 
   sta::VertexSet bad_vertices_;
 
+  double initial_design_area_ = 0;
+  int print_interval_ = 0;
+
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
+
+  static constexpr int min_print_interval_ = 10;
+  static constexpr int max_print_interval_ = 100;
 };
 
 }  // namespace rsz

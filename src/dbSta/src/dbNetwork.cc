@@ -2200,6 +2200,46 @@ void dbNetwork::deleteInstance(Instance* inst)
   }
 }
 
+/*
+Generic pin -> net connection with support for hierarchical
+nets
+*/
+
+void dbNetwork::connectPin(Pin* pin, Net* net)
+{
+  // get the type of the pin
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  odb::dbModBTerm* modbterm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  // get the type of the net
+  dbNet* dnet = nullptr;
+  dbModNet* mod_net = nullptr;
+  staToDb(net, dnet, mod_net);
+
+  if (iterm && dnet) {
+    iterm->connect(dnet);
+  } else if (bterm && dnet) {
+    bterm->connect(dnet);
+  } else if (iterm && mod_net) {
+    iterm->connect(mod_net);
+  } else if (bterm && mod_net) {
+    bterm->connect(mod_net);
+  } else if (moditerm && mod_net) {
+    moditerm->connect(mod_net);
+  } else if (modbterm && mod_net) {
+    modbterm->connect(mod_net);
+  } else {
+    logger_->error(
+        ORD,
+        2024,
+        "Illegal net/pin combination. Modnets can only be hooked to iterm, "
+        "bterm, moditerm, modbterm, dbNets can only be hooked to iterm, bterm");
+  }
+}
+
 Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
 {
   Pin* pin = nullptr;
@@ -3023,7 +3063,24 @@ Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
   return topInstance();
 }
 
-dbModule* dbNetwork::getNetDriverParentModule(Net* net)
+/*
+Get the dbModule driving a net.
+
+Sometimes when inserting a buffer we simply want to stop at the current
+owning module boundary. Other times we want to go right the way to
+the module which owns the leaf driver.
+
+
+If hier is true, go right the way through the hierarchy and return
+the dbModule owning the driver.
+
+In non-hier mode, stop at the module boundaries
+
+*/
+
+dbModule* dbNetwork::getNetDriverParentModule(Net* net,
+                                              Pin*& driver_pin,
+                                              bool hier)
 {
   if (hasHierarchy()) {
     dbNet* dnet;
@@ -3032,23 +3089,62 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net)
     if (dnet) {
       //
       // get sink driver instance and return its parent
-      // TODO: clean this up as we cannot trust getDrivingITerm.
       //
-      int drivingITerm = dnet->getDrivingITerm();
-      if (drivingITerm != 0 && drivingITerm != -1) {
-        dbITerm* iterm = dbITerm::getITerm(block_, drivingITerm);
-        dbModNet* modnet = iterm->getModNet();
-        if (modnet != nullptr) {
-          return modnet->getParent();
+      PinSet* drivers = this->drivers(net);
+      if (drivers && !drivers->empty()) {
+        PinSet::Iterator drvr_iter(drivers);
+        const Pin* drvr_pin = drvr_iter.next();
+        driver_pin = const_cast<Pin*>(drvr_pin);
+        odb::dbITerm* iterm;
+        odb::dbBTerm* bterm;
+        odb::dbModITerm* mod_iterm;
+        odb::dbModBTerm* mod_bterm;
+        staToDb(drvr_pin, iterm, bterm, mod_iterm, mod_bterm);
+        (void) (mod_iterm);
+        (void) (mod_bterm);
+        (void) (bterm);
+        if (iterm) {
+          dbInst* db_inst = iterm->getInst();
+          dbModule* db_inst_module = db_inst->getModule();
+          if (db_inst_module) {
+            return db_inst_module;
+          }
         }
       }
-    } else {
-      return modnet->getParent();
+    } else if (modnet) {
+      // in hier mode, go right the way through the hierarchy
+      // and return the dbModule owning the instance doing the
+      // driving
+      Net* sta_net = dbToSta(modnet);
+      PinSet* drivers = this->drivers(sta_net);
+      for (auto pin : *drivers) {
+        dbITerm* iterm = nullptr;
+        dbBTerm* bterm = nullptr;
+        dbModITerm* moditerm = nullptr;
+        dbModBTerm* modbterm = nullptr;
+        staToDb(pin, iterm, bterm, moditerm, modbterm);
+        driver_pin = const_cast<Pin*>(pin);
+        if (hier == false) {
+          return modnet->getParent();
+        }
+        (void) modbterm;
+        if (bterm) {
+          return block_->getTopModule();
+        }
+        if (iterm) {
+          // return the dbmodule containing the driving instance
+          dbInst* dinst = iterm->getInst();
+          return dinst->getModule();
+        }
+        if (moditerm) {
+          // return the dbmodule containing the driving instance
+          return moditerm->getParent()->getParent();
+        }
+      }
     }
-    // default to top module
-    return block_->getTopModule();
   }
-  return nullptr;
+  // default to top module
+  return block_->getTopModule();
 }
 
 void dbNetwork::getParentHierarchy(

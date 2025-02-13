@@ -278,7 +278,7 @@ class RepairDesign : dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr int min_print_interval_ = 10;
-  static constexpr int max_print_interval_ = 100;
+  static constexpr int max_print_interval_ = 1000;
 };
 
 }  // namespace rsz

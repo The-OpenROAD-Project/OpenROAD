@@ -649,7 +649,7 @@ proc repair_timing { args } {
   set repaired_setup 0
   set repaired_hold 0
   if { $recover_power_percent >= 0 } {
-    set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint]
+    set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint $verbose]
   } else {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
