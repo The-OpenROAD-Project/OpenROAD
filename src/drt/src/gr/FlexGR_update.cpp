@@ -186,6 +186,18 @@ void FlexGR::searchRepair_update(int iter,
   auto& ygp = gCellPatterns.at(1);
 
   std::vector<std::unique_ptr<FlexGRWorker>> uworkers;
+  std::vector<int> xCoords;
+  std::vector<int> yCoords;
+  for (int xIdx = 0; xIdx < (int) xgp.getCount(); xIdx++) {
+    Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(xIdx, 0));
+    xCoords.push_back((gcellBox.xMin() + gcellBox.xMax()) / 2);
+  }  
+  
+  for (int yIdx = 0; yIdx < (int)ygp.getCount(); yIdx++) {
+    Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx));
+    yCoords.push_back((gcellBox.yMin() + gcellBox.yMax()) / 2);
+  }
+    
   // We do not use the original batch mode (divide the entire routing region into 
   // multiple batches based on batchStepX and batchStepY) in GPU-accelerated Maze Routing
   // We handle the entire routing region in a single batch
@@ -308,7 +320,9 @@ void FlexGR::searchRepair_update(int iter,
         }
         
         h_costMap = uworkers[0]->getCMap()->getBits();
-        GPUAccelerated2DMazeRoute(curBatch, h_costMap, router_cfg_, xDim, yDim);
+        GPUAccelerated2DMazeRoute(curBatch, h_costMap, 
+          xCoords, yCoords, router_cfg_, 
+          congThresh, xDim, yDim);
 
         // Copy the cost map to the grid graph
         for (int i = 0; i < (int) uworkers.size(); i++) {

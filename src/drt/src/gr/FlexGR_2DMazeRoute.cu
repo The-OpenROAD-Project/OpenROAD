@@ -269,10 +269,10 @@ unsigned getRawDemand2D(const uint64_t* cmap, int idx, Directions2D dir)
 {
   unsigned demand = 0;
   switch (dir) {
-    case Directions2D::RIGHT:
+    case Directions2D::DIR_RIGHT:
       demand = getBits(cmap, idx, 48, CMAPDEMANDSIZE);
       break;
-    case Directions2D::NORTH:
+    case Directions2D::DIR_NORTH:
       demand = getBits(cmap, idx, 32, CMAPDEMANDSIZE);
       break;
     default:;
@@ -286,10 +286,10 @@ unsigned getRawSupply2D(const uint64_t* cmap, int idx, Directions2D dir)
 {
   unsigned supply = 0;
   switch (dir) {
-    case Directions2D::RIGHT:
+    case Directions2D::DIR_RIGHT:
       supply = getBits(cmap, idx, 24, CMAPSUPPLYSIZE);
       break;
-    case Directions2D::NORTH:
+    case Directions2D::DIR_NORTH:
       supply = getBits(cmap, idx, 16, CMAPSUPPLYSIZE);
       break;
     default:;
@@ -303,10 +303,10 @@ bool hasBlock2D(const uint64_t* cmap, int idx, Directions2D dir)
 {
   bool sol = false;
   switch (dir) {
-    case Directions2D::RIGHT:
+    case Directions2D::DIR_RIGHT:
       sol = getBit(cmap, idx, 3);
       break;
-    case Directions2D::NORTH:
+    case Directions2D::DIR_NORTH:
       sol = getBit(cmap, idx, 2);
       break;
     default:;
@@ -319,9 +319,9 @@ __host__ __device__
 bool hasEdge2D(const uint64_t* bits, int idx, Directions2D dir)
 {
   switch (dir) {
-    case Directions2D::RIGHT:
+    case Directions2D::DIR_RIGHT:
       return getBit(bits, idx, 0);
-    case Directions2D::NORTH:
+    case Directions2D::DIR_NORTH:
       return getBit(bits, idx, 1);
     default:;
   }  
@@ -333,9 +333,9 @@ unsigned getEdgeLength2D(const int* xCoords, const int* yCoords,
   int x, int y, Directions2D dir)
 {
   switch (dir) {
-    case Directions2D::RIGHT:
+    case Directions2D::DIR_RIGHT:
       return xCoords[x + 1] - xCoords[x];
-    case Directions2D::NORTH:
+    case Directions2D::DIR_NORTH:
       return yCoords[y + 1] - yCoords[y];
     default:
       return 0;
@@ -358,7 +358,7 @@ uint32_t getEdgeCost2D(
   Directions2D dir)
 {
   bool blockCost = hasBlock2D(d_costMap, idx, dir);
-  unsigned histCost = getHistoryCost(d_costMap, idx, dir);
+  unsigned histCost = getHistoryCost(d_costMap, idx);
   unsigned rawDemand = getRawDemand2D(d_costMap, idx, dir) * congThreshold;
   unsigned rawSupply = getRawSupply2D(d_costMap, idx, dir);
   bool overflowCost = (rawDemand >= rawSupply);
@@ -402,25 +402,25 @@ void initNodeData2D__device(
     if (d_nodes[idx].flags.src_flag) {
       d_nodes[idx].forward_g_cost = 0;
       d_nodes[idx].forward_g_cost_prev = 0;
-      d_nodes[idx].forward_visited_flag = true;
-      d_nodes[idx].forward_visited_flag_prev = true;
+      d_nodes[idx].flags.forward_visited_flag = true;
+      d_nodes[idx].flags.forward_visited_flag_prev = true;
     } else {
       d_nodes[idx].forward_g_cost = INF32;
       d_nodes[idx].forward_g_cost_prev = INF32;
-      d_nodes[idx].forward_visited_flag = false;
-      d_nodes[idx].forward_visited_flag_prev = false;
+      d_nodes[idx].flags.forward_visited_flag = false;
+      d_nodes[idx].flags.forward_visited_flag_prev = false;
     }
 
     if (d_nodes[idx].flags.dst_flag) {
       d_nodes[idx].backward_g_cost = 0;
       d_nodes[idx].backward_g_cost_prev = 0;
-      d_nodes[idx].backward_visited_flag = true;
-      d_nodes[idx].backward_visited_flag_prev = true;
+      d_nodes[idx].flags.backward_visited_flag = true;
+      d_nodes[idx].flags.backward_visited_flag_prev = true;
     } else {
       d_nodes[idx].backward_g_cost = INF32;
       d_nodes[idx].backward_g_cost_prev = INF32;
-      d_nodes[idx].backward_visited_flag = false;
-      d_nodes[idx].backward_visited_flag_prev = false;
+      d_nodes[idx].flags.backward_visited_flag = false;
+      d_nodes[idx].flags.backward_visited_flag_prev = false;
     }
 
     d_nodes[idx].forward_direction = DIR_NONE;
@@ -447,25 +447,25 @@ uint32_t getNeighorCost2D(
   unsigned OVERFLOWCOST,
   unsigned HISTCOST,
   int idx, int x, int y,
-  int nbrIdx, int nr, int ny)
+  int nbrIdx, int nx, int ny)
 {
   uint32_t newG = 0;
   if (nx == x && ny == y - 1) {
     newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
       congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-      nbrIdx, nx, ny, Directions2D::NORTH);
+      nbrIdx, nx, ny, Directions2D::DIR_NORTH);
   } else if (nx == x && ny == y + 1) {
     newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
       congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-      idx, x, y, Directions2D::NORTH);
+      idx, x, y, Directions2D::DIR_NORTH);
   } else if (nx == x - 1 && ny == y) {
     newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
       congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-      nbrIdx, nx, ny, Directions2D::RIGHT);
+      nbrIdx, nx, ny, Directions2D::DIR_RIGHT);
   } else if (nx == x + 1 && ny == y) {
     newG += getEdgeCost2D(d_costMap, d_xCoords, d_yCoords, 
       congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-      idx, x, y, Directions2D::RIGHT);
+      idx, x, y, Directions2D::DIR_RIGHT);
   }
 
   return newG;
@@ -477,7 +477,7 @@ __device__
 void runBiBellmanFord_2D__device(
   cooperative_groups::grid_group& g,   // grid-level cooperative group
   NodeData2D* nodes,
-  uint64_t* costMap, 
+  uint64_t* d_costMap, 
   int* d_dX, int* d_dY,
   int& d_doneFlag,
   int LLX, int LLY, int URX, int URY,
@@ -502,11 +502,11 @@ void runBiBellmanFord_2D__device(
     ////////////////////////////////////////////////////////////////////////////
     // (1) Forward & backward relaxation phase
     ////////////////////////////////////////////////////////////////////////////
-    for (int idx = tid; idx < total; idx += stride) {
-      NodeData2D &nd = nodes[idx];
+    for (int localIdx = tid; localIdx < total; localIdx += stride) {
       int local_x = localIdx % xDimTemp + LLX;
       int local_y = localIdx / xDimTemp + LLY;
       int idx = locToIdx_2D(local_x, local_y, xDim);
+      NodeData2D &nd = nodes[idx];
       int2 xy = idxToLoc_2D(idx, xDim);
       int  x  = xy.x;
       int  y  = xy.y;
@@ -520,7 +520,7 @@ void runBiBellmanFord_2D__device(
         for (int d = 0; d < 4; d++) {
           int nx = x + d_dX[d];
           int ny = y + d_dY[d];
-          if (nx < LX || nx > UX || ny < LY || ny > UY) {
+          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
             continue;  // out of bounds
           }
           
@@ -535,7 +535,7 @@ void runBiBellmanFord_2D__device(
           uint32_t newG = neighborCost +
             getNeighorCost2D(d_costMap, d_xCoords, d_yCoords,
               congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-              idx, x, y, nbrIdx, nr, ny);
+              idx, x, y, nbrIdx, nx, ny);
 
           // Check if we found a better cost
           if (newG < bestCost) {
@@ -546,7 +546,7 @@ void runBiBellmanFord_2D__device(
 
         if (bestD != -1) { // We found an improvement
           nd.forward_g_cost = bestCost;
-          nd.forward_direction = computeParentDirection(bestD);
+          nd.forward_direction = computeParentDirection2D(bestD);
           nd.flags.forward_update_flag = true;
         }
       } // end forward
@@ -560,7 +560,7 @@ void runBiBellmanFord_2D__device(
         for (int d = 0; d < 4; d++) {
           int nx = x + d_dX[d];
           int ny = y + d_dY[d];
-          if (nx < LX || nx > UX || ny < LY || ny > UY) {
+          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
             continue;  // out of bounds
           }
           
@@ -573,7 +573,7 @@ void runBiBellmanFord_2D__device(
           uint32_t newG = neighborCost +
           getNeighorCost2D(d_costMap, d_xCoords, d_yCoords,
             congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-            idx, x, y, nbrIdx, nr, ny);
+            idx, x, y, nbrIdx, nx, ny);
           
           if (newG < bestCost) {
             bestCost = newG;
@@ -583,7 +583,7 @@ void runBiBellmanFord_2D__device(
 
         if (bestD != -1) {
           nd.backward_g_cost = bestCost;
-          nd.backward_direction = computeParentDirection(bestD);
+          nd.backward_direction = computeParentDirection2D(bestD);
           nd.flags.backward_update_flag = true;
         }
       } // end backward
@@ -594,7 +594,7 @@ void runBiBellmanFord_2D__device(
     ////////////////////////////////////////////////////////////////////////////
     // (2) Commit updated costs (double-buffering technique)
     ////////////////////////////////////////////////////////////////////////////
-    for (int idx = tid; idx < total; idx += stride) {
+    for (int localIdx = tid; localIdx < total; localIdx += stride) {
       int local_x = localIdx % xDimTemp + LLX;
       int local_y = localIdx / xDimTemp + LLY;
       int idx = locToIdx_2D(local_x, local_y, xDim);
@@ -623,11 +623,11 @@ void runBiBellmanFord_2D__device(
     ////////////////////////////////////////////////////////////////////////////
     // (3) Check if forward and backward fronts meet
     ////////////////////////////////////////////////////////////////////////////
-    for (int idx = tid; idx < total; idx += stride) {
+    for (int localIdx = tid; localIdx < total; localIdx += stride) {
       int local_x = localIdx % xDimTemp + LLX;
       int local_y = localIdx / xDimTemp + LLY;
       int idx = locToIdx_2D(local_x, local_y, xDim);
-      NodeData &nd = nodes[idx];
+      NodeData2D &nd = nodes[idx];
       // If either side is "unreached," skip
       if (nd.forward_g_cost_prev == 0xFFFFFFFF || 
           nd.backward_g_cost_prev == 0xFFFFFFFF)
@@ -646,36 +646,36 @@ void runBiBellmanFord_2D__device(
       for (int d = 0; d < 4; d++) {
         int nx = x + d_dX[d];
         int ny = y + d_dY[d];
-        if (nx < LX || nx > UX || ny < LY || ny > UY) {
+        if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
           continue;  // out of bounds
         }
         
         int nbrIdx = locToIdx_2D(nx, ny, xDim);
         // check forward case
-        if ((nodes[nbrIdx].forward_visited_flag_prev == false) && 
+        if ((nodes[nbrIdx].flags.forward_visited_flag_prev == false) && 
             (nodes[nbrIdx].forward_g_cost_prev + nodes[nbrIdx].forward_h_cost < nd.forward_g_cost_prev + nd.forward_h_cost_prev)) {
           localForwardMin = false;
         } 
 
-        if ((nodes[nbrIdx].backward_visited_flag_prev == false) &&
+        if ((nodes[nbrIdx].flags.backward_visited_flag_prev == false) &&
             (nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost >= nd.backward_g_cost_prev + nd.backward_h_cost_prev)) {
           localBackwardMin = false;
         }      
       }
 
       if (localForwardMin == true) {
-        nd.forward_visited_flag = true;
+        nd.flags.forward_visited_flag = true;
       }
 
       if (localBackwardMin == true) {
-        nd.backward_visited_flag = true;
+        nd.flags.backward_visited_flag = true;
       }
     } // end “for each node”
     
     g.sync();
 
     // Check if any thread found a front-meet
-    for (int idx = tid; idx < total; idx += stride) {
+    for (int localIdx = tid; localIdx < total; localIdx += stride) {
       int local_x = localIdx % xDimTemp + LLX;
       int local_y = localIdx / xDimTemp + LLY;
       int idx = locToIdx_2D(local_x, local_y, xDim);
@@ -827,7 +827,7 @@ void biwaveBellmanFord2D__kernel(
   const int* d_yCoords,
   float congThreshold,
   int BLOCKCOST,
-  int CONGCOST, 
+  int OVERFLOWCOST, 
   int HISTCOST)
 {
   // Obtain a handle to the entire cooperative grid.
@@ -1058,8 +1058,8 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
 
   cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_nodes, nodes.data(), numGrids * sizeof(NodeData2D), cudaMemcpyHostToDevice);
