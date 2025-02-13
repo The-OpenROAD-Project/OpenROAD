@@ -2468,6 +2468,35 @@ PinSet* Resizer::findFloatingPins()
   return floating_pins;
 }
 
+NetSeq* Resizer::findOverdrivenNets()
+{
+  NetSeq* overdriven_nets = new NetSeq;
+  std::unique_ptr<NetIterator> net_iter(
+      network_->netIterator(network_->topInstance()));
+  while (net_iter->hasNext()) {
+    Net* net = net_iter->next();
+    PinSeq loads;
+    PinSeq drvrs;
+    PinSet visited_drvrs(db_network_);
+    FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
+    network_->visitConnectedPins(net, visitor);
+    if (drvrs.size() > 1) {
+      bool all_tristate = true;
+      for (const Pin* drvr : drvrs) {
+        if (!isTristateDriver(drvr)) {
+          all_tristate = false;
+        }
+      }
+
+      if (!all_tristate) {
+        overdriven_nets->emplace_back(net);
+      }
+    }
+  }
+  sort(overdriven_nets, sta::NetPathNameLess(network_));
+  return overdriven_nets;
+}
+
 ////////////////////////////////////////////////////////////////
 
 // TODO:

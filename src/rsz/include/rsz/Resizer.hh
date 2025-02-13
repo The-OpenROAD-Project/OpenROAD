@@ -343,6 +343,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Caller owns return value.
   NetSeq* findFloatingNets();
   PinSet* findFloatingPins();
+  NetSeq* findOverdrivenNets();
   void repairTieFanout(LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
