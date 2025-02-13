@@ -203,7 +203,7 @@ void RepairDesign::repairDesign(
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     print_iteration++;
-    if (verbose >= 2 || verbose == 1 && (print_iteration == 1)) {
+    if (verbose >= 2 || (verbose == 1 && (print_iteration == 1))) {
       printProgress(print_iteration, false, false, repaired_net_count);
     }
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
