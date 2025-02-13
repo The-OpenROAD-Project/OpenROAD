@@ -1729,7 +1729,7 @@ bool RepairDesign::isRepeater(const Pin* load_pin)
 
 ////////////////////////////////////////////////////////////////
 
-void RepairDesign::makeRepeater(const char* reason,
+bool RepairDesign::makeRepeater(const char* reason,
                                 const Point& loc,
                                 LibertyCell* buffer_cell,
                                 bool resize,
@@ -1742,19 +1742,19 @@ void RepairDesign::makeRepeater(const char* reason,
 {
   Net* out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
-  makeRepeater(reason,
-               loc.getX(),
-               loc.getY(),
-               buffer_cell,
-               resize,
-               level,
-               load_pins,
-               repeater_cap,
-               repeater_fanout,
-               repeater_max_slew,
-               out_net,
-               repeater_in_pin,
-               repeater_out_pin);
+  return makeRepeater(reason,
+                      loc.getX(),
+                      loc.getY(),
+                      buffer_cell,
+                      resize,
+                      level,
+                      load_pins,
+                      repeater_cap,
+                      repeater_fanout,
+                      repeater_max_slew,
+                      out_net,
+                      repeater_in_pin,
+                      repeater_out_pin);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1775,7 +1775,7 @@ bool RepairDesign::hasInputPort(const Net* net)
   return has_top_level_port;
 }
 
-void RepairDesign::makeRepeater(
+bool RepairDesign::makeRepeater(
     const char* reason,
     int x,
     int y,
@@ -2038,6 +2038,8 @@ void RepairDesign::makeRepeater(
   repeater_cap = resizer_->portCapacitance(buffer_input_port, corner_);
   repeater_fanout = resizer_->portFanoutLoad(buffer_input_port);
   repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
+
+  return true;
 }
 
 LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
