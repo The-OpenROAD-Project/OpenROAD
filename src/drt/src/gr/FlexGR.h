@@ -266,6 +266,7 @@ class FlexGR
     int iter);
 
   void GPUAccelerated2DMazeRoute(
+    std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
     std::vector<grNet*>& nets,
     std::vector<uint64_t>& h_costMap,
     std::vector<int>& xCoords,
@@ -319,9 +320,10 @@ class FlexGRWorker
 {
  public:
   // constructors
-  FlexGRWorker(FlexGR* grIn, RouterConfiguration* router_cfg)
+  FlexGRWorker(FlexGR* grIn, RouterConfiguration* router_cfg, Logger* logger)
       : design_(grIn->getDesign()),
         gr_(grIn),
+        logger_(logger),
         gridGraph_(grIn->getDesign(), this, router_cfg),
         rq_(this)
   {
@@ -398,10 +400,12 @@ class FlexGRWorker
   void mazeNetInit(grNet* net);
 
   bool restoreNet(grNet* net);
+  FlexGRGridGraph& getGridGraph() { return gridGraph_; }
 
  private:
   frDesign* design_{nullptr};
   FlexGR* gr_{nullptr};
+  Logger* logger_;
   Point routeGCellIdxLL_;
   Point routeGCellIdxUR_;
   Rect extBox_;

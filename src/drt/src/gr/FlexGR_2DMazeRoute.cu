@@ -730,7 +730,7 @@ void findMeetIdAndTraceBackId2D__device(
     int idx = locToIdx_2D(local_x, local_y, xDim);
     if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag && 
         (nodes[idx].forward_g_cost + nodes[idx].backward_g_cost == d_doneFlag)) {
-      atomicMin(&d_doneFlag, cost);      
+      atomicMin(&d_meetId, idx);      
     }
   }
 }
@@ -995,15 +995,35 @@ void launchMazeRouteStream(
 
 
 // We need to restore the connected path from the golden parent
-
-
-
-
-
-
-
+void batchPathSyncUp(
+  std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
+  std::vector<grNet*>& nets,
+  std::vector<Rect2D_CUDA>& netBBoxVec,
+  std::vector<NodeData2D>& nodes,
+  int xDim)
+{
+  for (int netId = 0; netId < nets.size(); netId++) {
+    auto& net = nets[netId];
+    auto& uworker = uworkers[netId];
+    auto& gridGraph = uworker->getGridGraph();
+    auto& netBBox = netBBoxVec[netId];
+    int LLX = netBBox.xMin;
+    int LLY = netBBox.yMin;
+    int URX = netBBox.xMax;
+    int URY = netBBox.yMax;
+    int xDimTemp = URX - LLX + 1;
+    int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
+    for (int localIdx = 0; localIdx < numNodes; localIdx++) {
+      int x = localIdx % xDimTemp + LLX;
+      int y = localIdx / xDimTemp + LLY;
+      int idx = locToIdx_2D(x, y, xDim);
+      gridGraph.setGoldenParent2D(x, y, nodes[idx].golden_parent_x, nodes[idx].golden_parent_y);
+    }
+  }
+}
 
 void FlexGR::GPUAccelerated2DMazeRoute(
+  std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
   std::vector<grNet*>& nets,
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
@@ -1144,6 +1164,7 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaCheckError();
 
   // Reconstruct the nets similar to the CPU version
+  batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
 
   for (int i = 0; i < numNets; i++) {
     cudaStreamDestroy(netStreams[i]);
@@ -1157,6 +1178,8 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaFree(d_doneFlag);
   cudaFree(d_meetId);
   cudaFree(d_costMap);
+  cudaFree(d_xCoords);
+  cudaFree(d_yCoords);
   cudaFree(d_pinIdxVec);
   cudaFree(d_nodes);
   cudaFree(d_netHPWL);

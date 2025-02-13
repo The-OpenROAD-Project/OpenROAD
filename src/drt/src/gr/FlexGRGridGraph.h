@@ -621,12 +621,37 @@ class FlexGRGridGraph
                               + zIdx * xCoords_.size() * yCoords_.size());
   }
 
+  // For GPU-accelerated GR
+  std::vector<int>& getGoldenParentX() { return golden_parent_x_; }
+  std::vector<int>& getGoldenParentY() { return golden_parent_y_; }
+  std::vector<int>& getGoldenParentZ() { return golden_parent_z_; }
+
+  void setGoldenParent2D(frMIdx x, frMIdx y, frMIdx xP, frMIdx yP)
+  {
+    int idx = getIdx(x, y, 0);
+    golden_parent_x_[idx] = xP;
+    golden_parent_y_[idx] = yP;
+  }
+
+  void setGoldenParent3D(frMIdx x, frMIdx y, frMIdx z, frMIdx xP, frMIdx yP, frMIdx zP)
+  {
+    int idx = getIdx(x, y, z);
+    golden_parent_x_[idx] = xP;
+    golden_parent_y_[idx] = yP;
+    golden_parent_z_[idx] = zP;
+  }
+
+
  private:
   frDesign* design_{nullptr};
   FlexGRWorker* grWorker_{nullptr};
   frGCellPattern* xgp_{nullptr};
   frGCellPattern* ygp_{nullptr};
   RouterConfiguration* router_cfg_;
+
+  std::vector<int> golden_parent_x_;
+  std::vector<int> golden_parent_y_;
+  std::vector<int> golden_parent_z_;
 
   // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
   // [3] blockE;   [4] blockN;   [5] blockU

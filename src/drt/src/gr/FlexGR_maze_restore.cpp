@@ -31,7 +31,6 @@
 
 namespace drt {
 
-
 // To be updated
 bool FlexGRWorker::restorePath(
   std::vector<FlexMazeIdx>& connComps,
@@ -41,6 +40,9 @@ bool FlexGRWorker::restorePath(
   FlexMazeIdx& ccMazeIdx2,
   const Point& centerPt) 
 {
+  
+  
+  
   return true;
 }
 
@@ -50,7 +52,7 @@ bool FlexGRWorker::restoreNet(grNet* net)
   std::set<grNode*, frBlockObjectComp> unConnPinGCellNodes;
   std::map<FlexMazeIdx, grNode*> mazeIdx2unConnPinGCellNode;
   std::map<FlexMazeIdx, grNode*> mazeIdx2endPointNode;
-  restoreNet_prep(net,
+  routeNet_prep(net,
     unConnPinGCellNodes,
     mazeIdx2unConnPinGCellNode,
     mazeIdx2endPointNode);
@@ -71,11 +73,11 @@ bool FlexGRWorker::restoreNet(grNet* net)
 
   while (!unConnPinGCellNodes.empty()) {
     path.clear();
-    auto nextPinGCellNode = restoreNet_getNextDst(
+    auto nextPinGCellNode = routeNet_getNextDst(
         ccMazeIdx1, ccMazeIdx2, mazeIdx2unConnPinGCellNode);
     if (restorePath(connComps, nextPinGCellNode, path, 
         ccMazeIdx1, ccMazeIdx2, centerPt)) {
-      auto leaf = restoreNet_postAstarUpdate(
+      auto leaf = routeNet_postAstarUpdate(
           path, connComps, unConnPinGCellNodes, mazeIdx2unConnPinGCellNode);
       routeNet_postAstarWritePath(net, path, leaf, mazeIdx2endPointNode);
     } else {

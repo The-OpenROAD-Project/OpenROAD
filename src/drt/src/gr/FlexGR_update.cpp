@@ -203,7 +203,7 @@ void FlexGR::searchRepair_update(int iter,
   // We handle the entire routing region in a single batch
   for (int i = 0; i < (int) xgp.getCount(); i += size) {
     for (int j = 0; j < (int) ygp.getCount(); j += size) {
-      auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
+      auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_, logger_);
       Point gcellIdxLL = Point(i, j);
       Point gcellIdxUR
           = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
@@ -321,7 +321,9 @@ void FlexGR::searchRepair_update(int iter,
         }
         
         h_costMap = uworkers[0]->getCMap()->getBits();
-        GPUAccelerated2DMazeRoute(curBatch, h_costMap, 
+        GPUAccelerated2DMazeRoute(
+          uworkers,
+          curBatch, h_costMap, 
           xCoords, yCoords, router_cfg_, 
           congThresh, xDim, yDim);
 

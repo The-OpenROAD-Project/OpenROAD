@@ -60,6 +60,7 @@ void FlexGRGridGraph::initCoords()
     Rect gcellBox = getDesign()->getTopBlock()->getGCellBox(Point(0, yIdx));
     yCoords_.push_back((gcellBox.yMin() + gcellBox.yMax()) / 2);
   }
+
   // z
   if (!is2DRouting_) {
     for (auto& layer : getTech()->getLayers()) {
@@ -96,6 +97,13 @@ void FlexGRGridGraph::initGrids()
   prevDirs_.resize(xDim * yDim * zDim * 3, false);
   srcs_.resize(xDim * yDim * zDim, false);
   dsts_.resize(xDim * yDim * zDim, false);
+  golden_parent_x_.resize(xDim * yDim * zDim, -1);
+  golden_parent_y_.resize(xDim * yDim * zDim, -1);
+  if (!is2DRouting_) {
+    golden_parent_z_.resize(xDim * yDim * zDim, -1);
+  } else {
+    golden_parent_z_.resize(xDim * yDim * zDim, 0);
+  }
 }
 
 void FlexGRGridGraph::initEdges()

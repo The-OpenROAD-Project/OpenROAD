@@ -223,7 +223,7 @@ void FlexGR::searchRepairMacro(int iter,
 
   // create separate worker for each macro
   for (auto macro : macros) {
-    auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
+    auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_, logger_);
     Rect macroBBox = macro->getBBox();
     Point macroLL(macroBBox.xMin(), macroBBox.yMin());
     Point macroUR(macroBBox.xMax(), macroBBox.yMax());
@@ -317,7 +317,7 @@ void FlexGR::searchRepair(int iter,
   if (TEST) {
     std::cout << "search and repair test mode" << std::endl << std::flush;
 
-    FlexGRWorker worker(this, router_cfg_);
+    FlexGRWorker worker(this, router_cfg_, logger_);
     Rect extBox(1847999, 440999, 1857000, 461999);
     Rect routeBox(1849499, 442499, 1855499, 460499);
     Point gcellIdxLL(616, 147);
@@ -353,7 +353,7 @@ void FlexGR::searchRepair(int iter,
     // sequential init
     for (int i = 0; i < (int) xgp.getCount(); i += size) {
       for (int j = 0; j < (int) ygp.getCount(); j += size) {
-        auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_);
+        auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_, logger_);
         Point gcellIdxLL = Point(i, j);
         Point gcellIdxUR
             = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
