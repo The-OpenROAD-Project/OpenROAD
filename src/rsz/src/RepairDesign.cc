@@ -1246,15 +1246,17 @@ void RepairDesign::repairNetWire(
       int buf_x = to_x + d * dx;
       int buf_y = to_y + d * dy;
       float repeater_cap, repeater_fanout;
-      makeRepeater("wire",
-                   Point(buf_x, buf_y),
-                   buffer_cell,
-                   resize,
-                   level,
-                   load_pins,
-                   repeater_cap,
-                   repeater_fanout,
-                   max_load_slew);
+      if (!makeRepeater("wire",
+                        Point(buf_x, buf_y),
+                        buffer_cell,
+                        resize,
+                        level,
+                        load_pins,
+                        repeater_cap,
+                        repeater_fanout,
+                        max_load_slew)) {
+        break;
+      }
       // Update for the next round.
       length -= buf_dist;
       wire_length = length;
@@ -1646,19 +1648,21 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
   float ignore2, ignore3, ignore4;
   Net* out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
-  makeRepeater("fanout",
-               loc.x(),
-               loc.y(),
-               resizer_->buffer_lowest_drive_,
-               false,
-               1,
-               repeater_loads,
-               ignore2,
-               ignore3,
-               ignore4,
-               out_net,
-               repeater_in_pin,
-               repeater_out_pin);
+  if (!makeRepeater("fanout",
+                    loc.x(),
+                    loc.y(),
+                    resizer_->buffer_lowest_drive_,
+                    false,
+                    1,
+                    repeater_loads,
+                    ignore2,
+                    ignore3,
+                    ignore4,
+                    out_net,
+                    repeater_in_pin,
+                    repeater_out_pin)) {
+    return;
+  }
   Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
   int repaired_net_count, slew_violations, cap_violations = 0;
   int fanout_violations, length_violations = 0;
