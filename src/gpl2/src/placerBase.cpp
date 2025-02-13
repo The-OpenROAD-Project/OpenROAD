@@ -190,7 +190,7 @@ void PlacerBaseCommon::evaluateHPWL()
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbSet<odb::dbNet> nets = block->getNets();
-  unsigned long int hpwl = 0;
+  uint64_t hpwl = 0;
   for (odb::dbNet* net : nets) {
     odb::dbSigType netType = net->getSigType();
     // escape nets with VDD/VSS/reset nets
@@ -3115,8 +3115,8 @@ void BinGrid::initBins()
     binCntY_ = 512;
   }
 
-  binSizeX_ = ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
-  binSizeY_ = ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
+  binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
+  binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
   // create bins_ on host and device
   numBins_ = binCntX_ * binCntY_;
 
