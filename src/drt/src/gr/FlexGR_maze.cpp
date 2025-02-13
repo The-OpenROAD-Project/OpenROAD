@@ -515,6 +515,8 @@ void FlexGRWorker::mazeNetInit_removeNetNodes(grNet* net)
   }
 }
 
+
+
 bool FlexGRWorker::routeNet(grNet* net)
 {
   if (net->isTrivial()) {

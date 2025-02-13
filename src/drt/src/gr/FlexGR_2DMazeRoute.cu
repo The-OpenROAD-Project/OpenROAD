@@ -117,16 +117,6 @@ enum Directions2D {
 };
 
 
-
-
-
-
-
-
-
-
-
-
 struct NodeData2D {
   // forward and backward propagation (heuristic and real cost) (32 bits each)
   uint32_t forward_h_cost; // heuristic cost
@@ -158,6 +148,7 @@ struct NodeData2D {
     uint8_t backward_visited_flag_prev: 1; // 1 if the backward node is visited
   }  flags;
 };
+
 
 
 __host__ __device__ 
@@ -695,6 +686,7 @@ void runBiBellmanFord_2D__device(
     g.sync();
 
     if (d_doneFlag == 1) {
+      d_doneFlag = INF32;
       return;
     }
   } // end for (iter)
@@ -703,9 +695,9 @@ void runBiBellmanFord_2D__device(
 
 // Define the device function for the meetId check
 __device__
-void findMeetIdAndTraceBack2D__device(
+void findMeetIdAndTraceBackCost2D__device(
   NodeData2D* nodes,
-  int& d_meetId, 
+  int& d_doneFlag, 
   int LLX, int LLY, int URX, int URY,
   int xDim)
 { 
@@ -716,12 +708,32 @@ void findMeetIdAndTraceBack2D__device(
     int local_y = localIdx / xDimTemp + LLY;
     int idx = locToIdx_2D(local_x, local_y, xDim);
     if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag) {
-      atomicMin(&d_meetId, idx);
+      int32_t cost = nodes[idx].forward_g_cost + nodes[idx].backward_g_cost;
+      atomicMin(&d_doneFlag, cost);      
     }
   }
 }
 
-
+__device__
+void findMeetIdAndTraceBackId2D__device(
+  NodeData2D* nodes,
+  int& d_doneFlag, 
+  int& d_meetId,
+  int LLX, int LLY, int URX, int URY,
+  int xDim)
+{ 
+  int xDimTemp = URX - LLX + 1;
+  int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
+  for (int localIdx = threadIdx.x; localIdx < numNodes; localIdx += blockDim.x) {
+    int local_x = localIdx % xDimTemp + LLX;
+    int local_y = localIdx / xDimTemp + LLY;
+    int idx = locToIdx_2D(local_x, local_y, xDim);
+    if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag && 
+        (nodes[idx].forward_g_cost + nodes[idx].backward_g_cost == d_doneFlag)) {
+      atomicMin(&d_doneFlag, cost);      
+    }
+  }
+}
 
 __device__
 void forwardTraceBack2D__single_thread__device(
@@ -873,8 +885,15 @@ void biwaveBellmanFord2D__kernel(
     grid.sync();
 
     // Find the d_meetId
-    findMeetIdAndTraceBack2D__device(
-      d_nodes, d_meetId, 
+    findMeetIdAndTraceBackCost2D__device(
+      d_nodes, d_doneFlag, 
+      LLX, LLY, URX, URY, 
+      xDim);
+
+    grid.sync(); // Synchronize all threads in the grid
+
+    findMeetIdAndTraceBackId2D__device(
+      d_nodes, d_doneFlag, d_meetId,
       LLX, LLY, URX, URY, 
       xDim);
 
@@ -973,6 +992,15 @@ void launchMazeRouteStream(
     printf("Kernel launch error (net %d): %s\n", netId, cudaGetErrorString(err));
   }
 }
+
+
+// We need to restore the connected path from the golden parent
+
+
+
+
+
+
 
 
 void FlexGR::GPUAccelerated2DMazeRoute(

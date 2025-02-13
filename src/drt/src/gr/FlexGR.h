@@ -48,6 +48,7 @@ class SteinerTreeBuilder;
 namespace drt {
 using odb::Rect;
 
+
 class FlexGR
 {
  public:
@@ -396,6 +397,8 @@ class FlexGRWorker
   bool routeNet(grNet* net);
   void mazeNetInit(grNet* net);
 
+  bool restoreNet(grNet* net);
+
  private:
   frDesign* design_{nullptr};
   FlexGR* gr_{nullptr};
@@ -533,6 +536,13 @@ class FlexGRWorker
 
   // For GPU-accelerated GGR-TR
   void init_pinGCellIdxs();
+  bool restorePath(std::vector<FlexMazeIdx>& connComps,
+    grNode* nextPinNode,
+    std::vector<FlexMazeIdx>& path,
+    FlexMazeIdx& ccMazeIdx1,
+    FlexMazeIdx& ccMazeIdx2,
+    const Point& centerPt);
+
 };
 
 

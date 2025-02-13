@@ -309,6 +309,7 @@ void FlexGR::searchRepair_update(int iter,
       // Route the nets in the batches
       for (auto& batchId : validBatchIds) {
         auto& curBatch = batches[batchId];
+        // This can be done in parallel if necessary
         for (auto net : curBatch) {  
           uworkers[net->getWorkerId()]->mazeNetInit(net);
           net->updateAbsGridCoords(uworkers[net->getWorkerId()]->getRouteGCellIdxLL());
@@ -324,9 +325,10 @@ void FlexGR::searchRepair_update(int iter,
           xCoords, yCoords, router_cfg_, 
           congThresh, xDim, yDim);
 
-        // Copy the cost map to the grid graph
-        for (int i = 0; i < (int) uworkers.size(); i++) {
-          uworkers[i]->initGridGraph_fromCMap();
+        // Restore the net in the batch
+        // This can be done in parallel if necessary
+        for (auto net : curBatch) {
+          uworkers[net->getWorkerId()]->restoreNet(net);
         }
       }  
     } else {
