@@ -36,6 +36,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -435,7 +436,7 @@ class PlacerBase
   int64_t nesterovInstsArea() const
   {
     return stdInstsArea_
-           + static_cast<int64_t>(round(macroInstsArea_ * targetDensity_));
+           + static_cast<int64_t>(std::round(macroInstsArea_ * targetDensity_));
   }
 
   int binCntX() const { return bg_.binCntX(); }

@@ -49,7 +49,7 @@ namespace gpl2 {
 
 using utl::GPL2;
 
-using int64_t_cu = unsigned long long int;
+using int64_t_cu = uint64_t;
 
 class DensityOp
 {
@@ -85,7 +85,7 @@ class DensityOp
   int coreUx_;
   int coreUy_;
 
-  // We need to store all the statictis information for each bin
+  // We need to store all the statistics information for each bin
   Kokkos::View<int*> dBinLx_;
   Kokkos::View<int*> dBinLy_;
   Kokkos::View<int*> dBinUx_;
