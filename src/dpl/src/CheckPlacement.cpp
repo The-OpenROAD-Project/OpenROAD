@@ -408,7 +408,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   grid_->visitCellBoundaryPixels(
-      cell, true, [&](Pixel* pixel, const Direction2D& edge, GridX x, GridY y) {
+      cell, [&](Pixel* pixel, const Direction2D& edge, GridX x, GridY y) {
         GridX abut_x{0};
 
         switch (static_cast<Direction2D::Value>(edge)) {
