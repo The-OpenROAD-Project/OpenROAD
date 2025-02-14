@@ -322,7 +322,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool is_routability_snapshot_saved = false;
   float route_snapshotA = 0;
   float route_snapshot_WlCoefX = 0, route_snapshot_WlCoefY = 0;
-  bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
   bool is_diverge_snapshot_saved = false;
