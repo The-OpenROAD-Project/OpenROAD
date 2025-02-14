@@ -179,7 +179,7 @@ void initNodeData2D(NodeData2D& nd) {
 
 
 
-__device__ __forceinline__ 
+__device__  
 uint8_t computeParentDirection2D(int d) {
   switch(d) {
     case 0: return DIR_NORTH;
@@ -192,7 +192,7 @@ uint8_t computeParentDirection2D(int d) {
 
 
 // Invert direction for backtracking
-__device__ __forceinline__ 
+__device__  
 uint8_t invertDirection2D(uint8_t d) {
   switch(d) {
     case DIR_NORTH:    return DIR_SOUTH;
@@ -206,7 +206,7 @@ uint8_t invertDirection2D(uint8_t d) {
 
 // Define the idxToLoc_2D function
 // Convert linear index -> (x,y)
-__device__ __host__ __forceinline__ 
+__device__ __host__  
 int2 idxToLoc_2D(int idx, int xDim) {
   int x = idx % xDim;
   int y = idx / xDim;
@@ -216,20 +216,20 @@ int2 idxToLoc_2D(int idx, int xDim) {
 
 // Define the locToIdx_2D function
 // Convert (x,y) -> linear index
-__device__ __host__ __forceinline__ 
+__device__ __host__  
 int locToIdx_2D(int x, int y, int xDim) {
   return y * xDim + x;
 }
 
 
 // Bit related functions
-__host__ __device__ __forceinline__
+__host__ __device__ 
 bool getBit(const uint64_t* cmap, unsigned idx, unsigned pos)
 {
   return (cmap[idx] >> pos) & 1;
 }
  
-__host__ __device__ __forceinline__
+__host__ __device__ 
 unsigned getBits(const uint64_t* cmap, unsigned idx, unsigned pos, unsigned length)
 {
   auto tmp = cmap[idx] & (((1ull << length) - 1) << pos);
@@ -237,14 +237,14 @@ unsigned getBits(const uint64_t* cmap, unsigned idx, unsigned pos, unsigned leng
 }
  
 
-__host__ __device__ __forceinline__
+__host__ __device__ 
 unsigned getHistoryCost(const uint64_t* cmap, int idx)
 {
   return getBits(cmap, idx, 8, GRGRIDGRAPHHISTCOSTSIZE);
 }
 
 
-__host__ __device__ __forceinline__
+__host__ __device__ 
 float getCongCost(unsigned supply, unsigned demand)
 {
   float exp_val = exp(std::min(10.0f, static_cast<float>(supply) - demand));  
@@ -424,11 +424,11 @@ void initNodeData2D__device(
     d_nodes[idx].flags.backward_visited_flag = false;
     d_nodes[idx].flags.forward_visited_flag_prev = false;
     d_nodes[idx].flags.backward_visited_flag_prev = false;
-  }  
+  } 
 }
 
 
-__device__ __forceinline__
+__device__ 
 uint32_t getNeighorCost2D(
   const uint64_t* d_costMap,
   const int* d_xCoords,
@@ -485,6 +485,7 @@ void runBiBellmanFord_2D__device(
   int tid     = blockDim.x * blockIdx.x + threadIdx.x;
   int stride  = blockDim.x * gridDim.x;
   int xDimTemp = URX - LLX + 1;
+  maxIters = total;
 
   // We’ll do up to maxIters or until no changes / front-meet
   for (int iter = 0; iter < maxIters; iter++)
@@ -533,6 +534,9 @@ void runBiBellmanFord_2D__device(
             bestCost = newG;
             bestD    = d;
           }
+           
+	  printf("bestD = %d, bestCost = %d", bestD, bestCost);
+
         } // end neighbor loop
 
         if (bestD != -1) { // We found an improvement
@@ -581,7 +585,25 @@ void runBiBellmanFord_2D__device(
     } // end “for each node” (forward + backward)
 
     g.sync();
+    
+    if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+      printf("iter = %d, maxIters = %d\n", iter, maxIters);
+      for (int id = 0; id < total; id++) {
+        int local_x = id % xDimTemp + LLX;
+        int local_y = id / xDimTemp + LLY;
+        int idx = locToIdx_2D(local_x, local_y, xDim);
+        NodeData2D &nd = nodes[idx];
+        if (nd.flags.backward_update_flag == true) {
+          printf("id = %d, x = %d, y = %d,  backward_cost = %d\n", idx, local_x, local_y,  nd.backward_g_cost);
+        }
 
+        if (nd.flags.forward_update_flag == true) {
+          printf("id = %d, x = %d, y = %d,  forward_cost = %d\n", idx, local_x, local_y, nd.forward_g_cost);
+        }
+      }
+    }
+ 
+ 
     ////////////////////////////////////////////////////////////////////////////
     // (2) Commit updated costs (double-buffering technique)
     ////////////////////////////////////////////////////////////////////////////
@@ -634,6 +656,7 @@ void runBiBellmanFord_2D__device(
       int  x  = xy.x;
       int  y  = xy.y;
 
+      /*
       for (int d = 0; d < 4; d++) {
         int nx = x + d_dX[d];
         int ny = y + d_dY[d];
@@ -649,7 +672,7 @@ void runBiBellmanFord_2D__device(
         } 
 
         if ((nodes[nbrIdx].flags.backward_visited_flag_prev == false) &&
-            (nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost >= nd.backward_g_cost_prev + nd.backward_h_cost_prev)) {
+            (nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost < nd.backward_g_cost_prev + nd.backward_h_cost_prev)) {
           localBackwardMin = false;
         }      
       }
@@ -660,6 +683,22 @@ void runBiBellmanFord_2D__device(
 
       if (localBackwardMin == true) {
         nd.flags.backward_visited_flag = true;
+      }
+      */
+
+      for (int d = 0; d < 4; d++) {
+        int nx = x + d_dX[d];
+        int ny = y + d_dY[d];
+        if (nx < LLX || nx > URY || ny < LLY || ny > URY) {
+          continue;
+        }
+
+        int nbrIdx = locToIdx_2D(nx, ny, xDim);
+        if (nodes[nbrIdx].forward_g_cost_prev + nodes[nbrIdx].forward_h_cost >= nd.forward_g_cost_prev + nd.forward_h_cost_prev &&
+            nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost >= nd.backward_g_cost_prev + nd.backward_h_cost_prev) {
+          nd.flags.forward_visited_flag = true;
+          nd.flags.backward_visited_flag = true;
+        }
       }
     } // end “for each node”
     
@@ -678,6 +717,25 @@ void runBiBellmanFord_2D__device(
     
     g.sync();
 
+    /*
+    if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+      printf("iter = %d, maxIters = %d\n", iter, maxIters);
+      for (int id = 0; id < total; id++) {
+        int local_x = id % xDimTemp + LLX;
+        int local_y = id / xDimTemp + LLY;
+        int idx = locToIdx_2D(local_x, local_y, xDim);
+        NodeData2D &nd = nodes[idx];
+        if (nd.flags.backward_update_flag == true) {
+          printf("id = %d, backward_cost = %d", idx, nd.backward_g_cost);
+        }
+
+        if (nd.flags.forward_update_flag == true) {
+          printf("id = %d, forward_cost = %d", idx, nd.forward_g_cost);
+        }
+      }
+    }
+    */
+ 
     bool localDone = localFrontsMeet;
     if (localDone) {
       atomicExch(&d_doneFlag, 1);
@@ -701,6 +759,10 @@ void findMeetIdAndTraceBackCost2D__device(
   int LLX, int LLY, int URX, int URY,
   int xDim)
 { 
+  if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+    if (d_doneFlag == 0) { printf("Error ! d_doneFlag = 0\n"); }
+  }
+
   int xDimTemp = URX - LLX + 1;
   int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
   for (int localIdx = threadIdx.x; localIdx < numNodes; localIdx += blockDim.x) {
@@ -821,8 +883,9 @@ void backwardTraceBack2D__single__thread__device(
 
 
 // Fused cooperative kernel that processes a single net.
-__global__ 
-void biwaveBellmanFord2D__kernel(
+__device__ 
+void biwaveBellmanFord2D__device(
+  cooperative_groups::grid_group& grid,   // grid-level cooperative group		
   int netId,
   int* d_netHPWL,
   int* d_netPtr,
@@ -842,9 +905,6 @@ void biwaveBellmanFord2D__kernel(
   int OVERFLOWCOST, 
   int HISTCOST)
 {
-  // Obtain a handle to the entire cooperative grid.
-  cg::grid_group grid = cg::this_grid();
-
   // for this net
   int pinIdxStart = d_netPtr[netId];
   int pinIdxEnd = d_netPtr[netId + 1];
@@ -913,6 +973,59 @@ void biwaveBellmanFord2D__kernel(
 
     grid.sync(); // Synchronize all threads in the grid
   }
+
+  grid.sync();
+}
+
+
+
+
+
+// Fused cooperative kernel that processes a single net.
+__global__
+void biwaveBellmanFord2D__kernel(
+  int netId,
+  int* d_netHPWL,
+  int* d_netPtr,
+  Rect2D_CUDA* d_netBBoxVec,
+  int* d_pins,
+  uint64_t* d_costMap,
+  NodeData2D* d_nodes,
+  int* d_dX,
+  int* d_dY,
+  int* d_doneFlags,
+  int* d_meetIds,
+  int xDim, int yDim,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
+  int BLOCKCOST,
+  int OVERFLOWCOST,
+  int HISTCOST)
+{
+  // Obtain a handle to the entire cooperative grid.
+  cg::grid_group grid = cg::this_grid();
+  biwaveBellmanFord2D__device(
+    grid,
+    netId,
+    d_netHPWL,
+    d_netPtr,
+    d_netBBoxVec,
+    d_pins,
+    d_costMap,
+    d_nodes,
+    d_dX,
+    d_dY,
+    d_doneFlags,
+    d_meetIds,
+    xDim, yDim,
+    d_xCoords,
+    d_yCoords,
+    congThreshold,
+    BLOCKCOST,
+    OVERFLOWCOST,
+    HISTCOST);
+  grid.sync(); // Synchronize all threads in the grid
 }
 
 
@@ -923,7 +1036,7 @@ void launchMazeRouteStream(
   Rect2D_CUDA* d_netBBox,
   int* d_pins,
   uint64_t* d_costMap,
-  int* d_nodes,
+  NodeData2D* d_nodes,
   int* d_dX,
   int* d_dY,
   int* d_doneFlag,
@@ -965,20 +1078,38 @@ void launchMazeRouteStream(
   int deviceId = 0;
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, deviceId);
+  if (deviceProp.cooperativeLaunch == 0) {
+    printf("Device does not support cooperative grid launch.\n");
+    exit(1);
+  } else {
+    printf("Device supports cooperative grid launch.\n");
+  }
+
+  printf("Cooperative launch: %d\n", deviceProp.cooperativeLaunch);
+  printf("Multi-device coop: %d\n", deviceProp.cooperativeMultiDeviceLaunch);
+  printf("Max threads per block: %d\n", deviceProp.maxThreadsPerBlock);
+ 
 
   int threadsPerBlock = 1024;
   int numBlocksPerSm = 0;
-  cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, biwaveBellmanFord2D__kernel, threadsPerBlock, 0);
+  cudaError_t occErr = cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, biwaveBellmanFord2D__kernel, threadsPerBlock, 0);
+  if (occErr != cudaSuccess) {
+    printf("Occupancy calculation error: %s\n", cudaGetErrorString(occErr));
+  } 
+
   int numSms = deviceProp.multiProcessorCount;
   int numBlocks = numBlocksPerSm * numSms;
+  printf("numBlocksPerSm = %d, numSms = %d, numBlocks = %d\n", numBlocksPerSm, numSms, numBlocks);
 
   // Ensure the grid size does not exceed the maximum allowed for cooperative launch
   int maxBlocksPerGrid = 0;
   cudaDeviceGetAttribute(&maxBlocksPerGrid, cudaDevAttrMaxGridDimX, deviceId);
-  numBlocks = min(numBlocks, maxBlocksPerGrid);
-  numBlocks = min(numBlocks, (totalThreads + threadsPerBlock - 1) / threadsPerBlock);
-  numBlocks = max(numBlocks, 1);
+  printf("maxBlocksPerGrid = %d\n", maxBlocksPerGrid);
 
+  // For cooperative kernels that use grid-wide sync, you must launch the full grid,
+  // even if totalThreads would allow a smaller grid. (Inside the kernel, extra blocks
+  // should simply exit if their blockIdx.x exceeds the work limit.)
+  numBlocks = min(numBlocks, maxBlocksPerGrid);
   printf("Launching kernel with %d blocks\n", numBlocks);
 
   cudaError_t err = cudaLaunchCooperativeKernel(
@@ -1004,7 +1135,7 @@ void batchPathSyncUp(
 {
   for (int netId = 0; netId < nets.size(); netId++) {
     auto& net = nets[netId];
-    auto& uworker = uworkers[netId];
+    auto& uworker = uworkers[net->getWorkerId()];
     auto& gridGraph = uworker->getGridGraph();
     auto& netBBox = netBBoxVec[netId];
     int LLX = netBBox.xMin;
@@ -1018,7 +1149,11 @@ void batchPathSyncUp(
       int y = localIdx / xDimTemp + LLY;
       int idx = locToIdx_2D(x, y, xDim);
       gridGraph.setGoldenParent2D(x, y, nodes[idx].golden_parent_x, nodes[idx].golden_parent_y);
-    }
+      if (nodes[idx].golden_parent_x != -1 || nodes[idx].golden_parent_y != -1) {
+        std::cout << "Net " << netId << " x = " << x << " y = " << y 
+                << "Parent " << nodes[idx].golden_parent_x << " " << nodes[idx].golden_parent_y << std::endl; 
+      }
+    }    
   }
 }
 
@@ -1032,6 +1167,9 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   float congThreshold,
   int xDim, int yDim)
 {
+  // Only process the first net
+  nets.resize(1);	
+ 
   std::cout << "[INFO] GPU accelerated 2D Maze Routing" << std::endl;
   std::cout << "[INFO] Number of nets: " << nets.size() << std::endl;
   
@@ -1044,6 +1182,7 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   std::vector<Rect2D_CUDA> netBBoxVec;
   std::vector<int> pinIdxVec;
   std::vector<NodeData2D> nodes;
+  nodes.resize(numGrids);
   for (auto& node : nodes) {
     initNodeData2D(node);
   }
@@ -1053,6 +1192,7 @@ void FlexGR::GPUAccelerated2DMazeRoute(
     for (auto& idx : net->getPinGCellAbsIdxs()) {
       netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
       pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
+      std::cout << "Pin x = " << idx.x() << " y = " << idx.y() << " idx = " << locToIdx_2D(idx.x(), idx.y(), xDim) << std::endl;
     }
     netPtr.push_back(netVec.size());
     auto netBBox = net->getRouteAbsBBox();
@@ -1087,7 +1227,7 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   int* d_xCoords = nullptr;
   int* d_yCoords = nullptr;
   int* d_pinIdxVec = nullptr;
-  int* d_nodes = nullptr;
+  NodeData2D* d_nodes = nullptr;
   int* d_netHPWL = nullptr;
   int* d_netPtr = nullptr;
   Rect2D_CUDA* d_netBBox = nullptr;
@@ -1102,6 +1242,11 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
   cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
   cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
+  cudaMalloc(&d_nodes, numGrids * sizeof(NodeData2D));
+  cudaMalloc(&d_netHPWL, netHWPL.size() * sizeof(int));
+  cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
+  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+
 
   cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
@@ -1163,6 +1308,8 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaMemcpy(nodes.data(), d_nodes, numGrids * sizeof(NodeData2D), cudaMemcpyDeviceToHost);
   cudaCheckError();
 
+  std::cout << "Finish the GPU routing" << std::endl;
+
   // Reconstruct the nets similar to the CPU version
   batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
 
@@ -1185,6 +1332,8 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaFree(d_netHPWL);
   cudaFree(d_netPtr);
   cudaFree(d_netBBox);
+
+  exit(1);
 }
 
 } // namespace drt

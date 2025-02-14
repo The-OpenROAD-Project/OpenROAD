@@ -31,6 +31,7 @@
 
 namespace drt {
 
+
 // To be updated
 bool FlexGRWorker::restorePath(
   std::vector<FlexMazeIdx>& connComps,
@@ -38,11 +39,57 @@ bool FlexGRWorker::restorePath(
   std::vector<FlexMazeIdx>& path,
   FlexMazeIdx& ccMazeIdx1,
   FlexMazeIdx& ccMazeIdx2,
-  const Point& centerPt) 
+  const Point& centerPt)  // Actually, this is not used
 {
-  
-  
-  
+  FlexMazeIdx mi;
+  auto loc = nextPinNode->getLoc();
+  auto lNum = nextPinNode->getLayerNum();
+  gridGraph_.getMazeIdx(loc, lNum, mi);
+
+  // check if the nextPinNode has been connected
+  for (auto& idx : connComps) {
+    if (gridGraph_.isDst(idx.x(), idx.y(), idx.z())) {
+      path.emplace_back(idx.x(), idx.y(), idx.z());
+      return true;
+    }
+  }
+
+  // trace back from the nextPinNode mi  
+  // Test flag  
+  // To be updated later
+  int maxLength = 10000; // This is should be related to HPWL
+  int length = 0;
+  path.emplace_back(mi.x(), mi.y(), mi.z());
+  while (true) {
+    gridGraph_.traceBackParent(mi); // This will be updated the mi
+    // check flag
+    if (mi.x() == -1 || mi.y() == -1 || mi.z() == -1) {
+      logger_->report("[ERROR] restorePath: traceBackParent failed");
+      return false;
+    }
+    
+    if (gridGraph_.isSrc(mi.x(), mi.y(), mi.z())) {
+      path.emplace_back(mi.x(), mi.y(), mi.z());
+      break;
+    }
+
+    // Test flag
+    length++;
+    if (length > maxLength) {
+      logger_->report("[ERROR] restorePath: maxLength reached");
+      return false;
+    }        
+  }  
+
+  for (auto& mi : path) {
+    ccMazeIdx1.set(std::min(ccMazeIdx1.x(), mi.x()),
+                   std::min(ccMazeIdx1.y(), mi.y()),
+                   std::min(ccMazeIdx1.z(), mi.z()));
+    ccMazeIdx2.set(std::max(ccMazeIdx2.x(), mi.x()),
+                   std::max(ccMazeIdx2.y(), mi.y()),
+                   std::max(ccMazeIdx2.z(), mi.z()));
+  }
+
   return true;
 }
 

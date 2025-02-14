@@ -50,6 +50,8 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda --expt-relaxed-const
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=-Wno-redundant-decls")
 # Enable relocatable device code (RDC) for dynamic parallelism
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -rdc=true -DCUDA_FORCE_CDP1_IF_SUPPORTED")
+# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -maxrregcount=64 --ptxas-options=-v")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -maxrregcount=64 --ptxas-options=-v")
 # Enable separable compilation
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -rdc=true -DCUDA_FORCE_CDP1_IF_SUPPORTED")
@@ -88,6 +90,7 @@ target_sources(drt
     src/gr/FlexGR_2DMazeRoute.cu
     src/gr/FlexGR_init.cpp
     src/gr/FlexGR_maze.cpp
+    src/gr/FlexGR_maze_restore.cpp
     src/gr/FlexGR_rq.cpp
     src/gr/FlexGR_topo.cpp
     src/dr/FlexDR_conn.cpp

@@ -641,6 +641,11 @@ class FlexGRGridGraph
     golden_parent_z_[idx] = zP;
   }
 
+  void traceBackParent(FlexMazeIdx& mi) const
+  {
+    int idx = getIdx(mi.x(), mi.y(), mi.z());
+    mi.set(golden_parent_x_[idx], golden_parent_y_[idx], golden_parent_z_[idx]);
+  }
 
  private:
   frDesign* design_{nullptr};
