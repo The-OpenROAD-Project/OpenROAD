@@ -67,17 +67,10 @@ std::vector<frTrackPattern*> UniqueInsts::getPrefTrackPatterns()
 UniqueInsts::MasterLayerRange UniqueInsts::initMasterToPinLayerRange()
 {
   MasterLayerRange master_to_pin_layer_range;
-  std::set<frString> masters;
-  for (odb::dbInst* inst : target_insts_) {
-    masters.insert(inst->getMaster()->getName());
-  }
   const int num_layers = getTech()->getLayers().size();
   const frLayerNum bottom_layer_num = getTech()->getBottomLayerNum();
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
-    if (!masters.empty() && masters.find(master->getName()) == masters.end()) {
-      continue;
-    }
     frLayerNum min_layer_num = std::numeric_limits<frLayerNum>::max();
     frLayerNum max_layer_num = std::numeric_limits<frLayerNum>::min();
     for (auto& u_term : master->getTerms()) {
