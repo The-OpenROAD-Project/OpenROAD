@@ -1,6 +1,9 @@
 or_integration_tests(
   "rsz"
   TESTS
+    repair_fanout1_hier
+    repair_fanout2_hier
+    repair_fanout3_hier      
     buffer_ports1
     buffer_ports3
     buffer_ports4
@@ -29,6 +32,7 @@ or_integration_tests(
     pin_swap1
     pinswap_flat
     pinswap_hier
+    recover_power_verbose
     remove_buffers1
     remove_buffers2
     remove_buffers3

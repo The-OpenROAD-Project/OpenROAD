@@ -1356,10 +1356,10 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
     for (LibertyCell* target_cell : swappable_cells) {
       if (!dontUse(target_cell) && isLinkCell(target_cell)) {
         float target_load = (*target_load_map_)[target_cell];
-        float delay
-            = is_buf_inv
-                  ? bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_)
-                  : 0.0;
+        float delay = 0.0;
+        if (is_buf_inv) {
+          delay = bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_);
+        }
         float dist = targetLoadDist(load_cap, target_load);
         debugPrint(logger_,
                    RSZ,
@@ -2470,23 +2470,31 @@ PinSet* Resizer::findFloatingPins()
 
 ////////////////////////////////////////////////////////////////
 
-//
-// Todo update this to apply over whole design
-// There is  a latent bug here. Note that we could
-// be inserting a new net somewhere deep in the hierarchy
-// which might, possibly, have a net called (say) net10 it in
-// which would clash with net10 in the top level. The fix
-// is to have another makeUniqueNetName which takes in a scope
-// prefix.
+// TODO:
+//----
+// when making a unique net name search within the scope of the
+// containing module only (parent scope module)which is passed in.
+// This requires scoping nets in the module in hierarchical mode
+//(as was done with dbInsts) and will require changing the
+// method: dbNetwork::name).
+// Currently all nets are scoped within a dbBlock.
 //
 
-string Resizer::makeUniqueNetName()
+string Resizer::makeUniqueNetName(Instance* parent_scope)
 {
   string node_name;
-  Instance* top_inst = network_->topInstance();
+  bool prefix_name = false;
+  if (parent_scope && parent_scope != network_->topInstance()) {
+    prefix_name = true;
+  }
+  Instance* top_inst = prefix_name ? parent_scope : network_->topInstance();
   do {
-    // sta::stringPrint can lead to string overflow and fatal
-    node_name = fmt::format("net{}", unique_net_index_++);
+    if (prefix_name) {
+      std::string parent_name = network_->name(parent_scope);
+      node_name = fmt::format("{}/net{}", parent_name, unique_net_index_++);
+    } else {
+      node_name = fmt::format("net{}", unique_net_index_++);
+    }
   } while (network_->findNet(top_inst, node_name.c_str()));
   return node_name;
 }
@@ -2513,6 +2521,14 @@ string Resizer::makeUniqueInstName(const char* base_name, bool underscore)
     } else {
       inst_name = fmt::format("{}{}", base_name, unique_inst_index_++);
     }
+    //
+    // NOTE: TODO: The scoping should be within
+    // the dbModule scope for the instance, not the whole network.
+    // dbInsts are already scoped within a dbModule
+    // To get the dbModule for a dbInst used inst -> getModule
+    // then search within that scope. That way the instance name
+    // does not have to be some massive string like root/X/Y/U1.
+    //
   } while (network_->findInstance(inst_name.c_str()));
   return inst_name;
 }
@@ -3289,7 +3305,8 @@ int Resizer::holdBufferCount() const
 
 ////////////////////////////////////////////////////////////////
 bool Resizer::recoverPower(float recover_power_percent,
-                           bool match_cell_footprint)
+                           bool match_cell_footprint,
+                           bool verbose)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
@@ -3298,7 +3315,7 @@ bool Resizer::recoverPower(float recover_power_percent,
       || parasitics_src_ == ParasiticsSrc::detailed_routing) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent);
+  return recover_power_->recoverPower(recover_power_percent, verbose);
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
