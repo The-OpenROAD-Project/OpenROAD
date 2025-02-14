@@ -59,11 +59,7 @@ class _dbGDSARef : public _dbObject
                    const char* field,
                    const _dbGDSARef& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-
-  dbGDSStructure* _stucture = nullptr;
-
-  // User Code End Methods
+  void collectMemInfo(MemInfo& info);
 
   Point _origin;
   Point _lr;

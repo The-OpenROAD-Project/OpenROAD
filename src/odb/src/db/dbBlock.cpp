@@ -665,6 +665,7 @@ _dbBlock::~_dbBlock()
   delete _modbterm_tbl;
   delete _moditerm_tbl;
   delete _modnet_tbl;
+  delete _busport_tbl;
   delete _powerdomain_tbl;
   delete _logicport_tbl;
   delete _powerswitch_tbl;
@@ -4340,6 +4341,227 @@ void dbBlock::writeMarkerCategories(std::ofstream& report)
   }
 
   _dbMarkerCategory::writeJSON(report, groups);
+}
+
+void dbBlock::debugPrintContent(std::ostream& str_db)
+{
+  str_db << fmt::format("Debug: Data base tables for block at {}:\n",
+                        getName());
+
+  str_db << "Db nets (The Flat db view)\n";
+
+  for (auto dbnet : getNets()) {
+    str_db << fmt::format(
+        "dbNet {} (id {})\n", dbnet->getName(), dbnet->getId());
+
+    for (auto db_iterm : dbnet->getITerms()) {
+      str_db << fmt::format(
+          "\t-> dbIterm {} ({})\n", db_iterm->getId(), db_iterm->getName());
+    }
+    for (auto db_bterm : dbnet->getBTerms()) {
+      str_db << fmt::format("\t-> dbBterm {}\n", db_bterm->getId());
+    }
+  }
+
+  str_db << "Block ports\n";
+  // got through the ports and their owner
+  str_db << "\t\tBTerm Ports +++\n";
+  for (auto bt : getBTerms()) {
+    str_db << fmt::format("\t\tBterm ({}) {} Net {} ({})  Mod Net {} ({}) \n",
+                          bt->getId(),
+                          bt->getName().c_str(),
+                          bt->getNet() ? bt->getNet()->getName().c_str() : "",
+                          bt->getNet() ? bt->getNet()->getId() : 0,
+                          bt->getModNet() ? bt->getModNet()->getName() : "",
+                          bt->getModNet() ? bt->getModNet()->getId() : 0);
+  }
+  str_db << "\t\tBTerm Ports ---\n";
+
+  str_db << "The hierarchical db view:\n";
+  dbSet<dbModule> block_modules = getModules();
+  str_db << fmt::format("Content size {} modules\n", block_modules.size());
+  for (auto mi : block_modules) {
+    dbModule* cur_obj = mi;
+    if (cur_obj == getTopModule()) {
+      str_db << "Top Module\n";
+    }
+    str_db << fmt::format("\tModule {} {}\n",
+                          (cur_obj == getTopModule()) ? "(Top Module)" : "",
+                          ((dbModule*) cur_obj)->getName());
+    // in case of top level, care as the bterms double up as pins
+    if (cur_obj == getTopModule()) {
+      for (auto bterm : getBTerms()) {
+        str_db << fmt::format(
+            "Top dbBTerm {} dbNet {} ({}) dbModNet {} ({})\n",
+            bterm->getName(),
+            bterm->getNet() ? bterm->getNet()->getName() : "",
+            bterm->getNet() ? bterm->getNet()->getId() : -1,
+            bterm->getModNet() ? bterm->getModNet()->getName() : "",
+            bterm->getModNet() ? bterm->getModNet()->getId() : -1);
+      }
+    }
+    // got through the module ports and their owner
+    str_db << "\t\tModBTerm Ports +++\n";
+
+    for (auto module_port : cur_obj->getModBTerms()) {
+      str_db << fmt::format(
+          "\t\tPort {} Net {} ({})\n",
+          module_port->getName(),
+          (module_port->getModNet()) ? (module_port->getModNet()->getName())
+                                     : "No-modnet",
+          (module_port->getModNet()) ? module_port->getModNet()->getId() : -1);
+
+      str_db << fmt::format("\t\tPort parent {}\n\n",
+                            module_port->getParent()->getName());
+    }
+    str_db << "\t\tModBTermPorts ---\n";
+
+    str_db << "\t\tModule instances +++\n";
+    for (auto module_inst : mi->getModInsts()) {
+      str_db << fmt::format("\t\tMod inst {} ", module_inst->getName());
+      dbModule* master = module_inst->getMaster();
+      str_db << fmt::format("\t\tMaster {}\n\n",
+                            module_inst->getMaster()->getName());
+      dbBlock* owner = master->getOwner();
+      if (owner != this) {
+        str_db << "\t\t\tMaster owner in wrong block\n";
+      }
+      str_db << "\t\tConnections\n";
+      for (dbModITerm* miterm_pin : module_inst->getModITerms()) {
+        str_db << fmt::format(
+            "\t\t\tModIterm : {} ({}) Mod Net {} ({}) \n",
+            miterm_pin->getName(),
+            miterm_pin->getId(),
+            miterm_pin->getModNet() ? (miterm_pin->getModNet()->getName())
+                                    : "No-net",
+            miterm_pin->getModNet() ? miterm_pin->getModNet()->getId() : 0);
+      }
+    }
+    str_db << "\t\tModule instances ---\n";
+    str_db << "\t\tDb instances +++\n";
+    for (dbInst* db_inst : cur_obj->getInsts()) {
+      str_db << fmt::format("\t\tdb inst {}\n", db_inst->getName());
+      str_db << "\t\tdb iterms:\n";
+      for (dbITerm* iterm : db_inst->getITerms()) {
+        dbMTerm* mterm = iterm->getMTerm();
+        str_db << fmt::format(
+            "\t\t\t\t iterm: {} ({}) Net: {} Mod net : {} ({})\n",
+            mterm->getName(),
+            iterm->getId(),
+            iterm->getNet() ? iterm->getNet()->getName() : "unk-dbnet",
+            iterm->getModNet() ? iterm->getModNet()->getName() : "unk-modnet",
+            iterm->getModNet() ? iterm->getModNet()->getId() : -1);
+      }
+    }
+    str_db << "\t\tDb instances ---\n";
+    str_db << "\tModule nets (modnets) +++ \n";
+    str_db << fmt::format("\t# mod nets {} in {}\n",
+                          cur_obj->getModNets().size(),
+                          cur_obj->getName());
+
+    for (auto mod_net : cur_obj->getModNets()) {
+      str_db << fmt::format(
+          "\t\tNet: {} ({})\n", mod_net->getName(), mod_net->getId());
+      str_db << "\t\tConnections -> modIterms/modbterms/bterms/iterms:\n";
+      str_db << fmt::format("\t\t -> {} moditerms\n",
+                            mod_net->getModITerms().size());
+      for (dbModITerm* modi_term : mod_net->getModITerms()) {
+        str_db << fmt::format("\t\t\t{}\n", modi_term->getName());
+      }
+      str_db << fmt::format("\t\t -> {} modbterms\n",
+                            mod_net->getModBTerms().size());
+      for (dbModBTerm* modb_term : mod_net->getModBTerms()) {
+        str_db << fmt::format("\t\t\t{}\n", modb_term->getName());
+      }
+      str_db << fmt::format("\t\t -> {} iterms\n", mod_net->getITerms().size());
+      for (dbITerm* db_iterm : mod_net->getITerms()) {
+        str_db << fmt::format("\t\t\t{}\n", db_iterm->getName().c_str());
+      }
+      str_db << fmt::format("\t\t -> {} bterms\n", mod_net->getBTerms().size());
+      for (dbBTerm* db_bterm : mod_net->getBTerms()) {
+        str_db << fmt::format("\t\t\t{}\n", db_bterm->getName().c_str());
+      }
+    }
+  }
+}
+
+void _dbBlock::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["corner_name"].add(_corner_name_list);
+  info.children_["blocked_regions_for_pins"].add(_blocked_regions_for_pins);
+
+  info.children_["net_hash"].add(_net_hash);
+  info.children_["inst_hash"].add(_inst_hash);
+  info.children_["module_hash"].add(_module_hash);
+  info.children_["modinst_hash"].add(_modinst_hash);
+  info.children_["powerdomain_hash"].add(_powerdomain_hash);
+  info.children_["logicport_hash"].add(_logicport_hash);
+  info.children_["powerswitch_hash"].add(_powerswitch_hash);
+  info.children_["isolation_hash"].add(_isolation_hash);
+  info.children_["marker_category_hash"].add(_marker_category_hash);
+  info.children_["levelshifter_hash"].add(_levelshifter_hash);
+  info.children_["group_hash"].add(_group_hash);
+  info.children_["inst_hdr_hash"].add(_inst_hdr_hash);
+  info.children_["bterm_hash"].add(_bterm_hash);
+
+  info.children_["children"].add(_children);
+  info.children_["component_mask_shift"].add(_component_mask_shift);
+
+  _bterm_tbl->collectMemInfo(info.children_["bterm"]);
+  _iterm_tbl->collectMemInfo(info.children_["iterm"]);
+  _net_tbl->collectMemInfo(info.children_["net"]);
+  _inst_hdr_tbl->collectMemInfo(info.children_["inst_hdr"]);
+  _inst_tbl->collectMemInfo(info.children_["inst"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _via_tbl->collectMemInfo(info.children_["via"]);
+  _gcell_grid_tbl->collectMemInfo(info.children_["gcell_grid"]);
+  _track_grid_tbl->collectMemInfo(info.children_["track_grid"]);
+  _obstruction_tbl->collectMemInfo(info.children_["obstruction"]);
+  _blockage_tbl->collectMemInfo(info.children_["blockage"]);
+  _wire_tbl->collectMemInfo(info.children_["wire"]);
+  _swire_tbl->collectMemInfo(info.children_["swire"]);
+  _sbox_tbl->collectMemInfo(info.children_["sbox"]);
+  _row_tbl->collectMemInfo(info.children_["row"]);
+  _fill_tbl->collectMemInfo(info.children_["fill"]);
+  _region_tbl->collectMemInfo(info.children_["region"]);
+  _hier_tbl->collectMemInfo(info.children_["hier"]);
+  _bpin_tbl->collectMemInfo(info.children_["bpin"]);
+  _non_default_rule_tbl->collectMemInfo(info.children_["non_default_rule"]);
+  _layer_rule_tbl->collectMemInfo(info.children_["layer_rule"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _module_tbl->collectMemInfo(info.children_["module"]);
+  _powerdomain_tbl->collectMemInfo(info.children_["powerdomain"]);
+  _logicport_tbl->collectMemInfo(info.children_["logicport"]);
+  _powerswitch_tbl->collectMemInfo(info.children_["powerswitch"]);
+  _isolation_tbl->collectMemInfo(info.children_["isolation"]);
+  _levelshifter_tbl->collectMemInfo(info.children_["levelshifter"]);
+  _modinst_tbl->collectMemInfo(info.children_["modinst"]);
+  _group_tbl->collectMemInfo(info.children_["group"]);
+  ap_tbl_->collectMemInfo(info.children_["ap"]);
+  global_connect_tbl_->collectMemInfo(info.children_["global_connect"]);
+  _guide_tbl->collectMemInfo(info.children_["guide"]);
+  _net_tracks_tbl->collectMemInfo(info.children_["net_tracks"]);
+  _dft_tbl->collectMemInfo(info.children_["dft"]);
+  _marker_categories_tbl->collectMemInfo(info.children_["marker_categories"]);
+  _modbterm_tbl->collectMemInfo(info.children_["modbterm"]);
+  _moditerm_tbl->collectMemInfo(info.children_["moditerm"]);
+  _modnet_tbl->collectMemInfo(info.children_["modnet"]);
+  _busport_tbl->collectMemInfo(info.children_["busport"]);
+  _cap_node_tbl->collectMemInfo(info.children_["cap_node"]);
+  _r_seg_tbl->collectMemInfo(info.children_["r_seg"]);
+  _cc_seg_tbl->collectMemInfo(info.children_["cc_seg"]);
+
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+  info.children_["r_val"].add(*_r_val_tbl);
+  info.children_["c_val"].add(*_c_val_tbl);
+  info.children_["cc_val"].add(*_cc_val_tbl);
+
+  info.children_["module_name_id_map"].add(_module_name_id_map);
+  info.children_["inst_name_id_map"].add(_inst_name_id_map);
 }
 
 }  // namespace odb

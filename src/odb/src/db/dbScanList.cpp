@@ -109,6 +109,13 @@ dbObjectTable* _dbScanList::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbScanList::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_insts_->collectMemInfo(info.children_["scan_insts_"]);
+}
 
 _dbScanList::~_dbScanList()
 {

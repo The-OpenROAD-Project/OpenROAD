@@ -123,6 +123,7 @@ class _dbBox : public _dbObject
   int equal(const _dbBox& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbBox& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   bool isOct() const;
 
   _dbTechLayer* getTechLayer() const;

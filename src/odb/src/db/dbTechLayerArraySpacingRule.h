@@ -71,6 +71,7 @@ class _dbTechLayerArraySpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerArraySpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerArraySpacingRuleFlags flags_;
   int via_width_;

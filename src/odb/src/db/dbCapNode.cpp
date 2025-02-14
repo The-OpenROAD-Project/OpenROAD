@@ -1135,4 +1135,11 @@ dbCapNode* dbCapNode::getCapNode(dbBlock* block_, uint dbid_)
   _dbBlock* block = (_dbBlock*) block_;
   return (dbCapNode*) block->_cap_node_tbl->getPtr(dbid_);
 }
+
+void _dbCapNode::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

@@ -214,4 +214,14 @@ dbMPin* dbMPin::getMPin(dbMaster* master_, uint dbid_)
   return (dbMPin*) master->_mpin_tbl->getPtr(dbid_);
 }
 
+void _dbMPin::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  MemInfo& ap_info = info.children_["aps"];
+  for (const auto& v : aps_) {
+    ap_info.add(v);
+  }
+}
 }  // namespace odb

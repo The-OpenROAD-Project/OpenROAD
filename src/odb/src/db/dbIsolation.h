@@ -59,6 +59,7 @@ class _dbIsolation : public _dbObject
                    const char* field,
                    const _dbIsolation& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbIsolation> _next_entry;

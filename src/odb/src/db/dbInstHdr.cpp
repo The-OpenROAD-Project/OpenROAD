@@ -247,4 +247,12 @@ void dbInstHdr::destroy(dbInstHdr* inst_hdr_)
   block->_inst_hdr_tbl->destroy(inst_hdr);
 }
 
+void _dbInstHdr::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["mterms"].add(_mterms);
+}
+
 }  // namespace odb

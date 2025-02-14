@@ -60,6 +60,7 @@ class _dbMasterEdgeType : public _dbObject
                    const char* field,
                    const _dbMasterEdgeType& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   uint edge_dir_;
   std::string edge_type_;

@@ -223,6 +223,22 @@ _dbBlock* _dbTechNonDefaultRule::getBlock()
   return (_dbBlock*) getOwner();
 }
 
+void _dbTechNonDefaultRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["_layer_rules"].add(_layer_rules);
+  info.children_["_vias"].add(_vias);
+  info.children_["_samenet_rules"].add(_samenet_rules);
+  info.children_["_samenet_matrix"].add(_samenet_matrix);
+  info.children_["_use_vias"].add(_use_vias);
+  info.children_["_use_rules"].add(_use_rules);
+  info.children_["_cut_layers"].add(_cut_layers);
+  info.children_["_min_cuts"].add(_min_cuts);
+}
+
 bool _dbTechNonDefaultRule::operator<(const _dbTechNonDefaultRule& rhs) const
 {
   return strcmp(_name, rhs._name) < 0;

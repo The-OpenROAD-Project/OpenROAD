@@ -211,4 +211,10 @@ dbFill* dbFill::getFill(dbBlock* block_, uint dbid_)
   return (dbFill*) block->_fill_tbl->getPtr(dbid_);
 }
 
+void _dbFill::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

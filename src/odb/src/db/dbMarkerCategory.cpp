@@ -185,6 +185,19 @@ dbObjectTable* _dbMarkerCategory::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+void _dbMarkerCategory::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  marker_tbl_->collectMemInfo(info.children_["marker_tbl_"]);
+
+  categories_tbl_->collectMemInfo(info.children_["categories_tbl_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["categories_hash"].add(categories_hash_);
+  // User Code End collectMemInfo
+}
 
 _dbMarkerCategory::~_dbMarkerCategory()
 {

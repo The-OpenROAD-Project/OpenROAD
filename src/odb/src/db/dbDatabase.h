@@ -260,6 +260,7 @@ class _dbDatabase : public _dbObject
   bool isSchema(uint rev) const { return _schema_minor >= rev; }
   bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db);
