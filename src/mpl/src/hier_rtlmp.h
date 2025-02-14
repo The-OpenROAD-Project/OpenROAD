@@ -49,14 +49,12 @@ class SACoreHardMacro;
 // origin for aligning the macros' pins to the track-grid
 struct LayerParameters
 {
+  odb::dbITerm* iterm;
   int offset = 0;
   int pitch = 0;
-  int pin_width = 0;
   int pin_offset = 0;
-  int lower_left_to_first_pin = 0;
 };
 
-using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
 using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
@@ -342,7 +340,6 @@ class Pusher
 
 struct SameDirectionLayersData
 {
-  LayersWithPinsMap layer_to_pin;
   LayerParametersMap layer_to_params;
   odb::dbTechLayer* snap_layer = nullptr;
 };
@@ -360,8 +357,7 @@ class Snapper
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
-                                   const LayerParameters& layer_params,
+  bool pinsAreAlignedWithTrackGrid(const LayerParameters& params,
                                    const odb::dbTechLayerDir& target_direction);
 
   SameDirectionLayersData computeSameDirectionLayersData(
