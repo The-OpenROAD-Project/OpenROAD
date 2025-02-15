@@ -44,8 +44,6 @@
 
 namespace mpl {
 
-using Point = std::pair<float, float>;
-
 // Each point in the hanan grid is represented by a vertex (with no size)
 // And each bundled IO pin is represented by a vertex
 struct Vertex

@@ -259,6 +259,11 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
+  template <typename Macro>
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::vector<Macro>& macros);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
