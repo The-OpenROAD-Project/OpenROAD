@@ -808,7 +808,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool has_sizing_leakage_limit_ = false;
   double sizing_area_limit_ = 1.0;
   double sizing_leakage_limit_ = 1.0;
-  
+
   friend class BufferedNet;
   friend class GateCloner;
   friend class PreChecks;

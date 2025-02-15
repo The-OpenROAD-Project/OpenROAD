@@ -760,7 +760,7 @@ proc set_opt_config { args } {
     puts "Cells with area > ${area_limit}X current cell will not be considered for sizing"
   }
   if { [info exists keys(-sizing_leakage_limit)] } {
-    set leakage_limit $keys(-sizing_leakage_limit)      
+    set leakage_limit $keys(-sizing_leakage_limit)
     sta::check_positive_float "-sizing_leakage_limit" $leakage_limit
     set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
     if { $leak_prop == "NULL" } {
