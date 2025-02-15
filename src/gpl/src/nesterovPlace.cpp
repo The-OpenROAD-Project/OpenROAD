@@ -322,6 +322,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool is_routability_snapshot_saved = false;
   float route_snapshotA = 0;
   float route_snapshot_WlCoefX = 0, route_snapshot_WlCoefY = 0;
+  // bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
   bool is_diverge_snapshot_saved = false;
@@ -540,6 +541,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (numDiverge > 0) {
       log_->report("Divergence occured in {} regions.", numDiverge);
 
+      // TODO: this divergence treatment uses the non-deterministic aspect of routability inflation to try one more time if a divergence is detected.
+      // This feature lost its consistency since we allow for non-virtual timing driven iterations. Meaning we would go back to a snapshot without newly added instances.
+      // A way to maintain this feature is to store two snapshots one for routability revert if diverge and try again, and another for simply revert if diverge and finish without hitting 0.10 overflow.
       // // revert back to the original rb solutions
       // // one more opportunity
       // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
@@ -550,7 +554,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       //   wireLengthCoefY_ = route_snapshot_WlCoefY;
       //   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
       //   for (auto& nb : nbVec_) {
-      //     nb->revertDivergence();
+      //     nb->revertToSnapshot();
       //   }
 
       //   isDiverged_ = false;
@@ -576,7 +580,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         wireLengthCoefY_ = diverge_snapshot_WlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
         for (auto& nb : nbVec_) {
-          nb->revertDivergence();
+          nb->revertToSnapshot();
         }
         isDiverged_ = false;
         break;
@@ -620,7 +624,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
         for (auto& nb : nbVec_) {
-          nb->revertDivergence();
+          nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
         log_->info(GPL, 89, "Routability: revert back to snapshot");

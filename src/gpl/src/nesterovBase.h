@@ -1067,7 +1067,7 @@ class NesterovBase
 
   bool checkConvergence();
   bool checkDivergence();
-  bool revertDivergence();
+  bool revertToSnapshot();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
