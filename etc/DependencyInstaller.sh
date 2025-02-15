@@ -154,7 +154,7 @@ _installCommonDev() {
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh --prefix="${boostPrefix}"
-        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
+        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread --with-json -j $(nproc)
     else
         echo "Boost already installed."
     fi
@@ -352,6 +352,7 @@ _installUbuntuPackages() {
         git \
         groff \
         lcov \
+        libcurl4-openssl-dev \
         libffi-dev \
         libfl-dev \
         libgomp1 \
@@ -445,7 +446,9 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
-        zlib-devel
+        zlib-devel \
+        libcurl-devel \
+        boost-devel
 
     yum install -y \
         https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
@@ -591,6 +594,7 @@ _installDebianPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl${tclver} \
+        libcurl4-openssl-dev \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
@@ -600,7 +604,7 @@ _installDebianPackages() {
         unzip \
         wget \
         zlib1g-dev
-
+        
     if [[ $1 == 10 ]]; then
         apt-get install -y --no-install-recommends \
             libpython3.7 \
