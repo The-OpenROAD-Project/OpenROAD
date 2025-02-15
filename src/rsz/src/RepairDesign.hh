@@ -214,7 +214,7 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
@@ -224,7 +224,7 @@ class RepairDesign : dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     int x,
                     int y,
                     LibertyCell* buffer_cell,
