@@ -143,12 +143,11 @@ target_include_directories(drt_lib
 
 target_link_libraries(drt_lib
   PUBLIC
-    odb
-    stt
+    stt_lib
     OpenSTA
     utl_lib
     dst
-    dbSta
+    dbSta_lib
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}
@@ -162,6 +161,7 @@ target_sources(drt
     src/pa/FlexPA_graphics.cpp
     src/MakeTritonRoute.cpp
     src/GraphicsFactory.cpp
+    src/ORDBInterface.cpp
 )
 
 target_include_directories(drt

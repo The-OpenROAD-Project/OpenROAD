@@ -1,7 +1,7 @@
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,61 +29,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////
 
-#include "triton_route/MakeTritonRoute.h"
-
-#include "GraphicsFactory.h"
 #include "ORDBInterface.h"
-#include "dr/FlexDR_graphics.h"
+
 #include "ord/OpenRoad.hh"
-#include "pa/FlexPA_graphics.h"
-#include "sta/StaMain.hh"
-#include "ta/FlexTA_graphics.h"
-#include "triton_route/TritonRoute.h"
 
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* drt_tcl_inits[];
-}  // namespace sta
+namespace drt {
 
-extern "C" {
-extern int Drt_Init(Tcl_Interp* interp);
-}
-
-namespace ord {
-
-drt::TritonRoute* makeTritonRoute()
+std::unique_ptr<AbstractORDBInterface> ORDBInterface::makeUnique()
 {
-  return new drt::TritonRoute();
+  return std::make_unique<ORDBInterface>();
 }
 
-void deleteTritonRoute(drt::TritonRoute* router)
+void ORDBInterface::readDb(const char* file_name)
 {
-  delete router;
+  ord::OpenRoad::openRoad()->readDb(file_name);
 }
 
-void initTritonRoute(OpenRoad* openroad)
+void ORDBInterface::writeDb(const char* file_name)
 {
-  // Define swig TCL commands.
-  auto tcl_interp = openroad->tclInterp();
-  Drt_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
-
-  drt::TritonRoute* router = openroad->getTritonRoute();
-
-  std::unique_ptr<drt::AbstractGraphicsFactory> graphics_factory
-      = std::make_unique<drt::GraphicsFactory>();
-
-  std::unique_ptr<drt::ORDBInterface> or_db_interface
-      = std::make_unique<drt::ORDBInterface>();
-
-  router->init(openroad->getDb(),
-               openroad->getLogger(),
-               openroad->getDistributed(),
-               openroad->getSteinerTreeBuilder(),
-               std::move(graphics_factory),
-               std::move(or_db_interface));
+  ord::OpenRoad::openRoad()->writeDb(file_name);
 }
 
-}  // namespace ord
+int ORDBInterface::getThreadCount()
+{
+  return ord::OpenRoad::openRoad()->getThreadCount();
+}
+
+}  // namespace drt
