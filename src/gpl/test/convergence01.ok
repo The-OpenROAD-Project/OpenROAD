@@ -49,7 +49,7 @@
 [INFO GPL-0029] BinSize: (  1.377  1.350 )
 [INFO GPL-0030] NumBins: 64
 [NesterovSolve] Iter:    1 overflow: 0.127 HPWL: 397899
-[INFO GPL-0100] Timing-driven iteration 1/6, virtual: false.
+[INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
 [INFO GPL-0101] Iter: 0, overflow: 0.127, keep rsz at: 0.3
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09
 [INFO GPL-0103] Timing-driven: weighted 4 nets.

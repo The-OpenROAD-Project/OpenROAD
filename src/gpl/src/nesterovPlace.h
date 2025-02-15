@@ -139,7 +139,8 @@ class NesterovPlace
   int64_t prevHpwl_ = 0;
 
   bool isDiverged_ = false;
-  bool isRoutabilityNeed_ = true;
+  bool is_routability_need_ = true;
+  float routability_save_snapshot_ = 0.6;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;
