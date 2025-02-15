@@ -158,7 +158,7 @@ void UniqueInsts::computeUnique(
       ndr_insts.push_back(inst.get());
       continue;
     }
-    const Point origin = inst->getOrigin();
+    const Point origin = inst->getLocation();
     const Rect boundary_bbox = inst->getBoundaryBBox();
     const dbOrientType orient = inst->getOrient();
     auto it = master_to_pin_layer_range.find(inst->getMaster());

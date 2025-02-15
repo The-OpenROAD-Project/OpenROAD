@@ -2750,9 +2750,13 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
   if (ap->getPathSegs().empty()) {
     return false;
   }
-  for (auto& ps : ap->getPathSegs()) {
+  for (frPathSeg ps : ap->getPathSegs()) {
     std::unique_ptr<drPathSeg> drPs = std::make_unique<drPathSeg>();
     drPs->setApPathSeg({x, y});
+    if (inst) {
+      dbTransform trans = inst->getTransform();
+      ps.transform(trans);
+    }
     Point begin = ps.getBeginPoint();
     Point end = ps.getEndPoint();
     Point* connecting = nullptr;
@@ -2760,21 +2764,6 @@ bool FlexDRWorker::addApPathSegs(const FlexMazeIdx& apIdx, drNet* net)
       connecting = &begin;
     } else if (ps.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
       connecting = &end;
-    }
-    if (inst) {
-      dbTransform trans = inst->getNoRotationTransform();
-      trans.apply(begin);
-      trans.apply(end);
-      if (end < begin) {  // if rotation swapped order, correct it
-        if (connecting == &begin) {
-          connecting = &end;
-        } else {
-          connecting = &begin;
-        }
-        Point tmp = begin;
-        begin = end;
-        end = tmp;
-      }
     }
     drPs->setPoints(begin, end);
     drPs->setLayerNum(lNum);
