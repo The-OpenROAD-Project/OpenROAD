@@ -1245,7 +1245,8 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
         continue;
       }
       if (has_sizing_area_limit_ && (source_cell_area != 0)
-          && (equiv_cell_master->getArea() / static_cast<double>(source_cell_area)
+          && (equiv_cell_master->getArea()
+                  / static_cast<double>(source_cell_area)
               > sizing_area_limit_)) {
         continue;
       }
