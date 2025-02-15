@@ -803,6 +803,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
+  // Sizing restrictions
+  bool has_sizing_area_limit_ = false;
+  bool has_sizing_leakage_limit_ = false;
+  double sizing_area_limit_ = 1.0;
+  double sizing_leakage_limit_ = 1.0;
+  
   friend class BufferedNet;
   friend class GateCloner;
   friend class PreChecks;
