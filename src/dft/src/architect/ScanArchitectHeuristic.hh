@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "Macros.hh"
 #include "ScanArchitect.hh"
 #include "utl/Logger.h"
 
@@ -41,14 +42,12 @@ namespace dft {
 // the smallest and start adding the biggest cells to each scan chain.
 class ScanArchitectHeuristic : public ScanArchitect
 {
+  DISABLE_COPY_AND_MOVE(ScanArchitectHeuristic);
+
  public:
   ScanArchitectHeuristic(const ScanArchitectConfig& config,
                          std::unique_ptr<ScanCellsBucket> scan_cells_bucket,
                          utl::Logger* logger);
-  // Not copyable or movable
-  ScanArchitectHeuristic(const ScanArchitectHeuristic&) = delete;
-  ScanArchitectHeuristic& operator=(const ScanArchitectHeuristic&) = delete;
-  ~ScanArchitectHeuristic() override = default;
 
   void architect() override;
 

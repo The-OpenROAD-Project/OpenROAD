@@ -34,12 +34,15 @@
 #include <cstdint>
 #include <optional>
 
+#include "Macros.hh"
 #include "utl/Logger.h"
 
 namespace dft {
 
 class ScanArchitectConfig
 {
+  DISABLE_COPY_AND_MOVE(ScanArchitectConfig);
+
  public:
   // TODO Add suport for mix_edges, mix_clocks, mix_clocks_not_edges
   enum class ClockMixing
@@ -47,6 +50,8 @@ class ScanArchitectConfig
     NoMix,    // We create different scan chains for each clock and edge
     ClockMix  // We architect the flops of different clock and edge together
   };
+
+  ScanArchitectConfig() : clock_mixing_(ClockMixing::NoMix) {}
 
   void setClockMixing(ClockMixing clock_mixing);
 
@@ -62,6 +67,9 @@ class ScanArchitectConfig
 
   // Prints using logger->report the config used by Scan Architect
   void report(utl::Logger* logger) const;
+
+  // Checks that the config is in a valid state. Reports issues in the logger
+  void validate(utl::Logger* logger) const;
 
   static std::string ClockMixingName(ClockMixing clock_mixing);
 

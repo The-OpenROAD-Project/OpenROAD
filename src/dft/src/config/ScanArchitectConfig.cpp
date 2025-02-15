@@ -29,8 +29,9 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
 #include "ScanArchitectConfig.hh"
+
+#include <iostream>
 
 #include "Formatting.hh"
 
@@ -84,6 +85,15 @@ std::string ScanArchitectConfig::ClockMixingName(
       return "Clock Mix";
     default:
       return "Missing case in ClockMixingName";
+  }
+}
+
+void ScanArchitectConfig::validate(utl::Logger* logger) const
+{
+  if (!max_chains_.has_value() && !max_length_.has_value()) {
+    logger->warn(
+        utl::DFT, 45, "Either max_chains or max_length should be specified");
+    return;
   }
 }
 
