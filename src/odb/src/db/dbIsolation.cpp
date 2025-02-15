@@ -306,6 +306,25 @@ std::vector<dbMaster*> dbIsolation::getIsolationCells()
 
   return masters;
 }
+
+bool dbIsolation::appliesTo(const dbIoType io)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  if (io == dbIoType::OUTPUT) {
+    if (obj->_applies_to == "inputs") {
+      return false;
+    }
+  } else if (io == dbIoType::INPUT) {
+    if (obj->_applies_to == "outputs") {
+      return false;
+    }
+  }
+
+  // default "both"
+  return true;
+}
+
 // User Code End dbIsolationPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
