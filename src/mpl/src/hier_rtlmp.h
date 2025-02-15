@@ -49,6 +49,7 @@ class SACoreHardMacro;
 // origin for aligning the macros' pins to the track-grid
 struct LayerParameters
 {
+  odb::dbTechLayer* layer;
   odb::dbITerm* iterm;
   int offset = 0;
   int pitch = 0;
@@ -338,12 +339,6 @@ class Pusher
   std::vector<HardMacro*> hard_macros_;
 };
 
-struct SameDirectionLayersData
-{
-  LayerParametersMap layer_to_params;
-  odb::dbTechLayer* snap_layer = nullptr;
-};
-
 class Snapper
 {
  public:
@@ -360,7 +355,7 @@ class Snapper
   bool pinsAreAlignedWithTrackGrid(const LayerParameters& params,
                                    const odb::dbTechLayerDir& target_direction);
 
-  SameDirectionLayersData computeSameDirectionLayersData(
+  std::vector<LayerParameters> computeSameDirectionLayersData(
       const odb::dbTechLayerDir& target_direction);
   LayerParameters computeLayerParameters(
       odb::dbTechLayer* layer,
@@ -375,8 +370,7 @@ class Snapper
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
                                 const odb::dbTechLayerDir& target_direction);
   void attemptSnapToExtraLayers(int origin,
-                                const SameDirectionLayersData& layers_data,
-                                const LayerParameters& snap_layer_params,
+                                const std::vector<LayerParameters>& layers_data,
                                 const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;

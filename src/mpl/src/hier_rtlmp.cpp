@@ -3220,22 +3220,21 @@ void Snapper::snapMacro()
 
 void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 {
-  SameDirectionLayersData layers_data
+  std::vector<LayerParameters> layers_data
       = computeSameDirectionLayersData(target_direction);
 
   int origin = target_direction == odb::dbTechLayerDir::VERTICAL
                    ? inst_->getOrigin().x()
                    : inst_->getOrigin().y();
 
-  if (!layers_data.snap_layer) {
+  if (layers_data.empty()) {
     // There are no pins to align with the track-grid.
     alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
     return;
   }
 
-  const LayerParameters& snap_layer_params
-      = layers_data.layer_to_params.at(layers_data.snap_layer);
+  const LayerParameters& snap_layer_params = layers_data[0];
 
   if (!pinsAreAlignedWithTrackGrid(snap_layer_params, target_direction)) {
     // The idea here is to first align the origin of the macro with
@@ -3251,8 +3250,7 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
     setOrigin(origin, target_direction);
   }
 
-  attemptSnapToExtraLayers(
-      origin, layers_data, snap_layer_params, target_direction);
+  attemptSnapToExtraLayers(origin, layers_data, target_direction);
 }
 
 void Snapper::setOrigin(const int origin,
@@ -3265,10 +3263,11 @@ void Snapper::setOrigin(const int origin,
   }
 }
 
-SameDirectionLayersData Snapper::computeSameDirectionLayersData(
+std::vector<LayerParameters> Snapper::computeSameDirectionLayersData(
     const odb::dbTechLayerDir& target_direction)
 {
-  SameDirectionLayersData data;
+  std::vector<LayerParameters> data;
+  std::set<odb::dbTechLayer*> seen;
 
   for (odb::dbITerm* iterm : inst_->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
@@ -3278,20 +3277,11 @@ SameDirectionLayersData Snapper::computeSameDirectionLayersData(
     for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
       odb::dbTechLayer* layer = (*mpin->getGeometry().begin())->getTechLayer();
 
-      if (layer->getDirection() != target_direction) {
+      if (layer->getDirection() != target_direction || seen.count(layer) != 0) {
         continue;
       }
 
-      if (data.layer_to_params.find(layer) != data.layer_to_params.end()) {
-        continue;
-      }
-
-      if (data.layer_to_params.empty()) {
-        data.snap_layer = layer;
-      }
-
-      data.layer_to_params[layer]
-          = computeLayerParameters(layer, iterm, target_direction);
+      data.push_back(computeLayerParameters(layer, iterm, target_direction));
     }
   }
 
@@ -3304,6 +3294,7 @@ LayerParameters Snapper::computeLayerParameters(
     const odb::dbTechLayerDir& target_direction)
 {
   LayerParameters params;
+  params.layer = layer;
   params.iterm = pin;
 
   int pin_width = getPinWidth(pin, target_direction);
@@ -3389,20 +3380,19 @@ int Snapper::getPinToLowerLeftDistance(
 
 void Snapper::attemptSnapToExtraLayers(
     const int origin,
-    const SameDirectionLayersData& layers_data,
-    const LayerParameters& snap_layer_params,
+    const std::vector<LayerParameters>& layers_data,
     const odb::dbTechLayerDir& target_direction)
 {
   // Calculate LCM from the layers pitches to define the search
   // range
   int lcm = 1;
-  for (const auto& [layer, params] : layers_data.layer_to_params) {
+  for (const auto& params : layers_data) {
     lcm = std::lcm(lcm, params.pitch);
   }
-  const int pitch = snap_layer_params.pitch;
-  const int total_attempts = lcm / snap_layer_params.pitch;
+  const int pitch = layers_data[0].pitch;
+  const int total_attempts = lcm / layers_data[0].pitch;
 
-  const int total_layers = static_cast<int>(layers_data.layer_to_params.size());
+  const int total_layers = static_cast<int>(layers_data.size());
 
   int best_origin = origin;
   int best_snapped_layers = 1;
@@ -3413,7 +3403,7 @@ void Snapper::attemptSnapToExtraLayers(
 
     setOrigin(origin + (pitch * steps), target_direction);
     int snapped_layers = 0;
-    for (const auto& [layer, params] : layers_data.layer_to_params) {
+    for (const auto& params : layers_data) {
       if (pinsAreAlignedWithTrackGrid(params, target_direction)) {
         ++snapped_layers;
       }
