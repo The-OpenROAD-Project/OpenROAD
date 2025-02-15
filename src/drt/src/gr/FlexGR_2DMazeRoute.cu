@@ -470,7 +470,7 @@ void runBiBellmanFord_2D__device(
   NodeData2D* nodes,
   uint64_t* d_costMap, 
   int* d_dX, int* d_dY,
-  int& d_doneFlag,
+  int* d_doneFlag,
   int LLX, int LLY, int URX, int URY,
   int xDim, int maxIters,
   const int* d_xCoords,
@@ -487,21 +487,43 @@ void runBiBellmanFord_2D__device(
   int xDimTemp = URX - LLX + 1;
   maxIters = total;
 
+  /*
+  if (tid == 0) 
+  { 
+    printf("total = %d\n", total);
+    for (int id = 0; id < total; id++) {
+      int local_x = id % xDimTemp + LLX;
+      int local_y = id / xDimTemp + LLY;
+      int idx = locToIdx_2D(local_x, local_y, xDim);
+      NodeData2D &nd = nodes[idx];
+      if (nd.flags.src_flag == 1) {
+        printf("device src_flag : id = %d, x = %d, y = %d cost = %d\n", idx, local_x, local_y, nd.forward_g_cost_prev);
+      }
+      
+      if (nd.flags.dst_flag == 1) {
+        printf("device dst_flag : id = %d, x = %d, y = %d, cost = %d\n", 
+          idx, local_x, local_y, nd.backward_g_cost_prev);
+      }
+    }
+  }
+  */
+
+  g.sync();
+
+  bool globalDone = false;
+
   // We’ll do up to maxIters or until no changes / front-meet
-  for (int iter = 0; iter < maxIters; iter++)
+  for (int iter = 0; iter < maxIters && !globalDone; iter++)
   {
     bool localFrontsMeet = false;
     ////////////////////////////////////////////////////////////////////////////
     // (1) Forward & backward relaxation phase
     ////////////////////////////////////////////////////////////////////////////
     for (int localIdx = tid; localIdx < total; localIdx += stride) {
-      int local_x = localIdx % xDimTemp + LLX;
-      int local_y = localIdx / xDimTemp + LLY;
-      int idx = locToIdx_2D(local_x, local_y, xDim);
+      int x = localIdx % xDimTemp + LLX;
+      int y = localIdx / xDimTemp + LLY;
+      int idx = locToIdx_2D(x, y, xDim);
       NodeData2D &nd = nodes[idx];
-      int2 xy = idxToLoc_2D(idx, xDim);
-      int  x  = xy.x;
-      int  y  = xy.y;
 
       // Forward relaxation
       // Typically: newCost = min over neighbors of (neighborCost + edgeWeight).
@@ -529,20 +551,22 @@ void runBiBellmanFord_2D__device(
               congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
               idx, x, y, nbrIdx, nx, ny);
 
+          //printf("id = %d, x = %d, y = %d, d = %d, newG = %d, bestCost = %d, bestD = %d\n", 
+          //  idx, x, y, d, newG, bestCost, bestD);
+
           // Check if we found a better cost
           if (newG < bestCost) {
             bestCost = newG;
             bestD    = d;
           }
-           
-	  printf("bestD = %d, bestCost = %d", bestD, bestCost);
-
         } // end neighbor loop
 
         if (bestD != -1) { // We found an improvement
           nd.forward_g_cost = bestCost;
           nd.forward_direction = computeParentDirection2D(bestD);
-          nd.flags.forward_update_flag = true;
+          nd.flags.forward_update_flag = 1;
+          // printf("id = %d, x = %d, y = %d, forward_cost = %d, forward_update_flag = %d\n", 
+          //  idx, x, y, nd.forward_g_cost, nd.flags.forward_update_flag);
         }
       } // end forward
 
@@ -579,30 +603,33 @@ void runBiBellmanFord_2D__device(
         if (bestD != -1) {
           nd.backward_g_cost = bestCost;
           nd.backward_direction = computeParentDirection2D(bestD);
-          nd.flags.backward_update_flag = true;
+          nd.flags.backward_update_flag = 1;
+          //printf("id = %d, x = %d, y = %d, backward_cost = %d, backward_update_flag = %d\n", 
+          //  idx, x, y, nd.backward_g_cost, nd.flags.backward_update_flag);
         }
       } // end backward
     } // end “for each node” (forward + backward)
 
     g.sync();
-    
-    if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+
+
+    /* 
+    if (tid == 0) {
       printf("iter = %d, maxIters = %d\n", iter, maxIters);
       for (int id = 0; id < total; id++) {
         int local_x = id % xDimTemp + LLX;
         int local_y = id / xDimTemp + LLY;
         int idx = locToIdx_2D(local_x, local_y, xDim);
         NodeData2D &nd = nodes[idx];
-        if (nd.flags.backward_update_flag == true) {
-          printf("id = %d, x = %d, y = %d,  backward_cost = %d\n", idx, local_x, local_y,  nd.backward_g_cost);
+        if (nd.flags.backward_update_flag == 1) {
+          printf("summary id = %d, x = %d, y = %d,  backward_cost = %d\n", idx, local_x, local_y,  nd.backward_g_cost);
         }
 
-        if (nd.flags.forward_update_flag == true) {
-          printf("id = %d, x = %d, y = %d,  forward_cost = %d\n", idx, local_x, local_y, nd.forward_g_cost);
+        if (nd.flags.forward_update_flag == 1) {
+          printf("summary id = %d, x = %d, y = %d,  forward_cost = %d\n", idx, local_x, local_y, nd.forward_g_cost);
         }
       }
-    }
- 
+    }*/ 
  
     ////////////////////////////////////////////////////////////////////////////
     // (2) Commit updated costs (double-buffering technique)
@@ -656,7 +683,6 @@ void runBiBellmanFord_2D__device(
       int  x  = xy.x;
       int  y  = xy.y;
 
-      /*
       for (int d = 0; d < 4; d++) {
         int nx = x + d_dX[d];
         int ny = y + d_dY[d];
@@ -684,8 +710,8 @@ void runBiBellmanFord_2D__device(
       if (localBackwardMin == true) {
         nd.flags.backward_visited_flag = true;
       }
-      */
 
+      /*
       for (int d = 0; d < 4; d++) {
         int nx = x + d_dX[d];
         int ny = y + d_dY[d];
@@ -700,6 +726,7 @@ void runBiBellmanFord_2D__device(
           nd.flags.backward_visited_flag = true;
         }
       }
+      */
     } // end “for each node”
     
     g.sync();
@@ -712,6 +739,7 @@ void runBiBellmanFord_2D__device(
       NodeData2D &nd = nodes[idx];
       if (nd.flags.forward_visited_flag && nd.flags.backward_visited_flag) {
         localFrontsMeet = true;
+        // printf("localFrontsMeet = %d", localFrontsMeet);
       }
     }
     
@@ -736,18 +764,29 @@ void runBiBellmanFord_2D__device(
     }
     */
  
-    bool localDone = localFrontsMeet;
-    if (localDone) {
-      atomicExch(&d_doneFlag, 1);
+    if (localFrontsMeet) {
+      atomicExch(d_doneFlag, 1);
     }
     
     g.sync();
 
-    if (d_doneFlag == 1) {
-      d_doneFlag = INF32;
-      return;
+    if (*d_doneFlag == 1) {
+      globalDone = true;
     }
+
+    g.sync();
+
+    //if (*d_doneFlag == 1) {
+    //  *d_doneFlag = 0x7FFFFFFF;
+    //  return;
+    //}
   } // end for (iter)
+
+  if (tid == 0) {
+    *d_doneFlag = 0x7FFFFFFF;
+  }
+  g.sync();
+  return;
 }
 
 
@@ -755,12 +794,12 @@ void runBiBellmanFord_2D__device(
 __device__
 void findMeetIdAndTraceBackCost2D__device(
   NodeData2D* nodes,
-  int& d_doneFlag, 
+  int* d_doneFlag, 
   int LLX, int LLY, int URX, int URY,
   int xDim)
 { 
   if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
-    if (d_doneFlag == 0) { printf("Error ! d_doneFlag = 0\n"); }
+    if (*d_doneFlag == 0) { printf("Error ! d_doneFlag = 0\n"); }
   }
 
   int xDimTemp = URX - LLX + 1;
@@ -771,16 +810,20 @@ void findMeetIdAndTraceBackCost2D__device(
     int idx = locToIdx_2D(local_x, local_y, xDim);
     if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag) {
       int32_t cost = nodes[idx].forward_g_cost + nodes[idx].backward_g_cost;
-      atomicMin(&d_doneFlag, cost);      
+      atomicMin(d_doneFlag, cost);      
     }
+  }
+
+  if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+    printf("Cost2D MinCost = %d\n", *d_doneFlag);
   }
 }
 
 __device__
 void findMeetIdAndTraceBackId2D__device(
   NodeData2D* nodes,
-  int& d_doneFlag, 
-  int& d_meetId,
+  int* d_doneFlag, 
+  int* d_meetId,
   int LLX, int LLY, int URX, int URY,
   int xDim)
 { 
@@ -791,8 +834,8 @@ void findMeetIdAndTraceBackId2D__device(
     int local_y = localIdx / xDimTemp + LLY;
     int idx = locToIdx_2D(local_x, local_y, xDim);
     if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag && 
-        (nodes[idx].forward_g_cost + nodes[idx].backward_g_cost == d_doneFlag)) {
-      atomicMin(&d_meetId, idx);      
+        (nodes[idx].forward_g_cost + nodes[idx].backward_g_cost == *d_doneFlag)) {
+      atomicMin(d_meetId, idx);      
     }
   }
 }
@@ -800,16 +843,16 @@ void findMeetIdAndTraceBackId2D__device(
 __device__
 void forwardTraceBack2D__single_thread__device(
   NodeData2D* nodes, 
-  int& d_meetId, 
+  int* d_meetId, 
   int* d_dX, int* d_dY,
   int LLX, int LLY, int URX, int URY,
   int xDim)
 {
-  if (d_meetId == 0x7FFFFFFF) {
+  if (*d_meetId == 0x7FFFFFFF) {
     return; // No meetId found
   }
   
-  int curId = d_meetId;
+  int curId = *d_meetId;
   int maxIterations = (URX - LLX + 1) * (URY - LLY + 1);
   int iteration = 0;
   while (nodes[curId].flags.src_flag == 0 && iteration < maxIterations) {
@@ -836,16 +879,16 @@ void forwardTraceBack2D__single_thread__device(
 __device__
 void backwardTraceBack2D__single__thread__device(
   NodeData2D* nodes, 
-  int& d_meetId, 
+  int* d_meetId, 
   int* d_dX, int* d_dY,
   int LLX, int LLY, int URX, int URY,
   int xDim)
 {  
-  if (d_meetId == 0x7FFFFFFF) {
+  if (*d_meetId == 0x7FFFFFFF) {
     return; // No meetId found
   }
   
-  int curId = d_meetId;
+  int curId = *d_meetId;
   if (nodes[curId].flags.dst_flag == 1) { 
     nodes[curId].flags.dst_flag = 0; // change the dst flag to 0
     nodes[curId].flags.src_flag = 1;
@@ -916,16 +959,52 @@ void biwaveBellmanFord2D__device(
   int URX = netBBox.xMax;
   int URY = netBBox.yMax;
 
-  int& d_doneFlag = d_doneFlags[netId];
-  int& d_meetId = d_meetIds[netId];
+  int* d_doneFlag = d_doneFlags + netId;
+  int* d_meetId = d_meetIds + netId;
 
   // Connect the pin one by one
+  //for (int pinIter = 1; pinIter < 2; pinIter++) {
   for (int pinIter = 1; pinIter < numPins; pinIter++) {
     // Initilization
     if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
-      d_doneFlag = 0;
-      d_meetId = 0x7FFFFFFF;
+      *d_doneFlag = 0;
+      *d_meetId = 0x7FFFFFFF;
+
+      /*
+      for (int i = 0; i < xDim * yDim; i++) {
+        int2 xy = idxToLoc_2D(i, xDim);
+        if (d_nodes[i].flags.src_flag == 1) {
+          printf("pinIter = %d, src_flag : id = %d, x = %d, y = %d\n", pinIter, i, xy.x, xy.y);
+        }
+
+        if (d_nodes[i].flags.dst_flag == 1) {
+          printf("pinIter = %d, dst_flag : id = %d, x = %d, y = %d\n", pinIter, i, xy.x, xy.y);
+        }
+      }
+      */
+
+      // Check the temp
+      printf("pinIter = %d, netId = %d, numPins = %d, LLX = %d, LLY = %d, URX = %d, URY = %d\n", pinIter, netId, numPins, LLX, LLY, URX, URY);
+      
+      /*
+      int total = (URX - LLX + 1) * (URY - LLY + 1);
+      int xDimTemp = URX - LLX + 1;
+      for (int id = 0; id < total; id++) {
+        int local_x = id % xDimTemp + LLX;
+        int local_y = id / xDimTemp + LLY;
+        int idx = locToIdx_2D(local_x, local_y, xDim);
+        NodeData2D &nd = d_nodes[idx];
+        if (nd.flags.src_flag == true) {
+          printf("local src_flag : id = %d, x = %d, y = %d\n", idx, local_x, local_y);
+        }
+          
+        if (nd.flags.dst_flag == true) {
+          printf("local dst_flag : id = %d, x = %d, y = %d\n", idx, local_x, local_y);
+        }
+      }
+      */
     }
+
 
     initNodeData2D__device(
       d_nodes,
@@ -944,6 +1023,7 @@ void biwaveBellmanFord2D__device(
 
     grid.sync();
 
+
     // Find the d_meetId
     findMeetIdAndTraceBackCost2D__device(
       d_nodes, d_doneFlag, 
@@ -961,20 +1041,27 @@ void biwaveBellmanFord2D__device(
 
     // Traceback
     if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+
+      printf("d_doneFlag = %d, d_meetId = %d\n",  *d_doneFlag,  *d_meetId);
+      
       // trace back
       forwardTraceBack2D__single_thread__device(
         d_nodes, d_meetId, d_dX, d_dY, 
         LLX, LLY, URX, URY, xDim);
-      
+
+      printf("finish forward traceback\n");    
+
       backwardTraceBack2D__single__thread__device(
         d_nodes, d_meetId, d_dX, d_dY, 
         LLX, LLY, URX, URY, xDim);
+
+      printf("finish backward traceback\n");
     }
 
     grid.sync(); // Synchronize all threads in the grid
   }
 
-  grid.sync();
+  //grid.sync();
 }
 
 
@@ -1024,7 +1111,7 @@ void biwaveBellmanFord2D__kernel(
     congThreshold,
     BLOCKCOST,
     OVERFLOWCOST,
-    HISTCOST);
+    HISTCOST);    
   grid.sync(); // Synchronize all threads in the grid
 }
 
@@ -1096,6 +1183,11 @@ void launchMazeRouteStream(
   if (occErr != cudaSuccess) {
     printf("Occupancy calculation error: %s\n", cudaGetErrorString(occErr));
   } 
+
+  if (numBlocksPerSm == 0) {
+    numBlocksPerSm = 1;
+    printf("Reset numBlocksPerSm to 1\n");
+  }
 
   int numSms = deviceProp.multiProcessorCount;
   int numBlocks = numBlocksPerSm * numSms;
@@ -1213,6 +1305,17 @@ void FlexGR::GPUAccelerated2DMazeRoute(
     }
   }
 
+  // Check the src and dist flag
+  for (int i = 0; i < numGrids; i++) {
+    if (nodes[i].flags.src_flag == 1) {
+      std::cout << "src x = " << i % xDim << " y = " << i / xDim << " idx = " << i << std::endl;
+    }
+
+    if (nodes[i].flags.dst_flag == 1) {
+      std::cout << "dst x = " << i % xDim << " y = " << i / xDim << " idx = " << i << std::endl;
+    }
+  }
+
   // We need to define the needed utility variables
   std::vector<int> h_dX = {0, 1, 0, -1};
   std::vector<int> h_dY = {1, 0, -1, 0};
@@ -1298,11 +1401,17 @@ void FlexGR::GPUAccelerated2DMazeRoute(
       netStreams[netId]);
   }
 
+  std::cout << "Finish launchMazeRouteStream" << std::endl;
+
+  cudaCheckError();
+
+  /*
   // cudaDeviceSynchronize();
   // Wait for all nets to finish
   for (int i = 0; i < numNets; i++) {
     cudaStreamSynchronize(netStreams[i]);
   }
+  */
   
   // We need to trace back the routing path on the CPU side
   cudaMemcpy(nodes.data(), d_nodes, numGrids * sizeof(NodeData2D), cudaMemcpyDeviceToHost);

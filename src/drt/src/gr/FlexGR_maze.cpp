@@ -113,7 +113,7 @@ void FlexGRWorker::init_pinGCellIdxs()
       ll.set(std::min(ll.x(), idx.x()), std::min(ll.y(), idx.y()), std::min(ll.z(), idx.z()));
       ur.set(std::max(ur.x(), idx.x()), std::max(ur.y(), idx.y()), std::max(ur.z(), idx.z()));
     }
-    net->setRouteBBox(Rect(ll.x(), ur.x(), ll.y(), ur.y()));
+    net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y()));    
 
     // Set the routed wirelength as HPWL
     int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
