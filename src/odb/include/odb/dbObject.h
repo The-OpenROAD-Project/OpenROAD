@@ -177,6 +177,8 @@ enum dbObjectType
 
 class dbDatabase;
 
+class dbMTerm;
+
 class dbObject
 {
  public:
@@ -191,6 +193,7 @@ class dbObject
   // not exported.  They are for internal db convenience.
   _dbObject* getImpl();
   const _dbObject* getImpl() const;
+  mutable dbMTerm* mterm_cache;
 
  protected:
   dbObject() = default;
