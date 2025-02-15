@@ -139,7 +139,6 @@ class Grid
                        const std::function<void(Pixel* pixel)>& visitor) const;
   void visitCellBoundaryPixels(
       Cell& cell,
-      bool padded,
       const std::function<
           void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
       const;
