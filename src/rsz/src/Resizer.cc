@@ -1235,7 +1235,9 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
     float source_cell_leakage = 0.0;
     bool has_leakage = false;
     if (has_sizing_leakage_limit_) {
-      source_cell->leakagePower(source_cell_leakage, has_leakage);
+      source_cell->leakagePower(
+          source_cell_leakage,
+          has_leakage);  // NOLINT(readability-suspicious-call-argument)
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
       dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
@@ -1243,7 +1245,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
         continue;
       }
       if (has_sizing_area_limit_ && (source_cell_area != 0)
-          && (equiv_cell_master->getArea() / source_cell_area
+          && (equiv_cell_master->getArea() / static_cast<double>(source_cell_area)
               > sizing_area_limit_)) {
         continue;
       }
@@ -1251,7 +1253,9 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       if (has_sizing_leakage_limit_ && has_leakage) {
         float equiv_cell_leakage = 0.0;
         bool has_leakage2;
-        equiv_cell->leakagePower(equiv_cell_leakage, has_leakage2);
+        equiv_cell->leakagePower(
+            equiv_cell_leakage,
+            has_leakage2);  // NOLINT(readability-suspicious-call-argument)
         if (has_leakage2
             && (equiv_cell_leakage / source_cell_leakage
                 > sizing_leakage_limit_)) {
