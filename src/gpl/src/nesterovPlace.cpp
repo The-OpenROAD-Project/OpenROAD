@@ -541,9 +541,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (numDiverge > 0) {
       log_->report("Divergence occured in {} regions.", numDiverge);
 
-      // TODO: this divergence treatment uses the non-deterministic aspect of routability inflation to try one more time if a divergence is detected.
-      // This feature lost its consistency since we allow for non-virtual timing driven iterations. Meaning we would go back to a snapshot without newly added instances.
-      // A way to maintain this feature is to store two snapshots one for routability revert if diverge and try again, and another for simply revert if diverge and finish without hitting 0.10 overflow.
+      // TODO: this divergence treatment uses the non-deterministic aspect of
+      // routability inflation to try one more time if a divergence is detected.
+      // This feature lost its consistency since we allow for non-virtual timing
+      // driven iterations. Meaning we would go back to a snapshot without newly
+      // added instances. A way to maintain this feature is to store two
+      // snapshots one for routability revert if diverge and try again, and
+      // another for simply revert if diverge and finish without hitting 0.10
+      // overflow.
       // // revert back to the original rb solutions
       // // one more opportunity
       // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
@@ -563,7 +568,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       //   isDivergeTriedRevert = true;
       //   // turn off the RD forcely
       //   is_routability_need_ = false;
-      // } else 
+      // } else
       if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved) {
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
