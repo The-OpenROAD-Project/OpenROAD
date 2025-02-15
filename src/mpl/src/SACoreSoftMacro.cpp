@@ -776,7 +776,8 @@ void SACoreSoftMacro::resizeOneCluster()
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
     float e_x2 = outline_.getWidth();
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 > ux && cur_x2 < e_x2) {
         e_x2 = cur_x2;
@@ -785,7 +786,8 @@ void SACoreSoftMacro::resizeOneCluster()
     src_macro.setWidth(e_x2 - lx);
   } else if (option <= 0.5) {
     float d_x2 = lx;
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 < ux && cur_x2 > d_x2) {
         d_x2 = cur_x2;
@@ -798,7 +800,8 @@ void SACoreSoftMacro::resizeOneCluster()
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
     float a_y2 = outline_.getHeight();
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 > uy && cur_y2 < a_y2) {
         a_y2 = cur_y2;
@@ -808,7 +811,8 @@ void SACoreSoftMacro::resizeOneCluster()
   } else {
     // Change the height of soft block to Bb = c.y2 - b.y1
     float c_y2 = ly;
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 < uy && cur_y2 > c_y2) {
         c_y2 = cur_y2;
