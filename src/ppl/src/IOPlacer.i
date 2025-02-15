@@ -350,6 +350,12 @@ write_pin_placement(const char* file_name, bool placed)
   getIOPlacer()->writePinPlacement(file_name, placed);
 }
 
+void
+write_pin_constraints(const char* file_name)
+{
+  getIOPlacer()->writePinConstraints(file_name);
+}
+
 } // namespace
 
 %} // inline

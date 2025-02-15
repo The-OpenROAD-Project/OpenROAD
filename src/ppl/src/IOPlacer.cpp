@@ -789,6 +789,30 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
   }
 }
 
+void IOPlacer::writePinConstraints(const char* file_name)
+{
+  std::string filename = file_name;
+  if (filename.empty()) {
+    return;
+  }
+
+  std::ofstream out(filename);
+
+  if (!out) {
+    logger_->error(PPL, 37, "Cannot open file {}.", filename);
+  }
+
+  for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+    auto constraint_region = bterm->getConstraintRegion();
+    if (constraint_region) {
+      odb::Rect region = constraint_region.value();
+      out << bterm->getName() << " constraint region: (" << region.xMin()
+          << ", " << region.yMin() << ") (" << region.xMax() << ", "
+          << region.yMax() << ")\n";
+    }
+  }
+}
+
 Edge IOPlacer::getMirroredEdge(const Edge& edge)
 {
   Edge mirrored_edge = Edge::invalid;
@@ -1775,6 +1799,11 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
   if (!inserted) {
     constraints_.emplace_back(*pins, Direction::invalid, interval);
   }
+
+  Constraint constraint(*pins, Direction::invalid, interval);
+  for (odb::dbBTerm* bterm : *pins) {
+    commitPinConstraintToDB(bterm, constraint);
+  }
 }
 
 void IOPlacer::addDirectionConstraint(Direction direction,
@@ -1793,6 +1822,12 @@ void IOPlacer::addDirectionConstraint(Direction direction,
 
   Constraint constraint(PinSet(), direction, interval);
   constraints_.push_back(constraint);
+  for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+    Direction dir = getBTermDirection(bterm);
+    if (dir == direction) {
+      commitPinConstraintToDB(bterm, constraint);
+    }
+  }
 }
 
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
@@ -1815,6 +1850,7 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
   for (odb::dbBTerm* bterm : *pins) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {
       top_layer_pins_count_++;
+      commitPinConstraintToDB(bterm, constraint);
     }
   }
 }
@@ -1829,6 +1865,67 @@ void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
              bterm1->getName(),
              bterm2->getName());
   mirrored_pins_[bterm1] = bterm2;
+
+  auto constraint_region1 = bterm1->getConstraintRegion();
+  auto constraint_region2 = bterm2->getConstraintRegion();
+  if (constraint_region1 && constraint_region2 == std::nullopt) {
+    applyMirroredConstraint(bterm1, bterm2);
+  } else if (constraint_region2 && constraint_region1 == std::nullopt) {
+    applyMirroredConstraint(bterm2, bterm1);
+  }
+}
+
+void IOPlacer::applyMirroredConstraint(odb::dbBTerm* constrained_bterm,
+                                       odb::dbBTerm* mirrored_bterm)
+{
+  auto constraint_region = constrained_bterm->getConstraintRegion();
+  if (constraint_region == std::nullopt) {
+    logger_->critical(utl::PPL, 41, "Pin {} must have a constraint.");
+  }
+  const odb::Rect& region = constraint_region.value();
+
+  Edge edge = getRegionEdge(region);
+  if (edge == Edge::invalid) {
+    logger_->error(
+        utl::PPL, 10, "Attempt to mirror pins assigned to the top layer grid.");
+  }
+
+  Interval interval;
+  if (edge == Edge::bottom || edge == Edge::top) {
+    interval = Interval(edge, region.xMin(), region.xMax());
+  } else {
+    interval = Interval(edge, region.yMin(), region.yMax());
+  }
+
+  Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+  Rect mirrored_constraint_region;
+  Interval mirrored_interval(mirrored_edge,
+                             interval.getBegin(),
+                             interval.getEnd(),
+                             interval.getLayer());
+
+  findConstraintRegion(mirrored_interval, region, mirrored_constraint_region);
+  mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
+}
+
+Edge IOPlacer::getRegionEdge(const odb::Rect& region)
+{
+  Rect die_boundary = getBlock()->getDieArea();
+  if (region.xMin() == region.xMax()) {
+    if (region.xMin() == die_boundary.xMin()) {
+      return Edge::left;
+    }
+    return Edge::right;
+  }
+
+  if (region.yMin() == region.yMax()) {
+    if (region.yMin() == die_boundary.yMin()) {
+      return Edge::bottom;
+    }
+    return Edge::top;
+  }
+
+  return Edge::invalid;
 }
 
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
@@ -2981,6 +3078,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 void IOPlacer::initNetlist()
 {
   netlist_->reset();
+  zero_sink_ios_.clear();
   const Rect& coreBoundary = core_->getBoundary();
   int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
   int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;
@@ -3006,17 +3104,7 @@ void IOPlacer::initNetlist()
       continue;
     }
 
-    Direction dir = Direction::inout;
-    switch (bterm->getIoType().getValue()) {
-      case odb::dbIoType::INPUT:
-        dir = Direction::input;
-        break;
-      case odb::dbIoType::OUTPUT:
-        dir = Direction::output;
-        break;
-      default:
-        dir = Direction::inout;
-    }
+    Direction dir = getBTermDirection(bterm);
 
     Point bounds(0, 0);
     IOPin io_pin(bterm,
@@ -3061,6 +3149,24 @@ void IOPlacer::initNetlist()
     }
     group_idx++;
   }
+  netlist_->setInitialized(true);
+}
+
+Direction IOPlacer::getBTermDirection(odb::dbBTerm* bterm)
+{
+  Direction dir = Direction::inout;
+  switch (bterm->getIoType().getValue()) {
+    case odb::dbIoType::INPUT:
+      dir = Direction::input;
+      break;
+    case odb::dbIoType::OUTPUT:
+      dir = Direction::output;
+      break;
+    default:
+      dir = Direction::inout;
+  }
+
+  return dir;
 }
 
 void IOPlacer::findConstraintRegion(const Interval& interval,
@@ -3119,6 +3225,37 @@ void IOPlacer::commitConstraintsToDB()
         mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
       }
     }
+  }
+}
+
+void IOPlacer::commitPinConstraintToDB(odb::dbBTerm* bterm,
+                                       const Constraint& constraint)
+{
+  if (!netlist_->isInitialized()) {
+    initNetlist();
+  }
+  initMirroredPins();
+
+  int pin_idx = netlist_->getIoPinIdx(bterm);
+  IOPin& io_pin = netlist_->getIoPin(pin_idx);
+  Rect constraint_region;
+  const Interval& interval = constraint.interval;
+  findConstraintRegion(interval, constraint.box, constraint_region);
+  bterm->setConstraintRegion(constraint_region);
+
+  if (io_pin.isMirrored()) {
+    IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
+    odb::dbBTerm* mirrored_bterm
+        = getBlock()->findBTerm(mirrored_pin.getName().c_str());
+    Edge mirrored_edge = getMirroredEdge(interval.getEdge());
+    Rect mirrored_constraint_region;
+    Interval mirrored_interval(mirrored_edge,
+                               interval.getBegin(),
+                               interval.getEnd(),
+                               interval.getLayer());
+    findConstraintRegion(
+        mirrored_interval, constraint.box, mirrored_constraint_region);
+    mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
   }
 }
 

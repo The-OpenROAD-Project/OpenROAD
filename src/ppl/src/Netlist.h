@@ -203,6 +203,8 @@ class Netlist
   void sortPinsFromGroup(int group_idx, Edge edge);
   odb::Rect getBB(int idx, const odb::Point& slot_pos);
   void reset();
+  bool isInitialized() const { return initialized_; }
+  void setInitialized(bool initialized) { initialized_ = initialized; }
 
  private:
   std::vector<InstancePin> inst_pins_;
@@ -210,6 +212,7 @@ class Netlist
   std::vector<IOPin> io_pins_;
   std::vector<PinGroupByIndex> io_groups_;
   std::map<odb::dbBTerm*, int> _db_pin_idx_map;
+  bool initialized_;
 };
 
 }  // namespace ppl

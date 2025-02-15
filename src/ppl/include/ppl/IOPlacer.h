@@ -138,6 +138,9 @@ class IOPlacer
                               int end);
   void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
   void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
+  void applyMirroredConstraint(odb::dbBTerm* constrained_bterm,
+                               odb::dbBTerm* mirrored_bterm);
+  Edge getRegionEdge(const odb::Rect& region);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
   void addPinGroup(PinList* group, bool order);
@@ -174,6 +177,8 @@ class IOPlacer
   void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
   void writePinPlacement(const char* file_name, bool placed);
+
+  void writePinConstraints(const char* file_name);
 
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
@@ -282,11 +287,14 @@ class IOPlacer
                             const Rect& constraint_box,
                             Rect& region);
   void commitConstraintsToDB();
+  void commitPinConstraintToDB(odb::dbBTerm* bterm,
+                               const Constraint& constraint);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,
                 const std::set<int>& ver_layer_idxs);
   void initNetlist();
+  Direction getBTermDirection(odb::dbBTerm* bterm);
   void initTracks();
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
