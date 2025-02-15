@@ -136,6 +136,8 @@ struct GridPt
 {
   GridPt() = default;
   GridPt(GridX x, GridY y) : x(x), y(y) {}
+  GridPt(int x, int y) : x(GridX(x)), y(GridY(y)) {}
+  bool operator==(const GridPt& p) const { return (x == p.x) && (y == p.y); }
   GridX x{0};
   GridY y{0};
 };
@@ -245,6 +247,17 @@ struct hash<dpl::TypedCoordinate<T>>
   std::size_t operator()(const dpl::TypedCoordinate<T>& tc) const noexcept
   {
     return std::hash<int>()(tc.v);
+  }
+};
+
+template <>
+struct hash<dpl::GridPt>
+{
+  std::size_t operator()(const dpl::GridPt& p) const
+  {
+    size_t hashX = std::hash<dpl::GridX>{}(p.x);
+    size_t hashY = std::hash<dpl::GridY>{}(p.y);
+    return hashX ^ (hashY + 0x9e3779b9 + (hashX << 6) + (hashX >> 2));
   }
 };
 

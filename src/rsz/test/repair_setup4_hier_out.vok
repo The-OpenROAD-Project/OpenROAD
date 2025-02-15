@@ -3,10 +3,10 @@ module reg1 (clk);
 
 
  BUF_X1 rebuffer1 (.A(r1q),
-    .Z(net4));
+    .Z(net3));
  DFF_X1 r1 (.CK(clk),
     .Q(r1q));
- submodule u1 (.r1q(net4),
+ submodule u1 (.r1q(net3),
     .clk(clk));
 endmodule
 module submodule (r1q,
