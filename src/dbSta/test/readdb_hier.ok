@@ -15,27 +15,13 @@
 [DEBUG ODB-dbReadVerilog] Created module iterm clk for bterm clk
 [DEBUG ODB-dbReadVerilog] Created module iterm out for bterm out
 [DEBUG ODB-dbReadVerilog] created mod_net in in module top
-[DEBUG ODB-dbReadVerilog] connected mod_iterm in to mod net in
 [DEBUG ODB-dbReadVerilog] created mod_net in in module block1
-[DEBUG ODB-dbReadVerilog] connected iterm b1/u1/A to mod net in
 [DEBUG ODB-dbReadVerilog] created mod_net clk1 in module top
-[DEBUG ODB-dbReadVerilog] connected mod_iterm clk to mod net clk1
 [DEBUG ODB-dbReadVerilog] created mod_net clk in module block1
-[DEBUG ODB-dbReadVerilog] connected iterm b1/r1/CP to mod net clk
 [DEBUG ODB-dbReadVerilog] created mod_net b1out in module top
-[DEBUG ODB-dbReadVerilog] connected mod_iterm out to mod net b1out
-[DEBUG ODB-dbReadVerilog] connected mod_iterm in to mod net b1out
 [DEBUG ODB-dbReadVerilog] created mod_net out in module block1
-[DEBUG ODB-dbReadVerilog] connected iterm b1/u2/Z to mod net out
-[DEBUG ODB-dbReadVerilog] connected mod_iterm out to mod net b1out
-[DEBUG ODB-dbReadVerilog] connected mod_iterm in to mod net b1out
 [DEBUG ODB-dbReadVerilog] created mod_net in in module block1_b2
-[DEBUG ODB-dbReadVerilog] connected iterm b2/u1/A to mod net in
 [DEBUG ODB-dbReadVerilog] created mod_net clk2 in module top
-[DEBUG ODB-dbReadVerilog] connected mod_iterm clk to mod net clk2
 [DEBUG ODB-dbReadVerilog] created mod_net clk in module block1_b2
-[DEBUG ODB-dbReadVerilog] connected iterm b2/r1/CP to mod net clk
 [DEBUG ODB-dbReadVerilog] created mod_net out in module top
-[DEBUG ODB-dbReadVerilog] connected mod_iterm out to mod net out
 [DEBUG ODB-dbReadVerilog] created mod_net out in module block1_b2
-[DEBUG ODB-dbReadVerilog] connected iterm b2/u2/Z to mod net out

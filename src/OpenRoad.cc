@@ -548,6 +548,7 @@ void OpenRoad::readVerilog(const char* filename)
   if (verilog_reader_ == nullptr) {
     verilog_reader_ = new sta::VerilogReader(verilog_network_);
   }
+  setDbNetworkLinkFunc(this, verilog_reader_);
   verilog_reader_->read(filename);
 }
 
