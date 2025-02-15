@@ -132,17 +132,8 @@ void UniqueInsts::computeUnique()
   computePrefTrackPatterns();
   initMasterToPinLayerRange();
 
-  std::set<frInst*> target_frinsts;
-  for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
-  }
-
   std::vector<frInst*> ndr_insts;
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!target_insts_.empty()
-        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
-      continue;
-    }
     if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
       ndr_insts.push_back(inst.get());
       continue;
