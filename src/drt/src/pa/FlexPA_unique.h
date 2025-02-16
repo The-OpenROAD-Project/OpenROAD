@@ -119,6 +119,12 @@ class UniqueInsts
   void initMasterToPinLayerRange();
 
   /**
+   * @brief Adds the instance to the unique instances structures,
+   * inserting new data if it is actually a new unique instance.
+   */
+  void addUniqueInst(frInst* inst);
+
+  /**
    * @brief Computes all unique instances data structures.
    *
    * Fills: master_OT_to_insts_, inst_to_unique_, inst_to_class_ and

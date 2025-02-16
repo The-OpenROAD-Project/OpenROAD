@@ -125,6 +125,53 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
+void UniqueInsts::addUniqueInst(frInst* inst)
+{
+  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    unique_.push_back(inst);
+    inst_to_unique_[inst] = inst;
+    inst_to_class_[inst] = nullptr;
+  }
+  const Point origin = inst->getOrigin();
+  const Rect boundary_bbox = inst->getBoundaryBBox();
+  const dbOrientType orient = inst->getOrient();
+  auto it = master_to_pin_layer_range_.find(inst->getMaster());
+  if (it == master_to_pin_layer_range_.end()) {
+    logger_->error(DRT,
+                   146,
+                   "Master {} not found in master_to_pin_layer_range",
+                   inst->getMaster()->getName());
+  }
+  const auto [min_layer_num, max_layer_num] = it->second;
+  std::vector<frCoord> offset;
+  for (auto& tp : pref_track_patterns_) {
+    if (tp->getLayerNum() >= min_layer_num && tp->getLayerNum() <= max_layer_num
+        && hasTrackPattern(tp, boundary_bbox)) {
+      // vertical track
+      if (tp->isHorizontal()) {
+        offset.push_back(origin.x() % tp->getTrackSpacing());
+      } else {
+        offset.push_back(origin.y() % tp->getTrackSpacing());
+      }
+    } else {
+      offset.push_back(tp->getTrackSpacing());
+    }
+  }
+
+  // Fills data structure that relate a instance to its unique instance
+  UniqueInsts::InstSet& unique_family
+      = master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
+  if (unique_family.empty()) {
+    int i = unique_.size();
+    unique_.push_back(inst);
+    unique_to_idx_[inst] = i;
+  }
+  unique_family.insert(inst);
+  frInst* unique_inst = *(unique_family.begin());
+  inst_to_unique_[inst] = unique_inst;
+  inst_to_class_[inst] = &unique_family;
+}
+
 // must init all unique, including filler, macro, etc. to ensure frInst
 // pin_access_idx is active
 void UniqueInsts::computeUnique()
@@ -132,63 +179,8 @@ void UniqueInsts::computeUnique()
   computePrefTrackPatterns();
   initMasterToPinLayerRange();
 
-  std::vector<frInst*> ndr_insts;
   for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
-      ndr_insts.push_back(inst.get());
-      continue;
-    }
-    const Point origin = inst->getOrigin();
-    const Rect boundary_bbox = inst->getBoundaryBBox();
-    const dbOrientType orient = inst->getOrient();
-    auto it = master_to_pin_layer_range_.find(inst->getMaster());
-    if (it == master_to_pin_layer_range_.end()) {
-      logger_->error(DRT,
-                     146,
-                     "Master {} not found in master_to_pin_layer_range",
-                     inst->getMaster()->getName());
-    }
-    const auto [min_layer_num, max_layer_num] = it->second;
-    std::vector<frCoord> offset;
-    for (auto& tp : pref_track_patterns_) {
-      if (tp->getLayerNum() >= min_layer_num
-          && tp->getLayerNum() <= max_layer_num
-          && hasTrackPattern(tp, boundary_bbox)) {
-        // vertical track
-        if (tp->isHorizontal()) {
-          offset.push_back(origin.x() % tp->getTrackSpacing());
-        } else {
-          offset.push_back(origin.y() % tp->getTrackSpacing());
-        }
-      } else {
-        offset.push_back(tp->getTrackSpacing());
-      }
-    }
-    master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset]
-        .insert(inst.get());
-  }
-
-  for (auto& [master, orientMap] : master_orient_trackoffset_to_insts_) {
-    for (auto& [orient, offsetMap] : orientMap) {
-      for (auto& [vec, insts] : offsetMap) {
-        auto unique_inst = *(insts.begin());
-        unique_.push_back(unique_inst);
-        for (auto i : insts) {
-          inst_to_unique_[i] = unique_inst;
-          inst_to_class_[i] = &insts;
-        }
-      }
-    }
-  }
-  for (frInst* inst : ndr_insts) {
-    unique_.push_back(inst);
-    inst_to_unique_[inst] = inst;
-    inst_to_class_[inst] = nullptr;
-  }
-
-  // init unique2Idx
-  for (int i = 0; i < (int) unique_.size(); i++) {
-    unique_to_idx_[unique_[i]] = i;
+    addUniqueInst(inst.get());
   }
 }
 
