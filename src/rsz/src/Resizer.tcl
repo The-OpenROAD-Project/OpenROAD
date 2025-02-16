@@ -758,7 +758,7 @@ proc set_opt_config { args } {
       $area_prop setValue $area_limit
     }
     utl::info RSZ 100 \
-        "Cells with area > ${area_limit}X current cell will not be considered for sizing"
+      "Cells with area > ${area_limit}X current cell will not be considered for sizing"
   }
   if { [info exists keys(-sizing_leakage_limit)] } {
     set leakage_limit $keys(-sizing_leakage_limit)
@@ -770,7 +770,7 @@ proc set_opt_config { args } {
       $leak_prop setValue $leakage_limit
     }
     utl::info RSZ 101 \
-        "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
+      "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
   }
 }
 
