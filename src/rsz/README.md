@@ -456,6 +456,7 @@ report_opt_config
 ### Resetting Optimization Configuration
 
 The `reset_opt_config` command resets optimization settings applied from set_opt_config command.
+If no options are specified, all optimization configurations are reset.
 
 ```tcl
 reset_opt_config 

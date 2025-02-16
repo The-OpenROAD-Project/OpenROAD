@@ -738,15 +738,15 @@ proc set_opt_config { args } {
     keys {-sizing_area_limit -sizing_leakage_limit} flags {}
   set db [ord::get_db]
   if { $db == "NULL" } {
-    utl::error "ORD" 210 "db needs to be defined for set_opt_config."
+    utl::error "RSZ" 200 "db needs to be defined for set_opt_config."
   }
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    utl::error "ORD" 211 "chip needs to be defined for set_opt_config."
+    utl::error "RSZ" 201 "chip needs to be defined for set_opt_config."
   }
   set block [$chip getBlock]
   if { $block == "NULL" } {
-    utl::error "ORD" 212 "block needs to be defined for set_opt_config."
+    utl::error "RSZ" 202 "block needs to be defined for set_opt_config."
   }
   if { [info exists keys(-sizing_area_limit)] } {
     set area_limit $keys(-sizing_area_limit)
@@ -757,7 +757,7 @@ proc set_opt_config { args } {
     } else {
       $area_prop setValue $area_limit
     }
-    puts "Cells with area > ${area_limit}X current cell will not be considered for sizing"
+    utl::info RSZ 100 "Cells with area > ${area_limit}X current cell will not be considered for sizing"
   }
   if { [info exists keys(-sizing_leakage_limit)] } {
     set leakage_limit $keys(-sizing_leakage_limit)
@@ -768,7 +768,7 @@ proc set_opt_config { args } {
     } else {
       $leak_prop setValue $leakage_limit
     }
-    puts "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
+    utl::info RSZ 101 "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
   }
 }
 
@@ -779,29 +779,29 @@ proc reset_opt_config { args } {
     keys {} flags {-sizing_area_limit -sizing_leakage_limit}
   set db [ord::get_db]
   if { $db == "NULL" } {
-    utl::error "ORD" 213 "db needs to be defined for reset_opt_config."
+    utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
   }
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    utl::error "ORD" 214 "chip needs to be defined for reset_opt_config."
+    utl::error "RSZ" 204 "chip needs to be defined for reset_opt_config."
   }
   set block [$chip getBlock]
   if { $block == "NULL" } {
-    utl::error "ORD" 215 "block needs to be defined for reset_opt_config."
+    utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
   }
-  if { [info exists flags(-sizing_area_limit)] } {
+  if { [info exists flags(-sizing_area_limit)] || [llength $args] == 0 } {
     set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
     if { $area_prop != "NULL" } {
       odb::dbProperty_destroy $area_prop
     }
-    puts "Cell sizing restriction based on area has been removed."
+    utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
   }
-  if { [info exists flags(-sizing_leakage_limit)] } {
+  if { [info exists flags(-sizing_leakage_limit)] || [llength $args] == 0 } {
     set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
     if { $leak_prop != "NULL" } {
       odb::dbProperty_destroy $leak_prop
     }
-    puts "Cell sizing restriction based on leakage has been removed."
+    utl::info RSZ 103 "Cell sizing restriction based on leakage has been removed."
   }
 }
 
@@ -811,15 +811,15 @@ proc report_opt_config { args } {
   sta::parse_key_args "report_opt_config" args keys {} flags {}
   set db [ord::get_db]
   if { $db == "NULL" } {
-    utl::error "ORD" 216 "db needs to be defined for report_opt_config."
+    utl::error "RSZ" 206 "db needs to be defined for report_opt_config."
   }
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    utl::error "ORD" 217 "chip needs to be defined for report_opt_config"
+    utl::error "RSZ" 207 "chip needs to be defined for report_opt_config"
   }
   set block [$chip getBlock]
   if { $block == "NULL" } {
-    utl::error "ORD" 218 "block needs to be defined for report_opt_config."
+    utl::error "RSZ" 208 "block needs to be defined for report_opt_config."
   }
 
   set area_limit_value "undefined"
