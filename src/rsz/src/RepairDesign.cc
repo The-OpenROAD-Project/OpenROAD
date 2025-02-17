@@ -1937,27 +1937,13 @@ void RepairDesign::makeRepeater(
       load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
+      // New api call: simultaneously disconnects old flat/hier net
+      // and connects in new one.
       db_network_->connectPin(const_cast<Pin*>(pin),
                               buffer_op_net,
                               db_network_->dbToSta(load_mod_net));
-
-      /*
-      db_network -> disconnectPin(const_cast<Pin*>(pin));
-      //sta_->disconnectPin(const_cast<Pin*>(pin));
-      //      sta_ -> connectPin(inst,port, buffer_op_net);
-      db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
-
-      if (load_mod_net) {
-        db_network_->connectPin(const_cast<Pin*>(pin),
-                                db_network_->dbToSta(load_mod_net));
-      }
-      */
     }
     db_network_->connectPin(buffer_ip_pin, db_network_->dbToSta(load_db_net));
-    // sta_->connectPin(
-    //		     buffer, buffer_input_port,
-    // db_network_->dbToSta(load_db_net)); sta_->connectPin(buffer,
-    // buffer_output_port, buffer_op_net);
     db_network_->connectPin(buffer_op_pin, buffer_op_net);
 
     // Preserve any driver pin hierarchical mod net connection
@@ -1973,21 +1959,12 @@ void RepairDesign::makeRepeater(
             = resizer_->makeUniqueNetName(owning_instance);
         driver_pin_mod_net->rename(new_mod_net_name.c_str());
       }
-      // Note how we use the sta interface for disconnect/connect
-      // of flat nets (ie dbNet*), so we get the side effects for the timing
-      // analyzer
-      //      sta_->disconnectPin(driver_pin);
       db_network_->disconnectPin(driver_pin);
 
       Port* port = network_->port(driver_pin);
       Instance* inst = network_->instance(driver_pin);
       db_network_->connectPin(driver_pin, db_network_->dbToSta(flat_net));
-
-      // sta_->connectPin(inst, port, db_network_->dbToSta(flat_net));
-
       // connect the propagated hierarchical net to the buffer output
-      // use the db interface
-      // TODO: replace this call with sta_ -> connectPin call.
       db_network_->connectPin(buffer_op_pin,
                               db_network_->dbToSta(driver_pin_mod_net));
     }
@@ -2034,7 +2011,6 @@ void RepairDesign::makeRepeater(
         }
         // preserve any hierarchical connection
         odb::dbModNet* mod_net = db_network_->hierNet(pin);
-        //        sta_->disconnectPin(const_cast<Pin*>(pin));
         db_network_->disconnectPin(const_cast<Pin*>(pin));
         db_network_->connectPin(const_cast<Pin*>(pin), ip_net);
         if (mod_net) {

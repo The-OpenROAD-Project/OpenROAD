@@ -2266,6 +2266,11 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
         moditerm->connect(hier_net_db);
       } else if (modbterm) {
         modbterm->connect(hier_net_db);
+      } else {
+        logger_->error(ORD,
+                       2028,
+                       "Illegal net combination. hier net expected to be "
+                       "hooked to one of iterm, bterm, moditerm, modbterm");
       }
     }
   }

@@ -515,8 +515,8 @@ void dbBTerm::connect(dbNet* net_)
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
     block->_journal->pushParam(net_->getId());
-    // modnet
-    block->_journal->pushParam(0);
+    // modnet is left out, only flat net.
+    block->_journal->pushParam(0U);
     block->_journal->endAction();
   }
 
@@ -558,9 +558,7 @@ void dbBTerm::disconnect()
       block->_journal->pushParam(mnet_id);
       block->_journal->endAction();
     }
-
     bterm->disconnectNet(bterm, block);
-
     if (bterm->_mnet) {
       bterm->disconnectModNet(bterm, block);
     }
@@ -600,6 +598,7 @@ void dbBTerm::disconnectDbNet()
       block->_journal->pushParam(dbBTermObj);
       block->_journal->pushParam(bterm->getId());
       block->_journal->pushParam(net->getOID());
+      // we are not considering the modnet.
       block->_journal->pushParam(0U);
       block->_journal->endAction();
     }
@@ -845,7 +844,8 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
     block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
-    block->_journal->pushParam(0);
+    // the flat net is left out
+    block->_journal->pushParam(0U);
     // modnet
     block->_journal->pushParam(mod_net->getId());
     block->_journal->endAction();

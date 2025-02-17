@@ -1878,7 +1878,7 @@ class dbBTerm : public dbObject
   /// Disconnect the block-terminal from its net.
   /// kills a dbModNet and dbNet connection
   void disconnect();
-
+  // Fine level apis to control which net removed from pin.
   /// Disconnect the block-terminal from its db net.
   void disconnectDbNet();
   /// Disconnect the block-terminal from its mod net.
