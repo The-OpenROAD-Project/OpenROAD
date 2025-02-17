@@ -709,13 +709,13 @@ sta::proc_redirect report_floating_nets {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_overdriven_nets" {[-verbose] [> filename] [>> filename]} ;# checker off
+sta::define_cmd_args "report_overdriven_nets" {[-include_parallel_driven] [-verbose] [> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_overdriven_nets {
-  sta::parse_key_args "report_overdriven_nets" args keys {} flags {-verbose};# checker off
+  sta::parse_key_args "report_overdriven_nets" args keys {} flags {-verbose -include_parallel_driven};# checker off
 
   set verbose [info exists flags(-verbose)]
-  set overdriven_nets [rsz::find_overdriven_nets]
+  set overdriven_nets [rsz::find_overdriven_nets [info exists flags(-include_parallel_driven)]]
   set overdriven_net_count [llength $overdriven_nets]
   if { $overdriven_net_count > 0 } {
     utl::warn RSZ 24 "found $overdriven_net_count overdriven nets."
