@@ -84,6 +84,7 @@ using std::vector;
 using utl::RSZ;
 
 using odb::dbBox;
+using odb::dbDoubleProperty;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
@@ -239,6 +240,18 @@ void Resizer::initBlock()
   core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
                    && core_.yMax() == 0);
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
+
+  // Apply sizing restrictions
+  dbDoubleProperty* area_prop
+      = dbDoubleProperty::find(block_, "sizing_area_limit");
+  if (area_prop) {
+    sizing_area_limit_ = area_prop->getValue();
+  }
+  dbDoubleProperty* leakage_prop
+      = dbDoubleProperty::find(block_, "sizing_leakage_limit");
+  if (leakage_prop) {
+    sizing_leakage_limit_ = leakage_prop->getValue();
+  }
 }
 
 void Resizer::init()
@@ -1212,7 +1225,44 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
 
   if (equiv_cells) {
+    // Convert sta results to std::optional
+    auto get_leakage = [](LibertyCell* cell) {
+      float leakage;
+      bool exists;
+      cell->leakagePower(leakage, exists);
+      std::optional<float> value;
+      if (exists) {
+        value = leakage;
+      }
+      return value;
+    };
+
+    int64_t source_cell_area = source_cell->area();
+    std::optional<float> source_cell_leakage;
+    if (sizing_leakage_limit_) {
+      source_cell_leakage = get_leakage(source_cell);
+    }
     for (LibertyCell* equiv_cell : *equiv_cells) {
+      dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
+      if (!equiv_cell_master) {
+        continue;
+      }
+      if (sizing_area_limit_.has_value() && (source_cell_area != 0)
+          && (equiv_cell_master->getArea()
+                  / static_cast<double>(source_cell_area)
+              > sizing_area_limit_.value())) {
+        continue;
+      }
+
+      if (sizing_leakage_limit_ && source_cell_leakage) {
+        std::optional<float> equiv_cell_leakage = get_leakage(equiv_cell);
+        if (equiv_cell_leakage
+            && (*equiv_cell_leakage / *source_cell_leakage
+                > sizing_leakage_limit_.value())) {
+          continue;
+        }
+      }
+
       if (match_cell_footprint_) {
         const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
                                                       equiv_cell->footprint());
