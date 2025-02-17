@@ -440,8 +440,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // timing driven feature
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
-    bool is_before_routability = average_overflow_ > routability_save_snapshot_;
-    bool is_after_routability
+    const bool is_before_routability
+        = average_overflow_ > routability_save_snapshot_;
+    const bool is_after_routability
         = (average_overflow_ < npVars_.routability_end_overflow
            && !is_routability_need_);
     if (npVars_.timingDrivenMode
