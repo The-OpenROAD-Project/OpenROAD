@@ -1921,7 +1921,13 @@ void RepairDesign::makeRepeater(
     buffer_ip_net = db_network_->dbToSta(ip_net_db);
 
     for (const Pin* pin : load_pins) {
-      Port* port = network_->port(pin);
+      // skip any hierarchical pins in loads
+      // in loads.
+
+      if (db_network_->hierPin(pin)) {
+        continue;
+      }
+
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         continue;
@@ -1931,18 +1937,28 @@ void RepairDesign::makeRepeater(
       load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
-      sta_->disconnectPin(const_cast<Pin*>(pin));
-      sta_->connectPin(inst, port, buffer_op_net);
+      db_network_->connectPin(const_cast<Pin*>(pin),
+                              buffer_op_net,
+                              db_network_->dbToSta(load_mod_net));
+
+      /*
+      db_network -> disconnectPin(const_cast<Pin*>(pin));
+      //sta_->disconnectPin(const_cast<Pin*>(pin));
+      //      sta_ -> connectPin(inst,port, buffer_op_net);
+      db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
 
       if (load_mod_net) {
-        // TODO: replace this call with sta_ -> connectPin call.
         db_network_->connectPin(const_cast<Pin*>(pin),
                                 db_network_->dbToSta(load_mod_net));
       }
+      */
     }
-    sta_->connectPin(
-        buffer, buffer_input_port, db_network_->dbToSta(load_db_net));
-    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
+    db_network_->connectPin(buffer_ip_pin, db_network_->dbToSta(load_db_net));
+    // sta_->connectPin(
+    //		     buffer, buffer_input_port,
+    // db_network_->dbToSta(load_db_net)); sta_->connectPin(buffer,
+    // buffer_output_port, buffer_op_net);
+    db_network_->connectPin(buffer_op_pin, buffer_op_net);
 
     // Preserve any driver pin hierarchical mod net connection
     // push to the output of the buffer. Rename the mod net.
@@ -1960,10 +1976,15 @@ void RepairDesign::makeRepeater(
       // Note how we use the sta interface for disconnect/connect
       // of flat nets (ie dbNet*), so we get the side effects for the timing
       // analyzer
-      sta_->disconnectPin(driver_pin);
+      //      sta_->disconnectPin(driver_pin);
+      db_network_->disconnectPin(driver_pin);
+
       Port* port = network_->port(driver_pin);
       Instance* inst = network_->instance(driver_pin);
-      sta_->connectPin(inst, port, db_network_->dbToSta(flat_net));
+      db_network_->connectPin(driver_pin, db_network_->dbToSta(flat_net));
+
+      // sta_->connectPin(inst, port, db_network_->dbToSta(flat_net));
+
       // connect the propagated hierarchical net to the buffer output
       // use the db interface
       // TODO: replace this call with sta_ -> connectPin call.
@@ -1992,11 +2013,18 @@ void RepairDesign::makeRepeater(
     for (const Pin* pin : load_pins) {
       repeater_load_pins.insert(pin);
     }
+
     // put non repeater loads from op net onto ip net, preserving
-    // any hierarchical connection
+    // any hierarchical connection.
+
     NetPinIterator* pin_iter = network_->pinIterator(load_net);
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
+
+      if (db_network_->hierPin(pin)) {
+        continue;
+      }
+
       if (!repeater_load_pins.hasKey(pin)) {
         Port* port = network_->port(pin);
         Instance* inst = network_->instance(pin);
@@ -2006,17 +2034,17 @@ void RepairDesign::makeRepeater(
         }
         // preserve any hierarchical connection
         odb::dbModNet* mod_net = db_network_->hierNet(pin);
-        sta_->disconnectPin(const_cast<Pin*>(pin));
-        sta_->connectPin(inst, port, ip_net);
+        //        sta_->disconnectPin(const_cast<Pin*>(pin));
+        db_network_->disconnectPin(const_cast<Pin*>(pin));
+        db_network_->connectPin(const_cast<Pin*>(pin), ip_net);
         if (mod_net) {
-          // TODO: replace this call with sta_ -> connectPin call.
           db_network_->connectPin(const_cast<Pin*>(pin),
                                   db_network_->dbToSta(mod_net));
         }
       }
     }
-    sta_->connectPin(buffer, buffer_input_port, buffer_ip_net);
-    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
+    db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
+    db_network_->connectPin(buffer_op_pin, buffer_op_net);
   }  // case 2
 
   resizer_->parasiticsInvalid(buffer_ip_net);
