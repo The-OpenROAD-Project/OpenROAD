@@ -427,6 +427,50 @@ If you are a developer, you might find these useful. More details can be found i
 | `dblayer_wire_rc` | Get layer RC values. |
 | `set_dblayer_wire_rc` | Set layer RC values. |
 
+### Setting Optimization Configuration
+
+The `set_opt_config` command configures optimization settings that apply to all 
+optimization commands like repair_design and repair_timing.
+
+```tcl
+set_opt_config 
+    [-sizing_area_limit float_value]
+    [-sizing_leakage_limit float_value]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-sizing_area_limit` | Don't consider cells whose area is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with area more than 2X of the current cell will not be considered for sizing. The cell LEF will be used for area computation, not liberty cell area. |
+| `-sizing_leakage_limit` | Don't consider cells whose leakage is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with leakage more than 2X of the current cell will not be considered for sizing. The leakage power will be computed from the current timing corner. |
+
+### Reporting Optimization Configuration
+
+The `report_opt_config` command reports current optimization configuration
+
+```tcl
+report_opt_config 
+```
+
+### Resetting Optimization Configuration
+
+The `reset_opt_config` command resets optimization settings applied from set_opt_config command.
+If no options are specified, all optimization configurations are reset.
+
+```tcl
+reset_opt_config 
+    [-sizing_area_limit]
+    [-sizing_leakage_limit]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-sizing_area_limit` | Remove area restriction during sizing. |
+| `-sizing_leakage_limit` | Remove leakage power restriction during sizing. |
+
 ## Example scripts
 
 A typical `resizer` command file (after a design and Liberty libraries have
