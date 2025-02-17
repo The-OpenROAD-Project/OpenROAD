@@ -754,10 +754,10 @@ PixelPt Opendp::searchNearestSite(const Cell* cell,
   };
   std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
       positionsHeap;
-  std::unordered_set<GridPt> inQueuePositions;
+  std::unordered_set<GridPt> visited;
   GridPt center{x, y};
   positionsHeap.push(PQ_entry{0, center});
-  inQueuePositions.insert(center);
+  visited.insert(center);
 
   const vector<GridPt> neighbors = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
   while (!positionsHeap.empty()) {
@@ -773,7 +773,7 @@ PixelPt Opendp::searchNearestSite(const Cell* cell,
     for (GridPt offset : neighbors) {
       GridPt neighbor = {nearest.x + offset.x, nearest.y + offset.y};
       // Check if it was already put in the queue
-      if (inQueuePositions.count(neighbor) > 0) {
+      if (visited.count(neighbor) > 0) {
         continue;
       }
       // Check limits
@@ -782,7 +782,7 @@ PixelPt Opendp::searchNearestSite(const Cell* cell,
         continue;
       }
 
-      inQueuePositions.insert(neighbor);
+      visited.insert(neighbor);
       positionsHeap.push(PQ_entry{calcDist(center, neighbor), neighbor});
     }
   }
