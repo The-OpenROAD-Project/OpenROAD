@@ -853,14 +853,15 @@ BACKEND_DEPENDENT_FUNCTION float getDistance(const Kokkos::View<const FloatPoint
   }
 
   float sumDistance = 0.0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA (const int instIdx, float& sum) {
-    for(int i = 0; i<numInsts; ++i) {
-      const FloatPoint& aPoint = a[i];
-      const FloatPoint& bPoint = b[i];
-      sum += (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
-      sum += (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
-    }
-  }, sumDistance);
+  Kokkos::DefaultHostExecutionSpace hostSpace;
+  auto hA = Kokkos::create_mirror_view_and_copy(hostSpace, a);
+  auto hB = Kokkos::create_mirror_view_and_copy(hostSpace, b);
+  for(int i = 0; i<numInsts; ++i) {
+    const FloatPoint& aPoint = hA[i];
+    const FloatPoint& bPoint = hB[i];
+    sumDistance += (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
+    sumDistance += (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
+  }
 
   return std::sqrt(sumDistance / (2.0 * numInsts));
 }
@@ -876,13 +877,14 @@ struct myAbs
 
 BACKEND_DEPENDENT_FUNCTION float getAbsGradSum(const Kokkos::View<const float*>& a, const int numInsts)
 {
+  Kokkos::DefaultHostExecutionSpace hostSpace;
+  auto hA = Kokkos::create_mirror_view_and_copy(hostSpace, a);
+
   double sumAbs = 0.0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA (const int instIdx, double& sum) {
-    for(int i = 0; i<numInsts; ++i) {
-      double x = a[i];
-      sum += x >= 0 ? x : -x;
-    }
-  }, sumAbs);
+  for(int i = 0; i<numInsts; ++i) {
+    double x = hA[i];
+    sumAbs += x >= 0 ? x : -x;
+  }
   return sumAbs;
 }
 
