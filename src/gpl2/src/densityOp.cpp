@@ -291,11 +291,12 @@ void DensityOp::updateDensityForceBin()
   });
 
   sumOverflow_ = 0.0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA (const int binIdx, float& sumOverflow) {
-    for(int i = 0; i<numBins; ++i) {
-      sumOverflow += dBinOverflowArea[i];
-    }
-  }, sumOverflow_);
+  Kokkos::DefaultHostExecutionSpace hostSpace;
+  auto hBinOverflowArea = Kokkos::create_mirror_view_and_copy(hostSpace, dBinOverflowArea);
+  for(int i = 0; i<numBins; ++i) {
+    sumOverflow_ += hBinOverflowArea[i];
+  }
+
   Kokkos::fence();
 
   // Step 4: solve the poisson equation
