@@ -136,7 +136,6 @@ struct GridPt
 {
   GridPt() = default;
   GridPt(GridX x, GridY y) : x(x), y(y) {}
-  GridPt(int x, int y) : x(GridX(x)), y(GridY(y)) {}
   bool operator==(const GridPt& p) const { return (x == p.x) && (y == p.y); }
   GridX x{0};
   GridY y{0};

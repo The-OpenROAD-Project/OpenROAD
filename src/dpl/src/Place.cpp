@@ -759,7 +759,10 @@ PixelPt Opendp::searchNearestSite(const Cell* cell,
   positionsHeap.push(PQ_entry{0, center});
   visited.insert(center);
 
-  const vector<GridPt> neighbors = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+  const vector<GridPt> neighbors = {{GridX(-1), GridY(0)},
+                                    {GridX(1), GridY(0)},
+                                    {GridX(0), GridY(-1)},
+                                    {GridX(0), GridY(1)}};
   while (!positionsHeap.empty()) {
     const GridPt nearest = positionsHeap.top().p;
     positionsHeap.pop();
