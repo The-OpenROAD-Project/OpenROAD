@@ -731,6 +731,118 @@ proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
 }
 
+sta::define_cmd_args "set_opt_config" { [-sizing_area_limit] [-sizing_leakage_limit] }
+
+proc set_opt_config { args } {
+  sta::parse_key_args "set_opt_config" args \
+    keys {-sizing_area_limit -sizing_leakage_limit} flags {}
+  set db [ord::get_db]
+  if { $db == "NULL" } {
+    utl::error "RSZ" 200 "db needs to be defined for set_opt_config."
+  }
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "RSZ" 201 "chip needs to be defined for set_opt_config."
+  }
+  set block [$chip getBlock]
+  if { $block == "NULL" } {
+    utl::error "RSZ" 202 "block needs to be defined for set_opt_config."
+  }
+  if { [info exists keys(-sizing_area_limit)] } {
+    set area_limit $keys(-sizing_area_limit)
+    sta::check_positive_float "-sizing_area_limit" $area_limit
+    set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+    if { $area_prop == "NULL" } {
+      odb::dbDoubleProperty_create $block "sizing_area_limit" $area_limit
+    } else {
+      $area_prop setValue $area_limit
+    }
+    utl::info RSZ 100 \
+      "Cells with area > ${area_limit}X current cell will not be considered for sizing"
+  }
+  if { [info exists keys(-sizing_leakage_limit)] } {
+    set leakage_limit $keys(-sizing_leakage_limit)
+    sta::check_positive_float "-sizing_leakage_limit" $leakage_limit
+    set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+    if { $leak_prop == "NULL" } {
+      odb::dbDoubleProperty_create $block "sizing_leakage_limit" $leakage_limit
+    } else {
+      $leak_prop setValue $leakage_limit
+    }
+    utl::info RSZ 101 \
+      "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
+  }
+}
+
+sta::define_cmd_args "reset_opt_config" { [-sizing_area_limit] [-sizing_leakage_limit] }
+
+proc reset_opt_config { args } {
+  sta::parse_key_args "reset_opt_config" args \
+    keys {} flags {-sizing_area_limit -sizing_leakage_limit}
+  set db [ord::get_db]
+  if { $db == "NULL" } {
+    utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
+  }
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "RSZ" 204 "chip needs to be defined for reset_opt_config."
+  }
+  set block [$chip getBlock]
+  if { $block == "NULL" } {
+    utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
+  }
+  if { [info exists flags(-sizing_area_limit)] || [llength $args] == 0 } {
+    set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+    if { $area_prop != "NULL" } {
+      odb::dbProperty_destroy $area_prop
+    }
+    utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
+  }
+  if { [info exists flags(-sizing_leakage_limit)] || [llength $args] == 0 } {
+    set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+    if { $leak_prop != "NULL" } {
+      odb::dbProperty_destroy $leak_prop
+    }
+    utl::info RSZ 103 "Cell sizing restriction based on leakage has been removed."
+  }
+}
+
+sta::define_cmd_args "report_opt_config" {}
+
+proc report_opt_config { args } {
+  sta::parse_key_args "report_opt_config" args keys {} flags {}
+  set db [ord::get_db]
+  if { $db == "NULL" } {
+    utl::error "RSZ" 206 "db needs to be defined for report_opt_config."
+  }
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "RSZ" 207 "chip needs to be defined for report_opt_config"
+  }
+  set block [$chip getBlock]
+  if { $block == "NULL" } {
+    utl::error "RSZ" 208 "block needs to be defined for report_opt_config."
+  }
+
+  set area_limit_value "undefined"
+  set area_limit [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+  if { $area_limit != "NULL" } {
+    set area_limit_value [[odb::dbDoubleProperty_find $block "sizing_area_limit"] getValue]
+  }
+
+  set leakage_limit_value "undefined"
+  set leakage_limit [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+  if { $leakage_limit != "NULL" } {
+    set leakage_limit_value [[odb::dbDoubleProperty_find $block "sizing_leakage_limit"] getValue]
+  }
+
+  puts "***********************************"
+  puts "Optimization config:"
+  puts "-sizing_area_limit:    $area_limit_value"
+  puts "-sizing_leakage_limit: $leakage_limit_value"
+  puts "***********************************"
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
