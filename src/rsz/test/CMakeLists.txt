@@ -132,6 +132,8 @@ or_integration_tests(
     report_overdriven_nets2
     report_overdriven_nets3
     report_overdriven_nets4
+    report_overdriven_nets5
+    report_overdriven_nets6
     resize1
     resize1_hier
     resize4

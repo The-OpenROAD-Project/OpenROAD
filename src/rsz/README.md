@@ -401,8 +401,16 @@ The `report_overdriven_nets` command reports nets with connected by multiple dri
 
 ```tcl
 report_overdriven_nets
+    [-include_parallel_driven]
     [-verbose]
 ```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-include_parallel_driven` | Include nets that are driven by multiple parallel drivers. |
+| `-verbose` | Print the net names. |
 
 ### Eliminate Dead Logic
 

@@ -455,11 +455,11 @@ find_floating_pins()
 }
 
 TmpNetSeq *
-find_overdriven_nets()
+find_overdriven_nets(bool include_parallel_driven)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->findOverdrivenNets();
+  return resizer->findOverdrivenNets(include_parallel_driven);
 }
 
 void
