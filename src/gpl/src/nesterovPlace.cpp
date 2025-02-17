@@ -628,7 +628,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numConverge == nbVec_.size()) {
-      // log_->report("[NesterovSolve] Finished, all regions converged");
       break;
     }
   }
@@ -729,9 +728,6 @@ void NesterovPlace::createGNet(odb::dbNet* db_net)
 {
   odb::dbSigType netType = db_net->getSigType();
   if (!isValidSigType(netType)) {
-    log_->report("db_net:{} is not signal or clock: {}",
-                 db_net->getName(),
-                 db_net->getSigType().getString());
     return;
   }
   nbc_->createGNet(db_net, pbc_->skipIoMode());
@@ -753,9 +749,6 @@ void NesterovPlace::createITerm(odb::dbITerm* iterm)
 void NesterovPlace::destroyITerm(odb::dbITerm* iterm)
 {
   if (!isValidSigType(iterm->getSigType())) {
-    log_->report("iterm:{} is not signal or clock: {}",
-                 iterm->getName('|'),
-                 iterm->getSigType().getString());
     return;
   }
   nbc_->destroyITerm(iterm);
