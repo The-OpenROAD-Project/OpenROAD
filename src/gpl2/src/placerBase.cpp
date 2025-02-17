@@ -883,7 +883,7 @@ BACKEND_DEPENDENT_FUNCTION float getAbsGradSum(const Kokkos::View<const float*>&
   double sumAbs = 0.0;
   for(int i = 0; i<numInsts; ++i) {
     double x = hA[i];
-    sumAbs += x >= 0 ? x : -x;
+    sumAbs += fabs(x);
   }
   return sumAbs;
 }
