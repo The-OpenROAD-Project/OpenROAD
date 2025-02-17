@@ -307,7 +307,7 @@ std::vector<dbMaster*> dbIsolation::getIsolationCells()
   return masters;
 }
 
-bool dbIsolation::appliesTo(const dbIoType io)
+bool dbIsolation::appliesTo(const dbIoType& io)
 {
   _dbIsolation* obj = (_dbIsolation*) this;
 
