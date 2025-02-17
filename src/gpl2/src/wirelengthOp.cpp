@@ -205,8 +205,7 @@ void WirelengthOp::initBackend()
   dNetLy_ = Kokkos::View<int*>("dNetLy", numNets_);
   dNetUx_ = Kokkos::View<int*>("dNetUx", numNets_);
   dNetUy_ = Kokkos::View<int*>("dNetUy", numNets_);
-  dNetWidth_ = Kokkos::View<int*>("dNetWidth", numNets_);
-  dNetHeight_ = Kokkos::View<int*>("dNetHeight", numNets_);
+  dNetWidthPlusHeight_ = Kokkos::View<int*>("dWidthPlusHeight", numNets_);
 
   // copy from host to device
   Kokkos::deep_copy(dPinX_, hPinX);
@@ -248,8 +247,7 @@ void updateNetBBoxKernel(int numNets,
                                     const Kokkos::View<int*>& dNetLy,
                                     const Kokkos::View<int*>& dNetUx,
                                     const Kokkos::View<int*>& dNetUy,
-                                    const Kokkos::View<int*>& dNetWidth,
-                                    const Kokkos::View<int*>& dNetHeight)
+                                    const Kokkos::View<int*>& dNetWidthPlusHeight)
 {
   Kokkos::parallel_for(numNets, KOKKOS_LAMBDA (const int netId) {
     const int pinStart = dNetPinPos[netId];
@@ -279,8 +277,9 @@ void updateNetBBoxKernel(int numNets,
     dNetLy[netId] = netLy;
     dNetUx[netId] = netUx;
     dNetUy[netId] = netUy;
-    dNetWidth[netId] = netUx - netLx;
-    dNetHeight[netId] = netUy - netLy;
+    auto netWidth = netUx - netLx;
+    auto netHeight = netUy - netLy;
+    dNetWidthPlusHeight[netId] = netWidth + netHeight;
   });
 }
 
@@ -305,8 +304,7 @@ void WirelengthOp::updatePinLocation(const Kokkos::View<const int*>& instDCx, co
                                                     dNetLy_,
                                                     dNetUx_,
                                                     dNetUy_,
-                                                    dNetWidth_,
-                                                    dNetHeight_);
+                                                    dNetWidthPlusHeight_);
 }
 
 struct TypeConvertor
@@ -320,10 +318,10 @@ struct TypeConvertor
 int64_t WirelengthOp::computeHPWL()
 {
   int64_t hpwl = 0;
-  auto dNetWidth = dNetWidth_, dNetHeight = dNetHeight_;
+  auto dNetWidthPlusHeight = dNetWidthPlusHeight_;
   const int numNets = numNets_;
   Kokkos::parallel_reduce(numNets, KOKKOS_LAMBDA (const int i, int64_t& hpwl) {
-      hpwl += (int64_t)(dNetWidth[i] + dNetHeight[i]);
+      hpwl += (int64_t) dNetWidthPlusHeight[i];
   }, hpwl);
 
   return hpwl;
@@ -332,13 +330,13 @@ int64_t WirelengthOp::computeHPWL()
 int64_t WirelengthOp::computeWeightedHPWL(float virtualWeightFactor)
 {
   int64_t hpwl = 0;
-  auto dNetWidth = dNetWidth_, dNetHeight = dNetHeight_;
+  auto dNetWidthPlusHeight = dNetWidthPlusHeight_;
   auto dNetWeight = dNetWeight_;
   auto dNetVirtualWeight = dNetVirtualWeight_;
   const int numNets = numNets_;
 
   Kokkos::parallel_reduce(numNets, KOKKOS_LAMBDA (const int i, int64_t& hpwl) {
-      hpwl += (int64_t)((dNetWeight[i] + dNetVirtualWeight[i] * virtualWeightFactor) * (dNetWidth[i] + dNetHeight[i]));
+      hpwl += (int64_t)((dNetWeight[i] + dNetVirtualWeight[i] * virtualWeightFactor) * dNetWidthPlusHeight[i]);
   }, hpwl);
 
   return hpwl;
