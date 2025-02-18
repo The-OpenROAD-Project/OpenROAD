@@ -854,13 +854,19 @@ BACKEND_DEPENDENT_FUNCTION float getDistance(const Kokkos::View<const FloatPoint
 
   float sumDistance = 0.0;
   Kokkos::DefaultHostExecutionSpace hostSpace;
-  auto hA = Kokkos::create_mirror_view_and_copy(hostSpace, a);
-  auto hB = Kokkos::create_mirror_view_and_copy(hostSpace, b);
+
+  auto aPlusbDistance  = Kokkos::View<float*, Kokkos::DefaultExecutionSpace>("aPlusbDistance", numInsts);
+  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int i) {
+    const FloatPoint& aPoint = a[i];
+    const FloatPoint& bPoint = b[i];
+    auto aDistance = (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
+    auto bDistance = (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
+    aPlusbDistance[i] = aDistance + bDistance;
+  });
+
+  auto haPlusbDistance = Kokkos::create_mirror_view_and_copy(hostSpace, aPlusbDistance);
   for(int i = 0; i<numInsts; ++i) {
-    const FloatPoint& aPoint = hA[i];
-    const FloatPoint& bPoint = hB[i];
-    sumDistance += (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
-    sumDistance += (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
+    sumDistance += haPlusbDistance[i];
   }
 
   return std::sqrt(sumDistance / (2.0 * numInsts));
