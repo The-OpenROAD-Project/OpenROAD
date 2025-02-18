@@ -395,6 +395,23 @@ report_floating_nets
     [-verbose]
 ```
 
+### Report Overdriven Nets
+
+The `report_overdriven_nets` command reports nets with connected by multiple drivers.
+
+```tcl
+report_overdriven_nets
+    [-include_parallel_driven]
+    [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-include_parallel_driven` | Include nets that are driven by multiple parallel drivers. |
+| `-verbose` | Print the net names. |
+
 ### Eliminate Dead Logic
 
 The `eliminate_dead_logic` command eliminates dead logic, i.e. it removes standard cell instances which can be removed without affecting the function of the design.

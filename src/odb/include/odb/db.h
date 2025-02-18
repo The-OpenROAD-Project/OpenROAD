@@ -504,14 +504,6 @@ class dbDatabase : public dbObject
   static dbDatabase* duplicate(dbDatabase* db);
 
   ///
-  /// diff the two databases
-  /// Returns true if differences were found.
-  ///
-  static bool diff(dbDatabase* db0,
-                   dbDatabase* db1,
-                   FILE* file,
-                   int indent_per_level);
-  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint oid);
@@ -1755,15 +1747,6 @@ class dbBlock : public dbObject
   /// Delete the bterm from the block.
   ///
   static dbSet<dbBlock>::iterator destroy(dbSet<dbBlock>::iterator& itr);
-
-  ///
-  /// Show the netlist differences of these blocks
-  /// Returns true if differences were found.
-  ///
-  static bool differences(dbBlock* block1,
-                          dbBlock* block2,
-                          FILE* out,
-                          int indent_per_level = 4);
 
   //
   // For debugging only.  Print block content to an ostream.

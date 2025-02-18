@@ -169,44 +169,6 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
   return true;
 }
 
-void _dbTechNonDefaultRule::differences(dbDiff& diff,
-                                        const char* field,
-                                        const _dbTechNonDefaultRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._hard_spacing);
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD(_name);
-  DIFF_VECTOR(_layer_rules);
-  DIFF_VECTOR(_vias);
-  DIFF_VECTOR(_samenet_rules);
-  DIFF_MATRIX(_samenet_matrix);
-  DIFF_VECTOR(_use_vias);
-  DIFF_VECTOR(_use_rules);
-  DIFF_VECTOR(_cut_layers);
-  DIFF_VECTOR(_min_cuts);
-  DIFF_END
-}
-
-void _dbTechNonDefaultRule::out(dbDiff& diff,
-                                char side,
-                                const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._hard_spacing);
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_VECTOR(_layer_rules);
-  DIFF_OUT_VECTOR(_vias);
-  DIFF_OUT_VECTOR(_samenet_rules);
-  DIFF_OUT_MATRIX(_samenet_matrix);
-  DIFF_OUT_VECTOR(_use_vias);
-  DIFF_OUT_VECTOR(_use_rules);
-  DIFF_OUT_VECTOR(_cut_layers);
-  DIFF_OUT_VECTOR(_min_cuts);
-  DIFF_END
-}
-
 _dbTech* _dbTechNonDefaultRule::getTech()
 {
 #if 0  // dead code generates warnings -cherry
