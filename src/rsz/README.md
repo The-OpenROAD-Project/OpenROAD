@@ -488,7 +488,7 @@ reset_opt_config
 | `-sizing_area_limit` | Remove area restriction during sizing. |
 | `-sizing_leakage_limit` | Remove leakage power restriction during sizing. |
 
-### Finding Equivalent Cellws
+### Finding Equivalent Cells
 
 The `get_equiv_cells` command finds all functionally equivalent library cells for a given library cell with relative area and leakage power details.
 
@@ -514,7 +514,7 @@ read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
 
-set_dont_use {CLKBUF_* AOI211_X1 OAI211_X1}
+set_dont_use {CLKBUFi_* AOI211_X1 OAI211_X1}
 
 buffer_ports
 repair_design -max_wire_length 100
