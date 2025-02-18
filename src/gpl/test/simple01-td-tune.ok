@@ -92,21 +92,19 @@
 [INFO GPL-0107] Timing-driven: repair_design delta area: -63.308 um^2 (-11.44%)
 [INFO GPL-0108] Timing-driven: new target density: 0.63363075
 [NesterovSolve] Iter:  290 overflow: 0.303 HPWL: 2700826
-[NesterovSolve] Iter:  300 overflow: 0.274 HPWL: 2619017
-[NesterovSolve] Iter:  310 overflow: 0.245 HPWL: 2628753
-[NesterovSolve] Iter:  320 overflow: 0.211 HPWL: 2671351
+[NesterovSolve] Iter:  300 overflow: 0.274 HPWL: 2619012
+[NesterovSolve] Iter:  310 overflow: 0.245 HPWL: 2628755
+[NesterovSolve] Iter:  320 overflow: 0.211 HPWL: 2671344
 [INFO GPL-0100] Timing-driven iteration 7/7, virtual: false.
 [INFO GPL-0101] Iter: 325, overflow: 0.192, keep rsz at: 0.3
 [INFO GPL-0106] Timing-driven: worst slack 1.39e-09
 [INFO GPL-0103] Timing-driven: weighted 34 nets.
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
 [INFO GPL-0108] Timing-driven: new target density: 0.63363075
-[NesterovSolve] Iter:  330 overflow: 0.174 HPWL: 2692696
-[NesterovSolve] Iter:  340 overflow: 0.143 HPWL: 2717242
-[NesterovSolve] Iter:  350 overflow: 0.128 HPWL: 2745702
-[NesterovSolve] Iter:  360 overflow: 0.105 HPWL: 2773023
-[NesterovSolve] Finished with Overflow: 0.099006
+[NesterovSolve] Iter:  330 overflow: 0.174 HPWL: 2692678
+[NesterovSolve] Iter:  340 overflow: 0.143 HPWL: 2717223
+[NesterovSolve] Iter:  350 overflow: 0.128 HPWL: 2745668
+[NesterovSolve] Iter:  360 overflow: 0.105 HPWL: 2773371
+[NesterovSolve] Finished with Overflow: 0.098344
 worst slack 1.39
-Differences found at line 62.
-COMPONENTS 287 ;
-COMPONENTS 286 ;
+No differences found.

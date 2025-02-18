@@ -6,7 +6,7 @@ module hi_fanout (clk1);
     .Z(net10));
  BUF_X2 fanout8 (.A(net10),
     .Z(net9));
- BUF_X1 fanout7 (.A(net0),
+ BUF_X2 fanout7 (.A(net0),
     .Z(net8));
  BUF_X2 fanout6 (.A(net8),
     .Z(net7));
