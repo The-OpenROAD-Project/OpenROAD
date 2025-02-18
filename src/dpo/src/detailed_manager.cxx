@@ -983,11 +983,11 @@ bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
         blockages_[r].end(),
         Blockage(position, position, 0, 0),
         [](const Blockage& block, const Blockage& target) {
-          return block.getPaddedXMax() < target.getPaddedXMin();
+          return block.getXMax() < target.getXMin();
         });
 
-    if (it != blockages_[r].end() && position >= it->getPaddedXMin()
-        && position <= it->getPaddedXMax()) {
+    if (it != blockages_[r].end() && position >= it->getXMin()
+        && position <= it->getXMax()) {
       return true;
     }
   }
