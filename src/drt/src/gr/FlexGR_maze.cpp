@@ -598,6 +598,82 @@ void FlexGRWorker::routeNet_prep(
   }
 }
 
+
+// Add by zhiang 
+void FlexGRWorker::routeNet_checkNet(grNet* net)
+{
+  // Make sure all the pinGCellNodes are visited
+  // Check all the pinGCellNodes in the net
+  std::map<FlexMazeIdx, bool> pinGCellNodesVisited;
+  for (auto pinGCellNode : net->getPinGCellNodes()) {
+    auto loc = pinGCellNode->getLoc();
+    auto lNum = pinGCellNode->getLayerNum();
+    FlexMazeIdx mi;
+    gridGraph_.getMazeIdx(loc, lNum, mi);
+    std::cout << "pinGCellNode: x = " << mi.x() << ", y = " << mi.y() << ", z = " << mi.z() << "\n";
+    pinGCellNodesVisited[mi] = false;
+  }
+
+
+  // Start traversing the net
+  auto root = net->getRoot();
+  auto ripin2GCellNode = net->getPinGCellNodePairs();
+  std::map<FlexMazeIdx, FlexMazeIdx> pin2GCellNode;
+  for (auto& [pinNode, gcellNode] : ripin2GCellNode) {
+    auto pinLoc = pinNode->getLoc();
+    auto pinLNum = pinNode->getLayerNum();
+    FlexMazeIdx pinMi;
+    pinMi.set(pinLoc.x(), pinLoc.y(), pinLNum);
+    
+    auto loc = gcellNode->getLoc();
+    auto lNum = gcellNode->getLayerNum();
+    FlexMazeIdx mi;
+    gridGraph_.getMazeIdx(loc, lNum, mi);
+    pin2GCellNode[pinMi] = mi;
+  }
+  
+
+  std::queue<grNode*> nodeQ;  
+  nodeQ.push(root);
+  while (!nodeQ.empty()) {
+    auto node = nodeQ.front();
+    nodeQ.pop();
+
+    // Check if the node is a pinGCellNode
+    if (node->getType() == frNodeTypeEnum::frcPin || node->getType() == frNodeTypeEnum::frcBoundaryPin) {
+      auto loc = node->getLoc();
+      auto lNum = node->getLayerNum();
+      FlexMazeIdx pinMi;
+      pinMi.set(loc.x(), loc.y(), lNum);
+      auto mi = pin2GCellNode[pinMi];
+      if (pinGCellNodesVisited.find(mi) != pinGCellNodesVisited.end()) {
+        pinGCellNodesVisited[mi] = true;
+      } else {
+        std::cout << "Error: pinGCellNode not found in the net : ";
+        std::cout << "x = " << mi.x() << ", y = " << mi.y() << ", z = " << mi.z() << "\n"; 
+        exit(1);
+      }
+    }
+
+    for (auto child : node->getChildren()) {
+      nodeQ.push(child);
+    }
+  }
+
+  
+  for (auto& [mi, visited] : pinGCellNodesVisited) {
+    if (!visited) {
+      int x = mi.x();
+      int y = mi.y();
+      int z = mi.z();
+      std::cout << "Error :  x = " << x << ", y = " << y << ", z = " << z << " Error: pinGCellNode not visited\n";
+      routeNet_printNet(net);      
+      exit(1);
+    }
+  }
+}
+
+
 void FlexGRWorker::routeNet_printNet(grNet* net)
 {
   auto root = net->getRoot();
@@ -638,8 +714,13 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
       std::cout << "at ";
       Point loc = child->getLoc();
       frLayerNum lNum = child->getLayerNum();
-      std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum
-                << std::endl;
+      std::cout << "(" << loc.x() << ", " << loc.y() << ") on layerNum " << lNum;
+      if (child->getType() == frNodeTypeEnum::frcSteiner) {
+        FlexMazeIdx mi;
+        gridGraph_.getMazeIdx(loc, lNum, mi);
+        std::cout << " mazeIdx (" << mi.x() << ", " << mi.y() << ", " << mi.z() << ")";
+      }
+      std::cout << std::endl;
     }
   }
 }
@@ -812,7 +893,272 @@ grNode* FlexGRWorker::routeNet_postAstarUpdate(
   return leaf;
 }
 
+
+
 void FlexGRWorker::routeNet_postAstarWritePath(
+  grNet* net,
+  std::vector<FlexMazeIdx>& points,
+  grNode* leaf,
+  std::map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode)
+{
+  if (points.size() < 2) {  return; }   
+    
+  auto& workerRegionQuery = getWorkerRegionQuery();
+  grNode* child = nullptr;
+  grNode* parent = nullptr;
+  for (int i = 0; i < (int) points.size() - 1; i++) {
+    FlexMazeIdx start, end;
+    if (points[i + 1] < points[i]) {
+      start = points[i + 1];
+      end = points[i];
+    } else {
+      start = points[i];
+      end = points[i + 1];
+    }
+  
+    auto startX = start.x();
+    auto startY = start.y();
+    auto startZ = start.z();
+    auto endX = end.x();
+    auto endY = end.y();
+    auto endZ = end.z();
+
+    bool needGenParent = false;
+    // destination must already have existing
+    if (i == 0) {  child = leaf; }
+
+    // need to check whether source node already exist
+    // if not, need to create new node (and break existing pathSeg if needed)
+    if (i == (int) points.size() - 2) {
+      if (mazeIdx2endPointNode.find(points.back()) == mazeIdx2endPointNode.end()) {
+        needGenParent = true;
+      } else {
+        needGenParent = false;
+        parent = mazeIdx2endPointNode[points.back()];
+      }
+      std::cout << "Need Gen Parent: " << needGenParent << std::endl;
+    }
+
+  
+    // if need to genParent, need to break pathSeg in case the source is not a
+    // pin (i.e., branch from pathSeg)
+    if (needGenParent && i == (int) points.size() - 2) {
+      Point srcLoc;
+      gridGraph_.getPoint(points.back().x(), points.back().y(), srcLoc);
+      frLayerNum srcLNum = (points.back().z() + 1) * 2;
+      Rect srcBox(srcLoc, srcLoc);
+      std::vector<grConnFig*> result;
+      workerRegionQuery.query(srcBox, srcLNum, result);
+      for (auto rptr : result) {
+        if (rptr->typeId() == grcPathSeg) {
+          auto cptr = static_cast<grPathSeg*>(rptr);
+          if (cptr->hasGrNet() && cptr->getGrNet() == net) {
+            parent = routeNet_postAstarWritePath_splitPathSeg(
+              cptr->getGrChild(), cptr->getGrParent(), srcLoc);
+            mazeIdx2endPointNode[points.back()] = parent;
+            break;
+          }
+        }
+      }
+    }
+
+    // create parent node if no existing done
+    if (parent == nullptr) {
+      // Check if the parent node already exists
+      if (mazeIdx2endPointNode.find(points[i + 1]) != mazeIdx2endPointNode.end()) {
+        parent = mazeIdx2endPointNode[points[i + 1]];
+      } else {
+        // create parent node
+        Point parentLoc;
+        frLayerNum parentLNum = (points[i + 1].z() + 1) * 2;
+        gridGraph_.getPoint(points[i + 1].x(), points[i + 1].y(), parentLoc);
+
+        auto uParent = std::make_unique<grNode>();
+        parent = uParent.get();
+        parent->addToNet(net);
+        parent->setLoc(parentLoc);
+        parent->setLayerNum(parentLNum);
+        parent->setType(frNodeTypeEnum::frcSteiner);
+
+        net->addNode(uParent);
+        mazeIdx2endPointNode[points[i + 1]] = parent;
+      }
+    }
+
+      
+    // child and parent are all set
+    if (startX != endX && startY == endY && startZ == endZ) {
+      // horz pathSeg
+      Point startLoc, endLoc;
+      frLayerNum lNum = gridGraph_.getLayerNum(startZ);
+      gridGraph_.getPoint(startX, startY, startLoc);
+      gridGraph_.getPoint(endX, endY, endLoc);
+      auto uPathSeg = std::make_unique<grPathSeg>();
+      auto pathSeg = uPathSeg.get();
+      pathSeg->setPoints(startLoc, endLoc);
+      pathSeg->setLayerNum(lNum);
+      pathSeg->addToNet(net);
+
+      // update connectivity
+      pathSeg->setParent(parent);
+      pathSeg->setChild(child);
+      child->setConnFig(pathSeg);
+      child->setParent(parent);
+      parent->addChild(child);
+
+      // update rq
+      workerRegionQuery.add(pathSeg);
+
+      // update ownership
+      std::unique_ptr<grConnFig> uConnFig(std::move(uPathSeg));
+      net->addRouteConnFig(uConnFig);
+
+    } else if (startX == endX && startY != endY && startZ == endZ) {
+      // vert pathSeg
+      Point startLoc, endLoc;
+      frLayerNum lNum = gridGraph_.getLayerNum(startZ);
+      gridGraph_.getPoint(startX, startY, startLoc);
+      gridGraph_.getPoint(endX, endY, endLoc);
+      auto uPathSeg = std::make_unique<grPathSeg>();
+      auto pathSeg = uPathSeg.get();
+      pathSeg->setPoints(startLoc, endLoc);
+      pathSeg->setLayerNum(lNum);
+      pathSeg->addToNet(net);
+
+      // update connectivity
+      pathSeg->setParent(parent);
+      pathSeg->setChild(child);
+      child->setConnFig(pathSeg);
+      child->setParent(parent);
+      parent->addChild(child);
+
+      // update rq
+      workerRegionQuery.add(pathSeg);
+
+      // update ownership
+      std::unique_ptr<grConnFig> uConnFig(std::move(uPathSeg));
+      net->addRouteConnFig(uConnFig);
+
+    } else if (startX == endX && startY == endY && startZ != endZ) {
+      // via(s)
+      bool isChildBP = (startZ == points[i].z());
+      // currZ is the bottom enclosure layer
+      if (isChildBP) {
+        // currZ is child node idx and parent idx is currZ + 1
+        for (auto currZ = startZ; currZ < endZ; currZ++) {
+          Point loc;
+          gridGraph_.getPoint(startX, startY, loc);
+          grNode* tmpParent = nullptr;
+          if (currZ == endZ - 1) {
+            tmpParent = parent;
+          } else {
+            // create temporary parent node
+            auto uNode = std::make_unique<grNode>();
+            tmpParent = uNode.get();
+            tmpParent->addToNet(net);
+            tmpParent->setLoc(loc);
+            tmpParent->setLayerNum(((currZ + 1) + 1) * 2);
+            tmpParent->setType(frNodeTypeEnum::frcSteiner);
+
+            net->addNode(uNode);
+
+            // add to endPoint map
+            mazeIdx2endPointNode[FlexMazeIdx(startX, startY, currZ + 1)]
+                = tmpParent;
+          }
+          // create via
+          auto uVia = std::make_unique<grVia>();
+          auto via = uVia.get();
+          via->setChild(child);
+          via->setParent(tmpParent);
+          via->addToNet(net);
+          via->setOrigin(loc);
+          via->setViaDef(getDesign()
+                            ->getTech()
+                            ->getLayer((currZ + 1) * 2 + 1)
+                            ->getDefaultViaDef());
+
+          // update connectivity
+          child->setConnFig(via);
+          child->setParent(tmpParent);
+          tmpParent->addChild(child);
+
+          // update rq
+          workerRegionQuery.add(via);
+
+          // update ownership
+          std::unique_ptr<grConnFig> uConnFig(std::move(uVia));
+          net->addRouteConnFig(uConnFig);
+
+          child = tmpParent;
+        }
+      } else {
+        // currZ is child idx and parent idx is currZ - 1
+        for (auto currZ = endZ; currZ > startZ; currZ--) {
+          Point loc;
+          gridGraph_.getPoint(startX, startY, loc);
+          grNode* tmpParent = nullptr;
+          if (currZ == startZ + 1) {
+            tmpParent = parent;
+          } else {
+            // create temporary parent node
+            auto uNode = std::make_unique<grNode>();
+            tmpParent = uNode.get();
+            tmpParent->addToNet(net);
+            tmpParent->setLoc(loc);
+            tmpParent->setLayerNum(((currZ - 1) + 1) * 2);
+            tmpParent->setType(frNodeTypeEnum::frcSteiner);
+
+            net->addNode(uNode);
+
+            // add to endPoint map
+            mazeIdx2endPointNode[FlexMazeIdx(startX, startY, currZ - 1)]
+                = tmpParent;
+          }
+          // create via
+          auto uVia = std::make_unique<grVia>();
+          auto via = uVia.get();
+          via->setChild(child);
+          via->setParent(tmpParent);
+          via->addToNet(net);
+          via->setOrigin(loc);
+          via->setViaDef(getDesign()
+                            ->getTech()
+                            ->getLayer(currZ * 2 + 1)
+                            ->getDefaultViaDef());
+
+          // update connectivty
+          child->setConnFig(via);
+          child->setParent(tmpParent);
+          tmpParent->addChild(child);
+
+          // update rq
+          workerRegionQuery.add(via);
+
+          // update ownership
+          std::unique_ptr<grConnFig> uConnFig(std::move(uVia));
+          net->addRouteConnFig(uConnFig);
+
+          child = tmpParent;
+        }
+      }
+    } else if (startX == endX && startY == endY && startZ == endZ) {
+      std::cout << "Warning: zero-length path in routeNet_postAstarWritePath\n";
+    } else {
+      std::cout << "Error: non-colinear path in routeNet_postAstarWritePath\n";
+    }
+
+    // set child to parent and parent to null for next iteration
+    child = parent;
+    parent = nullptr;
+  }
+}
+
+
+
+
+/*
+void FlexGRWorker::routeNet_postAstarWritePath_old(
     grNet* net,
     std::vector<FlexMazeIdx>& points,
     grNode* leaf,
@@ -1064,6 +1410,8 @@ void FlexGRWorker::routeNet_postAstarWritePath(
     parent = nullptr;
   }
 }
+*/
+
 
 grNode* FlexGRWorker::routeNet_postAstarWritePath_splitPathSeg(
     grNode* child,

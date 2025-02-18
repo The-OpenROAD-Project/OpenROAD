@@ -47,7 +47,7 @@ using utl::ThreadException;
 
 bool overlap(const Rect &r1, const Rect &r2)
 {
-  return !(r1.xMax() <= r2.xMin() || r1.xMin() >= r2.xMax() || r1.yMax() <= r2.yMin() || r1.yMin() >= r2.yMax());
+  return !(r1.xMax() < r2.xMin() || r1.xMin() > r2.xMax() || r1.yMax() < r2.yMin() || r1.yMin() > r2.yMax());
 }
 
 
@@ -103,10 +103,12 @@ void FlexGR::batchGenerationMIS(
             break;
           }
         }
-        if (!conflict) {
-          batches[batchId].push_back(net);
-          found = true;
-          break;
+        if (0) {
+          if (!conflict) {
+            batches[batchId].push_back(net);
+            found = true;
+            break;
+          }
         }
       }
       if (!found) {
@@ -127,6 +129,23 @@ void FlexGR::batchGenerationMIS(
   int cpuNets = 0;
   for (int i = 0; i < batches.size(); i++) {
     if (batches[i].size() >= validBatchThreshold_) {
+      //validBatchIds.push_back(i);
+      /*
+      for (auto net : batches[i]) {
+        auto box = net->getRouteBBox();
+        // if (box.xMin() == box.xMax() || box.yMin() == box.yMax()) {
+        //LLX = 74, LLY = 57, URX = 83, URY = 72
+        if (box.xMin() == 74 && box.yMin() == 57 && box.xMax() == 83 && box.yMax() == 72) {
+          //net->setCPUFlag(true);
+          net->setCPUFlag(false);
+          validBatchIds.push_back(i);
+        } 
+        // else {
+        //  net->setCPUFlag(false);
+        //  validBatchIds.push_back(i);
+        //}
+      }
+      */
       validBatchIds.push_back(i);
       for (auto net : batches[i]) {
         net->setCPUFlag(false);
@@ -305,7 +324,7 @@ void FlexGR::searchRepair_update(int iter,
     logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
 
     if (is2DRouting == true) {
-      std::cout << "This is for 2D routing" << std::endl;
+      std::cout << "This is for 2D routing" << std::endl;  
       // Route the nets in the batches
       for (auto& batchId : validBatchIds) {
         auto& curBatch = batches[batchId];
@@ -319,7 +338,7 @@ void FlexGR::searchRepair_update(int iter,
         for (int i = 0; i < (int) uworkers.size(); i++) {
           uworkers[i]->initGridGraph_back2CMap();
         }
-        
+
         h_costMap = uworkers[0]->getCMap()->getBits();
         GPUAccelerated2DMazeRoute(
           uworkers,

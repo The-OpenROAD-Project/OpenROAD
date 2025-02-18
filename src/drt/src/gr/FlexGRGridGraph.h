@@ -641,10 +641,24 @@ class FlexGRGridGraph
     golden_parent_z_[idx] = zP;
   }
 
-  void traceBackParent(FlexMazeIdx& mi) const
+  frDirEnum traceBackParent(FlexMazeIdx& mi, FlexMazeIdx& parent_mi) const
   {
     int idx = getIdx(mi.x(), mi.y(), mi.z());
-    mi.set(golden_parent_x_[idx], golden_parent_y_[idx], golden_parent_z_[idx]);
+    parent_mi.set(golden_parent_x_[idx], golden_parent_y_[idx], golden_parent_z_[idx]);
+  
+    if (mi.x() == parent_mi.x() && mi.y() == parent_mi.y() && mi.z() == parent_mi.z()) {
+      return frDirEnum::UNKNOWN;
+    }
+
+    if (mi.x() == parent_mi.x() && mi.y() == parent_mi.y()) {
+      return frDirEnum::U;
+    } else if (mi.x() == parent_mi.x() && mi.z() == parent_mi.z()) {
+      return frDirEnum::N;
+    } else if (mi.y() == parent_mi.y() && mi.z() == parent_mi.z()) {
+      return frDirEnum::E;
+    }
+    
+    return frDirEnum::UNKNOWN;  
   }
 
  private:

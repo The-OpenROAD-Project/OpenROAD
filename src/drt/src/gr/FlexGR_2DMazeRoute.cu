@@ -613,7 +613,7 @@ void runBiBellmanFord_2D__device(
     g.sync();
 
 
-    /* 
+    /*
     if (tid == 0) {
       printf("iter = %d, maxIters = %d\n", iter, maxIters);
       for (int id = 0; id < total; id++) {
@@ -629,7 +629,8 @@ void runBiBellmanFord_2D__device(
           printf("summary id = %d, x = %d, y = %d,  forward_cost = %d\n", idx, local_x, local_y, nd.forward_g_cost);
         }
       }
-    }*/ 
+    }
+    */
  
     ////////////////////////////////////////////////////////////////////////////
     // (2) Commit updated costs (double-buffering technique)
@@ -664,25 +665,77 @@ void runBiBellmanFord_2D__device(
     // (3) Check if forward and backward fronts meet
     ////////////////////////////////////////////////////////////////////////////
     for (int localIdx = tid; localIdx < total; localIdx += stride) {
-      int local_x = localIdx % xDimTemp + LLX;
-      int local_y = localIdx / xDimTemp + LLY;
-      int idx = locToIdx_2D(local_x, local_y, xDim);
+      int x = localIdx % xDimTemp + LLX;
+      int y = localIdx / xDimTemp + LLY;
+      int idx = locToIdx_2D(x, y, xDim);
       NodeData2D &nd = nodes[idx];
+      /*
       // If either side is "unreached," skip
       if (nd.forward_g_cost_prev == 0xFFFFFFFF || 
           nd.backward_g_cost_prev == 0xFFFFFFFF)
       {
         continue;
       }
+      */
 
       // Check the visited flag
-      bool localForwardMin = true;
-      bool localBackwardMin = true;
+      // bool localForwardMin = true;
+      // bool localBackwardMin = true;
+      
+      
+      if (!nd.flags.forward_visited_flag_prev) {
+        bool localForwardMin = (nd.forward_g_cost_prev != 0xFFFFFFFF);
+        for (int d = 0; d < 4; d++) {
+          int nx = x + d_dX[d];
+          int ny = y + d_dY[d];
+          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
+            continue;  // out of bounds
+          }
+          
+          int nbrIdx = locToIdx_2D(nx, ny, xDim);
+          NodeData2D &nbr = nodes[nbrIdx];
+          
+          // Check forward minimum
+          if (!nbr.flags.forward_visited_flag_prev && 
+              (nbr.forward_g_cost_prev + nbr.forward_h_cost < nd.forward_g_cost_prev + nd.forward_h_cost)) {
+              localForwardMin = false;
+          }
+        }
+  
+        if (localForwardMin) {
+          nd.flags.forward_visited_flag = true;
+        }
+      }
 
-      int2 xy = idxToLoc_2D(idx, xDim);
-      int  x  = xy.x;
-      int  y  = xy.y;
 
+      if (!nd.flags.backward_visited_flag_prev) {
+        bool localBackwardMin = (nd.backward_g_cost_prev != 0xFFFFFFFF);
+        for (int d = 0; d < 4; d++) {
+          int nx = x + d_dX[d];
+          int ny = y + d_dY[d];
+          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
+            continue;  // out of bounds
+          }
+          
+          int nbrIdx = locToIdx_2D(nx, ny, xDim);
+          NodeData2D &nbr = nodes[nbrIdx];
+          
+          // Check forward minimum
+          if (!nbr.flags.backward_visited_flag_prev && 
+              (nbr.backward_g_cost_prev + nbr.backward_h_cost < nd.backward_g_cost_prev + nd.backward_h_cost)) {
+              localBackwardMin = false;
+          }
+        }
+  
+        if (localBackwardMin) {
+          nd.flags.backward_visited_flag = true;
+        }
+      }
+    
+    
+      /*
+      bool localForwardMin = (nd.forward_g_cost_prev != 0xFFFFFFFF);
+      bool localBackwardMin = (nd.backward_g_cost_prev != 0xFFFFFFFF);
       for (int d = 0; d < 4; d++) {
         int nx = x + d_dX[d];
         int ny = y + d_dY[d];
@@ -691,31 +744,42 @@ void runBiBellmanFord_2D__device(
         }
         
         int nbrIdx = locToIdx_2D(nx, ny, xDim);
-        // check forward case
-        if ((nodes[nbrIdx].flags.forward_visited_flag_prev == false) && 
-            (nodes[nbrIdx].forward_g_cost_prev + nodes[nbrIdx].forward_h_cost < nd.forward_g_cost_prev + nd.forward_h_cost_prev)) {
-          localForwardMin = false;
-        } 
-
-        if ((nodes[nbrIdx].flags.backward_visited_flag_prev == false) &&
-            (nodes[nbrIdx].backward_g_cost_prev + nodes[nbrIdx].backward_h_cost < nd.backward_g_cost_prev + nd.backward_h_cost_prev)) {
-          localBackwardMin = false;
-        }      
+        NodeData2D &nbr = nodes[nbrIdx];
+        
+        // Check forward minimum
+        if (!nbr.flags.forward_visited_flag_prev && 
+            (nbr.forward_g_cost_prev + nbr.forward_h_cost < nd.forward_g_cost_prev + nd.forward_h_cost)) {
+            localForwardMin = false;
+        }
+    
+        // Check backward minimum
+        if (!nbr.flags.backward_visited_flag_prev &&
+            (nbr.backward_g_cost_prev + nbr.backward_h_cost < nd.backward_g_cost_prev + nd.backward_h_cost)) {
+            localBackwardMin = false;
+        }
       }
+      */
 
-      if (localForwardMin == true) {
+      /*
+      if (localForwardMin) {
         nd.flags.forward_visited_flag = true;
       }
 
-      if (localBackwardMin == true) {
-        nd.flags.backward_visited_flag = true;
-      }
+      if (localBackwardMin) {
+        nd.flags.backward_visited_flag = true;  
+      } */
 
+      /*
+      if (localForwardMin && localBackwardMin) {
+        nd.flags.forward_visited_flag = true;
+        nd.flags.backward_visited_flag = true;
+      }*/
+      
       /*
       for (int d = 0; d < 4; d++) {
         int nx = x + d_dX[d];
         int ny = y + d_dY[d];
-        if (nx < LLX || nx > URY || ny < LLY || ny > URY) {
+        if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
           continue;
         }
 
@@ -727,6 +791,7 @@ void runBiBellmanFord_2D__device(
         }
       }
       */
+
     } // end “for each node”
     
     g.sync();
@@ -741,6 +806,21 @@ void runBiBellmanFord_2D__device(
         localFrontsMeet = true;
         // printf("localFrontsMeet = %d", localFrontsMeet);
       }
+
+
+      /*
+      // Check neighbors for meeting fronts.
+      if (nd.flags.forward_visited_flag || nd.flags.backward_visited_flag) {
+        for (int d = 0; d < 4; d++) {
+          int nx = local_x + d_dX[d];
+          int ny = local_y + d_dY[d];
+          if (nx < LLX || nx > URX || ny < LLY || ny > URY) { continue; }
+          int nbrIdx = locToIdx_2D(nx, ny, xDim);
+          NodeData2D &nbr = nodes[nbrIdx];
+          if (nd.flags.forward_visited_flag && nbr.flags.backward_visited_flag) { localFrontsMeet = true; }
+          if (nd.flags.backward_visited_flag && nbr.flags.forward_visited_flag) { localFrontsMeet = true; }
+        }
+      } */
     }
     
     g.sync();
@@ -753,16 +833,15 @@ void runBiBellmanFord_2D__device(
         int local_y = id / xDimTemp + LLY;
         int idx = locToIdx_2D(local_x, local_y, xDim);
         NodeData2D &nd = nodes[idx];
-        if (nd.flags.backward_update_flag == true) {
-          printf("id = %d, backward_cost = %d", idx, nd.backward_g_cost);
+        if (nd.flags.backward_visited_flag == true) {
+          printf("backward_visited_flag id = %d, backward_cost = %d", idx, nd.backward_g_cost);
         }
 
-        if (nd.flags.forward_update_flag == true) {
-          printf("id = %d, forward_cost = %d", idx, nd.forward_g_cost);
+        if (nd.flags.forward_visited_flag == true) {
+          printf("forward_visited_flag id = %d, forward_cost = %d", idx, nd.forward_g_cost);
         }
       }
-    }
-    */
+    } */
  
     if (localFrontsMeet) {
       atomicExch(d_doneFlag, 1);
@@ -783,7 +862,9 @@ void runBiBellmanFord_2D__device(
   } // end for (iter)
 
   if (tid == 0) {
-    *d_doneFlag = 0x7FFFFFFF;
+    if (*d_doneFlag == 1) {
+      *d_doneFlag = 0x7FFFFFFF;
+    }
   }
   g.sync();
   return;
@@ -808,10 +889,15 @@ void findMeetIdAndTraceBackCost2D__device(
     int local_x = localIdx % xDimTemp + LLX;
     int local_y = localIdx / xDimTemp + LLY;
     int idx = locToIdx_2D(local_x, local_y, xDim);
-    if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag) {
+    if (nodes[idx].forward_g_cost != INF32 && nodes[idx].backward_g_cost != INF32) {
       int32_t cost = nodes[idx].forward_g_cost + nodes[idx].backward_g_cost;
       atomicMin(d_doneFlag, cost);      
     }
+    /*
+    if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag) {
+      int32_t cost = nodes[idx].forward_g_cost + nodes[idx].backward_g_cost;
+      atomicMin(d_doneFlag, cost);      
+    } */
   }
 
   if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
@@ -829,11 +915,33 @@ void findMeetIdAndTraceBackId2D__device(
 { 
   int xDimTemp = URX - LLX + 1;
   int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
+  /*
   for (int localIdx = threadIdx.x; localIdx < numNodes; localIdx += blockDim.x) {
     int local_x = localIdx % xDimTemp + LLX;
     int local_y = localIdx / xDimTemp + LLY;
     int idx = locToIdx_2D(local_x, local_y, xDim);
     if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.backward_visited_flag && 
+        (nodes[idx].forward_g_cost + nodes[idx].backward_g_cost == *d_doneFlag)) {
+      atomicMin(d_meetId, idx);      
+    }
+  }
+
+  if (*d_meetId == 0x7FFFFFFF) {
+    for (int localIdx = threadIdx.x; localIdx < numNodes; localIdx += blockDim.x) {
+      int local_x = localIdx % xDimTemp + LLX;
+      int local_y = localIdx / xDimTemp + LLY;
+      int idx = locToIdx_2D(local_x, local_y, xDim);
+      if (nodes[idx].flags.forward_visited_flag && nodes[idx].flags.dst_flag) {
+        atomicMin(d_meetId, idx);      
+      }
+    }
+  }*/
+  
+  for (int localIdx = threadIdx.x; localIdx < numNodes; localIdx += blockDim.x) {
+    int local_x = localIdx % xDimTemp + LLX;
+    int local_y = localIdx / xDimTemp + LLY;
+    int idx = locToIdx_2D(local_x, local_y, xDim);
+    if ((nodes[idx].forward_g_cost != INF32 && nodes[idx].backward_g_cost != INF32) &&
         (nodes[idx].forward_g_cost + nodes[idx].backward_g_cost == *d_doneFlag)) {
       atomicMin(d_meetId, idx);      
     }
@@ -855,6 +963,8 @@ void forwardTraceBack2D__single_thread__device(
   int curId = *d_meetId;
   int maxIterations = (URX - LLX + 1) * (URY - LLY + 1);
   int iteration = 0;
+  
+  /*
   while (nodes[curId].flags.src_flag == 0 && iteration < maxIterations) {
     uint8_t forwardDirection = nodes[curId].forward_direction;
     nodes[curId].flags.src_flag = 1;
@@ -869,7 +979,29 @@ void forwardTraceBack2D__single_thread__device(
     nodes[curId].golden_parent_y = ny;
     curId = locToIdx_2D(nx, ny, xDim);
     iteration++;
+  }*/
+
+  while (nodes[curId].flags.src_flag == 0 && iteration < maxIterations) {
+    // Ensure forward_direction is valid (e.g., 0 <= forward_direction < 4)
+    uint8_t fwdDir = nodes[curId].forward_direction;
+    
+    // Record the golden parent BEFORE moving on.
+    int2 xy = idxToLoc_2D(curId, xDim);
+    int nx = xy.x + d_dX[fwdDir];
+    int ny = xy.y + d_dY[fwdDir];
+    if (nx < LLX || nx > URX || ny < LLY || ny > URY) break;
+    
+    nodes[curId].golden_parent_x = nx;
+    nodes[curId].golden_parent_y = ny;
+    
+    // Mark this node as processed.
+    nodes[curId].flags.src_flag = 1;
+    
+    // Move to the next node.
+    curId = locToIdx_2D(nx, ny, xDim);
+    iteration++;
   }
+
 
   if (iteration >= maxIterations) {
     printf("Warning: Forward traceback exceeded maximum iterations.\n");
@@ -898,7 +1030,7 @@ void backwardTraceBack2D__single__thread__device(
   int maxIterations = (URX - LLX + 1) * (URY - LLY + 1);
   int iteration = 0;
 
-  while (iteration < maxIterations) {
+  while (nodes[curId].flags.dst_flag == 0 && iteration < maxIterations) {
     int2 xy = idxToLoc_2D(curId, xDim);
     uint8_t backwardDirection = nodes[curId].backward_direction;
     int nx = xy.x + d_dX[backwardDirection];
@@ -906,17 +1038,51 @@ void backwardTraceBack2D__single__thread__device(
     if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
       break;
     }  
+   
+    int nextId = locToIdx_2D(nx, ny, xDim);
+    if (nodes[nextId].golden_parent_x != -1) {
+      printf("Error: Backward traceback meets forward traceback.\n");
+    }    
     
-    curId = locToIdx_2D(nx, ny, xDim);
-    nodes[curId].flags.src_flag = 1;
+    nodes[nextId].flags.src_flag = 1;
+    nodes[nextId].golden_parent_x = xy.x;
+    nodes[nextId].golden_parent_y = xy.y;
+    
+    curId = nextId;
+    iteration++;
+  }
+  
+  nodes[curId].flags.dst_flag = 0; // change the dst flag to 0
+  /*
+  while (iteration < maxIterations) {
+    // Record current position.
+    int2 xy = idxToLoc_2D(curId, xDim);
+    uint8_t bwdDir = nodes[curId].backward_direction;
+    int nx = xy.x + d_dX[bwdDir];
+    int ny = xy.y + d_dY[bwdDir];
+    if (nx < LLX || nx > URX || ny < LLY || ny > URY) break;
+    
+    // Set the golden parent pointer for the current node before moving.
     nodes[curId].golden_parent_x = xy.x;
     nodes[curId].golden_parent_y = xy.y;
+    // Mark the node as processed.
+    nodes[curId].flags.src_flag = 1;
+    
+    // Check if moving to the next node would conflict with an already set pointer.
+    int nextId = locToIdx_2D(nx, ny, xDim);
+    if (nodes[nextId].golden_parent_x != -1) {
+      break;
+    }
+    
+    curId = nextId;
+    
+    // If we reach a node flagged as destination, clear the flag and stop.
     if (nodes[curId].flags.dst_flag == 1) {
-      nodes[curId].flags.dst_flag = 0; // change the dst flag to 0
+      nodes[curId].flags.dst_flag = 0;
       break;
     }
     iteration++;
-  }
+  } */
 
   if (iteration >= maxIterations) {
     printf("Warning: Backward traceback exceeded maximum iterations.\n");
@@ -1229,6 +1395,9 @@ void batchPathSyncUp(
     auto& net = nets[netId];
     auto& uworker = uworkers[net->getWorkerId()];
     auto& gridGraph = uworker->getGridGraph();
+    auto workerLL = uworkers[net->getWorkerId()]->getRouteGCellIdxLL();
+    int workerLX = workerLL.x();
+    int workerLY = workerLL.y();  
     auto& netBBox = netBBoxVec[netId];
     int LLX = netBBox.xMin;
     int LLY = netBBox.yMin;
@@ -1237,13 +1406,23 @@ void batchPathSyncUp(
     int xDimTemp = URX - LLX + 1;
     int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
     for (int localIdx = 0; localIdx < numNodes; localIdx++) {
-      int x = localIdx % xDimTemp + LLX;
-      int y = localIdx / xDimTemp + LLY;
+      int localX = localIdx % xDimTemp;
+      int localY = localIdx / xDimTemp;
+
+      int x = localX + LLX;
+      int y = localY + LLY;      
       int idx = locToIdx_2D(x, y, xDim);
-      gridGraph.setGoldenParent2D(x, y, nodes[idx].golden_parent_x, nodes[idx].golden_parent_y);
+
+      x -= workerLX;
+      y -= workerLY;
+
+      int parentX = nodes[idx].golden_parent_x - workerLX;
+      int parentY = nodes[idx].golden_parent_y - workerLY;
+
+      gridGraph.setGoldenParent2D(x, y, parentX, parentY);      
       if (nodes[idx].golden_parent_x != -1 || nodes[idx].golden_parent_y != -1) {
-        std::cout << "Net " << netId << " x = " << x << " y = " << y 
-                << "Parent " << nodes[idx].golden_parent_x << " " << nodes[idx].golden_parent_y << std::endl; 
+        std::cout << "Net " << netId << " x = " << x << " y = " << y << " "
+                  << "Parent " << parentX << "  " << parentY << std::endl;
       }
     }    
   }
@@ -1260,7 +1439,7 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   int xDim, int yDim)
 {
   // Only process the first net
-  nets.resize(1);	
+  //nets.resize(1);	
  
   std::cout << "[INFO] GPU accelerated 2D Maze Routing" << std::endl;
   std::cout << "[INFO] Number of nets: " << nets.size() << std::endl;
@@ -1405,17 +1584,40 @@ void FlexGR::GPUAccelerated2DMazeRoute(
 
   cudaCheckError();
 
-  /*
   // cudaDeviceSynchronize();
   // Wait for all nets to finish
   for (int i = 0; i < numNets; i++) {
     cudaStreamSynchronize(netStreams[i]);
   }
-  */
   
   // We need to trace back the routing path on the CPU side
   cudaMemcpy(nodes.data(), d_nodes, numGrids * sizeof(NodeData2D), cudaMemcpyDeviceToHost);
+    
   cudaCheckError();
+
+  int LX = netBBoxVec[0].xMin;
+  int LY = netBBoxVec[0].yMin;
+  int UX = netBBoxVec[0].xMax;
+  int UY = netBBoxVec[0].yMax;
+  if (LX == 74 && LY == 57 && UX == 83 && UY == 72) {
+    for (int id = 0; id < nodes.size(); id++) {
+      int2 xy = idxToLoc_2D(id, xDim);
+      if (xy.x < LX || xy.x > UX || xy.y < LY || xy.y > UY) {
+        continue;
+      }
+      std::cout << "id = " << id << " "
+                << "x = " << xy.x << " y = " << xy.y << " "
+                << "isSrc = " << (nodes[id].flags.src_flag == 1) << " "
+                << "isDst = " << (nodes[id].flags.dst_flag == 1) << " "
+                << "forward_visited_flag = " << (nodes[id].flags.forward_visited_flag == 1) << " "
+                << "backward_visited_flag = " << (nodes[id].flags.backward_visited_flag == 1) << " "
+                << "forward_g_cost = " << nodes[id].forward_g_cost << " "
+                << "backward_g_cost = " << nodes[id].backward_g_cost << " "
+                << "golden_parent_x = " << nodes[id].golden_parent_x << " "
+                << "golden_parent_y = " << nodes[id].golden_parent_y << " "
+                << std::endl;
+    }
+  }
 
   std::cout << "Finish the GPU routing" << std::endl;
 
@@ -1441,8 +1643,6 @@ void FlexGR::GPUAccelerated2DMazeRoute(
   cudaFree(d_netHPWL);
   cudaFree(d_netPtr);
   cudaFree(d_netBBox);
-
-  exit(1);
 }
 
 } // namespace drt

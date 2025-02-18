@@ -59,17 +59,41 @@ bool FlexGRWorker::restorePath(
   // To be updated later
   int maxLength = 10000; // This is should be related to HPWL
   int length = 0;
-  path.emplace_back(mi.x(), mi.y(), mi.z());
+  // path.emplace_back(mi.x(), mi.y(), mi.z());
+  // std::cout << "Dst:  x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << " "
+  //          << "isDst = " << gridGraph_.isDst(mi.x(), mi.y(), mi.z()) << std::endl;
+
+  frDirEnum prevDir = frDirEnum::UNKNOWN;
+  FlexMazeIdx parentMi = mi;
+  frDirEnum currDir = frDirEnum::UNKNOWN;
+
   while (true) {
-    gridGraph_.traceBackParent(mi); // This will be updated the mi
-    // check flag
-    if (mi.x() == -1 || mi.y() == -1 || mi.z() == -1) {
+    currDir = gridGraph_.traceBackParent(mi, parentMi); 
+    if (parentMi.x() == -1 || parentMi.y() == -1 || parentMi.z() == -1) {
       logger_->report("[ERROR] restorePath: traceBackParent failed");
       return false;
     }
-    
-    if (gridGraph_.isSrc(mi.x(), mi.y(), mi.z())) {
+
+    bool flag = gridGraph_.isSrc(mi.x(), mi.y(), mi.z()) || gridGraph_.isDst(mi.x(), mi.y(), mi.z()) 
+      || (prevDir != frDirEnum::UNKNOWN && currDir != prevDir); 
+    if (flag) {
       path.emplace_back(mi.x(), mi.y(), mi.z());
+    }
+
+    prevDir = currDir;
+    mi = parentMi;
+
+    // path.emplace_back(mi.x(), mi.y(), mi.z());      
+    if (gridGraph_.isSrc(mi.x(), mi.y(), mi.z())) {
+      if (path.empty() || !(path.back() == mi)) {
+        path.emplace_back(mi.x(), mi.y(), mi.z());
+      }
+      std::cout << "Exit at src x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << std::endl;
+      // check if the mi is the path
+      // if (path.empty() || !(path.back() == mi)) {
+      //  path.emplace_back(mi.x(), mi.y(), mi.z());
+      // }
+      // path.emplace_back(mi.x(), mi.y(), mi.z());
       break;
     }
 
@@ -118,21 +142,44 @@ bool FlexGRWorker::restoreNet(grNet* net)
 
   std::vector<FlexMazeIdx> path;  // astar must return with more than one idx
 
-  while (!unConnPinGCellNodes.empty()) {
+  std::cout << "Before restorNet" << std::endl;
+  routeNet_printNet(net);
+
+  while (!unConnPinGCellNodes.empty()) {    
     path.clear();
     auto nextPinGCellNode = routeNet_getNextDst(
         ccMazeIdx1, ccMazeIdx2, mazeIdx2unConnPinGCellNode);
-    if (restorePath(connComps, nextPinGCellNode, path, 
-        ccMazeIdx1, ccMazeIdx2, centerPt)) {
+    bool restoreFlag = restorePath(connComps, nextPinGCellNode, path, 
+        ccMazeIdx1, ccMazeIdx2, centerPt);
+    // for test
+    std::cout << "restoreFlag = " << restoreFlag << std::endl;
+    for (auto& vertex : path) {
+      std::cout << "\t x = " << vertex.x() << " y = " << vertex.y() << " z = " << vertex.z() << std::endl;
+    }
+    std::cout << "pathEnd" << std::endl;    
+    if (restoreFlag == true) {
       auto leaf = routeNet_postAstarUpdate(
           path, connComps, unConnPinGCellNodes, mazeIdx2unConnPinGCellNode);
+      std::cout << "finish postAStarUpdate" << std::endl;
       routeNet_postAstarWritePath(net, path, leaf, mazeIdx2endPointNode);
     } else {
       logger_->report("Error: restorePath failed !!!");
-      return false;
+      exit(1);
+      if (gridGraph_.search(connComps,
+                            nextPinGCellNode,
+                            path,
+                            ccMazeIdx1,
+                            ccMazeIdx2,
+                            centerPt)) {
+        auto leaf = routeNet_postAstarUpdate(
+          path, connComps, unConnPinGCellNodes, mazeIdx2unConnPinGCellNode);
+        routeNet_postAstarWritePath(net, path, leaf, mazeIdx2endPointNode);
+      }    
     }
+    //routeNet_printNet(net);
   }
 
+  //routeNet_checkNet(net);
   routeNet_postRouteAddCong(net);
   return true;
 }

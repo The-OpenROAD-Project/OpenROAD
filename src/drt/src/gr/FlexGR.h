@@ -275,7 +275,7 @@ class FlexGR
     float congThresh,
     int xDim, int yDim);
 
-  int validBatchThreshold_ = 50;
+  int validBatchThreshold_ = 0;
   std::vector<grNet*> nets2Ripup_;
 };
 
@@ -546,7 +546,7 @@ class FlexGRWorker
     FlexMazeIdx& ccMazeIdx1,
     FlexMazeIdx& ccMazeIdx2,
     const Point& centerPt);
-
+  void routeNet_checkNet(grNet* net);
 };
 
 
