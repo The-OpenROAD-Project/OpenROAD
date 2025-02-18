@@ -70,6 +70,7 @@ class UniqueInsts
   const std::vector<frInst*>& getUnique() const;
   frInst* getUnique(int idx) const;
   bool hasUnique(frInst* inst) const;
+  void deleteUniqueInst(frInst* inst);
 
   void report() const;
   void setDesign(frDesign* design) { design_ = design; }
@@ -121,8 +122,10 @@ class UniqueInsts
   /**
    * @brief Adds the instance to the unique instances structures,
    * inserting new data if it is actually a new unique instance.
+   *
+   * @returns if this instance if the first of its unique class.
    */
-  void addUniqueInst(frInst* inst);
+  bool addUniqueInst(frInst* inst);
 
   /**
    * @brief Computes all unique instances data structures.
