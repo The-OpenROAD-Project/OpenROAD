@@ -1312,10 +1312,9 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
             continue;
           }
 
-          
           // if both domains have same voltage then isolate
           if (!target_domain
-            || domain->getVoltage() == target_domain->getVoltage()) {
+              || domain->getVoltage() == target_domain->getVoltage()) {
             isolate_connection(
                 iterm, target_iterm, domain, block, logger, network);
             continue;
