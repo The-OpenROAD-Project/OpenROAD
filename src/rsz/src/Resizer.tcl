@@ -868,7 +868,7 @@ proc report_opt_config { args } {
   puts "***********************************"
 }
 
-sta::define_cmd_args "get_equiv_cells" { lib_cell }
+sta::define_cmd_args "get_equiv_cells" { -match_cell_footprint }
 
 proc get_equiv_cells { args } {
   sta::parse_key_args "get_equiv_cells" args keys {} flags {-match_cell_footprint}

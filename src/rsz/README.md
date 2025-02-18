@@ -488,6 +488,22 @@ reset_opt_config
 | `-sizing_area_limit` | Remove area restriction during sizing. |
 | `-sizing_leakage_limit` | Remove leakage power restriction during sizing. |
 
+### Finding Equivalent Cellws
+
+The `get_equiv_cells` command finds all functionally equivalent library cells for a given library cell with relative area and leakage power details.
+
+```tcl
+get_equiv_cells 
+    [-match_cell_footprint]
+    lib_cell
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
+
 ## Example scripts
 
 A typical `resizer` command file (after a design and Liberty libraries have
