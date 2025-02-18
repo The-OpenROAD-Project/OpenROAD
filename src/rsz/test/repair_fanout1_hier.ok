@@ -26,12 +26,12 @@
 [InitialPlace]  Iter: 5 CG residual: 0.00000004 HPWL: 24732
 Placement Analysis
 ---------------------------------
-total displacement        410.9 u
-average displacement       11.4 u
-max displacement           20.1 u
+total displacement        407.0 u
+average displacement       11.3 u
+max displacement           18.7 u
 original HPWL               2.3 u
-legalized HPWL             57.8 u
-delta HPWL                 2367 %
+legalized HPWL             59.2 u
+delta HPWL                 2426 %
 
 max fanout
 
@@ -42,7 +42,7 @@ hi_fanout_inst/drvr/Q                    10     35    -25 (VIOLATED)
 [INFO RSZ-0058] Using max wire length 530um.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 4 buffers in 1 nets.
-[INFO RSZ-0039] Resized 3 instances.
+[INFO RSZ-0039] Resized 4 instances.
 max fanout
 
 Pin                                   Limit Fanout  Slack
