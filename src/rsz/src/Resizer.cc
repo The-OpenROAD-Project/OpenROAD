@@ -246,11 +246,15 @@ void Resizer::initBlock()
       = dbDoubleProperty::find(block_, "sizing_area_limit");
   if (area_prop) {
     sizing_area_limit_ = area_prop->getValue();
+  } else {
+    sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
       = dbDoubleProperty::find(block_, "sizing_leakage_limit");
   if (leakage_prop) {
     sizing_leakage_limit_ = leakage_prop->getValue();
+  } else {
+    sizing_leakage_limit_.reset();
   }
 }
 
@@ -1209,6 +1213,16 @@ void Resizer::resizePreamble()
   findTargetLoads();
 }
 
+// For debugging
+LibertyCellSeq Resizer::getEquivalentCells(LibertyCell* source_cell,
+                                           bool match_cell_footprint)
+{
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         match_cell_footprint);
+  resizePreamble();
+  return getSwappableCells(source_cell);
+}
+
 // Filter equivalent cells based on the following liberty attributes:
 // - Footprint (Optional - Honored if enforced by user): Cells with the
 //   same footprint have the same layout boundary.
@@ -1237,7 +1251,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       return value;
     };
 
-    int64_t source_cell_area = source_cell->area();
+    int64_t source_cell_area = master->getArea();
     std::optional<float> source_cell_leakage;
     if (sizing_leakage_limit_) {
       source_cell_leakage = get_leakage(source_cell);
@@ -1247,6 +1261,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       if (!equiv_cell_master) {
         continue;
       }
+
       if (sizing_area_limit_.has_value() && (source_cell_area != 0)
           && (equiv_cell_master->getArea()
                   / static_cast<double>(source_cell_area)

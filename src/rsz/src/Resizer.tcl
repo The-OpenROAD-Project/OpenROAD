@@ -843,6 +843,16 @@ proc report_opt_config { args } {
   puts "***********************************"
 }
 
+sta::define_cmd_args "get_equiv_cells" { lib_cell }
+
+proc get_equiv_cells { args } {
+  sta::parse_key_args "get_equiv_cells" args keys {} flags {-match_cell_footprint}
+  set match_cell_footprint [info exists flags(-match_cell_footprint)]
+  sta::check_argc_eq1 "get_equiv_cells" $args
+  set lib_cell [sta::get_lib_cells_arg "get_equiv_cells" [lindex $args 0] sta::sta_warn]
+  rsz::get_equiv_cells_cmd $lib_cell $match_cell_footprint
+}
+
 namespace eval rsz {
 # for testing
 proc repair_setup_pin { end_pin } {
