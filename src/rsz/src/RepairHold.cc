@@ -263,14 +263,12 @@ bool RepairHold::repairHold(VertexSeq& ends,
                   "Found {} endpoints with hold violations.",
                   hold_failures.size());
     bool progress = true;
-    if (verbose) {
-      printProgress(0, true, false);
-    }
+    printProgress(0, true, false);
     int pass = 1;
     while (worst_slack < hold_margin && progress && !resizer_->overMaxArea()
            && inserted_buffer_count_ <= max_buffer_count
            && pass <= max_passes) {
-      if (verbose) {
+      if (verbose || pass == 1) {
         printProgress(pass, false, false);
       }
       debugPrint(logger_,
@@ -300,9 +298,7 @@ bool RepairHold::repairHold(VertexSeq& ends,
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }
-    if (verbose) {
-      printProgress(pass, true, true);
-    }
+    printProgress(pass, true, true);
     if (hold_margin == 0.0 && fuzzyLess(worst_slack, 0.0)) {
       logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
     } else if (fuzzyLess(worst_slack, hold_margin)) {

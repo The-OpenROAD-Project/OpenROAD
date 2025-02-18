@@ -173,9 +173,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
-  if (verbose) {
-    printProgress(opto_iteration, false, false, false, num_viols);
-  }
+  printProgress(opto_iteration, false, false, false, num_viols);
   float fix_rate_threshold = inc_fix_rate_threshold_;
   if (!violating_ends.empty()) {
     min_viol_ = -violating_ends.back().second;
@@ -219,7 +217,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     resizer_->journalBegin();
     while (pass <= max_passes) {
       opto_iteration++;
-      if (verbose) {
+      if (verbose || opto_iteration == 1) {
         printProgress(opto_iteration, false, false, false, num_viols);
       }
       if (terminateProgress(opto_iteration,
@@ -379,7 +377,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       pass++;
     }  // while pass <= max_passes
-    if (verbose) {
+    if (verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, false, num_viols);
     }
     if (two_cons_terminations) {
@@ -399,9 +397,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     repairSetupLastGasp(params, num_viols);
   }
 
-  if (verbose) {
-    printProgress(opto_iteration, true, true, false, num_viols);
-  }
+  printProgress(opto_iteration, true, true, false, num_viols);
 
   if (removed_buffer_count_ > 0) {
     repaired = true;
@@ -1943,9 +1939,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
   // clang-format on
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
   int opto_iteration = params.iteration;
-  if (params.verbose) {
-    printProgress(opto_iteration, false, false, true, num_viols);
-  }
+  printProgress(opto_iteration, false, false, true, num_viols);
 
   float prev_tns = curr_tns;
   Slack curr_worst_slack = violating_ends[0].second;
@@ -1987,7 +1981,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       if (opto_iteration % opto_small_interval_ == 0) {
         prev_termination = false;
       }
-      if (params.verbose) {
+      if (params.verbose || opto_iteration == 1) {
         printProgress(opto_iteration, false, false, true, num_viols);
       }
       if (end_slack > params.setup_slack_margin) {
@@ -2058,7 +2052,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       pass++;
     }  // while pass <= max_last_gasp_passes_
-    if (params.verbose) {
+    if (params.verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, true, num_viols);
     }
     if (two_cons_terminations) {
