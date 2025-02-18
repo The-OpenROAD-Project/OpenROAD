@@ -45,12 +45,14 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbMarker;
 template <class T>
 class dbTable;
 class _dbMarkerCategory;
+// User Code Begin Classes
+class _dbBlock;
+// User Code End Classes
 
 class _dbMarkerCategory : public _dbObject
 {
@@ -66,10 +68,6 @@ class _dbMarkerCategory : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbMarkerCategory& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbMarkerCategory& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods

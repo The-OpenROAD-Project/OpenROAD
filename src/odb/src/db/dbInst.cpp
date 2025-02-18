@@ -44,7 +44,6 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbGroup.h"
 #include "dbHier.h"
 #include "dbITerm.h"
@@ -356,115 +355,6 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   }
 
   return true;
-}
-
-void _dbInst::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbInst& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._orient);
-  DIFF_FIELD(_flags._status);
-  DIFF_FIELD(_flags._user_flag_1);
-  DIFF_FIELD(_flags._user_flag_2);
-  DIFF_FIELD(_flags._user_flag_3);
-  DIFF_FIELD(_flags._physical_only);
-  DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._source);
-  DIFF_FIELD(_x);
-  DIFF_FIELD(_y);
-  DIFF_FIELD(_weight);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_FIELD_NO_DEEP(_inst_hdr);
-  DIFF_OBJECT(_bbox, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-  DIFF_FIELD(_region);
-  DIFF_FIELD(_module);
-  DIFF_FIELD(_group);
-  DIFF_FIELD(_region_next);
-  DIFF_FIELD(_module_next);
-  DIFF_FIELD(_group_next);
-  DIFF_FIELD(_region_prev);
-  DIFF_FIELD(_module_prev);
-  DIFF_FIELD(_hierarchy);
-  DIFF_OBJECT(_halo, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-  DIFF_FIELD(pin_access_idx_);
-
-  if (!diff.deepDiff()) {
-    DIFF_VECTOR(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-
-    dbSet<_dbITerm> lhs_set((dbObject*) this, lhs_blk->_inst_iterm_itr);
-    std::vector<_dbITerm*> lhs_vec;
-
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr) {
-      lhs_vec.push_back(*itr);
-    }
-
-    dbSet<_dbITerm> rhs_set((dbObject*) &rhs, rhs_blk->_inst_iterm_itr);
-    std::vector<_dbITerm*> rhs_vec;
-
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr) {
-      rhs_vec.push_back(*itr);
-    }
-
-    set_symmetric_diff(diff, "_iterms", lhs_vec, rhs_vec);
-  }
-
-  DIFF_END
-}
-
-void _dbInst::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._orient);
-  DIFF_OUT_FIELD(_flags._status);
-  DIFF_OUT_FIELD(_flags._user_flag_1);
-  DIFF_OUT_FIELD(_flags._user_flag_2);
-  DIFF_OUT_FIELD(_flags._user_flag_3);
-  DIFF_OUT_FIELD(_flags._physical_only);
-  DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._source);
-  DIFF_OUT_FIELD(_x);
-  DIFF_OUT_FIELD(_y);
-  DIFF_OUT_FIELD(_weight);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-  DIFF_OUT_FIELD_NO_DEEP(_inst_hdr);
-  DIFF_OUT_OBJECT(_bbox, blk->_box_tbl);
-  DIFF_OUT_FIELD(_region);
-  DIFF_OUT_FIELD(_module);
-  DIFF_OUT_FIELD(_group);
-  DIFF_OUT_FIELD(_region_next);
-  DIFF_OUT_FIELD(_module_next);
-  DIFF_OUT_FIELD(_group_next);
-  DIFF_OUT_FIELD(_region_prev);
-  DIFF_OUT_FIELD(_module_prev);
-  DIFF_OUT_FIELD(_hierarchy);
-  DIFF_OUT_FIELD(pin_access_idx_);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_VECTOR(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-    dbSet<_dbITerm> insts((dbObject*) this, blk->_inst_iterm_itr);
-    diff.begin_object("%c _iterms\n", side);
-
-    for (itr = insts.begin(); itr != insts.end(); ++itr) {
-      (*itr)->out(diff, side, "");
-    }
-
-    diff.end_object();
-  }
-
-  DIFF_OUT_OBJECT(_halo, blk->_box_tbl);
-
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////

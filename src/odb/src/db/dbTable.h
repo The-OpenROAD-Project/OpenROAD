@@ -156,8 +156,6 @@ class dbTable : public dbObjectTable, public dbIterator
 
   bool operator==(const dbTable<T>& rhs) const;
   bool operator!=(const dbTable<T>& table) const;
-  void differences(dbDiff& diff, const dbTable<T>& rhs) const;
-  void out(dbDiff& diff, char side) const;
 
   // dbIterator interface methods
   bool reversible() override;
