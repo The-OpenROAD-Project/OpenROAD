@@ -81,3 +81,51 @@ KOKKOS_INLINE_FUNCTION float consistentCosf(float x) {
 KOKKOS_INLINE_FUNCTION float consistentExpf(float x) {
   return exp((double) x);
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+  #define HOST_FUNCTION __host__
+#else
+  #define HOST_FUNCTION KOKKOS_FUNCTION
+#endif
+
+#ifdef KOKKOS_ENABLE_CUDA
+  #define HOST_INLINE_FUNCTION inline __host__
+#else
+  #define HOST_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
+#endif
+
+// We can't use parallel_reduce as we would lose consisiency between platforms
+// In order to ensure consistency with as low performance penalty as possible, we do it with host-only functions
+// that are autovectorizable by compiler.
+HOST_INLINE_FUNCTION float sumFloats(const Kokkos::View<const float*> arr, size_t size) {
+  float partialSums[4] = {0.0, 0.0, 0.0, 0.0};
+  auto hArr = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace(), arr);
+  for(int i = 0; i<size/4*4; i+=4) {
+    partialSums[0] += hArr[i+0];
+    partialSums[1] += hArr[i+1];
+    partialSums[2] += hArr[i+2];
+    partialSums[3] += hArr[i+3];
+  }
+  float leftover = 0.0;
+  for(int i = size/4*4; i<size; ++i) {
+    leftover += hArr[i];
+  }
+  return partialSums[0] + partialSums[1] + partialSums[2] + partialSums[3] + leftover;
+}
+
+// More accurate version of sumFloats() that use double as accumulator. TODO: Consider using Kahan summation algorithm
+HOST_INLINE_FUNCTION float sumFloatsAccurate(const Kokkos::View<const float*> arr, size_t size) {
+  auto hArr = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultHostExecutionSpace(), arr);
+  double partialSums[4] = {0.0, 0.0, 0.0, 0.0};
+  for(int i = 0; i<size/4*4; i+=4) {
+    partialSums[0] += hArr[i+0];
+    partialSums[1] += hArr[i+1];
+    partialSums[2] += hArr[i+2];
+    partialSums[3] += hArr[i+3];
+  }
+  double leftover = 0.0;
+  for(int i = size/4*4; i<size; ++i) {
+    leftover += hArr[i];
+  }
+  return partialSums[0] + partialSums[1] + partialSums[2] + partialSums[3] + leftover;
+}
