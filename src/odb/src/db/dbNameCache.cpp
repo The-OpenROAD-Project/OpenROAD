@@ -33,12 +33,10 @@
 #include "dbNameCache.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbName.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-#include "odb/dbDiff.h"
 #include "odb/dbSet.h"
 
 namespace odb {
@@ -91,26 +89,6 @@ bool _dbName::operator==(const _dbName& rhs) const
 bool _dbName::operator<(const _dbName& rhs) const
 {
   return strcmp(_name, rhs._name) < 0;
-}
-
-void _dbName::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbName& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_ref_cnt);
-  DIFF_END
-}
-
-void _dbName::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_ref_cnt);
-  DIFF_END
 }
 
 void _dbName::collectMemInfo(MemInfo& info)
@@ -176,32 +154,6 @@ bool _dbNameCache::operator==(const _dbNameCache& rhs) const
   }
 
   return true;
-}
-
-void _dbNameCache::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbNameCache& rhs) const
-{
-  diff.begin_object("<> %s\n", field);
-
-  if (!diff.deepDiff()) {
-    DIFF_HASH_TABLE(_name_hash);
-  }
-
-  DIFF_TABLE(_name_tbl);
-  diff.end_object();
-}
-
-void _dbNameCache::out(dbDiff& diff, char side, const char* field) const
-{
-  diff.begin_object("%c %s\n", side, field);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_HASH_TABLE(_name_hash);
-  }
-
-  DIFF_OUT_TABLE(_name_tbl);
-  diff.end_object();
 }
 
 uint _dbNameCache::findName(const char* name)

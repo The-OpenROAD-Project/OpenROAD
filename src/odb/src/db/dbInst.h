@@ -52,7 +52,6 @@ class _dbGroup;
 class dbInst;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbInstFlags
 {
@@ -109,8 +108,6 @@ class _dbInst : public _dbObject
   bool operator==(const _dbInst& rhs) const;
   bool operator!=(const _dbInst& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbInst& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbInst& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   void collectMemInfo(MemInfo& info);
   static void setInstBBox(_dbInst* inst);
 };

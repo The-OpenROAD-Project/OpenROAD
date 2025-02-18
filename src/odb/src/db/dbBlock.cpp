@@ -60,7 +60,6 @@
 #include "dbChip.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.hpp"
 #include "dbFill.h"
 #include "dbGCellGrid.h"
 #include "dbGlobalConnect.h"
@@ -128,7 +127,6 @@
 #include "dbWire.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/dbDiff.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/defout.h"
@@ -1617,212 +1615,6 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   }
 
   return true;
-}
-
-void _dbBlock::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbBlock& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._valid_bbox);
-  DIFF_FIELD(_def_units);
-  DIFF_FIELD(_dbu_per_micron);
-  DIFF_FIELD(_hier_delimeter);
-  DIFF_FIELD(_left_bus_delimeter);
-  DIFF_FIELD(_right_bus_delimeter);
-  DIFF_FIELD(_num_ext_corners);
-  DIFF_FIELD(_corners_per_block);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_corner_name_list);
-  DIFF_FIELD(_die_area);
-  DIFF_FIELD(_tech);
-  DIFF_FIELD(_chip);
-  DIFF_FIELD(_bbox);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_next_block);
-  DIFF_OBJECT(_gcell_grid, _gcell_grid_tbl, rhs._gcell_grid_tbl);
-  DIFF_FIELD(_parent_block);
-  DIFF_FIELD(_parent_inst);
-  DIFF_FIELD(_top_module);
-
-  if (!diff.deepDiff()) {
-    DIFF_HASH_TABLE(_net_hash);
-    DIFF_HASH_TABLE(_inst_hash);
-    DIFF_HASH_TABLE(_module_hash);
-    DIFF_HASH_TABLE(_modinst_hash);
-    DIFF_HASH_TABLE(_powerdomain_hash);
-    DIFF_HASH_TABLE(_logicport_hash);
-    DIFF_HASH_TABLE(_powerswitch_hash);
-    DIFF_HASH_TABLE(_isolation_hash);
-    DIFF_HASH_TABLE(_levelshifter_hash);
-    DIFF_HASH_TABLE(_group_hash);
-    DIFF_HASH_TABLE(_inst_hdr_hash);
-    DIFF_HASH_TABLE(_bterm_hash);
-  }
-
-  DIFF_FIELD(_maxCapNodeId);
-  DIFF_FIELD(_maxRSegId);
-  DIFF_FIELD(_maxCCSegId);
-  DIFF_VECTOR(_children);
-  DIFF_VECTOR(_component_mask_shift);
-  DIFF_FIELD(_currentCcAdjOrder);
-  DIFF_TABLE(_bterm_tbl);
-  DIFF_TABLE_NO_DEEP(_iterm_tbl);
-  DIFF_TABLE(_net_tbl);
-  DIFF_TABLE_NO_DEEP(_inst_hdr_tbl);
-  DIFF_TABLE(_inst_tbl);
-  DIFF_TABLE(_module_tbl);
-  DIFF_TABLE(_modinst_tbl);
-  DIFF_TABLE(_powerdomain_tbl);
-  DIFF_TABLE(_logicport_tbl);
-  DIFF_TABLE(_powerswitch_tbl);
-  DIFF_TABLE(_isolation_tbl);
-  DIFF_TABLE(_levelshifter_tbl);
-  DIFF_TABLE(_group_tbl);
-  DIFF_TABLE(ap_tbl_);
-  DIFF_TABLE(global_connect_tbl_);
-  DIFF_TABLE(_guide_tbl);
-  DIFF_TABLE(_net_tracks_tbl);
-  DIFF_TABLE_NO_DEEP(_box_tbl);
-  DIFF_TABLE(_via_tbl);
-  DIFF_TABLE_NO_DEEP(_gcell_grid_tbl);
-  DIFF_TABLE(_track_grid_tbl);
-  DIFF_TABLE(_obstruction_tbl);
-  DIFF_TABLE(_blockage_tbl);
-  DIFF_TABLE_NO_DEEP(_wire_tbl);
-  DIFF_TABLE_NO_DEEP(_swire_tbl);
-  DIFF_TABLE_NO_DEEP(_sbox_tbl);
-  DIFF_TABLE(_row_tbl);
-  DIFF_TABLE(_fill_tbl);
-  DIFF_TABLE(_region_tbl);
-  DIFF_TABLE_NO_DEEP(_hier_tbl);
-  DIFF_TABLE_NO_DEEP(_bpin_tbl);
-  DIFF_TABLE(_non_default_rule_tbl);
-  DIFF_TABLE(_layer_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_FIELD(_dft);
-  DIFF_TABLE(_dft_tbl);
-  DIFF_TABLE(_marker_categories_tbl);
-  DIFF_FIELD(_min_routing_layer);
-  DIFF_FIELD(_max_routing_layer);
-  DIFF_FIELD(_min_layer_for_clock);
-  DIFF_FIELD(_max_layer_for_clock);
-
-  if (*_r_val_tbl != *rhs._r_val_tbl) {
-    _r_val_tbl->differences(diff, "_r_val_tbl", *rhs._r_val_tbl);
-  }
-
-  if (*_c_val_tbl != *rhs._c_val_tbl) {
-    _c_val_tbl->differences(diff, "_c_val_tbl", *rhs._c_val_tbl);
-  }
-
-  if (*_cc_val_tbl != *rhs._cc_val_tbl) {
-    _cc_val_tbl->differences(diff, "_c_val_tbl", *rhs._cc_val_tbl);
-  }
-
-  DIFF_TABLE_NO_DEEP(_cap_node_tbl);
-  DIFF_TABLE_NO_DEEP(_r_seg_tbl);
-  DIFF_TABLE_NO_DEEP(_cc_seg_tbl);
-  DIFF_END
-}
-
-void _dbBlock::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._valid_bbox);
-  DIFF_OUT_FIELD(_def_units);
-  DIFF_OUT_FIELD(_dbu_per_micron);
-  DIFF_OUT_FIELD(_hier_delimeter);
-  DIFF_OUT_FIELD(_left_bus_delimeter);
-  DIFF_OUT_FIELD(_right_bus_delimeter);
-  DIFF_OUT_FIELD(_num_ext_corners);
-  DIFF_OUT_FIELD(_corners_per_block);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_corner_name_list);
-  DIFF_OUT_FIELD(_die_area);
-  DIFF_OUT_FIELD(_tech);
-  DIFF_OUT_FIELD(_chip);
-  DIFF_OUT_FIELD(_bbox);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_next_block);
-  DIFF_OUT_OBJECT(_gcell_grid, _gcell_grid_tbl);
-  DIFF_OUT_FIELD(_parent_block);
-  DIFF_OUT_FIELD(_parent_inst);
-  DIFF_OUT_FIELD(_top_module);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_HASH_TABLE(_net_hash);
-    DIFF_OUT_HASH_TABLE(_inst_hash);
-    DIFF_OUT_HASH_TABLE(_module_hash);
-    DIFF_OUT_HASH_TABLE(_modinst_hash);
-    DIFF_OUT_HASH_TABLE(_powerdomain_hash);
-    DIFF_OUT_HASH_TABLE(_logicport_hash);
-    DIFF_OUT_HASH_TABLE(_powerswitch_hash);
-    DIFF_OUT_HASH_TABLE(_isolation_hash);
-    DIFF_OUT_HASH_TABLE(_levelshifter_hash);
-    DIFF_OUT_HASH_TABLE(_group_hash);
-    DIFF_OUT_HASH_TABLE(_inst_hdr_hash);
-    DIFF_OUT_HASH_TABLE(_bterm_hash);
-  }
-
-  DIFF_OUT_FIELD(_maxCapNodeId);
-  DIFF_OUT_FIELD(_maxRSegId);
-  DIFF_OUT_FIELD(_maxCCSegId);
-  DIFF_OUT_VECTOR(_children);
-  DIFF_OUT_VECTOR(_component_mask_shift);
-  DIFF_OUT_FIELD(_currentCcAdjOrder);
-  DIFF_OUT_TABLE(_bterm_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_iterm_tbl);
-  DIFF_OUT_TABLE(_net_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_inst_hdr_tbl);
-  DIFF_OUT_TABLE(_inst_tbl);
-  DIFF_OUT_TABLE(_module_tbl);
-  DIFF_OUT_TABLE(_modinst_tbl);
-  DIFF_OUT_TABLE(_powerdomain_tbl);
-  DIFF_OUT_TABLE(_logicport_tbl);
-  DIFF_OUT_TABLE(_powerswitch_tbl);
-  DIFF_OUT_TABLE(_isolation_tbl);
-  DIFF_OUT_TABLE(_levelshifter_tbl);
-  DIFF_OUT_TABLE(_group_tbl);
-  DIFF_OUT_TABLE(ap_tbl_);
-  DIFF_OUT_TABLE(global_connect_tbl_);
-  DIFF_OUT_TABLE(_guide_tbl);
-  DIFF_OUT_TABLE(_net_tracks_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
-  DIFF_OUT_TABLE(_via_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_gcell_grid_tbl);
-  DIFF_OUT_TABLE(_track_grid_tbl);
-  DIFF_OUT_TABLE(_obstruction_tbl);
-  DIFF_OUT_TABLE(_blockage_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_wire_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_swire_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_sbox_tbl);
-  DIFF_OUT_TABLE(_row_tbl);
-  DIFF_OUT_TABLE(_fill_tbl);
-  DIFF_OUT_TABLE(_region_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_hier_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_bpin_tbl);
-  DIFF_OUT_TABLE(_non_default_rule_tbl);
-  DIFF_OUT_TABLE(_layer_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_OUT_FIELD(_dft);
-  DIFF_OUT_TABLE(_dft_tbl);
-  DIFF_OUT_TABLE(_marker_categories_tbl);
-  DIFF_OUT_FIELD(_min_routing_layer);
-  DIFF_OUT_FIELD(_max_routing_layer);
-  DIFF_OUT_FIELD(_min_layer_for_clock);
-  DIFF_OUT_FIELD(_max_layer_for_clock);
-
-  _r_val_tbl->out(diff, side, "_r_val_tbl");
-  _c_val_tbl->out(diff, side, "_c_val_tbl");
-  _cc_val_tbl->out(diff, side, "_c_val_tbl");
-
-  DIFF_OUT_TABLE_NO_DEEP(_cap_node_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_r_seg_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_cc_seg_tbl);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -3688,21 +3480,6 @@ void dbBlock::writeGuides(const char* filename) const
     guide_file << ")\n";
   }
   guide_file.close();
-}
-
-bool dbBlock::differences(dbBlock* block1,
-                          dbBlock* block2,
-                          FILE* out,
-                          int indent)
-{
-  _dbBlock* b1 = (_dbBlock*) block1;
-  _dbBlock* b2 = (_dbBlock*) block2;
-
-  dbDiff diff(out);
-  diff.setDeepDiff(true);
-  diff.setIndentPerLevel(indent);
-  b1->differences(diff, nullptr, *b2);
-  return diff.hasDifferences();
 }
 
 uint dbBlock::levelize(std::vector<dbInst*>& startingInsts,

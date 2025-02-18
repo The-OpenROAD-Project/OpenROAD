@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
@@ -118,63 +117,6 @@ bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
 bool _dbLevelShifter::operator<(const _dbLevelShifter& rhs) const
 {
   return true;
-}
-
-void _dbLevelShifter::differences(dbDiff& diff,
-                                  const char* field,
-                                  const _dbLevelShifter& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_domain);
-  DIFF_FIELD(_source);
-  DIFF_FIELD(_sink);
-  DIFF_FIELD(_use_functional_equivalence);
-  DIFF_FIELD(_applies_to);
-  DIFF_FIELD(_applies_to_boundary);
-  DIFF_FIELD(_rule);
-  DIFF_FIELD(_threshold);
-  DIFF_FIELD(_no_shift);
-  DIFF_FIELD(_force_shift);
-  DIFF_FIELD(_location);
-  DIFF_FIELD(_input_supply);
-  DIFF_FIELD(_output_supply);
-  DIFF_FIELD(_internal_supply);
-  DIFF_FIELD(_name_prefix);
-  DIFF_FIELD(_name_suffix);
-  DIFF_FIELD(_cell_name);
-  DIFF_FIELD(_cell_input);
-  DIFF_FIELD(_cell_output);
-  DIFF_END
-}
-
-void _dbLevelShifter::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_domain);
-  DIFF_OUT_FIELD(_source);
-  DIFF_OUT_FIELD(_sink);
-  DIFF_OUT_FIELD(_use_functional_equivalence);
-  DIFF_OUT_FIELD(_applies_to);
-  DIFF_OUT_FIELD(_applies_to_boundary);
-  DIFF_OUT_FIELD(_rule);
-  DIFF_OUT_FIELD(_threshold);
-  DIFF_OUT_FIELD(_no_shift);
-  DIFF_OUT_FIELD(_force_shift);
-  DIFF_OUT_FIELD(_location);
-  DIFF_OUT_FIELD(_input_supply);
-  DIFF_OUT_FIELD(_output_supply);
-  DIFF_OUT_FIELD(_internal_supply);
-  DIFF_OUT_FIELD(_name_prefix);
-  DIFF_OUT_FIELD(_name_suffix);
-  DIFF_OUT_FIELD(_cell_name);
-  DIFF_OUT_FIELD(_cell_input);
-  DIFF_OUT_FIELD(_cell_output);
-
-  DIFF_END
 }
 
 _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
