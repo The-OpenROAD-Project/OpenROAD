@@ -139,7 +139,7 @@ void RepairDesign::repairDesign(
     double slew_margin,
     double cap_margin,
     double buffer_gain,
-    int verbose,
+    bool verbose,
     int& repaired_net_count,
     int& slew_violations,
     int& cap_violations,
