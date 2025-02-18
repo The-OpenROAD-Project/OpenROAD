@@ -1854,7 +1854,11 @@ bool RepairDesign::makeRepeater(
     }
   }
 
-  if (!hasInputPort(load_net) && preserve_outputs) {
+  const bool keep_input = hasInputPort(load_net) || !preserve_outputs;
+
+  // check for dont_touch
+
+  if (!keep_input) {
     // check if driving port is dont touch and reject
     bool driving_pin_dont_touch = false;
     std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
@@ -1925,7 +1929,7 @@ bool RepairDesign::makeRepeater(
 
   bool connections_modified = false;
 
-  if (hasInputPort(load_net) || !preserve_outputs) {
+  if (keep_input) {
     //
     // Case 1
     //------
