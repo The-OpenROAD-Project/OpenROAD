@@ -35,6 +35,7 @@
 #include "densityOp.h"
 
 #include <Kokkos_Core.hpp>
+#include "kokkosUtil.h"
 
 #include "placerBase.h"
 #include "placerObjects.h"
@@ -292,10 +293,10 @@ void DensityOp::updateDensityForceBin()
 
   sumOverflow_ = 0.0;
   Kokkos::DefaultHostExecutionSpace hostSpace;
-  auto hBinOverflowArea = Kokkos::create_mirror_view_and_copy(hostSpace, dBinOverflowArea);
-  for(int i = 0; i<numBins; ++i) {
-    sumOverflow_ += hBinOverflowArea[i];
-  }
+
+  Kokkos::View<float*> hBinOverflowArea("hBinOverflowArea", dBinOverflowArea.size());
+  Kokkos::deep_copy(hBinOverflowArea, dBinOverflowArea);
+  sumOverflow_ = sumFloats(hBinOverflowArea, numBins);
 
   Kokkos::fence();
 
