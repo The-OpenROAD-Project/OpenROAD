@@ -34,7 +34,6 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
@@ -56,22 +55,6 @@ bool _dbTechLayerCutSpacingTableOrthRule::operator<(
 {
   return true;
 }
-
-void _dbTechLayerCutSpacingTableOrthRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutSpacingTableOrthRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_END
-}
-
-void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff& diff,
-                                              char side,
-                                              const char* field) const {
-    DIFF_OUT_BEGIN
-
-        DIFF_END}
 
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
     _dbDatabase* db)
@@ -96,6 +79,16 @@ dbOStream& operator<<(dbOStream& stream,
 {
   stream << obj.spacing_tbl_;
   return stream;
+}
+
+void _dbTechLayerCutSpacingTableOrthRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["spacing_tbl"].add(spacing_tbl_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

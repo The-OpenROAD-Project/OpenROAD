@@ -40,7 +40,6 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHier.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -54,7 +53,6 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/dbDiff.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
@@ -180,78 +178,6 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
   }
 
   return true;
-}
-
-void _dbBTerm::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbBTerm& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._io_type);
-  DIFF_FIELD(_flags._sig_type);
-  DIFF_FIELD(_flags._spef);
-  DIFF_FIELD(_flags._special);
-  DIFF_FIELD(_ext_id);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_net);
-  } else {
-    _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-    _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-
-    if (strcmp(lhs_net->_name, rhs_net->_name) != 0) {
-      diff.report("< _net %s\n", lhs_net->_name);
-      diff.report("> _net %s\n", rhs_net->_name);
-    }
-  }
-
-  DIFF_FIELD_NO_DEEP(_next_bterm);
-  DIFF_FIELD_NO_DEEP(_prev_bterm);
-  DIFF_FIELD_NO_DEEP(_next_modnet_bterm);
-  DIFF_FIELD_NO_DEEP(_prev_modnet_bterm);
-  DIFF_FIELD_NO_DEEP(_parent_block);
-  DIFF_FIELD_NO_DEEP(_parent_iterm);
-  DIFF_FIELD_NO_DEEP(_bpins);
-  DIFF_FIELD_NO_DEEP(_ground_pin);
-  DIFF_FIELD_NO_DEEP(_supply_pin);
-  DIFF_END
-}
-
-void _dbBTerm::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._io_type);
-  DIFF_OUT_FIELD(_flags._sig_type);
-  DIFF_OUT_FIELD(_flags._spef);
-  DIFF_OUT_FIELD(_flags._special);
-  DIFF_OUT_FIELD(_ext_id);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_net);
-  } else {
-    _dbNet* net = blk->_net_tbl->getPtr(_net);
-    diff.report("%c _net %s\n", side, net->_name);
-  }
-
-  DIFF_OUT_FIELD_NO_DEEP(_next_bterm);
-  DIFF_OUT_FIELD_NO_DEEP(_prev_bterm);
-  DIFF_OUT_FIELD_NO_DEEP(_next_modnet_bterm);
-  DIFF_OUT_FIELD_NO_DEEP(_prev_modnet_bterm);
-  DIFF_OUT_FIELD_NO_DEEP(_parent_block);
-  DIFF_OUT_FIELD_NO_DEEP(_parent_iterm);
-  DIFF_OUT_FIELD_NO_DEEP(_bpins);
-  DIFF_OUT_FIELD_NO_DEEP(_ground_pin);
-  DIFF_OUT_FIELD_NO_DEEP(_supply_pin);
-  DIFF_END
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
@@ -918,6 +844,14 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
     }
   }
   _mnet = 0;
+}
+
+void _dbBTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)

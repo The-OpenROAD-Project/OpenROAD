@@ -220,6 +220,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                              const int& pos_x,
                              const int& pos_y,
                              const int& layer_level);
+  odb::Point getPositionOnGrid(const odb::Point& real_position);
   int repairAntennas(odb::dbMTerm* diode_mterm,
                      int iterations,
                      float ratio_margin,
@@ -359,6 +360,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                                   odb::dbTechLayer* tech_layer,
                                   bool is_macro = false);
   void addResourcesForPinAccess();
+  bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
   std::vector<Pin*> getAllPorts();

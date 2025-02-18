@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
@@ -81,37 +80,6 @@ bool _dbIsolation::operator<(const _dbIsolation& rhs) const
   return true;
 }
 
-void _dbIsolation::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbIsolation& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_applies_to);
-  DIFF_FIELD(_clamp_value);
-  DIFF_FIELD(_isolation_signal);
-  DIFF_FIELD(_isolation_sense);
-  DIFF_FIELD(_location);
-  DIFF_FIELD(_power_domain);
-  DIFF_END
-}
-
-void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_applies_to);
-  DIFF_OUT_FIELD(_clamp_value);
-  DIFF_OUT_FIELD(_isolation_signal);
-  DIFF_OUT_FIELD(_isolation_sense);
-  DIFF_OUT_FIELD(_location);
-  DIFF_OUT_FIELD(_power_domain);
-
-  DIFF_END
-}
-
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
   _name = nullptr;
@@ -155,6 +123,22 @@ dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
   stream << obj._isolation_cells;
   stream << obj._power_domain;
   return stream;
+}
+
+void _dbIsolation::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["applies_to"].add(_applies_to);
+  info.children_["clamp_value"].add(_clamp_value);
+  info.children_["isolation_signal"].add(_isolation_signal);
+  info.children_["isolation_sense"].add(_isolation_sense);
+  info.children_["location"].add(_location);
+  info.children_["isolation_cells"].add(_isolation_cells);
+  // User Code End collectMemInfo
 }
 
 _dbIsolation::~_dbIsolation()

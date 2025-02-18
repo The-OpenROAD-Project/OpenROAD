@@ -64,7 +64,6 @@ class dbTechLayerItr;
 class dbBoxItr;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbTechFlags
 {
@@ -134,9 +133,8 @@ class _dbTech : public _dbObject
 
   bool operator==(const _dbTech& rhs) const;
   bool operator!=(const _dbTech& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbTech& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech);

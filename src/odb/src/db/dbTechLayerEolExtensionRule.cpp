@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -67,28 +66,6 @@ bool _dbTechLayerEolExtensionRule::operator<(
   }
   // User Code End <
   return true;
-}
-
-void _dbTechLayerEolExtensionRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerEolExtensionRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.parallel_only_);
-  DIFF_FIELD(spacing_);
-  DIFF_END
-}
-
-void _dbTechLayerEolExtensionRule::out(dbDiff& diff,
-                                       char side,
-                                       const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.parallel_only_);
-  DIFF_OUT_FIELD(spacing_);
-
-  DIFF_END
 }
 
 _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
@@ -127,6 +104,16 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.spacing_;
   stream << obj.extension_tbl_;
   return stream;
+}
+
+void _dbTechLayerEolExtensionRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["extension_tbl"].add(extension_tbl_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

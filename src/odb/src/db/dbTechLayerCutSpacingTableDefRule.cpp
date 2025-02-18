@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -146,78 +145,6 @@ bool _dbTechLayerCutSpacingTableDefRule::operator<(
   return true;
 }
 
-void _dbTechLayerCutSpacingTableDefRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutSpacingTableDefRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.default_valid_);
-  DIFF_FIELD(flags_.same_mask_);
-  DIFF_FIELD(flags_.same_net_);
-  DIFF_FIELD(flags_.same_metal_);
-  DIFF_FIELD(flags_.same_via_);
-  DIFF_FIELD(flags_.layer_valid_);
-  DIFF_FIELD(flags_.no_stack_);
-  DIFF_FIELD(flags_.non_zero_enclosure_);
-  DIFF_FIELD(flags_.prl_for_aligned_cut_);
-  DIFF_FIELD(flags_.center_to_center_valid_);
-  DIFF_FIELD(flags_.center_and_edge_valid_);
-  DIFF_FIELD(flags_.no_prl_);
-  DIFF_FIELD(flags_.prl_valid_);
-  DIFF_FIELD(flags_.max_x_y_);
-  DIFF_FIELD(flags_.end_extension_valid_);
-  DIFF_FIELD(flags_.side_extension_valid_);
-  DIFF_FIELD(flags_.exact_aligned_spacing_valid_);
-  DIFF_FIELD(flags_.horizontal_);
-  DIFF_FIELD(flags_.prl_horizontal_);
-  DIFF_FIELD(flags_.vertical_);
-  DIFF_FIELD(flags_.prl_vertical_);
-  DIFF_FIELD(flags_.non_opposite_enclosure_spacing_valid_);
-  DIFF_FIELD(flags_.opposite_enclosure_resize_spacing_valid_);
-  DIFF_FIELD(default_);
-  DIFF_FIELD(second_layer_);
-  DIFF_FIELD(prl_);
-  DIFF_FIELD(extension_);
-  DIFF_END
-}
-
-void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
-                                             char side,
-                                             const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.default_valid_);
-  DIFF_OUT_FIELD(flags_.same_mask_);
-  DIFF_OUT_FIELD(flags_.same_net_);
-  DIFF_OUT_FIELD(flags_.same_metal_);
-  DIFF_OUT_FIELD(flags_.same_via_);
-  DIFF_OUT_FIELD(flags_.layer_valid_);
-  DIFF_OUT_FIELD(flags_.no_stack_);
-  DIFF_OUT_FIELD(flags_.non_zero_enclosure_);
-  DIFF_OUT_FIELD(flags_.prl_for_aligned_cut_);
-  DIFF_OUT_FIELD(flags_.center_to_center_valid_);
-  DIFF_OUT_FIELD(flags_.center_and_edge_valid_);
-  DIFF_OUT_FIELD(flags_.no_prl_);
-  DIFF_OUT_FIELD(flags_.prl_valid_);
-  DIFF_OUT_FIELD(flags_.max_x_y_);
-  DIFF_OUT_FIELD(flags_.end_extension_valid_);
-  DIFF_OUT_FIELD(flags_.side_extension_valid_);
-  DIFF_OUT_FIELD(flags_.exact_aligned_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.horizontal_);
-  DIFF_OUT_FIELD(flags_.prl_horizontal_);
-  DIFF_OUT_FIELD(flags_.vertical_);
-  DIFF_OUT_FIELD(flags_.prl_vertical_);
-  DIFF_OUT_FIELD(flags_.non_opposite_enclosure_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.opposite_enclosure_resize_spacing_valid_);
-  DIFF_OUT_FIELD(default_);
-  DIFF_OUT_FIELD(second_layer_);
-  DIFF_OUT_FIELD(prl_);
-  DIFF_OUT_FIELD(extension_);
-
-  DIFF_END
-}
-
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
@@ -313,6 +240,27 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.row_map_;
   stream << obj.col_map_;
   return stream;
+}
+
+void _dbTechLayerCutSpacingTableDefRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["prl_for_aligned_cut_tbl_"].add(prl_for_aligned_cut_tbl_);
+  info.children_["center_to_center_tbl_"].add(center_to_center_tbl_);
+  info.children_["center_and_edge_tbl_"].add(center_and_edge_tbl_);
+  info.children_["prl_tbl_"].add(prl_tbl_);
+  info.children_["end_extension_tbl_"].add(end_extension_tbl_);
+  info.children_["side_extension_tbl_"].add(side_extension_tbl_);
+  info.children_["exact_aligned_spacing_tbl_"].add(exact_aligned_spacing_tbl_);
+  info.children_["non_opp_enc_spacing_tbl_"].add(non_opp_enc_spacing_tbl_);
+  info.children_["opp_enc_spacing_tbl_"].add(opp_enc_spacing_tbl_);
+  info.children_["spacing_tbl_"].add(spacing_tbl_);
+  info.children_["row_map_"].add(row_map_);
+  info.children_["col_map_"].add(col_map_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

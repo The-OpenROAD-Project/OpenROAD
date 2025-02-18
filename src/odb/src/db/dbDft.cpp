@@ -34,7 +34,6 @@
 #include "dbDft.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
@@ -62,27 +61,6 @@ bool _dbDft::operator==(const _dbDft& rhs) const
 bool _dbDft::operator<(const _dbDft& rhs) const
 {
   return true;
-}
-
-void _dbDft::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbDft& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(scan_inserted_);
-  DIFF_TABLE(scan_pins_);
-  DIFF_TABLE(scan_chains_);
-  DIFF_END
-}
-
-void _dbDft::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(scan_inserted_);
-  DIFF_OUT_TABLE(scan_pins_);
-  DIFF_OUT_TABLE(scan_chains_);
-
-  DIFF_END
 }
 
 _dbDft::_dbDft(_dbDatabase* db)
@@ -128,6 +106,15 @@ dbObjectTable* _dbDft::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbDft::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_pins_->collectMemInfo(info.children_["scan_pins_"]);
+
+  scan_chains_->collectMemInfo(info.children_["scan_chains_"]);
 }
 
 _dbDft::~_dbDft()

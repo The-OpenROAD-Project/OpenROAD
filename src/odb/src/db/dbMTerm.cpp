@@ -119,50 +119,6 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
   return true;
 }
 
-void _dbMTerm::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbMTerm& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._io_type);
-  DIFF_FIELD(_flags._sig_type);
-  DIFF_FIELD(_flags._shape_type);
-  DIFF_FIELD(_order_id);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_next_mterm);
-  DIFF_FIELD(_pins);
-  DIFF_FIELD(_targets);
-  DIFF_FIELD(_oxide1);
-  DIFF_FIELD(_oxide2);
-  DIFF_VECTOR_PTR(_par_met_area);
-  DIFF_VECTOR_PTR(_par_met_sidearea);
-  DIFF_VECTOR_PTR(_par_cut_area);
-  DIFF_VECTOR_PTR(_diffarea);
-  DIFF_END
-}
-
-void _dbMTerm::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._io_type);
-  DIFF_OUT_FIELD(_flags._sig_type);
-  DIFF_OUT_FIELD(_flags._shape_type);
-  DIFF_OUT_FIELD(_order_id);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_next_mterm);
-  DIFF_OUT_FIELD(_pins);
-  DIFF_OUT_FIELD(_targets);
-  DIFF_OUT_FIELD(_oxide1);
-  DIFF_OUT_FIELD(_oxide2);
-  DIFF_OUT_VECTOR_PTR(_par_met_area);
-  DIFF_OUT_VECTOR_PTR(_par_met_sidearea);
-  DIFF_OUT_VECTOR_PTR(_par_cut_area);
-  DIFF_OUT_VECTOR_PTR(_diffarea);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbMTerm - Methods
@@ -584,6 +540,30 @@ dbMTerm* dbMTerm::getMTerm(dbMaster* master_, uint dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMTerm*) master->_mterm_tbl->getPtr(dbid_);
+}
+
+void _dbMTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+
+  // These fields have unusal pointer ownship semantics relative to
+  // the rest of odb (not a table but a vector of owning pointers).
+  // Should be just by value.
+  info.children_["_par_met_area"].add(_par_met_area);
+  info.children_["_par_met_area"].size
+      += _par_met_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_par_met_sidearea"].add(_par_met_sidearea);
+  info.children_["_par_met_sidearea"].size
+      += _par_met_sidearea.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_par_cut_area"].add(_par_cut_area);
+  info.children_["_par_cut_area"].size
+      += _par_cut_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_diffarea"].add(_diffarea);
+  info.children_["_diffarea"].size
+      += _diffarea.size() * sizeof(_dbTechAntennaAreaElement);
 }
 
 }  // namespace odb

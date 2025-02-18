@@ -35,7 +35,7 @@
 
 #include <tcl.h>
 
-#include "mpl/MacroPlacer.h"
+#include "mpl/rtl_mp.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 
@@ -59,8 +59,11 @@ void initMacroPlacer(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Mpl_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::mpl_tcl_inits);
-  openroad->getMacroPlacer()->init(
-      openroad->getDb(), openroad->getSta(), openroad->getLogger());
+  openroad->getMacroPlacer()->init(openroad->getDbNetwork(),
+                                   openroad->getDb(),
+                                   openroad->getSta(),
+                                   openroad->getLogger(),
+                                   openroad->getPartitionMgr());
 }
 
 void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)

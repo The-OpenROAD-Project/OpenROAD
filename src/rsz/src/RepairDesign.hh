@@ -247,6 +247,7 @@ class RepairDesign : dbStaState
   PreChecks* pre_checks_ = nullptr;
   Resizer* resizer_;
   int dbu_ = 0;
+  double initial_design_area_ = 0;
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
   // Gain buffering
@@ -271,7 +272,7 @@ class RepairDesign : dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr int min_print_interval_ = 10;
-  static constexpr int max_print_interval_ = 100;
+  static constexpr int max_print_interval_ = 1000;
 };
 
 }  // namespace rsz

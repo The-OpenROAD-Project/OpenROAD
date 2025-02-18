@@ -33,14 +33,6 @@
 ##
 ###############################################################################
 
-# The location used by etc/DependencyInstaller.sh
-# lib64 is used for CentOS and openSUSE
-# lib is used for Ubuntu and MacOS
-list(APPEND CMAKE_INSTALL_RPATH
-  "/opt/or-tools/lib64"
-  "/opt/or-tools/lib"
-)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 # The location used by etc/DependencyInstaller.sh
@@ -48,6 +40,9 @@ list(APPEND CMAKE_PREFIX_PATH
   "/opt/or-tools/lib64/cmake"
   "/opt/or-tools/lib/cmake"
 )
+
+# Link to where ortools was found
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include("openroad")
 
@@ -296,7 +291,6 @@ add_subdirectory(rmp)
 add_subdirectory(cts)
 add_subdirectory(grt)
 add_subdirectory(tap)
-add_subdirectory(mpl)
 add_subdirectory(rcx)
 add_subdirectory(psm)
 add_subdirectory(ant)
@@ -307,7 +301,7 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
-add_subdirectory(mpl2)
+add_subdirectory(mpl)
 add_subdirectory(par)
 
 ################################################################
@@ -363,14 +357,13 @@ target_link_libraries(openroad
   gui
   drt
   dst
-  mpl
   psm
   ant
   upf
   utl
   pdn
   dft
-  mpl2
+  mpl
   par
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
@@ -434,7 +427,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     grt_py
     gpl_py
     dpl_py
-    mpl_py
     ppl_py
     tap_py
     cts_py

@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -86,44 +85,6 @@ bool _dbTechLayerEolKeepOutRule::operator<(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerEolKeepOutRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerEolKeepOutRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.class_valid_);
-  DIFF_FIELD(flags_.corner_only_);
-  DIFF_FIELD(flags_.except_within_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(backward_ext_);
-  DIFF_FIELD(forward_ext_);
-  DIFF_FIELD(side_ext_);
-  DIFF_FIELD(within_low_);
-  DIFF_FIELD(within_high_);
-  DIFF_FIELD(class_name_);
-  DIFF_END
-}
-
-void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.class_valid_);
-  DIFF_OUT_FIELD(flags_.corner_only_);
-  DIFF_OUT_FIELD(flags_.except_within_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(backward_ext_);
-  DIFF_OUT_FIELD(forward_ext_);
-  DIFF_OUT_FIELD(side_ext_);
-  DIFF_OUT_FIELD(within_low_);
-  DIFF_OUT_FIELD(within_high_);
-  DIFF_OUT_FIELD(class_name_);
-
-  DIFF_END
 }
 
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
@@ -185,6 +146,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   stream << obj.within_high_;
   stream << obj.class_name_;
   return stream;
+}
+
+void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["class_name"].add(class_name_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

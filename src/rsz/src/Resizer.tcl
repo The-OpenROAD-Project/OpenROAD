@@ -441,13 +441,7 @@ sta::define_cmd_args "remove_buffers" { instances }
 
 proc remove_buffers { args } {
   sta::parse_key_args "remove_buffers" args keys {} flags {}
-  set insts [rsz::init_insts_cmd]
-  foreach arg $args {
-    set inst [get_cells $arg]
-    rsz::add_to_insts_cmd $inst $insts
-  }
-  rsz::remove_buffers_cmd $insts
-  rsz::delete_insts_cmd $insts
+  rsz::remove_buffers_cmd [get_cells $args]
 }
 
 sta::define_cmd_args "balance_row_usage" {}
@@ -565,13 +559,14 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
                                         [-match_cell_footprint] \
+                                        [-max_repairs_per_pass max_repairs_per_pass]\
                                         [-verbose]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
-            -recover_power -repair_tns -max_passes} \
+            -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
            -skip_buffering -skip_buffer_removal -skip_last_gasp -match_cell_footprint \
            -verbose}
@@ -642,6 +637,11 @@ proc repair_timing { args } {
     rsz::set_parasitics_src "detailed_routing"
   }
 
+  set max_repairs_per_pass 1
+  if { [info exists keys(-max_repairs_per_pass)] } {
+    set max_repairs_per_pass $keys(-max_repairs_per_pass)
+  }
+
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
 
@@ -649,11 +649,11 @@ proc repair_timing { args } {
   set repaired_setup 0
   set repaired_hold 0
   if { $recover_power_percent >= 0 } {
-    set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint]
+    set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint $verbose]
   } else {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-        $match_cell_footprint $verbose \
+        $max_repairs_per_pass $match_cell_footprint $verbose \
         $skip_pin_swap $skip_gate_cloning $skip_buffering \
         $skip_buffer_removal $skip_last_gasp]
     }
@@ -709,6 +709,31 @@ sta::proc_redirect report_floating_nets {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
+sta::define_cmd_args "report_overdriven_nets" {[-include_parallel_driven] \
+                                               [-verbose] \
+                                               [> filename] \
+                                               [>> filename]} ;# checker off
+
+sta::proc_redirect report_overdriven_nets {
+  sta::parse_key_args "report_overdriven_nets" args \
+    keys {} \
+    flags {-verbose -include_parallel_driven};# checker off
+
+  set verbose [info exists flags(-verbose)]
+  set overdriven_nets [rsz::find_overdriven_nets [info exists flags(-include_parallel_driven)]]
+  set overdriven_net_count [llength $overdriven_nets]
+  if { $overdriven_net_count > 0 } {
+    utl::warn RSZ 24 "found $overdriven_net_count overdriven nets."
+    if { $verbose } {
+      foreach net $overdriven_nets {
+        utl::report " [get_full_name $net]"
+      }
+    }
+  }
+
+  utl::metric_int "timing__drv__overdriven__nets" $overdriven_net_count
+}
+
 sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]} ;# checker off
 
 sta::proc_redirect report_long_wires {
@@ -729,6 +754,118 @@ sta::proc_redirect report_long_wires {
 sta::define_cmd_args "eliminate_dead_logic" {}
 proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
+}
+
+sta::define_cmd_args "set_opt_config" { [-sizing_area_limit] [-sizing_leakage_limit] }
+
+proc set_opt_config { args } {
+  sta::parse_key_args "set_opt_config" args \
+    keys {-sizing_area_limit -sizing_leakage_limit} flags {}
+  set db [ord::get_db]
+  if { $db == "NULL" } {
+    utl::error "RSZ" 200 "db needs to be defined for set_opt_config."
+  }
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "RSZ" 201 "chip needs to be defined for set_opt_config."
+  }
+  set block [$chip getBlock]
+  if { $block == "NULL" } {
+    utl::error "RSZ" 202 "block needs to be defined for set_opt_config."
+  }
+  if { [info exists keys(-sizing_area_limit)] } {
+    set area_limit $keys(-sizing_area_limit)
+    sta::check_positive_float "-sizing_area_limit" $area_limit
+    set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+    if { $area_prop == "NULL" } {
+      odb::dbDoubleProperty_create $block "sizing_area_limit" $area_limit
+    } else {
+      $area_prop setValue $area_limit
+    }
+    utl::info RSZ 100 \
+      "Cells with area > ${area_limit}X current cell will not be considered for sizing"
+  }
+  if { [info exists keys(-sizing_leakage_limit)] } {
+    set leakage_limit $keys(-sizing_leakage_limit)
+    sta::check_positive_float "-sizing_leakage_limit" $leakage_limit
+    set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+    if { $leak_prop == "NULL" } {
+      odb::dbDoubleProperty_create $block "sizing_leakage_limit" $leakage_limit
+    } else {
+      $leak_prop setValue $leakage_limit
+    }
+    utl::info RSZ 101 \
+      "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
+  }
+}
+
+sta::define_cmd_args "reset_opt_config" { [-sizing_area_limit] [-sizing_leakage_limit] }
+
+proc reset_opt_config { args } {
+  sta::parse_key_args "reset_opt_config" args \
+    keys {} flags {-sizing_area_limit -sizing_leakage_limit}
+  set db [ord::get_db]
+  if { $db == "NULL" } {
+    utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
+  }
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "RSZ" 204 "chip needs to be defined for reset_opt_config."
+  }
+  set block [$chip getBlock]
+  if { $block == "NULL" } {
+    utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
+  }
+  if { [info exists flags(-sizing_area_limit)] || [llength $args] == 0 } {
+    set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+    if { $area_prop != "NULL" } {
+      odb::dbProperty_destroy $area_prop
+    }
+    utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
+  }
+  if { [info exists flags(-sizing_leakage_limit)] || [llength $args] == 0 } {
+    set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+    if { $leak_prop != "NULL" } {
+      odb::dbProperty_destroy $leak_prop
+    }
+    utl::info RSZ 103 "Cell sizing restriction based on leakage has been removed."
+  }
+}
+
+sta::define_cmd_args "report_opt_config" {}
+
+proc report_opt_config { args } {
+  sta::parse_key_args "report_opt_config" args keys {} flags {}
+  set db [ord::get_db]
+  if { $db == "NULL" } {
+    utl::error "RSZ" 206 "db needs to be defined for report_opt_config."
+  }
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error "RSZ" 207 "chip needs to be defined for report_opt_config"
+  }
+  set block [$chip getBlock]
+  if { $block == "NULL" } {
+    utl::error "RSZ" 208 "block needs to be defined for report_opt_config."
+  }
+
+  set area_limit_value "undefined"
+  set area_limit [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+  if { $area_limit != "NULL" } {
+    set area_limit_value [[odb::dbDoubleProperty_find $block "sizing_area_limit"] getValue]
+  }
+
+  set leakage_limit_value "undefined"
+  set leakage_limit [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+  if { $leakage_limit != "NULL" } {
+    set leakage_limit_value [[odb::dbDoubleProperty_find $block "sizing_leakage_limit"] getValue]
+  }
+
+  puts "***********************************"
+  puts "Optimization config:"
+  puts "-sizing_area_limit:    $area_limit_value"
+  puts "-sizing_leakage_limit: $leakage_limit_value"
+  puts "***********************************"
 }
 
 namespace eval rsz {

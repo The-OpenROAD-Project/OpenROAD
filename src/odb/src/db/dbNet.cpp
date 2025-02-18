@@ -44,7 +44,6 @@
 #include "dbCapNodeItr.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbGroup.h"
 #include "dbGuide.h"
 #include "dbGuideItr.h"
@@ -74,12 +73,6 @@
 namespace odb {
 
 template class dbTable<_dbNet>;
-static void set_symmetric_diff(dbDiff& diff,
-                               std::vector<_dbBTerm*>& lhs,
-                               std::vector<_dbBTerm*>& rhs);
-static void set_symmetric_diff(dbDiff& diff,
-                               std::vector<_dbITerm*>& lhs,
-                               std::vector<_dbITerm*>& rhs);
 
 _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : _flags(n._flags),
@@ -382,302 +375,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   return true;
-}
-
-void _dbNet::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbNet& rhs) const
-{
-  _dbBlock* lhs_block = (_dbBlock*) getOwner();
-  _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._sig_type);
-  DIFF_FIELD(_flags._wire_type);
-  DIFF_FIELD(_flags._special);
-  DIFF_FIELD(_flags._wild_connect);
-  DIFF_FIELD(_flags._wire_ordered);
-  DIFF_FIELD(_flags._buffered);
-  DIFF_FIELD(_flags._disconnected);
-  DIFF_FIELD(_flags._spef);
-  DIFF_FIELD(_flags._select);
-  DIFF_FIELD(_flags._mark);
-  DIFF_FIELD(_flags._mark_1);
-  DIFF_FIELD(_flags._wire_altered);
-  DIFF_FIELD(_flags._extracted);
-  DIFF_FIELD(_flags._rc_graph);
-  DIFF_FIELD(_flags._reduced);
-  DIFF_FIELD(_flags._set_io);
-  DIFF_FIELD(_flags._io);
-  DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._fixed_bump);
-  DIFF_FIELD(_flags._source);
-  DIFF_FIELD(_flags._rc_disconnected);
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD_NO_DEEP(_gndc_calibration_factor);
-  DIFF_FIELD_NO_DEEP(_cc_calibration_factor);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_bterms);
-  } else {
-    dbSet<_dbBTerm>::iterator itr;
-
-    dbSet<_dbBTerm> lhs_set((dbObject*) this, lhs_block->_net_bterm_itr);
-    std::vector<_dbBTerm*> lhs_vec;
-
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr) {
-      lhs_vec.push_back(*itr);
-    }
-
-    dbSet<_dbBTerm> rhs_set((dbObject*) &rhs, rhs_block->_net_bterm_itr);
-    std::vector<_dbBTerm*> rhs_vec;
-
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr) {
-      rhs_vec.push_back(*itr);
-    }
-
-    set_symmetric_diff(diff, lhs_vec, rhs_vec);
-  }
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-
-    dbSet<_dbITerm> lhs_set((dbObject*) this, lhs_block->_net_iterm_itr);
-    std::vector<_dbITerm*> lhs_vec;
-
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr) {
-      lhs_vec.push_back(*itr);
-    }
-
-    dbSet<_dbITerm> rhs_set((dbObject*) &rhs, rhs_block->_net_iterm_itr);
-    std::vector<_dbITerm*> rhs_vec;
-
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr) {
-      rhs_vec.push_back(*itr);
-    }
-
-    set_symmetric_diff(diff, lhs_vec, rhs_vec);
-  }
-
-  DIFF_OBJECT(_wire, lhs_block->_wire_tbl, rhs_block->_wire_tbl);
-  DIFF_OBJECT(_global_wire, lhs_block->_wire_tbl, rhs_block->_wire_tbl);
-  DIFF_SET(_swires, lhs_block->_swire_itr, rhs_block->_swire_itr);
-  DIFF_SET(_cap_nodes, lhs_block->_cap_node_itr, rhs_block->_cap_node_itr);
-  DIFF_SET(_r_segs, lhs_block->_r_seg_itr, rhs_block->_r_seg_itr);
-  DIFF_FIELD(_non_default_rule);
-  DIFF_FIELD(_weight);
-  DIFF_FIELD(_xtalk);
-  DIFF_FIELD(_ccAdjustFactor);
-  DIFF_FIELD(_ccAdjustOrder);
-  DIFF_VECTOR(_groups);
-  DIFF_FIELD(guides_);
-  DIFF_FIELD(tracks_);
-  DIFF_END
-}
-
-void _dbNet::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* block = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._sig_type);
-  DIFF_OUT_FIELD(_flags._wire_type);
-  DIFF_OUT_FIELD(_flags._special);
-  DIFF_OUT_FIELD(_flags._wild_connect);
-  DIFF_OUT_FIELD(_flags._wire_ordered);
-  DIFF_OUT_FIELD(_flags._buffered);
-  DIFF_OUT_FIELD(_flags._disconnected);
-  DIFF_OUT_FIELD(_flags._spef);
-  DIFF_OUT_FIELD(_flags._select);
-  DIFF_OUT_FIELD(_flags._mark);
-  DIFF_OUT_FIELD(_flags._mark_1);
-  DIFF_OUT_FIELD(_flags._wire_altered);
-  DIFF_OUT_FIELD(_flags._extracted);
-  DIFF_OUT_FIELD(_flags._rc_graph);
-  DIFF_OUT_FIELD(_flags._reduced);
-  DIFF_OUT_FIELD(_flags._set_io);
-  DIFF_OUT_FIELD(_flags._io);
-  DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._fixed_bump);
-  DIFF_OUT_FIELD(_flags._source);
-  DIFF_OUT_FIELD(_flags._rc_disconnected);
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD_NO_DEEP(_gndc_calibration_factor);
-  DIFF_OUT_FIELD_NO_DEEP(_cc_calibration_factor);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_bterms);
-  } else {
-    dbSet<_dbBTerm>::iterator itr;
-    dbSet<_dbBTerm> bterms((dbObject*) this, block->_net_bterm_itr);
-    diff.begin_object("%c _bterms\n", side);
-
-    for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-      diff.report("%c %s\n", side, (*itr)->_name);
-    }
-
-    diff.end_object();
-  }
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-    dbSet<_dbITerm> iterms((dbObject*) this, block->_net_iterm_itr);
-    diff.begin_object("%c _iterms\n", side);
-
-    for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
-      _dbITerm* it = *itr;
-      _dbInst* inst = it->getInst();
-      _dbMTerm* mt = it->getMTerm();
-      diff.report("%c (%s %s)\n", side, inst->_name, mt->_name);
-    }
-
-    diff.end_object();
-  }
-
-  DIFF_OUT_OBJECT(_wire, block->_wire_tbl);
-  DIFF_OUT_OBJECT(_global_wire, block->_wire_tbl);
-  DIFF_OUT_SET(_swires, block->_swire_itr);
-  DIFF_OUT_SET(_cap_nodes, block->_cap_node_itr);
-  DIFF_OUT_SET(_r_segs, block->_r_seg_itr);
-  DIFF_OUT_FIELD(_non_default_rule);
-  DIFF_OUT_FIELD(_weight);
-  DIFF_OUT_FIELD(_xtalk);
-  DIFF_OUT_FIELD(_ccAdjustFactor);
-  DIFF_OUT_FIELD(_ccAdjustOrder);
-  DIFF_OUT_VECTOR(_groups);
-  DIFF_OUT_FIELD(guides_);
-  DIFF_OUT_FIELD(tracks_);
-  DIFF_END
-}
-
-void set_symmetric_diff(dbDiff& diff,
-                        std::vector<_dbBTerm*>& lhs,
-                        std::vector<_dbBTerm*>& rhs)
-{
-  diff.begin_object("<> _bterms\n");
-
-  std::sort(lhs.begin(), lhs.end(), dbDiffCmp<_dbBTerm>());
-  std::sort(rhs.begin(), rhs.end(), dbDiffCmp<_dbBTerm>());
-
-  std::vector<_dbBTerm*>::iterator end;
-  std::vector<_dbBTerm*> symmetric_diff;
-
-  symmetric_diff.resize(lhs.size() + rhs.size());
-
-  end = std::set_symmetric_difference(lhs.begin(),
-                                      lhs.end(),
-                                      rhs.begin(),
-                                      rhs.end(),
-                                      symmetric_diff.begin(),
-                                      dbDiffCmp<_dbBTerm>());
-
-  std::vector<_dbBTerm*>::iterator i1 = lhs.begin();
-  std::vector<_dbBTerm*>::iterator i2 = rhs.begin();
-  std::vector<_dbBTerm*>::iterator sd = symmetric_diff.begin();
-
-  while ((i1 != lhs.end()) && (i2 != rhs.end())) {
-    _dbBTerm* o1 = *i1;
-    _dbBTerm* o2 = *i2;
-
-    if (o1 == *sd) {
-      diff.report("%c %s\n", dbDiff::LEFT, o1->_name);
-      ++i1;
-      ++sd;
-    } else if (o2 == *sd) {
-      diff.report("%c %s\n", dbDiff::RIGHT, o2->_name);
-      ++i2;
-      ++sd;
-    } else  // equal keys
-    {
-      ++i1;
-      ++i2;
-    }
-  }
-
-  for (; i1 != lhs.end(); ++i1) {
-    _dbBTerm* o1 = *i1;
-    diff.report("%c %s\n", dbDiff::LEFT, o1->_name);
-  }
-
-  for (; i2 != rhs.end(); ++i2) {
-    _dbBTerm* o2 = *i2;
-    diff.report("%c %s\n", dbDiff::RIGHT, o2->_name);
-  }
-
-  diff.end_object();
-}
-
-void set_symmetric_diff(dbDiff& diff,
-                        std::vector<_dbITerm*>& lhs,
-                        std::vector<_dbITerm*>& rhs)
-{
-  diff.begin_object("<> _iterms\n");
-
-  std::sort(lhs.begin(), lhs.end(), dbDiffCmp<_dbITerm>());
-  std::sort(rhs.begin(), rhs.end(), dbDiffCmp<_dbITerm>());
-
-  std::vector<_dbITerm*>::iterator end;
-  std::vector<_dbITerm*> symmetric_diff;
-
-  symmetric_diff.resize(lhs.size() + rhs.size());
-
-  end = std::set_symmetric_difference(lhs.begin(),
-                                      lhs.end(),
-                                      rhs.begin(),
-                                      rhs.end(),
-                                      symmetric_diff.begin(),
-                                      dbDiffCmp<_dbITerm>());
-
-  std::vector<_dbITerm*>::iterator i1 = lhs.begin();
-  std::vector<_dbITerm*>::iterator i2 = rhs.begin();
-  std::vector<_dbITerm*>::iterator sd = symmetric_diff.begin();
-
-  while ((i1 != lhs.end()) && (i2 != rhs.end())) {
-    _dbITerm* o1 = *i1;
-    _dbITerm* o2 = *i2;
-
-    if (o1 == *sd) {
-      _dbInst* inst = o1->getInst();
-      _dbMTerm* mterm = o1->getMTerm();
-      diff.report("%c (%s %s)\n", dbDiff::LEFT, inst->_name, mterm->_name);
-      ++i1;
-      ++sd;
-    } else if (o2 == *sd) {
-      _dbInst* inst = o2->getInst();
-      _dbMTerm* mterm = o2->getMTerm();
-      diff.report("%c (%s %s)\n", dbDiff::RIGHT, inst->_name, mterm->_name);
-      ++i2;
-      ++sd;
-    } else  // equal keys
-    {
-      ++i1;
-      ++i2;
-    }
-  }
-
-  for (; i1 != lhs.end(); ++i1) {
-    _dbITerm* o1 = *i1;
-    _dbInst* inst = o1->getInst();
-    _dbMTerm* mterm = o1->getMTerm();
-    diff.report("%c (%s %s)\n", dbDiff::LEFT, inst->_name, mterm->_name);
-  }
-
-  for (; i2 != rhs.end(); ++i2) {
-    _dbITerm* o2 = *i2;
-    _dbInst* inst = o2->getInst();
-    _dbMTerm* mterm = o2->getMTerm();
-    diff.report("%c (%s %s)\n", dbDiff::RIGHT, inst->_name, mterm->_name);
-  }
-
-  diff.end_object();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -3238,31 +2935,40 @@ dbNet* dbNet::getValidNet(dbBlock* block_, uint dbid_)
   return (dbNet*) block->_net_tbl->getPtr(dbid_);
 }
 
+bool dbNet::canMergeNet(dbNet* in_net)
+{
+  if (isDoNotTouch() || in_net->isDoNotTouch()) {
+    return false;
+  }
+
+  for (dbITerm* iterm : in_net->getITerms()) {
+    if (iterm->getInst()->isDoNotTouch()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void dbNet::mergeNet(dbNet* in_net)
 {
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
-  for (auto callback : block->_callbacks) {
-    callback->inDbNetPreMerge(this, in_net);
-  }
 
   std::vector<dbITerm*> iterms;
   for (dbITerm* iterm : in_net->getITerms()) {
-    iterm->disconnect();
     iterms.push_back(iterm);
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbNetPreMerge(this, in_net);
   }
 
   for (dbITerm* iterm : iterms) {
     iterm->connect(this);
   }
 
-  std::vector<dbBTerm*> bterms;
   for (dbBTerm* bterm : in_net->getBTerms()) {
-    bterm->disconnect();
-    bterms.push_back(bterm);
-  }
-
-  for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
   }
 }
@@ -3368,6 +3074,15 @@ void dbNet::setJumpers(bool has_jumpers)
   if (db->isSchema(db_schema_has_jumpers)) {
     net->_flags._has_jumpers = has_jumpers ? 1 : 0;
   }
+}
+
+void _dbNet::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["groups"].add(_groups);
 }
 
 }  // namespace odb

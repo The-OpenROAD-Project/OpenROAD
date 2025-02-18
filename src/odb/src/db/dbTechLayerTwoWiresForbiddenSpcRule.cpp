@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -77,38 +76,6 @@ bool _dbTechLayerTwoWiresForbiddenSpcRule::operator<(
     const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerTwoWiresForbiddenSpcRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.min_exact_span_length_);
-  DIFF_FIELD(flags_.max_exact_span_length_);
-  DIFF_FIELD(min_spacing_);
-  DIFF_FIELD(max_spacing_);
-  DIFF_FIELD(min_span_length_);
-  DIFF_FIELD(max_span_length_);
-  DIFF_FIELD(prl_);
-  DIFF_END
-}
-
-void _dbTechLayerTwoWiresForbiddenSpcRule::out(dbDiff& diff,
-                                               char side,
-                                               const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.min_exact_span_length_);
-  DIFF_OUT_FIELD(flags_.max_exact_span_length_);
-  DIFF_OUT_FIELD(min_spacing_);
-  DIFF_OUT_FIELD(max_spacing_);
-  DIFF_OUT_FIELD(min_span_length_);
-  DIFF_OUT_FIELD(max_span_length_);
-  DIFF_OUT_FIELD(prl_);
-
-  DIFF_END
 }
 
 _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
@@ -164,6 +131,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.max_span_length_;
   stream << obj.prl_;
   return stream;
+}
+
+void _dbTechLayerTwoWiresForbiddenSpcRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

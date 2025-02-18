@@ -45,7 +45,6 @@
 namespace odb {
   class dbIStream;
   class dbOStream;
-  class dbDiff;
   class _dbDatabase;
   {% for _class in klass.classes %}
     {% if _class in ["dbTable", "dbHashTable"] %}
@@ -100,11 +99,10 @@ namespace odb {
     bool operator==(const _{{klass.name}}& rhs) const;
     bool operator!=(const _{{klass.name}}& rhs) const { return !operator==(rhs); }
     bool operator<(const _{{klass.name}}& rhs) const;
-    void differences(dbDiff& diff, const char* field, const _{{klass.name}}& rhs) const;
-    void out(dbDiff& diff, char side, const char* field) const;
     {% if klass.hasTables %}
     dbObjectTable* getObjectTable(dbObjectType type);
     {% endif %}
+    void collectMemInfo(MemInfo& info);
     // User Code Begin Methods
     // User Code End Methods
 

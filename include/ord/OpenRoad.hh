@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -57,6 +58,7 @@ class Rect;
 namespace sta {
 class dbSta;
 class dbNetwork;
+class VerilogReader;
 }  // namespace sta
 
 namespace rsz {
@@ -97,10 +99,6 @@ class Finale;
 
 namespace mpl {
 class MacroPlacer;
-}
-
-namespace mpl2 {
-class MacroPlacer2;
 }
 
 namespace gpl {
@@ -184,7 +182,6 @@ class OpenRoad
   fin::Finale* getFinale() { return finale_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
-  mpl2::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   drt::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -242,8 +239,6 @@ class OpenRoad
   void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 
-  void diffDbs(const char* filename1, const char* filename2, const char* diffs);
-
   void setThreadCount(int threads, bool printInfo = true);
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
@@ -271,6 +266,7 @@ class OpenRoad
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   dbVerilogNetwork* verilog_network_ = nullptr;
+  sta::VerilogReader* verilog_reader_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
   ppl::IOPlacer* ioPlacer_ = nullptr;
@@ -278,7 +274,6 @@ class OpenRoad
   dpo::Optdp* optdp_ = nullptr;
   fin::Finale* finale_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
-  mpl2::MacroPlacer2* macro_placer2_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;
   cts::TritonCTS* tritonCts_ = nullptr;

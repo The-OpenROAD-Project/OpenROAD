@@ -39,7 +39,6 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbGroupInstItr.h"
 #include "dbGroupItr.h"
 #include "dbGroupModInstItr.h"
@@ -119,51 +118,6 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
   return true;
 }
 
-void _dbGroup::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbGroup& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_._type);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_group_next);
-  DIFF_FIELD(_parent_group);
-  DIFF_FIELD(_insts);
-  DIFF_FIELD(_modinsts);
-  DIFF_FIELD(_groups);
-  DIFF_FIELD(region_next_);
-  DIFF_FIELD(region_prev_);
-  DIFF_FIELD(region_);
-  // User Code Begin Differences
-  DIFF_VECTOR(_power_nets);
-  DIFF_VECTOR(_ground_nets);
-  // User Code End Differences
-  DIFF_END
-}
-
-void _dbGroup::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_._type);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_group_next);
-  DIFF_OUT_FIELD(_parent_group);
-  DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_modinsts);
-  DIFF_OUT_FIELD(_groups);
-  DIFF_OUT_FIELD(region_next_);
-  DIFF_OUT_FIELD(region_prev_);
-  DIFF_OUT_FIELD(region_);
-
-  // User Code Begin Out
-  DIFF_OUT_VECTOR(_power_nets);
-  DIFF_OUT_VECTOR(_ground_nets);
-  // User Code End Out
-  DIFF_END
-}
-
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
   flags_ = {};
@@ -230,6 +184,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   stream << obj.region_prev_;
   stream << obj.region_;
   return stream;
+}
+
+void _dbGroup::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["power_nets"].add(_power_nets);
+  info.children_["ground_nets"].add(_ground_nets);
+  // User Code End collectMemInfo
 }
 
 _dbGroup::~_dbGroup()

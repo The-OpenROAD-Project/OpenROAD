@@ -77,11 +77,11 @@ Corner: slow
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ r1/CK (DFF_X1)
    0.35    0.35 ^ r1/Q (DFF_X1)
-   0.12    0.47 ^ u1/Z (BUF_X1)
-   0.03    0.50 v bc1/u4/ZN (INV_X1)
-   0.03    0.53 ^ bc1/u5/ZN (INV_X1)
-   0.00    0.53 ^ r2/D (DFF_X1)
-           0.53   data arrival time
+   0.11    0.46 ^ u1/Z (BUF_X1)
+   0.03    0.48 v bc1/u4/ZN (INV_X1)
+   0.03    0.52 ^ bc1/u5/ZN (INV_X1)
+   0.00    0.52 ^ r2/D (DFF_X1)
+           0.52   data arrival time
 
    0.30    0.30   clock clk (rise edge)
    0.00    0.30   clock network delay (ideal)
@@ -91,8 +91,8 @@ Corner: slow
            0.23   data required time
 ---------------------------------------------------------
            0.23   data required time
-          -0.53   data arrival time
+          -0.52   data arrival time
 ---------------------------------------------------------
-          -0.30   slack (VIOLATED)
+          -0.29   slack (VIOLATED)
 
 

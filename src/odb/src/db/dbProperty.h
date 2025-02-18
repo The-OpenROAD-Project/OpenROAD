@@ -49,7 +49,6 @@ class _dbProperty;
 class dbPropertyItr;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbNameCache;
 
 enum _PropTypeEnum
@@ -85,10 +84,7 @@ class _dbProperty : public _dbObject
   bool operator==(const _dbProperty& rhs) const;
   bool operator!=(const _dbProperty& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbProperty& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbProperty& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   static dbTable<_dbProperty>* getPropTable(dbObject* object);
   static _dbNameCache* getNameCache(dbObject* object);

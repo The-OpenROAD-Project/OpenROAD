@@ -551,9 +551,6 @@ void extMain::ccReportProgress()
   }
 }
 
-int ttttsrcnet = 66;
-int tttttgtnet = 66;
-int ttttm = 0;
 void extMain::printNet(dbNet* net, uint netId)
 {
   if (netId == net->getId()) {
@@ -619,10 +616,7 @@ void extMain::measureRC(CoupleOptions& options)
 
   uint totLenCovered = 0;
   if (_usingMetalPlanes) {
-    if (_ccContextArray
-        && ((!srcNet || (int) srcNet->getId() == ttttsrcnet)
-            || (!tgtNet || (int) tgtNet->getId() == tttttgtnet))
-        && (!ttttm || m._met == ttttm)) {
+    if (_ccContextArray && (!srcNet || !tgtNet)) {
       int pxy = m._dir ? m._ll[0] : m._ll[1];
       int pbase = m._dir ? m._ur[1] : m._ur[0];
       logger_->info(RCX,
@@ -719,7 +713,7 @@ void extMain::measureRC(CoupleOptions& options)
   ccReportProgress();
 }
 
-extern CoupleOptions coupleOptionsNull;
+const CoupleOptions coupleOptionsNull{};
 
 void extCompute1(CoupleOptions& options, void* computePtr)
 {

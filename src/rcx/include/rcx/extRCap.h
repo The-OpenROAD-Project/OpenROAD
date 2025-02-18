@@ -243,13 +243,18 @@ class extDistWidthRCTable
 
   // ---------------------------------------------------------------------------------------
 
-  extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
+  extDistWidthRCTable(bool dummy,
+                      uint met,
+                      uint layerCnt,
+                      uint width,
+                      bool OUREVERSEORDER);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
                       uint metCnt,
                       Ath__array1D<double>* widthTable,
                       AthPool<extDistRC>* rcPool,
+                      bool OUREVERSEORDER,
                       double dbFactor = 1.0);
   extDistWidthRCTable(bool over,
                       uint met,
@@ -259,13 +264,15 @@ class extDistWidthRCTable
                       int diagWidthCnt,
                       int diagDistCnt,
                       AthPool<extDistRC>* rcPool,
+                      bool OUREVERSEORDER,
                       double dbFactor = 1.0);
   extDistWidthRCTable(bool over,
                       uint met,
                       uint layerCnt,
                       uint metCnt,
                       uint maxWidthCnt,
-                      AthPool<extDistRC>* rcPool);
+                      AthPool<extDistRC>* rcPool,
+                      bool OUREVERSEORDER);
   void addRCw(uint n, uint w, extDistRC* rc);
   void createWidthMap();
   void makeWSmapping();
@@ -397,7 +404,10 @@ class extMetRCTable
   // dkf 01022024
   uint SetDefaultTechViaRes(dbTech* tech, bool dbg);
   // ----------------------------------------------------------------------------------------
-  extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_);
+  extMetRCTable(uint layerCnt,
+                AthPool<extDistRC>* rcPool,
+                Logger* logger_,
+                bool OUREVERSEORDER);
   ~extMetRCTable();
 
   // ---------------------- DKF 092024 -----------------------------------
@@ -471,6 +481,9 @@ class extMetRCTable
   // dkf 092024
   Ath__array1D<extViaModel*> _viaModel;
   AthHash<int> _viaModelHash;
+
+ private:
+  bool _OUREVERSEORDER;
 };
 
 class extRCTable
@@ -958,6 +971,8 @@ class extRCModel
   uint* _singlePlaneLayerMap;
 
   extMain* _extMain;
+
+  bool _OUREVERSEORDER{false};
 
  protected:
   Logger* logger_;

@@ -58,6 +58,7 @@ class OpenRoad;
 using odb::dbDatabase;
 
 using sta::Cell;
+using sta::ConcreteCell;
 using sta::ConcreteNetwork;
 using sta::dbNetwork;
 
@@ -70,6 +71,7 @@ class dbVerilogNetwork : public ConcreteNetwork
   dbVerilogNetwork();
   Cell* findAnyCell(const char* name) override;
   void init(dbNetwork* db_network);
+  bool isBlackBox(ConcreteCell* cell);
 
  private:
   NetworkReader* db_network_ = nullptr;
@@ -85,9 +87,7 @@ void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
 // objects. The hierarchical network is elaborated/flattened by the
 // link_design command and OpenDB objects are created from the flattened
 // network.
-void dbReadVerilog(const char* filename, dbVerilogNetwork* verilog_network);
-
-void dbLinkDesign(const char* top_cell_name,
+bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
                   dbDatabase* db,
                   utl::Logger* logger,

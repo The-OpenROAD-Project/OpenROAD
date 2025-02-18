@@ -156,8 +156,6 @@ class dbTable : public dbObjectTable, public dbIterator
 
   bool operator==(const dbTable<T>& rhs) const;
   bool operator!=(const dbTable<T>& table) const;
-  void differences(dbDiff& diff, const dbTable<T>& rhs) const;
-  void out(dbDiff& diff, char side) const;
 
   // dbIterator interface methods
   bool reversible() override;
@@ -171,6 +169,7 @@ class dbTable : public dbObjectTable, public dbIterator
   dbObject* getObject(uint id, ...) override;
   bool validObject(uint id, ...) override { return validId(id); }
   void getObjects(std::vector<T*>& objects);
+  void collectMemInfo(MemInfo& info);
 
  private:
   void copy_pages(const dbTable<T>&);

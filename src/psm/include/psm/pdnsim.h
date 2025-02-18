@@ -121,7 +121,8 @@ class PDNSim : public odb::dbBlockCallBackObj
                          IRDropByPoint& ir_drop) const;
   bool checkConnectivity(odb::dbNet* net,
                          bool floorplanning,
-                         const std::string& error_file);
+                         const std::string& error_file,
+                         bool require_bterm);
   void setDebugGui(bool enable);
 
   void clearSolvers();

@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbITerm.h"
 #include "dbModBTerm.h"
@@ -88,37 +87,6 @@ bool _dbModNet::operator==(const _dbModNet& rhs) const
 bool _dbModNet::operator<(const _dbModNet& rhs) const
 {
   return true;
-}
-
-void _dbModNet::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbModNet& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_prev_entry);
-  DIFF_FIELD(_moditerms);
-  DIFF_FIELD(_modbterms);
-  DIFF_FIELD(_iterms);
-  DIFF_FIELD(_bterms);
-  DIFF_END
-}
-
-void _dbModNet::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_prev_entry);
-  DIFF_OUT_FIELD(_moditerms);
-  DIFF_OUT_FIELD(_modbterms);
-  DIFF_OUT_FIELD(_iterms);
-  DIFF_OUT_FIELD(_bterms);
-
-  DIFF_END
 }
 
 _dbModNet::_dbModNet(_dbDatabase* db)
@@ -194,6 +162,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
     stream << obj._bterms;
   }
   return stream;
+}
+
+void _dbModNet::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbModNet::~_dbModNet()

@@ -43,7 +43,6 @@ class _dbBox;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbObstructionFlags
 {
@@ -72,10 +71,7 @@ class _dbObstruction : public _dbObject
   bool operator==(const _dbObstruction& rhs) const;
   bool operator!=(const _dbObstruction& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbObstruction& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbObstruction& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbObstruction& obs);

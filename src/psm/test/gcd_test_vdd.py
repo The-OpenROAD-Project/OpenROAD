@@ -11,7 +11,7 @@ design.readDef("Nangate45_data/gcd.def")
 design.evalTclString("read_sdc Nangate45_data/gcd.sdc")
 
 voltage_file = helpers.make_result_file("gcd_test_vdd-voltage.rpt")
-pdnsim_aux.check_power_grid(design, net="VDD")
+pdnsim_aux.check_power_grid(design, net="VDD", require_bterm=False)
 
 pdnsim_aux.analyze_power_grid(
     design, vsrc="Vsrc_gcd_vdd.loc", net="VDD", outfile=voltage_file

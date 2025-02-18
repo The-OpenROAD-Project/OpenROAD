@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerMinCutRuleFlags
@@ -70,10 +69,7 @@ class _dbTechLayerMinCutRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerMinCutRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerMinCutRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerMinCutRuleFlags flags_;
   int num_cuts_;

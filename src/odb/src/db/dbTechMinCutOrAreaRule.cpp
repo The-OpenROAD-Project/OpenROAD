@@ -45,6 +45,18 @@ namespace odb {
 template class dbTable<_dbTechMinCutRule>;
 template class dbTable<_dbTechMinEncRule>;
 
+void _dbTechMinCutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechMinEncRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
 {
   if (_flags._rule != rhs._flags._rule) {
@@ -78,34 +90,6 @@ bool _dbTechMinCutRule::operator==(const _dbTechMinCutRule& rhs) const
   return true;
 }
 
-void _dbTechMinCutRule::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbTechMinCutRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._rule);
-  DIFF_FIELD(_flags._cuts_length);
-  DIFF_FIELD(_num_cuts);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_cut_distance);
-  DIFF_FIELD(_length);
-  DIFF_FIELD(_distance);
-  DIFF_END
-}
-
-void _dbTechMinCutRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._rule);
-  DIFF_OUT_FIELD(_flags._cuts_length);
-  DIFF_OUT_FIELD(_num_cuts);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_cut_distance);
-  DIFF_OUT_FIELD(_length);
-  DIFF_OUT_FIELD(_distance);
-  DIFF_END
-}
-
 bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
 {
   if (_flags._has_width != rhs._flags._has_width) {
@@ -121,26 +105,6 @@ bool _dbTechMinEncRule::operator==(const _dbTechMinEncRule& rhs) const
   }
 
   return true;
-}
-
-void _dbTechMinEncRule::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbTechMinEncRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._has_width);
-  DIFF_FIELD(_area);
-  DIFF_FIELD(_width);
-  DIFF_END
-}
-
-void _dbTechMinEncRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_BEGIN
-  DIFF_OUT_FIELD(_flags._has_width);
-  DIFF_OUT_FIELD(_area);
-  DIFF_OUT_FIELD(_width);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////

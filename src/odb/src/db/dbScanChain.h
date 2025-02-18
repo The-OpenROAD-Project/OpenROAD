@@ -41,7 +41,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class dbScanPartition;
 class _dbScanPartition;
@@ -60,11 +59,8 @@ class _dbScanChain : public _dbObject
   bool operator==(const _dbScanChain& rhs) const;
   bool operator!=(const _dbScanChain& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbScanChain& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbScanChain& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   std::variant<dbBTerm*, dbITerm*> getPin(const dbId<dbScanPin>& scan_pin_id);
   void setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin);

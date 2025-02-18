@@ -49,10 +49,6 @@
 namespace odb {
 
 template class dbTable<_dbWire>;
-static void set_symmetric_diff(dbDiff& diff,
-                               std::vector<dbShape*>& lhs,
-                               std::vector<dbShape*>& rhs);
-static void out(dbDiff& diff, char side, dbShape* s);
 
 bool _dbWire::operator==(const _dbWire& rhs) const
 {
@@ -73,68 +69,6 @@ bool _dbWire::operator==(const _dbWire& rhs) const
   }
 
   return true;
-}
-
-void _dbWire::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbWire& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._is_global);
-  DIFF_FIELD_NO_DEEP(_net);
-
-  if (!diff.deepDiff()) {
-    DIFF_VECTOR(_data);
-    DIFF_VECTOR(_opcodes);
-  } else {
-    if ((_data != rhs._data) || (_opcodes != rhs._opcodes)) {
-      dbWireShapeItr itr;
-      dbShape s;
-
-      std::vector<dbShape*> lhs_vec;
-      for (itr.begin((dbWire*) this); itr.next(s);) {
-        lhs_vec.push_back(new dbShape(s));
-      }
-
-      std::vector<dbShape*> rhs_vec;
-      for (itr.begin((dbWire*) &rhs); itr.next(s);) {
-        rhs_vec.push_back(new dbShape(s));
-      }
-
-      set_symmetric_diff(diff, lhs_vec, rhs_vec);
-
-      std::vector<dbShape*>::iterator sitr;
-      for (sitr = lhs_vec.begin(); sitr != lhs_vec.begin(); ++sitr) {
-        delete *sitr;
-      }
-
-      for (sitr = rhs_vec.begin(); sitr != rhs_vec.begin(); ++sitr) {
-        delete *sitr;
-      }
-    }
-  }
-
-  DIFF_END
-}
-
-void _dbWire::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._is_global);
-  DIFF_OUT_FIELD_NO_DEEP(_net);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_VECTOR(_data);
-    DIFF_OUT_VECTOR(_opcodes);
-  } else {
-    dbWireShapeItr itr;
-    dbShape s;
-    for (itr.begin((dbWire*) this); itr.next(s);) {
-      odb::out(diff, side, &s);
-    }
-  }
-
-  DIFF_END
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire)
@@ -162,97 +96,6 @@ class dbDiffShapeCmp
  public:
   int operator()(dbShape* t1, dbShape* t2) { return *t1 < *t2; }
 };
-
-void set_symmetric_diff(dbDiff& diff,
-                        std::vector<dbShape*>& lhs,
-                        std::vector<dbShape*>& rhs)
-{
-  std::sort(lhs.begin(), lhs.end(), dbDiffShapeCmp());
-  std::sort(rhs.begin(), rhs.end(), dbDiffShapeCmp());
-
-  std::vector<dbShape*>::iterator end;
-  std::vector<dbShape*> symmetric_diff;
-
-  symmetric_diff.resize(lhs.size() + rhs.size());
-
-  end = std::set_symmetric_difference(lhs.begin(),
-                                      lhs.end(),
-                                      rhs.begin(),
-                                      rhs.end(),
-                                      symmetric_diff.begin(),
-                                      dbDiffShapeCmp());
-
-  std::vector<dbShape*>::iterator i1 = lhs.begin();
-  std::vector<dbShape*>::iterator i2 = rhs.begin();
-  std::vector<dbShape*>::iterator sd = symmetric_diff.begin();
-
-  while ((i1 != lhs.end()) && (i2 != rhs.end())) {
-    dbShape* o1 = *i1;
-    dbShape* o2 = *i2;
-
-    if (o1 == *sd) {
-      out(diff, dbDiff::LEFT, o1);
-      ++i1;
-      ++sd;
-    } else if (o2 == *sd) {
-      out(diff, dbDiff::RIGHT, o2);
-      ++i2;
-      ++sd;
-    } else  // equal keys
-    {
-      ++i1;
-      ++i2;
-    }
-  }
-
-  for (; i1 != lhs.end(); ++i1) {
-    dbShape* o1 = *i1;
-    out(diff, dbDiff::LEFT, o1);
-  }
-
-  for (; i2 != rhs.end(); ++i2) {
-    dbShape* o2 = *i2;
-    out(diff, dbDiff::RIGHT, o2);
-  }
-}
-
-void out(dbDiff& diff, char side, dbShape* s)
-{
-  switch (s->getType()) {
-    case dbShape::VIA: {
-      dbVia* v = s->getVia();
-      std::string n = v->getName();
-      int x, y;
-      s->getViaXY(x, y);
-      diff.report("%c VIA %s (%d %d)\n", side, n.c_str(), x, y);
-      break;
-    }
-
-    case dbShape::TECH_VIA: {
-      dbTechVia* v = s->getTechVia();
-      std::string n = v->getName();
-      int x, y;
-      s->getViaXY(x, y);
-      diff.report("%c VIA %s (%d %d)\n", side, n.c_str(), x, y);
-      break;
-    }
-
-    case dbShape::SEGMENT: {
-      dbTechLayer* l = s->getTechLayer();
-      std::string n = l->getName();
-      diff.report("%c BOX %s (%d %d) (%d %d)\n",
-                  side,
-                  n.c_str(),
-                  s->xMin(),
-                  s->yMin(),
-                  s->xMax(),
-                  s->yMax());
-      break;
-    }
-    default:
-      break;  // Wall
-  }
-}
 
 //
 // DB wire methods here
@@ -1850,6 +1693,15 @@ void dbWire::destroy(dbWire* wire_)
 
   dbProperty::destroyProperties(wire);
   block->_wire_tbl->destroy(wire);
+}
+
+void _dbWire::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["data"].add(_data);
+  info.children_["opcodes"].add(_opcodes);
 }
 
 }  // namespace odb

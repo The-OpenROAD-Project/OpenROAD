@@ -83,10 +83,6 @@ namespace mpl {
 class MacroPlacer;
 }
 
-namespace mpl2 {
-class MacroPlacer2;
-}
-
 namespace ppl {
 class IOPlacer;
 }
@@ -203,7 +199,6 @@ class Design
   grt::GlobalRouter* getGlobalRouter();
   ifp::InitFloorplan getFloorplan();
   mpl::MacroPlacer* getMacroPlacer();
-  mpl2::MacroPlacer2* getMacroPlacer2();
   odb::dbDatabase* getDb();
   pad::ICeWall* getICeWall();
   par::PartitionMgr* getPartitionMgr();
