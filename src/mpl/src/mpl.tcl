@@ -72,7 +72,7 @@ proc rtl_macro_placer { args } {
          -pin_access_th -target_util \
          -target_dead_space -min_ar \
          -report_directory \
-         -write_macro_placement } \
+         -write_macro_placement }
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
