@@ -936,7 +936,7 @@ void FlexGRWorker::routeNet_postAstarWritePath(
         needGenParent = false;
         parent = mazeIdx2endPointNode[points.back()];
       }
-      std::cout << "Need Gen Parent: " << needGenParent << std::endl;
+      // std::cout << "Need Gen Parent: " << needGenParent << std::endl;
     }
 
   

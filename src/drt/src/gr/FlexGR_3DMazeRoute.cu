@@ -91,11 +91,12 @@ namespace cg = cooperative_groups;
 __device__ __host__ __constant__ uint32_t INF32 = 0xFFFFFFFF;
 
 
-struct Point2D_CUDA {
+struct Point3D_CUDA {
   int x;
   int y;
+  int z;
 
-  Point2D_CUDA(int x, int y) : x(x), y(y) {}
+  Point3D_CUDA(int x, int y, int z) : x(x), y(y), z(z) {}
 };
 
 struct Rect2D_CUDA {
@@ -108,16 +109,18 @@ struct Rect2D_CUDA {
 };
 
 
-enum Directions2D {
+enum Directions3D {
   DIR_NORTH    = 0,
   DIR_RIGHT = 1,
   DIR_SOUTH  = 2,
   DIR_LEFT  = 3,
+  DIR_UP = 4;
+  DIR_DOWN = 5;
   DIR_NONE  = 255
 };
 
 
-struct NodeData2D {
+struct NodeData3D {
   // forward and backward propagation (heuristic and real cost) (32 bits each)
   uint32_t forward_h_cost; // heuristic cost
   uint32_t forward_g_cost; // real cost
@@ -135,6 +138,7 @@ struct NodeData2D {
   uint8_t backward_direction_prev;
   int golden_parent_x;
   int golden_parent_y;
+  int golden_parent_z;
 
   // Flags (1 bit each, packed into a single 8-bit field)
   struct Flags {
@@ -152,7 +156,7 @@ struct NodeData2D {
 
 
 __host__ __device__ 
-void initNodeData2D(NodeData2D& nd) {
+void initNodeData3D(NodeData2D& nd) {
   nd.forward_h_cost = INF32;
   nd.forward_g_cost = INF32;
   nd.backward_h_cost = INF32;
@@ -167,6 +171,7 @@ void initNodeData2D(NodeData2D& nd) {
   nd.backward_direction_prev = DIR_NONE;
   nd.golden_parent_x = -1;
   nd.golden_parent_y = -1;
+  nd.golden_parent_z = -1;
   nd.flags.src_flag = 0;
   nd.flags.dst_flag = 0;
   nd.flags.forward_update_flag = 0;
@@ -186,6 +191,8 @@ uint8_t computeParentDirection2D(int d) {
     case 1: return DIR_RIGHT;
     case 2: return DIR_SOUTH;
     case 3: return DIR_LEFT;
+    case 4: return DIR_UP;
+    case 5: return DIR_DOWN;
     default: return DIR_NONE;
   }
 }
@@ -199,6 +206,8 @@ uint8_t invertDirection2D(uint8_t d) {
     case DIR_SOUTH:    return DIR_NORTH;
     case DIR_LEFT:     return DIR_RIGHT;
     case DIR_RIGHT:    return DIR_LEFT;
+    case DIR_UP:       return DIR_DOWN;
+    case DIR_DOWN:     return DIR_UP;
     default:           return DIR_NONE;
   }
 }
@@ -1326,8 +1335,6 @@ void launchMazeRouteStream(
     &HISTCOST
   };
 
-
-  /*
   // Calculate the maximum number of blocks that can run cooperatively
   int deviceId = 0;
   cudaDeviceProp deviceProp;
@@ -1370,10 +1377,6 @@ void launchMazeRouteStream(
   // should simply exit if their blockIdx.x exceeds the work limit.)
   numBlocks = min(numBlocks, maxBlocksPerGrid);
   // printf("Launching kernel with %d blocks\n", numBlocks);
-  */
-
-  int threadsPerBlock = 1024;
-  int numBlocks = 108;
 
   cudaError_t err = cudaLaunchCooperativeKernel(
     (void*)biwaveBellmanFord2D__kernel,
@@ -1389,7 +1392,7 @@ void launchMazeRouteStream(
 
 
 // We need to restore the connected path from the golden parent
-float batchPathSyncUp(
+void batchPathSyncUp(
   std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
   std::vector<grNet*>& nets,
   std::vector<Rect2D_CUDA>& netBBoxVec,
@@ -1438,10 +1441,10 @@ float batchPathSyncUp(
 
   auto syncupTimeEnd = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> syncupTime = syncupTimeEnd - syncupTimeStart;
-  return syncupTime.count();
+  std::cout << "Syncup time: " << syncupTime.count() << " ms" << std::endl;
 }
 
-float FlexGR::GPUAccelerated2DMazeRoute(
+void FlexGR::GPUAccelerated2DMazeRoute(
   std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
   std::vector<grNet*>& nets,
   std::vector<uint64_t>& h_costMap,
@@ -1643,9 +1646,9 @@ float FlexGR::GPUAccelerated2DMazeRoute(
     std::cout << "Finish the GPU routing" << std::endl;
   }
 
-  float syncupTime = batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
+
   // Reconstruct the nets similar to the CPU version
-  // batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
+  batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
 
   for (int i = 0; i < numNets; i++) {
     cudaStreamDestroy(netStreams[i]);
@@ -1666,8 +1669,6 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   cudaFree(d_netHPWL);
   cudaFree(d_netPtr);
   cudaFree(d_netBBox);
-
-  return syncupTime;
 }
 
 } // namespace drt

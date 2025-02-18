@@ -364,8 +364,12 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
     auto childLoc = child->getLoc();
     auto parentLoc = parent->getLoc();
     if (childLoc.x() != parentLoc.x() && childLoc.y() != parentLoc.y()) {
-      std::cout
-          << "Error: boundary pin has non-colinear parent and child loc\n";
+      auto nodeLoc = node->getLoc();
+      std::cout << "Node Loc:  x = " << nodeLoc.x() << " y = " << nodeLoc.y() << std::endl;
+      std::cout << "Parent Loc:  x = " << parentLoc.x() << " y = " << parentLoc.y() << std::endl;
+      std::cout << "Child Loc:  x = " << childLoc.x() << " y = " << childLoc.y() << std::endl;
+      std::cout << "Error: boundary pin has non-colinear parent and child loc\n";
+      exit(1);
     }
 
     // update connectivity

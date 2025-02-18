@@ -58,7 +58,8 @@ void FlexGR::batchGenerationMIS(
   std::vector<std::vector<grNet*>> &rerouteNets,
   std::vector<std::vector<grNet*>> &batches,
   std::vector<int> &validBatchIds,
-  int iter)
+  int iter,
+  bool is2DRouting)
 {      
   // Measure the runtime of std::sort.
   auto start_time = std::chrono::high_resolution_clock::now();
@@ -103,12 +104,19 @@ void FlexGR::batchGenerationMIS(
             break;
           }
         }
-        if (0) {
+        /*
+        if (1) {
           if (!conflict) {
             batches[batchId].push_back(net);
             found = true;
             break;
           }
+        }
+        */
+        if (!conflict) {
+          batches[batchId].push_back(net);
+          found = true;
+          break;
         }
       }
       if (!found) {
@@ -147,8 +155,10 @@ void FlexGR::batchGenerationMIS(
       }
       */
       validBatchIds.push_back(i);
-      for (auto net : batches[i]) {
-        net->setCPUFlag(false);
+      if (is2DRouting) {
+        for (auto net : batches[i]) {
+          net->setCPUFlag(false);
+        }
       }
       gpuNets += batches[i].size();
     } else {
@@ -159,9 +169,9 @@ void FlexGR::batchGenerationMIS(
   // Report the batch information
   logger_->report("[INFO] Number of batches: " + std::to_string(batches.size()));
   logger_->report("[INFO] Batch information:");
-  for (int i = 0; i < validBatchIds.size(); i++) {
-    logger_->report("[INFO] Batch " + std::to_string(validBatchIds[i]) + ": " + std::to_string(batches[validBatchIds[i]].size()) + " nets");
-  } 
+  // for (int i = 0; i < validBatchIds.size(); i++) {
+  //  logger_->report("[INFO] Batch " + std::to_string(validBatchIds[i]) + ": " + std::to_string(batches[validBatchIds[i]].size()) + " nets");
+  //} 
 
   logger_->report("[INFO] Number of GPU nets: " + std::to_string(gpuNets) + " (" + std::to_string(gpuNets * 100.0 / (cpuNets + gpuNets)) + "%)");
   logger_->report("[INFO] Number of CPU nets: " + std::to_string(cpuNets) + " (" + std::to_string(cpuNets * 100.0 / (cpuNets + gpuNets)) + "%)");
@@ -277,14 +287,29 @@ void FlexGR::searchRepair_update(int iter,
   }
   exception_init.rethrow();
 
+
+  float routeInitTime = 0.0;
+  float routeTime = 0.0;
+  float restoreTime = 0.0;
+  float syncTime = 0.0;
+
+
   for (int iter = 0; iter < mazeEndIter; iter++) {
     std::vector<std::vector<grNet*>> rerouteNets(uworkers.size());
-    
+
+  
     // This can be done in parallel if necessary
+    ThreadException exception1;
+  #pragma omp parallel for schedule(dynamic)
     for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
-      uworkers[j]->route_addHistCost_update();
-      uworkers[j]->routePrep_update(rerouteNets[j], iter);
+      try {
+        uworkers[j]->route_addHistCost_update();
+        uworkers[j]->routePrep_update(rerouteNets[j], iter);
+      } catch (...) {
+        exception1.capture();
+      }
     }
+    exception1.rethrow();
 
     // Divide the nets into multiple batches and run the GPU-accelerated Maze Routing
     // Different nets has different relaxation strategies
@@ -294,10 +319,9 @@ void FlexGR::searchRepair_update(int iter,
     // Nets from different workers will naturally have no overlap
     // Nets from the same workers will be batched based on the relaxed bounding box
 
-
     std::vector<std::vector<grNet*>> batches;
     std::vector<int> validBatchIds;
-    batchGenerationMIS(rerouteNets, batches, validBatchIds, iter);
+    batchGenerationMIS(rerouteNets, batches, validBatchIds, iter, is2DRouting);
         
     // Run the CPU-side maze routing
     // Parallel execution
@@ -313,10 +337,17 @@ void FlexGR::searchRepair_update(int iter,
     exception.rethrow();
 
     // Copy the cost map back to the cmap
+    ThreadException exception2;
+#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int) uworkers.size(); i++) {
-      uworkers[i]->initGridGraph_back2CMap();
+      try {
+        uworkers[i]->initGridGraph_back2CMap();
+      } catch (...) {
+        exception2.capture();
+      }
     }
-      
+    exception2.rethrow();
+    
     auto& h_costMap = uworkers[0]->getCMap()->getBits();
     int xDim, yDim, zDim;
     uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
@@ -327,30 +358,67 @@ void FlexGR::searchRepair_update(int iter,
       std::cout << "This is for 2D routing" << std::endl;  
       // Route the nets in the batches
       for (auto& batchId : validBatchIds) {
+        
+        auto routeInitStart = std::chrono::high_resolution_clock::now();
+        
         auto& curBatch = batches[batchId];
         // This can be done in parallel if necessary
-        for (auto net : curBatch) {  
-          uworkers[net->getWorkerId()]->mazeNetInit(net);
-          net->updateAbsGridCoords(uworkers[net->getWorkerId()]->getRouteGCellIdxLL());
+        ThreadException exception3;
+        for (auto net : curBatch) {
+          try {
+            uworkers[net->getWorkerId()]->mazeNetInit(net);
+            net->updateAbsGridCoords(uworkers[net->getWorkerId()]->getRouteGCellIdxLL());
+          } catch (...) {
+            exception3.capture();
+          }
         }
+        exception3.rethrow();
         
+        ThreadException exception4;
         // update the cmap based on the grid graph
         for (int i = 0; i < (int) uworkers.size(); i++) {
-          uworkers[i]->initGridGraph_back2CMap();
+          try {
+            uworkers[i]->initGridGraph_back2CMap();
+          } catch (...) {
+            exception4.capture();
+          }
         }
+        exception4.rethrow();
+
+        auto routeInitEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> routeInitElapsed = routeInitEnd - routeInitStart;
+        routeInitTime += routeInitElapsed.count();
+
+
+        auto routeStart = std::chrono::high_resolution_clock::now();
 
         h_costMap = uworkers[0]->getCMap()->getBits();
-        GPUAccelerated2DMazeRoute(
+        syncTime += GPUAccelerated2DMazeRoute(
           uworkers,
           curBatch, h_costMap, 
           xCoords, yCoords, router_cfg_, 
           congThresh, xDim, yDim);
 
+        auto routeEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> routeElapsed = routeEnd - routeStart;
+        routeTime += routeElapsed.count();
+
+
+        auto restoreStart = std::chrono::high_resolution_clock::now();
         // Restore the net in the batch
         // This can be done in parallel if necessary
+        ThreadException exception5;
         for (auto net : curBatch) {
-          uworkers[net->getWorkerId()]->restoreNet(net);
+          try {
+            uworkers[net->getWorkerId()]->restoreNet(net);
+          } catch (...) {
+            exception5.capture();
+          }
         }
+        exception5.rethrow();
+        auto restoreEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> restoreElapsed = restoreEnd - restoreStart;
+        restoreTime += restoreElapsed.count();
       }  
     } else {
       std::cout << "This is for 3D routing" << std::endl;
@@ -362,6 +430,12 @@ void FlexGR::searchRepair_update(int iter,
         }
       }      
     }
+
+    float totalRouteTime = routeInitTime + routeTime + restoreTime;
+    logger_->report("[INFO] Route initialization time: " + std::to_string(routeInitTime) + " ms" + " (" + std::to_string(routeInitTime * 100.0 / totalRouteTime) + "%)");
+    logger_->report("[INFO] Route time: " + std::to_string(routeTime) + " ms" + " (" + std::to_string(routeTime * 100.0 / totalRouteTime) + "%)");
+    logger_->report("[INFO] Sync time: " + std::to_string(syncTime) + " ms" + " (" + std::to_string(syncTime * 100.0 / totalRouteTime) + "%)");
+    logger_->report("[INFO] Restore time: " + std::to_string(restoreTime) + " ms" + " (" + std::to_string(restoreTime * 100.0 / totalRouteTime) + "%)");    
 
     // Update the history cost
     // This can be done in parallel if necessary

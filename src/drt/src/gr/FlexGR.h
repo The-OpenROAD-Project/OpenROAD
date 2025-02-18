@@ -263,9 +263,10 @@ class FlexGR
     std::vector<std::vector<grNet*>> &rerouteNets,
     std::vector<std::vector<grNet*>> &batches,
     std::vector<int>& validBatchIds,
-    int iter);
+    int iter,
+    bool is2DRouting);
 
-  void GPUAccelerated2DMazeRoute(
+  float GPUAccelerated2DMazeRoute(
     std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
     std::vector<grNet*>& nets,
     std::vector<uint64_t>& h_costMap,
@@ -275,7 +276,7 @@ class FlexGR
     float congThresh,
     int xDim, int yDim);
 
-  int validBatchThreshold_ = 0;
+  int validBatchThreshold_ = 100;
   std::vector<grNet*> nets2Ripup_;
 };
 

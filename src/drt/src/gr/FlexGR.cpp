@@ -169,6 +169,8 @@ void FlexGR::main(odb::dbDatabase* db)
   writeToGuide();
 
   updateDb();
+
+  exit(1);
 }
 
 void FlexGR::searchRepairMacro(int iter,

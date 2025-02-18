@@ -31,6 +31,7 @@
 
 namespace drt {
 
+static const int VERBOSE = 0;
 
 // To be updated
 bool FlexGRWorker::restorePath(
@@ -88,7 +89,8 @@ bool FlexGRWorker::restorePath(
       if (path.empty() || !(path.back() == mi)) {
         path.emplace_back(mi.x(), mi.y(), mi.z());
       }
-      std::cout << "Exit at src x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << std::endl;
+      
+      // std::cout << "Exit at src x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << std::endl;
       // check if the mi is the path
       // if (path.empty() || !(path.back() == mi)) {
       //  path.emplace_back(mi.x(), mi.y(), mi.z());
@@ -142,8 +144,10 @@ bool FlexGRWorker::restoreNet(grNet* net)
 
   std::vector<FlexMazeIdx> path;  // astar must return with more than one idx
 
-  std::cout << "Before restorNet" << std::endl;
-  routeNet_printNet(net);
+  if (VERBOSE > 0) {
+    std::cout << "Before restorNet" << std::endl;
+    routeNet_printNet(net);
+  }
 
   while (!unConnPinGCellNodes.empty()) {    
     path.clear();
@@ -151,16 +155,20 @@ bool FlexGRWorker::restoreNet(grNet* net)
         ccMazeIdx1, ccMazeIdx2, mazeIdx2unConnPinGCellNode);
     bool restoreFlag = restorePath(connComps, nextPinGCellNode, path, 
         ccMazeIdx1, ccMazeIdx2, centerPt);
-    // for test
-    std::cout << "restoreFlag = " << restoreFlag << std::endl;
-    for (auto& vertex : path) {
-      std::cout << "\t x = " << vertex.x() << " y = " << vertex.y() << " z = " << vertex.z() << std::endl;
+    
+    if (VERBOSE > 0) {
+      // for test
+      std::cout << "restoreFlag = " << restoreFlag << std::endl;
+      for (auto& vertex : path) {
+        std::cout << "\t x = " << vertex.x() << " y = " << vertex.y() << " z = " << vertex.z() << std::endl;
+      }
+      std::cout << "pathEnd" << std::endl;    
     }
-    std::cout << "pathEnd" << std::endl;    
+    
     if (restoreFlag == true) {
       auto leaf = routeNet_postAstarUpdate(
           path, connComps, unConnPinGCellNodes, mazeIdx2unConnPinGCellNode);
-      std::cout << "finish postAStarUpdate" << std::endl;
+      // std::cout << "finish postAStarUpdate" << std::endl;
       routeNet_postAstarWritePath(net, path, leaf, mazeIdx2endPointNode);
     } else {
       logger_->report("Error: restorePath failed !!!");
