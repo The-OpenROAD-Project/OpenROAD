@@ -82,6 +82,7 @@ or_integration_tests(
     repair_setup5
     repair_setup6
     repair_setup7
+    repair_setup7_limit
     repair_setup8
     repair_setup_undo
     repair_slew1
@@ -127,6 +128,12 @@ or_integration_tests(
     report_floating_nets1
     report_floating_nets2
     report_floating_nets3
+    report_overdriven_nets1
+    report_overdriven_nets2
+    report_overdriven_nets3
+    report_overdriven_nets4
+    report_overdriven_nets5
+    report_overdriven_nets6
     resize1
     resize1_hier
     resize4

@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -74,36 +73,6 @@ bool _dbTechLayerWrongDirSpacingRule::operator<(
     const _dbTechLayerWrongDirSpacingRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerWrongDirSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerWrongDirSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.noneol_valid_);
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(wrongdir_space_);
-  DIFF_FIELD(noneol_width_);
-  DIFF_FIELD(length_);
-  DIFF_FIELD(prl_length_);
-  DIFF_END
-}
-
-void _dbTechLayerWrongDirSpacingRule::out(dbDiff& diff,
-                                          char side,
-                                          const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.noneol_valid_);
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(wrongdir_space_);
-  DIFF_OUT_FIELD(noneol_width_);
-  DIFF_OUT_FIELD(length_);
-  DIFF_OUT_FIELD(prl_length_);
-
-  DIFF_END
 }
 
 _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(

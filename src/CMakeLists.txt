@@ -33,14 +33,6 @@
 ##
 ###############################################################################
 
-# The location used by etc/DependencyInstaller.sh
-# lib64 is used for CentOS and openSUSE
-# lib is used for Ubuntu and MacOS
-list(APPEND CMAKE_INSTALL_RPATH
-  "/opt/or-tools/lib64"
-  "/opt/or-tools/lib"
-)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 # The location used by etc/DependencyInstaller.sh
@@ -48,6 +40,9 @@ list(APPEND CMAKE_PREFIX_PATH
   "/opt/or-tools/lib64/cmake"
   "/opt/or-tools/lib/cmake"
 )
+
+# Link to where ortools was found
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include("openroad")
 
