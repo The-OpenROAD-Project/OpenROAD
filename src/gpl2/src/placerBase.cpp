@@ -48,6 +48,7 @@
 #include <unordered_set>
 
 #include "db_sta/dbNetwork.hh"
+#include "kokkosUtil.h"
 #include "placerObjects.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -57,13 +58,6 @@ namespace gpl2 {
 using utl::GPL2;
 
 #define REPLACE_SQRT2 1.414213562373095048801L
-
-#ifdef KOKKOS_ENABLE_CUDA
-  #define BACKEND_DEPENDENT_FUNCTION __host__
-#else
-  #define BACKEND_DEPENDENT_FUNCTION KOKKOS_FUNCTION
-#endif
-
 
 ///////////////////////////////////////////////////////////////////////////////////
 // PlacerBaseVars
@@ -844,16 +838,13 @@ void PlacerBase::initDensity1()
 
 // (a)  // (a) define the get distance method
 // getDistance is only defined on the host side
-BACKEND_DEPENDENT_FUNCTION float getDistance(const Kokkos::View<const FloatPoint*>& a,
+HOST_FUNCTION float getDistance(const Kokkos::View<const FloatPoint*>& a,
                            const Kokkos::View<const FloatPoint*>& b,
                            const int numInsts)
 {
   if (numInsts <= 0) {
     return 0.0;
   }
-
-  float sumDistance = 0.0;
-  Kokkos::DefaultHostExecutionSpace hostSpace;
 
   auto aPlusbDistance  = Kokkos::View<float*, Kokkos::DefaultExecutionSpace>("aPlusbDistance", numInsts);
   Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int i) {
@@ -864,11 +855,7 @@ BACKEND_DEPENDENT_FUNCTION float getDistance(const Kokkos::View<const FloatPoint
     aPlusbDistance[i] = aDistance + bDistance;
   });
 
-  auto haPlusbDistance = Kokkos::create_mirror_view_and_copy(hostSpace, aPlusbDistance);
-  for(int i = 0; i<numInsts; ++i) {
-    sumDistance += haPlusbDistance[i];
-  }
-
+  float sumDistance = sumFloats(aPlusbDistance, numInsts);
   return std::sqrt(sumDistance / (2.0 * numInsts));
 }
 
@@ -880,19 +867,6 @@ struct myAbs
     return x >= 0 ? x : -x;
   }
 };
-
-BACKEND_DEPENDENT_FUNCTION float getAbsGradSum(const Kokkos::View<const float*>& a, const int numInsts)
-{
-  Kokkos::DefaultHostExecutionSpace hostSpace;
-  auto hA = Kokkos::create_mirror_view_and_copy(hostSpace, a);
-
-  double sumAbs = 0.0;
-  for(int i = 0; i<numInsts; ++i) {
-    double x = hA[i];
-    sumAbs += x;
-  }
-  return sumAbs;
-}
 
 float PlacerBase::getStepLength(const Kokkos::View<const FloatPoint*>& prevSLPCoordi,
                                 const Kokkos::View<const FloatPoint*>& prevSLPSumGrads,
@@ -1007,15 +981,14 @@ void PlacerBase::updateGradients(const Kokkos::View<float*>& wireLengthGradients
   densityGradSum_ = 0;
 
   // get the forces on each instance
-  Kokkos::View<float*> wirelenabsGradXPlusY("absGradXPlusY", numInsts_);
-  Kokkos::View<float*> densityabsGradXPlusY("absGradXPlusY", numInsts_);
-  Kokkos::DefaultHostExecutionSpace hostSpace;
+  Kokkos::View<float*> wireLengthGradAbsXPlusY("wireLengthGradAbsXPlusY", numInsts_);
+  Kokkos::View<float*> densityGradAbsXPlusY("densityGradAbsXPlusY", numInsts_);
 
-  getWireLengthGradientWA(wireLengthGradientsX, wireLengthGradientsY, wirelenabsGradXPlusY);
-  getDensityGradient(densityGradientsX, densityGradientsY, densityabsGradXPlusY);
+  getWireLengthGradientWA(wireLengthGradientsX, wireLengthGradientsY, wireLengthGradAbsXPlusY);
+  getDensityGradient(densityGradientsX, densityGradientsY, densityGradAbsXPlusY);
 
-  wireLengthGradSum_ += getAbsGradSum(wirelenabsGradXPlusY, numInsts_);
-  densityGradSum_ += getAbsGradSum(densityabsGradXPlusY, numInsts_);
+  wireLengthGradSum_ += sumFloatsAccurate(wireLengthGradAbsXPlusY, numInsts_);
+  densityGradSum_ += sumFloatsAccurate(densityGradAbsXPlusY, numInsts_);
 
   sumGradientKernel(numInsts_,
                                                densityPenalty_,
