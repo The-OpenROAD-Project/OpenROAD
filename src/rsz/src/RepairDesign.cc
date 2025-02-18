@@ -1961,8 +1961,6 @@ void RepairDesign::makeRepeater(
       }
       db_network_->disconnectPin(driver_pin);
 
-      Port* port = network_->port(driver_pin);
-      Instance* inst = network_->instance(driver_pin);
       db_network_->connectPin(driver_pin, db_network_->dbToSta(flat_net));
       // connect the propagated hierarchical net to the buffer output
       db_network_->connectPin(buffer_op_pin,
@@ -2003,7 +2001,6 @@ void RepairDesign::makeRepeater(
       }
 
       if (!repeater_load_pins.hasKey(pin)) {
-        Port* port = network_->port(pin);
         Instance* inst = network_->instance(pin);
         // do not disconnect/reconnect don't touch instances
         if (resizer_->dontTouch(inst)) {

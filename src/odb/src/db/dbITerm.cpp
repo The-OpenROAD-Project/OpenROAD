@@ -424,9 +424,11 @@ void dbITerm::connect(dbNet* net_)
                              "one net is currently not supported");
   }
 
+  //
   // Note we only disconnect the dbnet part.
-  // If we explicitly want to blow away the hierarchical
-  // net use iterm -> disconnect();
+  // so we use disconnectDbNet (to blow away
+  // both the hierarchical net and the flat net
+  // use disconnect() ).
   //
   if (iterm->_net != 0) {
     disconnectDbNet();
@@ -552,7 +554,7 @@ void dbITerm::disconnect()
   if (inst->_flags._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
-        1104,
+        370,
         "Attempt to disconnect term {} of dont_touch instance {}",
         getMTerm()->getName(),
         inst->_name);
@@ -668,7 +670,7 @@ void dbITerm::disconnectDbNet()
   if (inst->_flags._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,
-        370,
+        1104,
         "Attempt to disconnect term {} of dont_touch instance {}",
         getMTerm()->getName(),
         inst->_name);
