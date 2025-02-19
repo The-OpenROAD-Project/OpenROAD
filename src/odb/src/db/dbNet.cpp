@@ -692,19 +692,6 @@ void dbNet::calibrateCouplingCap()
   calibrateCouplingCap(-1);
 }
 
-bool dbNet::anchoredRSeg()
-{
-  dbSet<dbRSeg> rSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = nullptr;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rc = *rc_itr;
-    if (rc->getShapeId() != 0) {
-      return true;
-    }
-  }
-  return false;
-}
 uint dbNet::getRSegCount()
 {
   dbSet<dbRSeg> rSet = getRSegs();
@@ -1599,24 +1586,6 @@ dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
     }
   }
   return nullptr;
-}
-
-void dbNet::createZeroRc(bool foreign)
-{
-  dbCapNode* cap1 = dbCapNode::create(this, 1, foreign);
-  dbITerm* iterm = get1stITerm();
-  cap1->setITermFlag();
-  cap1->setNode(iterm->getId());
-  dbCapNode* cap2 = dbCapNode::create(this, 2, foreign);
-  cap2->setInternalFlag();
-  dbRSeg* rseg1 = dbRSeg::create(
-      this, 0 /*x*/, 0 /*y*/, 0 /*path_dir*/, !foreign /*allocate_cap*/);
-  dbRSeg* rseg0 = dbRSeg::create(
-      this, 0 /*x*/, 0 /*y*/, 0 /*path_dir*/, !foreign /*allocate_cap*/);
-  rseg0->setSourceNode(0);
-  rseg0->setTargetNode(cap1->getId());
-  rseg1->setSourceNode(cap1->getId());
-  rseg1->setTargetNode(cap2->getId());
 }
 
 void dbNet::set1stRSegId(uint rid)

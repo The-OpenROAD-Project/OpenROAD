@@ -2445,11 +2445,6 @@ class dbNet : public dbObject
   void reverseRSegs();
 
   ///
-  /// create dummy zero rseg and capNodes
-  ///
-  void createZeroRc(bool foreign);
-
-  ///
   /// Set the 1st R segment of this net.
   ///
   void set1stRSegId(uint rseg_id);
@@ -2483,11 +2478,6 @@ class dbNet : public dbObject
   /// Reset, or Set the extid of the bterms and iterms to the capnode id's
   ///
   void setTermExtIds(int capId);
-
-  ///
-  /// check if any of the RSegs has shape_id
-  ///
-  bool anchoredRSeg();
 
   ///
   /// get rseg  count
