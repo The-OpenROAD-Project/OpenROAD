@@ -640,7 +640,7 @@ void TritonRoute::dr()
                                  db_,
                                  router_cfg_.get(),
                                  or_db_interface_.get(),
-                                 or_db_interface_->getThreadCount());
+                                 router_cfg_->MAX_THREADS);
   if (debug_->debugDR) {
     dr_->setDebug(graphics_factory_->makeUniqueDRGraphics());
   }
