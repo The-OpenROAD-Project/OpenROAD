@@ -3311,6 +3311,11 @@ class dbInst : public dbObject
   bool isHierarchical();
 
   ///
+  /// Returns true if this instance is physical only.
+  ///
+  bool isPhysicalOnly();
+
+  ///
   /// Returns a halo assigned to this instance.
   /// Returns nullptr if this instance has no halo.
   ///

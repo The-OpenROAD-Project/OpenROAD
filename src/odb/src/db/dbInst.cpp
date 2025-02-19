@@ -1056,6 +1056,13 @@ bool dbInst::isHierarchical()
   return inst->_hierarchy != 0;
 }
 
+bool dbInst::isPhysicalOnly()
+{
+  _dbInst* inst = (_dbInst*) this;
+
+  return inst->_module == 0;
+}
+
 dbInst* dbInst::getParent()
 {
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
