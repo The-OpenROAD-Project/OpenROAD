@@ -246,44 +246,6 @@ uint dbWire::getTermJid(const int termid) const
   return jj;
 }
 
-void dbWire::donateWireSeg(dbWire* w1, dbRSeg** new_rsegs)
-{
-  _dbWire* wire = (_dbWire*) this;
-  //_dbWire * wire1 = (_dbWire *) w1;
-  uint wlen = wire->length();
-  int* destid = (int*) calloc(wlen, sizeof(int));
-  // uint jj, did;
-  uint jj;
-  int data;
-  unsigned char opcode;
-  int opcd;
-  // int xx, yy;
-  // dbTechLayer *layer;
-  // int njid;
-  for (jj = 0; jj < wlen; jj++) {
-    opcode = wire->_opcodes[jj];
-    opcd = opcode & WOP_OPCODE_MASK;
-    data = wire->_data[jj];
-    if (opcd == WOP_ITERM || opcd == WOP_BTERM || opcd == WOP_NOP) {
-      continue;
-    }
-    if (opcd == WOP_JUNCTION) {
-      data = destid[data];
-    }
-    if ((opcd == WOP_SHORT) || (opcd == WOP_VWIRE)) {
-      jj++;  // discard the WOP_OPERAND (jid)
-      w1->addOneSeg(WOP_PATH | (opcode & WOP_WIRE_TYPE_MASK),
-                    data,
-                    jj,
-                    destid,
-                    new_rsegs);
-      continue;
-    }
-    w1->addOneSeg(opcode, data, jj, destid, new_rsegs);
-  }
-  free(destid);
-}
-
 void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
 {
   _dbWire* wire = (_dbWire*) this;

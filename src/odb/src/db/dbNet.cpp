@@ -1101,35 +1101,6 @@ void dbNet::wireMatch(dbNet* target)
   if (!isWireOrdered() || !target->isWireOrdered()) {
     return;
   }
-  /************************************************ dimitris_fix LOOK_AGAIN */
-  // srcw->match(tgtw);
-}
-
-void dbNet::donateWire(dbNet* tnet, dbRSeg** new_rsegs)
-{
-  dbWire* wire = getWire();
-
-  if (!wire || wire->length() == 0) {
-    return;
-  }
-
-  dbWire* twire;
-
-  if (tnet == this)  // discard iterm and bterm by donate
-  {
-    wire->detach();
-    twire = dbWire::create(this);
-    wire->donateWireSeg(twire, new_rsegs);
-    dbWire::destroy(wire);
-  } else {
-    twire = tnet->getWire();
-
-    if (!twire) {
-      twire = dbWire::create(tnet);
-    }
-
-    wire->donateWireSeg(twire, new_rsegs);
-  }
 }
 
 void dbNet::printWire(int fid, int tid, char* type)

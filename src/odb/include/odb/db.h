@@ -2255,10 +2255,6 @@ class dbNet : public dbObject
   /// Returns nullptr if this net has no swires.
   ///
   dbSWire* getFirstSWire();
-  ///
-  /// Move segements of the wire of this net to that of tnet
-  ///
-  void donateWire(dbNet* tnet, dbRSeg** new_rsegs);
 
   ///
   /// Get the global wire of thie net.
@@ -3868,7 +3864,6 @@ class dbWire : public dbObject
                  int* did,
                  dbRSeg** new_rsegs);
   void addOneSeg(unsigned char op, int value);
-  void donateWireSeg(dbWire* w1, dbRSeg** new_rsegs);
 
   friend class dbNet;
 };
