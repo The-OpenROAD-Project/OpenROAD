@@ -496,14 +496,6 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   std::vector<float> accumulated_length(pos_seq_.size(), 0.0);
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = pos_seq_[i];
-
-    // There may exist pin access macros with zero area in our sequence pair
-    // when bus planning is on. This check is a temporary approach.
-    if (macros_[macro_id].getWidth() <= 0
-        || macros_[macro_id].getHeight() <= 0) {
-      continue;
-    }
-
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
     macros_[macro_id].setX(accumulated_length[neg_seq_pos]);
@@ -539,14 +531,6 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = reversed_pos_seq[i];
-
-    // There may exist pin access macros with zero area in our sequence pair
-    // when bus planning is on. This check is a temporary approach.
-    if (macros_[macro_id].getWidth() <= 0
-        || macros_[macro_id].getHeight() <= 0) {
-      continue;
-    }
-
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
     macros_[macro_id].setY(accumulated_length[neg_seq_pos]);
