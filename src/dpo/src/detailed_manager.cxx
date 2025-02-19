@@ -977,7 +977,7 @@ bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
   const int start_row = std::max(nd->getBottom() / single_height, 0);
   const int end_row
       = std::min(nd->getTop() / single_height, numSingleHeightRows_ - 1);
-  for (int r = start_row; r <= end_row; r++) {
+  for (int r = start_row; r < end_row; r++) {
     auto it
         = std::lower_bound(blockages_[r].begin(),
                            blockages_[r].end(),
