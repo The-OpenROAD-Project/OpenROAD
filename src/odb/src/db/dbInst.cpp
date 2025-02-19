@@ -121,8 +121,6 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._source = dbSourceType::NONE;
   //_flags._spare_bits = 0;
   _flags._level = 0;
-  _flags._input_cone = 0;
-  _flags._inside_cone = 0;
   _name = nullptr;
   _x = 0;
   _y = 0;
@@ -616,41 +614,6 @@ void dbInst::getHierTransform(dbTransform& t)
   t = x;
 }
 
-int dbInst::getLevel()
-{
-  _dbInst* inst = (_dbInst*) this;
-
-  if (inst->_flags._inside_cone > 0) {
-    return inst->_flags._level;
-  }
-  if (inst->_flags._input_cone > 0) {
-    return -inst->_flags._level;
-  }
-
-  return 0;
-}
-void dbInst::setLevel(uint v, bool fromPI)
-{
-  _dbInst* inst = (_dbInst*) this;
-  if (v > 255) {
-    getImpl()->getLogger()->info(
-        utl::ODB,
-        36,
-        "setLevel {} greater than 255 is illegal! inst {}",
-        v,
-        getId());
-    return;
-  }
-  inst->_flags._level = v;
-  inst->_flags._input_cone = 0;
-  inst->_flags._inside_cone = 0;
-
-  if (fromPI) {
-    inst->_flags._input_cone = 1;
-  } else {
-    inst->_flags._inside_cone = 1;
-  }
-}
 bool dbInst::getEcoCreate()
 {
   _dbInst* inst = (_dbInst*) this;
@@ -1056,6 +1019,13 @@ bool dbInst::isHierarchical()
   return inst->_hierarchy != 0;
 }
 
+bool dbInst::isPhysicalOnly()
+{
+  _dbInst* inst = (_dbInst*) this;
+
+  return inst->_module == 0;
+}
+
 dbInst* dbInst::getParent()
 {
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
@@ -1347,8 +1317,7 @@ dbInst* dbInst::create(dbBlock* block_,
   uint mterm_cnt = inst_hdr->_mterms.size();
   inst->_iterms.resize(mterm_cnt);
 
-  uint i;
-  for (i = 0; i < mterm_cnt; ++i) {
+  for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->_iterm_tbl->create();
     inst->_iterms[i] = iterm->getOID();
     iterm->_flags._mterm_idx = i;
@@ -1365,10 +1334,6 @@ dbInst* dbInst::create(dbBlock* block_,
 
   inst->_flags._physical_only = physical_only;
   if (!physical_only) {
-    // old code
-    //    block_->getTopModule()->addInst((dbInst*) inst);
-    // now we insert into scope of module...
-    // might screw things up..
     if (parent_module) {
       parent_module->addInst((dbInst*) inst);
     } else {
@@ -1378,28 +1343,19 @@ dbInst* dbInst::create(dbBlock* block_,
 
   if (region) {
     region->addInst((dbInst*) inst);
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbInstCreate((dbInst*) inst,
-                                 region);  // client ECO initialization - payam
+    for (dbBlockCallBackObj* cb : block->_callbacks) {
+      cb->inDbInstCreate((dbInst*) inst, region);
     }
   } else {
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbInstCreate(
-          (dbInst*) inst);  // client ECO initialization - payam
+    for (dbBlockCallBackObj* cb : block->_callbacks) {
+      cb->inDbInstCreate((dbInst*) inst);
     }
   }
 
-  for (i = 0; i < mterm_cnt; ++i) {
+  for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->_iterm_tbl->getPtr(inst->_iterms[i]);
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbITermCreate(
-          (dbITerm*) iterm);  // client ECO initialization - payam
+    for (dbBlockCallBackObj* cb : block->_callbacks) {
+      cb->inDbITermCreate((dbITerm*) iterm);
     }
   }
 
