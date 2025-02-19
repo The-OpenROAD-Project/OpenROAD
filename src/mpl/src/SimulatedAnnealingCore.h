@@ -167,10 +167,9 @@ class SimulatedAnnealingCore
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
 
-  // nets, fences, guides, blockages
   std::vector<BundledNet> nets_;
-  std::map<int, Rect> fences_;
-  std::map<int, Rect> guides_;
+  std::map<int, Rect> fences_; // Macro Id -> Fence
+  std::map<int, Rect> guides_; // Macro Id -> Guide
 
   SACoreWeights core_weights_;
 
