@@ -2124,9 +2124,6 @@ class dbNet : public dbObject
   uint wireEqual(dbNet* target);
 
   void wireMatch(dbNet* target);
-  void printWire(int fid, int tid, char* type);
-  void printWire();
-  void printWire(char* type);
   ///
   /// Returns the wire-ordered flag value. This flag specified that the
   /// wires of this net have been ordered into a single dbWire.
@@ -2453,11 +2450,6 @@ class dbNet : public dbObject
   dbCapNode* findCapNode(uint nodeId);
 
   ///
-  /// Print the CapNodes of this net.
-  ///
-  void printCapN(char* type);
-
-  ///
   /// donate parasitics
   ///
   void donateRC(dbITerm* donorterm,
@@ -2545,16 +2537,6 @@ class dbNet : public dbObject
   /// check if any of the RSegs has shape_id
   ///
   bool anchoredRSeg();
-
-  ///
-  /// Print the R segments of this net.
-  ///
-  void printRSeg(char* type);
-
-  ///
-  /// Print the Wire and Parasitics segments of this net.
-  ///
-  void printWnP(char* type);
 
   ///
   /// get rseg  count
@@ -3814,12 +3796,6 @@ class dbWire : public dbObject
   /// Set one opcode entry
   ///
   unsigned char getOpcode(int n);
-
-  ///
-  /// Print opcodes and data of this wire
-  ///
-  void printWire();
-  void printWire(FILE* fp, int fid, int tid);
 
   ///
   /// Attach this wire to a net.

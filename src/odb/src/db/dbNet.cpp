@@ -1103,35 +1103,6 @@ void dbNet::wireMatch(dbNet* target)
   }
 }
 
-void dbNet::printWire(int fid, int tid, char* type)
-{
-  FILE* fp;
-  char fn[40];
-  if (type) {
-    sprintf(fn, "%s%d", type, getId());
-    fp = fopen(fn, "w");
-  } else {
-    fp = stdout;
-  }
-  fprintf(fp, "dbWire of Net %d %s :\n", getId(), getConstName());
-  if (getWire() && getWire()->length()) {
-    getWire()->printWire(fp, fid, tid);
-  }
-  if (fp != stdout) {
-    fclose(fp);
-  }
-}
-
-void dbNet::printWire()
-{
-  printWire(0, 0, nullptr);
-}
-
-void dbNet::printWire(char* type)
-{
-  printWire(0, 0, type);
-}
-
 bool dbNet::isWireOrdered()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1651,41 +1622,6 @@ void dbNet::clearWildConnected()
   }
 }
 
-void dbNet::printRSeg(char* type)
-{
-  FILE* fp;
-  char fn[40];
-  if (type) {
-    sprintf(fn, "%s%d", type, getId());
-    fp = fopen(fn, "w");
-  } else {
-    fp = stdout;
-  }
-  fprintf(fp, "dbRSeg of Net %d %s :\n", getId(), getConstName());
-  dbSet<dbRSeg> rSet = getRSegs();
-  dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rseg;
-  int cnt = 0;
-  int rx, ry;
-  for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
-    rseg = *rc_itr;
-    rseg->getCoords(rx, ry);
-    fprintf(fp,
-            "  %d  id= %d, src= %d, tgt= %d, R= %g, C= %g\n",
-            cnt,
-            rseg->getId(),
-            rseg->getSourceNode(),
-            rseg->getTargetNode(),
-            rseg->getResistance(),
-            rseg->getCapacitance());  // zzzz corner ?
-    fprintf(fp, "      x= %d, y=%d\n", rx, ry);
-    cnt++;
-  }
-  if (fp != stdout) {
-    fclose(fp);
-  }
-}
-
 dbSet<dbRSeg> dbNet::getRSegs()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1801,56 +1737,6 @@ dbCapNode* dbNet::findCapNode(uint nodeId)
 
   return nullptr;
 }
-
-void dbNet::printCapN(char* type)
-{
-  FILE* fp;
-  char fn[40];
-  if (type) {
-    sprintf(fn, "%s%d", type, getId());
-    fp = fopen(fn, "w");
-  } else {
-    fp = stdout;
-  }
-  fprintf(fp, "dbCapNode of Net %d %s :\n", getId(), getConstName());
-  dbSet<dbCapNode> capNodes = getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
-
-  dbCapNode* capn;
-  int cnt = 0;
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    capn = *citr;
-    uint itermf = capn->isITerm() ? 1 : 0;
-    uint btermf = capn->isBTerm() ? 1 : 0;
-    uint interf = capn->isInternal() ? 1 : 0;
-    uint branch = capn->isBranch() ? 1 : 0;
-    uint foreign = capn->isForeign() ? 1 : 0;
-    uint treenode = capn->isTreeNode() ? 1 : 0;
-    // uint srcbterm = capn->isSourceNodeBterm() ? 1 : 0;
-    fprintf(fp,
-            "  %d  id= %d, node= %d, childCnt= %d, iterm= %d, bterm= %d, "
-            "internal= %d, branch= %d, foreign= %d, treenode= %d\n",
-            cnt,
-            capn->getId(),
-            capn->getNode(),
-            capn->getChildrenCnt(),
-            itermf,
-            btermf,
-            interf,
-            branch,
-            foreign,
-            treenode);
-    cnt++;
-  }
-  if (fp != stdout) {
-    fclose(fp);
-  }
-}
-
-// void dbNet::donateCornerRC(dbBlock *pblock, dbITerm *donorterm, dbITerm
-// *rcvterm, dbRSeg *& bridgeRseg, std::vector<dbCCSeg*> * gndcc, dbRSeg *&
-// rtrseg, dbCapNode *& lastrcapnd, dbRSeg *& 1stdrseg, dbRSeg *& dtrseg,
-// dbCapNode *& 1stdcapnd)
 
 void dbNet::donateRC(dbITerm* donorterm,
                      dbITerm* rcvterm,
@@ -2085,17 +1971,6 @@ void dbNet::unDonateRC(dbRSeg* rtrseg,
     }
     dbCCSeg::connect(ccseg);
   }
-}
-
-void dbNet::printWnP(char* type)
-{
-  char tag[20];
-  sprintf(tag, "%s_w_", type);
-  printWire(tag);
-  sprintf(tag, "%s_r_", type);
-  printRSeg(tag);
-  sprintf(tag, "%s_c_", type);
-  printCapN(tag);
 }
 
 dbSet<dbCapNode> dbNet::getCapNodes()
