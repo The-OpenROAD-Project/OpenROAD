@@ -44,11 +44,18 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cmath>
+#include <fstream>
+#include <map>
 #include <mutex>
 #include <regex>
+#include <string>
+#include <vector>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
+#include "boost/json.hpp"
+#include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -79,6 +86,38 @@ dbSta* makeDbSta()
   return new dbSta;
 }
 }  // namespace ord
+
+namespace boost::json {
+void tag_invoke(json::value_from_tag, json::value& json_value,
+                ord::dbSta::CellUsageInfo const& cell_usage_info) {
+  json_value = {{"name", cell_usage_info.name},
+                {"count", cell_usage_info.count},
+                {"area", cell_usage_info.area}};
+}
+
+void tag_invoke(json::value_from_tag, json::value& json_value,
+                ord::dbSta::CellUsageSnapshot const& cell_usage_snapshot) {
+  json_value = {
+      {"stage", cell_usage_snapshot.stage},
+      {"cell_usage_info",
+       boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
+}
+
+ord::dbSta::CellUsageInfo tag_invoke(value_to_tag<ord::dbSta::CellUsageInfo>,
+                                     value const& json_value) {
+  return {value_to<std::string>(json_value.at("name")),
+          value_to<int>(json_value.at("count")),
+          value_to<double>(json_value.at("area"))};
+}
+
+ord::dbSta::CellUsageSnapshot tag_invoke(
+    value_to_tag<ord::dbSta::CellUsageSnapshot>, value const& json_value) {
+  return {value_to<std::string>(json_value.at("stage")),
+          value_to<std::vector<ord::dbSta::CellUsageInfo>>(
+              json_value.at("cell_usage_info"))};
+}
+
+}  // namespace boost::json
 
 namespace sta {
 
@@ -538,7 +577,10 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
+void dbSta::report_cell_usage(odb::dbModule* module,
+                              const bool verbose,
+                              const char *file_name,
+                              const char *stage_name)
 {
   InstTypeMap instances_types;
   std::vector<dbInst*> insts;
@@ -602,6 +644,39 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
       logger_->report(
           format, master->getName(), stats.count, stats.area / area_to_microns);
     }
+  }
+
+  std::string file(file_name);
+  if (!file.empty()) {
+    std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
+    dbBlock* block = db_->getChip()->getBlock();
+    const std::vector<dbInst*> insts = module->getLeafInsts();
+    const double dbu_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
+    for (const dbInst* inst : insts) {
+      const std::string& cell_name = inst->getMaster()->getName();
+      auto [it, inserted] = name_to_cell_usage_info.insert(
+          {cell_name, CellUsageInfo{
+                          .name = cell_name,
+                          .count = 1,
+                          .area = inst->getMaster()->getArea() / dbu_to_microns,
+                      }});
+      if (!inserted) {
+        it->second.count++;
+      }
+    }
+
+    CellUsageSnapshot cell_usage_snapshot{.stage = std::string(stage_name)};
+    cell_usage_snapshot.cells_usage_info.reserve(
+        name_to_cell_usage_info.size());
+    for (const auto& [cell_name, cell_usage_info] : name_to_cell_usage_info) {
+      cell_usage_snapshot.cells_usage_info.push_back(cell_usage_info);
+    }
+    boost::json::value output = boost::json::value_from(cell_usage_snapshot);
+
+    std::ofstream snapshot;
+    snapshot.open(file);
+    snapshot << output.as_object();
+    snapshot.close();
   }
 }
 
