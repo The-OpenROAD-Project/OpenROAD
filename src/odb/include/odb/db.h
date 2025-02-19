@@ -3629,24 +3629,9 @@ class dbWire : public dbObject
   void append(dbWire* wire, bool singleSegmentWire = false);
 
   ///
-  /// Move segements of this wire to wires of other nets
-  ///
-  void shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs);
-
-  ///
   /// Get junction id associated with the term
   ///
   uint getTermJid(int termid) const;
-
-  ///
-  /// check if this wire equals the target wire
-  /// return value = 0: equal
-  ///                x: not equal
-  ///                1x: wire seg after junction not equal
-  ///
-  uint equal(dbWire* target);
-
-  // void match(dbWire *target);
 
   ///
   /// Get the shape of this shape-id.
