@@ -3318,7 +3318,7 @@ std::vector<LayerParameters> Snapper::computeSameDirectionLayersData(
 odb::dbITerm* Snapper::findPinForMultiPattern(
     odb::dbTrackGrid* track_grid,
     int grid_pattern,
-    const odb::dbTechLayerDir target_direction)
+    const odb::dbTechLayerDir& target_direction)
 {
   std::vector<odb::dbITerm*> iterms;
   std::vector<int> centers;

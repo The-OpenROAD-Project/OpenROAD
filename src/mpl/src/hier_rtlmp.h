@@ -374,7 +374,7 @@ class Snapper
   odb::dbITerm* findPinForMultiPattern(
       odb::dbTrackGrid* track_grid,
       int grid_pattern,
-      const odb::dbTechLayerDir target_direction);
+      const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
