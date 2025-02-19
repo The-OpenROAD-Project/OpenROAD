@@ -64,7 +64,7 @@ struct _dbNetFlags
   uint _special : 1;
   uint _wild_connect : 1;
   uint _wire_ordered : 1;
-  uint _buffered : 1;
+  uint _unused2 : 1; // free to reuse
   uint _disconnected : 1;  // this flag is only valid if wire_ordered == true
   uint _spef : 1;
   uint _select : 1;

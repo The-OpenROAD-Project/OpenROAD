@@ -109,7 +109,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._special = 0;
   _flags._wild_connect = 0;
   _flags._wire_ordered = 0;
-  _flags._buffered = 0;
+  _flags._unused2 = 0;
   _flags._disconnected = 0;
   _flags._spef = 0;
   _flags._select = 0;
@@ -224,10 +224,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (_flags._wire_ordered != rhs._flags._wire_ordered) {
-    return false;
-  }
-
-  if (_flags._buffered != rhs._flags._buffered) {
     return false;
   }
 
@@ -1072,37 +1068,6 @@ void dbNet::setMark_1(bool value)
   }
 }
 
-uint dbNet::wireEqual(dbNet* target)
-{
-  dbWire* srcw = getWire();
-  dbWire* tgtw = target->getWire();
-  if (srcw == nullptr && tgtw == nullptr) {
-    return 0;
-  }
-  if (srcw == nullptr || tgtw == nullptr) {
-    return 3;
-  }
-  if (!isWireOrdered() || !target->isWireOrdered()) {
-    return 4;
-  }
-  return (srcw->equal(tgtw));
-}
-
-void dbNet::wireMatch(dbNet* target)
-{
-  dbWire* srcw = getWire();
-  dbWire* tgtw = target->getWire();
-  if (srcw == nullptr && tgtw == nullptr) {
-    return;
-  }
-  if (srcw == nullptr || tgtw == nullptr) {
-    return;
-  }
-  if (!isWireOrdered() || !target->isWireOrdered()) {
-    return;
-  }
-}
-
 bool dbNet::isWireOrdered()
 {
   _dbNet* net = (_dbNet*) this;
@@ -1124,34 +1089,6 @@ void dbNet::setWireOrdered(bool value)
                "DB_ECO",
                1,
                "ECO: net {}, setWireOrdered: {}",
-               getId(),
-               value);
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
-  }
-}
-
-bool dbNet::isBuffered()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._buffered == 1;
-}
-
-void dbNet::setBuffered(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
-
-  net->_flags._buffered = (value == true) ? 1 : 0;
-
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: net {}, setBuffered: {}",
                getId(),
                value);
     block->_journal->updateField(
