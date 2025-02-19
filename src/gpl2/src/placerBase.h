@@ -665,10 +665,13 @@ class PlacerBase
   void updateGCellDensityCenterLocation(const Kokkos::View<const FloatPoint*>& coordis);
 
   void getWireLengthGradientWA(const Kokkos::View<float*>& wireLengthGradientsX,
-                               const Kokkos::View<float*>& wireLengthGradientsY);
+                               const Kokkos::View<float*>& wireLengthGradientsY,
+                               const Kokkos::View<float*>& wireLengthGradAbsXPlusY);
 
   private:
-  void getDensityGradient(const Kokkos::View<float*>& densityGradientsX, const Kokkos::View<float*>& densityGradientsY);
+  void getDensityGradient(const Kokkos::View<float*>& densityGradientsX,
+                          const Kokkos::View<float*>& densityGradientsY,
+                          const Kokkos::View<float*>& densityGradAbsXPlusY);
 
   float getPhiCoef(float scaledDiffHpwl) const;
 
