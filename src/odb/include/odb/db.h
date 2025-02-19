@@ -1524,60 +1524,6 @@ class dbBlock : public dbObject
                      std::vector<dbNet*>& ccHaloNets);
 
   ///
-  /// destroy old parasitics of nets
-  ///
-  void destroyOldParasitics(std::vector<dbNet*>& nets,
-                            std::vector<uint>* capnn,
-                            std::vector<uint>* rsegn);
-  void destroyOldCornerParasitics(std::vector<dbNet*>& nets,
-                                  std::vector<uint>& capnn,
-                                  std::vector<uint>& rsegn);
-
-  ///
-  /// restore old parasitics of nets
-  ///
-  void restoreOldParasitics(std::vector<dbNet*>& nets,
-                            bool coupled_rc,
-                            std::vector<dbNet*>& ccHaloNets,
-                            std::vector<uint>* capnn,
-                            std::vector<uint>* rsegn);
-  void restoreOldCornerParasitics(dbBlock* pBlock,
-                                  std::vector<dbNet*>& nets,
-                                  bool coupled_rc,
-                                  std::vector<dbNet*>& ccHaloNets,
-                                  std::vector<uint>& capnn,
-                                  std::vector<uint>& rsegn);
-
-  ///
-  /// keep old parasitics of nets and replace by zeroRc's'
-  ///
-  void replaceOldParasitics(std::vector<dbNet*>& nets,
-                            std::vector<uint>& capnn,
-                            std::vector<uint>& rsegn);
-
-  ///
-  /// restore old parasitics
-  ///
-  void restoreOldParasitics(std::vector<dbNet*>& nets,
-                            std::vector<uint>& capnn,
-                            std::vector<uint>& rsegn);
-
-  ///
-  /// keep old parasitics of nets
-  ///
-  void keepOldParasitics(std::vector<dbNet*>& nets,
-                         bool coupled_rc,
-                         std::vector<dbNet*>& ccHaloNets,
-                         std::vector<uint>* capnn,
-                         std::vector<uint>* rsegn);
-  void keepOldCornerParasitics(dbBlock* pBlock,
-                               std::vector<dbNet*>& nets,
-                               bool coupled_rc,
-                               std::vector<dbNet*>& ccHaloNets,
-                               std::vector<uint>& capnn,
-                               std::vector<uint>& rsegn);
-
-  ///
   /// merge rsegs before doing exttree
   ///
   void preExttreeMergeRC(double max_cap, uint corner);
