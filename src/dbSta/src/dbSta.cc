@@ -649,23 +649,23 @@ void dbSta::report_cell_usage(odb::dbModule* module,
   std::string file(file_name);
   if (!file.empty()) {
     std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
-    dbBlock* block = db_->getChip()->getBlock();
-    const std::vector<dbInst*> insts = module->getLeafInsts();
-    const double dbu_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
     for (const dbInst* inst : insts) {
       const std::string& cell_name = inst->getMaster()->getName();
       auto [it, inserted] = name_to_cell_usage_info.insert(
-          {cell_name, CellUsageInfo{
-                          .name = cell_name,
-                          .count = 1,
-                          .area = inst->getMaster()->getArea() / dbu_to_microns,
-                      }});
+          {cell_name,
+           CellUsageInfo{
+               .name = cell_name,
+               .count = 1,
+               .area = inst->getMaster()->getArea() / area_to_microns,
+           }});
       if (!inserted) {
         it->second.count++;
       }
     }
 
-    CellUsageSnapshot cell_usage_snapshot{.stage = std::string(stage_name)};
+    CellUsageSnapshot cell_usage_snapshot{
+        .stage = std::string(stage_name),
+        .cells_usage_info = std::vector<CellUsageInfo>()};
     cell_usage_snapshot.cells_usage_info.reserve(
         name_to_cell_usage_info.size());
     for (const auto& [cell_name, cell_usage_info] : name_to_cell_usage_info) {
@@ -675,8 +675,12 @@ void dbSta::report_cell_usage(odb::dbModule* module,
 
     std::ofstream snapshot;
     snapshot.open(file);
-    snapshot << output.as_object();
-    snapshot.close();
+    if (snapshot.fail()) {
+      logger_->error(STA, 1001, "Could not open snapshot file {}", file_name);
+    } else {
+      snapshot << output.as_object();
+      snapshot.close();
+    }
   }
 }
 
