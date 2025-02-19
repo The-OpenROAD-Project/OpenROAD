@@ -39,7 +39,6 @@
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/ZException.h"
-#include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 
 namespace odb {
@@ -757,79 +756,6 @@ bool dbTable<T>::operator==(const dbTable<T>& rhs) const
   }
 
   return true;
-}
-
-template <class T>
-void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
-{
-  const dbTable<T>& lhs = *this;
-
-  // These basic parameters should be the same...
-  assert(lhs._page_mask == rhs._page_mask);
-  assert(lhs._page_shift == rhs._page_shift);
-
-  uint page_sz = 1U << lhs._page_shift;
-  uint lhs_max = lhs._page_cnt * page_sz;
-  uint rhs_max = rhs._page_cnt * page_sz;
-
-  uint i;
-  const char* name = dbObject::getTypeName(_type);
-
-  for (i = 1; (i < lhs_max) && (i < rhs_max); ++i) {
-    bool lhs_valid_o = lhs.validId(i);
-    bool rhs_valid_o = rhs.validId(i);
-
-    if (lhs_valid_o && rhs_valid_o) {
-      T* l = lhs.getPtr(i);
-      T* r = rhs.getPtr(i);
-      l->differences(diff, nullptr, *r);
-    } else if (lhs_valid_o) {
-      T* l = lhs.getPtr(i);
-      l->out(diff, dbDiff::LEFT, nullptr);
-      diff.report("> %s [%u] FREE\n", name, i);
-    } else if (rhs_valid_o) {
-      T* r = rhs.getPtr(i);
-      diff.report("< %s [%u] FREE\n", name, i);
-      r->out(diff, dbDiff::RIGHT, nullptr);
-    }
-  }
-
-  if (i < lhs_max) {
-    for (; i < lhs_max; ++i) {
-      bool lhs_valid_o = lhs.validId(i);
-
-      if (lhs_valid_o) {
-        T* l = lhs.getPtr(i);
-        l->out(diff, dbDiff::LEFT, nullptr);
-      } else {
-        diff.report("< %s [%u] FREE\n", name, i);
-      }
-    }
-  } else if (i < rhs_max) {
-    for (; i < rhs_max; ++i) {
-      bool rhs_valid_o = rhs.validId(i);
-
-      if (rhs_valid_o) {
-        T* r = rhs.getPtr(i);
-        r->out(diff, dbDiff::RIGHT, nullptr);
-      } else {
-        diff.report("> %s [%u] FREE\n", name, i);
-      }
-    }
-  }
-}
-
-template <class T>
-void dbTable<T>::out(dbDiff& diff, char side) const
-{
-  uint i;
-
-  for (i = _bottom_idx; i <= _top_idx; ++i) {
-    if (validId(i)) {
-      T* o = getPtr(i);
-      o->out(diff, side, nullptr);
-    }
-  }
 }
 
 template <class T>

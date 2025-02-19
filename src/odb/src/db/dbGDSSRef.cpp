@@ -34,7 +34,6 @@
 #include "dbGDSSRef.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -60,25 +59,6 @@ bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
 bool _dbGDSSRef::operator<(const _dbGDSSRef& rhs) const
 {
   return true;
-}
-
-void _dbGDSSRef::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbGDSSRef& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_origin);
-  DIFF_FIELD(_structure);
-  DIFF_END
-}
-
-void _dbGDSSRef::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_origin);
-  DIFF_OUT_FIELD(_structure);
-
-  DIFF_END
 }
 
 _dbGDSSRef::_dbGDSSRef(_dbDatabase* db)

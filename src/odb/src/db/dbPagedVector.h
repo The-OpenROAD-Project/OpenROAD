@@ -33,7 +33,6 @@
 #pragma once
 
 #include "odb/ZException.h"
-#include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 #include "odb/odb.h"
 
@@ -41,7 +40,6 @@ namespace odb {
 
 template <class T, const uint P, const uint S>
 class dbPagedVector;
-class dbDiff;
 
 //
 // Vector - Creates a vector of type T. However, the vector is created
@@ -108,10 +106,6 @@ class dbPagedVector
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbPagedVector<T, page_size, page_shift>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 template <class T, const uint P, const uint S>
@@ -293,65 +287,6 @@ inline bool dbPagedVector<T, P, S>::operator==(
   }
 
   return true;
-}
-
-template <class T, const uint P, const uint S>
-inline void dbPagedVector<T, P, S>::differences(
-    dbDiff& diff,
-    const char* field,
-    const dbPagedVector<T, P, S>& rhs) const
-{
-  uint sz1 = size();
-  uint sz2 = rhs.size();
-  unsigned int i = 0;
-
-  for (; i < sz1 && i < sz2; ++i) {
-    const T& o1 = (*this)[i];
-    const T& o2 = rhs[i];
-
-    if (o1 != o2) {
-      diff.report("< %s[%d] = ", field, i);
-      diff << o1;
-      diff << "\n";
-      diff.report("> %s[%d] = ", field, i);
-      diff << o2;
-      diff << "\n";
-    }
-  }
-
-  if (i < sz1) {
-    for (; i < sz1; ++i) {
-      const T& o1 = (*this)[i];
-      diff.report("< %s[%d] = ", field, i);
-      diff << o1;
-      diff << "\n";
-    }
-  }
-
-  if (i < sz2) {
-    for (; i < sz2; ++i) {
-      const T& o2 = rhs[i];
-      diff.report("> %s[%d] = ", field, i);
-      diff << o2;
-      diff << "\n";
-    }
-  }
-}
-
-template <class T, const uint P, const uint S>
-inline void dbPagedVector<T, P, S>::out(dbDiff& diff,
-                                        char side,
-                                        const char* field) const
-{
-  uint sz1 = size();
-  unsigned int i = 0;
-
-  for (; i < sz1; ++i) {
-    const T& o1 = (*this)[i];
-    diff.report("%c %s[%d] = ", side, field, i);
-    diff << o1;
-    diff << "\n";
-  }
 }
 
 template <class T, const uint P, const uint S>

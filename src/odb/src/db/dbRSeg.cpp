@@ -83,34 +83,6 @@ bool _dbRSeg::operator==(const _dbRSeg& rhs) const
   return true;
 }
 
-void _dbRSeg::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbRSeg& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._path_dir);
-  DIFF_FIELD(_flags._allocated_cap);
-  DIFF_FIELD(_source);
-  DIFF_FIELD(_target);
-  DIFF_FIELD(_xcoord);
-  DIFF_FIELD(_ycoord);
-  DIFF_FIELD(_next);
-  DIFF_END
-}
-
-void _dbRSeg::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._path_dir);
-  DIFF_OUT_FIELD(_flags._allocated_cap);
-  DIFF_OUT_FIELD(_source);
-  DIFF_OUT_FIELD(_target);
-  DIFF_OUT_FIELD(_xcoord);
-  DIFF_OUT_FIELD(_ycoord);
-  DIFF_OUT_FIELD(_next);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbRSeg - Methods

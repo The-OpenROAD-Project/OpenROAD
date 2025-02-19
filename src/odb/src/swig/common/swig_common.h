@@ -31,10 +31,6 @@
 #include "odb/db.h"
 #include "odb/defout.h"
 
-bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2);
-
-bool db_def_diff(odb::dbDatabase* db1, const char* def_filename);
-
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path);
 
 int write_lef(odb::dbLib* lib, const char* path);

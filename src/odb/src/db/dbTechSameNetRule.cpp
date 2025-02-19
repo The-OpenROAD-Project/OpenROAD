@@ -65,28 +65,6 @@ bool _dbTechSameNetRule::operator==(const _dbTechSameNetRule& rhs) const
   return true;
 }
 
-void _dbTechSameNetRule::differences(dbDiff& diff,
-                                     const char* field,
-                                     const _dbTechSameNetRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._stack);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_layer_1);
-  DIFF_FIELD(_layer_2);
-  DIFF_END
-}
-
-void _dbTechSameNetRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._stack);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_layer_1);
-  DIFF_OUT_FIELD(_layer_2);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechSameNetRule - Methods

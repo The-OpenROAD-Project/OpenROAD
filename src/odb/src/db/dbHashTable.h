@@ -33,13 +33,13 @@
 #pragma once
 
 #include "dbPagedVector.h"
+#include "odb/dbId.h"
 #include "odb/odb.h"
 
 namespace odb {
 
 class dbIStream;
 class dbOStream;
-class dbDiff;
 template <class T>
 class dbTable;
 
@@ -77,10 +77,6 @@ class dbHashTable
 
   bool operator==(const dbHashTable<T>& rhs) const;
   bool operator!=(const dbHashTable<T>& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbHashTable<T>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
   void setTable(dbTable<T>* table) { _obj_tbl = table; }
   T* find(const char* name);

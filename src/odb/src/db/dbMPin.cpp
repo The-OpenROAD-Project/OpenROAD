@@ -106,28 +106,6 @@ bool _dbMPin::operator==(const _dbMPin& rhs) const
   return true;
 }
 
-void _dbMPin::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbMPin& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_mterm);
-  DIFF_FIELD(_geoms);
-  DIFF_FIELD(_next_mpin);
-  // DIFF_VECTOR(aps_);
-  DIFF_END
-}
-
-void _dbMPin::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_mterm);
-  DIFF_OUT_FIELD(_geoms);
-  DIFF_OUT_FIELD(_next_mpin);
-  // DIFF_OUT_VECTOR(aps_);
-  DIFF_END
-}
-
 void _dbMPin::addAccessPoint(uint idx, _dbAccessPoint* ap)
 {
   if (aps_.size() <= idx) {

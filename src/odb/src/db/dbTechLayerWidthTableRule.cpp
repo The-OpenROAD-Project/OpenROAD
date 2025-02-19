@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -62,28 +61,6 @@ bool _dbTechLayerWidthTableRule::operator<(
     const _dbTechLayerWidthTableRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerWidthTableRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerWidthTableRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.wrong_direction_);
-  DIFF_FIELD(flags_.orthogonal_);
-  DIFF_END
-}
-
-void _dbTechLayerWidthTableRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.wrong_direction_);
-  DIFF_OUT_FIELD(flags_.orthogonal_);
-
-  DIFF_END
 }
 
 _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(_dbDatabase* db)

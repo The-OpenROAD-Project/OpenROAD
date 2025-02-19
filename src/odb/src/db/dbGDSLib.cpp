@@ -33,7 +33,6 @@
 #include "dbGDSLib.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 
@@ -65,30 +64,6 @@ bool _dbGDSLib::operator==(const _dbGDSLib& rhs) const
 // dbGDSLib - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-void _dbGDSLib::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbGDSLib& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_libname);
-  DIFF_FIELD(_uu_per_dbu);
-  DIFF_FIELD(_dbu_per_meter);
-  DIFF_HASH_TABLE(_gdsstructure_hash);
-  DIFF_TABLE_NO_DEEP(_gdsstructure_tbl);
-  DIFF_END
-}
-
-void _dbGDSLib::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_libname);
-  DIFF_OUT_FIELD(_uu_per_dbu);
-  DIFF_OUT_FIELD(_dbu_per_meter);
-  DIFF_OUT_HASH_TABLE(_gdsstructure_hash);
-  DIFF_OUT_TABLE_NO_DEEP(_gdsstructure_tbl);
-  DIFF_END
-}
 
 dbObjectTable* _dbGDSLib::getObjectTable(dbObjectType type)
 {

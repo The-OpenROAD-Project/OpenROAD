@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"
 #include "dbNet.h"
@@ -79,37 +78,6 @@ bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 bool _dbIsolation::operator<(const _dbIsolation& rhs) const
 {
   return true;
-}
-
-void _dbIsolation::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbIsolation& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_applies_to);
-  DIFF_FIELD(_clamp_value);
-  DIFF_FIELD(_isolation_signal);
-  DIFF_FIELD(_isolation_sense);
-  DIFF_FIELD(_location);
-  DIFF_FIELD(_power_domain);
-  DIFF_END
-}
-
-void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_applies_to);
-  DIFF_OUT_FIELD(_clamp_value);
-  DIFF_OUT_FIELD(_isolation_signal);
-  DIFF_OUT_FIELD(_isolation_sense);
-  DIFF_OUT_FIELD(_location);
-  DIFF_OUT_FIELD(_power_domain);
-
-  DIFF_END
 }
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)

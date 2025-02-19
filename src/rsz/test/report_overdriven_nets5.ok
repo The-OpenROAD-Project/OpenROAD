@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+check include_parallel_driven
+[WARNING RSZ-0024] found 1 overdriven nets.
+ out

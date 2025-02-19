@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -68,32 +67,6 @@ bool _dbTechLayerSpacingTablePrlRule::operator<(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerSpacingTablePrlRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerSpacingTablePrlRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.wrong_direction_);
-  DIFF_FIELD(flags_.same_mask_);
-  DIFF_FIELD(flags_.exceept_eol_);
-  DIFF_FIELD(eol_width_);
-  DIFF_END
-}
-
-void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
-                                          char side,
-                                          const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.wrong_direction_);
-  DIFF_OUT_FIELD(flags_.same_mask_);
-  DIFF_OUT_FIELD(flags_.exceept_eol_);
-  DIFF_OUT_FIELD(eol_width_);
-
-  DIFF_END
 }
 
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(

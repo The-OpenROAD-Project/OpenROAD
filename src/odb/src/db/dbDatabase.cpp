@@ -121,36 +121,6 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   return true;
 }
 
-void _dbDatabase::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbDatabase& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_master_id);
-  DIFF_FIELD(_chip);
-  DIFF_TABLE_NO_DEEP(_tech_tbl);
-  DIFF_TABLE_NO_DEEP(_lib_tbl);
-  DIFF_TABLE_NO_DEEP(_chip_tbl);
-  DIFF_TABLE_NO_DEEP(_gds_lib_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbDatabase::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_master_id);
-  DIFF_OUT_FIELD(_chip);
-  DIFF_OUT_TABLE_NO_DEEP(_tech_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_lib_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_chip_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_gds_lib_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
@@ -728,19 +698,6 @@ utl::Logger* _dbDatabase::getLogger() const
 utl::Logger* _dbObject::getLogger() const
 {
   return getDatabase()->getLogger();
-}
-
-bool dbDatabase::diff(dbDatabase* db0_,
-                      dbDatabase* db1_,
-                      FILE* file,
-                      int indent)
-{
-  _dbDatabase* db0 = (_dbDatabase*) db0_;
-  _dbDatabase* db1 = (_dbDatabase*) db1_;
-  dbDiff diff(file);
-  diff.setIndentPerLevel(indent);
-  db0->differences(diff, nullptr, *db1);
-  return diff.hasDifferences();
 }
 
 void _dbDatabase::collectMemInfo(MemInfo& info)

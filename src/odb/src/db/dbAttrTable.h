@@ -33,13 +33,10 @@
 #pragma once
 
 #include "odb/ZException.h"
-#include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 #include "odb/odb.h"
 
 namespace odb {
-
-class dbDiff;
 
 //
 // dbAttrTable - Stores the property list for each table.
@@ -63,10 +60,6 @@ class dbAttrTable
 
   bool operator==(const dbAttrTable<T>& rhs) const;
   bool operator!=(const dbAttrTable<T>& rhs) const { return !(this == rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbAttrTable<T>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
  private:
   unsigned int _page_cnt = 0;
@@ -189,60 +182,6 @@ inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
   }
 
   return true;
-}
-
-template <typename T>
-inline void dbAttrTable<T>::differences(dbDiff& diff,
-                                        const char* field,
-                                        const dbAttrTable<T>& rhs) const
-{
-  const uint sz1 = _page_cnt * page_size;
-  const uint sz2 = rhs._page_cnt * page_size;
-  uint i = 0;
-
-  for (; i < sz1 && i < sz2; ++i) {
-    T o1 = getAttr(i);
-    T o2 = rhs.getAttr(i);
-
-    if (o1 != o2) {
-      diff.report("< %s[%d] = ", field, i);
-      diff << o1;
-      diff << "\n";
-      diff.report("> %s[%d] = ", field, i);
-      diff << o2;
-      diff << "\n";
-    }
-  }
-
-  if (i < sz1) {
-    for (; i < sz1; ++i) {
-      diff.report("< %s[%d] = ", field, i);
-      diff << getAttr(i);
-      diff << "\n";
-    }
-  }
-
-  if (i < sz2) {
-    for (; i < sz2; ++i) {
-      diff.report("> %s[%d] = ", field, i);
-      diff << rhs.getAttr(i);
-      diff << "\n";
-    }
-  }
-}
-
-template <typename T>
-inline void dbAttrTable<T>::out(dbDiff& diff,
-                                const char side,
-                                const char* field) const
-{
-  const uint sz1 = _page_cnt * page_size;
-
-  for (int i = 0; i < sz1; ++i) {
-    diff.report("%c %s[%d] = ", side, field, i);
-    diff << getAttr(i);
-    diff << "\n";
-  }
 }
 
 template <typename T>

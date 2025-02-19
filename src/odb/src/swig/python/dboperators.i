@@ -11,7 +11,6 @@ WRAP_OBJECT_OPERATOR(odb::dbSetIterator<dbCCSeg>)
 %define WRAP_OBJECT_STREAM(T)
 %rename(IStream) operator>>(dbIStream &, T &);
 %rename(OStream) operator<<(dbOStream &, const T &);
-%rename(dbDiff)  operator<<(dbDiff &, const dbTransform &);
 %rename(equal)  odb::T::operator=(const T &);
 
 %enddef

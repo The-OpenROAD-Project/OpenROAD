@@ -405,7 +405,7 @@ void BrowserWidget::updateModel()
 
   std::vector<odb::dbInst*> insts;
   for (auto* inst : block_->getInsts()) {
-    if (inst->getModule() != nullptr) {
+    if (!inst->isPhysicalOnly()) {
       continue;
     }
 

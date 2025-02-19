@@ -4,6 +4,11 @@
 [INFO ODB-0131]     Created 15 components and 105 component-terminals.
 [INFO ODB-0132]     Created 3 special nets and 45 connections.
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        31
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
 Repair timing output passed/skipped equivalence test
 Net RESET
  Pin capacitance: 26.17-26.68

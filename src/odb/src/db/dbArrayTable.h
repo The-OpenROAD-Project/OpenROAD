@@ -153,8 +153,6 @@ class dbArrayTable : public dbObjectTable
 
   bool operator==(const dbArrayTable<T>& table) const;
   bool operator!=(const dbArrayTable<T>& table) const;
-  void differences(dbDiff& diff, const dbArrayTable<T>& rhs) const;
-  void out(dbDiff& diff, char side) const;
 
   void readPage(dbIStream& stream, dbArrayTablePage* page);
   void writePage(dbOStream& stream, const dbArrayTablePage* page) const;

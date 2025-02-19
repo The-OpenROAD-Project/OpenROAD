@@ -36,11 +36,13 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/odb.h"
+// User Code Begin Includes
+#include "odb/geom.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbPowerSwitch;
 class _dbIsolation;
@@ -58,10 +60,6 @@ class _dbPowerDomain : public _dbObject
   bool operator==(const _dbPowerDomain& rhs) const;
   bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerDomain& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbPowerDomain& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   void collectMemInfo(MemInfo& info);
 
   char* _name;

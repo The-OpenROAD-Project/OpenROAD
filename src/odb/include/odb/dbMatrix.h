@@ -34,12 +34,10 @@
 
 #include <vector>
 
-#include "dbDiff.h"
 #include "dbStream.h"
 #include "odb.h"
 
 namespace odb {
-class dbDiff;
 
 template <class T>
 class dbMatrix
@@ -60,10 +58,6 @@ class dbMatrix
 
   bool operator==(const dbMatrix<T>& rhs) const;
   bool operator!=(const dbMatrix<T>& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbMatrix<T>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
  private:
   uint _n = 0;
@@ -156,84 +150,6 @@ template <class T>
 inline bool dbMatrix<T>::operator==(const dbMatrix<T>& rhs) const
 {
   return _matrix == rhs._matrix;
-}
-
-template <class T>
-inline void dbMatrix<T>::differences(dbDiff& diff,
-                                     const char* field,
-                                     const dbMatrix<T>& rhs) const
-{
-  uint i, j;
-
-  for (i = 0; i < _n && i < rhs._n; ++i) {
-    for (j = 0; j < _m && j < rhs._m; ++j) {
-      const T& o1 = (*this)(i, j);
-      const T& o2 = rhs(i, j);
-
-      if (o1 != o2) {
-        diff.report("< %s[%d][%d] = ", field, i, j);
-        diff << o1;
-        diff << "\n";
-        diff.report("> %s[%d][%d] = ", field, i, j);
-        diff << o2;
-        diff << "\n";
-      }
-    }
-
-    if (j < _m) {
-      for (j = 0; j < _m; ++j) {
-        const T& o1 = (*this)(i, j);
-
-        diff.report("< %s[%d][%d] = ", field, i, j);
-        diff << o1;
-        diff << "\n";
-      }
-    }
-
-    if (j < rhs._m) {
-      for (j = 0; j < rhs._m; ++j) {
-        const T& o2 = rhs(i, j);
-        diff.report("> %s[%d][%d] = ", field, i, j);
-        diff << o2;
-        diff << "\n";
-      }
-    }
-  }
-
-  if (i < _n) {
-    for (; i < _n; ++i) {
-      for (j = 0; j < _m; ++j) {
-        const T& o1 = (*this)(i, j);
-        diff.report("< %s[%d][%d] = ", field, i, j);
-        diff << o1;
-        diff << "\n";
-      }
-    }
-  }
-
-  if (i < rhs._n) {
-    for (; i < rhs._n; ++i) {
-      for (j = 0; j < rhs._m; ++j) {
-        const T& o2 = rhs(i, j);
-        diff.report("> %s[%d][%d] = ", field, i, j);
-        diff << o2;
-        diff << "\n";
-      }
-    }
-  }
-}
-
-template <class T>
-inline void dbMatrix<T>::out(dbDiff& diff, char side, const char* field) const
-{
-  for (uint i = 0; i < _n; ++i) {
-    for (uint j = 0; j < _m; ++j) {
-      const T& o1 = (*this)(i, j);
-      diff.report("%c %s[%d][%d] = ", side, field, i, j);
-      diff << o1;
-      diff << "\n";
-    }
-  }
 }
 
 }  // namespace odb

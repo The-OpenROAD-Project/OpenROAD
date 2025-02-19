@@ -39,7 +39,6 @@
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbITerm.h"
 #include "dbInst.h"
 #include "dbMarkerCategory.h"
@@ -100,41 +99,6 @@ bool _dbMarker::operator<(const _dbMarker& rhs) const
   }
   // User Code End <
   return true;
-}
-
-void _dbMarker::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbMarker& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.visited_);
-  DIFF_FIELD(flags_.visible_);
-  DIFF_FIELD(flags_.waived_);
-  DIFF_FIELD(parent_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(comment_);
-  DIFF_FIELD(line_number_);
-  // User Code Begin Differences
-  // DIFF_FIELD(sources_);
-  // User Code End Differences
-  DIFF_END
-}
-
-void _dbMarker::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.visited_);
-  DIFF_OUT_FIELD(flags_.visible_);
-  DIFF_OUT_FIELD(flags_.waived_);
-  DIFF_OUT_FIELD(parent_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(comment_);
-  DIFF_OUT_FIELD(line_number_);
-
-  // User Code Begin Out
-  // DIFF_FIELD(sources_);
-  // User Code End Out
-  DIFF_END
 }
 
 _dbMarker::_dbMarker(_dbDatabase* db)

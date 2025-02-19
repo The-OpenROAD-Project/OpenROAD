@@ -44,7 +44,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayer;
 
@@ -62,10 +61,6 @@ class _dbMetalWidthViaMap : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbMetalWidthViaMap& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbMetalWidthViaMap& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   void collectMemInfo(MemInfo& info);
 
   bool via_cut_class_;

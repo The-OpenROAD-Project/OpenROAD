@@ -40,7 +40,6 @@ namespace odb {
 
 class dbOStream;
 class dbIStream;
-class dbDiff;
 
 //
 // Database Transform - Transform points by rotation and translation.
@@ -110,12 +109,10 @@ class dbTransform
 
   friend dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
   friend dbIStream& operator>>(dbIStream& stream, dbTransform& t);
-  friend dbDiff& operator<<(dbDiff& diff, const dbTransform& t);
 };
 
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
 dbIStream& operator>>(dbIStream& stream, dbTransform& t);
-dbDiff& operator<<(dbDiff& diff, const dbTransform& t);
 
 inline void dbTransform::concat(const dbTransform& t)
 {

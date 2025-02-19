@@ -33,14 +33,15 @@
 #include <fstream>
 #include <iostream>
 
+#include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
 #include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_graphics.h"
 #include "dst/Distributed.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
@@ -52,21 +53,14 @@
 #include "io/io.h"
 #include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
+#include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "serialization.h"
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* drt_tcl_inits[];
-}  // namespace sta
-
-extern "C" {
-extern int Drt_Init(Tcl_Interp* interp);
-}
 
 namespace drt {
 
@@ -218,19 +212,15 @@ int TritonRoute::getNumDRVs() const
 std::string TritonRoute::runDRWorker(const std::string& workerStr,
                                      FlexDRViaData* viaData)
 {
-  bool on = debug_->debugDR;
-  std::unique_ptr<FlexDRGraphics> graphics_
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(
-                  debug_.get(), design_.get(), db_, logger_)
-            : nullptr;
   auto worker = FlexDRWorker::load(
       workerStr, viaData, design_.get(), logger_, router_cfg_.get());
-  worker->setGraphics(graphics_.get());
   worker->setSharedVolume(shared_volume_);
   worker->setDebugSettings(debug_.get());
-  if (graphics_) {
-    graphics_->startIter(worker->getDRIter(), router_cfg_.get());
+  if (graphics_factory_->guiActive() && debug_->debugDR) {
+    std::unique_ptr<AbstractDRGraphics> dr_graphics
+        = graphics_factory_->makeUniqueDRGraphics();
+    worker->setGraphics(dr_graphics.get());
+    dr_graphics->startIter(worker->getDRIter(), router_cfg_.get());
   }
   std::string result = worker->reloadedMain();
   return result;
@@ -243,18 +233,12 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
     io::Writer writer(getDesign(), logger_);
     writer.updateTrackAssignment(db_->getChip()->getBlock());
   }
-  bool on = debug_->debugDR;
   FlexDRViaData viaData;
   std::ifstream viaDataFile(fmt::format("{}/viadata.bin", dumpDir),
                             std::ios::binary);
   frIArchive ar(viaDataFile);
   ar >> viaData;
 
-  std::unique_ptr<FlexDRGraphics> graphics
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(
-                  debug_.get(), design_.get(), db_, logger_)
-            : nullptr;
   std::ifstream workerFile(fmt::format("{}/worker.bin", dumpDir),
                            std::ios::binary);
   std::string workerStr((std::istreambuf_iterator<char>(workerFile)),
@@ -262,6 +246,8 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
   workerFile.close();
   auto worker = FlexDRWorker::load(
       workerStr, &viaData, design_.get(), logger_, router_cfg_.get());
+  std::unique_ptr<AbstractDRGraphics> graphics
+      = debug_->debugDR ? graphics_factory_->makeUniqueDRGraphics() : nullptr;
   worker->setGraphics(graphics.get());
   if (debug_->mazeEndIter != -1) {
     worker->setMazeEndIter(debug_->mazeEndIter);
@@ -534,11 +520,12 @@ void TritonRoute::applyUpdates(
   }
 }
 
-void TritonRoute::init(Tcl_Interp* tcl_interp,
-                       odb::dbDatabase* db,
-                       Logger* logger,
-                       dst::Distributed* dist,
-                       stt::SteinerTreeBuilder* stt_builder)
+void TritonRoute::init(
+    odb::dbDatabase* db,
+    Logger* logger,
+    dst::Distributed* dist,
+    stt::SteinerTreeBuilder* stt_builder,
+    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
 {
   db_ = db;
   logger_ = logger;
@@ -546,10 +533,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
-  // Define swig TCL commands.
-  Drt_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
-  FlexDRGraphics::init();
+  graphics_factory_ = std::move(graphics_factory);
 }
 
 bool TritonRoute::initGuide()
@@ -614,6 +598,13 @@ void TritonRoute::initDesign()
   }
   parser.postProcess();
   db_callback_->addOwner(db_->getChip()->getBlock());
+  initGraphics();
+}
+
+void TritonRoute::initGraphics()
+{
+  graphics_factory_->reset(
+      debug_.get(), design_.get(), db_, logger_, router_cfg_.get());
 }
 
 void TritonRoute::prep()
@@ -630,9 +621,12 @@ void TritonRoute::gr()
 
 void TritonRoute::ta()
 {
-  FlexTA ta(getDesign(), logger_, router_cfg_.get(), distributed_);
-  ta.setDebug(debug_.get(), db_);
-  ta.main();
+  std::unique_ptr<FlexTA> ta = std::make_unique<FlexTA>(
+      getDesign(), logger_, router_cfg_.get(), distributed_);
+  if (debug_->debugTA) {
+    ta->setDebug(graphics_factory_->makeUniqueTAGraphics());
+  }
+  ta->main();
 }
 
 void TritonRoute::dr()
@@ -640,7 +634,9 @@ void TritonRoute::dr()
   num_drvs_ = -1;
   dr_ = std::make_unique<FlexDR>(
       this, getDesign(), logger_, db_, router_cfg_.get());
-  dr_->setDebug(debug_.get());
+  if (debug_->debugDR) {
+    dr_->setDebug(graphics_factory_->makeUniqueDRGraphics());
+  }
   if (distributed_) {
     dr_->setDistributed(dist_, dist_ip_, dist_port_, shared_volume_);
   }
@@ -984,11 +980,15 @@ int TritonRoute::main()
     return 0;
   }
   if (router_cfg_->DO_PA) {
-    FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get());
-    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
-    pa.setDebug(debug_.get(), db_);
+    pa_ = std::make_unique<FlexPA>(
+        getDesign(), logger_, dist_, router_cfg_.get());
+    pa_->setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    if (debug_->debugPA) {
+      pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
+    }
     pa_pool.join();
-    pa.main();
+    pa_->main();
+    /// bookmark
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_.get(), true);
@@ -1047,7 +1047,9 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   initDesign();
   FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get());
   pa.setTargetInstances(target_insts);
-  pa.setDebug(debug_.get(), db_);
+  if (debug_->debugPA) {
+    pa.setDebug(graphics_factory_->makeUniquePAGraphics());
+  }
   if (distributed_) {
     pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     dist_pool_->join();

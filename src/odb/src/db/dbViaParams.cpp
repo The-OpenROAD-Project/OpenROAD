@@ -33,7 +33,6 @@
 #include "odb/dbViaParams.h"
 
 #include "odb/db.h"
-#include "odb/dbDiff.h"
 
 namespace odb {
 
@@ -122,68 +121,6 @@ bool _dbViaParams::operator==(const _dbViaParams& rhs) const
   }
 
   return true;
-}
-
-void _dbViaParams::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbViaParams& rhs) const
-{
-  if (field) {
-    diff.begin_object("<> %s\n", field);
-  } else {
-    diff.begin_object("<> _dbViaParams\n");
-  }
-
-  DIFF_FIELD(_x_cut_size);
-  DIFF_FIELD(_y_cut_size);
-  DIFF_FIELD(_x_cut_spacing);
-  DIFF_FIELD(_y_cut_spacing);
-  DIFF_FIELD(_x_top_enclosure);
-  DIFF_FIELD(_y_top_enclosure);
-  DIFF_FIELD(_x_bot_enclosure);
-  DIFF_FIELD(_y_bot_enclosure);
-  DIFF_FIELD(_num_cut_rows);
-  DIFF_FIELD(_num_cut_cols);
-  DIFF_FIELD(_x_origin);
-  DIFF_FIELD(_y_origin);
-  DIFF_FIELD(_x_top_offset);
-  DIFF_FIELD(_y_top_offset);
-  DIFF_FIELD(_x_bot_offset);
-  DIFF_FIELD(_y_bot_offset);
-  DIFF_FIELD(_top_layer);
-  DIFF_FIELD(_cut_layer);
-  DIFF_FIELD(_bot_layer);
-  diff.end_object();
-}
-
-void _dbViaParams::out(dbDiff& diff, char side, const char* field) const
-{
-  if (field) {
-    diff.begin_object("%c %s\n", side, field);
-  } else {
-    diff.begin_object("%c _dbViaParams\n", side);
-  }
-
-  DIFF_OUT_FIELD(_x_cut_size);
-  DIFF_OUT_FIELD(_y_cut_size);
-  DIFF_OUT_FIELD(_x_cut_spacing);
-  DIFF_OUT_FIELD(_y_cut_spacing);
-  DIFF_OUT_FIELD(_x_top_enclosure);
-  DIFF_OUT_FIELD(_y_top_enclosure);
-  DIFF_OUT_FIELD(_x_bot_enclosure);
-  DIFF_OUT_FIELD(_y_bot_enclosure);
-  DIFF_OUT_FIELD(_num_cut_rows);
-  DIFF_OUT_FIELD(_num_cut_cols);
-  DIFF_OUT_FIELD(_x_origin);
-  DIFF_OUT_FIELD(_y_origin);
-  DIFF_OUT_FIELD(_x_top_offset);
-  DIFF_OUT_FIELD(_y_top_offset);
-  DIFF_OUT_FIELD(_x_bot_offset);
-  DIFF_OUT_FIELD(_y_bot_offset);
-  DIFF_OUT_FIELD(_top_layer);
-  DIFF_OUT_FIELD(_cut_layer);
-  DIFF_OUT_FIELD(_bot_layer);
-  diff.end_object();
 }
 
 _dbViaParams::_dbViaParams(const _dbViaParams& v)

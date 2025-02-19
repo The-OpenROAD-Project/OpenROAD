@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbModInst.h"
@@ -84,35 +83,6 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
 bool _dbPowerDomain::operator<(const _dbPowerDomain& rhs) const
 {
   return true;
-}
-
-void _dbPowerDomain::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbPowerDomain& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_group);
-  DIFF_FIELD(_top);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_area);
-  DIFF_FIELD(_voltage);
-  DIFF_END
-}
-
-void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_group);
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_area);
-  DIFF_OUT_FIELD(_voltage);
-
-  DIFF_END
 }
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)

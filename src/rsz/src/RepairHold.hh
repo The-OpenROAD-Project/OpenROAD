@@ -107,7 +107,9 @@ class RepairHold : public sta::dbStaState
                       double setup_margin,
                       double hold_margin,
                       bool allow_setup_violations,
-                      int max_buffer_count);
+                      int max_buffer_count,
+                      bool verbose,
+                      int& pass);
   void repairEndHold(Vertex* end_vertex,
                      LibertyCell* buffer_cell,
                      double setup_margin,

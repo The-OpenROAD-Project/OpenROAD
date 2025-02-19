@@ -34,7 +34,6 @@
 #include "dbGlobalConnect.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -83,29 +82,6 @@ bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
   }
 
   return true;
-}
-
-void _dbGlobalConnect::differences(dbDiff& diff,
-                                   const char* field,
-                                   const _dbGlobalConnect& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(region_);
-  DIFF_FIELD(net_);
-  DIFF_FIELD(inst_pattern_);
-  DIFF_FIELD(pin_pattern_);
-  DIFF_END
-}
-
-void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(region_);
-  DIFF_OUT_FIELD(net_);
-  DIFF_OUT_FIELD(inst_pattern_);
-  DIFF_OUT_FIELD(pin_pattern_);
-
-  DIFF_END
 }
 
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db)

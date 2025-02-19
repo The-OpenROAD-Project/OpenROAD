@@ -3,6 +3,11 @@
 [INFO ODB-0131]     Created 11 components and 43 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 11 connections.
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        11
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0042] Inserted 10 tie LOGIC1_X1 instances.
 10.1 10.6
 10.1 20.6

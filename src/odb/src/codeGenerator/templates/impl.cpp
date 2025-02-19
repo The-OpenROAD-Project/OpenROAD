@@ -33,7 +33,6 @@
 // Generator Code Begin Cpp
 #include "{{klass.name}}.h"
 #include "odb/db.h"
-#include "dbDiff.hpp"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -115,69 +114,6 @@ namespace odb {
     //User Code Begin <
     //User Code End <
     return true;
-  }
-
-  void _{{klass.name}}::differences(dbDiff& diff, const char* field, const _{{klass.name}}& rhs) const
-  {
-    DIFF_BEGIN   
-    {% for field in klass.fields %}
-      {% if field.bitFields %}
-        {% for innerField in klass.structs[0].fields %}
-          {% for component in innerField.components %}
-            {% if 'no-diff' not in innerField.flags %}
-              DIFF_FIELD({{field.name}}.{{component}});
-            {% endif %}
-          {% endfor %}
-        {% endfor %}
-      {% else %}
-        {% for component in field.components %}
-          {% if 'no-diff' not in field.flags %}
-            {% if field.table %}
-              DIFF_TABLE{%if 'no-deep' in field.flags%}_NO_DEEP{%endif%}({{component}});
-            {% elif 'isHashTable' in field and field.isHashTable %}
-              DIFF_HASH_TABLE{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
-            {% else %}
-              DIFF_FIELD{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-    {% endfor %}
-    // User Code Begin Differences
-    // User Code End Differences
-    DIFF_END
-  }
-
-  void _{{klass.name}}::out(dbDiff& diff, char side, const char* field) const
-  {
-    DIFF_OUT_BEGIN
-    {% for field in klass.fields %}
-      {% if field.bitFields %}
-        {% for innerField in klass.structs[0].fields %}
-          {% for component in innerField.components %}
-            {% if 'no-diff' not in innerField.flags %}
-              DIFF_OUT_FIELD({{field.name}}.{{component}});
-            {% endif %}
-          {% endfor %}
-        {% endfor %}
-      {% else %}
-        {% for component in field.components %}
-          {% if 'no-diff' not in field.flags %}
-            {% if field.table %}
-              DIFF_OUT_TABLE{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
-            {% elif field.isHashTable %}
-              DIFF_OUT_HASH_TABLE{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
-            {% else %}
-              DIFF_OUT_FIELD{% if 'no-deep' in field.flags %}_NO_DEEP{% endif %}({{component}});
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-    {% endfor %}
-
-    // User Code Begin Out
-    // User Code End Out
-    DIFF_END
   }
 
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)

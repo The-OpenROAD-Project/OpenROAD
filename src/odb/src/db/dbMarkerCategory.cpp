@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbMarker.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -86,37 +85,6 @@ bool _dbMarkerCategory::operator==(const _dbMarkerCategory& rhs) const
 bool _dbMarkerCategory::operator<(const _dbMarkerCategory& rhs) const
 {
   return true;
-}
-
-void _dbMarkerCategory::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbMarkerCategory& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(description_);
-  DIFF_FIELD(source_);
-  DIFF_FIELD(max_markers_);
-  DIFF_TABLE(marker_tbl_);
-  DIFF_TABLE(categories_tbl_);
-  DIFF_HASH_TABLE(categories_hash_);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbMarkerCategory::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(description_);
-  DIFF_OUT_FIELD(source_);
-  DIFF_OUT_FIELD(max_markers_);
-  DIFF_OUT_TABLE(marker_tbl_);
-  DIFF_OUT_TABLE(categories_tbl_);
-  DIFF_OUT_HASH_TABLE(categories_hash_);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  DIFF_END
 }
 
 _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)

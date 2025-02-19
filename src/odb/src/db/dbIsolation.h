@@ -40,7 +40,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbPowerDomain;
 
@@ -55,10 +54,6 @@ class _dbIsolation : public _dbObject
   bool operator==(const _dbIsolation& rhs) const;
   bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbIsolation& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbIsolation& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   void collectMemInfo(MemInfo& info);
 
   char* _name;

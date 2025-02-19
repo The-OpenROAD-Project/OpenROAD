@@ -34,7 +34,6 @@
 #include "dbGDSPath.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -64,29 +63,6 @@ bool _dbGDSPath::operator==(const _dbGDSPath& rhs) const
 bool _dbGDSPath::operator<(const _dbGDSPath& rhs) const
 {
   return true;
-}
-
-void _dbGDSPath::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbGDSPath& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_datatype);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_path_type);
-  DIFF_END
-}
-
-void _dbGDSPath::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_datatype);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_path_type);
-
-  DIFF_END
 }
 
 _dbGDSPath::_dbGDSPath(_dbDatabase* db)

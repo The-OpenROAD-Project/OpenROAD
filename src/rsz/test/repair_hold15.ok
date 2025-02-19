@@ -8,6 +8,11 @@
  (clk ^) r -0.07:-0.22 f 0.02:-0.26
  (clk ^) r 0.05:1.85 f 0.16:1.79
 [INFO RSZ-0046] Found 1 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.141 |  -0.213 | r2/D
+    final |       0 |       0 |            0 |    +0.0% |  -0.141 |  -0.213 | r2/D
+--------------------------------------------------------------------------------------
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
  (clk ^) r -0.14:2.03 f -0.05:2.01
  (clk ^) r -0.07:-0.22 f 0.02:-0.26

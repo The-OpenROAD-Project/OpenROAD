@@ -58,8 +58,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_util   target_util \
                                           -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
-                                          -snap_layer snap_layer \
-                                          -bus_planning \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                         }
@@ -72,10 +70,10 @@ proc rtl_macro_placer { args } {
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight -macro_blockage_weight  \
          -pin_access_th -target_util \
-         -target_dead_space -min_ar -snap_layer \
+         -target_dead_space -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-bus_planning}
+    flags {}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -115,7 +113,6 @@ proc rtl_macro_placer { args } {
   set target_util 0.25
   set target_dead_space 0.05
   set min_ar 0.33
-  set snap_layer -1
   set report_directory "hier_rtlmp"
 
   if { [info exists keys(-max_num_macro)] } {
@@ -207,9 +204,6 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-min_ar)] } {
     set min_ar $keys(-min_ar)
   }
-  if { [info exists keys(-snap_layer)] } {
-    set snap_layer $keys(-snap_layer)
-  }
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)
   }
@@ -240,8 +234,6 @@ proc rtl_macro_placer { args } {
       $target_util \
       $target_dead_space \
       $min_ar \
-      $snap_layer \
-      [info exists flags(-bus_planning)] \
       $report_directory]
   } {
     return false
