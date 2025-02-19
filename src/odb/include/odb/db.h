@@ -2178,12 +2178,6 @@ class dbNet : public dbObject
   bool isRCgraph();
 
   ///
-  /// reduced flag set when Arnoldi modeling takes place
-  ///
-  void setReduced(bool value);
-  bool isReduced();
-
-  ///
   /// extracted flag set when net was extracted
   ///
   void setExtracted(bool value);

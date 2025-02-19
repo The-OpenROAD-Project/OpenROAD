@@ -73,7 +73,7 @@ struct _dbNetFlags
   uint _wire_altered : 1;
   uint _extracted : 1;
   uint _rc_graph : 1;
-  uint _reduced : 1;
+  uint _unused : 1; // free to reuse
   uint _set_io : 1;
   uint _io : 1;
   uint _dont_touch : 1;

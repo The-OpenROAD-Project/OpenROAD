@@ -118,7 +118,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   _flags._wire_altered = 0;
   _flags._extracted = 0;
   _flags._rc_graph = 0;
-  _flags._reduced = 0;
+  _flags._unused = 0;
   _flags._set_io = 0;
   _flags._io = 0;
   _flags._dont_touch = 0;
@@ -260,10 +260,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (_flags._rc_graph != rhs._flags._rc_graph) {
-    return false;
-  }
-
-  if (_flags._reduced != rhs._flags._reduced) {
     return false;
   }
 
@@ -1334,32 +1330,6 @@ bool dbNet::isRCgraph()
 {
   _dbNet* net = (_dbNet*) this;
   return net->_flags._rc_graph == 1;
-}
-
-void dbNet::setReduced(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint prev_flags = flagsToUInt(net);
-  net->_flags._reduced = (value == true) ? 1 : 0;
-
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: net {}, setReduced: {}",
-               getId(),
-               value);
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
-  }
-}
-
-bool dbNet::isReduced()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->_flags._reduced == 1;
 }
 
 dbBlock* dbNet::getBlock()
