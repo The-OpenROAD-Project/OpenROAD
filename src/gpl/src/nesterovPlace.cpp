@@ -296,7 +296,7 @@ void NesterovPlace::reset()
   wireLengthCoefX_ = wireLengthCoefY_ = 0;
   prevHpwl_ = 0;
   isDiverged_ = false;
-  isRoutabilityNeed_ = true;
+  is_routability_need_ = true;
 
   divergeMsg_ = "";
   divergeCode_ = 0;
@@ -322,9 +322,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool is_routability_snapshot_saved = false;
   float route_snapshotA = 0;
   float route_snapshot_WlCoefX = 0, route_snapshot_WlCoefY = 0;
-  bool isDivergeTriedRevert = false;
+  // bool isDivergeTriedRevert = false;
 
   // divergence snapshot info
+  bool is_diverge_snapshot_saved = false;
   float diverge_snapshot_WlCoefX = 0, diverge_snapshot_WlCoefY = 0;
 
   // backTracking variable.
@@ -419,6 +420,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for (auto& nb : nbVec_) {
           nb->snapshot();
         }
+        is_diverge_snapshot_saved = true;
       }
     }
 
@@ -438,8 +440,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // timing driven feature
     // if virtual, do reweight on timing-critical nets,
     // otherwise keep all modifications by rsz.
+    const bool is_before_routability
+        = average_overflow_ > routability_save_snapshot_;
+    const bool is_after_routability
+        = (average_overflow_ < npVars_.routability_end_overflow
+           && !is_routability_need_);
     if (npVars_.timingDrivenMode
-        && tb_->isTimingNetWeightOverflow(average_overflow_)) {
+        && tb_->isTimingNetWeightOverflow(average_overflow_) &&
+        // do not execute timing-driven if routability is under execution
+        (is_before_routability || is_after_routability
+         || !npVars_.routability_driven_mode)) {
       // update db's instance location from current density coordinates
       updateDb();
 
@@ -552,31 +562,37 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numDiverge > 0) {
-      divergeMsg_ = "RePlAce divergence detected. ";
-      divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
-      divergeCode_ = 307;
-      isDiverged_ = true;
+      log_->report("Divergence occured in {} regions.", numDiverge);
 
-      // revert back to the original rb solutions
-      // one more opportunity
-      if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
-        // get back to the working rc size
-        rb_->revertGCellSizeToMinRc();
-        curA = route_snapshotA;
-        wireLengthCoefX_ = route_snapshot_WlCoefX;
-        wireLengthCoefY_ = route_snapshot_WlCoefY;
-        nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-        for (auto& nb : nbVec_) {
-          nb->revertDivergence();
-        }
+      // TODO: this divergence treatment uses the non-deterministic aspect of
+      // routability inflation to try one more time if a divergence is detected.
+      // This feature lost its consistency since we allow for non-virtual timing
+      // driven iterations. Meaning we would go back to a snapshot without newly
+      // added instances. A way to maintain this feature is to store two
+      // snapshots one for routability revert if diverge and try again, and
+      // another for simply revert if diverge and finish without hitting 0.10
+      // overflow.
+      // // revert back to the original rb solutions
+      // // one more opportunity
+      // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
+      //   // get back to the working rc size
+      //   rb_->revertGCellSizeToMinRc();
+      //   curA = route_snapshotA;
+      //   wireLengthCoefX_ = route_snapshot_WlCoefX;
+      //   wireLengthCoefY_ = route_snapshot_WlCoefY;
+      //   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+      //   for (auto& nb : nbVec_) {
+      //     nb->revertToSnapshot();
+      //   }
 
-        isDiverged_ = false;
-        divergeCode_ = 0;
-        divergeMsg_ = "";
-        isDivergeTriedRevert = true;
-        // turn off the RD forcely
-        isRoutabilityNeed_ = false;
-      } else if (!npVars_.disableRevertIfDiverge) {
+      //   isDiverged_ = false;
+      //   divergeCode_ = 0;
+      //   divergeMsg_ = "";
+      //   isDivergeTriedRevert = true;
+      //   // turn off the RD forcely
+      //   is_routability_need_ = false;
+      // } else
+      if (!npVars_.disableRevertIfDiverge && is_diverge_snapshot_saved) {
         // In case diverged and not in routability mode, finish with min hpwl
         // stored since overflow below 0.25
         log_->warn(GPL,
@@ -592,7 +608,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         wireLengthCoefY_ = diverge_snapshot_WlCoefY;
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
         for (auto& nb : nbVec_) {
-          nb->revertDivergence();
+          nb->revertToSnapshot();
         }
         isDiverged_ = false;
         break;
@@ -601,8 +617,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
-    if (!is_routability_snapshot_saved && npVars_.routabilityDrivenMode
-        && 0.6 >= average_overflow_unscaled_) {
+    if (!is_routability_snapshot_saved && npVars_.routability_driven_mode
+        && routability_save_snapshot_ >= average_overflow_unscaled_) {
       route_snapshot_WlCoefX = wireLengthCoefX_;
       route_snapshot_WlCoefY = wireLengthCoefY_;
       route_snapshotA = curA;
@@ -616,16 +632,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     // check routability using RUDY or GR
-    if (npVars_.routabilityDrivenMode && isRoutabilityNeed_
-        && npVars_.routabilityCheckOverflow >= average_overflow_unscaled_) {
+    if (npVars_.routability_driven_mode && is_routability_need_
+        && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
-      isRoutabilityNeed_ = result.first;
+      is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
 
       // if routability is needed
-      if (isRoutabilityNeed_ || isRevertInitNeeded) {
+      if (is_routability_need_ || isRevertInitNeeded) {
         // cutFillerCoordinates();
 
         // revert back the current density penality
@@ -636,7 +652,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
         for (auto& nb : nbVec_) {
-          nb->revertDivergence();
+          nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
         log_->info(GPL, 89, "Routability: revert back to snapshot");
@@ -650,7 +666,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numConverge == nbVec_.size()) {
-      // log_->report("[NesterovSolve] Finished, all regions converged");
       break;
     }
   }
@@ -751,9 +766,6 @@ void NesterovPlace::createGNet(odb::dbNet* db_net)
 {
   odb::dbSigType netType = db_net->getSigType();
   if (!isValidSigType(netType)) {
-    log_->report("db_net:{} is not signal or clock: {}",
-                 db_net->getName(),
-                 db_net->getSigType().getString());
     return;
   }
   nbc_->createGNet(db_net, pbc_->skipIoMode());
@@ -775,9 +787,6 @@ void NesterovPlace::createITerm(odb::dbITerm* iterm)
 void NesterovPlace::destroyITerm(odb::dbITerm* iterm)
 {
   if (!isValidSigType(iterm->getSigType())) {
-    log_->report("iterm:{} is not signal or clock: {}",
-                 iterm->getName('|'),
-                 iterm->getSigType().getString());
     return;
   }
   nbc_->destroyITerm(iterm);

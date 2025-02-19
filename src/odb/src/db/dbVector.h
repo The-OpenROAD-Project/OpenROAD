@@ -34,7 +34,6 @@
 
 #include <vector>
 
-#include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 #include "odb/odb.h"
 
@@ -65,10 +64,6 @@ class dbVector : public std::vector<T>
   iterator end() { return _base::end(); }
   const_iterator begin() const { return _base::begin(); }
   const_iterator end() const { return _base::end(); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbVector<T>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 template <class T>
@@ -119,11 +114,6 @@ class dbVector<T*> : public std::vector<T*>
   {
     return !this->operator==(rhs);
   }
-
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbVector<T*>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 template <class T>
@@ -158,91 +148,6 @@ inline dbIStream& operator>>(dbIStream& stream, dbVector<T>& v)
   }
 
   return stream;
-}
-
-template <class T>
-inline void dbVector<T>::differences(dbDiff& diff,
-                                     const char* field,
-                                     const dbVector<T>& rhs) const
-{
-  const_iterator i1 = begin();
-  const_iterator i2 = rhs.begin();
-  unsigned int i = 0;
-
-  for (; i1 != end() && i2 != rhs.end(); ++i1, ++i2, ++i) {
-    if (*i1 != *i2) {
-      diff.report("< %s[%d] = ", field, i);
-      diff << *i1;
-      diff << "\n";
-      diff.report("> %s[%d] = ", field, i);
-      diff << *i2;
-      diff << "\n";
-    }
-  }
-
-  for (; i1 != end(); ++i1, ++i) {
-    diff.report("< %s[%d] = ", field, i);
-    diff << *i1;
-    diff << "\n";
-  }
-
-  for (; i2 != rhs.end(); ++i2, ++i) {
-    diff.report("> %s[%d] = ", field, i);
-    diff << *i2;
-    diff << "\n";
-  }
-}
-
-template <class T>
-inline void dbVector<T>::out(dbDiff& diff, char side, const char* field) const
-{
-  const_iterator i1 = begin();
-  unsigned int i = 0;
-
-  for (; i1 != end(); ++i1, ++i) {
-    diff.report("%c %s[%d] = ", side, field, i);
-    diff << *i1;
-    diff << "\n";
-  }
-}
-
-template <class T>
-inline void dbVector<T*>::differences(dbDiff& diff,
-                                      const char* field,
-                                      const dbVector<T*>& rhs) const
-{
-  const_iterator i1 = begin();
-  const_iterator i2 = rhs.begin();
-  unsigned int i = 0;
-
-  for (; i1 != end() && i2 != rhs.end(); ++i1, ++i2, ++i) {
-    if (*i1 != *i2) {
-      diff.report("<> %s[%d]:\n", field, i);
-      (*i1)->differences(diff, nullptr, *(*i2));
-    }
-  }
-
-  for (; i1 != end(); ++i1, ++i) {
-    diff.report("< %s[%d]:\n", field, i);
-    (*i1)->out(diff, dbDiff::LEFT, nullptr);
-  }
-
-  for (; i2 != rhs.end(); ++i2, ++i) {
-    diff.report("> %s[%d]:\n", field, i);
-    (*i2)->out(diff, dbDiff::RIGHT, nullptr);
-  }
-}
-
-template <class T>
-inline void dbVector<T*>::out(dbDiff& diff, char side, const char* field) const
-{
-  const_iterator i1 = begin();
-  unsigned int i = 0;
-
-  for (; i1 != end(); ++i1, ++i) {
-    diff.report("%c %s[%d]:\n", side, field, i);
-    (*i1)->out(diff, side, nullptr);
-  }
 }
 
 }  // namespace odb

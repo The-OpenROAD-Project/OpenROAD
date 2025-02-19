@@ -2682,7 +2682,7 @@ bool NesterovBase::checkDivergence()
   return isDiverged_;
 }
 
-bool NesterovBase::revertDivergence()
+bool NesterovBase::revertToSnapshot()
 {
   if (isConverged_) {
     return true;

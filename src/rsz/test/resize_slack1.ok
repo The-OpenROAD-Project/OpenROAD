@@ -5,4 +5,9 @@
 [INFO ODB-0132]     Created 2 special nets and 34 connections.
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 [INFO RSZ-0026] Removed 5 buffers.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        25
+    final |    +73.5% |       1 |       1 |             1 |         0
+---------------------------------------------------------------------
 r1q 0.751
