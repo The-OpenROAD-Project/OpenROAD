@@ -745,8 +745,7 @@ bool FlexPA::genPatternsCommit(
   frCoord left_pt = std::numeric_limits<frCoord>::max();
   frCoord right_pt = std::numeric_limits<frCoord>::min();
 
-  const auto& [pin, inst_term] = pins[0];
-  const auto inst = inst_term->getInst();
+  const auto inst = (pins[0].second)->getInst();
   for (auto& inst_term : inst->getInstTerms()) {
     if (isSkipInstTerm(inst_term.get())) {
       continue;
@@ -789,17 +788,15 @@ bool FlexPA::genPatternsCommit(
     // genPatternsPrint(nodes, pins);
     is_valid = true;
   } else {
-    for (int idx_1 = 0; idx_1 < (int) pins.size(); idx_1++) {
-      auto idx_2 = access_pattern[idx_1];
-      auto& [pin, inst_term] = pins[idx_1];
+    for (int pin_idx = 0; pin_idx < (int) pins.size(); pin_idx++) {
+      auto acc_pattern_idx = access_pattern[pin_idx];
+      auto inst_term = pins[pin_idx].second;
+      frBlockObject* owner = inst_term;
       if (inst_term->hasNet()) {
-        if (owners.find(inst_term->getNet()) != owners.end()) {
-          viol_access_points.insert(std::make_pair(idx_1, idx_2));  // idx ;
-        }
-      } else {
-        if (owners.find(inst_term) != owners.end()) {
-          viol_access_points.insert(std::make_pair(idx_1, idx_2));  // idx ;
-        }
+        owner = inst_term->getNet();
+      }
+      if (owners.find(owner) != owners.end()) {
+        viol_access_points.insert({pin_idx, acc_pattern_idx});  // idx ;
       }
     }
   }
