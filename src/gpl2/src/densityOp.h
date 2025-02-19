@@ -58,7 +58,9 @@ class DensityOp
 
   ~DensityOp() = default;
 
-  void getDensityGradient(const Kokkos::View<float*>& densityGradientsX, const Kokkos::View<float*>& densityGradientsY);
+  void getDensityGradient(const Kokkos::View<float*>& densityGradientsX,
+                          const Kokkos::View<float*>& densityGradientsY,
+                          const Kokkos::View<float*>& densityGradAbsXPlusY);
 
   void updateDensityForceBin();
 
