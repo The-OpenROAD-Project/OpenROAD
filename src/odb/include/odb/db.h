@@ -1158,12 +1158,6 @@ class dbBlock : public dbObject
   ///
   dbNet* findNet(const char* name);
 
-  ///
-  /// Find a set of nets. Each name can be real name, or Nxxx, or xxx,
-  /// where xxx is the net oid.
-  ///
-  bool findSomeNet(const char* names, std::vector<dbNet*>& nets);
-
   //
   // Utility to write db file
   //
