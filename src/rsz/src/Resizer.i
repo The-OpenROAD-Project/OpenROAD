@@ -770,55 +770,11 @@ eliminate_dead_logic_cmd(bool clean_nets)
   resizer->eliminateDeadLogic(clean_nets);
 }
 
-void get_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
-  LibertyCellSeq equiv_cells
-      = resizer->getEquivalentCells(cell, match_cell_footprint);
-  Logger* logger = ord::getLogger();
-  logger->report("The following {} cells are equivalent to {}{}",
-                 equiv_cells.size(),
-                 cell->name(),
-                 (match_cell_footprint ? " with matching cell_footprint:" : ":"));
-  odb::dbMaster* master = resizer->getDbNetwork()->staToDb(cell);
-  int64_t base_area = master->getArea();
-  float base_leakage;
-  bool leakage_exists;
-  cell->leakagePower(base_leakage, leakage_exists);
-  if (leakage_exists) {
-    logger->report(
-        "Cell                                 Area     Area   Leakage Leakage");
-    logger->report(
-        "                                              Ratio           Ratio");
-    logger->report(
-        "====================================================================");
-    for (LibertyCell* equiv_cell : equiv_cells) {
-      odb::dbMaster* equiv_master
-          = resizer->getDbNetwork()->staToDb(equiv_cell);
-      float equiv_cell_leakage;
-      bool leakage_exists2;
-      equiv_cell->leakagePower(equiv_cell_leakage, leakage_exists2);
-      logger->report("{:<35} {:<9} {:.2f} {:.2e} {:.2f}",
-                     equiv_cell->name(),
-                     equiv_master->getArea(),
-                     equiv_master->getArea() / static_cast<double>(base_area),
-                     equiv_cell_leakage,
-                     equiv_cell_leakage / base_leakage);
-    }
-  } else {
-    logger->report("Cell                                 Area     Area");
-    logger->report("                                              Ratio");
-    logger->report("====================================================");
-    for (LibertyCell* equiv_cell : equiv_cells) {
-      odb::dbMaster* equiv_master
-          = resizer->getDbNetwork()->staToDb(equiv_cell);
-      logger->report("{:<35} {:<9} {:.2f}",
-                     equiv_cell->name(),
-                     equiv_master->getArea(),
-                     equiv_master->getArea() / static_cast<double>(base_area));
-    }
-  }
+  resizer->reportEquivalentCells(cell, match_cell_footprint);
 }
 
 } // namespace

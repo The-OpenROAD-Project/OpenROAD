@@ -1214,13 +1214,54 @@ void Resizer::resizePreamble()
 }
 
 // For debugging
-LibertyCellSeq Resizer::getEquivalentCells(LibertyCell* source_cell,
-                                           bool match_cell_footprint)
+void Resizer::reportEquivalentCells(LibertyCell* base_cell,
+                                    bool match_cell_footprint)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  return getSwappableCells(source_cell);
+  LibertyCellSeq equiv_cells = getSwappableCells(base_cell);
+  logger_->report(
+      "The following {} cells are equivalent to {}{}",
+      equiv_cells.size(),
+      base_cell->name(),
+      (match_cell_footprint ? " with matching cell_footprint:" : ":"));
+  odb::dbMaster* master = db_network_->staToDb(base_cell);
+  int64_t base_area = master->getArea();
+  float base_leakage;
+  bool leakage_exists;
+  base_cell->leakagePower(base_leakage, leakage_exists);
+  if (leakage_exists) {
+    logger_->report(
+        "Cell                                 Area     Area   Leakage Leakage");
+    logger_->report(
+        "                                              Ratio           Ratio");
+    logger_->report(
+        "====================================================================");
+    for (LibertyCell* equiv_cell : equiv_cells) {
+      odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      float equiv_cell_leakage;
+      bool leakage_exists2;
+      equiv_cell->leakagePower(equiv_cell_leakage, leakage_exists2);
+      logger_->report("{:<35} {:<9} {:.2f} {:.2e} {:.2f}",
+                      equiv_cell->name(),
+                      equiv_master->getArea(),
+                      equiv_master->getArea() / static_cast<double>(base_area),
+                      equiv_cell_leakage,
+                      equiv_cell_leakage / base_leakage);
+    }
+  } else {
+    logger_->report("Cell                                 Area     Area");
+    logger_->report("                                              Ratio");
+    logger_->report("====================================================");
+    for (LibertyCell* equiv_cell : equiv_cells) {
+      odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      logger_->report("{:<35} {:<9} {:.2f}",
+                      equiv_cell->name(),
+                      equiv_master->getArea(),
+                      equiv_master->getArea() / static_cast<double>(base_area));
+    }
+  }
 }
 
 // Filter equivalent cells based on the following liberty attributes:

@@ -154,7 +154,7 @@ or_integration_tests(
     repair_setup4_multi
     repair_setup6_multi
     repair_setup7_multi
-    get_equiv_cells
+    report_equiv_cells
   PASSFAIL_TESTS
     cpp_tests
 )

@@ -442,8 +442,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
   // For debugging - calls getSwappableCells
-  LibertyCellSeq getEquivalentCells(LibertyCell* source_cell,
-                                    bool match_cell_footprint);
+  void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
 
  protected:
   void init();
