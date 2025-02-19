@@ -2430,35 +2430,6 @@ class dbNet : public dbObject
   dbCapNode* findCapNode(uint nodeId);
 
   ///
-  /// donate parasitics
-  ///
-  void donateRC(dbITerm* donorterm,
-                dbITerm* rcvterm,
-                dbRSeg*& rtrseg,
-                dbRSeg*& lastrrseg,
-                dbCapNode*& lastrcapnd,
-                uint& ricapndCnt,
-                dbRSeg*& fstdrseg,
-                dbRSeg*& dtrseg,
-                dbCapNode*& fstdcapnd,
-                std::vector<dbCCSeg*>* gndcc,
-                dbRSeg*& bridgeRseg);
-
-  ///
-  /// reverse donate parasitics
-  ///
-  void unDonateRC(dbRSeg* rtrseg,
-                  dbRSeg* lastrrseg,
-                  dbITerm* it,
-                  dbCapNode* lastrcapnd,
-                  uint ricapndCnt,
-                  dbRSeg* dtrseg,
-                  dbRSeg* fstdrseg,
-                  dbCapNode* fstdcapnd,
-                  dbITerm* ot,
-                  std::vector<dbCCSeg*>* gndcc);
-
-  ///
   /// Get the Cap Nodes of this net.
   ///
   dbSet<dbCapNode> getCapNodes();
