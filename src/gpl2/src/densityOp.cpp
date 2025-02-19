@@ -307,7 +307,8 @@ void DensityOp::updateDensityForceBin()
 }
 
 void DensityOp::getDensityGradient(const Kokkos::View<float*>& densityGradientX,
-                                   const Kokkos::View<float*>& densityGradientY)
+                                   const Kokkos::View<float*>& densityGradientY,
+                                   const Kokkos::View<float*>& densityGradAbsXPlusY)
 {
   // Step 5: Compute electro force for each instance
   auto numBins = numBins_, binSizeX = binSizeX_, binSizeY = binSizeY_, binCntX = binCntX_, binCntY = binCntY_,
@@ -355,6 +356,7 @@ void DensityOp::getDensityGradient(const Kokkos::View<float*>& densityGradientX,
 
     densityGradientX[instIdx] = electroForceSumX;
     densityGradientY[instIdx] = electroForceSumY;
+    densityGradAbsXPlusY[instIdx] = fabsf(electroForceSumX) + fabsf(electroForceSumY);
   });
 }
 

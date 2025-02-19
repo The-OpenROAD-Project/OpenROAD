@@ -889,7 +889,7 @@ BACKEND_DEPENDENT_FUNCTION float getAbsGradSum(const Kokkos::View<const float*>&
   double sumAbs = 0.0;
   for(int i = 0; i<numInsts; ++i) {
     double x = hA[i];
-    sumAbs += fabs(x);
+    sumAbs += x;
   }
   return sumAbs;
 }
@@ -1007,13 +1007,15 @@ void PlacerBase::updateGradients(const Kokkos::View<float*>& wireLengthGradients
   densityGradSum_ = 0;
 
   // get the forces on each instance
-  getWireLengthGradientWA(wireLengthGradientsX, wireLengthGradientsY);
-  getDensityGradient(densityGradientsX, densityGradientsY);
+  Kokkos::View<float*> wirelenabsGradXPlusY("absGradXPlusY", numInsts_);
+  Kokkos::View<float*> densityabsGradXPlusY("absGradXPlusY", numInsts_);
+  Kokkos::DefaultHostExecutionSpace hostSpace;
 
-  wireLengthGradSum_ += getAbsGradSum(wireLengthGradientsX, numInsts_);
-  wireLengthGradSum_ += getAbsGradSum(wireLengthGradientsY, numInsts_);
-  densityGradSum_ += getAbsGradSum(densityGradientsX, numInsts_);
-  densityGradSum_ += getAbsGradSum(densityGradientsY, numInsts_);
+  getWireLengthGradientWA(wireLengthGradientsX, wireLengthGradientsY, wirelenabsGradXPlusY);
+  getDensityGradient(densityGradientsX, densityGradientsY, densityabsGradXPlusY);
+
+  wireLengthGradSum_ += getAbsGradSum(wirelenabsGradXPlusY, numInsts_);
+  densityGradSum_ += getAbsGradSum(densityabsGradXPlusY, numInsts_);
 
   sumGradientKernel(numInsts_,
                                                densityPenalty_,
@@ -1076,17 +1078,20 @@ void getWireLengthGradientWAKernel(const int numPlaceInsts,
                                               const Kokkos::View<const float*>& dWLGradXCommon,
                                               const Kokkos::View<const float*>& dWLGradYCommon,
                                               const Kokkos::View<float*>& dWireLengthGradX,
-                                              const Kokkos::View<float*>& dWireLengthGradY)
+                                              const Kokkos::View<float*>& dWireLengthGradY,
+                                              const Kokkos::View<float*>& dWireLengthGradAbsXPlusY)
 {
   Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instIdx) {
     int instId = dPlaceInstIds[instIdx];
     dWireLengthGradX[instIdx] = dWLGradXCommon[instId];
     dWireLengthGradY[instIdx] = dWLGradYCommon[instId];
+    dWireLengthGradAbsXPlusY[instIdx] = fabsf(dWLGradXCommon[instId]) + fabsf(dWLGradYCommon[instId]);
   });
 }
 
 void PlacerBase::getWireLengthGradientWA(const Kokkos::View<float*>& wireLengthGradientsX,
-                                         const Kokkos::View<float*>& wireLengthGradientsY)
+                                         const Kokkos::View<float*>& wireLengthGradientsY,
+                                         const Kokkos::View<float*>& wireLengthGradAbsXPlusY)
 {
   getWireLengthGradientWAKernel(
       numPlaceInsts_,
@@ -1094,13 +1099,16 @@ void PlacerBase::getWireLengthGradientWA(const Kokkos::View<float*>& wireLengthG
       pbCommon_->dWLGradX(),
       pbCommon_->dWLGradY(),
       wireLengthGradientsX,
-      wireLengthGradientsY);
+      wireLengthGradientsY,
+      wireLengthGradAbsXPlusY
+      );
 }
 
 void PlacerBase::getDensityGradient(const Kokkos::View<float*>& densityGradientsX,
-                                    const Kokkos::View<float*>& densityGradientsY)
+                                    const Kokkos::View<float*>& densityGradientsY,
+                                    const Kokkos::View<float*>& densityGradAbsXPlusY)
 {
-  densityOp_->getDensityGradient(densityGradientsX, densityGradientsY);
+  densityOp_->getDensityGradient(densityGradientsX, densityGradientsY, densityGradAbsXPlusY);
 }
 
 // calculate the next state based on current state
