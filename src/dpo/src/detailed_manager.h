@@ -70,21 +70,31 @@ class RoutingParams;
 // Structures.
 ////////////////////////////////////////////////////////////////////////////////
 
+enum class BlockageType
+{
+  Placement,
+  Routing,
+  FixedInstance,
+  None
+};
+
 struct Blockage
 {
   double x_min;
   double x_max;
   int pad_left;
   int pad_right;
+  BlockageType type;
 
-  Blockage(double xmin, double xmax, int pad_l, int pad_r)
-      : x_min(xmin), x_max(xmax), pad_left(pad_l), pad_right(pad_r)
+  Blockage(double xmin, double xmax, int pad_l, int pad_r, BlockageType t)
+      : x_min(xmin), x_max(xmax), pad_left(pad_l), pad_right(pad_r), type(t)
   {
   }
   double getXMin() const { return x_min; }
   double getXMax() const { return x_max; }
   double getPaddedXMin() const { return x_min - pad_left; }
   double getPaddedXMax() const { return x_max + pad_right; }
+  bool isFixedInstance() const { return type == BlockageType::FixedInstance; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

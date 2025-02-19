@@ -212,7 +212,8 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       const int yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(xmin, xmax, pad_left, pad_right);
+        blockages_[r].emplace_back(
+            xmin, xmax, pad_left, pad_right, BlockageType::FixedInstance);
       }
     }
   }
@@ -229,7 +230,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       const int yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(xmin, xmax, 0, 0);
+        blockages_[r].emplace_back(xmin, xmax, 0, 0, BlockageType::Placement);
       }
     }
   }
@@ -266,8 +267,11 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
             }
 
             if (i1 > i0) {
-              blockages_[r].emplace_back(
-                  originX + i0 * siteSpacing, originX + i1 * siteSpacing, 0, 0);
+              blockages_[r].emplace_back(originX + i0 * siteSpacing,
+                                         originX + i1 * siteSpacing,
+                                         0,
+                                         0,
+                                         BlockageType::Routing);
             }
           }
         }
@@ -978,13 +982,13 @@ bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
   const int end_row
       = std::min(nd->getTop() / single_height, numSingleHeightRows_ - 1);
   for (int r = start_row; r < end_row; r++) {
-    auto it
-        = std::lower_bound(blockages_[r].begin(),
-                           blockages_[r].end(),
-                           Blockage(position, position, 0, 0),
-                           [](const Blockage& block, const Blockage& target) {
-                             return block.getXMax() < target.getXMin();
-                           });
+    auto it = std::lower_bound(
+        blockages_[r].begin(),
+        blockages_[r].end(),
+        Blockage(position, position, 0, 0, BlockageType::None),
+        [](const Blockage& block, const Blockage& target) {
+          return block.getXMax() < target.getXMin();
+        });
 
     if (it != blockages_[r].end() && position >= it->getXMin()
         && position <= it->getXMax()) {
