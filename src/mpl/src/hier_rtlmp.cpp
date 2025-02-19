@@ -3269,6 +3269,8 @@ std::vector<LayerParameters> Snapper::computeSameDirectionLayersData(
   std::vector<LayerParameters> data;
   std::set<odb::dbTechLayer*> seen;
 
+  odb::dbBlock* block = inst_->getBlock();
+
   for (odb::dbITerm* iterm : inst_->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
       continue;
@@ -3281,35 +3283,97 @@ std::vector<LayerParameters> Snapper::computeSameDirectionLayersData(
         continue;
       }
 
-      data.push_back(computeLayerParameters(layer, iterm, target_direction));
+      seen.insert(layer);
+
+      odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
+      if (track_grid == nullptr) {
+        logger_->error(
+            MPL, 39, "No track-grid found for layer {}", layer->getName());
+      }
+      int grid_patterns = target_direction == odb::dbTechLayerDir::VERTICAL
+                              ? track_grid->getNumGridPatternsX()
+                              : track_grid->getNumGridPatternsY();
+
+      if (grid_patterns == 1) {
+        data.push_back(
+            computeLayerParameters(track_grid, 0, iterm, target_direction));
+      } else {
+        for (int pattern = 0; pattern < grid_patterns; pattern++) {
+          odb::dbITerm* pin
+              = findPinForMultiPattern(track_grid, pattern, target_direction);
+          if (pin == nullptr) {
+            continue;
+          }
+
+          data.push_back(computeLayerParameters(
+              track_grid, pattern, pin, target_direction));
+        }
+      }
     }
   }
 
   return data;
 }
 
+odb::dbITerm* Snapper::findPinForMultiPattern(
+    odb::dbTrackGrid* track_grid,
+    int grid_pattern,
+    const odb::dbTechLayerDir target_direction)
+{
+  std::vector<odb::dbITerm*> iterms;
+  std::vector<int> centers;
+
+  for (odb::dbITerm* iterm : inst_->getITerms()) {
+    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
+      odb::dbTechLayer* layer = (*mpin->getGeometry().begin())->getTechLayer();
+      if (layer != track_grid->getTechLayer()
+          || layer->getDirection() != target_direction) {
+        continue;
+      }
+
+      iterms.push_back(iterm);
+      centers.push_back(target_direction == odb::dbTechLayerDir::VERTICAL
+                            ? iterm->getBBox().xCenter()
+                            : iterm->getBBox().yCenter());
+    }
+  }
+
+  int offset, pitch;
+  getTrackGridPattern(
+      track_grid, grid_pattern, offset, pitch, target_direction);
+
+  for (int i = 0; i < iterms.size(); i++) {
+    for (int j = i + 1; j < iterms.size(); j++) {
+      // Searches for a pair of pins which follow the pattern pitch
+      // Aligning to any of them aligns all pins in the pattern
+      if ((centers[j] - centers[i]) % pitch == 0) {
+        return iterms[i];
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 LayerParameters Snapper::computeLayerParameters(
-    odb::dbTechLayer* layer,
+    odb::dbTrackGrid* track_grid,
+    int grid_pattern,
     odb::dbITerm* pin,
     const odb::dbTechLayerDir& target_direction)
 {
   LayerParameters params;
-  params.layer = layer;
   params.iterm = pin;
 
   int pin_width = getPinWidth(pin, target_direction);
   int lower_left_to_first_pin
       = getPinToLowerLeftDistance(pin, target_direction);
 
-  odb::dbBlock* block = inst_->getBlock();
-  odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
-
-  if (track_grid) {
-    getTrackGrid(track_grid, params.offset, params.pitch, target_direction);
-  } else {
-    logger_->error(
-        MPL, 39, "No track-grid found for layer {}", layer->getName());
-  }
+  getTrackGridPattern(
+      track_grid, grid_pattern, params.offset, params.pitch, target_direction);
 
   // The distance between the pins and the lower-left corner
   // of the master of a macro instance may not be a multiple
@@ -3333,6 +3397,7 @@ LayerParameters Snapper::computeLayerParameters(
              || orientation == odb::dbOrientType::R180) {
     params.pin_offset = -params.pin_offset;
   }
+
   return params;
 }
 
@@ -3348,17 +3413,18 @@ int Snapper::getPinWidth(odb::dbITerm* pin,
   return pin_width;
 }
 
-void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
-                           int& origin,
-                           int& step,
-                           const odb::dbTechLayerDir& target_direction)
+void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
+                                  int grid_pattern,
+                                  int& origin,
+                                  int& step,
+                                  const odb::dbTechLayerDir& target_direction)
 {
   // TODO: handle multiple patterns
   int count;
   if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    track_grid->getGridPatternX(0, origin, count, step);
+    track_grid->getGridPatternX(grid_pattern, origin, count, step);
   } else {
-    track_grid->getGridPatternY(0, origin, count, step);
+    track_grid->getGridPatternY(grid_pattern, origin, count, step);
   }
 }
 

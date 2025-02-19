@@ -162,95 +162,93 @@ TEST_F(TestSnapper, DoubleLayer)
 
 TEST_F(TestSnapper, MultiPattern)
 {
-  tech_->setManufacturingGrid(1);
+  db_->getTech()->setManufacturingGrid(1);
 
-  odb::dbTechLayer* h1 = odb::dbTechLayer::create(
-      tech_.get(), "H1", odb::dbTechLayerType::DEFAULT);
-  h1->setDirection(odb::dbTechLayerDir::HORIZONTAL);
-  odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_.get(), h1);
-  track1->addGridPatternY(0, 1000 / 3, 3);
-  track1->addGridPatternY(0, 1000 / 5, 5);
+  const int track_pitch1 = 36;
+  const int track_pitch2 = 48;
 
-  odb::dbMaster* master1 = odb::dbMaster::create(lib_.get(), "master1");
-  master1->setHeight(100);
-  master1->setWidth(100);
-  master1->setType(odb::dbMasterType::BLOCK);
+  odb::dbTechLayer* horizontal_layer = odb::dbTechLayer::create(
+      db_->getTech(), "H1", odb::dbTechLayerType::DEFAULT);
+  horizontal_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(db_->getChip()->getBlock(), horizontal_layer);
+  track->addGridPatternY(0, die_height_ / track_pitch1, track_pitch1);
+  track->addGridPatternY(0, die_height_ / track_pitch2, track_pitch2);
 
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+
+  const int pin_height = 20;
+  const int pin_width = 50;
+
+  const int pin1_x = 0;
+  const int pin1_y = 0;
+  // Pins 1 and 2 follow the first pattern
   odb::dbMTerm* mterm1 = odb::dbMTerm::create(
-      master1, "pin1", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+      macro_master, "pin1", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin1 = odb::dbMPin::create(mterm1);
-  odb::dbBox::create(mpin1, h1, 0, 0, 10, 10);
+  odb::dbBox::create(mpin1,
+                     horizontal_layer,
+                     pin1_x,
+                     pin1_y,
+                     pin1_x + pin_height,
+                     pin1_y + pin_width);
 
+  const int pin2_x = 0;
+  const int pin2_y = 72;
   odb::dbMTerm* mterm2 = odb::dbMTerm::create(
-      master1, "pin2", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+      macro_master, "pin2", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin2 = odb::dbMPin::create(mterm2);
-  odb::dbBox::create(mpin2, h1, 0, 10, 10, 20);
+  odb::dbBox::create(mpin2,
+                     horizontal_layer,
+                     pin2_x,
+                     pin2_y,
+                     pin2_x + pin_height,
+                     pin2_y + pin_width);
 
-  master1->setFrozen();
-
-  odb::dbInst* inst = odb::dbInst::create(block_.get(), master1, "macro1");
-  inst->setOrigin(10, 119);
-
-  snapper_->setMacro(inst);
-  snapper_->snapMacro();
-
-  EXPECT_EQ(inst->getOrigin().x(), 10);
-  EXPECT_EQ(inst->getOrigin().y(), 115);
-}
-
-TEST_F(TestSnapper, MultiLayerMultiPattern)
-{
-  tech_->setManufacturingGrid(1);
-
-  odb::dbTechLayer* h1 = odb::dbTechLayer::create(
-      tech_.get(), "H1", odb::dbTechLayerType::DEFAULT);
-  h1->setDirection(odb::dbTechLayerDir::HORIZONTAL);
-  odb::dbTrackGrid* track1 = odb::dbTrackGrid::create(block_.get(), h1);
-  track1->addGridPatternY(0, 1000 / 3, 3);
-  track1->addGridPatternY(0, 1000 / 11, 11);
-
-  odb::dbTechLayer* h2 = odb::dbTechLayer::create(
-      tech_.get(), "H2", odb::dbTechLayerType::DEFAULT);
-  h2->setDirection(odb::dbTechLayerDir::HORIZONTAL);
-  odb::dbTrackGrid* track2 = odb::dbTrackGrid::create(block_.get(), h2);
-  track2->addGridPatternY(0, 1000 / 7, 7);
-  track2->addGridPatternY(0, 1000 / 13, 13);
-
-  odb::dbMaster* master1 = odb::dbMaster::create(lib_.get(), "master1");
-  master1->setHeight(100);
-  master1->setWidth(100);
-  master1->setType(odb::dbMasterType::BLOCK);
-
-  odb::dbMTerm* mterm1 = odb::dbMTerm::create(
-      master1, "pin1", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMPin* mpin1 = odb::dbMPin::create(mterm1);
-  odb::dbBox::create(mpin1, h1, 0, 0, 10, 10);
-
-  odb::dbMTerm* mterm2 = odb::dbMTerm::create(
-      master1, "pin2", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
-  odb::dbMPin* mpin2 = odb::dbMPin::create(mterm2);
-  odb::dbBox::create(mpin2, h1, 0, 10, 10, 20);
-
+  // Pins 3 and 4 follow the second pattern
+  const int pin3_x = 0;
+  const int pin3_y = 216;
   odb::dbMTerm* mterm3 = odb::dbMTerm::create(
-      master1, "pin3", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+      macro_master, "pin3", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin3 = odb::dbMPin::create(mterm3);
-  odb::dbBox::create(mpin3, h2, 0, 0, 10, 10);
+  odb::dbBox::create(mpin3,
+                     horizontal_layer,
+                     pin3_x,
+                     pin3_y,
+                     pin3_x + pin_height,
+                     pin3_y + pin_width);
 
+  const int pin4_x = 0;
+  const int pin4_y = 312;
   odb::dbMTerm* mterm4 = odb::dbMTerm::create(
-      master1, "pin4", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+      macro_master, "pin4", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
   odb::dbMPin* mpin4 = odb::dbMPin::create(mterm4);
-  odb::dbBox::create(mpin4, h2, 0, 10, 10, 20);
+  odb::dbBox::create(mpin4,
+                     horizontal_layer,
+                     pin4_x,
+                     pin4_y,
+                     pin4_x + pin_height,
+                     pin4_y + pin_width);
 
-  master1->setFrozen();
+  macro_master->setFrozen();
 
-  odb::dbInst* inst = odb::dbInst::create(block_.get(), master1, "macro1");
-  inst->setOrigin(10, 119);
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1500, 1500);
 
-  snapper_->setMacro(inst);
+  snapper_->setMacro(macro);
   snapper_->snapMacro();
 
-  EXPECT_EQ(inst->getOrigin().x(), 10);
-  EXPECT_EQ(inst->getOrigin().y(), 121);
+  EXPECT_EQ(macro->getOrigin().x(), 1500);
+  // 1487 (origin) + 25 (pin1 center) equals 1512 which is
+  // a multiple of 36 (pin is aligned to pattern1)
+  // 1487 (origin) + 241 (pin3 center) equals 1728 which is
+  // a multiple of 48 (pin is aligned to pattern2)
+  EXPECT_EQ(macro->getOrigin().y(), 1487);
 }
 
 }  // namespace

@@ -49,14 +49,11 @@ class SACoreHardMacro;
 // origin for aligning the macros' pins to the track-grid
 struct LayerParameters
 {
-  odb::dbTechLayer* layer;
   odb::dbITerm* iterm;
   int offset = 0;
   int pitch = 0;
   int pin_offset = 0;
 };
-
-using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -358,13 +355,15 @@ class Snapper
   std::vector<LayerParameters> computeSameDirectionLayersData(
       const odb::dbTechLayerDir& target_direction);
   LayerParameters computeLayerParameters(
-      odb::dbTechLayer* layer,
+      odb::dbTrackGrid* track_grid,
+      int grid_pattern,
       odb::dbITerm* pin,
       const odb::dbTechLayerDir& target_direction);
-  void getTrackGrid(odb::dbTrackGrid* track_grid,
-                    int& origin,
-                    int& step,
-                    const odb::dbTechLayerDir& target_direction);
+  void getTrackGridPattern(odb::dbTrackGrid* track_grid,
+                           int grid_pattern,
+                           int& origin,
+                           int& step,
+                           const odb::dbTechLayerDir& target_direction);
   int getPinWidth(odb::dbITerm* pin,
                   const odb::dbTechLayerDir& target_direction);
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
@@ -372,6 +371,10 @@ class Snapper
   void attemptSnapToExtraLayers(int origin,
                                 const std::vector<LayerParameters>& layers_data,
                                 const odb::dbTechLayerDir& target_direction);
+  odb::dbITerm* findPinForMultiPattern(
+      odb::dbTrackGrid* track_grid,
+      int grid_pattern,
+      const odb::dbTechLayerDir target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
