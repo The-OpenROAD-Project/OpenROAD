@@ -2991,36 +2991,6 @@ void dbNet::markNets(std::vector<dbNet*>& nets, dbBlock* block, bool mk)
     }
   }
 }
-uint dbNet::setLevelAtFanout(uint level,
-                             bool fromPI,
-                             std::vector<dbInst*>& instVector)
-{
-  uint cnt = 0;
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iitr;
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* iterm = *iitr;
-    if (!((iterm->getIoType() == dbIoType::INPUT)
-          || (iterm->getIoType() == dbIoType::INOUT))) {
-      continue;
-    }
-
-    dbInst* inst = iterm->getInst();
-    if (inst->getMaster()->isSequential()) {
-      continue;
-    }
-    if (inst->getLevel() != 0) {
-      continue;
-    }
-    if (inst->getMaster()->getType() != dbMasterType::CORE) {
-      continue;
-    }
-    inst->setLevel(level, fromPI);
-    instVector.push_back(inst);
-    cnt++;
-  }
-  return cnt;
-}
 
 dbSet<dbGuide> dbNet::getGuides() const
 {
