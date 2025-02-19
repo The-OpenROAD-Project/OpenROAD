@@ -41,6 +41,7 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "util.h"
 
 namespace odb {
 class dbBlock;
@@ -289,15 +290,20 @@ class HierRTLMP
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
-  // SA related parameters
-  // weight for different penalty
-  float area_weight_ = 0.1;
-  float outline_weight_ = 1.0;
-  float wirelength_weight_ = 1.0;
-  float guidance_weight_ = 10.0;
-  float fence_weight_ = 10.0;
+  // For cluster and macro placement.
+  SACoreWeights placement_core_weights_;
+
+  // For generation of shape curves for Mixed / Std Cell clusters
+  // and generation of tilings for Macro clusters.
+  const SACoreWeights shaping_core_weights_{1.0f /* area */,
+                                            1000.0f /* outline */,
+                                            0.0f /* wirelength */,
+                                            0.0f /* guidance */,
+                                            0.0f /* fence */};
+
+  // Soft-Especific Weights
   float boundary_weight_ = 5.0;
-  float notch_weight_ = 1.0;
+  float notch_weight_ = 1.0;  // Used inside Core, but only for Soft.
   float macro_blockage_weight_ = 1.0;
 
   std::map<std::string, Rect> fences_;   // macro_name, fence
