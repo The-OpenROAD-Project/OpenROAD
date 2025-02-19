@@ -47,7 +47,7 @@ class SACoreHardMacro;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
-struct LayerParameters
+struct PatternParameters
 {
   odb::dbITerm* iterm;
   int offset = 0;
@@ -349,12 +349,12 @@ class Snapper
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  bool pinsAreAlignedWithTrackGrid(const LayerParameters& params,
+  bool pinsAreAlignedWithTrackGrid(const PatternParameters& params,
                                    const odb::dbTechLayerDir& target_direction);
 
-  std::vector<LayerParameters> computeSameDirectionLayersData(
+  std::vector<PatternParameters> computeSameDirectionPatternsData(
       const odb::dbTechLayerDir& target_direction);
-  LayerParameters computeLayerParameters(
+  PatternParameters computePatternParameters(
       odb::dbTrackGrid* track_grid,
       int grid_pattern,
       odb::dbITerm* pin,
@@ -368,9 +368,10 @@ class Snapper
                   const odb::dbTechLayerDir& target_direction);
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
                                 const odb::dbTechLayerDir& target_direction);
-  void attemptSnapToExtraLayers(int origin,
-                                const std::vector<LayerParameters>& layers_data,
-                                const odb::dbTechLayerDir& target_direction);
+  void attemptSnapToExtraPatterns(
+      int origin,
+      const std::vector<PatternParameters>& layers_data,
+      const odb::dbTechLayerDir& target_direction);
   odb::dbITerm* findPinForMultiPattern(
       odb::dbTrackGrid* track_grid,
       int grid_pattern,
