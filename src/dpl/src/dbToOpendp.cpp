@@ -41,6 +41,7 @@
 #include "Grid.h"
 #include "Objects.h"
 #include "dpl/Opendp.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -59,11 +60,11 @@ void Opendp::importDb()
   block_ = db_->getChip()->getBlock();
   grid_->initBlock(block_);
   have_fillers_ = false;
-  have_one_site_cells_ = false;
+
+  disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
 
   importClear();
   grid_->examineRows(block_);
-  checkOneSiteDbMaster();
   makeCellEdgeSpacingTable();
   makeMacros();
   makeCells();
@@ -78,24 +79,6 @@ void Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid();
   have_multi_row_cells_ = false;
-}
-
-void Opendp::checkOneSiteDbMaster()
-{
-  vector<dbMaster*> masters;
-  auto db_libs = db_->getLibs();
-  for (auto db_lib : db_libs) {
-    if (have_one_site_cells_) {
-      break;
-    }
-    auto masters = db_lib->getMasters();
-    for (auto db_master : masters) {
-      if (isOneSiteCell(db_master)) {
-        have_one_site_cells_ = true;
-        break;
-      }
-    }
-  }
 }
 
 void Opendp::makeMacros()
