@@ -236,6 +236,27 @@ def add_bitfield_flags(klass, flag_num_bits, struct):
         )
 
 
+def generate_relations(schema):
+  for relation in schema["relations"]:
+      if relation["type"] != "1_n":
+          raise KeyError('relation type is not supported, use 1_n')
+      parent = get_class(schema, relation["parent"])
+      child = get_class(schema, relation["child"])
+  
+      parent_field = make_parent_field(parent, relation)
+  
+      child_type_name = f"_{relation['child']}"
+  
+      if child_type_name not in parent["classes"]:
+          parent["classes"].append(child_type_name)
+  
+      if "dbTable" not in parent["classes"]:
+          parent["classes"].append("dbTable")
+      if relation.get("hash", False):
+          make_parent_hash_field(parent, relation, parent_field)
+          make_child_next_field(child, relation)
+
+        
 def generate(schema, env, includeDir, srcDir, keep_empty):
   
   print("###################Code Generation Begin###################")
@@ -262,25 +283,8 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
           klass,
       )
       schema["classes"][i] = klass
-  
-  for relation in schema["relations"]:
-      if relation["type"] != "1_n":
-          raise KeyError('relation type is not supported, use 1_n')
-      parent = get_class(schema, relation["parent"])
-      child = get_class(schema, relation["child"])
-  
-      parent_field = make_parent_field(parent, relation)
-  
-      child_type_name = f"_{relation['child']}"
-  
-      if child_type_name not in parent["classes"]:
-          parent["classes"].append(child_type_name)
-  
-      if "dbTable" not in parent["classes"]:
-          parent["classes"].append("dbTable")
-      if relation.get("hash", False):
-          make_parent_hash_field(parent, relation, parent_field)
-          make_child_next_field(child, relation)
+
+  generate_relations(schema)
   
   to_be_merged = []
   for klass in schema["classes"]:
@@ -305,9 +309,6 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
           template = env.get_template(template_file)
           text = template.render(klass=klass, schema=schema)
           fileType = template_file.split(".")
-          # for field in klass['fields']:
-          #     if field['isHashTable']:
-          #         print(field)
           out_file = f"{klass['name']}.{template_file.split('.')[1]}"
           to_be_merged.append(out_file)
           out_file = os.path.join("generated", out_file)
