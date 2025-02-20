@@ -36,6 +36,59 @@ def get_json_files(directory):
     return json_files
 
 
+def make_parent_field(parent, relation):
+    inParentField = {}
+    if "tbl_name" in relation:
+        inParentField["name"] = relation["tbl_name"]
+    else:
+        inParentField["name"] = relation["tbl_name"] = get_table_name(
+            relation["second"]
+        )
+    inParentField["type"] = relation["second"]
+    inParentField["table"] = True
+    inParentField["dbSetGetter"] = True
+    inParentField["components"] = [inParentField["name"]]
+    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
+        "flags", []
+    )
+    if "schema" in relation:
+        inParentField["schema"] = relation["schema"]
+
+    parent["fields"].append(inParentField)
+    if relation["first"] != relation["second"]:
+        parent["cpp_includes"].extend(
+            [f"{relation['second']}.h", "odb/dbSet.h"]
+        )
+    logging.debug(f"Add relation field {inParentField['name']} to {relation['first']}")
+    return inParentField
+
+
+def make_parent_hash_field(parent, relation):
+    inParentHashField = {}
+    inParentHashField["name"] = inParentField["name"][:-4] + "hash_"
+    inParentHashField["type"] = "dbHashTable<_" + relation["second"] + ">"
+    inParentHashField["components"] = [inParentHashField["name"]]
+    inParentHashField["table_name"] = inParentField["name"]
+    inParentHashField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    parent["fields"].append(inParentHashField)
+    if "dbHashTable.h" not in parent["h_includes"]:
+        parent["h_includes"].append("dbHashTable.h")
+    logging.debug(
+        f"Add hash field {inParentHashField['name']} to {relation['first']}"
+    )
+    return inParentHashField
+
+def make_child_next_field(child, relation):
+    inChildNextEntry = {"name": "_next_entry"}
+    inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
+    inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
+    child["fields"].append(inChildNextEntry)
+    logging.debug(
+        f"Add hash field {inChildNextEntry['name']} to {relation['second']}"
+    )
+
+
+
 parser = argparse.ArgumentParser(description="Code generator")
 parser.add_argument("--json", action="store", required=True)
 parser.add_argument("--src_dir", action="store", required=True)
@@ -100,75 +153,32 @@ for i, klass in enumerate(schema["classes"]):
     schema["classes"][i] = klass
 
 for relation in schema["relations"]:
-    if relation["type"] == "n_1":
-        relation["first"], relation["second"] = (
-            relation["second"],
-            relation["first"],
-        )
-        relation["type"] = "1_n"
     if relation["type"] != "1_n":
         raise KeyError(
             'relation type is not supported, " \
         "use either 1_n or n_1'
         )
-    parent = get_class_index(schema, relation["first"])
-    child = get_class_index(schema, relation["second"])
-    if parent == -1:
+    parent_idx = get_class_index(schema, relation["first"])
+    child_idx = get_class_index(schema, relation["second"])
+    if parent_idx == -1:
         raise NameError(f"Class {relation['first']} in relations is not found")
-    if child == -1:
+    if child_idx == -1:
         raise NameError(f"Class {relation['second']} in relations is not found")
-    inParentField = {}
-    if "tbl_name" in relation:
-        inParentField["name"] = relation["tbl_name"]
-    else:
-        inParentField["name"] = relation["tbl_name"] = get_table_name(
-            relation["second"]
-        )
-    inParentField["type"] = relation["second"]
-    inParentField["table"] = True
-    inParentField["dbSetGetter"] = True
-    inParentField["components"] = [inParentField["name"]]
-    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
-        "flags", []
-    )
-    if "schema" in relation:
-        inParentField["schema"] = relation["schema"]
+    parent = schema["classes"][parent_idx]
+    child = schema["classes"][child_idx]
 
-    schema["classes"][parent]["fields"].append(inParentField)
-    if relation["first"] != relation["second"]:
-        schema["classes"][parent]["cpp_includes"].extend(
-            [f"{relation['second']}.h", "odb/dbSet.h"]
-        )
-    logging.debug(f"Add relation field {inParentField['name']} to {relation['first']}")
+    inParentField = make_parent_field(parent, relation)
 
     child_type_name = f"_{relation['second']}"
 
-    if child_type_name not in schema["classes"][parent]["classes"]:
-        schema["classes"][parent]["classes"].append(child_type_name)
+    if child_type_name not in parent["classes"]:
+        parent["classes"].append(child_type_name)
 
-    if "dbTable" not in schema["classes"][parent]["classes"]:
-        schema["classes"][parent]["classes"].append("dbTable")
+    if "dbTable" not in parent["classes"]:
+        parent["classes"].append("dbTable")
     if relation.get("hash", False):
-        inParentHashField = {}
-
-        inParentHashField["name"] = inParentField["name"][:-4] + "hash_"
-        inParentHashField["type"] = "dbHashTable<_" + relation["second"] + ">"
-        inParentHashField["components"] = [inParentHashField["name"]]
-        inParentHashField["table_name"] = inParentField["name"]
-        inParentHashField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
-        schema["classes"][parent]["fields"].append(inParentHashField)
-        if "dbHashTable.h" not in schema["classes"][parent]["h_includes"]:
-            schema["classes"][parent]["h_includes"].append("dbHashTable.h")
-        inChildNextEntry = {"name": "_next_entry"}
-        inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
-        inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
-        schema["classes"][child]["fields"].append(inChildNextEntry)
-        logging.debug(
-            f"Add hash field {inParentHashField['name']} to {relation['first']}"
-        )
-        logging.debug(
-            f"Add hash field {inChildNextEntry['name']} to {relation['second']}"
-        )
+        inParentHashField = make_parent_hash_field(parent, relation)
+        make_child_next_field(child, relation)
 
 for klass in schema["classes"]:
     # Adding functional name to fields and extracting field components
