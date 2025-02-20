@@ -3635,7 +3635,6 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["cc_val"].add(*_cc_val_tbl);
 
   info.children_["module_name_id_map"].add(_module_name_id_map);
-  info.children_["inst_name_id_map"].add(_inst_name_id_map);
 }
 
 }  // namespace odb
