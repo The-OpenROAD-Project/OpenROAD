@@ -11,7 +11,7 @@ from jinja2 import Environment, FileSystemLoader
 from helper import (
     add_once_to_dict,
     components,
-    get_class_index,
+    get_class,
     get_functional_name,
     get_hash_table_type,
     get_ref_type,
@@ -158,14 +158,8 @@ for relation in schema["relations"]:
             'relation type is not supported, " \
         "use either 1_n or n_1'
         )
-    parent_idx = get_class_index(schema, relation["first"])
-    child_idx = get_class_index(schema, relation["second"])
-    if parent_idx == -1:
-        raise NameError(f"Class {relation['first']} in relations is not found")
-    if child_idx == -1:
-        raise NameError(f"Class {relation['second']} in relations is not found")
-    parent = schema["classes"][parent_idx]
-    child = schema["classes"][child_idx]
+    parent = get_class(schema, relation["first"])
+    child = get_class(schema, relation["second"])
 
     inParentField = make_parent_field(parent, relation)
 
