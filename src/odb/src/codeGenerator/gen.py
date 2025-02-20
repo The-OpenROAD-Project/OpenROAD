@@ -372,33 +372,24 @@ def main():
 
   args = parser.parse_args()
 
-  src = args.json
-  srcDir = args.src_dir
-  includeDir = args.include_dir
-  templates = args.templates
-  loglevel = args.log
-  keep_generated = args.keep_generated
-  keep_empty = args.keep_empty
-
-  numeric_level = getattr(logging, loglevel.upper(), None)
+  numeric_level = getattr(logging, args.log.upper(), None)
   if not isinstance(numeric_level, int):
-      raise ValueError("Invalid log level: %s" % loglevel)
+      raise ValueError("Invalid log level: %s" % args.log)
   logging.basicConfig(level=numeric_level)
 
-  with open(src, encoding="ascii") as file:
+  with open(args.json, encoding="ascii") as file:
       schema = json.load(file)
 
-  env = Environment(loader=FileSystemLoader(templates), trim_blocks=True)
+  env = Environment(loader=FileSystemLoader(args.templates), trim_blocks=True)
 
   # Creating Directory for generated files
-
   if os.path.exists("generated"):
       shutil.rmtree("generated")
   os.mkdir("generated")
 
-  generate(schema, env, includeDir, srcDir, keep_empty)
+  generate(schema, env, args.include_dir, args.src_dir, args.keep_empty)
 
-  if not keep_generated:
+  if not args.keep_generated:
       shutil.rmtree("generated")
 
 
