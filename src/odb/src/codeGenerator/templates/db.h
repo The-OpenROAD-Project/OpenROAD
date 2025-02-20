@@ -1,3 +1,4 @@
+{% import 'macros' as macros %}
 //Generator Code Begin ClassDeclarations
 {% for klass in schema.classes|sort(attribute='name') %}
 class {{klass.name}};
@@ -17,27 +18,8 @@ class {{klass.name}};
 class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
 {
  public:
-  {% for _struct in klass.structs %}
-    {% if _struct.public %}
-    struct {{ _struct.name }}
-    {
-      {% for field in _struct.fields %}
-        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %}{% if "default" in field %} = {{field.default}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
-      
-      {% endfor %}
-    };
-    {% endif %}
-  {% endfor %}
-  {% for _enum in klass.enums %}
-    {% if _enum.public %}
-    enum {% if _enum.class %} class {% endif %} {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
-    {
-      {% for value in _enum["values"]%}
-      {% if not loop.first %},{%endif%}{{value}}
-      {% endfor %}
-    };
-    {% endif %}
-  {% endfor %}
+  {{ macros.make_structs(klass, is_public=True) }}
+  {{ macros.make_enums(klass, is_public=True) }}
   // User Code Begin {{klass.name}}Enums
   // User Code End {{klass.name}}Enums
   {% for field in klass.fields %}
