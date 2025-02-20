@@ -34,7 +34,6 @@
 #include "dbGuide.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -77,35 +76,6 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
 bool _dbGuide::operator<(const _dbGuide& rhs) const
 {
   return true;
-}
-
-void _dbGuide::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbGuide& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(net_);
-  DIFF_FIELD(box_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(via_layer_);
-  DIFF_FIELD(guide_next_);
-  DIFF_FIELD(is_congested_);
-  DIFF_FIELD(is_jumper_);
-  DIFF_END
-}
-
-void _dbGuide::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(net_);
-  DIFF_OUT_FIELD(box_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(via_layer_);
-  DIFF_OUT_FIELD(guide_next_);
-  DIFF_OUT_FIELD(is_congested_);
-  DIFF_OUT_FIELD(is_jumper_);
-
-  DIFF_END
 }
 
 _dbGuide::_dbGuide(_dbDatabase* db)

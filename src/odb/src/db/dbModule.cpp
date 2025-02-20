@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
 #include "dbModBTerm.h"
@@ -93,35 +92,6 @@ bool _dbModule::operator<(const _dbModule& rhs) const
   }
   // User Code End <
   return true;
-}
-
-void _dbModule::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbModule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_insts);
-  DIFF_FIELD(_mod_inst);
-  DIFF_FIELD(_modinsts);
-  DIFF_FIELD(_modnets);
-  DIFF_FIELD(_modbterms);
-  DIFF_END
-}
-
-void _dbModule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_mod_inst);
-  DIFF_OUT_FIELD(_modinsts);
-  DIFF_OUT_FIELD(_modnets);
-  DIFF_OUT_FIELD(_modbterms);
-
-  DIFF_END
 }
 
 _dbModule::_dbModule(_dbDatabase* db)
