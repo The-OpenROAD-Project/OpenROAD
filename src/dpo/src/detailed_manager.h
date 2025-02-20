@@ -95,6 +95,7 @@ struct Blockage
   double getPaddedXMin() const { return x_min - pad_left; }
   double getPaddedXMax() const { return x_max + pad_right; }
   bool isFixedInstance() const { return type == BlockageType::FixedInstance; }
+  bool isPlacement() const { return type == BlockageType::Placement; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
