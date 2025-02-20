@@ -89,6 +89,116 @@ def make_child_next_field(child, relation):
     )
 
 
+def process_field(field, klass, struct, schema):
+  flag_num_bits = 0
+  if field["type"] == "bit":
+      field["type"] = "bool"
+      field["bits"] = 1
+  if "bits" in field:
+      struct["fields"].append(field)
+      flag_num_bits += int(field["bits"])
+  field["bitFields"] = is_bit_fields(field, klass["structs"])
+  field["isStruct"] = get_struct(field["type"], klass["structs"]) is not None
+  
+  field["isRef"] = (
+      is_ref(field["type"]) if field.get("parent") is not None else False
+  )
+  field["refType"] = get_ref_type(field["type"])
+  # refTable is the table name from which the getter extracts the pointer to dbObject
+  if field["isRef"]:
+      field["refTable"] = get_table_name(field["refType"].replace("*", ""))
+      # checking if there is a defined relation between parent and refType for extracting table name
+      for relation in schema["relations"]:
+          if relation["parent"] == field["parent"] and relation["child"] == field[
+              "refType"
+          ].replace("*", ""):
+              field["refTable"] = relation["tbl_name"]
+  field["isHashTable"] = is_hash_table(field["type"])
+  field["hashTableType"] = get_hash_table_type(field["type"])
+  field["isPassByRef"] = is_pass_by_ref(field["type"])
+  field["isSetByRef"] = is_set_by_ref(field["type"])
+  if "argument" not in field:
+      field["argument"] = field["name"].strip("_")
+  field.setdefault("flags", [])
+  if "private" in field["flags"]:
+      field["flags"].append("no-set")
+      field["flags"].append("no-get")
+  
+  # Check if a class is being used inside a template definition to add
+  # to the list of forward declared classes
+  #
+  # This needs documentation
+  #
+  template_class_name = None
+  tmp = get_template_type(field["type"])
+  while tmp is not None:
+      template_class_name = tmp
+      tmp = get_template_type(tmp)
+  
+  if template_class_name is not None:
+      if (
+          template_class_name not in klass["classes"]
+          and template_class_name not in std
+          and "no-template" not in field["flags"]
+          and klass["name"] != template_class_name[1:]
+          and klass["name"] + "::"
+          != template_class_name[0 : len(klass["name"]) + 2]
+      ):
+          klass["classes"].append(template_class_name)
+  ####
+  ####
+  ####
+  if field.get("table", False):
+      klass["hasTables"] = True
+      if field["type"].startswith("db"):
+          field["functional_name"] = f"{field['type'][2:]}s"
+      else:
+          field["functional_name"] = f"{field['type']}s"
+      field["components"] = [field["name"]]
+  elif field["isHashTable"]:
+      field["functional_name"] = f"{field['type'][2:]}s"
+  else:
+      field["functional_name"] = get_functional_name(field["name"])
+      field["components"] = components(
+          klass["structs"], field["name"], field["type"]
+      )
+  field.setdefault("setterFunctionName", "set" + field["functional_name"])
+  field.setdefault(
+      "getterFunctionName",
+      ("is" if field["type"] == "bool" or field.get("bits") == 1 else "get")
+      + field["functional_name"],
+  )
+  
+  if field["isRef"]:
+      field["setterArgumentType"] = field["getterReturnType"] = field["refType"]
+  elif field["isHashTable"]:
+      if "no-set" not in field["flags"]:
+          field.append("no-set")
+      field["setterArgumentType"] = field["getterReturnType"] = field[
+          "hashTableType"
+      ].replace("_", "")
+      field["getterFunctionName"] = "find" + field["setterArgumentType"][2:-1]
+  elif "bits" in field and field["bits"] == 1:
+      field["setterArgumentType"] = field["getterReturnType"] = "bool"
+  elif field["isPassByRef"]:
+      field["setterArgumentType"] = field["getterReturnType"] = field[
+          "type"
+      ].replace("dbVector", "std::vector")
+  elif field["type"] == "char *":
+      field["setterArgumentType"] = field["type"]
+      field["getterReturnType"] = "const char *"
+  else:
+      field["setterArgumentType"] = field["getterReturnType"] = field["type"]
+  
+  # For fields that we need to free/destroy in the destructor
+  if (
+      field["name"] == "_name"
+      and "no-destruct" not in field["flags"]
+      or "table" in field
+  ):
+      klass["needs_non_default_destructor"] = True
+  return flag_num_bits
+      
 def generate(schema, env, includeDir, srcDir, keep_empty):
   
   print("###################Code Generation Begin###################")
@@ -142,113 +252,8 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
       klass["hasTables"] = False
       flag_num_bits = 0
       for field in klass["fields"]:
-          if field["type"] == "bit":
-              field["type"] = "bool"
-              field["bits"] = 1
-          if "bits" in field:
-              struct["fields"].append(field)
-              flag_num_bits += int(field["bits"])
-          field["bitFields"] = is_bit_fields(field, klass["structs"])
-          field["isStruct"] = get_struct(field["type"], klass["structs"]) is not None
-  
-          field["isRef"] = (
-              is_ref(field["type"]) if field.get("parent") is not None else False
-          )
-          field["refType"] = get_ref_type(field["type"])
-          # refTable is the table name from which the getter extracts the pointer to dbObject
-          if field["isRef"]:
-              field["refTable"] = get_table_name(field["refType"].replace("*", ""))
-              # checking if there is a defined relation between parent and refType for extracting table name
-              for relation in schema["relations"]:
-                  if relation["parent"] == field["parent"] and relation["child"] == field[
-                      "refType"
-                  ].replace("*", ""):
-                      field["refTable"] = relation["tbl_name"]
-          field["isHashTable"] = is_hash_table(field["type"])
-          field["hashTableType"] = get_hash_table_type(field["type"])
-          field["isPassByRef"] = is_pass_by_ref(field["type"])
-          field["isSetByRef"] = is_set_by_ref(field["type"])
-          if "argument" not in field:
-              field["argument"] = field["name"].strip("_")
-          field.setdefault("flags", [])
-          if "private" in field["flags"]:
-              field["flags"].append("no-set")
-              field["flags"].append("no-get")
-  
-          # Check if a class is being used inside a template definition to add
-          # to the list of forward declared classes
-          #
-          # This needs documentation
-          #
-          template_class_name = None
-          tmp = get_template_type(field["type"])
-          while tmp is not None:
-              template_class_name = tmp
-              tmp = get_template_type(tmp)
-  
-          if template_class_name is not None:
-              if (
-                  template_class_name not in klass["classes"]
-                  and template_class_name not in std
-                  and "no-template" not in field["flags"]
-                  and klass["name"] != template_class_name[1:]
-                  and klass["name"] + "::"
-                  != template_class_name[0 : len(klass["name"]) + 2]
-              ):
-                  klass["classes"].append(template_class_name)
-          ####
-          ####
-          ####
-          if field.get("table", False):
-              klass["hasTables"] = True
-              if field["type"].startswith("db"):
-                  field["functional_name"] = f"{field['type'][2:]}s"
-              else:
-                  field["functional_name"] = f"{field['type']}s"
-              field["components"] = [field["name"]]
-          elif field["isHashTable"]:
-              field["functional_name"] = f"{field['type'][2:]}s"
-          else:
-              field["functional_name"] = get_functional_name(field["name"])
-              field["components"] = components(
-                  klass["structs"], field["name"], field["type"]
-              )
-          field.setdefault("setterFunctionName", "set" + field["functional_name"])
-          field.setdefault(
-              "getterFunctionName",
-              ("is" if field["type"] == "bool" or field.get("bits") == 1 else "get")
-              + field["functional_name"],
-          )
-  
-          if field["isRef"]:
-              field["setterArgumentType"] = field["getterReturnType"] = field["refType"]
-          elif field["isHashTable"]:
-              if "no-set" not in field["flags"]:
-                  field.append("no-set")
-              field["setterArgumentType"] = field["getterReturnType"] = field[
-                  "hashTableType"
-              ].replace("_", "")
-              field["getterFunctionName"] = "find" + field["setterArgumentType"][2:-1]
-          elif "bits" in field and field["bits"] == 1:
-              field["setterArgumentType"] = field["getterReturnType"] = "bool"
-          elif field["isPassByRef"]:
-              field["setterArgumentType"] = field["getterReturnType"] = field[
-                  "type"
-              ].replace("dbVector", "std::vector")
-          elif field["type"] == "char *":
-              field["setterArgumentType"] = field["type"]
-              field["getterReturnType"] = "const char *"
-          else:
-              field["setterArgumentType"] = field["getterReturnType"] = field["type"]
-  
-          # For fields that we need to free/destroy in the destructor
-          if (
-              field["name"] == "_name"
-              and "no-destruct" not in field["flags"]
-              or "table" in field
-          ):
-              klass["needs_non_default_destructor"] = True
-  
+          flag_num_bits += process_field(field, klass, struct, schema)
+          
       klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
   
       klass["hasBitFields"] = False
