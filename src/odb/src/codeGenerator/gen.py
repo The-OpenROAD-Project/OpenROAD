@@ -28,6 +28,8 @@ from helper import (
 
 
 def get_json_files(directory):
+    '''Return all json files under directory recursively'''
+
     json_files = []
     for root, _, files in os.walk(directory):
         for file in files:
@@ -37,6 +39,8 @@ def get_json_files(directory):
 
 
 def make_parent_field(parent, relation):
+    '''Adds a table field to the parent of a relationsip'''
+
     field = {}
     if "tbl_name" in relation:
         field["name"] = relation["tbl_name"]
@@ -64,6 +68,8 @@ def make_parent_field(parent, relation):
 
 
 def make_parent_hash_field(parent, relation, parent_field):
+    '''Adds a hash table field to the parent of a hashed relationsip'''
+
     field = {}
     field["name"] = parent_field["name"][:-4] + "hash_"
     field["type"] = "dbHashTable<_" + relation["child"] + ">"
@@ -80,6 +86,8 @@ def make_parent_hash_field(parent, relation, parent_field):
 
 
 def make_child_next_field(child, relation):
+    '''Adds a next entry field to the child of a hashed relationsip'''
+
     inChildNextEntry = {"name": "_next_entry"}
     inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
     inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
@@ -90,6 +98,8 @@ def make_child_next_field(child, relation):
 
 
 def add_field_attributes(field, klass, flags_struct, schema):
+  '''Adds various derived attributes to a field'''
+
   flag_num_bits = 0
   if field["type"] == "bit":
       field["type"] = "bool"
@@ -201,6 +211,8 @@ def add_field_attributes(field, klass, flags_struct, schema):
       
 
 def add_bitfield_flags(klass, flag_num_bits, flags_struct):
+    '''Create a flags field for all the bitfields in a class'''
+
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
   
     klass["hasBitFields"] = False
@@ -237,6 +249,8 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
 
 
 def generate_relations(schema):
+  '''Generate the parent and child fields for all relationships'''
+
   for relation in schema["relations"]:
       if relation["type"] != "1_n":
           raise KeyError('relation type is not supported, use 1_n')
@@ -258,7 +272,8 @@ def generate_relations(schema):
 
         
 def generate(schema, env, includeDir, srcDir, keep_empty):
-  
+  '''Generate generate code based on the schema and templates'''
+
   print("###################Code Generation Begin###################")
   add_once_to_dict(["classes", "iterators", "relations"], schema)
   
