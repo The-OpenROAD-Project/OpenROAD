@@ -49,6 +49,7 @@ def _get_sections(lines, tag, sections=None, remove=False):
 
 class Parser:
     """Parses a file looking for the sections delimited by the code_tags."""
+
     def __init__(self, file_name):
         with open(file_name, "r", encoding="ascii") as file:
             self.lines = file.readlines()
