@@ -78,6 +78,7 @@ def make_parent_hash_field(parent, relation, parent_field):
     )
     return field
 
+
 def make_child_next_field(child, relation):
     inChildNextEntry = {"name": "_next_entry"}
     inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
@@ -87,42 +88,6 @@ def make_child_next_field(child, relation):
         f"Add hash field {inChildNextEntry['name']} to {relation['child']}"
     )
 
-
-
-parser = argparse.ArgumentParser(description="Code generator")
-parser.add_argument("--json", action="store", required=True)
-parser.add_argument("--src_dir", action="store", required=True)
-parser.add_argument("--include_dir", action="store", required=True)
-parser.add_argument("--templates", action="store", required=True)
-parser.add_argument("--log", action="store", default="INFO")
-parser.add_argument("--keep_generated", action="store_true")
-parser.add_argument("--keep_empty", action="store_true")
-
-args = parser.parse_args()
-
-src = args.json
-srcDir = args.src_dir
-includeDir = args.include_dir
-templates = args.templates
-loglevel = args.log
-keep_generated = args.keep_generated
-keep_empty = args.keep_empty
-
-numeric_level = getattr(logging, loglevel.upper(), None)
-if not isinstance(numeric_level, int):
-    raise ValueError("Invalid log level: %s" % loglevel)
-logging.basicConfig(level=numeric_level)
-
-with open(src, encoding="ascii") as file:
-    schema = json.load(file)
-
-env = Environment(loader=FileSystemLoader(templates), trim_blocks=True)
-
-# Creating Directory for generated files
-
-if os.path.exists("generated"):
-    shutil.rmtree("generated")
-os.mkdir("generated")
 
 def generate():
   
@@ -393,6 +358,42 @@ def generate():
   with open("generated/final.json", "w") as outfile:
       outfile.write(json.dumps(schema, indent=2))
   print("###################Code Generation End###################")
+
+
+parser = argparse.ArgumentParser(description="Code generator")
+parser.add_argument("--json", action="store", required=True)
+parser.add_argument("--src_dir", action="store", required=True)
+parser.add_argument("--include_dir", action="store", required=True)
+parser.add_argument("--templates", action="store", required=True)
+parser.add_argument("--log", action="store", default="INFO")
+parser.add_argument("--keep_generated", action="store_true")
+parser.add_argument("--keep_empty", action="store_true")
+
+args = parser.parse_args()
+
+src = args.json
+srcDir = args.src_dir
+includeDir = args.include_dir
+templates = args.templates
+loglevel = args.log
+keep_generated = args.keep_generated
+keep_empty = args.keep_empty
+
+numeric_level = getattr(logging, loglevel.upper(), None)
+if not isinstance(numeric_level, int):
+    raise ValueError("Invalid log level: %s" % loglevel)
+logging.basicConfig(level=numeric_level)
+
+with open(src, encoding="ascii") as file:
+    schema = json.load(file)
+
+env = Environment(loader=FileSystemLoader(templates), trim_blocks=True)
+
+# Creating Directory for generated files
+
+if os.path.exists("generated"):
+    shutil.rmtree("generated")
+os.mkdir("generated")
 
 generate()
 
