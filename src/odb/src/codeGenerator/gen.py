@@ -154,7 +154,7 @@ for i, klass in enumerate(schema["classes"]):
 
 for relation in schema["relations"]:
     if relation["type"] != "1_n":
-        raise KeyError('relation type is not supported, use either 1_n or n_1')
+        raise KeyError('relation type is not supported, use 1_n')
     parent = get_class(schema, relation["first"])
     child = get_class(schema, relation["second"])
 
