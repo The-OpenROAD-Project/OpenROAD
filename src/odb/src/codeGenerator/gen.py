@@ -199,6 +199,27 @@ def add_field_attributes(field, klass, struct, schema):
       klass["needs_non_default_destructor"] = True
   return flag_num_bits
       
+
+def add_bitfield(klass, flag_num_bits, struct):
+    klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
+  
+    klass["hasBitFields"] = False
+    if flag_num_bits > 0:
+        klass["hasBitFields"] = True
+  
+    total_num_bits = flag_num_bits
+    if flag_num_bits > 0 and flag_num_bits % 32 != 0:
+        spare_bits_field = {
+            "name": "spare_bits_",
+            "type": "uint",
+            "bits": 32 - (flag_num_bits % 32),
+            "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
+        }
+        total_num_bits += spare_bits_field["bits"]
+        struct["fields"].append(spare_bits_field)
+    return total_num_bits
+
+
 def generate(schema, env, includeDir, srcDir, keep_empty):
   
   print("###################Code Generation Begin###################")
@@ -254,23 +275,8 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
       for field in klass["fields"]:
           flag_num_bits += add_field_attributes(field, klass, struct, schema)
           
-      klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
-  
-      klass["hasBitFields"] = False
-      if flag_num_bits > 0:
-          klass["hasBitFields"] = True
-  
-      total_num_bits = flag_num_bits
-      if flag_num_bits > 0 and flag_num_bits % 32 != 0:
-          spare_bits_field = {
-              "name": "spare_bits_",
-              "type": "uint",
-              "bits": 32 - (flag_num_bits % 32),
-              "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
-          }
-          total_num_bits += spare_bits_field["bits"]
-          struct["fields"].append(spare_bits_field)
-  
+      total_num_bits = add_bitfield(klass, flag_num_bits, struct)
+
       if len(struct["fields"]) > 0:
           struct["in_class"] = True
           struct["in_class_name"] = "flags_"
