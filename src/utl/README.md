@@ -36,10 +36,10 @@ man
 
 #### Options
 
-| Switch Name | Description | 
-| ----- | ----- |
-| `name` | Name of the command/message to query. |
-| `-manpath` | Include optional path to man pages (e.g. ~/OpenROAD/docs/cat). |
+| Switch Name | Description                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `name`      | Name of the command/message to query.                                                                                                |
+| `-manpath`  | Include optional path to man pages (e.g. ~/OpenROAD/docs/cat).                                                                       |
 | `-no_pager` | This flag determines whether you wish to see all of the man output at once. Default value is `False`, which shows a buffered output. |
 
 ## Example scripts
@@ -64,13 +64,13 @@ tee (-file filename | -variable name)
 
 #### Options
 
-| Switch Name | Description | 
-| ----- | ----- |
-| `-file filename` | File to redirect output into. |
-| `-variable name` | Direct output into a variable. |
-| `-append` | Append to file. |
-| `-quiet` | Do not send output to standard out. |
-| `command` | Command to execute. |
+| Switch Name      | Description                         |
+| ---------------- | ----------------------------------- |
+| `-file filename` | File to redirect output into.       |
+| `-variable name` | Direct output into a variable.      |
+| `-append`        | Append to file.                     |
+| `-quiet`         | Do not send output to standard out. |
+| `command`        | Command to execute.                 |
 
 ## Example scripts
 
@@ -94,6 +94,32 @@ Simply run the following script:
 ```shell
 ./test/regression
 ```
+
+## Prometheus Metrics
+
+OpenROAD includes a metrics endpoint server that can track internal tool metrics over time.
+
+![page](/docs/images/grafana.png)
+
+To use this feature you need to do the following start the prometheus and grafana collectors
+
+[Detailed instructions](/etc/monitoring/README.md):
+```shell
+$ cd etc/monitoring
+$ docker compose up -d
+```
+
+This will start a grafana endpoint ready to collect from the OpenROAD application you would
+like to track. By default it's looking for an http server running on port 8080 on your localhost.
+
+To start the metrics endpoint in OpenROAD, run:
+```tcl
+utl::startPrometheusEndpoint 8080
+```
+
+This is all configurable in the docker compose file, and you should be able to access grafana by going to
+http://localhost:3000 username: admin, password: grafana. Go to the dashboard tab and click service,
+then OpenROAD to see the pre-made dashboard.
 
 ## Limitations
 

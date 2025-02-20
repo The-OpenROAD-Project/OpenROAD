@@ -40,6 +40,7 @@
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "point.h"
+#include "utl/prometheus/gauge.h"
 
 namespace utl {
 class Logger;
@@ -134,6 +135,9 @@ class NesterovPlace
   // wlen_cof
   float wireLengthCoefX_ = 0;
   float wireLengthCoefY_ = 0;
+
+  // observability metrics
+  utl::Gauge<double>* hpwl_gauge_;
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;

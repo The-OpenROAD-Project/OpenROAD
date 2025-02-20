@@ -227,6 +227,15 @@ void NesterovPlace::init()
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
   }
 
+  std::shared_ptr<utl::Registry> registry = log_->getRegistry();
+  auto& hpwl_gauge_family
+      = utl::BuildGauge()
+            .Name("ord_hpwl")
+            .Help("The half perimeter wire length of the block")
+            .Register(*registry);
+  auto& hpwl_gauge = hpwl_gauge_family.Add({});
+  hpwl_gauge_ = &hpwl_gauge;
+
   average_overflow_ = total_sum_overflow_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
   updateWireLengthCoef(average_overflow_);
@@ -687,6 +696,7 @@ void NesterovPlace::updateNextIter(const int iter)
   // Update divergence snapshot
   if (!npVars_.disableRevertIfDiverge) {
     int64_t hpwl = nbc_->getHpwl();
+    hpwl_gauge_->Set(hpwl);
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;
       diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;

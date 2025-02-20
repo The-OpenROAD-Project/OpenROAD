@@ -59,6 +59,9 @@
 
 namespace utl {
 
+class PrometheusMetricsServer;
+class Registry;
+
 // Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
@@ -234,6 +237,11 @@ class Logger
     return (it != groups.end() && level <= it->second);
   }
 
+  void startPrometheusEndpoint(uint16_t port);
+  std::shared_ptr<Registry> getRegistry();
+  bool isPrometheusServerReadyToServe();
+  uint16_t getPrometheusPort();
+
   void suppressMessage(ToolId tool, int id);
   void unsuppressMessage(ToolId tool, int id);
 
@@ -349,6 +357,10 @@ class Logger
   // interface to handle string and file redirections
   std::unique_ptr<std::ostringstream> string_redirect_;
   std::unique_ptr<std::ofstream> file_redirect_;
+
+  // Prometheus server metrics collection
+  std::shared_ptr<Registry> prometheus_registry_ = nullptr;
+  std::unique_ptr<PrometheusMetricsServer> prometheus_metrics_ = nullptr;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
