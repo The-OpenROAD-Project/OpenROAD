@@ -286,8 +286,11 @@ Selected Gui::makeSelected(const std::any& object)
   if (!object.has_value()) {
     return Selected();
   }
-
+#ifdef __GLIBCXX__
   auto it = descriptors_.find(object.type());
+#else
+  auto it = descriptors_.find(object.type().name());
+#endif
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object);
   }
@@ -1167,12 +1170,20 @@ void Gui::fit()
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
+#ifdef __GLIBCXX__
   descriptors_[type] = std::unique_ptr<const Descriptor>(descriptor);
+#else
+  descriptors_[type.name()] = std::unique_ptr<const Descriptor>(descriptor);
+#endif
 }
 
 const Descriptor* Gui::getDescriptor(const std::type_info& type) const
 {
+#ifdef __GLIBCXX__
   auto find_descriptor = descriptors_.find(type);
+#else
+  auto find_descriptor = descriptors_.find(type.name());
+#endif
   if (find_descriptor == descriptors_.end()) {
     logger_->error(
         utl::GUI, 53, "Unable to find descriptor for: {}", type.name());
@@ -1183,7 +1194,11 @@ const Descriptor* Gui::getDescriptor(const std::type_info& type) const
 
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
+#ifdef __GLIBCXX__
   descriptors_.erase(type);
+#else
+  descriptors_.erase(type.name());
+#endif
 }
 
 const Selected& Gui::getInspectorSelection()

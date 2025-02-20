@@ -804,8 +804,13 @@ class Gui
   odb::dbDatabase* db_;
 
   // Maps types to descriptors
+#ifdef __GLIBCXX__
   std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>>
       descriptors_;
+#else
+  std::unordered_map<std::string, std::unique_ptr<const Descriptor>>
+      descriptors_;
+#endif
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
 
