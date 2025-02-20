@@ -1235,10 +1235,14 @@ Clock TritonCTS::forkRegisterClockNetwork(
   secondNet = odb::dbNet::create(block_, newClockName.c_str());
   secondNet->setSigType(odb::dbSigType::CLOCK);
 
-  odb::dbModule* first_net_module
-      = network_->getNetDriverParentModule(network_->dbToSta(firstNet));
-  odb::dbModule* second_net_module
-      = network_->getNetDriverParentModule(network_->dbToSta(secondNet));
+  sta::Pin* first_pin_driver = nullptr;
+  odb::dbModule* first_net_module = network_->getNetDriverParentModule(
+      network_->dbToSta(firstNet), first_pin_driver);
+  (void) first_pin_driver;
+  sta::Pin* second_pin_driver = nullptr;
+  odb::dbModule* second_net_module = network_->getNetDriverParentModule(
+      network_->dbToSta(secondNet), second_pin_driver);
+  (void) second_pin_driver;
   odb::dbModule* target_module = nullptr;
   if ((first_net_module != nullptr)
       && (first_net_module == second_net_module)) {
@@ -1310,8 +1314,10 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   Clock& clockNet = builder->getClock();
   odb::dbNet* topClockNet = clockNet.getNetObj();
   // gets the module for the driver for the net
-  odb::dbModule* top_module
-      = network_->getNetDriverParentModule(network_->dbToSta(topClockNet));
+  sta::Pin* pin_driver = nullptr;
+  odb::dbModule* top_module = network_->getNetDriverParentModule(
+      network_->dbToSta(topClockNet), pin_driver);
+  (void) pin_driver;
 
   disconnectAllSinksFromNet(topClockNet);
 

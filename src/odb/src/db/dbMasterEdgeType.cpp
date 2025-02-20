@@ -34,7 +34,6 @@
 #include "dbMasterEdgeType.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -69,33 +68,6 @@ bool _dbMasterEdgeType::operator==(const _dbMasterEdgeType& rhs) const
 bool _dbMasterEdgeType::operator<(const _dbMasterEdgeType& rhs) const
 {
   return true;
-}
-
-void _dbMasterEdgeType::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbMasterEdgeType& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(edge_dir_);
-  DIFF_FIELD(edge_type_);
-  DIFF_FIELD(cell_row_);
-  DIFF_FIELD(half_row_);
-  DIFF_FIELD(range_begin_);
-  DIFF_FIELD(range_end_);
-  DIFF_END
-}
-
-void _dbMasterEdgeType::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(edge_dir_);
-  DIFF_OUT_FIELD(edge_type_);
-  DIFF_OUT_FIELD(cell_row_);
-  DIFF_OUT_FIELD(half_row_);
-  DIFF_OUT_FIELD(range_begin_);
-  DIFF_OUT_FIELD(range_end_);
-
-  DIFF_END
 }
 
 _dbMasterEdgeType::_dbMasterEdgeType(_dbDatabase* db)
@@ -137,6 +109,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMasterEdgeType& obj)
   stream << obj.range_begin_;
   stream << obj.range_end_;
   return stream;
+}
+
+void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["edge_type"].add(edge_type_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -84,6 +84,7 @@ void RepairDesign::init()
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 // Repair long wires, max slew, max capacitance, max fanout violations
@@ -196,13 +197,11 @@ void RepairDesign::repairDesign(
   } else {
     print_interval_ = min_print_interval_;
   }
-  if (verbose) {
-    printProgress(print_iteration, false, false, repaired_net_count);
-  }
+  printProgress(print_iteration, false, false, repaired_net_count);
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     print_iteration++;
-    if (verbose) {
+    if (verbose || (print_iteration == 1)) {
       printProgress(print_iteration, false, false, repaired_net_count);
     }
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
@@ -254,9 +253,7 @@ void RepairDesign::repairDesign(
     }
   }
   resizer_->updateParasitics();
-  if (verbose) {
-    printProgress(print_iteration, true, true, repaired_net_count);
-  }
+  printProgress(print_iteration, true, true, repaired_net_count);
   resizer_->incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
@@ -1661,6 +1658,7 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
   Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
   int repaired_net_count, slew_violations, cap_violations = 0;
   int fanout_violations, length_violations = 0;
+
   repairNet(out_net,
             repeater_out_pin,
             repeater_out_vertex,
@@ -1757,24 +1755,42 @@ void RepairDesign::makeRepeater(const char* reason,
 
 ////////////////////////////////////////////////////////////////
 
-void RepairDesign::makeRepeater(const char* reason,
-                                int x,
-                                int y,
-                                LibertyCell* buffer_cell,
-                                bool resize,
-                                int level,
-                                // Return values.
-                                PinSeq& load_pins,
-                                float& repeater_cap,
-                                float& repeater_fanout,
-                                float& repeater_max_slew,
-                                Net*& out_net,
-                                Pin*& repeater_in_pin,
-                                Pin*& repeater_out_pin)
+bool RepairDesign::hasInputPort(const Net* net)
+{
+  bool has_top_level_port = false;
+  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
+  while (pin_iter->hasNext()) {
+    const Pin* pin = pin_iter->next();
+    if (network_->isTopLevelPort(pin)
+        && network_->direction(pin)->isAnyInput()) {
+      has_top_level_port = true;
+      break;
+    }
+  }
+  delete pin_iter;
+  return has_top_level_port;
+}
+
+void RepairDesign::makeRepeater(
+    const char* reason,
+    int x,
+    int y,
+    LibertyCell* buffer_cell,
+    bool resize,
+    int level,
+    // Return values.
+    PinSeq& load_pins,  // inout, read, reset, repopulated.
+    float& repeater_cap,
+    float& repeater_fanout,
+    float& repeater_max_slew,
+    Net*& out_net,
+    Pin*& repeater_in_pin,
+    Pin*& repeater_out_pin)
 {
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
   string buffer_name = resizer_->makeUniqueInstName(reason);
+
   debugPrint(logger_,
              RSZ,
              "repair_net",
@@ -1796,17 +1812,32 @@ void RepairDesign::makeRepeater(const char* reason,
   // between the driver and the loads changing the net as the repair works its
   // way from the loads to the driver.
 
-  Net *net = nullptr, *in_net;
+  Net* load_net = nullptr;
+  dbNet* load_db_net = nullptr;           // load net, flat
+  odb::dbModNet* load_mod_net = nullptr;  // load net, hierarchical
+
   bool preserve_outputs = false;
+  bool top_primary_output = false;
+
+  // Determine the type of the load
+  // primary output/ dont touch
+
   for (const Pin* pin : load_pins) {
+    load_db_net = db_network_->flatNet(pin);
+    load_mod_net = db_network_->hierNet(pin);
+
     if (network_->isTopLevelPort(pin)) {
-      net = network_->net(network_->term(pin));
+      load_net = network_->net(network_->term(pin));
+      db_network_->staToDb(load_net, load_db_net, load_mod_net);
+      load_db_net = db_network_->flatNet(pin);
+      // filter: is the top pin a primary output
       if (network_->direction(pin)->isAnyOutput()) {
         preserve_outputs = true;
+        top_primary_output = true;
         break;
       }
     } else {
-      net = network_->net(pin);
+      load_net = network_->net(pin);
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         preserve_outputs = true;
@@ -1814,61 +1845,30 @@ void RepairDesign::makeRepeater(const char* reason,
       }
     }
   }
-  Instance* parent = db_network_->topInstance();
 
-  // If the net is driven by an input port,
-  // use the net as the repeater input net so the port stays connected to it.
-  if (hasInputPort(net) || !preserve_outputs) {
-    in_net = net;
-    out_net = resizer_->makeUniqueNet();
-    // Copy signal type to new net.
-    dbNet* out_net_db = db_network_->staToDb(out_net);
-    dbNet* in_net_db = db_network_->staToDb(in_net);
-    out_net_db->setSigType(in_net_db->getSigType());
+  // Determine parent to put buffer (and net)
+  // Determine the driver pin
+  // Make the buffer in the root module in case or primary input connections
 
-    // Move load pins to out_net.
-    for (const Pin* pin : load_pins) {
-      Port* port = network_->port(pin);
-      Instance* inst = network_->instance(pin);
+  Instance* parent = nullptr;
+  Pin* driver_pin = nullptr;
 
-      // do not disconnect/reconnect don't touch instances
-      if (resizer_->dontTouch(inst)) {
-        continue;
-      }
-      sta_->disconnectPin(const_cast<Pin*>(pin));
-      sta_->connectPin(inst, port, out_net);
-    }
+  if (hasInputPort(load_net) || top_primary_output
+      || !db_network_->hasHierarchy()) {
+    (void) (db_network_->getNetDriverParentModule(load_net, driver_pin, true));
+    parent = db_network_->topInstance();
   } else {
-    // One of the loads is an output port.
-    // Use the net as the repeater output net so the port stays connected to it.
-    in_net = resizer_->makeUniqueNet();
-    out_net = net;
-    // Copy signal type to new net.
-    dbNet* out_net_db = db_network_->staToDb(out_net);
-    dbNet* in_net_db = db_network_->staToDb(in_net);
-    in_net_db->setSigType(out_net_db->getSigType());
-
-    // Move non-repeater load pins to in_net.
-    PinSet load_pins1(db_network_);
-    for (const Pin* pin : load_pins) {
-      load_pins1.insert(pin);
-    }
-
-    NetPinIterator* pin_iter = network_->pinIterator(out_net);
-    while (pin_iter->hasNext()) {
-      const Pin* pin = pin_iter->next();
-      if (!load_pins1.hasKey(pin)) {
-        Port* port = network_->port(pin);
-        Instance* inst = network_->instance(pin);
-
-        // do not disconnect/reconnect don't touch instances
-        if (resizer_->dontTouch(inst)) {
-          continue;
-        }
-
-        sta_->disconnectPin(const_cast<Pin*>(pin));
-        sta_->connectPin(inst, port, in_net);
+    odb::dbModule* parent_module
+        = db_network_->getNetDriverParentModule(load_net, driver_pin, true);
+    if (parent_module) {
+      odb::dbModInst* parent_mod_inst = parent_module->getModInst();
+      if (parent_mod_inst) {
+        parent = db_network_->dbToSta(parent_mod_inst);
+      } else {
+        parent = db_network_->topInstance();
       }
+    } else {
+      parent = db_network_->topInstance();
     }
   }
 
@@ -1877,11 +1877,146 @@ void RepairDesign::makeRepeater(const char* reason,
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, buf_loc);
   inserted_buffer_count_++;
 
-  sta_->connectPin(buffer, buffer_input_port, in_net);
-  sta_->connectPin(buffer, buffer_output_port, out_net);
+  Pin* buffer_ip_pin = nullptr;
+  Pin* buffer_op_pin = nullptr;
+  resizer_->getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
-  resizer_->parasiticsInvalid(in_net);
-  resizer_->parasiticsInvalid(out_net);
+  // make sure any nets created are scoped within hierarchy
+  // backwards compatible. new naming only used for hierarchy code.
+  std::string net_name = db_network_->hasHierarchy()
+                             ? resizer_->makeUniqueNetName(parent)
+                             : resizer_->makeUniqueNetName();
+  Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
+
+  Net* buffer_ip_net = nullptr;
+  Net* buffer_op_net = nullptr;
+
+  if (hasInputPort(load_net) || !preserve_outputs) {
+    //
+    // Case 1
+    //------
+    // A primary input or do not preserve the outputs
+    //
+    // use orig net as buffer ip (keep primary input name exposed)
+    // use new net as buffer op (ok to use new name on op of buffer).
+    // move loads to op side (so might need to rename any hierarchical
+    // nets to avoid conflict of names with primary input net).
+    //
+    // record the driver pin modnet, if any
+    odb::dbModNet* driver_pin_mod_net = db_network_->hierNet(driver_pin);
+
+    //
+    // Copy signal type to new net.
+    //
+    dbNet* ip_net_db = load_db_net;
+    dbNet* op_net_db = db_network_->staToDb(new_net);
+    op_net_db->setSigType(ip_net_db->getSigType());
+    out_net = new_net;
+
+    buffer_op_net = new_net;
+    buffer_ip_net = db_network_->dbToSta(ip_net_db);
+
+    for (const Pin* pin : load_pins) {
+      Port* port = network_->port(pin);
+      Instance* inst = network_->instance(pin);
+      if (resizer_->dontTouch(inst)) {
+        continue;
+      }
+      // preserve any hierarchical connection on the load
+      // & also connect the buffer output net to this pin
+      load_mod_net = db_network_->hierNet(pin);
+      load_db_net = db_network_->flatNet(pin);
+
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+      sta_->connectPin(inst, port, buffer_op_net);
+
+      if (load_mod_net) {
+        // TODO: replace this call with sta_ -> connectPin call.
+        db_network_->connectPin(const_cast<Pin*>(pin),
+                                db_network_->dbToSta(load_mod_net));
+      }
+    }
+    sta_->connectPin(
+        buffer, buffer_input_port, db_network_->dbToSta(load_db_net));
+    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
+
+    // Preserve any driver pin hierarchical mod net connection
+    // push to the output of the buffer. Rename the mod net.
+    // to prevent a name clash (recall the primary port net
+    // names need to be preserved, so we rename the mod net).
+    if (driver_pin_mod_net) {
+      dbNet* flat_net = db_network_->flatNet(driver_pin);
+      if (!strcmp(flat_net->getName().c_str(), driver_pin_mod_net->getName())) {
+        Instance* owning_instance = db_network_->dbToSta(
+            driver_pin_mod_net->getParent()->getModInst());
+        std::string new_mod_net_name
+            = resizer_->makeUniqueNetName(owning_instance);
+        driver_pin_mod_net->rename(new_mod_net_name.c_str());
+      }
+      // Note how we use the sta interface for disconnect/connect
+      // of flat nets (ie dbNet*), so we get the side effects for the timing
+      // analyzer
+      sta_->disconnectPin(driver_pin);
+      Port* port = network_->port(driver_pin);
+      Instance* inst = network_->instance(driver_pin);
+      sta_->connectPin(inst, port, db_network_->dbToSta(flat_net));
+      // connect the propagated hierarchical net to the buffer output
+      // use the db interface
+      // TODO: replace this call with sta_ -> connectPin call.
+      db_network_->connectPin(buffer_op_pin,
+                              db_network_->dbToSta(driver_pin_mod_net));
+    }
+  } else /* case 2 */ {
+    //
+    // case 2. One of the loads is a primary output or a dont touch
+    // Note that even if all loads dont touch we still insert a buffer
+    //
+    // Use the new net as the buffer input. Preserve
+    // the output net as is. Transfer non repeater loads
+    // to input side
+
+    out_net = load_net;
+    Net* ip_net = new_net;
+    dbNet* op_net_db = load_db_net;
+    dbNet* ip_net_db = db_network_->staToDb(new_net);
+    ip_net_db->setSigType(op_net_db->getSigType());
+
+    buffer_ip_net = new_net;
+    buffer_op_net = db_network_->dbToSta(load_db_net);
+
+    PinSet repeater_load_pins(db_network_);
+    for (const Pin* pin : load_pins) {
+      repeater_load_pins.insert(pin);
+    }
+    // put non repeater loads from op net onto ip net, preserving
+    // any hierarchical connection
+    NetPinIterator* pin_iter = network_->pinIterator(load_net);
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      if (!repeater_load_pins.hasKey(pin)) {
+        Port* port = network_->port(pin);
+        Instance* inst = network_->instance(pin);
+        // do not disconnect/reconnect don't touch instances
+        if (resizer_->dontTouch(inst)) {
+          continue;
+        }
+        // preserve any hierarchical connection
+        odb::dbModNet* mod_net = db_network_->hierNet(pin);
+        sta_->disconnectPin(const_cast<Pin*>(pin));
+        sta_->connectPin(inst, port, ip_net);
+        if (mod_net) {
+          // TODO: replace this call with sta_ -> connectPin call.
+          db_network_->connectPin(const_cast<Pin*>(pin),
+                                  db_network_->dbToSta(mod_net));
+        }
+      }
+    }
+    sta_->connectPin(buffer, buffer_input_port, buffer_ip_net);
+    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
+  }  // case 2
+
+  resizer_->parasiticsInvalid(buffer_ip_net);
+  resizer_->parasiticsInvalid(buffer_op_net);
 
   // Resize repeater as we back up by levels.
   if (resize) {
@@ -1899,22 +2034,6 @@ void RepairDesign::makeRepeater(const char* reason,
   repeater_cap = resizer_->portCapacitance(buffer_input_port, corner_);
   repeater_fanout = resizer_->portFanoutLoad(buffer_input_port);
   repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
-}
-
-bool RepairDesign::hasInputPort(const Net* net)
-{
-  bool has_top_level_port = false;
-  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)
-        && network_->direction(pin)->isAnyInput()) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
 }
 
 LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
@@ -1973,9 +2092,11 @@ void RepairDesign::printProgress(int iteration,
 
   if (start && !end) {
     logger_->report(
-        "Iteration | Resized | Buffers | Nets repaired | Remaining");
+        "Iteration |   Area    | Resized | Buffers | Nets repaired | "
+        "Remaining");
     logger_->report(
-        "---------------------------------------------------------");
+        "--------------------------------------------------------------------"
+        "-");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1985,18 +2106,23 @@ void RepairDesign::printProgress(int iteration,
     if (end) {
       itr_field = "final";
     }
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
 
-    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
-                    itr_field,
-                    resize_count_,
-                    inserted_buffer_count_,
-                    repaired_net_count,
-                    nets_left);
+    logger_->report(
+        "{: >9s} | {: >+8.1f}% | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
+        itr_field,
+        area_growth / initial_design_area_ * 1e3,
+        resize_count_,
+        inserted_buffer_count_,
+        repaired_net_count,
+        nets_left);
   }
 
   if (end) {
     logger_->report(
-        "---------------------------------------------------------");
+        "--------------------------------------------------------------------"
+        "-");
   }
 }
 

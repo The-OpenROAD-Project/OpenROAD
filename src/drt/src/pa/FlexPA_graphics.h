@@ -31,6 +31,7 @@
 #include <memory>
 #include <vector>
 
+#include "AbstractPAGraphics.h"
 #include "FlexPA.h"
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
@@ -57,7 +58,7 @@ class frPathSeg;
 class frConnFig;
 
 // This class draws debugging graphics on the layout
-class FlexPAGraphics : public gui::Renderer
+class FlexPAGraphics : public gui::Renderer, public AbstractPAGraphics
 {
  public:
   // Debug pin access
@@ -69,28 +70,29 @@ class FlexPAGraphics : public gui::Renderer
 
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
-                std::set<frInst*, frBlockObjectComp>* inst_class);
+                std::set<frInst*, frBlockObjectComp>* inst_class) override;
 
   void startPin(frMPin* pin,
                 frInstTerm* inst_term,
-                std::set<frInst*, frBlockObjectComp>* inst_class);
+                std::set<frInst*, frBlockObjectComp>* inst_class) override;
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,
-              frAccessPointEnum upper_type);
+              frAccessPointEnum upper_type) override;
 
   void setViaAP(const frAccessPoint* ap,
                 const frVia* via,
-                const std::vector<std::unique_ptr<frMarker>>& markers);
+                const std::vector<std::unique_ptr<frMarker>>& markers) override;
 
-  void setPlanarAP(const frAccessPoint* ap,
-                   const frPathSeg* seg,
-                   const std::vector<std::unique_ptr<frMarker>>& markers);
+  void setPlanarAP(
+      const frAccessPoint* ap,
+      const frPathSeg* seg,
+      const std::vector<std::unique_ptr<frMarker>>& markers) override;
 
   void setObjsAndMakers(
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      FlexPA::PatternType type);
+      FlexPA::PatternType type) override;
 
   // Show a message in the status bar
   void status(const std::string& message);

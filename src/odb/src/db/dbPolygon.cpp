@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -84,35 +83,6 @@ bool _dbPolygon::operator==(const _dbPolygon& rhs) const
 bool _dbPolygon::operator<(const _dbPolygon& rhs) const
 {
   return true;
-}
-
-void _dbPolygon::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbPolygon& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.owner_type_);
-  DIFF_FIELD(flags_.layer_id_);
-  DIFF_FIELD(polygon_);
-  DIFF_FIELD(design_rule_width_);
-  DIFF_FIELD(owner_);
-  DIFF_FIELD(next_pbox_);
-  DIFF_FIELD(boxes_);
-  DIFF_END
-}
-
-void _dbPolygon::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.owner_type_);
-  DIFF_OUT_FIELD(flags_.layer_id_);
-  DIFF_OUT_FIELD(polygon_);
-  DIFF_OUT_FIELD(design_rule_width_);
-  DIFF_OUT_FIELD(owner_);
-  DIFF_OUT_FIELD(next_pbox_);
-  DIFF_OUT_FIELD(boxes_);
-
-  DIFF_END
 }
 
 _dbPolygon::_dbPolygon(_dbDatabase* db)
@@ -163,6 +133,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbPolygon& obj)
   stream << obj.next_pbox_;
   stream << obj.boxes_;
   return stream;
+}
+
+void _dbPolygon::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["polygon"].add(polygon_.getPoints());
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

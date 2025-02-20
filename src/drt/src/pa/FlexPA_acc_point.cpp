@@ -29,8 +29,8 @@
 
 #include <omp.h>
 
+#include "AbstractPAGraphics.h"
 #include "FlexPA.h"
-#include "FlexPA_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "utl/exception.h"

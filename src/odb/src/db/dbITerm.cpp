@@ -41,7 +41,6 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHier.h"
 #include "dbInst.h"
 #include "dbInstHdr.h"
@@ -127,90 +126,6 @@ bool _dbITerm::operator<(const _dbITerm& rhs) const
   _dbMTerm* lhs_mterm = getMTerm();
   _dbMTerm* rhs_mterm = rhs.getMTerm();
   return strcmp(lhs_mterm->_name, rhs_mterm->_name) < 0;
-}
-
-void _dbITerm::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbITerm& rhs) const
-{
-  if (!diff.deepDiff()) {
-    DIFF_BEGIN
-    DIFF_FIELD(_net);
-    DIFF_FIELD(_inst);
-    DIFF_FIELD(_flags._mterm_idx);
-    DIFF_FIELD(_flags._spef);
-    DIFF_FIELD(_flags._special);
-    DIFF_FIELD(_flags._connected);
-    DIFF_FIELD(_ext_id);
-    DIFF_FIELD(_next_net_iterm);
-    DIFF_FIELD(_prev_net_iterm);
-    DIFF_FIELD(_next_modnet_iterm);
-    DIFF_FIELD(_prev_modnet_iterm);
-    DIFF_END
-  } else {
-    _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-    _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-    _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-    _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-    _dbMTerm* lhs_mterm = getMTerm();
-    _dbMTerm* rhs_mterm = rhs.getMTerm();
-    ZASSERT(strcmp(lhs_inst->_name, rhs_inst->_name) == 0);
-    ZASSERT(strcmp(lhs_mterm->_name, rhs_mterm->_name) == 0);
-
-    diff.begin_object("<> %s (_dbITerm)\n", lhs_mterm->_name);
-
-    if ((_net != 0) && (rhs._net != 0)) {
-      _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-      _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-      diff.diff("_net", lhs_net->_name, rhs_net->_name);
-    } else if (_net != 0) {
-      _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-      diff.out(dbDiff::LEFT, "_net", lhs_net->_name);
-    } else if (rhs._net != 0) {
-      _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-      diff.out(dbDiff::RIGHT, "_net", rhs_net->_name);
-    }
-
-    DIFF_FIELD(_flags._spef);
-    DIFF_FIELD(_flags._special);
-    DIFF_FIELD(_flags._connected);
-    DIFF_FIELD(_ext_id);
-    diff.end_object();
-  }
-}
-
-void _dbITerm::out(dbDiff& diff, char side, const char* field) const
-{
-  if (!diff.deepDiff()) {
-    DIFF_OUT_BEGIN
-    DIFF_OUT_FIELD(_net);
-    DIFF_OUT_FIELD(_inst);
-    DIFF_OUT_FIELD(_flags._mterm_idx);
-    DIFF_OUT_FIELD(_flags._spef);
-    DIFF_OUT_FIELD(_flags._special);
-    DIFF_OUT_FIELD(_flags._connected);
-    DIFF_OUT_FIELD(_ext_id);
-    DIFF_OUT_FIELD(_next_net_iterm);
-    DIFF_OUT_FIELD(_prev_net_iterm);
-    DIFF_OUT_FIELD(_next_modnet_iterm);
-    DIFF_OUT_FIELD(_prev_modnet_iterm);
-    DIFF_END
-  } else {
-    _dbMTerm* mterm = getMTerm();
-    diff.begin_object("%c %s (_dbITerm)\n", side, mterm->_name);
-    _dbBlock* blk = (_dbBlock*) getOwner();
-
-    if (_net != 0) {
-      _dbNet* net = blk->_net_tbl->getPtr(_net);
-      diff.out(side, "_net", net->_name);
-    }
-
-    DIFF_OUT_FIELD(_flags._spef);
-    DIFF_OUT_FIELD(_flags._special);
-    DIFF_OUT_FIELD(_flags._connected);
-    DIFF_OUT_FIELD(_ext_id);
-    diff.end_object();
-  }
 }
 
 _dbMTerm* _dbITerm::getMTerm() const
@@ -820,6 +735,14 @@ std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const
   }
 
   return geometries;
+}
+
+void _dbITerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["aps"].add(aps_);
 }
 
 }  // namespace odb

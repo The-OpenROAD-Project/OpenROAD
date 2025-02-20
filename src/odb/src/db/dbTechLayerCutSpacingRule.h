@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayer;
 class _dbTechLayerCutClassRule;
@@ -102,10 +101,7 @@ class _dbTechLayerCutSpacingRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutSpacingRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutSpacingRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutSpacingRuleFlags flags_;
   int cut_spacing_;

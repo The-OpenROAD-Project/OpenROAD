@@ -34,7 +34,6 @@
 #include "dbTechLayerForbiddenSpacingRule.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -65,32 +64,6 @@ bool _dbTechLayerForbiddenSpacingRule::operator<(
     const _dbTechLayerForbiddenSpacingRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerForbiddenSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerForbiddenSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(width_);
-  DIFF_FIELD(within_);
-  DIFF_FIELD(prl_);
-  DIFF_FIELD(two_edges_);
-  DIFF_END
-}
-
-void _dbTechLayerForbiddenSpacingRule::out(dbDiff& diff,
-                                           char side,
-                                           const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(width_);
-  DIFF_OUT_FIELD(within_);
-  DIFF_OUT_FIELD(prl_);
-  DIFF_OUT_FIELD(two_edges_);
-
-  DIFF_END
 }
 
 _dbTechLayerForbiddenSpacingRule::_dbTechLayerForbiddenSpacingRule(
@@ -131,6 +104,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.prl_;
   stream << obj.two_edges_;
   return stream;
+}
+
+void _dbTechLayerForbiddenSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

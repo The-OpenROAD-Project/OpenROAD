@@ -46,7 +46,6 @@ class _dbDatabase;
 class _dbAccessPoint;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbBPinFlags
 {
@@ -73,8 +72,7 @@ class _dbBPin : public _dbObject
 
   bool operator==(const _dbBPin& rhs) const;
   bool operator!=(const _dbBPin& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbBPin& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin);

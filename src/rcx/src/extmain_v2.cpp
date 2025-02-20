@@ -37,6 +37,7 @@
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/ext_options.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace rcx {
@@ -148,7 +149,7 @@ void extMain::infoBeforeCouplingExt()
 bool extMain::markNetsToExtract_v2(const char* netNames,
                                    std::vector<dbNet*>& inets)
 {
-  _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
+  _allNet = !findSomeNet(_block, netNames, inets, logger_);
   for (uint j = 0; j < inets.size(); j++) {
     dbNet* net = inets[j];
     net->setMark(true);

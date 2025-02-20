@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -78,37 +77,6 @@ bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
 bool _dbTechLayerAreaRule::operator<(const _dbTechLayerAreaRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerAreaRule::differences(dbDiff& diff,
-                                       const char* field,
-                                       const _dbTechLayerAreaRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.except_rectangle_);
-  DIFF_FIELD(flags_.overlap_);
-  DIFF_FIELD(area_);
-  DIFF_FIELD(except_min_width_);
-  DIFF_FIELD(except_edge_length_);
-  DIFF_FIELD(trim_layer_);
-  DIFF_FIELD(mask_);
-  DIFF_FIELD(rect_width_);
-  DIFF_END
-}
-
-void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.except_rectangle_);
-  DIFF_OUT_FIELD(flags_.overlap_);
-  DIFF_OUT_FIELD(area_);
-  DIFF_OUT_FIELD(except_min_width_);
-  DIFF_OUT_FIELD(except_edge_length_);
-  DIFF_OUT_FIELD(trim_layer_);
-  DIFF_OUT_FIELD(mask_);
-  DIFF_OUT_FIELD(rect_width_);
-
-  DIFF_END
 }
 
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
@@ -169,6 +137,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
   stream << obj.mask_;
   stream << obj.rect_width_;
   return stream;
+}
+
+void _dbTechLayerAreaRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

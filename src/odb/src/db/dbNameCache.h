@@ -38,9 +38,9 @@ namespace odb {
 
 class dbOStream;
 class dbIStream;
-class dbDiff;
 class _dbName;
 class _dbDatabase;
+struct MemInfo;
 
 class _dbNameCache
 {
@@ -56,10 +56,7 @@ class _dbNameCache
 
   bool operator==(const _dbNameCache& rhs) const;
   bool operator!=(const _dbNameCache& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbNameCache& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   // Find the name, returns 0 if the name does not exists.
   uint findName(const char* name);

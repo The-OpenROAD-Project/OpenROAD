@@ -42,7 +42,6 @@ namespace odb {
 class _dbSWire;
 class _dbNet;
 class _dbSBox;
-class dbDiff;
 
 struct _dbSWireFlags
 {
@@ -83,8 +82,7 @@ class _dbSWire : public _dbObject
   bool operator!=(const _dbSWire& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbSWire& rhs) const;
 
-  void differences(dbDiff& diff, const char* field, const _dbSWire& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbSWire& wire)

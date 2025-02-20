@@ -218,7 +218,6 @@ class _dbLib;
 class _dbGDSLib;
 class dbOStream;
 class dbIStream;
-class dbDiff;
 
 class _dbDatabase : public _dbObject
 {
@@ -252,14 +251,11 @@ class _dbDatabase : public _dbObject
 
   bool operator==(const _dbDatabase& rhs) const;
   bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbDatabase& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
   bool isSchema(uint rev) const { return _schema_minor >= rev; }
   bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db);

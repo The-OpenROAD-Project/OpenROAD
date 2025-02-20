@@ -117,37 +117,6 @@ bool _dbSite::operator==(const _dbSite& rhs) const
   return true;
 }
 
-void _dbSite::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbSite& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._x_symmetry);
-  DIFF_FIELD(_flags._y_symmetry);
-  DIFF_FIELD(_flags._R90_symmetry);
-  DIFF_FIELD(_flags._class);
-  DIFF_FIELD(_flags._is_hybrid);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_height);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_next_entry);
-  DIFF_END
-}
-
-void _dbSite::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._x_symmetry);
-  DIFF_OUT_FIELD(_flags._y_symmetry);
-  DIFF_OUT_FIELD(_flags._R90_symmetry);
-  DIFF_OUT_FIELD(_flags._class);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_height);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbSite - Methods
@@ -342,6 +311,15 @@ dbSite* dbSite::getSite(dbLib* lib, uint oid)
 {
   _dbLib* lib_impl = (_dbLib*) lib;
   return (dbSite*) lib_impl->_site_tbl->getPtr(oid);
+}
+
+void _dbSite::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["row_pattern"].add(_row_pattern);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)

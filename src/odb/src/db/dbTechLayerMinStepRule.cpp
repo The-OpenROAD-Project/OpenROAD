@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -107,56 +106,6 @@ bool _dbTechLayerMinStepRule::operator<(
   return true;
 }
 
-void _dbTechLayerMinStepRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerMinStepRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.max_edges_valid_);
-  DIFF_FIELD(flags_.min_adj_length1_valid_);
-  DIFF_FIELD(flags_.no_between_eol_);
-  DIFF_FIELD(flags_.min_adj_length2_valid_);
-  DIFF_FIELD(flags_.convex_corner_);
-  DIFF_FIELD(flags_.min_between_length_valid_);
-  DIFF_FIELD(flags_.except_same_corners_);
-  DIFF_FIELD(flags_.concave_corner_);
-  DIFF_FIELD(flags_.except_rectangle_);
-  DIFF_FIELD(flags_.no_adjacent_eol_);
-  DIFF_FIELD(min_step_length_);
-  DIFF_FIELD(max_edges_);
-  DIFF_FIELD(min_adj_length1_);
-  DIFF_FIELD(min_adj_length2_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(min_between_length_);
-  DIFF_END
-}
-
-void _dbTechLayerMinStepRule::out(dbDiff& diff,
-                                  char side,
-                                  const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.max_edges_valid_);
-  DIFF_OUT_FIELD(flags_.min_adj_length1_valid_);
-  DIFF_OUT_FIELD(flags_.no_between_eol_);
-  DIFF_OUT_FIELD(flags_.min_adj_length2_valid_);
-  DIFF_OUT_FIELD(flags_.convex_corner_);
-  DIFF_OUT_FIELD(flags_.min_between_length_valid_);
-  DIFF_OUT_FIELD(flags_.except_same_corners_);
-  DIFF_OUT_FIELD(flags_.concave_corner_);
-  DIFF_OUT_FIELD(flags_.except_rectangle_);
-  DIFF_OUT_FIELD(flags_.no_adjacent_eol_);
-  DIFF_OUT_FIELD(min_step_length_);
-  DIFF_OUT_FIELD(max_edges_);
-  DIFF_OUT_FIELD(min_adj_length1_);
-  DIFF_OUT_FIELD(min_adj_length2_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(min_between_length_);
-
-  DIFF_END
-}
-
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -219,6 +168,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   stream << obj.eol_width_;
   stream << obj.min_between_length_;
   return stream;
+}
+
+void _dbTechLayerMinStepRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -114,62 +113,6 @@ bool _dbTechLayerCornerSpacingRule::operator<(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerCornerSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCornerSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.corner_type_);
-  DIFF_FIELD(flags_.same_mask_);
-  DIFF_FIELD(flags_.corner_only_);
-  DIFF_FIELD(flags_.except_eol_);
-  DIFF_FIELD(flags_.except_jog_length_);
-  DIFF_FIELD(flags_.edge_length_valid_);
-  DIFF_FIELD(flags_.include_shape_);
-  DIFF_FIELD(flags_.min_length_valid_);
-  DIFF_FIELD(flags_.except_notch_);
-  DIFF_FIELD(flags_.except_notch_length_valid_);
-  DIFF_FIELD(flags_.except_same_net_);
-  DIFF_FIELD(flags_.except_same_metal_);
-  DIFF_FIELD(flags_.corner_to_corner_);
-  DIFF_FIELD(within_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(jog_length_);
-  DIFF_FIELD(edge_length_);
-  DIFF_FIELD(min_length_);
-  DIFF_FIELD(except_notch_length_);
-  DIFF_END
-}
-
-void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
-                                        char side,
-                                        const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.corner_type_);
-  DIFF_OUT_FIELD(flags_.same_mask_);
-  DIFF_OUT_FIELD(flags_.corner_only_);
-  DIFF_OUT_FIELD(flags_.except_eol_);
-  DIFF_OUT_FIELD(flags_.except_jog_length_);
-  DIFF_OUT_FIELD(flags_.edge_length_valid_);
-  DIFF_OUT_FIELD(flags_.include_shape_);
-  DIFF_OUT_FIELD(flags_.min_length_valid_);
-  DIFF_OUT_FIELD(flags_.except_notch_);
-  DIFF_OUT_FIELD(flags_.except_notch_length_valid_);
-  DIFF_OUT_FIELD(flags_.except_same_net_);
-  DIFF_OUT_FIELD(flags_.except_same_metal_);
-  DIFF_OUT_FIELD(flags_.corner_to_corner_);
-  DIFF_OUT_FIELD(within_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(jog_length_);
-  DIFF_OUT_FIELD(edge_length_);
-  DIFF_OUT_FIELD(min_length_);
-  DIFF_OUT_FIELD(except_notch_length_);
-
-  DIFF_END
 }
 
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
@@ -250,6 +193,17 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj._spacing_tbl;
   // User Code End <<
   return stream;
+}
+
+void _dbTechLayerCornerSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["width_tbl"].add(_width_tbl);
+  info.children_["spacing_tbl"].add(_spacing_tbl);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

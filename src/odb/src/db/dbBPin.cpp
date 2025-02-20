@@ -112,36 +112,6 @@ bool _dbBPin::operator==(const _dbBPin& rhs) const
   return true;
 }
 
-void _dbBPin::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbBPin& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._status);
-  DIFF_FIELD(_flags._has_min_spacing);
-  DIFF_FIELD(_flags._has_effective_width);
-  DIFF_FIELD(_bterm);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(_next_bpin);
-  DIFF_FIELD(_min_spacing);
-  DIFF_FIELD(_effective_width);
-  DIFF_END
-}
-
-void _dbBPin::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._status);
-  DIFF_OUT_FIELD(_flags._has_min_spacing);
-  DIFF_OUT_FIELD(_flags._has_effective_width);
-  DIFF_OUT_FIELD(_bterm);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(_next_bpin);
-  DIFF_OUT_FIELD(_min_spacing);
-  DIFF_OUT_FIELD(_effective_width);
-  DIFF_END
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 {
   uint* bit_field = (uint*) &bpin._flags;
@@ -334,6 +304,14 @@ dbBPin* dbBPin::getBPin(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBPin*) block->_bpin_tbl->getPtr(dbid_);
+}
+
+void _dbBPin::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["ap"].add(aps_);
 }
 
 }  // namespace odb

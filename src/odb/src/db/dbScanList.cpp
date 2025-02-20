@@ -34,7 +34,6 @@
 #include "dbScanList.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
@@ -57,23 +56,6 @@ bool _dbScanList::operator==(const _dbScanList& rhs) const
 bool _dbScanList::operator<(const _dbScanList& rhs) const
 {
   return true;
-}
-
-void _dbScanList::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbScanList& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_TABLE(scan_insts_);
-  DIFF_END
-}
-
-void _dbScanList::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_TABLE(scan_insts_);
-
-  DIFF_END
 }
 
 _dbScanList::_dbScanList(_dbDatabase* db)
@@ -108,6 +90,13 @@ dbObjectTable* _dbScanList::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbScanList::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_insts_->collectMemInfo(info.children_["scan_insts_"]);
 }
 
 _dbScanList::~_dbScanList()

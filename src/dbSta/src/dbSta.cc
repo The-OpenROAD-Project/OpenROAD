@@ -327,7 +327,7 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   return clk_nets;
 }
 
-std::string dbSta::getInstanceTypeText(InstType type)
+std::string dbSta::getInstanceTypeText(InstType type) const
 {
   switch (type) {
     case BLOCK:
@@ -496,19 +496,38 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType(
-    odb::dbModule* module)
+void dbSta::addInstanceByTypeInstance(odb::dbInst* inst,
+                                      InstTypeMap& inst_type_stats)
 {
-  std::map<InstType, TypeStats> inst_type_stats;
+  InstType type = getInstanceType(inst);
+  auto& stats = inst_type_stats[type];
+  stats.count++;
+  auto master = inst->getMaster();
+  stats.area += master->getArea();
+}
 
+void dbSta::countInstancesByType(odb::dbModule* module,
+                                 InstTypeMap& inst_type_stats,
+                                 std::vector<dbInst*>& insts)
+{
   for (auto inst : module->getLeafInsts()) {
-    InstType type = getInstanceType(inst);
-    auto& stats = inst_type_stats[type];
-    stats.count++;
-    auto master = inst->getMaster();
-    stats.area += master->getArea();
+    addInstanceByTypeInstance(inst, inst_type_stats);
+    insts.push_back(inst);
   }
-  return inst_type_stats;
+}
+
+void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
+                                             std::vector<dbInst*>& insts)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  for (auto inst : block->getInsts()) {
+    if (!inst->isPhysicalOnly()) {
+      continue;
+    }
+
+    addInstanceByTypeInstance(inst, inst_type_stats);
+    insts.push_back(inst);
+  }
 }
 
 std::string toLowerCase(std::string str)
@@ -521,11 +540,10 @@ std::string toLowerCase(std::string str)
 
 void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
 {
-  auto instances_types = countInstancesByType(module);
+  InstTypeMap instances_types;
+  std::vector<dbInst*> insts;
+  countInstancesByType(module, instances_types, insts);
   auto block = db_->getChip()->getBlock();
-  auto insts = module->getLeafInsts();
-  const int total_usage = insts.size();
-  int64_t total_area = 0;
   const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
 
   const char* header_format = "{:37} {:>7} {:>10}";
@@ -534,6 +552,8 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
     logger_->report("Cell type report for {} ({})",
                     module->getModInst()->getHierarchicalName(),
                     module->getName());
+  } else {
+    countPhysicalOnlyInstancesByType(instances_types, insts);
   }
   logger_->report(header_format, "Cell type report:", "Count", "Area");
 
@@ -541,6 +561,12 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
   std::string metrics_suffix;
   if (block->getTopModule() != module) {
     metrics_suffix = fmt::format("__in_module:{}", module->getName());
+  }
+
+  int total_usage = 0;
+  int64_t total_area = 0;
+  for (auto [type, stats] : instances_types) {
+    total_usage += stats.count;
   }
 
   for (auto [type, stats] : instances_types) {

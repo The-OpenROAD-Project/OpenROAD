@@ -331,7 +331,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
+  bool recoverPower(float recover_power_percent,
+                    bool match_cell_footprint,
+                    bool verbose);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -341,6 +343,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Caller owns return value.
   NetSeq* findFloatingNets();
   PinSet* findFloatingPins();
+  NetSeq* findOverdrivenNets(bool include_parallel_driven);
   void repairTieFanout(LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
@@ -441,6 +444,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
  protected:
   void init();
+  double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
@@ -566,7 +570,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  string makeUniqueNetName();
+  string makeUniqueNetName(Instance* parent = nullptr);
   Net* makeUniqueNet();
   string makeUniqueInstName(const char* base_name);
   string makeUniqueInstName(const char* base_name, bool underscore);
@@ -799,6 +803,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool is_callback_registered_ = false;
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
+
+  // Sizing restrictions
+  std::optional<double> sizing_area_limit_;
+  std::optional<double> sizing_leakage_limit_;
 
   friend class BufferedNet;
   friend class GateCloner;

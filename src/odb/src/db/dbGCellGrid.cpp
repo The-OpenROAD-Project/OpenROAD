@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -98,41 +97,6 @@ bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const
   }
   // User Code End <
   return true;
-}
-
-void _dbGCellGrid::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbGCellGrid& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.x_grid_valid_);
-  DIFF_FIELD(flags_.y_grid_valid_);
-  // User Code Begin Differences
-  DIFF_VECTOR(x_origin_);
-  DIFF_VECTOR(x_count_);
-  DIFF_VECTOR(x_step_);
-  DIFF_VECTOR(y_origin_);
-  DIFF_VECTOR(y_count_);
-  DIFF_VECTOR(y_step_);
-  // User Code End Differences
-  DIFF_END
-}
-
-void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.x_grid_valid_);
-  DIFF_OUT_FIELD(flags_.y_grid_valid_);
-
-  // User Code Begin Out
-  DIFF_OUT_VECTOR(x_origin_);
-  DIFF_OUT_VECTOR(x_count_);
-  DIFF_OUT_VECTOR(x_step_);
-  DIFF_OUT_VECTOR(y_origin_);
-  DIFF_OUT_VECTOR(y_count_);
-  DIFF_OUT_VECTOR(y_step_);
-  // User Code End Out
-  DIFF_END
 }
 
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
@@ -212,6 +176,28 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
   stream << obj.congestion_map_;
   // User Code End <<
   return stream;
+}
+
+void _dbGCellGrid::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["x_origin"].add(x_origin_);
+  info.children_["x_count_"].add(x_count_);
+  info.children_["x_step_"].add(x_step_);
+  info.children_["y_origin_"].add(y_origin_);
+  info.children_["y_count_"].add(y_count_);
+  info.children_["y_step_"].add(y_step_);
+  info.children_["x_grid_"].add(x_grid_);
+  info.children_["y_grid_"].add(y_grid_);
+
+  MemInfo& congestion_info = info.children_["congestion"];
+  for (auto& [layer, data] : congestion_map_) {
+    congestion_info.add(data);
+  }
+  // User Code End collectMemInfo
 }
 
 // User Code Begin PrivateMethods

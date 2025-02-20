@@ -34,7 +34,6 @@
 #include "dbNetTrack.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -69,29 +68,6 @@ bool _dbNetTrack::operator<(const _dbNetTrack& rhs) const
   return true;
 }
 
-void _dbNetTrack::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbNetTrack& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(net_);
-  DIFF_FIELD(box_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(track_next_);
-  DIFF_END
-}
-
-void _dbNetTrack::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(net_);
-  DIFF_OUT_FIELD(box_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(track_next_);
-
-  DIFF_END
-}
-
 _dbNetTrack::_dbNetTrack(_dbDatabase* db)
 {
 }
@@ -120,6 +96,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbNetTrack& obj)
   stream << obj.layer_;
   stream << obj.track_next_;
   return stream;
+}
+
+void _dbNetTrack::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

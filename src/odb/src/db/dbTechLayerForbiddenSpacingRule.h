@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 class _dbTechLayerForbiddenSpacingRule : public _dbObject
@@ -57,10 +56,7 @@ class _dbTechLayerForbiddenSpacingRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerForbiddenSpacingRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerForbiddenSpacingRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   std::pair<int, int> forbidden_spacing_;
   int width_;

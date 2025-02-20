@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -84,42 +83,6 @@ bool _dbTechLayerArraySpacingRule::operator<(
     const _dbTechLayerArraySpacingRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerArraySpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerArraySpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.parallel_overlap_);
-  DIFF_FIELD(flags_.long_array_);
-  DIFF_FIELD(flags_.via_width_valid_);
-  DIFF_FIELD(flags_.within_valid_);
-  DIFF_FIELD(via_width_);
-  DIFF_FIELD(cut_spacing_);
-  DIFF_FIELD(within_);
-  DIFF_FIELD(array_width_);
-  DIFF_FIELD(cut_class_);
-  DIFF_END
-}
-
-void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
-                                       char side,
-                                       const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.parallel_overlap_);
-  DIFF_OUT_FIELD(flags_.long_array_);
-  DIFF_OUT_FIELD(flags_.via_width_valid_);
-  DIFF_OUT_FIELD(flags_.within_valid_);
-  DIFF_OUT_FIELD(via_width_);
-  DIFF_OUT_FIELD(cut_spacing_);
-  DIFF_OUT_FIELD(within_);
-  DIFF_OUT_FIELD(array_width_);
-  DIFF_OUT_FIELD(cut_class_);
-
-  DIFF_END
 }
 
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
@@ -176,6 +139,16 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.array_spacing_map_;
   stream << obj.cut_class_;
   return stream;
+}
+
+void _dbTechLayerArraySpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["array_spacing_map"].add(array_spacing_map_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

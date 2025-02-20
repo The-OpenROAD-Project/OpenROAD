@@ -47,6 +47,18 @@ namespace odb {
 template class dbTable<_dbTechLayerSpacingRule>;
 template class dbTable<_dbTechV55InfluenceEntry>;
 
+void _dbTechLayerSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechV55InfluenceEntry::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 bool _dbTechLayerSpacingRule::operator==(
     const _dbTechLayerSpacingRule& rhs) const
 {
@@ -113,53 +125,6 @@ bool _dbTechLayerSpacingRule::operator==(
   return true;
 }
 
-void _dbTechLayerSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._rule);
-  DIFF_FIELD(_flags._except_same_pgnet);
-  DIFF_FIELD(_flags._cut_stacking);
-  DIFF_FIELD(_flags._cut_center_to_center);
-  DIFF_FIELD(_flags._cut_same_net);
-  DIFF_FIELD(_flags._cut_parallel_overlap);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_length_or_influence);
-  DIFF_FIELD(_r1min);
-  DIFF_FIELD(_r1max);
-  DIFF_FIELD(_r2min);
-  DIFF_FIELD(_r2max);
-  DIFF_FIELD(_cut_area);
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_cut_layer_below);
-  DIFF_END
-}
-
-void _dbTechLayerSpacingRule::out(dbDiff& diff,
-                                  char side,
-                                  const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._rule);
-  DIFF_OUT_FIELD(_flags._except_same_pgnet);
-  DIFF_OUT_FIELD(_flags._cut_stacking);
-  DIFF_OUT_FIELD(_flags._cut_center_to_center);
-  DIFF_OUT_FIELD(_flags._cut_same_net);
-  DIFF_OUT_FIELD(_flags._cut_parallel_overlap);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_length_or_influence);
-  DIFF_OUT_FIELD(_r1min);
-  DIFF_OUT_FIELD(_r1max);
-  DIFF_OUT_FIELD(_r2min);
-  DIFF_OUT_FIELD(_r2max);
-  DIFF_OUT_FIELD(_cut_area);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_cut_layer_below);
-  DIFF_END
-}
-
 bool _dbTechV55InfluenceEntry::operator==(
     const _dbTechV55InfluenceEntry& rhs) const
 {
@@ -176,29 +141,6 @@ bool _dbTechV55InfluenceEntry::operator==(
   }
 
   return true;
-}
-
-void _dbTechV55InfluenceEntry::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechV55InfluenceEntry& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_within);
-  DIFF_FIELD(_spacing);
-  DIFF_END
-}
-
-void _dbTechV55InfluenceEntry::out(dbDiff& diff,
-                                   char side,
-                                   const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_within);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////

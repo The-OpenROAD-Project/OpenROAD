@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -102,56 +101,6 @@ bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
 bool _dbTechLayerMinCutRule::operator<(const _dbTechLayerMinCutRule& rhs) const
 {
   return true;
-}
-
-void _dbTechLayerMinCutRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerMinCutRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.per_cut_class_);
-  DIFF_FIELD(flags_.within_cut_dist_valid);
-  DIFF_FIELD(flags_.from_above_);
-  DIFF_FIELD(flags_.from_below_);
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.area_valid_);
-  DIFF_FIELD(flags_.area_within_dist_valid_);
-  DIFF_FIELD(flags_.same_metal_overlap);
-  DIFF_FIELD(flags_.fully_enclosed_);
-  DIFF_FIELD(num_cuts_);
-  DIFF_FIELD(width_);
-  DIFF_FIELD(within_cut_dist);
-  DIFF_FIELD(length_);
-  DIFF_FIELD(length_within_dist_);
-  DIFF_FIELD(area_);
-  DIFF_FIELD(area_within_dist_);
-  DIFF_END
-}
-
-void _dbTechLayerMinCutRule::out(dbDiff& diff,
-                                 char side,
-                                 const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.per_cut_class_);
-  DIFF_OUT_FIELD(flags_.within_cut_dist_valid);
-  DIFF_OUT_FIELD(flags_.from_above_);
-  DIFF_OUT_FIELD(flags_.from_below_);
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.area_valid_);
-  DIFF_OUT_FIELD(flags_.area_within_dist_valid_);
-  DIFF_OUT_FIELD(flags_.same_metal_overlap);
-  DIFF_OUT_FIELD(flags_.fully_enclosed_);
-  DIFF_OUT_FIELD(num_cuts_);
-  DIFF_OUT_FIELD(width_);
-  DIFF_OUT_FIELD(within_cut_dist);
-  DIFF_OUT_FIELD(length_);
-  DIFF_OUT_FIELD(length_within_dist_);
-  DIFF_OUT_FIELD(area_);
-  DIFF_OUT_FIELD(area_within_dist_);
-
-  DIFF_END
 }
 
 _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
@@ -220,6 +169,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
   stream << obj.area_;
   stream << obj.area_within_dist_;
   return stream;
+}
+
+void _dbTechLayerMinCutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["cut_class_cuts_map"].add(cut_class_cuts_map_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

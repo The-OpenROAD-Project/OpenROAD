@@ -34,7 +34,6 @@
 #include "dbAccessPoint.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -107,33 +106,6 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
   return true;
 }
 
-void _dbAccessPoint::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbAccessPoint& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(point_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(lib_);
-  DIFF_FIELD(master_);
-  DIFF_FIELD(mpin_);
-  DIFF_FIELD(bpin_);
-  DIFF_END
-}
-
-void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(point_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(lib_);
-  DIFF_OUT_FIELD(master_);
-  DIFF_OUT_FIELD(mpin_);
-  DIFF_OUT_FIELD(bpin_);
-
-  DIFF_END
-}
-
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
 {
   low_type_ = dbAccessType::OnGrid;
@@ -199,6 +171,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << high;
   // User Code End <<
   return stream;
+}
+
+void _dbAccessPoint::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["iterms"].add(iterms_);
+  MemInfo& via_info = info.children_["vias"];
+  for (const auto& v : vias_) {
+    via_info.add(v);
+  }
+  info.children_["path_segs"].add(path_segs_);
+  // User Code End collectMemInfo
 }
 
 // User Code Begin PrivateMethods

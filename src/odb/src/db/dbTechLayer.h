@@ -43,7 +43,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
 template <class T>
@@ -108,11 +107,8 @@ class _dbTechLayer : public _dbObject
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayer& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   uint getV55RowIdx(const int& rowVal) const;
   uint getV55ColIdx(const int& colVal) const;

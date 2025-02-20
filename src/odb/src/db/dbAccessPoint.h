@@ -38,12 +38,14 @@
 #include "odb/odb.h"
 // User Code Begin Includes
 #include <array>
+
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 // User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayer;
 class _dbLib;
@@ -64,10 +66,7 @@ class _dbAccessPoint : public _dbObject
   bool operator==(const _dbAccessPoint& rhs) const;
   bool operator!=(const _dbAccessPoint& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbAccessPoint& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbAccessPoint& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   void setMPin(_dbMPin* mpin);
   // User Code End Methods

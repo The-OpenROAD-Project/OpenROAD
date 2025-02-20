@@ -51,7 +51,6 @@ class _dbTechSameNetRule;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbTechNonDefaultRuleFlags
 {
@@ -88,10 +87,7 @@ class _dbTechNonDefaultRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechNonDefaultRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechNonDefaultRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechNonDefaultRule& rule);

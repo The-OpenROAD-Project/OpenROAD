@@ -133,7 +133,6 @@ class dbCCSegItr;
 class dbExtControl;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class dbBlockSearch;
 class dbBlockCallBackObj;
 class dbGuideItr;
@@ -315,13 +314,12 @@ class _dbBlock : public _dbObject
 
   bool operator==(const _dbBlock& rhs) const;
   bool operator!=(const _dbBlock& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbBlock& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
   int globalConnect(const std::vector<dbGlobalConnect*>& connects);
   _dbTech* getTech();
 
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);

@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
 #include "dbModBTerm.h"
@@ -80,37 +79,6 @@ bool _dbModITerm::operator==(const _dbModITerm& rhs) const
 bool _dbModITerm::operator<(const _dbModITerm& rhs) const
 {
   return true;
-}
-
-void _dbModITerm::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbModITerm& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_child_modbterm);
-  DIFF_FIELD(_mod_net);
-  DIFF_FIELD(_next_net_moditerm);
-  DIFF_FIELD(_prev_net_moditerm);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_prev_entry);
-  DIFF_END
-}
-
-void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_child_modbterm);
-  DIFF_OUT_FIELD(_mod_net);
-  DIFF_OUT_FIELD(_next_net_moditerm);
-  DIFF_OUT_FIELD(_prev_net_moditerm);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_prev_entry);
-
-  DIFF_END
 }
 
 _dbModITerm::_dbModITerm(_dbDatabase* db)
@@ -196,6 +164,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
     stream << obj._prev_entry;
   }
   return stream;
+}
+
+void _dbModITerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbModITerm::~_dbModITerm()
