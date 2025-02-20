@@ -497,6 +497,7 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
   std::string modbterm_name(name);
+  // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
   size_t last_idx = modbterm_name.find_last_of('/');
   if (last_idx != std::string::npos) {
     modbterm_name = modbterm_name.substr(last_idx + 1);
@@ -579,6 +580,9 @@ void dbModule::copy(dbModule* old_module,
   copyModuleBoundaryIO(old_module, new_module, new_mod_inst);
 }
 
+// A bus with N members have N+1 modbterms.  The first one is the "bus port"
+// sentinel.   The sentinel has reference to the member size, direction and
+// list of member modbterms.
 void dbModule::copyModulePorts(dbModule* old_module,
                                dbModule* new_module,
                                modBTMap& mod_bt_map)
@@ -656,6 +660,7 @@ void dbModule::copyModulePorts(dbModule* old_module,
                           old_port->getName(),
                           ix);
           }
+          // TODO: use proper bus array delimiter instead of '[' and ']'
           std::string bus_bit_name = std::string(old_port->getName())
                                      + std::string("[") + std::to_string(ix)
                                      + std::string("]");
@@ -711,6 +716,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
     dbInst* old_inst = *inst_iter;
     // Change unique instance name from old_inst/leaf to new_inst/leaf
     std::string old_inst_name = old_inst->getName();
+    // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
     std::string new_inst_name;
     if (first_idx != std::string::npos) {
@@ -762,6 +768,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
       if (old_net) {
         // Create a local net only if it connects to iterms inside this module
         std::string net_name = old_net->getName();
+        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
         size_t first_idx = net_name.find_first_of('/');
         std::string new_net_name;
         if (first_idx != std::string::npos) {
