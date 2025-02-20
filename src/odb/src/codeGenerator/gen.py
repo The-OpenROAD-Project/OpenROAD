@@ -42,9 +42,9 @@ def make_parent_field(parent, relation):
         inParentField["name"] = relation["tbl_name"]
     else:
         inParentField["name"] = relation["tbl_name"] = get_table_name(
-            relation["second"]
+            relation["child"]
         )
-    inParentField["type"] = relation["second"]
+    inParentField["type"] = relation["child"]
     inParentField["table"] = True
     inParentField["dbSetGetter"] = True
     inParentField["components"] = [inParentField["name"]]
@@ -55,18 +55,18 @@ def make_parent_field(parent, relation):
         inParentField["schema"] = relation["schema"]
 
     parent["fields"].append(inParentField)
-    if relation["first"] != relation["second"]:
+    if relation["parent"] != relation["child"]:
         parent["cpp_includes"].extend(
-            [f"{relation['second']}.h", "odb/dbSet.h"]
+            [f"{relation['child']}.h", "odb/dbSet.h"]
         )
-    logging.debug(f"Add relation field {inParentField['name']} to {relation['first']}")
+    logging.debug(f"Add relation field {inParentField['name']} to {relation['parent']}")
     return inParentField
 
 
 def make_parent_hash_field(parent, relation):
     inParentHashField = {}
     inParentHashField["name"] = inParentField["name"][:-4] + "hash_"
-    inParentHashField["type"] = "dbHashTable<_" + relation["second"] + ">"
+    inParentHashField["type"] = "dbHashTable<_" + relation["child"] + ">"
     inParentHashField["components"] = [inParentHashField["name"]]
     inParentHashField["table_name"] = inParentField["name"]
     inParentHashField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
@@ -74,17 +74,17 @@ def make_parent_hash_field(parent, relation):
     if "dbHashTable.h" not in parent["h_includes"]:
         parent["h_includes"].append("dbHashTable.h")
     logging.debug(
-        f"Add hash field {inParentHashField['name']} to {relation['first']}"
+        f"Add hash field {inParentHashField['name']} to {relation['parent']}"
     )
     return inParentHashField
 
 def make_child_next_field(child, relation):
     inChildNextEntry = {"name": "_next_entry"}
-    inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
+    inChildNextEntry["type"] = "dbId<_" + relation["child"] + ">"
     inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
     child["fields"].append(inChildNextEntry)
     logging.debug(
-        f"Add hash field {inChildNextEntry['name']} to {relation['second']}"
+        f"Add hash field {inChildNextEntry['name']} to {relation['child']}"
     )
 
 
@@ -155,12 +155,12 @@ for i, klass in enumerate(schema["classes"]):
 for relation in schema["relations"]:
     if relation["type"] != "1_n":
         raise KeyError('relation type is not supported, use 1_n')
-    parent = get_class(schema, relation["first"])
-    child = get_class(schema, relation["second"])
+    parent = get_class(schema, relation["parent"])
+    child = get_class(schema, relation["child"])
 
     inParentField = make_parent_field(parent, relation)
 
-    child_type_name = f"_{relation['second']}"
+    child_type_name = f"_{relation['child']}"
 
     if child_type_name not in parent["classes"]:
         parent["classes"].append(child_type_name)
@@ -195,7 +195,7 @@ for klass in schema["classes"]:
             field["refTable"] = get_table_name(field["refType"].replace("*", ""))
             # checking if there is a defined relation between parent and refType for extracting table name
             for relation in schema["relations"]:
-                if relation["first"] == field["parent"] and relation["second"] == field[
+                if relation["parent"] == field["parent"] and relation["child"] == field[
                     "refType"
                 ].replace("*", ""):
                     field["refTable"] = relation["tbl_name"]
