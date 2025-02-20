@@ -7541,6 +7541,8 @@ class dbIsolation : public dbObject
 
   std::vector<dbMaster*> getIsolationCells();
 
+  bool appliesTo(const dbIoType& io);
+
   // User Code End dbIsolation
 };
 
