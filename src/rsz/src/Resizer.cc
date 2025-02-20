@@ -1221,46 +1221,82 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                                          match_cell_footprint);
   resizePreamble();
   LibertyCellSeq equiv_cells = getSwappableCells(base_cell);
+
+  // Sort equiv cells by ascending area
+  std::sort(equiv_cells.begin(),
+            equiv_cells.end(),
+            [this](const LibertyCell* a, const LibertyCell* b) {
+              odb::dbMaster* a_master = this->db_network_->staToDb(a);
+              odb::dbMaster* b_master = this->db_network_->staToDb(b);
+              if (a_master && b_master) {
+                return a_master->getArea() < b_master->getArea();
+              }
+              return a->area() < b->area();
+            });
+
   logger_->report(
       "The following {} cells are equivalent to {}{}",
       equiv_cells.size(),
       base_cell->name(),
       (match_cell_footprint ? " with matching cell_footprint:" : ":"));
   odb::dbMaster* master = db_network_->staToDb(base_cell);
-  int64_t base_area = master->getArea();
+  double base_area = block_->dbuAreaToMicrons(master->getArea());
   float base_leakage;
   bool leakage_exists;
   base_cell->leakagePower(base_leakage, leakage_exists);
   if (leakage_exists) {
     logger_->report(
-        "Cell                                 Area     Area   Leakage Leakage");
+        "======================================================================"
+        "==");
     logger_->report(
-        "                                              Ratio           Ratio");
+        "          Cell                              Area   Area Leakage  "
+        "Leakage");
     logger_->report(
-        "====================================================================");
+        "                                           (um^2)  Ratio  (W)     "
+        "Ratio");
+    logger_->report(
+        "======================================================================"
+        "==");
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       float equiv_cell_leakage;
       bool leakage_exists2;
       equiv_cell->leakagePower(equiv_cell_leakage, leakage_exists2);
-      logger_->report("{:<35} {:<9} {:.2f} {:.2e} {:.2f}",
-                      equiv_cell->name(),
-                      equiv_master->getArea(),
-                      equiv_master->getArea() / static_cast<double>(base_area),
-                      equiv_cell_leakage,
-                      equiv_cell_leakage / base_leakage);
+      if (leakage_exists2) {
+        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}",
+                        equiv_cell->name(),
+                        equiv_area,
+                        equiv_area / base_area,
+                        equiv_cell_leakage,
+                        equiv_cell_leakage / base_leakage);
+      } else {
+        logger_->report("{:<35} {:<9} {:.2f}",
+                        equiv_cell->name(),
+                        equiv_area,
+                        equiv_area / base_area);
+      }
     }
+    logger_->report(
+        "----------------------------------------------------------------------"
+        "--");
   } else {
-    logger_->report("Cell                                 Area     Area");
-    logger_->report("                                              Ratio");
-    logger_->report("====================================================");
+    logger_->report(
+        "=========================================================");
+    logger_->report("          Cell                              Area   Area");
+    logger_->report("                                           (um^2)  Ratio");
+    logger_->report(
+        "=========================================================");
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
-      logger_->report("{:<35} {:<9} {:.2f}",
+      double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
+      logger_->report("{:<41} {:>7.3f} {:>5.2f}",
                       equiv_cell->name(),
-                      equiv_master->getArea(),
-                      equiv_master->getArea() / static_cast<double>(base_area));
+                      equiv_area,
+                      equiv_area / base_area);
     }
+    logger_->report(
+        "---------------------------------------------------------");
   }
 }
 
@@ -1298,6 +1334,10 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       source_cell_leakage = get_leakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
+      if (equiv_cell == source_cell) {
+        continue;
+      }
+
       dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
       if (!equiv_cell_master) {
         continue;

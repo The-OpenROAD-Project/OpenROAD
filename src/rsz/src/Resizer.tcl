@@ -850,21 +850,28 @@ proc report_opt_config { args } {
   }
 
   set area_limit_value "undefined"
-  set area_limit [odb::dbDoubleProperty_find $block "sizing_area_limit"]
+  set area_limit [odb::dbDoubleProperty_find $block "limit_sizing_area"]
   if { $area_limit != "NULL" } {
-    set area_limit_value [[odb::dbDoubleProperty_find $block "sizing_area_limit"] getValue]
+    set area_limit_value [[odb::dbDoubleProperty_find $block "limit_sizing_area"] getValue]
   }
 
   set leakage_limit_value "undefined"
-  set leakage_limit [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
+  set leakage_limit [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
   if { $leakage_limit != "NULL" } {
     set leakage_limit_value [[odb::dbDoubleProperty_find $block "sizing_leakage_limit"] getValue]
   }
 
+  set keep_site_value "false"
+  set keep_site [odb::dbBoolProperty_find $block "keep_site"]
+  if { $keep_site != "NULL" } {
+    set keep_size_value [[odb::dbBoolProperty_find $block "keep_site"] getValue]
+  }
+    
   puts "***********************************"
   puts "Optimization config:"
-  puts "-sizing_area_limit:    $area_limit_value"
-  puts "-sizing_leakage_limit: $leakage_limit_value"
+  puts "-limit_sizing_area:    $area_limit_value"
+  puts "-limit_sizing_leakage: $leakage_limit_value"
+  puts "-keep_sizing_site:     $keep_site_value"
   puts "***********************************"
 }
 
