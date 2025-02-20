@@ -977,10 +977,14 @@ void DetailedMgr::assignCellsToSegments(
 
 bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
 {
-  const int single_height = arch_->getRow(0)->getHeight();
-  const int start_row = std::max(nd->getBottom() / single_height, 0);
-  const int end_row
-      = std::min(nd->getTop() / single_height, numSingleHeightRows_ - 1);
+  const Architecture::Row* first_row = arch_->getRow(0);
+  const int single_height = first_row->getHeight();
+  const int rows_origin_y = first_row->getBottom();
+  const int start_row
+      = std::max((nd->getBottom() - rows_origin_y) / single_height, 0);
+  const int end_row = std::min((nd->getTop() - rows_origin_y) / single_height,
+                               numSingleHeightRows_ - 1);
+
   for (int r = start_row; r < end_row; r++) {
     auto it = std::lower_bound(
         blockages_[r].begin(),
