@@ -37,46 +37,46 @@ def get_json_files(directory):
 
 
 def make_parent_field(parent, relation):
-    inParentField = {}
+    field = {}
     if "tbl_name" in relation:
-        inParentField["name"] = relation["tbl_name"]
+        field["name"] = relation["tbl_name"]
     else:
-        inParentField["name"] = relation["tbl_name"] = get_table_name(
+        field["name"] = relation["tbl_name"] = get_table_name(
             relation["child"]
         )
-    inParentField["type"] = relation["child"]
-    inParentField["table"] = True
-    inParentField["dbSetGetter"] = True
-    inParentField["components"] = [inParentField["name"]]
-    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
+    field["type"] = relation["child"]
+    field["table"] = True
+    field["dbSetGetter"] = True
+    field["components"] = [field["name"]]
+    field["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get(
         "flags", []
     )
     if "schema" in relation:
-        inParentField["schema"] = relation["schema"]
+        field["schema"] = relation["schema"]
 
-    parent["fields"].append(inParentField)
+    parent["fields"].append(field)
     if relation["parent"] != relation["child"]:
         parent["cpp_includes"].extend(
             [f"{relation['child']}.h", "odb/dbSet.h"]
         )
-    logging.debug(f"Add relation field {inParentField['name']} to {relation['parent']}")
-    return inParentField
+    logging.debug(f"Add relation field {field['name']} to {relation['parent']}")
+    return field
 
 
-def make_parent_hash_field(parent, relation):
-    inParentHashField = {}
-    inParentHashField["name"] = inParentField["name"][:-4] + "hash_"
-    inParentHashField["type"] = "dbHashTable<_" + relation["child"] + ">"
-    inParentHashField["components"] = [inParentHashField["name"]]
-    inParentHashField["table_name"] = inParentField["name"]
-    inParentHashField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
-    parent["fields"].append(inParentHashField)
+def make_parent_hash_field(parent, relation, parent_field):
+    field = {}
+    field["name"] = parent_field["name"][:-4] + "hash_"
+    field["type"] = "dbHashTable<_" + relation["child"] + ">"
+    field["components"] = [field["name"]]
+    field["table_name"] = parent_field["name"]
+    field["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    parent["fields"].append(field)
     if "dbHashTable.h" not in parent["h_includes"]:
         parent["h_includes"].append("dbHashTable.h")
     logging.debug(
-        f"Add hash field {inParentHashField['name']} to {relation['parent']}"
+        f"Add hash field {field['name']} to {relation['parent']}"
     )
-    return inParentHashField
+    return field
 
 def make_child_next_field(child, relation):
     inChildNextEntry = {"name": "_next_entry"}
@@ -158,7 +158,7 @@ for relation in schema["relations"]:
     parent = get_class(schema, relation["parent"])
     child = get_class(schema, relation["child"])
 
-    inParentField = make_parent_field(parent, relation)
+    parent_field = make_parent_field(parent, relation)
 
     child_type_name = f"_{relation['child']}"
 
@@ -168,7 +168,7 @@ for relation in schema["relations"]:
     if "dbTable" not in parent["classes"]:
         parent["classes"].append("dbTable")
     if relation.get("hash", False):
-        make_parent_hash_field(parent, relation)
+        make_parent_hash_field(parent, relation, parent_field)
         make_child_next_field(child, relation)
 
 for klass in schema["classes"]:
