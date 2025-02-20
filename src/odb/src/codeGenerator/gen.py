@@ -378,6 +378,20 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
   print("###################Code Generation End###################")
 
 
+def by_base_type(classes):
+    """A custom Jinja sort by the class' type
+
+    Objects based on dbObject come first"""
+    non_default_types = []
+    default_types = []
+    for klass in classes:
+        if 'type' in klass and klass['type'] != 'dbObject':
+            non_default_types.append(klass)
+        else:
+            default_types.append(klass)
+    return default_types + non_default_types
+    
+  
 def main():
   parser = argparse.ArgumentParser(description="Code generator")
   parser.add_argument("--json", action="store", required=True)
@@ -399,6 +413,7 @@ def main():
       schema = json.load(file)
 
   env = Environment(loader=FileSystemLoader(args.templates), trim_blocks=True)
+  env.filters["by_base_type"] = by_base_type
 
   # Creating Directory for generated files
   if os.path.exists("generated"):

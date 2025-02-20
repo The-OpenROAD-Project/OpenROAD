@@ -6,18 +6,8 @@ class {{klass.name}};
 //Generator Code Begin ClassDefinition
 
 {% set classes = schema.classes | sort(attribute='name') %}
-{% set non_default_types = [] %}
-{% set default_types = [] %}
 
-{% for klass in classes %}
-    {% if klass.type is defined and klass.type != 'dbObject' %}
-        {% set _ = non_default_types.append(klass) %}
-    {% else %}
-        {% set _ = default_types.append(klass) %}
-    {% endif %}
-{% endfor %}
-
-{% for klass in default_types + non_default_types %}
+{% for klass in classes|by_base_type %}
 
 {% if klass.description %}
   {% for line in klass.description %}
