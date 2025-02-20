@@ -104,7 +104,6 @@ void FlexGR::batchGenerationMIS(
             break;
           }
         }
-        /*
         if (1) {
           if (!conflict) {
             batches[batchId].push_back(net);
@@ -112,12 +111,12 @@ void FlexGR::batchGenerationMIS(
             break;
           }
         }
-        */
+        /*
         if (!conflict) {
           batches[batchId].push_back(net);
           found = true;
           break;
-        }
+        } */
       }
       if (!found) {
         batches.push_back({net});
@@ -293,150 +292,90 @@ void FlexGR::searchRepair_update(int iter,
   float restoreTime = 0.0;
   float syncTime = 0.0;
 
-
   for (int iter = 0; iter < mazeEndIter; iter++) {
-    std::vector<std::vector<grNet*>> rerouteNets(uworkers.size());
-
-  
-    // This can be done in parallel if necessary
+    std::vector<std::vector<grNet*> > rerouteNets(uworkers.size());
     ThreadException exception1;
-  #pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for schedule(dynamic)
     for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
       try {
-        uworkers[j]->route_addHistCost_update();
-        uworkers[j]->routePrep_update(rerouteNets[j], iter);
+        uworkers[j]->main_mt_prep(rerouteNets[j], iter);
       } catch (...) {
         exception1.capture();
       }
     }
     exception1.rethrow();
 
-    // Divide the nets into multiple batches and run the GPU-accelerated Maze Routing
-    // Different nets has different relaxation strategies
-    // The relaxation strategy is determined by the iteration number and the number of pins
-    // For feedthrough nets, we also need to give them special treatment
-    // Then determine the batch generation is the following manner:
-    // Nets from different workers will naturally have no overlap
-    // Nets from the same workers will be batched based on the relaxed bounding box
-
-    std::vector<std::vector<grNet*>> batches;
-    std::vector<int> validBatchIds;
-    batchGenerationMIS(rerouteNets, batches, validBatchIds, iter, is2DRouting);
-        
-    // Run the CPU-side maze routing
-    // Parallel execution
-    ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
-      try {
-        uworkers[i]->route(rerouteNets[i]); 
-      } catch (...) {
-        exception.capture();
-      }
-    }  
-    exception.rethrow();
-
     // Copy the cost map back to the cmap
     ThreadException exception2;
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int) uworkers.size(); i++) {
       try {
-        uworkers[i]->initGridGraph_back2CMap();
+        uworkers[i]->main_mt_init(rerouteNets[i]);  
       } catch (...) {
         exception2.capture();
       }
     }
     exception2.rethrow();
-    
-    auto& h_costMap = uworkers[0]->getCMap()->getBits();
-    int xDim, yDim, zDim;
-    uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
-    logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
-    logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
-
+  
     if (is2DRouting == true) {
-      std::cout << "This is for 2D routing" << std::endl;  
+      auto& h_costMap = uworkers[0]->getCMap()->getBits();
+      int xDim, yDim, zDim;
+      uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
+      logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
+      logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
+  
+      // Divide the nets into multiple batches and run the GPU-accelerated Maze Routing
+      // Different nets has different relaxation strategies
+      // The relaxation strategy is determined by the iteration number and the number of pins
+      // For feedthrough nets, we also need to give them special treatment
+      // Then determine the batch generation is the following manner:
+      // Nets from different workers will naturally have no overlap
+      // Nets from the same workers will be batched based on the relaxed bounding box
+      std::vector<std::vector<grNet*> > batches;
+      std::vector<int> validBatchIds;
+      batchGenerationMIS(rerouteNets, batches, validBatchIds, iter, is2DRouting);
+     
+      int numValidBatches = validBatchIds.size();
+      int numGrids = xDim * yDim;
+      std::cout << "[INFO] Number of batches: " << numValidBatches << std::endl;
+      std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
+
+      // In the current strategy, we ripup all the nets at the beginning
+      // multi thread
+      // then we route all the nets in the batches
+      // Then we restore all the nets at the end
+    
       // Route the nets in the batches
-      for (auto& batchId : validBatchIds) {
-        
-        auto routeInitStart = std::chrono::high_resolution_clock::now();
-        
-        auto& curBatch = batches[batchId];
-        // This can be done in parallel if necessary
-        ThreadException exception3;
-        for (auto net : curBatch) {
-          try {
-            uworkers[net->getWorkerId()]->mazeNetInit(net);
-            net->updateAbsGridCoords(uworkers[net->getWorkerId()]->getRouteGCellIdxLL());
-          } catch (...) {
-            exception3.capture();
-          }
+      float GPURuntime = GPUAccelerated2DMazeRoute_update(
+        uworkers, batches, validBatchIds, h_parents, h_costMap, xCoords, yCoords, router_cfg_, congThresh, xDim, yDim);
+      logger_->report("[INFO] GPU Maze Routing Runtime: " + std::to_string(GPURuntime) + " ms");
+
+      // For CPU-side net, we do routing
+      // For GPU-side net, we do restore only
+      // Parallel execution
+      ThreadException exception3;
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
+        try {
+          uworkers[i]->main_mt_restore(rerouteNets[i]); 
+        } catch (...) {
+          exception3.capture();
         }
-        exception3.rethrow();
-        
-        ThreadException exception4;
-        // update the cmap based on the grid graph
-        for (int i = 0; i < (int) uworkers.size(); i++) {
-          try {
-            uworkers[i]->initGridGraph_back2CMap();
-          } catch (...) {
-            exception4.capture();
-          }
-        }
-        exception4.rethrow();
-
-        auto routeInitEnd = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> routeInitElapsed = routeInitEnd - routeInitStart;
-        routeInitTime += routeInitElapsed.count();
-
-
-        auto routeStart = std::chrono::high_resolution_clock::now();
-
-        h_costMap = uworkers[0]->getCMap()->getBits();
-        syncTime += GPUAccelerated2DMazeRoute(
-          uworkers,
-          curBatch, h_costMap, 
-          xCoords, yCoords, router_cfg_, 
-          congThresh, xDim, yDim);
-
-        auto routeEnd = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> routeElapsed = routeEnd - routeStart;
-        routeTime += routeElapsed.count();
-
-
-        auto restoreStart = std::chrono::high_resolution_clock::now();
-        // Restore the net in the batch
-        // This can be done in parallel if necessary
-        ThreadException exception5;
-        for (auto net : curBatch) {
-          try {
-            uworkers[net->getWorkerId()]->restoreNet(net);
-          } catch (...) {
-            exception5.capture();
-          }
-        }
-        exception5.rethrow();
-        auto restoreEnd = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> restoreElapsed = restoreEnd - restoreStart;
-        restoreTime += restoreElapsed.count();
       }  
+      exception3.rethrow();
     } else {
-      std::cout << "This is for 3D routing" << std::endl;
-      // Route the nets in the batches
-      for (auto& batchId : validBatchIds) {
-        for (auto net : batches[batchId]) {  
-          uworkers[net->getWorkerId()]->mazeNetInit(net);
-          uworkers[net->getWorkerId()]->routeNet(net);
+      ThreadException exception4;
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
+        try {
+          uworkers[i]->main_mt_restore(rerouteNets[i]); 
+        } catch (...) {
+          exception4.capture();
         }
-      }      
+      }  
+      exception4.rethrow();
     }
-
-    float totalRouteTime = routeInitTime + routeTime + restoreTime;
-    logger_->report("[INFO] Route initialization time: " + std::to_string(routeInitTime) + " ms" + " (" + std::to_string(routeInitTime * 100.0 / totalRouteTime) + "%)");
-    logger_->report("[INFO] Route time: " + std::to_string(routeTime) + " ms" + " (" + std::to_string(routeTime * 100.0 / totalRouteTime) + "%)");
-    logger_->report("[INFO] Sync time: " + std::to_string(syncTime) + " ms" + " (" + std::to_string(syncTime * 100.0 / totalRouteTime) + "%)");
-    logger_->report("[INFO] Restore time: " + std::to_string(restoreTime) + " ms" + " (" + std::to_string(restoreTime * 100.0 / totalRouteTime) + "%)");    
-
+  
     // Update the history cost
     // This can be done in parallel if necessary
     for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT

@@ -49,6 +49,14 @@ namespace drt {
 using odb::Rect;
 
 
+struct Point2D_CUDA {
+  int x;
+  int y;
+
+  Point2D_CUDA(int x, int y) : x(x), y(y) {}
+};
+
+
 class FlexGR
 {
  public:
@@ -276,7 +284,19 @@ class FlexGR
     float congThresh,
     int xDim, int yDim);
 
-  int validBatchThreshold_ = 100;
+  float GPUAccelerated2DMazeRoute_update(
+    std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+    std::vector<std::vector<grNet*> >& netBatches,
+    std::vector<int>& validBatches,
+    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<uint64_t>& h_costMap,
+    std::vector<int>& h_xCoords,
+    std::vector<int>& h_yCoords,
+    RouterConfiguration* router_cfg,
+    float congThreshold,
+    int xDim, int yDim);
+
+  int validBatchThreshold_ = 200;
   std::vector<grNet*> nets2Ripup_;
 };
 
@@ -402,6 +422,32 @@ class FlexGRWorker
 
   bool restoreNet(grNet* net);
   FlexGRGridGraph& getGridGraph() { return gridGraph_; }
+
+  void main_mt_prep(std::vector<grNet*>& rerouteNets, int iter) {
+    route_addHistCost_update();
+    routePrep_update(rerouteNets, iter);
+  }
+
+  void main_mt_init(std::vector<grNet*>& rerouteNets) {
+    auto LLCorner = getRouteGCellIdxLL();
+    for (auto net : rerouteNets) {
+      net->setCPUFlag(false);
+      mazeNetInit(net);
+      net->setCPUFlag(true);
+      net->updateAbsGridCoords(LLCorner);
+    }
+  }
+
+  void main_mt_restore(std::vector<grNet*>& rerouteNets) {
+    for (auto& net : rerouteNets) {
+      net->setCPUFlag(true);
+      if (net->getCPUFlag() == false) {
+        restoreNet(net);
+      } else {
+        routeNet(net);
+      }
+    }
+  }
 
  private:
   frDesign* design_{nullptr};

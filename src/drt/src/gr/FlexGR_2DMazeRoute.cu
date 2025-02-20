@@ -31,7 +31,8 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
- 
+#include <future>
+
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "db/infra/frTime.h"
@@ -90,13 +91,6 @@ namespace cg = cooperative_groups;
 // We treat 0xFFFF as "infinite" cost for 32-bit fields
 __device__ __host__ __constant__ uint32_t INF32 = 0xFFFFFFFF;
 
-
-struct Point2D_CUDA {
-  int x;
-  int y;
-
-  Point2D_CUDA(int x, int y) : x(x), y(y) {}
-};
 
 struct Rect2D_CUDA {
   int xMin;
@@ -1441,6 +1435,519 @@ float batchPathSyncUp(
   return syncupTime.count();
 }
 
+
+
+
+__global__ 
+void initBatchNodeData2D__kernel(
+  NodeData2D* d_nodes,
+  int numNodes)
+{
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx >= numNodes) {
+    return;
+  }
+
+  initNodeData2D(d_nodes[idx]);
+}
+
+
+
+__global__
+void initBatchPin2D__kernel(
+  NodeData2D* d_nodes,
+  int* d_pins,
+  int* d_netPtr,
+  int netIdStart,
+  int numNets)
+{  
+  int netId = blockIdx.x * blockDim.x + threadIdx.x;
+  if (netId >= numNets) {
+    return;
+  }
+
+  netId += netIdStart;
+
+  int pinIdxStart = d_netPtr[netId];
+  int pinIdxEnd = d_netPtr[netId + 1];
+  d_nodes[d_pins[pinIdxStart]].flags.src_flag = true;
+  for (int pinIter = pinIdxStart + 1; pinIter < pinIdxEnd; pinIter++) {
+    d_nodes[d_pins[pinIter]].flags.dst_flag = true;
+  }
+}
+
+
+
+
+// Fused cooperative kernel that processes a single net.
+__device__ 
+void biwaveBellmanFord2D_update__device(
+  cooperative_groups::grid_group& grid,   // grid-level cooperative group		
+  int netId,
+  int netIdx,
+  int batchIdx,
+  Point2D_CUDA* d_parents,
+  int* d_netHPWL,
+  int* d_netPtr,
+  Rect2D_CUDA* d_netBBoxVec,
+  int* d_pins,
+  uint64_t* d_costMap,
+  NodeData2D* d_nodes,
+  int* d_dX,
+  int* d_dY,
+  int* d_doneFlags,
+  int* d_meetIds,
+  int xDim, int yDim,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
+  int BLOCKCOST,
+  int OVERFLOWCOST, 
+  int HISTCOST)
+{
+  // for this net
+  int pinIdxStart = d_netPtr[netId];
+  int pinIdxEnd = d_netPtr[netId + 1];
+  int numPins = pinIdxEnd - pinIdxStart;
+  int maxIters = d_netHPWL[netId];
+  Rect2D_CUDA netBBox = d_netBBoxVec[netId];
+  int LLX = netBBox.xMin;
+  int LLY = netBBox.yMin;
+  int URX = netBBox.xMax;
+  int URY = netBBox.yMax;
+
+  int* d_doneFlag = d_doneFlags + netIdx;
+  int* d_meetId = d_meetIds + netIdx;
+
+  // if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+  //  printf("netId = %d, netIdx = %d, batchIdx = %d, pinIdxStart = %d, pinIdxEnd = %d, numPins = %d, maxIters = %d\n", 
+  //          netId, netIdx, batchIdx, pinIdxStart, pinIdxEnd, numPins, maxIters);
+  //}
+
+
+  // Connect the pin one by one
+  //for (int pinIter = 1; pinIter < 2; pinIter++) {
+  for (int pinIter = 1; pinIter < numPins; pinIter++) {
+    // Initilization
+    if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+      *d_doneFlag = 0;
+      *d_meetId = 0x7FFFFFFF;
+    }
+
+    initNodeData2D__device(
+      d_nodes,
+      d_pins, pinIdxStart, pinIter, 
+      LLX, LLY, URX, URY, 
+      xDim);
+
+    grid.sync(); // Synchronize all threads in the grid
+
+    // Run the Bellman Ford algorithm
+    runBiBellmanFord_2D__device(
+      grid, d_nodes, d_costMap, d_dX, d_dY, 
+      d_doneFlag, LLX, LLY, URX, URY, xDim, maxIters,
+      d_xCoords, d_yCoords, congThreshold,
+      BLOCKCOST, OVERFLOWCOST, HISTCOST);  
+
+    grid.sync();
+
+    // Find the d_meetId
+    findMeetIdAndTraceBackCost2D__device(
+      d_nodes, d_doneFlag, 
+      LLX, LLY, URX, URY, 
+      xDim);
+
+    grid.sync(); // Synchronize all threads in the grid
+
+    findMeetIdAndTraceBackId2D__device(
+      d_nodes, d_doneFlag, d_meetId,
+      LLX, LLY, URX, URY, 
+      xDim);
+
+    grid.sync(); // Synchronize all threads in the grid
+
+    // Traceback
+    if (blockIdx.x * blockDim.x + threadIdx.x == 0) {
+      // printf("d_doneFlag = %d, d_meetId = %d\n",  *d_doneFlag,  *d_meetId);
+      
+      // trace back
+      forwardTraceBack2D__single_thread__device(
+        d_nodes, d_meetId, d_dX, d_dY, 
+        LLX, LLY, URX, URY, xDim);
+
+      // printf("finish forward traceback\n");    
+
+      backwardTraceBack2D__single__thread__device(
+        d_nodes, d_meetId, d_dX, d_dY, 
+        LLX, LLY, URX, URY, xDim);
+
+      // printf("finish backward traceback\n");
+    }
+
+    grid.sync(); // Synchronize all threads in the grid
+  }
+
+  //grid.sync();
+}
+
+
+// Fused cooperative kernel that processes a single net.
+__global__
+void biwaveBellmanFord2D_update__kernel(
+  int netId,
+  int netIdx,
+  int batchIdx,
+  Point2D_CUDA* d_parents,
+  int* d_netHPWL,
+  int* d_netPtr,
+  Rect2D_CUDA* d_netBBoxVec,
+  int* d_pins,
+  uint64_t* d_costMap,
+  NodeData2D* d_nodes,
+  int* d_dX,
+  int* d_dY,
+  int* d_doneFlags,
+  int* d_meetIds,
+  int xDim, int yDim,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  float congThreshold,
+  int BLOCKCOST,
+  int OVERFLOWCOST,
+  int HISTCOST)
+{
+  // Obtain a handle to the entire cooperative grid.
+  cg::grid_group grid = cg::this_grid();
+  biwaveBellmanFord2D_update__device(
+    grid,
+    netId,
+    netIdx,
+    batchIdx,
+    d_parents,
+    d_netHPWL,
+    d_netPtr,
+    d_netBBoxVec,
+    d_pins,
+    d_costMap,
+    d_nodes,
+    d_dX,
+    d_dY,
+    d_doneFlags,
+    d_meetIds,
+    xDim, yDim,
+    d_xCoords,
+    d_yCoords,
+    congThreshold,
+    BLOCKCOST,
+    OVERFLOWCOST,
+    HISTCOST);    
+  grid.sync(); // Synchronize all threads in the grid
+}
+
+
+// Just a wrapper function to call the kernel
+void launchMazeRouteStream_update(
+  int* d_netHPWL,
+  int* d_netPtr,
+  Rect2D_CUDA* d_netBBox,
+  int* d_pins,
+  uint64_t* d_costMap,
+  NodeData2D* d_nodes,
+  int* d_dX,
+  int* d_dY,
+  int* d_doneFlag,
+  int* d_meetId,
+  int xDim, int yDim,
+  const int* d_xCoords,
+  const int* d_yCoords,
+  Point2D_CUDA* d_parents,
+  float congThreshold,
+  int BLOCKCOST,
+  int CONGCOST,
+  int HISTCOST,
+  int netIdx,
+  int netId,
+  int batchIdx,
+  int totalThreads,
+  cudaStream_t stream)
+{
+  void* kernelArgs[] = {
+    &netId,
+    &netIdx,
+    &batchIdx,
+    &d_parents,
+    &d_netHPWL,
+    &d_netPtr,
+    &d_netBBox,
+    &d_pins,
+    &d_costMap,
+    &d_nodes,
+    &d_dX,
+    &d_dY,
+    &d_doneFlag,
+    &d_meetId,
+    &xDim, 
+    &yDim,
+    &d_xCoords,
+    &d_yCoords,
+    &congThreshold,
+    &BLOCKCOST, 
+    &CONGCOST, 
+    &HISTCOST
+  };
+
+  int threadsPerBlock = 1024;
+  int numBlocks = 108;
+
+  cudaError_t err = cudaLaunchCooperativeKernel(
+    (void*)biwaveBellmanFord2D_update__kernel,
+    numBlocks, threadsPerBlock,
+    kernelArgs,
+    0,       // additional dynamic shared memory (if needed)
+    stream); // launch on the given stream
+
+  if (err != cudaSuccess) {
+    printf("Kernel launch error (net %d): %s\n", netId, cudaGetErrorString(err));
+  }
+}
+
+
+float FlexGR::GPUAccelerated2DMazeRoute_update(
+  std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+  std::vector<std::vector<grNet*> >& netBatches,
+  std::vector<int>& validBatches,
+  std::vector<Point2D_CUDA>& h_parents,
+  std::vector<uint64_t>& h_costMap,
+  std::vector<int>& h_xCoords,
+  std::vector<int>& h_yCoords,
+  RouterConfiguration* router_cfg,
+  float congThreshold,
+  int xDim, int yDim)
+{
+  // Start overall timing.
+  auto totalStart = std::chrono::high_resolution_clock::now();
+  int numGrids = xDim * yDim;
+  
+  std::vector<Point2D_CUDA> netVec;
+  std::vector<int> netPtr; 
+  std::vector<int> netHWPL;
+  std::vector<Rect2D_CUDA> netBBoxVec;
+  std::vector<int> pinIdxVec;
+  std::vector<int> batchPtr;
+  
+  netPtr.push_back(0);
+  batchPtr.push_back(0);  
+  int maxBatchSize = 0;
+  int minBatchSize = std::numeric_limits<int>::max();
+  for (auto& batchId : validBatches) {
+    auto& batch = netBatches[batchId];
+    for (auto& net : batch) {
+      for (auto& idx : net->getPinGCellAbsIdxs()) {
+        netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
+        pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
+      }
+      netPtr.push_back(netVec.size());
+      auto netBBox = net->getRouteAbsBBox();
+      netBBoxVec.push_back(
+        Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
+      netHWPL.push_back(net->getHPWL());
+    }
+    batchPtr.push_back(netHWPL.size());
+    maxBatchSize = std::max(maxBatchSize, static_cast<int>(batch.size()));
+    minBatchSize = std::min(minBatchSize, static_cast<int>(batch.size()));
+  }
+
+  int numBatches = validBatches.size();
+  // std::cout << "[INFO] Number of batches: " << numBatches << std::endl;
+  std::cout << "[INFO] Max batch size: " << maxBatchSize << std::endl;
+  std::cout << "[INFO] Min batch size: " << minBatchSize << std::endl;
+  // std::vector<Point2D_CUDA> h_parents(numGrids * numBatches, Point2D_CUDA(-1, -1));
+
+  // Allocate and copy device memory
+  // We need to define the needed utility variables
+  std::vector<int> h_dX = {0, 1, 0, -1};
+  std::vector<int> h_dY = {1, 0, -1, 0};
+  
+  int* d_dX = nullptr;
+  int* d_dY = nullptr;
+  
+
+  int* d_doneFlag = nullptr; // This is allocated for each net seperately (maxBatchSize)
+  int* d_meetId = nullptr; // This is allocated for each net seperately (maxBatchSize)
+  
+  // For the design specific variables (numGrids)
+  uint64_t* d_costMap = nullptr;
+  int* d_xCoords = nullptr;
+  int* d_yCoords = nullptr;
+  NodeData2D* d_nodes = nullptr;
+  Point2D_CUDA* d_parents = nullptr;
+  
+  int* d_pinIdxVec = nullptr;
+  int* d_netHPWL = nullptr;
+  int* d_netPtr = nullptr;
+  Rect2D_CUDA* d_netBBox = nullptr;
+
+  // Allocate the device memory for the d_dX and d_dY
+  cudaMalloc(&d_dX, 4 * sizeof(int));
+  cudaMalloc(&d_dY, 4 * sizeof(int));
+  
+  cudaMalloc(&d_doneFlag, maxBatchSize * sizeof(int));
+  cudaMalloc(&d_meetId, maxBatchSize * sizeof(int));
+  
+  cudaMalloc(&d_costMap, numGrids * sizeof(uint64_t));
+  cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
+  cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
+  cudaMalloc(&d_nodes, numGrids * sizeof(NodeData2D));
+  cudaMalloc(&d_parents, numGrids * numBatches * sizeof(Point2D_CUDA));
+
+  cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
+  cudaMalloc(&d_netHPWL, netHWPL.size() * sizeof(int));
+  cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
+  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+
+
+  cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
+
+  cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_parents, h_parents.data(), numGrids * numBatches * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
+
+  cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netHPWL, netHWPL.data(), netHWPL.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
+  cudaCheckError();
+
+
+
+  std::vector<cudaStream_t> netStreams(maxBatchSize);
+  for (auto& stream : netStreams) {
+    cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
+  }
+  
+
+  // According to the original code
+  unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
+  unsigned OVERFLOWCOST = 128;
+  unsigned HISTCOST = 4;
+
+  for (int batchIdx = 0; batchIdx < numBatches; batchIdx++) {
+    int netBatchStart = batchPtr[batchIdx];
+    int netBatchEnd = batchPtr[batchIdx + 1];
+    int numNets = netBatchEnd - netBatchStart;
+
+    // Initialize the nodes accordingly
+    int numThreads = 1024;
+    int numBatchBlocks = (numGrids + numThreads - 1) / numThreads;
+    initBatchNodeData2D__kernel<<<numBatchBlocks, numThreads>>>(
+      d_nodes, numGrids);
+    cudaCheckError();
+    cudaDeviceSynchronize();
+
+    int numNetBlocks = (numNets + numThreads - 1) / numThreads;
+    initBatchPin2D__kernel<<<numNetBlocks, numThreads>>>(
+      d_nodes,
+      d_pinIdxVec, 
+      d_netPtr,
+      netBatchStart,
+      numNets);
+    cudaCheckError();
+    cudaDeviceSynchronize();
+      
+    std::vector<NodeData2D> h_nodes(numGrids);
+    cudaMemcpy(h_nodes.data(), d_nodes, numGrids * sizeof(NodeData2D), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+
+    /*
+    std::cout << "numGrids = " << numGrids << std::endl;
+    for (int nodeId = 0; nodeId < numGrids; nodeId++) {
+      if (h_nodes[nodeId].flags.src_flag == true) {
+        std::cout << "src_flag : id = " << nodeId << std::endl;
+      }
+
+      if (h_nodes[nodeId].flags.dst_flag == true) {
+        std::cout << "dst_flag : id = " << nodeId << std::endl;
+      }
+    } 
+    */
+
+    // Perform the routing here
+    for (int netIdx = 0; netIdx < numNets; netIdx++) {
+      int netId = netBatchStart + netIdx;
+      auto& netBBox = netBBoxVec[netId];
+      int localGridSize = (netBBox.xMax - netBBox.xMin + 1) * (netBBox.yMax - netBBox.yMin + 1);
+    
+      launchMazeRouteStream_update(
+        d_netHPWL, d_netPtr, d_netBBox, d_pinIdxVec, 
+        d_costMap, d_nodes, 
+        d_dX, d_dY, d_doneFlag, d_meetId,
+        xDim, yDim, 
+        d_xCoords,
+        d_yCoords,
+        d_parents,
+        congThreshold,
+        BLOCKCOST,
+        OVERFLOWCOST,
+        HISTCOST,
+        netIdx, 
+        netId,
+        batchIdx,  
+        (netBBox.xMax - netBBox.xMin + 1) * (netBBox.yMax - netBBox.yMin + 1),
+        netStreams[netIdx]);
+    }
+
+    // Wait for all streams to finish
+    for (int i = 0; i < numNets; i++) {
+      cudaStreamSynchronize(netStreams[i]);
+    }
+
+    //std::cout << "numNets = " << numNets << std::endl;
+  }
+
+  // Sync up the golden parents
+  cudaCheckError();
+
+  cudaMemcpy(h_parents.data(), d_parents, numGrids * numBatches * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
+  cudaCheckError();
+
+  
+  for (int i = 0; i < maxBatchSize; i++) {
+    cudaStreamDestroy(netStreams[i]);
+  }
+
+
+  // Clear the memory
+  cudaFree(d_dX);
+  cudaFree(d_dY);
+  cudaFree(d_doneFlag);
+  cudaFree(d_meetId);
+  cudaFree(d_costMap);
+  cudaFree(d_xCoords);
+  cudaFree(d_yCoords);
+  cudaFree(d_nodes);
+  cudaFree(d_parents);
+  
+  cudaFree(d_pinIdxVec);
+  cudaFree(d_netHPWL);
+  cudaFree(d_netPtr);
+  cudaFree(d_netBBox);
+
+  cudaCheckError();
+
+  auto totalEnd = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> totalTime = totalEnd - totalStart;
+  return totalTime.count();
+}
+
+
+
+
+
+
+
+
 float FlexGR::GPUAccelerated2DMazeRoute(
   std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
   std::vector<grNet*>& nets,
@@ -1451,6 +1958,9 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   float congThreshold,
   int xDim, int yDim)
 {
+  // Start overall timing.
+  auto totalStart = std::chrono::high_resolution_clock::now();
+
   if (VERBOSE > 0) {
     std::cout << "[INFO] GPU accelerated 2D Maze Routing" << std::endl;
     std::cout << "[INFO] Number of nets: " << nets.size() << std::endl;
@@ -1464,11 +1974,7 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   std::vector<int> netHWPL;
   std::vector<Rect2D_CUDA> netBBoxVec;
   std::vector<int> pinIdxVec;
-  std::vector<NodeData2D> nodes;
-  nodes.resize(numGrids);
-  for (auto& node : nodes) {
-    initNodeData2D(node);
-  }
+ 
 
   netPtr.push_back(0);
   for (auto& net : nets) {
@@ -1486,31 +1992,27 @@ float FlexGR::GPUAccelerated2DMazeRoute(
     netHWPL.push_back(net->getHPWL());
   }
 
-  // Perform the initialization
+
+  //===========================================================================
+  NodeData2D* h_nodesPinned = nullptr;
+  cudaHostAlloc(&h_nodesPinned, numGrids * sizeof(NodeData2D), cudaHostAllocDefault);
+  for (int i = 0; i < numGrids; i++) {
+    initNodeData2D(h_nodesPinned[i]);
+  }
+
+  // Mark the source and destination nodes for each net.
   for (int netId = 0; netId < numNets; netId++) {
-    // Mark the first pin of the net as src
-    // and the remaining pins as dst
     int pinIdxStart = netPtr[netId];
-    int pinIdxEnd = netPtr[netId + 1];
-    nodes[pinIdxVec[pinIdxStart]].flags.src_flag = 1;    
+    int pinIdxEnd   = netPtr[netId + 1];
+    h_nodesPinned[pinIdxVec[pinIdxStart]].flags.src_flag = 1;
     for (int idx = pinIdxStart + 1; idx < pinIdxEnd; idx++) {
-      nodes[pinIdxVec[idx]].flags.dst_flag = 1;
+      h_nodesPinned[pinIdxVec[idx]].flags.dst_flag = 1;
     }
   }
 
-  if (VERBOSE > 0) {
-    // Check the src and dist flag
-    for (int i = 0; i < numGrids; i++) {
-      if (nodes[i].flags.src_flag == 1) {
-        std::cout << "src x = " << i % xDim << " y = " << i / xDim << " idx = " << i << std::endl;
-      }
 
-      if (nodes[i].flags.dst_flag == 1) {
-        std::cout << "dst x = " << i % xDim << " y = " << i / xDim << " idx = " << i << std::endl;
-      }
-    }
-  }
 
+  // Allocate and copy device memory
   // We need to define the needed utility variables
   std::vector<int> h_dX = {0, 1, 0, -1};
   std::vector<int> h_dY = {1, 0, -1, 0};
@@ -1519,7 +2021,6 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   int* d_dY = nullptr;
   int* d_doneFlag = nullptr; // This is allocated for each net seperately
   int* d_meetId = nullptr; // This is allocated for each net seperately
-  
   // For the design specific variables
   uint64_t* d_costMap = nullptr;
   int* d_xCoords = nullptr;
@@ -1553,7 +2054,8 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
 
   cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_nodes, nodes.data(), numGrids * sizeof(NodeData2D), cudaMemcpyHostToDevice);
+  // Initialize d_nodes from h_nodesPinned.
+  cudaMemcpy(d_nodes, h_nodesPinned, numGrids * sizeof(NodeData2D), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netHPWL, netHWPL.data(), netHWPL.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
   cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
@@ -1594,6 +2096,23 @@ float FlexGR::GPUAccelerated2DMazeRoute(
       netId, 
       (netBBox.xMax - netBBox.xMin + 1) * (netBBox.yMax - netBBox.yMin + 1),
       netStreams[netId]);
+
+    // Determine the bounding box region for this net.
+    int xMin   = netBBox.xMin;
+    int yMin   = netBBox.yMin;
+    int width  = netBBox.xMax - netBBox.xMin + 1;
+    int height = netBBox.yMax - netBBox.yMin + 1;
+
+    // Source pointer in device memory and destination pointer in pinned host memory.
+    NodeData2D* srcPtr = d_nodes + yMin * xDim + xMin;
+    NodeData2D* dstPtr = h_nodesPinned + yMin * xDim + xMin;
+    size_t pitch = xDim * sizeof(NodeData2D);
+
+    // Enqueue an asynchronous 2D memory copy in the same stream.
+    cudaMemcpy2DAsync(dstPtr, pitch, srcPtr, pitch,
+      width * sizeof(NodeData2D), height,
+      cudaMemcpyDeviceToHost,
+      netStreams[netId]);
   }
 
   if (VERBOSE > 0) {
@@ -1602,6 +2121,56 @@ float FlexGR::GPUAccelerated2DMazeRoute(
 
   cudaCheckError();
 
+
+  //===========================================================================
+  // Launch asynchronous CPU tasks (one per net) to process the restored paths.
+  //     Each task waits on its corresponding stream (i.e. for its GPU kernel and async copy
+  //     to finish) and then processes the net's bounding-box region.
+  std::vector<std::future<void> > cpuFutures;
+  cpuFutures.reserve(numNets);
+  for (int netId = 0; netId < numNets; netId++) {
+    cpuFutures.push_back(std::async(std::launch::async, [&, netId]() {
+      // Wait for the GPU work (kernel + async memcopy) in this stream to complete.
+      cudaStreamSynchronize(netStreams[netId]);
+
+      // Process the CPU-side path sync for this net.
+      auto& net    = nets[netId];
+      auto& uworker= uworkers[net->getWorkerId()];
+      auto& gridGraph = uworker->getGridGraph();
+      auto workerLL  = uworker->getRouteGCellIdxLL();
+      int workerLX = workerLL.x();
+      int workerLY = workerLL.y();
+      auto& netBBox = netBBoxVec[netId];
+      int LLX = netBBox.xMin;
+      int LLY = netBBox.yMin;
+      int URX = netBBox.xMax;
+      int URY = netBBox.yMax;
+      int xDimTemp = URX - LLX + 1;
+      int numNodesLocal = xDimTemp * (URY - LLY + 1);
+      
+      for (int localIdx = 0; localIdx < numNodesLocal; localIdx++) {
+        int localX = localIdx % xDimTemp;
+        int localY = localIdx / xDimTemp;
+        int x = localX + LLX;
+        int y = localY + LLY;
+        int idx = locToIdx_2D(x, y, xDim);
+
+        int xRel = x - workerLX;
+        int yRel = y - workerLY;
+        int parentX = h_nodesPinned[idx].golden_parent_x - workerLX;
+        int parentY = h_nodesPinned[idx].golden_parent_y - workerLY;
+        gridGraph.setGoldenParent2D(xRel, yRel, parentX, parentY);
+      }
+    }));
+  }
+
+  // Wait for all CPU tasks to complete.
+  for (auto& f : cpuFutures) {
+    f.get();
+  }
+
+
+  /*  
   // cudaDeviceSynchronize();
   // Wait for all nets to finish
   for (int i = 0; i < numNets; i++) {
@@ -1610,8 +2179,8 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   
   // We need to trace back the routing path on the CPU side
   cudaMemcpy(nodes.data(), d_nodes, numGrids * sizeof(NodeData2D), cudaMemcpyDeviceToHost);
-    
   cudaCheckError();
+  */
 
   /*
   int LX = netBBoxVec[0].xMin;
@@ -1643,7 +2212,7 @@ float FlexGR::GPUAccelerated2DMazeRoute(
     std::cout << "Finish the GPU routing" << std::endl;
   }
 
-  float syncupTime = batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
+  // float syncupTime = batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
   // Reconstruct the nets similar to the CPU version
   // batchPathSyncUp(uworkers, nets, netBBoxVec, nodes, xDim);
 
@@ -1667,7 +2236,13 @@ float FlexGR::GPUAccelerated2DMazeRoute(
   cudaFree(d_netPtr);
   cudaFree(d_netBBox);
 
-  return syncupTime;
+  cudaFreeHost(h_nodesPinned);
+
+  cudaCheckError();
+
+  auto totalEnd = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> totalTime = totalEnd - totalStart;
+  return totalTime.count();
 }
 
 } // namespace drt

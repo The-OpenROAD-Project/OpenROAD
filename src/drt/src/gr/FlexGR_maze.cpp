@@ -515,8 +515,6 @@ void FlexGRWorker::mazeNetInit_removeNetNodes(grNet* net)
   }
 }
 
-
-
 bool FlexGRWorker::routeNet(grNet* net)
 {
   if (net->isTrivial()) {
@@ -524,6 +522,7 @@ bool FlexGRWorker::routeNet(grNet* net)
     return true;
   }
 
+  gridGraph_.resetStatus();
   std::set<grNode*, frBlockObjectComp> unConnPinGCellNodes;
   std::map<FlexMazeIdx, grNode*> mazeIdx2unConnPinGCellNode;
   std::map<FlexMazeIdx, grNode*> mazeIdx2endPointNode;
