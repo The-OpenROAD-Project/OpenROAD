@@ -359,8 +359,8 @@ class Logger
   std::unique_ptr<std::ofstream> file_redirect_;
 
   // Prometheus server metrics collection
-  std::shared_ptr<Registry> prometheus_registry_ = nullptr;
-  std::unique_ptr<PrometheusMetricsServer> prometheus_metrics_ = nullptr;
+  std::shared_ptr<Registry> prometheus_registry_;
+  std::unique_ptr<PrometheusMetricsServer> prometheus_metrics_;
 
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
@@ -398,9 +398,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int)
-      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
-                  std::true_type());
+  static auto test(int) -> decltype(std::declval<std::ostream>()
+                                        << std::declval<T>(),
+                                    std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;
