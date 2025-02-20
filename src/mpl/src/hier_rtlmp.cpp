@@ -85,27 +85,27 @@ HierRTLMP::HierRTLMP(sta::dbNetwork* network,
 
 void HierRTLMP::setAreaWeight(float weight)
 {
-  area_weight_ = weight;
+  placement_core_weights_.area = weight;
 }
 
 void HierRTLMP::setOutlineWeight(float weight)
 {
-  outline_weight_ = weight;
+  placement_core_weights_.outline = weight;
 }
 
 void HierRTLMP::setWirelengthWeight(float weight)
 {
-  wirelength_weight_ = weight;
+  placement_core_weights_.wirelength = weight;
 }
 
 void HierRTLMP::setGuidanceWeight(float weight)
 {
-  guidance_weight_ = weight;
+  placement_core_weights_.guidance = weight;
 }
 
 void HierRTLMP::setFenceWeight(float weight)
 {
-  fence_weight_ = weight;
+  placement_core_weights_.fence = weight;
 }
 
 void HierRTLMP::setBoundaryWeight(float weight)
@@ -322,7 +322,9 @@ void HierRTLMP::resetSAParameters()
   exchange_swap_prob_ = 0.2;
   flip_prob_ = 0.2;
   resize_prob_ = 0.0;
-  fence_weight_ = 0.0;
+
+  placement_core_weights_.fence = 0.0;
+
   boundary_weight_ = 0.0;
   notch_weight_ = 0.0;
   macro_blockage_weight_ = 0.0;
@@ -479,6 +481,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
   int remaining_runs = num_runs_;
   int run_id = 0;
+
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
     const int run_thread
@@ -495,16 +498,12 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               new_outline,
                                               macros,
-                                              1.0,     // area weight
-                                              1000.0,  // outline weight
-                                              0.0,     // wirelength weight
-                                              0.0,     // guidance weight
-                                              0.0,     // fence weight
-                                              0.0,     // boundary weight
-                                              0.0,     // macro blockage
-                                              0.0,     // notch weight
-                                              0.0,     // no notch size
-                                              0.0,     // no notch size
+                                              shaping_core_weights_,
+                                              0.0,  // boundary weight
+                                              0.0,  // macro blockage
+                                              0.0,  // notch weight
+                                              0.0,  // no notch size
+                                              0.0,  // no notch size
                                               pos_swap_prob_ / action_sum,
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
@@ -559,16 +558,12 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               new_outline,
                                               macros,
-                                              1.0,     // area weight
-                                              1000.0,  // outline weight
-                                              0.0,     // wirelength weight
-                                              0.0,     // guidance weight
-                                              0.0,     // fence weight
-                                              0.0,     // boundary weight
-                                              0.0,     // macro blockage
-                                              0.0,     // notch weight
-                                              0.0,     // no notch size
-                                              0.0,     // no notch size
+                                              shaping_core_weights_,
+                                              0.0,  // boundary weight
+                                              0.0,  // macro blockage
+                                              0.0,  // notch weight
+                                              0.0,  // no notch size
+                                              0.0,  // no notch size
                                               pos_swap_prob_ / action_sum,
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
@@ -734,11 +729,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
           = std::make_unique<SACoreHardMacro>(tree_.get(),
                                               new_outline,
                                               macros,
-                                              1.0,     // area_weight
-                                              1000.0,  // outline weight
-                                              0.0,     // wirelength weight
-                                              0.0,     // guidance
-                                              0.0,     // fence weight
+                                              shaping_core_weights_,
                                               pos_swap_prob_ / action_sum,
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
@@ -793,11 +784,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
           = std::make_unique<SACoreHardMacro>(tree_.get(),
                                               new_outline,
                                               macros,
-                                              1.0,     // area_weight
-                                              1000.0,  // outline weight
-                                              0.0,     // wirelength weight
-                                              0.0,     // guidance
-                                              0.0,     // fence weight
+                                              shaping_core_weights_,
                                               pos_swap_prob_ / action_sum,
                                               neg_swap_prob_ / action_sum,
                                               double_swap_prob_ / action_sum,
@@ -1093,7 +1080,7 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
 void HierRTLMP::adjustMacroBlockageWeight()
 {
   if (tree_->max_level == 1) {
-    float new_macro_blockage_weight = outline_weight_ / 2.0;
+    float new_macro_blockage_weight = placement_core_weights_.outline / 2.0;
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -1110,11 +1097,11 @@ void HierRTLMP::adjustMacroBlockageWeight()
 void HierRTLMP::reportSAWeights()
 {
   logger_->report("\nSimmulated Annealing Weights:\n");
-  logger_->report("Area = {}", area_weight_);
-  logger_->report("Outline = {}", outline_weight_);
-  logger_->report("WL = {}", wirelength_weight_);
-  logger_->report("Guidance = {}", guidance_weight_);
-  logger_->report("Fence = {}", fence_weight_);
+  logger_->report("Area = {}", placement_core_weights_.area);
+  logger_->report("Outline = {}", placement_core_weights_.outline);
+  logger_->report("WL = {}", placement_core_weights_.wirelength);
+  logger_->report("Guidance = {}", placement_core_weights_.guidance);
+  logger_->report("Fence = {}", placement_core_weights_.fence);
   logger_->report("Boundary = {}", boundary_weight_);
   logger_->report("Notch = {}", notch_weight_);
   logger_->report("Macro Blockage = {}\n", macro_blockage_weight_);
@@ -1439,11 +1426,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
                                               shaped_macros,
-                                              area_weight_,
-                                              outline_weight_,
-                                              wirelength_weight_,
-                                              guidance_weight_,
-                                              fence_weight_,
+                                              placement_core_weights_,
                                               boundary_weight_,
                                               macro_blockage_weight_,
                                               notch_weight_,
@@ -1887,11 +1870,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
                                               shaped_macros,
-                                              area_weight_,
-                                              outline_weight_,
-                                              wirelength_weight_,
-                                              guidance_weight_,
-                                              fence_weight_,
+                                              placement_core_weights_,
                                               boundary_weight_,
                                               macro_blockage_weight_,
                                               notch_weight_,
@@ -2402,26 +2381,26 @@ void HierRTLMP::placeMacros(Cluster* cluster)
         graphics_->setOutline(micronsToDbu(outline));
       }
 
-      std::unique_ptr<SACoreHardMacro> sa = std::make_unique<SACoreHardMacro>(
-          tree_.get(),
-          outline,
-          sa_macros,
-          area_weight_,
-          outline_weight_ * (run_id + 1) * 10,
-          wirelength_weight_ / (run_id + 1),
-          guidance_weight_,
-          fence_weight_,
-          pos_swap_prob,
-          neg_swap_prob,
-          double_swap_prob,
-          exchange_swap_prob,
-          flip_prob,
-          init_prob_,
-          max_num_step_,
-          num_perturb_per_step,
-          random_seed_ + run_id,
-          graphics_.get(),
-          logger_);
+      SACoreWeights new_weights = placement_core_weights_;
+      new_weights.outline *= (run_id + 1) * 10;
+      new_weights.wirelength /= (run_id + 1);
+
+      std::unique_ptr<SACoreHardMacro> sa
+          = std::make_unique<SACoreHardMacro>(tree_.get(),
+                                              outline,
+                                              sa_macros,
+                                              new_weights,
+                                              pos_swap_prob,
+                                              neg_swap_prob,
+                                              double_swap_prob,
+                                              exchange_swap_prob,
+                                              flip_prob,
+                                              init_prob_,
+                                              max_num_step_,
+                                              num_perturb_per_step,
+                                              random_seed_ + run_id,
+                                              graphics_.get(),
+                                              logger_);
       sa->setNumberOfMacrosToPlace(macros_to_place);
       sa->setNets(nets);
       sa->setFences(fences);
@@ -2448,15 +2427,9 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     }
 
     for (auto& sa : sa_batch) {
-      SACoreWeights weights;
-      weights.area = area_weight_;
-      weights.outline = outline_weight_;
-      weights.wirelength = wirelength_weight_;
-      weights.guidance = guidance_weight_;
-      weights.fence = fence_weight_;
-
       // Reset weights so we can compare the final costs.
-      sa->setWeights(weights);
+      sa->setWeights(placement_core_weights_);
+
       if (sa->isValid(outline) && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa.get();

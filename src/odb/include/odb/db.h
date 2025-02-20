@@ -1158,12 +1158,6 @@ class dbBlock : public dbObject
   ///
   dbNet* findNet(const char* name);
 
-  ///
-  /// Find a set of nets. Each name can be real name, or Nxxx, or xxx,
-  /// where xxx is the net oid.
-  ///
-  bool findSomeNet(const char* names, std::vector<dbNet*>& nets);
-
   //
   // Utility to write db file
   //
@@ -8161,6 +8155,7 @@ class dbPowerSwitch : public dbObject
     std::string input_supply_port;
     std::string boolean_expression;
   };
+
   const char* getName() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
@@ -8255,6 +8250,7 @@ class dbScanInst : public dbObject
     std::variant<dbBTerm*, dbITerm*> scan_in;
     std::variant<dbBTerm*, dbITerm*> scan_out;
   };
+
   enum class ClockEdge
   {
     Rising,
@@ -8997,6 +8993,7 @@ class dbTechLayerCutEnclosureRule : public dbObject
     ENDSIDE,
     HORZ_AND_VERT
   };
+
   // User Code Begin dbTechLayerCutEnclosureRuleEnums
   /*
   ENC_TYPE describes the enclosure overhang values as following (from the
@@ -9473,6 +9470,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
     MAX,
     MIN
   };
+
   // User Code Begin dbTechLayerCutSpacingTableDefRuleEnums
   /*
   LOOKUP_STRATEGY:
