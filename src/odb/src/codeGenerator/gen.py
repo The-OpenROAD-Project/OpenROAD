@@ -89,13 +89,13 @@ def make_child_next_field(child, relation):
     )
 
 
-def add_field_attributes(field, klass, struct, schema):
+def add_field_attributes(field, klass, flags_struct, schema):
   flag_num_bits = 0
   if field["type"] == "bit":
       field["type"] = "bool"
       field["bits"] = 1
   if "bits" in field:
-      struct["fields"].append(field)
+      flags_struct["fields"].append(field)
       flag_num_bits += int(field["bits"])
   field["bitFields"] = is_bit_fields(field, klass["structs"])
   field["isStruct"] = get_struct(field["type"], klass["structs"]) is not None
@@ -200,7 +200,7 @@ def add_field_attributes(field, klass, struct, schema):
   return flag_num_bits
       
 
-def add_bitfield_flags(klass, flag_num_bits, struct):
+def add_bitfield_flags(klass, flag_num_bits, flags_struct):
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
   
     klass["hasBitFields"] = False
@@ -216,18 +216,18 @@ def add_bitfield_flags(klass, flag_num_bits, struct):
             "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
         }
         total_num_bits += spare_bits_field["bits"]
-        struct["fields"].append(spare_bits_field)
+        flags_struct["fields"].append(spare_bits_field)
 
-    if len(struct["fields"]) > 0:
-        struct["in_class"] = True
-        struct["in_class_name"] = "flags_"
-        klass["structs"].insert(0, struct)
+    if len(flags_struct["fields"]) > 0:
+        flags_struct["in_class"] = True
+        flags_struct["in_class_name"] = "flags_"
+        klass["structs"].insert(0, flags_struct)
         klass["fields"].insert(
             0,
             {
                 "name": "flags_",
-                "type": struct["name"],
-                "components": components(klass["structs"], "flags_", struct["name"]),
+                "type": flags_struct["name"],
+                "components": components(klass["structs"], "flags_", flags_struct["name"]),
                 "bitFields": True,
                 "isStruct": True,
                 "numBits": total_num_bits,
@@ -289,13 +289,13 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
   to_be_merged = []
   for klass in schema["classes"]:
       # Adding functional name to fields and extracting field components
-      struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
+      flags_struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
       klass["hasTables"] = False
       flag_num_bits = 0
       for field in klass["fields"]:
-          flag_num_bits += add_field_attributes(field, klass, struct, schema)
+          flag_num_bits += add_field_attributes(field, klass, flags_struct, schema)
           
-      add_bitfield_flags(klass, flag_num_bits, struct)
+      add_bitfield_flags(klass, flag_num_bits, flags_struct)
   
       # Add required header files if they are not already expressed
       for struct in klass["structs"]:
