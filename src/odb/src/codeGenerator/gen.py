@@ -168,7 +168,7 @@ for relation in schema["relations"]:
     if "dbTable" not in parent["classes"]:
         parent["classes"].append("dbTable")
     if relation.get("hash", False):
-        inParentHashField = make_parent_hash_field(parent, relation)
+        make_parent_hash_field(parent, relation)
         make_child_next_field(child, relation)
 
 for klass in schema["classes"]:
