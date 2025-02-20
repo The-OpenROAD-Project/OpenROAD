@@ -125,7 +125,6 @@ if os.path.exists("generated"):
 os.mkdir("generated")
 
 def generate():
-  toBeMerged = []
   
   print("###################Code Generation Begin###################")
   add_once_to_dict(["classes", "iterators", "relations"], schema)
@@ -171,6 +170,7 @@ def generate():
           make_parent_hash_field(parent, relation, parent_field)
           make_child_next_field(child, relation)
   
+  to_be_merged = []
   for klass in schema["classes"]:
       # Adding functional name to fields and extracting field components
       struct = {"name": f"{klass['name']}Flags", "fields": [], "flags": ["no-serializer"]}
@@ -334,7 +334,7 @@ def generate():
           #     if field['isHashTable']:
           #         print(field)
           out_file = f"{klass['name']}.{template_file.split('.')[1]}"
-          toBeMerged.append(out_file)
+          to_be_merged.append(out_file)
           out_file = os.path.join("generated", out_file)
           with open(out_file, "w", encoding="ascii") as file:
               file.write(text)
@@ -350,7 +350,7 @@ def generate():
       template = env.get_template(template_file)
       text = template.render(schema=schema)
       out_file = os.path.join("generated", template_file)
-      toBeMerged.append(template_file)
+      to_be_merged.append(template_file)
       with open(out_file, "w", encoding="ascii") as file:
           file.write(text)
   
@@ -361,14 +361,14 @@ def generate():
           template = env.get_template(template_file)
           text = template.render(itr=itr, schema=schema)
           out_file = f"{itr['name']}.{template_file.split('.')[1]}"
-          toBeMerged.append(out_file)
+          to_be_merged.append(out_file)
           out_file = os.path.join("generated", out_file)
           with open(out_file, "w", encoding="ascii") as file:
               file.write(text)
   
   
   # Merging with existing files
-  for item in toBeMerged:
+  for item in to_be_merged:
       if item in includes:
           dr = includeDir
       else:
