@@ -994,7 +994,8 @@ bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
           return block.getXMax() < target.getXMin();
         });
 
-    if (it != blockages_[r].end() && (it->isFixedInstance() || it->isPlacement())
+    if (it != blockages_[r].end()
+        && (it->isFixedInstance() || it->isPlacement())
         && position >= it->getXMin() && position <= it->getXMax()) {
       return true;
     }
