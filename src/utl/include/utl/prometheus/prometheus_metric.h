@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "client_metric.h"
 

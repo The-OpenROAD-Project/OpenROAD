@@ -23,7 +23,9 @@
 #pragma once
 
 #include <chrono>
+#include <stdexcept>
 
+#include "client_metric.h"
 #include "family.h"
 #include "prometheus_metric.h"
 
@@ -52,10 +54,10 @@ class Benchmark : public PrometheusMetric
   void start()
   {
 #ifndef NDEBUG
-    if (already_started)
+    if (already_started) {
       throw std::runtime_error("try to start already started counter");
-    else
-      already_started = true;
+    }
+    already_started = true;
 #endif
 
     start_ = std::chrono::high_resolution_clock::now();
@@ -64,8 +66,9 @@ class Benchmark : public PrometheusMetric
   void stop()
   {
 #ifndef NDEBUG
-    if (already_started == false)
+    if (already_started == false) {
       throw std::runtime_error("try to stop already stoped counter");
+    }
 #endif
 
     std::chrono::time_point<std::chrono::high_resolution_clock> stop;
@@ -83,7 +86,7 @@ class Benchmark : public PrometheusMetric
         .count();
   }
 
-  virtual ClientMetric Collect() const
+  ClientMetric Collect() const override
   {
     ClientMetric metric;
     metric.counter.value = Get();

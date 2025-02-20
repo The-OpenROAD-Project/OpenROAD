@@ -100,8 +100,9 @@ class Family : public Collectable
   static Hash hash_labels(const Labels& labels)
   {
     size_t seed = 0;
-    for (const Label& label : labels)
+    for (const Label& label : labels) {
       detail::hash_combine(&seed, label.first, label.second);
+    }
 
     return seed;
   }
@@ -115,12 +116,15 @@ class Family : public Collectable
 
   bool nameStartsValid(const std::string& cur_name)
   {
-    if (cur_name.empty())
+    if (cur_name.empty()) {
       return false;  // must not be empty
-    if (isLocaleIndependentDigit(cur_name.front()))
+    }
+    if (isLocaleIndependentDigit(cur_name.front())) {
       return false;  // must not start with a digit
-    if (cur_name.compare(0, 2, "__") == 0)
+    }
+    if (cur_name.compare(0, 2, "__") == 0) {
       return false;  // must not start with "__"
+    }
     return true;
   }
 
@@ -134,13 +138,15 @@ class Family : public Collectable
   /// \return true is valid, false otherwise
   bool CheckMetricName(const std::string& cur_name)
   {
-    if (!nameStartsValid(cur_name))
+    if (!nameStartsValid(cur_name)) {
       return false;
+    }
 
-    for (const char& c : cur_name)
-      if (!isLocaleIndependentAlphaNumeric(c) && c != '_' && c != ':')
+    for (const char& c : cur_name) {
+      if (!isLocaleIndependentAlphaNumeric(c) && c != '_' && c != ':') {
         return false;
-
+      }
+    }
     return true;
   }
 
@@ -154,13 +160,15 @@ class Family : public Collectable
   /// \return true is valid, false otherwise
   bool CheckLabelName(const std::string& cur_name)
   {
-    if (!nameStartsValid(cur_name))
+    if (!nameStartsValid(cur_name)) {
       return false;
+    }
 
-    for (const char& c : cur_name)
-      if (!isLocaleIndependentAlphaNumeric(c) && c != '_')
+    for (const char& c : cur_name) {
+      if (!isLocaleIndependentAlphaNumeric(c) && c != '_') {
         return false;
-
+      }
+    }
     return true;
   }
 
@@ -198,13 +206,15 @@ class Family : public Collectable
          const Labels& constant_labels_)
       : type(type_), name(name_), help(help_), constant_labels(constant_labels_)
   {
-    if (!CheckMetricName(name_))
+    if (!CheckMetricName(name_)) {
       throw std::invalid_argument("Invalid metric name");
+    }
 
     for (const Label& label_pair : constant_labels) {
       const std::string& label_name = label_pair.first;
-      if (!CheckLabelName(label_name))
+      if (!CheckLabelName(label_name)) {
         throw std::invalid_argument("Invalid label name");
+      }
     }
   }
 
@@ -216,8 +226,9 @@ class Family : public Collectable
   {
     std::lock_guard<std::mutex> lock{mutex};
 
-    if (labels_reverse_lookup.count(metric) == 0)
+    if (labels_reverse_lookup.count(metric) == 0) {
       return;
+    }
 
     const Hash hash = labels_reverse_lookup.at(metric);
     metrics.erase(hash);
@@ -254,8 +265,9 @@ class Family : public Collectable
   {
     std::lock_guard<std::mutex> lock{mutex};
 
-    if (metrics.empty())
+    if (metrics.empty()) {
       return {};
+    }
 
     MetricFamily family = MetricFamily{};
     family.type = type;
@@ -265,14 +277,15 @@ class Family : public Collectable
 
     for (const std::pair<const Hash, MetricPtr>& metric_pair : metrics) {
       ClientMetric collected = metric_pair.second->Collect();
-      for (const Label& constant_label : constant_labels)
-        collected.label.emplace_back(
-            ClientMetric::Label(constant_label.first, constant_label.second));
+      for (const Label& constant_label : constant_labels) {
+        collected.label.emplace_back(constant_label.first,
+                                     constant_label.second);
+      }
 
       const Labels& metric_labels = labels.at(metric_pair.first);
-      for (const Label& metric_label : metric_labels)
-        collected.label.emplace_back(
-            ClientMetric::Label(metric_label.first, metric_label.second));
+      for (const Label& metric_label : metric_labels) {
+        collected.label.emplace_back(metric_label.first, metric_label.second);
+      }
 
       family.metric.push_back(std::move(collected));
     }
@@ -333,11 +346,13 @@ class CustomFamily : public Family
     // check labels before create the new one
     for (const Label& label_pair : new_labels) {
       const std::string& label_name = label_pair.first;
-      if (!CheckLabelName(label_name))
+      if (!CheckLabelName(label_name)) {
         throw std::invalid_argument("Invalid label name");
-      if (constant_labels.count(label_name))
+      }
+      if (constant_labels.count(label_name)) {
         throw std::invalid_argument(
             "Label name already present in constant labels");
+      }
     }
 
     // create new one

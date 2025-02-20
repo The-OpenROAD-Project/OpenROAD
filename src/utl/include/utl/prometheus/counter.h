@@ -72,16 +72,17 @@ class Counter : public PrometheusMetric
   void Increment(const Value& val)
   {  ///< \brief Increment the counter by a given amount. The counter will not
      ///< change if the given amount is negative.
-    if (val > 0)
+    if (val > 0) {
       value += val;
+    }
   }
 
-  const Value Get() const
+  Value Get() const
   {  ///< \brief Get the current value of the counter.
     return value;
   }
 
-  virtual ClientMetric Collect() const
+  ClientMetric Collect() const override
   {  ///< /// \brief Get the current value of the counter. Collect is called by
      ///< the Registry when collecting metrics.
     ClientMetric metric;

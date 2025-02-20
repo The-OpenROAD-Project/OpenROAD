@@ -41,7 +41,6 @@ class TimeWindowQuantiles
                       const int age_buckets)
       : quantiles_(quantiles),
         ckms_quantiles_(age_buckets, CKMSQuantiles(quantiles_)),
-        current_bucket_(0),
         last_rotation_(Clock::now()),
         rotation_interval_(max_age / age_buckets)
   {
@@ -80,7 +79,7 @@ class TimeWindowQuantiles
 
   const std::vector<CKMSQuantiles::Quantile>& quantiles_;
   mutable std::vector<CKMSQuantiles> ckms_quantiles_;
-  mutable std::size_t current_bucket_;
+  mutable std::size_t current_bucket_{0};
 
   mutable Clock::time_point last_rotation_;
   const Clock::duration rotation_interval_;

@@ -73,8 +73,7 @@ class Histogram : public PrometheusMetric
   Histogram(const BucketBoundaries& buckets)
       : PrometheusMetric(static_type),
         bucket_boundaries_{buckets},
-        bucket_counts_{buckets.size() + 1},
-        sum_{}
+        bucket_counts_{buckets.size() + 1}
   {
     assert(std::is_sorted(std::begin(bucket_boundaries_),
                           std::end(bucket_boundaries_)));
@@ -123,7 +122,7 @@ class Histogram : public PrometheusMetric
   /// \brief Get the current value of the counter.
   ///
   /// Collect is called by the Registry when collecting metrics.
-  virtual ClientMetric Collect() const
+  ClientMetric Collect() const override
   {
     auto metric = ClientMetric{};
 
@@ -136,7 +135,7 @@ class Histogram : public PrometheusMetric
       bucket.upper_bound = i == bucket_boundaries_.size()
                                ? std::numeric_limits<double>::infinity()
                                : static_cast<double>(bucket_boundaries_[i]);
-      metric.histogram.bucket.push_back(std::move(bucket));
+      metric.histogram.bucket.push_back(bucket);
     }
     metric.histogram.sample_count = cumulative_count;
     metric.histogram.sample_sum = static_cast<double>(sum_.Get());
@@ -147,7 +146,7 @@ class Histogram : public PrometheusMetric
  private:
   const BucketBoundaries bucket_boundaries_;
   std::vector<Counter<Value_>> bucket_counts_;
-  Gauge<Value_> sum_;
+  Gauge<Value_> sum_{};
 };
 
 /// \brief Return a builder to configure and register a Histogram metric.

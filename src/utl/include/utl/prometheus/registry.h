@@ -89,7 +89,7 @@ class Registry : public Collectable
   /// function.
   ///
   /// \return Zero or more metrics and their samples.
-  virtual MetricFamilies Collect() const
+  MetricFamilies Collect() const override
   {
     std::lock_guard<std::mutex> lock{mutex};
 
@@ -116,31 +116,34 @@ class Registry : public Collectable
     for (const FamilyPtr& family_ptr : families) {
       if (family_ptr->GetName() == name) {
         if (family_ptr->type
-            != CustomFamily::static_type)  // found family with this name and
-                                           // with different type
+            != CustomFamily::static_type) {  // found family with this name and
+                                             // with different type
           throw std::invalid_argument(
               "Family name already exists with different type");
+        }
 
-        else {  // found family with this name and the same type
-          switch (insert_behavior) {
-            case InsertBehavior::Throw:
-              throw std::invalid_argument("Family name already exists");
-            case InsertBehavior::Merge:
-              if (family_ptr->GetConstantLabels() == labels)
-                return dynamic_cast<CustomFamily&>(*family_ptr);
-              else  // this strange rule was in previos version prometheus cpp
-                found_one_but_not_merge = true;
-            case InsertBehavior::NonStandardAppend:
-              continue;
-          }
+        // found family with this name and the same type
+        switch (insert_behavior) {
+          case InsertBehavior::Throw:
+            throw std::invalid_argument("Family name already exists");
+          case InsertBehavior::Merge:
+            if (family_ptr->GetConstantLabels() == labels) {
+              return dynamic_cast<CustomFamily&>(*family_ptr);
+            } else {  // this strange rule was in previous version prometheus
+                      // cpp
+              found_one_but_not_merge = true;
+            }
+          case InsertBehavior::NonStandardAppend:
+            continue;
         }
       }
     }
 
-    if (found_one_but_not_merge)  // this strange rule was in previos version
-                                  // prometheus cpp
+    if (found_one_but_not_merge) {  // this strange rule was in previous version
+                                    // prometheus cpp
       throw std::invalid_argument(
           "Family name already exists with different labels");
+    }
 
     std::unique_ptr<CustomFamily> new_family_ptr(
         new CustomFamily(name, help, labels));

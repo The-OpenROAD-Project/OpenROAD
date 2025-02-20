@@ -72,8 +72,8 @@ class Summary : PrometheusMetric
 
   const Quantiles quantiles_;
   mutable std::mutex mutex_;
-  std::uint64_t count_;
-  double sum_;
+  std::uint64_t count_{0};
+  double sum_{0};
   detail::TimeWindowQuantiles quantile_values_;
 
  public:
@@ -109,8 +109,6 @@ class Summary : PrometheusMetric
           int age_buckets = 5)
       : PrometheusMetric(static_type),
         quantiles_{quantiles},
-        count_{0},
-        sum_{0},
         quantile_values_(quantiles_, max_age, age_buckets)
   {
   }
@@ -128,7 +126,7 @@ class Summary : PrometheusMetric
   /// \brief Get the current value of the summary.
   ///
   /// Collect is called by the Registry when collecting metrics.
-  virtual ClientMetric Collect() const
+  ClientMetric Collect() const override
   {
     auto metric = ClientMetric{};
 
@@ -139,7 +137,7 @@ class Summary : PrometheusMetric
       auto metricQuantile = ClientMetric::Quantile{};
       metricQuantile.quantile = quantile.quantile;
       metricQuantile.value = quantile_values_.get(quantile.quantile);
-      metric.summary.quantile.push_back(std::move(metricQuantile));
+      metric.summary.quantile.push_back(metricQuantile);
     }
     metric.summary.sample_count = count_;
     metric.summary.sample_sum = sum_;

@@ -22,9 +22,8 @@
 
 #pragma once
 
-#include <math.h>
-
 #include <array>
+#include <cmath>
 #include <iosfwd>
 #include <ostream>
 #include <vector>
@@ -42,12 +41,11 @@ class TextSerializer
   // Write a double as a string, with proper formatting for infinity and NaN
   static void WriteValue(std::ostream& out, double value)
   {
-    if (std::isnan(value))
+    if (std::isnan(value)) {
       out << "Nan";
-    else if (std::isinf(value))
+    } else if (std::isinf(value)) {
       out << (value < 0 ? "-Inf" : "+Inf");
-
-    else {
+    } else {
       std::array<char, 128> buffer;
 
 #if __cpp_lib_to_chars >= 201611L

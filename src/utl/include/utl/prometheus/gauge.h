@@ -87,12 +87,12 @@ class Gauge : public PrometheusMetric
   {
     value = val;
   }  ///< \brief Set the gauge to the given value.
-  const Value Get() const
+  Value Get() const
   {
     return value;
   }  ///< \brief Get the current value of the gauge.
 
-  virtual ClientMetric Collect() const
+  ClientMetric Collect() const override
   {  ///< \brief Get the current value of the gauge. Collect is called by the
      ///< Registry when collecting metrics.
     ClientMetric metric;

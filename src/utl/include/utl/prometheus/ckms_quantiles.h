@@ -68,7 +68,7 @@ class CKMSQuantiles
 
  public:
   explicit CKMSQuantiles(const std::vector<Quantile>& quantiles)
-      : quantiles_(quantiles), count_(0), buffer_{}, buffer_count_(0)
+      : quantiles_(quantiles)
   {
   }
 
@@ -213,10 +213,10 @@ class CKMSQuantiles
  private:
   const std::reference_wrapper<const std::vector<Quantile>> quantiles_;
 
-  std::size_t count_;
+  std::size_t count_{0};
   std::vector<Item> sample_;
-  std::array<double, 500> buffer_;
-  std::size_t buffer_count_;
+  std::array<double, 500> buffer_{};
+  std::size_t buffer_count_{0};
 };
 
 }  // namespace detail

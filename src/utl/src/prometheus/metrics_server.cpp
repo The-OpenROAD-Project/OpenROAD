@@ -22,7 +22,6 @@ namespace utl {
 
 PrometheusMetricsServer::~PrometheusMetricsServer()
 {
-  using tcp = boost::asio::ip::tcp;
   shutdown_ = true;
 
   // Make a dummy connection to unblock the accept().
