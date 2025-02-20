@@ -15,7 +15,7 @@ class {{klass.name}};
     // {{ line }}
   {% endfor %}
 {% endif %}
-class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
+class {{klass.name}} : public {{klass.type}}
 {
  public:
   {{ macros.make_structs(klass, is_public=True) }}
@@ -24,7 +24,13 @@ class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
   // User Code End {{klass.name}}Enums
   {% for field in klass.fields %}
     {% if 'no-set' not in field.flags %}
-      void {{field.setterFunctionName}} ({% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} );
+      void {{field.setterFunctionName}}(
+      {% if field.isSetByRef %}
+          const {{field.setterArgumentType}}&
+      {% else %}
+          {{field.setterArgumentType}}
+      {% endif %}
+      {{field.argument}} );
   
     {% endif %}
     {% if 'no-get' not in field.flags %}
@@ -41,8 +47,6 @@ class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
   
   {% endfor %}
 
-
-
   {% for _struct in klass.structs %}
     {% if  _struct.in_class %}
       {% for field in _struct.fields %}
@@ -55,8 +59,7 @@ class {{klass.name}} : public {{klass.type if klass.type else "dbObject"}}
       
         {% endif %}
         {% if field.dbSetGetter %}
-          dbSet<{{field.type}}> get{{field.functional_name}}() const;
-    
+          dbSet<{{field.type}}> get{{field.functional_name}}() const;    
         {% endif %}
       {% endfor %}
     {% endif %}

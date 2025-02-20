@@ -289,6 +289,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
           ],
           klass,
       )
+      klass.setdefault('type', 'dbObject')
       schema["classes"][i] = klass
 
   generate_relations(schema)
