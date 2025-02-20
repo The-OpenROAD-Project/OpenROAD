@@ -68,28 +68,6 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   return true;
 }
 
-void _dbChip::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbChip& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_top);
-  DIFF_TABLE_NO_DEEP(_block_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbChip::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_TABLE_NO_DEEP(_block_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbChip - Methods

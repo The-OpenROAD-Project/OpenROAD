@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbModInst.h"
@@ -65,27 +64,6 @@ bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
 bool _dbLogicPort::operator<(const _dbLogicPort& rhs) const
 {
   return true;
-}
-
-void _dbLogicPort::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbLogicPort& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(direction);
-  DIFF_END
-}
-
-void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(direction);
-
-  DIFF_END
 }
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)

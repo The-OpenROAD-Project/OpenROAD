@@ -36,7 +36,6 @@
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.hpp"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
@@ -77,35 +76,6 @@ bool _dbScanChain::operator==(const _dbScanChain& rhs) const
 bool _dbScanChain::operator<(const _dbScanChain& rhs) const
 {
   return true;
-}
-
-void _dbScanChain::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbScanChain& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(name_);
-  DIFF_FIELD(scan_in_);
-  DIFF_FIELD(scan_out_);
-  DIFF_FIELD(scan_enable_);
-  DIFF_FIELD(test_mode_);
-  DIFF_FIELD(test_mode_name_);
-  DIFF_TABLE(scan_partitions_);
-  DIFF_END
-}
-
-void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(name_);
-  DIFF_OUT_FIELD(scan_in_);
-  DIFF_OUT_FIELD(scan_out_);
-  DIFF_OUT_FIELD(scan_enable_);
-  DIFF_OUT_FIELD(test_mode_);
-  DIFF_OUT_FIELD(test_mode_name_);
-  DIFF_OUT_TABLE(scan_partitions_);
-
-  DIFF_END
 }
 
 _dbScanChain::_dbScanChain(_dbDatabase* db)

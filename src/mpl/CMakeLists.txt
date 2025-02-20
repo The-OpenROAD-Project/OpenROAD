@@ -44,7 +44,6 @@ add_library(mpl_lib
   src/SimulatedAnnealingCore.cpp
   src/SACoreHardMacro.cpp
   src/SACoreSoftMacro.cpp
-  src/bus_synthesis.cpp
   src/clusterEngine.cpp
 )
 
