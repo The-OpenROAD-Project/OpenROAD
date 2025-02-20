@@ -36,7 +36,6 @@
 #include "dbBlock.h"
 #include "dbBusPort.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
@@ -80,35 +79,6 @@ bool _dbBusPort::operator==(const _dbBusPort& rhs) const
 bool _dbBusPort::operator<(const _dbBusPort& rhs) const
 {
   return true;
-}
-
-void _dbBusPort::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbBusPort& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags);
-  DIFF_FIELD(_from);
-  DIFF_FIELD(_to);
-  DIFF_FIELD(_port);
-  DIFF_FIELD(_members);
-  DIFF_FIELD(_last);
-  DIFF_FIELD(_parent);
-  DIFF_END
-}
-
-void _dbBusPort::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags);
-  DIFF_OUT_FIELD(_from);
-  DIFF_OUT_FIELD(_to);
-  DIFF_OUT_FIELD(_port);
-  DIFF_OUT_FIELD(_members);
-  DIFF_OUT_FIELD(_last);
-  DIFF_OUT_FIELD(_parent);
-
-  DIFF_END
 }
 
 _dbBusPort::_dbBusPort(_dbDatabase* db)

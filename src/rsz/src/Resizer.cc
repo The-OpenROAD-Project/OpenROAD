@@ -2518,6 +2518,80 @@ PinSet* Resizer::findFloatingPins()
   return floating_pins;
 }
 
+NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
+{
+  NetSeq* overdriven_nets = new NetSeq;
+  std::unique_ptr<NetIterator> net_iter(
+      network_->netIterator(network_->topInstance()));
+  while (net_iter->hasNext()) {
+    Net* net = net_iter->next();
+    PinSeq loads;
+    PinSeq drvrs;
+    PinSet visited_drvrs(db_network_);
+    FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
+    network_->visitConnectedPins(net, visitor);
+    if (drvrs.size() > 1) {
+      bool all_tristate = true;
+      for (const Pin* drvr : drvrs) {
+        if (!isTristateDriver(drvr)) {
+          all_tristate = false;
+        }
+      }
+
+      if (all_tristate) {
+        continue;
+      }
+
+      if (!include_parallel_driven) {
+        bool allowed = true;
+        bool has_buffers = false;
+        bool has_inverters = false;
+        std::set<sta::Net*> input_nets;
+
+        for (const Pin* drvr : drvrs) {
+          const Instance* inst = network_->instance(drvr);
+          const LibertyCell* cell = network_->libertyCell(inst);
+          if (cell == nullptr) {
+            allowed = false;
+            break;
+          }
+          if (cell->isBuffer()) {
+            has_buffers = true;
+          }
+          if (cell->isInverter()) {
+            has_inverters = true;
+          }
+
+          std::unique_ptr<InstancePinIterator> inst_pin_iter(
+              network_->pinIterator(inst));
+          while (inst_pin_iter->hasNext()) {
+            Pin* inst_pin = inst_pin_iter->next();
+            sta::PortDirection* dir = network_->direction(inst_pin);
+            if (dir->isAnyInput()) {
+              input_nets.insert(network_->net(inst_pin));
+            }
+          }
+        }
+
+        if (has_inverters && has_buffers) {
+          allowed = false;
+        }
+
+        if (input_nets.size() > 1) {
+          allowed = false;
+        }
+
+        if (allowed) {
+          continue;
+        }
+      }
+      overdriven_nets->emplace_back(net);
+    }
+  }
+  sort(overdriven_nets, sta::NetPathNameLess(network_));
+  return overdriven_nets;
+}
+
 ////////////////////////////////////////////////////////////////
 
 // TODO:
