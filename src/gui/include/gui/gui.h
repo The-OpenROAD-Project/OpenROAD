@@ -803,14 +803,33 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
+  // There are RTTI implementation differences between libstdc++ and libc++,
+  // where the latter seems to generate multiple typeids for classes including
+  // but not limited to sta::Instance* in different compile units. We have been
+  // unable to remedy this.
+  //
+  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
+  // and comparing are done on the type's name instead, which adds a negligible
+  // performance penalty but has the distinct advantage of not crashing when an
+  // Instance is clicked in the GUI.
+  //
+  // In the event the RTTI issue is ever resolved, the following two structs may
+  // be removed.
+  struct TypeInfoHasher
+  {
+    std::size_t operator()(const std::type_index& x) const;
+  };
+  struct TypeInfoComparator
+  {
+    bool operator()(const std::type_index& a, const std::type_index& b) const;
+  };
+
   // Maps types to descriptors
-#ifdef __GLIBCXX__
-  std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>>
+  std::unordered_map<std::type_index,
+                     std::unique_ptr<const Descriptor>,
+                     TypeInfoHasher,
+                     TypeInfoComparator>
       descriptors_;
-#else
-  std::unordered_map<std::string, std::unique_ptr<const Descriptor>>
-      descriptors_;
-#endif
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
 
