@@ -89,7 +89,7 @@ def make_child_next_field(child, relation):
     )
 
 
-def process_field(field, klass, struct, schema):
+def add_field_attributes(field, klass, struct, schema):
   flag_num_bits = 0
   if field["type"] == "bit":
       field["type"] = "bool"
@@ -252,7 +252,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
       klass["hasTables"] = False
       flag_num_bits = 0
       for field in klass["fields"]:
-          flag_num_bits += process_field(field, klass, struct, schema)
+          flag_num_bits += add_field_attributes(field, klass, struct, schema)
           
       klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
   
