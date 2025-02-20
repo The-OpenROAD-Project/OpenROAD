@@ -200,7 +200,7 @@ def add_field_attributes(field, klass, struct, schema):
   return flag_num_bits
       
 
-def add_bitfield(klass, flag_num_bits, struct):
+def add_bitfield_flags(klass, flag_num_bits, struct):
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
   
     klass["hasBitFields"] = False
@@ -217,7 +217,23 @@ def add_bitfield(klass, flag_num_bits, struct):
         }
         total_num_bits += spare_bits_field["bits"]
         struct["fields"].append(spare_bits_field)
-    return total_num_bits
+
+    if len(struct["fields"]) > 0:
+        struct["in_class"] = True
+        struct["in_class_name"] = "flags_"
+        klass["structs"].insert(0, struct)
+        klass["fields"].insert(
+            0,
+            {
+                "name": "flags_",
+                "type": struct["name"],
+                "components": components(klass["structs"], "flags_", struct["name"]),
+                "bitFields": True,
+                "isStruct": True,
+                "numBits": total_num_bits,
+                "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
+            },
+        )
 
 
 def generate(schema, env, includeDir, srcDir, keep_empty):
@@ -275,24 +291,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
       for field in klass["fields"]:
           flag_num_bits += add_field_attributes(field, klass, struct, schema)
           
-      total_num_bits = add_bitfield(klass, flag_num_bits, struct)
-
-      if len(struct["fields"]) > 0:
-          struct["in_class"] = True
-          struct["in_class_name"] = "flags_"
-          klass["structs"].insert(0, struct)
-          klass["fields"].insert(
-              0,
-              {
-                  "name": "flags_",
-                  "type": struct["name"],
-                  "components": components(klass["structs"], "flags_", struct["name"]),
-                  "bitFields": True,
-                  "isStruct": True,
-                  "numBits": total_num_bits,
-                  "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
-              },
-          )
+      add_bitfield_flags(klass, flag_num_bits, struct)
   
       # Add required header files if they are not already expressed
       for struct in klass["structs"]:
