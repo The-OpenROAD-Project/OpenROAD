@@ -89,7 +89,7 @@ def make_child_next_field(child, relation):
     )
 
 
-def generate():
+def generate(schema, env, includeDir, srcDir, keep_empty):
   
   print("###################Code Generation Begin###################")
   add_once_to_dict(["classes", "iterators", "relations"], schema)
@@ -360,42 +360,47 @@ def generate():
   print("###################Code Generation End###################")
 
 
-parser = argparse.ArgumentParser(description="Code generator")
-parser.add_argument("--json", action="store", required=True)
-parser.add_argument("--src_dir", action="store", required=True)
-parser.add_argument("--include_dir", action="store", required=True)
-parser.add_argument("--templates", action="store", required=True)
-parser.add_argument("--log", action="store", default="INFO")
-parser.add_argument("--keep_generated", action="store_true")
-parser.add_argument("--keep_empty", action="store_true")
+def main():
+  parser = argparse.ArgumentParser(description="Code generator")
+  parser.add_argument("--json", action="store", required=True)
+  parser.add_argument("--src_dir", action="store", required=True)
+  parser.add_argument("--include_dir", action="store", required=True)
+  parser.add_argument("--templates", action="store", required=True)
+  parser.add_argument("--log", action="store", default="INFO")
+  parser.add_argument("--keep_generated", action="store_true")
+  parser.add_argument("--keep_empty", action="store_true")
 
-args = parser.parse_args()
+  args = parser.parse_args()
 
-src = args.json
-srcDir = args.src_dir
-includeDir = args.include_dir
-templates = args.templates
-loglevel = args.log
-keep_generated = args.keep_generated
-keep_empty = args.keep_empty
+  src = args.json
+  srcDir = args.src_dir
+  includeDir = args.include_dir
+  templates = args.templates
+  loglevel = args.log
+  keep_generated = args.keep_generated
+  keep_empty = args.keep_empty
 
-numeric_level = getattr(logging, loglevel.upper(), None)
-if not isinstance(numeric_level, int):
-    raise ValueError("Invalid log level: %s" % loglevel)
-logging.basicConfig(level=numeric_level)
+  numeric_level = getattr(logging, loglevel.upper(), None)
+  if not isinstance(numeric_level, int):
+      raise ValueError("Invalid log level: %s" % loglevel)
+  logging.basicConfig(level=numeric_level)
 
-with open(src, encoding="ascii") as file:
-    schema = json.load(file)
+  with open(src, encoding="ascii") as file:
+      schema = json.load(file)
 
-env = Environment(loader=FileSystemLoader(templates), trim_blocks=True)
+  env = Environment(loader=FileSystemLoader(templates), trim_blocks=True)
 
-# Creating Directory for generated files
+  # Creating Directory for generated files
 
-if os.path.exists("generated"):
-    shutil.rmtree("generated")
-os.mkdir("generated")
+  if os.path.exists("generated"):
+      shutil.rmtree("generated")
+  os.mkdir("generated")
 
-generate()
+  generate(schema, env, includeDir, srcDir, keep_empty)
 
-if not keep_generated:
-    shutil.rmtree("generated")
+  if not keep_generated:
+      shutil.rmtree("generated")
+
+
+if __name__ == "__main__":
+    main()
