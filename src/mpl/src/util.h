@@ -41,3 +41,11 @@ struct SACoreWeights
   float guidance{0.0f};
   float fence{0.0f};
 };
+
+struct Penalty
+{
+  std::string name;
+  float weight{0.0f};
+  float value{0.0f};
+  float initial_average{0.0f};
+};

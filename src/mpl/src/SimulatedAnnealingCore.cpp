@@ -197,6 +197,13 @@ float SimulatedAnnealingCore<T>::getHeight() const
 }
 
 template <class T>
+float SimulatedAnnealingCore<T>::getAreaPenalty() const
+{
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
+  return (width_ * height_) / outline_area;
+}
+
+template <class T>
 float SimulatedAnnealingCore<T>::getOutlinePenalty() const
 {
   return outline_penalty_;
@@ -631,6 +638,97 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
   }
 
   return std::accumulate(value_list.begin(), value_list.end(), 0.0f) / size;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::report(const Penalty& penalty) const
+{
+  logger_->report("{:>15s} | {:>8.4f} | {:>7.4f} | {:>13.4f} | {:>7.4f} ",
+                  penalty.name,
+                  penalty.weight,
+                  penalty.value,
+                  penalty.initial_average,
+                  penalty.weight * penalty.value / penalty.initial_average);
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::reportCoreWeights() const
+{
+  logger_->report(
+      "\n  Penalty Type  |  Weight  |  Value  |  Initial Avg  |  Cost");
+  logger_->report(
+      "--------------------------------------------------------------");
+  report({"Area", core_weights_.area, getAreaPenalty(), 1.0f});
+  report({"Outline",
+          core_weights_.outline,
+          outline_penalty_,
+          norm_outline_penalty_});
+  report(
+      {"Wire Length", core_weights_.wirelength, wirelength_, norm_wirelength_});
+  report({"Guidance",
+          core_weights_.guidance,
+          guidance_penalty_,
+          norm_guidance_penalty_});
+  report({"Fence", core_weights_.fence, fence_penalty_, norm_fence_penalty_});
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::reportFinalCost() const
+{
+  logger_->report(
+      "--------------------------------------------------------------");
+  logger_->report("  Final Cost  {:>48.4f} \n", getNormCost());
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::reportLocations() const
+{
+  if (logger_->debugCheck(utl::MPL, "hierarchical_macro_placement", 2)) {
+    if constexpr (std::is_same_v<T, HardMacro>) {
+      logger_->report("     Id     |                                Location");
+    } else {
+      logger_->report(" Cluster Id |                                Location");
+    }
+
+    logger_->report("-----------------------------------------------------");
+
+    // First the moveable macros. I.e., those from the sequence pair.
+    for (const int macro_id : pos_seq_) {
+      int display_id;
+      if constexpr (std::is_same_v<T, SoftMacro>) {
+        const SoftMacro& soft_macro = macros_[macro_id];
+        Cluster* cluster = soft_macro.getCluster();
+        display_id = cluster->getId();
+      } else {
+        display_id = macro_id;
+      }
+
+      const T& macro = macros_[macro_id];
+      logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                      display_id,
+                      macro.getX(),
+                      macro.getY(),
+                      macro.getWidth(),
+                      macro.getHeight());
+    }
+
+    // Then, the fixed terminals.
+    const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
+    for (int i = 0; i < macros_.size(); ++i) {
+      if (i <= number_of_moveable_macros) {
+        continue;
+      }
+
+      const T& macro = macros_[i];
+      logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                      "fixed",
+                      macro.getX(),
+                      macro.getY(),
+                      macro.getWidth(),
+                      macro.getHeight());
+    }
+    logger_->report("");
+  }
 }
 
 template <class T>

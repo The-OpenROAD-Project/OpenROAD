@@ -252,6 +252,12 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
+  // For debugging
+  template <typename SACore>
+  void printPlacementResult(Cluster* parent,
+                            const Rect& outline,
+                            SACore* sa_core);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;

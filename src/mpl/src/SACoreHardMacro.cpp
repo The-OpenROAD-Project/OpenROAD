@@ -92,12 +92,6 @@ void SACoreHardMacro::run()
   }
 }
 
-float SACoreHardMacro::getAreaPenalty() const
-{
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  return (width_ * height_) / outline_area;
-}
-
 float SACoreHardMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
@@ -297,75 +291,11 @@ void SACoreHardMacro::setWeights(const SACoreWeights& weights)
   core_weights_ = weights;
 }
 
-void SACoreHardMacro::printResults()
+void SACoreHardMacro::printResults() const
 {
-  debugPrint(
-      logger_, MPL, "hierarchical_macro_placement", 2, "SACoreHardMacro");
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "number of macros : {}",
-             macros_.size());
-  for (const auto& macro : macros_) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               2,
-               "lx = {}, ly = {}, width = {}, height = {}",
-               macro.getX(),
-               macro.getY(),
-               macro.getWidth(),
-               macro.getHeight());
-  }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "width = {}, outline_width = {}",
-             width_,
-             outline_.getWidth());
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "height = {}, outline_height = {}",
-             height_,
-             outline_.getHeight());
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "outline_penalty  = {}, norm_outline_penalty = {}",
-             outline_penalty_,
-             norm_outline_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "wirelength  = {}, norm_wirelength = {}",
-             wirelength_,
-             norm_wirelength_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "guidance_penalty  = {}, norm_guidance_penalty = {}",
-             guidance_penalty_,
-             norm_guidance_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "fence_penalty  = {}, norm_fence_penalty = {}",
-             fence_penalty_,
-             norm_fence_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "final cost = {}",
-             getNormCost());
+  reportCoreWeights();
+  reportFinalCost();
+  reportLocations();
 }
 
 }  // namespace mpl
