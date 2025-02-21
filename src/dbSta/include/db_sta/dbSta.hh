@@ -36,7 +36,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -197,21 +196,6 @@ class dbSta : public Sta, public ord::OpenRoadObserver
                          bool verbose,
                          const char *file_name,
                          const char *stage_name);
-
-  // Holds the usage information of a specific cell which includes (i) name of
-  // the cell, (ii) number of instances of the cell, and (iii) area of the cell
-  // in microns^2.
-  struct CellUsageInfo {
-    std::string name;
-    int count = 0;
-    double area = 0.0;
-  };
-
-  // Holds a snapshot of cell usage information at a given stage.
-  struct CellUsageSnapshot {
-    std::string stage;
-    std::vector<CellUsageInfo> cells_usage_info;
-  };
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 

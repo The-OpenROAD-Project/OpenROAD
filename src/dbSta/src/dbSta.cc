@@ -77,6 +77,26 @@
 
 ////////////////////////////////////////////////////////////////
 
+namespace {
+
+// Holds the usage information of a specific cell which includes (i) name of
+// the cell, (ii) number of instances of the cell, and (iii) area of the cell
+// in microns^2.
+struct CellUsageInfo {
+  std::string name;
+  int count = 0;
+  double area = 0.0;
+};
+
+// Holds a snapshot of cell usage information at a given stage.
+struct CellUsageSnapshot {
+  std::string stage;
+  std::vector<CellUsageInfo> cells_usage_info;
+};
+
+}  // namespace
+
+
 namespace ord {
 
 using sta::dbSta;
@@ -88,40 +108,31 @@ dbSta* makeDbSta()
 }  // namespace ord
 
 namespace boost::json {
-void tag_invoke(json::value_from_tag,
-                json::value& json_value,
-                ord::dbSta::CellUsageInfo const& cell_usage_info)
-{
+void tag_invoke(json::value_from_tag, json::value& json_value,
+                CellUsageInfo const& cell_usage_info) {
   json_value = {{"name", cell_usage_info.name},
                 {"count", cell_usage_info.count},
                 {"area", cell_usage_info.area}};
 }
 
-void tag_invoke(json::value_from_tag,
-                json::value& json_value,
-                ord::dbSta::CellUsageSnapshot const& cell_usage_snapshot)
-{
-  json_value
-      = {{"stage", cell_usage_snapshot.stage},
-         {"cell_usage_info",
-          boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
+void tag_invoke(json::value_from_tag, json::value& json_value,
+                CellUsageSnapshot const& cell_usage_snapshot) {
+  json_value = {{"stage", cell_usage_snapshot.stage},
+                {"cell_usage_info", boost::json::value_from(
+                                        cell_usage_snapshot.cells_usage_info)}};
 }
 
-ord::dbSta::CellUsageInfo tag_invoke(value_to_tag<ord::dbSta::CellUsageInfo>,
-                                     value const& json_value)
-{
+CellUsageInfo tag_invoke(value_to_tag<CellUsageInfo>, value const& json_value) {
   return {value_to<std::string>(json_value.at("name")),
           value_to<int>(json_value.at("count")),
           value_to<double>(json_value.at("area"))};
 }
 
-ord::dbSta::CellUsageSnapshot tag_invoke(
-    value_to_tag<ord::dbSta::CellUsageSnapshot>,
-    value const& json_value)
-{
-  return {value_to<std::string>(json_value.at("stage")),
-          value_to<std::vector<ord::dbSta::CellUsageInfo>>(
-              json_value.at("cell_usage_info"))};
+CellUsageSnapshot tag_invoke(value_to_tag<CellUsageSnapshot>,
+                             value const& json_value) {
+  return {
+      value_to<std::string>(json_value.at("stage")),
+      value_to<std::vector<CellUsageInfo>>(json_value.at("cell_usage_info"))};
 }
 
 }  // namespace boost::json
