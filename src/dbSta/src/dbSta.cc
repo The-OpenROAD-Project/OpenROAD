@@ -128,13 +128,6 @@ CellUsageInfo tag_invoke(value_to_tag<CellUsageInfo>, value const& json_value) {
           value_to<double>(json_value.at("area"))};
 }
 
-CellUsageSnapshot tag_invoke(value_to_tag<CellUsageSnapshot>,
-                             value const& json_value) {
-  return {
-      value_to<std::string>(json_value.at("stage")),
-      value_to<std::vector<CellUsageInfo>>(json_value.at("cell_usage_info"))};
-}
-
 }  // namespace boost::json
 
 namespace sta {
