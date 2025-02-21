@@ -107,6 +107,12 @@ class RepairDesign : dbStaState
                  double cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
+  void printViolationCounters(bool invalidate_driver_vertices,
+                              int slew_violations,
+                              int cap_violations,
+                              int fanout_violations,
+                              int length_violations,
+                              int repaired_net_count);
 
  protected:
   void init();
@@ -194,7 +200,7 @@ class RepairDesign : dbStaState
                       const DcalcAnalysisPt* dcalc_ap);
   LoadRegion findLoadRegions(const Pin* drvr_pin, int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
-  void makeRegionRepeaters(LoadRegion& region,
+  bool makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,
                            int level,
                            const Pin* drvr_pin,
@@ -202,7 +208,7 @@ class RepairDesign : dbStaState
                            bool check_cap,
                            int max_length,
                            bool resize_drvr);
-  void makeFanoutRepeater(PinSeq& repeater_loads,
+  bool makeFanoutRepeater(PinSeq& repeater_loads,
                           PinSeq& repeater_inputs,
                           const Rect& bbox,
                           const Point& loc,
@@ -214,7 +220,7 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  bool makeRepeater(const char* reason,
+  void makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
@@ -224,7 +230,7 @@ class RepairDesign : dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
-  bool makeRepeater(const char* reason,
+  void makeRepeater(const char* reason,
                     int x,
                     int y,
                     LibertyCell* buffer_cell,
