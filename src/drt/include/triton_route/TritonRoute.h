@@ -97,6 +97,7 @@ struct ParamStruct
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
+  int num_threads;
 };
 
 class TritonRoute
@@ -181,7 +182,7 @@ class TritonRoute
   int getWorkerResultsSize();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
-  void sendDesignUpdates(const std::string& router_cfg_path);
+  void sendDesignUpdates(const std::string& router_cfg_path, int num_threads);
   void sendGlobalsUpdates(const std::string& router_cfg_path,
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
@@ -193,11 +194,12 @@ class TritonRoute
                 int y1,
                 int x2,
                 int y2,
-                const std::string& marker_name);
+                const std::string& marker_name,
+                int num_threads);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }
-  void fixMaxSpacing();
+  void fixMaxSpacing(int num_threads);
 
  private:
   std::unique_ptr<frDesign> design_;

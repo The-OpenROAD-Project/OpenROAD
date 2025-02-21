@@ -54,6 +54,7 @@ def detailed_route(
     params.singleStepDR = single_step_dr
     params.minAccessPoints = min_access_points
     params.saveGuideUpdates = save_guide_updates
+    params.num_threads = 1
 
     router.setParams(params)
     router.main()

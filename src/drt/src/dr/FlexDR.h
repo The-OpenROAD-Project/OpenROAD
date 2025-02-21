@@ -113,8 +113,7 @@ class FlexDR
          Logger* loggerIn,
          odb::dbDatabase* dbIn,
          RouterConfiguration* router_cfg,
-         AbstractORDBInterface* or_db_interface,
-         int num_threads);
+         AbstractORDBInterface* or_db_interface);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -182,7 +181,6 @@ class FlexDR
   bool increaseClipsize_;
   float clipSizeInc_;
   int iter_;
-  int num_threads_;
 
   // others
   void initFromTA();

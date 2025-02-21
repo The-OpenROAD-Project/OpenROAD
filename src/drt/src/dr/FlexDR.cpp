@@ -105,8 +105,7 @@ FlexDR::FlexDR(TritonRoute* router,
                Logger* loggerIn,
                odb::dbDatabase* dbIn,
                RouterConfiguration* router_cfg,
-               AbstractORDBInterface* or_db_interface,
-               int num_threads)
+               AbstractORDBInterface* or_db_interface)
     : router_(router),
       design_(designIn),
       logger_(loggerIn),
@@ -119,8 +118,7 @@ FlexDR::FlexDR(TritonRoute* router,
       dist_port_(0),
       increaseClipsize_(false),
       clipSizeInc_(0),
-      iter_(0),
-      num_threads_(num_threads)
+      iter_(0)
 {
 }
 
@@ -743,7 +741,7 @@ void FlexDR::processWorkersBatchDistributed(
     serializeViaData(via_data_, serializedViaData);
     router_->sendGlobalsUpdates(router_cfg_path_, serializedViaData);
   } else {
-    router_->sendDesignUpdates(router_cfg_path_);
+    router_->sendDesignUpdates(router_cfg_path_, router_cfg_->MAX_THREADS);
   }
 
   ProfileTask task("DIST: PROCESS_BATCH");
@@ -1785,7 +1783,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
   std::vector<std::atomic_bool> visited(via_positions.size());
   std::fill(visited.begin(), visited.end(), false);
   std::set<int> isolated_via_nodes;
-  omp_set_num_threads(num_threads_);
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
     if (visited[i].load()) {

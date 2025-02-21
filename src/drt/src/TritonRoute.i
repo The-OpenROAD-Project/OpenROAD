@@ -100,6 +100,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int drcReportIterStep)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   std::optional<int> drcReportIterStepOpt;
   if (drcReportIterStep > 0) {
     drcReportIterStepOpt = drcReportIterStep;
@@ -124,7 +125,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                     singleStepDR,
                     minAccessPoints,
                     saveGuideUpdates,
-                    repairPDNLayerName});
+                    repairPDNLayerName,
+                    num_threads});
   router->main();
   router->setDistributed(false);
 }
@@ -142,6 +144,7 @@ void pin_access_cmd(const char* dbProcessNode,
   params.topRoutingLayer = topRoutingLayer;
   params.verbose = verbose;
   params.minAccessPoints = minAccessPoints;
+  params.num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   router->setParams(params);
   router->pinAccess();
   router->setDistributed(false);
@@ -232,7 +235,8 @@ void detailed_route_step_drt(int size,
 void fix_max_spacing_cmd()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->fixMaxSpacing();
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  router->fixMaxSpacing(num_threads);
 }
 void step_end()
 {
@@ -243,6 +247,7 @@ void step_end()
 void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2, const char* marker_name)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->checkDRC(drc_file, x1, y1, x2, y2, marker_name);
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  router->checkDRC(drc_file, x1, y1, x2, y2, marker_name, num_threads);
 }
 %} // inline
