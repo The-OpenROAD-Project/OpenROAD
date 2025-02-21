@@ -534,10 +534,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               rsz_delta_area_microns,
               rsz_delta_area_percentage);
 
-          float new_gcells_percentage
-              = (nbc_->getNewGcellsCount()
-                 / static_cast<float>(nbc_total_gcells_before_td))
-                * 100.0f;
+          float new_gcells_percentage = 0.0f;
+          if (nbc_total_gcells_before_td > 0) {
+            new_gcells_percentage
+                = (nbc_->getNewGcellsCount()
+                   / static_cast<float>(nbc_total_gcells_before_td))
+                  * 100.0f;
+          }
           log_->info(
               GPL,
               108,
