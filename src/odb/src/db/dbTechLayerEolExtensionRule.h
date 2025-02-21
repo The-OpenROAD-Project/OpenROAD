@@ -40,7 +40,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerEolExtensionRuleFlags
@@ -64,10 +63,6 @@ class _dbTechLayerEolExtensionRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerEolExtensionRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerEolExtensionRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   void collectMemInfo(MemInfo& info);
 
   dbTechLayerEolExtensionRuleFlags flags_;

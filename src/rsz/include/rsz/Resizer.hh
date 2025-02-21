@@ -809,6 +809,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Sizing restrictions
   std::optional<double> sizing_area_limit_;
   std::optional<double> sizing_leakage_limit_;
+  bool sizing_keep_site_ = false;
 
   friend class BufferedNet;
   friend class GateCloner;

@@ -140,38 +140,6 @@ bool _dbTechLayerRule::operator==(const _dbTechLayerRule& rhs) const
   return true;
 }
 
-void _dbTechLayerRule::differences(dbDiff& diff,
-                                   const char* field,
-                                   const _dbTechLayerRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_capacitance);
-  DIFF_FIELD(_edge_capacitance);
-  DIFF_FIELD(_wire_extension);
-  DIFF_FIELD(_non_default_rule);
-  DIFF_FIELD(_layer);
-  DIFF_END
-}
-
-void _dbTechLayerRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_capacitance);
-  DIFF_OUT_FIELD(_edge_capacitance);
-  DIFF_OUT_FIELD(_wire_extension);
-  DIFF_OUT_FIELD(_non_default_rule);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_END
-}
-
 _dbTech* _dbTechLayerRule::getTech()
 {
 #if 0  // dead code generates warnings -cherry

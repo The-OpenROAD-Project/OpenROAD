@@ -83,6 +83,7 @@ using std::vector;
 
 using utl::RSZ;
 
+using odb::dbBoolProperty;
 using odb::dbBox;
 using odb::dbDoubleProperty;
 using odb::dbInst;
@@ -243,18 +244,24 @@ void Resizer::initBlock()
 
   // Apply sizing restrictions
   dbDoubleProperty* area_prop
-      = dbDoubleProperty::find(block_, "sizing_area_limit");
+      = dbDoubleProperty::find(block_, "limit_sizing_area");
   if (area_prop) {
     sizing_area_limit_ = area_prop->getValue();
   } else {
     sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
-      = dbDoubleProperty::find(block_, "sizing_leakage_limit");
+      = dbDoubleProperty::find(block_, "limit_sizing_leakage");
   if (leakage_prop) {
     sizing_leakage_limit_ = leakage_prop->getValue();
   } else {
     sizing_leakage_limit_.reset();
+  }
+  dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
+  if (site_prop) {
+    sizing_keep_site_ = site_prop->getValue();
+  } else {
+    sizing_keep_site_ = false;
   }
 }
 

@@ -451,16 +451,18 @@ optimization commands like repair_design and repair_timing.
 
 ```tcl
 set_opt_config 
-    [-sizing_area_limit float_value]
-    [-sizing_leakage_limit float_value]
+    [-limit_sizing_area float_value]
+    [-limit_sizing_leakage float_value]
+    [-keep_sizing_site boolean_value]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-sizing_area_limit` | Don't consider cells whose area is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with area more than 2X of the current cell will not be considered for sizing. The cell LEF will be used for area computation, not liberty cell area. |
-| `-sizing_leakage_limit` | Don't consider cells whose leakage is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with leakage more than 2X of the current cell will not be considered for sizing. The leakage power will be computed from the current timing corner. |
+| `-limit_sizing_area` | Don't consider cells whose area is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with area more than 2X of the current cell will not be considered for sizing. The cell LEF will be used for area computation, not liberty cell area. |
+| `-limit_sizing_leakage` | Don't consider cells whose leakage is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with leakage more than 2X of the current cell will not be considered for sizing. The leakage power will be computed from the current timing corner. |
+| `-keep_sizing_site` | Preserve cell site during sizing.  This prevents a short cell from being swapped to a tall cell or vice versa in mixed row design. |
 
 ### Reporting Optimization Configuration
 
@@ -477,16 +479,18 @@ If no options are specified, all optimization configurations are reset.
 
 ```tcl
 reset_opt_config 
-    [-sizing_area_limit]
-    [-sizing_leakage_limit]
+    [-limit_sizing_area]
+    [-limit_sizing_leakage]
+    [-keep_sizing_site]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-sizing_area_limit` | Remove area restriction during sizing. |
-| `-sizing_leakage_limit` | Remove leakage power restriction during sizing. |
+| `-limit_sizing_area` | Remove area restriction during sizing. |
+| `-limit_sizing_leakage` | Remove leakage power restriction during sizing. |
+| `-keep_sizing_site` | Remove site restriction during sizing. |
 
 ### Finding Equivalent Cells
 
