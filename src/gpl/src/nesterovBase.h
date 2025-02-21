@@ -804,7 +804,7 @@ class NesterovBaseCommon
                      utl::Logger* log,
                      int num_threads);
 
-  const std::vector<GCell*>& getNbcGCells() const { return nbc_gCells_; }
+  const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -890,7 +890,7 @@ class NesterovBaseCommon
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
 
-  std::vector<GCell*> nbc_gCells_;
+  std::vector<GCell*> gCells_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 

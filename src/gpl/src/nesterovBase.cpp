@@ -1036,13 +1036,13 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCell ptr init
-  nbc_gCells_.reserve(gCellStor_.size());
+  gCells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
     if (!gCell.isInstance()) {
       continue;
     }
-    nbc_gCells_.push_back(&gCell);
+    gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
     db_inst_map_[gCell.instance()->dbInst()] = i;
   }
@@ -1370,7 +1370,7 @@ void NesterovBaseCommon::updateDbGCells()
   }
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = getNbcGCells().begin(); it < getNbcGCells().end(); ++it) {
+  for (auto it = gCells().begin(); it < gCells().end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isInstance()) {
       odb::dbInst* inst = gCell->instance()->dbInst();
@@ -1416,16 +1416,16 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
 //
 void NesterovBaseCommon::fixPointers()
 {
-  nbc_gCells_.clear();
+  gCells_.clear();
   gCellMap_.clear();
   db_inst_map_.clear();
-  nbc_gCells_.reserve(gCellStor_.size());
+  gCells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
     if (!gCell.isInstance()) {
       continue;
     }
-    nbc_gCells_.push_back(&gCell);
+    gCells_.push_back(&gCell);
     gCellMap_[gCell.instance()] = &gCell;
     db_inst_map_[gCell.instance()->dbInst()] = i;
   }

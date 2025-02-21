@@ -87,7 +87,7 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nbc_->getNbcGCells()) {
+    for (GCell* cell : nbc_->gCells()) {
       Instance* cell_inst = cell->instance();
       if (cell_inst && cell_inst->dbInst() == inst) {
         selected_ = cell;
@@ -278,7 +278,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
-  drawCells(nbc_->getNbcGCells(), painter);
+  drawCells(nbc_->gCells(), painter);
   for (const auto& nb : nbVec_) {
     drawCells(nb->gCells(), painter);
   }
@@ -417,7 +417,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nbc_->getNbcGCells()) {
+  for (GCell* cell : nbc_->gCells()) {
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
