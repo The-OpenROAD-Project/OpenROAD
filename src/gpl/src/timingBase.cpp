@@ -145,14 +145,11 @@ void TimingBase::setTimingNetWeightMax(float max)
 
 bool TimingBase::executeTimingDriven(bool run_journal_restore)
 {
-  log_->report("nbc #cells before findResizeSlacks:{}", nbc_->gCells().size());
   rs_->findResizeSlacks(run_journal_restore);
 
-  log_->report("nbc #cells before fixPointers:{}", nbc_->gCells().size());
   if (!run_journal_restore) {
     nbc_->fixPointers();
   }
-  log_->report("nbc #cells after fixPointers:{}", nbc_->gCells().size());
 
   // get worst resize nets
   sta::NetSeq& worst_slack_nets = rs_->resizeWorstSlackNets();

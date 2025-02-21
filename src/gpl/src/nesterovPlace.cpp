@@ -545,11 +545,19 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               nbc_->getNewGcellsCount(),
               new_gcells_percentage);
 
-          // log_->info(GPL,
-          //            109,
-          //            "Timing-driven: inserted buffers as reported by "
-          //            "repair_design: {}",
-          //            tb_->repairDesignBufferCount());
+          if (tb_->repairDesignBufferCount() != nbc_->getNewGcellsCount()) {
+            log_->warn(GPL,
+                       93,
+                       "Buffer insertion count by rsz ({}) and cells created "
+                       "by gpl ({}) do not match.",
+                       tb_->repairDesignBufferCount(),
+                       nbc_->getNewGcellsCount());
+          }
+          log_->info(GPL,
+                     109,
+                     "Timing-driven: inserted buffers as reported by "
+                     "repair_design: {}",
+                     tb_->repairDesignBufferCount());
           log_->info(GPL,
                      110,
                      "Timing-driven: new target density: {}",
