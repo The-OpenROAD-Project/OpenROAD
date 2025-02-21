@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace mpl {
 
 struct SACoreWeights
