@@ -46,9 +46,4 @@ void ORDBInterface::readDb(const char* file_name)
   ord::OpenRoad::openRoad()->readDb(file_name);
 }
 
-void ORDBInterface::writeDb(const char* file_name)
-{
-  ord::OpenRoad::openRoad()->writeDb(file_name);
-}
-
 }  // namespace drt

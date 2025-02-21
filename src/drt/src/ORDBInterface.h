@@ -43,7 +43,6 @@ class ORDBInterface : public AbstractORDBInterface
   ~ORDBInterface() override = default;
   std::unique_ptr<AbstractORDBInterface> makeUnique() override;
   void readDb(const char* file_name) override;
-  void writeDb(const char* file_name) override;
 };
 
 }  // namespace drt

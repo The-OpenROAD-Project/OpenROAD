@@ -36,7 +36,6 @@
 #include <memory>
 #include <vector>
 
-#include "AbstractORDBInterface.h"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/infra/frTime.h"
@@ -112,8 +111,7 @@ class FlexDR
          frDesign* designIn,
          Logger* loggerIn,
          odb::dbDatabase* dbIn,
-         RouterConfiguration* router_cfg,
-         AbstractORDBInterface* or_db_interface);
+         RouterConfiguration* router_cfg);
   ~FlexDR();
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -168,7 +166,6 @@ class FlexDR
   std::vector<int> numViols_;
   std::unique_ptr<AbstractDRGraphics> graphics_{nullptr};
   std::string debugNetName_;
-  AbstractORDBInterface* or_db_interface_;
   int numWorkUnits_;
 
   // distributed

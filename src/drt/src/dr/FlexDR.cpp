@@ -53,6 +53,7 @@
 #include "gc/FlexGC.h"
 #include "io/io.h"
 #include "serialization.h"
+#include "utl/ScopedTemporaryFile.h"
 #include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
@@ -104,14 +105,12 @@ FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn,
-               RouterConfiguration* router_cfg,
-               AbstractORDBInterface* or_db_interface)
+               RouterConfiguration* router_cfg)
     : router_(router),
       design_(designIn),
       logger_(loggerIn),
       db_(dbIn),
       router_cfg_(router_cfg),
-      or_db_interface_(or_db_interface),
       numWorkUnits_(0),
       dist_(nullptr),
       dist_on_(false),
@@ -1876,7 +1875,10 @@ int FlexDR::main()
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
-      or_db_interface_->writeDb(fmt::format("drt_iter{}.odb", iter_).c_str());
+
+      db_->write(
+          utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
+              .getStream());
     }
     ++iter_;
   }

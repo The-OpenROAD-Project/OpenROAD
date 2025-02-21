@@ -37,7 +37,6 @@
 #include <iostream>
 #include <mutex>
 
-#include "AbstractORDBInterface.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingJobDescription.h"
@@ -62,8 +61,7 @@ class RoutingCallBack : public dst::JobCallBack
  public:
   RoutingCallBack(TritonRoute* router,
                   dst::Distributed* dist,
-                  utl::Logger* logger,
-                  std::unique_ptr<AbstractORDBInterface> or_db_interface)
+                  utl::Logger* logger)
       : router_(router),
         dist_(dist),
         logger_(logger),
@@ -73,7 +71,6 @@ class RoutingCallBack : public dst::JobCallBack
             nullptr,
             router->getRouterConfiguration())
   {
-    or_db_interface_ = std::move(or_db_interface);
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
@@ -268,7 +265,6 @@ class RoutingCallBack : public dst::JobCallBack
   bool init_;
   FlexDRViaData via_data_;
   FlexPA pa_;
-  std::unique_ptr<AbstractORDBInterface> or_db_interface_;
 };
 
 }  // namespace drt

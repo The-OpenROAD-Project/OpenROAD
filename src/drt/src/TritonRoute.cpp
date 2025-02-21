@@ -60,6 +60,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "utl/ScopedTemporaryFile.h"
 
 namespace drt {
 
@@ -532,8 +533,7 @@ void TritonRoute::init(
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  dist->addCallBack(
-      new RoutingCallBack(this, dist, logger, or_db_interface->makeUnique()));
+  dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
   or_db_interface_ = std::move(or_db_interface);
 }
@@ -634,12 +634,8 @@ void TritonRoute::ta()
 void TritonRoute::dr()
 {
   num_drvs_ = -1;
-  dr_ = std::make_unique<FlexDR>(this,
-                                 getDesign(),
-                                 logger_,
-                                 db_,
-                                 router_cfg_.get(),
-                                 or_db_interface_.get());
+  dr_ = std::make_unique<FlexDR>(
+      this, getDesign(), logger_, db_, router_cfg_.get());
   if (debug_->debugDR) {
     dr_->setDebug(graphics_factory_->makeUniqueDRGraphics());
   }
@@ -836,7 +832,8 @@ void TritonRoute::sendDesignDist()
     std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
     std::string router_cfg_path
         = fmt::format("{}DESIGN.router_cfg", shared_volume_);
-    or_db_interface_->writeDb(design_path.c_str());
+
+    db_->write(utl::StreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -1009,8 +1006,9 @@ int TritonRoute::main()
     }
   }
   if (debug_->debugDumpDR) {
-    or_db_interface_->writeDb(
-        fmt::format("{}/design.odb", debug_->dumpDir).c_str());
+    db_->write(utl::StreamHandler(
+                   fmt::format("{}/design.odb", debug_->dumpDir).c_str(), true)
+                   .getStream());
   }
   if (!initGuide()) {
     gr();
@@ -1070,12 +1068,8 @@ void TritonRoute::fixMaxSpacing(int num_threads)
   initGuide();
   prep();
   router_cfg_->MAX_THREADS = num_threads;
-  dr_ = std::make_unique<FlexDR>(this,
-                                 getDesign(),
-                                 logger_,
-                                 db_,
-                                 router_cfg_.get(),
-                                 or_db_interface_.get());
+  dr_ = std::make_unique<FlexDR>(
+      this, getDesign(), logger_, db_, router_cfg_.get());
   dr_->init();
   dr_->fixMaxSpacing();
   io::Writer writer(getDesign(), logger_);
