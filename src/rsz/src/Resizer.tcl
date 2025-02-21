@@ -756,7 +756,11 @@ proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
 }
 
-sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] [-limit_sizing_leakage] [-keep_sizing_site] }
+sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
+                                        [-limit_sizing_leakage] \
+                                        [-keep_sizing_site] \
+                                        [-sizing_area_limit] \
+                                        [-sizing_leakage_limit] }                                        }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
@@ -828,7 +832,11 @@ proc set_opt_config { args } {
   }
 }
 
-sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] [-limit_sizing_leakage] [-keep_sizing_site] }
+sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
+                                          [-limit_sizing_leakage] \
+                                          [-keep_sizing_site] \
+                                          [-sizing_area_limit] \
+                                          [-sizing_leakage_limit] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
