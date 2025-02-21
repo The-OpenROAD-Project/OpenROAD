@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,61 +33,11 @@
 
 #pragma once
 
-#include <vector>
-
-#include "MplObserver.h"
-#include "SimulatedAnnealingCore.h"
-#include "object.h"
-
-namespace utl {
-class Logger;
-}
-
-namespace mpl {
-
-class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
+struct SACoreWeights
 {
- public:
-  SACoreHardMacro(PhysicalHierarchy* tree,
-                  const Rect& outline,
-                  const std::vector<HardMacro>& macros,
-                  const SACoreWeights& core_weights,
-                  // probability of each action
-                  float pos_swap_prob,
-                  float neg_swap_prob,
-                  float double_swap_prob,
-                  float exchange_prob,
-                  float flip_prob,
-                  // Fast SA hyperparameter
-                  float init_prob,
-                  int max_num_step,
-                  int num_perturb_per_step,
-                  unsigned seed,
-                  MplObserver* graphics,
-                  utl::Logger* logger);
-
-  void run() override;
-
-  void setWeights(const SACoreWeights& weights);
-
-  // Initialize the SA worker
-  void initialize() override;
-  void fillDeadSpace() override {}
-  // print results
-  void printResults();
-
- private:
-  float calNormCost() const override;
-  void calPenalty() override;
-  float getAreaPenalty() const;
-  void shrink() override {}
-
-  void perturb() override;
-  void restore() override;
-  // actions used
-  void flipAllMacros();
-
-  float flip_prob_ = 0.0;
+  float area{0.0f};
+  float outline{0.0f};
+  float wirelength{0.0f};
+  float guidance{0.0f};
+  float fence{0.0f};
 };
-
-}  // namespace mpl

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, Andrew Kennings
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,28 +30,39 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%{
+#include "util.h"
 
-#include "dpo/Optdp.h"
-#include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
+#include <memory>
 
-%}
+#include "odb/db.h"
+#include "odb/parse.h"
 
-%include "../../Exception.i"
+namespace rcx {
 
-%inline %{
-  namespace dpo {
-
-  void improve_placement_cmd(int seed,
-                             int max_displacement_x,
-                             int max_displacement_y)
-  {
-    dpo::Optdp* optdp = ord::OpenRoad::openRoad()->getOptdp();
-    optdp->improvePlacement(
-        seed, max_displacement_x, max_displacement_y);
+bool findSomeNet(odb::dbBlock* block,
+                 const char* names,
+                 std::vector<odb::dbNet*>& nets,
+                 utl::Logger* logger)
+{
+  if (!names || names[0] == '\0') {
+    return false;
   }
+  auto parser = std::make_unique<odb::Ath__parser>(logger);
+  parser->mkWords(names, nullptr);
+  for (int ii = 0; ii < parser->getWordCnt(); ii++) {
+    char* netName = parser->get(ii);
+    odb::dbNet* net = block->findNet(netName);
+    if (!net) {
+      uint noid = netName[0] == 'N' ? atoi(&netName[1]) : atoi(&netName[0]);
+      net = odb::dbNet::getValidNet(block, noid);
+    }
+    if (net) {
+      nets.push_back(net);
+    } else {
+      logger->warn(utl::RCX, 46, "Can not find net {}", netName);
+    }
+  }
+  return !nets.empty();
+}
 
-  }  // namespace dpo
-
-%}  // inline
+}  // namespace rcx

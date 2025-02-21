@@ -2021,33 +2021,6 @@ dbNet* dbBlock::findNet(const char* name)
   return (dbNet*) block->_net_hash.find(name);
 }
 
-bool dbBlock::findSomeNet(const char* names, std::vector<dbNet*>& nets)
-{
-  if (!names || names[0] == '\0') {
-    return false;
-  }
-  _dbBlock* block = (_dbBlock*) this;
-  dbNet* net;
-  auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
-  parser->mkWords(names, nullptr);
-  uint noid;
-  char* netName;
-  for (int ii = 0; ii < parser->getWordCnt(); ii++) {
-    netName = parser->get(ii);
-    net = (dbNet*) block->_net_hash.find(netName);
-    if (!net) {
-      noid = netName[0] == 'N' ? atoi(&netName[1]) : atoi(&netName[0]);
-      net = dbNet::getValidNet(this, noid);
-    }
-    if (net) {
-      nets.push_back(net);
-    } else {
-      getImpl()->getLogger()->warn(utl::ODB, 6, "Can not find net {}", netName);
-    }
-  }
-  return !nets.empty() ? true : false;
-}
-
 dbVia* dbBlock::findVia(const char* name)
 {
   dbSet<dbVia> vias = getVias();
@@ -3662,7 +3635,6 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["cc_val"].add(*_cc_val_tbl);
 
   info.children_["module_name_id_map"].add(_module_name_id_map);
-  info.children_["inst_name_id_map"].add(_inst_name_id_map);
 }
 
 }  // namespace odb
