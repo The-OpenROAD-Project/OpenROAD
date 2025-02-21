@@ -815,7 +815,7 @@ proc set_opt_config { args } {
     set keep_site $keys(-keep_sizing_site)
     if { ![string is boolean $keep_site] } {
       utl::error "RSZ" 209 \
-        "-keep_sizing_site argument should be Boolean"          
+        "-keep_sizing_site argument should be Boolean"
     }
     set site_prop [odb::dbBoolProperty_find $block "keep_sizing_site"]
     if { $site_prop eq "NULL" } {
@@ -834,7 +834,7 @@ proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit -sizing_leakage_limit -keep_sizing_site }
   set db [ord::get_db]
-  if { $db eq  "NULL" } {
+  if { $db eq "NULL" } {
     utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
   }
   set chip [$db getChip]
@@ -846,17 +846,21 @@ proc reset_opt_config { args } {
     utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
   }
 
-  set reset_all [expr {[llength $args] == 0}]    
-  if { $reset_all || [info exists flags(-limit_sizing_area)]
-    || [info exists flags(-sizing_area_limit)] } {
+  set reset_all [expr { [llength $args] == 0 }]  
+  if {
+    $reset_all || [info exists flags(-limit_sizing_area)]
+    || [info exists flags(-sizing_area_limit)]
+  } {
     set area_prop [odb::dbDoubleProperty_find $block "limit_sizing_area"]
     if { $area_prop ne "NULL" } {
       odb::dbProperty_destroy $area_prop
     }
     utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
   }
-  if { $reset_all || [info exists flags(-limit_sizing_leakage)]
-    || [info exists flags(-sizing_leakage_limit)] } {
+  if {
+    $reset_all || [info exists flags(-limit_sizing_leakage)]
+    || [info exists flags(-sizing_leakage_limit)]
+  } {
     set leak_prop [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
     if { $leak_prop ne "NULL" } {
       odb::dbProperty_destroy $leak_prop
