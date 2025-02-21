@@ -1230,14 +1230,10 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   LibertyCellSeq equiv_cells = getSwappableCells(base_cell);
 
   // Sort equiv cells by ascending area
+  // STA sorts them by drive resistance
   std::sort(equiv_cells.begin(),
             equiv_cells.end(),
-            [this](const LibertyCell* a, const LibertyCell* b) {
-              odb::dbMaster* a_master = this->db_network_->staToDb(a);
-              odb::dbMaster* b_master = this->db_network_->staToDb(b);
-              if (a_master && b_master) {
-                return a_master->getArea() < b_master->getArea();
-              }
+            [](const LibertyCell* a, const LibertyCell* b) {
               return a->area() < b->area();
             });
 
@@ -1362,6 +1358,12 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
         if (equiv_cell_leakage
             && (*equiv_cell_leakage / *source_cell_leakage
                 > sizing_leakage_limit_.value())) {
+          continue;
+        }
+      }
+
+      if (sizing_keep_site_) {
+        if (master->getSite() != equiv_cell_master->getSite()) {
           continue;
         }
       }
