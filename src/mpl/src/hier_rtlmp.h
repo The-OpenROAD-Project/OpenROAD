@@ -195,7 +195,6 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void reportSAWeights();
   void placeChildren(Cluster* parent);
   void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
 

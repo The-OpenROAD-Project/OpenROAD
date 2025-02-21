@@ -268,8 +268,10 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
   if (graphics_) {
-    graphics_->setOutlinePenalty(
-        {core_weights_.outline, outline_penalty_ / norm_outline_penalty_});
+    graphics_->setOutlinePenalty({"Outline",
+                                  core_weights_.outline,
+                                  outline_penalty_,
+                                  norm_outline_penalty_});
   }
 }
 
@@ -313,8 +315,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
                 / (outline_.getHeight() + outline_.getWidth());
 
   if (graphics_) {
-    graphics_->setWirelengthPenalty(
-        {core_weights_.wirelength, wirelength_ / norm_wirelength_});
+    graphics_->setWirelengthPenalty({"Wire Length",
+                                     core_weights_.wirelength,
+                                     wirelength_,
+                                     norm_wirelength_});
   }
 }
 
@@ -424,7 +428,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   fence_penalty_ = fence_penalty_ / fences_.size();
   if (graphics_) {
     graphics_->setFencePenalty(
-        {core_weights_.fence, fence_penalty_ / norm_fence_penalty_});
+        {"Fence", core_weights_.fence, fence_penalty_, norm_fence_penalty_});
   }
 }
 
@@ -463,8 +467,10 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   guidance_penalty_ = guidance_penalty_ / guides_.size();
 
   if (graphics_) {
-    graphics_->setGuidancePenalty(
-        {core_weights_.guidance, guidance_penalty_ / norm_guidance_penalty_});
+    graphics_->setGuidancePenalty({"Guidance",
+                                   core_weights_.guidance,
+                                   guidance_penalty_,
+                                   norm_guidance_penalty_});
   }
 }
 
@@ -641,28 +647,30 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::report(const Penalty& penalty) const
+void SimulatedAnnealingCore<T>::report(const PenaltyData& penalty) const
 {
-  logger_->report("{:>15s} | {:>8.4f} | {:>7.4f} | {:>13.4f} | {:>7.4f} ",
-                  penalty.name,
-                  penalty.weight,
-                  penalty.value,
-                  penalty.initial_average,
-                  penalty.weight * penalty.value / penalty.initial_average);
+  logger_->report(
+      "{:>15s} | {:>8.4f} | {:>7.4f} | {:>14.4f} | {:>7.4f} ",
+      penalty.name,
+      penalty.weight,
+      penalty.value,
+      penalty.normalization_factor,
+      penalty.weight * penalty.value / penalty.normalization_factor);
 }
 
 template <class T>
 void SimulatedAnnealingCore<T>::reportCoreWeights() const
 {
   logger_->report(
-      "\n  Penalty Type  |  Weight  |  Value  |  Initial Avg  |  Cost");
+      "\n  Penalty Type  |  Weight  |  Value  |  Norm. Factor  |  Cost");
   logger_->report(
-      "--------------------------------------------------------------");
+      "---------------------------------------------------------------");
   report({"Area", core_weights_.area, getAreaPenalty(), 1.0f});
   report({"Outline",
           core_weights_.outline,
           outline_penalty_,
           norm_outline_penalty_});
+
   report(
       {"Wire Length", core_weights_.wirelength, wirelength_, norm_wirelength_});
   report({"Guidance",
@@ -673,11 +681,11 @@ void SimulatedAnnealingCore<T>::reportCoreWeights() const
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::reportFinalCost() const
+void SimulatedAnnealingCore<T>::reportTotalCost() const
 {
   logger_->report(
-      "--------------------------------------------------------------");
-  logger_->report("  Final Cost  {:>48.4f} \n", getNormCost());
+      "---------------------------------------------------------------");
+  logger_->report("  Total Cost  {:>49.4f} \n", getNormCost());
 }
 
 template <class T>

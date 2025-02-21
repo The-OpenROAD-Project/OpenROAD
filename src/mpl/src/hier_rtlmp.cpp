@@ -307,10 +307,6 @@ void HierRTLMP::runHierarchicalMacroPlacement()
   }
 
   adjustMacroBlockageWeight();
-  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
-    reportSAWeights();
-  }
-
   placeChildren(tree_->root.get());
 }
 
@@ -1092,19 +1088,6 @@ void HierRTLMP::adjustMacroBlockageWeight()
                new_macro_blockage_weight);
     macro_blockage_weight_ = new_macro_blockage_weight;
   }
-}
-
-void HierRTLMP::reportSAWeights()
-{
-  logger_->report("\nSimmulated Annealing Weights:\n");
-  logger_->report("Area = {}", placement_core_weights_.area);
-  logger_->report("Outline = {}", placement_core_weights_.outline);
-  logger_->report("WL = {}", placement_core_weights_.wirelength);
-  logger_->report("Guidance = {}", placement_core_weights_.guidance);
-  logger_->report("Fence = {}", placement_core_weights_.fence);
-  logger_->report("Boundary = {}", boundary_weight_);
-  logger_->report("Notch = {}", notch_weight_);
-  logger_->report("Macro Blockage = {}\n", macro_blockage_weight_);
 }
 
 void HierRTLMP::placeChildren(Cluster* parent)

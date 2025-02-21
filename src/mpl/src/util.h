@@ -33,6 +33,8 @@
 
 #pragma once
 
+namespace mpl {
+
 struct SACoreWeights
 {
   float area{0.0f};
@@ -42,10 +44,20 @@ struct SACoreWeights
   float fence{0.0f};
 };
 
-struct Penalty
+// The cost of a certain penalty is:
+//   cost = weight * normalized_penalty
+//
+// Where the normalized_penalty is:
+//   normalized_penalty = value / normalization_factor
+//
+// Note: the normalization factor is generated during the
+// annealer core initialization.
+struct PenaltyData
 {
   std::string name;
   float weight{0.0f};
   float value{0.0f};
-  float initial_average{0.0f};
+  float normalization_factor{0.0f};
 };
+
+}  // namespace mpl

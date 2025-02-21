@@ -158,9 +158,9 @@ class SimulatedAnnealingCore
 
   // For debugging
   void reportCoreWeights() const;
-  void reportFinalCost() const;
+  void reportTotalCost() const;
   void reportLocations() const;
-  void report(const Penalty& penalty) const;
+  void report(const PenaltyData& penalty) const;
 
   /////////////////////////////////////////////
   // private member variables

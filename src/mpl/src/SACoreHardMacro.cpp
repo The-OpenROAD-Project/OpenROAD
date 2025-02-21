@@ -120,7 +120,8 @@ void SACoreHardMacro::calPenalty()
   calGuidancePenalty();
   calFencePenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty({core_weights_.area, getAreaPenalty()});
+    graphics_->setAreaPenalty(
+        {"Area", core_weights_.area, getAreaPenalty(), norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -294,7 +295,7 @@ void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 void SACoreHardMacro::printResults() const
 {
   reportCoreWeights();
-  reportFinalCost();
+  reportTotalCost();
   reportLocations();
 }
 
