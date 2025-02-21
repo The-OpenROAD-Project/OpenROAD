@@ -846,7 +846,7 @@ proc reset_opt_config { args } {
     utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
   }
 
-  set reset_all [expr { [llength $args] == 0 }]  
+  set reset_all [expr { [llength $args] == 0 }]
   if {
     $reset_all || [info exists flags(-limit_sizing_area)]
     || [info exists flags(-sizing_area_limit)]
@@ -910,7 +910,7 @@ proc report_opt_config { args } {
   if { $keep_site ne "NULL" } {
     set keep_site_value [$keep_site getValue]
   }
-    
+
   puts "***********************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:    $area_limit_value"
