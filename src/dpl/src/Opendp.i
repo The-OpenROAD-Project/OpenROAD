@@ -97,10 +97,9 @@ namespace dpl {
 void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
-                       bool disallow_one_site_gaps,
                        const char* report_file_name){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), disallow_one_site_gaps);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name));
 }
 
 void
@@ -111,10 +110,10 @@ report_legalization_stats()
 }
 
 void
-check_placement_cmd(bool verbose, bool disallow_one_site_gaps, const char* report_file_name)
+check_placement_cmd(bool verbose, const char* report_file_name)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose, disallow_one_site_gaps, std::string(report_file_name));
+  opendp->checkPlacement(verbose, std::string(report_file_name));
 }
 
 

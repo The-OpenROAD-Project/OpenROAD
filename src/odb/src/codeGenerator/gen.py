@@ -385,11 +385,16 @@ def by_base_type(classes):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Code generator")
-    parser.add_argument("--json", action="store", required=True)
-    parser.add_argument("--src_dir", action="store", required=True)
-    parser.add_argument("--include_dir", action="store", required=True)
-    parser.add_argument("--templates", action="store", required=True)
+    parser = argparse.ArgumentParser(
+        description="Code generator",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--json", default="schema.json", help="json schema filename")
+    parser.add_argument("--src_dir", default="../db", help="odb src dir")
+    parser.add_argument(
+        "--include_dir", default="../../include/odb", help="odb include dir"
+    )
+    parser.add_argument("--templates", default="templates", help="jinja templates dir")
     parser.add_argument("--log", action="store", default="INFO")
     parser.add_argument("--keep_generated", action="store_true")
     parser.add_argument("--keep_empty", action="store_true")
