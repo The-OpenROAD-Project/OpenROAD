@@ -84,7 +84,7 @@ class RoutingCallBack : public dst::JobCallBack
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (init_) {
       init_ = false;
-      omp_set_num_threads(or_db_interface_->getThreadCount());
+      omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
     }
     auto workers = desc->getWorkers();
     int size = workers.size();
@@ -141,7 +141,7 @@ class RoutingCallBack : public dst::JobCallBack
       logger_->report("Design Update");
       if (desc->isDesignUpdate()) {
         router_->updateDesign(desc->getUpdates(),
-                              or_db_interface_->getThreadCount());
+                              router_->getRouterConfiguration()->MAX_THREADS);
       } else {
         router_->resetDb(desc->getDesignPath().c_str());
       }
@@ -191,7 +191,7 @@ class RoutingCallBack : public dst::JobCallBack
         break;
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
-        omp_set_num_threads(or_db_interface_->getThreadCount());
+        omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < instRows.size(); i++) {  // NOLINT
           pa_.genInstRowPattern(instRows.at(i));

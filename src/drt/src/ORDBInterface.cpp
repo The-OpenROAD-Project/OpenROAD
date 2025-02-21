@@ -51,9 +51,4 @@ void ORDBInterface::writeDb(const char* file_name)
   ord::OpenRoad::openRoad()->writeDb(file_name);
 }
 
-int ORDBInterface::getThreadCount()
-{
-  return ord::OpenRoad::openRoad()->getThreadCount();
-}
-
 }  // namespace drt
