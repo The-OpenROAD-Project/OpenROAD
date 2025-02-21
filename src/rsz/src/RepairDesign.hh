@@ -200,7 +200,7 @@ class RepairDesign : dbStaState
                       const DcalcAnalysisPt* dcalc_ap);
   LoadRegion findLoadRegions(const Pin* drvr_pin, int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
-  bool makeRegionRepeaters(LoadRegion& region,
+  void makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,
                            int level,
                            const Pin* drvr_pin,
@@ -208,7 +208,7 @@ class RepairDesign : dbStaState
                            bool check_cap,
                            int max_length,
                            bool resize_drvr);
-  bool makeFanoutRepeater(PinSeq& repeater_loads,
+  void makeFanoutRepeater(PinSeq& repeater_loads,
                           PinSeq& repeater_inputs,
                           const Rect& bbox,
                           const Point& loc,
@@ -220,7 +220,7 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
@@ -230,7 +230,7 @@ class RepairDesign : dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     int x,
                     int y,
                     LibertyCell* buffer_cell,
