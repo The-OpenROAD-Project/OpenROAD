@@ -61,6 +61,7 @@ using sta::Cell;
 using sta::ConcreteCell;
 using sta::ConcreteNetwork;
 using sta::dbNetwork;
+using sta::VerilogReader;
 
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
@@ -80,6 +81,9 @@ class dbVerilogNetwork : public ConcreteNetwork
 dbVerilogNetwork* makeDbVerilogNetwork();
 
 void initDbVerilogNetwork(OpenRoad* openroad);
+
+void setDbNetworkLinkFunc(ord::OpenRoad* openroad,
+                          VerilogReader* verilog_reader);
 
 void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
 
