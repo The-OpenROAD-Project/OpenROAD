@@ -173,7 +173,7 @@ report_cell_usage_cmd(odb::dbModule* mod,
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
-  sta->report_cell_usage(mod, verbose, file_name, stage_name);
+  sta->reportCellUsage(mod, verbose, file_name, stage_name);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog

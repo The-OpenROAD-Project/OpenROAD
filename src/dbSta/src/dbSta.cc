@@ -125,7 +125,6 @@ void tag_invoke(boost::json::value_from_tag,
          {"cell_usage_info",
           boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
 }
-
 }  // namespace
 
 using utl::Logger;
@@ -584,10 +583,10 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(odb::dbModule* module,
-                              const bool verbose,
-                              const char* file_name,
-                              const char* stage_name)
+void dbSta::reportCellUsage(odb::dbModule* module,
+                            const bool verbose,
+                            const char* file_name,
+                            const char* stage_name)
 {
   InstTypeMap instances_types;
   std::vector<dbInst*> insts;
