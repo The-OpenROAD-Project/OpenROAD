@@ -293,6 +293,7 @@ void FlexGR::searchRepair_update(int iter,
   float syncTime = 0.0;
 
   for (int iter = 0; iter < mazeEndIter; iter++) {
+    std::vector<uint64_t> h_costMap = uworkers[0]->getCMap()->getBits();
     std::vector<std::vector<grNet*> > rerouteNets(uworkers.size());
     ThreadException exception1;
 #pragma omp parallel for schedule(dynamic)
@@ -317,8 +318,8 @@ void FlexGR::searchRepair_update(int iter,
     }
     exception2.rethrow();
   
-    if (is2DRouting == true) {
-      auto& h_costMap = uworkers[0]->getCMap()->getBits();
+    if (is2DRouting == true) {     
+      //auto& h_costMap = uworkers[0]->getCMap()->getBits();
       int xDim, yDim, zDim;
       uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
       logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
@@ -345,9 +346,11 @@ void FlexGR::searchRepair_update(int iter,
       // then we route all the nets in the batches
       // Then we restore all the nets at the end
     
+      float relaxThreshold = 2.0;
       // Route the nets in the batches
-      float GPURuntime = GPUAccelerated2DMazeRoute_update(
-        uworkers, batches, validBatchIds, h_parents, h_costMap, xCoords, yCoords, router_cfg_, congThresh, xDim, yDim);
+      float GPURuntime = GPUAccelerated2DMazeRoute_update_v3(
+        uworkers, batches, validBatchIds, h_parents, h_costMap, xCoords, yCoords, router_cfg_, 
+        relaxThreshold, congThresh, xDim, yDim);
       logger_->report("[INFO] GPU Maze Routing Runtime: " + std::to_string(GPURuntime) + " ms");
 
       // For CPU-side net, we do routing

@@ -296,7 +296,33 @@ class FlexGR
     float congThreshold,
     int xDim, int yDim);
 
-  int validBatchThreshold_ = 200;
+
+  float GPUAccelerated2DMazeRoute_update_v2(
+    std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+    std::vector<std::vector<grNet*> >& netBatches, 
+    std::vector<int>& validBatches,
+    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<uint64_t>& h_costMap,
+    std::vector<int>& h_xCoords,
+    std::vector<int>& h_yCoords,
+    RouterConfiguration* router_cfg,
+    float congThreshold,
+    int xDim, int yDim);
+
+  float GPUAccelerated2DMazeRoute_update_v3(
+    std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+    std::vector<std::vector<grNet*> >& netBatches, 
+    std::vector<int>& validBatches,
+    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<uint64_t>& h_costMap,
+    std::vector<int>& h_xCoords,
+    std::vector<int>& h_yCoords,
+    RouterConfiguration* router_cfg,
+    float relaxThreshold,
+    float congThreshold,
+    int xDim, int yDim);
+
+  int validBatchThreshold_ = 100;
   std::vector<grNet*> nets2Ripup_;
 };
 
