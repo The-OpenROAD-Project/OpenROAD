@@ -840,7 +840,8 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
-    keys {} flags {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit -sizing_leakage_limit -keep_sizing_site }
+    keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
+                     -sizing_area_limit -sizing_leakage_limit }
   set db [ord::get_db]
   if { $db eq "NULL" } {
     utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
