@@ -274,7 +274,7 @@ void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
                   path_stats.tot_num_noncritical_path);
   logger_->report("\tThe worst number of cuts on timing-critical paths = {}",
                   path_stats.worst_cut_critical_path);
-  logger_->report("\tThe average number of cuts on timing-critical paths = {}",
+  logger_->report("\tThe average number of cuts on timing-critical paths = {:.2f}",
                   path_stats.avg_cut_critical_path);
   logger_->report(
       "\tTotal number of timing-noncritical to timing critical paths = {}",
@@ -283,7 +283,7 @@ void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
       "\tThe worst number of cuts on timing-non2critical paths = {}",
       path_stats.worst_cut_non2critical_path);
   logger_->report(
-      "\tThe average number of cuts on timing-non2critical paths = {}",
+      "\tThe average number of cuts on timing-non2critical paths = {:.2f}",
       path_stats.avg_cut_non2critical_path);
 }
 

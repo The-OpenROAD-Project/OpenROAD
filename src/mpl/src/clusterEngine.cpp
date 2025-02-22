@@ -239,7 +239,7 @@ void ClusteringEngine::reportDesignData()
 {
   const odb::Rect& die = block_->getDieArea();
   logger_->report(
-      "Die Area: ({}, {}) ({}, {}),  Floorplan Area: ({}, {}) ({}, {})",
+      "Die Area: ({:.2f}, {:.2f}) ({:.2f}, {:.2f}),  Floorplan Area: ({:.2f}, {:.2f}) ({:.2f}, {:.2f})",
       block_->dbuToMicrons(die.xMin()),
       block_->dbuToMicrons(die.yMin()),
       block_->dbuToMicrons(die.xMax()),
