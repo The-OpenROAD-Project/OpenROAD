@@ -44,11 +44,18 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cmath>
+#include <fstream>
+#include <map>
 #include <mutex>
 #include <regex>
+#include <string>
+#include <vector>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
+#include "boost/json.hpp"
+#include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -70,6 +77,27 @@
 
 ////////////////////////////////////////////////////////////////
 
+namespace {
+
+// Holds the usage information of a specific cell which includes (i) name of
+// the cell, (ii) number of instances of the cell, and (iii) area of the cell
+// in microns^2.
+struct CellUsageInfo
+{
+  std::string name;
+  int count = 0;
+  double area = 0.0;
+};
+
+// Holds a snapshot of cell usage information at a given stage.
+struct CellUsageSnapshot
+{
+  std::string stage;
+  std::vector<CellUsageInfo> cells_usage_info;
+};
+
+}  // namespace
+
 namespace ord {
 
 using sta::dbSta;
@@ -79,6 +107,28 @@ dbSta* makeDbSta()
   return new dbSta;
 }
 }  // namespace ord
+
+namespace boost::json {
+void tag_invoke(json::value_from_tag,
+                json::value& json_value,
+                CellUsageInfo const& cell_usage_info)
+{
+  json_value = {{"name", cell_usage_info.name},
+                {"count", cell_usage_info.count},
+                {"area", cell_usage_info.area}};
+}
+
+void tag_invoke(json::value_from_tag,
+                json::value& json_value,
+                CellUsageSnapshot const& cell_usage_snapshot)
+{
+  json_value
+      = {{"stage", cell_usage_snapshot.stage},
+         {"cell_usage_info",
+          boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
+}
+
+}  // namespace boost::json
 
 namespace sta {
 
@@ -538,7 +588,10 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
+void dbSta::report_cell_usage(odb::dbModule* module,
+                              const bool verbose,
+                              const char* file_name,
+                              const char* stage_name)
 {
   InstTypeMap instances_types;
   std::vector<dbInst*> insts;
@@ -601,6 +654,43 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
     for (auto [master, stats] : usage_count) {
       logger_->report(
           format, master->getName(), stats.count, stats.area / area_to_microns);
+    }
+  }
+
+  std::string file(file_name);
+  if (!file.empty()) {
+    std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
+    for (const dbInst* inst : insts) {
+      const std::string& cell_name = inst->getMaster()->getName();
+      auto [it, inserted] = name_to_cell_usage_info.insert(
+          {cell_name,
+           CellUsageInfo{
+               .name = cell_name,
+               .count = 1,
+               .area = inst->getMaster()->getArea() / area_to_microns,
+           }});
+      if (!inserted) {
+        it->second.count++;
+      }
+    }
+
+    CellUsageSnapshot cell_usage_snapshot{
+        .stage = std::string(stage_name),
+        .cells_usage_info = std::vector<CellUsageInfo>()};
+    cell_usage_snapshot.cells_usage_info.reserve(
+        name_to_cell_usage_info.size());
+    for (const auto& [cell_name, cell_usage_info] : name_to_cell_usage_info) {
+      cell_usage_snapshot.cells_usage_info.push_back(cell_usage_info);
+    }
+    boost::json::value output = boost::json::value_from(cell_usage_snapshot);
+
+    std::ofstream snapshot;
+    snapshot.open(file);
+    if (snapshot.fail()) {
+      logger_->error(STA, 1001, "Could not open snapshot file {}", file_name);
+    } else {
+      snapshot << output.as_object();
+      snapshot.close();
     }
   }
 }

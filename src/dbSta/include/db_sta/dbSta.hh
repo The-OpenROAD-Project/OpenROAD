@@ -36,6 +36,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -190,7 +192,10 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   std::string getInstanceTypeText(InstType type) const;
   InstType getInstanceType(odb::dbInst* inst);
-  void report_cell_usage(odb::dbModule* module, bool verbose);
+  void report_cell_usage(odb::dbModule* module,
+                         bool verbose,
+                         const char* file_name,
+                         const char* stage_name);
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
