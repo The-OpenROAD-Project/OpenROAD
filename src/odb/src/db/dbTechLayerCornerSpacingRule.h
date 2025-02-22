@@ -47,7 +47,7 @@ class _dbDatabase;
 
 struct dbTechLayerCornerSpacingRuleFlags
 {
-  uint corner_type_ : 1;
+  bool corner_type_ : 1;
   bool same_mask_ : 1;
   bool corner_only_ : 1;
   bool except_eol_ : 1;
