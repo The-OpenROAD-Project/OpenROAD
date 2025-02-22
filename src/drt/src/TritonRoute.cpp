@@ -34,7 +34,6 @@
 #include <iostream>
 
 #include "AbstractGraphicsFactory.h"
-#include "AbstractORDBInterface.h"
 #include "DesignCallBack.h"
 #include "db/tech/frTechObject.h"
 #include "distributed/PinAccessJobDescription.h"
@@ -305,8 +304,25 @@ void TritonRoute::updateGlobals(const char* file_name)
 
 void TritonRoute::resetDb(const char* file_name)
 {
+  std::ifstream stream;
+  stream.open(file_name, std::ios::binary);
+  try {
+    if (db_->getChip() && db_->getChip()->getBlock()) {
+      logger_->error(
+          DRT,
+          9947,
+          "You can't load a new db file as the db is already populated");
+    }
+
+    stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                      | std::ios::eofbit);
+
+    db_->read(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(
+        DRT, 9954, "odb file {} is invalid: {}", file_name, f.what());
+  }
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  or_db_interface_->readDb(file_name);
   initDesign();
   if (!db_->getChip()->getBlock()->getAccessPoints().empty()) {
     initGuide();
@@ -525,8 +541,7 @@ void TritonRoute::init(
     Logger* logger,
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,
-    std::unique_ptr<AbstractGraphicsFactory> graphics_factory,
-    std::unique_ptr<AbstractORDBInterface> or_db_interface)
+    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
 {
   db_ = db;
   logger_ = logger;
@@ -535,7 +550,6 @@ void TritonRoute::init(
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
-  or_db_interface_ = std::move(or_db_interface);
 }
 
 bool TritonRoute::initGuide()

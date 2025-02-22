@@ -34,7 +34,6 @@
 #include "triton_route/MakeTritonRoute.h"
 
 #include "GraphicsFactory.h"
-#include "ORDBInterface.h"
 #include "dr/FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"
 #include "pa/FlexPA_graphics.h"
@@ -71,19 +70,14 @@ void initTritonRoute(OpenRoad* openroad)
   sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
 
   drt::TritonRoute* router = openroad->getTritonRoute();
-
   std::unique_ptr<drt::AbstractGraphicsFactory> graphics_factory
       = std::make_unique<drt::GraphicsFactory>();
-
-  std::unique_ptr<drt::ORDBInterface> or_db_interface
-      = std::make_unique<drt::ORDBInterface>();
 
   router->init(openroad->getDb(),
                openroad->getLogger(),
                openroad->getDistributed(),
                openroad->getSteinerTreeBuilder(),
-               std::move(graphics_factory),
-               std::move(or_db_interface));
+               std::move(graphics_factory));
 }
 
 }  // namespace ord

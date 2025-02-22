@@ -72,7 +72,6 @@ struct FlexDRViaData;
 class frMarker;
 struct RouterConfiguration;
 class AbstractGraphicsFactory;
-class AbstractORDBInterface;
 
 struct ParamStruct
 {
@@ -109,8 +108,7 @@ class TritonRoute
             utl::Logger* logger,
             dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder,
-            std::unique_ptr<AbstractGraphicsFactory> graphics_factory,
-            std::unique_ptr<AbstractORDBInterface> or_db_interface);
+            std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
   frDesign* getDesign() const { return design_.get(); }
   utl::Logger* getLogger() const { return logger_; }
@@ -223,7 +221,6 @@ class TritonRoute
   std::optional<boost::asio::thread_pool> dist_pool_;
   std::unique_ptr<FlexPA> pa_{nullptr};
   std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
-  std::unique_ptr<AbstractORDBInterface> or_db_interface_{nullptr};
 
   void initDesign();
   void initGraphics();

@@ -161,7 +161,6 @@ target_sources(drt
     src/pa/FlexPA_graphics.cpp
     src/MakeTritonRoute.cpp
     src/GraphicsFactory.cpp
-    src/ORDBInterface.cpp
 )
 
 target_include_directories(drt
