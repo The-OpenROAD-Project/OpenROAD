@@ -77,8 +77,19 @@
 
 ////////////////////////////////////////////////////////////////
 
-namespace {
+namespace ord {
 
+using sta::dbSta;
+
+dbSta* makeDbSta()
+{
+  return new dbSta;
+}
+}  // namespace ord
+
+namespace sta {
+
+namespace {
 // Holds the usage information of a specific cell which includes (i) name of
 // the cell, (ii) number of instances of the cell, and (iii) area of the cell
 // in microns^2.
@@ -96,21 +107,8 @@ struct CellUsageSnapshot
   std::vector<CellUsageInfo> cells_usage_info;
 };
 
-}  // namespace
-
-namespace ord {
-
-using sta::dbSta;
-
-dbSta* makeDbSta()
-{
-  return new dbSta;
-}
-}  // namespace ord
-
-namespace boost::json {
-void tag_invoke(json::value_from_tag,
-                json::value& json_value,
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& json_value,
                 CellUsageInfo const& cell_usage_info)
 {
   json_value = {{"name", cell_usage_info.name},
@@ -118,8 +116,8 @@ void tag_invoke(json::value_from_tag,
                 {"area", cell_usage_info.area}};
 }
 
-void tag_invoke(json::value_from_tag,
-                json::value& json_value,
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& json_value,
                 CellUsageSnapshot const& cell_usage_snapshot)
 {
   json_value
@@ -127,10 +125,7 @@ void tag_invoke(json::value_from_tag,
          {"cell_usage_info",
           boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
 }
-
-}  // namespace boost::json
-
-namespace sta {
+}  // namespace
 
 using utl::Logger;
 using utl::STA;
@@ -588,10 +583,10 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(odb::dbModule* module,
-                              const bool verbose,
-                              const char* file_name,
-                              const char* stage_name)
+void dbSta::reportCellUsage(odb::dbModule* module,
+                            const bool verbose,
+                            const char* file_name,
+                            const char* stage_name)
 {
   InstTypeMap instances_types;
   std::vector<dbInst*> insts;
