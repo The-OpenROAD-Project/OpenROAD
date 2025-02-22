@@ -125,9 +125,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     print_interval_ = min_print_interval_;
   }
 
-  if (verbose) {
-    printProgress(0, false, false);
-  }
+  printProgress(0, false, false);
 
   int end_index = 0;
   int failed_move_threshold = 0;
@@ -145,7 +143,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                "Doing {} / {}",
                end_index,
                max_end_count);
-    if (verbose) {
+    if (verbose || end_index == 1) {
       printProgress(end_index, false, false);
     }
 
@@ -233,9 +231,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     }
   }
 
-  if (verbose) {
-    printProgress(end_index, true, true);
-  }
+  printProgress(end_index, true, true);
 
   bad_vertices_.clear();
 

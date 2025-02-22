@@ -42,6 +42,11 @@ Pin                                   Limit Fanout  Slack
 drvr/Q                                   10     70    -60 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 530um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       143
+    final |    +53.9% |       9 |       9 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 [INFO RSZ-0039] Resized 9 instances.

@@ -43,7 +43,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
 template <class T>
@@ -82,13 +81,13 @@ struct dbTechLayerFlags
   dbTechLayerType::Value type_ : 4;
   dbTechLayerDir::Value direction_ : 4;
   dbTechLayerMinStepType::Value minstep_type_ : 2;
-  uint has_max_width_ : 1;
-  uint has_thickness_ : 1;
-  uint has_area_ : 1;
-  uint has_protrusion_ : 1;
-  uint has_alias_ : 1;
-  uint has_xy_pitch_ : 1;
-  uint has_xy_offset_ : 1;
+  bool has_max_width_ : 1;
+  bool has_thickness_ : 1;
+  bool has_area_ : 1;
+  bool has_protrusion_ : 1;
+  bool has_alias_ : 1;
+  bool has_xy_pitch_ : 1;
+  bool has_xy_offset_ : 1;
   bool rect_only_ : 1;
   bool right_way_on_grid_only_ : 1;
   bool right_way_on_grid_only_check_mask_ : 1;
@@ -108,10 +107,6 @@ class _dbTechLayer : public _dbObject
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayer& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods

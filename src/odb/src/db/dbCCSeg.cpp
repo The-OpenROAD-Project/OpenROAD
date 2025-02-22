@@ -79,34 +79,6 @@ bool _dbCCSeg::operator==(const _dbCCSeg& rhs) const
   return true;
 }
 
-void _dbCCSeg::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbCCSeg& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._spef_mark_1);
-  DIFF_FIELD(_flags._mark);
-  DIFF_FIELD(_flags._inFileCnt);
-  DIFF_FIELD(_cap_node[0]);
-  DIFF_FIELD(_cap_node[1]);
-  DIFF_FIELD(_next[0]);
-  DIFF_FIELD(_next[1]);
-  DIFF_END
-}
-
-void _dbCCSeg::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._spef_mark_1);
-  DIFF_OUT_FIELD(_flags._mark);
-  DIFF_OUT_FIELD(_flags._inFileCnt);
-  DIFF_OUT_FIELD(_cap_node[0]);
-  DIFF_OUT_FIELD(_cap_node[1]);
-  DIFF_OUT_FIELD(_next[0]);
-  DIFF_OUT_FIELD(_next[1]);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbCCSeg - Methods

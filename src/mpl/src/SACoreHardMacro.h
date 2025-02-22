@@ -45,20 +45,13 @@ class Logger;
 
 namespace mpl {
 
-// SA for hard macros.  It will be called by ShapeEngine and PinAlignEngine
 class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 {
  public:
   SACoreHardMacro(PhysicalHierarchy* tree,
                   const Rect& outline,
                   const std::vector<HardMacro>& macros,
-                  // weight for different penalty
-                  float area_weight,
-                  float outline_weight,
-                  float wirelength_weight,
-                  float guidance_weight,
-                  float fence_weight,  // each blockage will be modeled by a
-                                       // macro with fences
+                  const SACoreWeights& core_weights,
                   // probability of each action
                   float pos_swap_prob,
                   float neg_swap_prob,

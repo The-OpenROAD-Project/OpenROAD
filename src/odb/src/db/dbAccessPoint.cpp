@@ -34,7 +34,6 @@
 #include "dbAccessPoint.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -105,33 +104,6 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
   }
 
   return true;
-}
-
-void _dbAccessPoint::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbAccessPoint& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(point_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(lib_);
-  DIFF_FIELD(master_);
-  DIFF_FIELD(mpin_);
-  DIFF_FIELD(bpin_);
-  DIFF_END
-}
-
-void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(point_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(lib_);
-  DIFF_OUT_FIELD(master_);
-  DIFF_OUT_FIELD(mpin_);
-  DIFF_OUT_FIELD(bpin_);
-
-  DIFF_END
 }
 
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
