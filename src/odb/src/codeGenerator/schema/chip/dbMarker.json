@@ -14,18 +14,15 @@
     },
     {
       "name":"visited_",
-      "type":"bool",
-      "bits":1
+      "type":"bit"
     },
     {
       "name":"visible_",
-      "type":"bool",
-      "bits":1
+      "type":"bit"
     },
     {
       "name":"waived_",
-      "type":"bool",
-      "bits":1
+      "type":"bit"
     },
     {
       "name":"comment_",
