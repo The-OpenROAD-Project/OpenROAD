@@ -1,3 +1,4 @@
+{% import 'macros' as macros %}
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
@@ -256,27 +257,18 @@ namespace odb {
     {% endif %}
   
     {% if 'no-get' not in field.flags %}
+      {{- macros.getter_signature(field, klass) -}}
+      {
       {% if field.dbSetGetter %}
-        dbSet<{{field.type}}> {{klass.name}}::get{{field.functional_name}}() const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.type}}>(obj, obj->{{field.name}});
-        }
       {% elif field.isPassByRef %}
-        void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           tbl = obj->{{field.name}};
-        }
       {% elif field.isHashTable %}
-        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}(const char* name) const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
-        }
       {% else %}
-        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({% if field.isHashTable %}const char* name{% endif %}) const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           {% if field.isRef %}
             if(obj->{{field.name}} == 0) {
@@ -289,8 +281,8 @@ namespace odb {
           {% else %}
             return obj->{{field.name}};
           {% endif %}
-        }
       {% endif %}
+      }
     {% endif %}
   {% endfor %}
 

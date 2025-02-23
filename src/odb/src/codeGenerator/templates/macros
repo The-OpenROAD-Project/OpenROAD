@@ -30,3 +30,16 @@
     {% endif %}
   {% endfor %}
 {%- endmacro %}
+
+{% macro getter_signature(field, klass=None) -%}
+  {% if klass %}{% set prefix = klass.name + "::" %}{% endif %}
+  {% if field.dbSetGetter %}
+    dbSet<{{field.type}}> {{prefix}}get{{field.functional_name}}() const
+  {% elif field.isPassByRef %}
+    void {{prefix}}{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
+  {% elif field.isHashTable %}
+    {{field.getterReturnType}} {{prefix}}{{field.getterFunctionName}}(const char* name) const
+  {% else %}
+    {{field.getterReturnType}} {{prefix}}{{field.getterFunctionName}}() const
+  {% endif %}
+{%- endmacro %}
