@@ -634,6 +634,7 @@ class frPathSeg : public frShape
   }
   bool isApPathSeg() const { return is_ap_pathseg_; }
   Point getApLoc() const { return ap_loc_; }
+  void transform(const odb::dbTransform& xform);
 
  protected:
   Point begin_;  // begin always smaller than end, assumed

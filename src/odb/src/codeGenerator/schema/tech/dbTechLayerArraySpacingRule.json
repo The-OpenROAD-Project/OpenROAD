@@ -3,19 +3,16 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "bool",
-      "name": "parallel_overlap_",
-      "bits": 1
+      "type": "bit",
+      "name": "parallel_overlap_"
     },
     {
-      "type": "bool",
-      "name": "long_array_",
-      "bits": 1
+      "type": "bit",
+      "name": "long_array_"
     },
     {
-      "type": "bool",
-      "name": "via_width_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "via_width_valid_"
     },
     {
       "type": "int",
@@ -28,9 +25,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "within_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "within_valid_"
     },
     {
       "type": "int",

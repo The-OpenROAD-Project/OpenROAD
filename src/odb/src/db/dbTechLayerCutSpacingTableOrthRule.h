@@ -45,12 +45,7 @@ class _dbDatabase;
 class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
 {
  public:
-  _dbTechLayerCutSpacingTableOrthRule(
-      _dbDatabase*,
-      const _dbTechLayerCutSpacingTableOrthRule& r);
   _dbTechLayerCutSpacingTableOrthRule(_dbDatabase*);
-
-  ~_dbTechLayerCutSpacingTableOrthRule() = default;
 
   bool operator==(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableOrthRule& rhs) const

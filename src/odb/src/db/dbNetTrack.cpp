@@ -72,14 +72,6 @@ _dbNetTrack::_dbNetTrack(_dbDatabase* db)
 {
 }
 
-_dbNetTrack::_dbNetTrack(_dbDatabase* db, const _dbNetTrack& r)
-{
-  net_ = r.net_;
-  box_ = r.box_;
-  layer_ = r.layer_;
-  track_next_ = r.track_next_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbNetTrack& obj)
 {
   stream >> obj.net_;

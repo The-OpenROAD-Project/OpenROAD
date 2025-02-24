@@ -54,10 +54,7 @@ struct dbCellEdgeSpacingFlags
 class _dbCellEdgeSpacing : public _dbObject
 {
  public:
-  _dbCellEdgeSpacing(_dbDatabase*, const _dbCellEdgeSpacing& r);
   _dbCellEdgeSpacing(_dbDatabase*);
-
-  ~_dbCellEdgeSpacing() = default;
 
   bool operator==(const _dbCellEdgeSpacing& rhs) const;
   bool operator!=(const _dbCellEdgeSpacing& rhs) const

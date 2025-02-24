@@ -35,8 +35,27 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
+
+namespace odb {
+class dbBlock;
+class dbNet;
+};  // namespace odb
+
+namespace utl {
+class Logger;
+}
 
 namespace rcx {
+
+///
+/// Find a set of nets. Each name can be real name, or Nxxx, or xxx,
+/// where xxx is the net oid.
+///
+bool findSomeNet(odb::dbBlock* block,
+                 const char* names,
+                 std::vector<odb::dbNet*>& nets,
+                 utl::Logger* logger);
 
 // Simple list
 template <class T>

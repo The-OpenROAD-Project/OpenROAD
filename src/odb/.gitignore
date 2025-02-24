@@ -9,3 +9,4 @@ TAGS
 defRWarning.log
 
 test/results
+src/codeGenerator/generated

@@ -85,18 +85,6 @@ _dbIsolation::_dbIsolation(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _applies_to = r._applies_to;
-  _clamp_value = r._clamp_value;
-  _isolation_signal = r._isolation_signal;
-  _isolation_sense = r._isolation_sense;
-  _location = r._location;
-  _power_domain = r._power_domain;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 {
   stream >> obj._name;
@@ -274,6 +262,25 @@ std::vector<dbMaster*> dbIsolation::getIsolationCells()
 
   return masters;
 }
+
+bool dbIsolation::appliesTo(const dbIoType& io)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  if (io == dbIoType::OUTPUT) {
+    if (obj->_applies_to == "inputs") {
+      return false;
+    }
+  } else if (io == dbIoType::INPUT) {
+    if (obj->_applies_to == "outputs") {
+      return false;
+    }
+  }
+
+  // default "both"
+  return true;
+}
+
 // User Code End dbIsolationPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

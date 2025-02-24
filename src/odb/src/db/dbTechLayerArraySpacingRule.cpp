@@ -94,22 +94,6 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
   array_width_ = 0;
 }
 
-_dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerArraySpacingRule& r)
-{
-  flags_.parallel_overlap_ = r.flags_.parallel_overlap_;
-  flags_.long_array_ = r.flags_.long_array_;
-  flags_.via_width_valid_ = r.flags_.via_width_valid_;
-  flags_.within_valid_ = r.flags_.within_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  via_width_ = r.via_width_;
-  cut_spacing_ = r.cut_spacing_;
-  within_ = r.within_;
-  array_width_ = r.array_width_;
-  cut_class_ = r.cut_class_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
 {
   uint32_t flags_bit_field;

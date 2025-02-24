@@ -101,20 +101,6 @@ _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
   categories_hash_.setTable(categories_tbl_);
 }
 
-_dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db,
-                                     const _dbMarkerCategory& r)
-{
-  _name = r._name;
-  description_ = r.description_;
-  source_ = r.source_;
-  max_markers_ = r.max_markers_;
-  marker_tbl_ = new dbTable<_dbMarker>(db, this, *r.marker_tbl_);
-  categories_tbl_
-      = new dbTable<_dbMarkerCategory>(db, this, *r.categories_tbl_);
-  categories_hash_.setTable(categories_tbl_);
-  _next_entry = r._next_entry;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
 {
   stream >> obj._name;

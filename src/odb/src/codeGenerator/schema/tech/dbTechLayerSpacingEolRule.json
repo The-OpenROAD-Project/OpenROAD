@@ -44,9 +44,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "wrong_dir_within_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "wrong_dir_within_valid_"
     },
     {
       "type": "int",
@@ -54,14 +53,12 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "same_mask_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "same_mask_valid_"
     },
     {
-      "type": "bool",
-      "name": "except_exact_width_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "except_exact_width_valid_"
     },
     {
       "type": "int",
@@ -74,9 +71,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "fill_concave_corner_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "fill_concave_corner_valid_"
     },
     {
       "type": "int",
@@ -84,14 +80,12 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "withcut_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "withcut_valid_"
     },
     {
-      "type": "bool",
-      "name": "cut_class_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "cut_class_valid_"
     },
     {
       "type": "int",
@@ -99,9 +93,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "with_cut_above_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "with_cut_above_valid_"
     },
     {
       "type": "int",
@@ -109,9 +102,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "enclosure_end_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "enclosure_end_valid_"
     },
     {
       "type": "int",
@@ -119,9 +111,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "enclosure_end_within_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "enclosure_end_within_valid_"
     },
     {
       "type": "int",
@@ -129,9 +120,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "end_prl_spacing_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "end_prl_spacing_valid_"
     },
     {
       "type": "int",
@@ -139,9 +129,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "prl_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "prl_valid_"
     },
     {
       "type": "int",
@@ -149,9 +138,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "end_to_end_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "end_to_end_valid_"
     },
     {
       "type": "int",
@@ -159,9 +147,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "cut_spaces_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "cut_spaces_valid_"
     },
     {
       "type": "int",
@@ -174,9 +161,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "extension_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "extension_valid_"
     },
     {
       "type": "int",
@@ -184,9 +170,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "wrong_dir_extension_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "wrong_dir_extension_valid_"
     },
     {
       "type": "int",
@@ -194,9 +179,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "other_end_width_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "other_end_width_valid_"
     },
     {
       "type": "int",
@@ -204,9 +188,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "max_length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "max_length_valid_"
     },
     {
       "type": "int",
@@ -214,9 +197,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "min_length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "min_length_valid_"
     },
     {
       "type": "int",
@@ -224,24 +206,20 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "two_sides_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "two_sides_valid_"
     },
     {
-      "type": "bool",
-      "name": "equal_rect_width_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "equal_rect_width_valid_"
     },
     {
-      "type": "bool",
-      "name": "parallel_edge_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "parallel_edge_valid_"
     },
     {
-      "type": "bool",
-      "name": "subtract_eol_width_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "subtract_eol_width_valid_"
     },
     {
       "type": "int",
@@ -254,9 +232,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "par_prl_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "par_prl_valid_"
     },
     {
       "type": "int",
@@ -264,9 +241,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "par_min_length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "par_min_length_valid_"
     },
     {
       "type": "int",
@@ -274,39 +250,32 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "two_edges_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "two_edges_valid_"
     },
     {
-      "type": "bool",
-      "name": "same_metal_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "same_metal_valid_"
     },
     {
-      "type": "bool",
-      "name": "non_eol_corner_only_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "non_eol_corner_only_valid_"
     },
     {
-      "type": "bool",
-      "name": "parallel_same_mask_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "parallel_same_mask_valid_"
     },
     {
-      "type": "bool",
-      "name": "enclose_cut_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "enclose_cut_valid_"
     },
     {
-      "type": "bool",
-      "name": "below_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "below_valid_"
     },
     {
-      "type": "bool",
-      "name": "above_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "above_valid_"
     },
     {
       "type": "int",
@@ -314,9 +283,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "cut_spacing_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "cut_spacing_valid_"
     },
     {
       "type": "int",
@@ -324,24 +292,20 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "all_cuts_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "all_cuts_valid_"
     },
     {
-      "type": "bool",
-      "name": "to_concave_corner_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "to_concave_corner_valid_"
     },
     {
-      "type": "bool",
-      "name": "min_adjacent_length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "min_adjacent_length_valid_"
     },
     {
-      "type": "bool",
-      "name": "two_min_adj_length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "two_min_adj_length_valid_"
     },
     {
       "type": "int",
@@ -359,9 +323,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "to_notch_length_valid_",
-      "bits": "1"
+      "type": "bit",
+      "name": "to_notch_length_valid_"
     },
     {
       "type": "int",

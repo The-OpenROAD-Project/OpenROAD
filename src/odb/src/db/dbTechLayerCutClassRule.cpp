@@ -91,20 +91,6 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
   num_cuts_ = 0;
 }
 
-_dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutClassRule& r)
-{
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.cuts_valid_ = r.flags_.cuts_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  _name = r._name;
-  width_ = r.width_;
-  length_ = r.length_;
-  num_cuts_ = r.num_cuts_;
-  _next_entry = r._next_entry;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 {
   uint32_t flags_bit_field;

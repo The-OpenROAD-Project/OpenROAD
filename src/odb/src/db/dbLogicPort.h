@@ -45,7 +45,6 @@ class _dbDatabase;
 class _dbLogicPort : public _dbObject
 {
  public:
-  _dbLogicPort(_dbDatabase*, const _dbLogicPort& r);
   _dbLogicPort(_dbDatabase*);
 
   ~_dbLogicPort();

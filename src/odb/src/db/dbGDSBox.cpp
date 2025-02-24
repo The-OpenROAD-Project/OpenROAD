@@ -67,13 +67,6 @@ _dbGDSBox::_dbGDSBox(_dbDatabase* db)
   _datatype = 0;
 }
 
-_dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-  _bounds = r._bounds;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
   stream >> obj._layer;

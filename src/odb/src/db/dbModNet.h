@@ -50,7 +50,6 @@ class _dbBTerm;
 class _dbModNet : public _dbObject
 {
  public:
-  _dbModNet(_dbDatabase*, const _dbModNet& r);
   _dbModNet(_dbDatabase*);
 
   ~_dbModNet();

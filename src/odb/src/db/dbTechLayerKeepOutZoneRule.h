@@ -54,11 +54,7 @@ struct dbTechLayerKeepOutZoneRuleFlags
 class _dbTechLayerKeepOutZoneRule : public _dbObject
 {
  public:
-  _dbTechLayerKeepOutZoneRule(_dbDatabase*,
-                              const _dbTechLayerKeepOutZoneRule& r);
   _dbTechLayerKeepOutZoneRule(_dbDatabase*);
-
-  ~_dbTechLayerKeepOutZoneRule() = default;
 
   bool operator==(const _dbTechLayerKeepOutZoneRule& rhs) const;
   bool operator!=(const _dbTechLayerKeepOutZoneRule& rhs) const

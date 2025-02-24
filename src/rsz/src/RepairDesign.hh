@@ -107,6 +107,12 @@ class RepairDesign : dbStaState
                  double cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
+  void reportViolationCounters(bool invalidate_driver_vertices,
+                               int slew_violations,
+                               int cap_violations,
+                               int fanout_violations,
+                               int length_violations,
+                               int repaired_net_count);
 
  protected:
   void init();
@@ -214,7 +220,7 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
@@ -224,7 +230,7 @@ class RepairDesign : dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     int x,
                     int y,
                     LibertyCell* buffer_cell,

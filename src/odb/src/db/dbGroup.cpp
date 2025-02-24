@@ -124,26 +124,6 @@ _dbGroup::_dbGroup(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
-{
-  flags_._type = r.flags_._type;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _group_next = r._group_next;
-  _parent_group = r._parent_group;
-  _insts = r._insts;
-  _modinsts = r._modinsts;
-  _groups = r._groups;
-  region_next_ = r.region_next_;
-  region_prev_ = r.region_prev_;
-  region_ = r.region_;
-  // User Code Begin CopyConstructor
-  _power_nets = r._power_nets;
-  _ground_nets = r._ground_nets;
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 {
   uint32_t flags_bit_field;

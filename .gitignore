@@ -24,6 +24,8 @@ venv/
 include/ord/Version.hh
 
 build
+build_linux
+build_mac
 test/results
 flow
 

@@ -89,20 +89,6 @@ _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
   prl_ = 0;
 }
 
-_dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
-    _dbDatabase* db,
-    const _dbTechLayerTwoWiresForbiddenSpcRule& r)
-{
-  flags_.min_exact_span_length_ = r.flags_.min_exact_span_length_;
-  flags_.max_exact_span_length_ = r.flags_.max_exact_span_length_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  min_spacing_ = r.min_spacing_;
-  max_spacing_ = r.max_spacing_;
-  min_span_length_ = r.min_span_length_;
-  max_span_length_ = r.max_span_length_;
-  prl_ = r.prl_;
-}
-
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerTwoWiresForbiddenSpcRule& obj)
 {

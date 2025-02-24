@@ -110,21 +110,6 @@ _dbMarker::_dbMarker(_dbDatabase* db)
   // User Code End Constructor
 }
 
-_dbMarker::_dbMarker(_dbDatabase* db, const _dbMarker& r)
-{
-  flags_.visited_ = r.flags_.visited_;
-  flags_.visible_ = r.flags_.visible_;
-  flags_.waived_ = r.flags_.waived_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  parent_ = r.parent_;
-  layer_ = r.layer_;
-  comment_ = r.comment_;
-  line_number_ = r.line_number_;
-  // User Code Begin CopyConstructor
-  shapes_ = r.shapes_;
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
 {
   uint32_t flags_bit_field;

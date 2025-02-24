@@ -89,20 +89,6 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
   rect_width_ = 0;
 }
 
-_dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
-                                           const _dbTechLayerAreaRule& r)
-{
-  flags_.except_rectangle_ = r.flags_.except_rectangle_;
-  flags_.overlap_ = r.flags_.overlap_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  area_ = r.area_;
-  except_min_width_ = r.except_min_width_;
-  except_edge_length_ = r.except_edge_length_;
-  trim_layer_ = r.trim_layer_;
-  mask_ = r.mask_;
-  rect_width_ = r.rect_width_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 {
   uint32_t flags_bit_field;

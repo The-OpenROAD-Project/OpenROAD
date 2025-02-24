@@ -76,17 +76,6 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
   eol_width_ = 0;
 }
 
-_dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
-    _dbDatabase* db,
-    const _dbTechLayerSpacingTablePrlRule& r)
-{
-  flags_.wrong_direction_ = r.flags_.wrong_direction_;
-  flags_.same_mask_ = r.flags_.same_mask_;
-  flags_.exceept_eol_ = r.flags_.exceept_eol_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_width_ = r.eol_width_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 {
   uint32_t flags_bit_field;

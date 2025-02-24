@@ -46,10 +46,7 @@ class _dbGDSStructure;
 class _dbGDSSRef : public _dbObject
 {
  public:
-  _dbGDSSRef(_dbDatabase*, const _dbGDSSRef& r);
   _dbGDSSRef(_dbDatabase*);
-
-  ~_dbGDSSRef() = default;
 
   bool operator==(const _dbGDSSRef& rhs) const;
   bool operator!=(const _dbGDSSRef& rhs) const { return !operator==(rhs); }

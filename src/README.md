@@ -222,7 +222,7 @@ report_global_connect
 The `report_cell_usage` command is used to print out the usage of cells for each type of cell.
 
 ```
-report_cell_usage [-verbose] [module instance]
+report_cell_usage [-verbose] [module instance] [-file file] [-stage stage]
 ```
 
 ##### Options
@@ -231,6 +231,8 @@ report_cell_usage [-verbose] [module instance]
 | ----- | ----- |
 | `-verbose` | Add information about all leaf instances. |
 | `module instance` | Report cell usage for a specified module instance. |
+| `-file file` | Create cell usage snapshot with the given path to file. |
+| `-stage stage` | Attach the stage to the snapshot. |
 
 ## TCL functions
 

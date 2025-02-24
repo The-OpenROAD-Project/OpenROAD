@@ -244,7 +244,6 @@ class _dbDatabase : public _dbObject
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);
-  _dbDatabase(_dbDatabase* db, const _dbDatabase& d);
   ~_dbDatabase();
 
   utl::Logger* getLogger() const;

@@ -120,7 +120,7 @@ set_isolation
 | Switch Name | Description | 
 | ----- | ----- |
 | `-domain` | Power domain |
-| `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`). |
+| `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`), default value is `both`. |
 | `-clamp_value` | Value the isolation can drive (`0`, `1`). |
 | `-isolation_signal` | The control signal for this strategy. |
 | `-isolation_sense` | The active level of isolation control signal. |

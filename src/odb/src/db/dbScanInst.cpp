@@ -77,15 +77,6 @@ _dbScanInst::_dbScanInst(_dbDatabase* db)
   clock_edge_ = 0;
 }
 
-_dbScanInst::_dbScanInst(_dbDatabase* db, const _dbScanInst& r)
-{
-  bits_ = r.bits_;
-  scan_enable_ = r.scan_enable_;
-  inst_ = r.inst_;
-  scan_clock_ = r.scan_clock_;
-  clock_edge_ = r.clock_edge_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
 {
   stream >> obj.bits_;

@@ -1,0 +1,232 @@
+module mpd_top (in1,
+    in2,
+    out1,
+    out2,
+    out3,
+    d1_iso_control,
+    d2_iso_control,
+    d3_iso_control,
+    d4_iso_control);
+ input in1;
+ input in2;
+ output out1;
+ output out2;
+ output out3;
+ input d1_iso_control;
+ input d2_iso_control;
+ input d3_iso_control;
+ input d4_iso_control;
+
+ wire _0_;
+ wire d1_out1;
+ wire d1_out2;
+ wire d1_out3;
+ wire d2_out1;
+ wire d2_out2;
+ wire d2_out3;
+ wire d3_out1;
+ wire d3_out2;
+ wire d3_out3;
+ wire d4_out1;
+ wire d4_out2;
+ wire d4_out3;
+ wire d1_out2_o;
+ wire \d1/_2__d1_out2_d1_out2_o_isolation_inv_control ;
+ wire in1_o;
+ wire \d1/_1__in1_in1_o_isolation_inv_control ;
+ wire d1_out1_o;
+ wire \d1/_1__d1_out1_d1_out1_o_isolation_inv_control ;
+ wire \d1/_0__in1_in1_o_isolation_inv_control ;
+ wire d1_out3_o;
+ wire \d1/_0__d1_out3_d1_out3_o_isolation_inv_control ;
+ wire d1_out1_o_o;
+ wire \d2/_2__d1_out1_o_d1_out1_o_o_isolation_inv_control ;
+ wire in1_o_o;
+ wire \d2/_1__in1_o_in1_o_o_isolation_inv_control ;
+ wire \d2/_0__d1_out1_o_d1_out1_o_o_isolation_inv_control ;
+ wire \d2/_0__in1_o_in1_o_o_isolation_inv_control ;
+ wire d3_out2_o;
+ wire \d3/_2__d3_out2_d3_out2_o_isolation_inv_out ;
+ wire \d3/_2__d3_out2_d3_out2_o_isolation_inv_control ;
+ wire d3_out1_o;
+ wire \d3/_1__d3_out1_d3_out1_o_isolation_inv_out ;
+ wire \d3/_1__d3_out1_d3_out1_o_isolation_inv_control ;
+ wire d3_out3_o;
+ wire \d3/_0__d3_out3_d3_out3_o_isolation_inv_out ;
+ wire \d3/_0__d3_out3_d3_out3_o_isolation_inv_control ;
+ wire d2_out2_o;
+ wire \d4/_2__d2_out2_d2_out2_o_isolation_inv_out ;
+ wire \d4/_2__d2_out2_d2_out2_o_isolation_inv_control ;
+ wire d4_out2_o;
+ wire \d4/_2__d4_out2_d4_out2_o_isolation_inv_out ;
+ wire \d4/_2__d4_out2_d4_out2_o_isolation_inv_control ;
+ wire d3_out1_o_o;
+ wire \d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_out ;
+ wire \d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_control ;
+ wire d4_out1_o;
+ wire \d4/_1__d4_out1_d4_out1_o_isolation_inv_out ;
+ wire \d4/_1__d4_out1_d4_out1_o_isolation_inv_control ;
+ wire \d4/_0__d2_out2_d2_out2_o_isolation_inv_out ;
+ wire \d4/_0__d2_out2_d2_out2_o_isolation_inv_control ;
+ wire \d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_out ;
+ wire \d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_control ;
+ wire d4_out3_o;
+ wire \d4/_0__d4_out3_d4_out3_o_isolation_inv_out ;
+ wire \d4/_0__d4_out3_d4_out3_o_isolation_inv_control ;
+
+ sky130_fd_sc_hd__xnor2_1 _1_ (.A(d2_out3),
+    .B(d1_out3_o),
+    .Y(out1));
+ sky130_fd_sc_hd__xnor2_1 _2_ (.A(d4_out3_o),
+    .B(d3_out2_o),
+    .Y(out2));
+ sky130_fd_sc_hd__xnor2_1 _3_ (.A(d3_out3_o),
+    .B(d4_out2_o),
+    .Y(_0_));
+ sky130_fd_sc_hd__and2_1 _4_ (.A(d4_out1_o),
+    .B(_0_),
+    .X(out3));
+ sky130_fd_sc_hd__and2_1 \d1/_0_  (.A(in2),
+    .B(in1),
+    .X(d1_out3));
+ sky130_fd_sc_hd__buf_4 \d1/_1_  (.A(in1),
+    .X(d1_out1));
+ sky130_fd_sc_hd__buf_4 \d1/_2_  (.A(in2),
+    .X(d1_out2));
+ sky130_fd_sc_hd__and2_1 \d2/_0_  (.A(d1_out1_o),
+    .B(in1_o),
+    .X(d2_out3));
+ sky130_fd_sc_hd__buf_4 \d2/_1_  (.A(in1_o),
+    .X(d2_out1));
+ sky130_fd_sc_hd__buf_4 \d2/_2_  (.A(d1_out1_o),
+    .X(d2_out2_o));
+ sky130_fd_sc_hd__and2_1 \d3/_0_  (.A(d1_out2_o),
+    .B(d2_out1),
+    .X(d3_out3));
+ sky130_fd_sc_hd__buf_4 \d3/_1_  (.A(d2_out1),
+    .X(d3_out1));
+ sky130_fd_sc_hd__buf_4 \d3/_2_  (.A(d1_out2_o),
+    .X(d3_out2));
+ sky130_fd_sc_hd__and2_1 \d4/_0_  (.A(d2_out2),
+    .B(d3_out1_o),
+    .X(d4_out3));
+ sky130_fd_sc_hd__buf_4 \d4/_1_  (.A(d3_out1_o),
+    .X(d4_out1));
+ sky130_fd_sc_hd__buf_4 \d4/_2_  (.A(d2_out2),
+    .X(d4_out2));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d1/_2__d1_out2_d1_out2_o_isolation  (.A(d1_out2),
+    .SLEEP_B(\d1/_2__d1_out2_d1_out2_o_isolation_inv_control ),
+    .X(d1_out2_o));
+ sky130_fd_sc_hd__clkinv_1 \d1/_2__d1_out2_d1_out2_o_isolation_inv_control  (.A(d1_iso_control),
+    .Y(\d1/_2__d1_out2_d1_out2_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d1/_1__in1_in1_o_isolation  (.A(in1_o_o),
+    .SLEEP_B(\d1/_1__in1_in1_o_isolation_inv_control ),
+    .X(in1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d1/_1__in1_in1_o_isolation_inv_control  (.A(d1_iso_control),
+    .Y(\d1/_1__in1_in1_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d1/_1__d1_out1_d1_out1_o_isolation  (.A(d1_out1),
+    .SLEEP_B(\d1/_1__d1_out1_d1_out1_o_isolation_inv_control ),
+    .X(d1_out1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d1/_1__d1_out1_d1_out1_o_isolation_inv_control  (.A(d1_iso_control),
+    .Y(\d1/_1__d1_out1_d1_out1_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d1/_0__in1_in1_o_isolation  (.A(in1),
+    .SLEEP_B(\d1/_0__in1_in1_o_isolation_inv_control ),
+    .X(in1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d1/_0__in1_in1_o_isolation_inv_control  (.A(d1_iso_control),
+    .Y(\d1/_0__in1_in1_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d1/_0__d1_out3_d1_out3_o_isolation  (.A(d1_out3),
+    .SLEEP_B(\d1/_0__d1_out3_d1_out3_o_isolation_inv_control ),
+    .X(d1_out3_o));
+ sky130_fd_sc_hd__clkinv_1 \d1/_0__d1_out3_d1_out3_o_isolation_inv_control  (.A(d1_iso_control),
+    .Y(\d1/_0__d1_out3_d1_out3_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d2/_2__d1_out1_o_d1_out1_o_o_isolation  (.A(d1_out1_o_o),
+    .SLEEP_B(\d2/_2__d1_out1_o_d1_out1_o_o_isolation_inv_control ),
+    .X(d1_out1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d2/_2__d1_out1_o_d1_out1_o_o_isolation_inv_control  (.A(d2_iso_control),
+    .Y(\d2/_2__d1_out1_o_d1_out1_o_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d2/_1__in1_o_in1_o_o_isolation  (.A(in1_o_o),
+    .SLEEP_B(\d2/_1__in1_o_in1_o_o_isolation_inv_control ),
+    .X(in1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d2/_1__in1_o_in1_o_o_isolation_inv_control  (.A(d2_iso_control),
+    .Y(\d2/_1__in1_o_in1_o_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d2/_0__d1_out1_o_d1_out1_o_o_isolation  (.A(d1_out1_o),
+    .SLEEP_B(\d2/_0__d1_out1_o_d1_out1_o_o_isolation_inv_control ),
+    .X(d1_out1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d2/_0__d1_out1_o_d1_out1_o_o_isolation_inv_control  (.A(d2_iso_control),
+    .Y(\d2/_0__d1_out1_o_d1_out1_o_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d2/_0__in1_o_in1_o_o_isolation  (.A(in1_o),
+    .SLEEP_B(\d2/_0__in1_o_in1_o_o_isolation_inv_control ),
+    .X(in1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d2/_0__in1_o_in1_o_o_isolation_inv_control  (.A(d2_iso_control),
+    .Y(\d2/_0__in1_o_in1_o_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d3/_2__d3_out2_d3_out2_o_isolation  (.A(d3_out2),
+    .SLEEP_B(\d3/_2__d3_out2_d3_out2_o_isolation_inv_control ),
+    .X(\d3/_2__d3_out2_d3_out2_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d3/_2__d3_out2_d3_out2_o_isolation_inv_out  (.A(\d3/_2__d3_out2_d3_out2_o_isolation_inv_out ),
+    .Y(d3_out2_o));
+ sky130_fd_sc_hd__clkinv_1 \d3/_2__d3_out2_d3_out2_o_isolation_inv_control  (.A(d3_iso_control),
+    .Y(\d3/_2__d3_out2_d3_out2_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d3/_1__d3_out1_d3_out1_o_isolation  (.A(d3_out1),
+    .SLEEP_B(\d3/_1__d3_out1_d3_out1_o_isolation_inv_control ),
+    .X(\d3/_1__d3_out1_d3_out1_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d3/_1__d3_out1_d3_out1_o_isolation_inv_out  (.A(\d3/_1__d3_out1_d3_out1_o_isolation_inv_out ),
+    .Y(d3_out1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d3/_1__d3_out1_d3_out1_o_isolation_inv_control  (.A(d3_iso_control),
+    .Y(\d3/_1__d3_out1_d3_out1_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d3/_0__d3_out3_d3_out3_o_isolation  (.A(d3_out3),
+    .SLEEP_B(\d3/_0__d3_out3_d3_out3_o_isolation_inv_control ),
+    .X(\d3/_0__d3_out3_d3_out3_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d3/_0__d3_out3_d3_out3_o_isolation_inv_out  (.A(\d3/_0__d3_out3_d3_out3_o_isolation_inv_out ),
+    .Y(d3_out3_o));
+ sky130_fd_sc_hd__clkinv_1 \d3/_0__d3_out3_d3_out3_o_isolation_inv_control  (.A(d3_iso_control),
+    .Y(\d3/_0__d3_out3_d3_out3_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_2__d2_out2_d2_out2_o_isolation  (.A(d2_out2_o),
+    .SLEEP_B(\d4/_2__d2_out2_d2_out2_o_isolation_inv_control ),
+    .X(\d4/_2__d2_out2_d2_out2_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_2__d2_out2_d2_out2_o_isolation_inv_out  (.A(\d4/_2__d2_out2_d2_out2_o_isolation_inv_out ),
+    .Y(d2_out2_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_2__d2_out2_d2_out2_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_2__d2_out2_d2_out2_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_2__d4_out2_d4_out2_o_isolation  (.A(d4_out2),
+    .SLEEP_B(\d4/_2__d4_out2_d4_out2_o_isolation_inv_control ),
+    .X(\d4/_2__d4_out2_d4_out2_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_2__d4_out2_d4_out2_o_isolation_inv_out  (.A(\d4/_2__d4_out2_d4_out2_o_isolation_inv_out ),
+    .Y(d4_out2_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_2__d4_out2_d4_out2_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_2__d4_out2_d4_out2_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_1__d3_out1_o_d3_out1_o_o_isolation  (.A(d3_out1_o_o),
+    .SLEEP_B(\d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_control ),
+    .X(\d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_out  (.A(\d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_out ),
+    .Y(d3_out1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_1__d3_out1_o_d3_out1_o_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_1__d4_out1_d4_out1_o_isolation  (.A(d4_out1),
+    .SLEEP_B(\d4/_1__d4_out1_d4_out1_o_isolation_inv_control ),
+    .X(\d4/_1__d4_out1_d4_out1_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_1__d4_out1_d4_out1_o_isolation_inv_out  (.A(\d4/_1__d4_out1_d4_out1_o_isolation_inv_out ),
+    .Y(d4_out1_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_1__d4_out1_d4_out1_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_1__d4_out1_d4_out1_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_0__d2_out2_d2_out2_o_isolation  (.A(d2_out2),
+    .SLEEP_B(\d4/_0__d2_out2_d2_out2_o_isolation_inv_control ),
+    .X(\d4/_0__d2_out2_d2_out2_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_0__d2_out2_d2_out2_o_isolation_inv_out  (.A(\d4/_0__d2_out2_d2_out2_o_isolation_inv_out ),
+    .Y(d2_out2_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_0__d2_out2_d2_out2_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_0__d2_out2_d2_out2_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_0__d3_out1_o_d3_out1_o_o_isolation  (.A(d3_out1_o),
+    .SLEEP_B(\d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_control ),
+    .X(\d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_out  (.A(\d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_out ),
+    .Y(d3_out1_o_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_0__d3_out1_o_d3_out1_o_o_isolation_inv_control ));
+ sky130_fd_sc_hd__lpflow_inputiso0n_1 \d4/_0__d4_out3_d4_out3_o_isolation  (.A(d4_out3),
+    .SLEEP_B(\d4/_0__d4_out3_d4_out3_o_isolation_inv_control ),
+    .X(\d4/_0__d4_out3_d4_out3_o_isolation_inv_out ));
+ sky130_fd_sc_hd__clkinv_1 \d4/_0__d4_out3_d4_out3_o_isolation_inv_out  (.A(\d4/_0__d4_out3_d4_out3_o_isolation_inv_out ),
+    .Y(d4_out3_o));
+ sky130_fd_sc_hd__clkinv_1 \d4/_0__d4_out3_d4_out3_o_isolation_inv_control  (.A(d4_iso_control),
+    .Y(\d4/_0__d4_out3_d4_out3_o_isolation_inv_control ));
+endmodule

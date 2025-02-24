@@ -115,28 +115,6 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
   spiral_extension_ = -1;
 }
 
-_dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
-    _dbDatabase* db,
-    const _dbTechLayerKeepOutZoneRule& r)
-{
-  flags_.same_mask_ = r.flags_.same_mask_;
-  flags_.same_metal_ = r.flags_.same_metal_;
-  flags_.diff_metal_ = r.flags_.diff_metal_;
-  flags_.except_aligned_side_ = r.flags_.except_aligned_side_;
-  flags_.except_aligned_end_ = r.flags_.except_aligned_end_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  first_cut_class_ = r.first_cut_class_;
-  second_cut_class_ = r.second_cut_class_;
-  aligned_spacing_ = r.aligned_spacing_;
-  side_extension_ = r.side_extension_;
-  forward_extension_ = r.forward_extension_;
-  end_side_extension_ = r.end_side_extension_;
-  end_forward_extension_ = r.end_forward_extension_;
-  side_side_extension_ = r.side_side_extension_;
-  side_forward_extension_ = r.side_forward_extension_;
-  spiral_extension_ = r.spiral_extension_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 {
   uint32_t flags_bit_field;

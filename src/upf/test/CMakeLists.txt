@@ -3,6 +3,7 @@ or_integration_tests(
   TESTS
     levelshifter
     write
+    isolation
 )
 
 # Skipped

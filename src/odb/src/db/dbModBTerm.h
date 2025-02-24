@@ -48,7 +48,6 @@ class _dbBusPort;
 class _dbModBTerm : public _dbObject
 {
  public:
-  _dbModBTerm(_dbDatabase*, const _dbModBTerm& r);
   _dbModBTerm(_dbDatabase*);
 
   ~_dbModBTerm();

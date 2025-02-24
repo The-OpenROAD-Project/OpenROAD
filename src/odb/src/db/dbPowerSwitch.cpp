@@ -78,15 +78,6 @@ _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _lib_cell = r._lib_cell;
-  _lib = r._lib;
-  _power_domain = r._power_domain;
-}
-
 dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFIOSupplyPort& obj)
 {
   stream >> obj.port_name;

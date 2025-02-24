@@ -47,7 +47,6 @@ class dbTable;
 class _dbScanList : public _dbObject
 {
  public:
-  _dbScanList(_dbDatabase*, const _dbScanList& r);
   _dbScanList(_dbDatabase*);
 
   ~_dbScanList();

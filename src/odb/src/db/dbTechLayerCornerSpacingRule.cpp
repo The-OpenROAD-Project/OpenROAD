@@ -126,36 +126,6 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
   except_notch_length_ = 0;
 }
 
-_dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerCornerSpacingRule& r)
-{
-  flags_.corner_type_ = r.flags_.corner_type_;
-  flags_.same_mask_ = r.flags_.same_mask_;
-  flags_.corner_only_ = r.flags_.corner_only_;
-  flags_.except_eol_ = r.flags_.except_eol_;
-  flags_.except_jog_length_ = r.flags_.except_jog_length_;
-  flags_.edge_length_valid_ = r.flags_.edge_length_valid_;
-  flags_.include_shape_ = r.flags_.include_shape_;
-  flags_.min_length_valid_ = r.flags_.min_length_valid_;
-  flags_.except_notch_ = r.flags_.except_notch_;
-  flags_.except_notch_length_valid_ = r.flags_.except_notch_length_valid_;
-  flags_.except_same_net_ = r.flags_.except_same_net_;
-  flags_.except_same_metal_ = r.flags_.except_same_metal_;
-  flags_.corner_to_corner_ = r.flags_.corner_to_corner_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  within_ = r.within_;
-  eol_width_ = r.eol_width_;
-  jog_length_ = r.jog_length_;
-  edge_length_ = r.edge_length_;
-  min_length_ = r.min_length_;
-  except_notch_length_ = r.except_notch_length_;
-  // User Code Begin CopyConstructor
-  _width_tbl = r._width_tbl;
-  _spacing_tbl = r._spacing_tbl;
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 {
   uint32_t flags_bit_field;

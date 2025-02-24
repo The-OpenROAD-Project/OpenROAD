@@ -87,18 +87,6 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
       dbScanPartitionObj);
 }
 
-_dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
-{
-  name_ = r.name_;
-  scan_in_ = r.scan_in_;
-  scan_out_ = r.scan_out_;
-  scan_enable_ = r.scan_enable_;
-  test_mode_ = r.test_mode_;
-  test_mode_name_ = r.test_mode_name_;
-  scan_partitions_
-      = new dbTable<_dbScanPartition>(db, this, *r.scan_partitions_);
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
 {
   stream >> obj.name_;

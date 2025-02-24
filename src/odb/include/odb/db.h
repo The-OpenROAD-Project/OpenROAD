@@ -495,15 +495,6 @@ class dbDatabase : public dbObject
   static void destroy(dbDatabase* db);
 
   ///
-  /// Create a duplicate (IN-MEMORY) instance of a database.
-  ///
-  /// WARNING: This action may result in an out-of-memory condition if
-  ///          there is not enough memory (or swap space) to maintain
-  ///          multiple in-core databases.
-  ///
-  static dbDatabase* duplicate(dbDatabase* db);
-
-  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint oid);
@@ -1158,12 +1149,6 @@ class dbBlock : public dbObject
   ///
   dbNet* findNet(const char* name);
 
-  ///
-  /// Find a set of nets. Each name can be real name, or Nxxx, or xxx,
-  /// where xxx is the net oid.
-  ///
-  bool findSomeNet(const char* names, std::vector<dbNet*>& nets);
-
   //
   // Utility to write db file
   //
@@ -1586,17 +1571,6 @@ class dbBlock : public dbObject
   void clearUserInstFlags();
 
  public:
-  ///
-  /// This method copies the via-table from the src block to the destination
-  /// block.
-  ///
-  /// WARNING: This method deletes any vias previously defined in the
-  /// destination block.
-  ///          If there are wire which reference these vias, the references will
-  ///          be left dangling.
-  ///
-  static void copyViaTable(dbBlock* dst, dbBlock* src);
-
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
   /// exists.
@@ -3629,24 +3603,9 @@ class dbWire : public dbObject
   void append(dbWire* wire, bool singleSegmentWire = false);
 
   ///
-  /// Move segements of this wire to wires of other nets
-  ///
-  void shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs);
-
-  ///
   /// Get junction id associated with the term
   ///
   uint getTermJid(int termid) const;
-
-  ///
-  /// check if this wire equals the target wire
-  /// return value = 0: equal
-  ///                x: not equal
-  ///                1x: wire seg after junction not equal
-  ///
-  uint equal(dbWire* target);
-
-  // void match(dbWire *target);
 
   ///
   /// Get the shape of this shape-id.
@@ -4145,20 +4104,6 @@ class dbBlockage : public dbObject
 ///////////////////////////////////////////////////////////////////////////////
 class dbCapNode : public dbObject
 {
- protected:
-  friend class dbRSeg;
-  friend class extMain;
-  friend class extSpef;
-  friend class te_tile;
-  friend class tilext;
-  friend class dbJournal;
-
-  ///
-  /// Get the capacitance of this capNode segment for this process corner.
-  /// Returns value in femto-fards.
-  ///
-  void getCapTable(double* cap);
-
  public:
   ///
   /// Add the capacitances of other capnode to this capnode
@@ -4399,8 +4344,16 @@ class dbCapNode : public dbObject
   ///
   static dbCapNode* getCapNode(dbBlock* block, uint oid);
 
-  // friend void test_eco();
+ private:
+  ///
+  /// Get the capacitance of this capNode segment for this process corner.
+  /// Returns value in femto-fards.
+  ///
+  void getCapTable(double* cap);
+
+  friend class dbRSeg;
 };
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// A RSeg is the element that represents an Res element in a Res network.
@@ -6920,12 +6873,6 @@ class dbTechSameNetRule : public dbObject
 
 class dbViaParams : private _dbViaParams
 {
-  friend class dbVia;
-  friend class dbTechVia;
-  dbTech* _tech;
-
-  dbViaParams(const _dbViaParams& p);
-
  public:
   dbViaParams();
   dbViaParams(const dbViaParams& p);
@@ -6970,6 +6917,14 @@ class dbViaParams : private _dbViaParams
   void setTopLayer(dbTechLayer* layer);
   void setCutLayer(dbTechLayer* layer);
   void setBottomLayer(dbTechLayer* layer);
+
+ private:
+  dbViaParams(const _dbViaParams& p);
+
+  dbTech* _tech;
+
+  friend class dbVia;
+  friend class dbTechVia;
 };
 
 // Generator Code Begin ClassDefinition
@@ -7565,6 +7520,8 @@ class dbIsolation : public dbObject
   void addIsolationCell(std::string& master);
 
   std::vector<dbMaster*> getIsolationCells();
+
+  bool appliesTo(const dbIoType& io);
 
   // User Code End dbIsolation
 };
@@ -8180,6 +8137,7 @@ class dbPowerSwitch : public dbObject
     std::string input_supply_port;
     std::string boolean_expression;
   };
+
   const char* getName() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
@@ -8274,6 +8232,7 @@ class dbScanInst : public dbObject
     std::variant<dbBTerm*, dbITerm*> scan_in;
     std::variant<dbBTerm*, dbITerm*> scan_out;
   };
+
   enum class ClockEdge
   {
     Rising,
@@ -9016,6 +8975,7 @@ class dbTechLayerCutEnclosureRule : public dbObject
     ENDSIDE,
     HORZ_AND_VERT
   };
+
   // User Code Begin dbTechLayerCutEnclosureRuleEnums
   /*
   ENC_TYPE describes the enclosure overhang values as following (from the
@@ -9492,6 +9452,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
     MAX,
     MIN
   };
+
   // User Code Begin dbTechLayerCutSpacingTableDefRuleEnums
   /*
   LOOKUP_STRATEGY:

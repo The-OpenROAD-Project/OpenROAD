@@ -51,7 +51,6 @@ struct dbTechLayerCutClassRuleFlags
 class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
-  _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
   _dbTechLayerCutClassRule(_dbDatabase*);
 
   ~_dbTechLayerCutClassRule();

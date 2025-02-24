@@ -70,14 +70,6 @@ _dbGDSText::_dbGDSText(_dbDatabase* db)
   _datatype = 0;
 }
 
-_dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-  _origin = r._origin;
-  _text = r._text;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
 {
   stream >> obj._layer;

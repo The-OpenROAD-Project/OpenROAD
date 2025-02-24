@@ -86,20 +86,6 @@ _dbCellEdgeSpacing::_dbCellEdgeSpacing(_dbDatabase* db)
   spacing = -1;
 }
 
-_dbCellEdgeSpacing::_dbCellEdgeSpacing(_dbDatabase* db,
-                                       const _dbCellEdgeSpacing& r)
-{
-  flags_.except_abutted_ = r.flags_.except_abutted_;
-  flags_.except_non_filler_in_between_ = r.flags_.except_non_filler_in_between_;
-  flags_.optional_ = r.flags_.optional_;
-  flags_.soft_ = r.flags_.soft_;
-  flags_.exact_ = r.flags_.exact_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  first_edge_type_ = r.first_edge_type_;
-  second_edge_type_ = r.second_edge_type_;
-  spacing = r.spacing;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbCellEdgeSpacing& obj)
 {
   uint32_t flags_bit_field;

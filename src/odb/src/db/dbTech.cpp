@@ -326,67 +326,6 @@ _dbTech::_dbTech(_dbDatabase* db)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }
 
-_dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
-    : _version(t._version),
-      _name(t._name),
-      _via_cnt(t._via_cnt),
-      _layer_cnt(t._layer_cnt),
-      _rlayer_cnt(t._rlayer_cnt),
-      _lef_units(t._lef_units),
-      _dbu_per_micron(t._dbu_per_micron),
-      _mfgrid(t._mfgrid),
-      _flags(t._flags),
-      _bottom(t._bottom),
-      _top(t._top),
-      _non_default_rules(t._non_default_rules),
-      _samenet_rules(t._samenet_rules),
-      _samenet_matrix(t._samenet_matrix),
-      _via_hash(t._via_hash)
-{
-  _layer_tbl = new dbTable<_dbTechLayer>(db, this, *t._layer_tbl);
-
-  _via_tbl = new dbTable<_dbTechVia>(db, this, *t._via_tbl);
-
-  _non_default_rule_tbl
-      = new dbTable<_dbTechNonDefaultRule>(db, this, *t._non_default_rule_tbl);
-
-  _layer_rule_tbl = new dbTable<_dbTechLayerRule>(db, this, *t._layer_rule_tbl);
-
-  _box_tbl = new dbTable<_dbBox>(db, this, *t._box_tbl);
-
-  _samenet_rule_tbl
-      = new dbTable<_dbTechSameNetRule>(db, this, *t._samenet_rule_tbl);
-
-  _antenna_rule_tbl
-      = new dbTable<_dbTechLayerAntennaRule>(db, this, *t._antenna_rule_tbl);
-
-  _via_rule_tbl = new dbTable<_dbTechViaRule>(db, this, *t._via_rule_tbl);
-
-  _via_layer_rule_tbl
-      = new dbTable<_dbTechViaLayerRule>(db, this, *t._via_layer_rule_tbl);
-
-  _via_generate_rule_tbl = new dbTable<_dbTechViaGenerateRule>(
-      db, this, *t._via_generate_rule_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(db, this, *t._prop_tbl);
-
-  _metal_width_via_map_tbl
-      = new dbTable<_dbMetalWidthViaMap>(db, this, *t._metal_width_via_map_tbl);
-
-  cell_edge_spacing_tbl_
-      = new dbTable<_dbCellEdgeSpacing>(db, this, *t.cell_edge_spacing_tbl_);
-
-  _via_hash.setTable(_via_tbl);
-
-  _name_cache = new _dbNameCache(db, this, *t._name_cache);
-
-  _layer_itr = new dbTechLayerItr(_layer_tbl);
-
-  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
 _dbTech::~_dbTech()
 {
   delete _layer_tbl;

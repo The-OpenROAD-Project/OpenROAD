@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
+[INFO IFP-0001] Added 110 rows of 651 site unithd.
+No differences found.

@@ -86,18 +86,6 @@ _dbModITerm::_dbModITerm(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
-{
-  _name = r._name;
-  _parent = r._parent;
-  _child_modbterm = r._child_modbterm;
-  _mod_net = r._mod_net;
-  _next_net_moditerm = r._next_net_moditerm;
-  _prev_net_moditerm = r._prev_net_moditerm;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {

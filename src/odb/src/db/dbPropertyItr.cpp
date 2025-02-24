@@ -34,6 +34,7 @@
 
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "dbTable.hpp"
 
 namespace odb {
 

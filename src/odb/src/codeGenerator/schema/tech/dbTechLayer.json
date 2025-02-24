@@ -40,66 +40,59 @@
     },
     {
       "name": "has_max_width_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_thickness_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_area_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_protrusion_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_alias_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_xy_pitch_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "has_xy_offset_",
-      "type": "uint",
+      "type": "bit",
       "flags": [
         "no-set",
         "no-get"
-      ],
-      "bits": 1
+      ]
     },
     {
       "name": "rect_only_",

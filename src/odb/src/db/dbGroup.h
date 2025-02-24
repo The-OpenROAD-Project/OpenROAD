@@ -58,7 +58,6 @@ struct dbGroupFlags
 class _dbGroup : public _dbObject
 {
  public:
-  _dbGroup(_dbDatabase*, const _dbGroup& r);
   _dbGroup(_dbDatabase*);
 
   ~_dbGroup();

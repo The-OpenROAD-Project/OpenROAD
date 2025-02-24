@@ -51,7 +51,6 @@ class dbScanPin;
 class _dbScanChain : public _dbObject
 {
  public:
-  _dbScanChain(_dbDatabase*, const _dbScanChain& r);
   _dbScanChain(_dbDatabase*);
 
   ~_dbScanChain();
@@ -73,7 +72,6 @@ class _dbScanChain : public _dbObject
   dbId<dbScanPin> scan_enable_;
   dbId<dbScanPin> test_mode_;
   std::string test_mode_name_;
-
   dbTable<_dbScanPartition>* scan_partitions_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj);

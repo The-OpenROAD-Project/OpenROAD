@@ -74,7 +74,6 @@ class _dbLib : public _dbObject
   dbPropertyItr* _prop_itr;
 
   _dbLib(_dbDatabase* db);
-  _dbLib(_dbDatabase* db, const _dbLib& l);
   ~_dbLib();
   bool operator==(const _dbLib& rhs) const;
   bool operator!=(const _dbLib& rhs) const { return !operator==(rhs); }

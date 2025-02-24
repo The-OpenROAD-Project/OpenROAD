@@ -90,19 +90,6 @@ _dbChip::_dbChip(_dbDatabase* db)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }
 
-_dbChip::_dbChip(_dbDatabase* db, const _dbChip& c) : _top(c._top)
-{
-  _block_tbl = new dbTable<_dbBlock>(db, this, *c._block_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(db, this, *c._prop_tbl);
-
-  _name_cache = new _dbNameCache(db, this, *c._name_cache);
-
-  _block_itr = new dbBlockItr(_block_tbl);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
 _dbChip::~_dbChip()
 {
   delete _block_tbl;

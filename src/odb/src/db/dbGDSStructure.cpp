@@ -105,18 +105,6 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
 }
 
-_dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  boundaries_ = new dbTable<_dbGDSBoundary>(db, this, *r.boundaries_);
-  boxes_ = new dbTable<_dbGDSBox>(db, this, *r.boxes_);
-  paths_ = new dbTable<_dbGDSPath>(db, this, *r.paths_);
-  srefs_ = new dbTable<_dbGDSSRef>(db, this, *r.srefs_);
-  arefs_ = new dbTable<_dbGDSARef>(db, this, *r.arefs_);
-  texts_ = new dbTable<_dbGDSText>(db, this, *r.texts_);
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
 {
   stream >> obj._name;

@@ -62,7 +62,6 @@ class _dbChip : public _dbObject
   dbPropertyItr* _prop_itr;
 
   _dbChip(_dbDatabase* db);
-  _dbChip(_dbDatabase* db, const _dbChip& c);
   ~_dbChip();
 
   bool operator==(const _dbChip& rhs) const;

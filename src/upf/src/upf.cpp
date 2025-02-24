@@ -959,18 +959,10 @@ static bool isolate_connection(odb::dbITerm* src_term,
 {
   odb::dbInst* src_inst = src_term->getInst();
 
-  // find the smallest possible inverter in advance
-  odb::dbMaster* inverter_m = nullptr;
-  odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
-  bool inverter_found
-      = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
-
   auto isos = domain->getIsolations();
-
   if (isos.empty()) {
     return false;
   }
-
   if (isos.size() > 1) {
     logger->warn(
         utl::UPF,
@@ -980,6 +972,15 @@ static bool isolate_connection(odb::dbITerm* src_term,
   }
 
   odb::dbIsolation* iso = isos[0];
+  if (!iso->appliesTo(src_term->getIoType())) {
+    return false;
+  }
+
+  // find the smallest possible inverter in advance
+  odb::dbMaster* inverter_m = nullptr;
+  odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
+  bool inverter_found
+      = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
 
   odb::dbMTerm* enable_term = nullptr;
   odb::dbMTerm* data_term = nullptr;
@@ -1311,10 +1312,9 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
             continue;
           }
 
-          // if iterm is output and both domains have same voltage then isolate
-          if (iterm->getIoType() == odb::dbIoType::OUTPUT
-              && (!target_domain
-                  || domain->getVoltage() == target_domain->getVoltage())) {
+          // if both domains have same voltage then isolate
+          if (!target_domain
+              || domain->getVoltage() == target_domain->getVoltage()) {
             isolate_connection(
                 iterm, target_iterm, domain, block, logger, network);
             continue;

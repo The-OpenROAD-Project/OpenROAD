@@ -117,29 +117,6 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
   min_between_length_ = 0;
 }
 
-_dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
-    _dbDatabase* db,
-    const _dbTechLayerMinStepRule& r)
-{
-  flags_.max_edges_valid_ = r.flags_.max_edges_valid_;
-  flags_.min_adj_length1_valid_ = r.flags_.min_adj_length1_valid_;
-  flags_.no_between_eol_ = r.flags_.no_between_eol_;
-  flags_.min_adj_length2_valid_ = r.flags_.min_adj_length2_valid_;
-  flags_.convex_corner_ = r.flags_.convex_corner_;
-  flags_.min_between_length_valid_ = r.flags_.min_between_length_valid_;
-  flags_.except_same_corners_ = r.flags_.except_same_corners_;
-  flags_.concave_corner_ = r.flags_.concave_corner_;
-  flags_.except_rectangle_ = r.flags_.except_rectangle_;
-  flags_.no_adjacent_eol_ = r.flags_.no_adjacent_eol_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  min_step_length_ = r.min_step_length_;
-  max_edges_ = r.max_edges_;
-  min_adj_length1_ = r.min_adj_length1_;
-  min_adj_length2_ = r.min_adj_length2_;
-  eol_width_ = r.eol_width_;
-  min_between_length_ = r.min_between_length_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 {
   uint32_t flags_bit_field;

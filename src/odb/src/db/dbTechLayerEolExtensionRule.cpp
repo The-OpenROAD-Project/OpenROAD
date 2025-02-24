@@ -74,15 +74,6 @@ _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
   spacing_ = 0;
 }
 
-_dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(
-    _dbDatabase* db,
-    const _dbTechLayerEolExtensionRule& r)
-{
-  flags_.parallel_only_ = r.flags_.parallel_only_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  spacing_ = r.spacing_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj)
 {
   uint32_t flags_bit_field;

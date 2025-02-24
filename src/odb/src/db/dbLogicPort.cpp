@@ -71,13 +71,6 @@ _dbLogicPort::_dbLogicPort(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  direction = r.direction;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
 {
   stream >> obj._name;

@@ -254,7 +254,6 @@ void Grid::visitCellPixels(
 
 void Grid::visitCellBoundaryPixels(
     Cell& cell,
-    bool padded,
     const std::function<
         void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
     const
@@ -305,8 +304,7 @@ void Grid::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    const auto grid_rect
-        = padded ? gridCoveringPadded(&cell) : gridCovering(&cell);
+    const auto grid_rect = gridCovering(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",

@@ -36,6 +36,7 @@
 
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "util.h"
 #include "utl/Logger.h"
 #include "wire.h"
 
@@ -1853,7 +1854,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
   _foreign = false;  // extract after read_spef
 
   std::vector<dbNet*> inets;
-  _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
+  _allNet = !findSomeNet(_block, netNames, inets, logger_);
   for (uint j = 0; j < inets.size(); j++) {
     dbNet* net = inets[j];
     net->setMark(true);
@@ -2292,7 +2293,7 @@ void extMain::writeSPEF(char* filename,
     _spef->_db_ext_corner = n;
 
     std::vector<dbNet*> inets;
-    ((dbBlock*) _block)->findSomeNet(netNames, inets);
+    findSomeNet(_block, netNames, inets, logger_);
     _spef->writeBlock(nodeCoord,
                       capUnit,
                       resUnit,
@@ -2387,7 +2388,7 @@ uint extMain::readSPEF(char* filename,
   std::vector<dbNet*> inets;
 
   if (_block != nullptr) {
-    _block->findSomeNet(netNames, inets);
+    findSomeNet(_block, netNames, inets, logger_);
   }
 
   uint cnt = _spef->readBlock(0,

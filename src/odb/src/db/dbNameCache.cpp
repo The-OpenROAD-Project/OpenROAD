@@ -128,16 +128,6 @@ _dbNameCache::_dbNameCache(_dbDatabase* db,
   _name_hash.setTable(_name_tbl);
 }
 
-_dbNameCache::_dbNameCache(_dbDatabase* db,
-                           dbObject* owner,
-                           const _dbNameCache& cache)
-    : _name_hash(cache._name_hash)
-{
-  _name_tbl = new dbTable<_dbName>(db, owner, *cache._name_tbl);
-
-  _name_hash.setTable(_name_tbl);
-}
-
 _dbNameCache::~_dbNameCache()
 {
   delete _name_tbl;

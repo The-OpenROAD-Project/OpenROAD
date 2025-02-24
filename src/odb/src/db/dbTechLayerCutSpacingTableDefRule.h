@@ -77,12 +77,7 @@ struct dbTechLayerCutSpacingTableDefRuleFlags
 class _dbTechLayerCutSpacingTableDefRule : public _dbObject
 {
  public:
-  _dbTechLayerCutSpacingTableDefRule(
-      _dbDatabase*,
-      const _dbTechLayerCutSpacingTableDefRule& r);
   _dbTechLayerCutSpacingTableDefRule(_dbDatabase*);
-
-  ~_dbTechLayerCutSpacingTableDefRule() = default;
 
   bool operator==(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableDefRule& rhs) const
