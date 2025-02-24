@@ -31,7 +31,7 @@ namespace utl {
 /// @brief Interface implemented by anything that can be used by Prometheus to
 /// collect metrics.
 ///
-/// A Collectable has to be registered for collection. See Registry.
+/// A Collectable has to be registered for collection. See PrometheusRegistry.
 class Collectable
 {
  public:

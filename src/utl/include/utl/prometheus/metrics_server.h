@@ -24,19 +24,8 @@ class Logger;
 namespace utl {
 class PrometheusMetricsServer
 {
-  std::thread worker_thread_;
-  std::shared_ptr<Registry> registry_ptr_{nullptr};
-  uint16_t port_;
-  std::atomic<utl::Logger*> logger_;
-  bool shutdown_ = false;
-  bool is_ready_ = false;
-
-  void RunServer();
-  void WorkerFunction();
-
  public:
-  ~PrometheusMetricsServer();
-  PrometheusMetricsServer(std::shared_ptr<Registry>& registry_,
+  PrometheusMetricsServer(std::shared_ptr<PrometheusRegistry>& registry_,
                           utl::Logger* logger,
                           uint16_t port)
   {
@@ -46,13 +35,25 @@ class PrometheusMetricsServer
     worker_thread_
         = std::thread(&PrometheusMetricsServer::WorkerFunction, this);
   }
+  ~PrometheusMetricsServer();
 
   bool is_ready() { return is_ready_; }
   uint16_t port() { return port_; }
 
-  void SetRegistry(std::shared_ptr<Registry>& new_registry_ptr)
+  void SetRegistry(std::shared_ptr<PrometheusRegistry>& new_registry_ptr)
   {
     registry_ptr_ = new_registry_ptr;
   }
+
+ private:
+  std::thread worker_thread_;
+  std::shared_ptr<PrometheusRegistry> registry_ptr_{nullptr};
+  uint16_t port_;
+  std::atomic<utl::Logger*> logger_;
+  bool shutdown_ = false;
+  bool is_ready_ = false;
+
+  void RunServer();
+  void WorkerFunction();
 };
 }  // namespace utl

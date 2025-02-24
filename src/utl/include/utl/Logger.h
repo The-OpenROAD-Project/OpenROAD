@@ -60,7 +60,7 @@
 namespace utl {
 
 class PrometheusMetricsServer;
-class Registry;
+class PrometheusRegistry;
 
 // Keep this sorted
 #define FOREACH_TOOL(X) \
@@ -238,7 +238,7 @@ class Logger
   }
 
   void startPrometheusEndpoint(uint16_t port);
-  std::shared_ptr<Registry> getRegistry();
+  std::shared_ptr<PrometheusRegistry> getRegistry();
   bool isPrometheusServerReadyToServe();
   uint16_t getPrometheusPort();
 
@@ -359,7 +359,7 @@ class Logger
   std::unique_ptr<std::ofstream> file_redirect_;
 
   // Prometheus server metrics collection
-  std::shared_ptr<Registry> prometheus_registry_;
+  std::shared_ptr<PrometheusRegistry> prometheus_registry_;
   std::unique_ptr<PrometheusMetricsServer> prometheus_metrics_;
 
   // This matrix is pre-allocated so it can be safely updated

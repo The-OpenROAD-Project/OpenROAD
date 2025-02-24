@@ -251,7 +251,7 @@ TEST(Utl, metrics_server_responds_with_basic_metric)
 {
   Logger logger;
   logger.startPrometheusEndpoint(0);
-  std::shared_ptr<Registry> registry = logger.getRegistry();
+  std::shared_ptr<PrometheusRegistry> registry = logger.getRegistry();
   auto& test_gauge_family = BuildGauge()
                                 .Name("test_gauge")
                                 .Help("A test gauge for testing")

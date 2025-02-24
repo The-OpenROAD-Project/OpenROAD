@@ -258,7 +258,7 @@ class Family : public Collectable
 
   /// \brief Returns the current value of each dimensional data.
   ///
-  /// Collect is called by the Registry when collecting metrics.
+  /// Collect is called by the PrometheusRegistry when collecting metrics.
   ///
   /// \return Zero or more samples for each dimensional data.
   MetricFamilies Collect() const override
@@ -376,7 +376,7 @@ class CustomFamily : public Family
   /// Example usage:
   ///
   /// \code
-  /// auto registry = std::make_shared<Registry>();
+  /// auto registry = std::make_shared<PrometheusRegistry>();
   /// auto& counter_family = utl::Counter_family::build("some_name",
   /// "Additional description.", {{"key", "value"}}, *registry);
   ///
@@ -392,9 +392,9 @@ class CustomFamily : public Family
   ///   key-value pairs (= labels) to the metric.
   ///
   /// To finish the configuration of the Counter metric, register it with
-  /// Register(Registry&).
-  template <typename Registry>
-  static CustomFamily& Build(Registry& registry,
+  /// Register(PrometheusRegistry&).
+  template <typename PrometheusRegistry>
+  static CustomFamily& Build(PrometheusRegistry& registry,
                              const std::string& name,
                              const std::string& help,
                              const Family::Labels& labels = Family::Labels())

@@ -47,7 +47,7 @@ namespace utl {
 ///
 /// The class is thread-safe. No concurrent call to any API of this type causes
 /// a data race.
-class Registry : public Collectable
+class PrometheusRegistry : public Collectable
 {
  public:
   /// \brief How to deal with repeatedly added family names for a type.
@@ -78,7 +78,7 @@ class Registry : public Collectable
   /// \brief name Create a new registry.
   ///
   /// \param insert_behavior How to handle families with the same name.
-  Registry(InsertBehavior insert_behavior_ = InsertBehavior::Merge)
+  PrometheusRegistry(InsertBehavior insert_behavior_ = InsertBehavior::Merge)
       : insert_behavior(insert_behavior_)
   {
   }

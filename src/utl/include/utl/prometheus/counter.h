@@ -84,7 +84,7 @@ class Counter : public PrometheusMetric
 
   ClientMetric Collect() const override
   {  ///< /// \brief Get the current value of the counter. Collect is called by
-     ///< the Registry when collecting metrics.
+     ///< the PrometheusRegistry when collecting metrics.
     ClientMetric metric;
     metric.counter.value = static_cast<double>(value);
     return metric;
@@ -118,7 +118,7 @@ class Counter : public PrometheusMetric
 /// Example usage:
 ///
 /// \code
-/// auto registry = std::make_shared<Registry>();
+/// auto registry = std::make_shared<PrometheusRegistry>();
 /// auto& counter_family = utl::BuildCounter()
 ///                            .Name("some_name")
 ///                            .Help("Additional description.")
@@ -137,7 +137,7 @@ class Counter : public PrometheusMetric
 ///   key-value pairs (= labels) to the metric.
 ///
 /// To finish the configuration of the Counter metric, register it with
-/// Register(Registry&).
+/// Register(PrometheusRegistry&).
 using BuildCounter = Builder<Counter<double>>;
 
 }  // namespace utl

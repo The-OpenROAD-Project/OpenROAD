@@ -121,7 +121,7 @@ class Histogram : public PrometheusMetric
 
   /// \brief Get the current value of the counter.
   ///
-  /// Collect is called by the Registry when collecting metrics.
+  /// Collect is called by the PrometheusRegistry when collecting metrics.
   ClientMetric Collect() const override
   {
     auto metric = ClientMetric{};
@@ -156,7 +156,7 @@ class Histogram : public PrometheusMetric
 /// Example usage:
 ///
 /// \code
-/// auto registry = std::make_shared<Registry>();
+/// auto registry = std::make_shared<PrometheusRegistry>();
 /// auto& histogram_family = utl::BuildHistogram()
 ///                              .Name("some_name")
 ///                              .Help("Additional description.")
@@ -175,7 +175,7 @@ class Histogram : public PrometheusMetric
 ///   key-value pairs (= labels) to the metric.
 ///
 /// To finish the configuration of the Histogram metric register it with
-/// Register(Registry&).
+/// Register(PrometheusRegistry&).
 using BuildHistogram = Builder<Histogram<double>>;
 
 }  // namespace utl

@@ -227,7 +227,7 @@ void NesterovPlace::init()
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
   }
 
-  std::shared_ptr<utl::Registry> registry = log_->getRegistry();
+  std::shared_ptr<utl::PrometheusRegistry> registry = log_->getRegistry();
   auto& hpwl_gauge_family
       = utl::BuildGauge()
             .Name("ord_hpwl")

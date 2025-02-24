@@ -18,32 +18,13 @@
 
 #include "utl/Logger.h"
 
-namespace utl {
+namespace {
 
-PrometheusMetricsServer::~PrometheusMetricsServer()
-{
-  shutdown_ = true;
-
-  // Make a dummy connection to unblock the accept().
-  if (is_ready_) {  // Only connect if the server was actually started.
-    try {
-      boost::asio::io_context
-          io_context;  // Use a separate io_context for the connection.
-      boost::asio::ip::tcp::socket socket(io_context);
-      boost::asio::ip::tcp::endpoint endpoint(
-          boost::asio::ip::address::from_string("127.0.0.1"), port_);
-      socket.connect(endpoint);         // This will unblock the accept().
-    } catch (const std::exception& e) { /*Do nothing, we're dying*/
-    }
-  }
-  worker_thread_.join();
-}
-
-std::string SnapshotPrometheusMetrics(Registry* registry)
+std::string SnapshotPrometheusMetrics(utl::PrometheusRegistry* registry)
 {
   if (registry) {
     std::stringstream stringstream;
-    TextSerializer::Serialize(stringstream, registry->Collect());
+    utl::TextSerializer::Serialize(stringstream, registry->Collect());
     return stringstream.str();
   }
 
@@ -53,7 +34,7 @@ std::string SnapshotPrometheusMetrics(Registry* registry)
 boost::beast::http::response<boost::beast::http::string_body> HandleRequest(
     boost::beast::http::request<boost::beast::http::string_body>& request,
     boost::asio::ip::tcp::socket& socket,
-    Registry* registry)
+    utl::PrometheusRegistry* registry)
 {
   namespace http = boost::beast::http;
 
@@ -73,6 +54,28 @@ boost::beast::http::response<boost::beast::http::string_body> HandleRequest(
   response.prepare_payload();
 
   return response;
+}
+}  // namespace
+
+namespace utl {
+
+PrometheusMetricsServer::~PrometheusMetricsServer()
+{
+  shutdown_ = true;
+
+  // Make a dummy connection to unblock the accept().
+  if (is_ready_) {  // Only connect if the server was actually started.
+    try {
+      boost::asio::io_context
+          io_context;  // Use a separate io_context for the connection.
+      boost::asio::ip::tcp::socket socket(io_context);
+      boost::asio::ip::tcp::endpoint endpoint(
+          boost::asio::ip::address::from_string("127.0.0.1"), port_);
+      socket.connect(endpoint);         // This will unblock the accept().
+    } catch (const std::exception& e) { /*Do nothing, we're dying*/
+    }
+  }
+  worker_thread_.join();
 }
 
 void PrometheusMetricsServer::RunServer()

@@ -125,7 +125,7 @@ class Summary : PrometheusMetric
 
   /// \brief Get the current value of the summary.
   ///
-  /// Collect is called by the Registry when collecting metrics.
+  /// Collect is called by the PrometheusRegistry when collecting metrics.
   ClientMetric Collect() const override
   {
     auto metric = ClientMetric{};
@@ -153,7 +153,7 @@ class Summary : PrometheusMetric
 /// Example usage:
 ///
 /// \code
-/// auto registry = std::make_shared<Registry>();
+/// auto registry = std::make_shared<PrometheusRegistry>();
 /// auto& summary_family = utl::BuildSummary()
 ///                            .Name("some_name")
 ///                            .Help("Additional description.")
@@ -172,7 +172,7 @@ class Summary : PrometheusMetric
 ///   key-value pairs (= labels) to the metric.
 ///
 /// To finish the configuration of the Summary metric register it with
-/// Register(Registry&).
+/// Register(PrometheusRegistry&).
 using BuildSummary = Builder<Summary>;
 
 }  // namespace utl

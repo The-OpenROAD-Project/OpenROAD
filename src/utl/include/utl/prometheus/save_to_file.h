@@ -37,7 +37,7 @@ class SaveToFile
   std::chrono::seconds period{1};
   std::string filename;
   std::thread worker_thread;
-  std::shared_ptr<Registry> registry_ptr{nullptr};
+  std::shared_ptr<PrometheusRegistry> registry_ptr{nullptr};
   bool must_die{false};
 
   void save_data()
@@ -82,7 +82,7 @@ class SaveToFile
     worker_thread.join();
   }
 
-  SaveToFile(std::shared_ptr<Registry>& registry_,
+  SaveToFile(std::shared_ptr<PrometheusRegistry>& registry_,
              const std::chrono::seconds& period_,
              const std::string& filename_)
   {
@@ -106,7 +106,7 @@ class SaveToFile
     return open_success;
   }
 
-  void set_registry(std::shared_ptr<Registry>& new_registry_ptr)
+  void set_registry(std::shared_ptr<PrometheusRegistry>& new_registry_ptr)
   {
     registry_ptr = new_registry_ptr;
   }

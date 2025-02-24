@@ -52,7 +52,7 @@ class Builder
     help_ = help;
     return *this;
   }
-  CustomFamily<CustomMetric>& Register(Registry& registry)
+  CustomFamily<CustomMetric>& Register(PrometheusRegistry& registry)
   {
     return registry.Add<CustomFamily<CustomMetric>>(name_, help_, labels_);
   }

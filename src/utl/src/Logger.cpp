@@ -72,7 +72,7 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
     }
   }
 
-  prometheus_registry_ = std::make_shared<Registry>();
+  prometheus_registry_ = std::make_shared<PrometheusRegistry>();
 }
 
 Logger::~Logger()
@@ -334,7 +334,7 @@ void Logger::startPrometheusEndpoint(uint16_t port)
       prometheus_registry_, this, port);
 }
 
-std::shared_ptr<Registry> Logger::getRegistry()
+std::shared_ptr<PrometheusRegistry> Logger::getRegistry()
 {
   return prometheus_registry_;
 }
