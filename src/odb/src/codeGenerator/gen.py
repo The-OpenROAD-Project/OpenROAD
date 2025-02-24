@@ -206,7 +206,7 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
             "name": "spare_bits_",
             "type": "uint",
             "bits": 32 - (flag_num_bits % 32),
-            "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
+            "flags": ["no-cmp", "no-set", "no-get", "no-serial"],
         }
         total_num_bits += spare_bits_field["bits"]
         flags_struct["fields"].append(spare_bits_field)
@@ -226,7 +226,7 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
                 "bitFields": True,
                 "isStruct": True,
                 "numBits": total_num_bits,
-                "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
+                "flags": ["no-cmp", "no-set", "no-get", "no-serial"],
             },
         )
 
