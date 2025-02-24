@@ -43,8 +43,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]
     final |    +69.8% |       3 |       3 |             8 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0038] Inserted 3 buffers in 8 nets.
 [INFO RSZ-0039] Resized 3 instances.
+[INFO RSZ-0038] Inserted 3 buffers in 8 nets.
 Startpoint: _69_ (rising edge-triggered flip-flop clocked by clk)
 Endpoint: _68_ (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

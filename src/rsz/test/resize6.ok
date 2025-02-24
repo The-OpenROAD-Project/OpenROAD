@@ -12,8 +12,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |  +1213.1% |       6 |       1 |             2 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 2 capacitance violations.
-[INFO RSZ-0038] Inserted 1 buffers in 2 nets.
 [INFO RSZ-0039] Resized 6 instances.
+[INFO RSZ-0038] Inserted 1 buffers in 2 nets.
 Net out
  Pin capacitance: 2000.00
  Wire capacitance: 0.50
