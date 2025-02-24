@@ -64,16 +64,6 @@ frPatchWire::frPatchWire(const drPatchWire& in)
   owner_ = nullptr;
 }
 
-void frPathSeg::transform(const odb::dbTransform& xform)
-{
-  xform.apply(begin_);
-  xform.apply(end_);
-  if (end_ < begin_) {
-    // swap
-    std::swap(begin_, end_);
-    style_.swap();
-  }
-}
 template <class Archive>
 void frShape::serialize(Archive& ar, const unsigned int version)
 {

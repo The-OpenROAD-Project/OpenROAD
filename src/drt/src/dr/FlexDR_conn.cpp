@@ -62,8 +62,7 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
              std::set<std::pair<Point, frLayerNum>>,
              frBlockObjectComp>& pin2epMap)
 {
-  frRegionQuery* regionQuery = getRegionQuery();
-
+  auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
   Rect query_box(pt.x(), pt.y(), pt.x(), pt.y());
   regionQuery->query(query_box, lNum, result);
@@ -395,7 +394,7 @@ bool FlexDRConnectivityChecker::astar(
     }
     int lastNodeIdx = -1;
     while (!pq.empty()) {
-      wf wfront = pq.top();
+      auto wfront = pq.top();
       pq.pop();
       if (!onPathIdx[wfront.nodeIdx] && adjVisited[wfront.nodeIdx]) {
         continue;
@@ -427,10 +426,9 @@ bool FlexDRConnectivityChecker::astar(
       = count(adjVisited.begin() + nNetRouteObjs, adjVisited.end(), true);
   // true error when allowing feedthrough
   if (pinVisited != nNetObjs - nNetRouteObjs) {
-    logger_->report("Error: {} {} pin not visited #guides = {}",
-                    net->getName(),
-                    nNetObjs - nNetRouteObjs - pinVisited,
-                    nNetRouteObjs);
+    std::cout << "Error: " << net->getName() << " "
+              << nNetObjs - nNetRouteObjs - pinVisited
+              << " pin not visited #guides = " << nNetRouteObjs << std::endl;
   }
   return pinVisited == nNetObjs - nNetRouteObjs;
 }
