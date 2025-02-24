@@ -62,10 +62,10 @@ man
 
 #### Options
 
-| Switch Name | Description                                                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`      | Name of the command/message to query.                                                                                                |
-| `-manpath`  | Include optional path to man pages (e.g. ~/OpenROAD/docs/cat).                                                                       |
+| Switch Name | Description | 
+| ----- | ----- |
+| `name` | Name of the command/message to query. |
+| `-manpath` | Include optional path to man pages (e.g. ~/OpenROAD/docs/cat). |
 | `-no_pager` | This flag determines whether you wish to see all of the man output at once. Default value is `False`, which shows a buffered output. |
 
 ## Example scripts
@@ -90,13 +90,13 @@ tee (-file filename | -variable name)
 
 #### Options
 
-| Switch Name      | Description                         |
-| ---------------- | ----------------------------------- |
-| `-file filename` | File to redirect output into.       |
-| `-variable name` | Direct output into a variable.      |
-| `-append`        | Append to file.                     |
-| `-quiet`         | Do not send output to standard out. |
-| `command`        | Command to execute.                 |
+| Switch Name | Description | 
+| ----- | ----- |
+| `-file filename` | File to redirect output into. |
+| `-variable name` | Direct output into a variable. |
+| `-append` | Append to file. |
+| `-quiet` | Do not send output to standard out. |
+| `command` | Command to execute. |
 
 ## Example scripts
 
