@@ -95,18 +95,6 @@ _dbPolygon::_dbPolygon(_dbDatabase* db)
   boxes_ = 0;
 }
 
-_dbPolygon::_dbPolygon(_dbDatabase* db, const _dbPolygon& r)
-{
-  flags_.owner_type_ = r.flags_.owner_type_;
-  flags_.layer_id_ = r.flags_.layer_id_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  polygon_ = r.polygon_;
-  design_rule_width_ = r.design_rule_width_;
-  owner_ = r.owner_;
-  next_pbox_ = r.next_pbox_;
-  boxes_ = r.boxes_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbPolygon& obj)
 {
   uint32_t flags_bit_field;

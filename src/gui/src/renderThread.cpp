@@ -1387,9 +1387,7 @@ void RenderThread::drawAccessPoints(Painter& painter,
       if (restart_) {
         break;
       }
-      int x, y;
-      inst->getLocation(x, y);
-      odb::dbTransform xform({x, y});
+      odb::dbTransform xform = inst->getTransform();
 
       for (auto term : inst->getITerms()) {
         for (auto ap : term->getPrefAccessPoints()) {

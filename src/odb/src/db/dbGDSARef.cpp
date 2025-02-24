@@ -79,16 +79,6 @@ _dbGDSARef::_dbGDSARef(_dbDatabase* db)
   _num_columns = 1;
 }
 
-_dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
-{
-  _origin = r._origin;
-  _lr = r._lr;
-  _ul = r._ul;
-  _num_rows = r._num_rows;
-  _num_columns = r._num_columns;
-  _structure = r._structure;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
 {
   stream >> obj._origin;
