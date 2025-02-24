@@ -62,7 +62,6 @@ struct dbGCellGridFlags
 class _dbGCellGrid : public _dbObject
 {
  public:
-  _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
 
   bool operator==(const _dbGCellGrid& rhs) const;

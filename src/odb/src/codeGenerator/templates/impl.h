@@ -67,7 +67,6 @@ namespace odb {
     // User Code Begin Enums
     // User Code End Enums
         
-    _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
 
     {% if klass.needs_non_default_destructor %}

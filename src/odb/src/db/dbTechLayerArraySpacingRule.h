@@ -54,8 +54,6 @@ struct dbTechLayerArraySpacingRuleFlags
 class _dbTechLayerArraySpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerArraySpacingRule(_dbDatabase*,
-                               const _dbTechLayerArraySpacingRule& r);
   _dbTechLayerArraySpacingRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerArraySpacingRule& rhs) const;

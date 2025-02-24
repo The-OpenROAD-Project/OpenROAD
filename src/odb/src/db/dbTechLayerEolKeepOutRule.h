@@ -56,7 +56,6 @@ struct dbTechLayerEolKeepOutRuleFlags
 class _dbTechLayerEolKeepOutRule : public _dbObject
 {
  public:
-  _dbTechLayerEolKeepOutRule(_dbDatabase*, const _dbTechLayerEolKeepOutRule& r);
   _dbTechLayerEolKeepOutRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerEolKeepOutRule& rhs) const;

@@ -232,31 +232,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }
 
-_dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
-    : _magic1(d._magic1),
-      _magic2(d._magic2),
-      _schema_major(d._schema_major),
-      _schema_minor(d._schema_minor),
-      _master_id(d._master_id),
-      _chip(d._chip),
-      _unique_id(db_unique_id++),
-      _logger(nullptr)
-{
-  _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
-
-  _gds_lib_tbl = new dbTable<_dbGDSLib>(this, this, *d._gds_lib_tbl);
-
-  _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
-
-  _lib_tbl = new dbTable<_dbLib>(this, this, *d._lib_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(this, this, *d._prop_tbl);
-
-  _name_cache = new _dbNameCache(this, this, *d._name_cache);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
 _dbDatabase::~_dbDatabase()
 {
   delete _tech_tbl;

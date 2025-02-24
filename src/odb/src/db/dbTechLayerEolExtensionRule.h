@@ -51,8 +51,6 @@ struct dbTechLayerEolExtensionRuleFlags
 class _dbTechLayerEolExtensionRule : public _dbObject
 {
  public:
-  _dbTechLayerEolExtensionRule(_dbDatabase*,
-                               const _dbTechLayerEolExtensionRule& r);
   _dbTechLayerEolExtensionRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerEolExtensionRule& rhs) const;

@@ -58,7 +58,6 @@ struct dbTechLayerMinCutRuleFlags
 class _dbTechLayerMinCutRule : public _dbObject
 {
  public:
-  _dbTechLayerMinCutRule(_dbDatabase*, const _dbTechLayerMinCutRule& r);
   _dbTechLayerMinCutRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerMinCutRule& rhs) const;

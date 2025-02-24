@@ -190,22 +190,6 @@ dbTable<T>::dbTable(_dbDatabase* db,
 }
 
 template <class T>
-dbTable<T>::dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>& t)
-    : dbObjectTable(db, owner, t._getObjectTable, t._type, sizeof(T)),
-      _page_mask(t._page_mask),
-      _page_shift(t._page_shift),
-      _top_idx(t._top_idx),
-      _bottom_idx(t._bottom_idx),
-      _page_cnt(t._page_cnt),
-      _page_tbl_size(t._page_tbl_size),
-      _alloc_cnt(t._alloc_cnt),
-      _free_list(t._free_list),
-      _pages(nullptr)
-{
-  copy_pages(t);
-}
-
-template <class T>
 dbTable<T>::~dbTable()
 {
   clear();
@@ -590,47 +574,6 @@ void dbTable<T>::readPage(dbIStream& stream, dbTablePage* page)
       assert(
           t->_oid
           == oid);  // Check that the streaming code did not overwrite the oid
-    }
-  }
-}
-
-template <class T>
-void dbTable<T>::copy_pages(const dbTable<T>& t)
-{
-  _pages = new dbTablePage*[_page_tbl_size];
-
-  for (uint i = 0; i < _page_tbl_size; ++i) {
-    _pages[i] = nullptr;
-  }
-
-  for (uint i = 0; i < _page_cnt; ++i) {
-    dbTablePage* page = t._pages[i];
-    copy_page(i, page);
-  }
-}
-
-template <class T>
-void dbTable<T>::copy_page(uint page_id, dbTablePage* page)
-{
-  const uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
-  dbTablePage* p = (dbTablePage*) malloc(size);
-  ZALLOCATED(p);
-  memset(p, 0, size);
-  p->_table = this;
-  p->_page_addr = page_id << _page_shift;
-  p->_alloccnt = page->_alloccnt;
-  _pages[page_id] = p;
-
-  const T* t = (T*) page->_objects;
-  const T* e = &t[page_size()];
-  T* o = (T*) p->_objects;
-
-  for (; t < e; t++, o++) {
-    if (t->_oid & DB_ALLOC_BIT) {
-      new (o) T(_db, *t);
-      o->_oid = t->_oid;
-    } else {
-      *((_dbFreeObject*) o) = *((_dbFreeObject*) t);
     }
   }
 }

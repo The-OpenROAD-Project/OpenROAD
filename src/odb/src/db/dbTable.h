@@ -62,10 +62,6 @@ class dbTable : public dbObjectTable, public dbIterator
           uint page_size = 128,
           uint page_shift = 7);
 
-  // Make a copy of a table.
-  // The copy is identical including the ordering of all free-lists.
-  dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>& t);
-
   ~dbTable() override;
 
   // returns the number of instances of "T" allocated
@@ -105,8 +101,6 @@ class dbTable : public dbObjectTable, public dbIterator
   void collectMemInfo(MemInfo& info);
 
  private:
-  void copy_pages(const dbTable<T>&);
-  void copy_page(uint page_id, dbTablePage* page);
   void resizePageTbl();
   void newPage();
   void pushQ(uint& Q, _dbFreeObject* e);

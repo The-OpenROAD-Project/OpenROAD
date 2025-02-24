@@ -50,7 +50,6 @@ class dbInst;
 class _dbScanInst : public _dbObject
 {
  public:
-  _dbScanInst(_dbDatabase*, const _dbScanInst& r);
   _dbScanInst(_dbDatabase*);
 
   bool operator==(const _dbScanInst& rhs) const;

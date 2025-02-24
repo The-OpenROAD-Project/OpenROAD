@@ -115,21 +115,6 @@ _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
   // User Code End Constructor
 }
 
-_dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
-{
-  point_ = r.point_;
-  layer_ = r.layer_;
-  lib_ = r.lib_;
-  master_ = r.master_;
-  mpin_ = r.mpin_;
-  bpin_ = r.bpin_;
-  // User Code Begin CopyConstructor
-  iterms_ = r.iterms_;
-  low_type_ = r.low_type_;
-  high_type_ = r.high_type_;
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
 {
   stream >> obj.point_;

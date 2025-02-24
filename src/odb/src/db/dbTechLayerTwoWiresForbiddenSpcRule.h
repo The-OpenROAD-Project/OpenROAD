@@ -51,9 +51,6 @@ struct dbTechLayerTwoWiresForbiddenSpcRuleFlags
 class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
 {
  public:
-  _dbTechLayerTwoWiresForbiddenSpcRule(
-      _dbDatabase*,
-      const _dbTechLayerTwoWiresForbiddenSpcRule& r);
   _dbTechLayerTwoWiresForbiddenSpcRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;

@@ -75,13 +75,6 @@ _dbScanPin::_dbScanPin(_dbDatabase* db)
 {
 }
 
-_dbScanPin::_dbScanPin(_dbDatabase* db, const _dbScanPin& r)
-{
-  // User Code Begin CopyConstructor
-  pin_ = r.pin_;
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj)
 {
   stream >> obj.pin_;

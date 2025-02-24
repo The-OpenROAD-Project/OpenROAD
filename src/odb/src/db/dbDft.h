@@ -49,7 +49,6 @@ class _dbScanChain;
 class _dbDft : public _dbObject
 {
  public:
-  _dbDft(_dbDatabase*, const _dbDft& r);
   _dbDft(_dbDatabase*);
 
   ~_dbDft();

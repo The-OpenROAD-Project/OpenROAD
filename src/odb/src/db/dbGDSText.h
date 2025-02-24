@@ -45,7 +45,6 @@ class _dbDatabase;
 class _dbGDSText : public _dbObject
 {
  public:
-  _dbGDSText(_dbDatabase*, const _dbGDSText& r);
   _dbGDSText(_dbDatabase*);
 
   bool operator==(const _dbGDSText& rhs) const;

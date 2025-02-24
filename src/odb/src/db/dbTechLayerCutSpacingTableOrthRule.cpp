@@ -61,12 +61,6 @@ _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
 {
 }
 
-_dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutSpacingTableOrthRule& r)
-{
-}
-
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj)
 {

@@ -44,8 +44,6 @@ class _dbDatabase;
 class _dbTechLayerForbiddenSpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerForbiddenSpacingRule(_dbDatabase*,
-                                   const _dbTechLayerForbiddenSpacingRule& r);
   _dbTechLayerForbiddenSpacingRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerForbiddenSpacingRule& rhs) const;

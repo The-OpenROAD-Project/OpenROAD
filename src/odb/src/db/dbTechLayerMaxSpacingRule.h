@@ -44,7 +44,6 @@ class _dbDatabase;
 class _dbTechLayerMaxSpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerMaxSpacingRule(_dbDatabase*, const _dbTechLayerMaxSpacingRule& r);
   _dbTechLayerMaxSpacingRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerMaxSpacingRule& rhs) const;

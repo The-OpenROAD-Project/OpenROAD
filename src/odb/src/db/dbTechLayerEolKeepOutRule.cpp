@@ -99,23 +99,6 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
   class_name_ = "";
 }
 
-_dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
-    _dbDatabase* db,
-    const _dbTechLayerEolKeepOutRule& r)
-{
-  flags_.class_valid_ = r.flags_.class_valid_;
-  flags_.corner_only_ = r.flags_.corner_only_;
-  flags_.except_within_ = r.flags_.except_within_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_width_ = r.eol_width_;
-  backward_ext_ = r.backward_ext_;
-  forward_ext_ = r.forward_ext_;
-  side_ext_ = r.side_ext_;
-  within_low_ = r.within_low_;
-  within_high_ = r.within_high_;
-  class_name_ = r.class_name_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
 {
   uint32_t flags_bit_field;

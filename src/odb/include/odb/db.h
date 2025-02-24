@@ -1572,17 +1572,6 @@ class dbBlock : public dbObject
 
  public:
   ///
-  /// This method copies the via-table from the src block to the destination
-  /// block.
-  ///
-  /// WARNING: This method deletes any vias previously defined in the
-  /// destination block.
-  ///          If there are wire which reference these vias, the references will
-  ///          be left dangling.
-  ///
-  static void copyViaTable(dbBlock* dst, dbBlock* src);
-
-  ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
   /// exists.
   /// If tech is null then the db must contain only one dbTech.

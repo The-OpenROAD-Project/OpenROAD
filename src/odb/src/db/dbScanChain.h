@@ -51,7 +51,6 @@ class dbScanPin;
 class _dbScanChain : public _dbObject
 {
  public:
-  _dbScanChain(_dbDatabase*, const _dbScanChain& r);
   _dbScanChain(_dbDatabase*);
 
   ~_dbScanChain();

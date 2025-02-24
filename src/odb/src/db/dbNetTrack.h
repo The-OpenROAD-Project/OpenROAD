@@ -50,7 +50,6 @@ class _dbTechLayer;
 class _dbNetTrack : public _dbObject
 {
  public:
-  _dbNetTrack(_dbDatabase*, const _dbNetTrack& r);
   _dbNetTrack(_dbDatabase*);
 
   bool operator==(const _dbNetTrack& rhs) const;

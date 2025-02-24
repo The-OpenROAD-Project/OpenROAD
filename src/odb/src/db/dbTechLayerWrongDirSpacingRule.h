@@ -54,8 +54,6 @@ struct dbTechLayerWrongDirSpacingRuleFlags
 class _dbTechLayerWrongDirSpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerWrongDirSpacingRule(_dbDatabase*,
-                                  const _dbTechLayerWrongDirSpacingRule& r);
   _dbTechLayerWrongDirSpacingRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerWrongDirSpacingRule& rhs) const;

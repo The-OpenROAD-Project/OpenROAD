@@ -55,7 +55,6 @@ class _dbGDSText;
 class _dbGDSStructure : public _dbObject
 {
  public:
-  _dbGDSStructure(_dbDatabase*, const _dbGDSStructure& r);
   _dbGDSStructure(_dbDatabase*);
 
   ~_dbGDSStructure();

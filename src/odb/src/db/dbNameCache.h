@@ -51,7 +51,6 @@ class _dbNameCache
   _dbNameCache(_dbDatabase* db,
                dbObject* owner,
                dbObjectTable* (dbObject::*m)(dbObjectType));
-  _dbNameCache(_dbDatabase* db, dbObject* owner, const _dbNameCache& cache);
   ~_dbNameCache();
 
   bool operator==(const _dbNameCache& rhs) const;

@@ -52,7 +52,6 @@ class dbITerm;
 class _dbScanPin : public _dbObject
 {
  public:
-  _dbScanPin(_dbDatabase*, const _dbScanPin& r);
   _dbScanPin(_dbDatabase*);
 
   bool operator==(const _dbScanPin& rhs) const;

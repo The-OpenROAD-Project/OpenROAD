@@ -134,23 +134,6 @@ namespace odb {
     // User Code End Constructor
   }
 
-  _{{klass.name}}::_{{klass.name}}(_dbDatabase* db, const _{{klass.name}}& r)
-  {
-    {% for field in klass.fields %}
-      {% for component in field.components %}
-        {% if field.table %}
-          {{field.name}} = new dbTable<_{{field.type}}>(db, this, *r.{{field.name}});
-        {% elif field.isHashTable %}
-          {{field.name}}.setTable({{field.table_name}});
-        {% else %}
-          {{component}}=r.{{component}};
-        {% endif %}
-      {% endfor %}
-    {% endfor %}
-    //User Code Begin CopyConstructor
-    //User Code End CopyConstructor
-  }
-
   {% for _struct in klass.structs %}
     {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-in' not in _struct['flags']) %}
       {% set sname = klass.name+'::'+_struct.name %}

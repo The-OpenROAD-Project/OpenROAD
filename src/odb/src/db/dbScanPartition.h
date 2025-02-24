@@ -48,7 +48,6 @@ class dbTable;
 class _dbScanPartition : public _dbObject
 {
  public:
-  _dbScanPartition(_dbDatabase*, const _dbScanPartition& r);
   _dbScanPartition(_dbDatabase*);
 
   ~_dbScanPartition();

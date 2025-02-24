@@ -45,7 +45,6 @@ class _dbDatabase;
 class _dbGDSBoundary : public _dbObject
 {
  public:
-  _dbGDSBoundary(_dbDatabase*, const _dbGDSBoundary& r);
   _dbGDSBoundary(_dbDatabase*);
 
   bool operator==(const _dbGDSBoundary& rhs) const;

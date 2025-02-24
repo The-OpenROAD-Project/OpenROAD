@@ -57,7 +57,6 @@ class _dbBlock;
 class _dbMarkerCategory : public _dbObject
 {
  public:
-  _dbMarkerCategory(_dbDatabase*, const _dbMarkerCategory& r);
   _dbMarkerCategory(_dbDatabase*);
 
   ~_dbMarkerCategory();

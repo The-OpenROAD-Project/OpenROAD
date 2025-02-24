@@ -45,7 +45,6 @@ class _dbDatabase;
 class _dbGDSPath : public _dbObject
 {
  public:
-  _dbGDSPath(_dbDatabase*, const _dbGDSPath& r);
   _dbGDSPath(_dbDatabase*);
 
   bool operator==(const _dbGDSPath& rhs) const;

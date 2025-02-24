@@ -58,7 +58,6 @@ class _dbObject;
 class _dbAccessPoint : public _dbObject
 {
  public:
-  _dbAccessPoint(_dbDatabase*, const _dbAccessPoint& r);
   _dbAccessPoint(_dbDatabase*);
 
   bool operator==(const _dbAccessPoint& rhs) const;

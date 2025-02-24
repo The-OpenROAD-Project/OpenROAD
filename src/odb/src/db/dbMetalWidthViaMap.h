@@ -50,7 +50,6 @@ class _dbTechLayer;
 class _dbMetalWidthViaMap : public _dbObject
 {
  public:
-  _dbMetalWidthViaMap(_dbDatabase*, const _dbMetalWidthViaMap& r);
   _dbMetalWidthViaMap(_dbDatabase*);
 
   bool operator==(const _dbMetalWidthViaMap& rhs) const;

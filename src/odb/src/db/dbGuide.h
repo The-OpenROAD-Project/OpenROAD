@@ -50,7 +50,6 @@ class _dbTechLayer;
 class _dbGuide : public _dbObject
 {
  public:
-  _dbGuide(_dbDatabase*, const _dbGuide& r);
   _dbGuide(_dbDatabase*);
 
   bool operator==(const _dbGuide& rhs) const;

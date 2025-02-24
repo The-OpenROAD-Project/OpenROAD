@@ -90,7 +90,6 @@ struct dbTechLayerCutSpacingRuleFlags
 class _dbTechLayerCutSpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerCutSpacingRule(_dbDatabase*, const _dbTechLayerCutSpacingRule& r);
   _dbTechLayerCutSpacingRule(_dbDatabase*);
 
   bool operator==(const _dbTechLayerCutSpacingRule& rhs) const;
