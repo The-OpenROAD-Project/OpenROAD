@@ -856,7 +856,7 @@ proc reset_opt_config { args } {
   }
 
   set reset_all [expr { [array size flags] == 0 }]
-    
+
   if {
     $reset_all || [info exists flags(-limit_sizing_area)]
     || [info exists flags(-sizing_area_limit)]
