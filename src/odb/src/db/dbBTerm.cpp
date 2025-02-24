@@ -205,6 +205,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
     stream << bterm._constraint_region;
   }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+    stream << bterm._mirrored_bterm;
+  }
+
   return stream;
 }
 
@@ -232,6 +236,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._supply_pin;
   if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
     stream >> bterm._constraint_region;
+  }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+    stream >> bterm._mirrored_bterm;
   }
 
   return stream;
@@ -895,6 +902,26 @@ std::optional<Rect> dbBTerm::getConstraintRegion()
   }
 
   return bterm->_constraint_region;
+}
+
+void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
+  bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
+}
+
+dbBTerm* dbBTerm::getMirroredBTerm()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+
+  if (bterm->_mirrored_bterm == 0) {
+    return nullptr;
+  }
+
+  _dbBTerm* mirrored_bterm = block->_bterm_tbl->getPtr(bterm->_mirrored_bterm);
+  return (dbBTerm*) mirrored_bterm;
 }
 
 }  // namespace odb
