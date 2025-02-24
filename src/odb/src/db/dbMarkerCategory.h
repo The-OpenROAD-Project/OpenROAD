@@ -87,9 +87,7 @@ class _dbMarkerCategory : public _dbObject
   std::string description_;
   std::string source_;
   int max_markers_;
-
   dbTable<_dbMarker>* marker_tbl_;
-
   dbTable<_dbMarkerCategory>* categories_tbl_;
   dbHashTable<_dbMarkerCategory> categories_hash_;
   dbId<_dbMarkerCategory> _next_entry;

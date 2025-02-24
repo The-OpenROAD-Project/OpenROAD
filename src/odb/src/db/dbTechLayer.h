@@ -119,46 +119,26 @@ class _dbTechLayer : public _dbObject
   uint wrong_way_width_;
   float layer_adjustment_;
   std::vector<std::pair<int, int>> orth_spacing_tbl_;
-
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
-
   dbTable<_dbTechLayerSpacingEolRule>* spacing_eol_rules_tbl_;
-
   dbTable<_dbTechLayerCutSpacingRule>* cut_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerMinStepRule>* minstep_rules_tbl_;
-
   dbTable<_dbTechLayerCornerSpacingRule>* corner_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerSpacingTablePrlRule>* spacing_table_prl_rules_tbl_;
-
   dbTable<_dbTechLayerCutSpacingTableOrthRule>* cut_spacing_table_orth_tbl_;
-
   dbTable<_dbTechLayerCutSpacingTableDefRule>* cut_spacing_table_def_tbl_;
-
   dbTable<_dbTechLayerCutEnclosureRule>* cut_enc_rules_tbl_;
-
   dbTable<_dbTechLayerEolExtensionRule>* eol_ext_rules_tbl_;
-
   dbTable<_dbTechLayerArraySpacingRule>* array_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerEolKeepOutRule>* eol_keep_out_rules_tbl_;
-
   dbTable<_dbTechLayerMaxSpacingRule>* max_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerWidthTableRule>* width_table_rules_tbl_;
-
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
-
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
-
   dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
-
   dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>*
       two_wires_forbidden_spc_rules_tbl_;
 

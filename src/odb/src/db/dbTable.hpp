@@ -43,6 +43,49 @@
 
 namespace odb {
 
+//
+// Get the object of this id
+// This method is the same as getPtr() but is is
+// use to get objects on the free-list.
+//
+template <class T>
+inline T* dbTable<T>::getFreeObj(dbId<T> id)
+{
+  const uint page = (uint) id >> _page_shift;
+  const uint offset = (uint) id & _page_mask;
+
+  assert(((uint) id != 0) && (page < _page_cnt));
+  T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+  assert((p->_oid & DB_ALLOC_BIT) == 0);
+  return p;
+}
+
+template <class T>
+inline T* dbTable<T>::getPtr(dbId<T> id) const
+{
+  const uint page = (uint) id >> _page_shift;
+  const uint offset = (uint) id & _page_mask;
+
+  assert(((uint) id != 0) && (page < _page_cnt));
+  T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+  assert(p->_oid & DB_ALLOC_BIT);
+  return p;
+}
+
+template <class T>
+inline bool dbTable<T>::validId(dbId<T> id) const
+{
+  const uint page = (uint) id >> _page_shift;
+  const uint offset = (uint) id & _page_mask;
+
+  if (((uint) id != 0) && (page < _page_cnt)) {
+    T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+    return (p->_oid & DB_ALLOC_BIT) == DB_ALLOC_BIT;
+  }
+
+  return false;
+}
+
 template <class T>
 inline void dbTable<T>::pushQ(uint& Q, _dbFreeObject* e)
 {
@@ -76,7 +119,7 @@ inline _dbFreeObject* dbTable<T>::popQ(uint& Q)
 template <class T>
 inline void dbTable<T>::unlinkQ(uint& Q, _dbFreeObject* e)
 {
-  uint oid = e->getImpl()->getOID();
+  const uint oid = e->getImpl()->getOID();
 
   if (oid == Q) {
     Q = e->_next;
@@ -101,8 +144,7 @@ inline void dbTable<T>::unlinkQ(uint& Q, _dbFreeObject* e)
 template <class T>
 void dbTable<T>::clear()
 {
-  uint i;
-  for (i = 0; i < _page_cnt; ++i) {
+  for (uint i = 0; i < _page_cnt; ++i) {
     dbTablePage* page = _pages[i];
     const T* t = (T*) page->_objects;
     const T* e = &t[page_size()];
@@ -172,13 +214,13 @@ dbTable<T>::~dbTable()
 template <class T>
 void dbTable<T>::resizePageTbl()
 {
-  uint i;
   dbTablePage** old_tbl = _pages;
-  uint old_tbl_size = _page_tbl_size;
+  const uint old_tbl_size = _page_tbl_size;
   _page_tbl_size *= 2;
 
   _pages = new dbTablePage*[_page_tbl_size];
 
+  uint i;
   for (i = 0; i < old_tbl_size; ++i) {
     _pages[i] = old_tbl[i];
   }
@@ -193,12 +235,12 @@ void dbTable<T>::resizePageTbl()
 template <class T>
 void dbTable<T>::newPage()
 {
-  uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
+  const uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
   dbTablePage* page = (dbTablePage*) malloc(size);
   ZALLOCATED(page);
   memset(page, 0, size);
 
-  uint page_id = _page_cnt;
+  const uint page_id = _page_cnt;
 
   if (_page_tbl_size == 0) {
     _pages = new dbTablePage*[1];
@@ -257,7 +299,7 @@ T* dbTable<T>::create()
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   page->_alloccnt++;
 
-  uint id = t->getOID();
+  const uint id = t->getOID();
 
   if (id > _top_idx) {
     _top_idx = id;
@@ -280,7 +322,7 @@ T* dbTable<T>::duplicate(T* c)
   }
 
   _dbFreeObject* o = popQ(_free_list);
-  uint oid = o->_oid;
+  const uint oid = o->_oid;
   new (o) T(_db, *c);
   T* t = (T*) o;
   t->_oid = oid | DB_ALLOC_BIT;
@@ -288,7 +330,7 @@ T* dbTable<T>::duplicate(T* c)
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   page->_alloccnt++;
 
-  uint id = t->getOID();
+  const uint id = t->getOID();
 
   if (id > _top_idx) {
     _top_idx = id;
@@ -304,6 +346,7 @@ T* dbTable<T>::duplicate(T* c)
 #define ADS_DB_TABLE_BOTTOM_SEARCH_FAILED 0
 #define ADS_DB_TABLE_TOP_SEARCH_FAILED 0
 
+// find the new bottom_idx...
 template <class T>
 inline void dbTable<T>::findBottom()
 {
@@ -348,7 +391,7 @@ inline void dbTable<T>::findBottom()
 
   for (; s < e; s++) {
     if (s->_oid & DB_ALLOC_BIT) {
-      uint offset = s - b;
+      const uint offset = s - b;
       _bottom_idx = (page_id << _page_shift) + offset;
       return;
     }
@@ -358,6 +401,7 @@ inline void dbTable<T>::findBottom()
   ZASSERT(ADS_DB_TABLE_BOTTOM_SEARCH_FAILED);
 }
 
+// find the new top_idx...
 template <class T>
 inline void dbTable<T>::findTop()
 {
@@ -401,7 +445,7 @@ inline void dbTable<T>::findTop()
 
   for (; s >= b; s--) {
     if (s->_oid & DB_ALLOC_BIT) {
-      uint offset = s - b;
+      const uint offset = s - b;
       _top_idx = (page_id << _page_shift) + offset;
       return;
     }
@@ -428,8 +472,8 @@ void dbTable<T>::destroy(T* t)
   t->~T();  // call destructor
   o->_oid = oid & ~DB_ALLOC_BIT;
 
-  uint offset = t - (T*) page->_objects;
-  uint id = page->_page_addr + offset;
+  const uint offset = t - (T*) page->_objects;
+  const uint id = page->_page_addr + offset;
 
   // Add to freelist
   pushQ(_free_list, o);
@@ -505,7 +549,7 @@ next_obj:
   for (; p < e; ++p) {
     if (p->_oid & DB_ALLOC_BIT) {
       offset = p - (T*) page->_objects;
-      uint n = (page_id << _page_shift) + offset;
+      const uint n = (page_id << _page_shift) + offset;
       ZASSERT(n <= _top_idx);
       return n;
     }
@@ -538,11 +582,11 @@ void dbTable<T>::writePage(dbOStream& stream, const dbTablePage* page) const
 
   for (; t < e; t++) {
     if (t->_oid & DB_ALLOC_BIT) {
-      char allocated = 1;
+      const char allocated = 1;
       stream << allocated;
       stream << *t;
     } else {
-      char allocated = 0;
+      const char allocated = 0;
       stream << allocated;
       _dbFreeObject* o = (_dbFreeObject*) t;
       stream << o->_next;
@@ -586,13 +630,11 @@ void dbTable<T>::copy_pages(const dbTable<T>& t)
 {
   _pages = new dbTablePage*[_page_tbl_size];
 
-  uint i;
-
-  for (i = 0; i < _page_tbl_size; ++i) {
+  for (uint i = 0; i < _page_tbl_size; ++i) {
     _pages[i] = nullptr;
   }
 
-  for (i = 0; i < _page_cnt; ++i) {
+  for (uint i = 0; i < _page_cnt; ++i) {
     dbTablePage* page = t._pages[i];
     copy_page(i, page);
   }
@@ -764,9 +806,7 @@ void dbTable<T>::getObjects(std::vector<T*>& objects)
   objects.clear();
   objects.reserve(size());
 
-  uint i;
-
-  for (i = _bottom_idx; i <= _top_idx; ++i) {
+  for (uint i = _bottom_idx; i <= _top_idx; ++i) {
     if (validId(i)) {
       objects.push_back(getPtr(i));
     }

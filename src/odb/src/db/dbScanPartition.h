@@ -63,7 +63,6 @@ class _dbScanPartition : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   std::string name_;
-
   dbTable<_dbScanList>* scan_lists_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj);

@@ -68,17 +68,11 @@ class _dbGDSStructure : public _dbObject
 
   char* _name;
   dbId<_dbGDSStructure> _next_entry;
-
   dbTable<_dbGDSBoundary>* boundaries_;
-
   dbTable<_dbGDSBox>* boxes_;
-
   dbTable<_dbGDSPath>* paths_;
-
   dbTable<_dbGDSSRef>* srefs_;
-
   dbTable<_dbGDSARef>* arefs_;
-
   dbTable<_dbGDSText>* texts_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);

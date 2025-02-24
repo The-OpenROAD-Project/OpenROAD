@@ -64,9 +64,7 @@ class _dbDft : public _dbObject
   // User Code End Methods
 
   bool scan_inserted_;
-
   dbTable<_dbScanPin>* scan_pins_;
-
   dbTable<_dbScanChain>* scan_chains_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbDft& obj);

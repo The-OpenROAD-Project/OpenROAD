@@ -36,6 +36,7 @@
 #include "dbBlock.h"
 #include "dbNet.h"
 #include "dbTable.h"
+#include "dbTable.hpp"
 
 namespace odb {
 
