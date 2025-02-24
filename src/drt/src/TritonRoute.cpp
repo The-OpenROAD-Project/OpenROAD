@@ -938,7 +938,10 @@ int TritonRoute::main()
   if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     router_cfg_->USENONPREFTRACKS = false;
   }
-  std::optional<asio::thread_pool> pa_pool;
+  asio::thread_pool pa_pool(1);
+  if (!distributed_) {
+    pa_pool.join();
+  }
   if (debug_->debugDumpDR) {
     std::string router_cfg_path
         = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
@@ -947,8 +950,7 @@ int TritonRoute::main()
   router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_) {
     if (router_cfg_->DO_PA) {
-      pa_pool.emplace(1);
-      asio::post(*pa_pool, [this]() {
+      asio::post(pa_pool, [this]() {
         sendDesignDist();
         dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
                             dst::JobMessage::BROADCAST),
@@ -984,9 +986,7 @@ int TritonRoute::main()
     if (debug_->debugPA) {
       pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
     }
-    if (pa_pool.has_value()) {
-      pa_pool->join();
-    }
+    pa_pool.join();
     pa_->main();
     /// bookmark
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {

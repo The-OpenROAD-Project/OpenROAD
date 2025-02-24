@@ -414,7 +414,7 @@ void FlexPA::addAccessPatternObj(
     std::vector<std::unique_ptr<frVia>>& vias,
     const bool isPrev)
 {
-  const dbTransform xform = inst->getTransform();
+  const dbTransform xform = inst->getNoRotationTransform();
   int access_point_idx = 0;
   auto& access_points = access_pattern->getPattern();
 
