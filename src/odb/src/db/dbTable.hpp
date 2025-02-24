@@ -173,9 +173,9 @@ template <class T>
 dbTable<T>::dbTable(_dbDatabase* db,
                     dbObject* owner,
                     dbObjectTable* (dbObject::*m)(dbObjectType),
-                    dbObjectType type,
-                    uint page_size,
-                    uint page_shift)
+                    const dbObjectType type,
+                    const uint page_size,
+                    const uint page_shift)
     : dbObjectTable(db, owner, m, type, sizeof(T))
 {
   _page_mask = page_size - 1;
@@ -643,7 +643,7 @@ void dbTable<T>::copy_pages(const dbTable<T>& t)
 template <class T>
 void dbTable<T>::copy_page(uint page_id, dbTablePage* page)
 {
-  uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
+  const uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
   dbTablePage* p = (dbTablePage*) malloc(size);
   ZALLOCATED(p);
   memset(p, 0, size);
@@ -688,8 +688,7 @@ dbOStream& operator<<(dbOStream& stream, const dbTable<T>& table)
   stream << table._alloc_cnt;
   stream << table._free_list;
 
-  uint i;
-  for (i = 0; i < table._page_cnt; ++i) {
+  for (uint i = 0; i < table._page_cnt; ++i) {
     const dbTablePage* page = table._pages[i];
     table.writePage(stream, page);
   }
