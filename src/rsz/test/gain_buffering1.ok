@@ -32,15 +32,25 @@ Fanout   Delay    Time   Description
 
 
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        30
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]
+<<<<<<< HEAD
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]
 [INFO RSZ-0038] Inserted 3 buffers in 8 nets.
 [INFO RSZ-0039] Resized 3 instances.
 Startpoint: _69_ (rising edge-triggered flip-flop clocked by clk)
+=======
+    final |   +139.5% |       0 |       5 |             5 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0038] Inserted 5 buffers in 5 nets.
+Startpoint: _70_ (rising edge-triggered flip-flop clocked by clk)
+>>>>>>> master
 Endpoint: _68_ (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max

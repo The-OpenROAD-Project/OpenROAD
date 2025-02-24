@@ -34,6 +34,7 @@
 #include "{{itr.name}}.h"
 #include "{{itr.parentObject}}.h"
 #include "dbTable.h"
+#include "dbTable.hpp"
 {% for include in itr.includes %}
   #include "{{include}}"
 {% endfor %}

@@ -75,16 +75,6 @@ _dbTechLayerForbiddenSpacingRule::_dbTechLayerForbiddenSpacingRule(
   two_edges_ = 0;
 }
 
-_dbTechLayerForbiddenSpacingRule::_dbTechLayerForbiddenSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerForbiddenSpacingRule& r)
-{
-  width_ = r.width_;
-  within_ = r.within_;
-  prl_ = r.prl_;
-  two_edges_ = r.two_edges_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerForbiddenSpacingRule& obj)
 {
   stream >> obj.forbidden_spacing_;

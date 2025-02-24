@@ -255,13 +255,11 @@ void RepairDesign::repairDesign(
   } else {
     print_interval_ = min_print_interval_;
   }
-  if (verbose) {
-    printProgress(print_iteration, false, false, repaired_net_count);
-  }
+  printProgress(print_iteration, false, false, repaired_net_count);
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     print_iteration++;
-    if (verbose) {
+    if (verbose || (print_iteration == 1)) {
       printProgress(print_iteration, false, false, repaired_net_count);
     }
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
@@ -298,9 +296,7 @@ void RepairDesign::repairDesign(
     }
   }
   resizer_->updateParasitics();
-  if (verbose) {
-    printProgress(print_iteration, true, true, repaired_net_count);
-  }
+  printProgress(print_iteration, true, true, repaired_net_count);
   resizer_->incrementalParasiticsEnd();
 
   if (inserted_buffer_count_ > 0) {
@@ -1338,15 +1334,17 @@ void RepairDesign::repairNetWire(
       int buf_x = to_x + d * dx;
       int buf_y = to_y + d * dy;
       float repeater_cap, repeater_fanout;
-      makeRepeater("wire",
-                   Point(buf_x, buf_y),
-                   buffer_cell,
-                   resize,
-                   level,
-                   load_pins,
-                   repeater_cap,
-                   repeater_fanout,
-                   max_load_slew);
+      if (!makeRepeater("wire",
+                        Point(buf_x, buf_y),
+                        buffer_cell,
+                        resize,
+                        level,
+                        load_pins,
+                        repeater_cap,
+                        repeater_fanout,
+                        max_load_slew)) {
+        break;
+      }
       // Update for the next round.
       length -= buf_dist;
       wire_length = length;
@@ -1738,19 +1736,21 @@ void RepairDesign::makeFanoutRepeater(PinSeq& repeater_loads,
   float ignore2, ignore3, ignore4;
   Net* out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
-  makeRepeater("fanout",
-               loc.x(),
-               loc.y(),
-               resizer_->buffer_lowest_drive_,
-               false,
-               1,
-               repeater_loads,
-               ignore2,
-               ignore3,
-               ignore4,
-               out_net,
-               repeater_in_pin,
-               repeater_out_pin);
+  if (!makeRepeater("fanout",
+                    loc.x(),
+                    loc.y(),
+                    resizer_->buffer_lowest_drive_,
+                    false,
+                    1,
+                    repeater_loads,
+                    ignore2,
+                    ignore3,
+                    ignore4,
+                    out_net,
+                    repeater_in_pin,
+                    repeater_out_pin)) {
+    return;
+  }
   Vertex* repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
   int repaired_net_count = 0, slew_violations = 0, cap_violations = 0;
   int fanout_violations = 0, length_violations = 0;
@@ -1821,7 +1821,7 @@ bool RepairDesign::isRepeater(const Pin* load_pin)
 
 ////////////////////////////////////////////////////////////////
 
-void RepairDesign::makeRepeater(const char* reason,
+bool RepairDesign::makeRepeater(const char* reason,
                                 const Point& loc,
                                 LibertyCell* buffer_cell,
                                 bool resize,
@@ -1834,19 +1834,19 @@ void RepairDesign::makeRepeater(const char* reason,
 {
   Net* out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
-  makeRepeater(reason,
-               loc.getX(),
-               loc.getY(),
-               buffer_cell,
-               resize,
-               level,
-               load_pins,
-               repeater_cap,
-               repeater_fanout,
-               repeater_max_slew,
-               out_net,
-               repeater_in_pin,
-               repeater_out_pin);
+  return makeRepeater(reason,
+                      loc.getX(),
+                      loc.getY(),
+                      buffer_cell,
+                      resize,
+                      level,
+                      load_pins,
+                      repeater_cap,
+                      repeater_fanout,
+                      repeater_max_slew,
+                      out_net,
+                      repeater_in_pin,
+                      repeater_out_pin);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1867,7 +1867,7 @@ bool RepairDesign::hasInputPort(const Net* net)
   return has_top_level_port;
 }
 
-void RepairDesign::makeRepeater(
+bool RepairDesign::makeRepeater(
     const char* reason,
     int x,
     int y,
@@ -1942,6 +1942,101 @@ void RepairDesign::makeRepeater(
     }
   }
 
+  const bool keep_input = hasInputPort(load_net) || !preserve_outputs;
+
+  // check for dont_touch
+
+  if (!keep_input) {
+    // check if driving port is dont touch and reject
+    bool driving_pin_dont_touch = false;
+    std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      if (network_->direction(pin)->isAnyOutput() && resizer_->dontTouch(pin)) {
+        driving_pin_dont_touch = true;
+        break;
+      }
+    }
+
+    if (driving_pin_dont_touch) {
+      debugPrint(
+          logger_,
+          utl::RSZ,
+          "repair_net",
+          3,
+          "Cannot create repeater due to driving pin on {} being dont_touch",
+          network_->name(load_net));
+      return false;
+    }
+  }
+
+  PinSet repeater_load_pins(db_network_);
+
+  bool connections_will_be_modified = false;
+  if (keep_input) {
+    //
+    // Case 1
+    //------
+    // A primary input or do not preserve the outputs
+    //
+    // use orig net as buffer ip (keep primary input name exposed)
+    // use new net as buffer op (ok to use new name on op of buffer).
+    // move loads to op side (so might need to rename any hierarchical
+    // nets to avoid conflict of names with primary input net).
+    //
+    // record the driver pin modnet, if any
+
+    for (const Pin* pin : load_pins) {
+      Instance* inst = network_->instance(pin);
+      if (resizer_->dontTouch(inst)) {
+        continue;
+      }
+
+      connections_will_be_modified = true;
+    }
+  } else /* case 2 */ {
+    //
+    // case 2. One of the loads is a primary output or a dont touch
+    // Note that even if all loads dont touch we still insert a buffer
+    //
+    // Use the new net as the buffer input. Preserve
+    // the output net as is. Transfer non repeater loads
+    // to input side
+    for (const Pin* pin : load_pins) {
+      repeater_load_pins.insert(pin);
+    }
+    // put non repeater loads from op net onto ip net, preserving
+    // any hierarchical connection
+    std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      if (!repeater_load_pins.hasKey(pin)) {
+        Instance* inst = network_->instance(pin);
+        // do not disconnect/reconnect don't touch instances
+        if (resizer_->dontTouch(inst)) {
+          continue;
+        }
+        connections_will_be_modified = true;
+      }
+    }
+  }  // case 2
+
+  if (!connections_will_be_modified) {
+    debugPrint(logger_,
+               utl::RSZ,
+               "repair_net",
+               3,
+               "New buffer will not connected to anything on {}.",
+               network_->name(load_net));
+
+    // no connections change, so this buffer will be left floating
+    repeater_cap = 0;
+    repeater_fanout = 0;
+    repeater_max_slew = 0;
+
+    return false;
+  }
+
   // Determine parent to put buffer (and net)
   // Determine the driver pin
   // Make the buffer in the root module in case or primary input connections
@@ -1987,7 +2082,7 @@ void RepairDesign::makeRepeater(
   Net* buffer_ip_net = nullptr;
   Net* buffer_op_net = nullptr;
 
-  if (hasInputPort(load_net) || !preserve_outputs) {
+  if (keep_input) {
     //
     // Case 1
     //------
@@ -2080,13 +2175,9 @@ void RepairDesign::makeRepeater(
     buffer_ip_net = new_net;
     buffer_op_net = db_network_->dbToSta(load_db_net);
 
-    PinSet repeater_load_pins(db_network_);
-    for (const Pin* pin : load_pins) {
-      repeater_load_pins.insert(pin);
-    }
     // put non repeater loads from op net onto ip net, preserving
     // any hierarchical connection
-    NetPinIterator* pin_iter = network_->pinIterator(load_net);
+    std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
       if (!repeater_load_pins.hasKey(pin)) {
@@ -2130,6 +2221,8 @@ void RepairDesign::makeRepeater(
   repeater_cap = resizer_->portCapacitance(buffer_input_port, corner_);
   repeater_fanout = resizer_->portFanoutLoad(buffer_input_port);
   repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
+
+  return true;
 }
 
 LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)

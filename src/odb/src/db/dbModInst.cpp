@@ -104,18 +104,6 @@ _dbModInst::_dbModInst(_dbDatabase* db)
   // User Code End Constructor
 }
 
-_dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _parent = r._parent;
-  _module_next = r._module_next;
-  _master = r._master;
-  _group_next = r._group_next;
-  _group = r._group;
-  _moditerms = r._moditerms;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 {
   stream >> obj._name;

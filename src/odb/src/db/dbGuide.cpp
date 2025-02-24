@@ -84,17 +84,6 @@ _dbGuide::_dbGuide(_dbDatabase* db)
   is_jumper_ = false;
 }
 
-_dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
-{
-  net_ = r.net_;
-  box_ = r.box_;
-  layer_ = r.layer_;
-  via_layer_ = r.via_layer_;
-  guide_next_ = r.guide_next_;
-  is_congested_ = r.is_congested_;
-  is_jumper_ = r.is_jumper_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
 {
   stream >> obj.net_;

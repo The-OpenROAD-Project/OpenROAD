@@ -290,7 +290,6 @@ class _dbBlock : public _dbObject
   dbBlockSearch* _searchDb;
 
   std::map<std::string, int> _module_name_id_map;
-  std::map<std::string, int> _inst_name_id_map;
 
   unsigned char _num_ext_dbs;
 
@@ -301,7 +300,6 @@ class _dbBlock : public _dbObject
   dbJournal* _journal_pending;
 
   _dbBlock(_dbDatabase* db);
-  _dbBlock(_dbDatabase* db, const _dbBlock& block);
   ~_dbBlock();
   void add_rect(const Rect& rect);
   void add_oct(const Oct& oct);

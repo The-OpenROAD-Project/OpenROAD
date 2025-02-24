@@ -88,17 +88,6 @@ _dbBusPort::_dbBusPort(_dbDatabase* db)
   _to = 0;
 }
 
-_dbBusPort::_dbBusPort(_dbDatabase* db, const _dbBusPort& r)
-{
-  _flags = r._flags;
-  _from = r._from;
-  _to = r._to;
-  _port = r._port;
-  _members = r._members;
-  _last = r._last;
-  _parent = r._parent;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {

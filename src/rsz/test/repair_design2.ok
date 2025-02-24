@@ -6,5 +6,14 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO RSZ-0058] Using max wire length 2406um.
+<<<<<<< HEAD
 [INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0039] Resized 2 instances.
+=======
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         5
+    final |  +1368.4% |       3 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 3 instances.
+>>>>>>> master

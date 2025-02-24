@@ -6,8 +6,17 @@
 [INFO ODB-0133]     Created 8 nets and 14 connections.
 [INFO RSZ-0028] Inserted 1 output buffers.
 [INFO RSZ-0058] Using max wire length 693um.
+<<<<<<< HEAD
 [INFO RSZ-0036] Found 2 capacitance violations.
 [INFO RSZ-0038] Inserted 1 buffers in 2 nets.
+=======
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        12
+    final |  +1098.4% |       6 |       0 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0036] Found 1 capacitance violations.
+>>>>>>> master
 [INFO RSZ-0039] Resized 6 instances.
 Net out
  Pin capacitance: 2000.00

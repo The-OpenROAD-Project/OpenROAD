@@ -82,7 +82,6 @@ class _dbMTerm : public _dbObject
   friend dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm);
 
   _dbMTerm(_dbDatabase* db);
-  _dbMTerm(_dbDatabase* db, const _dbMTerm& m);
   ~_dbMTerm();
 
   bool operator==(const _dbMTerm& rhs) const;
