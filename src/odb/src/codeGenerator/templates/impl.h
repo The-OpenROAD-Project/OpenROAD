@@ -85,12 +85,12 @@ namespace odb {
     // User Code End Methods
 
     {% for field in klass.fields %}
-      {% if field.table %} 
-        dbTable<_{{field.type}}>* {{field.name}}; 
+      {% if "comment" in field %}
+        {{field.comment}}
+      {% endif %}
+      {% if field.table %}
+        dbTable<_{{field.type}}>* {{field.name}};
       {% else %}
-        {% if "comment" in field %}
-          {{field.comment}}
-        {% endif %}
         {{field.type}} {{field.name}};
       {% endif %}
     {% endfor %}
