@@ -64,6 +64,4 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
 [INFO GPL-0110] Timing-driven: new target density: 0.476
 [NesterovSolve] Finished with Overflow: 0.093288
-Differences found at line 163.
-    - _33_ INVx3_ASAP7_75t_R + PLACED ( 4484 10071 ) N ;
-    - _33_ INVx3_ASAP7_75t_R + PLACED ( 4075 5663 ) N ;
+No differences found.

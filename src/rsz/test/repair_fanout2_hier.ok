@@ -54,6 +54,4 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout3/Z                                10     70    -60 (VIOLATED)
 
-Differences found at line 15.
- BUF_X4 fanout4 (.A(net8),
- BUF_X2 fanout4 (.A(net8),
+No differences found.
