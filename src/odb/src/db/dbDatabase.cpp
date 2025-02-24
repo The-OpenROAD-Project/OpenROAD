@@ -666,14 +666,6 @@ void dbDatabase::destroy(dbDatabase* db_)
   db_tbl->destroy(db);
 }
 
-dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
-{
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
-  _dbDatabase* db = (_dbDatabase*) db_;
-  _dbDatabase* d = db_tbl->duplicate(db);
-  return (dbDatabase*) d;
-}
-
 dbDatabase* dbDatabase::getDatabase(uint dbid)
 {
   std::lock_guard<std::mutex> lock(*db_tbl_mutex);

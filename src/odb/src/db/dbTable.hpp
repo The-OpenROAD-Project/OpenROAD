@@ -312,37 +312,6 @@ T* dbTable<T>::create()
   return t;
 }
 
-template <class T>
-T* dbTable<T>::duplicate(T* c)
-{
-  ++_alloc_cnt;
-
-  if (_free_list == 0) {
-    newPage();
-  }
-
-  _dbFreeObject* o = popQ(_free_list);
-  const uint oid = o->_oid;
-  new (o) T(_db, *c);
-  T* t = (T*) o;
-  t->_oid = oid | DB_ALLOC_BIT;
-
-  dbTablePage* page = (dbTablePage*) t->getObjectPage();
-  page->_alloccnt++;
-
-  const uint id = t->getOID();
-
-  if (id > _top_idx) {
-    _top_idx = id;
-  }
-
-  if ((_bottom_idx == 0) || (id < _bottom_idx)) {
-    _bottom_idx = id;
-  }
-
-  return t;
-}
-
 #define ADS_DB_TABLE_BOTTOM_SEARCH_FAILED 0
 #define ADS_DB_TABLE_TOP_SEARCH_FAILED 0
 

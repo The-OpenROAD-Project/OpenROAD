@@ -74,9 +74,6 @@ class dbTable : public dbObjectTable, public dbIterator
   // Create a "T", calls T( _dbDatabase * )
   T* create();
 
-  // Duplicate a "T", calls T( _dbDatabase *, const T & )
-  T* duplicate(T* c);
-
   // Destroy instance of "T", calls destructor
   void destroy(T*);
 
