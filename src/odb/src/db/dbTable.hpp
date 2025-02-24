@@ -89,18 +89,13 @@ inline bool dbTable<T>::validId(dbId<T> id) const
 template <class T>
 inline void dbTable<T>::pushQ(uint& Q, _dbFreeObject* e)
 {
-  uint id = e->getImpl()->getOID();
-  if (Q == 0) {
-    e->_prev = 0;
-    e->_next = 0;
-    Q = id;
-  } else {
-    e->_prev = 0;
-    e->_next = Q;
-    _dbFreeObject* head = getFreeObj(Q);
-    head->_prev = id;
-    Q = id;
+  e->_prev = 0;
+  e->_next = Q;
+  const uint head_id = e->getImpl()->getOID();
+  if (Q != 0) {
+    getFreeObj(Q)->_prev = head_id;
   }
+  Q = head_id;
 }
 
 template <class T>
@@ -131,7 +126,7 @@ void dbTable<T>::clear()
       }
     }
 
-    free((void*) page);
+    free(page);
   }
 
   delete[] _pages;
