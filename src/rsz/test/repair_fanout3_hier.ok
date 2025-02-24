@@ -48,8 +48,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |    +94.4% |       9 |       9 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 [INFO RSZ-0039] Resized 9 instances.
+[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack

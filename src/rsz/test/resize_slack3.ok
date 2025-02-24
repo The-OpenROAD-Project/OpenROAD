@@ -10,4 +10,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
         0 |     +0.0% |       0 |       0 |             0 |        25
     final |    +63.7% |       1 |       1 |             1 |         0
 ---------------------------------------------------------------------
+<<<<<<< HEAD
 r1q 0.728
+=======
+[INFO RSZ-0037] Found 1 long wires.
+[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+r1q 0.751
+>>>>>>> master

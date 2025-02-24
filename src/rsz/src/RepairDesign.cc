@@ -114,28 +114,12 @@ void RepairDesign::repairDesign(double max_wire_length,
                fanout_violations,
                length_violations);
 
-  if (slew_violations > 0) {
-    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
-  }
-  if (fanout_violations > 0) {
-    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
-  }
-  if (cap_violations > 0) {
-    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
-  }
-  if (length_violations > 0) {
-    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
-  }
-  if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ,
-                  38,
-                  "Inserted {} buffers in {} nets.",
-                  inserted_buffer_count_,
-                  repaired_net_count);
-  }
-  if (resize_count_ > 0) {
-    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
-  }
+  reportViolationCounters(false,
+                          slew_violations,
+                          cap_violations,
+                          fanout_violations,
+                          length_violations,
+                          repaired_net_count);
 }
 
 void RepairDesign::performEarlySizingRound(float gate_gain,
@@ -421,32 +405,12 @@ void RepairDesign::repairNet(Net* net,
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (slew_violations > 0) {
-    logger_->info(RSZ, 51, "Found {} slew violations.", slew_violations);
-  }
-  if (fanout_violations > 0) {
-    logger_->info(RSZ, 52, "Found {} fanout violations.", fanout_violations);
-  }
-  if (cap_violations > 0) {
-    logger_->info(RSZ, 53, "Found {} capacitance violations.", cap_violations);
-  }
-  if (length_violations > 0) {
-    logger_->info(RSZ, 54, "Found {} long wires.", length_violations);
-  }
-  if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ,
-                  55,
-                  "Inserted {} buffers in {} nets.",
-                  inserted_buffer_count_,
-                  repaired_net_count);
-    resizer_->level_drvr_vertices_valid_ = false;
-  }
-  if (resize_count_ > 0) {
-    logger_->info(RSZ, 56, "Resized {} instances.", resize_count_);
-  }
-  if (resize_count_ > 0) {
-    logger_->info(RSZ, 57, "Resized {} instances.", resize_count_);
-  }
+  reportViolationCounters(true,
+                          slew_violations,
+                          cap_violations,
+                          fanout_violations,
+                          length_violations,
+                          repaired_net_count);
 }
 
 bool RepairDesign::getLargestSizeCin(const Pin* drvr_pin, float& cin)
@@ -2312,6 +2276,42 @@ void RepairDesign::printProgress(int iteration,
     logger_->report(
         "--------------------------------------------------------------------"
         "-");
+  }
+}
+
+void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
+                                           int slew_violations,
+                                           int cap_violations,
+                                           int fanout_violations,
+                                           int length_violations,
+                                           int repaired_net_count)
+{
+  if (slew_violations > 0) {
+    logger_->info(utl::RSZ, 34, "Found {} slew violations.", slew_violations);
+  }
+  if (fanout_violations > 0) {
+    logger_->info(
+        utl::RSZ, 35, "Found {} fanout violations.", fanout_violations);
+  }
+  if (cap_violations > 0) {
+    logger_->info(
+        utl::RSZ, 36, "Found {} capacitance violations.", cap_violations);
+  }
+  if (length_violations > 0) {
+    logger_->info(utl::RSZ, 37, "Found {} long wires.", length_violations);
+  }
+  if (resize_count_ > 0) {
+    logger_->info(utl::RSZ, 39, "Resized {} instances.", resize_count_);
+  }
+  if (inserted_buffer_count_ > 0) {
+    logger_->info(utl::RSZ,
+                  invalidate_driver_vertices ? 55 : 38,
+                  "Inserted {} buffers in {} nets.",
+                  inserted_buffer_count_,
+                  repaired_net_count);
+    if (invalidate_driver_vertices) {
+      resizer_->level_drvr_vertices_valid_ = false;
+    }
   }
 }
 

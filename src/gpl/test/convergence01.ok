@@ -50,17 +50,53 @@
 [INFO GPL-0030] NumBins: 64
 [NesterovSolve] Iter:    1 overflow: 0.127 HPWL: 397899
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
-[INFO GPL-0101] Iter: 0, overflow: 0.127, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 1, overflow: 0.127, keep rsz at: 0.3, HPWL: 397899
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
     final |    -79.5% |      32 |       0 |             0 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 14 instances.
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09
 [INFO GPL-0103] Timing-driven: weighted 4 nets.
+<<<<<<< HEAD
 [INFO GPL-0107] Timing-driven: repair_design delta area: -2.799 um^2 (-18.03%)
 [INFO GPL-0108] Timing-driven: new target density: 0.476
 [NesterovSolve] Finished with Overflow: 0.093288
 Differences found at line 163.
     - _33_ INVx3_ASAP7_75t_R + PLACED ( 4484 10071 ) N ;
     - _33_ INVx3_ASAP7_75t_R + PLACED ( 4075 5663 ) N ;
+=======
+[INFO GPL-0107] Timing-driven: repair_design delta area: -1.021 um^2 (-6.57%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.49125
+[NesterovSolve] Iter:   10 overflow: 0.379 HPWL: 13036
+[NesterovSolve] Iter:   20 overflow: 0.522 HPWL: 6251
+[NesterovSolve] Iter:   30 overflow: 0.726 HPWL: 1966
+[NesterovSolve] Iter:   40 overflow: 0.710 HPWL: 2056
+[NesterovSolve] Iter:   50 overflow: 0.745 HPWL: 759
+[NesterovSolve] Iter:   60 overflow: 0.743 HPWL: 1255
+[NesterovSolve] Iter:   70 overflow: 0.745 HPWL: 741
+[NesterovSolve] Iter:   80 overflow: 0.743 HPWL: 933
+[NesterovSolve] Iter:   90 overflow: 0.739 HPWL: 848
+[NesterovSolve] Iter:  100 overflow: 0.729 HPWL: 841
+[NesterovSolve] Iter:  110 overflow: 0.719 HPWL: 683
+[NesterovSolve] Iter:  120 overflow: 0.697 HPWL: 693
+[NesterovSolve] Iter:  130 overflow: 0.693 HPWL: 807
+[NesterovSolve] Iter:  140 overflow: 0.700 HPWL: 982
+[NesterovSolve] Iter:  150 overflow: 0.684 HPWL: 1389
+[NesterovSolve] Iter:  160 overflow: 0.630 HPWL: 2178
+[NesterovSolve] Iter:  170 overflow: 0.521 HPWL: 3636
+[NesterovSolve] Iter:  180 overflow: 0.505 HPWL: 3978
+[NesterovSolve] Iter:  190 overflow: 0.500 HPWL: 4651
+[NesterovSolve] Iter:  200 overflow: 0.460 HPWL: 6865
+[NesterovSolve] Iter:  210 overflow: 0.429 HPWL: 7570
+[NesterovSolve] Iter:  220 overflow: 0.335 HPWL: 7626
+[NesterovSolve] Iter:  230 overflow: 0.312 HPWL: 7462
+[NesterovSolve] Iter:  240 overflow: 0.239 HPWL: 7418
+[NesterovSolve] Iter:  250 overflow: 0.199 HPWL: 7411
+[NesterovSolve] Iter:  260 overflow: 0.106 HPWL: 7276
+[NesterovSolve] Finished with Overflow: 0.098768
+No differences found.
+>>>>>>> master
