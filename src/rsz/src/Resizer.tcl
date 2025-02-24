@@ -855,13 +855,14 @@ proc reset_opt_config { args } {
     utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
   }
 
-  set reset_all [expr { [llength $args] == 0 }]
+  set reset_all [expr { [array size flags] == 0 }]
+    
   if {
     $reset_all || [info exists flags(-limit_sizing_area)]
     || [info exists flags(-sizing_area_limit)]
   } {
     set area_prop [odb::dbDoubleProperty_find $block "limit_sizing_area"]
-    if { $area_prop ne "NULL" } {
+    if { $area_prop ne "NULL" && $area_prop ne "" } {
       odb::dbProperty_destroy $area_prop
     }
     utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
@@ -871,14 +872,14 @@ proc reset_opt_config { args } {
     || [info exists flags(-sizing_leakage_limit)]
   } {
     set leak_prop [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
-    if { $leak_prop ne "NULL" } {
+    if { $leak_prop ne "NULL" && $leak_prop ne "" } {
       odb::dbProperty_destroy $leak_prop
     }
     utl::info RSZ 103 "Cell sizing restriction based on leakage has been removed."
   }
   if { $reset_all || [info exists flags(-keep_sizing_site)] } {
     set site_prop [odb::dbBoolProperty_find $block "keep_sizing_site"]
-    if { $site_prop ne "NULL" } {
+    if { $site_prop ne "NULL" && $site_prop ne "" } {
       odb::dbProperty_destroy $site_prop
     }
     utl::info RSZ 105 "Cell sizing restriction based on site has been removed."
@@ -904,20 +905,21 @@ proc report_opt_config { args } {
 
   set area_limit_value "undefined"
   set area_limit [odb::dbDoubleProperty_find $block "limit_sizing_area"]
-  if { $area_limit ne "NULL" } {
+  if { $area_limit ne "NULL" && $area_limit ne "" } {
     set area_limit_value [$area_limit getValue]
   }
 
   set leakage_limit_value "undefined"
   set leakage_limit [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
-  if { $leakage_limit ne "NULL" } {
+  if { $leakage_limit ne "NULL" && $leakage_limit ne "" } {
     set leakage_limit_value [$leakage_limit getValue]
   }
 
-  set keep_site_value "undefined"
+  set keep_site_value "false"
   set keep_site [odb::dbBoolProperty_find $block "keep_sizing_site"]
-  if { $keep_site ne "NULL" } {
-    set keep_site_value [$keep_site getValue]
+  if { $keep_site ne "NULL" && $keep_site ne "" } {
+    set keep_site_result [$keep_site getValue]
+    set keep_site_value [expr { $keep_site_result ? "true" : "false" }]
   }
 
   puts "***********************************"
