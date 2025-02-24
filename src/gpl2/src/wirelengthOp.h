@@ -100,6 +100,16 @@ class WirelengthOp
   Kokkos::View<float*> dPinANegY_;
   Kokkos::View<float*> dNetBPosX_;
 
+  Kokkos::View<float*> dPinAPosX_modifiable_b_;
+  Kokkos::View<float*> dPinANegX_modifiable_b_;
+  Kokkos::View<float*> dPinAPosY_modifiable_b_;
+  Kokkos::View<float*> dPinANegY_modifiable_b_;
+
+  Kokkos::View<float*> dPinAPosX_modifiable_c_;
+  Kokkos::View<float*> dPinANegX_modifiable_c_;
+  Kokkos::View<float*> dPinAPosY_modifiable_c_;
+  Kokkos::View<float*> dPinANegY_modifiable_c_;
+
   // Net information
   Kokkos::View<int*> dNetWidth_;
   Kokkos::View<int*> dNetHeight_;
