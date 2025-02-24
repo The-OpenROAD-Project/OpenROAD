@@ -55,8 +55,6 @@ class _dbTechLayerWidthTableRule : public _dbObject
   _dbTechLayerWidthTableRule(_dbDatabase*, const _dbTechLayerWidthTableRule& r);
   _dbTechLayerWidthTableRule(_dbDatabase*);
 
-  ~_dbTechLayerWidthTableRule() = default;
-
   bool operator==(const _dbTechLayerWidthTableRule& rhs) const;
   bool operator!=(const _dbTechLayerWidthTableRule& rhs) const
   {

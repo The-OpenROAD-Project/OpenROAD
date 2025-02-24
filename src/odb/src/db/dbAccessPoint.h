@@ -61,8 +61,6 @@ class _dbAccessPoint : public _dbObject
   _dbAccessPoint(_dbDatabase*, const _dbAccessPoint& r);
   _dbAccessPoint(_dbDatabase*);
 
-  ~_dbAccessPoint() = default;
-
   bool operator==(const _dbAccessPoint& rhs) const;
   bool operator!=(const _dbAccessPoint& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbAccessPoint& rhs) const;

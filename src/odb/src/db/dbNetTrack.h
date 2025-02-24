@@ -53,8 +53,6 @@ class _dbNetTrack : public _dbObject
   _dbNetTrack(_dbDatabase*, const _dbNetTrack& r);
   _dbNetTrack(_dbDatabase*);
 
-  ~_dbNetTrack() = default;
-
   bool operator==(const _dbNetTrack& rhs) const;
   bool operator!=(const _dbNetTrack& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbNetTrack& rhs) const;

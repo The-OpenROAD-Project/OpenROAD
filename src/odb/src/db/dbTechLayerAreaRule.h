@@ -55,8 +55,6 @@ class _dbTechLayerAreaRule : public _dbObject
   _dbTechLayerAreaRule(_dbDatabase*, const _dbTechLayerAreaRule& r);
   _dbTechLayerAreaRule(_dbDatabase*);
 
-  ~_dbTechLayerAreaRule() = default;
-
   bool operator==(const _dbTechLayerAreaRule& rhs) const;
   bool operator!=(const _dbTechLayerAreaRule& rhs) const
   {

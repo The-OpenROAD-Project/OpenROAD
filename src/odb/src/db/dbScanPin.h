@@ -55,8 +55,6 @@ class _dbScanPin : public _dbObject
   _dbScanPin(_dbDatabase*, const _dbScanPin& r);
   _dbScanPin(_dbDatabase*);
 
-  ~_dbScanPin() = default;
-
   bool operator==(const _dbScanPin& rhs) const;
   bool operator!=(const _dbScanPin& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbScanPin& rhs) const;

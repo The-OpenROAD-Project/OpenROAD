@@ -62,8 +62,6 @@ class _dbTechLayerMinStepRule : public _dbObject
   _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
   _dbTechLayerMinStepRule(_dbDatabase*);
 
-  ~_dbTechLayerMinStepRule() = default;
-
   bool operator==(const _dbTechLayerMinStepRule& rhs) const;
   bool operator!=(const _dbTechLayerMinStepRule& rhs) const
   {

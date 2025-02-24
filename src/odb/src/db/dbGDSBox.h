@@ -48,8 +48,6 @@ class _dbGDSBox : public _dbObject
   _dbGDSBox(_dbDatabase*, const _dbGDSBox& r);
   _dbGDSBox(_dbDatabase*);
 
-  ~_dbGDSBox() = default;
-
   bool operator==(const _dbGDSBox& rhs) const;
   bool operator!=(const _dbGDSBox& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSBox& rhs) const;

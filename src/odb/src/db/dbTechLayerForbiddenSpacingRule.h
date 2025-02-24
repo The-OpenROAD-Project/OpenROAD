@@ -48,8 +48,6 @@ class _dbTechLayerForbiddenSpacingRule : public _dbObject
                                    const _dbTechLayerForbiddenSpacingRule& r);
   _dbTechLayerForbiddenSpacingRule(_dbDatabase*);
 
-  ~_dbTechLayerForbiddenSpacingRule() = default;
-
   bool operator==(const _dbTechLayerForbiddenSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerForbiddenSpacingRule& rhs) const
   {

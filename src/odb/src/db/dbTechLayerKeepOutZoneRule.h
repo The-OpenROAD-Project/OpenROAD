@@ -58,8 +58,6 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
                               const _dbTechLayerKeepOutZoneRule& r);
   _dbTechLayerKeepOutZoneRule(_dbDatabase*);
 
-  ~_dbTechLayerKeepOutZoneRule() = default;
-
   bool operator==(const _dbTechLayerKeepOutZoneRule& rhs) const;
   bool operator!=(const _dbTechLayerKeepOutZoneRule& rhs) const
   {

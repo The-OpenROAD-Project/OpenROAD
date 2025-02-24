@@ -58,8 +58,6 @@ class _dbTechLayerArraySpacingRule : public _dbObject
                                const _dbTechLayerArraySpacingRule& r);
   _dbTechLayerArraySpacingRule(_dbDatabase*);
 
-  ~_dbTechLayerArraySpacingRule() = default;
-
   bool operator==(const _dbTechLayerArraySpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerArraySpacingRule& rhs) const
   {

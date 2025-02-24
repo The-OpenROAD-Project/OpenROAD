@@ -61,8 +61,6 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
                                   const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
 
-  ~_dbTechLayerSpacingTablePrlRule() = default;
-
   bool operator==(const _dbTechLayerSpacingTablePrlRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingTablePrlRule& rhs) const
   {

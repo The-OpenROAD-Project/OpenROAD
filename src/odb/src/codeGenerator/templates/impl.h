@@ -72,8 +72,6 @@ namespace odb {
 
     {% if klass.needs_non_default_destructor %}
       ~_{{klass.name}}();
-    {% else %}
-      ~_{{klass.name}}() = default;
     {% endif %}
 
     bool operator==(const _{{klass.name}}& rhs) const;

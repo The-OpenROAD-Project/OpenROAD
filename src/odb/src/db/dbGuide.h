@@ -53,8 +53,6 @@ class _dbGuide : public _dbObject
   _dbGuide(_dbDatabase*, const _dbGuide& r);
   _dbGuide(_dbDatabase*);
 
-  ~_dbGuide() = default;
-
   bool operator==(const _dbGuide& rhs) const;
   bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGuide& rhs) const;

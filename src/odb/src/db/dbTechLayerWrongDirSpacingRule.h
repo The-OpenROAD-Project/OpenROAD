@@ -58,8 +58,6 @@ class _dbTechLayerWrongDirSpacingRule : public _dbObject
                                   const _dbTechLayerWrongDirSpacingRule& r);
   _dbTechLayerWrongDirSpacingRule(_dbDatabase*);
 
-  ~_dbTechLayerWrongDirSpacingRule() = default;
-
   bool operator==(const _dbTechLayerWrongDirSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerWrongDirSpacingRule& rhs) const
   {

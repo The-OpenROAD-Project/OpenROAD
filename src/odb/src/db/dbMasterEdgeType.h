@@ -47,8 +47,6 @@ class _dbMasterEdgeType : public _dbObject
   _dbMasterEdgeType(_dbDatabase*, const _dbMasterEdgeType& r);
   _dbMasterEdgeType(_dbDatabase*);
 
-  ~_dbMasterEdgeType() = default;
-
   bool operator==(const _dbMasterEdgeType& rhs) const;
   bool operator!=(const _dbMasterEdgeType& rhs) const
   {

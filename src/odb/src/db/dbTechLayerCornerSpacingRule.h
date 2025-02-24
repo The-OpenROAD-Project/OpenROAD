@@ -70,8 +70,6 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
                                 const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
 
-  ~_dbTechLayerCornerSpacingRule() = default;
-
   bool operator==(const _dbTechLayerCornerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerCornerSpacingRule& rhs) const
   {

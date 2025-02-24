@@ -48,8 +48,6 @@ class _dbGDSText : public _dbObject
   _dbGDSText(_dbDatabase*, const _dbGDSText& r);
   _dbGDSText(_dbDatabase*);
 
-  ~_dbGDSText() = default;
-
   bool operator==(const _dbGDSText& rhs) const;
   bool operator!=(const _dbGDSText& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSText& rhs) const;

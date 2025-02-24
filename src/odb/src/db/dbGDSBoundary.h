@@ -48,8 +48,6 @@ class _dbGDSBoundary : public _dbObject
   _dbGDSBoundary(_dbDatabase*, const _dbGDSBoundary& r);
   _dbGDSBoundary(_dbDatabase*);
 
-  ~_dbGDSBoundary() = default;
-
   bool operator==(const _dbGDSBoundary& rhs) const;
   bool operator!=(const _dbGDSBoundary& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSBoundary& rhs) const;

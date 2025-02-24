@@ -56,8 +56,6 @@ class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
       const _dbTechLayerTwoWiresForbiddenSpcRule& r);
   _dbTechLayerTwoWiresForbiddenSpcRule(_dbDatabase*);
 
-  ~_dbTechLayerTwoWiresForbiddenSpcRule() = default;
-
   bool operator==(const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;
   bool operator!=(const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
   {
