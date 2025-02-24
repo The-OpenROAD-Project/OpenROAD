@@ -54,7 +54,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
-    final |    -17.4% |      14 |       0 |             0 |         0
+    final |    -79.5% |      32 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09
 [INFO GPL-0103] Timing-driven: weighted 4 nets.

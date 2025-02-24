@@ -32,7 +32,7 @@ in1 manhtn 0.7 steiner 0.7 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |  +8111.1% |       2 |       2 |             1 |         0
+    final | +11111.1% |       2 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.

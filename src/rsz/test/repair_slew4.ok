@@ -12,13 +12,9 @@ Pin                                    Limit    Slew   Slack
 u5/A                                    0.07    0.14   -0.07 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 693um.
-<<<<<<< HEAD
-[INFO RSZ-0039] Resized 2 instances.
-=======
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         6
-    final |   +222.2% |       1 |       0 |             0 |         0
+    final |   +222.2% |       2 |       0 |             0 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 1 instances.
->>>>>>> master
+[INFO RSZ-0039] Resized 2 instances.
