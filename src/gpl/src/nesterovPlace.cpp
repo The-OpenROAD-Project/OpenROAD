@@ -413,17 +413,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     updateNextIter(iter);
 
-    if (!npVars_.disableRevertIfDiverge) {
-      if (is_min_hpwl_) {
-        diverge_snapshot_WlCoefX = wireLengthCoefX_;
-        diverge_snapshot_WlCoefY = wireLengthCoefY_;
-        for (auto& nb : nbVec_) {
-          nb->snapshot();
-        }
-        is_diverge_snapshot_saved = true;
-      }
-    }
-
     // For JPEG Saving
     // debug
     const int debug_start_iter = npVars_.debug_start_iter;
@@ -470,10 +459,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       log_->info(GPL,
                  101,
-                 "Iter: {}, overflow: {:.3f}, keep rsz at: {}",
-                 iter,
+                 "   Iter: {}, overflow: {:.3f}, keep rsz at: {}, HPWL: {}",
+                 iter + 1,
                  average_overflow_,
-                 npVars_.keepResizeBelowOverflow);
+                 npVars_.keepResizeBelowOverflow,
+                 nbc_->getHpwl());
 
       if (!virtual_td_iter) {
         db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
@@ -528,6 +518,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
+    if (!npVars_.disableRevertIfDiverge) {
+      if (is_min_hpwl_) {
+        diverge_snapshot_WlCoefX = wireLengthCoefX_;
+        diverge_snapshot_WlCoefY = wireLengthCoefY_;
+        for (auto& nb : nbVec_) {
+          nb->snapshot();
+        }
+        is_diverge_snapshot_saved = true;
+      }
+    }
     // diverge detection on
     // large max_phi_cof value + large design
     //
@@ -705,7 +705,7 @@ void NesterovPlace::updateNextIter(const int iter)
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;
       diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
-      diverge_snapshot_iter_ = iter;
+      diverge_snapshot_iter_ = iter + 1;
       is_min_hpwl_ = true;
     } else {
       is_min_hpwl_ = false;
