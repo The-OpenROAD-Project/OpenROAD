@@ -495,15 +495,6 @@ class dbDatabase : public dbObject
   static void destroy(dbDatabase* db);
 
   ///
-  /// Create a duplicate (IN-MEMORY) instance of a database.
-  ///
-  /// WARNING: This action may result in an out-of-memory condition if
-  ///          there is not enough memory (or swap space) to maintain
-  ///          multiple in-core databases.
-  ///
-  static dbDatabase* duplicate(dbDatabase* db);
-
-  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint oid);
@@ -1580,17 +1571,6 @@ class dbBlock : public dbObject
   void clearUserInstFlags();
 
  public:
-  ///
-  /// This method copies the via-table from the src block to the destination
-  /// block.
-  ///
-  /// WARNING: This method deletes any vias previously defined in the
-  /// destination block.
-  ///          If there are wire which reference these vias, the references will
-  ///          be left dangling.
-  ///
-  static void copyViaTable(dbBlock* dst, dbBlock* src);
-
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
   /// exists.
@@ -7540,6 +7520,8 @@ class dbIsolation : public dbObject
   void addIsolationCell(std::string& master);
 
   std::vector<dbMaster*> getIsolationCells();
+
+  bool appliesTo(const dbIoType& io);
 
   // User Code End dbIsolation
 };

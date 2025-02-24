@@ -34,15 +34,7 @@ class {{klass.name}} : public {{klass.type}}
   
     {% endif %}
     {% if 'no-get' not in field.flags %}
-      {% if field.dbSetGetter %}
-        dbSet<{{field.type}}> get{{field.functional_name}}() const;
-      {% elif field.isPassByRef %}
-        void {{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const;
-      {% elif field.isHashTable %}
-        {{field.getterReturnType}} {{field.getterFunctionName}}(const char* name) const;
-      {% else %}
-        {{field.getterReturnType}} {{field.getterFunctionName}}() const;
-      {% endif %}
+      {{ macros.getter_signature(field) }};
     {% endif %}
   
   {% endfor %}

@@ -68,15 +68,6 @@ _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(_dbDatabase* db)
   flags_ = {};
 }
 
-_dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(
-    _dbDatabase* db,
-    const _dbTechLayerWidthTableRule& r)
-{
-  flags_.wrong_direction_ = r.flags_.wrong_direction_;
-  flags_.orthogonal_ = r.flags_.orthogonal_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWidthTableRule& obj)
 {
   uint32_t flags_bit_field;

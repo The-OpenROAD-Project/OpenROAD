@@ -99,6 +99,7 @@ using sta::PinSeq;
 using sta::Port;
 using sta::PortDirection;
 using sta::Term;
+using sta::VerilogReader;
 using utl::Logger;
 
 dbVerilogNetwork::dbVerilogNetwork()
@@ -122,6 +123,22 @@ void initDbVerilogNetwork(ord::OpenRoad* openroad)
 {
   sta::dbSta* sta = openroad->getSta();
   openroad->getVerilogNetwork()->init(sta->getDbNetwork());
+}
+
+void setDbNetworkLinkFunc(ord::OpenRoad* openroad,
+                          VerilogReader* verilog_reader)
+{
+  if (verilog_reader) {
+    openroad->getVerilogNetwork()->setLinkFunc(
+        [=](const char* top_cell_name, bool make_black_boxes) -> Instance* {
+          return verilog_reader->linkNetwork(
+              top_cell_name,
+              make_black_boxes,
+              // don't delete modules after link so we can swap to
+              // uninstantiated modules if needed
+              false);
+        });
+  }
 }
 
 void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
@@ -879,7 +896,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
-                 1,
+                 2,
                  "connected iterm {} to mod net {}",
                  iterm->getName(),
                  db_mod_net->getName());
@@ -888,7 +905,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
-                 1,
+                 2,
                  "connected bterm {} to mod net {}",
                  bterm->getName(),
                  db_mod_net->getName());
@@ -897,7 +914,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
-                 1,
+                 2,
                  "connected mod_bterm {} to mod net {}",
                  mod_bterm->getName(),
                  db_mod_net->getName());
@@ -906,7 +923,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
-                 1,
+                 2,
                  "connected mod_iterm {} to mod net {}",
                  mod_iterm->getName(),
                  db_mod_net->getName());

@@ -206,7 +206,7 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
             "name": "spare_bits_",
             "type": "uint",
             "bits": 32 - (flag_num_bits % 32),
-            "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
+            "flags": ["no-cmp", "no-set", "no-get", "no-serial"],
         }
         total_num_bits += spare_bits_field["bits"]
         flags_struct["fields"].append(spare_bits_field)
@@ -226,7 +226,7 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
                 "bitFields": True,
                 "isStruct": True,
                 "numBits": total_num_bits,
-                "flags": ["no-cmp", "no-set", "no-get", "no-serial", "no-diff"],
+                "flags": ["no-cmp", "no-set", "no-get", "no-serial"],
             },
         )
 
@@ -385,11 +385,16 @@ def by_base_type(classes):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Code generator")
-    parser.add_argument("--json", action="store", required=True)
-    parser.add_argument("--src_dir", action="store", required=True)
-    parser.add_argument("--include_dir", action="store", required=True)
-    parser.add_argument("--templates", action="store", required=True)
+    parser = argparse.ArgumentParser(
+        description="Code generator",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--json", default="schema.json", help="json schema filename")
+    parser.add_argument("--src_dir", default="../db", help="odb src dir")
+    parser.add_argument(
+        "--include_dir", default="../../include/odb", help="odb include dir"
+    )
+    parser.add_argument("--templates", default="templates", help="jinja templates dir")
     parser.add_argument("--log", action="store", default="INFO")
     parser.add_argument("--keep_generated", action="store_true")
     parser.add_argument("--keep_empty", action="store_true")

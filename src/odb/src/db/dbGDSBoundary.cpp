@@ -64,12 +64,6 @@ _dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db)
   _datatype = 0;
 }
 
-_dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db, const _dbGDSBoundary& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSBoundary& obj)
 {
   stream >> obj._layer;

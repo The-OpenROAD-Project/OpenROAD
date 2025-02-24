@@ -128,7 +128,6 @@ class _dbTech : public _dbObject
   void _setLefVersion(double inver);
 
   _dbTech(_dbDatabase* db);
-  _dbTech(_dbDatabase* db, const _dbTech& t);
   ~_dbTech();
 
   bool operator==(const _dbTech& rhs) const;

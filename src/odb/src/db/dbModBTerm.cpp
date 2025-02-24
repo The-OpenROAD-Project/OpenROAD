@@ -94,20 +94,6 @@ _dbModBTerm::_dbModBTerm(_dbDatabase* db)
   _flags = 0;
 }
 
-_dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
-{
-  _name = r._name;
-  _flags = r._flags;
-  _parent_moditerm = r._parent_moditerm;
-  _parent = r._parent;
-  _modnet = r._modnet;
-  _next_net_modbterm = r._next_net_modbterm;
-  _prev_net_modbterm = r._prev_net_modbterm;
-  _busPort = r._busPort;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {

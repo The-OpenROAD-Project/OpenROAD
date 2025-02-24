@@ -237,55 +237,6 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _sta_cell = nullptr;
 }
 
-_dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
-    : _flags(m._flags),
-      _x(m._x),
-      _y(m._y),
-      _height(m._height),
-      _width(m._width),
-      _mterm_cnt(m._mterm_cnt),
-      _id(m._id),
-      _name(nullptr),
-      _next_entry(m._next_entry),
-      _leq(m._leq),
-      _eeq(m._eeq),
-      _obstructions(m._obstructions),
-      _poly_obstructions(m._poly_obstructions),
-      _lib_for_site(m._lib_for_site),
-      _site(m._site),
-      _mterm_hash(m._mterm_hash),
-      _sta_cell(m._sta_cell)
-{
-  if (m._name) {
-    _name = strdup(m._name);
-    ZALLOCATED(_name);
-  }
-
-  _mterm_tbl = new dbTable<_dbMTerm>(db, this, *m._mterm_tbl);
-
-  _mpin_tbl = new dbTable<_dbMPin>(db, this, *m._mpin_tbl);
-
-  _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
-
-  _poly_box_tbl = new dbTable<_dbPolygon>(db, this, *m._poly_box_tbl);
-
-  _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
-      db, this, *m._antenna_pin_model_tbl);
-
-  edge_types_tbl_
-      = new dbTable<_dbMasterEdgeType>(db, this, *m.edge_types_tbl_);
-
-  _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
-
-  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
-
-  _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
-
-  _mpin_itr = new dbMPinItr(_mpin_tbl);
-
-  _mterm_hash.setTable(_mterm_tbl);
-}
-
 _dbMaster::~_dbMaster()
 {
   delete _mterm_tbl;
