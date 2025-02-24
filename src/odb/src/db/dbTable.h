@@ -55,19 +55,6 @@ template <class T>
 class dbTable : public dbObjectTable, public dbIterator
 {
  public:
-  // PERSISTANT-DATA
-  uint _page_mask;      // bit-mask to get page-offset
-  uint _page_shift;     // number of bits to shift to determine page-no
-  uint _top_idx;        // largest id which has been allocated.
-  uint _bottom_idx;     // smallest id which has been allocated.
-  uint _page_cnt;       // high-water mark of page-table
-  uint _page_tbl_size;  // length of the page table
-  uint _alloc_cnt;      // number of object allocated
-  uint _free_list;      // objects on freelist
-
-  // NON-PERSISTANT-DATA
-  dbTablePage** _pages;  // page-table
-
   void resizePageTbl();
   void newPage();
   void pushQ(uint& Q, _dbFreeObject* e);
@@ -174,6 +161,25 @@ class dbTable : public dbObjectTable, public dbIterator
  private:
   void copy_pages(const dbTable<T>&);
   void copy_page(uint page_id, dbTablePage* page);
+
+  // PERSISTANT-DATA
+  uint _page_mask;      // bit-mask to get page-offset
+  uint _page_shift;     // number of bits to shift to determine page-no
+  uint _top_idx;        // largest id which has been allocated.
+  uint _bottom_idx;     // smallest id which has been allocated.
+  uint _page_cnt;       // high-water mark of page-table
+  uint _page_tbl_size;  // length of the page table
+  uint _alloc_cnt;      // number of object allocated
+  uint _free_list;      // objects on freelist
+
+  // NON-PERSISTANT-DATA
+  dbTablePage** _pages;  // page-table
+
+  template <class U>
+  friend dbOStream& operator<<(dbOStream& stream, const dbTable<U>& table);
+
+  template <class U>
+  friend dbIStream& operator>>(dbIStream& stream, dbTable<U>& table);
 };
 
 template <class T>
