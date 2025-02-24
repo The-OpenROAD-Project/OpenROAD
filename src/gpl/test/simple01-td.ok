@@ -38,7 +38,7 @@
 [INFO GPL-0030] NumBins: 256
 [NesterovSolve] Iter:    1 overflow: 0.832 HPWL: 3651238
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: true.
-[INFO GPL-0101] Iter: 2, overflow: 0.761, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 3, overflow: 0.761, keep rsz at: 0.3, HPWL: 3932272
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -67,7 +67,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [NesterovSolve] Iter:  190 overflow: 0.674 HPWL: 4128327
 [NesterovSolve] Iter:  200 overflow: 0.652 HPWL: 4181482
 [INFO GPL-0100] Timing-driven iteration 2/5, virtual: true.
-[INFO GPL-0101] Iter: 205, overflow: 0.632, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 206, overflow: 0.632, keep rsz at: 0.3, HPWL: 4214522
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -84,7 +84,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [NesterovSolve] Iter:  270 overflow: 0.331 HPWL: 4450617
 [NesterovSolve] Iter:  280 overflow: 0.305 HPWL: 4478236
 [INFO GPL-0100] Timing-driven iteration 3/5, virtual: false.
-[INFO GPL-0101] Iter: 285, overflow: 0.284, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 286, overflow: 0.284, keep rsz at: 0.3, HPWL: 4471956
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -98,7 +98,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [NesterovSolve] Iter:  300 overflow: 0.263 HPWL: 2656033
 [NesterovSolve] Iter:  310 overflow: 0.228 HPWL: 2638435
 [INFO GPL-0100] Timing-driven iteration 4/5, virtual: false.
-[INFO GPL-0101] Iter: 316, overflow: 0.202, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 317, overflow: 0.202, keep rsz at: 0.3, HPWL: 2638631
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -112,7 +112,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [NesterovSolve] Iter:  330 overflow: 0.180 HPWL: 2655060
 [NesterovSolve] Iter:  340 overflow: 0.151 HPWL: 2683596
 [INFO GPL-0100] Timing-driven iteration 5/5, virtual: false.
-[INFO GPL-0101] Iter: 341, overflow: 0.145, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 342, overflow: 0.145, keep rsz at: 0.3, HPWL: 2688300
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356

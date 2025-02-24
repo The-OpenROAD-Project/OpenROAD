@@ -50,7 +50,7 @@
 [INFO GPL-0030] NumBins: 64
 [NesterovSolve] Iter:    1 overflow: 0.127 HPWL: 397899
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
-[INFO GPL-0101] Iter: 0, overflow: 0.127, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 1, overflow: 0.127, keep rsz at: 0.3, HPWL: 397899
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
