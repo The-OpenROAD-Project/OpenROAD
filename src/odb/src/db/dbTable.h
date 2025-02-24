@@ -105,7 +105,6 @@ class dbTable : public dbObjectTable, public dbIterator
   void newPage();
   void pushQ(uint& Q, _dbFreeObject* e);
   _dbFreeObject* popQ(uint& Q);
-  void unlinkQ(uint& Q, _dbFreeObject* e);
   void findTop();
   void findBottom();
 

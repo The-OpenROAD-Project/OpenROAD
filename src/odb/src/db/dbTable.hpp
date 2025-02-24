@@ -117,31 +117,6 @@ inline _dbFreeObject* dbTable<T>::popQ(uint& Q)
 }
 
 template <class T>
-inline void dbTable<T>::unlinkQ(uint& Q, _dbFreeObject* e)
-{
-  const uint oid = e->getImpl()->getOID();
-
-  if (oid == Q) {
-    Q = e->_next;
-
-    if (Q) {
-      _dbFreeObject* head = (_dbFreeObject*) getFreeObj(Q);
-      head->_prev = 0;
-    }
-  } else {
-    if (e->_next) {
-      _dbFreeObject* next = (_dbFreeObject*) getFreeObj(e->_next);
-      next->_prev = e->_prev;
-    }
-
-    if (e->_prev) {
-      _dbFreeObject* prev = (_dbFreeObject*) getFreeObj(e->_prev);
-      prev->_next = e->_next;
-    }
-  }
-}
-
-template <class T>
 void dbTable<T>::clear()
 {
   for (uint i = 0; i < _page_cnt; ++i) {
