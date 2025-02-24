@@ -3279,7 +3279,8 @@ std::vector<PatternParameters> Snapper::computeSameDirectionPatternsData(
     for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
       odb::dbTechLayer* layer = (*mpin->getGeometry().begin())->getTechLayer();
 
-      if (layer->getDirection() != target_direction || visited.find(layer) != visited.end()) {
+      if (layer->getDirection() != target_direction
+          || visited.find(layer) != visited.end()) {
         continue;
       }
 
@@ -3291,16 +3292,17 @@ std::vector<PatternParameters> Snapper::computeSameDirectionPatternsData(
             MPL, 39, "No track-grid found for layer {}", layer->getName());
       }
       int number_of_patterns = target_direction == odb::dbTechLayerDir::VERTICAL
-                              ? track_grid->getNumGridPatternsX()
-                              : track_grid->getNumGridPatternsY();
+                                   ? track_grid->getNumGridPatternsX()
+                                   : track_grid->getNumGridPatternsY();
 
       if (number_of_patterns == 1) {
         data.push_back(
             computePatternParameters(track_grid, 0, iterm, target_direction));
       } else {
-        for (int pattern_idx = 0; pattern_idx < number_of_patterns; pattern_idx++) {
-          odb::dbITerm* pin
-              = findPinForMultiPattern(track_grid, pattern_idx, target_direction);
+        for (int pattern_idx = 0; pattern_idx < number_of_patterns;
+             pattern_idx++) {
+          odb::dbITerm* pin = findPinForMultiPattern(
+              track_grid, pattern_idx, target_direction);
           if (pin == nullptr) {
             continue;
           }
@@ -3357,10 +3359,10 @@ PatternParameters Snapper::computePatternParameters(
   return params;
 }
 
-odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin) {
+odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin)
+{
   return (*pin->getGeometry().begin())->getTechLayer();
 }
-
 
 int Snapper::getPinWidth(odb::dbITerm* pin,
                          const odb::dbTechLayerDir& target_direction)
@@ -3432,8 +3434,7 @@ odb::dbITerm* Snapper::findPinForMultiPattern(
   }
 
   int offset, pitch;
-  getTrackGridPattern(
-      track_grid, pattern_idx, offset, pitch, target_direction);
+  getTrackGridPattern(track_grid, pattern_idx, offset, pitch, target_direction);
 
   for (int i = 0; i < iterms.size(); i++) {
     for (int j = i + 1; j < iterms.size(); j++) {
