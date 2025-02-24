@@ -94,18 +94,6 @@ _dbModNet::_dbModNet(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbModNet::_dbModNet(_dbDatabase* db, const _dbModNet& r)
-{
-  _name = r._name;
-  _parent = r._parent;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
-  _moditerms = r._moditerms;
-  _modbterms = r._modbterms;
-  _iterms = r._iterms;
-  _bterms = r._bterms;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
 {
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {

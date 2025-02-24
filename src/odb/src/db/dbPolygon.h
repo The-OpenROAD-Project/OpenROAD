@@ -53,10 +53,7 @@ struct dbPolygonFlags
 class _dbPolygon : public _dbObject
 {
  public:
-  _dbPolygon(_dbDatabase*, const _dbPolygon& r);
   _dbPolygon(_dbDatabase*);
-
-  ~_dbPolygon() = default;
 
   bool operator==(const _dbPolygon& rhs) const;
   bool operator!=(const _dbPolygon& rhs) const { return !operator==(rhs); }

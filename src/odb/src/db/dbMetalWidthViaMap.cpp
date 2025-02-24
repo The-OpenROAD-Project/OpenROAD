@@ -89,19 +89,6 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
   pg_via_ = false;
 }
 
-_dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
-                                         const _dbMetalWidthViaMap& r)
-{
-  via_cut_class_ = r.via_cut_class_;
-  cut_layer_ = r.cut_layer_;
-  below_layer_width_low_ = r.below_layer_width_low_;
-  below_layer_width_high_ = r.below_layer_width_high_;
-  above_layer_width_low_ = r.above_layer_width_low_;
-  above_layer_width_high_ = r.above_layer_width_high_;
-  via_name_ = r.via_name_;
-  pg_via_ = r.pg_via_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
 {
   stream >> obj.via_cut_class_;

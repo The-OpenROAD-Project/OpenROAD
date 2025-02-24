@@ -74,11 +74,7 @@ struct dbTechLayerCutEnclosureRuleFlags
 class _dbTechLayerCutEnclosureRule : public _dbObject
 {
  public:
-  _dbTechLayerCutEnclosureRule(_dbDatabase*,
-                               const _dbTechLayerCutEnclosureRule& r);
   _dbTechLayerCutEnclosureRule(_dbDatabase*);
-
-  ~_dbTechLayerCutEnclosureRule() = default;
 
   bool operator==(const _dbTechLayerCutEnclosureRule& rhs) const;
   bool operator!=(const _dbTechLayerCutEnclosureRule& rhs) const

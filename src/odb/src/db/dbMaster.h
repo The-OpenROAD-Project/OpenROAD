@@ -105,7 +105,6 @@ class _dbMaster : public _dbObject
   dbMPinItr* _mpin_itr;
 
   _dbMaster(_dbDatabase* db);
-  _dbMaster(_dbDatabase* db, const _dbMaster& m);
   ~_dbMaster();
   bool operator==(const _dbMaster& rhs) const;
   bool operator!=(const _dbMaster& rhs) const { return !operator==(rhs); }

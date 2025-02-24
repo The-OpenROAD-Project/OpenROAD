@@ -67,13 +67,10 @@ namespace odb {
     // User Code Begin Enums
     // User Code End Enums
         
-    _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
 
     {% if klass.needs_non_default_destructor %}
       ~_{{klass.name}}();
-    {% else %}
-      ~_{{klass.name}}() = default;
     {% endif %}
 
     bool operator==(const _{{klass.name}}& rhs) const;
@@ -87,12 +84,12 @@ namespace odb {
     // User Code End Methods
 
     {% for field in klass.fields %}
-      {% if field.table %} 
-        dbTable<_{{field.type}}>* {{field.name}}; 
+      {% if "comment" in field %}
+        {{field.comment}}
+      {% endif %}
+      {% if field.table %}
+        dbTable<_{{field.type}}>* {{field.name}};
       {% else %}
-        {% if "comment" in field %}
-          {{field.comment}}
-        {% endif %}
         {{field.type}} {{field.name}};
       {% endif %}
     {% endfor %}

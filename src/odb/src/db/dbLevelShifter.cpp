@@ -128,31 +128,6 @@ _dbLevelShifter::_dbLevelShifter(_dbDatabase* db)
   _force_shift = false;
 }
 
-_dbLevelShifter::_dbLevelShifter(_dbDatabase* db, const _dbLevelShifter& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _domain = r._domain;
-  _source = r._source;
-  _sink = r._sink;
-  _use_functional_equivalence = r._use_functional_equivalence;
-  _applies_to = r._applies_to;
-  _applies_to_boundary = r._applies_to_boundary;
-  _rule = r._rule;
-  _threshold = r._threshold;
-  _no_shift = r._no_shift;
-  _force_shift = r._force_shift;
-  _location = r._location;
-  _input_supply = r._input_supply;
-  _output_supply = r._output_supply;
-  _internal_supply = r._internal_supply;
-  _name_prefix = r._name_prefix;
-  _name_suffix = r._name_suffix;
-  _cell_name = r._cell_name;
-  _cell_input = r._cell_input;
-  _cell_output = r._cell_output;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
 {
   stream >> obj._name;

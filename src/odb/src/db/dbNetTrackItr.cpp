@@ -35,6 +35,7 @@
 
 #include "dbNetTrack.h"
 #include "dbTable.h"
+#include "dbTable.hpp"
 // User Code Begin Includes
 #include "dbNet.h"
 // User Code End Includes

@@ -51,7 +51,6 @@ class _dbModule;
 class _dbBusPort : public _dbObject
 {
  public:
-  _dbBusPort(_dbDatabase*, const _dbBusPort& r);
   _dbBusPort(_dbDatabase*);
 
   ~_dbBusPort();

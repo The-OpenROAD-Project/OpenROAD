@@ -300,7 +300,6 @@ class _dbBlock : public _dbObject
   dbJournal* _journal_pending;
 
   _dbBlock(_dbDatabase* db);
-  _dbBlock(_dbDatabase* db, const _dbBlock& block);
   ~_dbBlock();
   void add_rect(const Rect& rect);
   void add_oct(const Oct& oct);

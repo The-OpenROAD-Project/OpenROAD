@@ -72,13 +72,6 @@ _dbDft::_dbDft(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanChainObj);
 }
 
-_dbDft::_dbDft(_dbDatabase* db, const _dbDft& r)
-{
-  scan_inserted_ = r.scan_inserted_;
-  scan_pins_ = new dbTable<_dbScanPin>(db, this, *r.scan_pins_);
-  scan_chains_ = new dbTable<_dbScanChain>(db, this, *r.scan_chains_);
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbDft& obj)
 {
   stream >> obj.scan_inserted_;

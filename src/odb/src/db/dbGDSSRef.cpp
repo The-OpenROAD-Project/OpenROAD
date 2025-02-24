@@ -65,12 +65,6 @@ _dbGDSSRef::_dbGDSSRef(_dbDatabase* db)
 {
 }
 
-_dbGDSSRef::_dbGDSSRef(_dbDatabase* db, const _dbGDSSRef& r)
-{
-  _origin = r._origin;
-  _structure = r._structure;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj)
 {
   stream >> obj._origin;

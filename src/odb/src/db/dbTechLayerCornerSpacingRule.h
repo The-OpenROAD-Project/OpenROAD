@@ -66,11 +66,7 @@ struct dbTechLayerCornerSpacingRuleFlags
 class _dbTechLayerCornerSpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerCornerSpacingRule(_dbDatabase*,
-                                const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
-
-  ~_dbTechLayerCornerSpacingRule() = default;
 
   bool operator==(const _dbTechLayerCornerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerCornerSpacingRule& rhs) const

@@ -88,17 +88,6 @@ _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db)
 {
 }
 
-_dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db, const _dbGlobalConnect& r)
-{
-  region_ = r.region_;
-  net_ = r.net_;
-  inst_pattern_ = r.inst_pattern_;
-  pin_pattern_ = r.pin_pattern_;
-  // User Code Begin CopyConstructor
-  setupRegex();
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGlobalConnect& obj)
 {
   stream >> obj.region_;

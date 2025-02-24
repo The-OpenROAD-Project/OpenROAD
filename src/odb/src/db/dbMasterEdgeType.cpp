@@ -78,17 +78,6 @@ _dbMasterEdgeType::_dbMasterEdgeType(_dbDatabase* db)
   range_end_ = -1;
 }
 
-_dbMasterEdgeType::_dbMasterEdgeType(_dbDatabase* db,
-                                     const _dbMasterEdgeType& r)
-{
-  edge_dir_ = r.edge_dir_;
-  edge_type_ = r.edge_type_;
-  cell_row_ = r.cell_row_;
-  half_row_ = r.half_row_;
-  range_begin_ = r.range_begin_;
-  range_end_ = r.range_end_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbMasterEdgeType& obj)
 {
   stream >> obj.edge_dir_;
