@@ -83,6 +83,8 @@ class dbTable : public dbObjectTable, public dbIterator
 
   bool validId(dbId<T> id) const;
 
+  void collectMemInfo(MemInfo& info);
+
   bool operator==(const dbTable<T>& rhs) const;
   bool operator!=(const dbTable<T>& table) const;
 
@@ -97,7 +99,6 @@ class dbTable : public dbObjectTable, public dbIterator
   uint next(uint id, ...) override;
   dbObject* getObject(uint id, ...) override;
   bool validObject(uint id, ...) override { return validId(id); }
-  void collectMemInfo(MemInfo& info);
 
  private:
   void resizePageTbl();
