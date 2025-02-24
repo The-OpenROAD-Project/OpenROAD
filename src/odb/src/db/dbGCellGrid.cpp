@@ -104,21 +104,6 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
   flags_ = {};
 }
 
-_dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
-{
-  flags_.x_grid_valid_ = r.flags_.x_grid_valid_;
-  flags_.y_grid_valid_ = r.flags_.y_grid_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  // User Code Begin CopyConstructor
-  x_origin_ = r.x_origin_;
-  x_count_ = r.x_count_;
-  x_step_ = r.x_step_;
-  y_origin_ = r.y_origin_;
-  y_count_ = r.y_count_;
-  y_step_ = r.y_step_;
-  // User Code End CopyConstructor
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 {
   uint32_t flags_bit_field;

@@ -38,6 +38,7 @@
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbTable.h"
+#include "dbTable.hpp"
 
 namespace odb {
 

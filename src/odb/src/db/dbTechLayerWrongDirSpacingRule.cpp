@@ -85,19 +85,6 @@ _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
   prl_length_ = 0;
 }
 
-_dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerWrongDirSpacingRule& r)
-{
-  flags_.noneol_valid_ = r.flags_.noneol_valid_;
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  wrongdir_space_ = r.wrongdir_space_;
-  noneol_width_ = r.noneol_width_;
-  length_ = r.length_;
-  prl_length_ = r.prl_length_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWrongDirSpacingRule& obj)
 {
   uint32_t flags_bit_field;
