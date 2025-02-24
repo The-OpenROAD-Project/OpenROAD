@@ -80,24 +80,23 @@ class frInst : public frRef
 
   /* from frRef
    * getOrient
-   * setOrient
    * getOrigin
-   * setOrigin
    * getTransform
-   * setTransform
    */
 
-  dbOrientType getOrient() const override { return xform_.getOrient(); }
-  void setOrient(const dbOrientType& tmpOrient) override
+  dbOrientType getOrient() const override
   {
-    xform_.setOrient(tmpOrient);
+    return db_inst_->getTransform().getOrient();
   }
-  Point getOrigin() const override { return xform_.getOffset(); }
-  void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
-  dbTransform getTransform() const override { return xform_; }
-  void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
+  Point getOrigin() const override
+  {
+    return db_inst_->getTransform().getOffset();
+  }
+  Rect getBoundaryBBox() const;
+  // Returns the lower left point of the bounding box
+  Point getLocation() const { return getBoundaryBBox().ll(); }
   odb::dbInst* getDBInst() const { return db_inst_; }
-  dbTransform getDBTransform() const { return db_inst_->getTransform(); }
+  dbTransform getTransform() const override { return db_inst_->getTransform(); }
 
   /* from frPinFig
    * hasPin
@@ -135,8 +134,6 @@ class frInst : public frRef
   void move(const dbTransform& xform) override { ; }
   bool intersects(const Rect& box) const override { return false; }
   // others
-  dbTransform getNoRotationTransform() const;
-  Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(int index);
 
@@ -146,7 +143,6 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   odb::dbInst* db_inst_;
-  dbTransform xform_;
   int pinAccessIdx_{0};
   bool toBeDeleted_{false};
 };
