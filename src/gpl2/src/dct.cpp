@@ -99,7 +99,8 @@ void dct_2d_fft(const int M,
   auto hPre2d = Kokkos::create_mirror_view_and_copy(hostSpace, pre2d);
   auto hFft2d = Kokkos::create_mirror_view(hostSpace, fft2d);
 
-  KokkosFFT::rfft2(hostSpace, hPre2d, hFft2d, KokkosFFT::Normalization::none);
+  static KokkosFFT::Plan fftplan(hostSpace, hPre2d, hFft2d, KokkosFFT::Direction::forward, KokkosFFT::axis_type<2>{-2, -1});
+  KokkosFFT::execute(fftplan, hPre2d, hFft2d, KokkosFFT::Normalization::none);
 
   Kokkos::deep_copy(fft2d, hFft2d);
 
@@ -318,7 +319,8 @@ void idct_2d_fft(const int M,
   auto hPre2d = Kokkos::create_mirror_view_and_copy(hostSpace, pre2d);
   auto hIfft2d = Kokkos::create_mirror_view(hostSpace, ifft2d);
 
-  KokkosFFT::irfft2(hostSpace, hPre2d, hIfft2d, KokkosFFT::Normalization::none);
+  static KokkosFFT::Plan fftplan(hostSpace, hPre2d, hIfft2d, KokkosFFT::Direction::backward, KokkosFFT::axis_type<2>{-2, -1});
+  KokkosFFT::execute(fftplan, hPre2d, hIfft2d, KokkosFFT::Normalization::none);
 
   Kokkos::deep_copy(ifft2d, hIfft2d);
 
