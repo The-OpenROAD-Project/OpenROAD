@@ -76,7 +76,7 @@ class dbTable : public dbObjectTable, public dbIterator
   // clear the table
   void clear();
 
-  uint page_size() const { return _page_mask + 1; }
+  uint pageSize() const { return _page_mask + 1; }
 
   // Get the object of this id
   T* getPtr(dbId<T> id) const;

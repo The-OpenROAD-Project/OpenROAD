@@ -123,7 +123,7 @@ void dbTable<T>::clear()
   for (uint i = 0; i < _page_cnt; ++i) {
     dbTablePage* page = _pages[i];
     const T* t = (T*) page->_objects;
-    const T* e = &t[page_size()];
+    const T* e = &t[pageSize()];
 
     for (; t < e; t++) {
       if (t->_oid & DB_ALLOC_BIT) {
@@ -195,7 +195,7 @@ void dbTable<T>::resizePageTbl()
 template <class T>
 void dbTable<T>::newPage()
 {
-  const uint size = page_size() * sizeof(T) + sizeof(dbObjectPage);
+  const uint size = pageSize() * sizeof(T) + sizeof(dbObjectPage);
   dbTablePage* page = (dbTablePage*) malloc(size);
   ZALLOCATED(page);
   memset(page, 0, size);
@@ -292,7 +292,7 @@ inline void dbTable<T>::findBottom()
     uint offset = _bottom_idx & _page_mask;
     T* b = (T*) page->_objects;
     T* s = &b[offset + 1];
-    T* e = &b[page_size()];
+    T* e = &b[pageSize()];
     for (; s < e; s++) {
       if (s->_oid & DB_ALLOC_BIT) {
         offset = s - b;
@@ -316,7 +316,7 @@ inline void dbTable<T>::findBottom()
 
   T* b = (T*) page->_objects;
   T* s = b;
-  T* e = &s[page_size()];
+  T* e = &s[pageSize()];
 
   for (; s < e; s++) {
     if (s->_oid & DB_ALLOC_BIT) {
@@ -473,7 +473,7 @@ uint dbTable<T>::next(uint id, ...)
 
 next_obj:
   T* p = (T*) &(page->_objects[offset * sizeof(T)]);
-  T* e = (T*) &(page->_objects[page_size() * sizeof(T)]);
+  T* e = (T*) &(page->_objects[pageSize() * sizeof(T)]);
 
   for (; p < e; ++p) {
     if (p->_oid & DB_ALLOC_BIT) {
@@ -507,7 +507,7 @@ template <class T>
 void dbTable<T>::writePage(dbOStream& stream, const dbTablePage* page) const
 {
   const T* t = (T*) page->_objects;
-  const T* e = &t[page_size()];
+  const T* e = &t[pageSize()];
 
   for (; t < e; t++) {
     if (t->_oid & DB_ALLOC_BIT) {
@@ -528,7 +528,7 @@ template <class T>
 void dbTable<T>::readPage(dbIStream& stream, dbTablePage* page)
 {
   T* t = (T*) page->_objects;
-  T* e = &t[page_size()];
+  T* e = &t[pageSize()];
   page->_alloccnt = 0;
 
   for (; t < e; t++) {
@@ -607,7 +607,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
 
   uint i;
   for (i = 0; i < table._page_cnt; ++i) {
-    uint size = table.page_size() * sizeof(T) + sizeof(dbObjectPage);
+    uint size = table.pageSize() * sizeof(T) + sizeof(dbObjectPage);
     dbTablePage* page = (dbTablePage*) malloc(size);
     ZALLOCATED(page);
     memset(page, 0, size);
