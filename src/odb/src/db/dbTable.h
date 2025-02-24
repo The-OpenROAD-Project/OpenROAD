@@ -55,12 +55,6 @@ template <class T>
 class dbTable : public dbObjectTable, public dbIterator
 {
  public:
-  void resizePageTbl();
-  void newPage();
-  void pushQ(uint& Q, _dbFreeObject* e);
-  _dbFreeObject* popQ(uint& Q);
-  void unlinkQ(uint& Q, _dbFreeObject* e);
-
   dbTable(_dbDatabase* db,
           dbObject* owner,
           dbObjectTable* (dbObject::*m)(dbObjectType),
@@ -70,8 +64,7 @@ class dbTable : public dbObjectTable, public dbIterator
 
   // Make a copy of a table.
   // The copy is identical including the ordering of all free-lists.
-  // dbTable(_dbDatabase * db, dbObject * owner, const dbTable<T> & T );
-  dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>&);
+  dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>& t);
 
   ~dbTable() override;
 
@@ -117,30 +110,6 @@ class dbTable : public dbObjectTable, public dbIterator
     return false;
   }
 
-  //
-  // Get the object of this id
-  // This method is the same as getPtr() but is is
-  // use to get objects on the free-list.
-  //
-  T* getFreeObj(dbId<T> id)
-  {
-    uint page = (uint) id >> _page_shift;
-    uint offset = (uint) id & _page_mask;
-    assert(((uint) id != 0) && (page < _page_cnt));
-    T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
-    assert((p->_oid & DB_ALLOC_BIT) == 0);
-    return p;
-  }
-
-  // find the new top_idx...
-  void findTop();
-
-  // find the new bottom_idx...
-  void findBottom();
-
-  void readPage(dbIStream& stream, dbTablePage* page);
-  void writePage(dbOStream& stream, const dbTablePage* page) const;
-
   bool operator==(const dbTable<T>& rhs) const;
   bool operator!=(const dbTable<T>& table) const;
 
@@ -161,6 +130,35 @@ class dbTable : public dbObjectTable, public dbIterator
  private:
   void copy_pages(const dbTable<T>&);
   void copy_page(uint page_id, dbTablePage* page);
+  void resizePageTbl();
+  void newPage();
+  void pushQ(uint& Q, _dbFreeObject* e);
+  _dbFreeObject* popQ(uint& Q);
+  void unlinkQ(uint& Q, _dbFreeObject* e);
+  // find the new top_idx...
+  void findTop();
+
+  // find the new bottom_idx...
+  void findBottom();
+
+  void readPage(dbIStream& stream, dbTablePage* page);
+  void writePage(dbOStream& stream, const dbTablePage* page) const;
+
+
+  //
+  // Get the object of this id
+  // This method is the same as getPtr() but is is
+  // use to get objects on the free-list.
+  //
+  T* getFreeObj(dbId<T> id)
+  {
+    uint page = (uint) id >> _page_shift;
+    uint offset = (uint) id & _page_mask;
+    assert(((uint) id != 0) && (page < _page_cnt));
+    T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
+    assert((p->_oid & DB_ALLOC_BIT) == 0);
+    return p;
+  }
 
   // PERSISTANT-DATA
   uint _page_mask;      // bit-mask to get page-offset
