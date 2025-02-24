@@ -1040,7 +1040,7 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
 }
 
 int IOPlacer::computeDistanceBetweenPins(const int layer,
-                                              const int min_distance)
+                                         const int min_distance)
 {
   bool dist_in_tracks = parms_->getMinDistanceInTracks();
   int min_dst_pins
