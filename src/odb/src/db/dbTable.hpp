@@ -687,19 +687,6 @@ bool dbTable<T>::operator==(const dbTable<T>& rhs) const
 }
 
 template <class T>
-void dbTable<T>::getObjects(std::vector<T*>& objects)
-{
-  objects.clear();
-  objects.reserve(size());
-
-  for (uint i = _bottom_idx; i <= _top_idx; ++i) {
-    if (validId(i)) {
-      objects.push_back(getPtr(i));
-    }
-  }
-}
-
-template <class T>
 void dbTable<T>::collectMemInfo(MemInfo& info)
 {
   for (int i = _bottom_idx; i <= _top_idx; ++i) {
