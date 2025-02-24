@@ -356,11 +356,12 @@ class Snapper
       const odb::dbTechLayerDir& target_direction);
   PatternParameters computePatternParameters(
       odb::dbTrackGrid* track_grid,
-      int grid_pattern,
+      const int pattern_idx,
       odb::dbITerm* pin,
       const odb::dbTechLayerDir& target_direction);
+  odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
   void getTrackGridPattern(odb::dbTrackGrid* track_grid,
-                           int grid_pattern,
+                           const int pattern_idx,
                            int& origin,
                            int& step,
                            const odb::dbTechLayerDir& target_direction);
@@ -368,13 +369,13 @@ class Snapper
                   const odb::dbTechLayerDir& target_direction);
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
                                 const odb::dbTechLayerDir& target_direction);
+  odb::dbITerm* findPinForMultiPattern(
+      odb::dbTrackGrid* track_grid,
+      const int pattern_idx,
+      const odb::dbTechLayerDir& target_direction);
   void attemptSnapToExtraPatterns(
       int origin,
       const std::vector<PatternParameters>& layers_data,
-      const odb::dbTechLayerDir& target_direction);
-  odb::dbITerm* findPinForMultiPattern(
-      odb::dbTrackGrid* track_grid,
-      int grid_pattern,
       const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
