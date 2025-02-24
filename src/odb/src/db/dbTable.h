@@ -111,7 +111,7 @@ class dbTable : public dbObjectTable, public dbIterator
   void readPage(dbIStream& stream, dbTablePage* page);
   void writePage(dbOStream& stream, const dbTablePage* page) const;
 
-  T* getFreeObj(dbId<T> id);
+  _dbFreeObject* getFreeObj(dbId<T> id);
 
   // PERSISTANT-DATA
   uint _page_mask;      // bit-mask to get page-offset

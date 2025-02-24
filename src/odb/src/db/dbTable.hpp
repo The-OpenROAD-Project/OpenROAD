@@ -49,7 +49,7 @@ namespace odb {
 // use to get objects on the free-list.
 //
 template <class T>
-inline T* dbTable<T>::getFreeObj(dbId<T> id)
+inline _dbFreeObject* dbTable<T>::getFreeObj(dbId<T> id)
 {
   const uint page = (uint) id >> _page_shift;
   const uint offset = (uint) id & _page_mask;
@@ -57,7 +57,7 @@ inline T* dbTable<T>::getFreeObj(dbId<T> id)
   assert(((uint) id != 0) && (page < _page_cnt));
   T* p = (T*) &(_pages[page]->_objects[offset * sizeof(T)]);
   assert((p->_oid & DB_ALLOC_BIT) == 0);
-  return p;
+  return (_dbFreeObject*) p;
 }
 
 template <class T>
@@ -89,27 +89,28 @@ inline bool dbTable<T>::validId(dbId<T> id) const
 template <class T>
 inline void dbTable<T>::pushQ(uint& Q, _dbFreeObject* e)
 {
+  uint id = e->getImpl()->getOID();
   if (Q == 0) {
     e->_prev = 0;
     e->_next = 0;
-    Q = e->getImpl()->getOID();
+    Q = id;
   } else {
     e->_prev = 0;
     e->_next = Q;
-    _dbFreeObject* head = (_dbFreeObject*) getFreeObj(Q);
-    head->_prev = e->getImpl()->getOID();
-    Q = e->getImpl()->getOID();
+    _dbFreeObject* head = getFreeObj(Q);
+    head->_prev = id;
+    Q = id;
   }
 }
 
 template <class T>
 inline _dbFreeObject* dbTable<T>::popQ(uint& Q)
 {
-  _dbFreeObject* e = (_dbFreeObject*) getFreeObj(Q);
+  _dbFreeObject* e = getFreeObj(Q);
   Q = e->_next;
 
   if (Q) {
-    _dbFreeObject* head = (_dbFreeObject*) getFreeObj(Q);
+    _dbFreeObject* head = getFreeObj(Q);
     head->_prev = 0;
   }
 
