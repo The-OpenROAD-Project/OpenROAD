@@ -70,7 +70,8 @@ class TimingWidget : public QDockWidget
  public:
   enum CommandType
   {
-    CLOSEST_MATCH,
+    EXACT,
+    NO_BUFFERING,
     FROM_START_TO_END
   };
 
