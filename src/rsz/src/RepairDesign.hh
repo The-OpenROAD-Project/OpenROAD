@@ -107,12 +107,12 @@ class RepairDesign : dbStaState
                  double cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
-  void printViolationCounters(bool invalidate_driver_vertices,
-                              int slew_violations,
-                              int cap_violations,
-                              int fanout_violations,
-                              int length_violations,
-                              int repaired_net_count);
+  void reportViolationCounters(bool invalidate_driver_vertices,
+                               int slew_violations,
+                               int cap_violations,
+                               int fanout_violations,
+                               int length_violations,
+                               int repaired_net_count);
 
  protected:
   void init();

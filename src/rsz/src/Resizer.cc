@@ -1629,12 +1629,12 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                cap_violations,
                                fanout_violations,
                                length_violations);
-  repair_design_->printViolationCounters(false,
-                                         slew_violations,
-                                         cap_violations,
-                                         fanout_violations,
-                                         length_violations,
-                                         repaired_net_count);
+  repair_design_->reportViolationCounters(false,
+                                          slew_violations,
+                                          cap_violations,
+                                          fanout_violations,
+                                          length_violations,
+                                          repaired_net_count);
 
   findResizeSlacks1();
   if (run_journal_restore)

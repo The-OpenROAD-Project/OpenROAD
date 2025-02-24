@@ -110,12 +110,12 @@ void RepairDesign::repairDesign(double max_wire_length,
                fanout_violations,
                length_violations);
 
-  printViolationCounters(false,
-                         slew_violations,
-                         cap_violations,
-                         fanout_violations,
-                         length_violations,
-                         repaired_net_count);
+  reportViolationCounters(false,
+                          slew_violations,
+                          cap_violations,
+                          fanout_violations,
+                          length_violations,
+                          repaired_net_count);
 }
 
 void RepairDesign::repairDesign(
@@ -362,12 +362,12 @@ void RepairDesign::repairNet(Net* net,
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  printViolationCounters(true,
-                         slew_violations,
-                         cap_violations,
-                         fanout_violations,
-                         length_violations,
-                         repaired_net_count);
+  reportViolationCounters(true,
+                          slew_violations,
+                          cap_violations,
+                          fanout_violations,
+                          length_violations,
+                          repaired_net_count);
 }
 
 bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
@@ -2187,12 +2187,12 @@ void RepairDesign::printProgress(int iteration,
   }
 }
 
-void RepairDesign::printViolationCounters(bool invalidate_driver_vertices,
-                                          int slew_violations,
-                                          int cap_violations,
-                                          int fanout_violations,
-                                          int length_violations,
-                                          int repaired_net_count)
+void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
+                                           int slew_violations,
+                                           int cap_violations,
+                                           int fanout_violations,
+                                           int length_violations,
+                                           int repaired_net_count)
 {
   if (slew_violations > 0) {
     logger_->info(utl::RSZ, 34, "Found {} slew violations.", slew_violations);
