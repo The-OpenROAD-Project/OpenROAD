@@ -498,9 +498,6 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       LibertyCell* cell = network_->libertyCell(sta_inst);
       LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (LibertyCell* target_cell : swappable_cells) {
-        if (dontUse(target_cell)) {
-          continue;
-        }
         dbMaster* target_master = db_network_->staToDb(target_cell);
         // TODO: pick the best choice rather than the first
         //       and consider timing criticality
@@ -1214,10 +1211,20 @@ void Resizer::resizePreamble()
 //   same footprint have the same layout boundary.
 // - User Function Class (Optional - Honored if found): Cells with the
 //   same user_function_class are electrically compatible.
+// - DontUse: Cells that are marked dont-use are not considered for
+//   replacement.
+// - Link Cell: Only link cells are considered for replacement.
+// This function is cached for performance and reset if more cells are read.
 LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 {
+  if (swappable_cells_cache_.find(source_cell)
+      != swappable_cells_cache_.end()) {
+    return swappable_cells_cache_[source_cell];
+  }
+
   dbMaster* master = db_network_->staToDb(source_cell);
   if (master && !master->isCore()) {
+    swappable_cells_cache_[source_cell] = {};
     return {};
   }
 
@@ -1243,6 +1250,9 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       source_cell_leakage = get_leakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
+      if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
+        continue;
+      }
       dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
       if (!equiv_cell_master) {
         continue;
@@ -1404,38 +1414,36 @@ LibertyCell* Resizer::findTargetCell(LibertyCell* cell,
                best_dist,
                delayAsString(best_delay, sta_, 3));
     for (LibertyCell* target_cell : swappable_cells) {
-      if (!dontUse(target_cell) && isLinkCell(target_cell)) {
-        float target_load = (*target_load_map_)[target_cell];
-        float delay = 0.0;
-        if (is_buf_inv) {
-          delay = bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_);
-        }
-        float dist = targetLoadDist(load_cap, target_load);
-        debugPrint(logger_,
-                   RSZ,
-                   "resize",
-                   3,
-                   " {} dist={:.2e} delay={}",
-                   target_cell->name(),
-                   dist,
-                   delayAsString(delay, sta_, 3));
-        if (is_buf_inv
-                // Library may have "delay" buffers/inverters that are
-                // functionally buffers/inverters but have additional
-                // intrinsic delay. Accept worse target load matching if
-                // delay is reduced to avoid using them.
-                ? ((delay < best_delay && dist < best_dist * 1.1)
-                   || (dist < best_dist && delay < best_delay * 1.1))
-                : dist < best_dist
-                      // If the instance has multiple outputs (generally a
-                      // register Q/QN) only allow upsizing after the first pin
-                      // is visited.
-                      && (!revisiting_inst || target_load > best_load)) {
-          best_cell = target_cell;
-          best_dist = dist;
-          best_load = target_load;
-          best_delay = delay;
-        }
+      float target_load = (*target_load_map_)[target_cell];
+      float delay = 0.0;
+      if (is_buf_inv) {
+        delay = bufferDelay(target_cell, load_cap, tgt_slew_dcalc_ap_);
+      }
+      float dist = targetLoadDist(load_cap, target_load);
+      debugPrint(logger_,
+                 RSZ,
+                 "resize",
+                 3,
+                 " {} dist={:.2e} delay={}",
+                 target_cell->name(),
+                 dist,
+                 delayAsString(delay, sta_, 3));
+      if (is_buf_inv
+              // Library may have "delay" buffers/inverters that are
+              // functionally buffers/inverters but have additional
+              // intrinsic delay. Accept worse target load matching if
+              // delay is reduced to avoid using them.
+              ? ((delay < best_delay && dist < best_dist * 1.1)
+                 || (dist < best_dist && delay < best_delay * 1.1))
+              : dist < best_dist
+                    // If the instance has multiple outputs (generally a
+                    // register Q/QN) only allow upsizing after the first pin
+                    // is visited.
+                    && (!revisiting_inst || target_load > best_load)) {
+        best_cell = target_cell;
+        best_dist = dist;
+        best_load = target_load;
+        best_delay = delay;
       }
     }
   }
@@ -4222,6 +4230,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
 void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
+  swappable_cells_cache_.clear();
 }
 
 void Resizer::copyDontUseFromLiberty()

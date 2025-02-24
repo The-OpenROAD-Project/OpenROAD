@@ -2110,23 +2110,21 @@ LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
                   > resizer_->bufferDriveResistance(buffer2);
          });
     for (LibertyCell* buffer : swappable_cells) {
-      if (!resizer_->dontUse(buffer) && resizer_->isLinkCell(buffer)) {
-        float slew = resizer_->bufferSlew(
-            buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
-        debugPrint(logger_,
-                   RSZ,
-                   "buffer_under_slew",
-                   1,
-                   "{:{}s}pt ({} {})",
-                   buffer->name(),
-                   units_->timeUnit()->asString(slew));
-        if (slew < max_slew) {
-          return buffer;
-        }
-        if (slew < min_slew) {
-          min_slew_buffer = buffer;
-          min_slew = slew;
-        }
+      float slew = resizer_->bufferSlew(
+          buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
+      debugPrint(logger_,
+                 RSZ,
+                 "buffer_under_slew",
+                 1,
+                 "{:{}s}pt ({} {})",
+                 buffer->name(),
+                 units_->timeUnit()->asString(slew));
+      if (slew < max_slew) {
+        return buffer;
+      }
+      if (slew < min_slew) {
+        min_slew_buffer = buffer;
+        min_slew = slew;
       }
     }
   }
