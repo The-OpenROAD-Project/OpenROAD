@@ -240,17 +240,13 @@ void DensityOp::updateDensityForceBin()
                                      dGCellDensityWidth[instIdx],
                                      dGCellDensityHeight[instIdx]);
 
+    const float instDLx = dGCellDCx[instIdx] - dGCellDensityWidth[instIdx] / 2.f;
+    const float instDLy = dGCellDCy[instIdx] - dGCellDensityHeight[instIdx] / 2.f;
+    const float instDUx = dGCellDCx[instIdx] + dGCellDensityWidth[instIdx] / 2.f;
+    const float instDUy = dGCellDCy[instIdx] + dGCellDensityHeight[instIdx] / 2.f;
     for (int i = binRect.lx; i < binRect.ux; i++) {
       for (int j = binRect.ly; j < binRect.uy; j++) {
         const int binIdx = j * binCntX + i;
-        const float instDLx
-            = dGCellDCx[instIdx] - dGCellDensityWidth[instIdx] / 2.f;
-        const float instDLy
-            = dGCellDCy[instIdx] - dGCellDensityHeight[instIdx] / 2.f;
-        const float instDUx
-            = dGCellDCx[instIdx] + dGCellDensityWidth[instIdx] / 2.f;
-        const float instDUy
-            = dGCellDCy[instIdx] + dGCellDensityHeight[instIdx] / 2.f;
         const float overlapWidth = getOverlapWidth(
             instDLx, instDUx, dBinLx[binIdx], dBinUx[binIdx]);
         const float overlapHeight = getOverlapWidth(
@@ -336,17 +332,13 @@ void DensityOp::getDensityGradient(const Kokkos::View<float*>& densityGradientX,
     float electroForceSumX = 0.0;
     float electroForceSumY = 0.0;
 
+    const float instDLx = dGCellDCx[instIdx] - dGCellDensityWidth[instIdx] / 2.f;
+    const float instDLy = dGCellDCy[instIdx] - dGCellDensityHeight[instIdx] / 2.f;
+    const float instDUx = dGCellDCx[instIdx] + dGCellDensityWidth[instIdx] / 2.f;
+    const float instDUy = dGCellDCy[instIdx] + dGCellDensityHeight[instIdx] / 2.f;
     for (int i = binRect.lx; i < binRect.ux; i++) {
       for (int j = binRect.ly; j < binRect.uy; j++) {
         const int binIdx = j * binCntX + i;
-        const float instDLx
-            = dGCellDCx[instIdx] - dGCellDensityWidth[instIdx] / 2.f;
-        const float instDLy
-            = dGCellDCy[instIdx] - dGCellDensityHeight[instIdx] / 2.f;
-        const float instDUx
-            = dGCellDCx[instIdx] + dGCellDensityWidth[instIdx] / 2.f;
-        const float instDUy
-            = dGCellDCy[instIdx] + dGCellDensityHeight[instIdx] / 2.f;
         const float overlapWidth = getOverlapWidth(
             instDLx, instDUx, dBinLx[binIdx], dBinUx[binIdx]);
         const float overlapHeight = getOverlapWidth(
