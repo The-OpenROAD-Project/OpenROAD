@@ -15,7 +15,6 @@ from helper import (
     get_functional_name,
     get_hash_table_type,
     get_ref_type,
-    get_struct,
     get_table_name,
     get_template_type,
     is_bit_fields,
@@ -95,7 +94,6 @@ def add_field_attributes(field, klass, flags_struct, schema):
         flags_struct["fields"].append(field)
         flag_num_bits += int(field["bits"])
     field["bitFields"] = is_bit_fields(field, klass["structs"])
-    field["isStruct"] = get_struct(field["type"], klass["structs"]) is not None
 
     field["isRef"] = is_ref(field["type"]) if field.get("parent") is not None else False
     field["refType"] = get_ref_type(field["type"])
@@ -224,7 +222,6 @@ def add_bitfield_flags(klass, flag_num_bits, flags_struct):
                     klass["structs"], "flags_", flags_struct["name"]
                 ),
                 "bitFields": True,
-                "isStruct": True,
                 "numBits": total_num_bits,
                 "flags": ["no-cmp", "no-set", "no-get", "no-serial"],
             },
