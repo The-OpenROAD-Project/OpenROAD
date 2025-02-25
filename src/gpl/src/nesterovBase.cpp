@@ -782,7 +782,7 @@ void BinGrid::initBins()
       bins_[bin_index]
           = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
       auto& bin = bins_[bin_index];
-      if (bin.dx() < 0 || bin.dy() < 0)
+      if (bin.dx() < 0 || bin.dy() < 0) {
         log_->warn(GPL,
                    34,
                    "Bin (center: {},{}, index: {}) has negative size: {}, {}",
@@ -791,6 +791,7 @@ void BinGrid::initBins()
                    bin_index,
                    bin.dx(),
                    bin.dy());
+      }
     }
   }
 
