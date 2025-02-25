@@ -23,7 +23,7 @@
     "dbBlock.h",
     "dbDft.h"
   ],
-  "classes": [
+  "declared_classes": [
     "dbScanPin",
     "dbBTerm",
     "dbITerm"

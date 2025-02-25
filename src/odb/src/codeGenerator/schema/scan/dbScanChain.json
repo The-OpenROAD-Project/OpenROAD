@@ -49,7 +49,7 @@
     "dbBlock.h",
     "dbDft.h"
   ],
-  "classes": [
+  "declared_classes": [
       "dbScanPartition"
   ]
 }

@@ -132,13 +132,13 @@ def add_field_attributes(field, klass, flags_struct, schema):
 
     if template_class_name is not None:
         if (
-            template_class_name not in klass["classes"]
+            template_class_name not in klass["declared_classes"]
             and template_class_name not in std
             and "no-template" not in field["flags"]
             and klass["name"] != template_class_name[1:]
             and klass["name"] + "::" != template_class_name[0 : len(klass["name"]) + 2]
         ):
-            klass["classes"].append(template_class_name)
+            klass["declared_classes"].append(template_class_name)
     ####
     ####
     ####
@@ -243,11 +243,11 @@ def generate_relations(schema):
 
         child_type_name = f"_{relation['child']}"
 
-        if child_type_name not in parent["classes"]:
-            parent["classes"].append(child_type_name)
+        if child_type_name not in parent["declared_classes"]:
+            parent["declared_classes"].append(child_type_name)
 
-        if "dbTable" not in parent["classes"]:
-            parent["classes"].append("dbTable")
+        if "dbTable" not in parent["declared_classes"]:
+            parent["declared_classes"].append("dbTable")
         if relation.get("hash", False):
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)
@@ -269,7 +269,7 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
                 klass = json.load(file)
         add_once_to_dict(
             [
-                "classes",
+                "declared_classes",
                 "fields",
                 "enums",
                 "structs",
