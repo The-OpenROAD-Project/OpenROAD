@@ -147,6 +147,10 @@ class TimingWidget : public QDockWidget
   void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
 
+  // Auxiliary for generating report_checks commands for Script Widget.
+  QString generateFromStartToEndString(TimingPath* path);
+  QString generateClosestMatchString(CommandType type, TimingPath* path);
+
   QMenu* commands_menu_;
 
   QModelIndex timing_paths_table_index_;

@@ -384,106 +384,93 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
       = static_cast<TimingPathsModel*>(focus_view_->model());
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
 
-  if (type == FROM_START_TO_END) {
-    QString start_node
-        = QString::fromStdString(selected_path->getStartStageName());
-    QString end_node = QString::fromStdString(selected_path->getEndStageName());
+  QString command = "report_checks ";
 
-    QString from_start_to_end_command
-        = "report_checks -from " + Utils::wrapInCurly(start_node) + " -to "
-          + Utils::wrapInCurly(end_node);
-
-    emit setCommand(from_start_to_end_command);
-    return;
+  switch (type) {
+    case FROM_START_TO_END: {
+      command += generateFromStartToEndString(selected_path);
+      break;
+    }
+    case NO_BUFFERING: {
+      command += generateClosestMatchString(NO_BUFFERING, selected_path);
+      break;
+    }
+    case EXACT: {
+      command += generateClosestMatchString(EXACT, selected_path);
+      break;
+    }
   }
 
-  TimingNodeList* node_list = &selected_path->getPathNodes();
+  emit setCommand(command);
+}
 
-  const int clock_end_idx = selected_path->getClkPathEndIndex();
+QString TimingWidget::generateFromStartToEndString(TimingPath* path)
+{
+  QString start_node = QString::fromStdString(path->getStartStageName());
+  QString end_node = QString::fromStdString(path->getEndStageName());
+
+  return "-from " + Utils::wrapInCurly(start_node) + " -to "
+         + Utils::wrapInCurly(end_node);
+}
+
+QString TimingWidget::generateClosestMatchString(CommandType type,
+                                                 TimingPath* path)
+{
+  QString command;
+  TimingNodeList* node_list = &path->getPathNodes();
+
+  const int clock_end_idx = path->getClkPathEndIndex();
   int start_idx = clock_end_idx + 1;
 
-  QString closest_match_command = "report_checks ";
-  QString through_rise_or_fall;
-  QString through_node;
-
-  // We actually write the clock nodes when the path has only clock nodes.
-  if (start_idx == node_list->size()) {
+  const bool only_clock_nodes = start_idx == node_list->size();
+  if (only_clock_nodes) {  // Then we write the clock nodes
     start_idx = 0;
 
     // The first and last node must also be written with -through. The path
     // cannot be found otherwise.
     for (int i = start_idx; i < node_list->size(); i++) {
-      through_rise_or_fall = (*node_list)[i]->isRisingEdge()
-                                 ? " -rise_through "
-                                 : " -fall_through ";
-      through_node = QString::fromStdString((*node_list)[i]->getNodeName());
-
-      closest_match_command
-          += through_rise_or_fall + Utils::wrapInCurly(through_node);
+      command += (*node_list)[i]->isRisingEdge() ? " -rise_through "
+                                                 : " -fall_through ";
+      command += Utils::wrapInCurly(
+          QString::fromStdString((*node_list)[i]->getNodeName()));
     }
   } else {
-    QString from_rise_or_fall = (*node_list)[start_idx]->isRisingEdge()
-                                    ? "-rise_from "
-                                    : "-fall_from ";
-    QString start_node
-        = QString::fromStdString(selected_path->getStartStageName());
+    command += (*node_list)[start_idx]->isRisingEdge() ? "-rise_from "
+                                                      : "-fall_from ";
+    command
+        += Utils::wrapInCurly(QString::fromStdString(path->getStartStageName()));
 
-    closest_match_command += from_rise_or_fall + Utils::wrapInCurly(start_node);
-
-    sta::dbSta* sta = settings_->getSTA()->getSTA();
-    sta::dbNetwork* db_network = sta->getDbNetwork();
     for (int i = (start_idx + 1); i < (node_list->size() - 1); i++) {
       TimingPathNode* curr_node = (*node_list)[i].get();
-
-      if (type == NO_BUFFERING) {
-        odb::dbInst* curr_inst = curr_node->getInstance();
-        const sta::LibertyCell* curr_lib_cell
-            = db_network->libertyCell(curr_inst);
-        if (curr_lib_cell->isBuffer()) {
-          continue;
-        }
-
-        // Search for back-to-back inverters, which should be skipped.
-        TimingPathNode* first_node = node_list->front().get();
-        if (curr_node != first_node) {
-          TimingPathNode* prev_node = (*node_list)[i - 1].get();
-          odb::dbInst* prev_node_inst = prev_node->getInstance();
-          if (prev_node_inst != curr_inst) {
-            const sta::LibertyCell* prev_lib_cell
-                = db_network->libertyCell(prev_node_inst);
-            if (prev_lib_cell->isInverter() && curr_lib_cell->isInverter()) {
-              continue;
-            }
-          }
-        }
+      odb::dbInst* curr_node_inst = curr_node->getInstance();
+      odb::dbInst* prev_node_inst = nullptr;
+      if (curr_node != node_list->front().get()) {
+        TimingPathNode* prev_node = (*node_list)[i - 1].get();
+        prev_node_inst = prev_node->getInstance();
       }
 
-      through_rise_or_fall
+      QString inst_fields
           = curr_node->isRisingEdge() ? " -rise_through " : " -fall_through ";
-      through_node = QString::fromStdString(curr_node->getNodeName());
+      inst_fields += Utils::wrapInCurly(
+          QString::fromStdString(curr_node->getNodeName()));
 
-      closest_match_command
-          += through_rise_or_fall + Utils::wrapInCurly(through_node);
+      // Interface between two instances.
+      if (curr_node_inst != prev_node_inst) {
+        command += inst_fields;
+      }
     }
 
-    QString to_rise_or_fall
-        = node_list->back()->isRisingEdge() ? " -rise_to " : " -fall_to ";
-    QString end_node = QString::fromStdString(selected_path->getEndStageName());
-
-    closest_match_command += to_rise_or_fall + Utils::wrapInCurly(end_node);
+    command += node_list->back()->isRisingEdge() ? " -rise_to " : " -fall_to ";
+    command
+        += Utils::wrapInCurly(QString::fromStdString(path->getEndStageName()));
   }
 
-  QString path_delay_config = focus_view_ == setup_timing_table_view_
-                                  ? " -path_delay max"
-                                  : " -path_delay min";
+  command += focus_view_ == setup_timing_table_view_ ? " -path_delay max"
+                                                     : " -path_delay min";
+  command += " -fields {capacitance slew input_pins nets fanout} -format "
+            "full_clock_expanded";
 
-  QString fields_and_format
-      = " -fields {capacitance slew input_pins nets fanout} -format "
-        "full_clock_expanded";
-
-  closest_match_command += path_delay_config + fields_and_format;
-
-  emit setCommand(closest_match_command);
+  return command;
 }
 
 void TimingWidget::clearPathDetails()
