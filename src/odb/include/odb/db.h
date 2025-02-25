@@ -1848,7 +1848,7 @@ class dbBTerm : public dbObject
 
   ///
   /// Set the bterm which position is mirrored to this bterm
-  /// 
+  ///
   void setMirroredBTerm(dbBTerm* mirrored_bterm);
 
   ///
