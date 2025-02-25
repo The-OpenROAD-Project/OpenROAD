@@ -45,9 +45,6 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-class dbScanPin;
-class dbBTerm;
-class dbITerm;
 
 class _dbScanPin : public _dbObject
 {
