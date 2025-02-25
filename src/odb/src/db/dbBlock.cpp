@@ -1604,7 +1604,7 @@ std::vector<dbBlock::BTermGroup> dbBlock::getBTermGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
   std::vector<dbBlock::BTermGroup> groups;
-  for (_dbBTermGroup group : block->_bterm_groups) {
+  for (const _dbBTermGroup& group : block->_bterm_groups) {
     dbBlock::BTermGroup bterm_group;
     for (const auto& bterm_id : group.bterms) {
       bterm_group.bterms.push_back(
@@ -1617,12 +1617,12 @@ std::vector<dbBlock::BTermGroup> dbBlock::getBTermGroups()
   return groups;
 }
 
-void dbBlock::addBTermGroup(std::vector<dbBTerm*> bterms, bool order)
+void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
 {
   _dbBlock* block = (_dbBlock*) this;
   _dbBTermGroup group;
   for (dbBTerm* bterm : bterms) {
-    group.bterms.push_back(bterm->getId());
+    group.bterms.emplace_back(bterm->getId());
   }
   group.order = order;
   block->_bterm_groups.push_back(std::move(group));

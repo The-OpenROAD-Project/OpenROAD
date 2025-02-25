@@ -978,7 +978,7 @@ class dbBlock : public dbObject
   ///
   /// Get all the block-terminals of this block.
   ///
-  void addBTermGroup(std::vector<dbBTerm*> bterms, bool order);
+  void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
   ///
   /// Get all the instance-terminals of this block.
