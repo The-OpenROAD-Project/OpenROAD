@@ -33,6 +33,7 @@
 
 #include "SACoreSoftMacro.h"
 
+#include <boost/random/uniform_int_distribution.hpp>
 #include <vector>
 
 #include "MplObserver.h"
@@ -738,8 +739,17 @@ void SACoreSoftMacro::calNotchPenalty()
 
 void SACoreSoftMacro::resizeOneCluster()
 {
-  const int idx = static_cast<int>(
-      std::floor(distribution_(generator_) * pos_seq_.size()));
+  if (pos_seq_.empty()) {
+    logger_->error(
+        utl::MPL,
+        51,
+        "Position sequence array is empty, please report this internal error");
+  }
+
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, pos_seq_.size() - 1);
+  const int idx = index_distribution(generator_);
+
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
