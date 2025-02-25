@@ -515,15 +515,20 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       }
       Instance* sta_inst = db_network_->dbToSta(inst);
       LibertyCell* cell = network_->libertyCell(sta_inst);
+      dbMaster* master = db_network_->staToDb(cell);
       LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (LibertyCell* target_cell : swappable_cells) {
         if (dontUse(target_cell)) {
           continue;
         }
         dbMaster* target_master = db_network_->staToDb(target_cell);
-        // TODO: pick the best choice rather than the first
-        //       and consider timing criticality
-        if (target_master->getSite() == site) {
+        // Pick a cell that has the matching site, the same VT type
+        // and equal or less drive resistance.  swappable_cells are
+        // sorted in decreasing order of drive resistance.
+        if (target_master->getSite() == site
+            && cellVTType(target_master) == cellVTType(master)
+            && sta::fuzzyLessEqual(cellDriveResistance(target_cell),
+                                   cellDriveResistance(cell))) {
           inst->swapMaster(target_master);
           width += target_master->getWidth();
           break;
@@ -1063,6 +1068,19 @@ float Resizer::bufferDriveResistance(const LibertyCell* buffer) const
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
   return output->driveResistance();
+}
+
+// This should be exported by STA
+float Resizer::cellDriveResistance(const LibertyCell* cell) const
+{
+  sta::LibertyCellPortBitIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    auto port = port_iter.next();
+    if (port->direction()->isOutput()) {
+      return port->driveResistance();
+    }
+  }
+  return 0.0;
 }
 
 LibertyCell* Resizer::halfDrivingPowerCell(Instance* inst)

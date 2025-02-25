@@ -509,6 +509,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int findMaxSteinerDist(Vertex* drvr, const Corner* corner);
   float driveResistance(const Pin* drvr_pin);
   float bufferDriveResistance(const LibertyCell* buffer) const;
+  float cellDriveResistance(const LibertyCell* cell) const;
+
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex* drvr);
 
