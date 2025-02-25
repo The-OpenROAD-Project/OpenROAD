@@ -454,19 +454,21 @@ set_opt_config
     [-limit_sizing_area float_value]
     [-limit_sizing_leakage float_value]
     [-keep_sizing_site boolean_value]
-    [-sizing_area_limit float_value]
-    [-sizing_leakage_limit float_value]
+    [-keep_sizing_vt boolean_value]
+    [-sizing_area_limit float_value] (deprecated)
+    [-sizing_leakage_limit float_value] (deprecated)
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-limit_sizing_area` | Don't consider cells whose area is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with area more than 2X of the current cell will not be considered for sizing. The cell LEF will be used for area computation, not liberty cell area. |
-| `-limit_sizing_leakage` | Don't consider cells whose leakage is more than float_value of the current cell during sizing. For example, if the value is 2, all cells with leakage more than 2X of the current cell will not be considered for sizing. The leakage power will be computed from the current timing corner. |
-| `-keep_sizing_site` | Preserve cell site during sizing.  This prevents a short cell from being swapped to a tall cell or vice versa in mixed row design. |
-| `-sizing_area_limit` | This option is deprecated.   Use -limit_sizing_area instead. |
-| `-sizing_leakage_limit` | This option is deprecated.  Use -limit_sizing_leakage instead. |
+| `-limit_sizing_area` | Exclude cells from sizing if their area exceeds <float_value> times the current cell's area. For example, with 2.0, only cells with an area <= 2X the current cell's area are considered. The area is determined from LEF, not Liberty. |
+| `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. |
+| `-keep_sizing_site` | Ensure cells retain their original site type during sizing. This prevents short cells from being replaced by tall cells (or vice versa) in mixed-row designs. |
+| `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
+| `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
+| `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
 ### Reporting Optimization Configuration
 
@@ -486,6 +488,7 @@ reset_opt_config
     [-limit_sizing_area]
     [-limit_sizing_leakage]
     [-keep_sizing_site]
+    [-keep_sizing_vt]
     [-sizing_area_limit]
     [-sizing_leakage_limit]
 ```
@@ -497,8 +500,9 @@ reset_opt_config
 | `-limit_sizing_area` | Remove area restriction during sizing. |
 | `-limit_sizing_leakage` | Remove leakage power restriction during sizing. |
 | `-keep_sizing_site` | Remove site restriction during sizing. |
-| `-sizing_area_limit` | This option is deprecated.  Use -limit_sizing_area instead. |
-| `-sizing_leakage_limit` | This option is deprecated.  Use -limit_sizing_leakage instead. |
+| `-keep_sizing_vt` | Remove VT type restriction during sizing. |
+| `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
+| `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
 ### Finding Equivalent Cells
 

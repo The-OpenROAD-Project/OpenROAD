@@ -432,6 +432,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  int cellVTType(dbMaster* master);
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
@@ -810,6 +811,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::optional<double> sizing_area_limit_;
   std::optional<double> sizing_leakage_limit_;
   bool sizing_keep_site_ = false;
+  bool sizing_keep_vt_ = false;
+
+  // VT layer hash
+  std::unordered_map<dbMaster*, int> vt_map_;
+  std::unordered_map<size_t, int>
+      vt_hash_map_;  // maps hash value to unique int
 
   friend class BufferedNet;
   friend class GateCloner;

@@ -35,6 +35,7 @@
 
 #include "rsz/Resizer.hh"
 
+#include <boost/functional/hash.hpp>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -89,6 +90,7 @@ using odb::dbDoubleProperty;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
+using odb::dbSet;
 
 using sta::ConcreteLibraryCellIterator;
 using sta::FindNetDrvrLoads;
@@ -262,6 +264,12 @@ void Resizer::initBlock()
     sizing_keep_site_ = site_prop->getValue();
   } else {
     sizing_keep_site_ = false;
+  }
+  dbBoolProperty* vt_prop = dbBoolProperty::find(block_, "keep_sizing_vt");
+  if (vt_prop) {
+    sizing_keep_vt_ = vt_prop->getValue();
+  } else {
+    sizing_keep_vt_ = false;
   }
 }
 
@@ -1229,12 +1237,19 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   resizePreamble();
   LibertyCellSeq equiv_cells = getSwappableCells(base_cell);
 
-  // Sort equiv cells by ascending area
+  // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
   std::sort(equiv_cells.begin(),
             equiv_cells.end(),
             [](const LibertyCell* a, const LibertyCell* b) {
-              return a->area() < b->area();
+              if (!sta::fuzzyEqual(a->area(), b->area())) {
+                return a->area() < b->area();
+              }
+              float a_leak, b_leak;
+              bool a_exists, b_exists;
+              a->leakagePower(a_leak, a_exists);
+              b->leakagePower(b_leak, b_exists);
+              return a_leak < b_leak;
             });
 
   logger_->report(
@@ -1250,16 +1265,16 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   if (leakage_exists) {
     logger_->report(
         "======================================================================"
-        "==");
+        "=======");
     logger_->report(
         "          Cell                              Area   Area Leakage  "
-        "Leakage");
+        "Leakage  VT");
     logger_->report(
         "                                           (um^2)  Ratio  (W)     "
-        "Ratio");
+        "Ratio  Type");
     logger_->report(
         "======================================================================"
-        "==");
+        "=======");
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
@@ -1267,39 +1282,44 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
       bool leakage_exists2;
       equiv_cell->leakagePower(equiv_cell_leakage, leakage_exists2);
       if (leakage_exists2) {
-        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}",
+        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f} {:>5}",
                         equiv_cell->name(),
                         equiv_area,
                         equiv_area / base_area,
                         equiv_cell_leakage,
-                        equiv_cell_leakage / base_leakage);
+                        equiv_cell_leakage / base_leakage,
+                        cellVTType(equiv_master));
       } else {
-        logger_->report("{:<35} {:<9} {:.2f}",
+        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>5}",
                         equiv_cell->name(),
                         equiv_area,
-                        equiv_area / base_area);
+                        equiv_area / base_area,
+                        cellVTType(equiv_master));
       }
     }
     logger_->report(
         "----------------------------------------------------------------------"
-        "--");
+        "-------");
   } else {
     logger_->report(
-        "=========================================================");
-    logger_->report("          Cell                              Area   Area");
-    logger_->report("                                           (um^2)  Ratio");
+        "==============================================================");
     logger_->report(
-        "=========================================================");
+        "          Cell                              Area   Area    VT");
+    logger_->report(
+        "                                           (um^2)  Ratio  Type");
+    logger_->report(
+        "==============================================================");
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
-      logger_->report("{:<41} {:>7.3f} {:>5.2f}",
+      logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>5}",
                       equiv_cell->name(),
                       equiv_area,
-                      equiv_area / base_area);
+                      equiv_area / base_area,
+                      cellVTType(equiv_master));
     }
     logger_->report(
-        "---------------------------------------------------------");
+        "--------------------------------------------------------------");
   }
 }
 
@@ -1364,6 +1384,12 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
       if (sizing_keep_site_) {
         if (master->getSite() != equiv_cell_master->getSite()) {
+          continue;
+        }
+      }
+
+      if (sizing_keep_vt_) {
+        if (cellVTType(master) != cellVTType(equiv_cell_master)) {
           continue;
         }
       }
@@ -1436,6 +1462,62 @@ void Resizer::makeEquivCells()
   }
   delete lib_iter;
   sta_->makeEquivCells(&libs, nullptr);
+}
+
+// VT layers are typically in LEF obstruction section.
+// To categorize cell VT type, hash all obstruction layers, including non-VT
+// layers. Cells beloning to the same VT category should have identical layer
+// composition, resulting in the same hash value.  VT type is 0 if there are
+// no OBS layers.  This categorization doesn't work if LEF has no VT OBS layer.
+int Resizer::cellVTType(dbMaster* master)
+{
+  // Check if VT type is already computed
+  auto it = vt_map_.find(master);
+  if (it != vt_map_.end()) {
+    return it->second;
+  }
+
+  dbSet<dbBox> obs = master->getObstructions();
+  if (obs.empty()) {
+    vt_map_[master] = 0;
+    return 0;
+  }
+
+  std::unordered_set<std::string> unique_layers;  // count each layer only once
+  size_t hash1 = 0;
+  for (dbBox* bbox : obs) {
+    dbTechLayer* layer = bbox->getTechLayer();
+    if (layer == nullptr) {
+      continue;
+    }
+
+    std::string layer_name = layer->getName();
+    if (unique_layers.insert(layer_name).second) {
+      debugPrint(logger_,
+                 RSZ,
+                 "equiv",
+                 1,
+                 "{} has OBS layer {}",
+                 master->getName(),
+                 layer_name);
+      size_t hash2 = boost::hash<std::string>()(layer_name);
+      boost::hash_combine(hash1, hash2);
+    }
+  }
+
+  if (vt_hash_map_.find(hash1) == vt_hash_map_.end()) {
+    int vt_id = vt_hash_map_.size() + 1;
+    vt_hash_map_[hash1] = vt_id;
+  }
+  vt_map_[master] = vt_hash_map_[hash1];
+  debugPrint(logger_,
+             RSZ,
+             "equiv",
+             1,
+             "{} has VT type {}",
+             master->getName(),
+             vt_map_[master]);
+  return vt_map_[master];
 }
 
 int Resizer::resizeToTargetSlew(const Pin* drvr_pin)

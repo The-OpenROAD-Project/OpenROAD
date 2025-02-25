@@ -759,13 +759,14 @@ proc eliminate_dead_logic { } {
 sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-limit_sizing_leakage] \
                                           [-keep_sizing_site] \
+                                          [-keep_sizing_vt] \
                                           [-sizing_area_limit] \
                                           [-sizing_leakage_limit] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site} flags {}
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt} flags {}
   set db [ord::get_db]
   if { $db eq "NULL" } {
     utl::error "RSZ" 200 "db needs to be defined for set_opt_config."
@@ -830,18 +831,35 @@ proc set_opt_config { args } {
     utl::info RSZ 104 \
       "Cell's site will be preserved for sizing"
   }
+
+  if { [info exists keys(-keep_sizing_vt)] } {
+    set keep_vt $keys(-keep_sizing_vt)
+    if { ![string is boolean $keep_vt] } {
+      utl::error "RSZ" 210 \
+        "-keep_sizing_vt argument should be Boolean"
+    }
+    set vt_prop [odb::dbBoolProperty_find $block "keep_sizing_vt"]
+    if { $vt_prop eq "NULL" } {
+      odb::dbBoolProperty_create $block "keep_sizing_vt" $keep_vt
+    } else {
+      $vt_prop setValue $keep_vt
+    }
+    utl::info RSZ 106 \
+      "Cell's VT type will be preserved for sizing"
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-limit_sizing_leakage] \
                                             [-keep_sizing_site] \
+                                            [-keep_sizing_vt] \
                                             [-sizing_area_limit] \
                                             [-sizing_leakage_limit] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
-                     -sizing_area_limit -sizing_leakage_limit }
+                     -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt}
   set db [ord::get_db]
   if { $db eq "NULL" } {
     utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
@@ -884,6 +902,13 @@ proc reset_opt_config { args } {
     }
     utl::info RSZ 105 "Cell sizing restriction based on site has been removed."
   }
+  if { $reset_all || [info exists flags(-keep_sizing_vt)] } {
+    set vt_prop [odb::dbBoolProperty_find $block "keep_sizing_vt"]
+    if { $vt_prop ne "NULL" && $vt_prop ne "" } {
+      odb::dbProperty_destroy $vt_prop
+    }
+    utl::info RSZ 107 "Cell sizing restriction based on VT type has been removed."
+  }
 }
 
 sta::define_cmd_args "report_opt_config" {}
@@ -922,11 +947,19 @@ proc report_opt_config { args } {
     set keep_site_value [expr { $keep_site_result ? "true" : "false" }]
   }
 
+  set keep_sizing_vt "false"
+  set keep_vt [odb::dbBoolProperty_find $block "keep_sizing_vt"]
+  if { $keep_vt ne "NULL" && $keep_vt ne "" } {
+    set keep_vt_value [$keep_vt getValue]
+    set keep_sizing_vt [expr { $keep_vt_value ? "true" : "false" }]
+  }
+
   puts "***********************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:    $area_limit_value"
   puts "-limit_sizing_leakage: $leakage_limit_value"
   puts "-keep_sizing_site:     $keep_site_value"
+  puts "-keep_sizing_vt:       $keep_sizing_vt"
   puts "***********************************"
 }
 
