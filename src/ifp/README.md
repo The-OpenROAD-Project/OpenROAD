@@ -99,7 +99,7 @@ make_tracks
 
 The `make_rows` command removes existing rows. 
 Use the `make_rows` command to add rows to an existing floorplan. Useful,
-if you're floorplan is stored as a floorplan def without rows.
+if your floorplan is stored as a floorplan def without rows.
 
 ```tcl
 make_rows
