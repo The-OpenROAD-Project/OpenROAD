@@ -1246,6 +1246,19 @@ void Resizer::resizePreamble()
   findTargetLoads();
 }
 
+// Convert sta results to std::optional
+std::optional<float> Resizer::cellLeakage(const LibertyCell* cell)
+{
+  float leakage;
+  bool exists;
+  cell->leakagePower(leakage, exists);
+  std::optional<float> value;
+  if (exists) {
+    value = leakage;
+  }
+  return value;
+}
+
 // For debugging
 void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                                     bool match_cell_footprint)
@@ -1259,15 +1272,16 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   // STA sorts them by drive resistance
   std::sort(equiv_cells.begin(),
             equiv_cells.end(),
-            [](const LibertyCell* a, const LibertyCell* b) {
+            [this](const LibertyCell* a, const LibertyCell* b) {
               if (!sta::fuzzyEqual(a->area(), b->area())) {
                 return a->area() < b->area();
               }
-              float a_leak, b_leak;
-              bool a_exists, b_exists;
-              a->leakagePower(a_leak, a_exists);
-              b->leakagePower(b_leak, b_exists);
-              return a_leak < b_leak;
+              std::optional<float> leakage_a = this->cellLeakage(a);
+              std::optional<float> leakage_b = this->cellLeakage(b);
+              if (leakage_a && leakage_b) {
+                return *leakage_a < *leakage_b;
+              }
+              return leakage_a.has_value();
             });
 
   logger_->report(
@@ -1277,10 +1291,8 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
       (match_cell_footprint ? " with matching cell_footprint:" : ":"));
   odb::dbMaster* master = db_network_->staToDb(base_cell);
   double base_area = block_->dbuAreaToMicrons(master->getArea());
-  float base_leakage;
-  bool leakage_exists;
-  base_cell->leakagePower(base_leakage, leakage_exists);
-  if (leakage_exists) {
+  std::optional<float> base_leakage = cellLeakage(base_cell);
+  if (base_leakage) {
     logger_->report(
         "======================================================================"
         "=======");
@@ -1296,16 +1308,14 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
-      float equiv_cell_leakage;
-      bool leakage_exists2;
-      equiv_cell->leakagePower(equiv_cell_leakage, leakage_exists2);
-      if (leakage_exists2) {
+      std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
+      if (equiv_cell_leakage) {
         logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f} {:>5}",
                         equiv_cell->name(),
                         equiv_area,
                         equiv_area / base_area,
-                        equiv_cell_leakage,
-                        equiv_cell_leakage / base_leakage,
+                        *equiv_cell_leakage,
+                        *equiv_cell_leakage / *base_leakage,
                         cellVTType(equiv_master));
       } else {
         logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>5}",
@@ -1357,22 +1367,10 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
 
   if (equiv_cells) {
-    // Convert sta results to std::optional
-    auto get_leakage = [](LibertyCell* cell) {
-      float leakage;
-      bool exists;
-      cell->leakagePower(leakage, exists);
-      std::optional<float> value;
-      if (exists) {
-        value = leakage;
-      }
-      return value;
-    };
-
     int64_t source_cell_area = master->getArea();
     std::optional<float> source_cell_leakage;
     if (sizing_leakage_limit_) {
-      source_cell_leakage = get_leakage(source_cell);
+      source_cell_leakage = cellLeakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
       if (equiv_cell == source_cell) {
@@ -1392,7 +1390,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       }
 
       if (sizing_leakage_limit_ && source_cell_leakage) {
-        std::optional<float> equiv_cell_leakage = get_leakage(equiv_cell);
+        std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
         if (equiv_cell_leakage
             && (*equiv_cell_leakage / *source_cell_leakage
                 > sizing_leakage_limit_.value())) {
@@ -1505,7 +1503,7 @@ int Resizer::cellVTType(dbMaster* master)
   size_t hash1 = 0;
   for (dbBox* bbox : obs) {
     dbTechLayer* layer = bbox->getTechLayer();
-    if (layer == nullptr) {
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::IMPLANT) {
       continue;
     }
 
@@ -1515,7 +1513,7 @@ int Resizer::cellVTType(dbMaster* master)
                  RSZ,
                  "equiv",
                  1,
-                 "{} has OBS layer {}",
+                 "{} has OBS implant layer {}",
                  master->getName(),
                  layer_name);
       size_t hash2 = boost::hash<std::string>()(layer_name);
