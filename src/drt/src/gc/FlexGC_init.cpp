@@ -214,7 +214,7 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design, bool skipDR)
   }
 }
 
-void FlexGCWorker::Impl::addPAObj(const frConnFig* obj, frBlockObject* owner)
+void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
 {
   auto it = owner2nets_.find(owner);
   gcNet* currNet = nullptr;
@@ -226,10 +226,10 @@ void FlexGCWorker::Impl::addPAObj(const frConnFig* obj, frBlockObject* owner)
 
   frLayerNum layerNum;
   if (obj->typeId() == frcPathSeg) {
-    auto pathSeg = static_cast<const frPathSeg*>(obj);
+    auto pathSeg = static_cast<frPathSeg*>(obj);
     currNet->addPolygon(pathSeg->getBBox(), pathSeg->getLayerNum(), false);
   } else if (obj->typeId() == frcVia) {
-    auto via = static_cast<const frVia*>(obj);
+    auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
     dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
@@ -252,7 +252,7 @@ void FlexGCWorker::Impl::addPAObj(const frConnFig* obj, frBlockObject* owner)
       currNet->addPolygon(box, layerNum, false);
     }
   } else if (obj->typeId() == frcPatchWire) {
-    auto pwire = static_cast<const frPatchWire*>(obj);
+    auto pwire = static_cast<frPatchWire*>(obj);
     currNet->addPolygon(pwire->getBBox(), pwire->getLayerNum(), false);
   }
 }
