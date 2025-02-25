@@ -436,27 +436,59 @@ QString TimingWidget::generateClosestMatchString(CommandType type,
     }
   } else {
     command += (*node_list)[start_idx]->isRisingEdge() ? "-rise_from "
-                                                      : "-fall_from ";
-    command
-        += Utils::wrapInCurly(QString::fromStdString(path->getStartStageName()));
+                                                       : "-fall_from ";
+    command += Utils::wrapInCurly(
+        QString::fromStdString(path->getStartStageName()));
 
+    int prev_inst_fields_char_count = 0;
+    sta::dbNetwork* network = settings_->getSTA()->getSTA()->getDbNetwork();
+    bool skipped_inverter_pair = false;
+    QString inst_fields;
     for (int i = (start_idx + 1); i < (node_list->size() - 1); i++) {
       TimingPathNode* curr_node = (*node_list)[i].get();
       odb::dbInst* curr_node_inst = curr_node->getInstance();
+      if (type == NO_BUFFERING
+          && network->libertyCell(curr_node_inst)->isBuffer()) {
+        continue;
+      }
+
       odb::dbInst* prev_node_inst = nullptr;
       if (curr_node != node_list->front().get()) {
         TimingPathNode* prev_node = (*node_list)[i - 1].get();
         prev_node_inst = prev_node->getInstance();
       }
 
-      QString inst_fields
-          = curr_node->isRisingEdge() ? " -rise_through " : " -fall_through ";
+      inst_fields
+          += curr_node->isRisingEdge() ? " -rise_through " : " -fall_through ";
       inst_fields += Utils::wrapInCurly(
           QString::fromStdString(curr_node->getNodeName()));
 
-      // Interface between two instances.
+      // We update the command string only at an
+      // interface between two instances.
       if (curr_node_inst != prev_node_inst) {
+        // Avoid messing up the command if there's another
+        // inverter after an inverter pair.
+        if (skipped_inverter_pair) {
+          skipped_inverter_pair = false;
+          prev_inst_fields_char_count = inst_fields.size();
+          command += inst_fields;
+          inst_fields.clear();
+          continue;
+        }
+
+        if (type == NO_BUFFERING
+            && network->libertyCell(curr_node_inst)->isInverter()
+            && network->libertyCell(prev_node_inst)->isInverter()) {
+          // Remove previously inserted inverter fields.
+          command.truncate(command.size() - prev_inst_fields_char_count);
+          skipped_inverter_pair = true;
+          inst_fields.clear();
+          continue;
+        }
+
+        prev_inst_fields_char_count = inst_fields.size();
         command += inst_fields;
+        inst_fields.clear();
       }
     }
 
