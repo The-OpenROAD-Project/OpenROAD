@@ -738,8 +738,15 @@ void SACoreSoftMacro::calNotchPenalty()
 
 void SACoreSoftMacro::resizeOneCluster()
 {
-  const int idx = static_cast<int>(
-      std::floor(distribution_(generator_) * pos_seq_.size()));
+  // TODO: See for explanation
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  float random_variable_0_1;
+  do {
+    random_variable_0_1 = distribution_(generator_);
+  } while (random_variable_0_1 >= 1.0);
+
+  const int idx
+      = static_cast<int>(std::floor(random_variable_0_1 * pos_seq_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {

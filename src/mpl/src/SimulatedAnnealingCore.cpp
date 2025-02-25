@@ -626,11 +626,27 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
 template <class T>
 void SimulatedAnnealingCore<T>::generateRandomIndices(int& index1, int& index2)
 {
-  index1 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
-  index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+  // TODO: See for explanation.
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  // This code is ugly on purpose to incentivize merging the proper
+  // fix.
+  float random_variable_0_1_index1;
+  float random_variable_0_1_index2;
+  do {
+    random_variable_0_1_index1 = distribution_(generator_);
+    random_variable_0_1_index2 = distribution_(generator_);
+  } while (random_variable_0_1_index1 >= 1.0
+           || random_variable_0_1_index2 >= 1.0);
+
+  index1 = (int) (std::floor(random_variable_0_1_index1 * pos_seq_.size()));
+  index2 = (int) (std::floor(random_variable_0_1_index2 * pos_seq_.size()));
 
   while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+    do {
+      random_variable_0_1_index2 = distribution_(generator_);
+    } while (random_variable_0_1_index2 >= 1.0);
+
+    index2 = (int) (std::floor(random_variable_0_1_index2 * pos_seq_.size()));
   }
 }
 
