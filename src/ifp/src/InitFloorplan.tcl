@@ -184,8 +184,8 @@ sta::define_cmd_args "make_rows" {
 
 proc make_rows { args } {
   sta::parse_key_args "make_rows" args \
-    keys {-utilization -aspect_ratio -core_space \
-    -die_area -core_area -site -additional_sites -row_parity -flip_sites} \
+    keys {-core_space \
+    -core_area -site -additional_sites -row_parity -flip_sites} \
     flags {}
 
   sta::check_argc_eq0 "make_rows" $args
@@ -234,7 +234,7 @@ proc make_rows { args } {
     sta::check_positive_float "-core_area" $core_uy
 
     ord::ensure_linked
-     
+
     # convert die/core coordinates to dbu.
     ifp::make_rows \
       [ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
@@ -265,7 +265,7 @@ proc make_rows { args } {
     }
 
     ord::ensure_linked
-        
+
     # convert spacing coordinates to dbu.
     ifp::make_rows_with_spacing \
       [ord::microns_to_dbu $core_sp_bottom] \
