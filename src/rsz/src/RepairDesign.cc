@@ -2173,7 +2173,7 @@ void RepairDesign::printProgress(int iteration,
     logger_->report(
         "{: >9s} | {: >+8.1f}% | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
         itr_field,
-        area_growth / initial_design_area_ * 1e3,
+        area_growth / initial_design_area_ * 1e2,
         resize_count_,
         inserted_buffer_count_,
         repaired_net_count,

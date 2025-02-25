@@ -13,7 +13,7 @@ u1/Z manhtn 0.4 steiner 0.4 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         5
-    final | +10416.7% |       2 |       3 |             1 |         0
+    final |  +1041.7% |       2 |       3 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0039] Resized 2 instances.

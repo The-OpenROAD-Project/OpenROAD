@@ -42,7 +42,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |    -11.5% |      31 |       0 |             0 |         0
+    final |     -1.2% |      31 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 31 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.42e-09
@@ -72,7 +72,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |    -16.3% |      29 |       0 |             0 |         0
+    final |     -1.6% |      29 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 29 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.42e-09
@@ -90,7 +90,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |    -25.5% |      28 |       0 |             0 |         0
+    final |     -2.5% |      28 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 28 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
@@ -107,7 +107,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |     -9.9% |       4 |       0 |             0 |         0
+    final |     -1.0% |       4 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 4 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
