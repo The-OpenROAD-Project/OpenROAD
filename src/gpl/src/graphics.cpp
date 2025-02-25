@@ -532,12 +532,15 @@ void Graphics::populateXYGrid()
   x_grid_set.push_back(bin[0].lx());
   y_grid_set.push_back(bin[0].ly());
 
-  for (int x = 0; x < x_grid; x++) {
+  for (int x = 0; x < x_grid && x < static_cast<int>(bin.size()); x++) {
     x_grid_set.push_back(bin[x].ux());
   }
 
   for (int y = 0; y < y_grid; y++) {
-    y_grid_set.push_back(bin[y * x_grid].uy());
+    size_t index = static_cast<size_t>(y) * static_cast<size_t>(x_grid);
+    if (index < bin.size()) {
+      y_grid_set.push_back(bin[index].uy());
+    }
   }
   setXYMapGrid(x_grid_set, y_grid_set);
 }
