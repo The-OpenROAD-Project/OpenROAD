@@ -33,7 +33,6 @@
 #include "dbSWire.h"
 
 #include "dbBlock.h"
-#include "dbDiff.hpp"
 #include "dbNet.h"
 #include "dbSBox.h"
 #include "dbSBoxItr.h"
@@ -103,64 +102,6 @@ bool _dbSWire::operator<(const _dbSWire& rhs) const
   }
 
   return false;
-}
-
-void _dbSWire::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbSWire& rhs) const
-{
-  _dbBlock* lhs_block = (_dbBlock*) getOwner();
-  _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._wire_type);
-  DIFF_FIELD_NO_DEEP(_net);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_shield);
-  } else {
-    if ((_shield != 0) && (rhs._shield != 0)) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-      _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-      diff.diff("_shield", lhs_net->_name, rhs_net->_name);
-    } else if (_shield != 0) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbNet* lhs_net = lhs_blk->_net_tbl->getPtr(_net);
-      diff.out(dbDiff::LEFT, "_shield", lhs_net->_name);
-    } else if (rhs._shield != 0) {
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbNet* rhs_net = rhs_blk->_net_tbl->getPtr(rhs._net);
-      diff.out(dbDiff::RIGHT, "_shield", rhs_net->_name);
-    }
-  }
-
-  DIFF_SET(_wires, lhs_block->_sbox_itr, rhs_block->_sbox_itr);
-  DIFF_FIELD_NO_DEEP(_next_swire);
-  DIFF_END
-}
-
-void _dbSWire::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* block = (_dbBlock*) getOwner();
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._wire_type);
-  DIFF_OUT_FIELD_NO_DEEP(_net);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_shield);
-  } else {
-    if (_shield != 0) {
-      _dbBlock* blk = (_dbBlock*) getOwner();
-      _dbNet* net = blk->_net_tbl->getPtr(_net);
-      diff.out(side, "_shield", net->_name);
-    }
-  }
-
-  DIFF_OUT_SET(_wires, block->_sbox_itr);
-  DIFF_OUT_FIELD_NO_DEEP(_next_swire);
-  DIFF_END
 }
 
 void _dbSWire::addSBox(_dbSBox* box)
@@ -328,6 +269,12 @@ dbSWire* dbSWire::getSWire(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbSWire*) block->_swire_tbl->getPtr(dbid_);
+}
+
+void _dbSWire::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

@@ -35,7 +35,6 @@
 // Generator Code Begin Cpp
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -92,37 +91,6 @@ bool _dbModInst::operator<(const _dbModInst& rhs) const
   return true;
 }
 
-void _dbModInst::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbModInst& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_module_next);
-  DIFF_FIELD(_master);
-  DIFF_FIELD(_group_next);
-  DIFF_FIELD(_group);
-  DIFF_FIELD(_moditerms);
-  DIFF_END
-}
-
-void _dbModInst::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_module_next);
-  DIFF_OUT_FIELD(_master);
-  DIFF_OUT_FIELD(_group_next);
-  DIFF_OUT_FIELD(_group);
-  DIFF_OUT_FIELD(_moditerms);
-
-  DIFF_END
-}
-
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
   // User Code Begin Constructor
@@ -134,18 +102,6 @@ _dbModInst::_dbModInst(_dbDatabase* db)
   _group = 0;
   _group_next = 0;
   // User Code End Constructor
-}
-
-_dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _parent = r._parent;
-  _module_next = r._module_next;
-  _master = r._master;
-  _group_next = r._group_next;
-  _group = r._group;
-  _moditerms = r._moditerms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
@@ -191,6 +147,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   }
   // User Code End <<
   return stream;
+}
+
+void _dbModInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["moditerm_hash"].add(_moditerm_hash);
+  // User Code End collectMemInfo
 }
 
 _dbModInst::~_dbModInst()

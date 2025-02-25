@@ -34,7 +34,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbLib.h"
 #include "dbSite.h"
 #include "dbTable.h"
@@ -162,38 +161,6 @@ bool _dbRow::operator<(const _dbRow& rhs) const
   }
 
   return false;
-}
-
-void _dbRow::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbRow& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._orient);
-  DIFF_FIELD(_flags._dir);
-  DIFF_FIELD(_lib);
-  DIFF_FIELD(_site);
-  DIFF_FIELD(_x);
-  DIFF_FIELD(_y);
-  DIFF_FIELD(_site_cnt);
-  DIFF_FIELD(_spacing);
-  DIFF_END
-}
-
-void _dbRow::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._orient);
-  DIFF_OUT_FIELD(_flags._dir);
-  DIFF_OUT_FIELD(_lib);
-  DIFF_OUT_FIELD(_site);
-  DIFF_OUT_FIELD(_x);
-  DIFF_OUT_FIELD(_y);
-  DIFF_OUT_FIELD(_site_cnt);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -341,6 +308,14 @@ dbRow* dbRow::getRow(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRow*) block->_row_tbl->getPtr(dbid_);
+}
+
+void _dbRow::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 }  // namespace odb

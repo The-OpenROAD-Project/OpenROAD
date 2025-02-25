@@ -511,36 +511,6 @@ void OpenRoad::writeDb(const char* filename)
   db_->write(stream_handler.getStream());
 }
 
-void OpenRoad::diffDbs(const char* filename1,
-                       const char* filename2,
-                       const char* diffs)
-{
-  std::ifstream stream1;
-  stream1.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                     | std::ios::eofbit);
-  stream1.open(filename1, std::ios::binary);
-
-  std::ifstream stream2;
-  stream2.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                     | std::ios::eofbit);
-  stream2.open(filename2, std::ios::binary);
-
-  FILE* out = fopen(diffs, "w");
-  if (out == nullptr) {
-    logger_->error(ORD, 105, "Can't open {}", diffs);
-  }
-
-  auto db1 = odb::dbDatabase::create();
-  auto db2 = odb::dbDatabase::create();
-
-  db1->read(stream1);
-  db2->read(stream2);
-
-  odb::dbDatabase::diff(db1, db2, out, 2);
-
-  fclose(out);
-}
-
 void OpenRoad::readVerilog(const char* filename)
 {
   verilog_network_->deleteTopInstance();
@@ -548,6 +518,7 @@ void OpenRoad::readVerilog(const char* filename)
   if (verilog_reader_ == nullptr) {
     verilog_reader_ = new sta::VerilogReader(verilog_network_);
   }
+  setDbNetworkLinkFunc(this, verilog_reader_);
   verilog_reader_->read(filename);
 }
 

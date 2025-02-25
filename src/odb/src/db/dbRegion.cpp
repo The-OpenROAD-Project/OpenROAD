@@ -133,40 +133,6 @@ bool _dbRegion::operator<(const _dbRegion& rhs) const
   return _boxes < rhs._boxes;
 }
 
-void _dbRegion::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbRegion& rhs) const
-{
-  if (diff.deepDiff()) {
-    return;
-  }
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_flags._invalid);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_insts);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(groups_);
-  DIFF_END
-}
-
-void _dbRegion::out(dbDiff& diff, char side, const char* field) const
-{
-  if (diff.deepDiff()) {
-    return;
-  }
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_flags._invalid);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(groups_);
-  DIFF_END
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
 {
   uint* bit_field = (uint*) &r._flags;
@@ -425,6 +391,14 @@ dbRegion* dbRegion::getRegion(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRegion*) block->_region_tbl->getPtr(dbid_);
+}
+
+void _dbRegion::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 }  // namespace odb

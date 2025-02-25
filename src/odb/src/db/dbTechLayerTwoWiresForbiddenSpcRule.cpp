@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -79,38 +78,6 @@ bool _dbTechLayerTwoWiresForbiddenSpcRule::operator<(
   return true;
 }
 
-void _dbTechLayerTwoWiresForbiddenSpcRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.min_exact_span_length_);
-  DIFF_FIELD(flags_.max_exact_span_length_);
-  DIFF_FIELD(min_spacing_);
-  DIFF_FIELD(max_spacing_);
-  DIFF_FIELD(min_span_length_);
-  DIFF_FIELD(max_span_length_);
-  DIFF_FIELD(prl_);
-  DIFF_END
-}
-
-void _dbTechLayerTwoWiresForbiddenSpcRule::out(dbDiff& diff,
-                                               char side,
-                                               const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.min_exact_span_length_);
-  DIFF_OUT_FIELD(flags_.max_exact_span_length_);
-  DIFF_OUT_FIELD(min_spacing_);
-  DIFF_OUT_FIELD(max_spacing_);
-  DIFF_OUT_FIELD(min_span_length_);
-  DIFF_OUT_FIELD(max_span_length_);
-  DIFF_OUT_FIELD(prl_);
-
-  DIFF_END
-}
-
 _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
     _dbDatabase* db)
 {
@@ -120,20 +87,6 @@ _dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
   min_span_length_ = 0;
   max_span_length_ = 0;
   prl_ = 0;
-}
-
-_dbTechLayerTwoWiresForbiddenSpcRule::_dbTechLayerTwoWiresForbiddenSpcRule(
-    _dbDatabase* db,
-    const _dbTechLayerTwoWiresForbiddenSpcRule& r)
-{
-  flags_.min_exact_span_length_ = r.flags_.min_exact_span_length_;
-  flags_.max_exact_span_length_ = r.flags_.max_exact_span_length_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  min_spacing_ = r.min_spacing_;
-  max_spacing_ = r.max_spacing_;
-  min_span_length_ = r.min_span_length_;
-  max_span_length_ = r.max_span_length_;
-  prl_ = r.prl_;
 }
 
 dbIStream& operator>>(dbIStream& stream,
@@ -164,6 +117,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.max_span_length_;
   stream << obj.prl_;
   return stream;
+}
+
+void _dbTechLayerTwoWiresForbiddenSpcRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

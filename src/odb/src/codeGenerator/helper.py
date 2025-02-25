@@ -105,11 +105,11 @@ def get_functional_name(name):
     return name
 
 
-def get_class_index(schema, name):
+def get_class(schema, name):
     for i in range(len(schema["classes"])):
         if schema["classes"][i]["name"] == name:
-            return i
-    return -1
+            return schema["classes"][i]
+    raise NameError(f"Class {name} in relations is not found")
 
 
 def get_table_name(name):

@@ -40,7 +40,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbScanList;
 template <class T>
@@ -49,7 +48,6 @@ class dbTable;
 class _dbScanPartition : public _dbObject
 {
  public:
-  _dbScanPartition(_dbDatabase*, const _dbScanPartition& r);
   _dbScanPartition(_dbDatabase*);
 
   ~_dbScanPartition();
@@ -60,14 +58,10 @@ class _dbScanPartition : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbScanPartition& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbScanPartition& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   std::string name_;
-
   dbTable<_dbScanList>* scan_lists_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj);

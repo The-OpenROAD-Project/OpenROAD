@@ -65,28 +65,6 @@ bool _dbTechSameNetRule::operator==(const _dbTechSameNetRule& rhs) const
   return true;
 }
 
-void _dbTechSameNetRule::differences(dbDiff& diff,
-                                     const char* field,
-                                     const _dbTechSameNetRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._stack);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_layer_1);
-  DIFF_FIELD(_layer_2);
-  DIFF_END
-}
-
-void _dbTechSameNetRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._stack);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_layer_1);
-  DIFF_OUT_FIELD(_layer_2);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechSameNetRule - Methods
@@ -194,6 +172,12 @@ dbTechSameNetRule* dbTechSameNetRule::getTechSameNetRule(dbTech* tech_,
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(dbid_);
+}
+
+void _dbTechSameNetRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

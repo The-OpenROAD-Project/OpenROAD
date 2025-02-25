@@ -34,8 +34,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "AbstractPAGraphics.h"
 #include "FlexPA.h"
-#include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -174,8 +174,8 @@ void FlexPA::prepPattern()
   std::vector<frInst*> row_insts;
 
   auto instLocComp = [](frInst* const& a, frInst* const& b) {
-    const Point originA = a->getOrigin();
-    const Point originB = b->getOrigin();
+    const Point originA = a->getLocation();
+    const Point originB = b->getLocation();
     if (originA.y() == originB.y()) {
       return (originA.x() < originB.x());
     }
@@ -189,7 +189,7 @@ void FlexPA::prepPattern()
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts) {
-    Point origin = inst->getOrigin();
+    Point origin = inst->getLocation();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
@@ -559,7 +559,7 @@ int FlexPA::getEdgeCost(
     has_vio = (vio_edges[edge_idx] == 1);
   } else {
     auto curr_unique_inst = unique_insts_.getUnique(curr_unique_inst_idx);
-    dbTransform xform = curr_unique_inst->getNoRotationTransform();
+    dbTransform xform = curr_unique_inst->getTransform();
     // check DRC
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     const auto& [pin_1, inst_term_1] = pins[prev_pin_idx];
@@ -728,7 +728,7 @@ bool FlexPA::genPatternsCommit(
       auto rvia = via.get();
       temp_vias.push_back(std::move(via));
 
-      dbTransform xform = inst->getNoRotationTransform();
+      dbTransform xform = inst->getTransform();
       Point pt(access_point->getPoint());
       xform.apply(pt);
       rvia->setOrigin(pt);
@@ -820,7 +820,7 @@ void FlexPA::genPatternsPrintDebug(
   auto& [pin, inst_term] = pins[0];
   if (inst_term) {
     frInst* inst = inst_term->getInst();
-    xform = inst->getNoRotationTransform();
+    xform = inst->getTransform();
   }
 
   std::cout << "failed pattern:";

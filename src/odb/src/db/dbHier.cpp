@@ -64,26 +64,6 @@ bool _dbHier::operator==(const _dbHier& rhs) const
   return true;
 }
 
-void _dbHier::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbHier& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_inst);
-  DIFF_FIELD(_child_block);
-  DIFF_VECTOR(_child_bterms);
-  DIFF_END
-}
-
-void _dbHier::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_inst);
-  DIFF_OUT_FIELD(_child_block);
-  DIFF_OUT_VECTOR(_child_bterms);
-  DIFF_END
-}
-
 _dbHier::_dbHier(_dbDatabase*)
 {
 }
@@ -196,6 +176,14 @@ void _dbHier::destroy(_dbHier* hier)
 
   // destroy the hier object...
   parent->_hier_tbl->destroy(hier);
+}
+
+void _dbHier::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["child_bterms"].add(_child_bterms);
 }
 
 }  // namespace odb

@@ -46,7 +46,6 @@ class _dbBox;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 //
 // These flags keep track of the variations between difference LEF versions
@@ -79,10 +78,7 @@ class _dbTechViaGenerateRule : public _dbObject
     return strcmp(_name, rhs._name) < 0;
   }
 
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechViaGenerateRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaGenerateRule& v);

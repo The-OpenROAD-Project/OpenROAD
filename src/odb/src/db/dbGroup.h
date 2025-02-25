@@ -43,7 +43,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbInst;
 class _dbModInst;
@@ -59,7 +58,6 @@ struct dbGroupFlags
 class _dbGroup : public _dbObject
 {
  public:
-  _dbGroup(_dbDatabase*, const _dbGroup& r);
   _dbGroup(_dbDatabase*);
 
   ~_dbGroup();
@@ -67,8 +65,7 @@ class _dbGroup : public _dbObject
   bool operator==(const _dbGroup& rhs) const;
   bool operator!=(const _dbGroup& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGroup& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbGroup& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbGroupFlags flags_;
   char* _name;

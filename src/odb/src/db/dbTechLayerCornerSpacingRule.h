@@ -43,12 +43,11 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerCornerSpacingRuleFlags
 {
-  uint corner_type_ : 1;
+  bool corner_type_ : 1;
   bool same_mask_ : 1;
   bool corner_only_ : 1;
   bool except_eol_ : 1;
@@ -67,11 +66,7 @@ struct dbTechLayerCornerSpacingRuleFlags
 class _dbTechLayerCornerSpacingRule : public _dbObject
 {
  public:
-  _dbTechLayerCornerSpacingRule(_dbDatabase*,
-                                const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
-
-  ~_dbTechLayerCornerSpacingRule() = default;
 
   bool operator==(const _dbTechLayerCornerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerCornerSpacingRule& rhs) const
@@ -79,10 +74,7 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCornerSpacingRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCornerSpacingRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCornerSpacingRuleFlags flags_;
   int within_;

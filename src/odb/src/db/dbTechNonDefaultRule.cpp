@@ -169,44 +169,6 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
   return true;
 }
 
-void _dbTechNonDefaultRule::differences(dbDiff& diff,
-                                        const char* field,
-                                        const _dbTechNonDefaultRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._hard_spacing);
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD(_name);
-  DIFF_VECTOR(_layer_rules);
-  DIFF_VECTOR(_vias);
-  DIFF_VECTOR(_samenet_rules);
-  DIFF_MATRIX(_samenet_matrix);
-  DIFF_VECTOR(_use_vias);
-  DIFF_VECTOR(_use_rules);
-  DIFF_VECTOR(_cut_layers);
-  DIFF_VECTOR(_min_cuts);
-  DIFF_END
-}
-
-void _dbTechNonDefaultRule::out(dbDiff& diff,
-                                char side,
-                                const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._hard_spacing);
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_VECTOR(_layer_rules);
-  DIFF_OUT_VECTOR(_vias);
-  DIFF_OUT_VECTOR(_samenet_rules);
-  DIFF_OUT_MATRIX(_samenet_matrix);
-  DIFF_OUT_VECTOR(_use_vias);
-  DIFF_OUT_VECTOR(_use_rules);
-  DIFF_OUT_VECTOR(_cut_layers);
-  DIFF_OUT_VECTOR(_min_cuts);
-  DIFF_END
-}
-
 _dbTech* _dbTechNonDefaultRule::getTech()
 {
 #if 0  // dead code generates warnings -cherry
@@ -221,6 +183,22 @@ _dbBlock* _dbTechNonDefaultRule::getBlock()
 {
   assert(_flags._block_rule == 1);
   return (_dbBlock*) getOwner();
+}
+
+void _dbTechNonDefaultRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["_layer_rules"].add(_layer_rules);
+  info.children_["_vias"].add(_vias);
+  info.children_["_samenet_rules"].add(_samenet_rules);
+  info.children_["_samenet_matrix"].add(_samenet_matrix);
+  info.children_["_use_vias"].add(_use_vias);
+  info.children_["_use_rules"].add(_use_rules);
+  info.children_["_cut_layers"].add(_cut_layers);
+  info.children_["_min_cuts"].add(_min_cuts);
 }
 
 bool _dbTechNonDefaultRule::operator<(const _dbTechNonDefaultRule& rhs) const

@@ -48,7 +48,6 @@ class dbTech;
 class dbTechLayer;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class lefout;
 
 //
@@ -66,10 +65,6 @@ class _ARuleFactor
   void setFactor(double factor, bool diffuse);
   bool operator==(const _ARuleFactor& rhs) const;
   bool operator!=(const _ARuleFactor& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _ARuleFactor& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 inline _ARuleFactor::_ARuleFactor()
@@ -101,10 +96,6 @@ class _ARuleRatio
 
   bool operator==(const _ARuleRatio& rhs) const;
   bool operator!=(const _ARuleRatio& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _ARuleRatio& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _ARuleRatio& arrt);
@@ -154,10 +145,7 @@ class _dbTechLayerAntennaRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerAntennaRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAntennaRule& inrule);
@@ -189,10 +177,6 @@ class _dbTechAntennaAreaElement
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechAntennaAreaElement& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
   double getArea() const { return _area; }
   dbId<_dbTechLayer> getLayerId() const { return _lyidx; }
@@ -224,10 +208,7 @@ class _dbTechAntennaPinModel : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechAntennaPinModel& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   static void getAntennaValues(
       _dbDatabase* db,

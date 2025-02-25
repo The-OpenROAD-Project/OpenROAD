@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbModInst.h"
@@ -67,37 +66,9 @@ bool _dbLogicPort::operator<(const _dbLogicPort& rhs) const
   return true;
 }
 
-void _dbLogicPort::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbLogicPort& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(direction);
-  DIFF_END
-}
-
-void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(direction);
-
-  DIFF_END
-}
-
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
   _name = nullptr;
-}
-
-_dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  direction = r.direction;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
@@ -114,6 +85,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
   stream << obj._next_entry;
   stream << obj.direction;
   return stream;
+}
+
+void _dbLogicPort::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["direction"].add(direction);
+  // User Code End collectMemInfo
 }
 
 _dbLogicPort::~_dbLogicPort()

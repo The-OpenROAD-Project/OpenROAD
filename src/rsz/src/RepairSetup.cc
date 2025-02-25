@@ -85,6 +85,7 @@ void RepairSetup::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 bool RepairSetup::repairSetup(const float setup_slack_margin,
@@ -172,9 +173,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
-  if (verbose) {
-    printProgress(opto_iteration, false, false, false, num_viols);
-  }
+  printProgress(opto_iteration, false, false, false, num_viols);
   float fix_rate_threshold = inc_fix_rate_threshold_;
   if (!violating_ends.empty()) {
     min_viol_ = -violating_ends.back().second;
@@ -218,7 +217,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     resizer_->journalBegin();
     while (pass <= max_passes) {
       opto_iteration++;
-      if (verbose) {
+      if (verbose || opto_iteration == 1) {
         printProgress(opto_iteration, false, false, false, num_viols);
       }
       if (terminateProgress(opto_iteration,
@@ -378,7 +377,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       pass++;
     }  // while pass <= max_passes
-    if (verbose) {
+    if (verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, false, num_viols);
     }
     if (two_cons_terminations) {
@@ -398,9 +397,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     repairSetupLastGasp(params, num_viols);
   }
 
-  if (verbose) {
-    printProgress(opto_iteration, true, true, false, num_viols);
-  }
+  printProgress(opto_iteration, true, true, false, num_viols);
 
   if (removed_buffer_count_ > 0) {
     repaired = true;
@@ -1809,13 +1806,13 @@ void RepairSetup::printProgress(const int iteration,
   if (start && !end) {
     logger_->report(
         "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "    WNS   |   TNS      |  Viol  | Worst");
+        "   Area   |    WNS   |   TNS      |  Viol  | Worst");
     logger_->report(
         "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |            | Endpts | Endpt");
+        "          |          |            | Endpts | Endpt");
     logger_->report(
         "-----------------------------------------------------------"
-        "----------------------------------------");
+        "---------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1830,15 +1827,19 @@ void RepairSetup::printProgress(const int iteration,
       itr_field = "final";
     }
 
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
     logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} | {: >8s} "
-        "| {: >10s} | {: >6d} | {}",
+        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
+        "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
         removed_buffer_count_,
         resize_count_,
         inserted_buffer_count_ + split_load_buffer_count_ + rebuffer_net_count_,
         cloned_gate_count_,
         swap_pin_count_,
+        area_growth / initial_design_area_ * 1e3,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
         max(0, num_viols),
@@ -1848,7 +1849,7 @@ void RepairSetup::printProgress(const int iteration,
   if (end) {
     logger_->report(
         "-----------------------------------------------------------"
-        "----------------------------------------");
+        "---------------------------------------------------");
   }
 }
 
@@ -1938,9 +1939,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
   // clang-format on
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
   int opto_iteration = params.iteration;
-  if (params.verbose) {
-    printProgress(opto_iteration, false, false, true, num_viols);
-  }
+  printProgress(opto_iteration, false, false, true, num_viols);
 
   float prev_tns = curr_tns;
   Slack curr_worst_slack = violating_ends[0].second;
@@ -1982,7 +1981,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       if (opto_iteration % opto_small_interval_ == 0) {
         prev_termination = false;
       }
-      if (params.verbose) {
+      if (params.verbose || opto_iteration == 1) {
         printProgress(opto_iteration, false, false, true, num_viols);
       }
       if (end_slack > params.setup_slack_margin) {
@@ -2053,7 +2052,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       pass++;
     }  // while pass <= max_last_gasp_passes_
-    if (params.verbose) {
+    if (params.verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, true, num_viols);
     }
     if (two_cons_terminations) {

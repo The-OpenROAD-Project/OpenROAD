@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -103,54 +102,6 @@ bool _dbTechLayerKeepOutZoneRule::operator<(
   return true;
 }
 
-void _dbTechLayerKeepOutZoneRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerKeepOutZoneRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.same_mask_);
-  DIFF_FIELD(flags_.same_metal_);
-  DIFF_FIELD(flags_.diff_metal_);
-  DIFF_FIELD(flags_.except_aligned_side_);
-  DIFF_FIELD(flags_.except_aligned_end_);
-  DIFF_FIELD(first_cut_class_);
-  DIFF_FIELD(second_cut_class_);
-  DIFF_FIELD(aligned_spacing_);
-  DIFF_FIELD(side_extension_);
-  DIFF_FIELD(forward_extension_);
-  DIFF_FIELD(end_side_extension_);
-  DIFF_FIELD(end_forward_extension_);
-  DIFF_FIELD(side_side_extension_);
-  DIFF_FIELD(side_forward_extension_);
-  DIFF_FIELD(spiral_extension_);
-  DIFF_END
-}
-
-void _dbTechLayerKeepOutZoneRule::out(dbDiff& diff,
-                                      char side,
-                                      const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.same_mask_);
-  DIFF_OUT_FIELD(flags_.same_metal_);
-  DIFF_OUT_FIELD(flags_.diff_metal_);
-  DIFF_OUT_FIELD(flags_.except_aligned_side_);
-  DIFF_OUT_FIELD(flags_.except_aligned_end_);
-  DIFF_OUT_FIELD(first_cut_class_);
-  DIFF_OUT_FIELD(second_cut_class_);
-  DIFF_OUT_FIELD(aligned_spacing_);
-  DIFF_OUT_FIELD(side_extension_);
-  DIFF_OUT_FIELD(forward_extension_);
-  DIFF_OUT_FIELD(end_side_extension_);
-  DIFF_OUT_FIELD(end_forward_extension_);
-  DIFF_OUT_FIELD(side_side_extension_);
-  DIFF_OUT_FIELD(side_forward_extension_);
-  DIFF_OUT_FIELD(spiral_extension_);
-
-  DIFF_END
-}
-
 _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -162,28 +113,6 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
   side_side_extension_ = -1;
   side_forward_extension_ = -1;
   spiral_extension_ = -1;
-}
-
-_dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
-    _dbDatabase* db,
-    const _dbTechLayerKeepOutZoneRule& r)
-{
-  flags_.same_mask_ = r.flags_.same_mask_;
-  flags_.same_metal_ = r.flags_.same_metal_;
-  flags_.diff_metal_ = r.flags_.diff_metal_;
-  flags_.except_aligned_side_ = r.flags_.except_aligned_side_;
-  flags_.except_aligned_end_ = r.flags_.except_aligned_end_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  first_cut_class_ = r.first_cut_class_;
-  second_cut_class_ = r.second_cut_class_;
-  aligned_spacing_ = r.aligned_spacing_;
-  side_extension_ = r.side_extension_;
-  forward_extension_ = r.forward_extension_;
-  end_side_extension_ = r.end_side_extension_;
-  end_forward_extension_ = r.end_forward_extension_;
-  side_side_extension_ = r.side_side_extension_;
-  side_forward_extension_ = r.side_forward_extension_;
-  spiral_extension_ = r.spiral_extension_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
@@ -222,6 +151,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
   stream << obj.side_forward_extension_;
   stream << obj.spiral_extension_;
   return stream;
+}
+
+void _dbTechLayerKeepOutZoneRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["first_cut_class"].add(first_cut_class_);
+  info.children_["second_cut_class"].add(second_cut_class_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

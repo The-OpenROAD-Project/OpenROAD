@@ -34,7 +34,6 @@
 #include "dbGDSPath.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -66,43 +65,12 @@ bool _dbGDSPath::operator<(const _dbGDSPath& rhs) const
   return true;
 }
 
-void _dbGDSPath::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbGDSPath& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_datatype);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_path_type);
-  DIFF_END
-}
-
-void _dbGDSPath::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_datatype);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_path_type);
-
-  DIFF_END
-}
-
 _dbGDSPath::_dbGDSPath(_dbDatabase* db)
 {
   _layer = 0;
   _datatype = 0;
   _width = 0;
   _path_type = 0;
-}
-
-_dbGDSPath::_dbGDSPath(_dbDatabase* db, const _dbGDSPath& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-  _width = r._width;
-  _path_type = r._path_type;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSPath& obj)
@@ -125,6 +93,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSPath& obj)
   stream << obj._width;
   stream << obj._path_type;
   return stream;
+}
+
+void _dbGDSPath::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["xy"].add(_xy);
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

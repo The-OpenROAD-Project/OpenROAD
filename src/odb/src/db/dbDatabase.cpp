@@ -121,36 +121,6 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   return true;
 }
 
-void _dbDatabase::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbDatabase& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_master_id);
-  DIFF_FIELD(_chip);
-  DIFF_TABLE_NO_DEEP(_tech_tbl);
-  DIFF_TABLE_NO_DEEP(_lib_tbl);
-  DIFF_TABLE_NO_DEEP(_chip_tbl);
-  DIFF_TABLE_NO_DEEP(_gds_lib_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbDatabase::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_master_id);
-  DIFF_OUT_FIELD(_chip);
-  DIFF_OUT_TABLE_NO_DEEP(_tech_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_lib_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_chip_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_gds_lib_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
@@ -258,31 +228,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   _name_cache = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
-_dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
-    : _magic1(d._magic1),
-      _magic2(d._magic2),
-      _schema_major(d._schema_major),
-      _schema_minor(d._schema_minor),
-      _master_id(d._master_id),
-      _chip(d._chip),
-      _unique_id(db_unique_id++),
-      _logger(nullptr)
-{
-  _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
-
-  _gds_lib_tbl = new dbTable<_dbGDSLib>(this, this, *d._gds_lib_tbl);
-
-  _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
-
-  _lib_tbl = new dbTable<_dbLib>(this, this, *d._lib_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(this, this, *d._prop_tbl);
-
-  _name_cache = new _dbNameCache(this, this, *d._name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }
@@ -696,14 +641,6 @@ void dbDatabase::destroy(dbDatabase* db_)
   db_tbl->destroy(db);
 }
 
-dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
-{
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
-  _dbDatabase* db = (_dbDatabase*) db_;
-  _dbDatabase* d = db_tbl->duplicate(db);
-  return (dbDatabase*) d;
-}
-
 dbDatabase* dbDatabase::getDatabase(uint dbid)
 {
   std::lock_guard<std::mutex> lock(*db_tbl_mutex);
@@ -730,17 +667,45 @@ utl::Logger* _dbObject::getLogger() const
   return getDatabase()->getLogger();
 }
 
-bool dbDatabase::diff(dbDatabase* db0_,
-                      dbDatabase* db1_,
-                      FILE* file,
-                      int indent)
+void _dbDatabase::collectMemInfo(MemInfo& info)
 {
-  _dbDatabase* db0 = (_dbDatabase*) db0_;
-  _dbDatabase* db1 = (_dbDatabase*) db1_;
-  dbDiff diff(file);
-  diff.setIndentPerLevel(indent);
-  db0->differences(diff, nullptr, *db1);
-  return diff.hasDifferences();
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  _tech_tbl->collectMemInfo(info.children_["tech"]);
+  _lib_tbl->collectMemInfo(info.children_["lib"]);
+  _chip_tbl->collectMemInfo(info.children_["chip"]);
+  _gds_lib_tbl->collectMemInfo(info.children_["gds_lib"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
+}
+
+void dbDatabase::report()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  MemInfo root;
+  db->collectMemInfo(root);
+  utl::Logger* logger = db->getLogger();
+  std::function<int64_t(MemInfo&, const std::string&, int)> print =
+      [&](MemInfo& info, const std::string& name, int depth) {
+        double avg_size = 0;
+        int64_t total_size = info.size;
+        if (info.cnt > 0) {
+          avg_size = info.size / static_cast<double>(info.cnt);
+        }
+
+        logger->report("{:40s} cnt={:10d} size={:12d} (avg elem={:12.1f})",
+                       name.c_str(),
+                       info.cnt,
+                       info.size,
+                       avg_size);
+        for (auto [name, child] : info.children_) {
+          total_size += print(child, std::string(depth, ' ') + name, depth + 1);
+        }
+        return total_size;
+      };
+  auto total_size = print(root, "dbDatabase", 1);
+  logger->report("Total size = {}", total_size);
 }
 
 }  // namespace odb

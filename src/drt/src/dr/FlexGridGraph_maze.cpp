@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "dr/FlexDR.h"
-#include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 
 namespace drt {
