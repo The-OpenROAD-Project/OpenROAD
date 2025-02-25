@@ -3277,7 +3277,7 @@ std::vector<PatternParameters> Snapper::computeSameDirectionPatternsData(
     }
 
     for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
-      odb::dbTechLayer* layer = (*mpin->getGeometry().begin())->getTechLayer();
+      odb::dbTechLayer* layer = getPinLayer(mpin);
 
       if (layer->getDirection() != target_direction
           || visited.find(layer) != visited.end()) {
