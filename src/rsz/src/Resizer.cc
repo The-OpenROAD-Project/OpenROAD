@@ -1892,18 +1892,20 @@ void Resizer::setDontUse(LibertyCell* cell, bool dont_use)
     dont_use_.erase(cell);
   }
 
-  // Reset buffer set to ensure it honors dont_use_
+  // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
   buffer_lowest_drive_ = nullptr;
+  swappable_cells_cache_.clear();
 }
 
 void Resizer::resetDontUse()
 {
   dont_use_.clear();
 
-  // Reset buffer set to ensure it honors dont_use_
+  // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
   buffer_lowest_drive_ = nullptr;
+  swappable_cells_cache_.clear();
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();
