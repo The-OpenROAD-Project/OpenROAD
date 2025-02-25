@@ -99,6 +99,7 @@ class SimulatedAnnealingCore
   float getNormCost() const;
   float getWidth() const;
   float getHeight() const;
+  float getAreaPenalty() const;
   float getOutlinePenalty() const;
   float getNormOutlinePenalty() const;
   float getWirelength() const;
@@ -154,6 +155,12 @@ class SimulatedAnnealingCore
 
   // utilities
   static float calAverage(std::vector<float>& value_list);
+
+  // For debugging
+  void reportCoreWeights() const;
+  void reportTotalCost() const;
+  void reportLocations() const;
+  void report(const PenaltyData& penalty) const;
 
   /////////////////////////////////////////////
   // private member variables

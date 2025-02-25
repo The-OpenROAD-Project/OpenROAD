@@ -307,10 +307,6 @@ void HierRTLMP::runHierarchicalMacroPlacement()
   }
 
   adjustMacroBlockageWeight();
-  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
-    reportSAWeights();
-  }
-
   placeChildren(tree_->root.get());
 }
 
@@ -1094,19 +1090,6 @@ void HierRTLMP::adjustMacroBlockageWeight()
   }
 }
 
-void HierRTLMP::reportSAWeights()
-{
-  logger_->report("\nSimmulated Annealing Weights:\n");
-  logger_->report("Area = {}", placement_core_weights_.area);
-  logger_->report("Outline = {}", placement_core_weights_.outline);
-  logger_->report("WL = {}", placement_core_weights_.wirelength);
-  logger_->report("Guidance = {}", placement_core_weights_.guidance);
-  logger_->report("Fence = {}", placement_core_weights_.fence);
-  logger_->report("Boundary = {}", boundary_weight_);
-  logger_->report("Notch = {}", notch_weight_);
-  logger_->report("Macro Blockage = {}\n", macro_blockage_weight_);
-}
-
 void HierRTLMP::placeChildren(Cluster* parent)
 {
   if (parent->getClusterType() == HardMacroCluster) {
@@ -1117,6 +1100,13 @@ void HierRTLMP::placeChildren(Cluster* parent)
   if (parent->isLeaf()) {  // Cover IO Clusters && Leaf Std Cells
     return;
   }
+
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Placing children of cluster {}",
+             parent->getName());
 
   if (graphics_) {
     graphics_->setCurrentCluster(parent);
@@ -1138,22 +1128,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   // The simulated annealing outline is determined by the parent's shape
-  const Rect outline(parent->getX(),
-                     parent->getY(),
-                     parent->getX() + parent->getWidth(),
-                     parent->getY() + parent->getHeight());
-
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Working on children of cluster: {}, Outline "
-             "{}, {}  {}, {}",
-             parent->getName(),
-             outline.xMin(),
-             outline.yMin(),
-             outline.getWidth(),
-             outline.getHeight());
+  const Rect outline = parent->getBBox();
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -1243,19 +1218,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
 
-  // update the connnection
   clustering_engine_->updateConnections();
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished calculating connection");
   clustering_engine_->updateDataFlow();
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished updating dataflow");
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -1277,7 +1241,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
       debugPrint(logger_,
                  MPL,
                  "hierarchical_macro_placement",
-                 2,
+                 3,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
                  tree_->maps.id_to_cluster[cluster_id]->getName(),
@@ -1292,11 +1256,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
       }
     }
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished creating bundled connections");
+
   // merge nets to reduce runtime
   mergeNets(nets);
 
@@ -1364,23 +1324,12 @@ void HierRTLMP::placeChildren(Cluster* parent)
   int begin_check = 0;
   int end_check = std::min(check_interval, remaining_runs);
   float best_cost = std::numeric_limits<float>::max();
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Start Simulated Annealing Core");
+
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "Start Simulated Annealing (run_id = {})",
-                 run_id);
-
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
 
       const float target_util = target_util_list[run_id];
@@ -1489,11 +1438,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
       break;
     }
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished Simulated Annealing Core");
+
   if (best_sa == nullptr) {
     debugPrint(logger_,
                MPL,
@@ -1531,13 +1476,12 @@ void HierRTLMP::placeChildren(Cluster* parent)
            << std::endl;
     }
     file.close();
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "Finished Simulated Annealing for cluster {}",
-               parent->getName());
-    best_sa->printResults();
+
+    if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+      logger_->report("Cluster Placement Summary");
+      printPlacementResult(parent, outline, best_sa);
+    }
+
     // write the cost function. This can be used to tune the temperature
     // schedule and cost weight
     best_sa->writeCostFile(file_name + ".cost.txt");
@@ -1580,6 +1524,13 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
     }
   }
 
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Conventional cluster placement failed. Attempting with minimum "
+             "target utilization.");
+
   if (graphics_) {
     graphics_->setCurrentCluster(parent);
   }
@@ -1601,18 +1552,6 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
                      parent->getY(),
                      parent->getX() + parent->getWidth(),
                      parent->getY() + parent->getHeight());
-
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Working on children of cluster: {}, Outline "
-             "{}, {}  {}, {}",
-             parent->getName(),
-             outline.xMin(),
-             outline.yMin(),
-             outline.getWidth(),
-             outline.getHeight());
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -1702,19 +1641,8 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
 
   createFixedTerminals(parent, soft_macro_id_map, macros);
 
-  // update the connnection
   clustering_engine_->updateConnections();
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished calculating connection");
   clustering_engine_->updateDataFlow();
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished updating dataflow");
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -1736,7 +1664,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
       debugPrint(logger_,
                  MPL,
                  "hierarchical_macro_placement",
-                 2,
+                 3,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
                  tree_->maps.id_to_cluster[cluster_id]->getName(),
@@ -1751,11 +1679,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
       }
     }
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished creating bundled connections");
+
   // merge nets to reduce runtime
   mergeNets(nets);
 
@@ -1811,24 +1735,14 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
   const int check_interval = 10;
   int begin_check = 0;
   int end_check = std::min(check_interval, remaining_runs);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Start Simulated Annealing Core");
+
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
-      // determine the shape for each macro
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "Start Simulated Annealing (run_id = {})",
-                 run_id);
+
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
       debugPrint(logger_,
@@ -1933,11 +1847,7 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
       break;
     }
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished Simulated Annealing Core");
+
   if (best_sa == nullptr) {
     debugPrint(logger_,
                MPL,
@@ -1976,14 +1886,11 @@ void HierRTLMP::placeChildrenUsingMinimumTargetUtil(Cluster* parent)
   }
   file.close();
 
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finish Simulated Annealing for cluster {}",
-             parent->getName());
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+    logger_->report("Cluster Placement Summary (Minimum Target Utilization)");
+    printPlacementResult(parent, outline, best_sa);
+  }
 
-  best_sa->printResults();
   // write the cost function. This can be used to tune the temperature schedule
   // and cost weight
   best_sa->writeCostFile(file_name + ".cost.txt");
@@ -2286,7 +2193,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
              MPL,
              "hierarchical_macro_placement",
              1,
-             "Place macros in cluster: {}",
+             "Placing macros of macro cluster {}",
              cluster->getName());
 
   if (graphics_) {
@@ -2452,7 +2359,11 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   } else {
     std::vector<HardMacro> best_macros;
     best_sa->getMacros(best_macros);
-    best_sa->printResults();
+
+    if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+      logger_->report("Macro Placement Summary");
+      printPlacementResult(cluster, outline, best_sa);
+    }
 
     for (int i = 0; i < hard_macros.size(); i++) {
       *(hard_macros[i]) = best_macros[i];
@@ -3144,6 +3055,20 @@ Rect HierRTLMP::dbuToMicrons(const odb::Rect& dbu_rect)
               block_->dbuToMicrons(dbu_rect.yMin()),
               block_->dbuToMicrons(dbu_rect.xMax()),
               block_->dbuToMicrons(dbu_rect.yMax()));
+}
+
+template <typename SACore>
+void HierRTLMP::printPlacementResult(Cluster* parent,
+                                     const Rect& outline,
+                                     SACore* sa_core)
+{
+  logger_->report("Id: {}", parent->getId());
+  logger_->report("Outline: ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                  outline.xMin(),
+                  outline.yMin(),
+                  outline.xMax(),
+                  outline.yMax());
+  sa_core->printResults();
 }
 
 //////// Pusher ////////

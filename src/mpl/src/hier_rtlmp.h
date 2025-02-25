@@ -195,7 +195,6 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
-  void reportSAWeights();
   void placeChildren(Cluster* parent);
   void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
 
@@ -251,6 +250,12 @@ class HierRTLMP
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
+
+  // For debugging
+  template <typename SACore>
+  void printPlacementResult(Cluster* parent,
+                            const Rect& outline,
+                            SACore* sa_core);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
