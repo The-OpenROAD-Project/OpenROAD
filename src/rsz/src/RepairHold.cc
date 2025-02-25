@@ -783,7 +783,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
         resize_count_,
         inserted_buffer_count_,
         cloned_gate_count_,
-        area_growth / initial_design_area_ * 1e3,
+        area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 3),
         worst_vertex->name(network_));

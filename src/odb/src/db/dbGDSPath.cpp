@@ -73,14 +73,6 @@ _dbGDSPath::_dbGDSPath(_dbDatabase* db)
   _path_type = 0;
 }
 
-_dbGDSPath::_dbGDSPath(_dbDatabase* db, const _dbGDSPath& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-  _width = r._width;
-  _path_type = r._path_type;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSPath& obj)
 {
   stream >> obj._layer;

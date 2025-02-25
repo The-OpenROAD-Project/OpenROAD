@@ -64,11 +64,6 @@ _dbScanList::_dbScanList(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbScanList::getObjectTable, dbScanInstObj);
 }
 
-_dbScanList::_dbScanList(_dbDatabase* db, const _dbScanList& r)
-{
-  scan_insts_ = new dbTable<_dbScanInst>(db, this, *r.scan_insts_);
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
   stream >> *obj.scan_insts_;

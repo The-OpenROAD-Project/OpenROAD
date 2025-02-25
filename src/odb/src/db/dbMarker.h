@@ -80,10 +80,7 @@ class _dbMarker : public _dbObject
   };
   // User Code End Enums
 
-  _dbMarker(_dbDatabase*, const _dbMarker& r);
   _dbMarker(_dbDatabase*);
-
-  ~_dbMarker() = default;
 
   bool operator==(const _dbMarker& rhs) const;
   bool operator!=(const _dbMarker& rhs) const { return !operator==(rhs); }

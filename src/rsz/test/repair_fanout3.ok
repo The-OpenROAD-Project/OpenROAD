@@ -15,7 +15,7 @@ clk1                                     10     13     -3 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        27
-    final |    +27.1% |       0 |       2 |             2 |         0
+    final |     +2.7% |       0 |       2 |             2 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 2 fanout violations.
 [INFO RSZ-0038] Inserted 2 buffers in 2 nets.

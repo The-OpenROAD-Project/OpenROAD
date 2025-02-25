@@ -95,17 +95,6 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
   // User Code End Constructor
 }
 
-_dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _group = r._group;
-  _top = r._top;
-  _parent = r._parent;
-  _area = r._area;
-  _voltage = r._voltage;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
 {
   stream >> obj._name;

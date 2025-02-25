@@ -21,7 +21,7 @@ r0/Q                                    0.17    0.00    0.17 (MET)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       252
-    final |    +44.8% |       0 |      14 |             1 |         0
+    final |     +4.5% |       0 |      14 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0037] Found 1 long wires.

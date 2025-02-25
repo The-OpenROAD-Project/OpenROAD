@@ -68,12 +68,6 @@ _dbScanPartition::_dbScanPartition(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbScanPartition::getObjectTable, dbScanListObj);
 }
 
-_dbScanPartition::_dbScanPartition(_dbDatabase* db, const _dbScanPartition& r)
-{
-  name_ = r.name_;
-  scan_lists_ = new dbTable<_dbScanList>(db, this, *r.scan_lists_);
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj)
 {
   stream >> obj.name_;

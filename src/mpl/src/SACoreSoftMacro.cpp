@@ -137,12 +137,6 @@ float SACoreSoftMacro::getNotchPenalty() const
   return notch_penalty_;
 }
 
-float SACoreSoftMacro::getAreaPenalty() const
-{
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  return (width_ * height_) / outline_area;
-}
-
 float SACoreSoftMacro::getNormNotchPenalty() const
 {
   return norm_notch_penalty_;
@@ -192,7 +186,8 @@ void SACoreSoftMacro::calPenalty()
   calMacroBlockagePenalty();
   calNotchPenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty({core_weights_.area, getAreaPenalty()});
+    graphics_->setAreaPenalty(
+        {"Area", core_weights_.area, getAreaPenalty(), norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -428,8 +423,10 @@ void SACoreSoftMacro::calBoundaryPenalty()
   // normalization
   boundary_penalty_ = boundary_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setBoundaryPenalty(
-        {boundary_weight_, boundary_penalty_ / norm_boundary_penalty_});
+    graphics_->setBoundaryPenalty({"Boundary",
+                                   boundary_weight_,
+                                   boundary_penalty_,
+                                   norm_boundary_penalty_});
   }
 }
 
@@ -489,9 +486,10 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   // normalization
   macro_blockage_penalty_ = macro_blockage_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setMacroBlockagePenalty(
-        {macro_blockage_weight_,
-         macro_blockage_penalty_ / norm_macro_blockage_penalty_});
+    graphics_->setMacroBlockagePenalty({"Macro Blockage",
+                                        macro_blockage_weight_,
+                                        macro_blockage_penalty_,
+                                        norm_macro_blockage_penalty_});
   }
 }
 
@@ -734,7 +732,7 @@ void SACoreSoftMacro::calNotchPenalty()
       = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
   if (graphics_) {
     graphics_->setNotchPenalty(
-        {notch_weight_, notch_penalty_ / norm_notch_penalty_});
+        {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
   }
 }
 
@@ -822,97 +820,16 @@ void SACoreSoftMacro::shrink()
 
 void SACoreSoftMacro::printResults() const
 {
-  debugPrint(
-      logger_, MPL, "hierarchical_macro_placement", 2, "SACoreSoftMacro");
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "number of macros : {}",
-             macros_.size());
-  for (const auto& macro : macros_) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               2,
-               "lx = {}, ly = {}, width = {}, height = {}, name = {}",
-               macro.getX(),
-               macro.getY(),
-               macro.getWidth(),
-               macro.getHeight(),
-               macro.getName());
+  reportCoreWeights();
+  report({"Macro Blockage",
+          macro_blockage_weight_,
+          macro_blockage_penalty_,
+          norm_macro_blockage_penalty_});
+  report({"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
+  reportTotalCost();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "width = {}, outline_width = {}",
-             width_,
-             outline_.getWidth());
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "height = {}, outline_height = {}",
-             height_,
-             outline_.getHeight());
-  debugPrint(
-      logger_,
-      MPL,
-      "hierarchical_macro_placement",
-      2,
-      "outline_weight = {}, outline_penalty  = {}, norm_outline_penalty = {}",
-      core_weights_.outline,
-      outline_penalty_,
-      norm_outline_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "wirelength_weight = {}, wirelength  = {}, norm_wirelength = {}",
-             core_weights_.wirelength,
-             wirelength_,
-             norm_wirelength_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "guidance_weight = {}, guidance_penalty  = {}, "
-             "norm_guidance_penalty = {}",
-             core_weights_.guidance,
-             guidance_penalty_,
-             norm_guidance_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "fence_weight = {}, fence_penalty  = {}, norm_fence_penalty = {}",
-             core_weights_.fence,
-             fence_penalty_,
-             norm_fence_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "macro_blockage_weight = {}, macro_blockage_penalty  = {}, "
-             "norm_macro_blockage_penalty = {}",
-             macro_blockage_weight_,
-             macro_blockage_penalty_,
-             norm_macro_blockage_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "notch_weight = {}, notch_penalty  = {}, norm_notch_penalty = {}",
-             notch_weight_,
-             notch_penalty_,
-             norm_notch_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "final cost = {}",
-             getNormCost());
 }
 
 // fill the dead space by adjust the size of MixedCluster

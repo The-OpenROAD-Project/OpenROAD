@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include "frBaseTypes.h"
 
 namespace drt {
@@ -82,6 +84,12 @@ class frSegStyle
   frEndStyle getBeginStyle() const { return beginStyle_; }
   frUInt4 getEndExt() const { return endExt_; }
   frEndStyle getEndStyle() const { return endStyle_; }
+
+  void swap()
+  {
+    std::swap(beginExt_, endExt_);
+    std::swap(beginStyle_, endStyle_);
+  }
 
  private:
   frUInt4 beginExt_{0};
