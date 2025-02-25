@@ -734,6 +734,20 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
   return getTable()->getObjectTable(type);
 }
 
+dbOStream& operator<<(dbOStream& stream, const _dbBTermGroup& obj)
+{
+  stream << obj.bterms;
+  stream << obj.order;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj)
+{
+  stream >> obj.bterms;
+  stream >> obj.order;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 {
   std::list<dbBlockCallBackObj*>::const_iterator cbitr;
@@ -851,6 +865,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._max_routing_layer;
     stream << block._min_layer_for_clock;
     stream << block._max_layer_for_clock;
+  }
+  if (db->isSchema(db_schema_block_pin_groups)) {
+    stream << block._bterm_groups;
   }
 
   //---------------------------------------------------------- stream out
@@ -1014,6 +1031,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> block._max_routing_layer;
     stream >> block._min_layer_for_clock;
     stream >> block._max_layer_for_clock;
+  }
+  if (db->isSchema(db_schema_block_pin_groups)) {
+    stream >> block._bterm_groups;
   }
 
   //---------------------------------------------------------- stream in
