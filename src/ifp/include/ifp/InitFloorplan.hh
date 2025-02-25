@@ -94,6 +94,22 @@ class InitFloorplan
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
 
+  void makeRowsWithSpacing(int core_space_bottom,
+                           int core_space_top,
+                           int core_space_left,
+                           int core_space_right,
+                           odb::dbSite* base_site,
+                           const std::vector<odb::dbSite*>& additional_sites
+                           = {},
+                           RowParity row_parity = RowParity::NONE,
+                           const std::set<odb::dbSite*>& flipped_sites = {});
+
+  void makeRows(const odb::Rect& core,
+                odb::dbSite* base_site,
+                const std::vector<odb::dbSite*>& additional_sites = {},
+                RowParity row_parity = RowParity::NONE,
+                const std::set<odb::dbSite*>& flipped_sites = {});
+
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
                   int x_offset,

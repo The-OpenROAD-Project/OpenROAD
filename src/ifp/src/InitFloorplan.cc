@@ -215,6 +215,52 @@ void InitFloorplan::initFloorplan(
     return;  // skip row building
   }
 
+  makeRows(core, base_site, additional_sites, row_parity, flipped_sites);
+}
+
+void InitFloorplan::makeRowsWithSpacing(
+    int core_space_bottom,
+    int core_space_top,
+    int core_space_left,
+    int core_space_right,
+    odb::dbSite* base_site,
+    const std::vector<odb::dbSite*>& additional_sites,
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
+{
+  odb::Rect block_die_area = block_->getDieArea();
+  if (block_die_area.area() == 0) {
+    logger_->error(IFP, 56, "Floorplan die area is 0. Cannot build rows.");
+  }
+
+  int lower_left_x = block_die_area.ll().x();
+  int lower_left_y = block_die_area.ll().y();
+  int upper_right_x = block_die_area.ur().x();
+  int upper_right_y = block_die_area.ur().y();
+
+  int core_lx = lower_left_x + core_space_left;
+  int core_ly = lower_left_y + core_space_bottom;
+  int core_ux = upper_right_x - core_space_right;
+  int core_uy = upper_right_y - core_space_top;
+
+  makeRows({core_lx, core_ly, core_ux, core_uy},
+           base_site,
+           additional_sites,
+           row_parity,
+           flipped_sites);
+}
+
+void InitFloorplan::makeRows(const odb::Rect& core,
+                             odb::dbSite* base_site,
+                             const std::vector<odb::dbSite*>& additional_sites,
+                             RowParity row_parity,
+                             const std::set<odb::dbSite*>& flipped_sites)
+{
+  odb::Rect block_die_area = block_->getDieArea();
+  if (block_die_area.area() == 0) {
+    logger_->error(IFP, 63, "Floorplan die area is 0. Cannot build rows.");
+  }
+
   // The same site can appear in more than one LEF file and therefore
   // in more than one dbLib.  We merge them by name to avoid duplicate
   // rows.

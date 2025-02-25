@@ -174,6 +174,114 @@ proc initialize_floorplan { args } {
   }
 }
 
+sta::define_cmd_args "make_rows" {
+					       [-core_space space | {bottom top left right}]\
+					       [-core_area {lx ly ux uy}]\
+					       [-additional_sites site_names]\
+					       [-site site_name]\
+					       [-row_parity NONE|ODD|EVEN]\
+					       [-flip_sites site_names]}
+
+proc make_rows { args } {
+  sta::parse_key_args "make_rows" args \
+    keys {-utilization -aspect_ratio -core_space \
+    -die_area -core_area -site -additional_sites -row_parity -flip_sites} \
+    flags {}
+
+  sta::check_argc_eq0 "make_rows" $args
+  set site ""
+  if { [info exists keys(-site)] } {
+    set site [ifp::find_site $keys(-site)]
+  } else {
+    utl::error IFP 35 "use -site to add placement rows."
+  }
+
+  set additional_sites {}
+  if { [info exists keys(-additional_sites)] } {
+    foreach sitename $keys(-additional_sites) {
+      lappend additional_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set flipped_sites {}
+  if { [info exists keys(-flip_sites)] } {
+    foreach sitename $keys(-flip_sites) {
+      lappend flipped_sites [ifp::find_site $sitename]
+    }
+  }
+
+  set row_parity "NONE"
+  if { [info exists keys(-row_parity)] } {
+    set row_parity $keys(-row_parity)
+    if { $row_parity != "NONE" && $row_parity != "ODD" && $row_parity != "EVEN" } {
+      utl::error IFP 57 "-row_parity must be NONE, ODD or EVEN"
+    }
+  }
+
+  if { [info exists keys(-core_area)] } {
+    if { [info exists keys(-core_space)] } {
+      utl::error IFP 60 "-core_space cannot be used with -core_area."
+    }
+
+    set core_area $keys(-core_area)
+    if { [llength $core_area] != 4 } {
+      utl::error IFP 59 "-core_area is a list of 4 coordinates."
+    }
+    lassign $core_area core_lx core_ly core_ux core_uy
+    sta::check_positive_float "-core_area" $core_lx
+    sta::check_positive_float "-core_area" $core_ly
+    sta::check_positive_float "-core_area" $core_ux
+    sta::check_positive_float "-core_area" $core_uy
+
+    ord::ensure_linked
+     
+    # convert die/core coordinates to dbu.
+    ifp::make_rows \
+      [ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
+      [ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
+      $site \
+      $additional_sites \
+      $row_parity \
+      $flipped_sites
+    return
+  }
+
+  if { [info exists keys(-core_space)] } {
+    set core_sp $keys(-core_space)
+    if { [llength $core_sp] == 1 } {
+      sta::check_positive_float "-core_space" $core_sp
+      set core_sp_bottom $core_sp
+      set core_sp_top $core_sp
+      set core_sp_left $core_sp
+      set core_sp_right $core_sp
+    } elseif { [llength $core_sp] == 4 } {
+      lassign $core_sp core_sp_bottom core_sp_top core_sp_left core_sp_right
+      sta::check_positive_float "-core_space" $core_sp_bottom
+      sta::check_positive_float "-core_space" $core_sp_top
+      sta::check_positive_float "-core_space" $core_sp_left
+      sta::check_positive_float "-core_space" $core_sp_right
+    } else {
+      utl::error IFP 58 "-core_space is either a list of 4 margins or one value for all margins."
+    }
+
+    ord::ensure_linked
+        
+    # convert spacing coordinates to dbu.
+    ifp::make_rows_with_spacing \
+      [ord::microns_to_dbu $core_sp_bottom] \
+      [ord::microns_to_dbu $core_sp_top] \
+      [ord::microns_to_dbu $core_sp_left] \
+      [ord::microns_to_dbu $core_sp_right] \
+      $site \
+      $additional_sites \
+      $row_parity \
+      $flipped_sites
+    return
+  }
+
+  utl::error IFP 62 "no -core_area or -core_space specified."
+}
+
 sta::define_cmd_args "make_tracks" {[layer]\
                                       [-x_pitch x_pitch]\
                                       [-y_pitch y_pitch]\

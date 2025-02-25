@@ -40,6 +40,7 @@
 #include "ord/OpenRoad.hh"
 #include "ord/Design.h"
 #include "utl/Logger.h"
+#include "odb/geom.h"
 
 // Defined by OpenRoad.i
 namespace ord {
@@ -144,6 +145,48 @@ void
 make_layer_tracks(ord::Design* design)
 {
   design->getFloorplan().makeTracks();
+}
+
+void
+make_rows_with_spacing(ord::Design* design, 
+          int spacing_lx,
+          int spacing_ly,
+          int spacing_ux,
+          int spacing_uy,
+          odb::dbSite* site,
+          const std::vector<odb::dbSite*>& additional_sites,
+          ifp::RowParity row_parity,
+          const std::vector<odb::dbSite*>& flipped_sites)
+{
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makeRowsWithSpacing(spacing_lx, spacing_ly, 
+                                             spacing_ux, spacing_uy,
+                                             site,
+                                             additional_sites,
+                                             row_parity,
+                                             flipped_sites_set);
+}
+
+void
+make_rows(ord::Design* design, 
+          int core_lx,
+          int core_ly,
+          int core_ux,
+          int core_uy,
+          odb::dbSite* site,
+          const std::vector<odb::dbSite*>& additional_sites,
+          ifp::RowParity row_parity,
+          const std::vector<odb::dbSite*>& flipped_sites)
+{
+  
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makeRows({core_lx, core_ly, core_ux, core_uy},
+                                  site,
+                                  additional_sites,
+                                  row_parity,
+                                  flipped_sites_set);
 }
 
 void
