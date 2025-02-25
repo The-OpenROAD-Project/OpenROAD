@@ -35,8 +35,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |  +8111.1% |       2 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0037] Found 1 long wires.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 Driver    length delay
 wire1/Z manhtn 757.2 steiner 757.2 0.08
 u2/Z manhtn 649.6 steiner 649.6 0.06

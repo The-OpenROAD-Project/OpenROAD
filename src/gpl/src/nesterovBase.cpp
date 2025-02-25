@@ -1007,7 +1007,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
-  deltaArea_ = 0;
+  delta_area_ = 0;
+  new_gcells_count_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
@@ -2731,7 +2732,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t areaChange = newCellArea - prevCellArea;
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -2872,7 +2873,8 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 
   int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
                        * static_cast<int64_t>(gcell_ptr->dy());
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
+  new_gcells_count_++;
   return gCellStor_.size() - 1;
 }
 

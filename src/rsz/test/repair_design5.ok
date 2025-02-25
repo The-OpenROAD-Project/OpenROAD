@@ -11,8 +11,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |    +24.5% |       3 |       4 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 [INFO RSZ-0039] Resized 3 instances.
+[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 Instance drvr
  Cell: DFF_X1
  Library: Nangate45
