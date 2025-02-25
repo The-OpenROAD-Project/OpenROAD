@@ -827,7 +827,9 @@ void SACoreSoftMacro::printResults() const
           norm_macro_blockage_penalty_});
   report({"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
   reportTotalCost();
-  reportLocations();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
+  }
 }
 
 // fill the dead space by adjust the size of MixedCluster

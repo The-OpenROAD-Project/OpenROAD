@@ -691,52 +691,50 @@ void SimulatedAnnealingCore<T>::reportTotalCost() const
 template <class T>
 void SimulatedAnnealingCore<T>::reportLocations() const
 {
-  if (logger_->debugCheck(utl::MPL, "hierarchical_macro_placement", 2)) {
-    if constexpr (std::is_same_v<T, HardMacro>) {
-      logger_->report("     Id     |                                Location");
-    } else {
-      logger_->report(" Cluster Id |                                Location");
-    }
-
-    logger_->report("-----------------------------------------------------");
-
-    // First the moveable macros. I.e., those from the sequence pair.
-    for (const int macro_id : pos_seq_) {
-      int display_id;
-      if constexpr (std::is_same_v<T, SoftMacro>) {
-        const SoftMacro& soft_macro = macros_[macro_id];
-        Cluster* cluster = soft_macro.getCluster();
-        display_id = cluster->getId();
-      } else {
-        display_id = macro_id;
-      }
-
-      const T& macro = macros_[macro_id];
-      logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
-                      display_id,
-                      macro.getX(),
-                      macro.getY(),
-                      macro.getWidth(),
-                      macro.getHeight());
-    }
-
-    // Then, the fixed terminals.
-    const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
-    for (int i = 0; i < macros_.size(); ++i) {
-      if (i <= number_of_moveable_macros) {
-        continue;
-      }
-
-      const T& macro = macros_[i];
-      logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
-                      "fixed",
-                      macro.getX(),
-                      macro.getY(),
-                      macro.getWidth(),
-                      macro.getHeight());
-    }
-    logger_->report("");
+  if constexpr (std::is_same_v<T, HardMacro>) {
+    logger_->report("     Id     |                                Location");
+  } else {
+    logger_->report(" Cluster Id |                                Location");
   }
+
+  logger_->report("-----------------------------------------------------");
+
+  // First the moveable macros. I.e., those from the sequence pair.
+  for (const int macro_id : pos_seq_) {
+    int display_id;
+    if constexpr (std::is_same_v<T, SoftMacro>) {
+      const SoftMacro& soft_macro = macros_[macro_id];
+      Cluster* cluster = soft_macro.getCluster();
+      display_id = cluster->getId();
+    } else {
+      display_id = macro_id;
+    }
+
+    const T& macro = macros_[macro_id];
+    logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                    display_id,
+                    macro.getX(),
+                    macro.getY(),
+                    macro.getWidth(),
+                    macro.getHeight());
+  }
+
+  // Then, the fixed terminals.
+  const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
+  for (int i = 0; i < macros_.size(); ++i) {
+    if (i <= number_of_moveable_macros) {
+      continue;
+    }
+
+    const T& macro = macros_[i];
+    logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                    "fixed",
+                    macro.getX(),
+                    macro.getY(),
+                    macro.getWidth(),
+                    macro.getHeight());
+  }
+  logger_->report("");
 }
 
 template <class T>

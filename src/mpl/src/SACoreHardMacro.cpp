@@ -296,7 +296,9 @@ void SACoreHardMacro::printResults() const
 {
   reportCoreWeights();
   reportTotalCost();
-  reportLocations();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
+  }
 }
 
 }  // namespace mpl
