@@ -6,6 +6,7 @@ or_integration_tests(
     ispd18_sample_incr
     ndr_vias1
     ndr_vias2
+    ndr_vias3
     obstruction
     single_step
     ta_ap_aligned
