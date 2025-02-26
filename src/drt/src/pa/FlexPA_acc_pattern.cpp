@@ -116,22 +116,7 @@ void FlexPA::prepPattern()
       if (!isStdCell(inst)) {
         continue;
       }
-
-      int num_valid_pattern = prepPatternInst(inst, curr_unique_inst_idx);
-
-      if (num_valid_pattern == 0) {
-        // In FAx1_ASAP7_75t_R (in asap7) the pins are mostly horizontal
-        // and sorting in X works poorly.  So we try again sorting in Y.
-        num_valid_pattern = prepPatternInst(inst, curr_unique_inst_idx, false);
-        if (num_valid_pattern == 0) {
-          logger_->warn(
-              DRT,
-              87,
-              "No valid pattern for unique instance {}, master is {}.",
-              inst->getName(),
-              inst->getMaster()->getName());
-        }
-      }
+      prepPatternInst(inst, curr_unique_inst_idx);
 #pragma omp critical
       {
         cnt++;
@@ -207,10 +192,28 @@ void FlexPA::prepPattern()
   prepPatternInstRows(std::move(inst_rows));
 }
 
+void FlexPA::prepPatternInst(frInst* inst, const int curr_unique_inst_idx)
+{
+  int num_valid_pattern = prepPatternInstHelper(inst, curr_unique_inst_idx);
+
+  if (num_valid_pattern > 0) {
+    return;
+  }
+  num_valid_pattern = prepPatternInstHelper(inst, curr_unique_inst_idx, false);
+
+  if (num_valid_pattern == 0) {
+    logger_->warn(DRT,
+                  87,
+                  "No valid pattern for unique instance {}, master is {}.",
+                  inst->getName(),
+                  inst->getMaster()->getName());
+  }
+}
+
 // the input inst must be unique instance
-int FlexPA::prepPatternInst(frInst* inst,
-                            const int curr_unique_inst_idx,
-                            const bool use_x)
+int FlexPA::prepPatternInstHelper(frInst* inst,
+                                  const int curr_unique_inst_idx,
+                                  const bool use_x)
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
