@@ -190,6 +190,16 @@ proc create_ndr { args } {
       }
       $ndr addUseVia $via
     }
+    # inintialize layers
+    foreach layer [$tech getLayers] {
+      if { [$layer getType] != "ROUTING" } {
+        continue
+      }
+      set rule [$ndr getLayerRule $layer]
+      if { $rule == "NULL" } {
+        set rule [odb::dbTechLayerRule_create $ndr $layer]
+      }
+    }
   }
 
 }
