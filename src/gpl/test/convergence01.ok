@@ -54,7 +54,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
-    final |    -17.4% |      14 |       0 |             0 |         0
+    final |     -1.7% |      14 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 14 instances.
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09

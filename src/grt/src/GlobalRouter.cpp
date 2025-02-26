@@ -938,7 +938,11 @@ bool GlobalRouter::findPinAccessPointPositions(
   for (const odb::dbAccessPoint* ap : access_points) {
     odb::Point ap_position = ap->getPoint();
     if (!pin.isPort()) {
-      odb::dbTransform xform = pin.getITerm()->getInst()->getTransform();
+      odb::dbTransform xform;
+      int x, y;
+      pin.getITerm()->getInst()->getLocation(x, y);
+      xform.setOffset({x, y});
+      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
       xform.apply(ap_position);
     }
 

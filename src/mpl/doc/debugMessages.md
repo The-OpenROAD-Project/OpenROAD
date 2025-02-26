@@ -29,10 +29,9 @@ MPL2 debug messages are divided in:
 ### Hierarchical Macro Placement
 - Group Name: `hierarchical_macro_placement`
 - Levels:
-1. Overall steps of the stage.
-2. Include in logs:
-    * Clusters' connections;
-    * Simulated annealing results for both SoftMacro and HardMacro.
+1. Summary with the final costs of each penalty for cluster/macro placement.
+2. Include locations chosen for each child/macro.
+3. Include, before the summary, a list with the connections between clusters.
 
 ### Orientation Improvement
 - Group Name: `flipping`

@@ -87,7 +87,7 @@ void io::Parser::instAnalysis()
   std::vector<frCoord> offset;
   int cnt = 0;
   for (auto& inst : getBlock()->getInsts()) {
-    Point origin = inst->getLocation();
+    Point origin = inst->getOrigin();
     auto orient = inst->getOrient();
     auto [minLayerNum, maxLayerNum] = masterPinLayerRange[inst->getMaster()];
     offset.clear();

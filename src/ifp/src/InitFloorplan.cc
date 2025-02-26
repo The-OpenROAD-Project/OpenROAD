@@ -745,11 +745,18 @@ void InitFloorplan::makeTracks()
                              layer->getPitchY(),
                              layer->getFirstLastPitch());
       } else {
-        makeTracks(layer,
-                   layer->getOffsetX(),
-                   layer->getPitchX(),
-                   layer->getOffsetY(),
-                   layer->getPitchY());
+        const int x_pitch = layer->getPitchX();
+        const int y_pitch = layer->getPitchY();
+        if (x_pitch == 0 || y_pitch == 0) {
+          logger_->warn(
+              utl::IFP,
+              56,
+              "No pitch found layer {} so no tracks will be generated.",
+              layer->getName());
+          continue;
+        }
+        makeTracks(
+            layer, layer->getOffsetX(), x_pitch, layer->getOffsetY(), y_pitch);
       }
     }
   }

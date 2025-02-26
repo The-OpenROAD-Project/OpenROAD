@@ -509,7 +509,7 @@ void RecoverPower::printProgress(int iteration, bool force, bool end) const
     logger_->report(
         "{: >9s} | {: >+8.1f}% | {: >8d} | {: >8s} | {}",
         itr_field,
-        area_growth / initial_design_area_ * 1e3,
+        area_growth / initial_design_area_ * 1e2,
         resize_count_,
         delayAsString(wns, sta_, 3),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");

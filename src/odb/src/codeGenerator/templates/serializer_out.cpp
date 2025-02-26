@@ -1,6 +1,8 @@
+{% macro serializer_out(klass, parent=None, comment_tag = "") %}
+  {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
   dbOStream& operator<<(dbOStream& stream, const {{sname}}& obj)
   {
-    {% for field in sklass.fields %}
+    {% for field in klass.fields %}
       {% if field.bitFields %}
         {% if field.numBits == 32 %}
           uint32_t {{field.name}}bit_field;
@@ -26,4 +28,4 @@
     //User Code End <<{{ comment_tag }}
     return stream;
   }
-
+{%- endmacro %}
