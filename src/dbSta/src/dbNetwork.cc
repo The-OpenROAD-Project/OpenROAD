@@ -2201,10 +2201,85 @@ void dbNetwork::deleteInstance(Instance* inst)
 }
 
 /*
+Generic pin -> net connection with support for both hierarchical
+nets and regular flat nets.
+
+As a side effect this routine will disconnect any prior
+flat/hierarchical connections and then make the new connections
+
+It also checks the legallity of the pin/net combination.
+
+
+*/
+
+void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+{
+  // get the type of the pin
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  odb::dbModBTerm* modbterm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  // get the type of the net
+  dbNet* flat_net_db = nullptr;
+  dbModNet* hier_net_db = nullptr;
+
+  if (flat_net) {
+    staToDb(flat_net, flat_net_db, hier_net_db);
+    if (hier_net_db) {
+      logger_->error(ORD,
+                     2025,
+                     "Illegal net combination. hierarchical flat net supplied "
+                     "as flat net argument to api:connectPin");
+    }
+
+    if (flat_net_db) {
+      if (iterm) {
+        iterm->connect(flat_net_db);
+      } else if (bterm) {
+        bterm->connect(flat_net_db);
+      } else {
+        logger_->error(ORD,
+                       2026,
+                       "Illegal net/pin combination. flat nets can only hook "
+                       "to dbIterm, dbBTerm");
+      }
+    }
+  }
+
+  if (hier_net) {
+    staToDb(hier_net, flat_net_db, hier_net_db);
+    if (flat_net_db) {
+      logger_->error(ORD,
+                     2027,
+                     "Illegal net combination. flat net supplied as hier net "
+                     "argument to api:connectPin");
+    }
+
+    if (hier_net_db) {
+      if (iterm) {
+        iterm->connect(hier_net_db);
+      } else if (bterm) {
+        bterm->connect(hier_net_db);
+      } else if (moditerm) {
+        moditerm->connect(hier_net_db);
+      } else if (modbterm) {
+        modbterm->connect(hier_net_db);
+      } else {
+        logger_->error(ORD,
+                       2028,
+                       "Illegal net combination. hier net expected to be "
+                       "hooked to one of iterm, bterm, moditerm, modbterm");
+      }
+    }
+  }
+}
+
+/*
 Generic pin -> net connection with support for hierarchical
 nets
 */
-
 void dbNetwork::connectPin(Pin* pin, Net* net)
 {
   // get the type of the pin
@@ -2320,6 +2395,10 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
   return pin;
 }
 
+//
+// remove all connnections to a pin
+//(both hierarchical and flat).
+//
 void dbNetwork::disconnectPin(Pin* pin)
 {
   dbITerm* iterm = nullptr;
@@ -2331,6 +2410,10 @@ void dbNetwork::disconnectPin(Pin* pin)
     iterm->disconnect();
   } else if (bterm) {
     bterm->disconnect();
+  } else if (moditerm) {
+    moditerm->disconnect();
+  } else if (modbterm) {
+    modbterm->disconnect();
   }
 }
 
