@@ -135,6 +135,7 @@ bool UniqueInsts::isNDRInst(frInst& inst)
 void UniqueInsts::addUniqueInst(frInst* inst)
 {
   if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    unique_to_idx_[inst] = unique_.size();
     unique_.push_back(inst);
     inst_to_unique_[inst] = inst;
     inst_to_class_[inst] = nullptr;
