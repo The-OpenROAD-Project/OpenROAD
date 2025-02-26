@@ -897,6 +897,11 @@ class dbChip : public dbObject
 class dbBlock : public dbObject
 {
  public:
+  struct dbBTermGroup
+  {
+    std::vector<dbBTerm*> bterms;
+    bool order = false;
+  };
   ///
   /// Get block chip name.
   ///
@@ -964,6 +969,17 @@ class dbBlock : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbBTerm* findBTerm(const char* name);
+
+  ///
+  /// Get all the bterm groups of this block.
+  ///
+  std::vector<dbBTermGroup> getBTermGroups();
+
+  ///
+  /// Get all the block-terminals of this block.
+  /// The flag order places the pins ordered in ascending x/y position.
+  ///
+  void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
   ///
   /// Get all the instance-terminals of this block.
