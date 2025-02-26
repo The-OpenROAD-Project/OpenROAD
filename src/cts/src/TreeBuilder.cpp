@@ -40,6 +40,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "utl/Logger.h"
 

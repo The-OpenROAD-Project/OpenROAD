@@ -28,11 +28,14 @@
 
 #pragma once
 
+#include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include "FlexMazeTypes.h"
 #include "db/drObj/drPin.h"
@@ -44,8 +47,12 @@
 
 namespace drt {
 
+using frLayerCoordTrackPatternMap = boost::container::
+    flat_map<frLayerNum, boost::container::flat_map<frCoord, frTrackPattern*>>;
+using frLayerDirMap = boost::container::flat_map<frLayerNum, dbTechLayerDir>;
+
 class FlexDRWorker;
-class FlexDRGraphics;
+class AbstractDRGraphics;
 class FlexGridGraph
 {
  public:
@@ -57,9 +64,9 @@ class FlexGridGraph
       : tech_(techIn),
         logger_(loggerIn),
         drWorker_(workerIn),
-        router_cfg_(router_cfg)
+        router_cfg_(router_cfg),
+        ap_locs_(techIn->getTopLayerNum() + 1)
   {
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
   }
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -90,6 +97,7 @@ class FlexGridGraph
   {
     return nodes_[getIdx(x, y, z)].hasSpecialVia;
   }
+  bool isSVia(frMIdx idx) const { return nodes_[idx].hasSpecialVia; }
   // unsafe access, no check
   bool hasGridCostE(frMIdx x, frMIdx y, frMIdx z) const
   {
@@ -419,14 +427,7 @@ class FlexGridGraph
     return sol;
   }
   // setters
-  void setTech(frTechObject* techIn)
-  {
-    tech_ = techIn;
-    ap_locs_.clear();
-    ap_locs_.resize(tech_->getTopLayerNum() + 1);
-  }
   void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
-  void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,
@@ -524,27 +525,27 @@ class FlexGridGraph
       }
     }
   }
-  void addRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addRouteShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostPlanarNDR = addToByte(node.routeShapeCostPlanarNDR, 1);
     } else {
       node.routeShapeCostPlanar = addToByte(node.routeShapeCostPlanar, 1);
     }
   }
-  void addRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addRouteShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostViaNDR = addToByte(node.routeShapeCostViaNDR, 1);
     } else {
       node.routeShapeCostVia = addToByte(node.routeShapeCostVia, 1);
     }
   }
-  void subRouteShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subRouteShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostPlanarNDR
           = subFromByte(node.routeShapeCostPlanarNDR, 1);
@@ -552,22 +553,22 @@ class FlexGridGraph
       node.routeShapeCostPlanar = subFromByte(node.routeShapeCostPlanar, 1);
     }
   }
-  void subRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subRouteShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    auto& node = nodes_[getIdx(x, y, z)];
+    auto& node = nodes_[idx];
     if (ndr) {
       node.routeShapeCostViaNDR = subFromByte(node.routeShapeCostViaNDR, 1);
     } else {
       node.routeShapeCostVia = subFromByte(node.routeShapeCostVia, 1);
     }
   }
-  void resetRouteShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void resetRouteShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    auto idx = getIdx(x, y, z);
+    auto& node = nodes_[idx];
     if (ndr) {
-      nodes_[idx].routeShapeCostViaNDR = 0;
+      node.routeShapeCostViaNDR = 0;
     } else {
-      nodes_[idx].routeShapeCostVia = 0;
+      node.routeShapeCostVia = 0;
     }
   }
   void addMarkerCostPlanar(frMIdx x, frMIdx y, frMIdx z)
@@ -664,105 +665,79 @@ class FlexGridGraph
     }
     return (currCost == 0);
   }
-  void addFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addFixedShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarHorzNDR
-            = addToByte(node.fixedShapeCostPlanarHorzNDR, 1);
-        node.fixedShapeCostPlanarVertNDR
-            = addToByte(node.fixedShapeCostPlanarVertNDR, 1);
-      } else {
-        node.fixedShapeCostPlanarHorz
-            = addToByte(node.fixedShapeCostPlanarHorz, 1);
-        node.fixedShapeCostPlanarVert
-            = addToByte(node.fixedShapeCostPlanarVert, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarHorzNDR
+          = addToByte(node.fixedShapeCostPlanarHorzNDR, 1);
+      node.fixedShapeCostPlanarVertNDR
+          = addToByte(node.fixedShapeCostPlanarVertNDR, 1);
+    } else {
+      node.fixedShapeCostPlanarHorz
+          = addToByte(node.fixedShapeCostPlanarHorz, 1);
+      node.fixedShapeCostPlanarVert
+          = addToByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void setFixedShapeCostPlanarVert(frMIdx x,
-                                   frMIdx y,
-                                   frMIdx z,
-                                   frUInt4 c,
-                                   bool ndr = false)
+  void setFixedShapeCostPlanarVert(frMIdx idx, frUInt4 c, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarVertNDR = c;
-      } else {
-        node.fixedShapeCostPlanarVert = c;
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarVertNDR = c;
+    } else {
+      node.fixedShapeCostPlanarVert = c;
     }
   }
-  void setFixedShapeCostPlanarHorz(frMIdx x,
-                                   frMIdx y,
-                                   frMIdx z,
-                                   frUInt4 c,
-                                   bool ndr = false)
+  void setFixedShapeCostPlanarHorz(frMIdx idx, frUInt4 c, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarHorzNDR = c;
-      } else {
-        node.fixedShapeCostPlanarHorz = c;
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarHorzNDR = c;
+    } else {
+      node.fixedShapeCostPlanarHorz = c;
     }
   }
-  void addFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void addFixedShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostViaNDR = addToByte(node.fixedShapeCostViaNDR, 1);
-      } else {
-        node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostViaNDR = addToByte(node.fixedShapeCostViaNDR, 1);
+    } else {
+      node.fixedShapeCostVia = addToByte(node.fixedShapeCostVia, 1);
     }
   }
-  void setFixedShapeCostVia(frMIdx x,
-                            frMIdx y,
-                            frMIdx z,
-                            frUInt4 c,
-                            bool ndr = false)
+  void setFixedShapeCostVia(frMIdx idx, frUInt4 c, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostViaNDR = c;
-      } else {
-        node.fixedShapeCostVia = c;
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostViaNDR = c;
+    } else {
+      node.fixedShapeCostVia = c;
     }
   }
-  void subFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subFixedShapeCostPlanar(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostPlanarHorzNDR
-            = subFromByte(node.fixedShapeCostPlanarHorzNDR, 1);
-        node.fixedShapeCostPlanarVertNDR
-            = subFromByte(node.fixedShapeCostPlanarVertNDR, 1);
-      } else {
-        node.fixedShapeCostPlanarHorz
-            = subFromByte(node.fixedShapeCostPlanarHorz, 1);
-        node.fixedShapeCostPlanarVert
-            = subFromByte(node.fixedShapeCostPlanarVert, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostPlanarHorzNDR
+          = subFromByte(node.fixedShapeCostPlanarHorzNDR, 1);
+      node.fixedShapeCostPlanarVertNDR
+          = subFromByte(node.fixedShapeCostPlanarVertNDR, 1);
+    } else {
+      node.fixedShapeCostPlanarHorz
+          = subFromByte(node.fixedShapeCostPlanarHorz, 1);
+      node.fixedShapeCostPlanarVert
+          = subFromByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void subFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z, bool ndr = false)
+  void subFixedShapeCostVia(frMIdx idx, bool ndr = false)
   {
-    if (isValid(x, y, z)) {
-      auto& node = nodes_[getIdx(x, y, z)];
-      if (ndr) {
-        node.fixedShapeCostViaNDR = subFromByte(node.fixedShapeCostViaNDR, 1);
-      } else {
-        node.fixedShapeCostVia = subFromByte(node.fixedShapeCostVia, 1);
-      }
+    auto& node = nodes_[idx];
+    if (ndr) {
+      node.fixedShapeCostViaNDR = subFromByte(node.fixedShapeCostViaNDR, 1);
+    } else {
+      node.fixedShapeCostVia = subFromByte(node.fixedShapeCostVia, 1);
     }
   }
 
@@ -917,7 +892,7 @@ class FlexGridGraph
         break;
     }
   }
-  void setGraphics(FlexDRGraphics* g) { graphics_ = g; }
+  void setGraphics(AbstractDRGraphics* g) { graphics_ = g; }
 
   void setNDR(frNonDefaultRule* ndr) { ndr_ = ndr; }
 
@@ -938,8 +913,8 @@ class FlexGridGraph
   void init(const frDesign* design,
             const Rect& routeBBox,
             const Rect& extBBox,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-            std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
+            frLayerCoordTrackPatternMap& xMap,
+            frLayerCoordTrackPatternMap& yMap,
             bool initDR,
             bool followGuide);
   void print() const;
@@ -1034,8 +1009,8 @@ class FlexGridGraph
   Logger* logger_ = nullptr;
   FlexDRWorker* drWorker_ = nullptr;
   RouterConfiguration* router_cfg_;
-  FlexDRGraphics* graphics_;  // owned by FlexDR
-                              //
+  AbstractDRGraphics* graphics_;  // owned by FlexDR
+                                  //
 #ifdef DEBUG_DRT_UNDERFLOW
   static constexpr int cost_bits = 16;
 #else
@@ -1119,8 +1094,6 @@ class FlexGridGraph
   std::ofstream dump_file_;
   bool debug_{false};
   frUInt4 curr_id_{1};
-
-  FlexGridGraph() = default;
 
   void printExpansion(const FlexWavefrontGrid& currGrid,
                       const std::string& keyword);
@@ -1284,21 +1257,18 @@ class FlexGridGraph
   }
   // internal init utility
   void initTracks(const frDesign* design,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      horLoc2TrackPatterns,
-                  std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>&
-                      vertLoc2TrackPatterns,
-                  std::map<frLayerNum, dbTechLayerDir>& layerNum2PreRouteDir,
+                  frLayerCoordTrackPatternMap& horLoc2TrackPatterns,
+                  frLayerCoordTrackPatternMap& vertLoc2TrackPatterns,
+                  frLayerDirMap& layerNum2PreRouteDir,
                   const Rect& bbox);
-  void initGrids(
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-      const std::map<frLayerNum, dbTechLayerDir>& zMap,
-      bool followGuide);
+  void initGrids(const frLayerCoordTrackPatternMap& xMap,
+                 const frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
+                 bool followGuide);
   void initEdges(const frDesign* design,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-                 std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap,
-                 const std::map<frLayerNum, dbTechLayerDir>& zMap,
+                 frLayerCoordTrackPatternMap& xMap,
+                 frLayerCoordTrackPatternMap& yMap,
+                 const frLayerDirMap& zMap,
                  const Rect& bbox,
                  bool initDR);
   frCost getEstCost(const FlexMazeIdx& src,
@@ -1338,35 +1308,6 @@ class FlexGridGraph
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
-  template <class Archive>
-  void serialize(Archive& ar, const unsigned int version)
-  {
-    // The wavefront should always be empty here so we don't need to
-    // serialize it.
-    if (!wavefront_.empty()) {
-      throw std::logic_error("don't serialize non-empty wavefront");
-    }
-    if (is_loading(ar)) {
-      tech_ = ar.getDesign()->getTech();
-    }
-    (ar) & drWorker_;
-    (ar) & nodes_;
-    (ar) & prevDirs_;
-    (ar) & srcs_;
-    (ar) & dsts_;
-    (ar) & guides_;
-    (ar) & xCoords_;
-    (ar) & yCoords_;
-    (ar) & zCoords_;
-    (ar) & zHeights_;
-    (ar) & layerRouteDirections_;
-    (ar) & dieBox_;
-    (ar) & ggDRCCost_;
-    (ar) & ggMarkerCost_;
-    (ar) & halfViaEncArea_;
-    (ar) & ap_locs_;
-  }
-  friend class boost::serialization::access;
   friend class FlexDRWorker;
 };
 

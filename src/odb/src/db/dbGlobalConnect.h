@@ -50,11 +50,11 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbRegion;
 class _dbNet;
 // User Code Begin Classes
+class dbInst;
 class dbMaster;
 class dbMTerm;
 class dbITerm;
@@ -63,10 +63,7 @@ class dbITerm;
 class _dbGlobalConnect : public _dbObject
 {
  public:
-  _dbGlobalConnect(_dbDatabase*, const _dbGlobalConnect& r);
   _dbGlobalConnect(_dbDatabase*);
-
-  ~_dbGlobalConnect() = default;
 
   bool operator==(const _dbGlobalConnect& rhs) const;
   bool operator!=(const _dbGlobalConnect& rhs) const
@@ -74,18 +71,18 @@ class _dbGlobalConnect : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbGlobalConnect& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGlobalConnect& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   void setupRegex();
   static void testRegex(utl::Logger* logger,
                         const std::string& pattern,
                         const std::string& type);
   std::map<dbMaster*, std::set<dbMTerm*>> getMTermMapping();
+  std::set<dbMTerm*> getMTermMapping(dbMaster* master,
+                                     const std::regex& pin_regex) const;
   std::set<dbITerm*> connect(const std::vector<dbInst*>& insts);
   bool appliesTo(dbInst* inst) const;
+  bool needsModification(dbInst* inst) const;
   // User Code End Methods
 
   dbId<_dbRegion> region_;

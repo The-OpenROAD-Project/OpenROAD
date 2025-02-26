@@ -31,6 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <vector>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
@@ -532,11 +533,7 @@ bool FastRouteCore::VTreeSuite(const int netID)
     }
   }
 
-  if ((ymax - ymin) > 3 * (xmax - xmin)) {
-    return true;
-  } else {
-    return false;
-  }
+  return (ymax - ymin) > 3 * (xmax - xmin);
 }
 
 bool FastRouteCore::HTreeSuite(const int netID)
@@ -562,11 +559,7 @@ bool FastRouteCore::HTreeSuite(const int netID)
     }
   }
 
-  if (5 * (ymax - ymin) < (xmax - xmin)) {
-    return true;
-  } else {
-    return false;
-  }
+  return 5 * (ymax - ymin) < (xmax - xmin);
 }
 
 float FastRouteCore::coeffADJ(const int netID)

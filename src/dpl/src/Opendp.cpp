@@ -62,7 +62,6 @@ using std::string;
 
 using utl::DPL;
 
-using odb::dbMasterType;
 using odb::Rect;
 
 using utl::format_as;
@@ -115,8 +114,7 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
-                               const std::string& report_file_name,
-                               const bool disallow_one_site_gaps)
+                               const std::string& report_file_name)
 {
   importDb();
 
@@ -132,17 +130,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
-  disallow_one_site_gaps_ = disallow_one_site_gaps;
-  if (!have_one_site_cells_) {
-    // If 1-site fill cell is not detected && no disallow_one_site_gaps flag:
-    // warn the user then continue as normal
-    if (!disallow_one_site_gaps_) {
-      logger_->warn(DPL,
-                    38,
-                    "No 1-site fill cells detected.  To remove 1-site gaps use "
-                    "the -disallow_one_site_gaps flag.");
-    }
-  }
+
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
   detailedPlacement();
@@ -158,7 +146,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->info(DPL, 35, " {}", cell->name());
     }
 
-    saveFailures({}, {}, {}, {}, {}, {}, placement_failures_);
+    saveFailures({}, {}, {}, {}, {}, {}, placement_failures_, {});
     if (!report_file_name.empty()) {
       writeJsonReport(report_file_name);
     }
@@ -376,6 +364,54 @@ void Opendp::groupInitPixels2()
       }
     }
   }
+}
+
+dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
+{
+  const Rect core = grid_->getCore();
+  const Rect inst_rect = inst->getBBox()->getBox();
+  DbuX x_dbu = left ? DbuX{inst_rect.xMin() - 1} : DbuX{inst_rect.xMax() + 1};
+  x_dbu -= core.xMin();
+  GridX x = grid_->gridX(x_dbu);
+
+  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core.yMin()});
+
+  Pixel* pixel = grid_->gridPixel(x, y);
+
+  dbInst* adjacent_inst = nullptr;
+
+  // do not return macros, endcaps and tapcells
+  if (pixel != nullptr && pixel->cell && pixel->cell->db_inst_->isCore()) {
+    adjacent_inst = pixel->cell->db_inst_;
+  }
+
+  return adjacent_inst;
+}
+
+std::vector<dbInst*> Opendp::getAdjacentInstancesCluster(dbInst* inst) const
+{
+  const bool left = true;
+  const bool right = false;
+  std::vector<dbInst*> adj_inst_cluster;
+
+  dbInst* left_inst = getAdjacentInstance(inst, left);
+  while (left_inst != nullptr) {
+    adj_inst_cluster.push_back(left_inst);
+    // the right instance can be ignored, since it was added in the line above
+    left_inst = getAdjacentInstance(left_inst, left);
+  }
+
+  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  adj_inst_cluster.push_back(inst);
+
+  dbInst* right_inst = getAdjacentInstance(inst, right);
+  while (right_inst != nullptr) {
+    adj_inst_cluster.push_back(right_inst);
+    // the left instance can be ignored, since it was added in the line above
+    right_inst = getAdjacentInstance(right_inst, right);
+  }
+
+  return adj_inst_cluster;
 }
 
 /* static */

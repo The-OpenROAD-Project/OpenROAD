@@ -39,6 +39,7 @@
 #include <optional>
 #include <string>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "rsz/OdbCallBack.hh"
@@ -81,6 +82,7 @@ using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbNetwork;
+using sta::dbNetworkObserver;
 using sta::dbSta;
 using sta::dbStaState;
 using sta::DcalcAnalysisPt;
@@ -183,7 +185,7 @@ struct BufferData
 
 class OdbCallBack;
 
-class Resizer : public dbStaState
+class Resizer : public dbStaState, public dbNetworkObserver
 {
  public:
   Resizer();
@@ -261,12 +263,14 @@ class Resizer : public dbStaState
   double maxArea() const;
 
   void setDontUse(LibertyCell* cell, bool dont_use);
-  bool dontUse(LibertyCell* cell);
+  void resetDontUse();
+  bool dontUse(const LibertyCell* cell);
   void reportDontUse() const;
   void setDontTouch(const Instance* inst, bool dont_touch);
   bool dontTouch(const Instance* inst);
   void setDontTouch(const Net* net, bool dont_touch);
   bool dontTouch(const Net* net);
+  bool dontTouch(const Pin* pin);
   void reportDontTouch();
 
   void setMaxUtilization(double max_utilization);
@@ -274,6 +278,9 @@ class Resizer : public dbStaState
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
   void bufferInputs();
   void bufferOutputs();
+
+  // from sta::dbNetworkObserver callbacks
+  void postReadLiberty() override;
 
   // Balance the usage of hybrid rows
   void balanceRowUsage();
@@ -289,6 +296,7 @@ class Resizer : public dbStaState
   bool repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   int max_repairs_per_pass,
                    bool match_cell_footprint,
                    bool verbose,
                    bool skip_pin_swap,
@@ -323,7 +331,9 @@ class Resizer : public dbStaState
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
+  bool recoverPower(float recover_power_percent,
+                    bool match_cell_footprint,
+                    bool verbose);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -333,6 +343,7 @@ class Resizer : public dbStaState
   // Caller owns return value.
   NetSeq* findFloatingNets();
   PinSet* findFloatingPins();
+  NetSeq* findOverdrivenNets(bool include_parallel_driven);
   void repairTieFanout(LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
@@ -433,6 +444,7 @@ class Resizer : public dbStaState
 
  protected:
   void init();
+  double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
@@ -440,6 +452,7 @@ class Resizer : public dbStaState
   bool hasTristateOrDontTouchDriver(const Net* net);
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
+  void copyDontUseFromLiberty();
   void findBuffers();
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
@@ -557,7 +570,7 @@ class Resizer : public dbStaState
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  string makeUniqueNetName();
+  string makeUniqueNetName(Instance* parent = nullptr);
   Net* makeUniqueNet();
   string makeUniqueInstName(const char* base_name);
   string makeUniqueInstName(const char* base_name, bool underscore);
@@ -622,9 +635,11 @@ class Resizer : public dbStaState
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBuffer(Instance* buffer,
-                    bool honorDontTouchFixed = true,
-                    bool recordJournal = false);
+  bool removeBufferIfPossible(Instance* buffer,
+                              bool honorDontTouchFixed = true,
+                              bool recordJournal = false);
+  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed = true);
+  void removeBuffer(Instance* buffer, bool recordJournal = false);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
@@ -734,6 +749,9 @@ class Resizer : public dbStaState
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
 
+  // Cache results of getSwappableCells() as this is expensive for large PDKs.
+  std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
@@ -788,6 +806,10 @@ class Resizer : public dbStaState
   bool is_callback_registered_ = false;
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
+
+  // Sizing restrictions
+  std::optional<double> sizing_area_limit_;
+  std::optional<double> sizing_leakage_limit_;
 
   friend class BufferedNet;
   friend class GateCloner;

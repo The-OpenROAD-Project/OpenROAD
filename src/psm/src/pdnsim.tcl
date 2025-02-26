@@ -37,11 +37,13 @@ sta::define_cmd_args "check_power_grid" {
   -net power_net
   [-error_file error_file]
   [-floorplanning]
+  [-dont_require_terminals]
 }
 
 proc check_power_grid { args } {
   sta::parse_key_args "check_power_grid" args \
-    keys {-net -error_file} flags {-floorplanning}
+    keys {-net -error_file} \
+    flags {-floorplanning -dont_require_terminals}
 
   if { ![info exists keys(-net)] } {
     utl::error PSM 57 "Argument -net not specified."
@@ -53,8 +55,13 @@ proc check_power_grid { args } {
   }
 
   set floorplanning [info exists flags(-floorplanning)]
+  set dont_require_bterm [info exists flags(-dont_require_terminals)]
 
-  psm::check_connectivity_cmd [psm::find_net $keys(-net)] $floorplanning $error_file
+  psm::check_connectivity_cmd \
+    [psm::find_net $keys(-net)] \
+    $floorplanning \
+    $error_file \
+    $dont_require_bterm
 }
 
 sta::define_cmd_args "analyze_power_grid" {
@@ -66,13 +73,14 @@ sta::define_cmd_args "analyze_power_grid" {
   [-em_outfile em_file]
   [-vsrc voltage_source_file]
   [-source_type FULL|BUMPS|STRAPS]
+  [-allow_reuse]
 }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
     keys {-net -corner -voltage_file -error_file -em_outfile -vsrc \
       -source_type} \
-    flags {-enable_em}
+    flags {-enable_em -allow_reuse}
   if { ![info exists keys(-net)] } {
     utl::error PSM 58 "Argument -net not specified."
   }
@@ -111,6 +119,7 @@ proc analyze_power_grid { args } {
     [sta::parse_corner_or_default keys] \
     $source_type \
     $error_file \
+    [info exists flags(-allow_reuse)] \
     $enable_em \
     $em_file \
     $voltage_file \

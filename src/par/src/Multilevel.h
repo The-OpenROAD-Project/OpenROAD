@@ -34,6 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "Coarsener.h"
 #include "Evaluator.h"
 #include "GreedyRefine.h"

@@ -43,7 +43,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
 template <class T>
@@ -82,13 +81,13 @@ struct dbTechLayerFlags
   dbTechLayerType::Value type_ : 4;
   dbTechLayerDir::Value direction_ : 4;
   dbTechLayerMinStepType::Value minstep_type_ : 2;
-  uint has_max_width_ : 1;
-  uint has_thickness_ : 1;
-  uint has_area_ : 1;
-  uint has_protrusion_ : 1;
-  uint has_alias_ : 1;
-  uint has_xy_pitch_ : 1;
-  uint has_xy_offset_ : 1;
+  bool has_max_width_ : 1;
+  bool has_thickness_ : 1;
+  bool has_area_ : 1;
+  bool has_protrusion_ : 1;
+  bool has_alias_ : 1;
+  bool has_xy_pitch_ : 1;
+  bool has_xy_offset_ : 1;
   bool rect_only_ : 1;
   bool right_way_on_grid_only_ : 1;
   bool right_way_on_grid_only_check_mask_ : 1;
@@ -100,7 +99,6 @@ struct dbTechLayerFlags
 class _dbTechLayer : public _dbObject
 {
  public:
-  _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
 
   ~_dbTechLayer();
@@ -108,11 +106,8 @@ class _dbTechLayer : public _dbObject
   bool operator==(const _dbTechLayer& rhs) const;
   bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayer& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   uint getV55RowIdx(const int& rowVal) const;
   uint getV55ColIdx(const int& colVal) const;
@@ -123,46 +118,26 @@ class _dbTechLayer : public _dbObject
   uint wrong_way_width_;
   float layer_adjustment_;
   std::vector<std::pair<int, int>> orth_spacing_tbl_;
-
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
   dbHashTable<_dbTechLayerCutClassRule> cut_class_rules_hash_;
-
   dbTable<_dbTechLayerSpacingEolRule>* spacing_eol_rules_tbl_;
-
   dbTable<_dbTechLayerCutSpacingRule>* cut_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerMinStepRule>* minstep_rules_tbl_;
-
   dbTable<_dbTechLayerCornerSpacingRule>* corner_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerSpacingTablePrlRule>* spacing_table_prl_rules_tbl_;
-
   dbTable<_dbTechLayerCutSpacingTableOrthRule>* cut_spacing_table_orth_tbl_;
-
   dbTable<_dbTechLayerCutSpacingTableDefRule>* cut_spacing_table_def_tbl_;
-
   dbTable<_dbTechLayerCutEnclosureRule>* cut_enc_rules_tbl_;
-
   dbTable<_dbTechLayerEolExtensionRule>* eol_ext_rules_tbl_;
-
   dbTable<_dbTechLayerArraySpacingRule>* array_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerEolKeepOutRule>* eol_keep_out_rules_tbl_;
-
   dbTable<_dbTechLayerMaxSpacingRule>* max_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerWidthTableRule>* width_table_rules_tbl_;
-
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
-
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
-
   dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
-
   dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
-
   dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>*
       two_wires_forbidden_spc_rules_tbl_;
 

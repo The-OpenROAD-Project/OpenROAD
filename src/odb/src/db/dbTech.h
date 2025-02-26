@@ -59,11 +59,11 @@ class _dbTechViaGenerateRule;
 class _dbBox;
 class _dbDatabase;
 class _dbMetalWidthViaMap;
+class _dbCellEdgeSpacing;
 class dbTechLayerItr;
 class dbBoxItr;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbTechFlags
 {
@@ -114,6 +114,8 @@ class _dbTech : public _dbObject
   dbTable<_dbTechViaGenerateRule>* _via_generate_rule_tbl;
   dbTable<_dbProperty>* _prop_tbl;
   dbTable<_dbMetalWidthViaMap>* _metal_width_via_map_tbl;
+  dbTable<_dbCellEdgeSpacing>* cell_edge_spacing_tbl_;
+
   _dbNameCache* _name_cache;
 
   // NON-PERSISTANT-NON-STREAMED-MEMBERS
@@ -126,14 +128,12 @@ class _dbTech : public _dbObject
   void _setLefVersion(double inver);
 
   _dbTech(_dbDatabase* db);
-  _dbTech(_dbDatabase* db, const _dbTech& t);
   ~_dbTech();
 
   bool operator==(const _dbTech& rhs) const;
   bool operator!=(const _dbTech& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbTech& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech);

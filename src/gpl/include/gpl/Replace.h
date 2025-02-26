@@ -83,7 +83,7 @@ class Replace
   void reset();
 
   void doIncrementalPlace(int threads);
-  void doInitialPlace();
+  void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
   int doNesterovPlace(int threads, int start_iter = 0);
@@ -119,18 +119,16 @@ class Replace
   void setTimingDrivenMode(bool mode);
 
   void setSkipIoMode(bool mode);
+  void setDisableRevertIfDiverge(bool mode);
 
   void setRoutabilityDrivenMode(bool mode);
   void setRoutabilityUseGrt(bool mode);
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
-
   void setRoutabilityMaxInflationIter(int iter);
-
   void setRoutabilityTargetRcMetric(float rc);
   void setRoutabilityInflationRatioCoef(float coef);
   void setRoutabilityMaxInflationRatio(float ratio);
-
   void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
   void addTimingNetWeightOverflow(int overflow);
@@ -141,7 +139,8 @@ class Replace
                 int update_iterations,
                 bool draw_bins,
                 bool initial,
-                odb::dbInst* inst = nullptr);
+                odb::dbInst* inst,
+                int start_iter);
 
  private:
   bool initNesterovPlace(int threads);
@@ -184,8 +183,8 @@ class Replace
   float routabilityCheckOverflow_ = 0.3;
   float routabilityMaxDensity_ = 0.99;
   float routabilityTargetRcMetric_ = 1.01;
-  float routabilityInflationRatioCoef_ = 5;
-  float routabilityMaxInflationRatio_ = 8;
+  float routabilityInflationRatioCoef_ = 3;
+  float routabilityMaxInflationRatio_ = 6;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
@@ -193,7 +192,6 @@ class Replace
   float routabilityRcK3_ = 0.0;
   float routabilityRcK4_ = 0.0;
 
-  int routabilityMaxBloatIter_ = 1;
   int routabilityMaxInflationIter_ = 4;
 
   float timingNetWeightMax_ = 1.9;
@@ -204,6 +202,7 @@ class Replace
   bool routabilityUseRudy_ = true;
   bool uniformTargetDensityMode_ = false;
   bool skipIoMode_ = false;
+  bool disableRevertIfDiverge_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
 
@@ -216,5 +215,6 @@ class Replace
   int gui_debug_draw_bins_ = false;
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
+  int gui_debug_start_iter_ = 0;
 };
 }  // namespace gpl

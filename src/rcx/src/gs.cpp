@@ -708,14 +708,12 @@ int gs::get_seqcol(const int x,
       }
       epix = row - 1;
       return 0;
-
-    } else {
-      if (seqcol == GS_BLACK) {
-        epix = row - 1;
-        return 0;
-      }
-      continue;
     }
+    if (seqcol == GS_BLACK) {
+      epix = row - 1;
+      return 0;
+    }
+    continue;
   }
 
   epix = plc_->height;

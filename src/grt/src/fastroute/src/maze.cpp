@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <vector>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -656,7 +657,7 @@ void FastRouteCore::setupHeap(const int netID,
         queue[queuetail] = nbr;
         queuetail++;
       }  // loop i (3 neighbors for cur node)
-    }    // while queue is not empty
+    }  // while queue is not empty
 
     // find all the grids on subtree t2 (connect to n2) and put them into
     // dest_heap find all the grids on tree edges in subtree t2 (connecting to
@@ -726,8 +727,8 @@ void FastRouteCore::setupHeap(const int netID,
         queue[queuetail] = nbr;
         queuetail++;
       }  // loop i (3 neigbors for cur node)
-    }    // while queue is not empty
-  }      // net with more than two pins
+    }  // while queue is not empty
+  }  // net with more than two pins
 
   for (int i = regionY1; i <= regionY2; i++) {
     for (int j = regionX1; j <= regionX2; j++)
@@ -757,7 +758,7 @@ int FastRouteCore::copyGrids(const std::vector<TreeNode>& treenodes,
         gridsY_n1n2[cnt] = treeedges[edge_n1n2].route.gridsY[i];
         cnt++;
       }
-    }     // MazeRoute
+    }  // MazeRoute
     else  // NoRoute
     {
       gridsX_n1n2.resize(1);
@@ -766,7 +767,7 @@ int FastRouteCore::copyGrids(const std::vector<TreeNode>& treenodes,
       gridsY_n1n2[cnt] = n1y;
       cnt++;
     }
-  }     // if n1 is the first node of (n1, n2)
+  }  // if n1 is the first node of (n1, n2)
   else  // n2 is the first node of (n1, n2)
   {
     if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
@@ -777,7 +778,7 @@ int FastRouteCore::copyGrids(const std::vector<TreeNode>& treenodes,
         gridsY_n1n2[cnt] = treeedges[edge_n1n2].route.gridsY[i];
         cnt++;
       }
-    }     // MazeRoute
+    }  // MazeRoute
     else  // NoRoute
     {
       gridsX_n1n2.resize(1);
@@ -1519,7 +1520,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           // update position for n1
           treenodes[n1].x = E1x;
           treenodes[n1].y = E1y;
-        }     // if E1 is on (n1, A1) or (n1, A2)
+        }  // if E1 is on (n1, A1) or (n1, A2)
         else  // E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
         {
           const int C1 = endpt1;
@@ -1607,7 +1608,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           }
 
         }  // else E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
-      }    // n1 is not a pin and E1!=n1
+      }  // n1 is not a pin and E1!=n1
 
       // (2) consider subtree2
       if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
@@ -1677,7 +1678,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           // update position for n2
           treenodes[n2].x = E2x;
           treenodes[n2].y = E2y;
-        }     // if E2 is on (n2, B1) or (n2, B2)
+        }  // if E2 is on (n2, B1) or (n2, B2)
         else  // E2 is not on (n2, B1) or (n2, B2), but on (D1, D2)
         {
           const int D1 = endpt1;
@@ -1764,7 +1765,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
             }
           }
         }  // else E2 is not on (n2, B1) or (n2, B2), but on (D1, D2)
-      }    // n2 is not a pin and E2!=n2
+      }  // n2 is not a pin and E2!=n2
 
       // update route for edge (n1, n2) and edge usage
       if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
@@ -1799,7 +1800,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         }
       }
     }  // loop edgeID
-  }    // loop netID
+  }  // loop netID
 
   h_cost_table_.clear();
   v_cost_table_.clear();

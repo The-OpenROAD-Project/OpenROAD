@@ -1,6 +1,7 @@
 # fanout 8000 max_fanout 20 stress test
 # modified to use large default max_transition, max_capacitance
 source "helpers.tcl"
+if {[expr {![info exists repair_args]}]} { set repair_args {} }
 read_liberty repair_fanout6.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
@@ -27,5 +28,5 @@ report_check_types -max_fanout
 # but there is no point in inserting extra buffers to fix non critical
 # paths. What matters is repair_timning's ability to optimize the timing
 # when it matters.
-repair_timing -setup -repair_tns 0 -skip_gate_cloning 
+repair_timing -setup -repair_tns 0 -skip_gate_cloning {*}$repair_args
 report_worst_slack -max

@@ -39,6 +39,7 @@
 #include <QShortcut>
 #include <QToolBar>
 #include <memory>
+#include <vector>
 
 #include "findDialog.h"
 #include "gotoDialog.h"
@@ -82,7 +83,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
  public:
   MainWindow(bool load_settings = true, QWidget* parent = nullptr);
-  ~MainWindow();
+  ~MainWindow() override;
 
   void setDatabase(odb::dbDatabase* db);
   void init(sta::dbSta* sta, const std::string& help_path);
@@ -90,9 +91,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   odb::dbDatabase* getDb() const { return db_; }
 
   // From ord::OpenRoad::Observer
-  virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
-  virtual void postReadDef(odb::dbBlock* block) override;
-  virtual void postReadDb(odb::dbDatabase* db) override;
+  void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
+  void postReadDef(odb::dbBlock* block) override;
+  void postReadDb(odb::dbDatabase* db) override;
 
   // Capture logger messages into the script widget output
   void setLogger(utl::Logger* logger);

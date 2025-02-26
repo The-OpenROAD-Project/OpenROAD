@@ -1007,7 +1007,8 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
-  deltaArea_ = 0;
+  delta_area_ = 0;
+  new_gcells_count_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
@@ -2220,7 +2221,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   // TODO: This OpenMP parallel section is causing non-determinism. Consider
   // revisiting this in the future to restore determinism.
-  //#pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
+  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
   // wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
@@ -2681,7 +2682,7 @@ bool NesterovBase::checkDivergence()
   return isDiverged_;
 }
 
-bool NesterovBase::revertDivergence()
+bool NesterovBase::revertToSnapshot()
 {
   if (isConverged_) {
     return true;
@@ -2731,7 +2732,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t areaChange = newCellArea - prevCellArea;
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -2872,7 +2873,8 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 
   int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
                        * static_cast<int64_t>(gcell_ptr->dy());
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
+  new_gcells_count_++;
   return gCellStor_.size() - 1;
 }
 
@@ -2920,21 +2922,13 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
     swapAndPopParallelVectors(gcell_index, last_index);
     gCells_.pop_back();
     db_inst_index_map_.erase(db_it);
-  } else {
-    log_->report(
-        "warning: db_inst not found in db_inst_index_map_ for instance: {}",
-        db_inst->getName());
   }
 }
 
 void NesterovBaseCommon::destroyGCell(size_t index_remove)
 {
-  log_->report("before destroy gCellStor_.size():{}", gCellStor_.size());
   size_t last_index = gCellStor_.size() - 1;
   if (index_remove > last_index) {
-    log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
-                 index_remove,
-                 last_index);
     return;
   }
   if (index_remove != last_index) {
@@ -2942,7 +2936,6 @@ void NesterovBaseCommon::destroyGCell(size_t index_remove)
   }
   gCellStor_.pop_back();
 
-  log_->report("after destroy gCellStor_.size():{}", gCellStor_.size());
   // TODO: update deltaArea_ after cell destruction.
 }
 
@@ -2950,9 +2943,6 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
 {
   size_t last_index = fillerStor_.size() - 1;
   if (index_remove > last_index) {
-    log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
-                 index_remove,
-                 last_index);
     return;
   }
   if (index_remove != last_index) {
@@ -2969,24 +2959,15 @@ void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
 {
   auto db_it = db_iterm_map_.find(db_iterm);
   if (db_it != db_iterm_map_.end()) {
-    log_->report("before destroy gPinStor_.size():{}", gPinStor_.size());
     size_t last_index = gPinStor_.size() - 1;
     size_t index_remove = db_it->second;
     if (index_remove > last_index) {
-      log_->report("error: index {} out of bounds for gPinStor_ (max:{})",
-                   index_remove,
-                   last_index);
       return;
     }
     if (index_remove != last_index) {
       std::swap(gPinStor_[index_remove], gPinStor_[last_index]);
     }
     gPinStor_.pop_back();
-
-    log_->report("after destroy gPinStor_.size():{}", gPinStor_.size());
-  } else {
-    log_->report("error: db_iterm not found in db_iterm_map_ for iterm: {}",
-                 db_iterm->getMTerm()->getName());
   }
 }
 
@@ -2995,16 +2976,10 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
                               size_t last_index)
 {
   if (last_index != vec.size() - 1) {
-    log_->report(
-        "Error: last_index {} does not match the actual last index {}.",
-        last_index,
-        vec.size() - 1);
     return;
   }
 
   if (remove_index != last_index) {
-    log_->report(
-        "Swapping index {} with last_index {}", remove_index, last_index);
     std::swap(vec[remove_index], vec[last_index]);
   }
   vec.pop_back();
@@ -3013,11 +2988,6 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
 void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
                                              size_t last_index)
 {
-  log_->report(
-      "Swapping and popping parallel vectors with remove_index {} and "
-      "last_index {}",
-      remove_index,
-      last_index);
   swapAndPop(curSLPCoordi_, remove_index, last_index);
   swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
   swapAndPop(curSLPDensityGrads_, remove_index, last_index);
@@ -3095,8 +3065,8 @@ static int64_t getOverlapArea(const Bin* bin,
     const biNormalParameters i
         = {meanX,
            meanY,
-           meanX / 4,
-           meanY / 4,
+           meanX / 6,
+           meanY / 6,
            (rectLx - inst->lx()) / (float) dbu_per_micron,
            (rectLy - inst->ly()) / (float) dbu_per_micron,
            (rectUx - inst->lx()) / (float) dbu_per_micron,
@@ -3109,10 +3079,10 @@ static int64_t getOverlapArea(const Bin* bin,
                          * static_cast<float>(inst->uy() - inst->ly());
 
     // For heavily dense regions towards the center of the macro,
-    // we are using an upper limit of 1.15*(overlap) between the macro
+    // we are using an upper limit of 1.10*(overlap) between the macro
     // and the bin.
     if (scaled >= original) {
-      return std::min<float>(scaled, original * 1.15);
+      return std::min<float>(scaled, original * 1.10);
     }
     // If the scaled value is smaller than the actual overlap
     // then use the original overlap value instead.

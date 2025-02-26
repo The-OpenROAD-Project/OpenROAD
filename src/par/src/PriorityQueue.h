@@ -34,9 +34,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <set>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <memory>
+#include <vector>
 
 #include "Hypergraph.h"
+#include "Utilities.h"
 
 namespace par {
 

@@ -33,13 +33,13 @@
 #include "odb/db.h"
 #include "odb/lefin.h"
 
-namespace lefTechLayerRightWayOnGridOnly {
+namespace odb::lefTechLayerRightWayOnGridOnly {
 
 template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
            odb::dbTechLayer* layer,
-           odb::lefin* lefin)
+           odb::lefinReader* lefinReader)
 {
   qi::rule<std::string::iterator, space_type> rightWayOnGridOnlyRule
       = (lit("RIGHTWAYONGRIDONLY")[boost::bind(
@@ -51,13 +51,13 @@ bool parse(Iterator first,
   bool valid = qi::phrase_parse(first, last, rightWayOnGridOnlyRule, space);
   return valid && first == last;
 }
-}  // namespace lefTechLayerRightWayOnGridOnly
+}  // namespace odb::lefTechLayerRightWayOnGridOnly
 
 namespace odb {
 
 bool lefTechLayerRightWayOnGridOnlyParser::parse(std::string s,
                                                  dbTechLayer* layer,
-                                                 odb::lefin* l)
+                                                 odb::lefinReader* l)
 {
   return lefTechLayerRightWayOnGridOnly::parse(s.begin(), s.end(), layer, l);
 }

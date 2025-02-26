@@ -1,0 +1,57 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk1 toplevel port is not placed!
+       Replace will regard clk1 is placed in (0, 0)
+[INFO GPL-0006] NumInstances:                71
+[INFO GPL-0007] NumPlaceInstances:           71
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:            0
+[INFO GPL-0010] NumNets:                      2
+[INFO GPL-0011] NumPins:                    143
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] CoreArea:             47872.020 um^2
+[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
+[INFO GPL-0018] PlaceInstsArea:         321.062 um^2
+[INFO GPL-0019] Util:                     0.671 %
+[INFO GPL-0020] StdInstsArea:           321.062 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[InitialPlace]  Iter: 1 CG residual: 0.00000001 HPWL: 18520
+[InitialPlace]  Iter: 2 CG residual: 0.00000009 HPWL: 27440
+[InitialPlace]  Iter: 3 CG residual: 0.00000004 HPWL: 25496
+[InitialPlace]  Iter: 4 CG residual: 0.00000003 HPWL: 24876
+[InitialPlace]  Iter: 5 CG residual: 0.00000000 HPWL: 24732
+Placement Analysis
+---------------------------------
+total displacement       1157.5 u
+average displacement       16.3 u
+max displacement           27.3 u
+original HPWL               2.3 u
+legalized HPWL             90.9 u
+delta HPWL                 3791 %
+
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+drvr/Q                                   10     70    -60 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 530um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       143
+    final |     +4.3% |       7 |       9 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0039] Resized 7 instances.
+[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+fanout3/Z                                10     70    -60 (VIOLATED)
+
+No differences found.

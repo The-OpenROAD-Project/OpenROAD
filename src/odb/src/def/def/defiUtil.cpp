@@ -27,9 +27,9 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #ifdef WIN32
 #include <time.h>
 #else /* not WIN32 */
@@ -41,7 +41,7 @@
 
 #include "defiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 /* Not needed
 time_t defiCalcTime() {
@@ -126,4 +126,4 @@ const char* defiOrientStr(int orient)
   return ((char*) "");
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

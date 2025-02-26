@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <vector>
 
 #include "nesterovBase.h"
 #include "placerBase.h"
@@ -142,7 +143,7 @@ void TimingBase::setTimingNetWeightMax(float max)
   net_weight_max_ = max;
 }
 
-bool TimingBase::updateGNetWeights(bool run_journal_restore)
+bool TimingBase::executeTimingDriven(bool run_journal_restore)
 {
   rs_->findResizeSlacks(run_journal_restore);
 

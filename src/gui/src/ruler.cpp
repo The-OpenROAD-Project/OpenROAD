@@ -33,6 +33,7 @@
 #include "ruler.h"
 
 #include <boost/geometry.hpp>
+#include <vector>
 
 #include "odb/db.h"
 

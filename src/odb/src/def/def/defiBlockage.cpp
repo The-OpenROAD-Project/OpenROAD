@@ -29,14 +29,14 @@
 
 #include "defiBlockage.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -55,17 +55,17 @@ void defiBlockage::Init()
 {
   numPolys_ = 0;
   clear();
-  layerName_ = 0;
-  componentName_ = 0;
+  layerName_ = nullptr;
+  componentName_ = nullptr;
   layerNameLength_ = 0;
   componentNameLength_ = 0;
-  xl_ = 0;
-  yl_ = 0;
-  xh_ = 0;
-  yh_ = 0;
+  xl_ = nullptr;
+  yl_ = nullptr;
+  xh_ = nullptr;
+  yh_ = nullptr;
   rectsAllocated_ = 0;
   polysAllocated_ = 0;
-  polygons_ = 0;
+  polygons_ = nullptr;
 }
 
 defiBlockage::~defiBlockage()
@@ -110,22 +110,22 @@ void defiBlockage::Destroy()
     free(layerName_);
   if (componentName_)
     free(componentName_);
-  layerName_ = 0;
-  componentName_ = 0;
+  layerName_ = nullptr;
+  componentName_ = nullptr;
   if (rectsAllocated_) {
     free((char*) (xl_));
     free((char*) (yl_));
     free((char*) (xh_));
     free((char*) (yh_));
     rectsAllocated_ = 0;
-    xl_ = 0;
-    yl_ = 0;
-    xh_ = 0;
-    yh_ = 0;
+    xl_ = nullptr;
+    yl_ = nullptr;
+    xh_ = nullptr;
+    yh_ = nullptr;
   }
   clearPoly();
   free((char*) (polygons_));
-  polygons_ = 0;
+  polygons_ = nullptr;
   clear();
 }
 
@@ -479,4 +479,4 @@ void defiBlockage::print(FILE* f) const
   }
   fprintf(f, "\n");
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

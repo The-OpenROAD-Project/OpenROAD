@@ -101,7 +101,7 @@ class IRSolver
 
   odb::dbNet* getNet() const { return net_; };
 
-  bool check();
+  bool check(bool check_bterms);
 
   void solve(sta::Corner* corner,
              GeneratedSourceType source_type,
@@ -156,6 +156,7 @@ class IRSolver
   odb::dbTech* getTech() const;
 
   bool checkOpen();
+  bool checkBTerms() const;
   bool checkShort() const;
 
   std::map<odb::dbInst*, Power> getInstancePower(sta::Corner* corner) const;
@@ -187,6 +188,7 @@ class IRSolver
       std::vector<std::unique_ptr<SourceNode>>& sources) const;
 
   void reportUnconnectedNodes() const;
+  void reportMissingBTerm() const;
   bool wasNodeVisited(const std::unique_ptr<ITermNode>& node) const;
   bool wasNodeVisited(const std::unique_ptr<Node>& node) const;
   bool wasNodeVisited(const Node* node) const;

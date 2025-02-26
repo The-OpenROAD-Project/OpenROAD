@@ -21,6 +21,7 @@
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
+#include "delay_optimization_strategy.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "logic_extractor.h"
@@ -31,10 +32,14 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
+#include "sta/VerilogReader.hh"
+#include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
+#include "zero_slack_strategy.h"
 
 // Headers have duplicate declarations so we include
 // a forward one to get at this function without angering
@@ -63,10 +68,10 @@ class AbcTest : public ::testing::Test
     db_->setLogger(&logger_);
     sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
-    auto path = std::filesystem::canonical("./Nangate45/Nangate45_fast.lib");
+    auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
                                  sta_->findCorner("default"),
-                                 /*min_max=*/nullptr,
+                                 /*min_max=*/sta::MinMaxAll::all(),
                                  /*infer_latches=*/false);
 
     odb::lefin lef_reader(
@@ -93,7 +98,10 @@ class AbcTest : public ::testing::Test
     sta::dbNetwork* network = sta_->getDbNetwork();
     ord::dbVerilogNetwork verilog_network;
     verilog_network.init(network);
-    ord::dbReadVerilog(file_name.c_str(), &verilog_network);
+
+    sta::VerilogReader verilog_reader(&verilog_network);
+    verilog_reader.read(file_name.c_str());
+
     ord::dbLinkDesign(top.c_str(),
                       &verilog_network,
                       db_.get(),
@@ -109,15 +117,16 @@ class AbcTest : public ::testing::Test
     sta::PinSet* pinset = new sta::PinSet(network);
     pinset->insert(clk_pin);
 
-    float period = 2.0;
+    // 0.5ns
+    double period = sta_->units()->timeUnit()->userToSta(0.5);
     sta::FloatSeq* waveform = new sta::FloatSeq;
     waveform->push_back(0);
     waveform->push_back(period / 2.0);
 
-    sta_->makeClock("clk",
+    sta_->makeClock("core_clock",
                     pinset,
                     /*add_to_pins=*/false,
-                    /*period=*/2.0,
+                    /*period=*/period,
                     waveform,
                     /*comment=*/nullptr);
 
@@ -238,8 +247,11 @@ TEST_F(AbcTest, TestLibraryInstallation)
   AbcLibrary abc_library = factory.Build();
 
   // When you set these params to zero they are essentially turned off.
-  abc::Abc_SclInstallGenlib(
-      abc_library.abc_library(), /*Slew=*/0, /*Gain=*/0, /*nGatesMin=*/0);
+  abc::Abc_SclInstallGenlib(abc_library.abc_library(),
+                            /*Slew=*/0,
+                            /*Gain=*/0,
+                            /*fUseAll=*/0,
+                            /*nGatesMin=*/0);
   abc::Mio_LibraryTransferCellIds();
   abc::Mio_Library_t* lib
       = static_cast<abc::Mio_Library_t*>(abc::Abc_FrameReadLibGen());
@@ -457,7 +469,7 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
   for (sta::Vertex* vertex : *sta_->endpoints()) {
-    if (std::string(vertex->name(network)) == "_32989_/D") {
+    if (std::string(vertex->name(network)) == "_33122_/D") {
       flop_input_vertex = vertex;
     }
   }
@@ -472,7 +484,40 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
 
   rmp::UniqueName unique_name;
   EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
-      mapped_abc_network.get(), network, unique_name, &logger_));
+      mapped_abc_network.get(), abc_library, network, unique_name, &logger_));
+}
+
+TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "_33122_/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+
+  DelayOptimizationStrategy strat(sta_.get());
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
+      = strat.Optimize(mapped_abc_network.get(), &logger_);
+
+  rmp::UniqueName unique_name;
+  EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
+      remapped.get(), abc_library, network, unique_name, &logger_));
 }
 
 TEST_F(AbcTest,
@@ -502,7 +547,7 @@ TEST_F(AbcTest,
 
   rmp::UniqueName unique_name;
   cut.InsertMappedAbcNetwork(
-      mapped_abc_network.get(), network, unique_name, &logger_);
+      mapped_abc_network.get(), abc_library, network, unique_name, &logger_);
 
   // Re-extract the same cone, and try to simulate it to make sure everything
   // still simulates correctly
@@ -536,6 +581,14 @@ TEST_F(AbcTest,
             0);  // Expect that !(1 & 1) == 0
   EXPECT_EQ(output_vector.get()[primary_output_name_to_index.at("and_output")],
             1);  // Expect that (1 & 1) == 1
+}
+
+TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
+{
+  LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
+
+  ZeroSlackStrategy zero_slack;
+  EXPECT_NO_THROW(zero_slack.OptimizeDesign(sta_.get(), &logger_));
 }
 
 }  // namespace rmp

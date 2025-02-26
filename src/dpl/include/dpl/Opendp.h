@@ -80,6 +80,7 @@ struct Cell;
 struct Group;
 struct Master;
 struct Pixel;
+struct EdgeSpacingEntry;
 
 class DplObserver;
 class Grid;
@@ -134,8 +135,7 @@ class Opendp
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
-                         const std::string& report_file_name = std::string(""),
-                         bool disallow_one_site_gaps = false);
+                         const std::string& report_file_name = std::string(""));
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -150,9 +150,7 @@ class Opendp
   int padLeft(dbInst* inst) const;
   int padRight(dbInst* inst) const;
 
-  void checkPlacement(bool verbose,
-                      bool disallow_one_site_gaps = false,
-                      const string& report_file_name = "");
+  void checkPlacement(bool verbose, const string& report_file_name = "");
   void fillerPlacement(dbMasterSeq* filler_masters,
                        const char* prefix,
                        bool verbose);
@@ -162,6 +160,12 @@ class Opendp
   // Place decap cells
   void addDecapMaster(dbMaster* decap_master, double decap_cap);
   void insertDecapCells(double target, IRDropByPoint& psm_ir_drops);
+
+  // Get the instance adjacent to the left or right of a given instance
+  dbInst* getAdjacentInstance(dbInst* inst, bool left) const;
+
+  // Find a cluster of instances that are touching each other
+  std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
 
  private:
   using bgPoint
@@ -202,6 +206,11 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
+
+  void makeCellEdgeSpacingTable();
+  bool hasCellEdgeSpacingTable() const;
+  int getMaxSpacing(int edge_idx) const;
+
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   DbuPt nearestPt(const Cell* cell, const DbuRect& rect) const;
@@ -234,6 +243,10 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
+  bool checkEdgeSpacing(const Cell* cell,
+                        GridX x,
+                        GridY y,
+                        const odb::dbOrientType& orient) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
   bool mapMove(Cell* cell, const GridPt& grid_pt);
@@ -294,7 +307,8 @@ class Opendp
                     const vector<Cell*>& one_site_gap_failures,
                     const vector<Cell*>& site_align_failures,
                     const vector<Cell*>& region_placement_failures,
-                    const vector<Cell*>& placement_failures);
+                    const vector<Cell*>& placement_failures,
+                    const vector<Cell*>& edge_spacing_failures);
   void writeJsonReport(const string& filename);
 
   void rectDist(const Cell* cell,
@@ -303,7 +317,6 @@ class Opendp
                 int* x,
                 int* y) const;
   int rectDist(const Cell* cell, const Rect& rect) const;
-  void checkOneSiteDbMaster();
   void deleteGrid();
   // Cell initial location wrt core origin.
 
@@ -367,7 +380,6 @@ class Opendp
   map<dbTechLayer*, GapFillers> gap_fillers_;
   map<dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
-  bool have_one_site_cells_ = false;
 
   // Decap placement.
   vector<DecapCell*> decap_masters_;
@@ -382,6 +394,10 @@ class Opendp
 
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Cell> dummy_cell_;
+
+  // LEF58_EDGETYPE
+  std::map<std::string, int> edge_types_indices_;
+  std::vector<std::vector<EdgeSpacingEntry>> edge_spacing_table_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

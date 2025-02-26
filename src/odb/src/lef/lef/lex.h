@@ -30,9 +30,11 @@
 #ifndef leh_h
 #define leh_h
 
+#include <cstddef>
+
 #include "lefiKRDefs.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 void lefAddStringDefine(const char* token, const char* string);
 
@@ -54,6 +56,6 @@ extern int yylex();
 
 int fake_ftell();
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE
 
 #endif

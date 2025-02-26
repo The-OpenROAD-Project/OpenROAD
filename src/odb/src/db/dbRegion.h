@@ -46,7 +46,6 @@ class _dbBox;
 class _dbGroup;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbRegionFlags
 {
@@ -73,8 +72,7 @@ class _dbRegion : public _dbObject
   bool operator!=(const _dbRegion& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbRegion& rhs) const;
 
-  void differences(dbDiff& diff, const char* field, const _dbRegion& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r);

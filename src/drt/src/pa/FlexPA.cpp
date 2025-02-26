@@ -36,8 +36,9 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
-#include "FlexPA_graphics.h"
+#include "AbstractPAGraphics.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -67,13 +68,9 @@ FlexPA::FlexPA(frDesign* in,
 // must be out-of-line due to the unique_ptr
 FlexPA::~FlexPA() = default;
 
-void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
+void FlexPA::setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics)
 {
-  const bool on = settings->debugPA;
-  graphics_ = on && FlexPAGraphics::guiActive()
-                  ? std::make_unique<FlexPAGraphics>(
-                      settings, design_, db, logger_, router_cfg_)
-                  : nullptr;
+  graphics_ = std::move(pa_graphics);
 }
 
 void FlexPA::init()
@@ -113,7 +110,7 @@ void FlexPA::applyPatternsFile(const char* file_path)
 void FlexPA::prep()
 {
   ProfileTask profile("PA:prep");
-  initAllAccessPoints();
+  genAllAccessPoints();
   revertAccessPoints();
   if (isDistributed()) {
     std::vector<paUpdate> updates;

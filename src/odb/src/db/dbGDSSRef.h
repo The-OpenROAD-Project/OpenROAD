@@ -40,37 +40,23 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
+class _dbGDSStructure;
 
 class _dbGDSSRef : public _dbObject
 {
  public:
-  _dbGDSSRef(_dbDatabase*, const _dbGDSSRef& r);
   _dbGDSSRef(_dbDatabase*);
-
-  ~_dbGDSSRef() = default;
 
   bool operator==(const _dbGDSSRef& rhs) const;
   bool operator!=(const _dbGDSSRef& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSSRef& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGDSSRef& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
+  void collectMemInfo(MemInfo& info);
 
-  dbGDSStructure* _stucture = nullptr;
-
-  // User Code End Methods
-
-  int16_t _layer;
-  int16_t _datatype;
-  std::vector<Point> _xy;
+  Point _origin;
   std::vector<std::pair<std::int16_t, std::string>> _propattr;
-  std::string _sName;
   dbGDSSTrans _transform;
-  std::pair<int16_t, int16_t> _colRow;
+  dbId<_dbGDSStructure> _structure;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSSRef& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGDSSRef& obj);

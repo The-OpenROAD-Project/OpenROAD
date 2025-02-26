@@ -46,6 +46,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include "odb/db.h"
 
@@ -297,7 +298,7 @@ class Descriptor
 
   // An action is a name and a callback function, the function should return
   // the next object to select (when deleting the object just return Selected())
-  using ActionCallback = std::function<Selected(void)>;
+  using ActionCallback = std::function<Selected()>;
   struct Action
   {
     std::string name;
@@ -358,7 +359,7 @@ class Selected
 {
  public:
   // Null case
-  Selected() : object_({}), descriptor_(nullptr) {}
+  Selected() = default;
 
   Selected(std::any object, const Descriptor* descriptor)
       : object_(std::move(object)), descriptor_(descriptor)
@@ -430,7 +431,7 @@ class Selected
 
  private:
   std::any object_;
-  const Descriptor* descriptor_;
+  const Descriptor* descriptor_{nullptr};
 };
 
 // This is an interface for classes that wish to be called to render
@@ -471,7 +472,7 @@ class Renderer
   // Used to register display controls for this renderer.
   // DisplayControls is a map with the name of the control and the initial
   // setting for the control
-  using DisplayControlCallback = std::function<void(void)>;
+  using DisplayControlCallback = std::function<void()>;
   struct DisplayControl
   {
     bool visibility;
@@ -802,8 +803,32 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
+  // There are RTTI implementation differences between libstdc++ and libc++,
+  // where the latter seems to generate multiple typeids for classes including
+  // but not limited to sta::Instance* in different compile units. We have been
+  // unable to remedy this.
+  //
+  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
+  // and comparing are done on the type's name instead, which adds a negligible
+  // performance penalty but has the distinct advantage of not crashing when an
+  // Instance is clicked in the GUI.
+  //
+  // In the event the RTTI issue is ever resolved, the following two structs may
+  // be removed.
+  struct TypeInfoHasher
+  {
+    std::size_t operator()(const std::type_index& x) const;
+  };
+  struct TypeInfoComparator
+  {
+    bool operator()(const std::type_index& a, const std::type_index& b) const;
+  };
+
   // Maps types to descriptors
-  std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>>
+  std::unordered_map<std::type_index,
+                     std::unique_ptr<const Descriptor>,
+                     TypeInfoHasher,
+                     TypeInfoComparator>
       descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;

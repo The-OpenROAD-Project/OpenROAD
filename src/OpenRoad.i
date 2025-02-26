@@ -36,8 +36,6 @@
 %{
 
 #include "odb/db.h"
-#include "odb/lefin.h"
-#include "odb/defin.h"
 #include "odb/defout.h"
 #include "sta/Report.hh"
 #include "sta/Network.hh"
@@ -138,13 +136,6 @@ getMacroPlacer()
 {
   OpenRoad *openroad = getOpenRoad();
   return openroad->getMacroPlacer();
-}
-
-mpl2::MacroPlacer2 *
-getMacroPlacer2()
-{
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->getMacroPlacer2();
 }
 
 gpl::Replace*
@@ -404,13 +395,6 @@ write_db_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeDb(filename);
-}
-
-void
-diff_dbs(const char *filename1, const char *filename2, const char* diffs)
-{
-  OpenRoad *ord = getOpenRoad();
-  ord->diffDbs(filename1, filename2, diffs);
 }
 
 void

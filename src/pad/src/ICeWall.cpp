@@ -36,6 +36,7 @@
 #include "pad/ICeWall.h"
 
 #include <boost/icl/interval_set.hpp>
+#include <vector>
 
 #include "RDLGui.h"
 #include "RDLRouter.h"
@@ -1218,9 +1219,8 @@ void ICeWall::placeFiller(
         // sort biggest to smallest
         if (use_height) {
           return r_bbox.dy() > l_bbox.dy();
-        } else {
-          return r_bbox.dx() > l_bbox.dx();
         }
+        return r_bbox.dx() > l_bbox.dx();
       });
 
   const odb::Rect rowbbox = row->getBBox();

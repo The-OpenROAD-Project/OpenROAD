@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
@@ -55,14 +56,12 @@
 
 namespace ifp {
 
-using std::abs;
 using std::ceil;
 using std::map;
 using std::round;
 using std::set;
 using std::string;
 
-using sta::dbNetwork;
 using sta::StringVector;
 
 using utl::IFP;
@@ -79,10 +78,8 @@ using odb::dbOrientType;
 using odb::dbRegion;
 using odb::dbRow;
 using odb::dbRowDir;
-using odb::dbSet;
 using odb::dbSite;
 using odb::dbTech;
-using odb::dbTechLayer;
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
@@ -156,6 +153,39 @@ double InitFloorplan::designArea()
   return design_area;
 }
 
+void InitFloorplan::checkInstanceDimensions(const odb::Rect& core) const
+{
+  for (dbInst* inst : block_->getInsts()) {
+    dbMaster* master = inst->getMaster();
+
+    if (master->isPad() || master->isCover()) {
+      continue;
+    }
+
+    bool fails = false;
+    if (master->getSymmetryR90()) {
+      fails
+          = std::max(master->getWidth(), master->getHeight()) > core.maxDXDY();
+    } else {
+      fails = master->getWidth() > core.dx() || master->getHeight() > core.dy();
+    }
+
+    if (fails) {
+      logger_->error(utl::IFP,
+                     2,
+                     "{} ({:.3f}um, {:.3f}um) does not fit in the core area: "
+                     "({:.3f}um, {:.3f}um) - ({:.3f}um, {:.3f}um)",
+                     inst->getName(),
+                     block_->dbuToMicrons(master->getWidth()),
+                     block_->dbuToMicrons(master->getHeight()),
+                     block_->dbuToMicrons(core.xMin()),
+                     block_->dbuToMicrons(core.yMin()),
+                     block_->dbuToMicrons(core.xMax()),
+                     block_->dbuToMicrons(core.yMax()));
+    }
+  }
+}
+
 static int divCeil(int dividend, int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
@@ -169,6 +199,12 @@ void InitFloorplan::initFloorplan(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
+  if (!die.contains(core)) {
+    logger_->error(IFP, 55, "Die area must contain the core area.");
+  }
+
+  checkInstanceDimensions(core);
+
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -324,7 +360,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;
           // in case there is at least one valid site width on the left, create
           // left core rows
-          if (lcr_xMax > core_lx + static_cast<int>(site_dx)) {
+          if (lcr_xMax > core_lx + site_dx) {
             string lcr_name = row_name + "_1";
             // warning message since tap cells might not be inserted
             if (lcr_xMax < core_lx + 10 * site_dx) {
@@ -356,7 +392,7 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
 
           // in case there is at least one valid site width on the right, create
           // right core rows
-          if (rcr_xMin + static_cast<int>(site_dx) < core_ux) {
+          if (rcr_xMin + site_dx < core_ux) {
             string rcr_name = row_name + "_2";
             if (rcr_xMin + 10 * site_dx > core_ux) {
               logger_->warn(IFP,
@@ -709,11 +745,18 @@ void InitFloorplan::makeTracks()
                              layer->getPitchY(),
                              layer->getFirstLastPitch());
       } else {
-        makeTracks(layer,
-                   layer->getOffsetX(),
-                   layer->getPitchX(),
-                   layer->getOffsetY(),
-                   layer->getPitchY());
+        const int x_pitch = layer->getPitchX();
+        const int y_pitch = layer->getPitchY();
+        if (x_pitch == 0 || y_pitch == 0) {
+          logger_->warn(
+              utl::IFP,
+              56,
+              "No pitch found layer {} so no tracks will be generated.",
+              layer->getName());
+          continue;
+        }
+        makeTracks(
+            layer, layer->getOffsetX(), x_pitch, layer->getOffsetY(), y_pitch);
       }
     }
   }
@@ -775,7 +818,7 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
 
   int layer_min_width = layer->getMinWidth();
 
-  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
+  int x_track_count = (die_area.dx() - x_offset) / x_pitch + 1;
   int origin_x = die_area.xMin() + x_offset;
   // Check if the track origin is not usable during routing
 
@@ -792,7 +835,7 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
 
   grid->addGridPatternX(origin_x, x_track_count, x_pitch);
 
-  auto y_track_count = int((die_area.dy() - y_offset) / y_pitch) + 1;
+  int y_track_count = (die_area.dy() - y_offset) / y_pitch + 1;
   int origin_y = die_area.yMin() + y_offset;
   // Check if the track origin is not usable during routing
   if (origin_y - layer_min_width / 2 < die_area.yMin()) {
@@ -835,8 +878,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   }
   Rect die_area = block_->getDieArea();
 
-  auto y_track_count
-      = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
+  int y_track_count = (cell_row_height - 2 * first_last_pitch) / y_pitch + 1;
   int origin_y = die_area.yMin() + first_last_pitch;
   for (int i = 0; i < y_track_count; i++) {
     makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);

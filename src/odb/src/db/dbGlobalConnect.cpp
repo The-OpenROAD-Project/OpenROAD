@@ -34,7 +34,6 @@
 #include "dbGlobalConnect.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -85,42 +84,8 @@ bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
   return true;
 }
 
-void _dbGlobalConnect::differences(dbDiff& diff,
-                                   const char* field,
-                                   const _dbGlobalConnect& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(region_);
-  DIFF_FIELD(net_);
-  DIFF_FIELD(inst_pattern_);
-  DIFF_FIELD(pin_pattern_);
-  DIFF_END
-}
-
-void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(region_);
-  DIFF_OUT_FIELD(net_);
-  DIFF_OUT_FIELD(inst_pattern_);
-  DIFF_OUT_FIELD(pin_pattern_);
-
-  DIFF_END
-}
-
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db)
 {
-}
-
-_dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db, const _dbGlobalConnect& r)
-{
-  region_ = r.region_;
-  net_ = r.net_;
-  inst_pattern_ = r.inst_pattern_;
-  pin_pattern_ = r.pin_pattern_;
-  // User Code Begin CopyConstructor
-  setupRegex();
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGlobalConnect& obj)
@@ -142,6 +107,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj)
   stream << obj.inst_pattern_;
   stream << obj.pin_pattern_;
   return stream;
+}
+
+void _dbGlobalConnect::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["inst_pattern"].add(inst_pattern_);
+  info.children_["pin_pattern"].add(pin_pattern_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -188,6 +164,8 @@ std::vector<dbInst*> dbGlobalConnect::getInsts() const
 {
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
+
+  const auto mterm_mapping = obj->getMTermMapping();
 
   std::vector<dbInst*> insts;
   for (dbInst* inst : block->getInsts()) {
@@ -240,6 +218,23 @@ dbGlobalConnect* dbGlobalConnect::create(dbNet* net,
 
   gc->setupRegex();
 
+  // check if global connect is identical to another
+  for (const dbGlobalConnect* check_gc :
+       ((dbBlock*) block)->getGlobalConnects()) {
+    const _dbGlobalConnect* db_check_gc = (const _dbGlobalConnect*) check_gc;
+
+    if (db_check_gc->getOID() == gc->getOID()) {
+      // dont compare with self
+      continue;
+    }
+
+    if (*db_check_gc == *gc) {
+      destroy((dbGlobalConnect*) gc);
+      gc = nullptr;
+      break;
+    }
+  }
+
   return ((dbGlobalConnect*) gc);
 }
 
@@ -271,7 +266,7 @@ void _dbGlobalConnect::testRegex(utl::Logger* logger,
                                  const std::string& type)
 {
   try {
-    auto test = std::regex(pattern);
+    std::regex test(pattern);  // NOLINT(*-unused-local-non-trivial-variable)
   } catch (const std::regex_error&) {
     logger->error(utl::ODB,
                   384,
@@ -290,12 +285,7 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   dbDatabase* db = (dbDatabase*) getImpl()->getDatabase();
   for (dbLib* lib : db->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
-      std::set<dbMTerm*> mterms;
-      for (dbMTerm* mterm : master->getMTerms()) {
-        if (std::regex_match(mterm->getConstName(), pin_regex)) {
-          mterms.insert(mterm);
-        }
-      }
+      std::set<dbMTerm*> mterms = getMTermMapping(master, pin_regex);
 
       if (!mterms.empty()) {
         mapping[master] = mterms;
@@ -304,6 +294,20 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   }
 
   return mapping;
+}
+
+std::set<dbMTerm*> _dbGlobalConnect::getMTermMapping(
+    dbMaster* master,
+    const std::regex& pin_regex) const
+{
+  std::set<dbMTerm*> mterms;
+  for (dbMTerm* mterm : master->getMTerms()) {
+    if (std::regex_match(mterm->getConstName(), pin_regex)) {
+      mterms.insert(mterm);
+    }
+  }
+
+  return mterms;
 }
 
 std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
@@ -367,6 +371,22 @@ std::set<dbITerm*> _dbGlobalConnect::connect(const std::vector<dbInst*>& insts)
 bool _dbGlobalConnect::appliesTo(dbInst* inst) const
 {
   return std::regex_match(inst->getConstName(), inst_regex_);
+}
+
+bool _dbGlobalConnect::needsModification(dbInst* inst) const
+{
+  dbBlock* block = (dbBlock*) getImpl()->getOwner();
+  dbNet* net = odb::dbNet::getNet(block, net_);
+
+  for (dbMTerm* mterm :
+       getMTermMapping(inst->getMaster(), std::regex(pin_pattern_))) {
+    auto* iterm = inst->getITerm(mterm);
+
+    if (iterm->getNet() != net) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // User Code End dbGlobalConnectPublicMethods

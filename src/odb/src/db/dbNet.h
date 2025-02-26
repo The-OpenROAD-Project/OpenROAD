@@ -56,7 +56,6 @@ class _dbGuide;
 class _dbNetTrack;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbNetFlags
 {
@@ -65,7 +64,7 @@ struct _dbNetFlags
   uint _special : 1;
   uint _wild_connect : 1;
   uint _wire_ordered : 1;
-  uint _buffered : 1;
+  uint _unused2 : 1;       // free to reuse
   uint _disconnected : 1;  // this flag is only valid if wire_ordered == true
   uint _spef : 1;
   uint _select : 1;
@@ -74,7 +73,7 @@ struct _dbNetFlags
   uint _wire_altered : 1;
   uint _extracted : 1;
   uint _rc_graph : 1;
-  uint _reduced : 1;
+  uint _unused : 1;  // free to reuse
   uint _set_io : 1;
   uint _io : 1;
   uint _dont_touch : 1;
@@ -138,8 +137,7 @@ class _dbNet : public _dbObject
   bool operator==(const _dbNet& rhs) const;
   bool operator!=(const _dbNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbNet& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbNet& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   dbObjectTable* getObjectTable(dbObjectType type);
 };
 

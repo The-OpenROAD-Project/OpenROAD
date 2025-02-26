@@ -39,80 +39,80 @@
 // Wrappers definitions.
 const char* defiRegion_name(const ::defiRegion* obj)
 {
-  return ((const LefDefParser::defiRegion*) obj)->name();
+  return ((const DefParser::defiRegion*) obj)->name();
 }
 
 int defiRegion_numProps(const ::defiRegion* obj)
 {
-  return ((LefDefParser::defiRegion*) obj)->numProps();
+  return ((DefParser::defiRegion*) obj)->numProps();
 }
 
 const char* defiRegion_propName(const ::defiRegion* obj, int index)
 {
-  return ((const LefDefParser::defiRegion*) obj)->propName(index);
+  return ((const DefParser::defiRegion*) obj)->propName(index);
 }
 
 const char* defiRegion_propValue(const ::defiRegion* obj, int index)
 {
-  return ((const LefDefParser::defiRegion*) obj)->propValue(index);
+  return ((const DefParser::defiRegion*) obj)->propValue(index);
 }
 
 double defiRegion_propNumber(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->propNumber(index);
+  return ((DefParser::defiRegion*) obj)->propNumber(index);
 }
 
 const char defiRegion_propType(const ::defiRegion* obj, int index)
 {
-  return ((const LefDefParser::defiRegion*) obj)->propType(index);
+  return ((const DefParser::defiRegion*) obj)->propType(index);
 }
 
 int defiRegion_propIsNumber(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->propIsNumber(index);
+  return ((DefParser::defiRegion*) obj)->propIsNumber(index);
 }
 
 int defiRegion_propIsString(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->propIsString(index);
+  return ((DefParser::defiRegion*) obj)->propIsString(index);
 }
 
 int defiRegion_hasType(const ::defiRegion* obj)
 {
-  return ((LefDefParser::defiRegion*) obj)->hasType();
+  return ((DefParser::defiRegion*) obj)->hasType();
 }
 
 const char* defiRegion_type(const ::defiRegion* obj)
 {
-  return ((const LefDefParser::defiRegion*) obj)->type();
+  return ((const DefParser::defiRegion*) obj)->type();
 }
 
 int defiRegion_numRectangles(const ::defiRegion* obj)
 {
-  return ((LefDefParser::defiRegion*) obj)->numRectangles();
+  return ((DefParser::defiRegion*) obj)->numRectangles();
 }
 
 int defiRegion_xl(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->xl(index);
+  return ((DefParser::defiRegion*) obj)->xl(index);
 }
 
 int defiRegion_yl(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->yl(index);
+  return ((DefParser::defiRegion*) obj)->yl(index);
 }
 
 int defiRegion_xh(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->xh(index);
+  return ((DefParser::defiRegion*) obj)->xh(index);
 }
 
 int defiRegion_yh(const ::defiRegion* obj, int index)
 {
-  return ((LefDefParser::defiRegion*) obj)->yh(index);
+  return ((DefParser::defiRegion*) obj)->yh(index);
 }
 
 void defiRegion_print(const ::defiRegion* obj, FILE* f)
 {
-  ((LefDefParser::defiRegion*) obj)->print(f);
+  ((DefParser::defiRegion*) obj)->print(f);
 }

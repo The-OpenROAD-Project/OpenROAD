@@ -36,7 +36,6 @@
 #include "dbBlock.h"
 #include "dbBusPort.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
 #include "dbModITerm.h"
@@ -89,59 +88,10 @@ bool _dbModBTerm::operator<(const _dbModBTerm& rhs) const
   return true;
 }
 
-void _dbModBTerm::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbModBTerm& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags);
-  DIFF_FIELD(_parent_moditerm);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_modnet);
-  DIFF_FIELD(_next_net_modbterm);
-  DIFF_FIELD(_prev_net_modbterm);
-  DIFF_FIELD(_busPort);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_prev_entry);
-  DIFF_END
-}
-
-void _dbModBTerm::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags);
-  DIFF_OUT_FIELD(_parent_moditerm);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_modnet);
-  DIFF_OUT_FIELD(_next_net_modbterm);
-  DIFF_OUT_FIELD(_prev_net_modbterm);
-  DIFF_OUT_FIELD(_busPort);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_prev_entry);
-
-  DIFF_END
-}
-
 _dbModBTerm::_dbModBTerm(_dbDatabase* db)
 {
   _name = nullptr;
   _flags = 0;
-}
-
-_dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
-{
-  _name = r._name;
-  _flags = r._flags;
-  _parent_moditerm = r._parent_moditerm;
-  _parent = r._parent;
-  _modnet = r._modnet;
-  _next_net_modbterm = r._next_net_modbterm;
-  _prev_net_modbterm = r._prev_net_modbterm;
-  _busPort = r._busPort;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
@@ -224,6 +174,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
   return stream;
 }
 
+void _dbModBTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
+}
+
 _dbModBTerm::~_dbModBTerm()
 {
   if (_name) {
@@ -295,16 +255,16 @@ struct dbModBTermFlags_str
   uint _spare_bits : 24;
 };
 
-typedef union dbModBTermFlags
+union dbModBTermFlags
 {
   struct dbModBTermFlags_str flags;
   uint uint_val;
-} dbModBTermFlagsU;
+};
 
 void dbModBTerm::setSigType(const dbSigType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   cur_flags.flags._sigtype = type.getValue();
   _dbmodbterm->_flags = cur_flags.uint_val;
@@ -313,7 +273,7 @@ void dbModBTerm::setSigType(const dbSigType& type)
 dbSigType dbModBTerm::getSigType()
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   return dbSigType(cur_flags.flags._sigtype);
 }
@@ -321,7 +281,7 @@ dbSigType dbModBTerm::getSigType()
 void dbModBTerm::setIoType(const dbIoType& type)
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   cur_flags.flags._iotype = type.getValue();
   _dbmodbterm->_flags = cur_flags.uint_val;
@@ -330,7 +290,7 @@ void dbModBTerm::setIoType(const dbIoType& type)
 dbIoType dbModBTerm::getIoType()
 {
   _dbModBTerm* _dbmodbterm = (_dbModBTerm*) this;
-  dbModBTermFlagsU cur_flags;
+  dbModBTermFlags cur_flags;
   cur_flags.uint_val = _dbmodbterm->_flags;
   return dbIoType(cur_flags.flags._iotype);
 }
@@ -345,7 +305,6 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   _dbModule* module = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  std::string str_name(name);
   _dbModBTerm* modbterm = block->_modbterm_tbl->create();
   // defaults
   modbterm->_flags = 0U;

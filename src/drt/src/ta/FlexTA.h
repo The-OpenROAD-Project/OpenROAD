@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
@@ -37,6 +38,7 @@
 
 namespace drt {
 class FlexTAGraphics;
+class AbstractTAGraphics;
 
 class FlexTA
 {
@@ -52,7 +54,7 @@ class FlexTA
   frDesign* getDesign() const { return design_; }
   // others
   int main();
-  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setDebug(std::unique_ptr<AbstractTAGraphics> ta_graphics);
 
  private:
   frTechObject* tech_;
@@ -60,7 +62,7 @@ class FlexTA
   Logger* logger_;
   RouterConfiguration* router_cfg_;
   bool save_updates_;
-  std::unique_ptr<FlexTAGraphics> graphics_;
+  std::unique_ptr<AbstractTAGraphics> graphics_;
   // others
   void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
   void initTA(int size);
@@ -135,7 +137,9 @@ class FlexTAWorker
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
-        hardIroutesMode(false){};
+        hardIroutesMode(false)
+  {
+  }
   // setters
   void setRouteBox(const Rect& boxIn) { routeBox_ = boxIn; }
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }

@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "db/drObj/drBlockObject.h"
 #include "db/drObj/drPin.h"
@@ -132,6 +133,7 @@ class drNet : public drBlockObject
     return false;
   }
   void setFrNetTerms(const std::set<frBlockObject*>& in) { fNetTerms_ = in; }
+  void addFrNetTerm(frBlockObject* in) { fNetTerms_.insert(in); }
   void setModified(bool in) { modified_ = in; }
 
   void setNumMarkers(int in) { numMarkers_ = in; }

@@ -190,10 +190,12 @@ class IOPlacer
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
   std::vector<int> findValidSlots(const Constraint& constraint, bool top_layer);
   void randomPlacement();
-  void randomPlacement(std::vector<int> pin_indices,
-                       std::vector<int> slot_indices,
+  void randomPlacement(const std::vector<int>& pin_indices,
+                       const std::vector<int>& slot_indices,
+                       Edge edge,
                        bool top_layer,
                        bool is_group);
+  std::string getSlotsLocation(Edge edge, bool top_layer);
   int placeFallbackPins(bool random);
   void assignMirroredPins(IOPin& io_pin,
                           MirroredPins& mirrored_pins,
@@ -209,6 +211,8 @@ class IOPlacer
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
+  std::vector<Point> findLayerSlots(int layer, Edge edge);
+  int computeDistanceBetweenPins(int layer, int min_distance);
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
@@ -274,6 +278,7 @@ class IOPlacer
                              int num_pins,
                              int& new_begin,
                              int& new_end);
+  int getMinDistanceForInterval(const Interval& interval);
   int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
 
   // db functions

@@ -33,6 +33,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "definBase.h"
 #include "definPolygon.h"
@@ -113,6 +114,8 @@ class definPin : public definBase
   virtual void pinSpecial();
   virtual void pinUse(dbSigType type);
   virtual void pinDirection(dbIoType type);
+  // Does the pin currently have this direction
+  virtual bool checkPinDirection(dbIoType type);
   virtual void pinPlacement(defPlacement status,
                             int x,
                             int y,
@@ -134,8 +137,8 @@ class definPin : public definBase
   virtual void portEnd();
 
   definPin();
-  virtual ~definPin();
-  void init();
+  ~definPin() override;
+  void init() override;
 };
 
 }  // namespace odb

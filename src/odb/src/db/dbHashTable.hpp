@@ -63,11 +63,6 @@ dbHashTable<T>::dbHashTable(const dbHashTable<T>& t)
 }
 
 template <class T>
-dbHashTable<T>::~dbHashTable()
-{
-}
-
-template <class T>
 bool dbHashTable<T>::operator==(const dbHashTable<T>& rhs) const
 {
   if (_num_entries != rhs._num_entries) {
@@ -200,7 +195,7 @@ T* dbHashTable<T>::find(const char* name)
   uint sz = _hash_tbl.size();
 
   if (sz == 0) {
-    return 0;
+    return nullptr;
   }
 
   uint hid = hash_string(name) & (sz - 1);
@@ -293,28 +288,6 @@ dbIStream& operator>>(dbIStream& stream, dbHashTable<T>& table)
   stream >> table._hash_tbl;
   stream >> table._num_entries;
   return stream;
-}
-
-template <class T>
-void dbHashTable<T>::differences(dbDiff& diff,
-                                 const char* field,
-                                 const dbHashTable<T>& rhs) const
-{
-  diff.report("<> %s", field);
-  diff.increment();
-  DIFF_FIELD(_num_entries)
-  DIFF_VECTOR(_hash_tbl);
-  diff.decrement();
-}
-
-template <class T>
-void dbHashTable<T>::out(dbDiff& diff, char side, const char* field) const
-{
-  diff.report("%c %s", side, field);
-  diff.increment();
-  DIFF_OUT_FIELD(_num_entries)
-  DIFF_OUT_VECTOR(_hash_tbl);
-  diff.decrement();
 }
 
 }  // namespace odb

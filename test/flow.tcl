@@ -63,8 +63,10 @@ place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_l
 ################################################################
 # Macro Placement
 if { [have_macros] } {
-  global_placement -density $global_place_density
-  macro_placement -halo $macro_place_halo -channel $macro_place_channel
+  lassign $macro_place_halo halo_x halo_y
+  set report_dir [make_result_file ${design}_${platform}_rtlmp]
+  rtl_macro_placer -halo_width $halo_x -halo_height $halo_y \
+      -report_directory $report_dir
 }
 
 ################################################################

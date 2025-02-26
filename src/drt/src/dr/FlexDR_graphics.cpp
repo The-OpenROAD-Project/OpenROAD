@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <vector>
 
 #include "../gc/FlexGC.h"
 #include "FlexDR.h"
@@ -799,7 +800,6 @@ bool FlexDRGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
-/* static */
 void FlexDRGraphics::init()
 {
   if (guiActive()) {

@@ -39,24 +39,6 @@
 
 namespace odb {
 
-//
-// dbIdValidation methods here
-//
-bool dbIdValidation::isId(const char* inid)
-{
-  if (!inid) {
-    return false;
-  }
-
-  for (; *inid; inid++) {
-    if (isdigit(*inid) == 0) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 std::optional<dbOrientType::Value> dbOrientType::fromString(const char* orient)
 {
   std::optional<dbOrientType::Value> ret;
@@ -229,30 +211,20 @@ bool dbOrientType::isRightAngleRotation() const
 dbGDSSTrans::dbGDSSTrans()
 {
   _flipX = false;
-  _absMag = false;
-  _absAngle = false;
   _mag = 1.0;
   _angle = 0.0;
 }
 
-dbGDSSTrans::dbGDSSTrans(bool flipX,
-                         bool absMag,
-                         bool absAngle,
-                         double mag,
-                         double angle)
+dbGDSSTrans::dbGDSSTrans(bool flipX, double mag, double angle)
 {
   _flipX = flipX;
-  _absMag = absMag;
-  _absAngle = absAngle;
   _mag = mag;
   _angle = angle;
 }
 
 bool dbGDSSTrans::operator==(const dbGDSSTrans& rhs) const
 {
-  return (_flipX == rhs._flipX) && (_absMag == rhs._absMag)
-         && (_absAngle == rhs._absAngle) && (_mag == rhs._mag)
-         && (_angle == rhs._angle);
+  return (_flipX == rhs._flipX) && (_mag == rhs._mag) && (_angle == rhs._angle);
 }
 
 std::string dbGDSSTrans::to_string() const
@@ -261,9 +233,9 @@ std::string dbGDSSTrans::to_string() const
   if (_flipX) {
     s += std::string("FLIP_X ");
   }
-  s += (_absMag) ? std::string("ABS_MAG ") : std::string("MAG ");
-  s += std::to_string(_mag) + " ";
-  s += (_absAngle) ? std::string("ABS_ANGLE ") : std::string("ANGLE ");
+  s += "MAG ";
+  s += std::to_string(_mag);
+  s += " ANGLE ";
   s += std::to_string(_angle);
   s += " ";
   return s;
@@ -271,8 +243,7 @@ std::string dbGDSSTrans::to_string() const
 
 bool dbGDSSTrans::identity() const
 {
-  return (!_flipX) && (!_absMag) && (!_absAngle) && (_mag == 1.0)
-         && (_angle == 0.0);
+  return (!_flipX) && (_mag == 1.0) && (_angle == 0.0);
 }
 
 dbGDSTextPres::dbGDSTextPres()
@@ -307,8 +278,6 @@ std::string dbGDSTextPres::to_string() const
 dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
 {
   stream >> t._flipX;
-  stream >> t._absMag;
-  stream >> t._absAngle;
   stream >> t._mag;
   stream >> t._angle;
   return stream;
@@ -317,8 +286,6 @@ dbIStream& operator>>(dbIStream& stream, dbGDSSTrans& t)
 dbOStream& operator<<(dbOStream& stream, const dbGDSSTrans t)
 {
   stream << t._flipX;
-  stream << t._absMag;
-  stream << t._absAngle;
   stream << t._mag;
   stream << t._angle;
   return stream;

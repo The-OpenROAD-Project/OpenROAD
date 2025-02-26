@@ -38,6 +38,7 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <vector>
 
 #include "Clock.h"
 #include "CtsOptions.h"
@@ -97,7 +98,7 @@ class LevelBalancer
 
   void run();
   void addBufferLevels(TreeBuilder* builder,
-                       std::vector<ClockInst*> cluster,
+                       const std::vector<ClockInst*>& cluster,
                        ClockSubNet* driverNet,
                        unsigned bufLevels,
                        const std::string& nameSuffix);

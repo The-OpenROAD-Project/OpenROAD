@@ -83,9 +83,11 @@ QVariant SelectionModel::data(const QModelIndex& index, int role) const
   const std::string obj_type = table_data_[row_index]->getTypeName();
   if (index.column() == 0) {
     return QString::fromStdString(obj_name);
-  } else if (index.column() == 1) {
+  }
+  if (index.column() == 1) {
     return QString::fromStdString(obj_type);
-  } else if (index.column() == 2) {
+  }
+  if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index]->getBBox(bbox);
     return valid ? QString::fromStdString(Descriptor::Property::toString(bbox))
@@ -101,9 +103,11 @@ QVariant SelectionModel::headerData(int section,
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     if (section == 0) {
       return QString("Object");
-    } else if (section == 1) {
+    }
+    if (section == 1) {
       return QString("Type");
-    } else if (section == 2) {
+    }
+    if (section == 2) {
       return QString("Bounds");
     }
   }
@@ -150,7 +154,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   }
   if (role == Qt::BackgroundRole && index.column() != 3)
     return QVariant();
-  else if (role == Qt::BackgroundRole && index.column() == 3) {
+  if (role == Qt::BackgroundRole && index.column() == 3) {
     auto highlight_color
         = Painter::highlightColors[table_data_[index.row()].first];
     return QColor(highlight_color.r,
@@ -172,14 +176,17 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   }
   if (index.column() == 0) {
     return QString::fromStdString(obj_name);
-  } else if (index.column() == 1) {
+  }
+  if (index.column() == 1) {
     return QString::fromStdString(obj_type);
-  } else if (index.column() == 2) {
+  }
+  if (index.column() == 2) {
     odb::Rect bbox;
     bool valid = table_data_[row_index].second->getBBox(bbox);
     return valid ? QString::fromStdString(Descriptor::Property::toString(bbox))
                  : "<none>";
-  } else if (index.column() == 3) {
+  }
+  if (index.column() == 3) {
     QString group_string
         = QString("Group ") + QString::number(table_data_[row_index].first + 1);
     return group_string;
@@ -194,11 +201,14 @@ QVariant HighlightModel::headerData(int section,
   if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     if (section == 0) {
       return QString("Object");
-    } else if (section == 1) {
+    }
+    if (section == 1) {
       return QString("Type");
-    } else if (section == 2) {
+    }
+    if (section == 2) {
       return QString("Bounds");
-    } else if (section == 3) {
+    }
+    if (section == 3) {
       return QString("Highlight Group");
     }
   }

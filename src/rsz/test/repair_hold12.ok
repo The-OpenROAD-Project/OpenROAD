@@ -5,5 +5,10 @@
 [INFO ODB-0133]     Created 16 nets and 30 connections.
  (clk ^) r -0.04:INF f -0.04:INF
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.045 |  -0.082 | out
+    final |       0 |       4 |            0 |   +14.6% |   0.012 |   0.000 | r3/D
+--------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 4 hold buffers.
  (clk ^) r 0.02:INF f 0.01:INF

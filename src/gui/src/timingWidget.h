@@ -44,6 +44,7 @@
 #include <QSplitter>
 #include <QTableView>
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -69,12 +70,13 @@ class TimingWidget : public QDockWidget
  public:
   enum CommandType
   {
-    CLOSEST_MATCH,
+    EXACT,
+    NO_BUFFERING,
     FROM_START_TO_END
   };
 
   TimingWidget(QWidget* parent = nullptr);
-  ~TimingWidget();
+  ~TimingWidget() override;
 
   void init(sta::dbSta* sta);
 
@@ -144,6 +146,10 @@ class TimingWidget : public QDockWidget
                              const std::string& path_group_name);
   void setInitialColumnsVisibility(const QVariant& columns_visibility);
   QVariantList getColumnsVisibility() const;
+
+  // Auxiliary for generating report_checks commands for Script Widget.
+  QString generateFromStartToEndString(TimingPath* path);
+  QString generateClosestMatchString(CommandType type, TimingPath* path);
 
   QMenu* commands_menu_;
 

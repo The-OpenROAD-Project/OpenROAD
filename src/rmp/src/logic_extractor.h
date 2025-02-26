@@ -54,7 +54,7 @@ class LogicExtractorFactory
   LogicCut BuildLogicCut(AbcLibrary& abc_network);
 
  private:
-  // Process vertificies from BFS STA output to find the primary inputs.
+  // Process vertices from BFS STA output to find the primary inputs.
   std::vector<sta::Pin*> GetPrimaryInputs(
       std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Pin*> GetPrimaryOutputs(
@@ -70,6 +70,9 @@ class LogicExtractorFactory
   void RemovePrimaryOutputInstances(
       std::unordered_set<sta::Instance*>& cut_instances,
       std::vector<sta::Pin*>& primary_output_pins);
+  std::vector<sta::Vertex*> AddMissingVertices(
+      std::vector<sta::Vertex*>& cut_vertices,
+      AbcLibrary& abc_library);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;

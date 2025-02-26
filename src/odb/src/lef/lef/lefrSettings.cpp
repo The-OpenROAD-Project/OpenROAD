@@ -29,11 +29,11 @@
 
 #include "lefrSettings.hpp"
 
-#include <string.h>
+#include <cstring>
 
 #include "lef_parser.hpp"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_LEF_PARSER_NAMESPACE
 
 const char* lefrSettings::lefOxides[] = {
     "OXIDE1",  "OXIDE2",  "OXIDE3",  "OXIDE4",  "OXIDE5",  "OXIDE6",  "OXIDE7",
@@ -42,61 +42,9 @@ const char* lefrSettings::lefOxides[] = {
     "OXIDE22", "OXIDE23", "OXIDE24", "OXIDE25", "OXIDE26", "OXIDE27", "OXIDE28",
     "OXIDE29", "OXIDE30", "OXIDE31", "OXIDE32"};
 
-lefrSettings* lefSettings = NULL;
+lefrSettings* lefSettings = nullptr;
 
 lefrSettings::lefrSettings()
-    : LineNumberFunction(0),
-      ReadFunction(0),
-      AntennaInoutWarnings(999),
-      AntennaInputWarnings(999),
-      AntennaOutputWarnings(999),
-      ArrayWarnings(999),
-      CaseSensitive(FALSE),
-      CaseSensitiveSet(FALSE),
-      CaseSensitiveWarnings(999),
-      CommentChar('#'),
-      CorrectionTableWarnings(999),
-      DeltaNumberLines(10000),
-      DielectricWarnings(999),
-      DisPropStrProcess(0),
-      EdgeRateScaleFactorWarnings(999),
-      EdgeRateThreshold1Warnings(999),
-      EdgeRateThreshold2Warnings(999),
-      IRDropWarnings(999),
-      InoutAntennaWarnings(999),
-      InputAntennaWarnings(999),
-      LayerWarnings(999),
-      LogFileAppend(0),
-      MacroWarnings(999),
-      MaxStackViaWarnings(999),
-      MinFeatureWarnings(999),
-      NoWireExtensionWarnings(999),
-      NoiseMarginWarnings(999),
-      NoiseTableWarnings(999),
-      NonDefaultWarnings(999),
-      OutputAntennaWarnings(999),
-      PinWarnings(999),
-      ReadEncrypted(0),
-      RegisterUnused(0),
-      RelaxMode(FALSE),
-      ShiftCase(0),
-      SiteWarnings(999),
-      SpacingWarnings(999),
-      TimingWarnings(999),
-      TotalMsgLimit(0),
-      UnitsWarnings(999),
-      UseMinSpacingWarnings(999),
-      ViaRuleWarnings(999),
-      ViaWarnings(999),
-      UserData(NULL),
-      dAllMsgs(0),
-      VersionNum(0.0),
-      MallocFunction(0),
-      ReallocFunction(0),
-      FreeFunction(0),
-      ErrorLogFunction(0),
-      SetLogFunction(0),
-      WarningLogFunction(0)
 {
   memset(MsgLimit, 0, MAX_LEF_MSGS * sizeof(int));
   init_symbol_table();
@@ -614,9 +562,8 @@ int lefrSettings::suppresMsg(int msgId)
     if (!status) {
       msgsDisableMap[msgId] = 1;
       return 1;
-    } else {
-      return 2;
     }
+    return 2;
   }
 
   return 0;
@@ -672,4 +619,4 @@ std::string lefrSettings::getLayerLef58Types(const char* type) const
   return result;
 }
 
-END_LEFDEF_PARSER_NAMESPACE
+END_LEF_PARSER_NAMESPACE

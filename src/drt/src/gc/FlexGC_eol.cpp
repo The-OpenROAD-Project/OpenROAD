@@ -26,6 +26,7 @@
  */
 
 #include <iostream>
+#include <vector>
 
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"

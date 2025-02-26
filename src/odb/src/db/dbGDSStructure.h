@@ -42,21 +42,19 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbGDSBoundary;
 template <class T>
 class dbTable;
 class _dbGDSBox;
-class _dbGDSNode;
 class _dbGDSPath;
 class _dbGDSSRef;
+class _dbGDSARef;
 class _dbGDSText;
 
 class _dbGDSStructure : public _dbObject
 {
  public:
-  _dbGDSStructure(_dbDatabase*, const _dbGDSStructure& r);
   _dbGDSStructure(_dbDatabase*);
 
   ~_dbGDSStructure();
@@ -64,25 +62,16 @@ class _dbGDSStructure : public _dbObject
   bool operator==(const _dbGDSStructure& rhs) const;
   bool operator!=(const _dbGDSStructure& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSStructure& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGDSStructure& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbGDSStructure> _next_entry;
-
   dbTable<_dbGDSBoundary>* boundaries_;
-
   dbTable<_dbGDSBox>* boxes_;
-
-  dbTable<_dbGDSNode>* nodes_;
-
   dbTable<_dbGDSPath>* paths_;
-
   dbTable<_dbGDSSRef>* srefs_;
-
+  dbTable<_dbGDSARef>* arefs_;
   dbTable<_dbGDSText>* texts_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj);

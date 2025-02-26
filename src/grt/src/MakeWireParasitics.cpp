@@ -35,6 +35,8 @@
 
 #include "MakeWireParasitics.h"
 
+#include <vector>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -170,8 +172,8 @@ sta::Pin* MakeWireParasitics::staPin(Pin& pin) const
 {
   if (pin.isPort())
     return network_->dbToSta(pin.getBTerm());
-  else
-    return network_->dbToSta(pin.getITerm());
+
+  return network_->dbToSta(pin.getITerm());
 }
 
 void MakeWireParasitics::makeRouteParasitics(

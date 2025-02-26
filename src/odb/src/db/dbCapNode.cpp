@@ -32,6 +32,8 @@
 
 #include "dbCapNode.h"
 
+#include <vector>
+
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCCSegItr.h"
@@ -101,50 +103,6 @@ bool _dbCapNode::operator==(const _dbCapNode& rhs) const
   }
 
   return true;
-}
-
-void _dbCapNode::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbCapNode& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._internal);
-  DIFF_FIELD(_flags._iterm);
-  DIFF_FIELD(_flags._bterm);
-  DIFF_FIELD(_flags._branch);
-  DIFF_FIELD(_flags._foreign);
-  DIFF_FIELD(_flags._childrenCnt);
-  DIFF_FIELD(_flags._select);
-
-  // if (stream.getDatabase()->isSchema(ADS_DB_CAPNODE_NAME))
-  DIFF_FIELD(_flags._name);
-
-  DIFF_FIELD(_node_num);
-  DIFF_FIELD(_net);
-  DIFF_FIELD(_next);
-  DIFF_FIELD(_cc_segs);
-  DIFF_END
-}
-
-void _dbCapNode::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._internal);
-  DIFF_OUT_FIELD(_flags._iterm);
-  DIFF_OUT_FIELD(_flags._bterm);
-  DIFF_OUT_FIELD(_flags._branch);
-  DIFF_OUT_FIELD(_flags._foreign);
-  DIFF_OUT_FIELD(_flags._childrenCnt);
-  DIFF_OUT_FIELD(_flags._select);
-
-  // if (stream.getDatabase()->isSchema(ADS_DB_CAPNODE_NAME))
-  DIFF_OUT_FIELD(_flags._name);
-
-  DIFF_OUT_FIELD(_node_num);
-  DIFF_OUT_FIELD(_net);
-  DIFF_OUT_FIELD(_next);
-  DIFF_OUT_FIELD(_cc_segs);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -537,7 +495,8 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
       return true;
     }
     return false;
-  } else if (seg->_flags._bterm) {
+  }
+  if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     iotype = bterm->getIoType();
     if (bterm->getIoType() == dbIoType::INPUT) {
@@ -557,7 +516,8 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
       return true;
     }
     return false;
-  } else if (seg->_flags._bterm) {
+  }
+  if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     if (bterm->getIoType() == dbIoType::INOUT) {
       return true;
@@ -871,12 +831,11 @@ uint dbCapNode::getShapeId()
     if (!iterm->getNet() || !iterm->getNet()->getWire())
       return 0;
     return iterm->getNet()->getWire()->getTermJid(iterm->getId());
-  } else {
-    dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
-    if (!bterm->getNet() || !bterm->getNet()->getWire())
-      return 0;
-    return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
   }
+  dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
+  if (!bterm->getNet() || !bterm->getNet()->getWire())
+    return 0;
+  return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
 }
 
 void dbCapNode::setSortIndex(uint idx)
@@ -918,9 +877,8 @@ bool dbCapNode::getTermCoords(int& x, int& y, dbBlock* mblock)
   if (seg->_flags._bterm > 0) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     return (bterm->getFirstPinLocation(x, y));
-  } else
-    return false;
-  return true;
+  }
+  return false;
 }
 
 dbSet<dbCCSeg> dbCapNode::getCCSegs()
@@ -1133,4 +1091,11 @@ dbCapNode* dbCapNode::getCapNode(dbBlock* block_, uint dbid_)
   _dbBlock* block = (_dbBlock*) block_;
   return (dbCapNode*) block->_cap_node_tbl->getPtr(dbid_);
 }
+
+void _dbCapNode::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

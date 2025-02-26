@@ -435,7 +435,7 @@ bool extMeasure::DebugStart(bool allNets)
              GetDBcoords(_ur[1]) - GetDBcoords(_ll[1]));
   return true;
 }
-
+/* DELETE ???
 bool extMeasure::DebugDiagCoords(int met,
                                  int targetMet,
                                  int len1,
@@ -452,12 +452,10 @@ bool extMeasure::DebugDiagCoords(int met,
       "debug_net",
       1,
       "[DIAG_EXT:C]"
-      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {} {:.3f}\n\tLen : {} {:.3f} \
-        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {} {:.3f} \
-        \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n",
-      met,
-      targetMet,
-      diagDist,
+      "\t----- Diagonal Coupling Coords ----- \n\tDiag: M{} to M{}\n\tDist: {}
+{:.3f}\n\tLen : {} {:.3f} \
+        \n\tloX : {} {:.3f} \n\thiX : {} {:.3f} \n\tloY : {} {:.3f} \n\thiY : {}
+{:.3f} \ \n\tDX  : {} {:.3f} \n\tDY  : {} {:.3f} \n", met, targetMet, diagDist,
       GetDBcoords(diagDist),
       len1,
       GetDBcoords(len1),
@@ -475,7 +473,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
-
+*/
 // -----------------------------------------------------------------
 //
 // from extRCmodel.cpp

@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "AbstractMakeWireParasitics.h"
 #include "FastRoute.h"
 #include "Grid.h"
@@ -93,7 +95,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   float getNetSlack(odb::dbNet* net) override;
 
  private:
-  typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
+  using NodeRoutePtMap = std::map<RoutePt, sta::ParasiticNode*>;
 
   sta::Pin* staPin(Pin& pin) const;
   void makeRouteParasitics(odb::dbNet* net,

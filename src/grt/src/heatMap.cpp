@@ -32,6 +32,8 @@
 
 #include "heatMap.h"
 
+#include <vector>
+
 namespace grt {
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
@@ -93,9 +95,8 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
       [this]() -> std::string {
         if (layer_ == nullptr) {
           return "All";  // default to all
-        } else {
-          return layer_->getName();
         }
+        return layer_->getName();
       },
       [this](const std::string& value) {
         auto* tech = db_->getTech();

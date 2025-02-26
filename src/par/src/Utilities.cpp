@@ -37,29 +37,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Utilities.h"
 
-#include <ortools/base/commandlineflags.h>
-#include <ortools/base/logging.h>
 #include <ortools/linear_solver/linear_solver.h>
-#include <ortools/linear_solver/linear_solver.pb.h>
 
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <climits>
 #include <cmath>
-#include <fstream>
 #include <functional>
-#include <iomanip>
-#include <iostream>
 #include <iterator>
 #include <map>
-#include <queue>
-#include <random>
-#include <sstream>
-#include <stack>
-#include <stdexcept>
+#include <memory>
+#include <numeric>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace par {

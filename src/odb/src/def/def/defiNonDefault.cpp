@@ -29,15 +29,14 @@
 
 #include "defiNonDefault.hpp"
 
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include "defiDebug.hpp"
 #include "lex.h"
 
-BEGIN_LEFDEF_PARSER_NAMESPACE
+BEGIN_DEF_PARSER_NAMESPACE
 
 namespace {
 
@@ -80,38 +79,38 @@ defiNonDefault::defiNonDefault(defrData* data) : defData(data)
 
 void defiNonDefault::Init()
 {
-  name_ = 0;
+  name_ = nullptr;
   hardSpacing_ = 0;
   numLayers_ = 0;
-  width_ = 0;
-  hasDiagWidth_ = 0;
-  hasSpacing_ = 0;
-  hasWireExt_ = 0;
+  width_ = nullptr;
+  hasDiagWidth_ = nullptr;
+  hasSpacing_ = nullptr;
+  hasWireExt_ = nullptr;
   numVias_ = 0;
   viasAllocated_ = 0;
-  viaNames_ = 0;
+  viaNames_ = nullptr;
   numViaRules_ = 0;
   viaRulesAllocated_ = 0;
-  viaRuleNames_ = 0;
+  viaRuleNames_ = nullptr;
   numMinCuts_ = 0;
   minCutsAllocated_ = 0;
-  cutLayerName_ = 0;
-  numCuts_ = 0;
+  cutLayerName_ = nullptr;
+  numCuts_ = nullptr;
   numProps_ = 0;
   propsAllocated_ = 0;
-  names_ = 0;
-  values_ = 0;
-  dvalues_ = 0;
-  types_ = 0;
+  names_ = nullptr;
+  values_ = nullptr;
+  dvalues_ = nullptr;
+  types_ = nullptr;
   layersAllocated_ = 0;
-  layerName_ = 0;
-  width_ = 0;
-  hasDiagWidth_ = 0;
-  diagWidth_ = 0;
-  hasSpacing_ = 0;
-  spacing_ = 0;
-  hasWireExt_ = 0;
-  wireExt_ = 0;
+  layerName_ = nullptr;
+  width_ = nullptr;
+  hasDiagWidth_ = nullptr;
+  diagWidth_ = nullptr;
+  hasSpacing_ = nullptr;
+  spacing_ = nullptr;
+  hasWireExt_ = nullptr;
+  wireExt_ = nullptr;
 }
 
 defiNonDefault::~defiNonDefault()
@@ -369,7 +368,7 @@ const char* defiNonDefault::layerName(int index) const
 {
   if (index < 0 || index >= numLayers_) {
     defiError6090(index, numLayers_, defData);
-    return 0;
+    return nullptr;
   }
   return layerName_[index];
 }
@@ -486,7 +485,7 @@ const char* defiNonDefault::viaName(int index) const
 {
   if (index < 0 || index >= numVias_) {
     defiError6090(index, numLayers_, defData);
-    return 0;
+    return nullptr;
   }
   return viaNames_[index];
 }
@@ -500,7 +499,7 @@ const char* defiNonDefault::viaRuleName(int index) const
 {
   if (index < 0 || index >= numViaRules_) {
     defiError6090(index, numLayers_, defData);
-    return 0;
+    return nullptr;
   }
   return viaRuleNames_[index];
 }
@@ -514,7 +513,7 @@ const char* defiNonDefault::cutLayerName(int index) const
 {
   if (index < 0 || index >= numMinCuts_) {
     defiError6090(index, numLayers_, defData);
-    return 0;
+    return nullptr;
   }
   return cutLayerName_[index];
 }
@@ -666,7 +665,7 @@ const char* defiNonDefault::propName(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6091(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return names_[index];
 }
@@ -675,7 +674,7 @@ const char* defiNonDefault::propValue(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6091(index, numProps_, defData);
-    return 0;
+    return nullptr;
   }
   return values_[index];
 }
@@ -715,4 +714,4 @@ int defiNonDefault::propIsString(int index) const
   }
   return dvalues_[index] ? 0 : 1;
 }
-END_LEFDEF_PARSER_NAMESPACE
+END_DEF_PARSER_NAMESPACE

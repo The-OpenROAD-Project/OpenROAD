@@ -1,13 +1,16 @@
 or_integration_tests(
   "mpl"
   TESTS
-    east_west1
-    east_west2
-    level3_01
-    level3_02
-    snap_layer1
+    macro_only
+    no_unfixed_macros
+    guides1
+    guides2
+    io_constraints1
+    io_constraints2
 )
 
 # Skipped
 #mpl_man_tcl_check
 #mpl_readme_msgs_check
+
+add_subdirectory(cpp)

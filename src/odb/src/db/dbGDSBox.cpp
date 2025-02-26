@@ -34,7 +34,6 @@
 #include "dbGDSBox.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -50,6 +49,9 @@ bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
   if (_datatype != rhs._datatype) {
     return false;
   }
+  if (_bounds != rhs._bounds) {
+    return false;
+  }
 
   return true;
 }
@@ -59,42 +61,17 @@ bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const
   return true;
 }
 
-void _dbGDSBox::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbGDSBox& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_datatype);
-  DIFF_END
-}
-
-void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_datatype);
-
-  DIFF_END
-}
-
 _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 {
   _layer = 0;
   _datatype = 0;
 }
 
-_dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
   stream >> obj._layer;
   stream >> obj._datatype;
-  stream >> obj._xy;
+  stream >> obj._bounds;
   stream >> obj._propattr;
   return stream;
 }
@@ -103,9 +80,22 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 {
   stream << obj._layer;
   stream << obj._datatype;
-  stream << obj._xy;
+  stream << obj._bounds;
   stream << obj._propattr;
   return stream;
+}
+
+void _dbGDSBox::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -140,17 +130,17 @@ int16_t dbGDSBox::getDatatype() const
   return obj->_datatype;
 }
 
-void dbGDSBox::setXy(const std::vector<Point>& xy)
+void dbGDSBox::setBounds(Rect bounds)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 
-  obj->_xy = xy;
+  obj->_bounds = bounds;
 }
 
-void dbGDSBox::getXy(std::vector<Point>& tbl) const
+Rect dbGDSBox::getBounds() const
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
-  tbl = obj->_xy;
+  return obj->_bounds;
 }
 
 // User Code Begin dbGDSBoxPublicMethods
@@ -158,12 +148,6 @@ std::vector<std::pair<std::int16_t, std::string>>& dbGDSBox::getPropattr()
 {
   auto* obj = (_dbGDSBox*) this;
   return obj->_propattr;
-}
-
-const std::vector<Point>& dbGDSBox::getXY()
-{
-  auto obj = (_dbGDSBox*) this;
-  return obj->_xy;
 }
 
 dbGDSBox* dbGDSBox::create(dbGDSStructure* structure)

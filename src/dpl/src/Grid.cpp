@@ -42,6 +42,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 #include "Objects.h"
 #include "Padding.h"
@@ -253,7 +254,6 @@ void Grid::visitCellPixels(
 
 void Grid::visitCellBoundaryPixels(
     Cell& cell,
-    bool padded,
     const std::function<
         void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
     const
@@ -304,8 +304,7 @@ void Grid::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    const auto grid_rect
-        = padded ? gridCoveringPadded(&cell) : gridCovering(&cell);
+    const auto grid_rect = gridCovering(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -385,6 +384,22 @@ void Grid::paintPixel(Cell* cell, GridX grid_x, GridY grid_y)
 GridX Grid::gridPaddedWidth(const Cell* cell) const
 {
   return GridX{divCeil(padding_->paddedWidth(cell).v, getSiteWidth().v)};
+}
+
+GridY Grid::gridHeight(odb::dbMaster* master) const
+{
+  Rect bbox;
+  master->getPlacementBoundary(bbox);
+  if (uniform_row_height_) {
+    DbuY row_height = uniform_row_height_.value();
+    return GridY{max(1, divCeil(bbox.dy(), row_height.v))};
+  }
+  auto site = master->getSite();
+  if (!site->hasRowPattern()) {
+    return GridY{1};
+  }
+
+  return GridY{static_cast<int>(site->getRowPattern().size())};
 }
 
 GridY Grid::gridHeight(const Cell* cell) const
@@ -566,7 +581,7 @@ void Grid::examineRows(dbBlock* block)
     // Check all sites have equal width
     if (!first_site) {
       first_site = site;
-      site_width_ = DbuX{static_cast<int>(site->getWidth())};
+      site_width_ = DbuX{site->getWidth()};
     } else if (site->getWidth() != site_width_) {
       logger_->error(DPL,
                      51,

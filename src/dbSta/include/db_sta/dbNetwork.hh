@@ -181,8 +181,12 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Port* port) const override;
   ObjectId id(const Cell* cell) const override;
 
+  // generic connect pin -> net, supports all pin/net types
+  void connectPin(Pin* pin, Net* net) override;
   // hierarchical support functions
-  dbModule* getNetDriverParentModule(Net* net);
+  dbModule* getNetDriverParentModule(Net* net,
+                                     Pin*& driver_pin,
+                                     bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
   bool ConnectionToModuleExists(dbITerm* source_pin,
@@ -195,7 +199,7 @@ class dbNetwork : public ConcreteNetwork
                            const char* connection_name);
 
   void getParentHierarchy(dbModule* start_module,
-                          std::vector<dbModule*>& parent_hierarchy);
+                          std::vector<dbModule*>& parent_hierarchy) const;
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
@@ -219,6 +223,10 @@ class dbNetwork : public ConcreteNetwork
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
   const char* name(const Port* port) const override;
+  // Path name functions needed hierarchical verilog netlists.
+  using ConcreteNetwork::pathName;
+  const char* pathName(const Net* net) const override;
+
   const char* busName(const Port* port) const override;
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
@@ -234,6 +242,7 @@ class dbNetwork : public ConcreteNetwork
   void setAttribute(Instance* instance,
                     const string& key,
                     const string& value) override;
+  dbModNet* findRelatedModNet(const dbNet*) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -310,6 +319,7 @@ class dbNetwork : public ConcreteNetwork
   void replaceCell(Instance* inst, Cell* cell) override;
   // Deleting instance also deletes instance pins.
   void deleteInstance(Instance* inst) override;
+
   // Connect the port on an instance to a net.
   Pin* connect(Instance* inst, Port* port, Net* net) override;
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;

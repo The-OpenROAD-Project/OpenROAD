@@ -39,6 +39,7 @@
 #include <QString>
 #include <QtCharts>
 #include <memory>
+#include <vector>
 
 #include "gui/gui.h"
 #include "staGuiInterface.h"
@@ -72,7 +73,7 @@ class HistogramView : public QChartView
  public:
   HistogramView(QChart* chart, QWidget* parent);
 
-  virtual void mousePressEvent(QMouseEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
 
  signals:
   void barIndex(int bar_index);

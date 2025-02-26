@@ -35,6 +35,8 @@
 
 #include "Slots.h"
 
+#include <vector>
+
 namespace ppl {
 
 int Section::getMaxContiguousSlots(const std::vector<Slot>& slots)

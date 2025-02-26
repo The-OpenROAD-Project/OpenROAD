@@ -33,7 +33,6 @@
 #include "dbTechViaRule.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -73,26 +72,6 @@ bool _dbTechViaRule::operator==(const _dbTechViaRule& rhs) const
   return true;
 }
 
-void _dbTechViaRule::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbTechViaRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_VECTOR(_layer_rules);
-  DIFF_VECTOR(_vias);
-  DIFF_END
-}
-
-void _dbTechViaRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_VECTOR(_layer_rules);
-  DIFF_OUT_VECTOR(_vias);
-  DIFF_END
-}
-
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
     : _flags(v._flags),
       _name(nullptr),
@@ -107,7 +86,7 @@ _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*)
 {
-  _name = 0;
+  _name = nullptr;
   _flags._spare_bits = 0;
 }
 
@@ -211,6 +190,16 @@ dbTechViaRule* dbTechViaRule::getTechViaRule(dbTech* tech_, uint dbid_)
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaRule*) tech->_via_rule_tbl->getPtr(dbid_);
+}
+
+void _dbTechViaRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["layer_rules"].add(_layer_rules);
+  info.children_["vias"].add(_vias);
 }
 
 }  // namespace odb

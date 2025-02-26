@@ -238,7 +238,7 @@ class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
 {
  public:
   DbITermDescriptor(odb::dbDatabase* db,
-                    std::function<bool(void)> usingPolyDecompView);
+                    std::function<bool()> usingPolyDecompView);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -255,7 +255,7 @@ class DbITermDescriptor : public BaseDbDescriptor<odb::dbITerm>
   Properties getDBProperties(odb::dbITerm* iterm) const override;
 
  private:
-  std::function<bool(void)> usingPolyDecompView_;
+  std::function<bool()> usingPolyDecompView_;
 };
 
 class DbBTermDescriptor : public BaseDbDescriptor<odb::dbBTerm>
@@ -299,7 +299,7 @@ class DbMTermDescriptor : public BaseDbDescriptor<odb::dbMTerm>
 {
  public:
   DbMTermDescriptor(odb::dbDatabase* db,
-                    std::function<bool(void)> usingPolyDecompView);
+                    std::function<bool()> usingPolyDecompView);
 
   std::string getName(std::any object) const override;
   std::string getShortName(std::any object) const override;
@@ -314,7 +314,7 @@ class DbMTermDescriptor : public BaseDbDescriptor<odb::dbMTerm>
   Properties getDBProperties(odb::dbMTerm* mterm) const override;
 
  private:
-  std::function<bool(void)> usingPolyDecompView_;
+  std::function<bool()> usingPolyDecompView_;
 };
 
 class DbViaDescriptor : public BaseDbDescriptor<odb::dbVia>

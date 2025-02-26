@@ -34,6 +34,7 @@
 
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "odb/dbShape.h"
 

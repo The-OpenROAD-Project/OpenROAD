@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "db/gcObj/gcShape.h"
 
 namespace drt {

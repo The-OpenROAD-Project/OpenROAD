@@ -46,12 +46,7 @@
 namespace odb {
 
 dbJournal::dbJournal(dbBlock* block)
-    : _block(block),
-      _logger(block->getImpl()->getLogger()),
-      _log(_logger),
-      _start_action(false),
-      _action_idx(0),
-      _cur_action(0)
+    : _block(block), _logger(block->getImpl()->getLogger()), _log(_logger)
 {
 }
 
@@ -1780,7 +1775,9 @@ void dbJournal::undo_swapObject()
                             dbObject::getTypeName(sub_obj_type));
         }
       }
+      break;
     }
+
     case dbInstObj: {
       uint inst_id;
       _log.pop(inst_id);

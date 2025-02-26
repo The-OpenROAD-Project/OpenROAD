@@ -36,22 +36,23 @@
 #include "tap/tapcell.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
 #include <map>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
 #include "utl/Logger.h"
-#include "utl/algorithms.h"
 
 namespace tap {
 
-using std::max;
-using std::min;
 using std::string;
 using std::vector;
 
@@ -122,10 +123,10 @@ void Tapcell::run(const Options& options)
   placeTapcells(options);
 }
 
-int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
-                           const int dist,
-                           const bool disallow_one_site_gaps)
+int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
 {
+  const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
+
   std::vector<Edge> edges;
 
   // Collect edges
@@ -1503,7 +1504,7 @@ void Tapcell::placeTapcells(const Options& options)
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
-  placeTapcells(options.tapcell_master, dist, options.disallow_one_site_gaps);
+  placeTapcells(options.tapcell_master, dist);
 }
 
 odb::dbBlock* Tapcell::getBlock() const

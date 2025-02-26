@@ -46,7 +46,6 @@ class _dbTechLayer;
 class _dbTechNonDefaultRule;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbTechLayerRuleFlags
 {
@@ -93,10 +92,7 @@ class _dbTechLayerRule : public _dbObject
     return _non_default_rule < rhs._non_default_rule;
   }
 
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerRule& rule);

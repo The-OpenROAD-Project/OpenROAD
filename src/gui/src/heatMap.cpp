@@ -38,6 +38,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <vector>
 
 #include "heatMapSetup.h"
 #include "utl/Logger.h"
@@ -266,7 +267,7 @@ std::string HeatMapDataSource::formatValue(double value, bool legend) const
 void HeatMapDataSource::addBooleanSetting(
     const std::string& name,
     const std::string& label,
-    const std::function<bool(void)>& getter,
+    const std::function<bool()>& getter,
     const std::function<void(bool)>& setter)
 {
   settings_.emplace_back(MapSettingBoolean{name, label, getter, setter});
@@ -275,8 +276,8 @@ void HeatMapDataSource::addBooleanSetting(
 void HeatMapDataSource::addMultipleChoiceSetting(
     const std::string& name,
     const std::string& label,
-    const std::function<std::vector<std::string>(void)>& choices,
-    const std::function<std::string(void)>& getter,
+    const std::function<std::vector<std::string>()>& choices,
+    const std::function<std::string()>& getter,
     const std::function<void(std::string)>& setter)
 {
   settings_.emplace_back(

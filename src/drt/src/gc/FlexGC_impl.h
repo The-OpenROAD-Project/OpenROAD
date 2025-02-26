@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/gcObj/gcNet.h"
 #include "dr/FlexDR.h"

@@ -29,6 +29,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
@@ -46,11 +47,7 @@ class frInst : public frRef
  public:
   // constructors
   frInst(const frString& name, frMaster* master, odb::dbInst* db_inst)
-      : name_(name),
-        master_(master),
-        db_inst_(db_inst),
-        pinAccessIdx_(0),
-        toBeDeleted_(false)
+      : name_(name), master_(master), db_inst_(db_inst)
   {
   }
   // getters
@@ -150,8 +147,8 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   odb::dbInst* db_inst_;
   dbTransform xform_;
-  int pinAccessIdx_;
-  bool toBeDeleted_;
+  int pinAccessIdx_{0};
+  bool toBeDeleted_{false};
 };
 
 }  // namespace drt

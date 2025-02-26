@@ -34,8 +34,16 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <boost/polygon/polygon.hpp>
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/geom_boost.h"
 
 namespace ord {
@@ -72,7 +80,6 @@ struct Options
   odb::dbMaster* tap_nwout3_master = nullptr;
   odb::dbMaster* incnrcap_nwin_master = nullptr;
   odb::dbMaster* incnrcap_nwout_master = nullptr;
-  bool disallow_one_site_gaps = false;
 
   bool addBoundaryCells() const
   {
@@ -198,9 +205,7 @@ class Tapcell
                      int width,
                      const odb::dbOrientType& orient,
                      const std::set<odb::dbInst*>& row_insts);
-  int placeTapcells(odb::dbMaster* tapcell_master,
-                    int dist,
-                    bool disallow_one_site_gaps);
+  int placeTapcells(odb::dbMaster* tapcell_master, int dist);
   int placeTapcells(odb::dbMaster* tapcell_master,
                     int dist,
                     odb::dbRow* row,

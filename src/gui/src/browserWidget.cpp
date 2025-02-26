@@ -41,6 +41,7 @@
 #include <QLocale>
 #include <QMouseEvent>
 #include <QString>
+#include <vector>
 
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
@@ -404,7 +405,7 @@ void BrowserWidget::updateModel()
 
   std::vector<odb::dbInst*> insts;
   for (auto* inst : block_->getInsts()) {
-    if (inst->getModule() != nullptr) {
+    if (!inst->isPhysicalOnly()) {
       continue;
     }
 

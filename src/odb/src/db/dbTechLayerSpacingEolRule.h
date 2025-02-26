@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 // User Code Begin Classes
 class _dbTechLayer;
@@ -94,10 +93,7 @@ struct dbTechLayerSpacingEolRuleFlags
 class _dbTechLayerSpacingEolRule : public _dbObject
 {
  public:
-  _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
   _dbTechLayerSpacingEolRule(_dbDatabase*);
-
-  ~_dbTechLayerSpacingEolRule() = default;
 
   bool operator==(const _dbTechLayerSpacingEolRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingEolRule& rhs) const
@@ -105,10 +101,7 @@ class _dbTechLayerSpacingEolRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerSpacingEolRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerSpacingEolRuleFlags flags_;
   int eol_space_;

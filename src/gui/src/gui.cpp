@@ -36,6 +36,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "chartsWidget.h"
 #include "clockWidget.h"
@@ -49,9 +50,7 @@
 #include "mainWindow.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
-#include "odb/defin.h"
 #include "odb/geom.h"
-#include "odb/lefin.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -1335,6 +1334,26 @@ void Gui::selectChart(const std::string& name)
 void Gui::updateTimingReport()
 {
   main_window->getTimingWidget()->populatePaths();
+}
+
+// See class header for documentation.
+std::size_t Gui::TypeInfoHasher::operator()(const std::type_index& x) const
+{
+#ifdef __GLIBCXX__
+  return std::hash<std::type_index>{}(x);
+#else
+  return std::hash<std::string_view>{}(std::string_view(x.name()));
+#endif
+}
+// See class header for documentation.
+bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
+                                         const std::type_index& b) const
+{
+#ifdef __GLIBCXX__
+  return a == b;
+#else
+  return strcmp(a.name(), b.name()) == 0;
+#endif
 }
 
 class SafeApplication : public QApplication

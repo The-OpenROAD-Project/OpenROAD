@@ -41,14 +41,13 @@
 #include "Grid.h"
 #include "Objects.h"
 #include "dpl/Opendp.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
 
 using std::string;
 using std::vector;
-
-using utl::DPL;
 
 using odb::dbBox;
 using odb::dbMaster;
@@ -61,11 +60,12 @@ void Opendp::importDb()
   block_ = db_->getChip()->getBlock();
   grid_->initBlock(block_);
   have_fillers_ = false;
-  have_one_site_cells_ = false;
+
+  disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
 
   importClear();
   grid_->examineRows(block_);
-  checkOneSiteDbMaster();
+  makeCellEdgeSpacingTable();
   makeMacros();
   makeCells();
   makeGroups();
@@ -81,24 +81,6 @@ void Opendp::importClear()
   have_multi_row_cells_ = false;
 }
 
-void Opendp::checkOneSiteDbMaster()
-{
-  vector<dbMaster*> masters;
-  auto db_libs = db_->getLibs();
-  for (auto db_lib : db_libs) {
-    if (have_one_site_cells_) {
-      break;
-    }
-    auto masters = db_lib->getMasters();
-    for (auto db_master : masters) {
-      if (isOneSiteCell(db_master)) {
-        have_one_site_cells_ = true;
-        break;
-      }
-    }
-  }
-}
-
 void Opendp::makeMacros()
 {
   vector<dbMaster*> masters;
@@ -109,9 +91,207 @@ void Opendp::makeMacros()
   }
 }
 
+namespace edge_calc {
+/**
+ * @brief Calculates the difference between the passed parent_segment and the
+ * vector segs The parent segment containts all the segments in the segs vector.
+ * This function computes the difference between the parent segment and the
+ * child segments. It first sorts the segs vector and merges intersecting ones.
+ * Then it calculates the difference and returns a list of segments.
+ */
+std::vector<Rect> difference(const Rect& parent_segment,
+                             const std::vector<Rect>& segs)
+{
+  if (segs.empty()) {
+    return {parent_segment};
+  }
+  bool is_horizontal = parent_segment.yMin() == parent_segment.yMax();
+  std::vector<Rect> sorted_segs = segs;
+  // Sort segments by start coordinate
+  std::sort(
+      sorted_segs.begin(),
+      sorted_segs.end(),
+      [is_horizontal](const Rect& a, const Rect& b) {
+        return (is_horizontal ? a.xMin() < b.xMin() : a.yMin() < b.yMin());
+      });
+  // Merge overlapping segments
+  auto prev_seg = sorted_segs.begin();
+  auto curr_seg = prev_seg;
+  for (++curr_seg; curr_seg != sorted_segs.end();) {
+    if (curr_seg->intersects(*prev_seg)) {
+      prev_seg->merge(*curr_seg);
+      curr_seg = sorted_segs.erase(curr_seg);
+    } else {
+      prev_seg = curr_seg++;
+    }
+  }
+  // Get the difference
+  const int start
+      = is_horizontal ? parent_segment.xMin() : parent_segment.yMin();
+  const int end = is_horizontal ? parent_segment.xMax() : parent_segment.yMax();
+  int current_pos = start;
+  std::vector<Rect> result;
+  for (const Rect& seg : sorted_segs) {
+    int seg_start = is_horizontal ? seg.xMin() : seg.yMin();
+    int seg_end = is_horizontal ? seg.xMax() : seg.yMax();
+    if (seg_start > current_pos) {
+      if (is_horizontal) {
+        result.emplace_back(current_pos,
+                            parent_segment.yMin(),
+                            seg_start,
+                            parent_segment.yMax());
+      } else {
+        result.emplace_back(parent_segment.xMin(),
+                            current_pos,
+                            parent_segment.xMax(),
+                            seg_start);
+      }
+    }
+    current_pos = seg_end;
+  }
+  // Add the remaining end segment if it exists
+  if (current_pos < end) {
+    if (is_horizontal) {
+      result.emplace_back(
+          current_pos, parent_segment.yMin(), end, parent_segment.yMax());
+    } else {
+      result.emplace_back(
+          parent_segment.xMin(), current_pos, parent_segment.xMax(), end);
+    }
+  }
+
+  return result;
+}
+
+Rect getBoundarySegment(const Rect& bbox,
+                        const odb::dbMasterEdgeType::EdgeDir dir)
+{
+  Rect segment(bbox);
+  switch (dir) {
+    case odb::dbMasterEdgeType::RIGHT:
+      segment.set_xlo(bbox.xMax());
+      break;
+    case odb::dbMasterEdgeType::LEFT:
+      segment.set_xhi(bbox.xMin());
+      break;
+    case odb::dbMasterEdgeType::TOP:
+      segment.set_ylo(bbox.yMax());
+      break;
+    case odb::dbMasterEdgeType::BOTTOM:
+      segment.set_yhi(bbox.yMin());
+      break;
+  }
+  return segment;
+}
+
+}  // namespace edge_calc
+
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   master->is_multi_row = grid_->isMultiHeight(db_master);
+  master->edges_.clear();
+  if (edge_spacing_table_.empty()) {
+    return;
+  }
+  if (db_master->getType()
+      == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
+    return;
+  }
+  Rect bbox;
+  db_master->getPlacementBoundary(bbox);
+  std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<Rect>> typed_segs;
+  int num_rows = grid_->gridHeight(db_master).v;
+  for (auto edge : db_master->getEdgeTypes()) {
+    auto dir = edge->getEdgeDir();
+    Rect edge_rect = edge_calc::getBoundarySegment(bbox, dir);
+    if (dir == odb::dbMasterEdgeType::TOP
+        || dir == odb::dbMasterEdgeType::BOTTOM) {
+      if (edge->getRangeBegin() != -1) {
+        edge_rect.set_xlo(edge_rect.xMin() + edge->getRangeBegin());
+        edge_rect.set_xhi(edge_rect.xMin() + edge->getRangeEnd());
+      }
+    } else {
+      auto dy = edge_rect.dy();
+      auto row_height = dy / num_rows;
+      auto half_row_height = row_height / 2;
+      if (edge->getCellRow() != -1) {
+        edge_rect.set_ylo(edge_rect.yMin()
+                          + (edge->getCellRow() - 1) * row_height);
+        edge_rect.set_yhi(
+            std::min(edge_rect.yMax(), edge_rect.yMin() + row_height));
+      } else if (edge->getHalfRow() != -1) {
+        edge_rect.set_ylo(edge_rect.yMin()
+                          + (edge->getHalfRow() - 1) * half_row_height);
+        edge_rect.set_yhi(
+            std::min(edge_rect.yMax(), edge_rect.yMin() + half_row_height));
+      }
+    }
+    typed_segs[dir].push_back(edge_rect);
+    if (edge_types_indices_.find(edge->getEdgeType())
+        != edge_types_indices_.end()) {
+      // consider only edge types defined in the spacing table
+      master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
+                                  edge_rect);
+    }
+  }
+  if (edge_types_indices_.find("DEFAULT") == edge_types_indices_.end()) {
+    return;
+  }
+  // Add the remaining DEFAULT un-typed segments
+  for (size_t dir_idx = 0; dir_idx <= 3; dir_idx++) {
+    const auto dir = (odb::dbMasterEdgeType::EdgeDir) dir_idx;
+    const auto parent_seg = edge_calc::getBoundarySegment(bbox, dir);
+    const auto default_segs
+        = edge_calc::difference(parent_seg, typed_segs[dir]);
+    for (const auto& seg : default_segs) {
+      master->edges_.emplace_back(0, seg);
+    }
+  }
+}
+
+void Opendp::makeCellEdgeSpacingTable()
+{
+  auto spacing_rules = db_->getTech()->getCellEdgeSpacingTable();
+  if (spacing_rules.empty()) {
+    return;
+  }
+  for (auto rule : spacing_rules) {
+    edge_types_indices_.try_emplace(rule->getFirstEdgeType(),
+                                    edge_types_indices_.size());
+    edge_types_indices_.try_emplace(rule->getSecondEdgeType(),
+                                    edge_types_indices_.size());
+  }
+  // Resize
+  const size_t size = edge_types_indices_.size();
+  edge_spacing_table_.resize(size);
+  for (size_t i = 0; i < size; i++) {
+    edge_spacing_table_[i].resize(size, EdgeSpacingEntry(0, false, false));
+  }
+  // Fill Table
+  for (auto rule : spacing_rules) {
+    std::string first_edge = rule->getFirstEdgeType();
+    std::string second_edge = rule->getSecondEdgeType();
+    const int spc = rule->getSpacing();
+    const bool exact = rule->isExact();
+    const bool except_abutted = rule->isExceptAbutted();
+    const EdgeSpacingEntry entry(spc, exact, except_abutted);
+    const int idx1 = edge_types_indices_[first_edge];
+    const int idx2 = edge_types_indices_[second_edge];
+    edge_spacing_table_[idx1][idx2] = entry;
+    edge_spacing_table_[idx2][idx1] = entry;
+  }
+}
+
+bool Opendp::hasCellEdgeSpacingTable() const
+{
+  return !edge_spacing_table_.empty();
+}
+
+int Opendp::getMaxSpacing(int edge_idx) const
+{
+  return std::max_element(edge_spacing_table_[edge_idx].begin(),
+                          edge_spacing_table_[edge_idx].end())
+      ->spc;
 }
 
 void Opendp::makeCells()

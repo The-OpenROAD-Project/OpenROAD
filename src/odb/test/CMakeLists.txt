@@ -5,7 +5,6 @@ or_integration_tests(
     bterm_hier_create
     check_routing_tracks
     create_sboxes
-    db_read_write
     def_parser
     design_is_routed1
     design_is_routed2
@@ -19,6 +18,7 @@ or_integration_tests(
     edit_def
     edit_via_params
     floorplan_initialize
+    floorplan_initialize2
     gcd_abstract_lef
     gcd_abstract_lef_with_power
     gcd_def_access
@@ -38,6 +38,7 @@ or_integration_tests(
     replace_design1
     replace_design2
     replace_design3
+    replace_design4
     rounding
     row_settings
     sky130hd_multi_patterned
@@ -53,6 +54,15 @@ or_integration_tests(
     dump_netlists
     dump_netlists_withfill
     parser_unit_test
+    test_block
+    test_bterm
+    test_destroy
+    test_group
+    test_inst
+    test_iterm
+    test_module
+    test_net
+    test_wire_codec
 )
 
 # Skipped

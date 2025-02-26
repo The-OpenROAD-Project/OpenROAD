@@ -45,7 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbSite;
 class dbLib;
-class dbDiff;
 class _dbSite;
 class _dbLib;
 
@@ -76,8 +75,7 @@ class _dbRow : public _dbObject
   bool operator==(const _dbRow& rhs) const;
   bool operator!=(const _dbRow& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbRow& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbRow& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)

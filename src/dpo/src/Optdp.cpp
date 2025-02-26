@@ -40,6 +40,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "odb/util.h"
@@ -93,8 +94,7 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
 ////////////////////////////////////////////////////////////////
 void Optdp::improvePlacement(const int seed,
                              const int max_displacement_x,
-                             const int max_displacement_y,
-                             const bool disallow_one_site_gaps)
+                             const int max_displacement_y)
 {
   logger_->report("Detailed placement improvement.");
 
@@ -108,6 +108,8 @@ void Optdp::improvePlacement(const int seed,
 
   // Get needed information from DB.
   import();
+
+  const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
   // A manager to track cells.
   dpo::DetailedMgr mgr(arch_, network_, routeinfo_);

@@ -35,7 +35,12 @@
 
 #include "PriorityQueue.h"
 
+#include <algorithm>
+#include <memory>
+#include <utility>
+
 #include "Hypergraph.h"
+#include "Utilities.h"
 
 namespace par {
 

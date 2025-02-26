@@ -8,7 +8,8 @@ read_def asap7_data/riscv.def
 
 
 set error_report [make_result_file check_power_grid_disconnected_macro.rpt]
-catch {check_power_grid -net VDD -error_file $error_report} err
+catch {check_power_grid -net VDD -error_file $error_report \
+    -dont_require_terminals} err
 puts $err
 
 diff_files $error_report check_power_grid_disconnected_macro.rptok

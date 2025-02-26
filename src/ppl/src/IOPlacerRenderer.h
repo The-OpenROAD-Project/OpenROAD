@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "AbstractIOPlacerRenderer.h"
 #include "SimulatedAnnealing.h"
 #include "gui/gui.h"

@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -86,42 +85,6 @@ bool _dbTechLayerArraySpacingRule::operator<(
   return true;
 }
 
-void _dbTechLayerArraySpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerArraySpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.parallel_overlap_);
-  DIFF_FIELD(flags_.long_array_);
-  DIFF_FIELD(flags_.via_width_valid_);
-  DIFF_FIELD(flags_.within_valid_);
-  DIFF_FIELD(via_width_);
-  DIFF_FIELD(cut_spacing_);
-  DIFF_FIELD(within_);
-  DIFF_FIELD(array_width_);
-  DIFF_FIELD(cut_class_);
-  DIFF_END
-}
-
-void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
-                                       char side,
-                                       const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.parallel_overlap_);
-  DIFF_OUT_FIELD(flags_.long_array_);
-  DIFF_OUT_FIELD(flags_.via_width_valid_);
-  DIFF_OUT_FIELD(flags_.within_valid_);
-  DIFF_OUT_FIELD(via_width_);
-  DIFF_OUT_FIELD(cut_spacing_);
-  DIFF_OUT_FIELD(within_);
-  DIFF_OUT_FIELD(array_width_);
-  DIFF_OUT_FIELD(cut_class_);
-
-  DIFF_END
-}
-
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -129,22 +92,6 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
   cut_spacing_ = 0;
   within_ = 0;
   array_width_ = 0;
-}
-
-_dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerArraySpacingRule& r)
-{
-  flags_.parallel_overlap_ = r.flags_.parallel_overlap_;
-  flags_.long_array_ = r.flags_.long_array_;
-  flags_.via_width_valid_ = r.flags_.via_width_valid_;
-  flags_.within_valid_ = r.flags_.within_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  via_width_ = r.via_width_;
-  cut_spacing_ = r.cut_spacing_;
-  within_ = r.within_;
-  array_width_ = r.array_width_;
-  cut_class_ = r.cut_class_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
@@ -176,6 +123,16 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.array_spacing_map_;
   stream << obj.cut_class_;
   return stream;
+}
+
+void _dbTechLayerArraySpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["array_spacing_map"].add(array_spacing_map_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

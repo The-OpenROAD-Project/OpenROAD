@@ -43,6 +43,7 @@
 #include <QTreeView>
 #include <array>
 #include <memory>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
@@ -79,17 +80,17 @@ class BrowserWidget : public QDockWidget,
   bool eventFilter(QObject* obj, QEvent* event) override;
 
   // dbBlockCallBackObj
-  virtual void inDbInstCreate(odb::dbInst*) override;
-  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
-  virtual void inDbInstDestroy(odb::dbInst*) override;
-  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
 
   // API from dbNetworkObserver
-  virtual void postReadLiberty() override;
-  virtual void postReadDb() override;
+  void postReadLiberty() override;
+  void postReadDb() override;
 
   // from QT
-  virtual void paintEvent(QPaintEvent* event) override;
+  void paintEvent(QPaintEvent* event) override;
 
  signals:
   void select(const SelectionSet& selected);

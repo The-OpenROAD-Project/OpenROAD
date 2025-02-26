@@ -48,32 +48,16 @@ swig_lib(NAME      grt
 )
 
 add_library(grt_lib
-    src/Grid.cpp
-    src/Net.cpp
-    src/Pin.cpp
-    src/MakeWireParasitics.cpp
-    src/RepairAntennas.cpp
-    src/Rudy.cpp
-    src/GlobalRouter.cpp
-)
-
-target_sources(grt
-  PRIVATE
-    src/MakeGlobalRouter.cpp
-    src/heatMap.cpp
-    src/heatMapRudy.cpp
-    src/GrouteRenderer.cpp
-    src/fastroute/src/FastRouteRenderer.cpp
+  src/Grid.cpp
+  src/Net.cpp
+  src/Pin.cpp
+  src/MakeWireParasitics.cpp
+  src/RepairAntennas.cpp
+  src/Rudy.cpp
+  src/GlobalRouter.cpp
 )
 
 target_include_directories(grt_lib
-  PUBLIC
-    include
-  PRIVATE
-    src
-)
-
-target_include_directories(grt
   PUBLIC
     include
   PRIVATE
@@ -93,9 +77,25 @@ target_link_libraries(grt_lib
     OpenMP::OpenMP_CXX
 )
 
+target_sources(grt
+  PRIVATE
+    src/MakeGlobalRouter.cpp
+    src/heatMap.cpp
+    src/heatMapRudy.cpp
+    src/GrouteRenderer.cpp
+    src/fastroute/src/FastRouteRenderer.cpp
+)
+
+target_include_directories(grt
+  PUBLIC
+    include
+  PRIVATE
+    src
+)
+
 target_link_libraries(grt
     grt_lib
-    utl
+    utl_lib
     FastRoute4.1
     ant_lib
     dpl_lib
@@ -124,7 +124,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(grt_py
     PUBLIC
-      utl
+      utl_lib
       FastRoute4.1
       ant_lib
       dpl_lib

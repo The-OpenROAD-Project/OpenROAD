@@ -48,8 +48,5 @@
     "dbScanInst.h",
     "dbBlock.h",
     "dbDft.h"
-  ],
-  "classes": [
-      "dbScanPartition"
   ]
 }

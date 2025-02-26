@@ -27,7 +27,9 @@
 
 #pragma once
 
-#include "dr/FlexDR_graphics.h"
+#include <vector>
+
+#include "dr/AbstractDRGraphics.h"
 #include "frDesign.h"
 
 namespace odb {
@@ -47,7 +49,7 @@ class FlexDRConnectivityChecker
   FlexDRConnectivityChecker(drt::TritonRoute* router,
                             Logger* logger,
                             RouterConfiguration* router_cfg,
-                            FlexDRGraphics* graphics,
+                            AbstractDRGraphics* graphics,
                             bool save_updates = false);
   void check(int iter = -1);
 
@@ -194,7 +196,7 @@ class FlexDRConnectivityChecker
   drt::TritonRoute* router_;
   Logger* logger_;
   RouterConfiguration* router_cfg_;
-  FlexDRGraphics* graphics_;
+  AbstractDRGraphics* graphics_;
   bool save_updates_;
 };
 

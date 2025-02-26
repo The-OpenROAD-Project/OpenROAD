@@ -40,6 +40,7 @@
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "point.h"
+#include "utl/prometheus/gauge.h"
 
 namespace utl {
 class Logger;
@@ -115,8 +116,15 @@ class NesterovPlace
 
   float total_sum_overflow_ = 0;
   float total_sum_overflow_unscaled_ = 0;
+  // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
+
+  // Snapshot saving for revert if diverge
+  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  int64_t min_hpwl_ = INT64_MAX;
+  int diverge_snapshot_iter_ = 0;
+  bool is_min_hpwl_ = false;
 
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
@@ -128,11 +136,15 @@ class NesterovPlace
   float wireLengthCoefX_ = 0;
   float wireLengthCoefY_ = 0;
 
+  // observability metrics
+  utl::Gauge<double>* hpwl_gauge_;
+
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
 
   bool isDiverged_ = false;
-  bool isRoutabilityNeed_ = true;
+  bool is_routability_need_ = true;
+  float routability_save_snapshot_ = 0.6;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;

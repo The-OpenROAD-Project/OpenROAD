@@ -41,6 +41,7 @@
 #include <limits>
 #include <list>
 #include <utility>
+#include <vector>
 
 #include "Core.h"
 #include "Hungarian.h"

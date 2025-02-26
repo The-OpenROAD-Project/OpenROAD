@@ -34,11 +34,12 @@
 #include <boost/serialization/export.hpp>
 #include <deque>
 #include <memory>
+#include <vector>
 
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/infra/frTime.h"
-#include "dr/FlexDR_graphics.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexWavefront.h"
 #include "dst/JobMessage.h"
@@ -123,12 +124,12 @@ class FlexDR
   void end(bool done = false);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
-  void setDebug(frDebugSettings* settings);
+  void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
 
   // For post-deserialization update
   void setLogger(Logger* logger) { logger_ = logger; }
   void setDB(odb::dbDatabase* db) { db_ = db; }
-  FlexDRGraphics* getGraphics() { return graphics_.get(); }
+  AbstractDRGraphics* getGraphics() { return graphics_.get(); }
   // distributed
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
@@ -163,7 +164,7 @@ class FlexDR
 
   FlexDRViaData via_data_;
   std::vector<int> numViols_;
-  std::unique_ptr<FlexDRGraphics> graphics_;
+  std::unique_ptr<AbstractDRGraphics> graphics_{nullptr};
   std::string debugNetName_;
   int numWorkUnits_;
 
@@ -295,11 +296,6 @@ class FlexDRWorker
         rq_(this)
   {
   }
-  FlexDRWorker()
-      :  // for serialization
-        rq_(this)
-  {
-  }
   // setters
   void setDebugSettings(frDebugSettings* settings)
   {
@@ -383,7 +379,7 @@ class FlexDRWorker
     gcWorker_ = std::move(in);
   }
 
-  void setGraphics(FlexDRGraphics* in)
+  void setGraphics(AbstractDRGraphics* in)
   {
     graphics_ = in;
     gridGraph_.setGraphics(in);
@@ -449,11 +445,13 @@ class FlexDRWorker
     logger_ = logger;
     gridGraph_.setLogger(logger);
   }
+  void setRouterCfg(RouterConfiguration* in) { router_cfg_ = in; }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& workerStr,
-                                            utl::Logger* logger,
+                                            FlexDRViaData* via_data,
                                             frDesign* design,
-                                            FlexDRGraphics* graphics);
+                                            utl::Logger* logger,
+                                            RouterConfiguration* router_cfg);
 
   // distributed
   void setDistributed(dst::Distributed* dist,
@@ -510,7 +508,7 @@ class FlexDRWorker
   frDesign* design_{nullptr};
   Logger* logger_{nullptr};
   RouterConfiguration* router_cfg_{nullptr};
-  FlexDRGraphics* graphics_{nullptr};  // owned by FlexDR
+  AbstractDRGraphics* graphics_{nullptr};  // owned by FlexDR
   frDebugSettings* debugSettings_{nullptr};
   FlexDRViaData* via_data_{nullptr};
   Rect routeBox_;
@@ -729,17 +727,14 @@ class FlexDRWorker
   void initNets_boundaryArea();
 
   void initGridGraph(const frDesign* design);
-  void initTrackCoords(
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_route(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
-  void initTrackCoords_pin(
-      drNet* net,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
-      std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& yMap);
+  void initTrackCoords(frLayerCoordTrackPatternMap& xMap,
+                       frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_route(drNet* net,
+                             frLayerCoordTrackPatternMap& xMap,
+                             frLayerCoordTrackPatternMap& yMap);
+  void initTrackCoords_pin(drNet* net,
+                           frLayerCoordTrackPatternMap& xMap,
+                           frLayerCoordTrackPatternMap& yMap);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);
@@ -867,19 +862,13 @@ class FlexDRWorker
   void modMinSpacingCostVia_eol(const Rect& box,
                                 const Rect& tmpBx,
                                 ModCostType type,
-                                bool isUpperVia,
                                 const drEolSpacingConstraint& drCon,
-                                frMIdx i,
-                                frMIdx j,
-                                frMIdx z,
+                                frMIdx idx,
                                 bool ndr = false);
   void modMinSpacingCostVia_eol_helper(const Rect& box,
                                        const Rect& testBox,
                                        ModCostType type,
-                                       bool isUpperVia,
-                                       frMIdx i,
-                                       frMIdx j,
-                                       frMIdx z,
+                                       frMIdx idx,
                                        bool ndr = false);
   // eolSpc
   void modEolSpacingCost_helper(const Rect& testbox,

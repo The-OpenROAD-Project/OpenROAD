@@ -127,9 +127,10 @@ class GDSReader
   dbGDSBoundary* processBoundary(dbGDSStructure* structure);
   dbGDSPath* processPath(dbGDSStructure* structure);
   dbGDSSRef* processSRef(dbGDSStructure* structure);
+  dbGDSARef* processARef(dbGDSStructure* structure);
   dbGDSText* processText(dbGDSStructure* structure);
   dbGDSBox* processBox(dbGDSStructure* structure);
-  dbGDSNode* processNode(dbGDSStructure* structure);
+  void processNode();
 
   /**
    * Parses special attributes of a GDS Element
@@ -142,11 +143,9 @@ class GDSReader
   /**
    * Parses the XY data of a GDS Element
    *
-   * @param elem The GDS Element to add the XY data to
-   * @return true if the XY data was successfully read
+   * @return The XY data
    */
-  template <typename T>
-  bool processXY(T* elem);
+  std::vector<Point> processXY();
 
   /**
    * Parses a GDS STrans from the GDS file
@@ -160,12 +159,6 @@ class GDSReader
    */
   dbGDSTextPres processTextPres();
 
-  /**
-   * This function is called after the entire GDS file has been read to bind all
-   * SRefs with the pointers to the referenced structures.
-   */
-  void bindAllSRefs();
-
   /** Current filestream */
   std::ifstream _file;
   /** Most recently read record */
@@ -174,6 +167,11 @@ class GDSReader
   dbDatabase* _db = nullptr;
   /** Current GDS Lib object */
   dbGDSLib* _lib = nullptr;
+  /** An sref may refer to a structure that isn't yet built while
+      reading the gds.  We will make an empty structure but it isn't
+      yet defined.  We keep track of defined structures to catch any
+      duplicates.*/
+  std::set<dbGDSStructure*> _defined;
 
   utl::Logger* _logger{nullptr};
 };

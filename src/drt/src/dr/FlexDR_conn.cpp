@@ -328,6 +328,33 @@ bool FlexDRConnectivityChecker::astar(
       const auto idx1 = *it1;
       for (; it2 != idxS.end(); it2++) {
         const auto idx2 = *it2;
+        if ((idx1 >= nNetRouteObjs) ^ (idx2 >= nNetRouteObjs)) {
+          // one of them is a pin
+          // check that the route object connects to the pin
+          const auto route_obj_idx = (idx1 >= nNetRouteObjs) ? idx2 : idx1;
+          if (netRouteObjs[route_obj_idx]->typeId() == frcPathSeg) {
+            auto ps = static_cast<frPathSeg*>(netRouteObjs[route_obj_idx]);
+            bool valid_connection = false;
+            if (ps->getBeginPoint() == pr.first
+                && ps->getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
+              valid_connection = true;
+            }
+            if (ps->getEndPoint() == pr.first
+                && ps->getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
+              valid_connection = true;
+            }
+            if (!valid_connection) {
+              continue;
+            }
+          } else if (netRouteObjs[route_obj_idx]->typeId() == frcVia) {
+            auto via = static_cast<frVia*>(netRouteObjs[route_obj_idx]);
+            if (!via->isBottomConnected() && !via->isTopConnected()) {
+              continue;
+            }
+          } else {
+            continue;
+          }
+        }
         adjVec[idx1].push_back(idx2);
         adjVec[idx2].push_back(idx1);
       }
@@ -819,14 +846,12 @@ void FlexDRConnectivityChecker::handleOverlaps_perform(
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        std::cout << "Error1: bp.x() >= ep.x()" << bp << " "
-                  << " " << ep << "\n";
+        std::cout << "Error1: bp.x() >= ep.x()" << bp << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        std::cout << "Error2: bp.y() >= ep.y()" << bp << " "
-                  << " " << ep << "\n";
+        std::cout << "Error2: bp.y() >= ep.y()" << bp << " " << ep << "\n";
       }
     }
   }
@@ -925,6 +950,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
     int currIdxSplitSpanIdxs = 0;
     int s;
     // change existing split ps's and spans to match split points
+    // TODO: This part is not handled in distributed detailed routing.
     for (s = 0;
          s <= splitPoints.size() && currIdxSplitSpanIdxs < splitSpanIdxs.size();
          s++, currIdxSplitSpanIdxs++) {
@@ -1085,6 +1111,7 @@ void FlexDRConnectivityChecker::merge_commit(
     regionQuery->removeDRObj(static_cast<frShape*>(victimPathSeg));
 
     Point bp, ep;
+    frCoord high = victimPathSeg->high();
     if (isHorz) {
       bp = {newSegSpan.lo, trackCoord};
       ep = {newSegSpan.hi, trackCoord};
@@ -1098,21 +1125,23 @@ void FlexDRConnectivityChecker::merge_commit(
     frUInt4 end_ext = victimPathSeg->getEndExt();
     for (; cnt < (int) victims.size(); cnt++) {
       frPathSeg* curr = static_cast<frPathSeg*>(netRouteObjs[victims[cnt]]);
-      if (curr->high() <= newSegSpan.hi) {
-        end_style = curr->getEndStyle();
-        end_ext = curr->getEndExt();
-        if (save_updates_) {
-          drUpdate update(drUpdate::REMOVE_FROM_NET);
-          update.setNet(curr->getNet());
-          update.setIndexInOwner(curr->getIndexInOwner());
-          getDesign()->addUpdate(update);
-        }
-        regionQuery->removeDRObj(curr);  // deallocates curr
-        net->removeShape(curr);
-        netRouteObjs[victims[cnt]] = nullptr;
-      } else {
+      if (curr->high() > newSegSpan.hi) {
         break;
       }
+      if (curr->high() >= high) {
+        end_style = curr->getEndStyle();
+        end_ext = curr->getEndExt();
+        high = curr->high();
+      }
+      if (save_updates_) {
+        drUpdate update(drUpdate::REMOVE_FROM_NET);
+        update.setNet(curr->getNet());
+        update.setIndexInOwner(curr->getIndexInOwner());
+        getDesign()->addUpdate(update);
+      }
+      regionQuery->removeDRObj(curr);  // deallocates curr
+      net->removeShape(curr);
+      netRouteObjs[victims[cnt]] = nullptr;
     }
     victimPathSeg->setEndStyle(end_style, end_ext);
     regionQuery->addDRObj(victimPathSeg);
@@ -1125,7 +1154,6 @@ void FlexDRConnectivityChecker::merge_commit(
     }
   }
 }
-
 void FlexDRConnectivityChecker::addMarker(frNet* net,
                                           frLayerNum lNum,
                                           const Rect& bbox)
@@ -1346,7 +1374,7 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
     Logger* logger,
     RouterConfiguration* router_cfg,
-    FlexDRGraphics* graphics,
+    AbstractDRGraphics* graphics,
     bool save_updates)
     : router_(router),
       logger_(logger),

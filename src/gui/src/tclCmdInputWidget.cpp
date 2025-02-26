@@ -90,10 +90,9 @@ TclCmdInputWidget::~TclCmdInputWidget()
   Tcl_Eval(interp_, exit_rename.c_str());
 }
 
-void TclCmdInputWidget::setTclInterp(
-    Tcl_Interp* interp,
-    bool do_init_openroad,
-    const std::function<void(void)>& post_or_init)
+void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
+                                     bool do_init_openroad,
+                                     const std::function<void()>& post_or_init)
 {
   interp_ = interp;
 

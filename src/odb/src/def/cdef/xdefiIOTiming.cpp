@@ -39,125 +39,125 @@
 // Wrappers definitions.
 int defiIOTiming_hasVariableRise(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasVariableRise();
+  return ((DefParser::defiIOTiming*) obj)->hasVariableRise();
 }
 
 int defiIOTiming_hasVariableFall(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasVariableFall();
+  return ((DefParser::defiIOTiming*) obj)->hasVariableFall();
 }
 
 int defiIOTiming_hasSlewRise(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasSlewRise();
+  return ((DefParser::defiIOTiming*) obj)->hasSlewRise();
 }
 
 int defiIOTiming_hasSlewFall(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasSlewFall();
+  return ((DefParser::defiIOTiming*) obj)->hasSlewFall();
 }
 
 int defiIOTiming_hasCapacitance(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasCapacitance();
+  return ((DefParser::defiIOTiming*) obj)->hasCapacitance();
 }
 
 int defiIOTiming_hasDriveCell(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasDriveCell();
+  return ((DefParser::defiIOTiming*) obj)->hasDriveCell();
 }
 
 int defiIOTiming_hasFrom(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasFrom();
+  return ((DefParser::defiIOTiming*) obj)->hasFrom();
 }
 
 int defiIOTiming_hasTo(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasTo();
+  return ((DefParser::defiIOTiming*) obj)->hasTo();
 }
 
 int defiIOTiming_hasParallel(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->hasParallel();
+  return ((DefParser::defiIOTiming*) obj)->hasParallel();
 }
 
 const char* defiIOTiming_inst(const ::defiIOTiming* obj)
 {
-  return ((const LefDefParser::defiIOTiming*) obj)->inst();
+  return ((const DefParser::defiIOTiming*) obj)->inst();
 }
 
 const char* defiIOTiming_pin(const ::defiIOTiming* obj)
 {
-  return ((const LefDefParser::defiIOTiming*) obj)->pin();
+  return ((const DefParser::defiIOTiming*) obj)->pin();
 }
 
 double defiIOTiming_variableFallMin(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->variableFallMin();
+  return ((DefParser::defiIOTiming*) obj)->variableFallMin();
 }
 
 double defiIOTiming_variableRiseMin(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->variableRiseMin();
+  return ((DefParser::defiIOTiming*) obj)->variableRiseMin();
 }
 
 double defiIOTiming_variableFallMax(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->variableFallMax();
+  return ((DefParser::defiIOTiming*) obj)->variableFallMax();
 }
 
 double defiIOTiming_variableRiseMax(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->variableRiseMax();
+  return ((DefParser::defiIOTiming*) obj)->variableRiseMax();
 }
 
 double defiIOTiming_slewFallMin(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->slewFallMin();
+  return ((DefParser::defiIOTiming*) obj)->slewFallMin();
 }
 
 double defiIOTiming_slewRiseMin(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->slewRiseMin();
+  return ((DefParser::defiIOTiming*) obj)->slewRiseMin();
 }
 
 double defiIOTiming_slewFallMax(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->slewFallMax();
+  return ((DefParser::defiIOTiming*) obj)->slewFallMax();
 }
 
 double defiIOTiming_slewRiseMax(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->slewRiseMax();
+  return ((DefParser::defiIOTiming*) obj)->slewRiseMax();
 }
 
 double defiIOTiming_capacitance(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->capacitance();
+  return ((DefParser::defiIOTiming*) obj)->capacitance();
 }
 
 const char* defiIOTiming_driveCell(const ::defiIOTiming* obj)
 {
-  return ((const LefDefParser::defiIOTiming*) obj)->driveCell();
+  return ((const DefParser::defiIOTiming*) obj)->driveCell();
 }
 
 const char* defiIOTiming_from(const ::defiIOTiming* obj)
 {
-  return ((const LefDefParser::defiIOTiming*) obj)->from();
+  return ((const DefParser::defiIOTiming*) obj)->from();
 }
 
 const char* defiIOTiming_to(const ::defiIOTiming* obj)
 {
-  return ((const LefDefParser::defiIOTiming*) obj)->to();
+  return ((const DefParser::defiIOTiming*) obj)->to();
 }
 
 double defiIOTiming_parallel(const ::defiIOTiming* obj)
 {
-  return ((LefDefParser::defiIOTiming*) obj)->parallel();
+  return ((DefParser::defiIOTiming*) obj)->parallel();
 }
 
 void defiIOTiming_print(const ::defiIOTiming* obj, FILE* f)
 {
-  ((LefDefParser::defiIOTiming*) obj)->print(f);
+  ((DefParser::defiIOTiming*) obj)->print(f);
 }

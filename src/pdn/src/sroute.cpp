@@ -33,6 +33,7 @@
 #include "sroute.h"
 
 #include <iostream>
+#include <vector>
 
 #include "domain.h"
 #include "grid.h"
