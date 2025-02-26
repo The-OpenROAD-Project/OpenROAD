@@ -1532,6 +1532,11 @@ int Resizer::cellVTType(dbMaster* master)
     }
   }
 
+  if (hash1 == 0) {
+    vt_map_[master] = 0;
+    return 0;
+  }
+
   if (vt_hash_map_.find(hash1) == vt_hash_map_.end()) {
     int vt_id = vt_hash_map_.size() + 1;
     vt_hash_map_[hash1] = vt_id;
