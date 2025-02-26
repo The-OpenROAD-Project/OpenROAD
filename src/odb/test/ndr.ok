@@ -21,6 +21,10 @@ layer metal3 spacing 420 width 1000
 layer metal4 spacing 840 width 1000
 layer metal5 spacing 840 width 1000
 layer metal6 spacing 0 width 1000
+layer metal7 spacing 0 width 0
+layer metal8 spacing 0 width 0
+layer metal9 spacing 0 width 0
+layer metal10 spacing 0 width 0
 mult:
 layer metal1 spacing 260 width 390
 layer metal2 spacing 300 width 420

@@ -11,6 +11,10 @@ NONDEFAULTRULES 2 ;
       + LAYER metal4 WIDTH 500 SPACING 420
       + LAYER metal5 WIDTH 500 SPACING 420
       + LAYER metal6 WIDTH 500
+      + LAYER metal7 WIDTH 0
+      + LAYER metal8 WIDTH 0
+      + LAYER metal9 WIDTH 0
+      + LAYER metal10 WIDTH 0
       + VIA M2_M1_via
     ;
     - mult
