@@ -977,6 +977,7 @@ class dbBlock : public dbObject
 
   ///
   /// Get all the block-terminals of this block.
+  /// The flag order places the pins ordered in ascending x/y position.
   ///
   void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
