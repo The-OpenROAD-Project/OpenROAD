@@ -1187,23 +1187,26 @@ void FlexDRWorker::initNet_term(const frDesign* design,
 {
   for (auto term : terms) {
     // ap
-    dbTransform transform;
+    // TODO is instXform used properly here?
+    dbTransform instXform;  // (0,0), R0
+    dbTransform shiftXform;
     switch (term->typeId()) {
       case frcInstTerm: {
         auto instTerm = static_cast<frInstTerm*>(term);
         frInst* inst = instTerm->getInst();
-        transform = inst->getTransform();
+        shiftXform = inst->getNoRotationTransform();
+        instXform = inst->getDBTransform();
         auto trueTerm = instTerm->getTerm();
         const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
-            design, trueTerm, term, inst, dNet, name, transform);
+            design, trueTerm, term, inst, dNet, name, shiftXform);
         break;
       }
       case frcBTerm: {
         auto trueTerm = static_cast<frBTerm*>(term);
         const std::string name = "PIN/" + trueTerm->getName();
         initNet_term_helper(
-            design, trueTerm, term, nullptr, dNet, name, transform);
+            design, trueTerm, term, nullptr, dNet, name, shiftXform);
         break;
       }
       default:
@@ -1220,7 +1223,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
                                        frInst* inst,
                                        drNet* dNet,
                                        const std::string& name,
-                                       const dbTransform& transform)
+                                       const dbTransform& shiftXform)
 {
   dNet->addFrNetTerm(term);
   auto dPin = std::make_unique<drPin>();
@@ -1238,7 +1241,7 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
     for (auto& ap : pin->getPinAccess(pinAccessIdx)->getAccessPoints()) {
       Point bp = ap->getPoint();
       const auto bNum = ap->getLayerNum();
-      transform.apply(bp);
+      shiftXform.apply(bp);
 
       auto dAp = std::make_unique<drAccessPattern>();
       dAp->setPoint(bp);
@@ -2900,7 +2903,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
     } else if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
       auto inst = instTerm->getInst();
-      const dbTransform xform = inst->getTransform();
+      const dbTransform xform = inst->getDBTransform();
+      const dbTransform shiftXform = inst->getNoRotationTransform();
       const dbMasterType masterType = inst->getMaster()->getMasterType();
       bool accessHorz = false;
       bool accessVert = false;
@@ -2969,7 +2973,7 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
               if (masterType.isBlock()) {
                 modCornerToCornerSpacing(
                     box, zIdx, type);  // temp solution for ISPD19 benchmarks
-                modBlockedEdgesForMacroPin(instTerm, xform, isAddPathCost);
+                modBlockedEdgesForMacroPin(instTerm, shiftXform, isAddPathCost);
                 if (isAddPathCost) {
                   type = ModCostType::setFixedShape;
                 } else {

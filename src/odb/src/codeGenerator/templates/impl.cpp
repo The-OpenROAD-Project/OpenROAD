@@ -134,31 +134,25 @@ namespace odb {
     // User Code End Constructor
   }
 
+  {% import 'serializer_in.cpp' as si %}
   {% for _struct in klass.structs %}
-    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-in' not in _struct['flags']) %}
-      {% set sname = klass.name+'::'+_struct.name %}
-      {% set sklass = _struct %}
-      {% set comment_tag = _struct.name %}
-      {% include 'serializer_in.cpp' %}
+    {% if 'flags' not in _struct
+                    or ('no-serializer' not in _struct['flags']
+                        and 'no-serializer-in' not in _struct['flags']) %}
+      {{- si.serializer_in(_struct, klass, _struct.name)}}
     {% endif %}
   {% endfor %}
-  {% set sklass = klass %}
-  {% set sname = '_'+sklass.name %}
-  {% set comment_tag = "" %}
-  {% include 'serializer_in.cpp' %}
+  {{- si.serializer_in(klass)}}
 
+  {% import 'serializer_out.cpp' as so %}
   {% for _struct in klass.structs %}
-    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
-      {% set sname = klass.name+'::'+_struct.name %}
-      {% set sklass = _struct %}
-      {% set comment_tag = _struct.name %}
-      {% include 'serializer_out.cpp' %}
+    {% if 'flags' not in _struct
+                    or ('no-serializer' not in _struct['flags']
+                        and 'no-serializer-out' not in _struct['flags']) %}
+      {{- so.serializer_out(_struct, klass, _struct.name)}}
     {% endif %}
   {% endfor %}
-  {% set sklass = klass %}
-  {% set sname = '_'+sklass.name %}
-  {% set comment_tag = "" %}
-  {% include 'serializer_out.cpp' %}
+  {{- so.serializer_out(klass)}}
 
   {% if klass.hasTables %}
   dbObjectTable* _{{klass.name}}::getObjectTable(dbObjectType type)

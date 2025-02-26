@@ -749,6 +749,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
 
+  // Cache results of getSwappableCells() as this is expensive for large PDKs.
+  std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;

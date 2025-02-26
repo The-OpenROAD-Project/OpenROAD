@@ -102,9 +102,11 @@ class frVia : public frRef
    */
 
   dbOrientType getOrient() const override { return dbOrientType(); }
+  void setOrient(const dbOrientType& tmpOrient) override { ; }
   Point getOrigin() const override { return origin_; }
-  void setOrigin(const Point& tmpPoint) { origin_ = tmpPoint; }
+  void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
   dbTransform getTransform() const override { return dbTransform(origin_); }
+  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin
