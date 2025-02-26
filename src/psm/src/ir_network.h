@@ -127,6 +127,7 @@ class IRNetwork
   odb::dbTechLayer* getTopLayer() const;
   const std::vector<std::unique_ptr<Node>>& getTopLayerNodes() const;
   NodeTree getTopLayerNodeTree() const;
+  std::set<odb::dbTechLayer*> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
 
