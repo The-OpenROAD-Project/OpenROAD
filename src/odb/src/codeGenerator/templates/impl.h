@@ -47,7 +47,7 @@ namespace odb {
   class dbIStream;
   class dbOStream;
   class _dbDatabase;
-  {% for _class in klass.classes %}
+  {% for _class in klass.declared_classes %}
     {% if _class in ["dbTable", "dbHashTable"] %}
       template <class T>
     {% endif %}
