@@ -117,12 +117,12 @@ void FlexPA::prepPattern()
         continue;
       }
 
-      int num_valid_pattern = prepPatternInst(inst, curr_unique_inst_idx, 1.0);
+      int num_valid_pattern = prepPatternInst(inst, curr_unique_inst_idx);
 
       if (num_valid_pattern == 0) {
         // In FAx1_ASAP7_75t_R (in asap7) the pins are mostly horizontal
         // and sorting in X works poorly.  So we try again sorting in Y.
-        num_valid_pattern = prepPatternInst(inst, curr_unique_inst_idx, 0.0);
+        num_valid_pattern = prepPatternInst(inst, curr_unique_inst_idx, false);
         if (num_valid_pattern == 0) {
           logger_->warn(
               DRT,
@@ -210,7 +210,7 @@ void FlexPA::prepPattern()
 // the input inst must be unique instance
 int FlexPA::prepPatternInst(frInst* inst,
                             const int curr_unique_inst_idx,
-                            const double x_weight)
+                            const bool use_x)
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
@@ -234,8 +234,7 @@ int FlexPA::prepPatternInst(frInst* inst,
       }
       n_aps += cnt;
       if (cnt != 0) {
-        const double coord
-            = (x_weight * sum_x_coord + (1.0 - x_weight) * sum_y_coord) / cnt;
+        const double coord = use_x ? sum_x_coord / cnt : sum_y_coord / cnt;
         pins.push_back({(int) std::round(coord), {pin.get(), inst_term.get()}});
       }
     }
