@@ -756,79 +756,158 @@ proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
 }
 
-sta::define_cmd_args "set_opt_config" { [-sizing_area_limit] [-sizing_leakage_limit] }
+sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
+                                          [-limit_sizing_leakage] \
+                                          [-keep_sizing_site] \
+                                          [-keep_sizing_vt] \
+                                          [-sizing_area_limit] \
+                                          [-sizing_leakage_limit] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
-    keys {-sizing_area_limit -sizing_leakage_limit} flags {}
+    keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt} flags {}
   set db [ord::get_db]
-  if { $db == "NULL" } {
+  if { $db eq "NULL" } {
     utl::error "RSZ" 200 "db needs to be defined for set_opt_config."
   }
   set chip [$db getChip]
-  if { $chip == "NULL" } {
+  if { $chip eq "NULL" } {
     utl::error "RSZ" 201 "chip needs to be defined for set_opt_config."
   }
   set block [$chip getBlock]
-  if { $block == "NULL" } {
+  if { $block eq "NULL" } {
     utl::error "RSZ" 202 "block needs to be defined for set_opt_config."
   }
-  if { [info exists keys(-sizing_area_limit)] } {
+
+  set area_limit "NULL"
+  if { [info exists keys(-limit_sizing_area)] } {
+    set area_limit $keys(-limit_sizing_area)
+  } elseif { [info exists keys(-sizing_area_limit)] } {
     set area_limit $keys(-sizing_area_limit)
+  }
+  if { $area_limit ne "NULL" } {
     sta::check_positive_float "-sizing_area_limit" $area_limit
-    set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
-    if { $area_prop == "NULL" } {
-      odb::dbDoubleProperty_create $block "sizing_area_limit" $area_limit
+    set area_prop [odb::dbDoubleProperty_find $block "limit_sizing_area"]
+    if { $area_prop eq "NULL" } {
+      odb::dbDoubleProperty_create $block "limit_sizing_area" $area_limit
     } else {
       $area_prop setValue $area_limit
     }
     utl::info RSZ 100 \
       "Cells with area > ${area_limit}X current cell will not be considered for sizing"
   }
-  if { [info exists keys(-sizing_leakage_limit)] } {
+
+  set leakage_limit "NULL"
+  if { [info exists keys(-limit_sizing_leakage)] } {
+    set leakage_limit $keys(-limit_sizing_leakage)
+  } elseif { [info exists keys(-sizing_leakage_limit)] } {
     set leakage_limit $keys(-sizing_leakage_limit)
+  }
+  if { $leakage_limit ne "NULL" } {
     sta::check_positive_float "-sizing_leakage_limit" $leakage_limit
-    set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
-    if { $leak_prop == "NULL" } {
-      odb::dbDoubleProperty_create $block "sizing_leakage_limit" $leakage_limit
+    set leak_prop [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
+    if { $leak_prop eq "NULL" } {
+      odb::dbDoubleProperty_create $block "limit_sizing_leakage" $leakage_limit
     } else {
       $leak_prop setValue $leakage_limit
     }
     utl::info RSZ 101 \
       "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
   }
+
+  if { [info exists keys(-keep_sizing_site)] } {
+    set keep_site $keys(-keep_sizing_site)
+    if { ![string is boolean $keep_site] } {
+      utl::error "RSZ" 209 \
+        "-keep_sizing_site argument should be Boolean"
+    }
+    set site_prop [odb::dbBoolProperty_find $block "keep_sizing_site"]
+    if { $site_prop eq "NULL" } {
+      odb::dbBoolProperty_create $block "keep_sizing_site" $keep_site
+    } else {
+      $site_prop setValue $keep_site
+    }
+    utl::info RSZ 104 \
+      "Cell's site will be preserved for sizing"
+  }
+
+  if { [info exists keys(-keep_sizing_vt)] } {
+    set keep_vt $keys(-keep_sizing_vt)
+    if { ![string is boolean $keep_vt] } {
+      utl::error "RSZ" 210 \
+        "-keep_sizing_vt argument should be Boolean"
+    }
+    set vt_prop [odb::dbBoolProperty_find $block "keep_sizing_vt"]
+    if { $vt_prop eq "NULL" } {
+      odb::dbBoolProperty_create $block "keep_sizing_vt" $keep_vt
+    } else {
+      $vt_prop setValue $keep_vt
+    }
+    utl::info RSZ 106 \
+      "Cell's VT type will be preserved for sizing"
+  }
 }
 
-sta::define_cmd_args "reset_opt_config" { [-sizing_area_limit] [-sizing_leakage_limit] }
+sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
+                                            [-limit_sizing_leakage] \
+                                            [-keep_sizing_site] \
+                                            [-keep_sizing_vt] \
+                                            [-sizing_area_limit] \
+                                            [-sizing_leakage_limit] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
-    keys {} flags {-sizing_area_limit -sizing_leakage_limit}
+    keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
+                     -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt}
   set db [ord::get_db]
-  if { $db == "NULL" } {
+  if { $db eq "NULL" } {
     utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
   }
   set chip [$db getChip]
-  if { $chip == "NULL" } {
+  if { $chip eq "NULL" } {
     utl::error "RSZ" 204 "chip needs to be defined for reset_opt_config."
   }
   set block [$chip getBlock]
-  if { $block == "NULL" } {
+  if { $block eq "NULL" } {
     utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
   }
-  if { [info exists flags(-sizing_area_limit)] || [llength $args] == 0 } {
-    set area_prop [odb::dbDoubleProperty_find $block "sizing_area_limit"]
-    if { $area_prop != "NULL" } {
+
+  set reset_all [expr { [array size flags] == 0 }]
+
+  if {
+    $reset_all || [info exists flags(-limit_sizing_area)]
+    || [info exists flags(-sizing_area_limit)]
+  } {
+    set area_prop [odb::dbDoubleProperty_find $block "limit_sizing_area"]
+    if { $area_prop ne "NULL" && $area_prop ne "" } {
       odb::dbProperty_destroy $area_prop
     }
     utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
   }
-  if { [info exists flags(-sizing_leakage_limit)] || [llength $args] == 0 } {
-    set leak_prop [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
-    if { $leak_prop != "NULL" } {
+  if {
+    $reset_all || [info exists flags(-limit_sizing_leakage)]
+    || [info exists flags(-sizing_leakage_limit)]
+  } {
+    set leak_prop [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
+    if { $leak_prop ne "NULL" && $leak_prop ne "" } {
       odb::dbProperty_destroy $leak_prop
     }
     utl::info RSZ 103 "Cell sizing restriction based on leakage has been removed."
+  }
+  if { $reset_all || [info exists flags(-keep_sizing_site)] } {
+    set site_prop [odb::dbBoolProperty_find $block "keep_sizing_site"]
+    if { $site_prop ne "NULL" && $site_prop ne "" } {
+      odb::dbProperty_destroy $site_prop
+    }
+    utl::info RSZ 105 "Cell sizing restriction based on site has been removed."
+  }
+  if { $reset_all || [info exists flags(-keep_sizing_vt)] } {
+    set vt_prop [odb::dbBoolProperty_find $block "keep_sizing_vt"]
+    if { $vt_prop ne "NULL" && $vt_prop ne "" } {
+      odb::dbProperty_destroy $vt_prop
+    }
+    utl::info RSZ 107 "Cell sizing restriction based on VT type has been removed."
   }
 }
 
@@ -837,35 +916,61 @@ sta::define_cmd_args "report_opt_config" {}
 proc report_opt_config { args } {
   sta::parse_key_args "report_opt_config" args keys {} flags {}
   set db [ord::get_db]
-  if { $db == "NULL" } {
+  if { $db eq "NULL" } {
     utl::error "RSZ" 206 "db needs to be defined for report_opt_config."
   }
   set chip [$db getChip]
-  if { $chip == "NULL" } {
+  if { $chip eq "NULL" } {
     utl::error "RSZ" 207 "chip needs to be defined for report_opt_config"
   }
   set block [$chip getBlock]
-  if { $block == "NULL" } {
+  if { $block eq "NULL" } {
     utl::error "RSZ" 208 "block needs to be defined for report_opt_config."
   }
 
   set area_limit_value "undefined"
-  set area_limit [odb::dbDoubleProperty_find $block "sizing_area_limit"]
-  if { $area_limit != "NULL" } {
-    set area_limit_value [[odb::dbDoubleProperty_find $block "sizing_area_limit"] getValue]
+  set area_limit [odb::dbDoubleProperty_find $block "limit_sizing_area"]
+  if { $area_limit ne "NULL" && $area_limit ne "" } {
+    set area_limit_value [$area_limit getValue]
   }
 
   set leakage_limit_value "undefined"
-  set leakage_limit [odb::dbDoubleProperty_find $block "sizing_leakage_limit"]
-  if { $leakage_limit != "NULL" } {
-    set leakage_limit_value [[odb::dbDoubleProperty_find $block "sizing_leakage_limit"] getValue]
+  set leakage_limit [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
+  if { $leakage_limit ne "NULL" && $leakage_limit ne "" } {
+    set leakage_limit_value [$leakage_limit getValue]
+  }
+
+  set keep_site_value "false"
+  set keep_site [odb::dbBoolProperty_find $block "keep_sizing_site"]
+  if { $keep_site ne "NULL" && $keep_site ne "" } {
+    set keep_site_result [$keep_site getValue]
+    set keep_site_value [expr { $keep_site_result ? "true" : "false" }]
+  }
+
+  set keep_sizing_vt "false"
+  set keep_vt [odb::dbBoolProperty_find $block "keep_sizing_vt"]
+  if { $keep_vt ne "NULL" && $keep_vt ne "" } {
+    set keep_vt_value [$keep_vt getValue]
+    set keep_sizing_vt [expr { $keep_vt_value ? "true" : "false" }]
   }
 
   puts "***********************************"
   puts "Optimization config:"
-  puts "-sizing_area_limit:    $area_limit_value"
-  puts "-sizing_leakage_limit: $leakage_limit_value"
+  puts "-limit_sizing_area:    $area_limit_value"
+  puts "-limit_sizing_leakage: $leakage_limit_value"
+  puts "-keep_sizing_site:     $keep_site_value"
+  puts "-keep_sizing_vt:       $keep_sizing_vt"
   puts "***********************************"
+}
+
+sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint }
+
+proc report_equiv_cells { args } {
+  sta::parse_key_args "report_equiv_cells" args keys {} flags {-match_cell_footprint}
+  set match_cell_footprint [info exists flags(-match_cell_footprint)]
+  sta::check_argc_eq1 "report_equiv_cells" $args
+  set lib_cell [sta::get_lib_cells_arg "report_equiv_cells" [lindex $args 0] sta::sta_warn]
+  rsz::report_equiv_cells_cmd $lib_cell $match_cell_footprint
 }
 
 namespace eval rsz {
