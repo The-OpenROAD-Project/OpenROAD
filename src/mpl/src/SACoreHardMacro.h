@@ -74,12 +74,11 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void initialize() override;
   void fillDeadSpace() override {}
   // print results
-  void printResults();
+  void printResults() const;
 
  private:
   float calNormCost() const override;
   void calPenalty() override;
-  float getAreaPenalty() const;
   void shrink() override {}
 
   void perturb() override;

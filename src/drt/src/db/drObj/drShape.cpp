@@ -68,15 +68,4 @@ drPatchWire::drPatchWire(const frPatchWire& in)
   origin_ = in.getOrigin();
 }
 
-void drPathSeg::transform(const odb::dbTransform& xform)
-{
-  xform.apply(begin_);
-  xform.apply(end_);
-  if (end_ < begin_) {
-    // swap
-    std::swap(begin_, end_);
-    style_.swap();
-  }
-}
-
 }  // namespace drt

@@ -63,14 +63,14 @@ class Graphics : public gui::Renderer, public MplObserver
   void finishedClustering(PhysicalHierarchy* tree) override;
 
   void setMaxLevel(int max_level) override;
-  void setAreaPenalty(const Penalty& penalty) override;
-  void setBoundaryPenalty(const Penalty& penalty) override;
-  void setFencePenalty(const Penalty& penalty) override;
-  void setGuidancePenalty(const Penalty& penalty) override;
-  void setMacroBlockagePenalty(const Penalty& penalty) override;
-  void setNotchPenalty(const Penalty& penalty) override;
-  void setOutlinePenalty(const Penalty& penalty) override;
-  void setWirelengthPenalty(const Penalty& penalty) override;
+  void setAreaPenalty(const PenaltyData& penalty) override;
+  void setBoundaryPenalty(const PenaltyData& penalty) override;
+  void setFencePenalty(const PenaltyData& penalty) override;
+  void setGuidancePenalty(const PenaltyData& penalty) override;
+  void setMacroBlockagePenalty(const PenaltyData& penalty) override;
+  void setNotchPenalty(const PenaltyData& penalty) override;
+  void setOutlinePenalty(const PenaltyData& penalty) override;
+  void setWirelengthPenalty(const PenaltyData& penalty) override;
   void penaltyCalculated(float norm_cost) override;
 
   void drawObjects(gui::Painter& painter) override;
@@ -129,7 +129,7 @@ class Graphics : public gui::Renderer, public MplObserver
   bool isTargetCluster();
 
   template <typename T>
-  void report(const char* name, const std::optional<T>& value);
+  void report(const std::optional<T>& value);
   void report(float norm_cost);
 
   std::vector<SoftMacro> soft_macros_;
@@ -162,14 +162,14 @@ class Graphics : public gui::Renderer, public MplObserver
   utl::Logger* logger_;
 
   std::optional<int> max_level_;
-  std::optional<Penalty> outline_penalty_;
-  std::optional<Penalty> fence_penalty_;
-  std::optional<Penalty> wirelength_penalty_;
-  std::optional<Penalty> guidance_penalty_;
-  std::optional<Penalty> boundary_penalty_;
-  std::optional<Penalty> macro_blockage_penalty_;
-  std::optional<Penalty> notch_penalty_;
-  std::optional<Penalty> area_penalty_;
+  std::optional<PenaltyData> outline_penalty_;
+  std::optional<PenaltyData> fence_penalty_;
+  std::optional<PenaltyData> wirelength_penalty_;
+  std::optional<PenaltyData> guidance_penalty_;
+  std::optional<PenaltyData> boundary_penalty_;
+  std::optional<PenaltyData> macro_blockage_penalty_;
+  std::optional<PenaltyData> notch_penalty_;
+  std::optional<PenaltyData> area_penalty_;
 
   float best_norm_cost_ = 0;
   int skipped_ = 0;

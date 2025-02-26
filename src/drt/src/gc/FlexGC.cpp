@@ -83,7 +83,7 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   markers_.push_back(std::move(in));
 }
 
-void FlexGCWorker::addPAObj(const frConnFig* obj, frBlockObject* owner)
+void FlexGCWorker::addPAObj(frConnFig* obj, frBlockObject* owner)
 {
   impl_->addPAObj(obj, owner);
 }
