@@ -6,10 +6,10 @@
 [INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNH2V2X already seen in asap7sc7p5t_DFFHQNV2X
 [INFO ODB-0227] LEF file: ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef, created 9 library cells
 [INFO IFP-0001] Added 370 rows of 1851 site asap7sc7p5t.
-Alpha = 60, Beta = 1, #paths = 0, max size = 50
+Alpha = 60.0, Beta = 1.0, #paths = 0, max size = 50
 Total ILP Cost: 4155.465
-Total Timing Critical Path Displacement: 0
-Average slot-to-flop displacement: 5.4878607
+Total Timing Critical Path Displacement: 0.0
+Average slot-to-flop displacement: 5.488
 Final Objective Value: 4155.465
 Sizes used
   1-bit: 2
