@@ -1600,12 +1600,12 @@ dbBTerm* dbBlock::findBTerm(const char* name)
   return (dbBTerm*) block->_bterm_hash.find(name);
 }
 
-std::vector<dbBlock::BTermGroup> dbBlock::getBTermGroups()
+std::vector<dbBlock::dbBTermGroup> dbBlock::getBTermGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
-  std::vector<dbBlock::BTermGroup> groups;
+  std::vector<dbBlock::dbBTermGroup> groups;
   for (const _dbBTermGroup& group : block->_bterm_groups) {
-    dbBlock::BTermGroup bterm_group;
+    dbBlock::dbBTermGroup bterm_group;
     for (const auto& bterm_id : group.bterms) {
       bterm_group.bterms.push_back(
           (dbBTerm*) block->_bterm_tbl->getPtr(bterm_id));

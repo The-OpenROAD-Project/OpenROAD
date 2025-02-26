@@ -897,7 +897,7 @@ class dbChip : public dbObject
 class dbBlock : public dbObject
 {
  public:
-  struct BTermGroup
+  struct dbBTermGroup
   {
     std::vector<dbBTerm*> bterms;
     bool order = false;
@@ -973,7 +973,7 @@ class dbBlock : public dbObject
   ///
   /// Get all the bterm groups of this block.
   ///
-  std::vector<BTermGroup> getBTermGroups();
+  std::vector<dbBTermGroup> getBTermGroups();
 
   ///
   /// Get all the block-terminals of this block.
