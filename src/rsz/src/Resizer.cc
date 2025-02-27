@@ -240,7 +240,8 @@ bool rszFuzzyEqual(double v1, double v2)
 {
   if (v1 == v2) {
     return true;
-  } else if (v1 == 0.0 || v2 == 0.0) {
+  }
+  if (v1 == 0.0 || v2 == 0.0) {
     return std::abs(v1 - v2) < double_equal_tolerance;
   }
   return std::abs(v1 - v2) < 1E-9 * std::max(std::abs(v1), std::abs(v2));
