@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "odb/parse.h"
+#include "parse.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
 #include "wire.h"

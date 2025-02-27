@@ -33,6 +33,7 @@
 #include <map>
 #include <vector>
 
+#include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
