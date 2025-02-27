@@ -47,7 +47,7 @@ class CommandLineProgress : public Progress
 {
  public:
   CommandLineProgress(Logger* logger);
-  ~CommandLineProgress() = default;
+  ~CommandLineProgress() override = default;
   void start(std::shared_ptr<ProgressReporter>& reporter) override;
   void update(ProgressReporter* reporter) override;
   void end(ProgressReporter* reporter) override;

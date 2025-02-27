@@ -62,7 +62,7 @@ class GUIProgress : public utl::Progress
 {
  public:
   GUIProgress(utl::Logger* logger, MainWindow* mw);
-  ~GUIProgress() = default;
+  ~GUIProgress() override = default;
 
   void start(std::shared_ptr<utl::ProgressReporter>& reporter) override;
   void update(utl::ProgressReporter* reporter) override;
