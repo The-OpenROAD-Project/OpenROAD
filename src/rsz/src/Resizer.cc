@@ -1333,8 +1333,12 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   std::stable_sort(equiv_cells.begin(),
                    equiv_cells.end(),
                    [this](LibertyCell* a, LibertyCell* b) {
-                     if (!sta::fuzzyEqual(a->area(), b->area())) {
-                       return a->area() < b->area();
+                     dbMaster* master_a = this->getDbNetwork()->staToDb(a);
+                     dbMaster* master_b = this->getDbNetwork()->staToDb(b);
+                     if (master_a && master_b) {
+                       if (master_a->getArea() != master_b->getArea()) {
+                         return master_a->getArea() < master_b->getArea();
+                       }
                      }
                      std::optional<float> leakage_a = this->cellLeakage(a);
                      std::optional<float> leakage_b = this->cellLeakage(b);
