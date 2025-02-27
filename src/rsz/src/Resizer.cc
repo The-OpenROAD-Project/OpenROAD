@@ -1330,19 +1330,19 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
 
   // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
-  std::sort(equiv_cells.begin(),
-            equiv_cells.end(),
-            [this](LibertyCell* a, LibertyCell* b) {
-              if (!sta::fuzzyEqual(a->area(), b->area())) {
-                return a->area() < b->area();
-              }
-              std::optional<float> leakage_a = this->cellLeakage(a);
-              std::optional<float> leakage_b = this->cellLeakage(b);
-              if (leakage_a && leakage_b) {
-                return *leakage_a < *leakage_b;
-              }
-              return leakage_a.has_value();
-            });
+  std::stable_sort(equiv_cells.begin(),
+                   equiv_cells.end(),
+                   [this](LibertyCell* a, LibertyCell* b) {
+                     if (!sta::fuzzyEqual(a->area(), b->area())) {
+                       return a->area() < b->area();
+                     }
+                     std::optional<float> leakage_a = this->cellLeakage(a);
+                     std::optional<float> leakage_b = this->cellLeakage(b);
+                     if (leakage_a && leakage_b) {
+                       return *leakage_a < *leakage_b;
+                     }
+                     return leakage_a.has_value() && !leakage_b.has_value();
+                   });
 
   logger_->report(
       "The following {} cells are equivalent to {}{}",
