@@ -1568,7 +1568,13 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
 
 void IOPlacer::printConfig(bool annealing)
 {
-  logger_->info(PPL, 1, "Number of slots           {}", slots_.size());
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  logger_->info(PPL, 1, "Number of available slots {}", available_slots);
   if (!top_layer_slots_.empty()) {
     logger_->info(
         PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
