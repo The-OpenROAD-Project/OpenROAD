@@ -480,7 +480,8 @@ void RepairDesign::findBufferSizes()
 {
   resizer_->findFastBuffers();
   buffer_sizes_.clear();
-  buffer_sizes_ = resizer_->buffer_fast_sizes_;
+  buffer_sizes_ = {resizer_->buffer_fast_sizes_.begin(),
+                   resizer_->buffer_fast_sizes_.end()};
   std::sort(buffer_sizes_.begin(),
             buffer_sizes_.end(),
             [=](LibertyCell* a, LibertyCell* b) {
@@ -726,42 +727,39 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
 
   if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst) && cell
       && resizer_->isLogicStdCell(inst)) {
-    LibertyCellSeq* equiv_cells = sta_->equivCells(cell);
-    if (equiv_cells) {
+    LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
+    if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
       typedef std::pair<float, LibertyCell*> SizeCandidate;
       std::vector<SizeCandidate> sizes;
 
-      for (LibertyCell* size_cell : *equiv_cells) {
-        if (resizer_->areCellsSwappable(cell, size_cell)) {
-          float limit, violation = 0;
-          bool limit_exists = false;
-          LibertyPort* port
-              = size_cell->findLibertyPort(network_->portName(drvr_pin));
-          sta_->findSlewLimit(port, corner, max_, limit, limit_exists);
+      for (LibertyCell* size_cell : equiv_cells) {
+        float limit, violation = 0;
+        bool limit_exists = false;
+        LibertyPort* port
+            = size_cell->findLibertyPort(network_->portName(drvr_pin));
+        sta_->findSlewLimit(port, corner, max_, limit, limit_exists);
 
-          if (limit_exists) {
-            float limit_w_margin = maxSlewMargined(limit);
+        if (limit_exists) {
+          float limit_w_margin = maxSlewMargined(limit);
 
-            for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
-              TimingRole* role = arc_set->role();
-              if (!role->isTimingCheck()
-                  && role != TimingRole::tristateDisable()
-                  && role != TimingRole::tristateEnable()
-                  && role != TimingRole::clockTreePathMin()
-                  && role != TimingRole::clockTreePathMax()) {
-                for (TimingArc* arc : arc_set->arcs()) {
-                  if (arc->to() == port) {
-                    checkDriverArcSlew(
-                        corner, inst, arc, load_cap, limit_w_margin, violation);
-                  }
+          for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
+            TimingRole* role = arc_set->role();
+            if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
+                && role != TimingRole::tristateEnable()
+                && role != TimingRole::clockTreePathMin()
+                && role != TimingRole::clockTreePathMax()) {
+              for (TimingArc* arc : arc_set->arcs()) {
+                if (arc->to() == port) {
+                  checkDriverArcSlew(
+                      corner, inst, arc, load_cap, limit_w_margin, violation);
                 }
               }
             }
           }
-
-          sizes.emplace_back(violation, size_cell);
         }
+
+        sizes.emplace_back(violation, size_cell);
       }
 
       if (sizes.empty()) {

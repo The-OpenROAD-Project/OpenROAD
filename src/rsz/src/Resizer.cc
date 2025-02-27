@@ -760,7 +760,7 @@ void Resizer::findFastBuffers()
     debugPrint(logger_, RSZ, "gain_buffering", 1, " - {}", size->name());
   }
 
-  buffer_fast_sizes_ = fast_buffers;
+  buffer_fast_sizes_ = {fast_buffers.begin(), fast_buffers.end()};
 }
 
 void Resizer::reportFastBufferSizes()
@@ -1894,30 +1894,28 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
         max_cap_ratio = 9.0f;
       }
 
-      LibertyCellSeq* equiv_cells
-          = cell->isBuffer() ? &buffer_fast_sizes_ : sta_->equivCells(cell);
+      LibertyCellSeq equiv_cells = getSwappableCells(cell);
       LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
-      if (equiv_cells) {
-        float highest_cin = 0;
-        for (LibertyCell* size : *equiv_cells) {
-          float size_cin;
-          if (areCellsSwappable(cell, size) && getCin(size, size_cin)) {
-            if (load_cap < size_cin * max_cap_ratio) {
-              if (upsize_only && size == cell) {
-                // The current size of the cell fits the criteria, apply no
-                // sizing
-                return 0;
-              }
-
-              if (!best || size->area() < best->area()) {
-                best = size;
-              }
+      float highest_cin = 0;
+      for (LibertyCell* size : equiv_cells) {
+        float size_cin;
+        if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
+            && getCin(size, size_cin)) {
+          if (load_cap < size_cin * max_cap_ratio) {
+            if (upsize_only && size == cell) {
+              // The current size of the cell fits the criteria, apply no
+              // sizing
+              return 0;
             }
 
-            if (size_cin > highest_cin) {
-              highest_cin = size_cin;
-              highest_cin_cell = size;
+            if (!best || size->area() < best->area()) {
+              best = size;
             }
+          }
+
+          if (size_cin > highest_cin) {
+            highest_cin = size_cin;
+            highest_cin_cell = size;
           }
         }
       }

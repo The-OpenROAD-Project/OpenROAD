@@ -504,7 +504,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool hasMultipleOutputs(const Instance* inst);
 
   void resizePreamble();
-  bool areCellsSwappable(LibertyCell* existing, LibertyCell* replacement);
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
 
   bool getCin(const LibertyCell* cell, float& cin);
@@ -763,7 +762,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
-  LibertyCellSeq buffer_fast_sizes_;
+  std::set<LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
