@@ -5,7 +5,7 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 402 components and 2413 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 3 connections.
-Die Area: (0, 0) (290, 125),  Floorplan Area: (0, 0) (149.91, 124.6)
+Die Area: (0.00, 0.00) (290.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
 	Number of std cell instances: 400
 	Area of std cell instances: 1808.79
 	Number of macros: 1

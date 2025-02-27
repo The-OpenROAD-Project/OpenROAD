@@ -51,6 +51,14 @@ HighlightGroupDialog::HighlightGroupDialog(QWidget* parent) : QDialog(parent)
   setButtonBackground(grp6RadioButton, Painter::highlightColors[5]);
   setButtonBackground(grp7RadioButton, Painter::highlightColors[6]);
   setButtonBackground(grp8RadioButton, Painter::highlightColors[7]);
+  setButtonBackground(grp9RadioButton, Painter::highlightColors[8]);
+  setButtonBackground(grp10RadioButton, Painter::highlightColors[9]);
+  setButtonBackground(grp11RadioButton, Painter::highlightColors[10]);
+  setButtonBackground(grp12RadioButton, Painter::highlightColors[11]);
+  setButtonBackground(grp13RadioButton, Painter::highlightColors[12]);
+  setButtonBackground(grp14RadioButton, Painter::highlightColors[13]);
+  setButtonBackground(grp15RadioButton, Painter::highlightColors[14]);
+  setButtonBackground(grp16RadioButton, Painter::highlightColors[15]);
 }
 
 void HighlightGroupDialog::setButtonBackground(QRadioButton* button,
@@ -73,8 +81,16 @@ int HighlightGroupDialog::getSelectedHighlightGroup() const
                                                      grp5RadioButton,
                                                      grp6RadioButton,
                                                      grp7RadioButton,
-                                                     grp8RadioButton};
-  for (int i = 0; i < 8; ++i) {
+                                                     grp8RadioButton,
+                                                     grp9RadioButton,
+                                                     grp10RadioButton,
+                                                     grp11RadioButton,
+                                                     grp12RadioButton,
+                                                     grp13RadioButton,
+                                                     grp14RadioButton,
+                                                     grp15RadioButton,
+                                                     grp16RadioButton};
+  for (int i = 0; i < num_highlight_set; ++i) {
     if (highlight_group_buttons[i]->isChecked()) {
       return i;
     }
