@@ -1,6 +1,6 @@
 source "helpers.tcl"
-read_lef Nangate45/Nangate45.lef
-read_lef Nangate45/fake_macros.lef
+read_lef Nangate45_data/Nangate45.lef
+read_lef Nangate45_data/fake_macros.lef
 read_def multi_height_one_site_gap_disallow.def
 detailed_placement -disallow_one_site_gaps
 check_placement

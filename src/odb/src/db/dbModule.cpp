@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
 #include "dbModBTerm.h"
@@ -95,35 +94,6 @@ bool _dbModule::operator<(const _dbModule& rhs) const
   return true;
 }
 
-void _dbModule::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbModule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_insts);
-  DIFF_FIELD(_mod_inst);
-  DIFF_FIELD(_modinsts);
-  DIFF_FIELD(_modnets);
-  DIFF_FIELD(_modbterms);
-  DIFF_END
-}
-
-void _dbModule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_mod_inst);
-  DIFF_OUT_FIELD(_modinsts);
-  DIFF_OUT_FIELD(_modnets);
-  DIFF_OUT_FIELD(_modbterms);
-
-  DIFF_END
-}
-
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
@@ -132,17 +102,6 @@ _dbModule::_dbModule(_dbDatabase* db)
   _modinsts = 0;
   _mod_inst = 0;
   // User Code End Constructor
-}
-
-_dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _insts = r._insts;
-  _mod_inst = r._mod_inst;
-  _modinsts = r._modinsts;
-  _modnets = r._modnets;
-  _modbterms = r._modbterms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
@@ -527,6 +486,7 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
   std::string modbterm_name(name);
+  // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
   size_t last_idx = modbterm_name.find_last_of('/');
   if (last_idx != std::string::npos) {
     modbterm_name = modbterm_name.substr(last_idx + 1);
@@ -609,6 +569,9 @@ void dbModule::copy(dbModule* old_module,
   copyModuleBoundaryIO(old_module, new_module, new_mod_inst);
 }
 
+// A bus with N members have N+1 modbterms.  The first one is the "bus port"
+// sentinel.   The sentinel has reference to the member size, direction and
+// list of member modbterms.
 void dbModule::copyModulePorts(dbModule* old_module,
                                dbModule* new_module,
                                modBTMap& mod_bt_map)
@@ -686,6 +649,7 @@ void dbModule::copyModulePorts(dbModule* old_module,
                           old_port->getName(),
                           ix);
           }
+          // TODO: use proper bus array delimiter instead of '[' and ']'
           std::string bus_bit_name = std::string(old_port->getName())
                                      + std::string("[") + std::to_string(ix)
                                      + std::string("]");
@@ -741,6 +705,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
     dbInst* old_inst = *inst_iter;
     // Change unique instance name from old_inst/leaf to new_inst/leaf
     std::string old_inst_name = old_inst->getName();
+    // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
     std::string new_inst_name;
     if (first_idx != std::string::npos) {
@@ -792,6 +757,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
       if (old_net) {
         // Create a local net only if it connects to iterms inside this module
         std::string net_name = old_net->getName();
+        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
         size_t first_idx = net_name.find_first_of('/');
         std::string new_net_name;
         if (first_idx != std::string::npos) {

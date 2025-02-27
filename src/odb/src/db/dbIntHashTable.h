@@ -39,7 +39,6 @@ namespace odb {
 
 class dbIStream;
 class dbOStream;
-class dbDiff;
 template <class T>
 class dbTable;
 
@@ -80,10 +79,6 @@ class dbIntHashTable
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const dbIntHashTable<T>& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
   void setTable(dbTable<T>* table) { _obj_tbl = table; }
 

@@ -454,6 +454,14 @@ find_floating_pins()
   return resizer->findFloatingPins();
 }
 
+TmpNetSeq *
+find_overdriven_nets(bool include_parallel_driven)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findOverdrivenNets(include_parallel_driven);
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
@@ -596,11 +604,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 bool
-recover_power(float recover_power_percent, bool match_cell_footprint)
+recover_power(float recover_power_percent, bool match_cell_footprint, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->recoverPower(recover_power_percent, match_cell_footprint);
+  return resizer->recoverPower(recover_power_percent, match_cell_footprint, verbose);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -760,6 +768,13 @@ eliminate_dead_logic_cmd(bool clean_nets)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->eliminateDeadLogic(clean_nets);
+}
+
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportEquivalentCells(cell, match_cell_footprint);
 }
 
 } // namespace

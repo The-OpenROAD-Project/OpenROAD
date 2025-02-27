@@ -1,0 +1,22 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45_io/dummy_pads.lef, created 28 library cells
+[INFO ODB-0227] LEF file: testcases/macro_only.lef, created 9 library cells
+[INFO ODB-0128] Design: io_pads1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 402 components and 2413 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 3 connections.
+Die Area: (0.00, 0.00) (290.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
+	Number of std cell instances: 400
+	Area of std cell instances: 1808.79
+	Number of macros: 1
+	Area of macros: 10000.00
+	Halo width: 4.00
+	Halo height: 4.00
+	Area of macros with halos: 11664.00
+	Area of std cell instances + Area of macros: 11808.79
+	Floorplan area: 18678.79
+	Design Utilization: 0.63
+	Floorplan Utilization: 0.21
+	Manufacturing Grid: 10
+
+No differences found.

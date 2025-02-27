@@ -40,25 +40,17 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbGDSStructure;
 
 class _dbGDSARef : public _dbObject
 {
  public:
-  _dbGDSARef(_dbDatabase*, const _dbGDSARef& r);
   _dbGDSARef(_dbDatabase*);
-
-  ~_dbGDSARef() = default;
 
   bool operator==(const _dbGDSARef& rhs) const;
   bool operator!=(const _dbGDSARef& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSARef& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGDSARef& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   void collectMemInfo(MemInfo& info);
 
   Point _origin;

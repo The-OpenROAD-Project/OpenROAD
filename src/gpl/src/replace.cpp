@@ -341,14 +341,14 @@ bool Replace::initNesterovPlace(int threads)
     npVars.minPhiCoef = minPhiCoef_;
     npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
-    npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
+    npVars.routability_end_overflow = routabilityCheckOverflow_;
     npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;
     npVars.initDensityPenalty = initDensityPenalityFactor_;
     npVars.initWireLengthCoef = initWireLengthCoef_;
     npVars.targetOverflow = overflow_;
     npVars.maxNesterovIter = nesterovPlaceMaxIter_;
     npVars.timingDrivenMode = timingDrivenMode_;
-    npVars.routabilityDrivenMode = routabilityDrivenMode_;
+    npVars.routability_driven_mode = routabilityDrivenMode_;
     npVars.debug = gui_debug_;
     npVars.debug_pause_iterations = gui_debug_pause_iterations_;
     npVars.debug_update_iterations = gui_debug_update_iterations_;

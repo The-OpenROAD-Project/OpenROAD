@@ -263,14 +263,12 @@ bool RepairHold::repairHold(VertexSeq& ends,
                   "Found {} endpoints with hold violations.",
                   hold_failures.size());
     bool progress = true;
-    if (verbose) {
-      printProgress(0, true, false);
-    }
+    printProgress(0, true, false);
     int pass = 1;
     while (worst_slack < hold_margin && progress && !resizer_->overMaxArea()
            && inserted_buffer_count_ <= max_buffer_count
            && pass <= max_passes) {
-      if (verbose) {
+      if (verbose || pass == 1) {
         printProgress(pass, false, false);
       }
       debugPrint(logger_,
@@ -287,7 +285,9 @@ bool RepairHold::repairHold(VertexSeq& ends,
                      setup_margin,
                      hold_margin,
                      allow_setup_violations,
-                     max_buffer_count);
+                     max_buffer_count,
+                     verbose,
+                     pass);
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
@@ -296,12 +296,9 @@ bool RepairHold::repairHold(VertexSeq& ends,
                  inserted_buffer_count_ - hold_buffer_count_before);
       sta_->findRequireds();
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
-      pass++;
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }
-    if (verbose) {
-      printProgress(pass, true, true);
-    }
+    printProgress(pass, true, true);
     if (hold_margin == 0.0 && fuzzyLess(worst_slack, 0.0)) {
       logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
     } else if (fuzzyLess(worst_slack, hold_margin)) {
@@ -363,19 +360,26 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 const double setup_margin,
                                 const double hold_margin,
                                 const bool allow_setup_violations,
-                                const int max_buffer_count)
+                                const int max_buffer_count,
+                                bool verbose,
+                                int& pass)
 {
   resizer_->updateParasitics();
   sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
   for (Vertex* end_vertex : hold_failures) {
+    if (verbose) {
+      printProgress(pass, false, false);
+    }
+
     resizer_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
                   hold_margin,
                   allow_setup_violations);
+    pass++;
     if (inserted_buffer_count_ > max_buffer_count) {
       break;
     }
@@ -779,7 +783,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
         resize_count_,
         inserted_buffer_count_,
         cloned_gate_count_,
-        area_growth / initial_design_area_ * 1e3,
+        area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 3),
         worst_vertex->name(network_));

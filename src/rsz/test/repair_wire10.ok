@@ -39,11 +39,16 @@ Driver    length delay
 u2/Z manhtn 1998.2 steiner 1998.2 0.00
 u3/Z manhtn 1.3 steiner 1.3 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         4
+    final |   +533.3% |       1 |       2 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 2 long wires.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained

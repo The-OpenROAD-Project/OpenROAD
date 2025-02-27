@@ -121,36 +121,6 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   return true;
 }
 
-void _dbDatabase::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbDatabase& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_master_id);
-  DIFF_FIELD(_chip);
-  DIFF_TABLE_NO_DEEP(_tech_tbl);
-  DIFF_TABLE_NO_DEEP(_lib_tbl);
-  DIFF_TABLE_NO_DEEP(_chip_tbl);
-  DIFF_TABLE_NO_DEEP(_gds_lib_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbDatabase::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_master_id);
-  DIFF_OUT_FIELD(_chip);
-  DIFF_OUT_TABLE_NO_DEEP(_tech_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_lib_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_chip_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_gds_lib_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
@@ -258,31 +228,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   _name_cache = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
-_dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
-    : _magic1(d._magic1),
-      _magic2(d._magic2),
-      _schema_major(d._schema_major),
-      _schema_minor(d._schema_minor),
-      _master_id(d._master_id),
-      _chip(d._chip),
-      _unique_id(db_unique_id++),
-      _logger(nullptr)
-{
-  _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
-
-  _gds_lib_tbl = new dbTable<_dbGDSLib>(this, this, *d._gds_lib_tbl);
-
-  _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
-
-  _lib_tbl = new dbTable<_dbLib>(this, this, *d._lib_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(this, this, *d._prop_tbl);
-
-  _name_cache = new _dbNameCache(this, this, *d._name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 }
@@ -696,14 +641,6 @@ void dbDatabase::destroy(dbDatabase* db_)
   db_tbl->destroy(db);
 }
 
-dbDatabase* dbDatabase::duplicate(dbDatabase* db_)
-{
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
-  _dbDatabase* db = (_dbDatabase*) db_;
-  _dbDatabase* d = db_tbl->duplicate(db);
-  return (dbDatabase*) d;
-}
-
 dbDatabase* dbDatabase::getDatabase(uint dbid)
 {
   std::lock_guard<std::mutex> lock(*db_tbl_mutex);
@@ -728,19 +665,6 @@ utl::Logger* _dbDatabase::getLogger() const
 utl::Logger* _dbObject::getLogger() const
 {
   return getDatabase()->getLogger();
-}
-
-bool dbDatabase::diff(dbDatabase* db0_,
-                      dbDatabase* db1_,
-                      FILE* file,
-                      int indent)
-{
-  _dbDatabase* db0 = (_dbDatabase*) db0_;
-  _dbDatabase* db1 = (_dbDatabase*) db1_;
-  dbDiff diff(file);
-  diff.setIndentPerLevel(indent);
-  db0->differences(diff, nullptr, *db1);
-  return diff.hasDifferences();
 }
 
 void _dbDatabase::collectMemInfo(MemInfo& info)

@@ -261,7 +261,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
 
   logger_->report("Partitioning Parameters");
   logger_->report("\tNumber of partitions = {}", num_parts_);
-  logger_->report("\tUBfactor = {}", ub_factor_);
+  logger_->report("\tUBfactor = {:.1f}", ub_factor_);
   logger_->report("\tSeed = {}", seed_);
   logger_->report("\tVertex dimensions = {}", vertex_dimensions_);
   logger_->report("\tHyperedge dimensions = {}", hyperedge_dimensions_);

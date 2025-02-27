@@ -34,7 +34,6 @@
 #include "dbGDSBox.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -62,38 +61,10 @@ bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const
   return true;
 }
 
-void _dbGDSBox::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbGDSBox& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_datatype);
-  DIFF_FIELD(_bounds);
-  DIFF_END
-}
-
-void _dbGDSBox::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_datatype);
-  DIFF_OUT_FIELD(_bounds);
-
-  DIFF_END
-}
-
 _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 {
   _layer = 0;
   _datatype = 0;
-}
-
-_dbGDSBox::_dbGDSBox(_dbDatabase* db, const _dbGDSBox& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-  _bounds = r._bounds;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)

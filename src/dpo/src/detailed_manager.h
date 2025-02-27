@@ -67,6 +67,38 @@ class Network;
 class RoutingParams;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Structures.
+////////////////////////////////////////////////////////////////////////////////
+
+enum class BlockageType
+{
+  Placement,
+  Routing,
+  FixedInstance,
+  None
+};
+
+struct Blockage
+{
+  double x_min;
+  double x_max;
+  int pad_left;
+  int pad_right;
+  BlockageType type;
+
+  Blockage(double xmin, double xmax, int pad_l, int pad_r, BlockageType t)
+      : x_min(xmin), x_max(xmax), pad_left(pad_l), pad_right(pad_r), type(t)
+  {
+  }
+  double getXMin() const { return x_min; }
+  double getXMax() const { return x_max; }
+  double getPaddedXMin() const { return x_min - pad_left; }
+  double getPaddedXMax() const { return x_max + pad_right; }
+  bool isFixedInstance() const { return type == BlockageType::FixedInstance; }
+  bool isPlacement() const { return type == BlockageType::Placement; }
+};
+
+////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -289,6 +321,17 @@ class DetailedMgr
  private:
   struct compareBlockages
   {
+    bool operator()(const Blockage& i1, const Blockage& i2) const
+    {
+      if (i1.getPaddedXMin() == i2.getPaddedXMin()) {
+        return i1.getPaddedXMax() < i2.getPaddedXMax();
+      }
+      return i1.getPaddedXMin() < i2.getPaddedXMin();
+    }
+  };
+
+  struct compareIntervals
+  {
     bool operator()(std::pair<double, double> i1,
                     std::pair<double, double> i2) const
     {
@@ -365,7 +408,7 @@ class DetailedMgr
   std::vector<Node*> fixedCells_;  // Fixed; filler, macros, temporary, etc.
 
   // Blockages and segments.
-  std::vector<std::vector<std::pair<double, double>>> blockages_;
+  std::vector<std::vector<Blockage>> blockages_;
   std::vector<std::vector<Node*>> cellsInSeg_;
   std::vector<std::vector<DetailedSeg*>> segsInRow_;
   std::vector<DetailedSeg*> segments_;

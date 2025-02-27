@@ -45,12 +45,11 @@
 
   void improve_placement_cmd(int seed,
                              int max_displacement_x,
-                             int max_displacement_y,
-                             bool disallow_one_site_gaps)
+                             int max_displacement_y)
   {
     dpo::Optdp* optdp = ord::OpenRoad::openRoad()->getOptdp();
     optdp->improvePlacement(
-        seed, max_displacement_x, max_displacement_y, disallow_one_site_gaps);
+        seed, max_displacement_x, max_displacement_y);
   }
 
   }  // namespace dpo

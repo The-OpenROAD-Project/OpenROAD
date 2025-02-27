@@ -34,7 +34,6 @@
 #include "dbMasterEdgeType.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbMaster.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -71,50 +70,12 @@ bool _dbMasterEdgeType::operator<(const _dbMasterEdgeType& rhs) const
   return true;
 }
 
-void _dbMasterEdgeType::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbMasterEdgeType& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(edge_dir_);
-  DIFF_FIELD(edge_type_);
-  DIFF_FIELD(cell_row_);
-  DIFF_FIELD(half_row_);
-  DIFF_FIELD(range_begin_);
-  DIFF_FIELD(range_end_);
-  DIFF_END
-}
-
-void _dbMasterEdgeType::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(edge_dir_);
-  DIFF_OUT_FIELD(edge_type_);
-  DIFF_OUT_FIELD(cell_row_);
-  DIFF_OUT_FIELD(half_row_);
-  DIFF_OUT_FIELD(range_begin_);
-  DIFF_OUT_FIELD(range_end_);
-
-  DIFF_END
-}
-
 _dbMasterEdgeType::_dbMasterEdgeType(_dbDatabase* db)
 {
   cell_row_ = -1;
   half_row_ = -1;
   range_begin_ = -1;
   range_end_ = -1;
-}
-
-_dbMasterEdgeType::_dbMasterEdgeType(_dbDatabase* db,
-                                     const _dbMasterEdgeType& r)
-{
-  edge_dir_ = r.edge_dir_;
-  edge_type_ = r.edge_type_;
-  cell_row_ = r.cell_row_;
-  half_row_ = r.half_row_;
-  range_begin_ = r.range_begin_;
-  range_end_ = r.range_end_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMasterEdgeType& obj)

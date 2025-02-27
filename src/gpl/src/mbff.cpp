@@ -2240,15 +2240,15 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   }
   avg_disp /= flops_.size();
 
-  log_->report("Alpha = {}, Beta = {}, #paths = {}, max size = {}",
+  log_->report("Alpha = {:.1f}, Beta = {:.1f}, #paths = {}, max size = {}",
                alpha,
                beta,
                num_paths,
                mx_sz);
-  log_->report("Total ILP Cost: {}", tot_ilp);
-  log_->report("Total Timing Critical Path Displacement: {}", tcp_disp);
-  log_->report("Average slot-to-flop displacement: {}", avg_disp);
-  log_->report("Final Objective Value: {}", tot_ilp + tcp_disp);
+  log_->report("Total ILP Cost: {:.3f}", tot_ilp);
+  log_->report("Total Timing Critical Path Displacement: {:.1f}", tcp_disp);
+  log_->report("Average slot-to-flop displacement: {:.3f}", avg_disp);
+  log_->report("Final Objective Value: {:.3f}", tot_ilp + tcp_disp);
   log_->report("Sizes used");
   for (const auto [tray, count] : tray_sizes_used_) {
     log_->report("  {}-bit: {}", tray, count);

@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -146,78 +145,6 @@ bool _dbTechLayerCutSpacingTableDefRule::operator<(
   return true;
 }
 
-void _dbTechLayerCutSpacingTableDefRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutSpacingTableDefRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.default_valid_);
-  DIFF_FIELD(flags_.same_mask_);
-  DIFF_FIELD(flags_.same_net_);
-  DIFF_FIELD(flags_.same_metal_);
-  DIFF_FIELD(flags_.same_via_);
-  DIFF_FIELD(flags_.layer_valid_);
-  DIFF_FIELD(flags_.no_stack_);
-  DIFF_FIELD(flags_.non_zero_enclosure_);
-  DIFF_FIELD(flags_.prl_for_aligned_cut_);
-  DIFF_FIELD(flags_.center_to_center_valid_);
-  DIFF_FIELD(flags_.center_and_edge_valid_);
-  DIFF_FIELD(flags_.no_prl_);
-  DIFF_FIELD(flags_.prl_valid_);
-  DIFF_FIELD(flags_.max_x_y_);
-  DIFF_FIELD(flags_.end_extension_valid_);
-  DIFF_FIELD(flags_.side_extension_valid_);
-  DIFF_FIELD(flags_.exact_aligned_spacing_valid_);
-  DIFF_FIELD(flags_.horizontal_);
-  DIFF_FIELD(flags_.prl_horizontal_);
-  DIFF_FIELD(flags_.vertical_);
-  DIFF_FIELD(flags_.prl_vertical_);
-  DIFF_FIELD(flags_.non_opposite_enclosure_spacing_valid_);
-  DIFF_FIELD(flags_.opposite_enclosure_resize_spacing_valid_);
-  DIFF_FIELD(default_);
-  DIFF_FIELD(second_layer_);
-  DIFF_FIELD(prl_);
-  DIFF_FIELD(extension_);
-  DIFF_END
-}
-
-void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
-                                             char side,
-                                             const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.default_valid_);
-  DIFF_OUT_FIELD(flags_.same_mask_);
-  DIFF_OUT_FIELD(flags_.same_net_);
-  DIFF_OUT_FIELD(flags_.same_metal_);
-  DIFF_OUT_FIELD(flags_.same_via_);
-  DIFF_OUT_FIELD(flags_.layer_valid_);
-  DIFF_OUT_FIELD(flags_.no_stack_);
-  DIFF_OUT_FIELD(flags_.non_zero_enclosure_);
-  DIFF_OUT_FIELD(flags_.prl_for_aligned_cut_);
-  DIFF_OUT_FIELD(flags_.center_to_center_valid_);
-  DIFF_OUT_FIELD(flags_.center_and_edge_valid_);
-  DIFF_OUT_FIELD(flags_.no_prl_);
-  DIFF_OUT_FIELD(flags_.prl_valid_);
-  DIFF_OUT_FIELD(flags_.max_x_y_);
-  DIFF_OUT_FIELD(flags_.end_extension_valid_);
-  DIFF_OUT_FIELD(flags_.side_extension_valid_);
-  DIFF_OUT_FIELD(flags_.exact_aligned_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.horizontal_);
-  DIFF_OUT_FIELD(flags_.prl_horizontal_);
-  DIFF_OUT_FIELD(flags_.vertical_);
-  DIFF_OUT_FIELD(flags_.prl_vertical_);
-  DIFF_OUT_FIELD(flags_.non_opposite_enclosure_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.opposite_enclosure_resize_spacing_valid_);
-  DIFF_OUT_FIELD(default_);
-  DIFF_OUT_FIELD(second_layer_);
-  DIFF_OUT_FIELD(prl_);
-  DIFF_OUT_FIELD(extension_);
-
-  DIFF_END
-}
-
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
@@ -225,42 +152,6 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   default_ = 0;
   prl_ = 0;
   extension_ = 0;
-}
-
-_dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutSpacingTableDefRule& r)
-{
-  flags_.default_valid_ = r.flags_.default_valid_;
-  flags_.same_mask_ = r.flags_.same_mask_;
-  flags_.same_net_ = r.flags_.same_net_;
-  flags_.same_metal_ = r.flags_.same_metal_;
-  flags_.same_via_ = r.flags_.same_via_;
-  flags_.layer_valid_ = r.flags_.layer_valid_;
-  flags_.no_stack_ = r.flags_.no_stack_;
-  flags_.non_zero_enclosure_ = r.flags_.non_zero_enclosure_;
-  flags_.prl_for_aligned_cut_ = r.flags_.prl_for_aligned_cut_;
-  flags_.center_to_center_valid_ = r.flags_.center_to_center_valid_;
-  flags_.center_and_edge_valid_ = r.flags_.center_and_edge_valid_;
-  flags_.no_prl_ = r.flags_.no_prl_;
-  flags_.prl_valid_ = r.flags_.prl_valid_;
-  flags_.max_x_y_ = r.flags_.max_x_y_;
-  flags_.end_extension_valid_ = r.flags_.end_extension_valid_;
-  flags_.side_extension_valid_ = r.flags_.side_extension_valid_;
-  flags_.exact_aligned_spacing_valid_ = r.flags_.exact_aligned_spacing_valid_;
-  flags_.horizontal_ = r.flags_.horizontal_;
-  flags_.prl_horizontal_ = r.flags_.prl_horizontal_;
-  flags_.vertical_ = r.flags_.vertical_;
-  flags_.prl_vertical_ = r.flags_.prl_vertical_;
-  flags_.non_opposite_enclosure_spacing_valid_
-      = r.flags_.non_opposite_enclosure_spacing_valid_;
-  flags_.opposite_enclosure_resize_spacing_valid_
-      = r.flags_.opposite_enclosure_resize_spacing_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  default_ = r.default_;
-  second_layer_ = r.second_layer_;
-  prl_ = r.prl_;
-  extension_ = r.extension_;
 }
 
 dbIStream& operator>>(dbIStream& stream,

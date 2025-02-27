@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMTerm.h"
 #include "dbMaster.h"
@@ -74,43 +73,9 @@ bool _dbPowerSwitch::operator<(const _dbPowerSwitch& rhs) const
   return true;
 }
 
-void _dbPowerSwitch::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbPowerSwitch& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_lib_cell);
-  DIFF_FIELD(_lib);
-  DIFF_FIELD(_power_domain);
-  DIFF_END
-}
-
-void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_lib_cell);
-  DIFF_OUT_FIELD(_lib);
-  DIFF_OUT_FIELD(_power_domain);
-
-  DIFF_END
-}
-
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
 {
   _name = nullptr;
-}
-
-_dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _lib_cell = r._lib_cell;
-  _lib = r._lib;
-  _power_domain = r._power_domain;
 }
 
 dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFIOSupplyPort& obj)
