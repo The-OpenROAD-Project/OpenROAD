@@ -162,7 +162,7 @@ bool Progress::removeReporter(ProgressReporter* reporter)
       std::remove_if(reporters_.begin(),
                      reporters_.end(),
                      [reporter, &found_reporter](
-                         std::weak_ptr<ProgressReporter> other) -> bool {
+                         const std::weak_ptr<ProgressReporter>& other) -> bool {
                        const auto other_ptr = other.lock();
                        if (!other_ptr) {
                          return true;
@@ -179,7 +179,7 @@ bool Progress::removeReporter(ProgressReporter* reporter)
 void Progress::interrupt()
 {
   std::unique_lock<std::mutex> lock(reporters_lock_);
-  for (auto reporter : reporters_) {
+  for (const auto& reporter : reporters_) {
     if (auto report = reporter.lock()) {
       report->interrupt();
     }
@@ -192,7 +192,7 @@ std::vector<std::shared_ptr<ProgressReporter>> Progress::getReporters()
 
   std::vector<std::shared_ptr<ProgressReporter>> reporters;
 
-  for (auto reporter : reporters_) {
+  for (const auto& reporter : reporters_) {
     if (auto rep = reporter.lock()) {
       reporters.push_back(rep);
     }
