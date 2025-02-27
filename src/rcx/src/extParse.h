@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,61 +30,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#define BOOST_TEST_MODULE parse
+#pragma once
 
-#ifdef HAS_BOOST_UNIT_TEST_LIBRARY
-// Shared library version
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-#else
-// Header only version
-#include <boost/test/included/unit_test.hpp>
-#endif
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-#include "odb/parse.h"
-#include "utl/CFileUtils.h"
+#include "parse.h"
 #include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
 
-namespace odb {
+namespace rcx {
 
-// Note: this is an undefined symbol when we depend on the odb library alone,
-// so we populate it with a dummy implementation.
-int notice(int code, const char* msg, ...)
+class extParser : public Ath__parser
 {
-  abort();
-}
+ public:
+  // Constructor
+  extParser(utl::Logger* logger) : Ath__parser(logger) {}
+  void setDbg(int v) { _dbg = v; }
 
-BOOST_AUTO_TEST_CASE(parser_init_and_parse_line_with_integers)
-{
-  utl::Logger logger;
-  Ath__parser parser(&logger);
+ private:
+  int _dbg;
+};
 
-  BOOST_TEST(parser.getLineNum() == 0);
-
-  utl::ScopedTemporaryFile scoped_temp_file(&logger);
-  const std::string kContents = "1 2 3 4";
-  boost::span<const uint8_t> contents(
-      reinterpret_cast<const uint8_t*>(kContents.data()), kContents.size());
-  utl::WriteAll(scoped_temp_file.file(), contents, &logger);
-  fseek(scoped_temp_file.file(), SEEK_SET, 0);
-
-  parser.setInputFP(scoped_temp_file.file());
-  BOOST_TEST(parser.readLineAndBreak() == 4);
-
-  BOOST_TEST(parser.get(0) == "1");
-  BOOST_TEST(parser.get(1) == "2");
-  BOOST_TEST(parser.get(2) == "3");
-  BOOST_TEST(parser.get(3) == "4");
-
-  BOOST_TEST(parser.getInt(0) == 1);
-  BOOST_TEST(parser.getInt(1) == 2);
-  BOOST_TEST(parser.getInt(2) == 3);
-  BOOST_TEST(parser.getInt(3) == 4);
-
-  // If we don't reset this we get an error as it thinks it owns the `FILE*`
-  // and can fclose it.
-  parser.setInputFP(nullptr);
-}
-
-}  // namespace odb
+}  // namespace rcx

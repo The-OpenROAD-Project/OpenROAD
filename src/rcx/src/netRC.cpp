@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "util.h"
