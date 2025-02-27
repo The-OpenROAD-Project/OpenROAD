@@ -5,6 +5,12 @@
 [INFO ODB-0131]     Created 66 components and 347 component-terminals.
 [INFO ODB-0133]     Created 8 nets and 54 connections.
 [WARNING GRT-0008] The read_guides command does not allow parasitics estimation from the guides file.
+[WARNING ODB-1003] (li1) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.17
+[WARNING ODB-1003] (met1) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.14
+[WARNING ODB-1003] (met2) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.14
+[WARNING ODB-1003] (met3) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.3
+[WARNING ODB-1003] (met4) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.3
+[WARNING ODB-1003] (met5) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 1.6
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via

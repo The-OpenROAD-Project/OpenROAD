@@ -128,12 +128,12 @@ VIAS 4 ;
 END VIAS
 NONDEFAULTRULES 1 ;
     - NDR_3W_3S
-      + LAYER li1 WIDTH 0
-      + LAYER met1 WIDTH 0
-      + LAYER met2 WIDTH 0
-      + LAYER met3 WIDTH 0
-      + LAYER met4 WIDTH 0
-      + LAYER met5 WIDTH 0
+      + LAYER li1 WIDTH 170
+      + LAYER met1 WIDTH 140
+      + LAYER met2 WIDTH 140
+      + LAYER met3 WIDTH 300
+      + LAYER met4 WIDTH 300
+      + LAYER met5 WIDTH 1600
       + VIA L1M1_PR_R
       + VIA M1M2_PR_R
     ;
