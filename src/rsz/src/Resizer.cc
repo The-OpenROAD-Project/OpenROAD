@@ -57,6 +57,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
+#include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Parasitics.hh"
@@ -132,6 +133,8 @@ using sta::VertexOutEdgeIterator;
 
 using sta::BufferUse;
 using sta::CLOCK;
+using sta::LeakagePower;
+using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -1243,17 +1246,39 @@ void Resizer::resizePreamble()
   findTargetLoads();
 }
 
-// Convert sta results to std::optional
-std::optional<float> Resizer::cellLeakage(const LibertyCell* cell)
+// Convert static cell leakage to std::optional.
+// For state-dependent leakage, compute the average
+// across all the power states.  Cache the leakage for
+// runtime.
+std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
 {
-  float leakage;
+  auto it = cell_leakage_cache_.find(cell);
+  if (it != cell_leakage_cache_.end()) {
+    return it->second;
+  }
+
+  float leakage = 0.0;
   bool exists;
   cell->leakagePower(leakage, exists);
-  std::optional<float> value;
   if (exists) {
-    value = leakage;
+    cell_leakage_cache_[cell] = leakage;
+    return leakage;
   }
-  return value;
+
+  // Compute average leakage across power conds for state-dependent leakage
+  LeakagePowerSeq* leakages = cell->leakagePowers();
+  if (!leakages || leakages->empty()) {
+    cell_leakage_cache_[cell] = std::nullopt;
+    return std::nullopt;
+  }
+
+  float total_leakage = 0.0;
+  for (LeakagePower* leak : *leakages) {
+    total_leakage += leak->power();
+  }
+  leakage = total_leakage / leakages->size();
+  cell_leakage_cache_[cell] = leakage;
+  return leakage;
 }
 
 // For debugging
@@ -1269,7 +1294,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   // STA sorts them by drive resistance
   std::sort(equiv_cells.begin(),
             equiv_cells.end(),
-            [this](const LibertyCell* a, const LibertyCell* b) {
+            [this](LibertyCell* a, LibertyCell* b) {
               if (!sta::fuzzyEqual(a->area(), b->area())) {
                 return a->area() < b->area();
               }
