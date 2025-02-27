@@ -1551,6 +1551,10 @@ std::string mergeVTLayerNames(const std::string& new_name,
     // If c1 and c2 are different, we do not add anything
   }
 
+  // If there is no overlap between names, append the names
+  if (merged.empty()) {
+    merged = new_name + curr_name;
+  }
   return merged;
 }
 
@@ -1591,7 +1595,7 @@ std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "NA"));
+    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
     return new_it->second;
   }
 
@@ -1620,7 +1624,7 @@ std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "NA"));
+    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
     return new_it->second;
   }
 
