@@ -8,14 +8,10 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        73
-<<<<<<< HEAD
-    final |    +29.4% |       3 |       4 |             1 |         0
-=======
-    final |     +2.5% |       3 |       4 |             1 |         0
->>>>>>> master
+    final |     +3.1% |       4 |       4 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 3 instances.
+[INFO RSZ-0039] Resized 4 instances.
 [INFO RSZ-0038] Inserted 4 buffers in 1 nets.
 Instance drvr
  Cell: DFF_X1
@@ -31,17 +27,13 @@ Instance drvr
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        77
-<<<<<<< HEAD
-    final |     +0.0% |       1 |       0 |             0 |         0
-=======
-    final |     +0.3% |       1 |       0 |             0 |         0
->>>>>>> master
+    final |     +2.1% |       5 |       0 |             0 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0039] Resized 5 instances.
 Instance drvr
- Cell: DFF_X1
+ Cell: DFF_X2
  Library: Nangate45
- Path cells: DFF_X1
+ Path cells: DFF_X2
  Input pins:
   D input (unconnected)
   CK input clk1

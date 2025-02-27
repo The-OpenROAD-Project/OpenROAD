@@ -35,20 +35,16 @@ Fanout   Delay    Time   Description
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]
-<<<<<<< HEAD
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
-=======
-    final |    +14.0% |       0 |       5 |             5 |         0
->>>>>>> master
 ---------------------------------------------------------------------
-        0 |   +125.6% |       0 |       3 |             5 |        33
+        0 |    +60.0% |       0 |       8 |            27 |        38
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]
-    final |    +69.8% |       3 |       3 |             8 |         0
+    final |    +11.6% |      35 |       8 |            62 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 3 instances.
-[INFO RSZ-0038] Inserted 3 buffers in 8 nets.
+[INFO RSZ-0039] Resized 35 instances.
+[INFO RSZ-0038] Inserted 8 buffers in 62 nets.
 Startpoint: _69_ (rising edge-triggered flip-flop clocked by clk)
 Endpoint: _68_ (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -60,24 +56,27 @@ Fanout   Delay    Time   Description
           0.00    0.00   clock network delay (ideal)
           0.00    0.00 ^ _69_/CLK (sky130_fd_sc_hd__dfxtp_1)
      2    0.28    0.28 ^ _69_/Q (sky130_fd_sc_hd__dfxtp_1)
-     6    0.16    0.44 ^ gain2/X (sky130_fd_sc_hd__buf_1)
-     4    0.25    0.69 ^ _48_/X (sky130_fd_sc_hd__and4_4)
-     5    0.20    0.89 ^ _50_/X (sky130_fd_sc_hd__and3_4)
-     1    0.15    1.04 ^ _53_/X (sky130_fd_sc_hd__and3_1)
-     1    0.04    1.08 v _55_/Y (sky130_fd_sc_hd__nor3_1)
-          0.00    1.08 v _68_/D (sky130_fd_sc_hd__dfxtp_1)
-                  1.08   data arrival time
+     1    0.08    0.36 ^ gain7/X (sky130_fd_sc_hd__buf_2)
+     6    0.15    0.51 ^ gain6/X (sky130_fd_sc_hd__buf_1)
+     1    0.19    0.70 ^ _48_/X (sky130_fd_sc_hd__and4_1)
+     4    0.13    0.83 ^ gain2/X (sky130_fd_sc_hd__buf_1)
+     2    0.17    1.00 ^ _50_/X (sky130_fd_sc_hd__and3_1)
+     4    0.14    1.14 ^ gain1/X (sky130_fd_sc_hd__buf_1)
+     1    0.08    1.22 v _54_/Y (sky130_fd_sc_hd__a21oi_1)
+     1    0.10    1.32 ^ _55_/Y (sky130_fd_sc_hd__nor3_1)
+          0.00    1.32 ^ _68_/D (sky130_fd_sc_hd__dfxtp_1)
+                  1.32   data arrival time
 
           1.00    1.00   clock clk (rise edge)
           0.00    1.00   clock network delay (ideal)
           0.00    1.00   clock reconvergence pessimism
                   1.00 ^ _68_/CLK (sky130_fd_sc_hd__dfxtp_1)
-         -0.12    0.88   library setup time
-                  0.88   data required time
+         -0.08    0.92   library setup time
+                  0.92   data required time
 ---------------------------------------------------------------
-                  0.88   data required time
-                 -1.08   data arrival time
+                  0.92   data required time
+                 -1.32   data arrival time
 ---------------------------------------------------------------
-                 -0.19   slack (VIOLATED)
+                 -0.40   slack (VIOLATED)
 
 

@@ -20,11 +20,7 @@ u2/Z                                   60.65   23.79   36.87 (MET)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        13
-<<<<<<< HEAD
-    final |   +166.7% |       1 |       2 |             1 |         0
-=======
-    final |    +16.7% |       0 |       2 |             1 |         0
->>>>>>> master
+    final |    +16.7% |       1 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0039] Resized 1 instances.
