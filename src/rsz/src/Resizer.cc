@@ -1384,16 +1384,56 @@ void Resizer::resizePreamble()
 
 bool Resizer::areCellsSwappable(LibertyCell* existing, LibertyCell* replacement)
 {
-  if (isLinkCell(replacement) && !dontUse(replacement)) {
-    if (!match_cell_footprint_
-        || sta::stringEqIf(existing->footprint(), replacement->footprint())) {
-      if (!existing->userFunctionClass()
-          || sta::stringEqIf(existing->userFunctionClass(),
-                             replacement->userFunctionClass())) {
-        return true;
-      }
+  // Convert sta results to std::optional
+  auto get_leakage = [](LibertyCell* cell) {
+    float leakage;
+    bool exists;
+    cell->leakagePower(leakage, exists);
+    std::optional<float> value;
+    if (exists) {
+      value = leakage;
+    }
+    return value;
+  };
+
+  if (!isLinkCell(replacement) || dontUse(replacement)) {
+    return false;
+  }
+
+  dbMaster* replacement_master = db_network_->staToDb(replacement);
+  if (!replacement_master) {
+    return false;
+  }
+
+  int64_t source_cell_area = existing->area();
+  std::optional<float> source_cell_leakage;
+
+  if (sizing_area_limit_.has_value() && (source_cell_area != 0)
+      && (replacement_master->getArea() / static_cast<double>(source_cell_area)
+          > sizing_area_limit_.value())) {
+    return false;
+  }
+
+  if (sizing_leakage_limit_ && source_cell_leakage) {
+    std::optional<float> replacement_leakage = get_leakage(replacement);
+    if (replacement_leakage
+        && (*replacement_leakage / *source_cell_leakage
+            > sizing_leakage_limit_.value())) {
+      return false;
     }
   }
+
+  if (match_cell_footprint_
+      && !sta::stringEqIf(existing->footprint(), replacement->footprint())) {
+    return false;
+  }
+
+  if (existing->userFunctionClass()
+      && !sta::stringEqIf(existing->userFunctionClass(),
+                          replacement->userFunctionClass())) {
+    return false;
+  }
+
   return false;
 }
 
