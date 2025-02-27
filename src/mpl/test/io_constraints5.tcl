@@ -1,6 +1,6 @@
 # Test if pin access blockages are generated correctly for a case
 # with pins with different constraint regions. Both regions are
-# in the same boundary, but have different densities.
+# in the same boundary, but have different IO density.
 source "helpers.tcl"
 
 # We're not interested in the connections, so don't include the lib.

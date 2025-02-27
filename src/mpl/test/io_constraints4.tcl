@@ -1,6 +1,7 @@
 # Test if pin access blockages are generated correctly for a case
-# with pins with different constraint regions. One region has
-# more pins and should have a larger blockage.
+# with pins with different constraint regions. The region on the left
+# edge has more pins and should have a larger blockage. The macro should,
+# then, be placed closer to the right edge.
 source "helpers.tcl"
 
 # We're not interested in the connections, so don't include the lib.

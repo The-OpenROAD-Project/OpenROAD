@@ -193,9 +193,10 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
-  void createIOCluster(std::vector<IOClusterAndRegion>& cluster_and_region_list,
-                       odb::dbBTerm* bterm,
-                       const odb::Rect& bterm_constraint);
+  void createClusterOfUnplacedIOs(
+      std::vector<IOClusterAndRegion>& cluster_and_region_list,
+      odb::dbBTerm* bterm,
+      const odb::Rect& bterm_constraint);
   void createIOPadClusters();
   void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
   void mapIOPinsAndPads();

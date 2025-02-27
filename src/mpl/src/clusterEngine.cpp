@@ -361,11 +361,11 @@ void ClusteringEngine::setBaseThresholds()
 // 1. A Group of Unplaced Pins;
 // 2. An IO Pad.
 //
-// For the former, we group IO pins that are constrainted to the same region;
-// the shape of the cluster is the shape of the constraint region.
-// If a pin has no constraints, we consider it constrained to all edges of
-// the die area - for this case, the shape of the IO cluster is the shape of
-// the die area.
+// For 1:
+// We group IO pins that are constrained to the same region - the cluster's
+// shape is the constraint region. If a pin has no constraints, we consider
+// it constrained to all edges of the die area - for this case, the cluster's
+// shape is the die area.
 void ClusteringEngine::createIOClusters()
 {
   if (!tree_->maps.pad_to_bterm.empty()) {
@@ -386,9 +386,11 @@ void ClusteringEngine::createIOClusters()
     auto bterm_constraint = bterm->getConstraintRegion();
     if (bterm_constraint) {
       design_has_only_unconstrained_ios = false;
-      createIOCluster(cluster_and_region_list, bterm, bterm_constraint.value());
+      createClusterOfUnplacedIOs(
+          cluster_and_region_list, bterm, bterm_constraint.value());
     } else {
-      createIOCluster(cluster_and_region_list, bterm, block_->getDieArea());
+      createClusterOfUnplacedIOs(
+          cluster_and_region_list, bterm, block_->getDieArea());
     }
   }
 
@@ -398,7 +400,7 @@ void ClusteringEngine::createIOClusters()
 }
 
 // Isso pode ter um nome melhor
-void ClusteringEngine::createIOCluster(
+void ClusteringEngine::createClusterOfUnplacedIOs(
     std::vector<IOClusterAndRegion>& cluster_and_region_list,
     odb::dbBTerm* bterm,
     const odb::Rect& bterm_constraint)
