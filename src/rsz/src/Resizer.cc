@@ -1342,9 +1342,12 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                      }
                      std::optional<float> leakage_a = this->cellLeakage(a);
                      std::optional<float> leakage_b = this->cellLeakage(b);
+                     // Compare leakages only if they are defined
                      if (leakage_a && leakage_b) {
                        return *leakage_a < *leakage_b;
                      }
+                     // Cell 'a' has a priority as it has lower
+                     // drive resistance than 'b' after STA sort
                      return leakage_a.has_value() && !leakage_b.has_value();
                    });
 
