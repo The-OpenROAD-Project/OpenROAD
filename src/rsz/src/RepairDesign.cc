@@ -164,7 +164,6 @@ void RepairDesign::performEarlySizingRound(float gate_gain,
         && !drvr->isConstant()) {
       float fanout, max_fanout, fanout_slack;
       sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
-      max_fanout = 10.0f;
 
       bool repaired_net = false;
 
