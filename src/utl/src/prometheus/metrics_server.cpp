@@ -70,7 +70,7 @@ PrometheusMetricsServer::~PrometheusMetricsServer()
           io_context;  // Use a separate io_context for the connection.
       boost::asio::ip::tcp::socket socket(io_context);
       boost::asio::ip::tcp::endpoint endpoint(
-          boost::asio::ip::address::from_string("127.0.0.1"), port_);
+          boost::asio::ip::make_address("127.0.0.1"), port_);
       socket.connect(endpoint);         // This will unblock the accept().
     } catch (const std::exception& e) { /*Do nothing, we're dying*/
     }
