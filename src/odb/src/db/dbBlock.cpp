@@ -131,7 +131,6 @@
 #include "odb/dbShape.h"
 #include "odb/defout.h"
 #include "odb/lefout.h"
-#include "odb/parse.h"
 #include "utl/Logger.h"
 
 namespace odb {

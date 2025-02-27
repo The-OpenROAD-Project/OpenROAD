@@ -1,7 +1,7 @@
 # repair_design shorted outputs (synthesized RAM)
 source "helpers.tcl"
-read_lef sky130hd/sky130hd.tlef
-read_lef sky130hd/sky130hd_std_cell.lef
+read_lef sky130hd/sky130hd_vt.tlef
+read_lef sky130hd/sky130hd_std_cell_vt.lef
 read_liberty sky130hd/sky130hd_tt.lib
 read_def repair_design2.def
 
