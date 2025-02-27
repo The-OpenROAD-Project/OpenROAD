@@ -158,20 +158,21 @@ bool Progress::removeReporter(ProgressReporter* reporter)
   }
 
   bool found_reporter = false;
-  reporters_.erase(std::remove_if(
-      reporters_.begin(),
-      reporters_.end(),
-      [reporter,
-       &found_reporter](std::weak_ptr<ProgressReporter> other) -> bool {
-        const auto other_ptr = other.lock();
-        if (!other_ptr) {
-          return true;
-        }
+  reporters_.erase(
+      std::remove_if(reporters_.begin(),
+                     reporters_.end(),
+                     [reporter, &found_reporter](
+                         std::weak_ptr<ProgressReporter> other) -> bool {
+                       const auto other_ptr = other.lock();
+                       if (!other_ptr) {
+                         return true;
+                       }
 
-        bool found = other_ptr.get() == reporter;
-        found_reporter |= found;
-        return found;
-      }));
+                       bool found = other_ptr.get() == reporter;
+                       found_reporter |= found;
+                       return found;
+                     }),
+      reporters_.end());
   return found_reporter;
 }
 
