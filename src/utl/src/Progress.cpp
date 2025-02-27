@@ -51,16 +51,17 @@ static void controlC_handler(int sig)
 
   // Remove old interrupts
   while (std::difftime(now, signal_halt->interrupts.front())
-         >= signal_halt->max_prune_delay) {
+         >= Progress::ProgressHalt::max_prune_delay) {
     signal_halt->interrupts.pop();
   }
 
-  if (signal_halt->interrupts.size() >= signal_halt->max_interrupts) {
+  if (signal_halt->interrupts.size()
+      >= Progress::ProgressHalt::max_interrupts) {
     // halt the application
     signal(sig, SIG_DFL);
     raise(sig);
   } else if (signal_halt->interrupts.size() + 1
-             >= signal_halt->max_interrupts) {
+             >= Progress::ProgressHalt::max_interrupts) {
     // let user know one more will terminate openroad
     signal_halt->logger->warn(
         utl::UTL, 14, "OpenROAD will terminate after the next control+C");
