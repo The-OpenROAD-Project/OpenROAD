@@ -442,7 +442,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
-  std::optional<float> cellLeakage(const LibertyCell* cell);
+  std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
 
@@ -793,6 +793,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::stack<InstanceTuple> cloned_gates_;
   std::unordered_set<Instance*> cloned_inst_set_;
   std::unordered_map<std::string, BufferData> removed_buffer_map_;
+  std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
   // Need to track all changes for buffer removal
   InstanceSet all_sized_inst_set_;
