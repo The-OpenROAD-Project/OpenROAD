@@ -912,6 +912,14 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                                           layer_min_distances.end()));
     int min_dst_pins = computeDistanceBetweenPins(layer, tech_min_dst);
 
+    // if user-defined min distance is not in tracks, use this value to
+    // determine if slots are valid between each other. also ensures to use the
+    // layer pitch if the user-defined min distance is lesser than the pitch.
+    if (!parms_->getMinDistanceInTracks()) {
+      int layer_pitch = core_->getLayerSpacing(layer) * 2;
+      min_dst_pins = std::max(parms_->getMinDistance(), layer_pitch);
+    }
+
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
     Point last = slots[0];

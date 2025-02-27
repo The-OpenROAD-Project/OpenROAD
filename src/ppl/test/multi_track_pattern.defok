@@ -521,219 +521,219 @@ PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 12735 ) N ;
+        + PLACED ( 18 5175 ) N ;
     - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 7980 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 12375 ) N ;
     - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 9765 ) N ;
+        + PLACED ( 18 9603 ) N ;
     - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 11004 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 12150 ) N ;
     - req_msg[12] + NET req_msg[12] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 10812 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 10953 ) N ;
     - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 10860 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 9873 ) N ;
     - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 9225 ) N ;
+        + PLACED ( 16181 9297 ) N ;
     - req_msg[15] + NET req_msg[15] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 8988 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 9531 ) N ;
     - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 9660 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 12105 ) N ;
     - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 5868 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 10719 ) N ;
     - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 4668 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 11025 ) N ;
     - req_msg[19] + NET req_msg[19] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 10305 ) N ;
+        + PLACED ( 18 10179 ) N ;
     - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 7020 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 11961 ) N ;
     - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 7875 ) N ;
+        + PLACED ( 18 7830 ) N ;
     - req_msg[21] + NET req_msg[21] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 6525 ) N ;
+        + PLACED ( 18 6561 ) N ;
     - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 4572 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 4905 ) N ;
     - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 6012 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 4590 ) N ;
     - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 7980 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 4671 ) N ;
     - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 10380 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 4635 ) N ;
     - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 7605 ) N ;
+        + PLACED ( 18 7713 ) N ;
     - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 10476 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 11340 ) N ;
     - req_msg[28] + NET req_msg[28] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 10845 ) N ;
+        + PLACED ( 16181 10800 ) N ;
     - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 9708 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 9990 ) N ;
     - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 5292 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 12033 ) N ;
     - req_msg[30] + NET req_msg[30] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 8415 ) N ;
+        + PLACED ( 16181 8019 ) N ;
     - req_msg[31] + NET req_msg[31] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 8145 ) N ;
+        + PLACED ( 16181 7983 ) N ;
     - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 9495 ) N ;
+        + PLACED ( 18 9567 ) N ;
     - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 8685 ) N ;
+        + PLACED ( 18 8595 ) N ;
     - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 5985 ) N ;
+        + PLACED ( 18 6057 ) N ;
     - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 4524 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 3591 ) N ;
     - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 6300 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 3240 ) N ;
     - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 7836 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 3159 ) N ;
     - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 8604 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 3321 ) N ;
     - req_rdy + NET req_rdy + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 11115 ) N ;
+        + PLACED ( 18 5715 ) N ;
     - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 9228 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 11529 ) N ;
     - reset + NET reset + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 9804 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 11835 ) N ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 7884 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 12105 ) N ;
     - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
         + PLACED ( 16181 6525 ) N ;
     - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 12828 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 5481 ) N ;
     - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 10575 ) N ;
+        + PLACED ( 16181 10647 ) N ;
     - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 6255 ) N ;
+        + PLACED ( 16181 6831 ) N ;
     - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 7605 ) N ;
+        + PLACED ( 16181 7875 ) N ;
     - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 16181 7875 ) N ;
+        + PLACED ( 16181 7830 ) N ;
     - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 8955 ) N ;
+        + PLACED ( 18 8910 ) N ;
     - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 5724 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 10800 ) N ;
     - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 10035 ) N ;
+        + PLACED ( 18 9909 ) N ;
     - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 8145 ) N ;
+        + PLACED ( 18 8181 ) N ;
     - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 6795 ) N ;
+        + PLACED ( 18 6831 ) N ;
     - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER M2 ( -18 -9 ) ( 19 9 )
-        + PLACED ( 18 7065 ) N ;
+        + PLACED ( 18 6903 ) N ;
     - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 6252 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 5085 ) N ;
     - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 7692 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 18 6021 ) N ;
     - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 10332 42 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 4860 ) N ;
     - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 9756 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 12303 ) N ;
     - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER M5 ( -12 -42 ) ( 12 42 )
-        + PLACED ( 9996 16158 ) N ;
+        + LAYER M2 ( -18 -9 ) ( 19 9 )
+        + PLACED ( 16181 12375 ) N ;
 END PINS
 SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER
