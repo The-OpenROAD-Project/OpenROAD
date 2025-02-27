@@ -1428,7 +1428,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   }
 
   dbMaster* master = db_network_->staToDb(source_cell);
-  if (master && !master->isCore()) {
+  if (master == nullptr || !master->isCore()) {
     swappable_cells_cache_[source_cell] = {};
     return {};
   }
@@ -1698,7 +1698,6 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
       if (target_cell != cell) {
         debugPrint(logger_,
                    RSZ,
-
                    "resize",
                    2,
                    "{} {} -> {}",
