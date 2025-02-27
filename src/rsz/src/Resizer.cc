@@ -243,8 +243,7 @@ bool rszFuzzyEqual(double v1, double v2)
   } else if (v1 == 0.0 || v2 == 0.0) {
     return std::abs(v1 - v2) < double_equal_tolerance;
   }
-  return std::abs(v1 - v2)
-         < 1E-9 * std::max(std::abs(v1), std::abs(v2));
+  return std::abs(v1 - v2) < 1E-9 * std::max(std::abs(v1), std::abs(v2));
 }
 
 // block_ indicates core_, design_area_, db_network_ etc valid.
