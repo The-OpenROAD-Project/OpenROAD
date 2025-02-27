@@ -1097,7 +1097,13 @@ void IOPlacer::defineSlots()
 
   int regular_pin_count
       = static_cast<int>(netlist_->getIOPins().size()) - top_layer_pins_count_;
-  if (regular_pin_count > slots_.size()) {
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  if (regular_pin_count > available_slots) {
     int min_dist = std::numeric_limits<int>::min();
     for (int layer_idx : ver_layers_) {
       std::vector<int> layer_min_distances
@@ -1124,7 +1130,7 @@ void IOPlacer::defineSlots()
         "Number of IO pins ({}) exceeds maximum number of available "
         "positions ({}). Increase the die perimeter from {:.2f}um to {:.2f}um.",
         regular_pin_count,
-        slots_.size(),
+        available_slots,
         getBlock()->dbuToMicrons(die_margin),
         getBlock()->dbuToMicrons(new_margin));
   }
