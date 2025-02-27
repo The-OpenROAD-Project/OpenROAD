@@ -1307,7 +1307,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
-        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f} {}",
+        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}   {}",
                         equiv_cell->name(),
                         equiv_area,
                         equiv_area / base_area,
@@ -1315,7 +1315,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                         *equiv_cell_leakage / *base_leakage,
                         cellVTType(equiv_master).second);
       } else {
-        logger_->report("{:<41} {:>7.3f} {:>5.2f} {}",
+        logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                         equiv_cell->name(),
                         equiv_area,
                         equiv_area / base_area,
@@ -1337,7 +1337,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
-      logger_->report("{:<41} {:>7.3f} {:>5.2f} {}",
+      logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                       equiv_cell->name(),
                       equiv_area,
                       equiv_area / base_area,
