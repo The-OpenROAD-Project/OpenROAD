@@ -2801,6 +2801,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
   std::map<int, int> min_areas_y;
   std::map<int, int> min_widths_x;
   std::map<int, int> min_widths_y;
+  std::map<int, int> spacing_per_layer;
 
   for (int hor_layer_idx : hor_layer_idxs) {
     odb::dbTechLayer* hor_layer = getTech()->findRoutingLayer(hor_layer_idx);
@@ -2826,6 +2827,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     min_areas_y[hor_layer_idx] = min_area_y;
     min_widths_y[hor_layer_idx] = min_width_y;
     num_tracks_y[hor_layer_idx] = std::move(num_track_y);
+    spacing_per_layer[hor_layer_idx] = hor_layer->getSpacing();
   }
 
   for (int ver_layer_idx : ver_layer_idxs) {
@@ -2852,6 +2854,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     min_areas_x[ver_layer_idx] = min_area_x;
     min_widths_x[ver_layer_idx] = min_width_x;
     num_tracks_x[ver_layer_idx] = std::move(num_track_x);
+    spacing_per_layer[ver_layer_idx] = ver_layer->getSpacing();
   }
 
   *core_ = Core(boundary,
@@ -2865,6 +2868,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                 min_areas_y,
                 min_widths_x,
                 min_widths_y,
+                spacing_per_layer,
                 database_unit);
 }
 
