@@ -234,6 +234,18 @@ bool VertexLevelLess::operator()(const Vertex* vertex1,
 }
 
 ////////////////////////////////////////////////////////////////
+constexpr static double double_equal_tolerance
+    = std::numeric_limits<double>::epsilon() * 10;
+bool rszFuzzyEqual(double v1, double v2)
+{
+  if (v1 == v2) {
+    return true;
+  } else if (v1 == 0.0 || v2 == 0.0) {
+    return std::abs(v1 - v2) < double_equal_tolerance;
+  }
+  return std::abs(v1 - v2)
+         < 1E-9 * std::max(std::abs(v1), std::abs(v2));
+}
 
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void Resizer::initBlock()
@@ -248,27 +260,53 @@ void Resizer::initBlock()
   dbDoubleProperty* area_prop
       = dbDoubleProperty::find(block_, "limit_sizing_area");
   if (area_prop) {
+    if (sizing_area_limit_
+        && !rszFuzzyEqual(*sizing_area_limit_, area_prop->getValue())) {
+      swappable_cells_cache_.clear();
+    }
     sizing_area_limit_ = area_prop->getValue();
   } else {
+    if (sizing_area_limit_) {
+      swappable_cells_cache_.clear();
+    }
     sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
       = dbDoubleProperty::find(block_, "limit_sizing_leakage");
   if (leakage_prop) {
+    if (sizing_leakage_limit_
+        && !rszFuzzyEqual(*sizing_leakage_limit_, leakage_prop->getValue())) {
+      swappable_cells_cache_.clear();
+    }
     sizing_leakage_limit_ = leakage_prop->getValue();
   } else {
+    if (sizing_leakage_limit_) {
+      swappable_cells_cache_.clear();
+    }
     sizing_leakage_limit_.reset();
   }
   dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
   if (site_prop) {
+    if (sizing_keep_site_ != site_prop->getValue()) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_site_ = site_prop->getValue();
   } else {
+    if (sizing_keep_site_ != false) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_site_ = false;
   }
   dbBoolProperty* vt_prop = dbBoolProperty::find(block_, "keep_sizing_vt");
   if (vt_prop) {
+    if (sizing_keep_vt_ != vt_prop->getValue()) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_vt_ = vt_prop->getValue();
   } else {
+    if (sizing_keep_vt_ != false) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_vt_ = false;
   }
 }
