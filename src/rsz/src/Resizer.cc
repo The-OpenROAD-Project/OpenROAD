@@ -234,6 +234,18 @@ bool VertexLevelLess::operator()(const Vertex* vertex1,
 }
 
 ////////////////////////////////////////////////////////////////
+constexpr static double double_equal_tolerance
+    = std::numeric_limits<double>::epsilon() * 10;
+bool rszFuzzyEqual(double v1, double v2)
+{
+  if (v1 == v2) {
+    return true;
+  }
+  if (v1 == 0.0 || v2 == 0.0) {
+    return std::abs(v1 - v2) < double_equal_tolerance;
+  }
+  return std::abs(v1 - v2) < 1E-9 * std::max(std::abs(v1), std::abs(v2));
+}
 
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void Resizer::initBlock()
@@ -248,27 +260,53 @@ void Resizer::initBlock()
   dbDoubleProperty* area_prop
       = dbDoubleProperty::find(block_, "limit_sizing_area");
   if (area_prop) {
+    if (sizing_area_limit_
+        && !rszFuzzyEqual(*sizing_area_limit_, area_prop->getValue())) {
+      swappable_cells_cache_.clear();
+    }
     sizing_area_limit_ = area_prop->getValue();
   } else {
+    if (sizing_area_limit_) {
+      swappable_cells_cache_.clear();
+    }
     sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
       = dbDoubleProperty::find(block_, "limit_sizing_leakage");
   if (leakage_prop) {
+    if (sizing_leakage_limit_
+        && !rszFuzzyEqual(*sizing_leakage_limit_, leakage_prop->getValue())) {
+      swappable_cells_cache_.clear();
+    }
     sizing_leakage_limit_ = leakage_prop->getValue();
   } else {
+    if (sizing_leakage_limit_) {
+      swappable_cells_cache_.clear();
+    }
     sizing_leakage_limit_.reset();
   }
   dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
   if (site_prop) {
+    if (sizing_keep_site_ != site_prop->getValue()) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_site_ = site_prop->getValue();
   } else {
+    if (sizing_keep_site_ != false) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_site_ = false;
   }
   dbBoolProperty* vt_prop = dbBoolProperty::find(block_, "keep_sizing_vt");
   if (vt_prop) {
+    if (sizing_keep_vt_ != vt_prop->getValue()) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_vt_ = vt_prop->getValue();
   } else {
+    if (sizing_keep_vt_ != false) {
+      swappable_cells_cache_.clear();
+    }
     sizing_keep_vt_ = false;
   }
 }
@@ -523,7 +561,7 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
         // and equal or less drive resistance.  swappable_cells are
         // sorted in decreasing order of drive resistance.
         if (target_master->getSite() == site
-            && cellVTType(target_master) == cellVTType(master)
+            && cellVTType(target_master).first == cellVTType(master).first
             && sta::fuzzyLessEqual(cellDriveResistance(target_cell),
                                    cellDriveResistance(cell))) {
           inst->swapMaster(target_master);
@@ -1307,19 +1345,19 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
-        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f} {:>5}",
+        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}   {}",
                         equiv_cell->name(),
                         equiv_area,
                         equiv_area / base_area,
                         *equiv_cell_leakage,
                         *equiv_cell_leakage / *base_leakage,
-                        cellVTType(equiv_master));
+                        cellVTType(equiv_master).second);
       } else {
-        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>5}",
+        logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                         equiv_cell->name(),
                         equiv_area,
                         equiv_area / base_area,
-                        cellVTType(equiv_master));
+                        cellVTType(equiv_master).second);
       }
     }
     logger_->report(
@@ -1337,11 +1375,11 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     for (LibertyCell* equiv_cell : equiv_cells) {
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
-      logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>5}",
+      logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                       equiv_cell->name(),
                       equiv_area,
                       equiv_area / base_area,
-                      cellVTType(equiv_master));
+                      cellVTType(equiv_master).second);
     }
     logger_->report(
         "--------------------------------------------------------------");
@@ -1416,7 +1454,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       }
 
       if (sizing_keep_vt_) {
-        if (cellVTType(master) != cellVTType(equiv_cell_master)) {
+        if (cellVTType(master).first != cellVTType(equiv_cell_master).first) {
           continue;
         }
       }
@@ -1491,12 +1529,63 @@ void Resizer::makeEquivCells()
   sta_->makeEquivCells(&libs, nullptr);
 }
 
+// When there are multiple VT layers, create a composite name
+// by removing conflicting characters.
+std::string mergeVTLayerNames(const std::string& new_name,
+                              const std::string& curr_name)
+{
+  std::string merged;
+  size_t len = std::max(new_name.size(), curr_name.size());
+
+  for (size_t i = 0; i < len; ++i) {
+    char c1 = (i < new_name.size()) ? new_name[i] : '\0';
+    char c2 = (i < curr_name.size()) ? curr_name[i] : '\0';
+
+    if (c1 == c2) {
+      merged.push_back(c1);  // Same character, keep it
+    } else if (c1 == '\0') {
+      merged.push_back(c2);  // Only c2 exists, add it
+    } else if (c2 == '\0') {
+      merged.push_back(c1);  // Only c1 exists, add it
+    }
+    // If c1 and c2 are different, we do not add anything
+  }
+
+  // If there is no overlap between names, append the names
+  if (merged.empty()) {
+    merged = new_name + curr_name;
+  }
+  return merged;
+}
+
+// Make new composite VT type name more compact by stripping out VT
+// and trailing underscore
+// LVT => L (no VT)
+// VTL_ => L (no VT, no trailing underscore)
+void compressVTLayerName(std::string& name)
+{
+  if (name.empty()) {
+    return;
+  }
+
+  // Strip out VT from name
+  size_t pos;
+  while ((pos = name.find("VT")) != std::string::npos) {
+    name.erase(pos, 2);
+  }
+
+  // Strip out trailing underscore
+  if (!name.empty() && name.back() == '_') {
+    name.pop_back();
+  }
+}
+
 // VT layers are typically in LEF obstruction section.
-// To categorize cell VT type, hash all obstruction layers, including non-VT
-// layers. Cells beloning to the same VT category should have identical layer
+// To categorize cell VT type, hash all obstruction VT layers.
+// Cells beloning to the same VT category should have identical layer
 // composition, resulting in the same hash value.  VT type is 0 if there are
-// no OBS layers.  This categorization doesn't work if LEF has no VT OBS layer.
-int Resizer::cellVTType(dbMaster* master)
+// no OBS VT layers.
+std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
 {
   // Check if VT type is already computed
   auto it = vt_map_.find(master);
@@ -1506,50 +1595,56 @@ int Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    vt_map_[master] = 0;
-    return 0;
+    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
+    return new_it->second;
   }
 
   std::unordered_set<std::string> unique_layers;  // count each layer only once
   size_t hash1 = 0;
+  std::string new_layer_name;
   for (dbBox* bbox : obs) {
     dbTechLayer* layer = bbox->getTechLayer();
     if (layer == nullptr || layer->getType() != odb::dbTechLayerType::IMPLANT) {
       continue;
     }
 
-    std::string layer_name = layer->getName();
-    if (unique_layers.insert(layer_name).second) {
+    std::string curr_layer_name = layer->getName();
+    if (unique_layers.insert(curr_layer_name).second) {
       debugPrint(logger_,
                  RSZ,
                  "equiv",
                  1,
                  "{} has OBS implant layer {}",
                  master->getName(),
-                 layer_name);
-      size_t hash2 = boost::hash<std::string>()(layer_name);
+                 curr_layer_name);
+      size_t hash2 = boost::hash<std::string>()(curr_layer_name);
       boost::hash_combine(hash1, hash2);
+      new_layer_name = mergeVTLayerNames(new_layer_name, curr_layer_name);
     }
   }
 
   if (hash1 == 0) {
-    vt_map_[master] = 0;
-    return 0;
+    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
+    return new_it->second;
   }
 
   if (vt_hash_map_.find(hash1) == vt_hash_map_.end()) {
     int vt_id = vt_hash_map_.size() + 1;
     vt_hash_map_[hash1] = vt_id;
   }
-  vt_map_[master] = vt_hash_map_[hash1];
+
+  compressVTLayerName(new_layer_name);
+  auto [new_it, _] = vt_map_.emplace(
+      master, std::make_pair(vt_hash_map_[hash1], new_layer_name));
   debugPrint(logger_,
              RSZ,
              "equiv",
              1,
-             "{} has VT type {}",
+             "{} has VT type {} {}",
              master->getName(),
-             vt_map_[master]);
-  return vt_map_[master];
+             vt_map_[master].first,
+             vt_map_[master].second);
+  return new_it->second;
 }
 
 int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
@@ -1578,6 +1673,7 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
       if (target_cell != cell) {
         debugPrint(logger_,
                    RSZ,
+
                    "resize",
                    2,
                    "{} {} -> {}",
