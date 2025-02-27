@@ -35,10 +35,6 @@
 #include "db/obj/frBlockObject.h"
 #include "frShape.h"
 
-namespace odb {
-class dbTransform;
-}
-
 namespace drt {
 class frViaDef;
 class frPinAccess;
@@ -198,8 +194,7 @@ class frAccessPoint : public frBlockObject
   frCoord y() const { return point_.y(); }
 
   void addPathSeg(const frPathSeg& ps) { pathSegs_.emplace_back(ps); }
-  const std::vector<frPathSeg>& getPathSegs() const { return pathSegs_; }
-  void transformPathSegs(const odb::dbTransform& transform);
+  std::vector<frPathSeg>& getPathSegs() { return pathSegs_; }
 
  private:
   Point point_;

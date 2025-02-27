@@ -8,8 +8,10 @@
 [INFO RSZ-0101] Cells with leakage > 2.0X current cell will not be considered for sizing
 ***********************************
 Optimization config:
--sizing_area_limit:    2.0
--sizing_leakage_limit: 2.0
+-limit_sizing_area:    2.0
+-limit_sizing_leakage: 2.0
+-keep_sizing_site:     false
+-keep_sizing_vt:       false
 ***********************************
 worst slack -1.95
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
@@ -18,6 +20,7 @@ worst slack -1.95
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
+<<<<<<< HEAD
     final |       0 |      37 |        9 |      0 |     0 |  +753.4% |   -0.631 |       -2.8 |      6 | r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 3 buffers.
@@ -25,3 +28,12 @@ worst slack -1.95
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack -0.63
+=======
+    final |       0 |      12 |        3 |      0 |     0 |   +19.2% |   -0.928 |       -3.0 |      6 | r2/D
+--------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 2 buffers.
+[INFO RSZ-0041] Resized 12 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Repair timing output passed/skipped equivalence test
+worst slack -0.93
+>>>>>>> master

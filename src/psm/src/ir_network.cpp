@@ -1141,6 +1141,20 @@ odb::dbTechLayer* IRNetwork::getTopLayer() const
   return nodes_.rbegin()->first;
 }
 
+std::set<odb::dbTechLayer*> IRNetwork::getLayers() const
+{
+  std::set<odb::dbTechLayer*> layers;
+  for (const auto& [layer, nodes] : nodes_) {
+    layers.insert(layer);
+  }
+  for (const auto& conn : connections_) {
+    if (conn->isVia()) {
+      layers.insert(conn->getNode0()->getLayer()->getUpperLayer());
+    }
+  }
+  return layers;
+}
+
 const std::vector<std::unique_ptr<Node>>& IRNetwork::getTopLayerNodes() const
 {
   return nodes_.rbegin()->second;

@@ -9,7 +9,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |      1002
-    final |  +1624.4% |    1000 |       0 |             0 |         0
+    final |   +162.4% |    1000 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1000 slew violations.
 [INFO RSZ-0039] Resized 1000 instances.

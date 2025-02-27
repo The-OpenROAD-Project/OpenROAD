@@ -40,10 +40,10 @@ Rect frRPin::getBBox()
   switch (term->typeId()) {
     case frcInstTerm: {
       auto inst = static_cast<frInstTerm*>(term)->getInst();
-      dbTransform transform = inst->getTransform();
+      dbTransform shiftXform = inst->getNoRotationTransform();
 
       pt = accessPoint->getPoint();
-      transform.apply(pt);
+      shiftXform.apply(pt);
       break;
     }
     case frcBTerm:

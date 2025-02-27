@@ -58,6 +58,7 @@ using ord::getLogger;
 
 // Catch exceptions in inline functions.
 %include "../../Exception.i"
+%include "stdint.i"
 %import <std_string.i>
 
 %include "LoggerCommon.h"
@@ -124,6 +125,12 @@ std::string redirectStringEnd()
 {
   utl::Logger* logger = ord::getLogger();
   return logger->redirectStringEnd();
+}
+
+void startPrometheusEndpoint(uint16_t port)
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->startPrometheusEndpoint(port);
 }
 
 } // namespace

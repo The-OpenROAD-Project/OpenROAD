@@ -205,6 +205,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
     stream << bterm._constraint_region;
   }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+    stream << bterm._mirrored_bterm;
+  }
+
   return stream;
 }
 
@@ -232,6 +236,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._supply_pin;
   if (bterm.getDatabase()->isSchema(db_schema_bterm_constraint_region)) {
     stream >> bterm._constraint_region;
+  }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
+    stream >> bterm._mirrored_bterm;
   }
 
   return stream;
@@ -405,7 +412,6 @@ void dbBTerm::connect(dbModNet* mod_net)
   if (bterm->_mnet == _mod_net->getId()) {
     return;
   }
-
   if (bterm->_mnet) {
     bterm->disconnectModNet(bterm, block);
   }
@@ -425,8 +431,9 @@ void dbBTerm::connect(dbNet* net_)
                             net->_name);
   }
 
+  // disconnect the db mod net
   if (bterm->_net) {
-    disconnect();
+    disconnectDbNet();
   }
 
   if (block->_journal) {
@@ -441,6 +448,8 @@ void dbBTerm::connect(dbNet* net_)
     block->_journal->pushParam(dbBTermObj);
     block->_journal->pushParam(bterm->getId());
     block->_journal->pushParam(net_->getId());
+    // modnet is left out, only flat net.
+    block->_journal->pushParam(0U);
     block->_journal->endAction();
   }
 
@@ -482,12 +491,52 @@ void dbBTerm::disconnect()
       block->_journal->pushParam(mnet_id);
       block->_journal->endAction();
     }
-
     bterm->disconnectNet(bterm, block);
-
     if (bterm->_mnet) {
       bterm->disconnectModNet(bterm, block);
     }
+  }
+}
+
+void dbBTerm::disconnectDbModNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) bterm->getOwner();
+  bterm->disconnectModNet(bterm, block);
+}
+
+void dbBTerm::disconnectDbNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_net) {
+    _dbBlock* block = (_dbBlock*) bterm->getOwner();
+
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
+    if (net->_flags._dont_touch) {
+      net->getLogger()->error(
+          utl::ODB,
+          1106,
+          "Attempt to disconnect bterm of dont_touch net {}",
+          net->_name);
+    }
+
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect bterm {}",
+                 bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      block->_journal->pushParam(net->getOID());
+      // we are not considering the modnet.
+      block->_journal->pushParam(0U);
+      block->_journal->endAction();
+    }
+
+    bterm->disconnectNet(bterm, block);
   }
 }
 
@@ -712,7 +761,29 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 
 void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
 {
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
   _mnet = mod_net->getOID();
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Bterm {} to net {}",
+               bterm->getId(),
+               mod_net->getId());
+
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm->getId());
+    // the flat net is left out
+    block->_journal->pushParam(0U);
+    // modnet
+    block->_journal->pushParam(mod_net->getId());
+    block->_journal->endAction();
+  }
+
   if (mod_net->_bterms != 0) {
     _dbBTerm* head = block->_bterm_tbl->getPtr(mod_net->_bterms);
     _next_modnet_bterm = mod_net->_bterms;
@@ -895,6 +966,26 @@ std::optional<Rect> dbBTerm::getConstraintRegion()
   }
 
   return bterm->_constraint_region;
+}
+
+void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
+  bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
+}
+
+dbBTerm* dbBTerm::getMirroredBTerm()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  _dbBlock* block = (_dbBlock*) getBlock();
+
+  if (bterm->_mirrored_bterm == 0) {
+    return nullptr;
+  }
+
+  _dbBTerm* mirrored_bterm = block->_bterm_tbl->getPtr(bterm->_mirrored_bterm);
+  return (dbBTerm*) mirrored_bterm;
 }
 
 }  // namespace odb

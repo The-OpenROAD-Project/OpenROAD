@@ -42,7 +42,11 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |   -115.9% |      74 |       1 |             1 |         0
+=======
+    final |     -1.2% |      31 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 74 instances.
@@ -71,7 +75,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |   -114.9% |      75 |       1 |             1 |         0
+=======
+    final |     -1.6% |      29 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 75 instances.
@@ -87,7 +95,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |   -114.4% |      75 |       1 |             1 |         0
+=======
+    final |     -1.7% |      29 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 75 instances.
@@ -102,7 +114,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |   -114.4% |      75 |       1 |             1 |         0
+=======
+    final |     -1.7% |      29 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 75 instances.
@@ -115,12 +131,50 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |   -114.4% |      75 |       1 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 75 instances.
 [INFO RSZ-0038] Inserted 1 buffers in 1 nets.
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
+=======
+    final |     -2.1% |      30 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 30 instances.
+[INFO GPL-0106] Timing-driven: worst slack 1.41e-09
+[INFO GPL-0103] Timing-driven: weighted 33 nets.
+[NesterovSolve] Iter:  260 overflow: 0.384 HPWL: 4438815
+[NesterovSolve] Iter:  270 overflow: 0.334 HPWL: 4468479
+[INFO GPL-0100] Timing-driven iteration 6/7, virtual: false.
+[INFO GPL-0101]    Iter: 279, overflow: 0.294, keep rsz at: 0.3, HPWL: 4477648
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       356
+    final |     -2.3% |      29 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 29 instances.
+[INFO GPL-0106] Timing-driven: worst slack 1.41e-09
+[INFO GPL-0103] Timing-driven: weighted 32 nets.
+[INFO GPL-0107] Timing-driven: repair_design delta area: -12.768 um^2 (-2.31%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.6866146
+[NesterovSolve] Iter:  280 overflow: 0.305 HPWL: 2863594
+[NesterovSolve] Iter:  290 overflow: 0.290 HPWL: 2675862
+[NesterovSolve] Iter:  300 overflow: 0.242 HPWL: 2607478
+[NesterovSolve] Iter:  310 overflow: 0.217 HPWL: 2621283
+[NesterovSolve] Iter:  320 overflow: 0.202 HPWL: 2639961
+[INFO GPL-0100] Timing-driven iteration 7/7, virtual: false.
+[INFO GPL-0101]    Iter: 323, overflow: 0.194, keep rsz at: 0.3, HPWL: 2649932
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       356
+    final |     -1.2% |       5 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 5 instances.
+[INFO GPL-0106] Timing-driven: worst slack 1.41e-09
+>>>>>>> master
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:  260 overflow: 0.386 HPWL: 4434733
 [NesterovSolve] Iter:  270 overflow: 0.336 HPWL: 4458723

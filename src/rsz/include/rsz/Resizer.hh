@@ -434,6 +434,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  std::pair<int, std::string> cellVTType(dbMaster* master);
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
@@ -443,6 +444,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
+  std::optional<float> cellLeakage(const LibertyCell* cell);
+  // For debugging - calls getSwappableCells
+  void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
 
  protected:
   void init();
@@ -518,6 +522,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int findMaxSteinerDist(Vertex* drvr, const Corner* corner);
   float driveResistance(const Pin* drvr_pin);
   float bufferDriveResistance(const LibertyCell* buffer) const;
+  float cellDriveResistance(const LibertyCell* cell) const;
+
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex* drvr);
 
@@ -762,6 +768,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
 
+  // Cache results of getSwappableCells() as this is expensive for large PDKs.
+  std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
@@ -820,6 +829,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Sizing restrictions
   std::optional<double> sizing_area_limit_;
   std::optional<double> sizing_leakage_limit_;
+  bool sizing_keep_site_ = false;
+  bool sizing_keep_vt_ = false;
+
+  // VT layer hash
+  std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
+  std::unordered_map<size_t, int>
+      vt_hash_map_;  // maps hash value to unique int
 
   friend class BufferedNet;
   friend class GateCloner;

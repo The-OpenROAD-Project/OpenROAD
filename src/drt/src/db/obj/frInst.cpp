@@ -35,15 +35,24 @@ namespace drt {
 Rect frInst::getBBox() const
 {
   Rect box = getMaster()->getBBox();
-  getTransform().apply(box);
+  dbTransform xform = getDBTransform();
+  xform.apply(box);
   return box;
 }
 
 Rect frInst::getBoundaryBBox() const
 {
   Rect box = getMaster()->getDieBox();
-  getTransform().apply(box);
+  dbTransform xform = getDBTransform();
+  xform.apply(box);
   return box;
+}
+
+dbTransform frInst::getNoRotationTransform() const
+{
+  dbTransform xfm = getTransform();
+  xfm.setOrient(dbOrientType(dbOrientType::R0));
+  return xfm;
 }
 
 frInstTerm* frInst::getInstTerm(const int index)

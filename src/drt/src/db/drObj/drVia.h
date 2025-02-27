@@ -99,6 +99,7 @@ class drVia : public drRef
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
   dbTransform getTransform() const override { return dbTransform(origin_); }
   void setTransform(const dbTransform& xformIn) override {}
+
   /* from frPinFig
    * hasPin
    * getPin

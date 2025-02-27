@@ -723,7 +723,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
     }
   }
   design_rule_checker.addPAObj(ps, owner);
-  for (const auto& apPs : ap->getPathSegs()) {
+  for (auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
   }
   design_rule_checker.initPA1();
@@ -957,6 +957,7 @@ bool FlexPA::checkDirectionalViaAccess(
                                       via->getViaDef()->getLayer2Num(),
                                       dir,
                                       is_block);
+
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
   } else {
@@ -1032,7 +1033,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.addPAObj(ps, owner);
   design_rule_checker.addPAObj(via, owner);
-  for (const auto& apPs : ap->getPathSegs()) {
+  for (auto& apPs : ap->getPathSegs()) {
     design_rule_checker.addPAObj(&apPs, owner);
   }
   design_rule_checker.initPA1();
@@ -1249,7 +1250,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 
   dbTransform xform;
   if (inst) {
-    xform = inst->getTransform();
+    xform = inst->getDBTransform();
   }
 
   frTechObject* tech = getDesign()->getTech();
@@ -1479,8 +1480,9 @@ void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
   for (auto& inst : unique) {
-    dbTransform revert_transform;
-    inst->getTransform().invert(revert_transform);
+    const dbTransform xform = inst->getTransform();
+    const Point offset(xform.getOffset());
+    dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
     const auto pin_access_idx = unique_insts_.getPAIndex(inst);
     for (auto& inst_term : inst->getInstTerms()) {
@@ -1492,9 +1494,20 @@ void FlexPA::revertAccessPoints()
         auto pin_access = pin->getPinAccess(pin_access_idx);
         for (auto& access_point : pin_access->getAccessPoints()) {
           Point unique_AP_point(access_point->getPoint());
-          revert_transform.apply(unique_AP_point);
+          revertXform.apply(unique_AP_point);
           access_point->setPoint(unique_AP_point);
-          access_point->transformPathSegs(revert_transform);
+          for (auto& ps : access_point->getPathSegs()) {
+            Point begin = ps.getBeginPoint();
+            Point end = ps.getEndPoint();
+            revertXform.apply(begin);
+            revertXform.apply(end);
+            if (end < begin) {
+              Point tmp = begin;
+              begin = end;
+              end = tmp;
+            }
+            ps.setPoints(begin, end);
+          }
         }
       }
     }

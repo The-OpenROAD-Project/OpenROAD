@@ -770,6 +770,13 @@ eliminate_dead_logic_cmd(bool clean_nets)
   resizer->eliminateDeadLogic(clean_nets);
 }
 
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportEquivalentCells(cell, match_cell_footprint);
+}
+
 void
 report_fast_buffer_sizes()
 {
