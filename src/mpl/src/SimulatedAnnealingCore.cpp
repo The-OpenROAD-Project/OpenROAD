@@ -328,54 +328,54 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& io,
     const float net_weight)
 {
-  // Cluster* io_cluster = io.getCluster();
-  // const Rect die = io_cluster->getBBox();
-  // const float die_hpwl = die.getWidth() + die.getHeight();
+  Cluster* io_cluster = io.getCluster();
+  const Rect die = io_cluster->getBBox();
+  const float die_hpwl = die.getWidth() + die.getHeight();
 
-  // if (isOutsideTheOutline(macro)) {
-  //   wirelength_ += net_weight * die_hpwl;
-  //   return;
-  // }
+  if (isOutsideTheOutline(macro)) {
+    wirelength_ += net_weight * die_hpwl;
+    return;
+  }
 
-  // const float x1 = macro.getPinX();
-  // const float y1 = macro.getPinY();
+  const float x1 = macro.getPinX();
+  const float y1 = macro.getPinY();
 
-  // Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
 
-  // if (constraint_boundary == NONE) {
-  //   float dist_to_left = die_hpwl;
-  //   if (!left_is_blocked_) {
-  //     dist_to_left = std::abs(x1 - die.xMin());
-  //   }
+  if (constraint_boundary == NONE) {
+    float dist_to_left = die_hpwl;
+    if (!left_is_blocked_) {
+      dist_to_left = std::abs(x1 - die.xMin());
+    }
 
-  //   float dist_to_right = die_hpwl;
-  //   if (!right_is_blocked_) {
-  //     dist_to_right = std::abs(x1 - die.xMax());
-  //   }
+    float dist_to_right = die_hpwl;
+    if (!right_is_blocked_) {
+      dist_to_right = std::abs(x1 - die.xMax());
+    }
 
-  //   float dist_to_bottom = die_hpwl;
-  //   if (!bottom_is_blocked_) {
-  //     dist_to_right = std::abs(y1 - die.yMin());
-  //   }
+    float dist_to_bottom = die_hpwl;
+    if (!bottom_is_blocked_) {
+      dist_to_right = std::abs(y1 - die.yMin());
+    }
 
-  //   float dist_to_top = die_hpwl;
-  //   if (!top_is_blocked_) {
-  //     dist_to_top = std::abs(y1 - die.yMax());
-  //   }
+    float dist_to_top = die_hpwl;
+    if (!top_is_blocked_) {
+      dist_to_top = std::abs(y1 - die.yMax());
+    }
 
-  //   wirelength_
-  //       += net_weight
-  //          * std::min(
-  //              {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
-  // } else if (constraint_boundary == Boundary::L
-  //            || constraint_boundary == Boundary::R) {
-  //   const float x2 = io.getPinX();
-  //   wirelength_ += net_weight * std::abs(x2 - x1);
-  // } else if (constraint_boundary == Boundary::T
-  //            || constraint_boundary == Boundary::B) {
-  //   const float y2 = io.getPinY();
-  //   wirelength_ += net_weight * std::abs(y2 - y1);
-  // }
+    wirelength_
+        += net_weight
+           * std::min(
+               {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
+  } else if (constraint_boundary == Boundary::L
+             || constraint_boundary == Boundary::R) {
+    const float x2 = io.getPinX();
+    wirelength_ += net_weight * std::abs(x2 - x1);
+  } else if (constraint_boundary == Boundary::T
+             || constraint_boundary == Boundary::B) {
+    const float y2 = io.getPinY();
+    wirelength_ += net_weight * std::abs(y2 - y1);
+  }
 }
 
 // We consider the macro outside the outline based on the location of
