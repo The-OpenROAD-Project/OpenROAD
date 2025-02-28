@@ -38,7 +38,6 @@
 %{
 
 #include "utl/Logger.h"
-#include "utl/Progress.h"
 #include "LoggerCommon.h"
 
 namespace ord {
@@ -62,6 +61,9 @@ using namespace utl;
 %apply unsigned long { ToolId };
 
 %include "../../Exception-py.i"
+
+%ignore utl::Logger::progress;
+%ignore utl::Logger::swapProgress;
 
 %include "utl/Logger.h"
 %include "LoggerCommon.h"
