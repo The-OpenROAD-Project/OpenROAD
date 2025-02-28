@@ -42,7 +42,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbMaster;
 class _dbLib;
@@ -52,7 +51,6 @@ class _dbPowerDomain;
 class _dbPowerSwitch : public _dbObject
 {
  public:
-  _dbPowerSwitch(_dbDatabase*, const _dbPowerSwitch& r);
   _dbPowerSwitch(_dbDatabase*);
 
   ~_dbPowerSwitch();
@@ -60,10 +58,7 @@ class _dbPowerSwitch : public _dbObject
   bool operator==(const _dbPowerSwitch& rhs) const;
   bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPowerSwitch& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbPowerSwitch& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;

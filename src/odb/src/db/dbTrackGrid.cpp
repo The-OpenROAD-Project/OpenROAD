@@ -38,7 +38,6 @@
 #include "dbBlock.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -93,40 +92,6 @@ bool _dbTrackGrid::operator==(const _dbTrackGrid& rhs) const
   }
 
   return true;
-}
-
-void _dbTrackGrid::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbTrackGrid& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_VECTOR(_x_origin);
-  DIFF_VECTOR(_x_count);
-  DIFF_VECTOR(_x_step);
-  DIFF_VECTOR(_y_origin);
-  DIFF_VECTOR(_y_count);
-  DIFF_VECTOR(_y_step);
-  DIFF_VECTOR(_first_mask);
-  DIFF_VECTOR(_samemask);
-  DIFF_FIELD_NO_DEEP(_next_grid);
-  DIFF_END
-}
-
-void _dbTrackGrid::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_VECTOR(_x_origin);
-  DIFF_OUT_VECTOR(_x_count);
-  DIFF_OUT_VECTOR(_x_step);
-  DIFF_OUT_VECTOR(_y_origin);
-  DIFF_OUT_VECTOR(_y_count);
-  DIFF_OUT_VECTOR(_y_step);
-  DIFF_OUT_VECTOR(_first_mask);
-  DIFF_OUT_VECTOR(_samemask);
-  DIFF_OUT_FIELD_NO_DEEP(_next_grid);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -380,7 +345,21 @@ void dbTrackGrid::destroy(dbTrackGrid* grid_)
   block->_track_grid_tbl->destroy(grid);
 }
 
-// User Code Begin PrivateMethods
+void _dbTrackGrid::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["x_origin"].add(_x_origin);
+  info.children_["x_count"].add(_x_count);
+  info.children_["x_step"].add(_x_step);
+  info.children_["y_origin"].add(_y_origin);
+  info.children_["y_count"].add(_y_count);
+  info.children_["y_step"].add(_y_step);
+  info.children_["first_mask"].add(_first_mask);
+  info.children_["samemask"].add(_samemask);
+}
+
 void _dbTrackGrid::getAverageTrackPattern(bool is_x,
                                           int& track_init,
                                           int& num_tracks,
@@ -398,6 +377,5 @@ void _dbTrackGrid::getAverageTrackPattern(bool is_x,
   track_step = std::ceil((float) span / coordinates.size());
   num_tracks = coordinates.size();
 }
-// User Code End PrivateMethods
 
 }  // namespace odb

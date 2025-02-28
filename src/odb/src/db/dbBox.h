@@ -48,7 +48,6 @@ class _dbTechLayer;
 class _dbVia;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbBoxFlagsBackwardCompatability
 {
@@ -121,8 +120,7 @@ class _dbBox : public _dbObject
   bool operator!=(const _dbBox& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBox& rhs) const;
   int equal(const _dbBox& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbBox& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   bool isOct() const;
 
   _dbTechLayer* getTechLayer() const;

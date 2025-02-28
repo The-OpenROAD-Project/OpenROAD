@@ -214,98 +214,6 @@ bool _dbTech::operator==(const _dbTech& rhs) const
   return true;
 }
 
-void _dbTech::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbTech& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._namecase);
-  DIFF_FIELD(_flags._haswireext);
-  DIFF_FIELD(_flags._nowireext);
-  DIFF_FIELD(_flags._hasclmeas);
-  DIFF_FIELD(_flags._clmeas);
-  DIFF_FIELD(_flags._hasminspobs);
-  DIFF_FIELD(_flags._minspobs);
-  DIFF_FIELD(_flags._hasminsppin);
-  DIFF_FIELD(_flags._minsppin);
-  DIFF_FIELD(_version);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_via_cnt);
-  DIFF_FIELD(_layer_cnt);
-  DIFF_FIELD(_rlayer_cnt);
-  DIFF_FIELD(_lef_units);
-  DIFF_FIELD(_dbu_per_micron);
-  DIFF_FIELD(_mfgrid);
-  DIFF_FIELD(_bottom);
-  DIFF_FIELD(_top);
-  DIFF_FIELD(_non_default_rules);
-  DIFF_VECTOR(_samenet_rules);
-  DIFF_MATRIX(_samenet_matrix);
-  if (!diff.deepDiff()) {
-    DIFF_HASH_TABLE(_via_hash);
-  }
-  DIFF_TABLE_NO_DEEP(_layer_tbl);
-  DIFF_TABLE_NO_DEEP(_via_tbl);
-  DIFF_TABLE_NO_DEEP(_non_default_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_layer_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_box_tbl);
-  DIFF_TABLE_NO_DEEP(_samenet_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_antenna_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_via_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_via_layer_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_via_generate_rule_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_TABLE_NO_DEEP(_metal_width_via_map_tbl);
-  DIFF_TABLE_NO_DEEP(cell_edge_spacing_tbl_);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbTech::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._namecase);
-  DIFF_OUT_FIELD(_flags._haswireext);
-  DIFF_OUT_FIELD(_flags._nowireext);
-  DIFF_OUT_FIELD(_flags._hasclmeas);
-  DIFF_OUT_FIELD(_flags._clmeas);
-  DIFF_OUT_FIELD(_flags._hasminspobs);
-  DIFF_OUT_FIELD(_flags._minspobs);
-  DIFF_OUT_FIELD(_flags._hasminsppin);
-  DIFF_OUT_FIELD(_flags._minsppin);
-  DIFF_OUT_FIELD(_version);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_via_cnt);
-  DIFF_OUT_FIELD(_layer_cnt);
-  DIFF_OUT_FIELD(_rlayer_cnt);
-  DIFF_OUT_FIELD(_lef_units);
-  DIFF_OUT_FIELD(_dbu_per_micron);
-  DIFF_OUT_FIELD(_mfgrid);
-  DIFF_OUT_FIELD(_bottom);
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_FIELD(_non_default_rules);
-  DIFF_OUT_VECTOR(_samenet_rules);
-  DIFF_OUT_MATRIX(_samenet_matrix);
-  if (!diff.deepDiff()) {
-    DIFF_OUT_HASH_TABLE(_via_hash);
-  }
-  DIFF_OUT_TABLE_NO_DEEP(_layer_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_via_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_non_default_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_layer_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_samenet_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_antenna_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_via_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_via_layer_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_via_generate_rule_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_metal_width_via_map_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(cell_edge_spacing_tbl_);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbTech - Methods
@@ -410,67 +318,6 @@ _dbTech::_dbTech(_dbDatabase* db)
 
   _name_cache
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbTech::getObjectTable);
-
-  _layer_itr = new dbTechLayerItr(_layer_tbl);
-
-  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
-_dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
-    : _version(t._version),
-      _name(t._name),
-      _via_cnt(t._via_cnt),
-      _layer_cnt(t._layer_cnt),
-      _rlayer_cnt(t._rlayer_cnt),
-      _lef_units(t._lef_units),
-      _dbu_per_micron(t._dbu_per_micron),
-      _mfgrid(t._mfgrid),
-      _flags(t._flags),
-      _bottom(t._bottom),
-      _top(t._top),
-      _non_default_rules(t._non_default_rules),
-      _samenet_rules(t._samenet_rules),
-      _samenet_matrix(t._samenet_matrix),
-      _via_hash(t._via_hash)
-{
-  _layer_tbl = new dbTable<_dbTechLayer>(db, this, *t._layer_tbl);
-
-  _via_tbl = new dbTable<_dbTechVia>(db, this, *t._via_tbl);
-
-  _non_default_rule_tbl
-      = new dbTable<_dbTechNonDefaultRule>(db, this, *t._non_default_rule_tbl);
-
-  _layer_rule_tbl = new dbTable<_dbTechLayerRule>(db, this, *t._layer_rule_tbl);
-
-  _box_tbl = new dbTable<_dbBox>(db, this, *t._box_tbl);
-
-  _samenet_rule_tbl
-      = new dbTable<_dbTechSameNetRule>(db, this, *t._samenet_rule_tbl);
-
-  _antenna_rule_tbl
-      = new dbTable<_dbTechLayerAntennaRule>(db, this, *t._antenna_rule_tbl);
-
-  _via_rule_tbl = new dbTable<_dbTechViaRule>(db, this, *t._via_rule_tbl);
-
-  _via_layer_rule_tbl
-      = new dbTable<_dbTechViaLayerRule>(db, this, *t._via_layer_rule_tbl);
-
-  _via_generate_rule_tbl = new dbTable<_dbTechViaGenerateRule>(
-      db, this, *t._via_generate_rule_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(db, this, *t._prop_tbl);
-
-  _metal_width_via_map_tbl
-      = new dbTable<_dbMetalWidthViaMap>(db, this, *t._metal_width_via_map_tbl);
-
-  cell_edge_spacing_tbl_
-      = new dbTable<_dbCellEdgeSpacing>(db, this, *t.cell_edge_spacing_tbl_);
-
-  _via_hash.setTable(_via_tbl);
-
-  _name_cache = new _dbNameCache(db, this, *t._name_cache);
 
   _layer_itr = new dbTechLayerItr(_layer_tbl);
 
@@ -1094,6 +941,34 @@ void dbTech::destroy(dbTech* tech_)
   _dbDatabase* db = tech->getDatabase();
   dbProperty::destroyProperties(tech);
   db->_tech_tbl->destroy(tech);
+}
+
+void _dbTech::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["samenet_rules"].add(_samenet_rules);
+  info.children_["samenet_matrix"].add(_samenet_matrix);
+  info.children_["via_hash"].add(_via_hash);
+
+  _layer_tbl->collectMemInfo(info.children_["layer"]);
+  _via_tbl->collectMemInfo(info.children_["via"]);
+  _non_default_rule_tbl->collectMemInfo(info.children_["non_default_rule"]);
+  _layer_rule_tbl->collectMemInfo(info.children_["layer_rule"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _samenet_rule_tbl->collectMemInfo(info.children_["samenet_rule"]);
+  _antenna_rule_tbl->collectMemInfo(info.children_["antenna_rule"]);
+  _via_rule_tbl->collectMemInfo(info.children_["via_rule"]);
+  _via_layer_rule_tbl->collectMemInfo(info.children_["via_layer_rule"]);
+  _via_generate_rule_tbl->collectMemInfo(info.children_["via_generate_rule"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _metal_width_via_map_tbl->collectMemInfo(
+      info.children_["metal_width_via_map"]);
+  cell_edge_spacing_tbl_->collectMemInfo(info.children_["cell_edge_spacing"]);
+
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
 }
 
 }  // namespace odb

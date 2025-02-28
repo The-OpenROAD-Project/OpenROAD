@@ -26,6 +26,11 @@ Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
 drvr/Q                                 60.73   31.21   29.52 (MET)
 
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        43
+    final |     +0.6% |       1 |       0 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0039] Resized 1 instances.
 max slew

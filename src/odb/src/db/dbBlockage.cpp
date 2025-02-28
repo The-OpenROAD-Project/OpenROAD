@@ -35,13 +35,11 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/dbDiff.h"
 #include "odb/dbSet.h"
 
 namespace odb {
@@ -147,67 +145,6 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
   return false;
 }
 
-void _dbBlockage::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbBlockage& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_OBJECT(_bbox, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_inst);
-  } else {
-    if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.diff("_inst", lhs_inst->_name, rhs_inst->_name);
-    } else if (_inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      diff.out(dbDiff::LEFT, "_inst", lhs_inst->_name);
-    } else if (rhs._inst) {
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.out(dbDiff::RIGHT, "_inst", rhs_inst->_name);
-    }
-  }
-
-  DIFF_FIELD(_flags._pushed_down);
-  DIFF_FIELD(_flags._soft);
-  DIFF_FIELD(_max_density);
-  DIFF_END
-}
-
-void _dbBlockage::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_OBJECT(_bbox, blk->_box_tbl);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_inst);
-  } else {
-    if (_inst) {
-      _dbBlock* blk = (_dbBlock*) getOwner();
-      _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
-      diff.out(side, "_inst", inst->_name);
-    } else {
-      diff.out(side, "_inst", "(nullptr)");
-    }
-  }
-
-  DIFF_OUT_FIELD(_flags._pushed_down);
-  DIFF_OUT_FIELD(_flags._soft);
-  DIFF_OUT_FIELD(_max_density);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbBlockage - Methods
@@ -302,6 +239,12 @@ dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBlockage*) block->_blockage_tbl->getPtr(dbid_);
+}
+
+void _dbBlockage::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

@@ -44,27 +44,17 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
-class dbScanPin;
-class dbBTerm;
-class dbITerm;
 
 class _dbScanPin : public _dbObject
 {
  public:
-  _dbScanPin(_dbDatabase*, const _dbScanPin& r);
   _dbScanPin(_dbDatabase*);
-
-  ~_dbScanPin() = default;
 
   bool operator==(const _dbScanPin& rhs) const;
   bool operator!=(const _dbScanPin& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbScanPin& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbScanPin& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   std::variant<dbId<_dbBTerm>, dbId<_dbITerm>> pin_;
 };

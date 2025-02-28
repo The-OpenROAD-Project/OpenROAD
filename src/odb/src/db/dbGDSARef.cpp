@@ -34,7 +34,6 @@
 #include "dbGDSARef.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -74,47 +73,10 @@ bool _dbGDSARef::operator<(const _dbGDSARef& rhs) const
   return true;
 }
 
-void _dbGDSARef::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbGDSARef& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_origin);
-  DIFF_FIELD(_lr);
-  DIFF_FIELD(_ul);
-  DIFF_FIELD(_num_rows);
-  DIFF_FIELD(_num_columns);
-  DIFF_FIELD(_structure);
-  DIFF_END
-}
-
-void _dbGDSARef::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_origin);
-  DIFF_OUT_FIELD(_lr);
-  DIFF_OUT_FIELD(_ul);
-  DIFF_OUT_FIELD(_num_rows);
-  DIFF_OUT_FIELD(_num_columns);
-  DIFF_OUT_FIELD(_structure);
-
-  DIFF_END
-}
-
 _dbGDSARef::_dbGDSARef(_dbDatabase* db)
 {
   _num_rows = 1;
   _num_columns = 1;
-}
-
-_dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
-{
-  _origin = r._origin;
-  _lr = r._lr;
-  _ul = r._ul;
-  _num_rows = r._num_rows;
-  _num_columns = r._num_columns;
-  _structure = r._structure;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
@@ -141,6 +103,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
   stream << obj._num_columns;
   stream << obj._structure;
   return stream;
+}
+
+void _dbGDSARef::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

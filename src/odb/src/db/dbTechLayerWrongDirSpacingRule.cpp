@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -76,36 +75,6 @@ bool _dbTechLayerWrongDirSpacingRule::operator<(
   return true;
 }
 
-void _dbTechLayerWrongDirSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerWrongDirSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.noneol_valid_);
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(wrongdir_space_);
-  DIFF_FIELD(noneol_width_);
-  DIFF_FIELD(length_);
-  DIFF_FIELD(prl_length_);
-  DIFF_END
-}
-
-void _dbTechLayerWrongDirSpacingRule::out(dbDiff& diff,
-                                          char side,
-                                          const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.noneol_valid_);
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(wrongdir_space_);
-  DIFF_OUT_FIELD(noneol_width_);
-  DIFF_OUT_FIELD(length_);
-  DIFF_OUT_FIELD(prl_length_);
-
-  DIFF_END
-}
-
 _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
     _dbDatabase* db)
 {
@@ -114,19 +83,6 @@ _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
   noneol_width_ = 0;
   length_ = 0;
   prl_length_ = 0;
-}
-
-_dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerWrongDirSpacingRule& r)
-{
-  flags_.noneol_valid_ = r.flags_.noneol_valid_;
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  wrongdir_space_ = r.wrongdir_space_;
-  noneol_width_ = r.noneol_width_;
-  length_ = r.length_;
-  prl_length_ = r.prl_length_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWrongDirSpacingRule& obj)
@@ -154,6 +110,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.length_;
   stream << obj.prl_length_;
   return stream;
+}
+
+void _dbTechLayerWrongDirSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

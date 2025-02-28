@@ -643,8 +643,14 @@ void dbJournal::redo_disconnectObject()
       dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
       uint net_id;
       _log.pop(net_id);
-      bterm->disconnect();
-
+      if (net_id != 0U) {
+        bterm->disconnectDbNet();
+      }
+      uint mnet_id;
+      _log.pop(mnet_id);
+      if (mnet_id != 0U) {
+        bterm->disconnectDbModNet();
+      }
       break;
     }
 

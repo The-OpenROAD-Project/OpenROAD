@@ -696,55 +696,6 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   return -1;
 }
 
-// Pin Access Support
-void Cluster::setPinAccess(int cluster_id,
-                           Boundary pin_access,
-                           float net_weight)
-{
-  if (cluster_id < 0) {
-    logger_->error(MPL,
-                   38,
-                   "Cannot set pin access for {} boundary.",
-                   toString(pin_access));
-  }
-  pin_access_map_[cluster_id]
-      = std::pair<Boundary, float>(pin_access, net_weight);
-}
-
-const std::pair<Boundary, float> Cluster::getPinAccess(int cluster_id)
-{
-  return pin_access_map_[cluster_id];
-}
-
-const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap() const
-{
-  return pin_access_map_;
-}
-
-const std::map<Boundary, std::map<Boundary, float>>
-Cluster::getBoundaryConnection() const
-{
-  return boundary_connection_map_;
-}
-
-void Cluster::addBoundaryConnection(Boundary pin_a,
-                                    Boundary pin_b,
-                                    float num_net)
-{
-  if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
-    std::map<Boundary, float> pin_map;
-    pin_map[pin_b] = num_net;
-    boundary_connection_map_[pin_a] = std::move(pin_map);
-  } else {
-    if (boundary_connection_map_[pin_a].find(pin_b)
-        == boundary_connection_map_[pin_a].end()) {
-      boundary_connection_map_[pin_a][pin_b] = num_net;
-    } else {
-      boundary_connection_map_[pin_a][pin_b] += num_net;
-    }
-  }
-}
-
 // Print Basic Information
 // Normally we call this after macro placement is done
 void Cluster::printBasicInformation(utl::Logger* logger) const
@@ -1328,8 +1279,15 @@ void SoftMacro::resizeRandomly(
   if (width_list_.empty()) {
     return;
   }
-  const int idx = static_cast<int>(
-      std::floor(distribution(generator) * width_list_.size()));
+  // TODO: See for explanation
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  float random_variable_0_1;
+  do {
+    random_variable_0_1 = distribution(generator);
+  } while (random_variable_0_1 >= 1.0);
+
+  const int idx
+      = static_cast<int>(std::floor(random_variable_0_1 * width_list_.size()));
   const float min_width = width_list_[idx].first;
   const float max_width = width_list_[idx].second;
   width_ = min_width + distribution(generator) * (max_width - min_width);

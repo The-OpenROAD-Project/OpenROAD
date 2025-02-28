@@ -17,6 +17,11 @@ Pin                                    Limit     Cap   Slack
 u2/Z                                   60.65   23.79   36.87 (MET)
 
 [INFO RSZ-0058] Using max wire length 240um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        13
+    final |    +16.7% |       0 |       2 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 max slew

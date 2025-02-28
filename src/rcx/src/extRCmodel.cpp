@@ -33,6 +33,7 @@
 #include <map>
 #include <vector>
 
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "utl/Logger.h"

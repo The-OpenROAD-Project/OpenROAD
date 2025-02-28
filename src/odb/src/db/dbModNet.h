@@ -40,7 +40,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbModule;
 class _dbModITerm;
@@ -51,7 +50,6 @@ class _dbBTerm;
 class _dbModNet : public _dbObject
 {
  public:
-  _dbModNet(_dbDatabase*, const _dbModNet& r);
   _dbModNet(_dbDatabase*);
 
   ~_dbModNet();
@@ -59,8 +57,7 @@ class _dbModNet : public _dbObject
   bool operator==(const _dbModNet& rhs) const;
   bool operator!=(const _dbModNet& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModNet& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModNet& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbModule> _parent;

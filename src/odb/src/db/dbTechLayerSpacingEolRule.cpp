@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -293,172 +292,6 @@ bool _dbTechLayerSpacingEolRule::operator<(
   return true;
 }
 
-void _dbTechLayerSpacingEolRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerSpacingEolRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.exact_width_valid_);
-  DIFF_FIELD(flags_.wrong_dir_spacing_valid_);
-  DIFF_FIELD(flags_.opposite_width_valid_);
-  DIFF_FIELD(flags_.within_valid_);
-  DIFF_FIELD(flags_.wrong_dir_within_valid_);
-  DIFF_FIELD(flags_.same_mask_valid_);
-  DIFF_FIELD(flags_.except_exact_width_valid_);
-  DIFF_FIELD(flags_.fill_concave_corner_valid_);
-  DIFF_FIELD(flags_.withcut_valid_);
-  DIFF_FIELD(flags_.cut_class_valid_);
-  DIFF_FIELD(flags_.with_cut_above_valid_);
-  DIFF_FIELD(flags_.enclosure_end_valid_);
-  DIFF_FIELD(flags_.enclosure_end_within_valid_);
-  DIFF_FIELD(flags_.end_prl_spacing_valid_);
-  DIFF_FIELD(flags_.prl_valid_);
-  DIFF_FIELD(flags_.end_to_end_valid_);
-  DIFF_FIELD(flags_.cut_spaces_valid_);
-  DIFF_FIELD(flags_.extension_valid_);
-  DIFF_FIELD(flags_.wrong_dir_extension_valid_);
-  DIFF_FIELD(flags_.other_end_width_valid_);
-  DIFF_FIELD(flags_.max_length_valid_);
-  DIFF_FIELD(flags_.min_length_valid_);
-  DIFF_FIELD(flags_.two_sides_valid_);
-  DIFF_FIELD(flags_.equal_rect_width_valid_);
-  DIFF_FIELD(flags_.parallel_edge_valid_);
-  DIFF_FIELD(flags_.subtract_eol_width_valid_);
-  DIFF_FIELD(flags_.par_prl_valid_);
-  DIFF_FIELD(flags_.par_min_length_valid_);
-  DIFF_FIELD(flags_.two_edges_valid_);
-  DIFF_FIELD(flags_.same_metal_valid_);
-  DIFF_FIELD(flags_.non_eol_corner_only_valid_);
-  DIFF_FIELD(flags_.parallel_same_mask_valid_);
-  DIFF_FIELD(flags_.enclose_cut_valid_);
-  DIFF_FIELD(flags_.below_valid_);
-  DIFF_FIELD(flags_.above_valid_);
-  DIFF_FIELD(flags_.cut_spacing_valid_);
-  DIFF_FIELD(flags_.all_cuts_valid_);
-  DIFF_FIELD(flags_.to_concave_corner_valid_);
-  DIFF_FIELD(flags_.min_adjacent_length_valid_);
-  DIFF_FIELD(flags_.two_min_adj_length_valid_);
-  DIFF_FIELD(flags_.to_notch_length_valid_);
-  DIFF_FIELD(eol_space_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(wrong_dir_space_);
-  DIFF_FIELD(opposite_width_);
-  DIFF_FIELD(eol_within_);
-  DIFF_FIELD(wrong_dir_within_);
-  DIFF_FIELD(exact_width_);
-  DIFF_FIELD(other_width_);
-  DIFF_FIELD(fill_triangle_);
-  DIFF_FIELD(cut_class_);
-  DIFF_FIELD(with_cut_space_);
-  DIFF_FIELD(enclosure_end_width_);
-  DIFF_FIELD(enclosure_end_within_);
-  DIFF_FIELD(end_prl_space_);
-  DIFF_FIELD(end_prl_);
-  DIFF_FIELD(end_to_end_space_);
-  DIFF_FIELD(one_cut_space_);
-  DIFF_FIELD(two_cut_space_);
-  DIFF_FIELD(extension_);
-  DIFF_FIELD(wrong_dir_extension_);
-  DIFF_FIELD(other_end_width_);
-  DIFF_FIELD(max_length_);
-  DIFF_FIELD(min_length_);
-  DIFF_FIELD(par_space_);
-  DIFF_FIELD(par_within_);
-  DIFF_FIELD(par_prl_);
-  DIFF_FIELD(par_min_length_);
-  DIFF_FIELD(enclose_dist_);
-  DIFF_FIELD(cut_to_metal_space_);
-  DIFF_FIELD(min_adj_length_);
-  DIFF_FIELD(min_adj_length1_);
-  DIFF_FIELD(min_adj_length2_);
-  DIFF_FIELD(notch_length_);
-  DIFF_END
-}
-
-void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.exact_width_valid_);
-  DIFF_OUT_FIELD(flags_.wrong_dir_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.opposite_width_valid_);
-  DIFF_OUT_FIELD(flags_.within_valid_);
-  DIFF_OUT_FIELD(flags_.wrong_dir_within_valid_);
-  DIFF_OUT_FIELD(flags_.same_mask_valid_);
-  DIFF_OUT_FIELD(flags_.except_exact_width_valid_);
-  DIFF_OUT_FIELD(flags_.fill_concave_corner_valid_);
-  DIFF_OUT_FIELD(flags_.withcut_valid_);
-  DIFF_OUT_FIELD(flags_.cut_class_valid_);
-  DIFF_OUT_FIELD(flags_.with_cut_above_valid_);
-  DIFF_OUT_FIELD(flags_.enclosure_end_valid_);
-  DIFF_OUT_FIELD(flags_.enclosure_end_within_valid_);
-  DIFF_OUT_FIELD(flags_.end_prl_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.prl_valid_);
-  DIFF_OUT_FIELD(flags_.end_to_end_valid_);
-  DIFF_OUT_FIELD(flags_.cut_spaces_valid_);
-  DIFF_OUT_FIELD(flags_.extension_valid_);
-  DIFF_OUT_FIELD(flags_.wrong_dir_extension_valid_);
-  DIFF_OUT_FIELD(flags_.other_end_width_valid_);
-  DIFF_OUT_FIELD(flags_.max_length_valid_);
-  DIFF_OUT_FIELD(flags_.min_length_valid_);
-  DIFF_OUT_FIELD(flags_.two_sides_valid_);
-  DIFF_OUT_FIELD(flags_.equal_rect_width_valid_);
-  DIFF_OUT_FIELD(flags_.parallel_edge_valid_);
-  DIFF_OUT_FIELD(flags_.subtract_eol_width_valid_);
-  DIFF_OUT_FIELD(flags_.par_prl_valid_);
-  DIFF_OUT_FIELD(flags_.par_min_length_valid_);
-  DIFF_OUT_FIELD(flags_.two_edges_valid_);
-  DIFF_OUT_FIELD(flags_.same_metal_valid_);
-  DIFF_OUT_FIELD(flags_.non_eol_corner_only_valid_);
-  DIFF_OUT_FIELD(flags_.parallel_same_mask_valid_);
-  DIFF_OUT_FIELD(flags_.enclose_cut_valid_);
-  DIFF_OUT_FIELD(flags_.below_valid_);
-  DIFF_OUT_FIELD(flags_.above_valid_);
-  DIFF_OUT_FIELD(flags_.cut_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.all_cuts_valid_);
-  DIFF_OUT_FIELD(flags_.to_concave_corner_valid_);
-  DIFF_OUT_FIELD(flags_.min_adjacent_length_valid_);
-  DIFF_OUT_FIELD(flags_.two_min_adj_length_valid_);
-  DIFF_OUT_FIELD(flags_.to_notch_length_valid_);
-  DIFF_OUT_FIELD(eol_space_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(wrong_dir_space_);
-  DIFF_OUT_FIELD(opposite_width_);
-  DIFF_OUT_FIELD(eol_within_);
-  DIFF_OUT_FIELD(wrong_dir_within_);
-  DIFF_OUT_FIELD(exact_width_);
-  DIFF_OUT_FIELD(other_width_);
-  DIFF_OUT_FIELD(fill_triangle_);
-  DIFF_OUT_FIELD(cut_class_);
-  DIFF_OUT_FIELD(with_cut_space_);
-  DIFF_OUT_FIELD(enclosure_end_width_);
-  DIFF_OUT_FIELD(enclosure_end_within_);
-  DIFF_OUT_FIELD(end_prl_space_);
-  DIFF_OUT_FIELD(end_prl_);
-  DIFF_OUT_FIELD(end_to_end_space_);
-  DIFF_OUT_FIELD(one_cut_space_);
-  DIFF_OUT_FIELD(two_cut_space_);
-  DIFF_OUT_FIELD(extension_);
-  DIFF_OUT_FIELD(wrong_dir_extension_);
-  DIFF_OUT_FIELD(other_end_width_);
-  DIFF_OUT_FIELD(max_length_);
-  DIFF_OUT_FIELD(min_length_);
-  DIFF_OUT_FIELD(par_space_);
-  DIFF_OUT_FIELD(par_within_);
-  DIFF_OUT_FIELD(par_prl_);
-  DIFF_OUT_FIELD(par_min_length_);
-  DIFF_OUT_FIELD(enclose_dist_);
-  DIFF_OUT_FIELD(cut_to_metal_space_);
-  DIFF_OUT_FIELD(min_adj_length_);
-  DIFF_OUT_FIELD(min_adj_length1_);
-  DIFF_OUT_FIELD(min_adj_length2_);
-  DIFF_OUT_FIELD(notch_length_);
-
-  DIFF_END
-}
-
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -530,87 +363,6 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
   min_adj_length2_ = 0;
   notch_length_ = 0;
   // User Code End Constructor
-}
-
-_dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
-    _dbDatabase* db,
-    const _dbTechLayerSpacingEolRule& r)
-{
-  flags_.exact_width_valid_ = r.flags_.exact_width_valid_;
-  flags_.wrong_dir_spacing_valid_ = r.flags_.wrong_dir_spacing_valid_;
-  flags_.opposite_width_valid_ = r.flags_.opposite_width_valid_;
-  flags_.within_valid_ = r.flags_.within_valid_;
-  flags_.wrong_dir_within_valid_ = r.flags_.wrong_dir_within_valid_;
-  flags_.same_mask_valid_ = r.flags_.same_mask_valid_;
-  flags_.except_exact_width_valid_ = r.flags_.except_exact_width_valid_;
-  flags_.fill_concave_corner_valid_ = r.flags_.fill_concave_corner_valid_;
-  flags_.withcut_valid_ = r.flags_.withcut_valid_;
-  flags_.cut_class_valid_ = r.flags_.cut_class_valid_;
-  flags_.with_cut_above_valid_ = r.flags_.with_cut_above_valid_;
-  flags_.enclosure_end_valid_ = r.flags_.enclosure_end_valid_;
-  flags_.enclosure_end_within_valid_ = r.flags_.enclosure_end_within_valid_;
-  flags_.end_prl_spacing_valid_ = r.flags_.end_prl_spacing_valid_;
-  flags_.prl_valid_ = r.flags_.prl_valid_;
-  flags_.end_to_end_valid_ = r.flags_.end_to_end_valid_;
-  flags_.cut_spaces_valid_ = r.flags_.cut_spaces_valid_;
-  flags_.extension_valid_ = r.flags_.extension_valid_;
-  flags_.wrong_dir_extension_valid_ = r.flags_.wrong_dir_extension_valid_;
-  flags_.other_end_width_valid_ = r.flags_.other_end_width_valid_;
-  flags_.max_length_valid_ = r.flags_.max_length_valid_;
-  flags_.min_length_valid_ = r.flags_.min_length_valid_;
-  flags_.two_sides_valid_ = r.flags_.two_sides_valid_;
-  flags_.equal_rect_width_valid_ = r.flags_.equal_rect_width_valid_;
-  flags_.parallel_edge_valid_ = r.flags_.parallel_edge_valid_;
-  flags_.subtract_eol_width_valid_ = r.flags_.subtract_eol_width_valid_;
-  flags_.par_prl_valid_ = r.flags_.par_prl_valid_;
-  flags_.par_min_length_valid_ = r.flags_.par_min_length_valid_;
-  flags_.two_edges_valid_ = r.flags_.two_edges_valid_;
-  flags_.same_metal_valid_ = r.flags_.same_metal_valid_;
-  flags_.non_eol_corner_only_valid_ = r.flags_.non_eol_corner_only_valid_;
-  flags_.parallel_same_mask_valid_ = r.flags_.parallel_same_mask_valid_;
-  flags_.enclose_cut_valid_ = r.flags_.enclose_cut_valid_;
-  flags_.below_valid_ = r.flags_.below_valid_;
-  flags_.above_valid_ = r.flags_.above_valid_;
-  flags_.cut_spacing_valid_ = r.flags_.cut_spacing_valid_;
-  flags_.all_cuts_valid_ = r.flags_.all_cuts_valid_;
-  flags_.to_concave_corner_valid_ = r.flags_.to_concave_corner_valid_;
-  flags_.min_adjacent_length_valid_ = r.flags_.min_adjacent_length_valid_;
-  flags_.two_min_adj_length_valid_ = r.flags_.two_min_adj_length_valid_;
-  flags_.to_notch_length_valid_ = r.flags_.to_notch_length_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_space_ = r.eol_space_;
-  eol_width_ = r.eol_width_;
-  wrong_dir_space_ = r.wrong_dir_space_;
-  opposite_width_ = r.opposite_width_;
-  eol_within_ = r.eol_within_;
-  wrong_dir_within_ = r.wrong_dir_within_;
-  exact_width_ = r.exact_width_;
-  other_width_ = r.other_width_;
-  fill_triangle_ = r.fill_triangle_;
-  cut_class_ = r.cut_class_;
-  with_cut_space_ = r.with_cut_space_;
-  enclosure_end_width_ = r.enclosure_end_width_;
-  enclosure_end_within_ = r.enclosure_end_within_;
-  end_prl_space_ = r.end_prl_space_;
-  end_prl_ = r.end_prl_;
-  end_to_end_space_ = r.end_to_end_space_;
-  one_cut_space_ = r.one_cut_space_;
-  two_cut_space_ = r.two_cut_space_;
-  extension_ = r.extension_;
-  wrong_dir_extension_ = r.wrong_dir_extension_;
-  other_end_width_ = r.other_end_width_;
-  max_length_ = r.max_length_;
-  min_length_ = r.min_length_;
-  par_space_ = r.par_space_;
-  par_within_ = r.par_within_;
-  par_prl_ = r.par_prl_;
-  par_min_length_ = r.par_min_length_;
-  enclose_dist_ = r.enclose_dist_;
-  cut_to_metal_space_ = r.cut_to_metal_space_;
-  min_adj_length_ = r.min_adj_length_;
-  min_adj_length1_ = r.min_adj_length1_;
-  min_adj_length2_ = r.min_adj_length2_;
-  notch_length_ = r.notch_length_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
@@ -695,6 +447,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
   stream << obj.min_adj_length2_;
   stream << obj.notch_length_;
   return stream;
+}
+
+void _dbTechLayerSpacingEolRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

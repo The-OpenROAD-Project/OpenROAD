@@ -191,6 +191,20 @@ proc create_ndr { args } {
       $ndr addUseVia $via
     }
   }
+  # inintialize layers
+  foreach layer [$tech getLayers] {
+    if { [$layer getType] != "ROUTING" } {
+      continue
+    }
+    set rule [$ndr getLayerRule $layer]
+    if { $rule != "NULL" } {
+      if { [$rule getWidth] != 0 } {
+        continue
+      }
+    }
+    utl::warn ODB 1003 "([$layer getName]) layer's width from (${name}) NDR is not defined. Using the default value [ord::dbu_to_microns [$layer getWidth]]"
+    set_ndr_layer_rule $tech $ndr [$layer getName] "*1" 0
+  }
 
 }
 

@@ -773,7 +773,7 @@ class NesterovPlaceVars
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routabilityCheckOverflow = 0.30;
+  float routability_end_overflow = 0.30;
   float keepResizeBelowOverflow = 0.3;
 
   static const int maxRecursionWlCoef = 10;
@@ -781,7 +781,7 @@ class NesterovPlaceVars
 
   bool timingDrivenMode = true;
   int timingDrivenIterCounter = 0;
-  bool routabilityDrivenMode = true;
+  bool routability_driven_mode = true;
   bool disableRevertIfDiverge = false;
 
   bool debug = false;
@@ -876,8 +876,10 @@ class NesterovBaseCommon
 
   // TODO do this for each region? Also, manage this properly if other callbacks
   // are implemented.
-  int64_t getDeltaArea() { return deltaArea_; }
-  void resetDeltaArea() { deltaArea_ = 0; }
+  int64_t getDeltaArea() { return delta_area_; }
+  void resetDeltaArea() { delta_area_ = 0; }
+  int64_t getNewGcellsCount() { return new_gcells_count_; }
+  void resetNewGcellsCount() { new_gcells_count_ = 0; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -907,7 +909,8 @@ class NesterovBaseCommon
   std::deque<Pin> pb_pins_stor_;
 
   int num_threads_;
-  int64_t deltaArea_;
+  int64_t delta_area_;
+  uint new_gcells_count_;
   nesterovDbCbk* db_cbk_;
 };
 
@@ -1067,7 +1070,7 @@ class NesterovBase
 
   bool checkConvergence();
   bool checkDivergence();
-  bool revertDivergence();
+  bool revertToSnapshot();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();

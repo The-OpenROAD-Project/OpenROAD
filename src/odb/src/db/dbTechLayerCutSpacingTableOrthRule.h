@@ -40,18 +40,12 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
 {
  public:
-  _dbTechLayerCutSpacingTableOrthRule(
-      _dbDatabase*,
-      const _dbTechLayerCutSpacingTableOrthRule& r);
   _dbTechLayerCutSpacingTableOrthRule(_dbDatabase*);
-
-  ~_dbTechLayerCutSpacingTableOrthRule() = default;
 
   bool operator==(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableOrthRule& rhs) const
@@ -59,10 +53,7 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   //{cutWithin, orthoSpacing}
   dbVector<std::pair<int, int>> spacing_tbl_;

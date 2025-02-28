@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerKeepOutZoneRuleFlags
@@ -55,11 +54,7 @@ struct dbTechLayerKeepOutZoneRuleFlags
 class _dbTechLayerKeepOutZoneRule : public _dbObject
 {
  public:
-  _dbTechLayerKeepOutZoneRule(_dbDatabase*,
-                              const _dbTechLayerKeepOutZoneRule& r);
   _dbTechLayerKeepOutZoneRule(_dbDatabase*);
-
-  ~_dbTechLayerKeepOutZoneRule() = default;
 
   bool operator==(const _dbTechLayerKeepOutZoneRule& rhs) const;
   bool operator!=(const _dbTechLayerKeepOutZoneRule& rhs) const
@@ -67,10 +62,7 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerKeepOutZoneRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerKeepOutZoneRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerKeepOutZoneRuleFlags flags_;
   std::string first_cut_class_;

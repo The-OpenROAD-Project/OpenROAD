@@ -129,30 +129,33 @@ void Graphics::saStep(const std::vector<HardMacro>& macros)
 }
 
 template <typename T>
-void Graphics::report(const char* name, const std::optional<T>& value)
+void Graphics::report(const std::optional<T>& value)
 {
   if (value) {
-    auto penalty = value.value();
+    const PenaltyData& penalty_data = value.value();
+    const float normalized_penalty
+        = penalty_data.value / penalty_data.normalization_factor;
+
     logger_->report(
         "{:25}(Norm penalty {:>8.4f}) * (weight {:>8.4f}) = cost {:>8.4f}",
-        name,
-        penalty.norm_penalty,
-        penalty.weight,
-        penalty.norm_penalty * penalty.weight);
+        penalty_data.name,
+        normalized_penalty,
+        penalty_data.weight,
+        normalized_penalty * penalty_data.weight);
   }
 }
 
 void Graphics::report(const float norm_cost)
 {
-  report("Area", area_penalty_);
-  report("Outline Penalty", outline_penalty_);
-  report("Wirelength", wirelength_penalty_);
-  report("Fence Penalty", fence_penalty_);
-  report("Guidance Penalty", guidance_penalty_);
-  report("Boundary Penalty", boundary_penalty_);
-  report("Macro Blockage Penalty", macro_blockage_penalty_);
-  report("Notch Penalty", notch_penalty_);
-  report("Normalized Cost", std::optional<Penalty>({1.0f, norm_cost}));
+  report(area_penalty_);
+  report(outline_penalty_);
+  report(wirelength_penalty_);
+  report(fence_penalty_);
+  report(guidance_penalty_);
+  report(boundary_penalty_);
+  report(macro_blockage_penalty_);
+  report(notch_penalty_);
+  report(std::optional<PenaltyData>({"Total", 1.0f, norm_cost, 1.0f}));
 }
 
 void Graphics::drawResult()
@@ -259,42 +262,42 @@ void Graphics::resetPenalties()
   notch_penalty_.reset();
 }
 
-void Graphics::setNotchPenalty(const Penalty& penalty)
+void Graphics::setNotchPenalty(const PenaltyData& penalty)
 {
   notch_penalty_ = penalty;
 }
 
-void Graphics::setMacroBlockagePenalty(const Penalty& penalty)
+void Graphics::setMacroBlockagePenalty(const PenaltyData& penalty)
 {
   macro_blockage_penalty_ = penalty;
 }
 
-void Graphics::setBoundaryPenalty(const Penalty& penalty)
+void Graphics::setBoundaryPenalty(const PenaltyData& penalty)
 {
   boundary_penalty_ = penalty;
 }
 
-void Graphics::setFencePenalty(const Penalty& penalty)
+void Graphics::setFencePenalty(const PenaltyData& penalty)
 {
   fence_penalty_ = penalty;
 }
 
-void Graphics::setGuidancePenalty(const Penalty& penalty)
+void Graphics::setGuidancePenalty(const PenaltyData& penalty)
 {
   guidance_penalty_ = penalty;
 }
 
-void Graphics::setAreaPenalty(const Penalty& penalty)
+void Graphics::setAreaPenalty(const PenaltyData& penalty)
 {
   area_penalty_ = penalty;
 }
 
-void Graphics::setOutlinePenalty(const Penalty& penalty)
+void Graphics::setOutlinePenalty(const PenaltyData& penalty)
 {
   outline_penalty_ = penalty;
 }
 
-void Graphics::setWirelengthPenalty(const Penalty& penalty)
+void Graphics::setWirelengthPenalty(const PenaltyData& penalty)
 {
   wirelength_penalty_ = penalty;
 }

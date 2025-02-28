@@ -44,7 +44,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerSpacingTablePrlRuleFlags
@@ -58,11 +57,7 @@ struct dbTechLayerSpacingTablePrlRuleFlags
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
 {
  public:
-  _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
-                                  const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
-
-  ~_dbTechLayerSpacingTablePrlRule() = default;
 
   bool operator==(const _dbTechLayerSpacingTablePrlRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingTablePrlRule& rhs) const
@@ -70,10 +65,7 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerSpacingTablePrlRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerSpacingTablePrlRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
 
   uint getWidthIdx(int width) const;

@@ -1,5 +1,4 @@
 add_library(zutil
-    parse.cpp
     poly_decomp.cpp
     util.cpp
 )

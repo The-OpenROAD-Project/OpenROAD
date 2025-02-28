@@ -43,7 +43,6 @@ class _dbBox;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbBlockageFlags
 {
@@ -70,10 +69,7 @@ class _dbBlockage : public _dbObject
   bool operator==(const _dbBlockage& rhs) const;
   bool operator!=(const _dbBlockage& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBlockage& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbBlockage& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbBlockage::_dbBlockage(_dbDatabase*)

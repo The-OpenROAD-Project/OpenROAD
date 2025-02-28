@@ -268,18 +268,6 @@ class Cluster
   int getCloseCluster(const std::vector<int>& candidate_clusters,
                       float net_threshold);
 
-  // Path synthesis support
-  // After path synthesis, the children cluster of current cluster will
-  // not have any connections outsize the parent cluster
-  // All the outside connections have been converted to the connections
-  // related to pin access
-  void setPinAccess(int cluster_id, Boundary pin_access, float weight);
-  void addBoundaryConnection(Boundary pin_a, Boundary pin_b, float num_net);
-  const std::pair<Boundary, float> getPinAccess(int cluster_id);
-  const std::map<int, std::pair<Boundary, float>> getPinAccessMap() const;
-  const std::map<Boundary, std::map<Boundary, float>> getBoundaryConnection()
-      const;
-
   // virtual connections
   const std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
@@ -598,14 +586,12 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
-    hpwl = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
-    hpwl = 0;
   }
 
   bool operator==(const BundledNet& net)
@@ -614,19 +600,8 @@ struct BundledNet
            && (terminals.second == net.terminals.second);
   }
 
-  // id for terminals, the id can be the id of hard macro or soft
-  // macro
-  std::pair<int, int> terminals;
-  // Number of bundled connections (can be timing-related weight)
-  float weight;
-  // support for bus synthsis
-  float hpwl;  // HPWL of the Net (in terms of path length)
-  // shortest paths:  to minimize timing
-  // store all the shortest paths between two soft macros
-  std::vector<std::vector<int>> edge_paths;
-  // store all the shortest paths between two soft macros in terms of
-  // boundary edges.  All the internal edges are removed
-  std::vector<std::vector<int>> boundary_edge_paths;
+  std::pair<int, int> terminals;  // source_id <--> target_id (undirected)
+  float weight;  // Number of bundled connections (can be timing-related)
 
   // In our framework, we only bundled connections between clusters.
   // Thus each net must have both src_cluster_id and target_cluster_id

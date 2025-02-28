@@ -2,6 +2,7 @@ import re
 
 
 def _find_index(_list, _object, start_index=0):
+    """Find the index of _object in _list[start_index:] ignoring white space"""
     index = start_index
     while index < len(_list):
         line = _list[index].strip()
@@ -13,6 +14,15 @@ def _find_index(_list, _object, start_index=0):
 
 
 def _get_sections(lines, tag, sections=None, remove=False):
+    """Find all sections delimeted by begin/end tags in lines.
+
+    The lines containing the section tags are kept and not stored or deleted.
+    Only the lines within by the section tags are operated on.
+
+    If remove=False the lines found are stored in sections by tag name.
+       Empty sections are not stored.
+    If remove=True the lines found are deleted from lines
+    """
     if sections is None:
         sections = {}
     i = 0
@@ -38,30 +48,46 @@ def _get_sections(lines, tag, sections=None, remove=False):
 
 
 class Parser:
+    """Parses a file looking for the sections delimited by the code_tags."""
+
     def __init__(self, file_name):
         with open(file_name, "r", encoding="ascii") as file:
             self.lines = file.readlines()
         self.generator_code = {}
         self.user_code = {}
-        self.user_code_tag = "//UserCodeBegin"
-        self.generator_code_tag = "//GeneratorCodeBegin"
+        self.set_comment_str("//")
 
     def set_comment_str(self, comment):
+        """Set the prefix for the code tags comments
+
+        For example, CMakeLists.txt uses # rather than //"""
         self.user_code_tag = f"{comment}UserCodeBegin"
         self.generator_code_tag = f"{comment}GeneratorCodeBegin"
 
     def parse_user_code(self):
+        """Parse using the user_code_tag
+
+        Used for a file where the default is generated code and user
+        code is taggged."""
         _get_sections(self.lines, self.user_code_tag, self.user_code)
 
     def parse_source_code(self, file_name):
+        """Parse using the file using the generator_code_tag
+
+        Used for a file where the default is user code and generated
+        code is taggged."""
         with open(file_name, "r", encoding="ascii") as source_file:
             db_lines = source_file.readlines()
         _get_sections(db_lines, self.generator_code_tag, self.generator_code)
 
     def clean_code(self):
+        """Remove all section lines using the generator_code_tag
+
+        Empties the generated sections in preparation for new code"""
         _get_sections(self.lines, self.generator_code_tag, remove=True)
 
     def write_in_file(self, file_name, keep_empty):
+        """Write the file with user and/or generated sections"""
         # Replace the user sections inside the generate sections with
         # their current contents.
         for section in self.generator_code:

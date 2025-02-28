@@ -32,11 +32,11 @@
 
 #include "rcx/extprocess.h"
 
+#include "parse.h"
 #include "utl/Logger.h"
 
 namespace rcx {
 
-using odb::extParser;
 using utl::RCX;
 
 void printInt(FILE* fp, const char* sep, const char* key, int v, bool pos)

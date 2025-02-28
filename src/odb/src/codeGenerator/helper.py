@@ -53,7 +53,7 @@ def _stem(s):
     return " ".join([str(elem) for elem in target])
 
 
-def get_struct(name, structs):
+def _get_struct(name, structs):
     for struct in structs:
         if struct["name"] == name:
             return struct
@@ -63,7 +63,7 @@ def get_struct(name, structs):
 def components(structs, name, _type):
     if _stem(_type) in _comparable or is_ref(_type):
         return [name]
-    struct = get_struct(_type.rstrip(" *"), structs)
+    struct = _get_struct(_type.rstrip(" *"), structs)
     if struct is not None:
         ret = []
         for field in struct["fields"]:
@@ -88,7 +88,7 @@ def add_once_to_dict(src, target):
 def is_bit_fields(field, structs):
     if "bits" in field:
         return True
-    struct = get_struct(field["type"], structs)
+    struct = _get_struct(field["type"], structs)
     if struct is None:
         return False
     for struct_field in struct["fields"]:
@@ -105,11 +105,11 @@ def get_functional_name(name):
     return name
 
 
-def get_class_index(schema, name):
+def get_class(schema, name):
     for i in range(len(schema["classes"])):
         if schema["classes"][i]["name"] == name:
-            return i
-    return -1
+            return schema["classes"][i]
+    raise NameError(f"Class {name} in relations is not found")
 
 
 def get_table_name(name):

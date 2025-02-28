@@ -44,7 +44,6 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbGroup.h"
 #include "dbHier.h"
 #include "dbITerm.h"
@@ -122,8 +121,6 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._source = dbSourceType::NONE;
   //_flags._spare_bits = 0;
   _flags._level = 0;
-  _flags._input_cone = 0;
-  _flags._inside_cone = 0;
   _name = nullptr;
   _x = 0;
   _y = 0;
@@ -356,115 +353,6 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   }
 
   return true;
-}
-
-void _dbInst::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbInst& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._orient);
-  DIFF_FIELD(_flags._status);
-  DIFF_FIELD(_flags._user_flag_1);
-  DIFF_FIELD(_flags._user_flag_2);
-  DIFF_FIELD(_flags._user_flag_3);
-  DIFF_FIELD(_flags._physical_only);
-  DIFF_FIELD(_flags._dont_touch);
-  DIFF_FIELD(_flags._source);
-  DIFF_FIELD(_x);
-  DIFF_FIELD(_y);
-  DIFF_FIELD(_weight);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_FIELD_NO_DEEP(_inst_hdr);
-  DIFF_OBJECT(_bbox, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-  DIFF_FIELD(_region);
-  DIFF_FIELD(_module);
-  DIFF_FIELD(_group);
-  DIFF_FIELD(_region_next);
-  DIFF_FIELD(_module_next);
-  DIFF_FIELD(_group_next);
-  DIFF_FIELD(_region_prev);
-  DIFF_FIELD(_module_prev);
-  DIFF_FIELD(_hierarchy);
-  DIFF_OBJECT(_halo, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-  DIFF_FIELD(pin_access_idx_);
-
-  if (!diff.deepDiff()) {
-    DIFF_VECTOR(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-
-    dbSet<_dbITerm> lhs_set((dbObject*) this, lhs_blk->_inst_iterm_itr);
-    std::vector<_dbITerm*> lhs_vec;
-
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr) {
-      lhs_vec.push_back(*itr);
-    }
-
-    dbSet<_dbITerm> rhs_set((dbObject*) &rhs, rhs_blk->_inst_iterm_itr);
-    std::vector<_dbITerm*> rhs_vec;
-
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr) {
-      rhs_vec.push_back(*itr);
-    }
-
-    set_symmetric_diff(diff, "_iterms", lhs_vec, rhs_vec);
-  }
-
-  DIFF_END
-}
-
-void _dbInst::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._orient);
-  DIFF_OUT_FIELD(_flags._status);
-  DIFF_OUT_FIELD(_flags._user_flag_1);
-  DIFF_OUT_FIELD(_flags._user_flag_2);
-  DIFF_OUT_FIELD(_flags._user_flag_3);
-  DIFF_OUT_FIELD(_flags._physical_only);
-  DIFF_OUT_FIELD(_flags._dont_touch);
-  DIFF_OUT_FIELD(_flags._source);
-  DIFF_OUT_FIELD(_x);
-  DIFF_OUT_FIELD(_y);
-  DIFF_OUT_FIELD(_weight);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-  DIFF_OUT_FIELD_NO_DEEP(_inst_hdr);
-  DIFF_OUT_OBJECT(_bbox, blk->_box_tbl);
-  DIFF_OUT_FIELD(_region);
-  DIFF_OUT_FIELD(_module);
-  DIFF_OUT_FIELD(_group);
-  DIFF_OUT_FIELD(_region_next);
-  DIFF_OUT_FIELD(_module_next);
-  DIFF_OUT_FIELD(_group_next);
-  DIFF_OUT_FIELD(_region_prev);
-  DIFF_OUT_FIELD(_module_prev);
-  DIFF_OUT_FIELD(_hierarchy);
-  DIFF_OUT_FIELD(pin_access_idx_);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_VECTOR(_iterms);
-  } else {
-    dbSet<_dbITerm>::iterator itr;
-    dbSet<_dbITerm> insts((dbObject*) this, blk->_inst_iterm_itr);
-    diff.begin_object("%c _iterms\n", side);
-
-    for (itr = insts.begin(); itr != insts.end(); ++itr) {
-      (*itr)->out(diff, side, "");
-    }
-
-    diff.end_object();
-  }
-
-  DIFF_OUT_OBJECT(_halo, blk->_box_tbl);
-
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -726,41 +614,6 @@ void dbInst::getHierTransform(dbTransform& t)
   t = x;
 }
 
-int dbInst::getLevel()
-{
-  _dbInst* inst = (_dbInst*) this;
-
-  if (inst->_flags._inside_cone > 0) {
-    return inst->_flags._level;
-  }
-  if (inst->_flags._input_cone > 0) {
-    return -inst->_flags._level;
-  }
-
-  return 0;
-}
-void dbInst::setLevel(uint v, bool fromPI)
-{
-  _dbInst* inst = (_dbInst*) this;
-  if (v > 255) {
-    getImpl()->getLogger()->info(
-        utl::ODB,
-        36,
-        "setLevel {} greater than 255 is illegal! inst {}",
-        v,
-        getId());
-    return;
-  }
-  inst->_flags._level = v;
-  inst->_flags._input_cone = 0;
-  inst->_flags._inside_cone = 0;
-
-  if (fromPI) {
-    inst->_flags._input_cone = 1;
-  } else {
-    inst->_flags._inside_cone = 1;
-  }
-}
 bool dbInst::getEcoCreate()
 {
   _dbInst* inst = (_dbInst*) this;
@@ -1166,6 +1019,13 @@ bool dbInst::isHierarchical()
   return inst->_hierarchy != 0;
 }
 
+bool dbInst::isPhysicalOnly()
+{
+  _dbInst* inst = (_dbInst*) this;
+
+  return inst->_module == 0;
+}
+
 dbInst* dbInst::getParent()
 {
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
@@ -1457,8 +1317,7 @@ dbInst* dbInst::create(dbBlock* block_,
   uint mterm_cnt = inst_hdr->_mterms.size();
   inst->_iterms.resize(mterm_cnt);
 
-  uint i;
-  for (i = 0; i < mterm_cnt; ++i) {
+  for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->_iterm_tbl->create();
     inst->_iterms[i] = iterm->getOID();
     iterm->_flags._mterm_idx = i;
@@ -1475,10 +1334,6 @@ dbInst* dbInst::create(dbBlock* block_,
 
   inst->_flags._physical_only = physical_only;
   if (!physical_only) {
-    // old code
-    //    block_->getTopModule()->addInst((dbInst*) inst);
-    // now we insert into scope of module...
-    // might screw things up..
     if (parent_module) {
       parent_module->addInst((dbInst*) inst);
     } else {
@@ -1488,28 +1343,19 @@ dbInst* dbInst::create(dbBlock* block_,
 
   if (region) {
     region->addInst((dbInst*) inst);
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbInstCreate((dbInst*) inst,
-                                 region);  // client ECO initialization - payam
+    for (dbBlockCallBackObj* cb : block->_callbacks) {
+      cb->inDbInstCreate((dbInst*) inst, region);
     }
   } else {
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbInstCreate(
-          (dbInst*) inst);  // client ECO initialization - payam
+    for (dbBlockCallBackObj* cb : block->_callbacks) {
+      cb->inDbInstCreate((dbInst*) inst);
     }
   }
 
-  for (i = 0; i < mterm_cnt; ++i) {
+  for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->_iterm_tbl->getPtr(inst->_iterms[i]);
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbITermCreate(
-          (dbITerm*) iterm);  // client ECO initialization - payam
+    for (dbBlockCallBackObj* cb : block->_callbacks) {
+      cb->inDbITermCreate((dbITerm*) iterm);
     }
   }
 
@@ -1730,6 +1576,15 @@ dbITerm* dbInst::getFirstOutput()
   getImpl()->getLogger()->warn(
       utl::ODB, 47, "instance {} has no output pin", getConstName());
   return nullptr;
+}
+
+void _dbInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["iterms"].add(_iterms);
 }
 
 }  // namespace odb
