@@ -162,11 +162,11 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  /////////////////////////////////////////////
-  // private member variables
-  /////////////////////////////////////////////
-  // boundary constraints
   Rect outline_;
+
+  // The max cost for distance to boundary wirelength computation
+  // when one of the SoftMacros is a cluster of unplaced IO pins.
+  float die_hpwl_;
 
   // Boundaries blocked for IO pins
   std::set<Boundary> blocked_boundaries_;
