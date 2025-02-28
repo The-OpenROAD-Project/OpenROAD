@@ -113,8 +113,26 @@ void FlexGRWorker::init_pinGCellIdxs()
       ll.set(std::min(ll.x(), idx.x()), std::min(ll.y(), idx.y()), std::min(ll.z(), idx.z()));
       ur.set(std::max(ur.x(), idx.x()), std::max(ur.y(), idx.y()), std::max(ur.z(), idx.z()));
     }
-    net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y()));    
+   
+    /*
+    int deltaX = std::min(ur.x() - ll.x(), 5);
+    int deltaY = std::min(ur.y() - ll.y(), 5);
+    int delta = std::max(deltaX, deltaY);
+    ll.set(std::max(0, ll.x() - delta), std::max(0, ll.y() - delta), ll.z());
+    
+    int xDim, yDim, zDim;
+    gridGraph_.getDim(xDim, yDim, zDim); 
+    int xDim_global, yDim_global, zDim_global;
+    this->getCMap()->getDim(xDim_global, yDim_global, zDim_global);
+    xDim = std::min(xDim, xDim_global);
+    yDim = std::min(yDim, yDim_global);
+    ur.set(std::min(xDim - 1, ur.x() + delta), std::min(yDim - 1, ur.y() + delta), ur.z());        
+     
+    //net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));
+    //std::cout << "[Test] xDim = " << xDim << ", yDim = " << yDim << std::endl;
+    */    
 
+    net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y())); 
     // Set the routed wirelength as HPWL
     int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
     net->setHPWL(hpwl);

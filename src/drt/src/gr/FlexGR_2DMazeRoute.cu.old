@@ -92,6 +92,58 @@ namespace cg = cooperative_groups;
 __device__ __host__ __constant__ uint32_t INF32 = 0xFFFFFFFF;
 
 
+struct Rect2D_CUDA {
+  int xMin;
+  int yMin;
+  int xMax;
+  int yMax;
+
+  Rect2D_CUDA(int xMin, int yMin, int xMax, int yMax) : xMin(xMin), yMin(yMin), xMax(xMax), yMax(yMax) {}
+};
+
+
+enum Directions2D {
+  DIR_NORTH    = 0,
+  DIR_RIGHT = 1,
+  DIR_SOUTH  = 2,
+  DIR_LEFT  = 3,
+  DIR_NONE  = 255
+};
+
+
+struct NodeData2D {
+  // forward and backward propagation (heuristic and real cost) (32 bits each)
+  uint32_t forward_h_cost; // heuristic cost
+  uint32_t forward_g_cost; // real cost
+  uint32_t backward_h_cost; // heuristic cost
+  uint32_t backward_g_cost; // real cost
+  uint32_t forward_h_cost_prev; 
+  uint32_t forward_g_cost_prev;
+  uint32_t backward_h_cost_prev;
+  uint32_t backward_g_cost_prev;
+  
+  // Store the direction (for turning point cost and path reconstruction)
+  uint8_t forward_direction;
+  uint8_t backward_direction;
+  uint8_t forward_direction_prev;
+  uint8_t backward_direction_prev;
+  int golden_parent_x;
+  int golden_parent_y;
+
+  // Flags (1 bit each, packed into a single 8-bit field)
+  struct Flags {
+    uint8_t src_flag : 1; // 1 if this node is the source
+    uint8_t dst_flag : 1; // 1 if this node is the destination
+    uint8_t forward_update_flag: 1; // 1 if the forward cost is updated
+    uint8_t backward_update_flag: 1; // 1 if the backward cost is updated
+    uint8_t forward_visited_flag: 1; // 1 if the forward node is visited
+    uint8_t backward_visited_flag: 1; // 1 if the backward node is visited
+    uint8_t forward_visited_flag_prev: 1; // 1 if the forward node is visited
+    uint8_t backward_visited_flag_prev: 1; // 1 if the backward node is visited
+  }  flags;
+};
+
+
 
 __host__ __device__ 
 void initNodeData2D(NodeData2D& nd) {
@@ -1182,7 +1234,12 @@ void runBiBellmanFord2D_v4__device(
     }
     __syncthreads();
     return;
-  } 
+  } else {
+    if (tid == 0) {
+      printf("biwaveBellmanFord_2D_v3__device converged. doneFlag = true \n");
+    }
+  }
+
   __syncthreads();  
 
   // Identify the minimum total cost (forward + backward) among meeting nodes.
@@ -1226,15 +1283,10 @@ void runBiBellmanFord2D_v4__device(
   if (tracebackError == 0) {
     // ----- Forward Traceback (Thread 0) -----
     if (threadIdx.x == 0) {
-      // printf("Start the traceback\n");
+      printf("Start the traceback\n");
       int tempIter = 0;      
       // Update the meetId accordingly to remove redundant path
       while (d_nodes[s_meetId].forward_direction == d_nodes[s_meetId].backward_direction && tempIter < total) {
-        if (d_nodes[s_meetId].forward_direction == DIR_NONE) {
-          printf("Warning: forward_direction == DIR_NONE\n");
-          break;
-        }
-        
         int2 xy = idxToLoc_2D(s_meetId, xDim);
         auto direction = d_nodes[s_meetId].forward_direction;
         int nx = xy.x + s_dX[direction];
@@ -1247,7 +1299,7 @@ void runBiBellmanFord2D_v4__device(
         printf("Warning: reduce iteration exceeded maximum iterations.\n");
       }
             
-      // printf("Start the forward traceback\n");
+      printf("Start the forward traceback\n");
 
       int forwardCurId = s_meetId;
       int forwardIteration = 0;
@@ -1271,7 +1323,7 @@ void runBiBellmanFord2D_v4__device(
     // }
     
 
-     //  printf("Start the backward traceback\n");
+      printf("Start the backward traceback\n");
     // ----- Backward Traceback (Thread 1) -----
     // if (threadIdx.x == 1) {
       int backwardCurId = s_meetId;
@@ -1289,8 +1341,6 @@ void runBiBellmanFord2D_v4__device(
             break;
           }
           int nextId = locToIdx_2D(nx, ny, xDim);
-          
-          /*
           if (d_nodes[nextId].golden_parent_x != -1 || d_nodes[nextId].golden_parent_y != -1) {
             printf("Error: Backward traceback meets forward traceback.\n");
             printf("meetId = %d\n", s_meetId); 
@@ -1307,8 +1357,7 @@ void runBiBellmanFord2D_v4__device(
               d_nodes[nextId].flags.dst_flag, d_nodes[nextId].flags.src_flag);
             atomicExch(&tracebackError, 1);
             break;      
-          } */
-
+          }
           d_nodes[nextId].flags.src_flag = 1;
           d_nodes[nextId].golden_parent_x = xy.x;
           d_nodes[nextId].golden_parent_y = xy.y;
@@ -1320,7 +1369,7 @@ void runBiBellmanFord2D_v4__device(
           printf("Warning: Backward traceback exceeded maximum iterations.\n");
         }
       }
-      // printf("End the traceback\n");
+      printf("End the traceback\n");
 
     }
   }
@@ -1332,424 +1381,12 @@ void runBiBellmanFord2D_v4__device(
 
 
 
-// Define the device function for the biwaveBellmanFord_2D_v4__device
-__device__
-void runBiBellmanFord2D_v5__device(
-  int netId,
-  NodeData2D* d_nodes,
-  uint64_t* d_costMap, 
-  const int* __restrict__ d_dX, 
-  const int* __restrict__ d_dY,
-  const int* __restrict__ d_xCoords,
-  const int* __restrict__ d_yCoords,
-  int LLX, int LLY, int URX, int URY,
-  int xDim, 
-  int maxIters,
-  float congThreshold,
-  unsigned BLOCKCOST,
-  unsigned OVERFLOWCOST,
-  unsigned HISTCOST)
-{
-  // Each device function is handled by a single block
-  int total = (URX - LLX + 1) * (URY - LLY + 1);
-  int tid = threadIdx.x;
-  int stride = blockDim.x; 
-  int xDimTemp = URX - LLX + 1;
-  
-  // Define the shared memory for d_dx and d_dy
-  __shared__ int s_dX[4];
-  __shared__ int s_dY[4];
-  __shared__ volatile int s_doneFlag;
-  __shared__ volatile int s_minCost;
-  //__shared__ volatile int s_meetId;
-  __shared__ unsigned long long s_meet;
-  __shared__ volatile int tracebackError;   // 0: no error; 1: error detected
-  __shared__ int s_minForwardCost;
-  __shared__ int s_minBackwardCost;
-  
-  // Load the d_dX and d_dY into shared memory
-  if (tid < 4) {
-    s_dX[tid] = d_dX[tid];
-    s_dY[tid] = d_dY[tid];
-    if (tid == 0) {
-      s_doneFlag = 0;
-      s_minCost = 0x7FFFFFFF;
-      //s_meetId = 0x7FFFFFFF;
-      s_meet = 0xFFFFFFFFFFFFFFFFULL;
-      tracebackError = 0;
-      s_minForwardCost = 0x7FFFFFFF;
-      s_minBackwardCost = 0x7FFFFFFF;
-    }
-  }
-  __syncthreads();
-
-  for (int localIdx = tid; localIdx < total; localIdx += stride) {
-    int x = localIdx % xDimTemp + LLX;
-    int y = localIdx / xDimTemp + LLY;
-    int idx = locToIdx_2D(x, y, xDim);
-    if (d_nodes[idx].flags.dst_flag) {
-      atomicExch((int*)&s_doneFlag, 1);
-      break; // Exit early if any destination node is found.
-    }
-  }
-  __syncthreads();
-
-  if (!s_doneFlag) {
-    return;
-  } 
-  
-  if (tid == 0) {
-    s_doneFlag = 0;
-  }
-
-  __syncthreads();
-
-  // We'll do up to maxIters or until no changes / front-meet
-  for (int iter = 0; iter < maxIters && (s_doneFlag == 0); iter++)
-  {
-    bool localFrontsMeet = false;
-
-    ////////////////////////////////////////////////////////////////////////////
-    // (1) Forward & backward relaxation phase
-    ////////////////////////////////////////////////////////////////////////////
-    for (int localIdx = tid; localIdx < total; localIdx += stride) {
-      int x = localIdx % xDimTemp + LLX;
-      int y = localIdx / xDimTemp + LLY;
-      int idx = locToIdx_2D(x, y, xDim);
-      NodeData2D &nd = d_nodes[idx];
-
-      // Forward relaxation:
-      // Skip if src_flag is set.
-      if (!nd.flags.src_flag) {
-        uint32_t bestCost = nd.forward_g_cost_prev;
-        int      bestD    = -1;
-        for (int d = 0; d < 4; d++) {
-          int nx = x + s_dX[d];
-          int ny = y + s_dY[d];
-          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
-            continue;  // out of bounds
-          }
-          int nbrIdx = locToIdx_2D(nx, ny, xDim);
-          uint32_t neighborCost = d_nodes[nbrIdx].forward_g_cost_prev;
-          if (neighborCost == 0xFFFFFFFF) {
-            continue;
-          }
-          uint32_t newG = neighborCost +
-            getNeighorCost2D(d_costMap, d_xCoords, d_yCoords,
-              congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-              idx, x, y, nbrIdx, nx, ny);
-          if (newG < bestCost) {
-            bestCost = newG;
-            bestD    = d;
-          }
-        } // end neighbor loop
-
-        if (bestD != -1) { // Found an improvement
-          nd.forward_g_cost = bestCost;
-          nd.forward_direction = computeParentDirection2D(bestD);
-          nd.flags.forward_update_flag = 1;
-        }
-      } // end forward
-
-      // Backward relaxation:
-      // newCost = min over neighbors of (neighbor.backward_cost + edgeWeight).
-      // Skip if dst_flag is set.
-      if (!nd.flags.dst_flag) {
-        uint32_t bestCost = nd.backward_g_cost_prev;
-        int      bestD    = -1;
-        for (int d = 0; d < 4; d++) {
-          int nx = x + s_dX[d];
-          int ny = y + s_dY[d];
-          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
-            continue;  // out of bounds
-          }
-          int nbrIdx = locToIdx_2D(nx, ny, xDim);
-          uint32_t neighborCost = d_nodes[nbrIdx].backward_g_cost_prev;
-          if (neighborCost == 0xFFFFFFFF) {
-            continue;
-          }
-          uint32_t newG = neighborCost +
-            getNeighorCost2D(d_costMap, d_xCoords, d_yCoords,
-              congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST,
-              idx, x, y, nbrIdx, nx, ny);
-          if (newG < bestCost) {
-            bestCost = newG;
-            bestD    = d;
-          }
-        } // end neighbor loop
-
-        if (bestD != -1) {
-          nd.backward_g_cost = bestCost;
-          nd.backward_direction = computeParentDirection2D(bestD);
-          nd.flags.backward_update_flag = 1;
-        }
-      } // end backward
-    } // end for each node (relaxation)
-    __syncthreads();
-
-    ////////////////////////////////////////////////////////////////////////////
-    // (2) Commit updated costs (double-buffering technique)
-    ////////////////////////////////////////////////////////////////////////////
-    for (int localIdx = tid; localIdx < total; localIdx += stride) {
-      int local_x = localIdx % xDimTemp + LLX;
-      int local_y = localIdx / xDimTemp + LLY;
-      int idx = locToIdx_2D(local_x, local_y, xDim);
-      NodeData2D &nd = d_nodes[idx];
-      if (nd.flags.forward_update_flag) {
-        nd.flags.forward_update_flag = false;
-        nd.forward_g_cost_prev = nd.forward_g_cost;
-        atomicMin(&s_minForwardCost, nd.forward_g_cost);
-      }
-      if (nd.flags.backward_update_flag) {
-        nd.flags.backward_update_flag = false;
-        nd.backward_g_cost_prev = nd.backward_g_cost;
-        atomicMin(&s_minBackwardCost, nd.backward_g_cost);
-      }
-      // Save previous visited flags for later comparisons.
-      nd.flags.forward_visited_flag_prev = nd.flags.forward_visited_flag;
-      nd.flags.backward_visited_flag_prev = nd.flags.backward_visited_flag;
-    }
-    __syncthreads();
-
-    ////////////////////////////////////////////////////////////////////////////
-    // (3) Mark nodes using parallel reduction to select the minimum cost nodes.
-    //     For the forward side, we find the node with the minimum forward_g_cost
-    //     (among nodes not already visited) and mark its forward_visited_flag.
-    //     Similarly for the backward side.    
-    // Alternatively, one could scan all nodes to check for any node that has both flags true.
-    for (int localIdx = tid; localIdx < total; localIdx += stride) {
-      int local_x = localIdx % xDimTemp + LLX;
-      int local_y = localIdx / xDimTemp + LLY;
-      int idx = locToIdx_2D(local_x, local_y, xDim);
-      NodeData2D &nd = d_nodes[idx];
-      if (nd.forward_g_cost_prev <= s_minForwardCost) {
-        nd.flags.forward_visited_flag = true;
-      }
-
-      if (nd.backward_g_cost_prev <= s_minBackwardCost) {
-        nd.flags.backward_visited_flag = true;
-      }
-
-      // Check if the forward and backward fronts meet.
-      if (nd.flags.forward_visited_flag && nd.flags.backward_visited_flag) {
-        localFrontsMeet = true;
-      }
-    }
-
-    __syncthreads();
-
-    if (localFrontsMeet) {
-      atomicExch((int*)&s_doneFlag, 1);
-    }
-    
-    if (tid == 0) {
-      s_minForwardCost = 0x7FFFFFFF;
-      s_minBackwardCost = 0x7FFFFFFF;
-    }
-    
-    __syncthreads();
-
-  } // end for (iter)
-
-  __syncthreads();
-
-  // Ensure all threads know the doneFlag
-  bool converged = (s_doneFlag == 1);
-  if (!converged) {
-    if (tid == 0) {
-      printf("Error! biwaveBellmanFord_2D_v3__device did not converge. doneFlag = false netId = %d\n", netId);
-      for (int localIdx = 0; localIdx < total; localIdx++) {
-        int local_x = localIdx % xDimTemp + LLX;
-        int local_y = localIdx / xDimTemp + LLY;
-        int idx = locToIdx_2D(local_x, local_y, xDim);
-        printf("node id = %d, x = %d, y = %d ", idx, local_x, local_y);
-        printNode2D(d_nodes[idx]);
-      }
-    }
-    __syncthreads();
-    return;
-  } 
-  __syncthreads();  
 
 
-  /*
-  // Identify the meetId corresponding to the minimum cost.
-  for (int localIdx = tid; localIdx < total; localIdx += stride) {
-    int local_x = localIdx % xDimTemp + LLX;
-    int local_y = localIdx / xDimTemp + LLY;
-    int idx = locToIdx_2D(local_x, local_y, xDim);
-    auto& nd = d_nodes[idx];
-    if (nd.flags.forward_visited_flag && nd.flags.backward_visited_flag) {
-      atomicMin((int*)&s_meetId, idx);      
-    }
-  }
-  __syncthreads();
-  */
 
 
-  // Iterate over your domain. Assume tid and stride are defined appropriately.
-  for (int localIdx = tid; localIdx < total; localIdx += stride) {
-    int local_x = localIdx % xDimTemp + LLX;
-    int local_y = localIdx / xDimTemp + LLY;
-    int idx = locToIdx_2D(local_x, local_y, xDim);
-    auto& nd = d_nodes[idx];
-  
-    // Only consider nodes visited from both directions.
-    if (nd.flags.forward_visited_flag && nd.flags.backward_visited_flag) {
-      // Assume each node has an integer cost value.
-      int cost = nd.forward_g_cost + nd.backward_g_cost;
-      // Pack the cost and idx into a 64-bit value.
-      // Lower cost (in high bits) gives a lower overall value.
-      unsigned long long candidate = (((unsigned long long)cost) << 32) | ((unsigned int)idx);
-      atomicMin(&s_meet, candidate);
-    }
-  }
-  __syncthreads();
 
 
-  // After the loop, the meetId is stored in the lower 32 bits of s_meet.
-  int s_meetId = (int)(s_meet & 0xFFFFFFFF);
-
-
-  // Check if s_meetId is valid.
-  if (s_meetId == 0x7FFFFFFF) {
-    if (threadIdx.x == 0 || threadIdx.x == 1) {
-      printf("Error! biwaveBellmanFord_2D_v3__device did not converge. meetId = 0x7FFFFFFF, netId = %d\n", netId);
-    }
-    if (threadIdx.x == 0 || threadIdx.x == 1) {
-      atomicExch((int*)&tracebackError, 1);
-    }
-  }
-  __syncthreads();
-  
-  // Only threads 0 and 1 perform the traceback if no error occurred.
-  if (tracebackError == 0) {
-    // ----- Forward Traceback (Thread 0) -----
-    if (threadIdx.x == 0) {
-      
-      /*
-      if (netId == 537) {
-        printf("*****************************************************************\n");
-        printf("meetId = %d, netId = %d\n", s_meetId, netId);
-        for (int idx = 0; idx < total; idx++) {
-          int local_x = idx % xDimTemp + LLX;
-          int local_y = idx / xDimTemp + LLY;
-          int id = locToIdx_2D(local_x, local_y, xDim);
-          printf("node id = %d, x = %d, y = %d ", id, local_x, local_y);
-          printNode2D(d_nodes[id]);
-        }
-        printf("\n");
-      }*/
-      
-      
-      
-      // printf("Start the traceback\n");
-      int tempIter = 0;      
-      // Update the meetId accordingly to remove redundant path
-      while (d_nodes[s_meetId].forward_direction == d_nodes[s_meetId].backward_direction && tempIter < total) {
-        if (d_nodes[s_meetId].forward_direction == DIR_NONE) {
-          printf("Warning: forward_direction == DIR_NONE netId = %d s_meetId = %d\n", netId, s_meetId);
-          for (int idx = 0; idx < total; idx++) {
-            int local_x = idx % xDimTemp + LLX;
-            int local_y = idx / xDimTemp + LLY;
-            int id = locToIdx_2D(local_x, local_y, xDim);
-            printf("node id = %d, x = %d, y = %d ", id, local_x, local_y);
-            printNode2D(d_nodes[id]);
-          }
-          break;
-        }
-        
-        int2 xy = idxToLoc_2D(s_meetId, xDim);
-        auto direction = d_nodes[s_meetId].forward_direction;
-        int nx = xy.x + s_dX[direction];
-        int ny = xy.y + s_dY[direction];
-        s_meetId = locToIdx_2D(nx, ny, xDim);
-        tempIter++;
-      }
-
-      if (tempIter >= total) {
-        printf("Warning: reduce iteration exceeded maximum iterations. netId = %d\n", netId);
-      }
-            
-      // printf("Start the forward traceback\n");
-
-      int forwardCurId = s_meetId;
-      int forwardIteration = 0;
-      while (!d_nodes[forwardCurId].flags.src_flag && forwardIteration < total) {
-        uint8_t fwdDir = d_nodes[forwardCurId].forward_direction;
-        int2 xy = idxToLoc_2D(forwardCurId, xDim);
-        int nx = xy.x + s_dX[fwdDir];
-        int ny = xy.y + s_dY[fwdDir];
-        if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
-          break;
-        }
-        d_nodes[forwardCurId].golden_parent_x = nx;
-        d_nodes[forwardCurId].golden_parent_y = ny;
-        d_nodes[forwardCurId].flags.src_flag = 1;
-        forwardCurId = locToIdx_2D(nx, ny, xDim);
-        forwardIteration++;
-      }
-      if (forwardIteration >= total) {
-        printf("Warning: Forward traceback exceeded maximum iterations. netId = %d\n", netId);
-      }
-    // }
-    
-
-     //  printf("Start the backward traceback\n");
-    // ----- Backward Traceback (Thread 1) -----
-    // if (threadIdx.x == 1) {
-      int backwardCurId = s_meetId;
-      int backwardIteration = 0;
-      if (d_nodes[backwardCurId].flags.dst_flag == 1) {
-        d_nodes[backwardCurId].flags.dst_flag = 0; // Reset dst flag.
-        d_nodes[backwardCurId].flags.src_flag = 1;
-      } else {
-        while (!d_nodes[backwardCurId].flags.dst_flag && backwardIteration < total) {
-          int2 xy = idxToLoc_2D(backwardCurId, xDim);
-          uint8_t backwardDir = d_nodes[backwardCurId].backward_direction;
-          int nx = xy.x + s_dX[backwardDir];
-          int ny = xy.y + s_dY[backwardDir];
-          if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
-            break;
-          }
-          int nextId = locToIdx_2D(nx, ny, xDim);
-          
-          /*
-          if (d_nodes[nextId].golden_parent_x != -1 || d_nodes[nextId].golden_parent_y != -1) {
-            printf("Error: Backward traceback meets forward traceback.\n");
-            printf("meetId = %d\n", s_meetId); 
-            for (int localIdx = 0; localIdx < total; localIdx++) {
-              int local_x = localIdx % xDimTemp + LLX;
-              int local_y = localIdx / xDimTemp + LLY;
-              int idx = locToIdx_2D(local_x, local_y, xDim);
-              printf("node id = %d, x = %d, y = %d ", idx, local_x, local_y);
-              printNode2D(d_nodes[idx]);
-            }
-            printf("nextId = %d, x = %d, y = %d,  golden_parent_x = %d, golden_parent_y = %d, dst_flag = %d, src_flag = %d\n", 
-              nextId, nx, ny, 
-              d_nodes[nextId].golden_parent_x, d_nodes[nextId].golden_parent_y, 
-              d_nodes[nextId].flags.dst_flag, d_nodes[nextId].flags.src_flag);
-            atomicExch(&tracebackError, 1);
-            break;      
-          } */
-           
-          d_nodes[nextId].flags.src_flag = 1;
-          d_nodes[nextId].golden_parent_x = xy.x;
-          d_nodes[nextId].golden_parent_y = xy.y;
-          backwardCurId = nextId;
-          backwardIteration++;
-        }
-        d_nodes[backwardCurId].flags.dst_flag = 0;
-        if (backwardIteration >= total) {
-          printf("Warning: Backward traceback exceeded maximum iterations. netId = %d\n", netId);
-        }
-      }
-      // printf("End the traceback\n");
-
-    }
-  }
-  __syncthreads();
-}
 
 
 
@@ -1771,8 +1408,8 @@ void initNodeData2D_v3__device(
     int local_y = localIdx / xDimTemp + LLY;
     int idx = locToIdx_2D(local_x, local_y, xDim);
     // int2 xy = idxToLoc_2D(idx, xDim);
-    // int2 src = idxToLoc_2D(d_pins[pinIterStart + pinIter - 1], xDim);
-    // int2 dst = idxToLoc_2D(d_pins[pinIterStart + pinIter], xDim);
+    int2 src = idxToLoc_2D(d_pins[pinIterStart + pinIter - 1], xDim);
+    int2 dst = idxToLoc_2D(d_pins[pinIterStart + pinIter], xDim);
   
     // The experimental results show that the heuristic cost is not needed
     d_nodes[idx].forward_h_cost = 0;
@@ -1816,35 +1453,6 @@ void initNodeData2D_v3__device(
 }
 
 
-__device__
-void checkConnectivity__device(
-  NodeData2D* d_nodes,
-  int LLX, int LLY, int URX, int URY, // Bounding box
-  int xDim)
-{
-  int total = (URX - LLX + 1) * (URY - LLY + 1);
-  int xDimTemp = URX - LLX + 1;
-  int tid = threadIdx.x;
-  int stride = blockDim.x;
-  
-  for (int localIdx = tid; localIdx < total; localIdx += stride) {
-    int local_x = localIdx % xDimTemp + LLX;
-    int local_y = localIdx / xDimTemp + LLY;
-    int idx = locToIdx_2D(local_x, local_y, xDim);
-    if (d_nodes[idx].flags.dst_flag) {
-      printf("Error: dst_flag is set. idx = %d, x = %d, y = %d\n", idx, local_x, local_y);
-    }
-
-    if (d_nodes[idx].golden_parent_x == -1 && d_nodes[idx].golden_parent_y != d_nodes[idx].golden_parent_x) {
-      printf("Error: golden_parent_x = %d, golden_parent_y = %d, idx = %d, x = %d, y = %d\n", 
-        d_nodes[idx].golden_parent_x, d_nodes[idx].golden_parent_y, idx, local_x, local_y);
-    }
-  }
-}
-
-
-
-
 __device__ 
 void biwaveBellmanFord2D_v3__device(
   int netId,
@@ -1886,19 +1494,13 @@ void biwaveBellmanFord2D_v3__device(
     __syncthreads(); // Synchronize all threads in the block
 
     // Run the Bellman Ford algorithm
-    runBiBellmanFord2D_v5__device(
-      netId, 
+    runBiBellmanFord2D_v3__device(
       d_nodes, d_costMap, d_dX, d_dY, d_xCoords, d_yCoords,
       LLX, LLY, URX, URY, xDim, maxIters,
       congThreshold, BLOCKCOST, OVERFLOWCOST, HISTCOST);  
 
     __syncthreads(); // Synchronize all threads in the block
   }
-
-  // Check the connectivity
-  checkConnectivity__device(
-    d_nodes,
-    LLX, LLY, URX, URY, xDim);
 }
 
 
@@ -1961,18 +1563,6 @@ void initBatchNodeData2D_v3__kernel(
 }
 
 
-__global__
-void copyParents2D__kernel(
-  NodeData2D* d_nodes,
-  Point2D_CUDA* d_parents,
-  int numNodes)
-{
-  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < numNodes; idx += gridDim.x * blockDim.x) {
-    d_parents[idx].x = d_nodes[idx].golden_parent_x;
-    d_parents[idx].y = d_nodes[idx].golden_parent_y;
-  }
-}
-
 
 __global__
 void initBatchPin2D_v3__kernel(
@@ -2015,371 +1605,10 @@ void initBatchPin2D_v3__kernel(
 }
 
 
-
-float ChunkPathSyncUp(
-  std::vector<std::unique_ptr<FlexGRWorker>>& uworkers,
-  std::vector<grNet*>& nets,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
-  std::vector<Point2D_CUDA>& h_parents,
-  int netIdStart,
-  int netIdEnd,
-  int xDim)
-{ 
-  auto syncupTimeStart = std::chrono::high_resolution_clock::now();
-  for (int netId = netIdStart; netId < netIdEnd; netId++) {
-    auto& net = nets[netId];
-    auto& uworker = uworkers[net->getWorkerId()];
-    auto& gridGraph = uworker->getGridGraph();
-    auto workerLL = uworkers[net->getWorkerId()]->getRouteGCellIdxLL();
-    int workerLX = workerLL.x();
-    int workerLY = workerLL.y();  
-    auto& netBBox = netBBoxVec[netId];
-    int LLX = netBBox.xMin;
-    int LLY = netBBox.yMin;
-    int URX = netBBox.xMax;
-    int URY = netBBox.yMax;
-    int xDimTemp = URX - LLX + 1;
-    int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
-    for (int localIdx = 0; localIdx < numNodes; localIdx++) {
-      int localX = localIdx % xDimTemp;
-      int localY = localIdx / xDimTemp;
-
-      int x = localX + LLX;
-      int y = localY + LLY;      
-      int idx = locToIdx_2D(x, y, xDim);
-
-      x -= workerLX;
-      y -= workerLY;
-
-      int parentX = h_parents[idx].x - workerLX;
-      int parentY = h_parents[idx].y - workerLY;
-
-      //int parentX = nodes[idx].golden_parent_x - workerLX;
-      //int parentY = nodes[idx].golden_parent_y - workerLY;
-
-      gridGraph.setGoldenParent2D(x, y, parentX, parentY);      
-      /*
-      if (nodes[idx].golden_parent_x != -1 || nodes[idx].golden_parent_y != -1) {
-        std::cout << "Net " << netId << " x = " << x << " y = " << y << " "
-                  << "Parent " << parentX << "  " << parentY << std::endl;
-      }
-      */
-    }    
-  }
-
-  auto syncupTimeEnd = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> syncupTime = syncupTimeEnd - syncupTimeStart;
-  return syncupTime.count();
-}
-
-
-void FlexGR::allocateCUDAMem(
-  std::vector<uint64_t>& h_costMap,
-  std::vector<int>& h_xCoords,
-  std::vector<int>& h_yCoords,
-  std::vector<Point2D_CUDA>& h_parents,
-  std::vector<int>& pinIdxVec,
-  std::vector<int>& netPtr,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
-  std::vector<int>& netBatchIdxVec,
-  int numGrids,
-  int numNodes)
-{  
-  // We have defined the following variables
-  // h_costMap_size_
-  // h_xCoords_size_
-  // h_yCoords_size_
-  // h_parents_size_
-  // h_pinIdxVec_size_
-  // h_netPtr_size_
-  // h_netBBoxVec_size_
-  // h_netBatchIdxVec_size_ 
-  // h_nodes_size_
-
-  if (d_dX_ == nullptr) {
-    std::vector<int> h_dX = {0, 1, 0, -1};
-    std::vector<int> h_dY = {1, 0, -1, 0};
-    cudaMalloc(&d_dX_, 4 * sizeof(int));
-    cudaMalloc(&d_dY_, 4 * sizeof(int));
-    cudaMemcpy(d_dX_, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_dY_, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-  }
-
-  if (h_xCoords.size() > h_costMap_size_) {
-    h_xCoords_size_ = h_xCoords.size();
-    cudaFree(d_xCoords_);
-    cudaMalloc(&d_xCoords_, h_xCoords.size() * sizeof(int));
-    cudaMemcpy(d_xCoords_, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice); 
-  }
-
-  if (h_yCoords.size() > h_costMap_size_) {
-    h_yCoords_size_ = h_yCoords.size();
-    cudaFree(d_yCoords_);
-    cudaMalloc(&d_yCoords_, h_yCoords.size() * sizeof(int));
-    cudaMemcpy(d_yCoords_, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  }
-
-  if (h_costMap.size() > h_costMap_size_) {
-    h_costMap_size_ = h_costMap.size();
-    cudaFree(d_costMap_);
-    cudaMalloc(&d_costMap_, h_costMap.size() * sizeof(uint64_t));
-  }
-  cudaMemcpy(d_costMap_, h_costMap.data(), h_costMap.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
-
-  if (h_parents.size() > h_parents_size_) {
-    h_parents_size_ = h_parents.size();
-    cudaFree(d_parents_);
-    cudaMalloc(&d_parents_, h_parents.size() * sizeof(Point2D_CUDA));
-  }
-  cudaMemcpy(d_parents_, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (pinIdxVec.size() > h_pinIdxVec_size_) {
-    h_pinIdxVec_size_ = pinIdxVec.size();
-    cudaFree(d_pinIdxVec_);
-    cudaMalloc(&d_pinIdxVec_, pinIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_pinIdxVec_, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-  if (netPtr.size() > h_netPtr_size_) {
-    h_netPtr_size_ = netPtr.size();
-    cudaFree(d_netPtr_);
-    cudaMalloc(&d_netPtr_, netPtr.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netPtr_, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-  if (netBBoxVec.size() > h_netBBoxVec_size_) {
-    h_netBBoxVec_size_ = netBBoxVec.size();
-    cudaFree(d_netBBox_);
-    cudaMalloc(&d_netBBox_, netBBoxVec.size() * sizeof(Rect2D_CUDA));
-  }
-  cudaMemcpy(d_netBBox_, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
-    h_netBatchIdxVec_size_ = netBatchIdxVec.size();
-    cudaFree(d_netBatchIdx_);
-    cudaMalloc(&d_netBatchIdx_, netBatchIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netBatchIdx_, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-  if (numNodes > h_nodes_size_) {
-    h_nodes_size_ = numNodes;
-    cudaFree(d_nodes_);
-    cudaMalloc(&d_nodes_, numNodes * sizeof(NodeData2D));
-  }
-  cudaCheckError();
-}
-
-
-/*
-void FlexGR::allocateCUDAMem(
-  int* d_dX,
-  int* d_dY,
-  uint64_t* d_costMap,
-  int* d_xCoords,
-  int* d_yCoords,
-  NodeData2D* d_nodes,
-  Point2D_CUDA* d_parents,
-  int* d_pinIdxVec,
-  int* d_netPtr,
-  Rect2D_CUDA* d_netBBox,
-  int* d_netBatchIdx,
-  std::vector<uint64_t>& h_costMap,
-  std::vector<int>& h_xCoords,
-  std::vector<int>& h_yCoords,
-  std::vector<Point2D_CUDA>& h_parents,
-  std::vector<int>& pinIdxVec,
-  std::vector<int>& netPtr,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
-  std::vector<int>& netBatchIdxVec,
-  int numGrids,
-  int numNodes)
-{  
-  // We have defined the following variables
-  // h_costMap_size_
-  // h_xCoords_size_
-  // h_yCoords_size_
-  // h_parents_size_
-  // h_pinIdxVec_size_
-  // h_netPtr_size_
-  // h_netBBoxVec_size_
-  // h_netBatchIdxVec_size_ 
-  // h_nodes_size_
-
-  std::vector<int> h_dX = {0, 1, 0, -1};
-  std::vector<int> h_dY = {1, 0, -1, 0};
-
-  cudaFree(d_dX);
-  cudaFree(d_dY);
-  cudaFree(d_costMap);
-  cudaFree(d_xCoords);
-  cudaFree(d_yCoords);
-  cudaFree(d_parents);
-  cudaFree(d_pinIdxVec);
-  cudaFree(d_netPtr);
-  cudaFree(d_netBBox);
-  cudaFree(d_netBatchIdx);
-  cudaFree(d_nodes);
-
-  // Allocate the device memory for the d_dX and d_dY
-  cudaMalloc(&d_dX, 4 * sizeof(int));
-  cudaMalloc(&d_dY, 4 * sizeof(int));
-  
-  cudaMalloc(&d_costMap, numGrids * sizeof(uint64_t));
-  cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
-  cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
-  
-  cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
-  cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D_CUDA));
-
-  cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
-  cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
-  cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
-
-  
-  cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-
-  cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
-
-  cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);  
-
-
-
-
-  
-  if (d_dX == nullptr) {
-    std::vector<int> h_dX = {0, 1, 0, -1};
-    std::vector<int> h_dY = {1, 0, -1, 0};
-    int* d_dX = nullptr;
-    int* d_dY = nullptr;
-    cudaMalloc(&d_dX, 4 * sizeof(int));
-    cudaMalloc(&d_dY, 4 * sizeof(int));
-    cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_xCoords.size() > h_xCoords_size_) {
-    h_xCoords_size_ = h_xCoords.size();
-    cudaFree(d_xCoords);
-    cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
-    cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_yCoords.size() > h_yCoords_size_) {
-    h_yCoords_size_ = h_yCoords.size();
-    cudaFree(d_yCoords);
-    cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
-    cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_costMap.size() > h_costMap_size_) {
-    h_costMap_size_ = h_costMap.size();
-    cudaFree(d_costMap);
-    cudaMalloc(&d_costMap, h_costMap.size() * sizeof(uint64_t));
-  }
-  cudaMemcpy(d_costMap, h_costMap.data(), h_costMap.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
-
-  if (h_parents.size() > h_parents_size_) {
-    h_parents_size_ = h_parents.size();
-    cudaFree(d_parents);
-    cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D_CUDA));
-  }
-  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (pinIdxVec.size() > h_pinIdxVec_size_) {
-    h_pinIdxVec_size_ = pinIdxVec.size();
-    cudaFree(d_pinIdxVec);
-    cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-  if (netPtr.size() > h_netPtr_size_) {
-    h_netPtr_size_ = netPtr.size();
-    cudaFree(d_netPtr);
-    cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  
-
-  if (netBBoxVec.size() > h_netBBoxVec_size_) {
-    h_netBBoxVec_size_ = netBBoxVec.size();
-    cudaFree(d_netBBox);
-    cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
-  }
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
-    h_netBatchIdxVec_size_ = netBatchIdxVec.size();
-    cudaFree(d_netBatchIdx);
-    cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-  
-
-
-  if (numNodes > h_nodes_size_) {
-    h_nodes_size_ = numNodes;
-    std::cout << "h_nodes_size_ = " << h_nodes_size_ << std::endl;
-    cudaFree(d_nodes);
-    cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
-  }
-  
-
-  cudaCheckError();
-}
-*/
-
-
-void FlexGR::freeCUDAMem()
-{
-  cudaFree(d_dX_);
-  cudaFree(d_dY_);
-  cudaFree(d_costMap_);
-  cudaFree(d_xCoords_);
-  cudaFree(d_yCoords_);
-  cudaFree(d_nodes_);
-  cudaFree(d_parents_);
-  cudaFree(d_pinIdxVec_);
-  cudaFree(d_netPtr_);
-  cudaFree(d_netBBox_);
-  cudaFree(d_netBatchIdx_);
-
-  d_dX_ = nullptr;
-  d_dY_ = nullptr;
-  d_costMap_ = nullptr;
-  d_xCoords_ = nullptr;
-  d_yCoords_ = nullptr;
-  d_nodes_ = nullptr;
-  d_parents_ = nullptr;
-  d_pinIdxVec_ = nullptr;
-  d_netPtr_ = nullptr;
-  d_netBBox_ = nullptr;
-  d_netBatchIdx_ = nullptr;
-
-  h_costMap_size_ = 0;
-  h_xCoords_size_ = 0;
-  h_yCoords_size_ = 0;
-  h_parents_size_ = 0;
-  h_pinIdxVec_size_ = 0;
-  h_netPtr_size_ = 0;
-  h_netBBoxVec_size_ = 0;
-  h_netBatchIdxVec_size_ = 0;
-  h_nodes_size_ = 0;
-
-  cudaCheckError();
-}
-
-
+// In the V3 version, we will use node-level parallelism directly
+// Basically, we do not do the batch-level synchronization anymore
+// Just let the tool run for maxHPWL * value iteratively
+// And see how it works
 float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
   std::vector<std::vector<grNet*> >& netBatches,
@@ -2397,11 +1626,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   auto totalStart = std::chrono::high_resolution_clock::now();
   int numGrids = xDim * yDim;
   int numBatches = validBatches.size();  
-  
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Number of batches: " << numBatches << std::endl;
-  }
-  
+  std::cout << "[INFO] Number of batches: " << numBatches << std::endl;
   if (numBatches == 0) {
     return 0.0;
   }
@@ -2417,253 +1642,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   int maxHPWL = 0; // We will run the algorithm for maxHPWL * relaxThreshold iteratively
   
   // We need to divide the batches into multiple chunks due to the memory limitation
-  int maxChunkSize = 200;  // Basically we allows 200 batches to be processed in one chunk
+  // int maxChunkSize = 200;  // Basically we allows 200 batches to be processed in one chunk
   // For testing 
-  // int maxChunkSize = 1;
+  int maxChunkSize = 1;
   
   std::vector<int> chunkNetPtr; // store the first netIdx of each chunk
-  
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Max chunk size: " << maxChunkSize << std::endl;
-  }
-
-  netPtr.push_back(0);
-  chunkNetPtr.push_back(0);
-
-  int maxBatchSize = 0;
-  int minBatchSize = std::numeric_limits<int>::max();
-
-  int batchChunkIdx = 0;
-  for (int batchIdx = 0; batchIdx < numBatches; batchIdx++) {
-    auto& batch = netBatches[validBatches[batchIdx]];
-    for (auto& net : batch) {
-      for (auto& idx : net->getPinGCellAbsIdxs()) {
-        netVec.push_back(Point2D_CUDA(idx.x(), idx.y()));
-        pinIdxVec.push_back(locToIdx_2D(idx.x(), idx.y(), xDim));
-      }
-      netBatchIdxVec.push_back(batchChunkIdx);
-      netPtr.push_back(netVec.size());
-      auto netBBox = net->getRouteAbsBBox();
-      netBBoxVec.push_back(
-        Rect2D_CUDA(netBBox.xMin(), netBBox.yMin(), netBBox.xMax(), netBBox.yMax()));
-      // maxHPWL = std::max(maxHPWL, net->getHPWL());
-      maxHPWL = std::max(maxHPWL, static_cast<int>((netBBox.xMax() - netBBox.xMin()) * (netBBox.yMax() - netBBox.yMin())));
-    }
-   
-    batchChunkIdx++;
-
-    if (batchChunkIdx % maxChunkSize == 0) {
-      chunkNetPtr.push_back(netPtr.size() - 1);
-      batchChunkIdx = 0;
-    }
-    
-    maxBatchSize = std::max(maxBatchSize, static_cast<int>(batch.size()));
-    minBatchSize = std::min(minBatchSize, static_cast<int>(batch.size()));
-  }
- 
-  if (batchChunkIdx != 0) {
-    chunkNetPtr.push_back(netPtr.size() - 1);
-  }
-
-  int numNets = static_cast<int>(netBBoxVec.size());
-  int numChunks = static_cast<int>(chunkNetPtr.size()) - 1;
-  
-  if (numChunks > numBatches) {
-    std::cout << "[ERROR] Number of chunks is larger than the number of batches." << std::endl;
-    exit(1);
-    return 0.0;
-  }  
-  
-  int chunkSize = std::min(maxChunkSize, numBatches);
-  int maxIters = static_cast<int>(maxHPWL * relaxThreshold);
-  int numNodes = numGrids * chunkSize;
-
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Number of nets: " << numNets << std::endl;
-    std::cout << "[INFO] Number of chunks: " << numChunks << std::endl;
-    std::cout << "[INFO] Chunk size: " << chunkSize << std::endl; 
-    std::cout << "[INFO] Max batch size: " << maxBatchSize << std::endl;
-    std::cout << "[INFO] Min batch size: " << minBatchSize << std::endl;
-    std::cout << "[INFO] Max HPWL: " << maxHPWL << std::endl;
-    std::cout << "[INFO] Max iterations: " << maxIters << std::endl;
-    std::cout << "[INFO] Number of nodes: " << numNodes << std::endl;
-    std::cout << "[INFO] Number of grids: " << numGrids << std::endl;
-  }
-
-  for (int i = 0; i < netBatchIdxVec.size(); i++) {
-    if (netBatchIdxVec[i] < 0 || netBatchIdxVec[i] >= chunkSize) {
-      std::cout << "[ERROR] Net " << i << " is in batch " << netBatchIdxVec[i] << std::endl;
-    }
-  }
-
-
-  allocateCUDAMem(
-    h_costMap,
-    h_xCoords,
-    h_yCoords,
-    h_parents,
-    pinIdxVec,
-    netPtr,
-    netBBoxVec,
-    netBatchIdxVec,
-    numGrids, 
-    numNodes);
-
-
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Device memory allocation is done." << std::endl;
-  }
-
-  // According to the original code
-  unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
-  unsigned OVERFLOWCOST = 128;
-  unsigned HISTCOST = 4;
- 
-  for (int chunkId = 0; chunkId < numChunks; chunkId++) {
-    int netStartId = chunkNetPtr[chunkId];
-    int netEndId = chunkNetPtr[chunkId + 1];
-    
-    // Perform Global Initialization
-    int numThreads = 1024;
-    int numBatchBlocks = (numNodes + numThreads - 1) / numThreads;
-    
-    initBatchNodeData2D_v3__kernel<<<numBatchBlocks, numThreads>>>(
-      d_nodes_, 
-      numNodes);
-    cudaDeviceSynchronize();
-
-    cudaCheckError();
-
-  
-    int numNets = netEndId - netStartId;
-    if (VERBOSE > 0) {
-      std::cout << "[INFO] Chunk " << chunkId << " has " << numNets << " nets." << std::endl;
-    }
-  
-    int numNetBlocks = (numNets + numThreads - 1) / numThreads;
-    initBatchPin2D_v3__kernel<<<numNetBlocks, numThreads>>>(
-      d_nodes_,
-      d_pinIdxVec_, 
-      d_netPtr_,
-      d_netBatchIdx_,
-      netStartId,
-      netEndId,
-      numGrids);
-    cudaDeviceSynchronize();
-  
-
-    cudaCheckError();
-    // std::cout << "[INFO] Initialization is done." << std::endl;
-
-    //int numThreads = 1024;
-    auto netRouteStart = std::chrono::high_resolution_clock::now();
-    int numBlocks = numNets;
-    biwaveBellmanFord2D_v3__kernel<<<numBlocks, numThreads>>>(
-      netStartId,
-      netEndId,
-      d_netBatchIdx_,
-      d_netPtr_,
-      d_netBBox_,
-      d_pinIdxVec_,
-      d_costMap_,
-      d_nodes_,
-      d_dX_,
-      d_dY_,
-      d_xCoords_,
-      d_yCoords_,
-      maxIters,
-      xDim,
-      yDim,
-      congThreshold,
-      BLOCKCOST,
-      OVERFLOWCOST,
-      HISTCOST);
-    
-    cudaCheckError();
-    
-    cudaDeviceSynchronize();
-    auto netRouteEnd = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> netRouteTime = netRouteEnd - netRouteStart;
-   
-    // copy the back results to the d_parents
-    copyParents2D__kernel<<<numBatchBlocks, numThreads>>>(
-      d_nodes_, 
-      d_parents_, 
-      numNodes);
-
-    cudaDeviceSynchronize();
-    cudaCheckError();
-
-
-    cudaMemcpy(h_parents.data(), d_parents_, h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
-
-    // Check the parents
-    cudaCheckError();
-  }  
-  
-  cudaCheckError();
-  
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Kernel execution is done." << std::endl;
-  }
-
-  auto totalEnd = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> totalTime = totalEnd - totalStart;
-  return totalTime.count();
-}
-
-
-
-// In the V3 version, we will use node-level parallelism directly
-// Basically, we do not do the batch-level synchronization anymore
-// Just let the tool run for maxHPWL * value iteratively
-// And see how it works
-float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
-  std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
-  std::vector<std::vector<grNet*> >& netBatches,
-  std::vector<int>& validBatches,
-  std::vector<Point2D_CUDA>& h_parents,
-  std::vector<uint64_t>& h_costMap,
-  std::vector<int>& h_xCoords,
-  std::vector<int>& h_yCoords,
-  RouterConfiguration* router_cfg,
-  float relaxThreshold,
-  float congThreshold,
-  int xDim, int yDim)
-{
-  // Start overall timing.
-  auto totalStart = std::chrono::high_resolution_clock::now();
-  int numGrids = xDim * yDim;
-  int numBatches = validBatches.size();  
-  
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Number of batches: " << numBatches << std::endl;
-  }
-  
-  if (numBatches == 0) {
-    return 0.0;
-  }
-
-  // Set the GPU device to 1.
-  cudaSetDevice(1);
-
-  std::vector<Point2D_CUDA> netVec;
-  std::vector<int> netPtr;
-  std::vector<int> netBatchIdxVec; 
-  std::vector<Rect2D_CUDA> netBBoxVec;
-  std::vector<int> pinIdxVec;
-  int maxHPWL = 0; // We will run the algorithm for maxHPWL * relaxThreshold iteratively
-  
-  // We need to divide the batches into multiple chunks due to the memory limitation
-  int maxChunkSize = 200;  // Basically we allows 200 batches to be processed in one chunk
-  // For testing 
-  // int maxChunkSize = 1;
-  
-  std::vector<int> chunkNetPtr; // store the first netIdx of each chunk
-  
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Max chunk size: " << maxChunkSize << std::endl;
-  }
+  std::cout << "[INFO] Max chunk size: " << maxChunkSize << std::endl;
 
   netPtr.push_back(0);
   chunkNetPtr.push_back(0);
@@ -2717,19 +1701,16 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   int maxIters = static_cast<int>(maxHPWL * relaxThreshold);
   int numNodes = numGrids * chunkSize;
 
-
-  // if (VERBOSE > 0) {
-  if (1) {
-    std::cout << "[INFO] Number of nets: " << numNets << std::endl;
-    std::cout << "[INFO] Number of chunks: " << numChunks << std::endl;
-    std::cout << "[INFO] Chunk size: " << chunkSize << std::endl; 
-    std::cout << "[INFO] Max batch size: " << maxBatchSize << std::endl;
-    std::cout << "[INFO] Min batch size: " << minBatchSize << std::endl;
-    std::cout << "[INFO] Max HPWL: " << maxHPWL << std::endl;
-    std::cout << "[INFO] Max iterations: " << maxIters << std::endl;
-    std::cout << "[INFO] Number of nodes: " << numNodes << std::endl;
-    std::cout << "[INFO] Number of grids: " << numGrids << std::endl;
-  }
+  std::cout << "[INFO] Number of nets: " << numNets << std::endl;
+  std::cout << "[INFO] Number of chunks: " << numChunks << std::endl;
+  std::cout << "[INFO] Chunk size: " << chunkSize << std::endl; 
+  std::cout << "[INFO] Max batch size: " << maxBatchSize << std::endl;
+  std::cout << "[INFO] Min batch size: " << minBatchSize << std::endl;
+  std::cout << "[INFO] Max HPWL: " << maxHPWL << std::endl;
+  std::cout << "[INFO] Max iterations: " << maxIters << std::endl;
+  std::cout << "[INFO] Number of nodes: " << numNodes << std::endl;
+  std::cout << "[INFO] Number of grids: " << numGrids << std::endl;
+  
 
   for (int i = 0; i < netBatchIdxVec.size(); i++) {
     if (netBatchIdxVec[i] < 0 || netBatchIdxVec[i] >= chunkSize) {
@@ -2737,18 +1718,20 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
     }
   }
 
+  // Allocate and copy device memory
   // We need to define the needed utility variables
   std::vector<int> h_dX = {0, 1, 0, -1};
   std::vector<int> h_dY = {1, 0, -1, 0};
- 
-  /*
+  
   int* d_dX = nullptr;
   int* d_dY = nullptr;
 
   // For the design specific variables (numGrids)
   uint64_t* d_costMap = nullptr;
   int* d_xCoords = nullptr;
-  int* d_yCoords = nullptr;  
+  int* d_yCoords = nullptr;
+  
+  
   // For the chunk specific variables
   NodeData2D* d_nodes = nullptr; // (numGrids * chunkSize);
   
@@ -2757,193 +1740,40 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   int* d_netPtr = nullptr;
   Rect2D_CUDA* d_netBBox = nullptr;
   int* d_netBatchIdx = nullptr;
-  Point2D_CUDA* d_parents = nullptr;
-  */
 
- 
-
-
+  // Allocate the device memory for the d_dX and d_dY
+  cudaMalloc(&d_dX, 4 * sizeof(int));
+  cudaMalloc(&d_dY, 4 * sizeof(int));
   
-  cudaCheckError();
+  cudaMalloc(&d_costMap, numGrids * sizeof(uint64_t));
+  cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
+  cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
+  
+  cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
+  // cudaMalloc(&d_parents, numNodes * sizeof(Point2D_CUDA));
 
-  /*
-  allocateCUDAMem(
-    d_dX_,
-    d_dY_,
-    d_costMap_,
-    d_xCoords_,
-    d_yCoords_,
-    d_nodes_,
-    d_parents_,
-    d_pinIdxVec_,
-    d_netPtr_,
-    d_netBBox_,
-    d_netBatchIdx_,
-    h_costMap,
-    h_xCoords,
-    h_yCoords,
-    h_parents,
-    pinIdxVec,
-    netPtr,
-    netBBoxVec,
-    netBatchIdxVec,
-    numGrids, 
-    numNodes);
-  */
+  cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
+  cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
+  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
+  cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
 
-  int* d_dX = d_dX_;
-  int* d_dY = d_dY_;
-  uint64_t* d_costMap = d_costMap_;
-  int* d_xCoords = d_xCoords_;
-  int* d_yCoords = d_yCoords_;
-  Point2D_CUDA* d_parents = d_parents_;
-  int* d_pinIdxVec = d_pinIdxVec_;
-  int* d_netPtr = d_netPtr_;
-  Rect2D_CUDA* d_netBBox = d_netBBox_;
-  int* d_netBatchIdx = d_netBatchIdx_;
-  NodeData2D* d_nodes = d_nodes_;
-   
-  cudaCheckError();
-
-  std::cout << "Finish Memory Allocation" << std::endl;
+  cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
 
 
+  cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
+  // cudaMemcpy(d_parents, h_parents.data(), numNodes * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
 
-
-  /*  
-  allocateCUDAMem(
-    d_dX_,
-    d_dY_,
-    d_costMap_,
-    d_xCoords_,
-    d_yCoords_,
-    d_nodes_,
-    d_parents_,
-    d_pinIdxVec_,
-    d_netPtr_,
-    d_netBBox_,
-    d_netBatchIdx_,
-    h_costMap,
-    h_xCoords,
-    h_yCoords,
-    h_parents,
-    pinIdxVec,
-    netPtr,
-    netBBoxVec,
-    netBatchIdxVec,
-    numNodes);
-
-  int* d_dX = d_dX_;
-  int* d_dY = d_dY_;
-
-  uint64_t* d_costMap = d_costMap_;
-  int* d_xCoords = d_xCoords_;
-  int* d_yCoords = d_yCoords_;
-  Point2D_CUDA* d_parents = d_parents_;
-  int* d_pinIdxVec = d_pinIdxVec_;
-  int* d_netPtr = d_netPtr_;
-  Rect2D_CUDA* d_netBBox = d_netBBox_;
-  int* d_netBatchIdx = d_netBatchIdx_;
-  NodeData2D* d_nodes = d_nodes_;
- 
-    
-  if (d_dX == nullptr) {
-    std::vector<int> h_dX = {0, 1, 0, -1};
-    std::vector<int> h_dY = {1, 0, -1, 0};
-    int* d_dX = nullptr;
-    int* d_dY = nullptr;
-    cudaMalloc(&d_dX, 4 * sizeof(int));
-    cudaMalloc(&d_dY, 4 * sizeof(int));
-    cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_xCoords.size() > h_xCoords_size_) {
-    h_xCoords_size_ = h_xCoords.size();
-    cudaFree(d_xCoords);
-    cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
-    cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_yCoords.size() > h_yCoords_size_) {
-    h_yCoords_size_ = h_yCoords.size();
-    cudaFree(d_yCoords);
-    cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
-    cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_costMap.size() > h_costMap_size_) {
-    h_costMap_size_ = h_costMap.size();
-    cudaFree(d_costMap);
-    cudaMalloc(&d_costMap, h_costMap.size() * sizeof(uint64_t));
-  }
-  cudaMemcpy(d_costMap, h_costMap.data(), h_costMap.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
-
-  if (h_parents.size() > h_parents_size_) {
-    h_parents_size_ = h_parents.size();
-    cudaFree(d_parents);
-    cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D_CUDA));
-  }
-  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (pinIdxVec.size() > h_pinIdxVec_size_) {
-    h_pinIdxVec_size_ = pinIdxVec.size();
-    cudaFree(d_pinIdxVec);
-    cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
-  }
   cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-  if (netPtr.size() > h_netPtr_size_) {
-    h_netPtr_size_ = netPtr.size();
-    cudaFree(d_netPtr);
-    cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  }
   cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  
-
-  if (netBBoxVec.size() > h_netBBoxVec_size_) {
-    h_netBBoxVec_size_ = netBBoxVec.size();
-    cudaFree(d_netBBox);
-    cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
-  }
   cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
-    h_netBatchIdxVec_size_ = netBatchIdxVec.size();
-    cudaFree(d_netBatchIdx);
-    cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-
+  cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);  
   
-  if (numNodes > h_nodes_size_) {
-    h_nodes_size_ = numNodes;
-    std::cout << "h_nodes_size_ = " << h_nodes_size_ << std::endl;
-    cudaFree(d_nodes);
-    cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
-  }
-
   cudaCheckError();
 
-  if (h_nodes_size_ != h_parents_size_) {
-    std::cout << "Error: h_nodes_size_ != h_parents_size_" << std::endl;
-    exit(1);
-  }
-
-  std::cout << "[INFO] Number of nodes = " << numNodes << std::endl;
-  std::cout << "[INFO] Number of parents = " << h_parents.size() << std::endl;
-  std::cout << "[INFO] h_nodes_size_ = " << h_nodes_size_ << std::endl;
-  std::cout << "[INFO] h_parents_size_ = " << h_parents_size_ << std::endl;
-  */
-
-
-
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Device memory allocation is done." << std::endl;
-  }
+  std::cout << "[INFO] Device memory allocation is done." << std::endl;
 
   // According to the original code
   unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
@@ -2951,13 +1781,9 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   unsigned HISTCOST = 4;
  
   for (int chunkId = 0; chunkId < numChunks; chunkId++) {
-    int netStartId = chunkNetPtr[chunkId];
-    int netEndId = chunkNetPtr[chunkId + 1];
-    
     // Perform Global Initialization
     int numThreads = 1024;
     int numBatchBlocks = (numNodes + numThreads - 1) / numThreads;
-    
     initBatchNodeData2D_v3__kernel<<<numBatchBlocks, numThreads>>>(
       d_nodes, 
       numNodes);
@@ -2965,14 +1791,11 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
 
     cudaCheckError();
 
-    std::cout << "Test a " << std::endl;
 
-  
+    int netStartId = chunkNetPtr[chunkId];
+    int netEndId = chunkNetPtr[chunkId + 1];
     int numNets = netEndId - netStartId;
-    if (VERBOSE > 0) {
-      std::cout << "[INFO] Chunk " << chunkId << " has " << numNets << " nets." << std::endl;
-    }
-  
+    std::cout << "[INFO] Chunk " << chunkId << " has " << numNets << " nets." << std::endl;
     int numNetBlocks = (numNets + numThreads - 1) / numThreads;
     initBatchPin2D_v3__kernel<<<numNetBlocks, numThreads>>>(
       d_nodes,
@@ -2983,12 +1806,11 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
       netEndId,
       numGrids);
     cudaDeviceSynchronize();
-  
+
+    std::cout << "Test a" << std::endl;
 
     cudaCheckError();
-    // std::cout << "[INFO] Initialization is done." << std::endl;
-
-    std::cout << "Test b " << std::endl;
+    std::cout << "[INFO] Initialization is done." << std::endl;
 
     //int numThreads = 1024;
     auto netRouteStart = std::chrono::high_resolution_clock::now();
@@ -3019,10 +1841,6 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
     cudaDeviceSynchronize();
     auto netRouteEnd = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> netRouteTime = netRouteEnd - netRouteStart;
-
-    std::cout << "Test c" << std::endl;
-   
-    /*
     int numPins = netPtr[netStartId + 1] - netPtr[netStartId];
     int HPWL = (netBBoxVec[netStartId].xMax - netBBoxVec[netStartId].xMin) + 
                (netBBoxVec[netStartId].yMax - netBBoxVec[netStartId].yMin);
@@ -3030,43 +1848,13 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
     std::cout << "[INFO] Net: HPWL = " << HPWL << "  "
               << "numPins = " << numPins << " "
               << "netRouteTime = " << netRouteTime.count() << " ms" << std::endl;
-    */
-
-    // copy the back results to the d_parents
-    copyParents2D__kernel<<<numBatchBlocks, numThreads>>>(
-      d_nodes, 
-      d_parents, 
-      numNodes);
-
-    cudaDeviceSynchronize();
-    cudaCheckError();
-
-    std::cout << "Test d" << std::endl;
-
-    cudaMemcpy(h_parents.data(), d_parents, h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyDeviceToHost);
-
-    // Check the parents
-    cudaCheckError();
-
-    /*
-    ChunkPathSyncUp(
-      uworkers,
-      netBatches[validBatches[0]],
-      netBBoxVec,
-      h_parents,
-      netStartId,
-      netEndId,
-      xDim);
-    */
+      
+    // cudaCheckError();
   }  
   
   cudaCheckError();
-  
-  if (VERBOSE > 0) {
-    std::cout << "[INFO] Kernel execution is done." << std::endl;
-  }
+  std::cout << "[INFO] Kernel execution is done." << std::endl;
 
-  /*
   // Clear the memory
   cudaFree(d_dX);
   cudaFree(d_dY);
@@ -3074,13 +1862,13 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3_old(
   cudaFree(d_xCoords);
   cudaFree(d_yCoords);
   cudaFree(d_nodes);
-  cudaFree(d_parents);
   cudaFree(d_pinIdxVec);
   cudaFree(d_netPtr);
   cudaFree(d_netBBox);
   cudaFree(d_netBatchIdx);
+
+
   cudaCheckError();
-  */
 
   auto totalEnd = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double, std::milli> totalTime = totalEnd - totalStart;

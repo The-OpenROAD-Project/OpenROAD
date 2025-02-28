@@ -47,6 +47,8 @@ using utl::ThreadException;
 
 void FlexGR::main(odb::dbDatabase* db)
 {
+  auto grRuntimeStart = std::chrono::high_resolution_clock::now();
+
   db_ = db;
   init();
   // resource analysis
@@ -69,6 +71,9 @@ void FlexGR::main(odb::dbDatabase* db)
   getRegionQuery()->printGRObj();
 
   reportCong2D();
+
+
+  auto Maze2DRuntimeStart = std::chrono::high_resolution_clock::now();
 
   searchRepairMacro(0,
                     10,
@@ -144,6 +149,11 @@ void FlexGR::main(odb::dbDatabase* db)
 
   reportCong2D();
 
+
+  auto Maze2DRuntimeEnd = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> Maze2DRuntime = Maze2DRuntimeEnd - Maze2DRuntimeStart;
+  logger_->report("2D Maze runtime: " + std::to_string(Maze2DRuntime.count()) + "s");
+
   layerAssign();
 
   // populate region query for 3D
@@ -169,6 +179,12 @@ void FlexGR::main(odb::dbDatabase* db)
   writeToGuide();
 
   updateDb();
+
+  freeCUDAMem();
+
+  auto grRuntimeEnd = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> grRuntime = grRuntimeEnd - grRuntimeStart;
+  logger_->report("GR runtime: " + std::to_string(grRuntime.count()) + "s");
 
   exit(1);
 }

@@ -33,6 +33,209 @@ namespace drt {
 
 static const int VERBOSE = 0;
 
+
+struct NetStruct {
+  grNet* net = nullptr;
+  int netId = -1;
+
+  std::vector<int> points; // Store all the steiner points in the net
+  std::vector<std::pair<int, int> > vSegments;
+  std::vector<std::pair<int, int> > hSegments;
+
+  NetStruct() = default;
+
+  NetStruct(grNet* _net) : net(_net) { }
+};
+
+
+
+void FlexGRWorker::batchGenerationRelax(
+  std::vector<grNet*>& rerouteNets,
+  std::vector<std::vector<grNet*>>& batches)
+{
+  batches.clear();
+  batches.reserve(rerouteNets.size());
+  
+  // Use mask to track the occupied gcells for each batch to detect conflicts
+  // batchMask[i] is a 2D vector with the same size as the gcell grid of size (xGrids_ x yGrids_)
+  std::vector<std::vector<bool> > batchMask; 
+  batchMask.reserve(rerouteNets.size());
+
+  int xDim, yDim, zDim;
+  gridGraph_.getDim(xDim, yDim, zDim);
+
+  // logger_->report("[INFO][FlexGR] Number of effective nets for batch generation: {}\n", rerouteNets.size());
+  // logger_->report("[INFO][FlexGR] Grid Graph size: {} x {}\n", xDim, yDim);
+
+  // Define the lambda function to get the idx for each gcell
+  // We use the row-major order to index the gcells
+  auto getGCellIdx1D = [xDim](int x, int y) {
+    return y * xDim + x;
+  };
+
+
+  std::sort(rerouteNets.begin(), rerouteNets.end(), 
+    [](const grNet* a, const grNet* b) {
+      return a->getHPWL() > b->getHPWL();
+    });
+
+
+  std::vector<NetStruct> netTrees;
+  netTrees.reserve(rerouteNets.size());
+
+  for (auto& net : rerouteNets) {
+    NetStruct netTree;
+    netTree.netId = static_cast<int>(netTrees.size());
+    auto& points = netTree.points;
+    auto& vSegments = netTree.vSegments;
+    auto& hSegments = netTree.hSegments;
+
+    grNode* root = nullptr;
+    for (auto& [pinNode, gcellNode] : net->getPinGCellNodePairs()) {
+      if (root == nullptr) {
+        root = gcellNode;
+        break;
+      }
+    }
+  
+    if (root == nullptr) {
+      std::cout << "Error: root is nullptr\n";
+    }
+  
+    std::queue<grNode*> nodeQ;
+    //auto root = net->getRoot();
+    nodeQ.push(root);
+
+    while (!nodeQ.empty()) {
+      auto node = nodeQ.front();
+      nodeQ.pop();
+      if (node->getType() != frNodeTypeEnum::frcSteiner) {
+        continue;
+      }
+      
+      auto Loc = node->getLoc();
+      auto lNum = node->getLayerNum();
+      FlexMazeIdx mi;
+      gridGraph_.getMazeIdx(Loc, lNum, mi);
+      int nodeLocIdx = getGCellIdx1D(mi.x(), mi.y());
+      points.push_back(nodeLocIdx);
+
+      for (auto& child : node->getChildren()) {
+        if (child->getType() != frNodeTypeEnum::frcSteiner) {
+          continue;
+        }
+        
+        nodeQ.push(child);
+        auto childLoc = child->getLoc();
+        auto childLNum = child->getLayerNum();
+        FlexMazeIdx childMi;
+        gridGraph_.getMazeIdx(childLoc, childLNum, childMi);
+        int childLocIdx1D = getGCellIdx1D(childMi.x(), childMi.y());
+        if (childMi.x() == mi.x()) {
+          nodeLocIdx > childLocIdx1D 
+            ? vSegments.push_back(std::make_pair(childLocIdx1D, nodeLocIdx)) 
+            : vSegments.push_back(std::make_pair(nodeLocIdx, childLocIdx1D));
+        } else if (childMi.y() == mi.y()) {
+          nodeLocIdx > childLocIdx1D 
+            ? hSegments.push_back(std::make_pair(childLocIdx1D, nodeLocIdx)) 
+            : hSegments.push_back(std::make_pair(nodeLocIdx, childLocIdx1D));
+        } else {
+          logger_->error(DRT, 260, "current node and parent node are are not aligned collinearly\n");
+        }
+      }
+    }
+
+    netTrees.push_back(netTree);
+  }
+
+  // Define the lambda function to check if the net is in some batch
+  // Here we use the representative point exhaustion, for non-exact overlap checking.
+  // Only checks the two end points of a query segment
+  // The checking may fail is the segment is too long 
+  // and the two end points cover all the existing segments
+  auto hasConflict = [&](std::vector<std::vector<bool> >::iterator maskIter, int netId) -> bool {
+    for (auto& point : netTrees[netId].points) {
+      if ((*maskIter)[point]) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  auto findBatch = [&](int netId) -> int {
+    std::vector<std::vector<bool> >::iterator maskIter = batchMask.begin();
+    while (maskIter != batchMask.end()) {
+      if (!hasConflict(maskIter, netId)) {
+        return std::distance(batchMask.begin(), maskIter);
+      }
+      maskIter++;
+    }
+    return -1; 
+  };    
+    
+  auto maskExactRegion = [&](int netId, std::vector<bool>& mask) {    
+    for (auto& vSeg : netTrees[netId].vSegments) {
+      for (int id = vSeg.first; id <= vSeg.second; id += xDim) {
+        mask[id] = true;
+      }
+    }
+
+    for (auto& hSeg : netTrees[netId].hSegments) {
+      for (int id = hSeg.first; id <= hSeg.second; id++) {
+        mask[id] = true;
+      }
+    }
+  };
+
+  int numGrids = xDim * yDim;
+  for (int netId = 0; netId < rerouteNets.size(); netId++) {
+    int batchId = findBatch(netId);  
+    if (batchId == -1 || batches[batchId].size() >= numGrids) {
+      batchId = batches.size();
+      batches.push_back(std::vector<grNet*>());
+      batchMask.push_back(std::vector<bool>(static_cast<size_t>(numGrids), false));
+    }  
+
+    batches[batchId].push_back(rerouteNets[netId]);
+    maskExactRegion(netId, batchMask[batchId]);      
+
+    //if (netId % 100000 == 1) {
+    //  std::cout << "Processed " << netId << " nets" << std::endl;
+    //  std::cout << "Current batch size: " << batches.size() << std::endl;
+    //}
+  }
+
+  // Two round of batch matching
+  // logger_->report("[INFO][FlexGR] Number of batches: {}\n", batches.size());
+  // print the basic statistics
+  int sparseBatch = 0;
+  for (size_t i = 0; i < batches.size(); i++) {
+    if (batches[i].size() < 40) {
+      sparseBatch++;
+      continue;
+    }
+    
+    //logger_->report("[INFO][FlexGR] Batch {} has {} nets", i, batches[i].size());
+  }
+
+  /*
+  for (auto& netTree : netTrees) {
+    std::cout << "netTree.points.size() = " << netTree.points.size() << "  "
+              << "netTree.vSegments.size() = " << netTree.vSegments.size() << "  "
+              << "netTree.hSegments.size() = " << netTree.hSegments.size() << std::endl;
+  }
+  */
+
+
+  // logger_->report("[INFO][FlexGR] Number of sparse batches (#nets < 40): {}", sparseBatch);
+  // logger_->report("[INFO][FlexGR] Number of dense batches (#nets >= 40): {}", batches.size() - sparseBatch);
+  // logger_->report("[INFO][FlexGR] Done batch generation...\n");
+
+  //exit(1);
+}
+
+
+
 // To be updated
 bool FlexGRWorker::restorePath(
   std::vector<FlexMazeIdx>& connComps,
@@ -70,6 +273,10 @@ bool FlexGRWorker::restorePath(
 
   while (true) {
     currDir = gridGraph_.traceBackParent(mi, parentMi); 
+    // std::cout << "Trace back: x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << " "
+    //           << "parentX = " << parentMi.x() << " parentY = " << parentMi.y() << " parentZ = " << parentMi.z() << " "
+    //           << std::endl;
+    
     if (parentMi.x() == -1 || parentMi.y() == -1 || parentMi.z() == -1) {
       logger_->report("[ERROR] restorePath: traceBackParent failed");
       return false;
@@ -89,8 +296,10 @@ bool FlexGRWorker::restorePath(
       if (path.empty() || !(path.back() == mi)) {
         path.emplace_back(mi.x(), mi.y(), mi.z());
       }
-      
-      // std::cout << "Exit at src x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << std::endl;
+     
+      if (VERBOSE > 0) {      
+        std::cout << "Exit at src x = " << mi.x() << " y = " << mi.y() << " z = " << mi.z() << std::endl;
+      }
       // check if the mi is the path
       // if (path.empty() || !(path.back() == mi)) {
       //  path.emplace_back(mi.x(), mi.y(), mi.z());
@@ -120,8 +329,25 @@ bool FlexGRWorker::restorePath(
 }
 
 
+void FlexGRWorker::printSrc()
+{
+  int xDim, yDim, zDim;
+  gridGraph_.getDim(xDim, yDim, zDim);
+  for (int z = 0; z < zDim; z++) {
+    for (int y = 0; y < yDim; y++) {
+      for (int x = 0; x < xDim; x++) {
+        if (gridGraph_.isSrc(x, y, z)) {
+          std::cout << "x = " << x << " y = " << y << " z = " << z << std::endl;
+        }
+      }
+    }
+  }
+}
+
+
 bool FlexGRWorker::restoreNet(grNet* net)
 {
+  gridGraph_.resetStatus();
   std::set<grNode*, frBlockObjectComp> unConnPinGCellNodes;
   std::map<FlexMazeIdx, grNode*> mazeIdx2unConnPinGCellNode;
   std::map<FlexMazeIdx, grNode*> mazeIdx2endPointNode;
@@ -142,12 +368,51 @@ bool FlexGRWorker::restoreNet(grNet* net)
                   ccMazeIdx2,
                   centerPt);
 
+  if (VERBOSE > 0) {
+                  
+    printSrc();
+    int llx = std::numeric_limits<int>::max();
+    int lly = std::numeric_limits<int>::max();
+    int urx = std::numeric_limits<int>::min();
+    int ury = std::numeric_limits<int>::min();
+
+
+    for (auto& idx : connComps) {
+      std::cout << "connComps: x = " << idx.x() << " y = " << idx.y() << " z = " << idx.z() << std::endl;
+      llx = std::min(llx, idx.x());
+      lly = std::min(lly, idx.y());
+      urx = std::max(urx, idx.x());
+      ury = std::max(ury, idx.y());
+    } 
+    
+    for (auto& [idx, node] : mazeIdx2unConnPinGCellNode) {
+      std::cout << "unConnPinGCellNode: x = " << idx.x() << " y = " << idx.y() << " z = " << idx.z() << std::endl;
+      llx = std::min(llx, idx.x());
+      lly = std::min(lly, idx.y());
+      urx = std::max(urx, idx.x());
+      ury = std::max(ury, idx.y());
+    }
+
+    for (int x = llx; x <= urx; x++) {
+      for (int y = lly; y <= ury; y++) {
+        FlexMazeIdx idx(x, y, 0);
+        // get the parent
+        FlexMazeIdx parentIdx;
+        gridGraph_.traceBackParent(idx, parentIdx);
+        if (parentIdx.x() != -1 && parentIdx.y() != -1) {
+          std::cout << "x = " << x << " y = " << y << " parentX = " << parentIdx.x() << " parentY = " << parentIdx.y() << std::endl;
+        }
+      }
+    }
+  }
+
+
   std::vector<FlexMazeIdx> path;  // astar must return with more than one idx
 
-  if (VERBOSE > 0) {
-    std::cout << "Before restorNet" << std::endl;
-    routeNet_printNet(net);
-  }
+  //if (VERBOSE > 0) {
+  //  std::cout << "Before restorNet" << std::endl;
+  //  routeNet_printNet(net);
+  //}
 
   while (!unConnPinGCellNodes.empty()) {    
     path.clear();
@@ -157,7 +422,7 @@ bool FlexGRWorker::restoreNet(grNet* net)
         ccMazeIdx1, ccMazeIdx2, centerPt);
     
     if (VERBOSE > 0) {
-      // for test
+    // for test
       std::cout << "restoreFlag = " << restoreFlag << std::endl;
       for (auto& vertex : path) {
         std::cout << "\t x = " << vertex.x() << " y = " << vertex.y() << " z = " << vertex.z() << std::endl;
@@ -171,6 +436,13 @@ bool FlexGRWorker::restoreNet(grNet* net)
       // std::cout << "finish postAStarUpdate" << std::endl;
       routeNet_postAstarWritePath(net, path, leaf, mazeIdx2endPointNode);
     } else {
+      auto bbox = net->getRouteBBox();
+      std::cout << "netId = " << net->getNetId() << std::endl;
+      std::cout << "BBox lx = " << bbox.xMin() << " " 
+                << "ly = " << bbox.yMin() << " "
+                << "ux = " << bbox.xMax() << " "
+                << "uy = " << bbox.yMax() << std::endl;
+      
       logger_->report("Error: restorePath failed !!!");
       exit(1);
       if (gridGraph_.search(connComps,
@@ -184,10 +456,12 @@ bool FlexGRWorker::restoreNet(grNet* net)
         routeNet_postAstarWritePath(net, path, leaf, mazeIdx2endPointNode);
       }    
     }
+    
+   // printSrc();
     //routeNet_printNet(net);
   }
 
-  //routeNet_checkNet(net);
+  // routeNet_checkNet(net);
   routeNet_postRouteAddCong(net);
   return true;
 }

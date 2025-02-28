@@ -57,6 +57,63 @@ struct Point2D_CUDA {
 };
 
 
+
+struct Rect2D_CUDA {
+  int xMin;
+  int yMin;
+  int xMax;
+  int yMax;
+
+  Rect2D_CUDA(int xMin, int yMin, int xMax, int yMax) : xMin(xMin), yMin(yMin), xMax(xMax), yMax(yMax) {}
+};
+
+
+enum Directions2D {
+  DIR_NORTH    = 0,
+  DIR_RIGHT = 1,
+  DIR_SOUTH  = 2,
+  DIR_LEFT  = 3,
+  DIR_NONE  = 255
+};
+
+
+struct NodeData2D {
+  // forward and backward propagation (heuristic and real cost) (32 bits each)
+  uint32_t forward_h_cost; // heuristic cost
+  uint32_t forward_g_cost; // real cost
+  uint32_t backward_h_cost; // heuristic cost
+  uint32_t backward_g_cost; // real cost
+  uint32_t forward_h_cost_prev; 
+  uint32_t forward_g_cost_prev;
+  uint32_t backward_h_cost_prev;
+  uint32_t backward_g_cost_prev;
+  
+  // Store the direction (for turning point cost and path reconstruction)
+  uint8_t forward_direction;
+  uint8_t backward_direction;
+  uint8_t forward_direction_prev;
+  uint8_t backward_direction_prev;
+  int golden_parent_x;
+  int golden_parent_y;
+
+  // Flags (1 bit each, packed into a single 8-bit field)
+  struct Flags {
+    uint8_t src_flag : 1; // 1 if this node is the source
+    uint8_t dst_flag : 1; // 1 if this node is the destination
+    uint8_t forward_update_flag: 1; // 1 if the forward cost is updated
+    uint8_t backward_update_flag: 1; // 1 if the backward cost is updated
+    uint8_t forward_visited_flag: 1; // 1 if the forward node is visited
+    uint8_t backward_visited_flag: 1; // 1 if the backward node is visited
+    uint8_t forward_visited_flag_prev: 1; // 1 if the forward node is visited
+    uint8_t backward_visited_flag_prev: 1; // 1 if the backward node is visited
+  }  flags;
+};
+
+
+
+
+
+
 class FlexGR
 {
  public:
@@ -322,8 +379,81 @@ class FlexGR
     float congThreshold,
     int xDim, int yDim);
 
-  int validBatchThreshold_ = 100;
+  float GPUAccelerated2DMazeRoute_update_v3_old(
+      std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+      std::vector<std::vector<grNet*> >& netBatches, 
+      std::vector<int>& validBatches,
+      std::vector<Point2D_CUDA>& h_parents,
+      std::vector<uint64_t>& h_costMap,
+      std::vector<int>& h_xCoords,
+      std::vector<int>& h_yCoords,
+      RouterConfiguration* router_cfg,
+      float relaxThreshold,
+      float congThreshold,
+      int xDim, int yDim);
+  
+  
+  
+
+
+
+  void batchGenerationMIS_update(
+    std::vector<grNet*> &rerouteNets,
+    std::vector<std::vector<grNet*>> &batches,
+    std::vector<int> &validBatchIds,
+    int iter,
+    bool is2DRouting);      
+
+  int validBatchThreshold_ = 200;
+  int maxChunkSize_ = 200;
   std::vector<grNet*> nets2Ripup_;
+
+  int* d_dX_ = nullptr;
+  int* d_dY_ = nullptr;
+  uint64_t* d_costMap_ = nullptr;
+  int* d_xCoords_ = nullptr;
+  int* d_yCoords_ = nullptr;
+  NodeData2D* d_nodes_ = nullptr;
+  Point2D_CUDA* d_parents_ = nullptr;
+  int* d_pinIdxVec_ = nullptr;
+  int* d_netPtr_ = nullptr;
+  Rect2D_CUDA* d_netBBox_ = nullptr;
+  int* d_netBatchIdx_ = nullptr;
+  
+  int h_costMap_size_ = 0;
+  int h_xCoords_size_ = 0;
+  int h_yCoords_size_ = 0;
+  int h_nodes_size_ = 0;
+  int h_parents_size_ = 0;
+  int h_pinIdxVec_size_ = 0;
+  int h_netPtr_size_ = 0;
+  int h_netBBoxVec_size_ = 0;
+  int h_netBatchIdxVec_size_ = 0;
+
+  void allocateCUDAMem(
+    std::vector<uint64_t>& h_costMap,
+    std::vector<int>& h_xCoords,
+    std::vector<int>& h_yCoords,
+    std::vector<Point2D_CUDA>& h_parents,
+    std::vector<int>& pinIdxVec,
+    std::vector<int>& netPtr,
+    std::vector<Rect2D_CUDA>& netBBoxVec,
+    std::vector<int>& netBatchIdxVec,
+    int numGrids,
+    int numNodes);
+
+  void freeCUDAMem();
+
+
+  
+
+
+
+
+
+
+
+  
 };
 
 class FlexGRWorker;
@@ -457,14 +587,149 @@ class FlexGRWorker
   void main_mt_init(std::vector<grNet*>& rerouteNets) {
     auto LLCorner = getRouteGCellIdxLL();
     for (auto net : rerouteNets) {
-      net->setCPUFlag(false);
+      //net->setCPUFlag(false);
       mazeNetInit(net);
       net->setCPUFlag(true);
       net->updateAbsGridCoords(LLCorner);
     }
   }
 
-  void main_mt_restore(std::vector<grNet*>& rerouteNets) {
+  void printSrc();
+
+  void main_mt_restore(
+    std::vector<grNet*>& rerouteNets, 
+    std::vector<Point2D_CUDA>& h_parent,
+    int xDim,
+    int yDim) {
+    for (auto& net : rerouteNets) {
+      //net->setCPUFlag(true);
+      if (net->getCPUFlag() == false) {
+        // update the grid graph accroding to the parent
+        int batchId = net->getBatchId();
+        int nodeBase = batchId * xDim * yDim;
+        auto& gridGraph = getGridGraph();
+        auto workerLL = getRouteGCellIdxLL();
+        int workerLX = workerLL.x();
+        int workerLY = workerLL.y();
+        auto& netRouteBox = net->getRouteAbsBBox();
+        int LLX = netRouteBox.xMin();
+        int LLY = netRouteBox.yMin();
+        int URX = netRouteBox.xMax();
+        int URY = netRouteBox.yMax();
+        int xDimTemp = URX - LLX + 1;
+        int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
+        for (int localIdx = 0; localIdx < numNodes; localIdx++) {
+          int localX = localIdx % xDimTemp;
+          int localY = localIdx / xDimTemp;
+          int x = localX + LLX;
+          int y = localY + LLY;      
+          int idx = y * xDim + x + nodeBase;
+          x -= workerLX;
+          y -= workerLY;
+          int parentX = h_parent[idx].x - workerLX;
+          int parentY = h_parent[idx].y - workerLY;
+          if (parentX < 0 || parentY < 0) {
+            continue;
+          }
+
+          int absDist = abs(x - parentX) + abs(y - parentY);
+          if (absDist > 2) {
+            std::cout << "Error: absDist > 2" << std::endl;
+            std::cout << "x = " << x << ", y = " << y << ", parentX = " << parentX << ", parentY = " << parentY << std::endl;
+            exit(1);
+          }
+
+          gridGraph.setGoldenParent2D(x, y, parentX, parentY);      
+        }    
+        restoreNet(net);
+      } else {
+        routeNet(net);
+      }
+    }
+  }
+
+
+  void main_mt_restore_CPU_GPU(
+    std::vector<grNet*>& rerouteNets, 
+    std::vector<Point2D_CUDA>& h_parent,
+    int xDim,
+    int yDim) {
+    for (auto& net : rerouteNets) {
+      //net->setCPUFlag(true);
+      if (net->getWorkerId() != getWorkerId()) {
+        continue;
+      }
+      
+      if (net->getCPUFlag() == false) {
+        // update the grid graph accroding to the parent
+        int batchId = net->getBatchId();
+        int nodeBase = batchId * xDim * yDim;
+        auto& gridGraph = getGridGraph();
+        auto workerLL = getRouteGCellIdxLL();
+        int workerLX = workerLL.x();
+        int workerLY = workerLL.y();
+        auto& netRouteBox = net->getRouteAbsBBox();
+        int LLX = netRouteBox.xMin();
+        int LLY = netRouteBox.yMin();
+        int URX = netRouteBox.xMax();
+        int URY = netRouteBox.yMax();
+        int xDimTemp = URX - LLX + 1;
+        int numNodes = (URX - LLX + 1) * (URY - LLY + 1);
+        for (int localIdx = 0; localIdx < numNodes; localIdx++) {
+          int localX = localIdx % xDimTemp;
+          int localY = localIdx / xDimTemp;
+          int x = localX + LLX;
+          int y = localY + LLY;      
+          int idx = y * xDim + x + nodeBase;
+          x -= workerLX;
+          y -= workerLY;
+          if (idx >= h_parent.size()) {
+            std::cout << "Error: idx >= h_parent.size()" << std::endl;
+            std::cout << "idx = " << idx << ", h_parent.size() = " << h_parent.size() << std::endl;
+            std::cout << "xDim = " << xDim << ", yDim = " << yDim << std::endl;
+            std::cout << "batchId = " << batchId << ", nodeBase = " << nodeBase << std::endl;
+            std::cout << "x = " << x << ", y = " << y << std::endl;
+            std::cout << "numNodes = " << numNodes << std::endl;
+            std::cout << "LLX = " << LLX << ", LLY = " << LLY << ", URX = " << URX << ", URY = " << URY << std::endl; 
+            exit(1);
+          }
+          
+          int parentX = h_parent[idx].x - workerLX;
+          int parentY = h_parent[idx].y - workerLY;
+          
+          if (parentX < 0 || parentY < 0) {
+            continue;
+          }
+
+          int absDist = abs(x - parentX) + abs(y - parentY);
+          if (absDist > 2) {
+            std::cout << "Error: absDist > 2" << std::endl;
+            std::cout << "x = " << x << ", y = " << y << ", parentX = " << parentX << ", parentY = " << parentY << std::endl;
+            exit(1);
+          }
+
+          gridGraph.setGoldenParent2D(x, y, parentX, parentY);      
+        }    
+        restoreNet(net);
+      } else {
+        routeNet(net);
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+  void main_mt_restore_temp(
+    std::vector<grNet*>& rerouteNets) {
     for (auto& net : rerouteNets) {
       net->setCPUFlag(true);
       if (net->getCPUFlag() == false) {
@@ -474,6 +739,22 @@ class FlexGRWorker
       }
     }
   }
+
+
+  void main_mt_restore_CPU_only(
+    std::vector<grNet*>& rerouteNets) {
+    for (auto& net : rerouteNets) {
+      if (net->getWorkerId() != getWorkerId()) {
+        continue;
+      }
+      //net->setCPUFlag(true);
+      routeNet(net);
+    }
+  }
+
+  void batchGenerationRelax(
+    std::vector<grNet*>& rerouteNets,
+    std::vector<std::vector<grNet*>>& batches);
 
  private:
   frDesign* design_{nullptr};

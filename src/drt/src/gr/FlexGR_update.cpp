@@ -45,17 +45,168 @@ namespace drt {
 
 using utl::ThreadException;
 
+constexpr int VERBOSE = 0; 
+
+
 bool overlap(const Rect &r1, const Rect &r2)
 {
   return !(r1.xMax() < r2.xMin() || r1.xMin() > r2.xMax() || r1.yMax() < r2.yMin() || r1.yMin() > r2.yMax());
 }
 
 
+// Jus for reference
+/*
+void FlexGR::layerAssign_batchGeneration_update(
+  std::vector<std::tuple<frNet*, int, int> >& sortedNets, 
+  std::vector<std::vector<int> >& batchNets)
+{
+  batchNets.clear();
+  batchNets.reserve(sortedNets.size() * 100);
+  // Use mask to track the occupied gcells for each batch to detect conflicts
+  // batchMask[i] is a 2D vector with the same size as the gcell grid of size (xGrids_ x yGrids_)
+  std::vector<std::vector<bool> > batchMask; 
+  batchMask.reserve(sortedNets.size() * 100);
+
+  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+  auto& xgp = gCellPatterns.at(0);
+  auto& ygp = gCellPatterns.at(1);
+  int gridXSize = xgp.getCount();
+  int gridYSize = ygp.getCount();
+
+  logger_->report("[INFO][FlexGR] Number of effective nets for batch generation: {}\n", sortedNets.size());
+  logger_->report("[INFO][FlexGR] Grid size: {} x {}\n", gridXSize, gridYSize);
+
+  // Define the lambda function to get the idx for each gcell
+  // We use the row-major order to index the gcells
+  auto getGCellIdx1D = [gridXSize](int x, int y) {
+    return x * gridXSize + y;
+  };
+
+
+  std::vector<NetStruct> netTrees;
+  netTrees.reserve(sortedNets.size());
+
+  for (auto& netRatio : sortedNets) {
+    NetStruct netTree;
+    netTree.netId = static_cast<int>(netTrees.size());
+    auto& points = netTree.points;
+    auto& vSegments = netTree.vSegments;
+    auto& hSegments = netTree.hSegments;
+
+    std::queue<frNode*> queue;
+    auto root = std::get<0>(netRatio)->getRootGCellNode();
+    queue.push(root);
+
+    while (!queue.empty()) {
+      auto node = queue.front();
+      queue.pop();
+      if (node->getType() != frNodeTypeEnum::frcSteiner) {
+        continue;
+      }
+
+      Point locIdx = design_->getTopBlock()->getGCellIdx(node->getLoc());
+      int nodeLocIdx = getGCellIdx1D(locIdx.x(), locIdx.y());
+      points.push_back(nodeLocIdx);
+
+      for (auto& child : node->getChildren()) {
+        queue.push(child);
+        Point childLocIdx = design_->getTopBlock()->getGCellIdx(child->getLoc());
+        int childLocIdx1D = getGCellIdx1D(childLocIdx.x(), childLocIdx.y());
+        if (childLocIdx.x() == locIdx.x()) {
+          nodeLocIdx > childLocIdx1D 
+            ? vSegments.push_back(std::make_pair(childLocIdx1D, nodeLocIdx)) 
+            : vSegments.push_back(std::make_pair(nodeLocIdx, childLocIdx1D));
+        } else if (childLocIdx.y() == locIdx.y()) {
+          nodeLocIdx > childLocIdx1D 
+            ? hSegments.push_back(std::make_pair(childLocIdx1D, nodeLocIdx)) 
+            : hSegments.push_back(std::make_pair(nodeLocIdx, childLocIdx1D));
+        } else {
+          logger_->error(DRT, 264, "current node and parent node are are not aligned collinearly\n");
+        } 
+      }
+    }
+
+    netTrees.push_back(netTree);
+  }
+
+
+  int batchCntStart = 0;
+  // Define the lambda function to check if the net is in some batch
+  // Here we use the representative point exhaustion, for non-exact overlap checking.
+  // Only checks the two end points of a query segment
+  // The checking may fail is the segment is too long 
+  // and the two end points cover all the existing segments
+  auto findBatch = [&](int netId) -> int {
+    std::vector<std::vector<bool> >::iterator maskIter = batchMask.begin();
+    maskIter += batchCntStart;
+    while (maskIter != batchMask.end()) {
+      for (auto& point : netTrees[netId].points) {
+        if ((*maskIter)[point]) {
+          return std::distance(batchMask.begin(), maskIter);
+        }
+      }
+      maskIter++;
+    }
+    return -1; 
+  };    
+    
+  auto maskExactRegion = [&](int netId, std::vector<bool>& mask) {    
+    for (auto& vSeg : netTrees[netId].vSegments) {
+      for (int id = vSeg.first; id <= vSeg.second; id += gridXSize) {
+        mask[id] = true;
+      }
+    }
+
+    for (auto& hSeg : netTrees[netId].hSegments) {
+      for (int id = hSeg.first; id <= hSeg.second; id++) {
+        mask[id] = true;
+      }
+    }
+  };
+
+  for (int netId = 0; netId < sortedNets.size(); netId++) {
+    int batchId = findBatch(netId);  
+    if (batchId == -1 || batchNets[batchId].size() >= xDim_ * yDim_) {
+      batchId = batchNets.size();
+      batchNets.push_back(std::vector<int>());
+      batchMask.push_back(std::vector<bool>(static_cast<size_t>(gridXSize * gridYSize), false));
+    }  
+
+    batchNets[batchId].push_back(netId);  
+    maskExactRegion(netId, batchMask[batchId]);      
+
+    if (netId % 100000 == 1) {
+      std::cout << "Processed " << netId << " nets" << std::endl;
+      std::cout << "Current batch size: " << batchNets.size() << std::endl;
+    }
+  }
+
+  // Two round of batch matching
+  logger_->report("[INFO][FlexGR] Number of batches: {}\n", batchNets.size());
+  // print the basic statistics
+  int sparseBatch = 0;
+  for (size_t i = 0; i < batchNets.size(); i++) {
+    if (batchNets[i].size() < 40) {
+      sparseBatch++;
+      continue;
+    }
+    
+    logger_->report("[INFO][FlexGR] Batch {} has {} nets", i, batchNets[i].size());
+  }
+
+  logger_->report("[INFO][FlexGR] Number of sparse batches (#nets < 40): {}", sparseBatch);
+  logger_->report("[INFO][FlexGR] Number of dense batches (#nets >= 40): {}", batchNets.size() - sparseBatch);
+  logger_->report("[INFO][FlexGR] Done batch generation...\n");
+}
+*/
+
+
+
 // Batch Generation Related Functions
 // Version 1:
 // Greedy maximal independent set (MIS) based batch generation
-void FlexGR::batchGenerationMIS(
-  std::vector<std::vector<grNet*>> &rerouteNets,
+void FlexGR::batchGenerationMIS_update(
+  std::vector<grNet*> &rerouteNets,
   std::vector<std::vector<grNet*>> &batches,
   std::vector<int> &validBatchIds,
   int iter,
@@ -69,116 +220,91 @@ void FlexGR::batchGenerationMIS(
   }
   batches.clear();
 
-  // Assign unique netId and workerId to each net
-  int netId = 0;
-  for (int workerId = 0; workerId < rerouteNets.size(); workerId++) {
-    for (auto net : rerouteNets[workerId]) {
-      net->setNetId(netId++);
-      net->setWorkerId(workerId);
-    }
-  }
-
-  if (netId == 0) {
+  if (rerouteNets.empty()) {
     return;
   }
 
   // Implement the batch generation algorithm
   std::vector<int> batchStartPtr;
-  for (int workerId = 0; workerId < rerouteNets.size(); workerId++) {
-    // Perform bounding box relaxation later
-    // Now just use the route bounding box
-    // sort all the nets in the non-decreasing order of HPWL
-    std::sort(rerouteNets[workerId].begin(), rerouteNets[workerId].end(), 
-      [](const grNet* a, const grNet* b) {
-        return a->getHPWL() > b->getHPWL();
-      });
+  // Sort all the nets in the non-increasing order of HPWL
+  std::sort(rerouteNets.begin(), rerouteNets.end(), 
+    [](const grNet* a, const grNet* b) {
+      return a->getHPWL() > b->getHPWL();
+    });  
+  
 
-    // For the net in the same worker, determine the batch number
-    for (auto net : rerouteNets[workerId]) {
-      bool found = false;
-      for (int batchId = 0; batchId < batches.size(); batchId++) {
-        bool conflict = false;
-        for (int net_idx = batchStartPtr[batchId]; net_idx < batches[batchId].size(); net_idx++) {
-          if (overlap(net->getRouteBBox(), batches[batchId][net_idx]->getRouteBBox())) {
-            conflict = true;
-            break;
-          }
+  for (auto net : rerouteNets) {
+    bool found = false;
+    for (int batchId = 0; batchId < batches.size(); batchId++) {
+      bool conflict = false;
+      for (auto& tempNet : batches[batchId]) {
+        if (tempNet->getWorkerId() != net->getWorkerId()) {
+          continue;
         }
-        if (1) {
-          if (!conflict) {
-            batches[batchId].push_back(net);
-            found = true;
-            break;
-          }
-        }
-        /*
-        if (!conflict) {
-          batches[batchId].push_back(net);
-          found = true;
+          
+        if (overlap(net->getRouteBBox(), tempNet->getRouteBBox())) {
+          conflict = true;
           break;
-        } */
+        }
       }
-      if (!found) {
-        batches.push_back({net});
-        batchStartPtr.push_back(0);
-      }
+      
+      if (!conflict) {
+        batches[batchId].push_back(net);
+        found = true;
+        break;
+      } 
     }
-
-    // Update the batch start pointer
-    for (int i = 0; i < batches.size(); i++) {
-      batchStartPtr[i] = batches[i].size();
-    } 
+    
+    if (!found) {
+      batches.push_back({net});
+    }
   }
 
   // Check the valid batch threshold
   validBatchIds.clear();
+  std::vector<int> sortedBatchIds(batches.size());
+  std::iota(sortedBatchIds.begin(), sortedBatchIds.end(), 0);
+  std::sort(sortedBatchIds.begin(), sortedBatchIds.end(), 
+    [&batches](const int a, const int b) {
+      return batches[a].size() > batches[b].size();
+    });
+  
   int gpuNets = 0;
-  int cpuNets = 0;
-  for (int i = 0; i < batches.size(); i++) {
-    if (batches[i].size() >= validBatchThreshold_) {
-      //validBatchIds.push_back(i);
-      /*
-      for (auto net : batches[i]) {
-        auto box = net->getRouteBBox();
-        // if (box.xMin() == box.xMax() || box.yMin() == box.yMax()) {
-        //LLX = 74, LLY = 57, URX = 83, URY = 72
-        if (box.xMin() == 74 && box.yMin() == 57 && box.xMax() == 83 && box.yMax() == 72) {
-          //net->setCPUFlag(true);
-          net->setCPUFlag(false);
-          validBatchIds.push_back(i);
-        } 
-        // else {
-        //  net->setCPUFlag(false);
-        //  validBatchIds.push_back(i);
-        //}
+  for (int i = 0; i < sortedBatchIds.size(); i++) {
+    int batchId = sortedBatchIds[i];
+    if (validBatchIds.size() >= maxChunkSize_) {
+      break;
+    }
+    
+    validBatchIds.push_back(batchId);
+    if (is2DRouting) {
+      for (auto net : batches[batchId]) {
+        net->setCPUFlag(false);
+        net->setBatchId(i);
       }
-      */
-      validBatchIds.push_back(i);
-      if (is2DRouting) {
-        for (auto net : batches[i]) {
-          net->setCPUFlag(false);
-        }
-      }
-      gpuNets += batches[i].size();
-    } else {
-      cpuNets += batches[i].size();
+      gpuNets += batches[batchId].size();
     }
   }
- 
-  // Report the batch information
-  logger_->report("[INFO] Number of batches: " + std::to_string(batches.size()));
-  logger_->report("[INFO] Batch information:");
-  // for (int i = 0; i < validBatchIds.size(); i++) {
-  //  logger_->report("[INFO] Batch " + std::to_string(validBatchIds[i]) + ": " + std::to_string(batches[validBatchIds[i]].size()) + " nets");
-  //} 
 
-  logger_->report("[INFO] Number of GPU nets: " + std::to_string(gpuNets) + " (" + std::to_string(gpuNets * 100.0 / (cpuNets + gpuNets)) + "%)");
-  logger_->report("[INFO] Number of CPU nets: " + std::to_string(cpuNets) + " (" + std::to_string(cpuNets * 100.0 / (cpuNets + gpuNets)) + "%)");
+  if (VERBOSE > 0) {
+  //if (1) {
+    // Report the batch information
+    logger_->report("[INFO] Number of batches: " + std::to_string(batches.size()));
+    logger_->report("\t[INFO] Batch information:");
+    for (int i = 0; i < validBatchIds.size(); i++) {
+      logger_->report("\t[INFO] Batch " + std::to_string(validBatchIds[i]) + ": " + std::to_string(batches[validBatchIds[i]].size()) + " nets");
+    } 
 
-  // Calculate elapsed time in milliseconds.
-  auto end_time = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
-  logger_->report("[INFO] Batch generation runtime: " + std::to_string(elapsed.count() * 1e-3) + " s");
+    int totalNumNets = rerouteNets.size();
+    int cpuNets = totalNumNets - gpuNets;
+    logger_->report("\t[INFO] Number of GPU nets: " + std::to_string(gpuNets) + " (" + std::to_string(gpuNets * 100.0 / (cpuNets + gpuNets)) + "%)");
+    logger_->report("\t[INFO] Number of CPU nets: " + std::to_string(cpuNets) + " (" + std::to_string(cpuNets * 100.0 / (cpuNets + gpuNets)) + "%)");
+
+    // Calculate elapsed time in milliseconds.
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end_time - start_time;
+    logger_->report("\t[INFO] Batch generation runtime: " + std::to_string(elapsed.count() * 1e-3) + " s");
+  }
 }
 
 
@@ -265,7 +391,8 @@ void FlexGR::searchRepair_update(int iter,
   }
 
   logger_->report("[INFO] Number of workers: " + std::to_string(uworkers.size()));
-  int numThreads = std::min(8, router_cfg_->MAX_THREADS);
+  //int numThreads = std::min(8, router_cfg_->MAX_THREADS);
+  int numThreads = 8;
   omp_set_num_threads(numThreads);
   logger_->report("[INFO] Number of threads: " + std::to_string(numThreads));  
 
@@ -292,6 +419,180 @@ void FlexGR::searchRepair_update(int iter,
   float restoreTime = 0.0;
   float syncTime = 0.0;
 
+  for (int iter = 0; iter < mazeEndIter; iter++) {    
+    int xDim, yDim, zDim;
+    uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
+    logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
+    logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
+    
+    float GPUMazeRouteTimeTot = 0;
+    float RestoreTimeTot = 0;
+
+    // Generate the batches in parallel
+    std::vector<std::vector<grNet*> > rerouteNets(uworkers.size());
+    ThreadException exception1;
+#pragma omp parallel for schedule(dynamic)
+    for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
+      try {
+        uworkers[j]->main_mt_prep(rerouteNets[j], iter);
+      } catch (...) {
+        exception1.capture();
+      }
+    }
+    exception1.rethrow();
+
+    // Assign unique netId and workerId to each net
+    int netId = 0;
+    int totalNumNets = 0;
+    for (int workerId = 0; workerId < rerouteNets.size(); workerId++) {
+      for (auto net : rerouteNets[workerId]) {
+        net->setNetId(netId++);
+        net->setWorkerId(workerId);
+      }
+    }
+
+    // Generate the batch for each worker in parallel
+    std::vector<std::vector<std::vector<grNet*>> > workerBatches(uworkers.size());
+#pragma omp parallel for schedule(dynamic)
+    for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
+      uworkers[j]->batchGenerationRelax(rerouteNets[j], workerBatches[j]); // Use the lazy mode
+    }
+  
+    // Create global level batches
+    std::vector<std::vector<grNet*> > batches;
+    int maxNumBatches = 0;
+    for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
+      maxNumBatches = std::max(maxNumBatches, (int) workerBatches[j].size());
+    }
+
+    batches.resize(maxNumBatches);
+    for (int j = maxNumBatches - 1; j >= 0; j--) {
+      auto& batch = batches[maxNumBatches - 1 - j];
+      for (int k = 0; k < (int) uworkers.size(); k++) {  // NOLINT
+        if (j < (int) workerBatches[k].size()) {
+          std::copy(workerBatches[k][j].begin(), workerBatches[k][j].end(), std::back_inserter(batch));
+        }
+      }
+    }
+    
+    // print the batch information
+    logger_->report("[INFO] (Relax) Number of batches: " + std::to_string(batches.size()));
+    //for (int i = 0; i < batches.size(); i++) {
+    //  logger_->report("[INFO] Batch " + std::to_string(i) + ": " + std::to_string(batches[i].size()) + " nets");
+    //}
+   
+    // Copy the cost map back to the cmap
+    // At this step, we ripup all the nets
+    ThreadException exception2;
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < (int) uworkers.size(); i++) {
+      try {
+        uworkers[i]->main_mt_init(rerouteNets[i]);  
+      } catch (...) {
+        exception2.capture();
+      }
+    }
+    exception2.rethrow();
+
+
+    auto runCPURoute = [&]() {
+      ThreadException exception3;
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
+        try {
+          uworkers[i]->main_mt_restore_temp(rerouteNets[i]); 
+        } catch (...) {
+          exception3.capture();
+        }
+      }  
+      exception3.rethrow();
+    };
+
+
+    if (is2DRouting == true) {
+      for (int batchIdx = 0; batchIdx < batches.size(); batchIdx++) {
+        if (batches[batchIdx].size() < validBatchThreshold_) {
+          // Route all the nets on the CPU side
+#pragma omp parallel for schedule(dynamic)      
+          for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
+            uworkers[i]->main_mt_restore_CPU_only(batches[batchIdx]);
+          }
+          continue;
+        }
+
+        auto& h_costMap = uworkers[0]->getCMap()->getBits();
+
+        // We need to use GPU-accelerated Maze Routing
+        std::vector<std::vector<grNet*> > subBatches;
+        std::vector<int> validBatchIds;
+        batchGenerationMIS_update(batches[batchIdx], subBatches, validBatchIds, iter, is2DRouting);
+
+        int numValidBatches = validBatchIds.size();
+        int numGrids = xDim * yDim;
+        if (VERBOSE > 0) {
+          std::cout << "[INFO] Number of batches: " << numValidBatches << std::endl;
+        }
+          // std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
+        std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
+  
+        // In the current strategy, we ripup all the nets at the beginning
+        // multi thread
+        // then we route all the nets in the batches
+        // Then we restore all the nets at the end
+        float relaxThreshold = 2.0;
+        // Route the nets in the batches
+        float GPURuntime = GPUAccelerated2DMazeRoute_update_v3(
+          uworkers, subBatches, validBatchIds, h_parents, h_costMap, xCoords, yCoords, router_cfg_, 
+          relaxThreshold, congThresh, xDim, yDim);
+        
+        if (0) {
+        //if (VERBOSE > 0) {
+          logger_->report("[INFO] Batch GPU Maze Routing Runtime: " + std::to_string(GPURuntime) + " ms");
+        }
+
+        GPUMazeRouteTimeTot += GPURuntime;
+
+        auto restoreRuntimeStart = std::chrono::high_resolution_clock::now();
+        // For CPU-side net, we do routing          
+#pragma omp parallel for schedule(dynamic)
+        for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
+          uworkers[j]->main_mt_restore_CPU_GPU(batches[batchIdx], h_parents, xDim, yDim);
+        }
+
+        auto restoreRuntimeEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> restoreRuntime = restoreRuntimeEnd - restoreRuntimeStart;
+        if (VERBOSE > 0) {
+          logger_->report("[INFO] Batch GPU Maze Restore Runtime: " + std::to_string(restoreRuntime.count()) + " ms");
+        }
+
+        RestoreTimeTot += restoreRuntime.count();
+      }
+    } else {
+#pragma omp parallel for schedule(dynamic)
+      for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
+        uworkers[i]->main_mt_restore_temp(rerouteNets[i]); 
+      }  
+    }
+
+    // Update the history cost
+    // This can be done in parallel if necessary
+    for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
+      uworkers[j]->route_decayHistCost_update();
+    }
+
+    std::cout << "Iteration GPU Maze Routing Time: " << GPUMazeRouteTimeTot << " ms" << std::endl;
+    std::cout << "Iteration Restore Time: " << RestoreTimeTot << " ms" << std::endl;
+  }
+
+  for (auto& worker : uworkers) {
+    worker->end();
+  }
+  uworkers.clear();
+  
+
+
+
+  /*
   for (int iter = 0; iter < mazeEndIter; iter++) {
     std::vector<uint64_t> h_costMap = uworkers[0]->getCMap()->getBits();
     std::vector<std::vector<grNet*> > rerouteNets(uworkers.size());
@@ -339,6 +640,7 @@ void FlexGR::searchRepair_update(int iter,
       int numValidBatches = validBatchIds.size();
       int numGrids = xDim * yDim;
       std::cout << "[INFO] Number of batches: " << numValidBatches << std::endl;
+      // std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
       std::vector<Point2D_CUDA> h_parents(numGrids * numValidBatches, Point2D_CUDA(-1, -1));
 
       // In the current strategy, we ripup all the nets at the beginning
@@ -356,22 +658,28 @@ void FlexGR::searchRepair_update(int iter,
       // For CPU-side net, we do routing
       // For GPU-side net, we do restore only
       // Parallel execution
+      if (0) {
       ThreadException exception3;
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
         try {
-          uworkers[i]->main_mt_restore(rerouteNets[i]); 
+          uworkers[i]->main_mt_restore(rerouteNets[i], h_parents, xDim, yDim); 
         } catch (...) {
           exception3.capture();
         }
       }  
-      exception3.rethrow();
+      exception3.rethrow(); }
+#pragma omp parallel for schedule(dynamic)
+      for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
+        uworkers[j]->main_mt_restore(rerouteNets[j], h_parents, xDim, yDim);
+      }
+
     } else {
       ThreadException exception4;
 #pragma omp parallel for schedule(dynamic)
       for (int i = 0; i < (int) uworkers.size(); i++) {  // NOLINT
         try {
-          uworkers[i]->main_mt_restore(rerouteNets[i]); 
+          uworkers[i]->main_mt_restore_temp(rerouteNets[i]); 
         } catch (...) {
           exception4.capture();
         }
@@ -379,18 +687,20 @@ void FlexGR::searchRepair_update(int iter,
       exception4.rethrow();
     }
   
-    // Update the history cost
-    // This can be done in parallel if necessary
-    for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
-      uworkers[j]->route_decayHistCost_update();
-    }
-  }
+    */
 
-  for (auto& worker : uworkers) {
-    worker->end();
-  }
-  uworkers.clear();
-  
+
+
+
+
+
+
+
+
+
+
+
+
   /* -------------------------------------------------------------------------------------------
   // Original code snippet
   // We do not use the original batch mode

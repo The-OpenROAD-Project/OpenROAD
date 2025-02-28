@@ -547,11 +547,17 @@ class FlexGRGridGraph
     prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
   }
   // unsafe access, no idx check
-  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = true; }
+  void setSrc(frMIdx x, frMIdx y, frMIdx z) { 
+    //std::cout << "Set SRC: x = " << x << ", y = " << y << ", z = " << z << std::endl;
+    srcs_[getIdx(x, y, z)] = true; 
+  }
+  
   void setSrc(const FlexMazeIdx& mi)
   {
+    //std::cout << "Set SRC: x = " << mi.x() << ", y = " << mi.y() << ", z = " << mi.z() << std::endl;
     srcs_[getIdx(mi.x(), mi.y(), mi.z())] = true;
   }
+  
   // unsafe access, no idx check
   void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = true; }
   void setDst(const FlexMazeIdx& mi)

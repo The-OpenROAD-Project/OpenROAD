@@ -275,6 +275,9 @@ class grNet : public grBlockObject
     return routeAbsBBox;
   }
 
+  void setBatchId(int id) { batchId = id; }
+  int getBatchId() const { return batchId; }
+
  protected:
   std::vector<std::unique_ptr<grPin>> pins;
   std::vector<std::unique_ptr<grConnFig>> extConnFigs;
@@ -309,6 +312,7 @@ class grNet : public grBlockObject
   // used for GPU-accelerated maze routing
   int workerId{-1};
   int netId{-1};
+  int batchId{-1};
   bool feedThroughFlag{false};
   Rect routeBBox;
   int routedWL{0};

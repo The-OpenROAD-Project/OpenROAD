@@ -1,0 +1,1154 @@
+/* Authors: Zhiang Wang */
+/*
+ * Copyright (c) 2024, The Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the University nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "FlexGR.h"
+#include "FlexGRWorker.h"
+#include "FlexGR_util_update.h"
+
+#include <omp.h>
+#include <spdlog/common.h>
+#include <sys/types.h>
+
+#include <climits>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <mutex>
+#include <queue>
+
+
+#include "db/grObj/grShape.h"
+#include "db/grObj/grVia.h"
+#include "db/infra/frTime.h"
+#include "db/obj/frGuide.h"
+#include "odb/db.h"
+#include "utl/exception.h"
+#include "FlexGR_util.h"
+#include "stt/SteinerTreeBuilder.h"
+
+
+namespace drt {
+
+void FlexGR::layerAssign_update()
+{
+  logger_->report("[INFO] Starting Layer assignment...\n");
+
+  // Sort all the nets based on HPWL / number of pins (tie breaking: number of nodes)
+  std::vector<std::tuple<frNet*, int, int> >& sortedNets = sortedNets_;
+
+  /*
+  sortedNets.reserve(net2GCellNodes_.size());   
+  int maxNumNodes = 0;
+  numLayers_ = cmap_->getNumLayers();
+  maxNumRPins_ = 0;
+
+  for (auto [net, nodes] : net2GCellNodes_) {
+    if (nodes.size() <= 1) {
+      continue;
+    }
+    
+    frCoord llx = INT_MAX;
+    frCoord lly = INT_MAX;
+    frCoord urx = INT_MIN;
+    frCoord ury = INT_MIN;
+    
+    for (auto& rpin : net->getRPins()) {
+      Rect bbox = rpin->getBBox();
+      llx = std::min(bbox.xMin(), llx);
+      lly = std::min(bbox.yMin(), lly);
+      urx = std::max(bbox.xMax(), urx);
+      ury = std::max(bbox.yMax(), ury);
+    }
+    
+    int numRPins = net->getRPins().size();
+    int numNodes = net->getNodes().size() - numRPins;
+    maxNumNodes = std::max(maxNumNodes, numNodes);
+    maxNumRPins_ = std::max(maxNumRPins_, numRPins);
+    int ratio = ((urx - llx) + (ury - lly)) / (numRPins);
+    sortedNets.emplace_back(net, ratio, numNodes);
+  }
+
+  // sort
+  std::sort(sortedNets.begin(), sortedNets.end(), 
+    [](const std::tuple<frNet*, int, int>& left, const std::tuple<frNet*, int, int>& right) {
+      if (std::get<1>(left) == std::get<1>(right)) {
+        return (std::get<2>(left) < std::get<2>(right));
+      }
+
+      return (std::get<1>(left) < std::get<1>(right));
+    });
+    
+  logger_->report("[INFO] Number of nets to be layer assigned: {}\n", sortedNets.size());
+  logger_->report("[INFO] Max number of segments in a net: {}\n", maxNumNodes - 1);
+  logger_->report("[INFO] Number of layers: {}\n", numLayers_);
+  logger_->report("[INFO] Max number of RPin nodes in a net: {}\n", maxNumRPins_);
+
+  // Steiner Tree Shifting (TODO: Move this out of the layer assignment)
+  // for (int i = 0; i < 1; i++) {
+  //  RRR_SteinerTreeShift(sortedNets);
+  //}
+  */
+
+  int mode = 1; 
+
+  switch(mode) {
+    case 0:
+      layerAssign_seq_update(sortedNets, maxNumNodes_);
+      break;
+    case 1:
+      layerAssign_parallel_update(sortedNets, maxNumNodes_);
+      break;
+    default:
+      logger_->error(DRT, 244, "Invalid layer assignment mode\n");
+  }
+
+  /*
+  std::vector<unsigned> bestLayerCosts(maxNumNodes * numLayers_, UINT_MAX);
+  std::vector<unsigned> bestLayerCombs(maxNumNodes * numLayers_, 0);
+  std::vector<int> minPinLayerNumNodes(maxNumNodes, UINT_MAX);
+  std::vector<int> maxPinLayerNumNodes(maxNumNodes, INT_MIN);
+  std::vector<frNode*> gcellNodes2RPinNodes(maxNumNodes * maxNumRPins_, nullptr);
+  std::vector<int> gcellNode2RPinNodeSize(maxNumNodes, 0);
+  std::vector<frNode*> layerNum2SubNode(numLayers_, nullptr);
+
+  for (auto [net, ratio, numNodes] : sortedNets) {
+    layerAssign_net_update(net, bestLayerCosts, bestLayerCombs,
+      minPinLayerNumNodes, maxPinLayerNumNodes, 
+      gcellNodes2RPinNodes, gcellNode2RPinNodeSize,
+      layerNum2SubNode,
+      numNodes);
+  }
+  */
+
+
+  logger_->report("[INFO] Done Layer assignment...");
+  logger_->report("[INFO] Node compute time: {} s", nodeComputeTime_);
+  logger_->report("[INFO] Node commit time: {} s", nodeCommitTime_);
+  logger_->report("[INFO] Segment commit time: {} s", segmentCommitTime_);
+}
+
+
+void FlexGR::layerAssign_seq_update(std::vector<std::tuple<frNet*, int, int> >& sortedNets, int maxNumNodes)
+{
+  logger_->report("[INFO] Starting sequential layer assignment...\n");
+  
+  std::vector<unsigned> bestLayerCosts(maxNumNodes * numLayers_, UINT_MAX);
+  std::vector<unsigned> bestLayerCombs(maxNumNodes * numLayers_, 0);
+  std::vector<int> minPinLayerNumNodes(maxNumNodes, UINT_MAX);
+  std::vector<int> maxPinLayerNumNodes(maxNumNodes, INT_MIN);
+  std::vector<frNode*> gcellNodes2RPinNodes(maxNumNodes * maxNumRPins_, nullptr);
+  std::vector<int> gcellNode2RPinNodeSize(maxNumNodes, 0);
+  std::vector<frNode*> layerNum2SubNode(numLayers_, nullptr);
+
+  for (auto [net, ratio, numNodes] : sortedNets) {
+    layerAssign_net_update(net, bestLayerCosts, bestLayerCombs,
+      minPinLayerNumNodes, maxPinLayerNumNodes, 
+      gcellNodes2RPinNodes, gcellNode2RPinNodeSize,
+      layerNum2SubNode,
+      numNodes);
+  }
+}
+
+
+void FlexGR::layerAssign_net_update(frNet* net, 
+  std::vector<unsigned>& bestLayerCosts,
+  std::vector<unsigned>& bestLayerCombs,
+  std::vector<int>& minPinLayerNumNode,
+  std::vector<int>& maxPinLayerNumNode,
+  std::vector<frNode*>& gcellNodes2RPinNodes,
+  std::vector<int>& gcellNode2RPinNodeSize,
+  std::vector<frNode*>& layerNum2SubNode,
+  int numNodes)
+{
+  // Refill the values in the bestLayerCosts and bestLayerCombs
+  std::fill(bestLayerCosts.begin(), bestLayerCosts.begin() + numNodes * numLayers_, UINT_MAX);
+  std::fill(bestLayerCombs.begin(), bestLayerCombs.begin() + numNodes * numLayers_, 0);
+  std::fill(minPinLayerNumNode.begin(), minPinLayerNumNode.begin() + numNodes, INT_MAX);
+  std::fill(maxPinLayerNumNode.begin(), maxPinLayerNumNode.begin() + numNodes, INT_MIN);
+  std::fill(gcellNodes2RPinNodes.begin(), gcellNodes2RPinNodes.begin() + numNodes * maxNumRPins_, nullptr);
+  std::fill(gcellNode2RPinNodeSize.begin(), gcellNode2RPinNodeSize.begin() + numNodes, 0);
+  std::fill(layerNum2SubNode.begin(), layerNum2SubNode.begin() + numLayers_, nullptr);
+
+  // Clear all the GR Shapes
+  net->clearGRShapes();
+  
+  // update net2GCellNode2RPinNodes
+  // Todo: not sure if this is necessary
+  // Teporarily remove disable this part
+  /*
+  auto& gcellNode2RPinNodes = net2GCellNode2RPinNodes_[net];
+  gcellNode2RPinNodes.clear();
+  unsigned rpinNodeSize = net->getRPins().size();
+  unsigned nodeCnt = 0;
+  for (auto& node : net->getNodes()) {
+    if (nodeCnt == rpinNodeSize) {
+      net->setFirstNonRPinNode(node.get());
+      break;
+    }
+
+    if (node.get() == net->getRoot()) {
+      gcellNode2RPinNodes[node->getChildren().front()].push_back(node.get());
+    } else {
+      gcellNode2RPinNodes[node->getParent()].push_back(node.get());
+    }
+    nodeCnt++;
+  }
+  */
+
+  // break connections between rpin and gcell nodes
+  unsigned rpinNodeSize = net->getRPins().size();
+  auto iter = net->getNodes().begin();
+  auto endIter = net->getNodes().begin();
+  std::advance(endIter, rpinNodeSize);
+  net->setFirstNonRPinNode(endIter->get());
+  for(; iter != endIter; iter++) {
+    auto node = iter->get();
+    if (node == net->getRoot()) {
+      auto firstGCellNode = node->getChildren().front();
+      firstGCellNode->setParent(nullptr);      
+      net->setRootGCellNode(firstGCellNode);
+      node->clearChildren(); // disconnect the root ripin node with the first gcell node
+      // update the min and max pin layer number for the first gcell node
+      auto pinLayerNum = node->getLayerNum() / 2 - 1;
+      int idx = distance(net->getFirstNonRPinNode()->getIter(), firstGCellNode->getIter());
+      minPinLayerNumNode[idx] = std::min(minPinLayerNumNode[idx], pinLayerNum);
+      maxPinLayerNumNode[idx] = std::max(maxPinLayerNumNode[idx], pinLayerNum);
+      gcellNodes2RPinNodes[idx * maxNumRPins_ + gcellNode2RPinNodeSize[idx]] = node;
+      gcellNode2RPinNodeSize[idx]++;
+    } else {
+      auto parent = node->getParent();
+      // disconnect the ripin node with its parent
+      parent->removeChild(node);
+      node->setParent(nullptr);
+      // update the min and max pin layer number for the ripin node
+      auto pinLayerNum = node->getLayerNum() / 2 - 1;
+      int idx = distance(net->getFirstNonRPinNode()->getIter(), parent->getIter());
+      minPinLayerNumNode[idx] = std::min(minPinLayerNumNode[idx], pinLayerNum);
+      maxPinLayerNumNode[idx] = std::max(maxPinLayerNumNode[idx], pinLayerNum);
+      gcellNodes2RPinNodes[idx * maxNumRPins_ + gcellNode2RPinNodeSize[idx]] = node;
+      gcellNode2RPinNodeSize[idx]++;
+    }
+  }
+  
+  for (auto& node : net->getNodes()) {
+    node->setConnFig(nullptr);
+  }
+
+  auto nodeComputeTimeStart = std::chrono::high_resolution_clock::now();
+  
+  // recursively compute the best layer for each node from root 
+  // post-order traversal) 
+  // We associate the layer of the segment between the nodes with the layer of child node
+  layerAssign_node_compute_update(net->getRootGCellNode(), net, bestLayerCosts, bestLayerCombs,
+    minPinLayerNumNode, maxPinLayerNumNode);
+
+  auto nodeComputeTimeEnd = std::chrono::high_resolution_clock::now();
+  nodeComputeTime_ += std::chrono::duration_cast<std::chrono::duration<double>>(nodeComputeTimeEnd - nodeComputeTimeStart).count();
+
+
+  // recursively update nodes to 3D in a pre-order DFS manner
+  frLayerNum minCostLayerNum = 0;
+  unsigned minCost = UINT_MAX;
+  int rootIdx = distance(net->getFirstNonRPinNode()->getIter(),
+                          net->getRootGCellNode()->getIter());
+
+  for (frLayerNum layerNum = 0; layerNum < numLayers_; layerNum++) {
+    if (bestLayerCosts[rootIdx * numLayers_ + layerNum]  < minCost) {
+      minCostLayerNum = layerNum;
+      minCost = bestLayerCosts[rootIdx * numLayers_ + layerNum];
+    }
+  }
+  
+
+  auto nodeCommitTimeStart = std::chrono::high_resolution_clock::now();
+  
+  // recursively commit the best layer for each node from root 
+  // post-order DFS traversal) 
+  layerAssign_node_commit_update(
+    net->getRootGCellNode(), net, 
+    minCostLayerNum, bestLayerCombs,
+    gcellNodes2RPinNodes, gcellNode2RPinNodeSize,
+    layerNum2SubNode);
+  
+  auto nodeCommitTimeEnd = std::chrono::high_resolution_clock::now();
+  nodeCommitTime_ += std::chrono::duration_cast<std::chrono::duration<double>>(nodeCommitTimeEnd - nodeCommitTimeStart).count();
+
+  
+
+  auto segmentCommitTimeStart = std::chrono::high_resolution_clock::now();
+  // create shapes and update congestion
+  layerAssign_segment_commit_update(net);
+
+  auto segmentCommitTimeEnd = std::chrono::high_resolution_clock::now();
+  segmentCommitTime_ += std::chrono::duration_cast<std::chrono::duration<double>>(segmentCommitTimeEnd - segmentCommitTimeStart).count();
+}
+
+
+// Compute the cost of each layer for each node in a DFS manner
+void FlexGR::layerAssign_node_compute_update(
+  frNode* currNode,
+  frNet* net,
+  std::vector<unsigned>& bestLayerCosts,
+  std::vector<unsigned>& bestLayerCombs,
+  std::vector<int>& minPinLayerNumNode,
+  std::vector<int>& maxPinLayerNumNode)
+{
+  if (currNode == nullptr) {
+    return;
+  }
+
+  // Post-order DFS traversal
+  for (auto child : currNode->getChildren()) {
+    layerAssign_node_compute_update(child, net, bestLayerCosts, bestLayerCombs, minPinLayerNumNode, maxPinLayerNumNode);
+  }
+
+  // Since all the children have been computed, 
+  // we can compute the cost for the current node
+  unsigned numChild = currNode->getChildren().size();
+  unsigned numComb = std::pow(numLayers_, numChild); 
+  int currNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), 
+    currNode->getIter());
+
+  // iterate over all combinations and get the combination with lowest overall cost  
+  for (int layerNum = 0; layerNum < numLayers_; layerNum++) {
+    unsigned currLayerBestCost = UINT_MAX;
+    unsigned currLayerBestComb = 0;
+    for (unsigned comb = 0; comb < numComb; comb++) {
+      int minPinLayerNum = minPinLayerNumNode[currNodeIdx];
+      int maxPinLayerNum = maxPinLayerNumNode[currNodeIdx];
+      unsigned currComb = comb; // current combination idx
+      unsigned downstreamCost = 0;
+      unsigned downstreamViaCost = 0;
+      int downstreamMinLayerNum = INT_MAX;
+      int downstreamMaxLayerNum = INT_MIN;
+
+      // Compute the downstream cost
+      for (auto child : currNode->getChildren()) {
+        int childNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), 
+          child->getIter());
+        int childLayerNum = currComb % numLayers_;
+        downstreamMinLayerNum = std::min(downstreamMinLayerNum, childLayerNum);
+        downstreamMaxLayerNum = std::max(downstreamMaxLayerNum, childLayerNum);
+        currComb /= numLayers_;
+        // add downstream cost
+        downstreamCost += bestLayerCosts[childNodeIdx * numLayers_ + childLayerNum];
+      }
+
+      // number of vias
+      // TODO: tune the via cost here
+      unsigned numVias = std::max(layerNum, std::max(maxPinLayerNum, downstreamMaxLayerNum))
+        - std::min(layerNum, std::min(minPinLayerNum, downstreamMinLayerNum));
+      downstreamViaCost = numVias * VIACOST;
+    
+      // get upstream edge congestion cost
+      unsigned congestionCost = 0;
+      if (layerNum <= (VIA_ACCESS_LAYERNUM / 2 - 1)) { // Pin layer routing
+        congestionCost += VIACOST * 8;
+      }
+
+      if (currNode->getParent()) {
+        Point curLocIdx = design_->getTopBlock()->getGCellIdx(currNode->getLoc());
+        Point parentLocIdx = design_->getTopBlock()->getGCellIdx(
+          currNode->getParent()->getLoc());
+        // sanity check
+        if (curLocIdx.x() == parentLocIdx.x() && curLocIdx.y() == parentLocIdx.y()) {
+          logger_->error(DRT, 213, "current node and parent node have the same location\n");
+        }
+
+        bool isLayerBlocked = false;
+        if (curLocIdx.y() == parentLocIdx.y()) { // horizontal segment
+          if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
+              == dbTechLayerDir::VERTICAL) {
+            isLayerBlocked = true;
+          }
+        
+          int yIdx = curLocIdx.y();
+          int xMin = std::min(curLocIdx.x(), parentLocIdx.x());
+          int xMax = std::max(curLocIdx.x(), parentLocIdx.x());
+          for (int xIdx = xMin; xIdx < xMax; xIdx++) {
+            auto supply = cmap_->getRawSupply(xIdx, yIdx, layerNum, frDirEnum::E);
+            auto demand = cmap_->getRawDemand(xIdx, yIdx, layerNum, frDirEnum::E);
+            // block cost
+            if (isLayerBlocked || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::E)) {
+              congestionCost += BLOCKCOST * 100;
+            }
+            
+            // congestion cost 
+            if (demand > supply / 4) {
+              congestionCost += (demand * 10 / (supply + 1));
+              if (demand >= supply) {
+                congestionCost += MARKERCOST * 8; // extra cost for overflow
+              }
+            }
+          }
+        } else if (curLocIdx.x() == parentLocIdx.x()) { // vertical segment
+          if (design_->getTech()->getLayer((layerNum + 1) * 2)->getDir()
+              == dbTechLayerDir::HORIZONTAL) {
+            isLayerBlocked = true;
+          }
+          int xIdx = curLocIdx.x();
+          int yMin = std::min(curLocIdx.y(), parentLocIdx.y());
+          int yMax = std::max(curLocIdx.y(), parentLocIdx.y());
+          for (int yIdx = yMin; yIdx < yMax; yIdx++) {
+            auto supply = cmap_->getRawSupply(xIdx, yIdx, layerNum, frDirEnum::N);
+            auto demand = cmap_->getRawDemand(xIdx, yIdx, layerNum, frDirEnum::N);
+            // block cost
+            if (isLayerBlocked || cmap_->hasBlock(xIdx, yIdx, layerNum, frDirEnum::N)) {
+              congestionCost += BLOCKCOST * 100;
+            }
+            // congestion cost
+            if (demand > supply / 4) {
+              congestionCost += (demand * 10 / (supply + 1));
+              if (demand >= supply) {
+                congestionCost += MARKERCOST * 8; // extra cost for overflow
+              }
+            }
+          }
+        } else {
+          logger_->error(DRT, 241, "current node and parent node are are not aligned collinearly\n");
+        }
+      } 
+
+      unsigned currLayerCost = downstreamCost + downstreamViaCost + congestionCost;
+      if (currLayerCost < currLayerBestCost) {
+        currLayerBestCost = currLayerCost;
+        currLayerBestComb = comb;
+      }
+    } // end of combination loop
+    bestLayerCosts[currNodeIdx * numLayers_ + layerNum] = currLayerBestCost;
+    bestLayerCombs[currNodeIdx * numLayers_ + layerNum] = currLayerBestComb;
+  } // end of layer loop     
+}
+
+
+// Commit the best layer for each node in a post-order DFS manner
+void FlexGR::layerAssign_node_commit_update(
+  frNode* currNode,
+  frNet* net,
+  frLayerNum currLayerNum,  // which layer the connection (segment) from currNode to parentNode should be on
+  std::vector<unsigned>& bestLayerCombs,
+  std::vector<frNode*>& gcellNodes2RPinNodes,
+  std::vector<int>& gcellNode2RPinNodeSize,
+  std::vector<frNode*>& layerNum2SubNode)
+{
+  if (currNode == nullptr) {
+    return;
+  }
+
+  int currNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), currNode->getIter()); 
+  auto comb = bestLayerCombs[currNodeIdx * numLayers_ + currLayerNum];
+  for (auto child : currNode->getChildren()) {
+    layerAssign_node_commit_update(child, net, 
+      comb % numLayers_, bestLayerCombs,
+      gcellNodes2RPinNodes, gcellNode2RPinNodeSize,
+      layerNum2SubNode);
+    comb /= numLayers_;
+  }
+
+  // move currNode to its best layer (tech layerNum)
+  currNode->setLayerNum((currLayerNum + 1) * 2);
+
+  // tech layer num, not grid layer num
+  std::set<frLayerNum> nodeLayerNums;
+  int minLayerNum = INT_MAX;
+  int maxLayerNum = INT_MIN;
+  std::fill(layerNum2SubNode.begin(), layerNum2SubNode.end(), nullptr);
+
+  std::map<frLayerNum, std::vector<frNode*> > layerNum2Children;
+  std::map<frLayerNum, std::vector<frNode*> > layerNum2RPinNodes;
+
+  // Check the distribution of children nodes
+  for (auto& child : currNode->getChildren()) {
+    int childLayerNum = child->getLayerNum() / 2 - 1;
+    minLayerNum = std::min(minLayerNum, childLayerNum);
+    maxLayerNum = std::max(maxLayerNum, childLayerNum);
+    nodeLayerNums.insert(childLayerNum);
+    layerNum2Children[childLayerNum].push_back(child);
+  }
+  
+  // Check the distribution of RPin nodes
+  bool hasRootNode = false;
+  for (int i = 0; i < gcellNode2RPinNodeSize[currNodeIdx]; i++) {
+    auto rpinNode = gcellNodes2RPinNodes[currNodeIdx * maxNumRPins_ + i];
+    if (rpinNode == net->getRoot()) {
+      hasRootNode = true;
+    }
+    
+    int rpinLayerNum = rpinNode->getLayerNum() / 2 - 1;
+    minLayerNum = std::min(minLayerNum, rpinLayerNum);
+    maxLayerNum = std::max(maxLayerNum, rpinLayerNum);
+    nodeLayerNums.insert(rpinLayerNum);
+    layerNum2RPinNodes[rpinLayerNum].push_back(rpinNode);
+  }
+
+  // sub nodes are created at same loc as currNode but differnt layerNum
+  // since we move from 2d to 3d
+  Point currNodeLoc = currNode->getLoc();
+  layerNum2SubNode[currLayerNum] = currNode;
+  minLayerNum = std::min(minLayerNum, currLayerNum);
+  maxLayerNum = std::max(maxLayerNum, currLayerNum);
+
+  for (int layerNum = minLayerNum; layerNum <= maxLayerNum; layerNum++) {
+    // create node if the layer number is not equal to currNode layerNum
+    if (layerNum == currLayerNum) {
+      continue;
+    }
+
+    auto uNode = std::make_unique<frNode>();
+    uNode->setType(frNodeTypeEnum::frcSteiner);
+    uNode->setLoc(currNodeLoc);
+    uNode->setLayerNum((layerNum + 1) * 2);
+    layerNum2SubNode[layerNum] = uNode.get();
+    net->addNode(uNode);
+  }
+
+  // update connectivity between children and current sub nodes
+  currNode->clearChildren();
+  frLayerNum parentLayer = hasRootNode ?  
+    net->getRoot()->getLayerNum() / 2 - 1 : currLayerNum;
+  for (int layerNum = minLayerNum; layerNum <= maxLayerNum; layerNum++) {
+    // connect children nodes and sub node (including currNode) (i.e., planar)
+    if (layerNum2Children.find(layerNum) != layerNum2Children.end()) {
+      for (auto child : layerNum2Children[layerNum]) {
+        child->setParent(layerNum2SubNode[layerNum]);
+        layerNum2SubNode[layerNum]->addChild(child);
+      }
+    }
+
+    // connect vertical
+    if (layerNum < parentLayer) { 
+      layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum + 1]);
+      layerNum2SubNode[layerNum + 1]->addChild(layerNum2SubNode[layerNum]);
+    } else if (layerNum > parentLayer) {
+      layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum - 1]);
+      layerNum2SubNode[layerNum - 1]->addChild(layerNum2SubNode[layerNum]);
+    }
+  }
+
+  // update connectivity if there is local rpin node
+  for (auto& [layerNum, rpinNodes] : layerNum2RPinNodes) {
+    for (auto rpinNode : rpinNodes) {
+      if (hasRootNode == true && rpinNode == net->getRoot()) {
+        layerNum2SubNode[layerNum]->setParent(rpinNode);
+        rpinNode->addChild(layerNum2SubNode[layerNum]);
+      } else {
+        rpinNode->setParent(layerNum2SubNode[layerNum]);
+        layerNum2SubNode[layerNum]->addChild(rpinNode);
+      }
+    }
+  }
+}
+
+// Create shapes and update congestion
+void FlexGR::layerAssign_segment_commit_update(frNet* net)
+{
+  for (auto& uNode : net->getNodes()) {
+    auto node = uNode.get();
+    if (node->getType() == frNodeTypeEnum::frcPin) {
+      continue;
+    }
+
+    if (node->getParent() == nullptr || node->getParent()->getType() == frNodeTypeEnum::frcPin) {
+      continue;
+    }
+    
+    // steiner-to-steiner
+    auto parent = node->getParent();
+    if (node->getLayerNum() == parent->getLayerNum()) { // pathSeg
+      Point bp = node->getLoc();
+      Point ep = parent->getLoc();
+      if (ep < bp) {
+        std::swap(bp, ep);
+      }
+
+      auto uPathSeg = std::make_unique<grPathSeg>();
+      uPathSeg->setChild(node);
+      uPathSeg->setParent(parent);
+      uPathSeg->addToNet(net);
+      uPathSeg->setPoints(bp, ep);
+      uPathSeg->setLayerNum(node->getLayerNum());
+
+      Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
+      Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
+
+      // update congestion map
+      // horizontal
+      unsigned zIdx = node->getLayerNum() / 2 - 1;
+      if (bpIdx.y() == epIdx.y()) {
+        int xStart = bpIdx.x();
+        int xEnd = epIdx.x();
+        int yIdx = bpIdx.y();
+        for (int xIdx = xStart; xIdx < xEnd; xIdx++) {
+          cmap_->addRawDemand(xIdx, yIdx, zIdx, frDirEnum::E);
+          cmap_->addRawDemand(xIdx + 1, yIdx, zIdx, frDirEnum::E);
+        }
+      } else {
+        int yStart = bpIdx.y();
+        int yEnd = epIdx.y();
+        int xIdx = bpIdx.x();
+        for (int yIdx = yStart; yIdx < yEnd; yIdx++) {
+          cmap_->addRawDemand(xIdx, yIdx, zIdx, frDirEnum::N);
+          cmap_->addRawDemand(xIdx, yIdx + 1, zIdx, frDirEnum::N);
+        }
+      }
+
+      // assign to child
+      node->setConnFig(uPathSeg.get());
+      std::unique_ptr<grShape> uShape(std::move(uPathSeg));
+      net->addGRShape(uShape);
+    } else { // via
+      Point loc = node->getLoc();
+      // based on the definition, abs(beginLayerNum - endLayerNum) = 2
+      frLayerNum beginLayerNum = node->getLayerNum();
+      frLayerNum endLayerNum = parent->getLayerNum();
+
+      auto uVia = std::make_unique<grVia>();
+      uVia->setChild(node);
+      uVia->setParent(parent);
+      uVia->addToNet(net);
+      uVia->setOrigin(loc);
+      uVia->setViaDef(design_->getTech()
+                          ->getLayer((beginLayerNum + endLayerNum) / 2)
+                          ->getDefaultViaDef());
+      // assign to child
+      node->setConnFig(uVia.get());
+      net->addGRVia(uVia);
+    }
+  }
+}
+
+
+void FlexGR::layerAssign_parallel_update(std::vector<std::tuple<frNet*, int, int> >& sortedNets, int maxNumNodes)
+{
+  logger_->report("[INFO] Starting parallel layer assignment...\n");
+
+  // Step 1: Preprocess the nets for layer assignment
+
+  // Total number of nodes
+  int totalNumNodes = 0;
+  int netId = 0;
+
+  // Shared resources for the thread pool
+  std::mutex queueMutex;
+  std::queue<NetStruct> taskQueue;
+  std::vector<int> nodeCntPtrVec;
+  nodeCntPtrVec.reserve(sortedNets.size());
+
+  // Initialize the task queue with the first net of each worker
+  {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    for (auto net : sortedNets) {
+      nodeCntPtrVec.push_back(totalNumNodes);
+      int numNodes = std::get<2>(net);
+      taskQueue.push(NetStruct(std::get<0>(net), netId++, totalNumNodes, numNodes));
+      totalNumNodes += numNodes;
+    }
+    nodeCntPtrVec.push_back(totalNumNodes);
+  }
+
+  // Initialize the vectors
+  std::vector<unsigned> bestLayerCosts(static_cast<size_t>(totalNumNodes) * numLayers_, UINT_MAX);
+  std::vector<unsigned> bestLayerCombs(static_cast<size_t>(totalNumNodes) * numLayers_, 0);
+  std::vector<int> minPinLayerNumNodes(static_cast<size_t>(totalNumNodes), UINT_MAX);
+  std::vector<int> maxPinLayerNumNodes(static_cast<size_t>(totalNumNodes), INT_MIN);
+  std::vector<frNode*> gcellNodes2RPinNodes(static_cast<size_t>(totalNumNodes) * maxNumRPins_, nullptr);
+  std::vector<int> gcellNode2RPinNodeSize(static_cast<size_t>(totalNumNodes), 0);
+  //std::vector<frNode*> layerNum2SubNode(sortedNets.size() * numLayers_, nullptr);
+
+  auto layerAssign_initNet_lambda = [](
+    frNet* net, 
+    int nodeCntStart, 
+    int maxNumRPins,
+    std::vector<int>& minPinLayerNumNodes,
+    std::vector<int>& maxPinLayerNumNodes,
+    std::vector<frNode*>& gcellNodes2RPinNodes,
+    std::vector<int>& gcellNode2RPinNodeSize) {
+
+    // Clear all the GR Shapes
+    net->clearGRShapes();
+    
+    // break connections between rpin and gcell nodes
+    unsigned rpinNodeSize = net->getRPins().size();
+    auto iter = net->getNodes().begin();
+    auto endIter = net->getNodes().begin();
+    std::advance(endIter, rpinNodeSize);
+    net->setFirstNonRPinNode(endIter->get());
+    for(; iter != endIter; iter++) {
+      auto node = iter->get();
+      if (node == net->getRoot()) {
+        auto firstGCellNode = node->getChildren().front();
+        firstGCellNode->setParent(nullptr);      
+        net->setRootGCellNode(firstGCellNode);
+        node->clearChildren(); // disconnect the root ripin node with the first gcell node
+        // update the min and max pin layer number for the first gcell node
+        auto pinLayerNum = node->getLayerNum() / 2 - 1;
+        int idx = distance(net->getFirstNonRPinNode()->getIter(), firstGCellNode->getIter()) + nodeCntStart;
+        minPinLayerNumNodes[idx] = std::min(minPinLayerNumNodes[idx], pinLayerNum);
+        maxPinLayerNumNodes[idx] = std::max(maxPinLayerNumNodes[idx], pinLayerNum);
+        gcellNodes2RPinNodes[idx * maxNumRPins + gcellNode2RPinNodeSize[idx]] = node;
+        gcellNode2RPinNodeSize[idx]++;
+      } else {
+        auto parent = node->getParent();
+        // disconnect the ripin node with its parent
+        parent->removeChild(node);
+        node->setParent(nullptr);
+        // update the min and max pin layer number for the ripin node
+        auto pinLayerNum = node->getLayerNum() / 2 - 1;
+        int idx = distance(net->getFirstNonRPinNode()->getIter(), parent->getIter()) + nodeCntStart;
+        minPinLayerNumNodes[idx] = std::min(minPinLayerNumNodes[idx], pinLayerNum);
+        maxPinLayerNumNodes[idx] = std::max(maxPinLayerNumNodes[idx], pinLayerNum);
+        gcellNodes2RPinNodes[idx * maxNumRPins + gcellNode2RPinNodeSize[idx]] = node;
+        gcellNode2RPinNodeSize[idx]++;
+      }
+    }
+  
+    for (auto& node : net->getNodes()) {
+      node->setConnFig(nullptr);
+    }
+  };  
+
+
+  auto layerAssign_initNet_worker_lambda = [&](
+    int maxNumRPins) {
+    // get task from taskQueue
+    while (true) {
+      NetStruct task;
+      {
+        // Lock the queue mutex before accessing the queue
+        std::lock_guard<std::mutex> lock(queueMutex);
+        if (taskQueue.empty()) {
+          // No more tasks to process
+          return;
+        }
+        
+        task = taskQueue.front();
+        taskQueue.pop();
+      }
+      
+      // Process the task outside the lock to minimize lock duration
+      layerAssign_initNet_lambda(task.net, task.nodeCntStart,
+        maxNumRPins, minPinLayerNumNodes, maxPinLayerNumNodes,
+        gcellNodes2RPinNodes, gcellNode2RPinNodeSize);
+    }
+  };
+    
+
+  // Number of worker threads
+  // create the thread pool
+  const int numThreads = numThreads_;
+  std::vector<std::thread> workers;
+  logger_->report("[INFO] Number of worker threads: {}\n", numThreads);
+  workers.reserve(numThreads);
+  for (int i = 0; i < numThreads; ++i) {
+    workers.emplace_back(
+      layerAssign_initNet_worker_lambda, 
+      maxNumRPins_);
+  }
+
+  // Wait for all threads to finish
+  for (auto& thread : workers) {
+    thread.join();
+  }
+
+
+  // Step 2: Perform batch generation for nets
+  std::vector<std::vector<int> > batchNets;
+  layerAssign_batchGeneration_update(sortedNets, batchNets);
+
+  auto nodeComputeTimeStart = std::chrono::high_resolution_clock::now();
+  
+  std::vector<int> nodeLayerVec;
+  // Call CUDA to parallelize the node computation
+  layerAssign_node_compute_CUDA(
+    design_, sortedNets, batchNets, 
+    nodeCntPtrVec,
+    bestLayerCosts, bestLayerCombs,
+    minPinLayerNumNodes, maxPinLayerNumNodes,
+    nodeLayerVec,
+    cmap_.get(), maxNumNodes, logger_);
+
+  auto nodeComputeTimeEnd = std::chrono::high_resolution_clock::now();
+  nodeComputeTime_ += std::chrono::duration_cast<std::chrono::duration<double>>(nodeComputeTimeEnd - nodeComputeTimeStart).count();
+
+  auto nodeCommitTimeStart = std::chrono::high_resolution_clock::now();
+  // Commit the node
+  layerAssign_node_commit_parallel_update(
+    sortedNets,
+    nodeLayerVec,
+    gcellNodes2RPinNodes, 
+    gcellNode2RPinNodeSize,
+    nodeCntPtrVec);
+
+  auto nodeCommitTimeEnd = std::chrono::high_resolution_clock::now();
+  nodeCommitTime_ += std::chrono::duration_cast<std::chrono::duration<double>>(nodeCommitTimeEnd - nodeCommitTimeStart).count();
+
+  auto segmentCommitTimeStart = std::chrono::high_resolution_clock::now();
+  // commit the shapes and update congestion
+  for (auto& net : sortedNets) {
+    layerAssign_segment_commit_update(std::get<0>(net));
+  }
+
+  auto segmentCommitTimeEnd = std::chrono::high_resolution_clock::now();
+  segmentCommitTime_ += std::chrono::duration_cast<std::chrono::duration<double>>(segmentCommitTimeEnd - segmentCommitTimeStart).count();
+}
+
+
+void FlexGR::layerAssign_batchGeneration_update(
+  std::vector<std::tuple<frNet*, int, int> >& sortedNets, 
+  std::vector<std::vector<int> >& batchNets)
+{
+  batchNets.clear();
+  batchNets.reserve(sortedNets.size() * 100);
+  // Use mask to track the occupied gcells for each batch to detect conflicts
+  // batchMask[i] is a 2D vector with the same size as the gcell grid of size (xGrids_ x yGrids_)
+  std::vector<std::vector<bool> > batchMask; 
+  batchMask.reserve(sortedNets.size() * 100);
+
+  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+  auto& xgp = gCellPatterns.at(0);
+  auto& ygp = gCellPatterns.at(1);
+  int gridXSize = xgp.getCount();
+  int gridYSize = ygp.getCount();
+
+  logger_->report("[INFO][FlexGR] Number of effective nets for batch generation: {}\n", sortedNets.size());
+  logger_->report("[INFO][FlexGR] Grid size: {} x {}\n", gridXSize, gridYSize);
+
+  // Define the lambda function to get the idx for each gcell
+  // We use the row-major order to index the gcells
+  auto getGCellIdx1D = [gridXSize](int x, int y) {
+    return x * gridXSize + y;
+  };
+
+
+  std::vector<NetStruct> netTrees;
+  netTrees.reserve(sortedNets.size());
+
+  for (auto& netRatio : sortedNets) {
+    NetStruct netTree;
+    netTree.netId = static_cast<int>(netTrees.size());
+    auto& points = netTree.points;
+    auto& vSegments = netTree.vSegments;
+    auto& hSegments = netTree.hSegments;
+
+    std::queue<frNode*> queue;
+    auto root = std::get<0>(netRatio)->getRootGCellNode();
+    queue.push(root);
+
+    while (!queue.empty()) {
+      auto node = queue.front();
+      queue.pop();
+      if (node->getType() != frNodeTypeEnum::frcSteiner) {
+        continue;
+      }
+
+      Point locIdx = design_->getTopBlock()->getGCellIdx(node->getLoc());
+      int nodeLocIdx = getGCellIdx1D(locIdx.x(), locIdx.y());
+      points.push_back(nodeLocIdx);
+
+      for (auto& child : node->getChildren()) {
+        queue.push(child);
+        Point childLocIdx = design_->getTopBlock()->getGCellIdx(child->getLoc());
+        int childLocIdx1D = getGCellIdx1D(childLocIdx.x(), childLocIdx.y());
+        if (childLocIdx.x() == locIdx.x()) {
+          nodeLocIdx > childLocIdx1D 
+            ? vSegments.push_back(std::make_pair(childLocIdx1D, nodeLocIdx)) 
+            : vSegments.push_back(std::make_pair(nodeLocIdx, childLocIdx1D));
+        } else if (childLocIdx.y() == locIdx.y()) {
+          nodeLocIdx > childLocIdx1D 
+            ? hSegments.push_back(std::make_pair(childLocIdx1D, nodeLocIdx)) 
+            : hSegments.push_back(std::make_pair(nodeLocIdx, childLocIdx1D));
+        } else {
+          logger_->error(DRT, 254, "current node and parent node are are not aligned collinearly\n");
+        } 
+      }
+    }
+
+    netTrees.push_back(netTree);
+  }
+
+
+  int batchCntStart = 0;
+  // Define the lambda function to check if the net is in some batch
+  // Here we use the representative point exhaustion, for non-exact overlap checking.
+  // Only checks the two end points of a query segment
+  // The checking may fail is the segment is too long 
+  // and the two end points cover all the existing segments
+  auto findBatch = [&](int netId) -> int {
+    std::vector<std::vector<bool> >::iterator maskIter = batchMask.begin();
+    maskIter += batchCntStart;
+    while (maskIter != batchMask.end()) {
+      for (auto& point : netTrees[netId].points) {
+        if ((*maskIter)[point]) {
+          return std::distance(batchMask.begin(), maskIter);
+        }
+      }
+      maskIter++;
+    }
+    return -1; 
+  };    
+    
+  auto maskExactRegion = [&](int netId, std::vector<bool>& mask) {    
+    for (auto& vSeg : netTrees[netId].vSegments) {
+      for (int id = vSeg.first; id <= vSeg.second; id += gridXSize) {
+        mask[id] = true;
+      }
+    }
+
+    for (auto& hSeg : netTrees[netId].hSegments) {
+      for (int id = hSeg.first; id <= hSeg.second; id++) {
+        mask[id] = true;
+      }
+    }
+  };
+
+  for (int netId = 0; netId < sortedNets.size(); netId++) {
+    int batchId = findBatch(netId);  
+    if (batchId == -1 || batchNets[batchId].size() >= xDim_ * yDim_) {
+      batchId = batchNets.size();
+      batchNets.push_back(std::vector<int>());
+      batchMask.push_back(std::vector<bool>(static_cast<size_t>(gridXSize * gridYSize), false));
+    }  
+
+    batchNets[batchId].push_back(netId);  
+    maskExactRegion(netId, batchMask[batchId]);      
+
+    if (netId % 100000 == 1) {
+      std::cout << "Processed " << netId << " nets" << std::endl;
+      std::cout << "Current batch size: " << batchNets.size() << std::endl;
+    }
+  }
+
+  // Two round of batch matching
+  logger_->report("[INFO][FlexGR] Number of batches: {}\n", batchNets.size());
+  // print the basic statistics
+  int sparseBatch = 0;
+  for (size_t i = 0; i < batchNets.size(); i++) {
+    if (batchNets[i].size() < 40) {
+      sparseBatch++;
+      continue;
+    }
+    
+    logger_->report("[INFO][FlexGR] Batch {} has {} nets", i, batchNets[i].size());
+  }
+
+  logger_->report("[INFO][FlexGR] Number of sparse batches (#nets < 40): {}", sparseBatch);
+  logger_->report("[INFO][FlexGR] Number of dense batches (#nets >= 40): {}", batchNets.size() - sparseBatch);
+  logger_->report("[INFO][FlexGR] Done batch generation...\n");
+}
+
+
+
+// Define the function for parallel node commit
+void layerAssign_net_node_commit_parallel_util(
+  frNet* net,
+  frNode* currNode,
+  int nodeCntStart,
+  std::vector<frNode*>& gcellNodes2RPinNodes,
+  std::vector<int>& gcellNode2RPinNodeSize,
+  std::vector<int>& nodeLayerVec,
+  int numLayers,
+  int maxNumRPins)  
+{
+  if (currNode == nullptr) {
+    return;
+  }
+
+  int currNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), currNode->getIter()) + nodeCntStart;
+  for (auto child : currNode->getChildren()) {
+    layerAssign_net_node_commit_parallel_util(net, child, nodeCntStart, 
+      gcellNodes2RPinNodes, gcellNode2RPinNodeSize, nodeLayerVec, 
+      numLayers, maxNumRPins);
+  }
+
+  int currLayerNum = nodeLayerVec[currNodeIdx];
+  // move currNode to its best layer (tech layerNum)
+  currNode->setLayerNum((currLayerNum + 1) * 2);
+
+  // tech layer num, not grid layer num
+  std::set<frLayerNum> nodeLayerNums;
+  int minLayerNum = INT_MAX;
+  int maxLayerNum = INT_MIN;
+
+  std::vector<frNode*> layerNum2SubNode(numLayers, nullptr);    
+  std::map<frLayerNum, std::vector<frNode*> > layerNum2Children;
+  std::map<frLayerNum, std::vector<frNode*> > layerNum2RPinNodes;
+
+  // Check the distribution of children nodes
+  for (auto& child : currNode->getChildren()) {
+    int childLayerNum = child->getLayerNum() / 2 - 1;
+    minLayerNum = std::min(minLayerNum, childLayerNum);
+    maxLayerNum = std::max(maxLayerNum, childLayerNum);
+    nodeLayerNums.insert(childLayerNum);
+    layerNum2Children[childLayerNum].push_back(child);
+  }
+  
+  // Check the distribution of RPin nodes
+  bool hasRootNode = false;
+  for (int i = 0; i < gcellNode2RPinNodeSize[currNodeIdx]; i++) {
+    auto rpinNode = gcellNodes2RPinNodes[currNodeIdx * maxNumRPins + i];
+    if (rpinNode == net->getRoot()) {
+      hasRootNode = true;
+    }
+    
+    int rpinLayerNum = rpinNode->getLayerNum() / 2 - 1;
+    minLayerNum = std::min(minLayerNum, rpinLayerNum);
+    maxLayerNum = std::max(maxLayerNum, rpinLayerNum);
+    nodeLayerNums.insert(rpinLayerNum);
+    layerNum2RPinNodes[rpinLayerNum].push_back(rpinNode);
+  }
+
+  // sub nodes are created at same loc as currNode but differnt layerNum
+  // since we move from 2d to 3d
+  Point currNodeLoc = currNode->getLoc();
+  layerNum2SubNode[currLayerNum] = currNode;
+  minLayerNum = std::min(minLayerNum, currLayerNum);
+  maxLayerNum = std::max(maxLayerNum, currLayerNum);
+
+  for (int layerNum = minLayerNum; layerNum <= maxLayerNum; layerNum++) {
+    // create node if the layer number is not equal to currNode layerNum
+    if (layerNum == currLayerNum) {
+      continue;
+    }
+
+    auto uNode = std::make_unique<frNode>();
+    uNode->setType(frNodeTypeEnum::frcSteiner);
+    uNode->setLoc(currNodeLoc);
+    uNode->setLayerNum((layerNum + 1) * 2);
+    layerNum2SubNode[layerNum] = uNode.get();
+    net->addNode(uNode);
+  }
+
+  // update connectivity between children and current sub nodes
+  currNode->clearChildren();
+  frLayerNum parentLayer = hasRootNode ?  
+    net->getRoot()->getLayerNum() / 2 - 1 : currLayerNum;
+  for (int layerNum = minLayerNum; layerNum <= maxLayerNum; layerNum++) {
+    // connect children nodes and sub node (including currNode) (i.e., planar)
+    if (layerNum2Children.find(layerNum) != layerNum2Children.end()) {
+      for (auto child : layerNum2Children[layerNum]) {
+        child->setParent(layerNum2SubNode[layerNum]);
+        layerNum2SubNode[layerNum]->addChild(child);
+      }
+    }
+
+    // connect vertical
+    if (layerNum < parentLayer) { 
+      layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum + 1]);
+      layerNum2SubNode[layerNum + 1]->addChild(layerNum2SubNode[layerNum]);
+    } else if (layerNum > parentLayer) {
+      layerNum2SubNode[layerNum]->setParent(layerNum2SubNode[layerNum - 1]);
+      layerNum2SubNode[layerNum - 1]->addChild(layerNum2SubNode[layerNum]);
+    }
+  }
+
+  // update connectivity if there is local rpin node
+  for (auto& [layerNum, rpinNodes] : layerNum2RPinNodes) {
+    for (auto rpinNode : rpinNodes) {
+      if (hasRootNode == true && rpinNode == net->getRoot()) {
+        layerNum2SubNode[layerNum]->setParent(rpinNode);
+        rpinNode->addChild(layerNum2SubNode[layerNum]);
+      } else {
+        rpinNode->setParent(layerNum2SubNode[layerNum]);
+        layerNum2SubNode[layerNum]->addChild(rpinNode);
+      }
+    }
+  }
+}
+
+
+void FlexGR::layerAssign_node_commit_parallel_update(
+  std::vector<std::tuple<frNet*, int, int> >& sortedNets,
+  std::vector<int>& nodeLayerVec,
+  std::vector<frNode*>& gcellNodes2RPinNodes,
+  std::vector<int>& gcellNode2RPinNodeSize,
+  std::vector<int>& nodeCntPtrVec)
+{
+  // Shared resources for the thread pool
+  std::mutex queueMutex;
+  std::queue<std::pair<frNet*, int> > taskQueue; // net, netId
+
+  // Initialize the task queue with the first net of each worker
+  {
+    std::lock_guard<std::mutex> lock(queueMutex);
+    int netId = 0;
+    for (auto net : sortedNets) {
+      taskQueue.push(std::pair<frNet*, int>(std::get<0>(net), netId++));
+    }
+  }
+
+  auto worker_lambda = [&](int numLayers, int maxNumRPins) {
+    // get task from taskQueue
+    while (true) {
+      std::pair<frNet*, int> task;
+      {
+        // Lock the queue mutex before accessing the queue
+        std::lock_guard<std::mutex> lock(queueMutex);
+        if (taskQueue.empty()) {
+          // No more tasks to process
+          return;
+        }
+        
+        task = taskQueue.front();
+        taskQueue.pop();
+      }
+
+      // Process the task outside the lock to minimize lock duration      
+      layerAssign_net_node_commit_parallel_util(
+        task.first, task.first->getRootGCellNode(),
+        nodeCntPtrVec[task.second], 
+        gcellNodes2RPinNodes, gcellNode2RPinNodeSize,
+        nodeLayerVec, numLayers, maxNumRPins);
+    }
+  };
+    
+
+  // Number of worker threads
+  // create the thread pool
+  std::vector<std::thread> workers;
+  workers.reserve(numThreads_);
+  for (int i = 0; i < numThreads_; ++i) {
+    workers.emplace_back(
+      worker_lambda,
+      numLayers_, 
+      maxNumRPins_);
+  }
+
+  // Wait for all threads to finish
+  for (auto& thread : workers) {
+    thread.join();
+  }
+}
+
+
+} // namespace drt
+
+
+
+
+
