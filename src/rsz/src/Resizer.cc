@@ -35,6 +35,7 @@
 
 #include "rsz/Resizer.hh"
 
+#include <boost/functional/hash.hpp>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -56,6 +57,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
+#include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Parasitics.hh"
@@ -83,11 +85,13 @@ using std::vector;
 
 using utl::RSZ;
 
+using odb::dbBoolProperty;
 using odb::dbBox;
 using odb::dbDoubleProperty;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
+using odb::dbSet;
 
 using sta::ConcreteLibraryCellIterator;
 using sta::FindNetDrvrLoads;
@@ -129,6 +133,8 @@ using sta::VertexOutEdgeIterator;
 
 using sta::BufferUse;
 using sta::CLOCK;
+using sta::LeakagePower;
+using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -231,6 +237,18 @@ bool VertexLevelLess::operator()(const Vertex* vertex1,
 }
 
 ////////////////////////////////////////////////////////////////
+constexpr static double double_equal_tolerance
+    = std::numeric_limits<double>::epsilon() * 10;
+bool rszFuzzyEqual(double v1, double v2)
+{
+  if (v1 == v2) {
+    return true;
+  }
+  if (v1 == 0.0 || v2 == 0.0) {
+    return std::abs(v1 - v2) < double_equal_tolerance;
+  }
+  return std::abs(v1 - v2) < 1E-9 * std::max(std::abs(v1), std::abs(v2));
+}
 
 // block_ indicates core_, design_area_, db_network_ etc valid.
 void Resizer::initBlock()
@@ -243,14 +261,56 @@ void Resizer::initBlock()
 
   // Apply sizing restrictions
   dbDoubleProperty* area_prop
-      = dbDoubleProperty::find(block_, "sizing_area_limit");
+      = dbDoubleProperty::find(block_, "limit_sizing_area");
   if (area_prop) {
+    if (sizing_area_limit_
+        && !rszFuzzyEqual(*sizing_area_limit_, area_prop->getValue())) {
+      swappable_cells_cache_.clear();
+    }
     sizing_area_limit_ = area_prop->getValue();
+  } else {
+    if (sizing_area_limit_) {
+      swappable_cells_cache_.clear();
+    }
+    sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
-      = dbDoubleProperty::find(block_, "sizing_leakage_limit");
+      = dbDoubleProperty::find(block_, "limit_sizing_leakage");
   if (leakage_prop) {
+    if (sizing_leakage_limit_
+        && !rszFuzzyEqual(*sizing_leakage_limit_, leakage_prop->getValue())) {
+      swappable_cells_cache_.clear();
+    }
     sizing_leakage_limit_ = leakage_prop->getValue();
+  } else {
+    if (sizing_leakage_limit_) {
+      swappable_cells_cache_.clear();
+    }
+    sizing_leakage_limit_.reset();
+  }
+  dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
+  if (site_prop) {
+    if (sizing_keep_site_ != site_prop->getValue()) {
+      swappable_cells_cache_.clear();
+    }
+    sizing_keep_site_ = site_prop->getValue();
+  } else {
+    if (sizing_keep_site_ != false) {
+      swappable_cells_cache_.clear();
+    }
+    sizing_keep_site_ = false;
+  }
+  dbBoolProperty* vt_prop = dbBoolProperty::find(block_, "keep_sizing_vt");
+  if (vt_prop) {
+    if (sizing_keep_vt_ != vt_prop->getValue()) {
+      swappable_cells_cache_.clear();
+    }
+    sizing_keep_vt_ = vt_prop->getValue();
+  } else {
+    if (sizing_keep_vt_ != false) {
+      swappable_cells_cache_.clear();
+    }
+    sizing_keep_vt_ = false;
   }
 }
 
@@ -496,12 +556,17 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
       }
       Instance* sta_inst = db_network_->dbToSta(inst);
       LibertyCell* cell = network_->libertyCell(sta_inst);
+      dbMaster* master = db_network_->staToDb(cell);
       LibertyCellSeq swappable_cells = getSwappableCells(cell);
       for (LibertyCell* target_cell : swappable_cells) {
         dbMaster* target_master = db_network_->staToDb(target_cell);
-        // TODO: pick the best choice rather than the first
-        //       and consider timing criticality
-        if (target_master->getSite() == site) {
+        // Pick a cell that has the matching site, the same VT type
+        // and equal or less drive resistance.  swappable_cells are
+        // sorted in decreasing order of drive resistance.
+        if (target_master->getSite() == site
+            && cellVTType(target_master).first == cellVTType(master).first
+            && sta::fuzzyLessEqual(cellDriveResistance(target_cell),
+                                   cellDriveResistance(cell))) {
           inst->swapMaster(target_master);
           width += target_master->getWidth();
           break;
@@ -1043,6 +1108,19 @@ float Resizer::bufferDriveResistance(const LibertyCell* buffer) const
   return output->driveResistance();
 }
 
+// This should be exported by STA
+float Resizer::cellDriveResistance(const LibertyCell* cell) const
+{
+  sta::LibertyCellPortBitIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    auto port = port_iter.next();
+    if (port->direction()->isOutput()) {
+      return port->driveResistance();
+    }
+  }
+  return 0.0;
+}
+
 LibertyCell* Resizer::halfDrivingPowerCell(Instance* inst)
 {
   return halfDrivingPowerCell(network_->libertyCell(inst));
@@ -1206,6 +1284,140 @@ void Resizer::resizePreamble()
   findTargetLoads();
 }
 
+// Convert static cell leakage to std::optional.
+// For state-dependent leakage, compute the average
+// across all the power states.  Cache the leakage for
+// runtime.
+std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
+{
+  auto it = cell_leakage_cache_.find(cell);
+  if (it != cell_leakage_cache_.end()) {
+    return it->second;
+  }
+
+  float leakage = 0.0;
+  bool exists;
+  cell->leakagePower(leakage, exists);
+  if (exists) {
+    cell_leakage_cache_[cell] = leakage;
+    return leakage;
+  }
+
+  // Compute average leakage across power conds for state-dependent leakage
+  LeakagePowerSeq* leakages = cell->leakagePowers();
+  if (!leakages || leakages->empty()) {
+    cell_leakage_cache_[cell] = std::nullopt;
+    return std::nullopt;
+  }
+
+  float total_leakage = 0.0;
+  for (LeakagePower* leak : *leakages) {
+    total_leakage += leak->power();
+  }
+  leakage = total_leakage / leakages->size();
+  cell_leakage_cache_[cell] = leakage;
+  return leakage;
+}
+
+// For debugging
+void Resizer::reportEquivalentCells(LibertyCell* base_cell,
+                                    bool match_cell_footprint)
+{
+  utl::SetAndRestore set_match_footprint(match_cell_footprint_,
+                                         match_cell_footprint);
+  resizePreamble();
+  LibertyCellSeq equiv_cells = getSwappableCells(base_cell);
+
+  // Sort equiv cells by ascending area and leakage
+  // STA sorts them by drive resistance
+  std::stable_sort(equiv_cells.begin(),
+                   equiv_cells.end(),
+                   [this](LibertyCell* a, LibertyCell* b) {
+                     dbMaster* master_a = this->getDbNetwork()->staToDb(a);
+                     dbMaster* master_b = this->getDbNetwork()->staToDb(b);
+                     if (master_a && master_b) {
+                       if (master_a->getArea() != master_b->getArea()) {
+                         return master_a->getArea() < master_b->getArea();
+                       }
+                     }
+                     std::optional<float> leakage_a = this->cellLeakage(a);
+                     std::optional<float> leakage_b = this->cellLeakage(b);
+                     // Compare leakages only if they are defined
+                     if (leakage_a && leakage_b) {
+                       return *leakage_a < *leakage_b;
+                     }
+                     // Cell 'a' has a priority as it has lower
+                     // drive resistance than 'b' after STA sort
+                     return leakage_a.has_value() && !leakage_b.has_value();
+                   });
+
+  logger_->report(
+      "The following {} cells are equivalent to {}{}",
+      equiv_cells.size(),
+      base_cell->name(),
+      (match_cell_footprint ? " with matching cell_footprint:" : ":"));
+  odb::dbMaster* master = db_network_->staToDb(base_cell);
+  double base_area = block_->dbuAreaToMicrons(master->getArea());
+  std::optional<float> base_leakage = cellLeakage(base_cell);
+  if (base_leakage) {
+    logger_->report(
+        "======================================================================"
+        "=======");
+    logger_->report(
+        "          Cell                              Area   Area Leakage  "
+        "Leakage  VT");
+    logger_->report(
+        "                                           (um^2)  Ratio  (W)     "
+        "Ratio  Type");
+    logger_->report(
+        "======================================================================"
+        "=======");
+    for (LibertyCell* equiv_cell : equiv_cells) {
+      odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
+      std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
+      if (equiv_cell_leakage) {
+        logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}   {}",
+                        equiv_cell->name(),
+                        equiv_area,
+                        equiv_area / base_area,
+                        *equiv_cell_leakage,
+                        *equiv_cell_leakage / *base_leakage,
+                        cellVTType(equiv_master).second);
+      } else {
+        logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
+                        equiv_cell->name(),
+                        equiv_area,
+                        equiv_area / base_area,
+                        cellVTType(equiv_master).second);
+      }
+    }
+    logger_->report(
+        "----------------------------------------------------------------------"
+        "-------");
+  } else {
+    logger_->report(
+        "==============================================================");
+    logger_->report(
+        "          Cell                              Area   Area    VT");
+    logger_->report(
+        "                                           (um^2)  Ratio  Type");
+    logger_->report(
+        "==============================================================");
+    for (LibertyCell* equiv_cell : equiv_cells) {
+      odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
+      double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
+      logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
+                      equiv_cell->name(),
+                      equiv_area,
+                      equiv_area / base_area,
+                      cellVTType(equiv_master).second);
+    }
+    logger_->report(
+        "--------------------------------------------------------------");
+  }
+}
+
 // Filter equivalent cells based on the following liberty attributes:
 // - Footprint (Optional - Honored if enforced by user): Cells with the
 //   same footprint have the same layout boundary.
@@ -1223,7 +1435,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   }
 
   dbMaster* master = db_network_->staToDb(source_cell);
-  if (master && !master->isCore()) {
+  if (master == nullptr || !master->isCore()) {
     swappable_cells_cache_[source_cell] = {};
     return {};
   }
@@ -1232,31 +1444,25 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
 
   if (equiv_cells) {
-    // Convert sta results to std::optional
-    auto get_leakage = [](LibertyCell* cell) {
-      float leakage;
-      bool exists;
-      cell->leakagePower(leakage, exists);
-      std::optional<float> value;
-      if (exists) {
-        value = leakage;
-      }
-      return value;
-    };
-
-    int64_t source_cell_area = source_cell->area();
+    int64_t source_cell_area = master->getArea();
     std::optional<float> source_cell_leakage;
     if (sizing_leakage_limit_) {
-      source_cell_leakage = get_leakage(source_cell);
+      source_cell_leakage = cellLeakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
+      if (equiv_cell == source_cell) {
+        continue;
+      }
+
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
       }
+
       dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
       if (!equiv_cell_master) {
         continue;
       }
+
       if (sizing_area_limit_.has_value() && (source_cell_area != 0)
           && (equiv_cell_master->getArea()
                   / static_cast<double>(source_cell_area)
@@ -1265,10 +1471,22 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       }
 
       if (sizing_leakage_limit_ && source_cell_leakage) {
-        std::optional<float> equiv_cell_leakage = get_leakage(equiv_cell);
+        std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
         if (equiv_cell_leakage
             && (*equiv_cell_leakage / *source_cell_leakage
                 > sizing_leakage_limit_.value())) {
+          continue;
+        }
+      }
+
+      if (sizing_keep_site_) {
+        if (master->getSite() != equiv_cell_master->getSite()) {
+          continue;
+        }
+      }
+
+      if (sizing_keep_vt_) {
+        if (cellVTType(master).first != cellVTType(equiv_cell_master).first) {
           continue;
         }
       }
@@ -1341,6 +1559,124 @@ void Resizer::makeEquivCells()
   }
   delete lib_iter;
   sta_->makeEquivCells(&libs, nullptr);
+}
+
+// When there are multiple VT layers, create a composite name
+// by removing conflicting characters.
+std::string mergeVTLayerNames(const std::string& new_name,
+                              const std::string& curr_name)
+{
+  std::string merged;
+  size_t len = std::max(new_name.size(), curr_name.size());
+
+  for (size_t i = 0; i < len; ++i) {
+    char c1 = (i < new_name.size()) ? new_name[i] : '\0';
+    char c2 = (i < curr_name.size()) ? curr_name[i] : '\0';
+
+    if (c1 == c2) {
+      merged.push_back(c1);  // Same character, keep it
+    } else if (c1 == '\0') {
+      merged.push_back(c2);  // Only c2 exists, add it
+    } else if (c2 == '\0') {
+      merged.push_back(c1);  // Only c1 exists, add it
+    }
+    // If c1 and c2 are different, we do not add anything
+  }
+
+  // If there is no overlap between names, append the names
+  if (merged.empty()) {
+    merged = new_name + curr_name;
+  }
+  return merged;
+}
+
+// Make new composite VT type name more compact by stripping out VT
+// and trailing underscore
+// LVT => L (no VT)
+// VTL_ => L (no VT, no trailing underscore)
+void compressVTLayerName(std::string& name)
+{
+  if (name.empty()) {
+    return;
+  }
+
+  // Strip out VT from name
+  size_t pos;
+  while ((pos = name.find("VT")) != std::string::npos) {
+    name.erase(pos, 2);
+  }
+
+  // Strip out trailing underscore
+  if (!name.empty() && name.back() == '_') {
+    name.pop_back();
+  }
+}
+
+// VT layers are typically in LEF obstruction section.
+// To categorize cell VT type, hash all obstruction VT layers.
+// Cells beloning to the same VT category should have identical layer
+// composition, resulting in the same hash value.  VT type is 0 if there are
+// no OBS VT layers.
+std::pair<int, std::string> Resizer::cellVTType(dbMaster* master)
+{
+  // Check if VT type is already computed
+  auto it = vt_map_.find(master);
+  if (it != vt_map_.end()) {
+    return it->second;
+  }
+
+  dbSet<dbBox> obs = master->getObstructions();
+  if (obs.empty()) {
+    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
+    return new_it->second;
+  }
+
+  std::unordered_set<std::string> unique_layers;  // count each layer only once
+  size_t hash1 = 0;
+  std::string new_layer_name;
+  for (dbBox* bbox : obs) {
+    dbTechLayer* layer = bbox->getTechLayer();
+    if (layer == nullptr || layer->getType() != odb::dbTechLayerType::IMPLANT) {
+      continue;
+    }
+
+    std::string curr_layer_name = layer->getName();
+    if (unique_layers.insert(curr_layer_name).second) {
+      debugPrint(logger_,
+                 RSZ,
+                 "equiv",
+                 1,
+                 "{} has OBS implant layer {}",
+                 master->getName(),
+                 curr_layer_name);
+      size_t hash2 = boost::hash<std::string>()(curr_layer_name);
+      boost::hash_combine(hash1, hash2);
+      new_layer_name = mergeVTLayerNames(new_layer_name, curr_layer_name);
+    }
+  }
+
+  if (hash1 == 0) {
+    auto [new_it, _] = vt_map_.emplace(master, std::make_pair(0, "-"));
+    return new_it->second;
+  }
+
+  if (vt_hash_map_.find(hash1) == vt_hash_map_.end()) {
+    int vt_id = vt_hash_map_.size() + 1;
+    vt_hash_map_[hash1] = vt_id;
+  }
+
+  compressVTLayerName(new_layer_name);
+  auto [new_it, _] = vt_map_.emplace(
+      master, std::make_pair(vt_hash_map_[hash1], new_layer_name));
+  debugPrint(logger_,
+             RSZ,
+             "equiv",
+             1,
+             "{} has VT type {} {}",
+             master->getName(),
+             vt_map_[master].first,
+             vt_map_[master].second);
+  return new_it->second;
 }
 
 int Resizer::resizeToTargetSlew(const Pin* drvr_pin)

@@ -145,6 +145,7 @@ class IRSolver
   odb::dbNet* getPowerNet() const;
 
   Connection::ResistanceMap getResistanceMap(sta::Corner* corner) const;
+  void assertResistanceMap(sta::Corner* corner) const;
 
   IRNetwork* getNetwork() const { return network_.get(); }
 

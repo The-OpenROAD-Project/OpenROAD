@@ -13,9 +13,9 @@ Corner           : default
 Supply voltage   : 1.40e+00 V
 Worstcase voltage: 1.40e+00 V
 Average voltage  : 1.40e+00 V
-Average IR drop  : 2.40e-03 V
-Worstcase IR drop: 4.55e-03 V
-Percentage drop  : 0.32 %
+Average IR drop  : 1.66e-04 V
+Worstcase IR drop: 3.15e-04 V
+Percentage drop  : 0.02 %
 ######################################
 [INFO DPL-0056] Placed 657 decap cells. Total capacitance: 0.000611
 No differences found.

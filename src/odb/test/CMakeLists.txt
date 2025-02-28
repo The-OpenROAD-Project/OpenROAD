@@ -53,7 +53,6 @@ or_integration_tests(
     cpp_tests
     dump_netlists
     dump_netlists_withfill
-    parser_unit_test
     test_block
     test_bterm
     test_destroy

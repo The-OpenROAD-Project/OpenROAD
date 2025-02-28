@@ -131,7 +131,6 @@
 #include "odb/dbShape.h"
 #include "odb/defout.h"
 #include "odb/lefout.h"
-#include "odb/parse.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -734,6 +733,20 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
   return getTable()->getObjectTable(type);
 }
 
+dbOStream& operator<<(dbOStream& stream, const _dbBTermGroup& obj)
+{
+  stream << obj.bterms;
+  stream << obj.order;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj)
+{
+  stream >> obj.bterms;
+  stream >> obj.order;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 {
   std::list<dbBlockCallBackObj*>::const_iterator cbitr;
@@ -851,6 +864,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._max_routing_layer;
     stream << block._min_layer_for_clock;
     stream << block._max_layer_for_clock;
+  }
+  if (db->isSchema(db_schema_block_pin_groups)) {
+    stream << block._bterm_groups;
   }
 
   //---------------------------------------------------------- stream out
@@ -1014,6 +1030,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> block._max_routing_layer;
     stream >> block._min_layer_for_clock;
     stream >> block._max_layer_for_clock;
+  }
+  if (db->isSchema(db_schema_block_pin_groups)) {
+    stream >> block._bterm_groups;
   }
 
   //---------------------------------------------------------- stream in
@@ -1578,6 +1597,34 @@ dbBTerm* dbBlock::findBTerm(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbBTerm*) block->_bterm_hash.find(name);
+}
+
+std::vector<dbBlock::dbBTermGroup> dbBlock::getBTermGroups()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  std::vector<dbBlock::dbBTermGroup> groups;
+  for (const _dbBTermGroup& group : block->_bterm_groups) {
+    dbBlock::dbBTermGroup bterm_group;
+    for (const auto& bterm_id : group.bterms) {
+      bterm_group.bterms.push_back(
+          (dbBTerm*) block->_bterm_tbl->getPtr(bterm_id));
+    }
+    bterm_group.order = group.order;
+    groups.push_back(std::move(bterm_group));
+  }
+
+  return groups;
+}
+
+void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  _dbBTermGroup group;
+  for (dbBTerm* bterm : bterms) {
+    group.bterms.emplace_back(bterm->getId());
+  }
+  group.order = order;
+  block->_bterm_groups.push_back(std::move(group));
 }
 
 dbSet<dbITerm> dbBlock::getITerms()

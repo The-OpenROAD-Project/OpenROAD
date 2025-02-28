@@ -84,7 +84,7 @@ class Parser
   void initSecondaryVias();
   void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }
-  std::vector<frTrackPattern*>& getPrefTrackPatterns()
+  std::vector<frTrackPattern*>& computePrefTrackPatterns()
   {
     return prefTrackPatterns_;
   }

@@ -897,6 +897,11 @@ class dbChip : public dbObject
 class dbBlock : public dbObject
 {
  public:
+  struct dbBTermGroup
+  {
+    std::vector<dbBTerm*> bterms;
+    bool order = false;
+  };
   ///
   /// Get block chip name.
   ///
@@ -964,6 +969,17 @@ class dbBlock : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbBTerm* findBTerm(const char* name);
+
+  ///
+  /// Get all the bterm groups of this block.
+  ///
+  std::vector<dbBTermGroup> getBTermGroups();
+
+  ///
+  /// Get all the block-terminals of this block.
+  /// The flag order places the pins ordered in ascending x/y position.
+  ///
+  void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
   ///
   /// Get all the instance-terminals of this block.
@@ -1721,9 +1737,14 @@ class dbBTerm : public dbObject
   dbModNet* getModNet();
   ///
 
-  /// Disconnect the block-terminal from it's net.
-  ///
+  /// Disconnect the block-terminal from its net.
+  /// kills a dbModNet and dbNet connection
   void disconnect();
+  // Fine level apis to control which net removed from pin.
+  /// Disconnect the block-terminal from its db net.
+  void disconnectDbNet();
+  /// Disconnect the block-terminal from its mod net.
+  void disconnectDbModNet();
 
   /// Connect the block-terminal to net.
   ///
@@ -3398,6 +3419,17 @@ class dbITerm : public dbObject
   /// Will remove from both mod net and dbNet.
   ///
   void disconnect();
+
+  ///
+  /// Disconnect just the db net
+  ///
+  void disconnectDbNet();
+
+  ///
+  /// Disconnect just the mod net
+  ///
+
+  void disconnectModNet();
 
   ///
   /// Get the average of the centers for the iterm shapes

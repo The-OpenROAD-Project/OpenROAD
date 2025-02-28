@@ -1826,7 +1826,7 @@ void IOPlacer::addDirectionConstraint(Direction direction,
   Interval interval(edge, begin, end);
   logger_->info(utl::PPL,
                 67,
-                "Restrict {} pins to region {}u-{}u, in the {} edge.",
+                "Restrict {} pins to region {:.2f}u-{:.2f}u, in the {} edge.",
                 getDirectionString(direction),
                 getBlock()->dbuToMicrons(begin),
                 getBlock()->dbuToMicrons(end),
