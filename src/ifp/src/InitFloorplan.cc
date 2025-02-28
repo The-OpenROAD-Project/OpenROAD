@@ -262,7 +262,7 @@ void InitFloorplan::makeRowsWithSpacing(
 {
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
-    logger_->error(IFP, 56, "Floorplan die area is 0. Cannot build rows.");
+    logger_->error(IFP, 64, "Floorplan die area is 0. Cannot build rows.");
   }
 
   validateCoreSpacing(block_,
