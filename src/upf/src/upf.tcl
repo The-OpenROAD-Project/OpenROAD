@@ -54,7 +54,7 @@ proc write_upf { args } {
 #
 # Arguments:
 #
-# - elements: list of module paths that belong to this domain OR '*' for top domain
+# - elements: list of module paths that belong to this domain OR '.' for top domain
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {

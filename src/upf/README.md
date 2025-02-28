@@ -53,7 +53,7 @@ create_power_domain
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-elements` | List of module paths that belong this this domain OR `*` for top domain. |
+| `-elements` | List of module paths that belong this this domain OR `.` for top domain. |
 | `name` | Domain name. |
 
 ### Create Logic Port
