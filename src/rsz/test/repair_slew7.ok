@@ -38,7 +38,7 @@ u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        14
-    final |   +245.3% |       1 |       0 |             0 |         0
+    final |    +24.5% |       1 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 1 instances.
 Startpoint: u1/A4 (internal pin)

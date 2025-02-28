@@ -38,7 +38,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net _20_
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[7]
 [WARNING RSZ-0143] dont-touch instance _53_ ignored when buffering net y[6]
-    final |   +139.5% |       0 |       5 |             5 |         0
+    final |    +14.0% |       0 |       5 |             5 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0038] Inserted 5 buffers in 5 nets.
 Startpoint: _70_ (rising edge-triggered flip-flop clocked by clk)

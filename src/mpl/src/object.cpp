@@ -1261,8 +1261,15 @@ void SoftMacro::resizeRandomly(
   if (width_list_.empty()) {
     return;
   }
-  const int idx = static_cast<int>(
-      std::floor(distribution(generator) * width_list_.size()));
+  // TODO: See for explanation
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  float random_variable_0_1;
+  do {
+    random_variable_0_1 = distribution(generator);
+  } while (random_variable_0_1 >= 1.0);
+
+  const int idx
+      = static_cast<int>(std::floor(random_variable_0_1 * width_list_.size()));
   const float min_width = width_list_[idx].first;
   const float max_width = width_list_[idx].second;
   width_ = min_width + distribution(generator) * (max_width - min_width);
