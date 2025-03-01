@@ -368,7 +368,7 @@ uint32_t getEdgeCost2D(
   // cost 
   uint32_t edgeCost = edgeLength
     + edgeLength * congCost
-    + (histCost ? HISTCOST * edgeLength * congCost * HISTCOST : 0)
+    // + (histCost ? HISTCOST * edgeLength * congCost * HISTCOST : 0)
     + (blockCost ? BLOCKCOST * edgeLength : 0)
     + (overflowCost ? OVERFLOWCOST * edgeLength : 0);
 

@@ -34,6 +34,42 @@
 
 namespace drt {
 
+
+float FlexGRGridGraph::getGridCost(
+  frMIdx gridX, frMIdx gridY, frMIdx gridZ,
+  frDirEnum dir) 
+{
+  // currently no congeston on via direction
+  bool congCost = (dir == frDirEnum::U || dir == frDirEnum::D) ? false : true;
+  bool blockCost = hasBlock(gridX, gridY, gridZ, dir);
+  bool overflowCost = false;
+
+  frMIdx tmpX = gridX;
+  frMIdx tmpY = gridY;
+  frMIdx tmpZ = gridZ;
+  frDirEnum tmpDir = dir;
+  correct(tmpX, tmpY, tmpZ, tmpDir);
+  unsigned rawDemand = 0;
+  unsigned rawSupply = 0;
+
+  if (tmpDir != frDirEnum::U && tmpDir != frDirEnum::D) {
+    rawDemand = getRawDemand(tmpX, tmpY, tmpZ, tmpDir);
+    rawSupply = getRawSupply(tmpX, tmpY, tmpZ, tmpDir);
+  }
+
+  bool histCost = hasHistoryCost(tmpX, tmpY, tmpZ);
+  overflowCost = (rawDemand >= rawSupply * grWorker_->getCongThresh());
+
+  float gridCost = getEdgeLength(gridX, gridY, gridZ, dir);
+  gridCost += (congCost ? getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
+  gridCost += (histCost ? 4 * getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getHistoryCost(gridX, gridY, gridZ) * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
+  gridCost += (blockCost ? router_cfg_->BLOCKCOST * getEdgeLength(gridX, gridY, gridZ, dir) * 100 : 0);
+  gridCost += (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
+  return gridCost;
+}
+
+
+
 bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                              grNode* nextPinNode,
                              std::vector<FlexMazeIdx>& path,
@@ -352,6 +388,11 @@ void FlexGRGridGraph::getNextGrid(frMIdx& gridX,
   }
 }
 
+
+
+
+
+
 frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
                                         const frDirEnum& dir)
 {
@@ -369,7 +410,7 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
   // currently no congeston on via direction
   bool congCost = (dir == frDirEnum::U || dir == frDirEnum::D) ? false : true;
 
-  bool blockCost = hasBlock(gridX, gridY, gridZ, dir);
+  //bool blockCost = hasBlock(gridX, gridY, gridZ, dir);
   bool overflowCost = false;
 
   frMIdx tmpX = gridX;
@@ -386,8 +427,14 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
   }
 
   bool histCost = hasHistoryCost(tmpX, tmpY, tmpZ);
-
+  bool blockCost = hasBlock(tmpX, tmpY, tmpZ, tmpDir);
   overflowCost = (rawDemand >= rawSupply * grWorker_->getCongThresh());
+
+  nextPathCost += getEdgeLength(tmpX, tmpY, tmpZ, dir)
+    + (congCost ? getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getEdgeLength(tmpX, tmpY, tmpZ, dir) : 0)
+    + (histCost ? 4 * getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getHistoryCost(tmpX, tmpY, tmpZ) * getEdgeLength(tmpX, tmpY, tmpZ, dir) : 0)
+    + (blockCost ? router_cfg_->BLOCKCOST * getEdgeLength(tmpX, tmpY, tmpZ, dir) * 100 : 0)
+    + (overflowCost ? 128 * getEdgeLength(tmpX, tmpY, tmpZ, dir) : 0);
 
   nextPathCost
       += getEdgeLength(gridX, gridY, gridZ, dir)
@@ -405,6 +452,12 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
                             * getEdgeLength(gridX, gridY, gridZ, dir) * 100
                       : 0)
          + (overflowCost ? 128 * getEdgeLength(gridX, gridY, gridZ, dir) : 0);
+  
+         //nextPathCost += getEdgeLength(gridX, gridY, gridZ, dir);
+  //return getEdgeLength(gridX, gridY, gridZ, dir);
+
+  //return 1.0;
+
   return nextPathCost;
 }
 

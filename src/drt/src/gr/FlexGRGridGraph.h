@@ -667,6 +667,10 @@ class FlexGRGridGraph
     return frDirEnum::UNKNOWN;  
   }
 
+  float getGridCost(
+    frMIdx gridX, frMIdx gridY, frMIdx gridZ,
+    frDirEnum dir);
+
  private:
   frDesign* design_{nullptr};
   FlexGRWorker* grWorker_{nullptr};

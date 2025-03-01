@@ -190,6 +190,10 @@ void FlexGRWorker::batchGenerationRelax(
   int numGrids = xDim * yDim;
   for (int netId = 0; netId < rerouteNets.size(); netId++) {
     int batchId = findBatch(netId);  
+    // always create a new batch if no batch is found
+    // for testing purpose
+    batchId = -1;
+    
     if (batchId == -1 || batches[batchId].size() >= numGrids) {
       batchId = batches.size();
       batches.push_back(std::vector<grNet*>());
@@ -463,6 +467,40 @@ bool FlexGRWorker::restoreNet(grNet* net)
 
   // routeNet_checkNet(net);
   routeNet_postRouteAddCong(net);
+
+  net->setPostCost(calcPathCost(net));
+  if (net->getPinGCellNodes().size() <= 0) {
+    if (net->getPostCost() != net->getPreCost()) {
+      std::cout << "Net " << net->getFrNet()->getName() << " ";
+      if (net->getPostCost() < net->getPreCost()) {
+        std::cout << " Improved: PostCost = " << net->getPostCost() << " < PreCost = " << net->getPreCost() << std::endl;
+      } else {
+        std::cout << " Deteriorated: PostCost = " << net->getPostCost() << " > PreCost = " << net->getPreCost() << std::endl;
+        for (auto& uptr : net->getRouteConnFigs()) {
+          if (uptr->typeId() == grcPathSeg) {
+            auto cptr = static_cast<grPathSeg*>(uptr.get());
+            auto [bp, ep] = cptr->getPoints();
+            frLayerNum lNum = cptr->getLayerNum();
+            FlexMazeIdx bi, ei;
+            gridGraph_.getMazeIdx(bp, lNum, bi);
+            gridGraph_.getMazeIdx(ep, lNum, ei);
+            frDirEnum dir = (bi.x() == ei.x()) ? frDirEnum::N : frDirEnum::E;
+            if (bi.x() == ei.x()) {
+              std::cout << "vert: " << " bp = ( " << bi.x() << " " << bi.y() << " ) "
+                        << " ep = ( " << ei.x() << " " << ei.y() << " ) " << std::endl;
+            } else {
+              // horz
+              std::cout << "horz: " << " bp = ( " << bi.x() << " " << bi.y() << " ) "
+                        << " ep = ( " << ei.x() << " " << ei.y() << " ) " << std::endl;
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+
   return true;
 }
 

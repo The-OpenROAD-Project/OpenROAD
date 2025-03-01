@@ -393,9 +393,6 @@ class FlexGR
       int xDim, int yDim);
   
   
-  
-
-
 
   void batchGenerationMIS_update(
     std::vector<grNet*> &rerouteNets,
@@ -404,7 +401,7 @@ class FlexGR
     int iter,
     bool is2DRouting);      
 
-  int validBatchThreshold_ = 200;
+  int validBatchThreshold_ = 0;
   int maxChunkSize_ = 200;
   std::vector<grNet*> nets2Ripup_;
 
@@ -551,6 +548,8 @@ class FlexGRWorker
   const FlexGRWorkerRegionQuery& getWorkerRegionQuery() const { return rq_; }
   FlexGRWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
+  float calcPathCost(grNet* net);
+
   // others
   void initBoundary();
   void main_mt();
@@ -582,6 +581,9 @@ class FlexGRWorker
   void main_mt_prep(std::vector<grNet*>& rerouteNets, int iter) {
     route_addHistCost_update();
     routePrep_update(rerouteNets, iter);
+    for (auto net : rerouteNets) {
+      net->setPreCost(calcPathCost(net));
+    }
   }
 
   void main_mt_init(std::vector<grNet*>& rerouteNets) {

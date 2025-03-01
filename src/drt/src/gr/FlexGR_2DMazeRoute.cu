@@ -198,15 +198,25 @@ unsigned getHistoryCost(const uint64_t* cmap, int idx)
 }
 
 
+/*
 __host__ __device__ 
-float getCongCost(unsigned supply, unsigned demand)
+float getCongCost(unsigned demand, unsigned supply)
 {
   float exp_val = exp(std::min(10.0f, static_cast<float>(supply) - demand));  
   float factor = 4.0f / (1.0f + exp_val); 
   float congCost = demand * (1.0f + factor) / (supply + 1.0f);
   return congCost;  
 }
+*/
 
+
+// Please DO NOT TOUCH the following function
+// The performance of the function is critical to the overall performance of the router.
+__host__ __device__
+double getCongCost(unsigned demand, unsigned supply)
+{
+  return (demand * (4 / (1.0 + exp(static_cast<double>(supply) - demand))) / (supply + 1));
+}
 
 
 __host__ __device__
@@ -215,10 +225,10 @@ unsigned getRawDemand2D(const uint64_t* cmap, int idx, Directions2D dir)
   unsigned demand = 0;
   switch (dir) {
     case Directions2D::DIR_RIGHT:
-      demand = getBits(cmap, idx, 48, CMAPDEMANDSIZE);
+      demand = getBits(cmap, idx, 48, GRDEMANDSIZE);
       break;
     case Directions2D::DIR_NORTH:
-      demand = getBits(cmap, idx, 32, CMAPDEMANDSIZE);
+      demand = getBits(cmap, idx, 32, GRDEMANDSIZE);
       break;
     default:;
   }
@@ -232,14 +242,14 @@ unsigned getRawSupply2D(const uint64_t* cmap, int idx, Directions2D dir)
   unsigned supply = 0;
   switch (dir) {
     case Directions2D::DIR_RIGHT:
-      supply = getBits(cmap, idx, 24, CMAPSUPPLYSIZE);
+      supply = getBits(cmap, idx, 24, GRSUPPLYSIZE);
       break;
     case Directions2D::DIR_NORTH:
-      supply = getBits(cmap, idx, 16, CMAPSUPPLYSIZE);
+      supply = getBits(cmap, idx, 16, GRSUPPLYSIZE);
       break;
     default:;
   }
-  return supply << CMAPFRACSIZE;
+  return supply << GRFRACSIZE;
 }
 
 
@@ -304,10 +314,10 @@ uint32_t getEdgeCost2D(
 {
   bool blockCost = hasBlock2D(d_costMap, idx, dir);
   unsigned histCost = getHistoryCost(d_costMap, idx);
-  unsigned rawDemand = getRawDemand2D(d_costMap, idx, dir) * congThreshold;
-  unsigned rawSupply = getRawSupply2D(d_costMap, idx, dir);
+  unsigned rawDemand = getRawDemand2D(d_costMap, idx, dir);
+  unsigned rawSupply = getRawSupply2D(d_costMap, idx, dir) * congThreshold;
   bool overflowCost = (rawDemand >= rawSupply);
-  float congCost = getCongCost(rawSupply, rawDemand);
+  double congCost = getCongCost(rawDemand, rawSupply);
   unsigned edgeLength = getEdgeLength2D(d_xCoords, d_yCoords, x, y, dir);
 
   // cost 
@@ -1962,6 +1972,18 @@ void initBatchNodeData2D_v3__kernel(
 
 
 __global__
+void initParent2D__kernel(
+  Point2D_CUDA* d_parents,
+  int numParents)
+{
+  for (int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < numParents; idx += gridDim.x * blockDim.x) {
+    d_parents[idx].x = -1;
+    d_parents[idx].y = -1;
+  }
+}
+
+
+__global__
 void copyParents2D__kernel(
   NodeData2D* d_nodes,
   Point2D_CUDA* d_parents,
@@ -2131,7 +2153,7 @@ void FlexGR::allocateCUDAMem(
     cudaFree(d_parents_);
     cudaMalloc(&d_parents_, h_parents.size() * sizeof(Point2D_CUDA));
   }
-  cudaMemcpy(d_parents_, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
+  //cudaMemcpy(d_parents_, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
 
   if (pinIdxVec.size() > h_pinIdxVec_size_) {
     h_pinIdxVec_size_ = pinIdxVec.size();
@@ -2169,175 +2191,6 @@ void FlexGR::allocateCUDAMem(
   cudaCheckError();
 }
 
-
-/*
-void FlexGR::allocateCUDAMem(
-  int* d_dX,
-  int* d_dY,
-  uint64_t* d_costMap,
-  int* d_xCoords,
-  int* d_yCoords,
-  NodeData2D* d_nodes,
-  Point2D_CUDA* d_parents,
-  int* d_pinIdxVec,
-  int* d_netPtr,
-  Rect2D_CUDA* d_netBBox,
-  int* d_netBatchIdx,
-  std::vector<uint64_t>& h_costMap,
-  std::vector<int>& h_xCoords,
-  std::vector<int>& h_yCoords,
-  std::vector<Point2D_CUDA>& h_parents,
-  std::vector<int>& pinIdxVec,
-  std::vector<int>& netPtr,
-  std::vector<Rect2D_CUDA>& netBBoxVec,
-  std::vector<int>& netBatchIdxVec,
-  int numGrids,
-  int numNodes)
-{  
-  // We have defined the following variables
-  // h_costMap_size_
-  // h_xCoords_size_
-  // h_yCoords_size_
-  // h_parents_size_
-  // h_pinIdxVec_size_
-  // h_netPtr_size_
-  // h_netBBoxVec_size_
-  // h_netBatchIdxVec_size_ 
-  // h_nodes_size_
-
-  std::vector<int> h_dX = {0, 1, 0, -1};
-  std::vector<int> h_dY = {1, 0, -1, 0};
-
-  cudaFree(d_dX);
-  cudaFree(d_dY);
-  cudaFree(d_costMap);
-  cudaFree(d_xCoords);
-  cudaFree(d_yCoords);
-  cudaFree(d_parents);
-  cudaFree(d_pinIdxVec);
-  cudaFree(d_netPtr);
-  cudaFree(d_netBBox);
-  cudaFree(d_netBatchIdx);
-  cudaFree(d_nodes);
-
-  // Allocate the device memory for the d_dX and d_dY
-  cudaMalloc(&d_dX, 4 * sizeof(int));
-  cudaMalloc(&d_dY, 4 * sizeof(int));
-  
-  cudaMalloc(&d_costMap, numGrids * sizeof(uint64_t));
-  cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
-  cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
-  
-  cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
-  cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D_CUDA));
-
-  cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
-  cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
-  cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
-
-  
-  cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-
-  cudaMemcpy(d_costMap, h_costMap.data(), numGrids * sizeof(uint64_t), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
-
-  cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);  
-
-
-
-
-  
-  if (d_dX == nullptr) {
-    std::vector<int> h_dX = {0, 1, 0, -1};
-    std::vector<int> h_dY = {1, 0, -1, 0};
-    int* d_dX = nullptr;
-    int* d_dY = nullptr;
-    cudaMalloc(&d_dX, 4 * sizeof(int));
-    cudaMalloc(&d_dY, 4 * sizeof(int));
-    cudaMemcpy(d_dX, h_dX.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_dY, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_xCoords.size() > h_xCoords_size_) {
-    h_xCoords_size_ = h_xCoords.size();
-    cudaFree(d_xCoords);
-    cudaMalloc(&d_xCoords, h_xCoords.size() * sizeof(int));
-    cudaMemcpy(d_xCoords, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_yCoords.size() > h_yCoords_size_) {
-    h_yCoords_size_ = h_yCoords.size();
-    cudaFree(d_yCoords);
-    cudaMalloc(&d_yCoords, h_yCoords.size() * sizeof(int));
-    cudaMemcpy(d_yCoords, h_yCoords.data(), h_yCoords.size() * sizeof(int), cudaMemcpyHostToDevice);
-    cudaCheckError();
-  }
-
-  if (h_costMap.size() > h_costMap_size_) {
-    h_costMap_size_ = h_costMap.size();
-    cudaFree(d_costMap);
-    cudaMalloc(&d_costMap, h_costMap.size() * sizeof(uint64_t));
-  }
-  cudaMemcpy(d_costMap, h_costMap.data(), h_costMap.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
-
-  if (h_parents.size() > h_parents_size_) {
-    h_parents_size_ = h_parents.size();
-    cudaFree(d_parents);
-    cudaMalloc(&d_parents, h_parents.size() * sizeof(Point2D_CUDA));
-  }
-  cudaMemcpy(d_parents, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (pinIdxVec.size() > h_pinIdxVec_size_) {
-    h_pinIdxVec_size_ = pinIdxVec.size();
-    cudaFree(d_pinIdxVec);
-    cudaMalloc(&d_pinIdxVec, pinIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_pinIdxVec, pinIdxVec.data(), pinIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-
-  if (netPtr.size() > h_netPtr_size_) {
-    h_netPtr_size_ = netPtr.size();
-    cudaFree(d_netPtr);
-    cudaMalloc(&d_netPtr, netPtr.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netPtr, netPtr.data(), netPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
-  
-
-  if (netBBoxVec.size() > h_netBBoxVec_size_) {
-    h_netBBoxVec_size_ = netBBoxVec.size();
-    cudaFree(d_netBBox);
-    cudaMalloc(&d_netBBox, netBBoxVec.size() * sizeof(Rect2D_CUDA));
-  }
-  cudaMemcpy(d_netBBox, netBBoxVec.data(), netBBoxVec.size() * sizeof(Rect2D_CUDA), cudaMemcpyHostToDevice);
-
-  if (netBatchIdxVec.size() > h_netBatchIdxVec_size_) {
-    h_netBatchIdxVec_size_ = netBatchIdxVec.size();
-    cudaFree(d_netBatchIdx);
-    cudaMalloc(&d_netBatchIdx, netBatchIdxVec.size() * sizeof(int));
-  }
-  cudaMemcpy(d_netBatchIdx, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
-  
-
-
-  if (numNodes > h_nodes_size_) {
-    h_nodes_size_ = numNodes;
-    std::cout << "h_nodes_size_ = " << h_nodes_size_ << std::endl;
-    cudaFree(d_nodes);
-    cudaMalloc(&d_nodes, numNodes * sizeof(NodeData2D));
-  }
-  
-
-  cudaCheckError();
-}
-*/
 
 
 void FlexGR::freeCUDAMem()
@@ -2527,6 +2380,9 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     int numThreads = 1024;
     int numBatchBlocks = (numNodes + numThreads - 1) / numThreads;
     
+    int numParentsBlocks = (h_parents_size_ + numThreads - 1) / numThreads;
+    initParent2D__kernel<<<numParentsBlocks, numThreads>>>(d_parents_, h_parents.size());
+
     initBatchNodeData2D_v3__kernel<<<numBatchBlocks, numThreads>>>(
       d_nodes_, 
       numNodes);
@@ -2579,6 +2435,8 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
       OVERFLOWCOST,
       HISTCOST);
     
+    std::cout << "Congestion threshold: " << congThreshold << std::endl;
+
     cudaCheckError();
     
     cudaDeviceSynchronize();
@@ -2600,7 +2458,15 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     // Check the parents
     cudaCheckError();
   }  
-  
+ 
+  for (auto& parent : h_parents) {
+    if (parent.x < 0 || parent.y < 0) {
+      if (parent.x != -1 || parent.y != -1) {
+        std::cout << "[ERROR] Invalid parent: " << parent.x << " " << parent.y << std::endl;
+      } 
+    }
+  }  
+
   cudaCheckError();
   
   if (VERBOSE > 0) {

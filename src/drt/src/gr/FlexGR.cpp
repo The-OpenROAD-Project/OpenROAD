@@ -375,7 +375,7 @@ void FlexGR::searchRepair(int iter,
         Point gcellIdxLL = Point(i, j);
         Point gcellIdxUR
             = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
-                    std::min((int) ygp.getCount(), j + size - 1));
+                    std::min((int) ygp.getCount() - 1, j + size - 1));
 
         Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(gcellIdxLL);
         Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(gcellIdxUR);

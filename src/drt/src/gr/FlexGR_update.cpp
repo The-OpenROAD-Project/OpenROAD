@@ -286,8 +286,8 @@ void FlexGR::batchGenerationMIS_update(
     }
   }
 
-  if (VERBOSE > 0) {
-  //if (1) {
+  //if (VERBOSE > 0) {
+  if (1) {
     // Report the batch information
     logger_->report("[INFO] Number of batches: " + std::to_string(batches.size()));
     logger_->report("\t[INFO] Batch information:");
@@ -359,9 +359,10 @@ void FlexGR::searchRepair_update(int iter,
     for (int j = 0; j < (int) ygp.getCount(); j += size) {
       auto worker = std::make_unique<FlexGRWorker>(this, router_cfg_, logger_);
       Point gcellIdxLL = Point(i, j);
+      // Fixed by Zhiang
       Point gcellIdxUR
           = Point(std::min((int) xgp.getCount() - 1, i + size - 1),
-                  std::min((int) ygp.getCount(), j + size - 1));
+                  std::min((int) ygp.getCount() - 1, j + size - 1));
 
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(gcellIdxLL);
       Rect routeBox2 = getDesign()->getTopBlock()->getGCellBox(gcellIdxUR);
@@ -392,7 +393,7 @@ void FlexGR::searchRepair_update(int iter,
 
   logger_->report("[INFO] Number of workers: " + std::to_string(uworkers.size()));
   //int numThreads = std::min(8, router_cfg_->MAX_THREADS);
-  int numThreads = 8;
+  int numThreads = 1;
   omp_set_num_threads(numThreads);
   logger_->report("[INFO] Number of threads: " + std::to_string(numThreads));  
 
@@ -418,6 +419,7 @@ void FlexGR::searchRepair_update(int iter,
   float routeTime = 0.0;
   float restoreTime = 0.0;
   float syncTime = 0.0;
+  mazeEndIter = 10;  
 
   for (int iter = 0; iter < mazeEndIter; iter++) {    
     int xDim, yDim, zDim;
@@ -440,6 +442,7 @@ void FlexGR::searchRepair_update(int iter,
       }
     }
     exception1.rethrow();
+
 
     // Assign unique netId and workerId to each net
     int netId = 0;
@@ -510,7 +513,7 @@ void FlexGR::searchRepair_update(int iter,
 
 
     if (is2DRouting == true) {
-      for (int batchIdx = 0; batchIdx < batches.size(); batchIdx++) {
+      for (int batchIdx = 0; batchIdx < batches.size(); batchIdx++) {      
         if (batches[batchIdx].size() < validBatchThreshold_) {
           // Route all the nets on the CPU side
 #pragma omp parallel for schedule(dynamic)      
@@ -520,7 +523,17 @@ void FlexGR::searchRepair_update(int iter,
           continue;
         }
 
+        // Copy the cost map back to the cmap
+        for (int i = 0; i < (int) uworkers.size(); i++) {
+          uworkers[i]->initGridGraph_back2CMap();
+        }
+
+        std::cout << "Before GPU Routing" << std::endl;
+        reportCong2D();
+
         auto& h_costMap = uworkers[0]->getCMap()->getBits();
+
+
 
         // We need to use GPU-accelerated Maze Routing
         std::vector<std::vector<grNet*> > subBatches;
@@ -565,6 +578,15 @@ void FlexGR::searchRepair_update(int iter,
           logger_->report("[INFO] Batch GPU Maze Restore Runtime: " + std::to_string(restoreRuntime.count()) + " ms");
         }
 
+      
+        // Copy the cost map back to the cmap
+        for (int i = 0; i < (int) uworkers.size(); i++) {
+          uworkers[i]->initGridGraph_back2CMap();
+        }
+
+        std::cout << "After GPU Routing" << std::endl;
+        reportCong2D();
+
         RestoreTimeTot += restoreRuntime.count();
       }
     } else {
@@ -580,6 +602,14 @@ void FlexGR::searchRepair_update(int iter,
       uworkers[j]->route_decayHistCost_update();
     }
 
+        
+    // Copy the cost map back to the cmap
+    for (int i = 0; i < (int) uworkers.size(); i++) {
+      uworkers[i]->initGridGraph_back2CMap();
+    }
+
+    reportCong2D();
+
     std::cout << "Iteration GPU Maze Routing Time: " << GPUMazeRouteTimeTot << " ms" << std::endl;
     std::cout << "Iteration Restore Time: " << RestoreTimeTot << " ms" << std::endl;
   }
@@ -588,9 +618,10 @@ void FlexGR::searchRepair_update(int iter,
     worker->end();
   }
   uworkers.clear();
-  
 
+  reportCong2D();
 
+  exit(1);
 
   /*
   for (int iter = 0; iter < mazeEndIter; iter++) {

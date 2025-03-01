@@ -86,6 +86,46 @@ void FlexGRWorker::route_decayHistCost_update()
 }
 
 
+float FlexGRWorker::calcPathCost(grNet* net)
+{
+  // Traverse all the metal segments in the net
+  float pathCost = 0;
+  for (auto& uptr : net->getRouteConnFigs()) {
+    if (uptr->typeId() == grcPathSeg) {
+      auto cptr = static_cast<grPathSeg*>(uptr.get());
+      auto [bp, ep] = cptr->getPoints();
+      frLayerNum lNum = cptr->getLayerNum();
+      FlexMazeIdx bi, ei;
+      gridGraph_.getMazeIdx(bp, lNum, bi);
+      gridGraph_.getMazeIdx(ep, lNum, ei);
+      frDirEnum dir = (bi.x() == ei.x()) ? frDirEnum::N : frDirEnum::E;
+      if (bi.x() == ei.x()) {
+        // vert
+        for (auto yIdx = bi.y(); yIdx < ei.y(); yIdx++) {
+          pathCost += gridGraph_.getGridCost(bi.x(), yIdx, bi.z(), dir);
+        }  
+          
+        if (bi.y() == ei.y()) {
+          std::cout << "Single point pathseg" << std::endl;
+        }
+        
+      } else {
+        // horz
+        for (auto xIdx = bi.x(); xIdx < ei.x(); xIdx++) {
+          pathCost += gridGraph_.getGridCost(xIdx, bi.y(), bi.z(), dir);   
+        }
+
+        if (bi.x() == ei.x()) {
+          std::cout << "Single point pathseg" << std::endl;
+        }
+      }
+    }
+  }
+
+  return pathCost;  
+}
+
+
 void FlexGRWorker::init_pinGCellIdxs()
 {
   for (auto &net : nets_) {
@@ -114,25 +154,30 @@ void FlexGRWorker::init_pinGCellIdxs()
       ur.set(std::max(ur.x(), idx.x()), std::max(ur.y(), idx.y()), std::max(ur.z(), idx.z()));
     }
    
-    /*
     int deltaX = std::min(ur.x() - ll.x(), 5);
     int deltaY = std::min(ur.y() - ll.y(), 5);
     int delta = std::max(deltaX, deltaY);
     ll.set(std::max(0, ll.x() - delta), std::max(0, ll.y() - delta), ll.z());
     
+    /*
     int xDim, yDim, zDim;
     gridGraph_.getDim(xDim, yDim, zDim); 
     int xDim_global, yDim_global, zDim_global;
     this->getCMap()->getDim(xDim_global, yDim_global, zDim_global);
     xDim = std::min(xDim, xDim_global);
     yDim = std::min(yDim, yDim_global);
-    ur.set(std::min(xDim - 1, ur.x() + delta), std::min(yDim - 1, ur.y() + delta), ur.z());        
-     
+    */
+    //ur.set(std::min(xDim - 1, ur.x() + delta), std::min(yDim - 1, ur.y() + delta), ur.z());        
     //net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));
-    //std::cout << "[Test] xDim = " << xDim << ", yDim = " << yDim << std::endl;
-    */    
+    auto LL = getRouteGCellIdxLL();
+    auto UR = getRouteGCellIdxUR();
 
-    net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y())); 
+    int xDim = UR.x() - LL.x() + 1;
+    int yDim = UR.y() - LL.y() + 1;
+    net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));    
+    //auto netRouteBBox = net->getRouteBBox();
+    std::cout << "[Test] xDim = " << xDim << ", yDim = " << yDim << std::endl;
+    // net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y())); 
     // Set the routed wirelength as HPWL
     int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
     net->setHPWL(hpwl);
@@ -336,6 +381,9 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
 // reset gridGraph, remove routeObj and remove nodes
 void FlexGRWorker::mazeNetInit(grNet* net)
 {
+  // Added by Zhiang 
+  //net->setPreCost(calcPathCost(net));  
+  
   gridGraph_.resetStatus();
   if (ripupMode_ == RipUpMode::DRC) {
     mazeNetInit_decayHistCost(net);
@@ -584,6 +632,47 @@ bool FlexGRWorker::routeNet(grNet* net)
   }
 
   routeNet_postRouteAddCong(net);
+  
+  if (net->getPinGCellNodes().size() >= 2) {
+    net->setPostCost(calcPathCost(net));
+    if (net->getPostCost() != net->getPreCost()) {
+      std::cout << "Net " << net->getFrNet()->getName() << " ";
+      if (net->getPostCost() < net->getPreCost()) {
+        std::cout << " Improved: PostCost = " << net->getPostCost() << " < PreCost = " << net->getPreCost() << std::endl;
+      } else {
+        std::cout << " Deteriorated: PostCost = " << net->getPostCost() << " > PreCost = " << net->getPreCost() << std::endl;
+        std::cout << "PinGCellNodes: ";
+        for (auto pinGCellNode : net->getPinGCellNodes()) {
+          auto loc = pinGCellNode->getLoc();
+          auto lNum = pinGCellNode->getLayerNum();
+          FlexMazeIdx mi;
+          gridGraph_.getMazeIdx(loc, lNum, mi);
+          std::cout << "\t(" << mi.x() << ", " << mi.y() << ", " << mi.z() << ")";
+        } 
+        std::cout << std::endl;
+        for (auto& uptr : net->getRouteConnFigs()) {
+          if (uptr->typeId() == grcPathSeg) {
+            auto cptr = static_cast<grPathSeg*>(uptr.get());
+            auto [bp, ep] = cptr->getPoints();
+            frLayerNum lNum = cptr->getLayerNum();
+            FlexMazeIdx bi, ei;
+            gridGraph_.getMazeIdx(bp, lNum, bi);
+            gridGraph_.getMazeIdx(ep, lNum, ei);
+            frDirEnum dir = (bi.x() == ei.x()) ? frDirEnum::N : frDirEnum::E;
+            if (bi.x() == ei.x()) {
+              std::cout << "vert: " << " bp = ( " << bi.x() << " " << bi.y() << " ) "
+                        << " ep = ( " << ei.x() << " " << ei.y() << " ) " << std::endl;
+            } else {
+              // horz
+              std::cout << "horz: " << " bp = ( " << bi.x() << " " << bi.y() << " ) "
+                        << " ep = ( " << ei.x() << " " << ei.y() << " ) " << std::endl;
+            }
+          }
+        } 
+      }
+    }
+  }
+
   return true;
 }
 
