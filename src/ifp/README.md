@@ -73,6 +73,35 @@ initialize_floorplan
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
 | `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
 
+### Make Die
+
+This command only sets the die area.
+
+The user can either specify manually die area, or
+specify the utilization/aspect ratio. Setting both
+is not allowed
+
+- Method 1: Automatic die size calculation
+Example: `make_die -utilization 70 -aspect_ratio 1.0 -core_space 0.0`
+
+- Method 2: Set die/core area
+Example: `make_die -die_area 0 0 2000 2000`
+
+
+```tcl
+make_die
+  (-die_area {llx lly urx ury}) | (-utilization util -core_space (space | {bottom top left right}) [-aspect_ratio ratio])
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-core_space` | Space around the core in microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
+| `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
+| `[-aspect_ratio]` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
+
 ### Make Tracks
 
 The `initialize_floorplan` command removes existing tracks. 
@@ -94,6 +123,33 @@ make_tracks
 | `[layer]` | Select layer name to make tracks for. Defaults to all layers. |
 | `[-x_offset]`, `[-y_offset]` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
 | `[-x_pitch]`, `[-y_pitch]` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
+
+### Make Rows
+
+The `make_rows` command removes existing rows. 
+Use the `make_rows` command to add rows to an existing floorplan. Useful,
+if your floorplan is stored as a floorplan def without rows.
+
+```tcl
+make_rows
+  (-core_area {llx lly urx ury}) | (-core_space (space | {bottom top left right}))
+  -site site_name
+  [-additional_sites site_names]
+  [-flip_sites site_names]
+  [-row_parity NONE|EVEN|ODD]
+```
+
+#### Options
+
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-core_space` | Space around the core in microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
+| `-site` | Site name. |
+| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
+| `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
 
 ### Insert tieoff cells
 

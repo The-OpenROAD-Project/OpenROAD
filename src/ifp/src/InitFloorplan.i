@@ -40,6 +40,7 @@
 #include "ord/OpenRoad.hh"
 #include "ord/Design.h"
 #include "utl/Logger.h"
+#include "odb/geom.h"
 
 // Defined by OpenRoad.i
 namespace ord {
@@ -89,48 +90,29 @@ static utl::Logger* getLogger() {
 
 namespace ifp {
 
-void
-init_floorplan_core(ord::Design* design,
+void make_die(ord::Design* design,
                     int die_lx,
                     int die_ly,
                     int die_ux,
-                    int die_uy,
-                    int core_lx,
-                    int core_ly,
-                    int core_ux,
-                    int core_uy,
-                    odb::dbSite* site,
-                    const std::vector<odb::dbSite*>& additional_sites,
-                    ifp::RowParity row_parity,
-                    const std::vector<odb::dbSite*>& flipped_sites)
+                    int die_uy)
 {
-  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
-                                           flipped_sites.end());
-  design->getFloorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
-                                {core_lx, core_ly, core_ux, core_uy},
-                                site, additional_sites, row_parity, flipped_sites_set); 
+  design->getFloorplan().makeDie({die_lx, die_ly, die_ux, die_uy});
 }
 
-void
-init_floorplan_util(ord::Design* design,
-                    double util,
-                    double aspect_ratio,
-                    int core_space_bottom,
-                    int core_space_top,
-                    int core_space_left,
-                    int core_space_right,
-                    odb::dbSite* site,
-                    const std::vector<odb::dbSite*>& additional_sites,
-                    ifp::RowParity row_parity,
-                    const std::vector<odb::dbSite*>& flipped_sites)
+void make_die_util(ord::Design* design,
+                  double util,
+                  double aspect_ratio,
+                  int core_space_bottom,
+                  int core_space_top,
+                  int core_space_left,
+                  int core_space_right)
 {
-  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
-                                           flipped_sites.end());
-  design->getFloorplan().initFloorplan(util, aspect_ratio,
-                                core_space_bottom, core_space_top,
-                                core_space_left, core_space_right,
-                                site, additional_sites, row_parity,
-                                flipped_sites_set);
+  design->getFloorplan().makeDieUtilization(util, 
+                                            aspect_ratio, 
+                                            core_space_bottom,
+                                            core_space_top,
+                                            core_space_left,
+                                            core_space_right);
 }
 
 void
@@ -144,6 +126,48 @@ void
 make_layer_tracks(ord::Design* design)
 {
   design->getFloorplan().makeTracks();
+}
+
+void
+make_rows_with_spacing(ord::Design* design, 
+          int spacing_lx,
+          int spacing_ly,
+          int spacing_ux,
+          int spacing_uy,
+          odb::dbSite* site,
+          const std::vector<odb::dbSite*>& additional_sites,
+          ifp::RowParity row_parity,
+          const std::vector<odb::dbSite*>& flipped_sites)
+{
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makeRowsWithSpacing(spacing_lx, spacing_ly, 
+                                             spacing_ux, spacing_uy,
+                                             site,
+                                             additional_sites,
+                                             row_parity,
+                                             flipped_sites_set);
+}
+
+void
+make_rows(ord::Design* design, 
+          int core_lx,
+          int core_ly,
+          int core_ux,
+          int core_uy,
+          odb::dbSite* site,
+          const std::vector<odb::dbSite*>& additional_sites,
+          ifp::RowParity row_parity,
+          const std::vector<odb::dbSite*>& flipped_sites)
+{
+  
+  std::set<odb::dbSite*> flipped_sites_set(flipped_sites.begin(),
+                                           flipped_sites.end());
+  design->getFloorplan().makeRows({core_lx, core_ly, core_ux, core_uy},
+                                  site,
+                                  additional_sites,
+                                  row_parity,
+                                  flipped_sites_set);
 }
 
 void
