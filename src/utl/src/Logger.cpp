@@ -39,11 +39,13 @@
 #include <fstream>
 #include <mutex>
 
+#include "CommandLineProgress.h"
 #include "spdlog/pattern_formatter.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include "utl/Progress.h"
 #include "utl/prometheus/metrics_server.h"
 #include "utl/prometheus/registry.h"
 
@@ -51,6 +53,8 @@ namespace utl {
 
 Logger::Logger(const char* log_filename, const char* metrics_filename)
 {
+  progress_ = std::make_unique<CommandLineProgress>(this);
+
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
     sinks_.push_back(
@@ -364,6 +368,14 @@ void Logger::setFormatter()
       = std::make_unique<spdlog::pattern_formatter>(
           pattern_, spdlog::pattern_time_type::local, "");
   logger_->set_formatter(std::move(formatter));
+}
+
+std::unique_ptr<Progress> Logger::swapProgress(Progress* progress)
+{
+  std::unique_ptr<Progress> current_progress = std::move(progress_);
+  progress_ = std::unique_ptr<Progress>(progress);
+
+  return current_progress;
 }
 
 }  // namespace utl

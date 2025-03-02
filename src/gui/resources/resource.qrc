@@ -14,5 +14,8 @@
   <file alias="defocus.png">google_icons/round_minusloupe_black_36dp.png</file>
   <file alias="undo.png">google_icons/round_undo_black_36dp.png</file>
   <file alias="play.png">google_icons/sharp_play_arrow_black_36dp.png</file>
+  <file alias="cancel.png">google_icons/round_cancel_black_36dp.png</file>
+  <file alias="expand_more.png">google_icons/round_unfold_more_black_36dp.png</file>
+  <file alias="expand_less.png">google_icons/round_unfold_less_black_36dp.png</file>
 </qresource>
 </RCC>
