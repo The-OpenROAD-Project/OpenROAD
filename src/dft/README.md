@@ -19,12 +19,33 @@ A simple DFT insertion consist of the following parts:
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
+### Create a test mode
+
+You can create test modes with the command ```create_dft_test_mode```. Each test
+mode is architected and stitched independenly.
+
+```{note}
+Usually, you can select what cells or subset of the scan cells you can to be in
+each test mode. This is currently not implemented as this is WIP.
+```
+
+```tcl
+create_dft_test_mode 
+    [-test_mode <string>]
+```
+
+| Switch Name  | Description                          |
+| ----         | ----                                 |
+| `-test_mode` | The name of the test mode to create. |
+
+
 ### Set DFT Config 
 
 The command `set_dft_config` sets the DFT configuration variables.
 
 ```tcl
 set_dft_config 
+    [-test_mode <string>]
     [-max_length <int>]
     [-max_chains <int>]
     [-clock_mixing <string>]
@@ -35,9 +56,10 @@ set_dft_config
 
 #### Options
 
-| Switch Name | Description |
-| ---- | ---- |
-| `-max_length` | The maximum number of bits that can be in each scan chain. |
+| Switch Name   | Description                                                                                               |
+| ----          | ----                                                                                                      |
+| `-test_mode`  | The test mode where to apply this config. By default it will apply the config to the "default" test mode. |
+| `-max_length` | The maximum number of bits that can be in each scan chain.                                                |
 | `-max_chains` | The maximum number of scan chains that will be generated. This takes priority over `max_length`,
 in `no_mix` clock mode it specifies a maximum number of chains per clock-edge pair. |
 | `-clock_mixing` | How architect will mix the scan flops based on the clock driver. `no_mix`: Creates scan chains with only one type of clock and edge. This may create unbalanced chains. `clock_mix`: Creates scan chains mixing clocks and edges. Falling edge flops are going to be stitched before rising edge. |
