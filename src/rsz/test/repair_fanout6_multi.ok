@@ -7,12 +7,12 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |      8003
-    final |     +2.3% |     509 |     508 |             1 |         0
+    final |    +10.9% |    8509 |     508 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 509 instances.
+[INFO RSZ-0039] Resized 8509 instances.
 [INFO RSZ-0038] Inserted 508 buffers in 1 nets.
-worst slack -8.67
+worst slack -8.54
 max fanout
 
 Pin                                   Limit Fanout  Slack
@@ -24,10 +24,10 @@ fanout1/X                                20     20      0 (MET)
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -8.670 |   -37766.1 |   6400 | sink7447/D
-    final |       0 |     175 |       18 |      0 |     0 |    +0.4% |   -3.090 |   -13397.3 |   6400 | sink7689/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -8.538 |   -41493.4 |   6400 | sink6389/D
+    final |       0 |      29 |       23 |      0 |     0 |    +0.2% |   -3.151 |   -10815.1 |   6176 | sink7689/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 14 buffers, 1 to split loads.
-[INFO RSZ-0041] Resized 175 instances.
+[INFO RSZ-0045] Inserted 18 buffers, 1 to split loads.
+[INFO RSZ-0041] Resized 29 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -3.09
+worst slack -3.15

@@ -273,6 +273,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontTouch(const Pin* pin);
   void reportDontTouch();
 
+  void reportFastBufferSizes();
+
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
@@ -457,7 +459,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
+  bool bufferSizeOutmatched(LibertyCell* worse,
+                            LibertyCell* better,
+                            float max_drive_resist);
   void findBuffers();
+  void findFastBuffers();
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
@@ -500,9 +506,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
 
+  bool getCin(const LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);
+
+  // Resize drvr_pin instance to target cap ratio.
+  // Return 1 if resized.
+  int resizeToCapRatio(const Pin* drvr_pin, bool upsize_only);
 
   ////////////////////////////////////////////////////////////////
 
@@ -751,6 +762,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  std::set<LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
