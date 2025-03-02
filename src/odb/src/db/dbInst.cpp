@@ -1224,6 +1224,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   uint i;
   for (i = 0; i < cnt; ++i) {
     _dbITerm* it = block->_iterm_tbl->getPtr(inst->_iterms[i]);
+    it->mterm_cache = nullptr;
     uint old_idx = it->_flags._mterm_idx;
     it->_flags._mterm_idx = idx_map[old_idx];
   }
@@ -1319,6 +1320,7 @@ dbInst* dbInst::create(dbBlock* block_,
 
   for (int i = 0; i < mterm_cnt; ++i) {
     _dbITerm* iterm = block->_iterm_tbl->create();
+    iterm->mterm_cache = nullptr;
     inst->_iterms[i] = iterm->getOID();
     iterm->_flags._mterm_idx = i;
     iterm->_inst = inst->getOID();
