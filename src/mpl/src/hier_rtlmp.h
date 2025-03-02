@@ -76,17 +76,13 @@ class SACoreHardMacro;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
-struct LayerParameters
+struct PatternParameters
 {
+  odb::dbITerm* iterm;
   int offset = 0;
   int pitch = 0;
-  int pin_width = 0;
   int pin_offset = 0;
-  int lower_left_to_first_pin = 0;
 };
-
-using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
-using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -381,13 +377,6 @@ class Pusher
   std::vector<HardMacro*> hard_macros_;
 };
 
-struct SameDirectionLayersData
-{
-  LayersWithPinsMap layer_to_pin;
-  LayerParametersMap layer_to_params;
-  odb::dbTechLayer* snap_layer = nullptr;
-};
-
 class Snapper
 {
  public:
@@ -401,28 +390,34 @@ class Snapper
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
-                                   const LayerParameters& layer_params,
+  bool pinsAreAlignedWithTrackGrid(const PatternParameters& params,
                                    const odb::dbTechLayerDir& target_direction);
 
-  SameDirectionLayersData computeSameDirectionLayersData(
+  std::vector<PatternParameters> computeSameDirectionPatternsData(
       const odb::dbTechLayerDir& target_direction);
-  LayerParameters computeLayerParameters(
-      odb::dbTechLayer* layer,
+  PatternParameters computePatternParameters(
+      odb::dbTrackGrid* track_grid,
+      const int pattern_idx,
       odb::dbITerm* pin,
       const odb::dbTechLayerDir& target_direction);
-  void getTrackGrid(odb::dbTrackGrid* track_grid,
-                    int& origin,
-                    int& step,
-                    const odb::dbTechLayerDir& target_direction);
+  odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
+  void getTrackGridPattern(odb::dbTrackGrid* track_grid,
+                           const int pattern_idx,
+                           int& origin,
+                           int& step,
+                           const odb::dbTechLayerDir& target_direction);
   int getPinWidth(odb::dbITerm* pin,
                   const odb::dbTechLayerDir& target_direction);
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
                                 const odb::dbTechLayerDir& target_direction);
-  void attemptSnapToExtraLayers(int origin,
-                                const SameDirectionLayersData& layers_data,
-                                const LayerParameters& snap_layer_params,
-                                const odb::dbTechLayerDir& target_direction);
+  odb::dbITerm* findPinForMultiPattern(
+      odb::dbTrackGrid* track_grid,
+      const int pattern_idx,
+      const odb::dbTechLayerDir& target_direction);
+  void attemptSnapToExtraPatterns(
+      int origin,
+      const std::vector<PatternParameters>& layers_data,
+      const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
