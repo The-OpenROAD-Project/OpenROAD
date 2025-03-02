@@ -79,6 +79,7 @@ class PrometheusRegistry;
   X(IFP)                \
   X(MPL)                \
   X(ODB)                \
+  X(ORA)                \
   X(ORD)                \
   X(PAD)                \
   X(PAR)                \
