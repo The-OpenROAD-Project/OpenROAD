@@ -48,7 +48,7 @@ class GraphicsFactory : public AbstractGraphicsFactory
 {
  public:
   GraphicsFactory();
-  ~GraphicsFactory();
+  ~GraphicsFactory() override;
   void reset(frDebugSettings* settings,
              frDesign* design,
              odb::dbDatabase* db,

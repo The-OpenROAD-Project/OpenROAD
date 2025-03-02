@@ -52,8 +52,8 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "io/io.h"
-#include "ord/OpenRoad.hh"
 #include "serialization.h"
+#include "utl/ScopedTemporaryFile.h"
 #include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
@@ -740,7 +740,7 @@ void FlexDR::processWorkersBatchDistributed(
     serializeViaData(via_data_, serializedViaData);
     router_->sendGlobalsUpdates(router_cfg_path_, serializedViaData);
   } else {
-    router_->sendDesignUpdates(router_cfg_path_);
+    router_->sendDesignUpdates(router_cfg_path_, router_cfg_->MAX_THREADS);
   }
 
   ProfileTask task("DIST: PROCESS_BATCH");
@@ -1782,7 +1782,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
   std::vector<std::atomic_bool> visited(via_positions.size());
   std::fill(visited.begin(), visited.end(), false);
   std::set<int> isolated_via_nodes;
-  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
     if (visited[i].load()) {
@@ -1875,8 +1875,10 @@ int FlexDR::main()
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
-      ord::OpenRoad::openRoad()->writeDb(
-          fmt::format("drt_iter{}.odb", iter_).c_str());
+
+      db_->write(
+          utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
+              .getStream());
     }
     ++iter_;
   }
