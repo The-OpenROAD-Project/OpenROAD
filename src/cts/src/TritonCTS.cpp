@@ -577,9 +577,11 @@ void TritonCTS::reportCtsMetrics()
     for (const auto& [master, count] : options_->getBufferCount()) {
       file << "  " << master->getName() << ": " << count << "\n";
     }
-    file << "Dummys used:\n";
-    for (const auto& [master, count] : options_->getDummyCount()) {
-      file << "  " << master->getName() << ": " << count << "\n";
+    if (!options_->getDummyCount().empty()) {
+      file << "Dummys used:\n";
+      for (const auto& [master, count] : options_->getDummyCount()) {
+        file << "  " << master->getName() << ": " << count << "\n";
+      }
     }
     file.close();
 
@@ -596,9 +598,11 @@ void TritonCTS::reportCtsMetrics()
     for (const auto& [master, count] : options_->getBufferCount()) {
       logger_->report("  {}: {}", master->getName(), count);
     }
-    logger_->report("Dummys used:");
-    for (const auto& [master, count] : options_->getDummyCount()) {
-      logger_->report("  {}: {}", master->getName(), count);
+    if (!options_->getDummyCount().empty()) {
+      logger_->report("Dummys used:");
+      for (const auto& [master, count] : options_->getDummyCount()) {
+        logger_->report("  {}: {}", master->getName(), count);
+      }
     }
   }
 }
