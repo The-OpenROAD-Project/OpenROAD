@@ -293,7 +293,6 @@ uint extMain::initSearchForNets(int* X1,
                                 Rect& extRect,
                                 bool skipBaseCalc)
 {
-  bool USE_DB_UNITS = false;
   uint W[32];
   uint S[32];
 
@@ -312,11 +311,6 @@ uint extMain::initSearchForNets(int* X1,
     }
   }
 
-  if (USE_DB_UNITS) {
-    GetDBcoords2(maxRect);
-    GetDBcoords2(extRect);
-  }
-
   std::vector<int> trackXY(32000);
   uint n = 0;
   for (itr = layers.begin(); itr != layers.end(); ++itr) {
@@ -327,27 +321,13 @@ uint extMain::initSearchForNets(int* X1,
     }
 
     n = layer->getRoutingLevel();
-    int w = GetDBcoords2(layer->getWidth());
     widthTable[n] = layer->getWidth();
 
-    if (USE_DB_UNITS) {
-      widthTable[n] = w;
-    }
-
     W[n] = 1;
-    int s = GetDBcoords2(layer->getSpacing());
     S[n] = layer->getSpacing();
 
-    if (USE_DB_UNITS) {
-      S[n] = s;
-    }
-
-    int p = GetDBcoords2(layer->getPitch());
     pitchTable[n] = layer->getPitch();
 
-    if (USE_DB_UNITS) {
-      pitchTable[n] = p;
-    }
     if (pitchTable[n] <= 0) {
       logger_->error(RCX,
                      82,
@@ -668,8 +648,6 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
                                    FILE* fp,
                                    dbCreateNetUtil* netUtil)
 {
-  bool USE_DB_UNITS = false;
-
   dbWire* wire = net->getWire();
 
   if (wire == nullptr) {
@@ -698,49 +676,38 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
       if (netUtil != nullptr) {
         netUtil->createNetSingleWire(r, level, net->getId(), shapeId);
       } else {
-        if (USE_DB_UNITS) {
-          _search->addBox(GetDBcoords2(r.xMin()),
-                          GetDBcoords2(r.yMin()),
-                          GetDBcoords2(r.xMax()),
-                          GetDBcoords2(r.yMax()),
-                          level,
-                          net->getId(),
-                          shapeId,
-                          wtype);
-        } else {
-          const uint trackNum = _search->addBox(r.xMin(),
-                                                r.yMin(),
-                                                r.xMax(),
-                                                r.yMax(),
-                                                level,
-                                                net->getId(),
-                                                shapeId,
-                                                wtype);
-          if (net->getId() == _debug_net_id) {
-            const int dx = r.xMax() - r.xMin();
-            const int dy = r.yMax() - r.yMin();
-            debugPrint(
-                logger_,
-                RCX,
-                "debug_net",
-                1,
-                "\t[Search:W]"
-                "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
-                "{:.3f}  {:.3f} {:.3f} net {}",
-                trackNum,
-                level,
-                dx,
-                dy,
-                r.xMin(),
-                r.yMin(),
-                r.xMax(),
-                r.yMax(),
-                GetDBcoords1(r.xMin()),
-                GetDBcoords1(r.yMin()),
-                GetDBcoords1(r.xMax()),
-                GetDBcoords1(r.yMax()),
-                net->getId());
-          }
+        const uint trackNum = _search->addBox(r.xMin(),
+                                              r.yMin(),
+                                              r.xMax(),
+                                              r.yMax(),
+                                              level,
+                                              net->getId(),
+                                              shapeId,
+                                              wtype);
+        if (net->getId() == _debug_net_id) {
+          const int dx = r.xMax() - r.xMin();
+          const int dy = r.yMax() - r.yMin();
+          debugPrint(
+              logger_,
+              RCX,
+              "debug_net",
+              1,
+              "\t[Search:W]"
+              "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
+              "{:.3f}  {:.3f} {:.3f} net {}",
+              trackNum,
+              level,
+              dx,
+              dy,
+              r.xMin(),
+              r.yMin(),
+              r.xMax(),
+              r.yMax(),
+              GetDBcoords1(r.xMin()),
+              GetDBcoords1(r.yMin()),
+              GetDBcoords1(r.xMax()),
+              GetDBcoords1(r.yMax()),
+              net->getId());
         }
       }
 
@@ -754,7 +721,6 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype)
 {
   wtype = 5;  // Via Type
 
-  bool USE_DB_UNITS = false;
   uint cnt = 0;
 
   std::vector<dbShape> shapes;
@@ -786,18 +752,7 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype)
       continue;
     }
 
-    if (USE_DB_UNITS) {
-      _search->addBox(GetDBcoords2(x1),
-                      GetDBcoords2(y1),
-                      GetDBcoords2(x2),
-                      GetDBcoords2(y2),
-                      level,
-                      net->getId(),
-                      shapeId,
-                      wtype);
-    } else {
-      _search->addBox(x1, y1, x2, y2, level, net->getId(), shapeId, wtype);
-    }
+    _search->addBox(x1, y1, x2, y2, level, net->getId(), shapeId, wtype);
   }
   return cnt;
 }
@@ -959,7 +914,6 @@ void extMain::addNetShapesGs(dbNet* net,
                              const bool swap_coords,
                              const int dir)
 {
-  bool USE_DB_UNITS = false;
   dbWire* wire = net->getWire();
   if (wire == nullptr) {
     return;
@@ -975,10 +929,6 @@ void extMain::addNetShapesGs(dbNet* net,
     }
 
     Rect r = s.getBox();
-
-    if (USE_DB_UNITS) {
-      GetDBcoords2(r);
-    }
 
     addShapeOnGS(r, plane, s.getTechLayer(), gsRotated, swap_coords, dir);
   }
