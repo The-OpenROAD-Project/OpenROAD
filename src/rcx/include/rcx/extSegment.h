@@ -35,12 +35,12 @@
 #include <dbUtil.h>
 
 #include "extprocess.h"
+#include "grids.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/odb.h"
 #include "odb/util.h"
-#include "wire.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)

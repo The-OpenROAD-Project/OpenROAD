@@ -33,8 +33,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "grids.h"
 #include "gseq.h"
-#include "wire.h"
 
 namespace rcx {
 

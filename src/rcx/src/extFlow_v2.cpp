@@ -33,13 +33,13 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
 #include "gseq.h"
 #include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
