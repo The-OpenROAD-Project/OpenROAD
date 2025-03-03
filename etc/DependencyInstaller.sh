@@ -145,7 +145,7 @@ _installCommonDev() {
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
+    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp 2> /dev/null) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         eval wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
@@ -199,7 +199,7 @@ _installCommonDev() {
 
     # lemon
     lemonPrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
+    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h 2> /dev/null) ]]; then
         cd "${baseDir}"
         git clone --depth=1 -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
         cd lemon-graph
