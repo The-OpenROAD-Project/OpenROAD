@@ -70,23 +70,23 @@ class Ath__searchBox
  public:
   Ath__searchBox(int x1, int y1, int x2, int y2, uint l, int dir = -1);
   void set(int x1, int y1, int x2, int y2, uint l, int dir);
-  int loXY(uint d);
-  int loXY(uint d, int loBound);
-  int hiXY(uint d);
-  int hiXY(uint d, int hiBound);
+  int loXY(uint d) const;
+  int loXY(uint d, int loBound) const;
+  int hiXY(uint d) const;
+  int hiXY(uint d, int hiBound) const;
   void setLo(uint d, int xy);
   void setHi(uint d, int xy);
   void setType(uint v);
-  uint getType();
+  uint getType() const;
 
-  uint getDir();
-  uint getLevel();
+  uint getDir() const;
+  uint getLevel() const;
   void setDir(int v = -1);
   void setLevel(uint v);
   void setOwnerId(uint v, uint other = 0);
-  uint getOwnerId();
-  uint getOtherId();
-  uint getLength();
+  uint getOwnerId() const;
+  uint getOtherId() const;
+  uint getLength() const;
 
  private:
   int _ll[2];

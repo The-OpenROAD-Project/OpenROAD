@@ -149,45 +149,45 @@ void Ath__searchBox::setHi(uint d, int xy)
 {
   _ur[d] = xy;
 }
-int Ath__searchBox::loXY(uint d)
+int Ath__searchBox::loXY(uint d) const
 {
   return _ll[d];
 }
-int Ath__searchBox::hiXY(uint d)
+int Ath__searchBox::hiXY(uint d) const
 {
   return _ur[d];
 }
-int Ath__searchBox::loXY(uint d, int loBound)
+int Ath__searchBox::loXY(uint d, int loBound) const
 {
   if (_ll[d] < loBound) {
     return loBound;
   }
   return _ll[d];
 }
-int Ath__searchBox::hiXY(uint d, int hiBound)
+int Ath__searchBox::hiXY(uint d, int hiBound) const
 {
   if (_ur[d] > hiBound) {
     return hiBound;
   }
   return _ur[d];
 }
-uint Ath__searchBox::getDir()
+uint Ath__searchBox::getDir() const
 {
   return _dir;
 }
-uint Ath__searchBox::getLevel()
+uint Ath__searchBox::getLevel() const
 {
   return _level;
 }
-uint Ath__searchBox::getOwnerId()
+uint Ath__searchBox::getOwnerId() const
 {
   return _ownId;
 }
-uint Ath__searchBox::getOtherId()
+uint Ath__searchBox::getOtherId() const
 {
   return _otherId;
 }
-uint Ath__searchBox::getType()
+uint Ath__searchBox::getType() const
 {
   return _type;
 }
@@ -212,7 +212,7 @@ void Ath__searchBox::setDir(int dir)
     }
   }
 }
-uint Ath__searchBox::getLength()
+uint Ath__searchBox::getLength() const
 {
   if (_dir > 0) {
     return _ur[0] - _ll[0];
