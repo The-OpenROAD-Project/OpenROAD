@@ -118,8 +118,8 @@ void gs::setPlanes(const int nplanes)
 }
 
 void gs::setSize(const int plane,
-                 const int xres,
-                 const int yres,
+                 const int x_resolution,
+                 const int y_resolution,
                  const int x0,
                  const int y0,
                  const int x1,
@@ -142,16 +142,16 @@ void gs::setSize(const int plane,
     plc.y1 = plc.y0 + 1;
   }
 
-  plc.xres = xres;
-  plc.yres = yres;
+  plc.x_resolution = x_resolution;
+  plc.y_resolution = y_resolution;
 
-  plc.width = (plc.x1 - plc.x0 + 1) / plc.xres;
-  if (((plc.x1 - plc.x0 + 1) % plc.xres) != 0) {
+  plc.width = (plc.x1 - plc.x0 + 1) / plc.x_resolution;
+  if (((plc.x1 - plc.x0 + 1) % plc.x_resolution) != 0) {
     plc.width++;
   }
 
-  plc.height = (plc.y1 - plc.y0 + 1) / plc.yres;
-  if (((plc.y1 - plc.y0 + 1) % plc.yres) != 0) {
+  plc.height = (plc.y1 - plc.y0 + 1) / plc.y_resolution;
+  if (((plc.y1 - plc.y0 + 1) % plc.y_resolution) != 0) {
     plc.height++;
   }
 
@@ -184,15 +184,15 @@ void gs::setSize(const int plane,
 }
 
 void gs::configurePlane(const int plane,
-                        const int xres,
-                        const int yres,
+                        const int x_resolution,
+                        const int y_resolution,
                         const int x0,
                         const int y0,
                         const int x1,
                         const int y1)
 {
   if ((init_ & ALLOCATED) && plane < nplanes_) {
-    setSize(plane, xres, yres, x0, y0, x1, y1);
+    setSize(plane, x_resolution, y_resolution, x0, y0, x1, y1);
   }
 }
 
@@ -244,10 +244,10 @@ int gs::box(int px0, int py0, int px1, int py1, const int plane)
   }
 
   // convert to pixel space
-  int cx0 = int((px0 - plc.x0) / plc.xres);
-  int cx1 = int((px1 - plc.x0) / plc.xres);
-  int cy0 = int((py0 - plc.y0) / plc.yres);
-  int cy1 = int((py1 - plc.y0) / plc.yres);
+  int cx0 = int((px0 - plc.x0) / plc.x_resolution);
+  int cx1 = int((px1 - plc.x0) / plc.x_resolution);
+  int cy0 = int((py0 - plc.y0) / plc.y_resolution);
+  int cy1 = int((py1 - plc.y0) / plc.y_resolution);
 
   // render a rectangle on the selected plane. Paint all pixels
   cx0 = clip(cx0, 0, plc.width);
@@ -372,15 +372,15 @@ uint gs::getSeq(int* ll,
   SEQ* s = salloc();
 
   // convert into internal coordinates
-  const int cx0 = int((ll[0] - plc.x0) / plc.xres);
-  const int cy0 = int((ll[1] - plc.y0) / plc.yres);
+  const int cx0 = int((ll[0] - plc.x0) / plc.x_resolution);
+  const int cy0 = int((ll[1] - plc.y0) / plc.y_resolution);
 
-  int cx1 = int((ur[0] - plc.x0) / plc.xres);
-  if (((ur[0] - plc.x0 + 1) % plc.xres) != 0) {
+  int cx1 = int((ur[0] - plc.x0) / plc.x_resolution);
+  if (((ur[0] - plc.x0 + 1) % plc.x_resolution) != 0) {
     cx1++;
   }
-  int cy1 = int((ur[1] - plc.y0) / plc.yres);
-  if (((ur[1] - plc.y0 + 1) % plc.yres) != 0) {
+  int cy1 = int((ur[1] - plc.y0) / plc.y_resolution);
+  if (((ur[1] - plc.y0 + 1) % plc.y_resolution) != 0) {
     cy1++;
   }
 
@@ -395,8 +395,8 @@ uint gs::getSeq(int* ll,
       int end = cx1;
       bool flag = false;
       while (getSeqRow(row, plane, start, end, s->type)) {
-        s->_ll[0] = (int) (start * (plc.xres) + plc.x0);
-        s->_ur[0] = (int) ((end + 1) * (plc.xres) + (plc.x0) - 1);
+        s->_ll[0] = (int) (start * (plc.x_resolution) + plc.x0);
+        s->_ur[0] = (int) ((end + 1) * (plc.x_resolution) + (plc.x0) - 1);
         if (s->_ur[0] >= ur[0]) {
           s->_ur[0] = ur[0];
           flag = true;
@@ -423,14 +423,14 @@ uint gs::getSeq(int* ll,
         }
         start = end + 1;
       }
-      rs += plc.yres;
+      rs += plc.y_resolution;
       if (rs > ur[1]) {
         break;
       }
-      re += plc.yres;
+      re += plc.y_resolution;
     }
   } else if (order == GS_COLUMN) {
-    int cs = ((cx1 + cx0) / 2) * plc.xres + plc.x0;
+    int cs = ((cx1 + cx0) / 2) * plc.x_resolution + plc.x0;
     int ce = cs;
 
     if (cs < ll[0]) {
@@ -446,8 +446,8 @@ uint gs::getSeq(int* ll,
       int end;
       bool flag = false;
       while (getSeqCol(col, plane, start, end, s->type)) {
-        s->_ll[1] = (int) (start * plc.yres + plc.y0);
-        s->_ur[1] = (int) ((end + 1) * plc.yres + plc.y0 - 1);
+        s->_ll[1] = (int) (start * plc.y_resolution + plc.y0);
+        s->_ur[1] = (int) ((end + 1) * plc.y_resolution + plc.y0 - 1);
         if (s->_ur[1] >= ur[1]) {
           flag = true;
           s->_ur[1] = ur[1];
@@ -474,11 +474,11 @@ uint gs::getSeq(int* ll,
         }
         start = end + 1;
       }
-      cs += plc.xres;
+      cs += plc.x_resolution;
       if (cs > ur[0]) {
         break;
       }
-      ce += plc.xres;
+      ce += plc.x_resolution;
     }
   }
   seqPool_->free(s);

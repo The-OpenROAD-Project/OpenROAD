@@ -81,11 +81,11 @@ class gs
 
   struct plconfig
   {
-    int width;
-    int height;
-    int xres;
-    int yres;
-    int x0, x1, y0, y1;  // bounding box
+    int width;           // width in pixels
+    int height;          // height in pixels
+    int x_resolution;    // x dbu per pixel
+    int y_resolution;    // y dbu per pixel
+    int x0, x1, y0, y1;  // bounding box in dbu
     int pixwrem;         // how many pixels are used in the last block of a row
     int pixstride;       // how many memory blocks per row
     int pixfullblox;     // how many "full" blocks per row
