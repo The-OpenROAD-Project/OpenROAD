@@ -772,10 +772,10 @@ uint extMeasure::getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable)
   uint len1 = 0;
 
   if (!_rotatedGs) {
-    len1 = _pixelTable->get_seq(s->_ll, s->_ur, _dir, met, resTable);
+    len1 = _pixelTable->getSeq(s->_ll, s->_ur, _dir, met, resTable);
   } else {
     if (_dir > 0) {  // extracting horizontal segments
-      len1 = _pixelTable->get_seq(s->_ll, s->_ur, _dir, met, resTable);
+      len1 = _pixelTable->getSeq(s->_ll, s->_ur, _dir, met, resTable);
     } else {
       int sll[2];
       int sur[2];
@@ -787,7 +787,7 @@ uint extMeasure::getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable)
 
       uint initCnt = resTable->getCnt();
 
-      len1 = _pixelTable->get_seq(sll, sur, !_dir, met, resTable);
+      len1 = _pixelTable->getSeq(sll, sur, !_dir, met, resTable);
 
       swap_coords(initCnt, resTable->getCnt(), resTable);
     }
@@ -807,10 +807,10 @@ uint extMeasure::getOverlapSeq(uint met,
   uint len1 = 0;
 
   if (!_rotatedGs) {
-    len1 = _pixelTable->get_seq(ll, ur, _dir, met, resTable);
+    len1 = _pixelTable->getSeq(ll, ur, _dir, met, resTable);
   } else {
     if (_dir > 0) {  // extracting horizontal segments
-      len1 = _pixelTable->get_seq(ll, ur, _dir, met, resTable);
+      len1 = _pixelTable->getSeq(ll, ur, _dir, met, resTable);
     } else {
       int sll[2];
       int sur[2];
@@ -822,7 +822,7 @@ uint extMeasure::getOverlapSeq(uint met,
 
       uint initCnt = resTable->getCnt();
 
-      len1 = _pixelTable->get_seq(sll, sur, !_dir, met, resTable);
+      len1 = _pixelTable->getSeq(sll, sur, !_dir, met, resTable);
 
       swap_coords(initCnt, resTable->getCnt(), resTable);
     }

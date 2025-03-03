@@ -1061,7 +1061,7 @@ uint extMain::initPlanes(uint dir,
   }
   _geomSeq = new gs(_seqPool);
 
-  _geomSeq->set_slices(layerCnt);
+  _geomSeq->setPlanes(layerCnt);
 
   for (uint ii = 1; ii < layerCnt; ii++) {
     uint layerDir = dirTable[ii];
@@ -1083,18 +1083,18 @@ uint extMain::initPlanes(uint dir,
     ur[dir] = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
 
     if (!rotatedFlag) {
-      _geomSeq->configureSlice(ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
+      _geomSeq->configurePlane(ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
     } else {
       if (dir > 0) {  // horizontal segment extraction
-        _geomSeq->configureSlice(
+        _geomSeq->configurePlane(
             ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
       } else {
         if (layerDir > 0) {
-          _geomSeq->configureSlice(
+          _geomSeq->configurePlane(
               ii, pitchTable[ii], widthTable[ii], ll[1], ll[0], ur[1], ur[0]);
 
         } else {
-          _geomSeq->configureSlice(
+          _geomSeq->configurePlane(
               ii, widthTable[ii], pitchTable[ii], ll[1], ll[0], ur[1], ur[0]);
         }
       }
