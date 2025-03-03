@@ -1501,20 +1501,20 @@ void extDistRC::printBound(FILE* fp,
           res * 1000);
 }
 
-uint extMain::addInstsGs(const Ath__array1D<uint>* instTable,
-                         Ath__array1D<uint>* tmpInstIdTable,
-                         uint dir)
+uint extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
+                                 Ath__array1D<uint>* tmpInstIdTable,
+                                 const uint dir)
 {
   if (instTable == NULL)
     return 0;
 
-  bool rotatedGs = getRotatedFlag();
+  const bool rotatedGs = getRotatedFlag();
 
   uint cnt = 0;
-  uint instCnt = instTable->getCnt();
+  const uint instCnt = instTable->getCnt();
 
   for (uint ii = 0; ii < instCnt; ii++) {
-    uint instId = instTable->get(ii);
+    const uint instId = instTable->get(ii);
     dbInst* inst = dbInst::getInst(_block, instId);
 
     if (tmpInstIdTable != NULL) {
@@ -1525,44 +1525,30 @@ uint extMain::addInstsGs(const Ath__array1D<uint>* instTable,
       tmpInstIdTable->add(instId);
     }
 
-    /*
-                    Rect r;
-                    dbBox *bb= inst->getBBox();
-                    bb->getBox(r);
-                    if ( !isIncludedInsearch(r, dir, bb_ll, bb_ur) )
-                            continue;
-    */
     cnt += addItermShapesOnPlanes(inst, rotatedGs, !dir);
     cnt += addObsShapesOnPlanes(inst, rotatedGs, !dir);
   }
   if (tmpInstIdTable != NULL) {
     for (uint jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
-      uint instId = instTable->get(jj);
-      dbInst* inst = dbInst::getInst(_block, instId);
-
-      inst->clearUserFlag1();
+      const uint instId = instTable->get(jj);
+      dbInst::getInst(_block, instId)->clearUserFlag1();
     }
   }
   return cnt;
 }
 uint extMain::addItermShapesOnPlanes(dbInst* inst,
-                                     bool rotatedFlag,
-                                     bool swap_coords)
+                                     const bool rotatedFlag,
+                                     const bool swap_coords)
 {
   uint cnt = 0;
-  dbSet<dbITerm> iterms = inst->getITerms();
-  dbSet<dbITerm>::iterator iterm_itr;
-
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    dbITerm* iterm = *iterm_itr;
-
+  for (dbITerm* iterm : inst->getITerms()) {
     dbShape s;
     dbITermShapeItr term_shapes;
     for (term_shapes.begin(iterm); term_shapes.next(s);) {
       if (s.isVia())
         continue;
 
-      uint level = s.getTechLayer()->getRoutingLevel();
+      const uint level = s.getTechLayer()->getRoutingLevel();
 
       uint n = 0;
       if (!rotatedFlag)
@@ -1576,18 +1562,18 @@ uint extMain::addItermShapesOnPlanes(dbInst* inst,
   }
   return cnt;
 }
-uint extMain::addShapeOnGs(dbShape* s, bool swap_coords)
+uint extMain::addShapeOnGs(dbShape* s, const bool swap_coords)
 {
-  int level = s->getTechLayer()->getRoutingLevel();
+  const int level = s->getTechLayer()->getRoutingLevel();
 
   if (!swap_coords)  // horizontal
     return _geomSeq->box(s->xMin(), s->yMin(), s->xMax(), s->yMax(), level);
-  else
-    return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
+
+  return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
 }
 uint extMain::addObsShapesOnPlanes(dbInst* inst,
-                                   bool rotatedFlag,
-                                   bool swap_coords)
+                                   const bool rotatedFlag,
+                                   const bool swap_coords)
 {
   uint cnt = 0;
   dbInstShapeItr obs_shapes;

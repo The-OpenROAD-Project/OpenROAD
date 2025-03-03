@@ -1162,7 +1162,7 @@ uint extMain::fill_gs4(int dir,
       instGsTable.add(inst->getId());
     }
     if (instGsTable.getCnt() > 0)
-      addInstsGs(&instGsTable, &tmpNetIdTable, dir);
+      addInstsGeometries(&instGsTable, &tmpNetIdTable, dir);
   }
   return pcnt + scnt;
 }
