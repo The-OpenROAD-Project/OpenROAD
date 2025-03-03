@@ -2304,12 +2304,12 @@ class extMain
                     int dir);
 
   void fill_gs4(int dir,
-                int* ll,
-                int* ur,
-                int* lo_gs,
-                int* hi_gs,
+                const int* ll,
+                const int* ur,
+                const int* lo_gs,
+                const int* hi_gs,
                 uint layerCnt,
-                uint* dirTable,
+                const uint* dirTable,
                 const uint* pitchTable,
                 const uint* widthTable);
 

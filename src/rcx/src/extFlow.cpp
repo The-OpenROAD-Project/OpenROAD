@@ -1113,17 +1113,17 @@ bool extMain::enableRotatedFlag()
   return _rotatedGs;
 }
 
-void extMain::fill_gs4(int dir,
-                       int* ll,
-                       int* ur,
-                       int* lo_gs,
-                       int* hi_gs,
-                       uint layerCnt,
-                       uint* dirTable,
+void extMain::fill_gs4(const int dir,
+                       const int* ll,
+                       const int* ur,
+                       const int* lo_gs,
+                       const int* hi_gs,
+                       const uint layerCnt,
+                       const uint* dirTable,
                        const uint* pitchTable,
                        const uint* widthTable)
 {
-  bool rotatedGs = getRotatedFlag();
+  const bool rotatedGs = getRotatedFlag();
 
   initPlanes(dir, lo_gs, hi_gs, layerCnt, pitchTable, widthTable, dirTable, ll);
 
