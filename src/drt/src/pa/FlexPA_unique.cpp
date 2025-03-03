@@ -192,18 +192,6 @@ void UniqueInsts::computeUnique()
   for (auto& inst : design_->getTopBlock()->getInsts()) {
     addUniqueInst(inst.get());
   }
-  // This is just to see if deleteUniqueInst breaks things, if you are seeing
-  // this the PR is not complete
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
-    deleteUniqueInst(inst.get());
-    addUniqueInst(inst.get());
-  }
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
-    deleteUniqueInst(inst.get());
-  }
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
-    addUniqueInst(inst.get());
-  }
 }
 
 void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
