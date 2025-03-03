@@ -535,7 +535,7 @@ int extMeasureRC::CouplingFlow(uint dir,
 
     config.reset_calc_flow_flag(level);
 
-    uint maxDist = 10 * netGrid->_pitch;
+    uint maxDist = 10 * netGrid->getPitch();
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
       Ath__track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)

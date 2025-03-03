@@ -342,54 +342,12 @@ class Ath__track
 
 class Ath__grid
 {
-  // ------------------------------------------ v2
  public:
   int initCouplingCapLoops_v2(uint couplingDist,
                               bool startSearchTrack = true,
                               int startXY = 0);
   uint placeWire_v2(Ath__searchBox* bb);
 
-  int _pitch;
-
- private:
-  Ath__gridTable* _gridtable;
-  Ath__track** _trackTable;
-  uint* _blockedTrackTable;
-  uint _trackCnt;
-  uint* _subTrackCnt;
-  int _base;
-  int _max;
-
-  int _start;  // laterally
-  int _end;
-
-  int _lo[2];
-  int _hi[2];
-
-  int _width;
-  //  int _pitch;
-  uint _level;
-  uint _layer;
-  uint _dir;
-  int _markerLen;
-  uint _markerCnt;
-  uint _searchLowTrack;
-  uint _searchHiTrack;
-  uint _searchLowMarker;
-  uint _searchHiMarker;
-
-  uint _widthTable[8];
-  uint _shiftTable[8];
-  AthPool<Ath__track>* _trackPoolPtr;
-  AthPool<Ath__wire>* _wirePoolPtr;
-
-  uint _schema;
-  uint _wireType;
-
-  uint _currentTrack;
-  uint _lastFreeTrack;
-
- public:
   Ath__grid(Ath__gridTable* gt,
             AthPool<Ath__track>* trackPool,
             AthPool<Ath__wire>* wirePool,
@@ -504,8 +462,6 @@ class Ath__grid
 
   void getBuses(Ath__array1D<Ath__box*>* boxtable, uint width);
 
-  friend class Ath__gridTable;
-
   uint removeMarkedNetWires();
   void setSearchDomain(uint domainAdjust);
   uint searchLowMarker() { return _searchLowMarker; };
@@ -546,6 +502,48 @@ class Ath__grid
                    bool ttttGetDgOverlap);
   int dealloc(int hiXY);
   void dealloc();
+  int getPitch() const { return _pitch; }
+
+ private:
+  int _pitch;
+  Ath__gridTable* _gridtable;
+  Ath__track** _trackTable;
+  uint* _blockedTrackTable;
+  uint _trackCnt;
+  uint* _subTrackCnt;
+  int _base;
+  int _max;
+
+  int _start;  // laterally
+  int _end;
+
+  int _lo[2];
+  int _hi[2];
+
+  int _width;
+  //  int _pitch;
+  uint _level;
+  uint _layer;
+  uint _dir;
+  int _markerLen;
+  uint _markerCnt;
+  uint _searchLowTrack;
+  uint _searchHiTrack;
+  uint _searchLowMarker;
+  uint _searchHiMarker;
+
+  uint _widthTable[8];
+  uint _shiftTable[8];
+  AthPool<Ath__track>* _trackPoolPtr;
+  AthPool<Ath__wire>* _wirePoolPtr;
+
+  uint _schema;
+  uint _wireType;
+
+  uint _currentTrack;
+  uint _lastFreeTrack;
+
+  friend class Ath__gridTable;
 };
 
 class Ath__gridTable

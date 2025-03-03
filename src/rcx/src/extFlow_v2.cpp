@@ -502,7 +502,7 @@ uint Ath__wire::getLevel()
 }
 uint Ath__wire::getPitch()
 {
-  return this->_track->getGrid()->_pitch;
+  return this->_track->getGrid()->getPitch();
 }
 uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 {

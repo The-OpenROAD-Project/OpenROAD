@@ -565,7 +565,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
     Ath__grid* netGrid = _search->getGrid(dir, level);
     upTable.resetCnt();
 
-    uint maxDist = 10 * netGrid->_pitch;
+    uint maxDist = 10 * netGrid->getPitch();
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
       Ath__track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)

@@ -397,9 +397,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
 
     config.reset_calc_flow_flag(level);
 
-    uint maxDist = 10 * netGrid->_pitch;
-
-    // for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
+    uint maxDist = 10 * netGrid->getPitch();
 
     for (uint tr = _lowTrackToExtract[dir][level];
          tr < _hiTrackToExtract[dir][level];
