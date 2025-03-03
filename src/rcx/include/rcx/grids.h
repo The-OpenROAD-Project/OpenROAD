@@ -135,10 +135,6 @@ class Ath__wire
   void getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir);
 
   // Extraction
-  void printOneWire(FILE* ptfile);
-  void printWireNeighbor(uint met,
-                         Ath__array1D<Ath__wire*>* topNeighbor,
-                         Ath__array1D<Ath__wire*>* botNeighbor);
   int wireOverlap(Ath__wire* w, int* len1, int* len2, int* len3);
   Ath__wire* getPoolWire(AthPool<Ath__wire>* wirePool);
   Ath__wire* makeWire(AthPool<Ath__wire>* wirePool, int xy1, uint len);
