@@ -1057,9 +1057,7 @@ uint extMain::initPlanes(uint dir,
 {
   bool rotatedFlag = getRotatedFlag();
 
-  {
-    delete _geomSeq;
-  }
+  delete _geomSeq;
   _geomSeq = new gs(_seqPool);
 
   _geomSeq->setPlanes(layerCnt);
@@ -1133,36 +1131,26 @@ uint extMain::fill_gs4(int dir,
   const int gs_dir = dir;
 
   uint pcnt = 0;
-  dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator net_itr;
-
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet* net = *net_itr;
-
-    if (!((net->getSigType().isSupply()))) {
+  for (dbNet* net : _block->getNets()) {
+    if (!net->getSigType().isSupply()) {
       continue;
     }
     pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
+
   uint scnt = 0;
-
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet* net = *net_itr;
-
-    if ((net->getSigType().isSupply())) {
+  for (dbNet* net : _block->getNets()) {
+    if (net->getSigType().isSupply()) {
       continue;
     }
     scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
   if (_v2 && _overCell) {
-    Ath__array1D<uint> instGsTable(nets.size());
-    Ath__array1D<uint> tmpNetIdTable(nets.size());
+    const int num_nets = _block->getNets().size();
+    Ath__array1D<uint> instGsTable(num_nets);
+    Ath__array1D<uint> tmpNetIdTable(num_nets);
 
-    dbSet<dbInst> insts = _block->getInsts();
-    dbSet<dbInst>::iterator inst_itr;
-    for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
-      dbInst* inst = *inst_itr;
-
+    for (dbInst* inst : _block->getInsts()) {
       dbBox* R = inst->getBBox();
 
       int R_ll[2] = {R->xMin(), R->yMin()};

@@ -1501,7 +1501,7 @@ void extDistRC::printBound(FILE* fp,
           res * 1000);
 }
 
-uint extMain::addInstsGs(Ath__array1D<uint>* instTable,
+uint extMain::addInstsGs(const Ath__array1D<uint>* instTable,
                          Ath__array1D<uint>* tmpInstIdTable,
                          uint dir)
 {
