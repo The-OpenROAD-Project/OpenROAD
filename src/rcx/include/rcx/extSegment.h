@@ -34,10 +34,8 @@
 #define ADS_EXTSEGMENT_H
 
 #include <dbUtil.h>
-#include <gseq.h>
 
 #include "extprocess.h"
-#include "gseq.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"

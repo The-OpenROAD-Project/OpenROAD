@@ -33,7 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "rcx/gseq.h"
+#include "gseq.h"
 
 namespace rcx {
 

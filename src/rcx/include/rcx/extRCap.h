@@ -48,7 +48,6 @@
 #include "rcx/extPattern.h"
 #include "rcx/extSolverGen.h"
 #include "rcx/ext_options.h"
-#include "rcx/gseq.h"
 #include "util.h"
 
 namespace utl {
@@ -61,6 +60,7 @@ using namespace odb;
 
 class extMeasure;
 class extMeasureRC;
+struct SEQ;
 
 using odb::Ath__array1D;
 using odb::AthPool;
@@ -506,6 +506,7 @@ class extRCTable
 class extMain;
 class extMeasure;
 class extMainOptions;
+class gs;
 
 class extRCModel
 {

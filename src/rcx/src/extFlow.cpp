@@ -33,6 +33,7 @@
 #include <map>
 #include <vector>
 
+#include "gseq.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
