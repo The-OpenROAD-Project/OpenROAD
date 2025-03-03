@@ -142,11 +142,11 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
           if (w2 != NULL && found) {
             firstWireTable.set(next_tr, w2);
 
-            w->_upNext = w2;
+            w->setUpNext(w2);
             break;
           } else if (w2 != NULL && !found) {
             firstWireTable.set(next_tr, w2);
-            w->_upNext = w2;
+            w->setUpNext(w2);
             break;
           } else if (first_wire != NULL) {
             firstWireTable.set(next_tr, first_wire);
@@ -218,7 +218,7 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
           Ath__wire* w2 = FindOverlap_found(w, first_wire, found);
           if (w2 != NULL && found) {
             firstWireTable.set(next_tr, w2);
-            w->_downNext = w2;
+            w->setDownNext(w2);
             break;
           } else if (w2 != NULL && !found) {
             firstWireTable.set(next_tr, w2);
@@ -268,7 +268,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
       for (Ath__wire* w = first_wire1; w != NULL;
            w = w->getNext())  // for all wires in the track
       {
-        if (w->isPower() || w->_aboveNext != NULL)
+        if (w->isPower() || w->getAboveNext())
           continue;
 
         prev = w;
@@ -287,7 +287,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
                                                        limitTrackNum,
                                                        firstWireTable);
           if (w2 != NULL) {
-            w->_aboveNext = w2;
+            w->setAboveNext(w2);
             break;
           }
           if (found)
@@ -334,7 +334,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
       for (Ath__wire* w = first_wire1; w != NULL;
            w = w->getNext())  // for all wires in the track
       {
-        if (w->isPower() || w->_aboveNext != NULL)
+        if (w->isPower() || w->getAboveNext() != NULL)
           continue;
 
         prev = w;
@@ -353,7 +353,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
                                                        limitTrackNum,
                                                        firstWireTable);
           if (w2 != NULL) {
-            w->_belowNext = w2;
+            w->setBelowNext(w2);
             break;
           }
           if (found)

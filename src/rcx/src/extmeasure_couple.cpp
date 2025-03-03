@@ -873,13 +873,14 @@ uint extMeasureRC::FindAllSegments_vertical(
     Ath__array1D<extSegment*>* aboveTable)
 {
   bool dbgOverlaps = true;
-  Ath__wire* w2_next = lookUp ? w->_aboveNext : w->_belowNext;
+  Ath__wire* w2_next = lookUp ? w->getAboveNext() : w->getBelowNext();
   if (w2_next == NULL)
     return 0;
 
   Ath__array1D<Ath__wire*> wTable;
   wTable.add(w2_next);
-  Ath__wire* w2_next_next = lookUp ? w2_next->_aboveNext : w2_next->_belowNext;
+  Ath__wire* w2_next_next
+      = lookUp ? w2_next->getAboveNext() : w2_next->getBelowNext();
   if (w2_next_next != NULL)
     wTable.add(w2_next_next);
   // TODO, optimize, not accurate

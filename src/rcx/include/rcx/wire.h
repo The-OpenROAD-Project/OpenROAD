@@ -103,11 +103,6 @@ class Ath__searchBox
 class Ath__wire
 {
  public:
-  Ath__wire* _upNext = nullptr;
-  Ath__wire* _downNext = nullptr;
-  Ath__wire* _aboveNext = nullptr;  // vertical
-  Ath__wire* _belowNext = nullptr;  // vertical
-
   int getLen() { return _len; }
   int getWidth() { return _width; }
   int getBase() { return _base; }
@@ -157,8 +152,21 @@ class Ath__wire
                             uint wtype);
   void setXY(int xy1, uint len);
   dbNet* getNet();
+  Ath__wire* getUpNext() const { return _upNext; }
+  Ath__wire* getDownNext() const { return _downNext; }
+  Ath__wire* getAboveNext() const { return _aboveNext; }
+  Ath__wire* getBelowNext() const { return _belowNext; }
+  void setUpNext(Ath__wire* wire) { _upNext = wire; }
+  void setDownNext(Ath__wire* wire) { _downNext = wire; }
+  void setAboveNext(Ath__wire* wire) { _aboveNext = wire; }
+  void setBelowNext(Ath__wire* wire) { _belowNext = wire; }
 
  private:
+  Ath__wire* _upNext = nullptr;
+  Ath__wire* _downNext = nullptr;
+  Ath__wire* _aboveNext = nullptr;  // vertical
+  Ath__wire* _belowNext = nullptr;  // vertical
+
   uint _id;
   uint _srcId;  // TODO-OPTIMIZE
   uint _boxId;
@@ -180,7 +188,7 @@ class Ath__wire
 
   uint _dir : 1;
   uint _ext : 1;
-  uint _visited : 1;  // OpenRCX
+  uint _visited : 1;
 
   friend class Ath__track;
   friend class Ath__grid;
