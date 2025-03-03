@@ -75,10 +75,8 @@ class gs
   SEQ* salloc();
 
  private:
-  using gsPixel = char;
-
   using pixint = std::uint64_t;
-  using pixints = unsigned int;
+  using pixints = std::uint32_t;
 
   union pixmap
   {

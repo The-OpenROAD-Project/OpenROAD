@@ -183,16 +183,16 @@ void gs::setSize(const int pl,
   plc.plane = pm;
 }
 
-void gs::configureSlice(const int _slicenum,
-                        const int _xres,
-                        const int _yres,
-                        const int _x0,
-                        const int _y0,
-                        const int _x1,
-                        const int _y1)
+void gs::configureSlice(const int slicenum,
+                        const int xres,
+                        const int yres,
+                        const int x0,
+                        const int y0,
+                        const int x1,
+                        const int y1)
 {
-  if ((init_ & ALLOCATED) && _slicenum < nslices_) {
-    setSize(_slicenum, _xres, _yres, _x0, _y0, _x1, _y1);
+  if ((init_ & ALLOCATED) && slicenum < nslices_) {
+    setSize(slicenum, xres, yres, x0, y0, x1, y1);
   }
 }
 
