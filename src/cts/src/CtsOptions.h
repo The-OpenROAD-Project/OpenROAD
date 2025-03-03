@@ -37,6 +37,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <map>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -253,6 +254,9 @@ class CtsOptions
   const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
   bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
 
+  void recordBuffer(odb::dbMaster* master) { buffer_count_[master]++; }
+  std::map<odb::dbMaster*, int> getBufferCount() const { return buffer_count_; }
+
  private:
   std::string clockNets_ = "";
   std::string rootBuffer_ = "";
@@ -311,6 +315,7 @@ class CtsOptions
   bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
   std::string ctsLibrary_;
+  std::map<odb::dbMaster*, int> buffer_count_;
 };
 
 }  // namespace cts
