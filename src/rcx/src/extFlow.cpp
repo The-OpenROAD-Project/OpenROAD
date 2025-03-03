@@ -1146,9 +1146,9 @@ uint extMain::fill_gs4(int dir,
     scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
   if (_v2 && _overCell) {
-    const int num_nets = _block->getNets().size();
-    Ath__array1D<uint> instGsTable(num_nets);
-    Ath__array1D<uint> tmpNetIdTable(num_nets);
+    const int num_insts = _block->getInsts().size();
+    Ath__array1D<uint> instGsTable(num_insts);
+    Ath__array1D<uint> tmpInstIdTable(num_insts);
 
     for (dbInst* inst : _block->getInsts()) {
       dbBox* R = inst->getBBox();
@@ -1162,7 +1162,7 @@ uint extMain::fill_gs4(int dir,
       instGsTable.add(inst->getId());
     }
     if (instGsTable.getCnt() > 0)
-      addInstsGeometries(&instGsTable, &tmpNetIdTable, dir);
+      addInstsGeometries(&instGsTable, &tmpInstIdTable, dir);
   }
   return pcnt + scnt;
 }
