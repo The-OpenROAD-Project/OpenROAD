@@ -232,7 +232,20 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           prev_termination = true;
         }
-        resizer_->journalEnd();
+
+        // Restore to previous good checkpoint
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   2,
+                   "Restoring best slack end slack {} worst slack {}",
+                   delayAsString(prev_end_slack, sta_, digits),
+                   delayAsString(prev_worst_slack, sta_, digits));
+        resizer_->journalRestore(resize_count_,
+                                 inserted_buffer_count_,
+                                 cloned_gate_count_,
+                                 swap_pin_count_,
+                                 removed_buffer_count_);
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
