@@ -612,7 +612,6 @@ class Ath__gridTable
                  const int* Y1 = nullptr);
   ~Ath__gridTable();
   Ath__grid* getGrid(uint row, uint col);
-  void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);
   uint getColCnt();
   uint getRowCnt();
   Ath__wire* getWirePtr(uint id);
@@ -628,10 +627,8 @@ class Ath__gridTable
   Ath__wire* addBox(Ath__box* bb);
   Ath__wire* addBox(dbBox* bb, uint wtype, uint id);
   bool addBox(uint row, uint col, dbBox* bb);
-  uint setExtrusionMarker(uint startRow, uint startCol);
 
   uint getBoxes(Ath__box* bb, Ath__array1D<Ath__box*>* table);
-  bool isOrdered(bool ascending);
   uint search(Ath__searchBox* bb,
               uint row,
               uint col,
@@ -639,7 +636,6 @@ class Ath__gridTable
               bool wireIdFlag);
   uint search(Ath__searchBox* bb, Ath__array1D<uint>* idTable);
   uint search(Ath__box* bb);
-  Ath__wire* getWire_Linear(uint instId);
 
   uint addBox(int x1,
               int y1,
@@ -661,8 +657,6 @@ class Ath__gridTable
   void setMaxArea(int x1, int y1, int x2, int y2);
   void resetMaxArea();
 
-  void removeMarkedNetWires();
-
   // EXTRACTION
 
   void setDefaultWireType(uint v);
@@ -677,8 +671,6 @@ class Ath__gridTable
               uint* id1,
               uint* id2,
               uint* wireType);
-  void getCCdist(uint wid, uint* width, uint* level, uint* id1, uint* id2);
-  void getIds(uint wid, uint* id1, uint* id2, uint* wtype);
   uint search(Ath__searchBox* bb,
               uint* gxy,
               uint row,
@@ -772,6 +764,12 @@ class Ath__gridTable
   }
 
  private:
+  void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);
+  uint setExtrusionMarker(uint startRow, uint startCol);
+  Ath__wire* getWire_Linear(uint instId);
+  bool isOrdered(bool ascending);
+  void removeMarkedNetWires();
+
   bool _no_sub_tracks = false;
   bool _v2 = false;
   Ath__grid*** _gridTable;

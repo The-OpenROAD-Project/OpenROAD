@@ -3117,26 +3117,5 @@ void Ath__gridTable::getCoords(Ath__searchBox* bb, uint wireId)
   Ath__wire* w = getWirePtr(wireId);
   w->getCoords(bb);
 }
-void Ath__gridTable::getCCdist(uint wid,
-                               uint* width,
-                               uint* len,
-                               uint* id1,
-                               uint* id2)
-{
-  Ath__wire* w = getWirePtr(wid);
-
-  *width = w->_width;
-  *len = w->_len;
-  *id1 = w->_boxId;
-  *id2 = w->_otherId;
-}
-void Ath__gridTable::getIds(uint wid, uint* id1, uint* id2, uint* wtype)
-{
-  Ath__wire* w = getWirePtr(wid);
-
-  *wtype = w->_flags;
-  *id1 = w->_boxId;
-  *id2 = w->_otherId;
-}
 
 }  // namespace rcx
