@@ -220,7 +220,7 @@ int gs::box(int px0, int py0, int px1, int py1, const int sl)
     maxslice_ = sl;
   }
 
-  plconfig& plc = pldata_[sl];
+  const plconfig& plc = pldata_[sl];
 
   // normalize bbox
   if (px0 > px1) {
@@ -335,7 +335,7 @@ uint gs::getSeq(int* ll,
     return 0;
   }
 
-  plconfig& plc = pldata_[plane];
+  const plconfig& plc = pldata_[plane];
 
   // Sanity checks
   if (ur[0] < plc.x0) {
@@ -495,7 +495,7 @@ int gs::getSeqRow(const int y,
     return -1;
   }
 
-  plconfig& plc = pldata_[plane];
+  const plconfig& plc = pldata_[plane];
   if (y >= plc.height) {
     return -1;
   }
@@ -610,7 +610,7 @@ int gs::getSeqCol(const int x,
     return -1;
   }
 
-  plconfig& plc = pldata_[plane];
+  const plconfig& plc = pldata_[plane];
   if (x >= plc.width) {
     return -1;
   }
