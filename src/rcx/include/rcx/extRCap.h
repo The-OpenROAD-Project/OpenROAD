@@ -2016,14 +2016,14 @@ class extMain
                     uint ccFlag,
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
-  uint initPlanes(uint dir,
-                  int* wLL,
-                  int* wUR,
+  void initPlanes(uint dir,
+                  const int* wLL,
+                  const int* wUR,
                   uint layerCnt,
-                  uint* pitchTable,
-                  uint* widthTable,
+                  const uint* pitchTable,
+                  const uint* widthTable,
                   const uint* dirTable,
-                  int* bb_ll);
+                  const int* bb_ll);
 
   bool isIncluded(odb::Rect& r, uint dir, const int* ll, const int* ur);
   bool matchDir(uint dir, odb::Rect& r);
@@ -2310,8 +2310,8 @@ class extMain
                 int* hi_gs,
                 uint layerCnt,
                 uint* dirTable,
-                uint* pitchTable,
-                uint* widthTable);
+                const uint* pitchTable,
+                const uint* widthTable);
 
   uint addInsts(uint dir,
                 int* lo_gs,

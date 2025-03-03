@@ -1046,14 +1046,14 @@ int extMain::getXY_gs(int base, int XY, uint minRes)
   return v;
 }
 
-uint extMain::initPlanes(uint dir,
-                         int* wLL,
-                         int* wUR,
-                         uint layerCnt,
-                         uint* pitchTable,
-                         uint* widthTable,
+void extMain::initPlanes(const uint dir,
+                         const int* wLL,
+                         const int* wUR,
+                         const uint layerCnt,
+                         const uint* pitchTable,
+                         const uint* widthTable,
                          const uint* dirTable,
-                         int* bb_ll)
+                         const int* bb_ll)
 {
   bool rotatedFlag = getRotatedFlag();
 
@@ -1099,7 +1099,6 @@ uint extMain::initPlanes(uint dir,
       }
     }
   }
-  return layerCnt;
 }
 
 bool extMain::getRotatedFlag()
@@ -1121,8 +1120,8 @@ void extMain::fill_gs4(int dir,
                        int* hi_gs,
                        uint layerCnt,
                        uint* dirTable,
-                       uint* pitchTable,
-                       uint* widthTable)
+                       const uint* pitchTable,
+                       const uint* widthTable)
 {
   bool rotatedGs = getRotatedFlag();
 
