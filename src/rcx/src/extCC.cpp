@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <vector>
 
-#include "rcx/gseq.h"
+#include "gseq.h"
 #include "wire.h"
 
 namespace rcx {

@@ -33,7 +33,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "rcx/gseq.h"
+#include "gseq.h"
 
 namespace rcx {
 
@@ -307,16 +307,6 @@ void gs::release(SEQ* s)
 {
   seqPool_->free(s);
 }
-
-/* getSeq - returns an integer corresponding to the longest uninterrupted
- * sequence of virtual bits found of the same type (set or unset)
- *
- * Parameters: ll - lower left array [0] = x0, [1] = y0
- *             ur - upper right array [0] = x1, [1] = y1
- *             order - search by column or by row (GS_COLUMN, GS_ROW)
- *             plane  - which plane to search
- *             array - pool of sequence pointers to get a handle from
- */
 
 uint gs::getSeq(int* ll,
                 int* ur,

@@ -44,39 +44,54 @@ struct SEQ
   int type;
 };
 
+// Holds a set of bitmaps per plane covering the given area.
 class gs
 {
  public:
   gs(odb::AthPool<SEQ>* seqPool);
   ~gs();
 
-  void
-  configurePlane(int plane, int xres, int yres, int x0, int y0, int x1, int y1);
-
-  // render a rectangle
-  int box(int x0, int y0, int x1, int y1, int plane);
-
   // set the number of planes
   void setPlanes(int nplanes);
 
+  // Set the bounds and resolution for one plane.
+  void configurePlane(int plane,
+                      int x_resolution,
+                      int y_resolution,
+                      int x0,
+                      int y0,
+                      int x1,
+                      int y1);
+
+  // add a rectangle to a plane
+  int box(int x0, int y0, int x1, int y1, int plane);
+
+  // Returns an integer corresponding to the longest uninterrupted
+  // sequence of virtual bits found of the same type (set or unset)
+  //
+  // Parameters: ll - lower left array [0] = x0, [1] = y0
+  //             ur - upper right array [0] = x1, [1] = y1
+  //             order - search by column or by row (GS_COLUMN, GS_ROW)
+  //             plane  - which plane to search
+  //             array - pool of sequence pointers to get a handle from
   uint getSeq(int* ll,
               int* ur,
               uint order,
               uint plane,
               odb::Ath__array1D<SEQ*>* array);
 
-  void release(SEQ* s);
-
+  // Allocate a SEQ
   SEQ* salloc();
+
+  // Deallocate a SEQ
+  void release(SEQ* s);
 
  private:
   using pixint = std::uint64_t;
-  using pixints = std::uint32_t;
 
-  union pixmap
+  struct pixmap
   {
     pixint lword;
-    pixints word[2];
   };
 
   struct plconfig
@@ -104,8 +119,6 @@ class gs
   bool getSeqRow(int y, int plane, int stpix, int& epix, int& seqcol);
   bool getSeqCol(int x, int plane, int stpix, int& epix, int& seqcol);
 
-  static constexpr int PIXMAPGRID = 64;
-
   int nplanes_;   // max number of planes
   int maxplane_;  // maximum used plane
 
@@ -113,6 +126,7 @@ class gs
 
   std::vector<plconfig> pldata_;  // size == nplanes_ when init_ == ALLOCATED
 
+  static constexpr int PIXMAPGRID = 64;
   pixint start_[PIXMAPGRID];
   pixint middle_[PIXMAPGRID];
   pixint end_[PIXMAPGRID];

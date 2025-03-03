@@ -32,6 +32,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "dbUtil.h"
+#include "gseq.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
