@@ -607,8 +607,8 @@ void Resizer::balanceRowUsage()
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     auto site = master->getSite();
-    // Ignore multi-height cells for now
-    if (site->hasRowPattern()) {
+    // Ignore macros, and multi-height cells for now
+    if (inst->isBlock() || site->hasRowPattern()) {
       continue;
     }
 
