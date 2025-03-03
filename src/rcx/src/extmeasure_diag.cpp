@@ -88,11 +88,11 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
           if (w2 != NULL && found) {
             firstWireTable.set(next_tr, w2);
 
-            w->_upNext = w2;
+            w->setUpNext(w2);
             break;
           } else if (w2 != NULL && !found) {
             firstWireTable.set(next_tr, w2);
-            w->_upNext = w2;
+            w->setUpNext(w2);
             break;
           } else if (first_wire != NULL) {
             firstWireTable.set(next_tr, first_wire);
@@ -173,7 +173,7 @@ int extMeasureRC::FindCouplingNeighbors_down(uint dir,
           Ath__wire* w2 = FindOverlap_found(w, first_wire, found);
           if (w2 != NULL && found) {
             firstWireTable.set(next_tr, w2);
-            w->_downNext = w2;
+            w->setDownNext(w2);
             break;
           } else if (w2 != NULL && !found) {
             firstWireTable.set(next_tr, w2);
@@ -445,39 +445,41 @@ void extMeasureRC::Print5wires(FILE* fp, Ath__wire* w, uint level)
 {
   fprintf(fp, "---------------------------------- \n");
   int jj = level;
-  if (w->_upNext != NULL) {
-    if (w->_upNext->_upNext != NULL)
-      PrintWire(fp, w->_upNext->_upNext, jj);
-    PrintWire(fp, w->_upNext, 0);
+  if (w->getUpNext()) {
+    if (w->getUpNext()->getUpNext())
+      PrintWire(fp, w->getUpNext()->getUpNext(), jj);
+    PrintWire(fp, w->getUpNext(), 0);
   }
   fprintf(fp, "\n");
   PrintWire(fp, w, jj, "", " _____ ");
   fprintf(fp, "\n");
-  if (w->_downNext != NULL) {
-    PrintWire(fp, w->_downNext, jj);
-    if (w->_downNext->_downNext != NULL)
-      PrintWire(fp, w->_downNext->_downNext, jj);
+  if (w->getDownNext()) {
+    PrintWire(fp, w->getDownNext(), jj);
+    if (w->getDownNext()->getDownNext())
+      PrintWire(fp, w->getDownNext()->getDownNext(), jj);
   }
   fprintf(fp, "---------------------------------- \n");
 }
 void extMeasureRC::PrintDiagwires(FILE* fp, Ath__wire* w, uint level)
 {
-  if (w->_aboveNext != NULL) {
+  if (w->getAboveNext()) {
     fprintf(fp, "Vertical up::\n");
-    if (w->_aboveNext->_aboveNext != NULL)
-      PrintWire(
-          fp, w->_aboveNext->_aboveNext, w->_aboveNext->_aboveNext->getLevel());
-    PrintWire(fp, w->_aboveNext, w->_aboveNext->getLevel());
+    if (w->getAboveNext()->getAboveNext())
+      PrintWire(fp,
+                w->getAboveNext()->getAboveNext(),
+                w->getAboveNext()->getAboveNext()->getLevel());
+    PrintWire(fp, w->getAboveNext(), w->getAboveNext()->getLevel());
   }
   fprintf(fp, "-------------------------------------------------------\n");
   PrintWire(fp, w, w->getLen());
   fprintf(fp, "-------------------------------------------------------\n");
-  if (w->_belowNext != NULL) {
+  if (w->getBelowNext() != NULL) {
     fprintf(fp, "Vertical Down:\n");
-    PrintWire(fp, w->_belowNext, w->_belowNext->getLevel());
-    if (w->_belowNext->_belowNext != NULL)
-      PrintWire(
-          fp, w->_belowNext->_belowNext, w->_belowNext->_belowNext->getLevel());
+    PrintWire(fp, w->getBelowNext(), w->getBelowNext()->getLevel());
+    if (w->getBelowNext()->getBelowNext() != NULL)
+      PrintWire(fp,
+                w->getBelowNext()->getBelowNext(),
+                w->getBelowNext()->getBelowNext()->getLevel());
   }
   fprintf(fp, "\n");
 }
@@ -511,32 +513,34 @@ Ath__wire* extMeasureRC::FindOverlap(Ath__wire* w,
 }
 bool extMeasureRC::CheckWithNeighbors(Ath__wire* w, Ath__wire* prev)
 {
-  if (w->_aboveNext != NULL)
+  if (w->getAboveNext())
     return true;
 
-  if (prev != NULL && IsOverlap(w, prev->_aboveNext)) {
-    w->_aboveNext = prev->_aboveNext;
+  if (prev != NULL && IsOverlap(w, prev->getAboveNext())) {
+    w->setAboveNext(prev->getAboveNext());
     prev = w;
     return true;
   }
-  if (w->_downNext != NULL && IsOverlap(w, w->_downNext->_aboveNext)) {
-    w->_aboveNext = w->_downNext->_aboveNext;
+  if (w->getDownNext() != NULL
+      && IsOverlap(w, w->getDownNext()->getAboveNext())) {
+    w->setAboveNext(w->getDownNext()->getAboveNext());
     return true;
   }
   return false;
 }
 bool extMeasureRC::CheckWithNeighbors_below(Ath__wire* w, Ath__wire* prev)
 {
-  if (w->_belowNext != NULL)
+  if (w->getBelowNext() != NULL)
     return true;
 
-  if (prev != NULL && IsOverlap(w, prev->_belowNext)) {
-    w->_belowNext = prev->_belowNext;
+  if (prev != NULL && IsOverlap(w, prev->getBelowNext())) {
+    w->setBelowNext(prev->getBelowNext());
     prev = w;
     return true;
   }
-  if (w->_downNext != NULL && IsOverlap(w, w->_downNext->_belowNext)) {
-    w->_belowNext = w->_downNext->_belowNext;
+  if (w->getDownNext() != NULL
+      && IsOverlap(w, w->getDownNext()->getBelowNext())) {
+    w->setBelowNext(w->getDownNext()->getBelowNext());
     return true;
   }
   return false;
@@ -644,11 +648,7 @@ uint extMeasureRC::ConnectAllWires(Ath__track* track)
   uint ii = track->getGrid()->searchLowMarker();
   int first_marker_index = -1;
   for (; ii <= track->getGrid()->searchHiMarker(); ii++) {
-    // fprintf(stdout, "Track %d marker %d ------------------------ \n",
-    // track->getTrackNum(), ii);
-
-    for (Ath__wire* w = track->_marker[ii]; w != NULL; w = w->getNext()) {
-      // PrintWire(stdout, w, 0);
+    for (Ath__wire* w = track->getMarker(ii); w != NULL; w = w->getNext()) {
       tbl.add(w);
       if (first_marker_index < 0)
         first_marker_index = ii;
@@ -686,7 +686,7 @@ uint extMeasureRC::ConnectAllWires(Ath__track* track)
     }
   }
   Ath__wire* w0 = tbl.get(0);
-  track->_marker[first_marker_index] = w0;
+  track->setMarker(first_marker_index, w0);
 
   return swap;
 }
@@ -748,7 +748,7 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
               continue;
 
             firstWireTable[level]->set(next_tr, w2);
-            w->_aboveNext = w2;
+            w->setAboveNext(w2);
             found = true;
             cnt++;
             break;
@@ -882,7 +882,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
       for (Ath__wire* w = first_wire1; w != NULL;
            w = w->getNext())  // for all wires in the track
       {
-        if (w->isPower() || w->_aboveNext != NULL)
+        if (w->isPower() || w->getAboveNext() != NULL)
           continue;
 
         prev = w;
@@ -901,7 +901,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
                                                        limitTrackNum,
                                                        firstWireTable);
           if (w2 != NULL) {
-            w->_aboveNext = w2;
+            w->setAboveNext(w2);
             break;
           }
           if (found)
@@ -945,7 +945,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint dir,
       for (Ath__wire* w = first_wire1; w != NULL;
            w = w->getNext())  // for all wires in the track
       {
-        if (w->isPower() || w->_aboveNext != NULL)
+        if (w->isPower() || w->getAboveNext() != NULL)
           continue;
 
         prev = w;
@@ -964,7 +964,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint dir,
                                                        limitTrackNum,
                                                        firstWireTable);
           if (w2 != NULL) {
-            w->_belowNext = w2;
+            w->setBelowNext(w2);
             break;
           }
           if (found)
@@ -1037,7 +1037,7 @@ int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
               continue;
 
             firstWireTable[level]->set(next_tr, w2);
-            w->_belowNext = w2;
+            w->setBelowNext(w2);
             found = true;
             cnt++;
             break;

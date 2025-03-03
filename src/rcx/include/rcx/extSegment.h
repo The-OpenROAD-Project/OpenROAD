@@ -30,18 +30,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXTSEGMENT_H
-#define ADS_EXTSEGMENT_H
+#pragma once
 
 #include <dbUtil.h>
 
 #include "extprocess.h"
+#include "grids.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/odb.h"
 #include "odb/util.h"
-#include "wire.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)
@@ -117,5 +116,3 @@ class extSegment  // assume cross-section on the z-direction
 };
 
 }  // namespace rcx
-
-#endif

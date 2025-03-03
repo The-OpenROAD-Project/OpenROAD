@@ -33,13 +33,13 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
 #include "gseq.h"
 #include "parse.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -198,8 +198,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
   uint totWireCnt;
   int layerCnt = initSearch(tables, extRect, totWireCnt);
-  _search->_no_sub_tracks = _v2;
-  _search->_v2 = _v2;
+  _search->setV2(_v2);
 
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
@@ -299,8 +298,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 
   uint totWireCnt;
   int layerCnt = initSearch(tables, extRect, totWireCnt);
-  _search->_no_sub_tracks = _v2;
-  _search->_v2 = _v2;
+  _search->setV2(_v2);
 
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
@@ -502,7 +500,7 @@ uint Ath__wire::getLevel()
 }
 uint Ath__wire::getPitch()
 {
-  return this->_track->getGrid()->_pitch;
+  return this->_track->getGrid()->getPitch();
 }
 uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 {

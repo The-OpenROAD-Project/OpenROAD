@@ -35,13 +35,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef EXTVIAMODEL_H
-#define EXTVIAMODEL_H
+#pragma once
 
 #include "odb/util.h"
 #include "util.h"
-// #include "array1.h"
-// #include "parse.h"
 
 namespace utl {
 class Logger;
@@ -95,5 +92,3 @@ class extViaModel
   void printVia(FILE* fp, uint corner);
 };
 }  // namespace rcx
-
-#endif

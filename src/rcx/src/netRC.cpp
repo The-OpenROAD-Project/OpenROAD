@@ -34,12 +34,12 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "util.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 

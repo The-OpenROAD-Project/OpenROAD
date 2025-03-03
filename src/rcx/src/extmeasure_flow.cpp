@@ -565,7 +565,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
     Ath__grid* netGrid = _search->getGrid(dir, level);
     upTable.resetCnt();
 
-    uint maxDist = 10 * netGrid->_pitch;
+    uint maxDist = 10 * netGrid->getPitch();
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
       Ath__track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
@@ -645,7 +645,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_upNext,
+                     w->getUpNext(),
                      &upTable);
         BubbleSort(&upTable);
         if (dbgOverlaps) {
@@ -658,7 +658,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_downNext,
+                     w->getDownNext(),
                      &downTable);
         if (dbgOverlaps) {
           fprintf(fp, "Down Segments %d\n", downTable.getCnt());
@@ -670,7 +670,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_aboveNext,
+                     w->getAboveNext(),
                      &aboveTable);
         if (dbgOverlaps) {
           fprintf(fp, "Above Diag Segments %d\n", aboveTable.getCnt());
@@ -682,7 +682,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_belowNext,
+                     w->getBelowNext(),
                      &belowTable);
         if (dbgOverlaps) {
           fprintf(fp, "Below Diag Segments %d\n", belowTable.getCnt());
@@ -726,15 +726,6 @@ int extMeasureRC::CouplingFlow_new(uint dir,
         BubbleSort(&segTable);
         if (!CheckOrdered(&segTable))
           fprintf(stdout, "======> segTable NOT SORTED after Buggble\n");
-        /*
-                            if (w->_verticalNext != NULL)
-                            {
-                                uint len = CalcDiagBelow(s,
-           s->_wire->_belowNext); Ath__wire *below = s->_wire->_belowNext; if
-           (below != NULL && below->_belowNext != NULL && _met <= 3) len =
-           CalcDiagBelow(s, below->_belowNext);
-                            }
-        */
         for (uint ii = 0; ii < segTable.getCnt(); ii++) {
           extSegment* s = segTable.get(ii);
           measure_RC_new(s);

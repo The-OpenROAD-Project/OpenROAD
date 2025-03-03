@@ -113,7 +113,8 @@ uint extMeasureRC::FindSegments(bool lookUp,
   }
   if (xy1 + len1 < w2_next->getXY())  // no overlap and w2 too far on the right
   {
-    Ath__wire* next_up_down = lookUp ? w2_next->_upNext : w2_next->_downNext;
+    Ath__wire* next_up_down
+        = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
   }
@@ -130,7 +131,8 @@ uint extMeasureRC::FindSegments(bool lookUp,
     prev = w2;
   }
   if (w2 == NULL) {
-    Ath__wire* next_up_down = lookUp ? w2_next->_upNext : w2_next->_downNext;
+    Ath__wire* next_up_down
+        = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
   }
@@ -158,12 +160,12 @@ uint extMeasureRC::FindSegments(bool lookUp,
           && next->getXY() <= w1->getXY() + w1->getLen()) {  // overlap
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       } else {
-        next = lookUp ? w2_next->_upNext : w2_next->_downNext;
+        next = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       }
     }
   } else {  // Open Left
-    Ath__wire* next = lookUp ? w2_next->_upNext : w2_next->_downNext;
+    Ath__wire* next = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(
         lookUp, dir, maxDist, w1, xy1, dx1, next, segTable);  // white space
     if (dx2 >= 0) {                                           // covered Right
@@ -182,7 +184,7 @@ uint extMeasureRC::FindSegments(bool lookUp,
           && next->getXY() <= w1->getXY() + w1->getLen()) {  // overlap
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       } else {
-        next = lookUp ? w2_next->_upNext : w2_next->_downNext;
+        next = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       }
     }
