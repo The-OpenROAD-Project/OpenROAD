@@ -43,13 +43,13 @@ static constexpr int PIXADJUST = 2;
 
 /* Values for the member variable init_
  * INIT = created,
- * CONFIGURED = has reasonable values for width, height, slices, etc
+ * CONFIGURED = has reasonable values for width, height, planes, etc
  * ALLOCATED = memory has been allocated
  */
 static constexpr int INIT = 0;
-static constexpr int SLICES = 1;
+static constexpr int PLANES = 1;
 static constexpr int ALLOCATED = 2;
-static constexpr int GS_ALL = (SLICES | ALLOCATED);
+static constexpr int GS_ALL = (PLANES | ALLOCATED);
 
 static constexpr int GS_WHITE = 0;
 static constexpr int GS_BLACK = 1;
@@ -78,8 +78,8 @@ gs::gs(odb::AthPool<SEQ>* pool)
     s2 = (s2 >> 1);
   }
 
-  nslices_ = -1;
-  maxslice_ = -1;
+  nplanes_ = -1;
+  maxplane_ = -1;
 
   seqPool_ = pool;
 }
@@ -103,21 +103,21 @@ void gs::allocMem()
     freeMem();
   }
 
-  if (init_ & SLICES) {
-    pldata_.resize(nslices_);
+  if (init_ & PLANES) {
+    pldata_.resize(nplanes_);
     init_ |= ALLOCATED;
   }
 }
 
-void gs::setSlices(const int nslices)
+void gs::setPlanes(const int nplanes)
 {
   freeMem();
-  nslices_ = nslices;
-  init_ |= SLICES;
+  nplanes_ = nplanes;
+  init_ |= PLANES;
   allocMem();
 }
 
-void gs::setSize(const int pl,
+void gs::setSize(const int plane,
                  const int xres,
                  const int yres,
                  const int x0,
@@ -125,7 +125,7 @@ void gs::setSize(const int pl,
                  const int x1,
                  const int y1)
 {
-  plconfig& plc = pldata_[pl];
+  plconfig& plc = pldata_[plane];
 
   plc.x0 = x0;
   plc.x1 = x1;
@@ -175,7 +175,7 @@ void gs::setSize(const int pl,
   if (pm == nullptr) {
     fprintf(stderr,
             "Error: not enough memory available trying to allocate plane %d\n",
-            pl);
+            plane);
     exit(-1);
   }
 
@@ -183,7 +183,7 @@ void gs::setSize(const int pl,
   plc.plane = pm;
 }
 
-void gs::configureSlice(const int slicenum,
+void gs::configurePlane(const int plane,
                         const int xres,
                         const int yres,
                         const int x0,
@@ -191,8 +191,8 @@ void gs::configureSlice(const int slicenum,
                         const int x1,
                         const int y1)
 {
-  if ((init_ & ALLOCATED) && slicenum < nslices_) {
-    setSize(slicenum, xres, yres, x0, y0, x1, y1);
+  if ((init_ & ALLOCATED) && plane < nplanes_) {
+    setSize(plane, xres, yres, x0, y0, x1, y1);
   }
 }
 
@@ -201,14 +201,14 @@ static int clip(const int p, const int min, const int max)
   return (p < min) ? min : (p >= max) ? (max - 1) : p;
 }
 
-int gs::box(int px0, int py0, int px1, int py1, const int sl)
+int gs::box(int px0, int py0, int px1, int py1, const int plane)
 {
-  if (!checkSlice(sl)) {
+  if (!checkPlane(plane)) {
     fprintf(stderr,
-            "Box in slice %d exceeds maximum configured slice count %d - "
+            "Box in plane %d exceeds maximum configured plane count %d - "
             "ignored!\n",
-            sl,
-            nslices_);
+            plane,
+            nplanes_);
     return -1;
   }
 
@@ -216,11 +216,11 @@ int gs::box(int px0, int py0, int px1, int py1, const int sl)
     return -1;
   }
 
-  if (sl > maxslice_) {
-    maxslice_ = sl;
+  if (plane > maxplane_) {
+    maxplane_ = plane;
   }
 
-  const plconfig& plc = pldata_[sl];
+  const plconfig& plc = pldata_[plane];
 
   // normalize bbox
   if (px0 > px1) {
@@ -249,7 +249,7 @@ int gs::box(int px0, int py0, int px1, int py1, const int sl)
   int cy0 = int((py0 - plc.y0) / plc.yres);
   int cy1 = int((py1 - plc.y0) / plc.yres);
 
-  // render a rectangle on the selected slice. Paint all pixels
+  // render a rectangle on the selected plane. Paint all pixels
   cx0 = clip(cx0, 0, plc.width);
   cx1 = clip(cx1, 0, plc.width);
   cy0 = clip(cy0, 0, plc.height);
@@ -299,9 +299,9 @@ int gs::box(int px0, int py0, int px1, int py1, const int sl)
   return 0;
 }
 
-bool gs::checkSlice(const int sl)
+bool gs::checkPlane(const int plane)
 {
-  return 0 <= sl && sl < nslices_;
+  return 0 <= plane && plane < nplanes_;
 }
 
 SEQ* gs::salloc()
@@ -331,7 +331,7 @@ uint gs::getSeq(int* ll,
                 const uint plane,
                 odb::Ath__array1D<SEQ*>* array)
 {
-  if (!checkSlice(plane)) {
+  if (!checkPlane(plane)) {
     return 0;
   }
 

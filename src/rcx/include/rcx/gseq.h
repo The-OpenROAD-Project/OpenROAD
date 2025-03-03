@@ -50,19 +50,14 @@ class gs
   gs(odb::AthPool<SEQ>* seqPool);
   ~gs();
 
-  void configureSlice(int slicenum,
-                      int xres,
-                      int yres,
-                      int x0,
-                      int y0,
-                      int x1,
-                      int y1);
+  void
+  configurePlane(int plane, int xres, int yres, int x0, int y0, int x1, int y1);
 
   // render a rectangle
-  int box(int x0, int y0, int x1, int y1, int slice);
+  int box(int x0, int y0, int x1, int y1, int plane);
 
-  // set the number of slices
-  void setSlices(int nslices);
+  // set the number of planes
+  void setPlanes(int nplanes);
 
   uint getSeq(int* ll,
               int* ur,
@@ -101,24 +96,24 @@ class gs
   };
 
   // set the size parameters
-  void setSize(int pl, int xres, int yres, int x0, int x1, int y0, int y1);
+  void setSize(int plane, int xres, int yres, int x0, int x1, int y0, int y1);
 
   void allocMem();
   void freeMem();
 
-  bool checkSlice(int sl);
+  bool checkPlane(int plane);
 
   bool getSeqRow(int y, int plane, int stpix, int& epix, int& seqcol);
   bool getSeqCol(int x, int plane, int stpix, int& epix, int& seqcol);
 
   static constexpr int PIXMAPGRID = 64;
 
-  int nslices_;   // max number of slices
-  int maxslice_;  // maximum used slice
+  int nplanes_;   // max number of planes
+  int maxplane_;  // maximum used plane
 
   int init_;
 
-  std::vector<plconfig> pldata_;  // size == nslices_ when init_ == ALLOCATED
+  std::vector<plconfig> pldata_;  // size == nplanes_ when init_ == ALLOCATED
 
   pixint start_[PIXMAPGRID];
   pixint middle_[PIXMAPGRID];
