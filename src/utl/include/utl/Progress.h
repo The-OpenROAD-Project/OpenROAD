@@ -156,8 +156,8 @@ class ProgressReporter
   bool checkInterrupt() const { return interrupt_; };
 
   // call at the end of reporting, if db_modified is true generates a warning if
-  // an interrupt was requested
-  void end(bool db_modified);
+  // an interrupt was requested, returns true is an interrupt has been requested
+  bool end(bool db_modified);
 
   // interrupt this reporter
   void interrupt() { interrupt_ = true; }

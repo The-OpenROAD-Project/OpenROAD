@@ -41,22 +41,22 @@
 #include <QStatusBar>
 #include <QVBoxLayout>
 
+#include "mainWindow.h"
 #include "utl/Logger.h"
 
 namespace gui {
 
 GUIProgress::GUIProgress(utl::Logger* logger, MainWindow* mw)
     : utl::Progress(logger),
-      mw_(mw),
-      combined_progress_(new CombinedProgressWidget(this, mw_))
+      combined_progress_(new CombinedProgressWidget(this, mw))
 {
-  mw_->statusBar()->addPermanentWidget(combined_progress_);
+  mw->statusBar()->addPermanentWidget(combined_progress_);
 }
 
 void GUIProgress::start(std::shared_ptr<utl::ProgressReporter>& reporter)
 {
   // Create reporting widget
-  ProgressReporterWidget* widget = new ProgressReporterWidget(reporter, mw_);
+  ProgressReporterWidget* widget = new ProgressReporterWidget(reporter);
   widgets_[reporter.get()] = widget;
 
   configureProgressUI(reporter.get(), widget);
@@ -73,13 +73,6 @@ void GUIProgress::update(utl::ProgressReporter* reporter)
 
   configureProgressUI(reporter, widgets_[reporter]);
 
-  if (!reporter->usingLogger()) {
-    const auto msg = reporter->getMessage();
-    if (msg) {
-      mw_->status(msg.value());
-    }
-  }
-
   updateCombined();
 
   updateGUI();
@@ -91,11 +84,6 @@ void GUIProgress::end(utl::ProgressReporter* reporter)
 
   // remove widget
   widgets_.erase(reporter);
-
-  const auto msg = reporter->getEndMessage();
-  if (msg) {
-    mw_->status(msg.value());
-  }
 
   updateCombined();
 

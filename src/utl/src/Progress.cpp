@@ -243,15 +243,15 @@ void ProgressReporter::report()
   }
 }
 
-void ProgressReporter::end(bool db_modified)
+bool ProgressReporter::end(bool db_modified)
 {
   progress_->removeReporter(this);
 
   if (checkInterrupt() && db_modified) {
-    logger_->warn(utl::UTL,
-                  13,
-                  "{} was interupted and may have modified the database.",
-                  name_);
+    logger_->error(utl::UTL,
+                   13,
+                   "{} was interupted and may have modified the database.",
+                   name_);
   }
 
   if (usingLogger()) {
@@ -262,6 +262,8 @@ void ProgressReporter::end(bool db_modified)
   }
 
   progress_->end(this);
+
+  return checkInterrupt();
 }
 
 bool ProgressReporter::hasInterrupt()

@@ -43,7 +43,6 @@
 #include <map>
 #include <memory>
 
-#include "mainWindow.h"
 #include "utl/Progress.h"
 
 namespace utl {
@@ -54,6 +53,7 @@ class Logger;
 
 namespace gui {
 
+class MainWindow;
 class ProgressWidget;
 class ProgressReporterWidget;
 class CombinedProgressWidget;
@@ -73,8 +73,6 @@ class GUIProgress : public utl::Progress
   void updateCombined();
   void configureProgressUI(utl::ProgressReporter* reporter,
                            ProgressWidget* widget) const;
-
-  MainWindow* mw_;
 
   CombinedProgressWidget* combined_progress_;
 
