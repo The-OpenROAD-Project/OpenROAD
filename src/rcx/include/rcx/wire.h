@@ -68,15 +68,6 @@ struct SEQ;
 
 class Ath__searchBox
 {
- private:
-  int _ll[2];
-  int _ur[2];
-  uint _level;
-  uint _dir;
-  uint _ownId;
-  uint _otherId;
-  uint _type;
-
  public:
   Ath__searchBox(int x1, int y1, int x2, int y2, uint l, int dir = -1);
   Ath__searchBox(Ath__box* bb, uint l, int dir = -1);
@@ -101,11 +92,19 @@ class Ath__searchBox
   uint getOwnerId();
   uint getOtherId();
   uint getLength();
+
+ private:
+  int _ll[2];
+  int _ur[2];
+  uint _level;
+  uint _dir;
+  uint _ownId;
+  uint _otherId;
+  uint _type;
 };
 
 class Ath__wire
 {
-  // ---------------------------------------- v2
  public:
   Ath__wire* _upNext = nullptr;
   Ath__wire* _downNext = nullptr;
@@ -115,57 +114,28 @@ class Ath__wire
   int getLen() { return _len; }
   int getWidth() { return _width; }
   int getBase() { return _base; }
-  // void getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir);
 
   uint getLevel();
-  uint getPitch();  // dkf 10192023
+  uint getPitch();
 
-  // ------------------------------------------------------------
- private:
-  uint _id;
-  uint _srcId;  // TODO-OPTIMIZE
-  uint _boxId;
-  uint _otherId;
-  Ath__wire* _srcWire;  // OpenRCX
-
-  Ath__track* _track;
-  Ath__wire* _next;
-
-  int _xy;  // TODO offset from track start in large dimension
-  int _len;
-  int _ouLen;  // OpenRCX
-
-  int _base;
-  int _width : 24;
-
-  uint _flags : 6;
-  // 0=wire, 2=obs, 1=pin, 3=power or SET BY USER
-
-  uint _dir : 1;
-  uint _ext : 1;
-  uint _visited : 1;  // OpenRCX
-
- public:
-  int getShapeProperty(int id);  // OpenRCX
-  int getRsegId();               // OpenRCX
+  int getShapeProperty(int id);
+  int getRsegId();
 
   void reset();
-  // void set(int xy1, int xy2);
   void set(uint dir, const int* ll, const int* ur);
   void search(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
   void search1(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
 
   void setNext(Ath__wire* w) { _next = w; };
-  Ath__wire* getNext() { return _next; };
-  uint getFlags() { return _flags; };
+  Ath__wire* getNext() const { return _next; };
+  uint getFlags() const { return _flags; };
   uint getBoxId();
   void setExt(uint ext) { _ext = ext; };
   uint getExt() { return _ext; };
-  uint getId() { return _id; };
   void setOtherId(uint id);
   uint getOtherId();
   bool isPower();
-  bool isVia();  // OpenRCX
+  bool isVia();
   bool isTilePin();
   bool isTileBus();
   uint getOwnerId();
@@ -173,10 +143,6 @@ class Ath__wire
   void getCoords(Ath__searchBox* box);
   int getXY() { return _xy; }
   void getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir);
-
-  friend class Ath__track;
-  friend class Ath__grid;
-  friend class Ath__gridTable;
 
   // Extraction
   void printOneWire(FILE* ptfile);
@@ -194,6 +160,34 @@ class Ath__wire
                             uint wtype);
   void setXY(int xy1, uint len);
   dbNet* getNet();
+
+ private:
+  uint _id;
+  uint _srcId;  // TODO-OPTIMIZE
+  uint _boxId;
+  uint _otherId;
+  Ath__wire* _srcWire;
+
+  Ath__track* _track;
+  Ath__wire* _next;
+
+  int _xy;  // TODO offset from track start in large dimension
+  int _len;
+  int _ouLen;
+
+  int _base;
+  int _width : 24;
+
+  uint _flags : 6;
+  // 0=wire, 2=obs, 1=pin, 3=power or SET BY USER
+
+  uint _dir : 1;
+  uint _ext : 1;
+  uint _visited : 1;  // OpenRCX
+
+  friend class Ath__track;
+  friend class Ath__grid;
+  friend class Ath__gridTable;
 };
 
 class Ath__grid;
@@ -408,7 +402,7 @@ class Ath__grid
   ~Ath__grid();
 
   Ath__gridTable* getGridTable() { return _gridtable; };
-  void setBoundaries(uint dir, int xlo, int ylo, int xhi, int yhi);
+  void setBoundaries(uint dir, const odb::Rect& rect);
   void setTracks(uint dir,
                  uint width,
                  uint pitch,
@@ -423,7 +417,6 @@ class Ath__grid
 
   bool anyTrackAvailable();
 
-  uint addWireList(Ath__box* box);
   uint getTrackCnt() { return _trackCnt; };
   Ath__track* getTrackPtr(uint n) { return _trackTable[n]; };
   uint getTrackNum1(int xy);

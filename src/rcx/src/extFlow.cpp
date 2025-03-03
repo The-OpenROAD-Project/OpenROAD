@@ -296,10 +296,6 @@ uint extMain::initSearchForNets(int* X1,
   uint W[32];
   uint S[32];
 
-  dbSet<dbTechLayer> layers = _tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-  dbTrackGrid* tg = nullptr;
-
   Rect maxRect;
   if ((extRect.dx() > 0) && (extRect.dy() > 0)) {
     maxRect = extRect;
@@ -313,9 +309,7 @@ uint extMain::initSearchForNets(int* X1,
 
   std::vector<int> trackXY(32000);
   uint n = 0;
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
-
+  for (dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
@@ -346,7 +340,7 @@ uint extMain::initSearchForNets(int* X1,
       continue;
     }
 
-    tg = _block->findTrackGrid(layer);
+    dbTrackGrid* tg = _block->findTrackGrid(layer);
     if (tg) {
       tg->getGridX(trackXY);
       X1[n] = trackXY[0] - layer->getWidth() / 2;
@@ -357,7 +351,7 @@ uint extMain::initSearchForNets(int* X1,
       Y1[n] = maxRect.yMin();
     }
   }
-  uint layerCnt = n + 1;
+  const uint layerCnt = n + 1;
 
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
   _search->setBlock(_block);
