@@ -30,11 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_extMeasureRC_H
-#define ADS_extMeasureRC_H
+#pragma once
 
 #include "extRCap.h"
-// TODO #include "extProgressTracker.hpp"
 
 namespace rcx {
 
@@ -1094,5 +1092,3 @@ class extMeasureRC : public extMeasure
 };
 
 }  // namespace rcx
-
-#endif

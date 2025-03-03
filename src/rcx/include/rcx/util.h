@@ -30,9 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// #pragma once
-#ifndef UTIL_Y
-#define UTIL_Y
+#pragma once
 
 #include <cassert>
 #include <cstdlib>
@@ -270,4 +268,3 @@ class AthHash
 };
 
 // }  // namespace rcx
-#endif

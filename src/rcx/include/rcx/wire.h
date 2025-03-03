@@ -30,10 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// #pragma once
-
-#ifndef ADS_WIRE_H
-#define ADS_WIRE_H
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
@@ -834,5 +831,3 @@ class Ath__gridTable
 };
 
 }  // namespace rcx
-
-#endif
