@@ -145,15 +145,9 @@ void gs::setSize(const int plane,
   plc.x_resolution = x_resolution;
   plc.y_resolution = y_resolution;
 
-  plc.width = (plc.x1 - plc.x0 + 1) / plc.x_resolution;
-  if (((plc.x1 - plc.x0 + 1) % plc.x_resolution) != 0) {
-    plc.width++;
-  }
-
-  plc.height = (plc.y1 - plc.y0 + 1) / plc.y_resolution;
-  if (((plc.y1 - plc.y0 + 1) % plc.y_resolution) != 0) {
-    plc.height++;
-  }
+  // Round up to resolution
+  plc.width = (plc.x1 - plc.x0 + plc.x_resolution) / plc.x_resolution;
+  plc.height = (plc.y1 - plc.y0 + plc.y_resolution) / plc.y_resolution;
 
   plc.pixwrem = plc.width % PIXMAPGRID;
 
