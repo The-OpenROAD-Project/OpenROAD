@@ -1114,7 +1114,7 @@ bool extMain::enableRotatedFlag()
   return _rotatedGs;
 }
 
-uint extMain::fill_gs4(int dir,
+void extMain::fill_gs4(int dir,
                        int* ll,
                        int* ur,
                        int* lo_gs,
@@ -1130,20 +1130,18 @@ uint extMain::fill_gs4(int dir,
 
   const int gs_dir = dir;
 
-  uint pcnt = 0;
   for (dbNet* net : _block->getNets()) {
     if (!net->getSigType().isSupply()) {
       continue;
     }
-    pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
+    addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
 
-  uint scnt = 0;
   for (dbNet* net : _block->getNets()) {
     if (net->getSigType().isSupply()) {
       continue;
     }
-    scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
+    addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
   if (_v2 && _overCell) {
     const int num_insts = _block->getInsts().size();
@@ -1164,7 +1162,6 @@ uint extMain::fill_gs4(int dir,
     if (instGsTable.getCnt() > 0)
       addInstsGeometries(&instGsTable, &tmpInstIdTable, dir);
   }
-  return pcnt + scnt;
 }
 
 uint extMain::couplingFlow(Rect& extRect,

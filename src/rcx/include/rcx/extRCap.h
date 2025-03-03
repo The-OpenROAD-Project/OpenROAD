@@ -1837,16 +1837,16 @@ class extMain
                            bool v = false);
   bool modelExists(const char* extRules);
 
-  uint addInstsGeometries(const Ath__array1D<uint>* instTable,
+  void addInstsGeometries(const Ath__array1D<uint>* instTable,
                           Ath__array1D<uint>* tmpInstIdTable,
                           uint dir);
-  uint addObsShapesOnPlanes(odb::dbInst* inst,
+  void addObsShapesOnPlanes(odb::dbInst* inst,
                             bool rotatedFlag,
                             bool swap_coords);
-  uint addItermShapesOnPlanes(odb::dbInst* inst,
+  void addItermShapesOnPlanes(odb::dbInst* inst,
                               bool rotatedFlag,
                               bool swap_coords);
-  uint addShapeOnGs(dbShape* s, bool swap_coords);
+  void addShapeOnGs(dbShape* s, bool swap_coords);
 
   void initRunEnv(extMeasureRC& m);
   uint _ccContextDepth = 0;
@@ -2303,7 +2303,7 @@ class extMain
                     bool swap_coords,
                     int dir);
 
-  uint fill_gs4(int dir,
+  void fill_gs4(int dir,
                 int* ll,
                 int* ur,
                 int* lo_gs,

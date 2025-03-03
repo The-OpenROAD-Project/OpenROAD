@@ -1501,16 +1501,15 @@ void extDistRC::printBound(FILE* fp,
           res * 1000);
 }
 
-uint extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
+void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
                                  Ath__array1D<uint>* tmpInstIdTable,
                                  const uint dir)
 {
   if (instTable == NULL)
-    return 0;
+    return;
 
   const bool rotatedGs = getRotatedFlag();
 
-  uint cnt = 0;
   const uint instCnt = instTable->getCnt();
 
   for (uint ii = 0; ii < instCnt; ii++) {
@@ -1525,8 +1524,8 @@ uint extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
       tmpInstIdTable->add(instId);
     }
 
-    cnt += addItermShapesOnPlanes(inst, rotatedGs, !dir);
-    cnt += addObsShapesOnPlanes(inst, rotatedGs, !dir);
+    addItermShapesOnPlanes(inst, rotatedGs, !dir);
+    addObsShapesOnPlanes(inst, rotatedGs, !dir);
   }
   if (tmpInstIdTable != NULL) {
     for (uint jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
@@ -1534,13 +1533,12 @@ uint extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
       dbInst::getInst(_block, instId)->clearUserFlag1();
     }
   }
-  return cnt;
 }
-uint extMain::addItermShapesOnPlanes(dbInst* inst,
+
+void extMain::addItermShapesOnPlanes(dbInst* inst,
                                      const bool rotatedFlag,
                                      const bool swap_coords)
 {
-  uint cnt = 0;
   for (dbITerm* iterm : inst->getITerms()) {
     dbShape s;
     dbITermShapeItr term_shapes;
@@ -1550,35 +1548,32 @@ uint extMain::addItermShapesOnPlanes(dbInst* inst,
 
       const uint level = s.getTechLayer()->getRoutingLevel();
 
-      uint n = 0;
       if (!rotatedFlag)
-        n = _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
+        _geomSeq->box(s.xMin(), s.yMin(), s.xMax(), s.yMax(), level);
       else
-        n = addShapeOnGs(&s, swap_coords);
-
-      if (n == 0)
-        cnt++;
+        addShapeOnGs(&s, swap_coords);
     }
   }
-  return cnt;
 }
-uint extMain::addShapeOnGs(dbShape* s, const bool swap_coords)
+
+void extMain::addShapeOnGs(dbShape* s, const bool swap_coords)
 {
   const int level = s->getTechLayer()->getRoutingLevel();
 
-  if (!swap_coords)  // horizontal
-    return _geomSeq->box(s->xMin(), s->yMin(), s->xMax(), s->yMax(), level);
-
-  return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
+  if (!swap_coords) {  // horizontal
+    _geomSeq->box(s->xMin(), s->yMin(), s->xMax(), s->yMax(), level);
+  } else {
+    _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
+  }
 }
-uint extMain::addObsShapesOnPlanes(dbInst* inst,
+
+void extMain::addObsShapesOnPlanes(dbInst* inst,
                                    const bool rotatedFlag,
                                    const bool swap_coords)
 {
-  uint cnt = 0;
   dbInstShapeItr obs_shapes;
-
   dbShape s;
+
   for (obs_shapes.begin(inst, dbInstShapeItr::OBSTRUCTIONS);
        obs_shapes.next(s);) {
     if (s.isVia())
@@ -1591,7 +1586,6 @@ uint extMain::addObsShapesOnPlanes(dbInst* inst,
     else
       addShapeOnGs(&s, swap_coords);
   }
-  return cnt;
 }
 
 }  // namespace rcx
