@@ -62,13 +62,13 @@ class gs
   int box(int x0, int y0, int x1, int y1, int slice);
 
   // set the number of slices
-  void set_slices(int nslices);
+  void setSlices(int nslices);
 
-  uint get_seq(int* ll,
-               int* ur,
-               uint order,
-               uint plane,
-               odb::Ath__array1D<SEQ*>* array);
+  uint getSeq(int* ll,
+              int* ur,
+              uint order,
+              uint plane,
+              odb::Ath__array1D<SEQ*>* array);
 
   void release(SEQ* s);
 
@@ -105,13 +105,13 @@ class gs
   // set the size parameters
   void setSize(int pl, int xres, int yres, int x0, int x1, int y0, int y1);
 
-  void alloc_mem();
-  void free_mem();
+  void allocMem();
+  void freeMem();
 
-  bool check_slice(int sl);
+  bool checkSlice(int sl);
 
-  int get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol);
-  int get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol);
+  int getSeqRow(int y, int plane, int stpix, int& epix, int& seqcol);
+  int getSeqCol(int x, int plane, int stpix, int& epix, int& seqcol);
 
   static constexpr int PIXMAPGRID = 64;
 

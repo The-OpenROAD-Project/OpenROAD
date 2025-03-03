@@ -86,10 +86,10 @@ gs::gs(odb::AthPool<SEQ>* pool)
 
 gs::~gs()
 {
-  free_mem();
+  freeMem();
 }
 
-void gs::free_mem()
+void gs::freeMem()
 {
   if (init_ & ALLOCATED) {
     pldata_.clear();
@@ -97,10 +97,10 @@ void gs::free_mem()
   }
 }
 
-void gs::alloc_mem()
+void gs::allocMem()
 {
   if (init_ & ALLOCATED) {
-    free_mem();
+    freeMem();
   }
 
   if (init_ & SLICES) {
@@ -109,12 +109,12 @@ void gs::alloc_mem()
   }
 }
 
-void gs::set_slices(const int nslices)
+void gs::setSlices(const int nslices)
 {
-  free_mem();
+  freeMem();
   nslices_ = nslices;
   init_ |= SLICES;
-  alloc_mem();
+  allocMem();
 }
 
 void gs::setSize(const int pl,
@@ -203,7 +203,7 @@ static int clip(const int p, const int min, const int max)
 
 int gs::box(int px0, int py0, int px1, int py1, const int sl)
 {
-  if (!check_slice(sl)) {
+  if (!checkSlice(sl)) {
     fprintf(stderr,
             "Box in slice %d exceeds maximum configured slice count %d - "
             "ignored!\n",
@@ -299,7 +299,7 @@ int gs::box(int px0, int py0, int px1, int py1, const int sl)
   return 0;
 }
 
-bool gs::check_slice(const int sl)
+bool gs::checkSlice(const int sl)
 {
   return 0 <= sl && sl < nslices_;
 }
@@ -315,7 +315,7 @@ void gs::release(SEQ* s)
   seqPool_->free(s);
 }
 
-/* get_seq - returns an integer corresponding to the longest uninterrupted
+/* getSeq - returns an integer corresponding to the longest uninterrupted
  * sequence of virtual bits found of the same type (set or unset)
  *
  * Parameters: ll - lower left array [0] = x0, [1] = y0
@@ -325,13 +325,13 @@ void gs::release(SEQ* s)
  *             array - pool of sequence pointers to get a handle from
  */
 
-uint gs::get_seq(int* ll,
-                 int* ur,
-                 const uint order,
-                 const uint plane,
-                 odb::Ath__array1D<SEQ*>* array)
+uint gs::getSeq(int* ll,
+                int* ur,
+                const uint order,
+                const uint plane,
+                odb::Ath__array1D<SEQ*>* array)
 {
-  if (!check_slice(plane)) {
+  if (!checkSlice(plane)) {
     return 0;
   }
 
@@ -394,7 +394,7 @@ uint gs::get_seq(int* ll,
       int start = cx0;
       int end = cx1;
       bool flag = false;
-      while (get_seqrow(row, plane, start, end, s->type) == 0) {
+      while (getSeqRow(row, plane, start, end, s->type) == 0) {
         s->_ll[0] = (int) (start * (plc.xres) + plc.x0);
         s->_ur[0] = (int) ((end + 1) * (plc.xres) + (plc.x0) - 1);
         if (s->_ur[0] >= ur[0]) {
@@ -445,7 +445,7 @@ uint gs::get_seq(int* ll,
       int start = cy0;
       int end;
       bool flag = false;
-      while (get_seqcol(col, plane, start, end, s->type) == 0) {
+      while (getSeqCol(col, plane, start, end, s->type) == 0) {
         s->_ll[1] = (int) (start * plc.yres + plc.y0);
         s->_ur[1] = (int) ((end + 1) * plc.yres + plc.y0 - 1);
         if (s->_ur[1] >= ur[1]) {
@@ -485,11 +485,11 @@ uint gs::get_seq(int* ll,
   return blacksum;
 }
 
-int gs::get_seqrow(const int y,
-                   const int plane,
-                   const int stpix,
-                   int& epix,
-                   int& seqcol)
+int gs::getSeqRow(const int y,
+                  const int plane,
+                  const int stpix,
+                  int& epix,
+                  int& seqcol)
 {
   if (!(init_ & ALLOCATED)) {
     return -1;
@@ -600,11 +600,11 @@ int gs::get_seqrow(const int y,
   return 0;
 }
 
-int gs::get_seqcol(const int x,
-                   const int plane,
-                   const int stpix,
-                   int& epix,
-                   int& seqcol)
+int gs::getSeqCol(const int x,
+                  const int plane,
+                  const int stpix,
+                  int& epix,
+                  int& seqcol)
 {
   if (!(init_ & ALLOCATED)) {
     return -1;

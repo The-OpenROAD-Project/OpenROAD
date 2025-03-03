@@ -1061,7 +1061,7 @@ uint extMain::initPlanes(uint dir,
   }
   _geomSeq = new gs(_seqPool);
 
-  _geomSeq->set_slices(layerCnt);
+  _geomSeq->setSlices(layerCnt);
 
   for (uint ii = 1; ii < layerCnt; ii++) {
     uint layerDir = dirTable[ii];
