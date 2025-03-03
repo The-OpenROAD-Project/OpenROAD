@@ -216,7 +216,7 @@ void extMain::getNetSboxes(dbNet* net,
   }
 }
 
-bool extMain::matchDir(uint dir, Rect& r)
+bool extMain::matchDir(uint dir, const Rect& r)
 {
   uint dd = 0;  // vertical
   if (r.dx() >= r.dy()) {
@@ -931,56 +931,41 @@ uint extMain::getDir(int x1, int y1, int x2, int y2)
   return dd;
 }
 
-uint extMain::addShapeOnGS(dbNet* net,
-                           uint sId,
-                           Rect& r,
-                           bool plane,
+void extMain::addShapeOnGS(const Rect& r,
+                           const bool plane,
                            dbTechLayer* layer,
-                           bool gsRotated,
-                           bool swap_coords,
-                           int dir)
+                           const bool gsRotated,
+                           const bool swap_coords,
+                           const int dir)
 {
-  if (dir >= 0) {
-    if (!plane) {
-      if (matchDir(dir, r)) {
-        return 0;
-      }
-    }
+  if (dir >= 0 && !plane && matchDir(dir, r)) {
+    return;
   }
 
-  uint level = layer->getRoutingLevel();
-  int n = 0;
+  const uint level = layer->getRoutingLevel();
   if (!gsRotated) {
-    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
+    _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
   } else {
     if (!swap_coords) {  // horizontal
-      n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
+      _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
     } else {
-      n = _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
+      _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
     }
   }
-  if (n == 0) {
-    return 1;
-  }
-  return 0;
 }
 
-uint extMain::addNetShapesGs(dbNet* net,
-                             bool gsRotated,
-                             bool swap_coords,
-                             int dir)
+void extMain::addNetShapesGs(dbNet* net,
+                             const bool gsRotated,
+                             const bool swap_coords,
+                             const int dir)
 {
   bool USE_DB_UNITS = false;
-  uint cnt = 0;
   dbWire* wire = net->getWire();
   if (wire == nullptr) {
-    return 0;
+    return;
   }
 
-  bool plane = false;
-  if (net->getSigType() == dbSigType::ANALOG) {
-    plane = true;
-  }
+  const bool plane = net->getSigType() == dbSigType::ANALOG;
 
   dbWireShapeItr shapes;
   dbShape s;
@@ -989,54 +974,31 @@ uint extMain::addNetShapesGs(dbNet* net,
       continue;
     }
 
-    int shapeId = shapes.getShapeId();
-
     Rect r = s.getBox();
 
     if (USE_DB_UNITS) {
-      this->GetDBcoords2(r);
+      GetDBcoords2(r);
     }
 
-    cnt += addShapeOnGS(
-        net, shapeId, r, plane, s.getTechLayer(), gsRotated, swap_coords, dir);
+    addShapeOnGS(r, plane, s.getTechLayer(), gsRotated, swap_coords, dir);
   }
-  return cnt;
 }
 
-uint extMain::addNetSboxesGs(dbNet* net,
-                             bool gsRotated,
-                             bool swap_coords,
-                             int dir)
+void extMain::addNetSboxesGs(dbNet* net,
+                             const bool gsRotated,
+                             const bool swap_coords,
+                             const int dir)
 {
-  uint cnt = 0;
-
-  dbSet<dbSWire> swires = net->getSWires();
-  dbSet<dbSWire>::iterator itr;
-
-  for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire* swire = *itr;
-    dbSet<dbSBox> wires = swire->getWires();
-    dbSet<dbSBox>::iterator box_itr;
-
-    for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
-      dbSBox* s = *box_itr;
-
+  for (dbSWire* swire : net->getSWires()) {
+    for (dbSBox* s : swire->getWires()) {
       if (s->isVia()) {
         continue;
       }
 
       Rect r = s->getBox();
-      cnt += addShapeOnGS(nullptr,
-                          s->getId(),
-                          r,
-                          true,
-                          s->getTechLayer(),
-                          gsRotated,
-                          swap_coords,
-                          dir);
+      addShapeOnGS(r, true, s->getTechLayer(), gsRotated, swap_coords, dir);
     }
   }
-  return cnt;
 }
 
 int extMain::getXY_gs(int base, int XY, uint minRes)

@@ -2001,11 +2001,11 @@ class extMain
                     odb::Rect& maxRectGs,
                     bool* hasSdbWires,
                     bool& hasGsWires);
-  uint addNetShapesGs(odb::dbNet* net,
+  void addNetShapesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
                       int dir);
-  uint addNetSboxesGs(odb::dbNet* net,
+  void addNetSboxesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
                       int dir);
@@ -2026,7 +2026,7 @@ class extMain
                   const int* bb_ll);
 
   bool isIncluded(odb::Rect& r, uint dir, const int* ll, const int* ur);
-  bool matchDir(uint dir, odb::Rect& r);
+  bool matchDir(uint dir, const odb::Rect& r);
   bool isIncludedInsearch(odb::Rect& r,
                           uint dir,
                           const int* bb_ll,
@@ -2294,9 +2294,7 @@ class extMain
                                 uint wtype);
 
   //--------------- Window
-  uint addShapeOnGS(odb::dbNet* net,
-                    uint sId,
-                    odb::Rect& r,
+  void addShapeOnGS(const odb::Rect& r,
                     bool plane,
                     odb::dbTechLayer* layer,
                     bool gsRotated,
