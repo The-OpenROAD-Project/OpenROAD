@@ -1586,8 +1586,11 @@ int RepairSetup::fanout(Vertex* vertex)
   int fanout = 0;
   VertexOutEdgeIterator edge_iter(vertex, graph_);
   while (edge_iter.hasNext()) {
-    edge_iter.next();
-    fanout++;
+    Edge* edge = edge_iter.next();
+    // Disregard output->output timing arcs
+    if (edge->isWire()) {
+      fanout++;
+    }
   }
   return fanout;
 }
