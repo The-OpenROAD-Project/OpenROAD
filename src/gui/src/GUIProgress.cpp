@@ -276,9 +276,14 @@ void ProgressWidget::setFormat(const std::string& format)
 
 bool ProgressWidget::checkInterrupt(const std::string& name)
 {
+  return ProgressWidget::checkInterrupt(name, this);
+}
+
+bool ProgressWidget::checkInterrupt(const std::string& name, QWidget* parent)
+{
   const std::string message
       = fmt::format("Are you sure you want to interrupt {}?", name);
-  return QMessageBox::critical(this,
+  return QMessageBox::critical(parent,
                                "Interrupt?",
                                QString::fromStdString(message),
                                QMessageBox::Yes,

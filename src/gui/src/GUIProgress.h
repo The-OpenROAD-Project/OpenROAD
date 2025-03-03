@@ -97,12 +97,14 @@ class ProgressWidget : public QWidget
 
   void setFormat(const std::string& format);
 
+  bool checkInterrupt(const std::string& name);
+  static bool checkInterrupt(const std::string& name, QWidget* parent);
+
  signals:
   void updateProgress(int progress);
   void updateRange(int min, int max);
 
  protected:
-  bool checkInterrupt(const std::string& name);
   QProgressBar* progress_bar_;
   QPushButton* interrupt_;
 };
