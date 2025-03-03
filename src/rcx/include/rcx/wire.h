@@ -550,83 +550,12 @@ class Ath__gridTable
 {
   // -------------------------------------------------------------- v2
  public:
-  bool _no_sub_tracks = false;
-  bool _v2 = false;
   void initCouplingCapLoops_v2(uint dir,
                                uint couplingDist,
                                int* startXY = nullptr);
   int initCouplingCapLoops_v2(uint couplingDist,
                               bool startSearchTrack,
                               int startXY);
-
-  // ------------------------------------------------------------------------
- private:
-  Ath__grid*** _gridTable;
-  Ath__box _bbox;
-  Ath__box _maxSearchBox;
-  bool _setMaxArea;
-  Rect _rectBB;
-  uint _rowCnt;
-  uint _colCnt;
-  uint _rowSize;
-  uint _colSize;
-  AthPool<Ath__track>* _trackPool;
-  AthPool<Ath__wire>* _wirePool;
-  uint _schema;
-  uint _overlapAdjust;
-  uint _powerMultiTrackWire;
-  uint _signalMultiTrackWire;
-  uint _overlapTouchCheck;
-  uint _noPowerSource;
-  uint _noPowerTarget;
-  uint _CCshorts;
-  uint _CCtargetHighTracks;
-  uint _CCtargetHighMarkedNet;
-  bool _targetTrackReversed;
-  bool _allNet;
-  bool _handleEmptyOnly;
-  bool _useDbSdb;
-  uint _ccFlag;
-
-  uint _ccContextDepth;
-
-  // _v2
-  uint* _ccContextLength;
-
-  Ath__array1D<int>** _ccContextArray;
-
-  AthPool<SEQ>* _seqPool;
-  Ath__array1D<SEQ*>*** _dgContextArray;  // array
-
-  uint* _dgContextDepth;      // not array
-  uint* _dgContextPlanes;     // not array
-  uint* _dgContextTracks;     // not array
-  uint* _dgContextBaseLvl;    // not array
-  int* _dgContextLowLvl;      // not array
-  int* _dgContextHiLvl;       // not array
-  uint* _dgContextBaseTrack;  // array
-  int* _dgContextLowTrack;    // array
-  int* _dgContextHiTrack;     // array
-  int** _dgContextTrackBase;  // array
-
-  int _signalPowerNotAlignedOverlap;
-  int _powerNotAlignedOverlap;
-  int _signalNotAlignedOverlap;
-  int _signalOverlap;
-  int _powerOverlap;
-  int _signalPowerOverlap;
-  int _powerSignalOverlap;
-
-  dbBlock* _block;
-
-  uint _wireCnt;
-
-  Ath__array1D<Ath__wire*>* _bandWire;
-
-  bool _ttttGetDgOverlap{false};
-
- public:
-  // -------------------------------------------------------- v2
 
   void setExtControl_v2(dbBlock* block,
                         bool useDbSdb,
@@ -836,6 +765,78 @@ class Ath__gridTable
   void dealloc();
 
   uint getWireCnt();
+  void setV2(bool v2)
+  {
+    _no_sub_tracks = v2;
+    _v2 = v2;
+  }
+
+ private:
+  bool _no_sub_tracks = false;
+  bool _v2 = false;
+  Ath__grid*** _gridTable;
+  Ath__box _bbox;
+  Ath__box _maxSearchBox;
+  bool _setMaxArea;
+  Rect _rectBB;
+  uint _rowCnt;
+  uint _colCnt;
+  uint _rowSize;
+  uint _colSize;
+  AthPool<Ath__track>* _trackPool;
+  AthPool<Ath__wire>* _wirePool;
+  uint _schema;
+  uint _overlapAdjust;
+  uint _powerMultiTrackWire;
+  uint _signalMultiTrackWire;
+  uint _overlapTouchCheck;
+  uint _noPowerSource;
+  uint _noPowerTarget;
+  uint _CCshorts;
+  uint _CCtargetHighTracks;
+  uint _CCtargetHighMarkedNet;
+  bool _targetTrackReversed;
+  bool _allNet;
+  bool _handleEmptyOnly;
+  bool _useDbSdb;
+  uint _ccFlag;
+
+  uint _ccContextDepth;
+
+  // _v2
+  uint* _ccContextLength;
+
+  Ath__array1D<int>** _ccContextArray;
+
+  AthPool<SEQ>* _seqPool;
+  Ath__array1D<SEQ*>*** _dgContextArray;  // array
+
+  uint* _dgContextDepth;      // not array
+  uint* _dgContextPlanes;     // not array
+  uint* _dgContextTracks;     // not array
+  uint* _dgContextBaseLvl;    // not array
+  int* _dgContextLowLvl;      // not array
+  int* _dgContextHiLvl;       // not array
+  uint* _dgContextBaseTrack;  // array
+  int* _dgContextLowTrack;    // array
+  int* _dgContextHiTrack;     // array
+  int** _dgContextTrackBase;  // array
+
+  int _signalPowerNotAlignedOverlap;
+  int _powerNotAlignedOverlap;
+  int _signalNotAlignedOverlap;
+  int _signalOverlap;
+  int _powerOverlap;
+  int _signalPowerOverlap;
+  int _powerSignalOverlap;
+
+  dbBlock* _block;
+
+  uint _wireCnt;
+
+  Ath__array1D<Ath__wire*>* _bandWire;
+
+  bool _ttttGetDgOverlap{false};
 };
 
 }  // namespace rcx

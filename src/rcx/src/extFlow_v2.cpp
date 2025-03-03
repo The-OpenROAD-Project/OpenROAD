@@ -198,8 +198,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
   uint totWireCnt;
   int layerCnt = initSearch(tables, extRect, totWireCnt);
-  _search->_no_sub_tracks = _v2;
-  _search->_v2 = _v2;
+  _search->setV2(_v2);
 
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
@@ -299,8 +298,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 
   uint totWireCnt;
   int layerCnt = initSearch(tables, extRect, totWireCnt);
-  _search->_no_sub_tracks = _v2;
-  _search->_v2 = _v2;
+  _search->setV2(_v2);
 
   setExtControl_v2(mrc->_seqPool);
   _seqPool = mrc->_seqPool;
