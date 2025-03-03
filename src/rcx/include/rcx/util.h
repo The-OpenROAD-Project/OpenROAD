@@ -36,7 +36,7 @@
 #include <cstdlib>
 #include <cstring>
 
-// namespace rcx {
+namespace rcx {
 
 // Simple list
 template <class T>
@@ -267,4 +267,4 @@ class AthHash
   }
 };
 
-// }  // namespace rcx
+}  // namespace rcx

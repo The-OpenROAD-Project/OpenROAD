@@ -39,7 +39,7 @@
 #include "odb/util.h"
 #include "util.h"
 
-// amespace rcx {
+namespace rcx {
 
 using uint = unsigned int;
 
@@ -107,4 +107,4 @@ class Ath__nameTable
                  int* nn = 0);
 };
 
-// }  // namespace rcx
+}  // namespace rcx
