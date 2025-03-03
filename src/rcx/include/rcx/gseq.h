@@ -62,7 +62,7 @@ class gs
   int box(int x0, int y0, int x1, int y1, int slice);
 
   // set the number of slices
-  int set_slices(int nslices);
+  void set_slices(int nslices);
 
   uint get_seq(int* ll,
                int* ur,
@@ -71,10 +71,6 @@ class gs
                odb::Ath__array1D<SEQ*>* array);
 
   void release(SEQ* s);
-
-  int intersect_rows(int row1, int row2, int store);
-  int union_rows(int row1, int row2, int store);
-  int xor_rows(int row1, int row2, int store);
 
   SEQ* salloc();
 
@@ -112,7 +108,7 @@ class gs
   void alloc_mem();
   void free_mem();
 
-  int check_slice(int sl);
+  bool check_slice(int sl);
 
   int get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol);
   int get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol);
@@ -124,8 +120,7 @@ class gs
 
   int init_;
 
-  plconfig* plc_;
-  plconfig** pldata_;  // size == nslices_ when init_ == ALLOCATED
+  std::vector<plconfig> pldata_;  // size == nslices_ when init_ == ALLOCATED
 
   pixint start_[PIXMAPGRID];
   pixint middle_[PIXMAPGRID];
