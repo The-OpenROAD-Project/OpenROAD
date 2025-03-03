@@ -1410,25 +1410,26 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   std::map<int, int> cluster_vertex_id_map;
   std::vector<float> vertex_weight;
+  std::vector<odb::dbInst*> std_cells = parent->getLeafStdCells();
   int vertex_id = 0;
   for (auto& [cluster_id, cluster] : tree_->maps.id_to_cluster) {
     cluster_vertex_id_map[cluster_id] = vertex_id++;
     vertex_weight.push_back(0.0f);
   }
-  const int num_other_cluster_vertices = vertex_id;
 
-  std::vector<odb::dbInst*> insts;
   std::map<odb::dbInst*, int> inst_vertex_id_map;
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
     vertex_weight.push_back(computeMicronArea(macro));
-    insts.push_back(macro);
   }
-  for (auto& std_cell : parent->getLeafStdCells()) {
+
+  const int num_fixed_vertices = vertex_id;
+
+  for (auto& std_cell : std_cells) {
     inst_vertex_id_map[std_cell] = vertex_id++;
     vertex_weight.push_back(computeMicronArea(std_cell));
-    insts.push_back(std_cell);
   }
+
 
   std::vector<std::vector<int>> hyperedges;
   for (odb::dbNet* net : block_->getNets()) {
@@ -1492,7 +1493,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   // the constraint until we find a reasonable split.
   constexpr float balance_constraint_relaxation_factor = 10.0f;
   std::vector<int> solution;
-  do {
+  // do {
     debugPrint(
         logger_,
         MPL,
@@ -1515,27 +1516,26 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
                                                      hyperedge_weights);
 
     balance_constraint += balance_constraint_relaxation_factor;
-  } while (partitionerSolutionIsFullyUnbalanced(solution,
-                                                num_other_cluster_vertices));
+  // } while (partitionerSolutionIsFullyUnbalanced(solution,
+  //                                               num_fixed_vertices));
 
   parent->clearLeafStdCells();
-  parent->clearLeafMacros();
+  // parent->clearLeafMacros();
 
   const std::string cluster_name = parent->getName();
   parent->setName(cluster_name + std::string("_0"));
   auto cluster_part_1 = std::make_unique<Cluster>(
       id_, cluster_name + std::string("_1"), logger_);
 
-  for (int i = num_other_cluster_vertices; i < num_vertices; i++) {
-    odb::dbInst* inst = insts[i - num_other_cluster_vertices];
+  for (int i = num_fixed_vertices; i < num_vertices; i++) {
     if (solution[i] == 0) {
-      parent->addLeafInst(inst);
+      parent->addLeafStdCell(std_cells[i - num_fixed_vertices]);
     } else {
-      cluster_part_1->addLeafInst(inst);
+      cluster_part_1->addLeafStdCell(std_cells[i - num_fixed_vertices]);
     }
   }
 
-  Cluster* raw_part_1 = cluster_part_1.get();
+  splitMacrosBetweenPartitions(parent, cluster_part_1.get());
 
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
@@ -1544,7 +1544,62 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
   breakLargeFlatCluster(parent);
-  breakLargeFlatCluster(raw_part_1);
+  breakLargeFlatCluster(cluster_part_1.get());
+}
+
+void ClusteringEngine::splitMacrosBetweenPartitions(Cluster* parent,
+                                             Cluster* new_cluster)
+{
+  std::map<odb::dbInst*, int> parent_macro_to_iterm_count
+      = getMacroToStdCellPinCount(parent);
+  std::map<odb::dbInst*, int> partition_macro_to_iterm_count
+      = getMacroToStdCellPinCount(new_cluster);
+
+  std::vector<odb::dbInst*> macros = parent->getLeafMacros();
+  parent->clearLeafMacros();
+
+  for (odb::dbInst* macro : macros) {
+    if (parent_macro_to_iterm_count[macro]
+        > partition_macro_to_iterm_count[macro]) {
+      parent->addLeafMacro(macro);
+    } else {
+      new_cluster->addLeafMacro(macro);
+    }
+  }
+}
+
+std::map<odb::dbInst*, int> ClusteringEngine::getMacroToStdCellPinCount(
+    Cluster* cluster)
+{
+
+  std::set<odb::dbNet*> non_supply_nets;
+  for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
+    for (odb::dbITerm* iterm : std_cell->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (net == nullptr || net->getSigType().isSupply()) {
+        continue;
+      }
+      non_supply_nets.insert(net);
+    }
+  }
+
+  std::map<odb::dbInst*, int> macro_to_iterms_count;
+  for (odb::dbNet* net : non_supply_nets) {
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      odb::dbMaster* master = inst->getMaster();
+
+      if (master->isPad() || master->isCover() || master->isEndCap()) {
+        continue;
+      }
+
+      if (inst->isBlock()) {
+        macro_to_iterms_count[inst]++;
+      }
+    }
+  }
+
+  return macro_to_iterms_count;
 }
 
 bool ClusteringEngine::partitionerSolutionIsFullyUnbalanced(

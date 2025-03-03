@@ -255,6 +255,9 @@ class ClusteringEngine
   float computeMicronArea(odb::dbInst* inst);
 
   bool isValidNet(odb::dbNet* net);
+  std::map<odb::dbInst*, int> getMacroToStdCellPinCount(Cluster* cluster);
+  void splitMacrosBetweenPartitions(Cluster* parent,
+                                             Cluster* new_cluster);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;
