@@ -505,7 +505,6 @@ class Ath__grid
   int getPitch() const { return _pitch; }
 
  private:
-  int _pitch;
   Ath__gridTable* _gridtable;
   Ath__track** _trackTable;
   uint* _blockedTrackTable;
@@ -521,7 +520,7 @@ class Ath__grid
   int _hi[2];
 
   int _width;
-  //  int _pitch;
+  int _pitch;
   uint _level;
   uint _layer;
   uint _dir;
