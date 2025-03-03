@@ -1360,6 +1360,15 @@ void runBiBellmanFord2D_v5__device(
   unsigned OVERFLOWCOST,
   unsigned HISTCOST)
 {
+  // To handle the case where maxIters is too small
+  if (URX - LLX == 0) {
+    maxIters = maxIters < 2 * (URY - LLY) ? 2 * (URY - LLY) : maxIters;
+  }
+
+  if (URY - LLY == 0) {
+    maxIters = maxIters < 2 * (URX - LLX) ? 2 * (URX - LLX) : maxIters;
+  }
+    
   // Each device function is handled by a single block
   int total = (URX - LLX + 1) * (URY - LLY + 1);
   int tid = threadIdx.x;
@@ -1567,7 +1576,7 @@ void runBiBellmanFord2D_v5__device(
   bool converged = (s_doneFlag == 1);
   if (!converged) {
     if (tid == 0) {
-      printf("Error! biwaveBellmanFord_2D_v3__device did not converge. doneFlag = false netId = %d\n", netId);
+      printf("Error! biwaveBellmanFord_2D_v5__device did not converge. doneFlag = false netId = %d\n", netId);
       for (int localIdx = 0; localIdx < total; localIdx++) {
         int local_x = localIdx % xDimTemp + LLX;
         int local_y = localIdx / xDimTemp + LLY;
@@ -1624,7 +1633,7 @@ void runBiBellmanFord2D_v5__device(
   // Check if s_meetId is valid.
   if (s_meetId == 0x7FFFFFFF) {
     if (threadIdx.x == 0 || threadIdx.x == 1) {
-      printf("Error! biwaveBellmanFord_2D_v3__device did not converge. meetId = 0x7FFFFFFF, netId = %d\n", netId);
+      printf("Error! biwaveBellmanFord_2D_v5__device did not converge. meetId = 0x7FFFFFFF, netId = %d\n", netId);
     }
     if (threadIdx.x == 0 || threadIdx.x == 1) {
       atomicExch((int*)&tracebackError, 1);
@@ -2371,7 +2380,10 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
   unsigned OVERFLOWCOST = 128;
   unsigned HISTCOST = 4;
- 
+
+  
+  cudaCheckError();
+
   for (int chunkId = 0; chunkId < numChunks; chunkId++) {
     int netStartId = chunkNetPtr[chunkId];
     int netEndId = chunkNetPtr[chunkId + 1];
@@ -2382,6 +2394,15 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     
     int numParentsBlocks = (h_parents_size_ + numThreads - 1) / numThreads;
     initParent2D__kernel<<<numParentsBlocks, numThreads>>>(d_parents_, h_parents.size());
+
+    cudaDeviceSynchronize();
+
+    cudaCheckError();
+
+    std::cout << "[INFO] Number of nodes: " << numNodes << std::endl;
+    std::cout << "[INFO] ChunkSize: " << chunkSize << std::endl;
+    std::cout << "[INFO] NumGrids: " << numGrids << std::endl;
+    std::cout << "[INFO] ChunkSize * NumGrids = " << chunkSize * numGrids << std::endl;
 
     initBatchNodeData2D_v3__kernel<<<numBatchBlocks, numThreads>>>(
       d_nodes_, 
@@ -2435,7 +2456,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
       OVERFLOWCOST,
       HISTCOST);
     
-    std::cout << "Congestion threshold: " << congThreshold << std::endl;
+    //std::cout << "Congestion threshold: " << congThreshold << std::endl;
 
     cudaCheckError();
     

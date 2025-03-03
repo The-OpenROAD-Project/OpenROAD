@@ -154,10 +154,7 @@ void FlexGRWorker::init_pinGCellIdxs()
       ur.set(std::max(ur.x(), idx.x()), std::max(ur.y(), idx.y()), std::max(ur.z(), idx.z()));
     }
    
-    int deltaX = std::min(ur.x() - ll.x(), 5);
-    int deltaY = std::min(ur.y() - ll.y(), 5);
-    int delta = std::max(deltaX, deltaY);
-    ll.set(std::max(0, ll.x() - delta), std::max(0, ll.y() - delta), ll.z());
+   
     
     /*
     int xDim, yDim, zDim;
@@ -174,10 +171,19 @@ void FlexGRWorker::init_pinGCellIdxs()
 
     int xDim = UR.x() - LL.x() + 1;
     int yDim = UR.y() - LL.y() + 1;
-    net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));    
+    
+    if (1) {
+      int deltaX = std::min(ur.x() - ll.x(), 10);
+      int deltaY = std::min(ur.y() - ll.y(), 10);
+      int delta = std::max(deltaX, deltaY);
+      ll.set(std::max(0, ll.x() - delta), std::max(0, ll.y() - delta), ll.z());
+      ur.set(std::min(xDim - 1, ur.x() + delta), std::min(yDim - 1, ur.y() + delta), ur.z());     
+    }
+
+    //net->setRouteBBox(Rect(0, 0, xDim - 1, yDim - 1));    
     //auto netRouteBBox = net->getRouteBBox();
-    std::cout << "[Test] xDim = " << xDim << ", yDim = " << yDim << std::endl;
-    // net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y())); 
+    // std::cout << "[Test] xDim = " << xDim << ", yDim = " << yDim << std::endl;
+    net->setRouteBBox(Rect(ll.x(), ll.y(), ur.x(), ur.y())); 
     // Set the routed wirelength as HPWL
     int hpwl = (ur.x() - ll.x()) + (ur.y() - ll.y());
     net->setHPWL(hpwl);
@@ -633,7 +639,10 @@ bool FlexGRWorker::routeNet(grNet* net)
 
   routeNet_postRouteAddCong(net);
   
-  if (net->getPinGCellNodes().size() >= 2) {
+  routeNet_checkNet(net);
+
+  // To be deleted, just for testing
+  if (net->getPinGCellNodes().size() < 0) {
     net->setPostCost(calcPathCost(net));
     if (net->getPostCost() != net->getPreCost()) {
       std::cout << "Net " << net->getFrNet()->getName() << " ";
@@ -716,10 +725,18 @@ void FlexGRWorker::routeNet_checkNet(grNet* net)
     auto lNum = pinGCellNode->getLayerNum();
     FlexMazeIdx mi;
     gridGraph_.getMazeIdx(loc, lNum, mi);
-    std::cout << "pinGCellNode: x = " << mi.x() << ", y = " << mi.y() << ", z = " << mi.z() << "\n";
+    //std::cout << "pinGCellNode: x = " << mi.x() << ", y = " << mi.y() << ", z = " << mi.z() << "\n";
     pinGCellNodesVisited[mi] = false;
   }
 
+  auto originalPinGCellNodes = net->getPinGCellIdxs();
+  for (auto& idx : originalPinGCellNodes) {
+    if (pinGCellNodesVisited.find(idx) == pinGCellNodesVisited.end()) {
+      std::cout << "Error: original pinGCellNode not found in the net : ";
+      std::cout << "x = " << idx.x() << ", y = " << idx.y() << ", z = " << idx.z() << "\n"; 
+      exit(1);
+    }
+  }
 
   // Start traversing the net
   auto root = net->getRoot();

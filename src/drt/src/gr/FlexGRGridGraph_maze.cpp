@@ -430,11 +430,16 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
   bool blockCost = hasBlock(tmpX, tmpY, tmpZ, tmpDir);
   overflowCost = (rawDemand >= rawSupply * grWorker_->getCongThresh());
 
+
+  // Zhiang:  This part needs to be further debugged.
+  // Why this part fail ? 
+  /*
   nextPathCost += getEdgeLength(tmpX, tmpY, tmpZ, dir)
     + (congCost ? getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getEdgeLength(tmpX, tmpY, tmpZ, dir) : 0)
     + (histCost ? 4 * getCongCost(rawDemand, rawSupply * grWorker_->getCongThresh()) * getHistoryCost(tmpX, tmpY, tmpZ) * getEdgeLength(tmpX, tmpY, tmpZ, dir) : 0)
     + (blockCost ? router_cfg_->BLOCKCOST * getEdgeLength(tmpX, tmpY, tmpZ, dir) * 100 : 0)
     + (overflowCost ? 128 * getEdgeLength(tmpX, tmpY, tmpZ, dir) : 0);
+  */
 
   nextPathCost
       += getEdgeLength(gridX, gridY, gridZ, dir)

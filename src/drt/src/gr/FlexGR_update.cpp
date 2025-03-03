@@ -287,7 +287,7 @@ void FlexGR::batchGenerationMIS_update(
   }
 
   //if (VERBOSE > 0) {
-  if (1) {
+  if (0) {
     // Report the batch information
     logger_->report("[INFO] Number of batches: " + std::to_string(batches.size()));
     logger_->report("\t[INFO] Batch information:");
@@ -392,8 +392,8 @@ void FlexGR::searchRepair_update(int iter,
   }
 
   logger_->report("[INFO] Number of workers: " + std::to_string(uworkers.size()));
-  //int numThreads = std::min(8, router_cfg_->MAX_THREADS);
-  int numThreads = 1;
+  int numThreads = std::min(8, router_cfg_->MAX_THREADS);
+  //int numThreads = 1;
   omp_set_num_threads(numThreads);
   logger_->report("[INFO] Number of threads: " + std::to_string(numThreads));  
 
@@ -419,13 +419,13 @@ void FlexGR::searchRepair_update(int iter,
   float routeTime = 0.0;
   float restoreTime = 0.0;
   float syncTime = 0.0;
-  mazeEndIter = 10;  
+  // mazeEndIter = 10;  
 
   for (int iter = 0; iter < mazeEndIter; iter++) {    
     int xDim, yDim, zDim;
     uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
-    logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
-    logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
+    // logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
+    // logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
     
     float GPUMazeRouteTimeTot = 0;
     float RestoreTimeTot = 0;
@@ -453,6 +453,7 @@ void FlexGR::searchRepair_update(int iter,
         net->setWorkerId(workerId);
       }
     }
+    totalNumNets = netId;
 
     // Generate the batch for each worker in parallel
     std::vector<std::vector<std::vector<grNet*>> > workerBatches(uworkers.size());
@@ -469,6 +470,56 @@ void FlexGR::searchRepair_update(int iter,
     }
 
     batches.resize(maxNumBatches);
+
+
+    // Option 1:  evenly distribute the nets to the batches
+
+    std::vector<int> binCnt(maxNumBatches, 0);
+    std::vector<bool> binVisited(maxNumBatches, false);
+    int avgBinNet = (totalNumNets + maxNumBatches - 1) / maxNumBatches;
+    std::cout << "avgBinNet: " << avgBinNet << std::endl;
+    
+    for (int workerId = 0; workerId < (int) uworkers.size(); workerId++) {
+      std::fill(binVisited.begin(), binVisited.end(), false);
+      // determine the batch id for each localBatch
+      for (int localBatchId = workerBatches[workerId].size() - 1; localBatchId >= 0; localBatchId--) {
+        int batchId = -1;
+        auto& localBatch = workerBatches[workerId][localBatchId];
+        for (int i = 0; i < maxNumBatches; i++) {
+          if (binVisited[i]) {
+            continue;
+          }
+          if (binCnt[i] + localBatch.size() <= avgBinNet) {
+            batchId = i;
+            break;
+          }
+        }
+
+        if (batchId == -1) {
+          int minBatchId = -1;
+          int minBatchSize = totalNumNets;
+          for (int i = 0; i < maxNumBatches; i++) {
+            if (binVisited[i]) {
+              continue;
+            }
+            if (binCnt[i] < minBatchSize) {
+              minBatchSize = binCnt[i];
+              minBatchId = i;
+            }
+          }
+
+          batchId = minBatchId;
+        }
+
+        std::copy(localBatch.begin(), localBatch.end(), std::back_inserter(batches[batchId]));
+        binCnt[batchId] += localBatch.size();
+        binVisited[batchId] = true;
+      }
+    }
+    
+
+    // Option 2:  reverse the order of the batches
+    /*
     for (int j = maxNumBatches - 1; j >= 0; j--) {
       auto& batch = batches[maxNumBatches - 1 - j];
       for (int k = 0; k < (int) uworkers.size(); k++) {  // NOLINT
@@ -476,13 +527,13 @@ void FlexGR::searchRepair_update(int iter,
           std::copy(workerBatches[k][j].begin(), workerBatches[k][j].end(), std::back_inserter(batch));
         }
       }
-    }
+    } */
     
     // print the batch information
     logger_->report("[INFO] (Relax) Number of batches: " + std::to_string(batches.size()));
-    //for (int i = 0; i < batches.size(); i++) {
-    //  logger_->report("[INFO] Batch " + std::to_string(i) + ": " + std::to_string(batches[i].size()) + " nets");
-    //}
+    for (int i = 0; i < batches.size(); i++) {
+      logger_->report("[INFO] Batch " + std::to_string(i) + ": " + std::to_string(batches[i].size()) + " nets");
+    }
    
     // Copy the cost map back to the cmap
     // At this step, we ripup all the nets
@@ -514,6 +565,7 @@ void FlexGR::searchRepair_update(int iter,
 
     if (is2DRouting == true) {
       for (int batchIdx = 0; batchIdx < batches.size(); batchIdx++) {      
+      //for (int batchIdx = batches.size() -  1;  batchIdx >= 0; batchIdx--) {
         if (batches[batchIdx].size() < validBatchThreshold_) {
           // Route all the nets on the CPU side
 #pragma omp parallel for schedule(dynamic)      
@@ -528,8 +580,8 @@ void FlexGR::searchRepair_update(int iter,
           uworkers[i]->initGridGraph_back2CMap();
         }
 
-        std::cout << "Before GPU Routing" << std::endl;
-        reportCong2D();
+        // std::cout << "Before GPU Routing" << std::endl;
+        // reportCong2D();
 
         auto& h_costMap = uworkers[0]->getCMap()->getBits();
 
@@ -584,8 +636,8 @@ void FlexGR::searchRepair_update(int iter,
           uworkers[i]->initGridGraph_back2CMap();
         }
 
-        std::cout << "After GPU Routing" << std::endl;
-        reportCong2D();
+        //std::cout << "After GPU Routing" << std::endl;
+        //reportCong2D();
 
         RestoreTimeTot += restoreRuntime.count();
       }
@@ -608,7 +660,7 @@ void FlexGR::searchRepair_update(int iter,
       uworkers[i]->initGridGraph_back2CMap();
     }
 
-    reportCong2D();
+    //reportCong2D();
 
     std::cout << "Iteration GPU Maze Routing Time: " << GPUMazeRouteTimeTot << " ms" << std::endl;
     std::cout << "Iteration Restore Time: " << RestoreTimeTot << " ms" << std::endl;
@@ -620,8 +672,6 @@ void FlexGR::searchRepair_update(int iter,
   uworkers.clear();
 
   reportCong2D();
-
-  exit(1);
 
   /*
   for (int iter = 0; iter < mazeEndIter; iter++) {

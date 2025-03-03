@@ -192,8 +192,7 @@ void FlexGRWorker::batchGenerationRelax(
     int batchId = findBatch(netId);  
     // always create a new batch if no batch is found
     // for testing purpose
-    batchId = -1;
-    
+    // batchId = -1;
     if (batchId == -1 || batches[batchId].size() >= numGrids) {
       batchId = batches.size();
       batches.push_back(std::vector<grNet*>());
@@ -499,7 +498,8 @@ bool FlexGRWorker::restoreNet(grNet* net)
     }
   }
 
-
+  
+  routeNet_checkNet(net);
 
   return true;
 }

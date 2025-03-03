@@ -113,10 +113,13 @@ void FlexGR::main(odb::dbDatabase* db)
   // reportCong2D();
 
   //  reportCong2D();
+  int Clip_Size_2D = 200;  
+  int Maze_End_Iter_2D = 2;
+
   searchRepair(/*iter*/ 0,
-               /*size*/ 200,
+               /*size*/ Clip_Size_2D,
                /*offset*/ 0,
-               /*mazeEndIter*/ 2,
+               /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
                /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
@@ -125,23 +128,23 @@ void FlexGR::main(odb::dbDatabase* db)
                /*TEST*/ false);
   // reportCong2D();
   searchRepair(/*iter*/ 1,
-               /*size*/ 200,
+               /*size*/ Clip_Size_2D,
                /*offset*/ -70,
-               /*mazeEndIter*/ 2,
+               /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 1 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
   searchRepair(/*iter*/ 2,
-               /*size*/ 200,
+               /*size*/ Clip_Size_2D,
                /*offset*/ -150,
-               /*mazeEndIter*/ 2,
-               /*workerCongCost*/ 2 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 2 * router_cfg_->HISTCOST,
-               /*congThresh*/ 0.8,
+               /*mazeEndIter*/ Maze_End_Iter_2D,
+               /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
+               /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
+               /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
@@ -156,10 +159,15 @@ void FlexGR::main(odb::dbDatabase* db)
 
   layerAssign();
 
+  gpuFlag_ = false;
+
   // populate region query for 3D
   getRegionQuery()->initGRObj();
 
-  // reportCong3D();
+  reportCong3D();
+
+
+  auto Maze3DRuntimeStart = std::chrono::high_resolution_clock::now();
 
   searchRepair(/*iter*/ 0,
                /*size*/ 10,
@@ -172,6 +180,11 @@ void FlexGR::main(odb::dbDatabase* db)
                RipUpMode::ALL,
                /*TEST*/ false);
   reportCong3D();
+  
+  auto Maze3DRuntimeEnd = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> Maze3DRuntime = Maze3DRuntimeEnd - Maze3DRuntimeStart;
+  logger_->report("3D Maze runtime: " + std::to_string(Maze3DRuntime.count()) + "s");
+  
   if (db != nullptr) {
     updateDbCongestion(db, cmap_.get());
   }

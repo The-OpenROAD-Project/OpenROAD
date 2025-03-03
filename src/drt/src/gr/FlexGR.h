@@ -401,7 +401,9 @@ class FlexGR
     int iter,
     bool is2DRouting);      
 
-  int validBatchThreshold_ = 0;
+  int validBatchThreshold_ = 200;
+  //int maxChunkSize_ = 200;
+  // MemPool Cluster Fail for maxChunkSize_ = 200;
   int maxChunkSize_ = 200;
   std::vector<grNet*> nets2Ripup_;
 
