@@ -394,7 +394,7 @@ uint gs::getSeq(int* ll,
       int start = cx0;
       int end = cx1;
       bool flag = false;
-      while (getSeqRow(row, plane, start, end, s->type) == 0) {
+      while (getSeqRow(row, plane, start, end, s->type)) {
         s->_ll[0] = (int) (start * (plc.xres) + plc.x0);
         s->_ur[0] = (int) ((end + 1) * (plc.xres) + (plc.x0) - 1);
         if (s->_ur[0] >= ur[0]) {
@@ -445,7 +445,7 @@ uint gs::getSeq(int* ll,
       int start = cy0;
       int end;
       bool flag = false;
-      while (getSeqCol(col, plane, start, end, s->type) == 0) {
+      while (getSeqCol(col, plane, start, end, s->type)) {
         s->_ll[1] = (int) (start * plc.yres + plc.y0);
         s->_ur[1] = (int) ((end + 1) * plc.yres + plc.y0 - 1);
         if (s->_ur[1] >= ur[1]) {
@@ -485,23 +485,23 @@ uint gs::getSeq(int* ll,
   return blacksum;
 }
 
-int gs::getSeqRow(const int y,
-                  const int plane,
-                  const int stpix,
-                  int& epix,
-                  int& seqcol)
+bool gs::getSeqRow(const int y,
+                   const int plane,
+                   const int stpix,
+                   int& epix,
+                   int& seqcol)
 {
   if (!(init_ & ALLOCATED)) {
-    return -1;
+    return false;
   }
 
   const plconfig& plc = pldata_[plane];
   if (y >= plc.height) {
-    return -1;
+    return false;
   }
 
   if (stpix >= plc.width) {
-    return -1;
+    return false;
   }
 
   int sto = stpix / PIXMAPGRID;
@@ -543,12 +543,12 @@ int gs::getSeqRow(const int y,
 
       epix++;
     }
-    return 0;
+    return true;
   }
 
   if (sto > plc.pixfullblox) {
     epix = plc.width - 1;
-    return 0;
+    return true;
   }
 
   int st;
@@ -556,12 +556,12 @@ int gs::getSeqRow(const int y,
     if ((pl->lword) == PIXFILL) {
       if (seqcol != GS_BLACK) {
         epix = st * PIXMAPGRID - 1;
-        return 0;
+        return true;
       }
     } else if (pl->lword == 0) {
       if (seqcol != GS_WHITE) {
         epix = st * PIXMAPGRID - 1;
-        return 0;
+        return true;
       }
     } else {
       // ends here
@@ -579,7 +579,7 @@ int gs::getSeqRow(const int y,
 
         epix++;
       }
-      return 0;
+      return true;
     }
     pl++;
   }
@@ -597,26 +597,26 @@ int gs::getSeqRow(const int y,
     }
     epix++;
   }
-  return 0;
+  return true;
 }
 
-int gs::getSeqCol(const int x,
-                  const int plane,
-                  const int stpix,
-                  int& epix,
-                  int& seqcol)
+bool gs::getSeqCol(const int x,
+                   const int plane,
+                   const int stpix,
+                   int& epix,
+                   int& seqcol)
 {
   if (!(init_ & ALLOCATED)) {
-    return -1;
+    return false;
   }
 
   const plconfig& plc = pldata_[plane];
   if (x >= plc.width) {
-    return -1;
+    return false;
   }
 
   if (stpix >= plc.height) {
-    return -1;
+    return false;
   }
 
   // get proper "word" offset
@@ -642,17 +642,17 @@ int gs::getSeqCol(const int x,
         continue;
       }
       epix = row - 1;
-      return 0;
+      return true;
     }
     if (seqcol == GS_BLACK) {
       epix = row - 1;
-      return 0;
+      return true;
     }
     continue;
   }
 
   epix = plc.height;
-  return 0;
+  return true;
 }
 
 }  // namespace rcx

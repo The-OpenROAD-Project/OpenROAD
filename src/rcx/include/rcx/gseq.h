@@ -110,8 +110,8 @@ class gs
 
   bool checkSlice(int sl);
 
-  int getSeqRow(int y, int plane, int stpix, int& epix, int& seqcol);
-  int getSeqCol(int x, int plane, int stpix, int& epix, int& seqcol);
+  bool getSeqRow(int y, int plane, int stpix, int& epix, int& seqcol);
+  bool getSeqCol(int x, int plane, int stpix, int& epix, int& seqcol);
 
   static constexpr int PIXMAPGRID = 64;
 
