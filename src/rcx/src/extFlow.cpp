@@ -1146,7 +1146,6 @@ void extMain::fill_gs4(int dir,
   if (_v2 && _overCell) {
     const int num_insts = _block->getInsts().size();
     Ath__array1D<uint> instGsTable(num_insts);
-    Ath__array1D<uint> tmpInstIdTable(num_insts);
 
     for (dbInst* inst : _block->getInsts()) {
       dbBox* R = inst->getBBox();
@@ -1159,8 +1158,10 @@ void extMain::fill_gs4(int dir,
 
       instGsTable.add(inst->getId());
     }
-    if (instGsTable.getCnt() > 0)
+    if (instGsTable.getCnt() > 0) {
+      Ath__array1D<uint> tmpInstIdTable(num_insts);
       addInstsGeometries(&instGsTable, &tmpInstIdTable, dir);
+    }
   }
 }
 
