@@ -69,11 +69,7 @@ class Ath__searchBox
 {
  public:
   Ath__searchBox(int x1, int y1, int x2, int y2, uint l, int dir = -1);
-  Ath__searchBox(Ath__box* bb, uint l, int dir = -1);
-  Ath__searchBox(Ath__searchBox* bb, uint l, int dir = -1);
-  Ath__searchBox();
   void set(int x1, int y1, int x2, int y2, uint l, int dir);
-  void setMidPointSearch();
   int loXY(uint d);
   int loXY(uint d, int loBound);
   int hiXY(uint d);

@@ -136,28 +136,9 @@ void Ath__searchBox::set(int x1, int y1, int x2, int y2, uint l, int dir)
   _otherId = 0;
   _type = 0;
 }
-Ath__searchBox::Ath__searchBox()
-{
-}
-Ath__searchBox::Ath__searchBox(Ath__box* bb, uint l, int dir)
-{
-  const odb::Rect rect = bb->getRect();
-  set(rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), l, dir);
-}
-Ath__searchBox::Ath__searchBox(Ath__searchBox* bb, uint l, int dir)
-{
-  set(bb->_ll[0], bb->_ll[1], bb->_ur[0], bb->_ur[1], l, dir);
-}
 Ath__searchBox::Ath__searchBox(int x1, int y1, int x2, int y2, uint l, int dir)
 {
   set(x1, y1, x2, y2, l, dir);
-}
-void Ath__searchBox::setMidPointSearch()
-{
-  for (uint i = 0; i < 2; i++) {
-    _ll[i] = (_ll[i] + _ur[i]) / 2;
-    _ur[i] = _ll[i] + 1;
-  }
 }
 
 void Ath__searchBox::setLo(uint d, int xy)
