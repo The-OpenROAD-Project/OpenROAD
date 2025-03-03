@@ -173,7 +173,6 @@ void gs::setSize(const int plane,
     exit(-1);
   }
 
-  plc.plalloc = pm;
   plc.plane = pm;
 }
 

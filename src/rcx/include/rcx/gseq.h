@@ -90,9 +90,7 @@ class gs
     int pixstride;       // how many memory blocks per row
     int pixfullblox;     // how many "full" blocks per row
                          // (equal to stride, or one less if pixwrem > 0)
-    pixmap* plalloc;
     pixmap* plane;
-    pixmap* plptr;
   };
 
   // set the size parameters
