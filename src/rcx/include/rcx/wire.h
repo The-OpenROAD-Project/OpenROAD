@@ -61,6 +61,8 @@ enum Ath__overlapAdjust
 };
 
 class Ath__track;
+class Ath__grid;
+class Ath__gridTable;
 struct SEQ;
 
 class Ath__searchBox
@@ -195,42 +197,9 @@ class Ath__wire
   friend class Ath__gridTable;
 };
 
-class Ath__grid;
-
 class Ath__track
 {
- private:
-  int _x;  // you need only one
-  int _y;
-
-  int _base;
-  Ath__track* _hiTrack;
-  Ath__track* _lowTrack;
-
-  // Ath__wire** _marker;
-  Ath__wire** _eMarker;
-  uint _markerCnt;
-  uint _searchMarkerIndex;
-
-  uint _targetMarker;
-  Ath__wire* _targetWire;
-
-  Ath__grid* _grid;
-
-  uint _num : 20;
-
-  int _width : 19;
-  uint _lowest : 1;
-  uint _shift : 4;
-  uint _centered : 1;
-  uint _blocked : 1;
-  uint _full : 1;
-  bool _ordered;
-
  public:
-  // -------------------------------------------------------- v2
-  Ath__wire** _marker;
-  // --------------------------------------------------------------
   uint getTrackNum() { return _num; };
   void set(Ath__grid* g,
            int x,
@@ -286,10 +255,6 @@ class Ath__track
                           bool tohi);
   void setLowest(uint lst) { _lowest = lst; };
 
-  friend class Ath__gridTable;
-  friend class Ath__grid;
-  friend class Ath__wire;
-
   uint removeMarkedNetWires();
 
   // EXTRACTION
@@ -335,8 +300,45 @@ class Ath__track
                       Ath__array1D<int>* context);
 
   void dealloc(AthPool<Ath__wire>* pool);
+  Ath__wire* getMarker(int index) const { return _marker[index]; }
+  void setMarker(int index, Ath__wire* wire) { _marker[index] = wire; }
+
+ private:
+  int _x;  // you need only one
+  int _y;
+
+  int _base;
+  Ath__track* _hiTrack;
+  Ath__track* _lowTrack;
+
+  // Ath__wire** _marker;
+  Ath__wire** _eMarker;
+  uint _markerCnt;
+  uint _searchMarkerIndex;
+
+  uint _targetMarker;
+  Ath__wire* _targetWire;
+
+  Ath__grid* _grid;
+
+  uint _num : 20;
+
+  int _width : 19;
+  uint _lowest : 1;
+  uint _shift : 4;
+  uint _centered : 1;
+  uint _blocked : 1;
+  uint _full : 1;
+  bool _ordered;
+
+  // -------------------------------------------------------- v2
+  Ath__wire** _marker;
+  // --------------------------------------------------------
+
+  friend class Ath__gridTable;
+  friend class Ath__grid;
+  friend class Ath__wire;
 };
-class Ath__gridTable;
 
 class Ath__grid
 {

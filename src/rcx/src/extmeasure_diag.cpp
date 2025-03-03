@@ -648,11 +648,7 @@ uint extMeasureRC::ConnectAllWires(Ath__track* track)
   uint ii = track->getGrid()->searchLowMarker();
   int first_marker_index = -1;
   for (; ii <= track->getGrid()->searchHiMarker(); ii++) {
-    // fprintf(stdout, "Track %d marker %d ------------------------ \n",
-    // track->getTrackNum(), ii);
-
-    for (Ath__wire* w = track->_marker[ii]; w != NULL; w = w->getNext()) {
-      // PrintWire(stdout, w, 0);
+    for (Ath__wire* w = track->getMarker(ii); w != NULL; w = w->getNext()) {
       tbl.add(w);
       if (first_marker_index < 0)
         first_marker_index = ii;
@@ -690,7 +686,7 @@ uint extMeasureRC::ConnectAllWires(Ath__track* track)
     }
   }
   Ath__wire* w0 = tbl.get(0);
-  track->_marker[first_marker_index] = w0;
+  track->setMarker(first_marker_index, w0);
 
   return swap;
 }
