@@ -60,7 +60,7 @@ enum Ath__overlapAdjust
   Z_endAdjust
 };
 
-class Ath__track;
+class Track;
 class Grid;
 class GridTable;
 struct SEQ;
@@ -166,7 +166,7 @@ class Ath__wire
   uint _otherId;
   Ath__wire* _srcWire;
 
-  Ath__track* _track;
+  Track* _track;
   Ath__wire* _next;
 
   int _xy;  // TODO offset from track start in large dimension
@@ -183,12 +183,12 @@ class Ath__wire
   uint _ext : 1;
   uint _visited : 1;
 
-  friend class Ath__track;
+  friend class Track;
   friend class Grid;
   friend class GridTable;
 };
 
-class Ath__track
+class Track
 {
  public:
   uint getTrackNum() { return _num; };
@@ -229,17 +229,17 @@ class Ath__track
   void resetExtFlag(uint markerCnt);
   void linkWire(Ath__wire*& w1, Ath__wire*& w2);
 
-  Ath__track* getNextSubTrack(Ath__track* subt, bool tohi);
+  Track* getNextSubTrack(Track* subt, bool tohi);
   int getBase() { return _base; };
-  void setHiTrack(Ath__track* hitrack);
-  void setLowTrack(Ath__track* lowtrack);
-  Ath__track* getHiTrack();
-  Ath__track* getLowTrack();
-  Ath__track* nextTrackInRange(uint& delt,
+  void setHiTrack(Track* hitrack);
+  void setLowTrack(Track* lowtrack);
+  Track* getHiTrack();
+  Track* getLowTrack();
+  Track* nextTrackInRange(uint& delt,
                                uint trackDist,
                                uint srcTrack,
                                bool tohi);
-  int nextSubTrackInRange(Ath__track*& tstrack,
+  int nextSubTrackInRange(Track*& tstrack,
                           uint& delt,
                           uint trackDist,
                           uint srcTrack,
@@ -299,8 +299,8 @@ class Ath__track
   int _y;
 
   int _base;
-  Ath__track* _hiTrack;
-  Ath__track* _lowTrack;
+  Track* _hiTrack;
+  Track* _lowTrack;
 
   // Ath__wire** _marker;
   Ath__wire** _eMarker;
@@ -340,7 +340,7 @@ class Grid
   uint placeWire_v2(Ath__searchBox* bb);
 
   Grid(GridTable* gt,
-       AthPool<Ath__track>* trackPool,
+       AthPool<Track>* trackPool,
        AthPool<Ath__wire>* wirePool,
        Ath__box* bb,
        uint level,
@@ -350,7 +350,7 @@ class Grid
        uint pitch,
        uint markerCnt = 4);
   Grid(GridTable* gt,
-       AthPool<Ath__track>* trackPool,
+       AthPool<Track>* trackPool,
        AthPool<Ath__wire>* wirePool,
        uint level,
        uint num,
@@ -374,12 +374,12 @@ class Grid
   bool anyTrackAvailable();
 
   uint getTrackCnt() { return _trackCnt; };
-  Ath__track* getTrackPtr(uint n) { return _trackTable[n]; };
+  Track* getTrackPtr(uint n) { return _trackTable[n]; };
   uint getTrackNum1(int xy);
   uint getWidth();
   int getXYbyWidth(int xy, uint* mark);
-  Ath__track* addTrack(uint ii, uint markerCnt, int base);
-  Ath__track* addTrack(uint ii, uint markerCnt);
+  Track* addTrack(uint ii, uint markerCnt, int base);
+  Track* addTrack(uint ii, uint markerCnt);
   void makeTracks(uint space, uint width);
   void getBbox(Ath__box* bb);
   void getBbox(Ath__searchBox* bb);
@@ -428,10 +428,10 @@ class Grid
   bool addOnTrack(uint track, Ath__wire* w, uint mark1, uint mark2);
   int getTrackHeight(uint track);
   uint getTrackNum(Ath__box* box);
-  Ath__track* getTrackPtr(int* ll);
-  Ath__track* getTrackPtr(int xy);
-  Ath__track* getTrackPtr(uint ii, uint markerCnt, int base);
-  Ath__track* getTrackPtr(uint ii, uint markerCnt);
+  Track* getTrackPtr(int* ll);
+  Track* getTrackPtr(int xy);
+  Track* getTrackPtr(uint ii, uint markerCnt, int base);
+  Track* getTrackPtr(uint ii, uint markerCnt);
   bool isOrdered(bool ascending, uint* cnt);
   uint search(Ath__searchBox* bb,
               Ath__array1D<uint>* idtable,
@@ -497,7 +497,7 @@ class Grid
 
  private:
   GridTable* _gridtable;
-  Ath__track** _trackTable;
+  Track** _trackTable;
   uint* _blockedTrackTable;
   int _trackCnt;
   uint* _subTrackCnt;
@@ -524,7 +524,7 @@ class Grid
 
   uint _widthTable[8];
   uint _shiftTable[8];
-  AthPool<Ath__track>* _trackPoolPtr;
+  AthPool<Track>* _trackPoolPtr;
   AthPool<Ath__wire>* _wirePoolPtr;
 
   uint _schema;
@@ -748,7 +748,7 @@ class GridTable
   uint _colCnt;
   uint _rowSize;
   uint _colSize;
-  AthPool<Ath__track>* _trackPool;
+  AthPool<Track>* _trackPool;
   AthPool<Ath__wire>* _wirePool;
   uint _schema{1};
   uint _overlapAdjust{Z_noAdjust};

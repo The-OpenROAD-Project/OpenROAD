@@ -62,7 +62,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
 
     uint tr = _lowTrackSearch[dir][jj];
     for (; tr < netGrid->getTrackCnt(); tr++) {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -111,7 +111,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
     // for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)
     for (uint tr = _lowTrackToExtract[dir][jj]; tr < _hiTrackSearch[dir][jj];
          tr++) {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -199,7 +199,7 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
     // for (; tr >= 0; tr--)
     int tr = _hiTrackToExtract[dir][jj];
     for (; tr >= _lowTrackToExtract[dir][jj]; tr--) {
-      Ath__track* track = netGrid->getTrackPtr((uint) tr);
+      Track* track = netGrid->getTrackPtr((uint) tr);
       if (track == NULL)
         continue;
 
@@ -252,7 +252,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
     for (uint tr = _lowTrackToExtract[dir][jj]; tr < _hiTrackToExtract[dir][jj];
          tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -318,7 +318,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
     for (uint tr = _lowTrackToExtract[dir][jj]; tr < _hiTrackToExtract[dir][jj];
          tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -402,7 +402,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
     for (uint tr = _lowTrackToExtract[dir][level];
          tr < _hiTrackToExtract[dir][level];
          tr++) {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 

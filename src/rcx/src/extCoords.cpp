@@ -143,12 +143,12 @@ namespace rcx {
 void Grid::dealloc()
 {
   for (uint ii = 0; ii <= _searchHiTrack; ii++) {
-    Ath__track* btrack = _trackTable[ii];
+    Track* btrack = _trackTable[ii];
     if (btrack == nullptr) {
       continue;
     }
 
-    Ath__track* track = nullptr;
+    Track* track = nullptr;
     bool tohi = true;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
       track->dealloc(_wirePoolPtr);

@@ -1083,7 +1083,7 @@ class extMeasureRC : public extMeasure
   bool CalcRes(extSegment* s);
 
   // dkf 11012023
-  uint ConnectAllWires(Ath__track* track);
+  uint ConnectAllWires(Track* track);
 
   // dkf 061824
   bool printProgress(uint totalWiresExtracted,

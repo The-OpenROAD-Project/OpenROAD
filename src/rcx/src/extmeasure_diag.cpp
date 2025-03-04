@@ -62,7 +62,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
     firstWireTable.resetCnt();
 
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
       ResetFirstWires(
@@ -154,7 +154,7 @@ int extMeasureRC::FindCouplingNeighbors_down(uint dir,
 
     int tr = netGrid->getTrackCnt() - 1;
     for (; tr >= 0; tr--) {
-      Ath__track* track = netGrid->getTrackPtr((uint) tr);
+      Track* track = netGrid->getTrackPtr((uint) tr);
       if (track == NULL)
         continue;
 
@@ -195,7 +195,7 @@ void extMeasureRC::ResetFirstWires(Grid* netGrid,
                                    uint limitTrackNum)
 {
   for (uint ii = tr1; ii - tr1 < limitTrackNum && ii < trCnt; ii++) {
-    Ath__track* track = netGrid->getTrackPtr(ii);
+    Track* track = netGrid->getTrackPtr(ii);
     if (track == NULL) {
       firstWireTable->set(ii, NULL);
       continue;
@@ -487,7 +487,7 @@ Ath__wire* extMeasureRC::GetNextWire(Grid* netGrid,
                                      uint tr,
                                      Ath__array1D<Ath__wire*>* firstWireTable)
 {
-  Ath__track* next_track = netGrid->getTrackPtr(tr);
+  Track* next_track = netGrid->getTrackPtr(tr);
   if (next_track == NULL)
     return NULL;
 
@@ -590,7 +590,7 @@ int extMeasureRC::PrintAllGrids(uint dir, FILE* fp, uint mode)
             netGrid->getTrackCnt());
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -622,7 +622,7 @@ int extMeasureRC::ConnectWires(uint dir)
     Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -642,7 +642,7 @@ int extMeasureRC::ConnectWires(uint dir)
     PrintAllGrids(dir, OpenPrintFile(dir, "wires"), 0);
   return cnt;
 }
-uint extMeasureRC::ConnectAllWires(Ath__track* track)
+uint extMeasureRC::ConnectAllWires(Track* track)
 {
   Ath__array1D<Ath__wire*> tbl(128);
   uint ii = track->getGrid()->searchLowMarker();
@@ -707,7 +707,7 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
     Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -788,7 +788,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_power(
          next_tr < end_track && next_tr < grid->getTrackCnt();
          next_tr++)  // for tracks overlapping wire
     {
-      Ath__track* next_track = grid->getTrackPtr(next_tr);
+      Track* next_track = grid->getTrackPtr(next_tr);
       if (next_track == NULL)
         continue;
       Ath__wire* first = next_track->getNextWire(NULL);
@@ -866,7 +866,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
     Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -929,7 +929,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint dir,
     Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
@@ -999,7 +999,7 @@ int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
     Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 

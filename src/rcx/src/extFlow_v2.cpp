@@ -536,7 +536,7 @@ uint Grid::placeWire_v2(Ath__searchBox* bb)
 
   Ath__wire* w
       = makeWire(_dir, ll, ur, bb->getOwnerId(), bb->getOtherId(), wireType);
-  Ath__track* track = getTrackPtr(trackNum1, _markerCnt);
+  Track* track = getTrackPtr(trackNum1, _markerCnt);
   /* DELETE
     int TTTsubt = NO_SUB_TRACKS ? 0 : 1;
     if (TTTsubt>0)
@@ -553,7 +553,7 @@ uint Grid::placeWire_v2(Ath__searchBox* bb)
     w1->_srcId = w->_id;
     w1->_srcWire = w;
     _gridtable->incrMultiTrackWireCnt(w->isPower());
-    Ath__track* track = getTrackPtr(ii, _markerCnt);
+    Track* track = getTrackPtr(ii, _markerCnt);
     track->place(w1, m1);
     wCnt++;
   }
