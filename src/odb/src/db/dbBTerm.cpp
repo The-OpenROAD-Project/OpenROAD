@@ -413,8 +413,10 @@ void dbBTerm::connect(dbModNet* mod_net)
     return;
   }
   if (bterm->_mnet) {
+    // journalling done inside
     bterm->disconnectModNet(bterm, block);
   }
+  // journalling done inside
   bterm->connectModNet(_mod_net, block);
 }
 
@@ -433,26 +435,10 @@ void dbBTerm::connect(dbNet* net_)
 
   // disconnect the db mod net
   if (bterm->_net) {
+    // journalling done in leaf call
     disconnectDbNet();
   }
-
-  if (block->_journal) {
-    debugPrint(block->getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: connect Bterm {} to net {}",
-               bterm->getId(),
-               net_->getId());
-    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
-    block->_journal->pushParam(dbBTermObj);
-    block->_journal->pushParam(bterm->getId());
-    block->_journal->pushParam(net_->getId());
-    // modnet is left out, only flat net.
-    block->_journal->pushParam(0U);
-    block->_journal->endAction();
-  }
-
+  // journal ok
   bterm->connectNet(net, block);
 }
 
@@ -470,29 +456,10 @@ void dbBTerm::disconnect()
           "Attempt to disconnect bterm of dont_touch net {}",
           net->_name);
     }
-
-    auto mnet_id = 0;
-    if (bterm->_mnet) {
-      _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
-      mnet_id = mod_net->getOID();
-    }
-
-    if (block->_journal) {
-      debugPrint(block->getImpl()->getLogger(),
-                 utl::ODB,
-                 "DB_ECO",
-                 1,
-                 "ECO: disconnect bterm {}",
-                 bterm->getId());
-      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
-      block->_journal->pushParam(dbBTermObj);
-      block->_journal->pushParam(bterm->getId());
-      block->_journal->pushParam(net->getOID());
-      block->_journal->pushParam(mnet_id);
-      block->_journal->endAction();
-    }
+    // journalling inside
     bterm->disconnectNet(bterm, block);
     if (bterm->_mnet) {
+      // journalling inside
       bterm->disconnectModNet(bterm, block);
     }
   }
@@ -502,6 +469,7 @@ void dbBTerm::disconnectDbModNet()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
+  // journalling done inside
   bterm->disconnectModNet(bterm, block);
 }
 
@@ -519,23 +487,7 @@ void dbBTerm::disconnectDbNet()
           "Attempt to disconnect bterm of dont_touch net {}",
           net->_name);
     }
-
-    if (block->_journal) {
-      debugPrint(block->getImpl()->getLogger(),
-                 utl::ODB,
-                 "DB_ECO",
-                 1,
-                 "ECO: disconnect bterm {}",
-                 bterm->getId());
-      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
-      block->_journal->pushParam(dbBTermObj);
-      block->_journal->pushParam(bterm->getId());
-      block->_journal->pushParam(net->getOID());
-      // we are not considering the modnet.
-      block->_journal->pushParam(0U);
-      block->_journal->endAction();
-    }
-
+    // journalling done inside
     bterm->disconnectNet(bterm, block);
   }
 }
@@ -754,6 +706,8 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   for (auto callback : block->_callbacks) {
     callback->inDbBTermCreate((dbBTerm*) bterm);
   }
+
+  // journalling done inside
   bterm->connectNet(net, block);
 
   return (dbBTerm*) bterm;
@@ -770,7 +724,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
                utl::ODB,
                "DB_ECO",
                1,
-               "ECO: connect Bterm {} to net {}",
+               "ECO: connect Bterm {} to modnet {}",
                bterm->getId(),
                mod_net->getId());
 
@@ -797,6 +751,25 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
 
 void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
 {
+  _dbBTerm* bterm = (_dbBTerm*) this;
+
+  if (block->_journal) {
+    debugPrint(block->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect Bterm {} to net {}",
+               bterm->getId(),
+               net->getId());
+    block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
+    block->_journal->pushParam(dbBTermObj);
+    block->_journal->pushParam(bterm->getId());
+    block->_journal->pushParam(net->getId());
+    // modnet is left out, only flat net.
+    block->_journal->pushParam(0U);
+    block->_journal->endAction();
+  }
+
   for (auto callback : block->_callbacks) {
     callback->inDbBTermPreConnect((dbBTerm*) this, (dbNet*) net);
   }
@@ -863,58 +836,97 @@ void dbBTerm::destroy(dbBTerm* bterm_)
 
 void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
 {
-  // unlink bterm from the net
-  for (auto callback : block->_callbacks) {
-    callback->inDbBTermPreDisconnect((dbBTerm*) this);
-  }
-  _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
-  uint id = bterm->getOID();
+  if (bterm->_net) {
+    _dbNet* net = block->_net_tbl->getPtr(bterm->_net);
 
-  if (net->_bterms == id) {
-    net->_bterms = bterm->_next_bterm;
+    // Journal
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect bterm {}",
+                 bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      block->_journal->pushParam(net->getId());
+      block->_journal->pushParam(0U);  // no modnet
+      block->_journal->endAction();
+    }
 
-    if (net->_bterms != 0) {
-      _dbBTerm* t = block->_bterm_tbl->getPtr(net->_bterms);
-      t->_prev_bterm = 0;
-    }
-  } else {
-    if (bterm->_next_bterm != 0) {
-      _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_bterm);
-      next->_prev_bterm = bterm->_prev_bterm;
+    // unlink bterm from the net
+    for (auto callback : block->_callbacks) {
+      callback->inDbBTermPreDisconnect((dbBTerm*) this);
     }
 
-    if (bterm->_prev_bterm != 0) {
-      _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_bterm);
-      prev->_next_bterm = bterm->_next_bterm;
+    uint id = bterm->getOID();
+
+    if (net->_bterms == id) {
+      net->_bterms = bterm->_next_bterm;
+
+      if (net->_bterms != 0) {
+        _dbBTerm* t = block->_bterm_tbl->getPtr(net->_bterms);
+        t->_prev_bterm = 0;
+      }
+    } else {
+      if (bterm->_next_bterm != 0) {
+        _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_bterm);
+        next->_prev_bterm = bterm->_prev_bterm;
+      }
+
+      if (bterm->_prev_bterm != 0) {
+        _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_bterm);
+        prev->_next_bterm = bterm->_next_bterm;
+      }
     }
-  }
-  _net = 0;
-  for (auto callback : block->_callbacks) {
-    callback->inDbBTermPostDisConnect((dbBTerm*) this, (dbNet*) net);
+    _net = 0;
+    for (auto callback : block->_callbacks) {
+      callback->inDbBTermPostDisConnect((dbBTerm*) this, (dbNet*) net);
+    }
   }
 }
 
 void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
 {
-  _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
-  uint id = bterm->getOID();
-  if (mod_net->_bterms == id) {
-    mod_net->_bterms = bterm->_next_modnet_bterm;
-    if (mod_net->_bterms != 0) {
-      _dbBTerm* t = block->_bterm_tbl->getPtr(mod_net->_bterms);
-      t->_prev_modnet_bterm = 0;
+  if (bterm->_mnet) {
+    _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
+
+    if (block->_journal) {
+      debugPrint(block->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect bterm {}",
+                 bterm->getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbBTermObj);
+      block->_journal->pushParam(bterm->getId());
+      // we are not considering the dbNet
+      block->_journal->pushParam(0U);
+      block->_journal->pushParam(mod_net->getId());
+      block->_journal->endAction();
     }
-  } else {
-    if (bterm->_next_modnet_bterm != 0) {
-      _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_modnet_bterm);
-      next->_prev_modnet_bterm = bterm->_prev_modnet_bterm;
+
+    uint id = bterm->getOID();
+    if (mod_net->_bterms == id) {
+      mod_net->_bterms = bterm->_next_modnet_bterm;
+      if (mod_net->_bterms != 0) {
+        _dbBTerm* t = block->_bterm_tbl->getPtr(mod_net->_bterms);
+        t->_prev_modnet_bterm = 0;
+      }
+    } else {
+      if (bterm->_next_modnet_bterm != 0) {
+        _dbBTerm* next = block->_bterm_tbl->getPtr(bterm->_next_modnet_bterm);
+        next->_prev_modnet_bterm = bterm->_prev_modnet_bterm;
+      }
+      if (bterm->_prev_modnet_bterm != 0) {
+        _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_modnet_bterm);
+        prev->_next_modnet_bterm = bterm->_next_modnet_bterm;
+      }
     }
-    if (bterm->_prev_modnet_bterm != 0) {
-      _dbBTerm* prev = block->_bterm_tbl->getPtr(bterm->_prev_modnet_bterm);
-      prev->_next_modnet_bterm = bterm->_next_modnet_bterm;
-    }
+    _mnet = 0;
   }
-  _mnet = 0;
 }
 
 void _dbBTerm::collectMemInfo(MemInfo& info)
