@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2024, Nefelus Inc
+// Copyright (c) 2025, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,38 +30,43 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "CtsOptions.h"
 
-#include "extRCap.h"
+namespace cts {
 
-namespace rcx {
-
-class extModelGen : public extRCModel
+CtsOptions::MasterType CtsOptions::getType(odb::dbInst* inst) const
 {
- public:
-  extModelGen(uint layerCnt, const char* name, Logger* logger)
-      : extRCModel(layerCnt, name, logger)
-  {
+  if (inst->getName().substr(0, dummyload_prefix_.size())
+      == dummyload_prefix_) {
+    return MasterType::DUMMY;
   }
-  uint ReadRCDB(dbBlock* block, uint widthCnt, uint diagOption, char* logFile);
-  void writeRules(FILE* fp, bool binary, uint m, int corner = -1);
-  FILE* InitWriteRules(const char* name,
-                       std::list<std::string> corner_list,
-                       const char* comment,
-                       bool binary,
-                       uint modelCnt);
-  static std::list<std::string> GetCornerNames(const char* filename,
-                                               double& version,
-                                               Logger* logger);
 
-  // ----------------------------------- DKF 09212024
-  // ---------------------------------------
-  uint GenExtModel(const char* out_file,
-                   const char* comment,
-                   const char* version,
-                   int pattern);
-  // --------------------------------------------------------------------------------------------
-};
+  return MasterType::TREE;
+}
 
-}  // namespace rcx
+void CtsOptions::inDbInstCreate(odb::dbInst* inst)
+{
+  recordBuffer(inst->getMaster(), getType(inst));
+}
+
+void CtsOptions::inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region)
+{
+  recordBuffer(inst->getMaster(), getType(inst));
+}
+
+void CtsOptions::recordBuffer(odb::dbMaster* master, MasterType type)
+{
+  switch (type) {
+    case MasterType::DUMMY:
+      dummy_count_[master]++;
+      break;
+    case MasterType::TREE:
+      buffer_count_[master]++;
+      break;
+  }
+}
+
+}  // namespace cts

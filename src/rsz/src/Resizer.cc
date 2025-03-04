@@ -608,7 +608,7 @@ void Resizer::balanceRowUsage()
     auto master = inst->getMaster();
     auto site = master->getSite();
     // Ignore multi-height cells for now
-    if (site->hasRowPattern()) {
+    if (site && site->hasRowPattern()) {
       continue;
     }
 
