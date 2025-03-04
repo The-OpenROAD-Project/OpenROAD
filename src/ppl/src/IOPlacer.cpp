@@ -1047,23 +1047,6 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
   return slots;
 }
 
-int IOPlacer::computeDistanceBetweenPins(const int layer,
-                                         const int min_distance)
-{
-  bool dist_in_tracks = parms_->getMinDistanceInTracks();
-  int min_dst_pins
-      = dist_in_tracks
-            ? min_distance * parms_->getMinDistance()
-            : min_distance
-                  * std::ceil(static_cast<float>(parms_->getMinDistance())
-                              / min_distance);
-
-  min_dst_pins
-      = (min_dst_pins == 0) ? default_min_dist_ * min_distance : min_dst_pins;
-
-  return min_dst_pins;
-}
-
 void IOPlacer::defineSlots()
 {
   /*******************************************
