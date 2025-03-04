@@ -43,6 +43,23 @@ module gcd (clk,
  wire partition__353_;
  wire \partition_dpath.a_lt_b$in1[15] ;
  wire \partition_dpath.a_lt_b$in1[8] ;
+ wire _NC1;
+ wire _NC2;
+ wire _NC3;
+ wire _NC4;
+ wire _NC5;
+ wire _NC6;
+ wire _NC7;
+ wire _NC8;
+ wire _NC9;
+ wire _NC10;
+ wire _NC11;
+ wire _NC12;
+ wire _NC13;
+ wire _NC14;
+ wire _NC15;
+ wire _NC16;
+ wire _NC17;
 
  gcd_partition0 gcd_partition0_inst (.clk(clk),
     .req_rdy(req_rdy),
