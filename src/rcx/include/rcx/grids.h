@@ -339,7 +339,7 @@ class Grid
   Grid(GridTable* gt,
        AthPool<Track>* trackPool,
        AthPool<Wire>* wirePool,
-       Ath__box* bb,
+       Box* bb,
        uint level,
        uint dir,
        uint num,
@@ -378,16 +378,16 @@ class Grid
   Track* addTrack(uint ii, uint markerCnt, int base);
   Track* addTrack(uint ii, uint markerCnt);
   void makeTracks(uint space, uint width);
-  void getBbox(Ath__box* bb);
+  void getBbox(Box* bb);
   void getBbox(SearchBox* bb);
   uint setExtrusionMarker();
-  uint addWire(Ath__box* box, int check);
-  uint addWire(Ath__box* box);
+  uint addWire(Box* box, int check);
+  uint addWire(Box* box);
 
   uint placeWire(SearchBox* bb);
   uint placeBox(uint id, int x1, int y1, int x2, int y2);
   uint placeBox(dbBox* box, uint wtype, uint id);
-  uint placeBox(Ath__box* box);
+  uint placeBox(Box* box);
   uint placeBox(SearchBox* bb);
   uint getBucketNum(int xy);
   uint getTrackNum(int* ll, uint d, uint* marker);
@@ -398,10 +398,10 @@ class Grid
   int findEmptyTrack(int ll[2], int ur[2]);
   uint getFirstTrack(uint divider);
   int getClosestTrackCoord(int xy);
-  uint addWire(uint initTrack, Ath__box* box, int sortedOrder, int* height);
+  uint addWire(uint initTrack, Box* box, int sortedOrder, int* height);
   Wire* getPoolWire();
-  Wire* makeWire(Ath__box* box, uint* id, uint* m1, uint* m2, uint fullTrack);
-  Wire* makeWire(Ath__box* box, uint id, uint* m1);
+  Wire* makeWire(Box* box, uint* id, uint* m1, uint* m2, uint fullTrack);
+  Wire* makeWire(Box* box, uint id, uint* m1);
   Wire* makeWire(int* ll, int* ur, uint id, uint* m1);
   Wire* makeWire(uint dir, int* ll, int* ur, uint id1, uint id2, uint type = 0);
 
@@ -415,7 +415,7 @@ class Grid
   int getMinMaxTrackNum(int xy);
   bool addOnTrack(uint track, Wire* w, uint mark1, uint mark2);
   int getTrackHeight(uint track);
-  uint getTrackNum(Ath__box* box);
+  uint getTrackNum(Box* box);
   Track* getTrackPtr(int* ll);
   Track* getTrackPtr(int xy);
   Track* getTrackPtr(uint ii, uint markerCnt, int base);
@@ -439,7 +439,7 @@ class Grid
   uint getLevel();
   Wire* getWire_Linear(uint id);
 
-  void getBuses(Ath__array1D<Ath__box*>* boxtable, uint width);
+  void getBuses(Ath__array1D<Box*>* boxtable, uint width);
 
   uint removeMarkedNetWires();
   void setSearchDomain(int domainAdjust);
@@ -571,7 +571,7 @@ class GridTable
   uint getRowCnt();
   Wire* getWirePtr(uint id);
   void releaseWire(uint wireId);
-  Ath__box* maxSearchBox() { return &_maxSearchBox; };
+  Box* maxSearchBox() { return &_maxSearchBox; };
   int xMin();
   int xMax();
   int yMin();
@@ -579,18 +579,18 @@ class GridTable
   uint getRowNum(int x);
   uint getColNum(int y);
   bool getRowCol(int x1, int y1, uint* row, uint* col);
-  Wire* addBox(Ath__box* bb);
+  Wire* addBox(Box* bb);
   Wire* addBox(dbBox* bb, uint wtype, uint id);
   bool addBox(uint row, uint col, dbBox* bb);
 
-  uint getBoxes(Ath__box* bb, Ath__array1D<Ath__box*>* table);
+  uint getBoxes(Box* bb, Ath__array1D<Box*>* table);
   uint search(SearchBox* bb,
               uint row,
               uint col,
               Ath__array1D<uint>* idTable,
               bool wireIdFlag);
   uint search(SearchBox* bb, Ath__array1D<uint>* idTable);
-  uint search(Ath__box* bb);
+  uint search(Box* bb);
 
   uint addBox(int x1,
               int y1,
@@ -728,8 +728,8 @@ class GridTable
   bool _v2 = false;
   // indexed [row][col].  Rows = dirs (2); cols = layers+1 (1-indexing)
   Grid*** _gridTable;
-  Ath__box _bbox;
-  Ath__box _maxSearchBox;
+  Box _bbox;
+  Box _maxSearchBox;
   bool _setMaxArea;
   Rect _rectBB;
   uint _rowCnt;

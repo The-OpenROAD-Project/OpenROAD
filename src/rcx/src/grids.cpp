@@ -36,33 +36,33 @@
 
 namespace rcx {
 
-Ath__box::Ath__box()
+Box::Box()
 {
   set(0, 0, 0, 0);
   _layer = 0;
 }
 
-int Ath__box::getXlo(const int bound) const
+int Box::getXlo(const int bound) const
 {
   return std::max(_rect.xMin(), bound);
 }
 
-int Ath__box::getYlo(const int bound) const
+int Box::getYlo(const int bound) const
 {
   return std::max(_rect.yMin(), bound);
 }
 
-int Ath__box::getXhi(const int bound) const
+int Box::getXhi(const int bound) const
 {
   return std::min(_rect.xMax(), bound);
 }
 
-int Ath__box::getYhi(const int bound) const
+int Box::getYhi(const int bound) const
 {
   return std::min(_rect.yMax(), bound);
 }
 
-uint Ath__box::getDir() const
+uint Box::getDir() const
 {
   const uint dx = getDX();
   const uint dy = getDY();
@@ -70,7 +70,7 @@ uint Ath__box::getDir() const
   return (dx < dy) ? 0 : 1;
 }
 
-uint Ath__box::getWidth(uint* dir) const
+uint Box::getWidth(uint* dir) const
 {
   const uint dx = getDX();
   const uint dy = getDY();
@@ -82,44 +82,44 @@ uint Ath__box::getWidth(uint* dir) const
   return dy;
 }
 
-Ath__box::Ath__box(int x1, int y1, int x2, int y2, int units)
+Box::Box(int x1, int y1, int x2, int y2, int units)
 {
   set(x1, y1, x2, y2, units);
 }
 
-void Ath__box::set(int x1, int y1, int x2, int y2, int units)
+void Box::set(int x1, int y1, int x2, int y2, int units)
 {
   _rect = {x1 * units, y1 * units, x2 * units, y2 * units};
   _valid = 1;
   _id = 0;
 }
 
-uint Ath__box::getOwner() const
+uint Box::getOwner() const
 {
   return 0;
 }
 
-uint Ath__box::getDX() const
+uint Box::getDX() const
 {
   return _rect.dx();
 }
 
-uint Ath__box::getDY() const
+uint Box::getDY() const
 {
   return _rect.dy();
 }
 
-uint Ath__box::getLength() const
+uint Box::getLength() const
 {
   return std::max(getDX(), getDY());
 }
 
-void Ath__box::invalidateBox()
+void Box::invalidateBox()
 {
   _valid = 0;
 }
 
-void Ath__box::set(Ath__box* bb)
+void Box::set(Box* bb)
 {
   _rect = bb->_rect;
 }
@@ -615,7 +615,7 @@ void Grid::setSearchDomain(const int domainAdjust)
     _searchHiMarker = _markerCnt - 1;
     return;
   }
-  const Ath__box* searchBox = _gridtable->maxSearchBox();
+  const Box* searchBox = _gridtable->maxSearchBox();
   const odb::Rect rect = searchBox->getRect();
   const odb::Orientation2D dir = _dir ? odb::horizontal : odb::vertical;
   const int lo = rect.low(dir.turn_90());
@@ -1314,7 +1314,7 @@ void Grid::setSchema(uint v)
 Grid::Grid(GridTable* gt,
            AthPool<Track>* trackPool,
            AthPool<Wire>* wirePool,
-           Ath__box* bb,
+           Box* bb,
            uint level,
            uint dir,
            uint num,
@@ -1342,7 +1342,7 @@ void Grid::getBbox(SearchBox* bb)
     bb->set(_start, _base, _end, _max, _level, _dir);
   }
 }
-void Grid::getBbox(Ath__box* bb)
+void Grid::getBbox(Box* bb)
 {
   if (_dir == 0) {  // vertical
     bb->setRect({_base, _start, _max, _end});
@@ -1519,7 +1519,7 @@ uint Grid::placeWire(uint initTrack,
   return nextTrack;
 }
 
-uint Grid::addWire(uint initTrack, Ath__box* box, int sortedOrder, int* height)
+uint Grid::addWire(uint initTrack, Box* box, int sortedOrder, int* height)
 {
   uint id, markIndex1, markIndex2;
   Wire* w = makeWire(box, &id, &markIndex1, &markIndex2, 0);
@@ -1787,7 +1787,7 @@ uint Grid::setExtrusionMarker()
   }
   return cnt;
 }
-uint Grid::placeBox(Ath__box* box)
+uint Grid::placeBox(Box* box)
 {
   const odb::Rect rect = box->getRect();
   int ll[2] = {rect.xMin(), rect.yMin()};
@@ -1982,7 +1982,7 @@ uint Grid::search(SearchBox* bb,
 
   return idtable->getCnt();
 }
-void Grid::getBuses(Ath__array1D<Ath__box*>* boxTable, uint width)
+void Grid::getBuses(Ath__array1D<Box*>* boxTable, uint width)
 {
   Ath__array1D<Wire*> wireTable(32);
 
@@ -2011,7 +2011,7 @@ void Grid::getBuses(Ath__array1D<Ath__box*>* boxTable, uint width)
         continue;
       }
 
-      Ath__box* bb = new Ath__box();
+      Box* bb = new Box();
       if (_dir > 0) {
         bb->set(e->_xy, height, e->_xy + e->_len, height + width);
       } else {
@@ -2144,7 +2144,7 @@ uint Grid::getTrackNum(int* ll, uint d, uint* marker)
   }
   return b;
 }
-uint Grid::getTrackNum(Ath__box* box)
+uint Grid::getTrackNum(Box* box)
 {
   const odb::Rect rect = box->getRect();
   int ll[2] = {rect.xMin(), rect.yMin()};
@@ -2189,7 +2189,7 @@ Wire* Grid::makeWire(int* ll, int* ur, uint id, uint* m1)
 
   return w;
 }
-Wire* Grid::makeWire(Ath__box* box,
+Wire* Grid::makeWire(Box* box,
                      uint* id,
                      uint* m1,
                      uint* m2,
@@ -2585,7 +2585,7 @@ Wire* GridTable::addBox(dbBox* bb, uint wtype, uint id)
 
   return nullptr;
 }
-Wire* GridTable::addBox(Ath__box* bb)
+Wire* GridTable::addBox(Box* bb)
 {
   uint row;
   uint col;

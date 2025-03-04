@@ -42,11 +42,11 @@ namespace rcx {
 
 using uint = unsigned int;
 
-class Ath__box
+class Box
 {
  public:
-  Ath__box();
-  Ath__box(int x1, int y1, int x2, int y2, int units = 1);
+  Box();
+  Box(int x1, int y1, int x2, int y2, int units = 1);
 
   uint getDir() const;
   int getYhi(int bound) const;
@@ -64,7 +64,7 @@ class Ath__box
   void setRect(const odb::Rect& rect) { _rect = rect; }
 
   void invalidateBox();
-  void set(Ath__box* bb);
+  void set(Box* bb);
   void set(int x1, int y1, int x2, int y2, int units = 1);
   void setLayer(uint layer) { _layer = layer; }
 
