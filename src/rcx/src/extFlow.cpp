@@ -1103,7 +1103,7 @@ uint extMain::couplingFlow(Rect& extRect,
   int lo_sdb[2];
   int hi_sdb[2];
 
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
+  OverlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,

@@ -398,7 +398,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 
 void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
 {
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
+  OverlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl_v2(_block,
                             _useDbSdb,

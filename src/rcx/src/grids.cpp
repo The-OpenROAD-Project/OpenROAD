@@ -996,8 +996,7 @@ bool Track::place2(Wire* w, int mark1, int mark2)
 
 void Track::linkWire(Wire*& w1, Wire*& w2)
 {
-  Ath__overlapAdjust adj
-      = (Ath__overlapAdjust) _grid->getGridTable()->getOverlapAdjust();
+  OverlapAdjust adj = (OverlapAdjust) _grid->getGridTable()->getOverlapAdjust();
   int nend, oend, tend;
   nend = w1->_xy + w1->_len;
   oend = w2->_xy + w2->_len;
@@ -1048,8 +1047,7 @@ bool Track::place(Wire* w, int markIndex1)
     _marker[markIndex1] = w;
     return true;
   }
-  Ath__overlapAdjust adj
-      = (Ath__overlapAdjust) _grid->getGridTable()->getOverlapAdjust();
+  OverlapAdjust adj = (OverlapAdjust) _grid->getGridTable()->getOverlapAdjust();
   bool status = true;
 
   Wire* a = _marker[markIndex1];

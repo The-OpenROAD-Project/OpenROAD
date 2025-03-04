@@ -53,7 +53,7 @@ using odb::dbBox;
 using odb::dbNet;
 using odb::Rect;
 
-enum Ath__overlapAdjust
+enum OverlapAdjust
 {
   Z_noAdjust,
   Z_merge,
