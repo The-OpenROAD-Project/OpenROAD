@@ -215,18 +215,7 @@ proc set_io_pin_constraint { args } {
       utl::error PPL 58 "The -pin_names argument is required when using -group flag."
     }
 
-    set pin_list {}
-    set final_group ""
-    foreach pin_name $group {
-      set db_bterm [$dbBlock findBTerm $pin_name]
-      if { $db_bterm != "NULL" } {
-        lappend pin_list $db_bterm
-        set final_group "$final_group $pin_name"
-      } else {
-        utl::warn PPL 47 "Group pin $pin_name not found in the design."
-      }
-    }
-
+    set pin_list [ppl::parse_pin_names "place_pins -group_pins" $group]
     if { [llength $pin_list] != 0 } {
       ppl::add_pin_group $pin_list [info exists flags(-order)]
       incr group_idx
@@ -636,16 +625,8 @@ proc place_pins { args } {
   if { [llength $pin_groups] != 0 } {
     set group_idx 0
     foreach group $pin_groups {
-      set pin_list {}
-      foreach pin_name $group {
-        set db_bterm [$dbBlock findBTerm $pin_name]
-        if { $db_bterm != "NULL" } {
-          lappend pin_list $db_bterm
-        } else {
-          utl::warn PPL 43 "Pin $pin_name not found in group $group_idx."
-        }
-      }
-      ppl::add_pin_group $pin_list 0
+      set pins [ppl::parse_pin_names "place_pins -group_pins" $group]
+      ppl::add_pin_group $pins 0
       incr group_idx
     }
   }
