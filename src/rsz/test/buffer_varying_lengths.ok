@@ -23,6 +23,4 @@ tns -30.262
 [INFO RSZ-0033] No hold violations found.
 worst slack -0.267
 tns -27.797
-Differences found at line 21.
-    - i1-111 BUF_X8 + PLACED ( 0 2220000 ) N ;
-    - i1-111 BUF_X4 + PLACED ( 0 2220000 ) N ;
+No differences found.
