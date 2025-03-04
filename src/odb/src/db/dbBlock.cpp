@@ -131,7 +131,6 @@
 #include "odb/dbShape.h"
 #include "odb/defout.h"
 #include "odb/lefout.h"
-#include "odb/parse.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -425,224 +424,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _num_ext_dbs = 1;
   _searchDb = nullptr;
   _extmi = nullptr;
-  _journal = nullptr;
-  _journal_pending = nullptr;
-}
-
-_dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
-    : _flags(block._flags),
-      _def_units(block._def_units),
-      _dbu_per_micron(block._dbu_per_micron),
-      _hier_delimeter(block._hier_delimeter),
-      _left_bus_delimeter(block._left_bus_delimeter),
-      _right_bus_delimeter(block._right_bus_delimeter),
-      _num_ext_corners(block._num_ext_corners),
-      _corners_per_block(block._corners_per_block),
-      _corner_name_list(block._corner_name_list),
-      _name(nullptr),
-      _die_area(block._die_area),
-      _tech(block._tech),
-      _chip(block._chip),
-      _bbox(block._bbox),
-      _parent(block._parent),
-      _next_block(block._next_block),
-      _gcell_grid(block._gcell_grid),
-      _parent_block(block._parent_block),
-      _parent_inst(block._parent_inst),
-      _top_module(block._top_module),
-      _net_hash(block._net_hash),
-      _inst_hash(block._inst_hash),
-      _module_hash(block._module_hash),
-      _modinst_hash(block._modinst_hash),
-      _powerdomain_hash(block._powerdomain_hash),
-      _logicport_hash(block._logicport_hash),
-      _powerswitch_hash(block._powerswitch_hash),
-      _isolation_hash(block._isolation_hash),
-      _levelshifter_hash(block._levelshifter_hash),
-      _group_hash(block._group_hash),
-      _inst_hdr_hash(block._inst_hdr_hash),
-      _bterm_hash(block._bterm_hash),
-      _maxCapNodeId(block._maxCapNodeId),
-      _maxRSegId(block._maxRSegId),
-      _maxCCSegId(block._maxCCSegId),
-      _children(block._children),
-      _component_mask_shift(block._component_mask_shift),
-      _currentCcAdjOrder(block._currentCcAdjOrder),
-      _dft(block._dft),
-      _min_routing_layer(block._min_routing_layer),
-      _max_routing_layer(block._max_routing_layer),
-      _min_layer_for_clock(block._min_layer_for_clock),
-      _max_layer_for_clock(block._max_layer_for_clock)
-{
-  if (block._name) {
-    _name = strdup(block._name);
-    ZALLOCATED(_name);
-  }
-
-  _bterm_tbl = new dbTable<_dbBTerm>(db, this, *block._bterm_tbl);
-
-  _iterm_tbl = new dbTable<_dbITerm>(db, this, *block._iterm_tbl);
-
-  _net_tbl = new dbTable<_dbNet>(db, this, *block._net_tbl);
-
-  _inst_hdr_tbl = new dbTable<_dbInstHdr>(db, this, *block._inst_hdr_tbl);
-
-  _inst_tbl = new dbTable<_dbInst>(db, this, *block._inst_tbl);
-
-  _module_tbl = new dbTable<_dbModule>(db, this, *block._module_tbl);
-
-  _modinst_tbl = new dbTable<_dbModInst>(db, this, *block._modinst_tbl);
-
-  _powerdomain_tbl
-      = new dbTable<_dbPowerDomain>(db, this, *block._powerdomain_tbl);
-
-  _logicport_tbl = new dbTable<_dbLogicPort>(db, this, *block._logicport_tbl);
-
-  _powerswitch_tbl
-      = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
-
-  _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
-
-  _levelshifter_tbl
-      = new dbTable<_dbLevelShifter>(db, this, *block._levelshifter_tbl);
-
-  _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
-
-  ap_tbl_ = new dbTable<_dbAccessPoint>(db, this, *block.ap_tbl_);
-
-  global_connect_tbl_
-      = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
-
-  _guide_tbl = new dbTable<_dbGuide>(db, this, *block._guide_tbl);
-
-  _net_tracks_tbl = new dbTable<_dbNetTrack>(db, this, *block._net_tracks_tbl);
-
-  _box_tbl = new dbTable<_dbBox>(db, this, *block._box_tbl);
-
-  _via_tbl = new dbTable<_dbVia>(db, this, *block._via_tbl);
-
-  _gcell_grid_tbl = new dbTable<_dbGCellGrid>(db, this, *block._gcell_grid_tbl);
-
-  _track_grid_tbl = new dbTable<_dbTrackGrid>(db, this, *block._track_grid_tbl);
-
-  _obstruction_tbl
-      = new dbTable<_dbObstruction>(db, this, *block._obstruction_tbl);
-
-  _blockage_tbl = new dbTable<_dbBlockage>(db, this, *block._blockage_tbl);
-
-  _wire_tbl = new dbTable<_dbWire>(db, this, *block._wire_tbl);
-
-  _swire_tbl = new dbTable<_dbSWire>(db, this, *block._swire_tbl);
-
-  _sbox_tbl = new dbTable<_dbSBox>(db, this, *block._sbox_tbl);
-
-  _row_tbl = new dbTable<_dbRow>(db, this, *block._row_tbl);
-
-  _fill_tbl = new dbTable<_dbFill>(db, this, *block._fill_tbl);
-
-  _region_tbl = new dbTable<_dbRegion>(db, this, *block._region_tbl);
-
-  _hier_tbl = new dbTable<_dbHier>(db, this, *block._hier_tbl);
-
-  _bpin_tbl = new dbTable<_dbBPin>(db, this, *block._bpin_tbl);
-
-  _non_default_rule_tbl = new dbTable<_dbTechNonDefaultRule>(
-      db, this, *block._non_default_rule_tbl);
-
-  _layer_rule_tbl
-      = new dbTable<_dbTechLayerRule>(db, this, *block._layer_rule_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(db, this, *block._prop_tbl);
-
-  _name_cache = new _dbNameCache(db, this, *block._name_cache);
-
-  _r_val_tbl = new dbPagedVector<float, 4096, 12>(*block._r_val_tbl);
-
-  _c_val_tbl = new dbPagedVector<float, 4096, 12>(*block._c_val_tbl);
-
-  _cc_val_tbl = new dbPagedVector<float, 4096, 12>(*block._cc_val_tbl);
-
-  _cap_node_tbl = new dbTable<_dbCapNode>(db, this, *block._cap_node_tbl);
-
-  _r_seg_tbl = new dbTable<_dbRSeg>(db, this, *block._r_seg_tbl);
-
-  _cc_seg_tbl = new dbTable<_dbCCSeg>(db, this, *block._cc_seg_tbl);
-
-  _extControl = new dbExtControl();
-
-  _dft_tbl = new dbTable<_dbDft>(db, this, *block._dft_tbl);
-
-  _marker_categories_tbl
-      = new dbTable<_dbMarkerCategory>(db, this, *block._marker_categories_tbl);
-
-  _net_hash.setTable(_net_tbl);
-  _inst_hash.setTable(_inst_tbl);
-  _module_hash.setTable(_module_tbl);
-  _modinst_hash.setTable(_modinst_tbl);
-  _group_hash.setTable(_group_tbl);
-  _inst_hdr_hash.setTable(_inst_hdr_tbl);
-  _bterm_hash.setTable(_bterm_tbl);
-  _powerdomain_hash.setTable(_powerdomain_tbl);
-  _logicport_hash.setTable(_logicport_tbl);
-  _powerswitch_hash.setTable(_powerswitch_tbl);
-  _isolation_hash.setTable(_isolation_tbl);
-  _levelshifter_hash.setTable(_levelshifter_tbl);
-  _marker_category_hash.setTable(_marker_categories_tbl);
-
-  _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
-
-  _net_iterm_itr = new dbNetITermItr(_iterm_tbl);
-
-  _inst_iterm_itr = new dbInstITermItr(_iterm_tbl);
-
-  _box_itr = new dbBoxItr(_box_tbl, nullptr, false);
-
-  _swire_itr = new dbSWireItr(_swire_tbl);
-
-  _sbox_itr = new dbSBoxItr(_sbox_tbl);
-
-  _cap_node_itr = new dbCapNodeItr(_cap_node_tbl);
-
-  _r_seg_itr = new dbRSegItr(_r_seg_tbl);
-
-  _cc_seg_itr = new dbCCSegItr(_cc_seg_tbl);
-
-  _region_inst_itr = new dbRegionInstItr(_inst_tbl);
-
-  _module_inst_itr = new dbModuleInstItr(_inst_tbl);
-
-  _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
-
-  _region_group_itr = new dbRegionGroupItr(_group_tbl);
-
-  _group_itr = new dbGroupItr(_group_tbl);
-
-  _guide_itr = new dbGuideItr(_guide_tbl);
-
-  _net_track_itr = new dbNetTrackItr(_net_tracks_tbl);
-
-  _group_inst_itr = new dbGroupInstItr(_inst_tbl);
-
-  _group_modinst_itr = new dbGroupModInstItr(_modinst_tbl);
-
-  _group_power_net_itr = new dbGroupPowerNetItr(_net_tbl);
-
-  _group_ground_net_itr = new dbGroupGroundNetItr(_net_tbl);
-
-  _bpin_itr = new dbBPinItr(_bpin_tbl);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-
-  _num_ext_dbs = 0;
-
-  // ??? Initialize search-db on copy?
-  _searchDb = nullptr;
-
-  // ??? callbacks
-  // _callbacks = ???
-
-  // ??? _ext?
-  _extmi = block._extmi;
   _journal = nullptr;
   _journal_pending = nullptr;
 }
@@ -952,6 +733,20 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
   return getTable()->getObjectTable(type);
 }
 
+dbOStream& operator<<(dbOStream& stream, const _dbBTermGroup& obj)
+{
+  stream << obj.bterms;
+  stream << obj.order;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj)
+{
+  stream >> obj.bterms;
+  stream >> obj.order;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 {
   std::list<dbBlockCallBackObj*>::const_iterator cbitr;
@@ -1069,6 +864,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     stream << block._max_routing_layer;
     stream << block._min_layer_for_clock;
     stream << block._max_layer_for_clock;
+  }
+  if (db->isSchema(db_schema_block_pin_groups)) {
+    stream << block._bterm_groups;
   }
 
   //---------------------------------------------------------- stream out
@@ -1232,6 +1030,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> block._max_routing_layer;
     stream >> block._min_layer_for_clock;
     stream >> block._max_layer_for_clock;
+  }
+  if (db->isSchema(db_schema_block_pin_groups)) {
+    stream >> block._bterm_groups;
   }
 
   //---------------------------------------------------------- stream in
@@ -1796,6 +1597,34 @@ dbBTerm* dbBlock::findBTerm(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbBTerm*) block->_bterm_hash.find(name);
+}
+
+std::vector<dbBlock::dbBTermGroup> dbBlock::getBTermGroups()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  std::vector<dbBlock::dbBTermGroup> groups;
+  for (const _dbBTermGroup& group : block->_bterm_groups) {
+    dbBlock::dbBTermGroup bterm_group;
+    for (const auto& bterm_id : group.bterms) {
+      bterm_group.bterms.push_back(
+          (dbBTerm*) block->_bterm_tbl->getPtr(bterm_id));
+    }
+    bterm_group.order = group.order;
+    groups.push_back(std::move(bterm_group));
+  }
+
+  return groups;
+}
+
+void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  _dbBTermGroup group;
+  for (dbBTerm* bterm : bterms) {
+    group.bterms.emplace_back(bterm->getId());
+  }
+  group.order = order;
+  block->_bterm_groups.push_back(std::move(group));
 }
 
 dbSet<dbITerm> dbBlock::getITerms()
@@ -2809,14 +2638,6 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
 void dbBlock::setCornerCount(int cnt)
 {
   setCornerCount(cnt, cnt, nullptr);
-}
-
-void dbBlock::copyViaTable(dbBlock* dst_, dbBlock* src_)
-{
-  _dbBlock* dst = (_dbBlock*) dst_;
-  _dbBlock* src = (_dbBlock*) src_;
-  delete dst->_via_tbl;
-  dst->_via_tbl = new dbTable<_dbVia>(dst->getDatabase(), dst, *src->_via_tbl);
 }
 
 dbBlock* dbBlock::create(dbChip* chip_,

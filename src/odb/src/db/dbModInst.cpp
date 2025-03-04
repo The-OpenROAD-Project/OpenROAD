@@ -104,18 +104,6 @@ _dbModInst::_dbModInst(_dbDatabase* db)
   // User Code End Constructor
 }
 
-_dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _parent = r._parent;
-  _module_next = r._module_next;
-  _master = r._master;
-  _group_next = r._group_next;
-  _group = r._group;
-  _moditerms = r._moditerms;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
 {
   stream >> obj._name;
@@ -626,9 +614,19 @@ bool dbModInst::swapMaster(dbModule* new_module)
                    "  connecting iterm {} of mod net {}",
                    new_iterm->getName(),
                    new_mod_net->getName());
+
         if (flat_net) {
+          // Bug Fix:
+          // Explicitly kill connections to new_iterm
+          // kill any old modnet connections and flat nets.
+          //(for example the new_iterm on the new module
+          // might be connected to some modnet).
+          new_iterm->disconnect();  // kills both flat and hier net on new_iterm
+          // Connect the flat net, clears the old
+          // flat net if any, but not the mod net
           new_iterm->connect(flat_net);
         }
+
         if (other_mod_net) {
           new_iterm->connect(other_mod_net);
         }

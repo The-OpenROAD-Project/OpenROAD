@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>230</width>
-    <height>230</height>
+    <width>293</width>
+    <height>315</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -31,11 +31,11 @@
         <item row="2" column="0">
          <widget class="QRadioButton" name="grp3RadioButton">
           <property name="text">
-           <string>Group3</string>
+           <string>Group 3</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
+        <item row="4" column="0">
          <widget class="QRadioButton" name="grp5RadioButton">
           <property name="text">
            <string>Group 5</string>
@@ -49,7 +49,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="5" column="0">
          <widget class="QRadioButton" name="grp6RadioButton">
           <property name="text">
            <string>Group 6</string>
@@ -63,7 +63,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="7" column="0">
          <widget class="QRadioButton" name="grp8RadioButton">
           <property name="text">
            <string>Group 8</string>
@@ -77,10 +77,66 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
+        <item row="6" column="0">
          <widget class="QRadioButton" name="grp7RadioButton">
           <property name="text">
            <string>Group 7</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QRadioButton" name="grp9RadioButton">
+          <property name="text">
+           <string>Group9</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QRadioButton" name="grp10RadioButton">
+          <property name="text">
+           <string>Group 10</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QRadioButton" name="grp11RadioButton">
+          <property name="text">
+           <string>Group 11</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QRadioButton" name="grp12RadioButton">
+          <property name="text">
+           <string>Group 12</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QRadioButton" name="grp13RadioButton">
+          <property name="text">
+           <string>Group 13</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QRadioButton" name="grp14RadioButton">
+          <property name="text">
+           <string>Group 14</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QRadioButton" name="grp15RadioButton">
+          <property name="text">
+           <string>Group 15</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QRadioButton" name="grp16RadioButton">
+          <property name="text">
+           <string>Group 16</string>
           </property>
          </widget>
         </item>

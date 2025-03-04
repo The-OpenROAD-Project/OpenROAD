@@ -65,14 +65,6 @@ _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
   max_spacing_ = 0;
 }
 
-_dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerMaxSpacingRule& r)
-{
-  cut_class_ = r.cut_class_;
-  max_spacing_ = r.max_spacing_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMaxSpacingRule& obj)
 {
   stream >> obj.cut_class_;

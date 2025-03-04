@@ -495,15 +495,6 @@ class dbDatabase : public dbObject
   static void destroy(dbDatabase* db);
 
   ///
-  /// Create a duplicate (IN-MEMORY) instance of a database.
-  ///
-  /// WARNING: This action may result in an out-of-memory condition if
-  ///          there is not enough memory (or swap space) to maintain
-  ///          multiple in-core databases.
-  ///
-  static dbDatabase* duplicate(dbDatabase* db);
-
-  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint oid);
@@ -906,6 +897,11 @@ class dbChip : public dbObject
 class dbBlock : public dbObject
 {
  public:
+  struct dbBTermGroup
+  {
+    std::vector<dbBTerm*> bterms;
+    bool order = false;
+  };
   ///
   /// Get block chip name.
   ///
@@ -973,6 +969,17 @@ class dbBlock : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbBTerm* findBTerm(const char* name);
+
+  ///
+  /// Get all the bterm groups of this block.
+  ///
+  std::vector<dbBTermGroup> getBTermGroups();
+
+  ///
+  /// Get all the block-terminals of this block.
+  /// The flag order places the pins ordered in ascending x/y position.
+  ///
+  void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
   ///
   /// Get all the instance-terminals of this block.
@@ -1581,17 +1588,6 @@ class dbBlock : public dbObject
 
  public:
   ///
-  /// This method copies the via-table from the src block to the destination
-  /// block.
-  ///
-  /// WARNING: This method deletes any vias previously defined in the
-  /// destination block.
-  ///          If there are wire which reference these vias, the references will
-  ///          be left dangling.
-  ///
-  static void copyViaTable(dbBlock* dst, dbBlock* src);
-
-  ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
   /// exists.
   /// If tech is null then the db must contain only one dbTech.
@@ -1741,9 +1737,14 @@ class dbBTerm : public dbObject
   dbModNet* getModNet();
   ///
 
-  /// Disconnect the block-terminal from it's net.
-  ///
+  /// Disconnect the block-terminal from its net.
+  /// kills a dbModNet and dbNet connection
   void disconnect();
+  // Fine level apis to control which net removed from pin.
+  /// Disconnect the block-terminal from its db net.
+  void disconnectDbNet();
+  /// Disconnect the block-terminal from its mod net.
+  void disconnectDbModNet();
 
   /// Connect the block-terminal to net.
   ///
@@ -1865,6 +1866,16 @@ class dbBTerm : public dbObject
   /// Get the region where the BTerm is constrained
   ///
   std::optional<Rect> getConstraintRegion();
+
+  ///
+  /// Set the bterm which position is mirrored to this bterm
+  ///
+  void setMirroredBTerm(dbBTerm* mirrored_bterm);
+
+  ///
+  /// Get the bterm that is mirrored to this bterm
+  ///
+  dbBTerm* getMirroredBTerm();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3408,6 +3419,17 @@ class dbITerm : public dbObject
   /// Will remove from both mod net and dbNet.
   ///
   void disconnect();
+
+  ///
+  /// Disconnect just the db net
+  ///
+  void disconnectDbNet();
+
+  ///
+  /// Disconnect just the mod net
+  ///
+
+  void disconnectModNet();
 
   ///
   /// Get the average of the centers for the iterm shapes

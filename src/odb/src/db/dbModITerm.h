@@ -47,7 +47,6 @@ class _dbModNet;
 class _dbModITerm : public _dbObject
 {
  public:
-  _dbModITerm(_dbDatabase*, const _dbModITerm& r);
   _dbModITerm(_dbDatabase*);
 
   ~_dbModITerm();

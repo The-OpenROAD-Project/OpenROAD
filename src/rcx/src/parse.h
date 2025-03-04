@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,61 +30,72 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#define BOOST_TEST_MODULE parse
+#pragma once
 
-#ifdef HAS_BOOST_UNIT_TEST_LIBRARY
-// Shared library version
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-#else
-// Header only version
-#include <boost/test/included/unit_test.hpp>
-#endif
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-#include "odb/parse.h"
-#include "utl/CFileUtils.h"
+#include "odb/array1.h"
 #include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
 
-namespace odb {
+namespace rcx {
 
-// Note: this is an undefined symbol when we depend on the odb library alone,
-// so we populate it with a dummy implementation.
-int notice(int code, const char* msg, ...)
+class Ath__parser
 {
-  abort();
-}
+ public:
+  Ath__parser(utl::Logger* logger);
+  ~Ath__parser();
+  void openFile(const char* name = nullptr);
+  void setInputFP(FILE* fp);
+  int mkWords(const char* word, const char* sep = nullptr);
+  int readLineAndBreak(int prevWordCnt = -1);
+  int parseNextLine();
+  char* get(int ii);
+  int getInt(int ii);
+  int getInt(int n, int start);
+  double getDouble(int ii);
+  void getDoubleArray(odb::Ath__array1D<double>* A,
+                      int start,
+                      double mult = 1.0);
+  odb::Ath__array1D<double>* readDoubleArray(const char* keyword, int start);
+  void printWords(FILE* fp);
 
-BOOST_AUTO_TEST_CASE(parser_init_and_parse_line_with_integers)
-{
-  utl::Logger logger;
-  Ath__parser parser(&logger);
+  int getWordCnt();
+  char getFirstChar();
 
-  BOOST_TEST(parser.getLineNum() == 0);
+  void syntaxError(const char* msg);
+  bool mkDir(char* word);
+  int mkDirTree(const char* word, const char* sep);
 
-  utl::ScopedTemporaryFile scoped_temp_file(&logger);
-  const std::string kContents = "1 2 3 4";
-  boost::span<const uint8_t> contents(
-      reinterpret_cast<const uint8_t*>(kContents.data()), kContents.size());
-  utl::WriteAll(scoped_temp_file.file(), contents, &logger);
-  fseek(scoped_temp_file.file(), SEEK_SET, 0);
+  void resetSeparator(const char* s);
+  void addSeparator(const char* s);
+  bool isKeyword(int ii, const char* key1);
+  void resetLineNum(int v);
+  int getLineNum();
+  bool isDigit(int ii, int jj);
 
-  parser.setInputFP(scoped_temp_file.file());
-  BOOST_TEST(parser.readLineAndBreak() == 4);
+ private:
+  void init();
+  void reportProgress();
+  int mkWords(int jj);
+  bool isSeparator(char a);
 
-  BOOST_TEST(parser.get(0) == "1");
-  BOOST_TEST(parser.get(1) == "2");
-  BOOST_TEST(parser.get(2) == "3");
-  BOOST_TEST(parser.get(3) == "4");
+  char* _line;
+  char* _tmpLine;
+  char* _wordSeparators;
+  char** _wordArray;
+  char _commentChar;
+  int _maxWordCnt;
 
-  BOOST_TEST(parser.getInt(0) == 1);
-  BOOST_TEST(parser.getInt(1) == 2);
-  BOOST_TEST(parser.getInt(2) == 3);
-  BOOST_TEST(parser.getInt(3) == 4);
+  int _lineNum;
+  int _currentWordCnt;
+  int _lineSize;
+  FILE* _inFP;
+  char* _inputFile;
 
-  // If we don't reset this we get an error as it thinks it owns the `FILE*`
-  // and can fclose it.
-  parser.setInputFP(nullptr);
-}
+  int _progressLineChunk;
+  utl::Logger* _logger;
+};
 
-}  // namespace odb
+}  // namespace rcx

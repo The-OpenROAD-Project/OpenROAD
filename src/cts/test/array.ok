@@ -63,6 +63,18 @@
 [INFO CTS-0101]  Average sink wire length 9259.20 um
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO CTS-0207]  Leaf load cells 62
+Total number of Clock Roots: 1.
+Total number of Buffers Inserted: 231.
+Total number of Clock Subnets: 231.
+Total number of Sinks: 2475.
+Cells used:
+  BUF_X4: 231
+Dummys used:
+  BUF_X4: 2
+  INV_X1: 6
+  INV_X16: 6
+  INV_X4: 23
+  INV_X8: 25
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 31 long wires.
 [INFO RSZ-0048] Inserted 91 buffers in 31 nets.

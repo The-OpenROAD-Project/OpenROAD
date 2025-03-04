@@ -34,11 +34,12 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "util.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -211,8 +212,6 @@ double extMain::getViaResistance_b(dbVia* tvia, dbNet* net)
 
 void extMain::getViaCapacitance(dbShape svia, dbNet* net)
 {
-  bool USE_DB_UNITS = false;
-
   std::vector<dbShape> shapes;
   dbShape::getViaBoxes(svia, shapes);
 
@@ -248,10 +247,6 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
       Width[level] = width;
       Level[level] = level;
     }
-    if (USE_DB_UNITS) {
-      width = GetDBcoords2(width);
-      len = GetDBcoords2(len);
-    }
 
     if (net->getId() == _debug_net_id) {
       debugPrint(
@@ -278,10 +273,6 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
     int w = Width[jj];
     int len = Len[jj];
 
-    if (USE_DB_UNITS) {
-      w = GetDBcoords2(w);
-      len = GetDBcoords2(len);
-    }
     for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
       double areaCap;
       double c1 = getFringe(jj, w, ii, areaCap);

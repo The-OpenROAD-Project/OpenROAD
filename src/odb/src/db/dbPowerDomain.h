@@ -52,7 +52,6 @@ class _dbLevelShifter;
 class _dbPowerDomain : public _dbObject
 {
  public:
-  _dbPowerDomain(_dbDatabase*, const _dbPowerDomain& r);
   _dbPowerDomain(_dbDatabase*);
 
   ~_dbPowerDomain();

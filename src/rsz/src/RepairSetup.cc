@@ -232,7 +232,20 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           prev_termination = true;
         }
-        resizer_->journalEnd();
+
+        // Restore to previous good checkpoint
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   2,
+                   "Restoring best slack end slack {} worst slack {}",
+                   delayAsString(prev_end_slack, sta_, digits),
+                   delayAsString(prev_worst_slack, sta_, digits));
+        resizer_->journalRestore(resize_count_,
+                                 inserted_buffer_count_,
+                                 cloned_gate_count_,
+                                 swap_pin_count_,
+                                 removed_buffer_count_);
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -1586,8 +1599,11 @@ int RepairSetup::fanout(Vertex* vertex)
   int fanout = 0;
   VertexOutEdgeIterator edge_iter(vertex, graph_);
   while (edge_iter.hasNext()) {
-    edge_iter.next();
-    fanout++;
+    Edge* edge = edge_iter.next();
+    // Disregard output->output timing arcs
+    if (edge->isWire()) {
+      fanout++;
+    }
   }
   return fanout;
 }
@@ -1839,7 +1855,7 @@ void RepairSetup::printProgress(const int iteration,
         inserted_buffer_count_ + split_load_buffer_count_ + rebuffer_net_count_,
         cloned_gate_count_,
         swap_pin_count_,
-        area_growth / initial_design_area_ * 1e3,
+        area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
         max(0, num_viols),

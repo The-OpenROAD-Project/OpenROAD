@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extViaModel.h"

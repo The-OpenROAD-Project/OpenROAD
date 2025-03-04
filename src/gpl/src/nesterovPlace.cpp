@@ -227,6 +227,15 @@ void NesterovPlace::init()
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
   }
 
+  std::shared_ptr<utl::PrometheusRegistry> registry = log_->getRegistry();
+  auto& hpwl_gauge_family
+      = utl::BuildGauge()
+            .Name("ord_hpwl")
+            .Help("The half perimeter wire length of the block")
+            .Register(*registry);
+  auto& hpwl_gauge = hpwl_gauge_family.Add({});
+  hpwl_gauge_ = &hpwl_gauge;
+
   average_overflow_ = total_sum_overflow_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
   updateWireLengthCoef(average_overflow_);
@@ -413,17 +422,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     updateNextIter(iter);
 
-    if (!npVars_.disableRevertIfDiverge) {
-      if (is_min_hpwl_) {
-        diverge_snapshot_WlCoefX = wireLengthCoefX_;
-        diverge_snapshot_WlCoefY = wireLengthCoefY_;
-        for (auto& nb : nbVec_) {
-          nb->snapshot();
-        }
-        is_diverge_snapshot_saved = true;
-      }
-    }
-
     // For JPEG Saving
     // debug
     const int debug_start_iter = npVars_.debug_start_iter;
@@ -470,10 +468,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       log_->info(GPL,
                  101,
-                 "Iter: {}, overflow: {:.3f}, keep rsz at: {}",
-                 iter,
+                 "   Iter: {}, overflow: {:.3f}, keep rsz at: {}, HPWL: {}",
+                 iter + 1,
                  average_overflow_,
-                 npVars_.keepResizeBelowOverflow);
+                 npVars_.keepResizeBelowOverflow,
+                 nbc_->getHpwl());
 
       if (!virtual_td_iter) {
         db_cbk_->addOwner(pbc_->db()->getChip()->getBlock());
@@ -482,8 +481,30 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       auto block = pbc_->db()->getChip()->getBlock();
-      bool shouldTdProceed = tb_->updateGNetWeights(virtual_td_iter);
+      int nb_total_gcells_delta = 0;
+      int nb_gcells_before_td = 0;
+      int nb_gcells_after_td = 0;
+      int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
 
+      for (auto& nb : nbVec_) {
+        nb_gcells_before_td += nb->gCells().size();
+      }
+
+      bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+
+      for (auto& nb : nbVec_) {
+        nb_gcells_after_td += nb->gCells().size();
+      }
+
+      nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
+      if (nb_total_gcells_delta != nbc_->getNewGcellsCount()) {
+        log_->warn(GPL,
+                   92,
+                   "Mismatch in #cells between central object and all regions. "
+                   "NesterovBaseCommon: {}, Summing all regions: {}",
+                   nbc_->getNewGcellsCount(),
+                   nb_total_gcells_delta);
+      }
       if (!virtual_td_iter) {
         for (auto& nesterov : nbVec_) {
           nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
@@ -511,11 +532,40 @@ int NesterovPlace::doNesterovPlace(int start_iter)
               "Timing-driven: repair_design delta area: {:.3f} um^2 ({:+.2f}%)",
               rsz_delta_area_microns,
               rsz_delta_area_percentage);
+
+          float new_gcells_percentage = 0.0f;
+          if (nbc_total_gcells_before_td > 0) {
+            new_gcells_percentage
+                = (nbc_->getNewGcellsCount()
+                   / static_cast<float>(nbc_total_gcells_before_td))
+                  * 100.0f;
+          }
+          log_->info(
+              GPL,
+              108,
+              "Timing-driven: repair_design, gpl cells created: {} ({:+.2f}%)",
+              nbc_->getNewGcellsCount(),
+              new_gcells_percentage);
+
+          if (tb_->repairDesignBufferCount() != nbc_->getNewGcellsCount()) {
+            log_->warn(GPL,
+                       93,
+                       "Buffer insertion count by rsz ({}) and cells created "
+                       "by gpl ({}) do not match.",
+                       tb_->repairDesignBufferCount(),
+                       nbc_->getNewGcellsCount());
+          }
           log_->info(GPL,
-                     108,
+                     109,
+                     "Timing-driven: inserted buffers as reported by "
+                     "repair_design: {}",
+                     tb_->repairDesignBufferCount());
+          log_->info(GPL,
+                     110,
                      "Timing-driven: new target density: {}",
                      nesterov->targetDensity());
           nbc_->resetDeltaArea();
+          nbc_->resetNewGcellsCount();
           nesterov->updateAreas();
           nesterov->updateDensitySize();
         }
@@ -528,6 +578,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
+    if (!npVars_.disableRevertIfDiverge) {
+      if (is_min_hpwl_) {
+        diverge_snapshot_WlCoefX = wireLengthCoefX_;
+        diverge_snapshot_WlCoefY = wireLengthCoefY_;
+        for (auto& nb : nbVec_) {
+          nb->snapshot();
+        }
+        is_diverge_snapshot_saved = true;
+      }
+    }
     // diverge detection on
     // large max_phi_cof value + large design
     //
@@ -702,10 +762,11 @@ void NesterovPlace::updateNextIter(const int iter)
   // Update divergence snapshot
   if (!npVars_.disableRevertIfDiverge) {
     int64_t hpwl = nbc_->getHpwl();
+    hpwl_gauge_->Set(hpwl);
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;
       diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
-      diverge_snapshot_iter_ = iter;
+      diverge_snapshot_iter_ = iter + 1;
       is_min_hpwl_ = true;
     } else {
       is_min_hpwl_ = false;

@@ -137,6 +137,7 @@ OpenRoad::~OpenRoad()
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
+  deletePDNSim(pdnsim_);
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);

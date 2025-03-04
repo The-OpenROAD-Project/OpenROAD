@@ -3,29 +3,24 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "bool",
-      "name": "except_abutted_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_abutted_"
     },
     {
-      "type": "bool",
-      "name": "except_non_filler_in_between_",
-      "bits": 1
+      "type": "bit",
+      "name": "except_non_filler_in_between_"
     },
     {
-      "type": "bool",
-      "name": "optional_",
-      "bits": 1
+      "type": "bit",
+      "name": "optional_"
     },
     {
-      "type": "bool",
-      "name": "soft_",
-      "bits": 1
+      "type": "bit",
+      "name": "soft_"
     },
     {
-      "type": "bool",
-      "name": "exact_",
-      "bits": 1
+      "type": "bit",
+      "name": "exact_"
     },
     {
       "type": "std::string",

@@ -224,7 +224,7 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
   return true;
 }
 
-uint extMeasureRC::CalcDiagBelow(extSegment* s, Ath__wire* dw)
+uint extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
 {
   if (dw == NULL)
     return 0;

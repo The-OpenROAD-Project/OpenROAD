@@ -115,28 +115,6 @@ _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
   area_within_dist_ = 0;
 }
 
-_dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db,
-                                               const _dbTechLayerMinCutRule& r)
-{
-  flags_.per_cut_class_ = r.flags_.per_cut_class_;
-  flags_.within_cut_dist_valid = r.flags_.within_cut_dist_valid;
-  flags_.from_above_ = r.flags_.from_above_;
-  flags_.from_below_ = r.flags_.from_below_;
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.area_valid_ = r.flags_.area_valid_;
-  flags_.area_within_dist_valid_ = r.flags_.area_within_dist_valid_;
-  flags_.same_metal_overlap = r.flags_.same_metal_overlap;
-  flags_.fully_enclosed_ = r.flags_.fully_enclosed_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  num_cuts_ = r.num_cuts_;
-  width_ = r.width_;
-  within_cut_dist = r.within_cut_dist;
-  length_ = r.length_;
-  length_within_dist_ = r.length_within_dist_;
-  area_ = r.area_;
-  area_within_dist_ = r.area_within_dist_;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
 {
   uint32_t flags_bit_field;

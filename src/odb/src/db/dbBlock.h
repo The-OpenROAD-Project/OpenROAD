@@ -40,6 +40,7 @@
 #include "dbIntHashTable.h"
 #include "dbPagedVector.h"
 #include "dbVector.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -145,6 +146,12 @@ struct _dbBlockFlags
   uint _spare_bits : 31;
 };
 
+struct _dbBTermGroup
+{
+  std::vector<dbId<_dbBTerm>> bterms;
+  bool order = false;
+};
+
 class _dbBlock : public _dbObject
 {
  public:
@@ -201,6 +208,7 @@ class _dbBlock : public _dbObject
   int _max_routing_layer;
   int _min_layer_for_clock;
   int _max_layer_for_clock;
+  std::vector<_dbBTermGroup> _bterm_groups;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -300,7 +308,6 @@ class _dbBlock : public _dbObject
   dbJournal* _journal_pending;
 
   _dbBlock(_dbDatabase* db);
-  _dbBlock(_dbDatabase* db, const _dbBlock& block);
   ~_dbBlock();
   void add_rect(const Rect& rect);
   void add_oct(const Oct& oct);
@@ -324,5 +331,8 @@ class _dbBlock : public _dbObject
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);
 dbIStream& operator>>(dbIStream& stream, _dbBlock& block);
+
+dbOStream& operator<<(dbOStream& stream, const _dbBTermGroup& obj);
+dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj);
 
 }  // namespace odb

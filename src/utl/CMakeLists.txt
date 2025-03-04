@@ -73,6 +73,7 @@ add_library(utl_lib
   src/ScopedTemporaryFile.cpp
   src/Logger.cpp
   src/timer.cpp
+  src/prometheus/metrics_server.cpp
 )
 
 target_include_directories(utl_lib

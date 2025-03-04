@@ -1,3 +1,4 @@
+{% import 'macros' as macros %}
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
@@ -133,48 +134,25 @@ namespace odb {
     // User Code End Constructor
   }
 
-  _{{klass.name}}::_{{klass.name}}(_dbDatabase* db, const _{{klass.name}}& r)
-  {
-    {% for field in klass.fields %}
-      {% for component in field.components %}
-        {% if field.table %}
-          {{field.name}} = new dbTable<_{{field.type}}>(db, this, *r.{{field.name}});
-        {% elif field.isHashTable %}
-          {{field.name}}.setTable({{field.table_name}});
-        {% else %}
-          {{component}}=r.{{component}};
-        {% endif %}
-      {% endfor %}
-    {% endfor %}
-    //User Code Begin CopyConstructor
-    //User Code End CopyConstructor
-  }
-
+  {% import 'serializer_in.cpp' as si %}
   {% for _struct in klass.structs %}
-    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-in' not in _struct['flags']) %}
-      {% set sname = klass.name+'::'+_struct.name %}
-      {% set sklass = _struct %}
-      {% set comment_tag = _struct.name %}
-      {% include 'serializer_in.cpp' %}
+    {% if 'flags' not in _struct
+                    or ('no-serializer' not in _struct['flags']
+                        and 'no-serializer-in' not in _struct['flags']) %}
+      {{- si.serializer_in(_struct, klass, _struct.name)}}
     {% endif %}
   {% endfor %}
-  {% set sklass = klass %}
-  {% set sname = '_'+sklass.name %}
-  {% set comment_tag = "" %}
-  {% include 'serializer_in.cpp' %}
+  {{- si.serializer_in(klass)}}
 
+  {% import 'serializer_out.cpp' as so %}
   {% for _struct in klass.structs %}
-    {% if 'flags' not in _struct or ('no-serializer' not in _struct['flags'] and 'no-serializer-out' not in _struct['flags']) %}
-      {% set sname = klass.name+'::'+_struct.name %}
-      {% set sklass = _struct %}
-      {% set comment_tag = _struct.name %}
-      {% include 'serializer_out.cpp' %}
+    {% if 'flags' not in _struct
+                    or ('no-serializer' not in _struct['flags']
+                        and 'no-serializer-out' not in _struct['flags']) %}
+      {{- so.serializer_out(_struct, klass, _struct.name)}}
     {% endif %}
   {% endfor %}
-  {% set sklass = klass %}
-  {% set sname = '_'+sklass.name %}
-  {% set comment_tag = "" %}
-  {% include 'serializer_out.cpp' %}
+  {{- so.serializer_out(klass)}}
 
   {% if klass.hasTables %}
   dbObjectTable* _{{klass.name}}::getObjectTable(dbObjectType type)
@@ -256,27 +234,18 @@ namespace odb {
     {% endif %}
   
     {% if 'no-get' not in field.flags %}
+      {{- macros.getter_signature(field, klass) -}}
+      {
       {% if field.dbSetGetter %}
-        dbSet<{{field.type}}> {{klass.name}}::get{{field.functional_name}}() const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.type}}>(obj, obj->{{field.name}});
-        }
       {% elif field.isPassByRef %}
-        void {{klass.name}}::{{field.getterFunctionName}}({{field.getterReturnType}}& tbl) const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           tbl = obj->{{field.name}};
-        }
       {% elif field.isHashTable %}
-        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}(const char* name) const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
-        }
       {% else %}
-        {{field.getterReturnType}} {{klass.name}}::{{field.getterFunctionName}}({% if field.isHashTable %}const char* name{% endif %}) const
-        {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           {% if field.isRef %}
             if(obj->{{field.name}} == 0) {
@@ -289,8 +258,8 @@ namespace odb {
           {% else %}
             return obj->{{field.name}};
           {% endif %}
-        }
       {% endif %}
+      }
     {% endif %}
   {% endfor %}
 

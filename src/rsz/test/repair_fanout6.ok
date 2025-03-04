@@ -7,11 +7,11 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |      8003
-    final |    +22.7% |     509 |     508 |             1 |         0
+    final |     +2.3% |     509 |     508 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 508 buffers in 1 nets.
 [INFO RSZ-0039] Resized 509 instances.
+[INFO RSZ-0038] Inserted 508 buffers in 1 nets.
 worst slack -8.67
 max fanout
 
@@ -25,7 +25,7 @@ fanout1/X                                20     20      0 (MET)
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -8.670 |   -37766.1 |   6400 | sink7447/D
-    final |       0 |     158 |       20 |      0 |     0 |    +3.5% |   -3.102 |   -11736.4 |   6400 | sink7689/D
+    final |       0 |     158 |       20 |      0 |     0 |    +0.3% |   -3.102 |   -11736.4 |   6400 | sink7689/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 17 buffers, 1 to split loads.
 [INFO RSZ-0041] Resized 158 instances.

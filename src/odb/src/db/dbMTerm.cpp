@@ -125,47 +125,6 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 
-_dbMTerm::_dbMTerm(_dbDatabase*, const _dbMTerm& m)
-    : _flags(m._flags),
-      _order_id(m._order_id),
-      _name(nullptr),
-      _next_entry(m._next_entry),
-      _next_mterm(m._next_mterm),
-      _pins(m._pins),
-      _targets(m._targets),
-      _oxide1(m._oxide1),
-      _oxide2(m._oxide2),
-      _sta_port(m._sta_port)
-{
-  if (m._name) {
-    _name = strdup(m._name);
-    ZALLOCATED(_name);
-  }
-
-  dbVector<_dbTechAntennaAreaElement*>::const_iterator itr;
-
-  for (itr = m._par_met_area.begin(); itr != m._par_met_area.end(); ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _par_met_area.push_back(e);
-  }
-
-  for (itr = m._par_met_sidearea.begin(); itr != m._par_met_sidearea.end();
-       ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _par_met_sidearea.push_back(e);
-  }
-
-  for (itr = m._par_cut_area.begin(); itr != m._par_cut_area.end(); ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _par_cut_area.push_back(e);
-  }
-
-  for (itr = m._diffarea.begin(); itr != m._diffarea.end(); ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _diffarea.push_back(e);
-  }
-}
-
 _dbMTerm::~_dbMTerm()
 {
   if (_name) {

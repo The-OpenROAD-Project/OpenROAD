@@ -51,7 +51,7 @@ void extMeasureRC::VerticalCap(Ath__array1D<extSegment*>* segTable,
 {
   for (uint ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
-    Ath__wire* w2 = look_up ? s->_up : s->_down;
+    Wire* w2 = look_up ? s->_up : s->_down;
 
     if (w2 == NULL)
       continue;
@@ -78,7 +78,7 @@ void extMeasureRC::VerticalCap(Ath__array1D<extSegment*>* segTable,
   }
 }
 bool extMeasureRC::DiagCap(FILE* fp,
-                           Ath__wire* w,
+                           Wire* w,
                            bool lookUp,
                            uint maxDist,
                            uint trackLimitCnt,
@@ -97,7 +97,7 @@ bool extMeasureRC::DiagCap(FILE* fp,
   maxDist = trackLimitCnt * pitch;
   for (uint ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
-    Ath__wire* w2 = lookUp ? s->_up : s->_down;
+    Wire* w2 = lookUp ? s->_up : s->_down;
     if (w2 == NULL)
       continue;
     if (PowerOnly && !w2->isPower())

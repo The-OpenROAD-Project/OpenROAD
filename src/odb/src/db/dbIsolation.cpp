@@ -85,18 +85,6 @@ _dbIsolation::_dbIsolation(_dbDatabase* db)
   _name = nullptr;
 }
 
-_dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _applies_to = r._applies_to;
-  _clamp_value = r._clamp_value;
-  _isolation_signal = r._isolation_signal;
-  _isolation_sense = r._isolation_sense;
-  _location = r._location;
-  _power_domain = r._power_domain;
-}
-
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
 {
   stream >> obj._name;
