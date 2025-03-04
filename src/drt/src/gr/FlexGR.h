@@ -400,11 +400,11 @@ class FlexGR
     int iter,
     bool is2DRouting);      
 
-  int validBatchThreshold_ = 200;
+  int validBatchThreshold_ = 100;
   //int maxChunkSize_ = 200;
   // MemPool Cluster Fail for maxChunkSize_ = 200;
   // So we set the maxChunkSize to 100
-  int maxChunkSize_ = 100;
+  int maxChunkSize_ = 150;
   std::vector<grNet*> nets2Ripup_;
 
   int* d_dX_ = nullptr;
@@ -439,6 +439,7 @@ class FlexGR
     std::vector<Rect2D_CUDA>& netBBoxVec,
     std::vector<int>& netBatchIdxVec,
     int numGrids,
+    int maxChunkSize,
     int numNodes);
 
   void freeCUDAMem();

@@ -287,13 +287,18 @@ void FlexGR::batchGenerationMIS_update(
   }
 
   //if (VERBOSE > 0) {
-  if (0) {
+  if (1) {
     // Report the batch information
     logger_->report("[INFO] Number of batches: " + std::to_string(batches.size()));
     logger_->report("\t[INFO] Batch information:");
     for (int i = 0; i < validBatchIds.size(); i++) {
-      logger_->report("\t[INFO] Batch " + std::to_string(validBatchIds[i]) + ": " + std::to_string(batches[validBatchIds[i]].size()) + " nets");
+      logger_->report("\t[INFO] Valid Batch " + std::to_string(validBatchIds[i]) + ": " + std::to_string(batches[validBatchIds[i]].size()) + " nets");
     } 
+
+    logger_->report("\t[INFO] Report all the batches:");
+    for (int i = 0; i < batches.size(); i++) {
+      logger_->report("\t[INFO] Batch " + std::to_string(i) + ": " + std::to_string(batches[i].size()) + " nets");
+    }
 
     int totalNumNets = rerouteNets.size();
     int cpuNets = totalNumNets - gpuNets;

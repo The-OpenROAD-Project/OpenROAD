@@ -2114,6 +2114,7 @@ void FlexGR::allocateCUDAMem(
   std::vector<Rect2D_CUDA>& netBBoxVec,
   std::vector<int>& netBatchIdxVec,
   int numGrids,
+  int maxChunkSize,
   int numNodes)
 {  
   // We have defined the following variables
@@ -2158,9 +2159,14 @@ void FlexGR::allocateCUDAMem(
   cudaMemcpy(d_costMap_, h_costMap.data(), h_costMap.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
 
   if (h_parents.size() > h_parents_size_) {
-    h_parents_size_ = h_parents.size();
+    // We only allocate once
+    int maxParentSize = numGrids * maxChunkSize;
+    h_parents_size_ = maxParentSize;
     cudaFree(d_parents_);
-    cudaMalloc(&d_parents_, h_parents.size() * sizeof(Point2D_CUDA));
+    cudaMalloc(&d_parents_, maxParentSize * sizeof(Point2D_CUDA));    
+    // h_parents_size_ = h_parents.size();
+    //cudaFree(d_parents_);
+    //cudaMalloc(&d_parents_, h_parents.size() * sizeof(Point2D_CUDA));
   }
   //cudaMemcpy(d_parents_, h_parents.data(), h_parents.size() * sizeof(Point2D_CUDA), cudaMemcpyHostToDevice);
 
@@ -2193,9 +2199,13 @@ void FlexGR::allocateCUDAMem(
   cudaMemcpy(d_netBatchIdx_, netBatchIdxVec.data(), netBatchIdxVec.size() * sizeof(int), cudaMemcpyHostToDevice);
 
   if (numNodes > h_nodes_size_) {
-    h_nodes_size_ = numNodes;
+    int maxNodeSize = numGrids * maxChunkSize;
+    h_nodes_size_ = maxNodeSize;
     cudaFree(d_nodes_);
-    cudaMalloc(&d_nodes_, numNodes * sizeof(NodeData2D));
+    cudaMalloc(&d_nodes_, maxNodeSize * sizeof(NodeData2D));
+    // h_nodes_size_ = numNodes;
+    // cudaFree(d_nodes_);
+    // cudaMalloc(&d_nodes_, numNodes * sizeof(NodeData2D));
   }
   cudaCheckError();
 }
@@ -2369,6 +2379,7 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     netBBoxVec,
     netBatchIdxVec,
     numGrids, 
+    maxChunkSize,
     numNodes);
 
 

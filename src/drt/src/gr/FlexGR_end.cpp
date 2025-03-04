@@ -316,7 +316,7 @@ void FlexGRWorker::endAddNets_stitchRouteBound_node(grNode* node)
   auto parent = node->getParent();
   // We cannot remove the node if it is a pinGCellNode
   // This is very important because we need to keep the pinGCellNode
-  if (child->getType() == frNodeTypeEnum::frcPin) {
+  if (child->getType() == frNodeTypeEnum::frcPin || parent->getType() == frNodeTypeEnum::frcPin) {
     return;
   }
 
