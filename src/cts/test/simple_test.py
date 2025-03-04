@@ -20,6 +20,8 @@ cts_aux.clock_tree_synthesis(
     apply_ndr=True,
 )
 
+cts_aux.report_cts(design)
+
 def_file = helpers.make_result_file("simple_test_out.def")
 design.writeDef(def_file)
 helpers.diff_files(def_file, "simple_test_out.defok")

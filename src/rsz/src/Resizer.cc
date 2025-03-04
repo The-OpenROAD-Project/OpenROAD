@@ -57,6 +57,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
+#include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Parasitics.hh"
@@ -132,6 +133,8 @@ using sta::VertexOutEdgeIterator;
 
 using sta::BufferUse;
 using sta::CLOCK;
+using sta::LeakagePower;
+using sta::LeakagePowerSeq;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -605,7 +608,7 @@ void Resizer::balanceRowUsage()
     auto master = inst->getMaster();
     auto site = master->getSite();
     // Ignore multi-height cells for now
-    if (site->hasRowPattern()) {
+    if (site && site->hasRowPattern()) {
       continue;
     }
 
@@ -1281,17 +1284,39 @@ void Resizer::resizePreamble()
   findTargetLoads();
 }
 
-// Convert sta results to std::optional
-std::optional<float> Resizer::cellLeakage(const LibertyCell* cell)
+// Convert static cell leakage to std::optional.
+// For state-dependent leakage, compute the average
+// across all the power states.  Cache the leakage for
+// runtime.
+std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
 {
-  float leakage;
+  auto it = cell_leakage_cache_.find(cell);
+  if (it != cell_leakage_cache_.end()) {
+    return it->second;
+  }
+
+  float leakage = 0.0;
   bool exists;
   cell->leakagePower(leakage, exists);
-  std::optional<float> value;
   if (exists) {
-    value = leakage;
+    cell_leakage_cache_[cell] = leakage;
+    return leakage;
   }
-  return value;
+
+  // Compute average leakage across power conds for state-dependent leakage
+  LeakagePowerSeq* leakages = cell->leakagePowers();
+  if (!leakages || leakages->empty()) {
+    cell_leakage_cache_[cell] = std::nullopt;
+    return std::nullopt;
+  }
+
+  float total_leakage = 0.0;
+  for (LeakagePower* leak : *leakages) {
+    total_leakage += leak->power();
+  }
+  leakage = total_leakage / leakages->size();
+  cell_leakage_cache_[cell] = leakage;
+  return leakage;
 }
 
 // For debugging
@@ -1305,19 +1330,26 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
 
   // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
-  std::sort(equiv_cells.begin(),
-            equiv_cells.end(),
-            [this](const LibertyCell* a, const LibertyCell* b) {
-              if (!sta::fuzzyEqual(a->area(), b->area())) {
-                return a->area() < b->area();
-              }
-              std::optional<float> leakage_a = this->cellLeakage(a);
-              std::optional<float> leakage_b = this->cellLeakage(b);
-              if (leakage_a && leakage_b) {
-                return *leakage_a < *leakage_b;
-              }
-              return leakage_a.has_value();
-            });
+  std::stable_sort(equiv_cells.begin(),
+                   equiv_cells.end(),
+                   [this](LibertyCell* a, LibertyCell* b) {
+                     dbMaster* master_a = this->getDbNetwork()->staToDb(a);
+                     dbMaster* master_b = this->getDbNetwork()->staToDb(b);
+                     if (master_a && master_b) {
+                       if (master_a->getArea() != master_b->getArea()) {
+                         return master_a->getArea() < master_b->getArea();
+                       }
+                     }
+                     std::optional<float> leakage_a = this->cellLeakage(a);
+                     std::optional<float> leakage_b = this->cellLeakage(b);
+                     // Compare leakages only if they are defined
+                     if (leakage_a && leakage_b) {
+                       return *leakage_a < *leakage_b;
+                     }
+                     // Cell 'a' has a priority as it has lower
+                     // drive resistance than 'b' after STA sort
+                     return leakage_a.has_value() && !leakage_b.has_value();
+                   });
 
   logger_->report(
       "The following {} cells are equivalent to {}{}",
@@ -1403,7 +1435,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
   }
 
   dbMaster* master = db_network_->staToDb(source_cell);
-  if (master && !master->isCore()) {
+  if (master == nullptr || !master->isCore()) {
     swappable_cells_cache_[source_cell] = {};
     return {};
   }
@@ -1673,7 +1705,6 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
       if (target_cell != cell) {
         debugPrint(logger_,
                    RSZ,
-
                    "resize",
                    2,
                    "{} {} -> {}",

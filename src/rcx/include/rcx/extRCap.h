@@ -48,7 +48,6 @@
 #include "rcx/extPattern.h"
 #include "rcx/extSolverGen.h"
 #include "rcx/ext_options.h"
-#include "rcx/gseq.h"
 #include "util.h"
 
 namespace utl {
@@ -61,6 +60,7 @@ using namespace odb;
 
 class extMeasure;
 class extMeasureRC;
+struct SEQ;
 
 using odb::Ath__array1D;
 using odb::AthPool;
@@ -68,7 +68,7 @@ using odb::uint;
 using utl::Logger;
 
 class extSpef;
-class Ath__gridTable;
+class GridTable;
 
 // CoupleOptions seriously needs to be rewriten to use a class with named
 // members. -cherry 05/09/2021
@@ -506,6 +506,7 @@ class extRCTable
 class extMain;
 class extMeasure;
 class extMainOptions;
+class gs;
 
 class extRCModel
 {
@@ -1015,7 +1016,7 @@ class extMeasure
   double _peffR;
   bool _skipResCalc = false;
 
-  Ath__gridTable* _search = NULL;
+  GridTable* _search = NULL;
   bool IsDebugNet1();
   static int getMetIndexOverUnder(int met,
                                   int mUnder,
@@ -1836,16 +1837,16 @@ class extMain
                            bool v = false);
   bool modelExists(const char* extRules);
 
-  uint addInstsGs(Ath__array1D<uint>* instTable,
-                  Ath__array1D<uint>* tmpInstIdTable,
-                  uint dir);
-  uint addObsShapesOnPlanes(odb::dbInst* inst,
+  void addInstsGeometries(const Ath__array1D<uint>* instTable,
+                          Ath__array1D<uint>* tmpInstIdTable,
+                          uint dir);
+  void addObsShapesOnPlanes(odb::dbInst* inst,
                             bool rotatedFlag,
                             bool swap_coords);
-  uint addItermShapesOnPlanes(odb::dbInst* inst,
+  void addItermShapesOnPlanes(odb::dbInst* inst,
                               bool rotatedFlag,
                               bool swap_coords);
-  uint addShapeOnGs(dbShape* s, bool swap_coords);
+  void addShapeOnGs(dbShape* s, bool swap_coords);
 
   void initRunEnv(extMeasureRC& m);
   uint _ccContextDepth = 0;
@@ -2000,11 +2001,11 @@ class extMain
                     odb::Rect& maxRectGs,
                     bool* hasSdbWires,
                     bool& hasGsWires);
-  uint addNetShapesGs(odb::dbNet* net,
+  void addNetShapesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
                       int dir);
-  uint addNetSboxesGs(odb::dbNet* net,
+  void addNetSboxesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
                       int dir);
@@ -2015,17 +2016,17 @@ class extMain
                     uint ccFlag,
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
-  uint initPlanes(uint dir,
-                  int* wLL,
-                  int* wUR,
+  void initPlanes(uint dir,
+                  const int* wLL,
+                  const int* wUR,
                   uint layerCnt,
-                  uint* pitchTable,
-                  uint* widthTable,
+                  const uint* pitchTable,
+                  const uint* widthTable,
                   const uint* dirTable,
-                  int* bb_ll);
+                  const int* bb_ll);
 
   bool isIncluded(odb::Rect& r, uint dir, const int* ll, const int* ur);
-  bool matchDir(uint dir, odb::Rect& r);
+  bool matchDir(uint dir, const odb::Rect& r);
   bool isIncludedInsearch(odb::Rect& r,
                           uint dir,
                           const int* bb_ll,
@@ -2293,24 +2294,22 @@ class extMain
                                 uint wtype);
 
   //--------------- Window
-  uint addShapeOnGS(odb::dbNet* net,
-                    uint sId,
-                    odb::Rect& r,
+  void addShapeOnGS(const odb::Rect& r,
                     bool plane,
                     odb::dbTechLayer* layer,
                     bool gsRotated,
                     bool swap_coords,
                     int dir);
 
-  uint fill_gs4(int dir,
-                int* ll,
-                int* ur,
-                int* lo_gs,
-                int* hi_gs,
+  void fill_gs4(int dir,
+                const int* ll,
+                const int* ur,
+                const int* lo_gs,
+                const int* hi_gs,
                 uint layerCnt,
-                uint* dirTable,
-                uint* pitchTable,
-                uint* widthTable);
+                const uint* dirTable,
+                const uint* pitchTable,
+                const uint* widthTable);
 
   uint addInsts(uint dir,
                 int* lo_gs,
@@ -2789,7 +2788,7 @@ class extMain
   std::vector<odb::dbBTerm*> _connectedBTerm;
   std::vector<odb::dbITerm*> _connectedITerm;
 
-  Ath__gridTable* _search = nullptr;
+  GridTable* _search = nullptr;
 
   int _noVariationIndex;
 

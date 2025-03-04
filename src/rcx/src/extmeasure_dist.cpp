@@ -90,14 +90,6 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
   // DELETE int prevCovered = options[20];
   // DELETE prevCovered = 0;
 
-  // -------------------------------- db units -------------
-  bool USE_DB_UNITS = false;
-  if (USE_DB_UNITS) {
-    if (_dist > 0)
-      _dist = _extMain->GetDBcoords2(_dist);
-    _width = _extMain->GetDBcoords2(_width);
-  }
-
   _netId = _extMain->_debug_net_id;
   if (IsDebugNet()) {
     OpenDebugFile();
