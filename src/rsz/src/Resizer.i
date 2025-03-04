@@ -777,6 +777,13 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
   resizer->reportEquivalentCells(cell, match_cell_footprint);
 }
 
+void
+report_fast_buffer_sizes()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportFastBufferSizes();
+}
+
 } // namespace
 
 %} // inline
