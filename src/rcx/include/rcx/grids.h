@@ -81,7 +81,7 @@ class SearchBox
 
   uint getDir() const;
   uint getLevel() const;
-  void setDir(int v = -1);
+  void setDir(int dir = -1);
   void setLevel(uint v);
   void setOwnerId(uint v, uint other = 0);
   uint getOwnerId() const;

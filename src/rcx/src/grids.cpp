@@ -229,12 +229,12 @@ void Wire::reset()
   _boxId = 0;
   _srcId = 0;
   _otherId = 0;
-  _track = NULL;
-  _next = NULL;
-  _upNext = NULL;
-  _downNext = NULL;
-  _aboveNext = NULL;
-  _belowNext = NULL;
+  _track = nullptr;
+  _next = nullptr;
+  _upNext = nullptr;
+  _downNext = nullptr;
+  _aboveNext = nullptr;
+  _belowNext = nullptr;
   _ouLen = 0;
 
   _xy = 0;  // offset from track start
@@ -585,7 +585,8 @@ void Grid::initContextTracks()
       continue;
     }
     const bool tohi = true;
-    while (Track* track = btrack->getNextSubTrack(track, tohi)) {
+    Track* track = nullptr;
+    while ((track = btrack->getNextSubTrack(track, tohi))) {
       track->initTargetWire(noPowerTarget);
     }
   }
@@ -2184,13 +2185,13 @@ int Grid::getClosestTrackCoord(int xy)
 {
   int track1 = getAbsTrackNum(xy);
   int ii;
-  for (ii = track1 - 1; ii < (int) _trackCnt; ii++) {
+  for (ii = track1 - 1; ii < _trackCnt; ii++) {
     if (_trackTable[ii] != nullptr) {
       break;
     }
   }
   int h1 = _max;
-  if (ii < (int) _trackCnt) {
+  if (ii < _trackCnt) {
     h1 = getTrackHeight(ii);
   }
 
@@ -2287,7 +2288,7 @@ void GridTable::dumpTrackCounts(FILE* fp)
       offbase = 0;
       liveCnt = 0;
       tgrid = _gridTable[dir][layer];
-      for (trn = 0; trn < (int) tgrid->_trackCnt; trn++) {
+      for (trn = 0; trn < tgrid->_trackCnt; trn++) {
         if (tgrid->_trackTable[trn] == nullptr) {
           continue;
         }
@@ -2697,10 +2698,11 @@ void GridTable::setExtControl_v2(dbBlock* block,
   _noPowerSource = npsrc;
   _noPowerTarget = nptgt;
   _CCtargetHighTracks = ccUp;
-  if (ccUp == 2)
+  if (ccUp == 2) {
     _CCtargetHighMarkedNet = 1;
-  else
+  } else {
     _CCtargetHighMarkedNet = 0;
+  }
   _targetTrackReversed = false;
   _ccContextDepth = contextDepth;
   _ccContextArray = contextArray;
