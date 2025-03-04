@@ -98,7 +98,7 @@ class Ath__searchBox
   uint _type;
 };
 
-class Ath__wire
+class Wire
 {
  public:
   int getLen() { return _len; }
@@ -116,8 +116,8 @@ class Ath__wire
   void search(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
   void search1(int xy1, int xy2, uint& cnt, Ath__array1D<uint>* idTable);
 
-  void setNext(Ath__wire* w) { _next = w; };
-  Ath__wire* getNext() const { return _next; };
+  void setNext(Wire* w) { _next = w; };
+  Wire* getNext() const { return _next; };
   uint getFlags() const { return _flags; };
   uint getBoxId();
   void setExt(uint ext) { _ext = ext; };
@@ -134,40 +134,40 @@ class Ath__wire
   void getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir);
 
   // Extraction
-  int wireOverlap(Ath__wire* w, int* len1, int* len2, int* len3);
-  Ath__wire* getPoolWire(AthPool<Ath__wire>* wirePool);
-  Ath__wire* makeWire(AthPool<Ath__wire>* wirePool, int xy1, uint len);
-  Ath__wire* makeCoupleWire(AthPool<Ath__wire>* wirePool,
-                            int targetHighTracks,
-                            Ath__wire* w2,
-                            int xy1,
-                            uint len,
-                            uint wtype);
+  int wireOverlap(Wire* w, int* len1, int* len2, int* len3);
+  Wire* getPoolWire(AthPool<Wire>* wirePool);
+  Wire* makeWire(AthPool<Wire>* wirePool, int xy1, uint len);
+  Wire* makeCoupleWire(AthPool<Wire>* wirePool,
+                       int targetHighTracks,
+                       Wire* w2,
+                       int xy1,
+                       uint len,
+                       uint wtype);
   void setXY(int xy1, uint len);
   dbNet* getNet();
-  Ath__wire* getUpNext() const { return _upNext; }
-  Ath__wire* getDownNext() const { return _downNext; }
-  Ath__wire* getAboveNext() const { return _aboveNext; }
-  Ath__wire* getBelowNext() const { return _belowNext; }
-  void setUpNext(Ath__wire* wire) { _upNext = wire; }
-  void setDownNext(Ath__wire* wire) { _downNext = wire; }
-  void setAboveNext(Ath__wire* wire) { _aboveNext = wire; }
-  void setBelowNext(Ath__wire* wire) { _belowNext = wire; }
+  Wire* getUpNext() const { return _upNext; }
+  Wire* getDownNext() const { return _downNext; }
+  Wire* getAboveNext() const { return _aboveNext; }
+  Wire* getBelowNext() const { return _belowNext; }
+  void setUpNext(Wire* wire) { _upNext = wire; }
+  void setDownNext(Wire* wire) { _downNext = wire; }
+  void setAboveNext(Wire* wire) { _aboveNext = wire; }
+  void setBelowNext(Wire* wire) { _belowNext = wire; }
 
  private:
-  Ath__wire* _upNext = nullptr;
-  Ath__wire* _downNext = nullptr;
-  Ath__wire* _aboveNext = nullptr;  // vertical
-  Ath__wire* _belowNext = nullptr;  // vertical
+  Wire* _upNext = nullptr;
+  Wire* _downNext = nullptr;
+  Wire* _aboveNext = nullptr;  // vertical
+  Wire* _belowNext = nullptr;  // vertical
 
   uint _id;
   uint _srcId;  // TODO-OPTIMIZE
   uint _boxId;
   uint _otherId;
-  Ath__wire* _srcWire;
+  Wire* _srcWire;
 
   Track* _track;
-  Ath__wire* _next;
+  Wire* _next;
 
   int _xy;  // TODO offset from track start in large dimension
   int _len;
@@ -200,17 +200,17 @@ class Track
            uint markerLen,
            uint markerCnt,
            int base);
-  void freeWires(AthPool<Ath__wire>* pool);
-  bool place(Ath__wire* w, int markIndex1, int markIndex2);
-  bool place(Ath__wire* w, int markIndex1);
+  void freeWires(AthPool<Wire>* pool);
+  bool place(Wire* w, int markIndex1, int markIndex2);
+  bool place(Wire* w, int markIndex1);
   uint setExtrusionMarker(int markerCnt, int start, uint markerLen);
-  bool placeTrail(Ath__wire* w, uint m1, uint m2);
+  bool placeTrail(Wire* w, uint m1, uint m2);
 
-  bool overlapCheck(Ath__wire* w, int markIndex1, int markIndex2);
+  bool overlapCheck(Wire* w, int markIndex1, int markIndex2);
   bool isAscendingOrdered(uint markerCnt, uint* wCnt);
   Grid* getGrid();
-  Ath__wire* getWire_Linear(uint markerCnt, uint id);
-  Ath__wire* getNextWire(Ath__wire* wire);
+  Wire* getWire_Linear(uint markerCnt, uint id);
+  Wire* getNextWire(Wire* wire);
   uint search(int xy1,
               int xy2,
               uint markIndex1,
@@ -222,12 +222,12 @@ class Track
                uint markIndex2,
                Ath__array1D<uint>* idTable);
 
-  bool checkAndplace(Ath__wire* w, int markIndex1);
+  bool checkAndplace(Wire* w, int markIndex1);
   bool checkMarker(int markIndex);
-  bool checkAndplacerOnMarker(Ath__wire* w, int markIndex);
-  uint getAllWires(Ath__array1D<Ath__wire*>* boxTable, uint markerCnt);
+  bool checkAndplacerOnMarker(Wire* w, int markIndex);
+  uint getAllWires(Ath__array1D<Wire*>* boxTable, uint markerCnt);
   void resetExtFlag(uint markerCnt);
-  void linkWire(Ath__wire*& w1, Ath__wire*& w2);
+  void linkWire(Wire*& w1, Wire*& w2);
 
   Track* getNextSubTrack(Track* subt, bool tohi);
   int getBase() { return _base; };
@@ -235,10 +235,7 @@ class Track
   void setLowTrack(Track* lowtrack);
   Track* getHiTrack();
   Track* getLowTrack();
-  Track* nextTrackInRange(uint& delt,
-                               uint trackDist,
-                               uint srcTrack,
-                               bool tohi);
+  Track* nextTrackInRange(uint& delt, uint trackDist, uint srcTrack, bool tohi);
   int nextSubTrackInRange(Track*& tstrack,
                           uint& delt,
                           uint trackDist,
@@ -250,14 +247,14 @@ class Track
 
   // EXTRACTION
 
-  bool place2(Ath__wire* w, int mark1, int mark2);
-  void insertWire(Ath__wire* w, int mark1, int mark2);
+  bool place2(Wire* w, int mark1, int mark2);
+  void insertWire(Wire* w, int mark1, int mark2);
   uint initTargetTracks(uint srcTrack, uint trackDist, bool tohi);
-  void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
-  void getTrackWires(std::vector<Ath__wire*>& ctxwire);
+  void findNeighborWire(Wire*, Ath__array1D<Wire*>*, bool);
+  void getTrackWires(std::vector<Wire*>& ctxwire);
   void buildDgContext(Ath__array1D<SEQ*>* dgContext,
-                      std::vector<Ath__wire*>& allWire);
-  int getBandWires(Ath__array1D<Ath__wire*>* bandWire);
+                      std::vector<Wire*>& allWire);
+  int getBandWires(Ath__array1D<Wire*>* bandWire);
   uint couplingCaps(Grid* ccGrid,
                     uint srcTrack,
                     uint trackDist,
@@ -268,19 +265,19 @@ class Track
                     void* compPtr,
                     bool ttttGetDgOverlap);
 
-  uint findOverlap(Ath__wire* origWire,
+  uint findOverlap(Wire* origWire,
                    uint ccThreshold,
-                   Ath__array1D<Ath__wire*>* wTable,
-                   Ath__array1D<Ath__wire*>* nwTable,
+                   Ath__array1D<Wire*>* wTable,
+                   Ath__array1D<Wire*>* nwTable,
                    Grid* ccGrid,
-                   Ath__array1D<Ath__wire*>* ccTable,
+                   Ath__array1D<Wire*>* ccTable,
                    uint met,
                    CoupleAndCompute coupleAndCompute,
                    void* compPtr);
 
   void initTargetWire(int noPowerWire);
-  Ath__wire* nextTargetWire(int noPowerWire);
-  Ath__wire* getTargetWire();
+  Wire* nextTargetWire(int noPowerWire);
+  Wire* getTargetWire();
   void adjustOverlapMakerEnd(uint markerCnt);
   void adjustOverlapMakerEnd(uint markerCnt, int start, uint markerLen);
   uint trackContextOn(int orig,
@@ -290,9 +287,9 @@ class Track
                       uint firstContextTrack,
                       Ath__array1D<int>* context);
 
-  void dealloc(AthPool<Ath__wire>* pool);
-  Ath__wire* getMarker(int index) const { return _marker[index]; }
-  void setMarker(int index, Ath__wire* wire) { _marker[index] = wire; }
+  void dealloc(AthPool<Wire>* pool);
+  Wire* getMarker(int index) const { return _marker[index]; }
+  void setMarker(int index, Wire* wire) { _marker[index] = wire; }
 
  private:
   int _x;  // you need only one
@@ -302,13 +299,13 @@ class Track
   Track* _hiTrack;
   Track* _lowTrack;
 
-  // Ath__wire** _marker;
-  Ath__wire** _eMarker;
+  // Wire** _marker;
+  Wire** _eMarker;
   uint _markerCnt;
   uint _searchMarkerIndex;
 
   uint _targetMarker;
-  Ath__wire* _targetWire;
+  Wire* _targetWire;
 
   Grid* _grid;
 
@@ -323,12 +320,12 @@ class Track
   bool _ordered;
 
   // -------------------------------------------------------- v2
-  Ath__wire** _marker;
+  Wire** _marker;
   // --------------------------------------------------------
 
   friend class GridTable;
   friend class Grid;
-  friend class Ath__wire;
+  friend class Wire;
 };
 
 class Grid
@@ -341,7 +338,7 @@ class Grid
 
   Grid(GridTable* gt,
        AthPool<Track>* trackPool,
-       AthPool<Ath__wire>* wirePool,
+       AthPool<Wire>* wirePool,
        Ath__box* bb,
        uint level,
        uint dir,
@@ -351,7 +348,7 @@ class Grid
        uint markerCnt = 4);
   Grid(GridTable* gt,
        AthPool<Track>* trackPool,
-       AthPool<Ath__wire>* wirePool,
+       AthPool<Wire>* wirePool,
        uint level,
        uint num,
        uint markerCnt);
@@ -394,7 +391,7 @@ class Grid
   uint placeBox(Ath__searchBox* bb);
   uint getBucketNum(int xy);
   uint getTrackNum(int* ll, uint d, uint* marker);
-  Ath__wire* getWirePtr(uint wireId);
+  Wire* getWirePtr(uint wireId);
   void getBoxIds(Ath__array1D<uint>* wireIdTable, Ath__array1D<uint>* idtable);
   void getWireIds(Ath__array1D<uint>* wireIdTable, Ath__array1D<uint>* idtable);
 
@@ -402,22 +399,13 @@ class Grid
   uint getFirstTrack(uint divider);
   int getClosestTrackCoord(int xy);
   uint addWire(uint initTrack, Ath__box* box, int sortedOrder, int* height);
-  Ath__wire* getPoolWire();
-  Ath__wire* makeWire(Ath__box* box,
-                      uint* id,
-                      uint* m1,
-                      uint* m2,
-                      uint fullTrack);
-  Ath__wire* makeWire(Ath__box* box, uint id, uint* m1);
-  Ath__wire* makeWire(int* ll, int* ur, uint id, uint* m1);
-  Ath__wire* makeWire(uint dir,
-                      int* ll,
-                      int* ur,
-                      uint id1,
-                      uint id2,
-                      uint type = 0);
+  Wire* getPoolWire();
+  Wire* makeWire(Ath__box* box, uint* id, uint* m1, uint* m2, uint fullTrack);
+  Wire* makeWire(Ath__box* box, uint id, uint* m1);
+  Wire* makeWire(int* ll, int* ur, uint id, uint* m1);
+  Wire* makeWire(uint dir, int* ll, int* ur, uint id1, uint id2, uint type = 0);
 
-  Ath__wire* makeWire(Ath__wire* w, uint type = 0);
+  Wire* makeWire(Wire* w, uint type = 0);
 
   void makeTrackTable(uint width, uint pitch, uint space = 0);
   float updateFreeTracks(float v);
@@ -425,7 +413,7 @@ class Grid
   void freeTracksAndTables();
   int getAbsTrackNum(int xy);
   int getMinMaxTrackNum(int xy);
-  bool addOnTrack(uint track, Ath__wire* w, uint mark1, uint mark2);
+  bool addOnTrack(uint track, Wire* w, uint mark1, uint mark2);
   int getTrackHeight(uint track);
   uint getTrackNum(Ath__box* box);
   Track* getTrackPtr(int* ll);
@@ -438,7 +426,7 @@ class Grid
               bool wireIdFlag = false);
 
   uint placeWire(uint initTrack,
-                 Ath__wire* w,
+                 Wire* w,
                  uint mark1,
                  uint mark2,
                  int sortedOrder,
@@ -449,7 +437,7 @@ class Grid
 
   uint getDir();
   uint getLevel();
-  Ath__wire* getWire_Linear(uint id);
+  Wire* getWire_Linear(uint id);
 
   void getBuses(Ath__array1D<Ath__box*>* boxtable, uint width);
 
@@ -463,10 +451,10 @@ class Grid
   int getBandWires(int hiXY,
                    uint couplingDist,
                    uint& wireCnt,
-                   Ath__array1D<Ath__wire*>* bandWire,
+                   Ath__array1D<Wire*>* bandWire,
                    int* limitArray);
-  AthPool<Ath__wire>* getWirePoolPtr();
-  uint placeWire(Ath__wire* w);
+  AthPool<Wire>* getWirePoolPtr();
+  uint placeWire(Wire* w);
   uint defaultWireType();
   void setDefaultWireType(uint v);
   uint search(Ath__searchBox* bb,
@@ -525,7 +513,7 @@ class Grid
   uint _widthTable[8];
   uint _shiftTable[8];
   AthPool<Track>* _trackPoolPtr;
-  AthPool<Ath__wire>* _wirePoolPtr;
+  AthPool<Wire>* _wirePoolPtr;
 
   uint _schema;
   uint _wireType;
@@ -581,7 +569,7 @@ class GridTable
   Grid* getGrid(uint row, uint col);
   uint getColCnt();
   uint getRowCnt();
-  Ath__wire* getWirePtr(uint id);
+  Wire* getWirePtr(uint id);
   void releaseWire(uint wireId);
   Ath__box* maxSearchBox() { return &_maxSearchBox; };
   int xMin();
@@ -591,8 +579,8 @@ class GridTable
   uint getRowNum(int x);
   uint getColNum(int y);
   bool getRowCol(int x1, int y1, uint* row, uint* col);
-  Ath__wire* addBox(Ath__box* bb);
-  Ath__wire* addBox(dbBox* bb, uint wtype, uint id);
+  Wire* addBox(Ath__box* bb);
+  Wire* addBox(dbBox* bb, uint wtype, uint id);
   bool addBox(uint row, uint col, dbBox* bb);
 
   uint getBoxes(Ath__box* bb, Ath__array1D<Ath__box*>* table);
@@ -696,7 +684,7 @@ class GridTable
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
   bool targetTrackReversed() { return _targetTrackReversed; };
-  void incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2);
+  void incrNotAlignedOverlap(Wire* w1, Wire* w2);
   void incrSignalOverlap();
   void incrPowerOverlap();
   void incrSignalToPowerOverlap();
@@ -732,7 +720,7 @@ class GridTable
 
  private:
   uint setExtrusionMarker(uint startRow, uint startCol);
-  Ath__wire* getWire_Linear(uint instId);
+  Wire* getWire_Linear(uint instId);
   bool isOrdered(bool ascending);
   void removeMarkedNetWires();
 
@@ -749,7 +737,7 @@ class GridTable
   uint _rowSize;
   uint _colSize;
   AthPool<Track>* _trackPool;
-  AthPool<Ath__wire>* _wirePool;
+  AthPool<Wire>* _wirePool;
   uint _schema{1};
   uint _overlapAdjust{Z_noAdjust};
   uint _powerMultiTrackWire{0};
@@ -799,7 +787,7 @@ class GridTable
 
   uint _wireCnt;
 
-  Ath__array1D<Ath__wire*>* _bandWire{nullptr};
+  Ath__array1D<Wire*>* _bandWire{nullptr};
 
   bool _ttttGetDgOverlap{false};
 };

@@ -74,8 +74,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
         if (_extMain->_dbgOption > 1) {
           // fprintf(stdout, "Track %d M%d %d \n", tr, jj,
           // track->getBase());
-          for (Ath__wire* w = track->getNextWire(NULL); w != NULL;
-               w = w->getNext())
+          for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext())
             PrintWire(stdout, w, jj);
         }
       }
@@ -92,7 +91,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
 }
 
 // Find immediate coupling neighbor wires in all directions and levels for every
-// Ath__wire
+// Wire
 int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
 {
   // uint couplingDist, uint diag_met_limit;
@@ -101,7 +100,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
   uint limitTrackNum = bounds.maxCouplingTracks;
   uint couplingDist = bounds.maxCouplingTracks;
 
-  Ath__array1D<Ath__wire*> firstWireTable;
+  Ath__array1D<Wire*> firstWireTable;
 
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++) {
@@ -122,8 +121,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
       ResetFirstWires(
           netGrid, &firstWireTable, tr, netGrid->getTrackCnt(), limitTrackNum);
 
-      for (Ath__wire* w = track->getNextWire(NULL); w != NULL;
-           w = w->getNext()) {
+      for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext()) {
         bool found = false;
         uint start_next_track
             = tr;  // in case that track holds wires with different base
@@ -131,14 +129,14 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
              !found && next_tr - tr < limitTrackNum
              && next_tr < netGrid->getTrackCnt();
              next_tr++) {
-          Ath__wire* first_wire;
+          Wire* first_wire;
           if (next_tr == tr)
             first_wire = w->getNext();
           else
             first_wire = GetNextWire(netGrid, next_tr, &firstWireTable);
 
           // PrintWire(stdout, first_wire, jj);
-          Ath__wire* w2 = FindOverlap_found(w, first_wire, found);
+          Wire* w2 = FindOverlap_found(w, first_wire, found);
           if (w2 != NULL && found) {
             firstWireTable.set(next_tr, w2);
 
@@ -189,7 +187,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
 int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
 {
   uint limitTrackNum = bounds.maxCouplingTracks;
-  Ath__array1D<Ath__wire*> firstWireTable;
+  Ath__array1D<Wire*> firstWireTable;
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++) {
     Grid* netGrid = _search->getGrid(dir, jj);
@@ -207,15 +205,14 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
       ResetFirstWires(
           netGrid, &firstWireTable, start_track_index, tr, limitTrackNum);
 
-      Ath__wire* first_wire1 = track->getNextWire(NULL);
-      for (Ath__wire* w = first_wire1; w != NULL; w = w->getNext()) {
+      Wire* first_wire1 = track->getNextWire(NULL);
+      for (Wire* w = first_wire1; w != NULL; w = w->getNext()) {
         bool found = false;
         for (int next_tr = tr - 1;
              !found && tr - next_tr < limitTrackNum && next_tr >= 0;
              next_tr--) {
-          Ath__wire* first_wire
-              = GetNextWire(netGrid, next_tr, &firstWireTable);
-          Ath__wire* w2 = FindOverlap_found(w, first_wire, found);
+          Wire* first_wire = GetNextWire(netGrid, next_tr, &firstWireTable);
+          Wire* w2 = FindOverlap_found(w, first_wire, found);
           if (w2 != NULL && found) {
             firstWireTable.set(next_tr, w2);
             w->setDownNext(w2);
@@ -243,7 +240,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
 {
   uint cnt = 0;
   int levelCnt = _search->getColCnt();
-  Ath__array1D<Ath__wire*>** firstWireTable = allocMarkTable(levelCnt);
+  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
   for (uint jj = 1; jj < levelCnt - 1; jj++)  // For all Layers
   {
@@ -263,9 +260,9 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
 
       ResetFirstWires(m1, m2, dir, firstWireTable);
 
-      Ath__wire* prev = NULL;
-      Ath__wire* first_wire1 = track->getNextWire(NULL);
-      for (Ath__wire* w = first_wire1; w != NULL;
+      Wire* prev = NULL;
+      Wire* first_wire1 = track->getNextWire(NULL);
+      for (Wire* w = first_wire1; w != NULL;
            w = w->getNext())  // for all wires in the track
       {
         if (w->isPower() || w->getAboveNext())
@@ -278,14 +275,13 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
         for (uint level = m1; level < m2; level++)  // for layers above
         {
           bool found = false;
-          Ath__wire* w2
-              = FindDiagonalNeighbors_vertical_up_down(w,
-                                                       found,
-                                                       dir,
-                                                       level,
-                                                       couplingDist,
-                                                       limitTrackNum,
-                                                       firstWireTable);
+          Wire* w2 = FindDiagonalNeighbors_vertical_up_down(w,
+                                                            found,
+                                                            dir,
+                                                            level,
+                                                            couplingDist,
+                                                            limitTrackNum,
+                                                            firstWireTable);
           if (w2 != NULL) {
             w->setAboveNext(w2);
             break;
@@ -309,7 +305,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
 {
   uint cnt = 0;
   int levelCnt = _search->getColCnt();
-  Ath__array1D<Ath__wire*>** firstWireTable = allocMarkTable(levelCnt);
+  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(levelCnt);
 
   for (int jj = levelCnt - 1; jj > 1; jj--)  // For all Layers going down
   {
@@ -329,9 +325,9 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
 
       ResetFirstWires(m2, m1, dir, firstWireTable);
 
-      Ath__wire* prev = NULL;
-      Ath__wire* first_wire1 = track->getNextWire(NULL);
-      for (Ath__wire* w = first_wire1; w != NULL;
+      Wire* prev = NULL;
+      Wire* first_wire1 = track->getNextWire(NULL);
+      for (Wire* w = first_wire1; w != NULL;
            w = w->getNext())  // for all wires in the track
       {
         if (w->isPower() || w->getAboveNext() != NULL)
@@ -344,14 +340,13 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
         for (int level = m1; level > m2; level--)  // for layers above
         {
           bool found = false;
-          Ath__wire* w2
-              = FindDiagonalNeighbors_vertical_up_down(w,
-                                                       found,
-                                                       dir,
-                                                       level,
-                                                       couplingDist,
-                                                       limitTrackNum,
-                                                       firstWireTable);
+          Wire* w2 = FindDiagonalNeighbors_vertical_up_down(w,
+                                                            found,
+                                                            dir,
+                                                            level,
+                                                            couplingDist,
+                                                            limitTrackNum,
+                                                            firstWireTable);
           if (w2 != NULL) {
             w->setBelowNext(w2);
             break;
@@ -385,7 +380,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
   SegmentTables segments;
 
   // first wire from a Track on all levels and tracks
-  Ath__array1D<Ath__wire*>** firstWireTable = allocMarkTable(metalLevelCnt);
+  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(metalLevelCnt);
   allocateTables(metalLevelCnt);
 
   _dir = dir;
@@ -407,8 +402,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
         continue;
 
       ResetFirstWires(level, metalLevelCnt, dir, firstWireTable);
-      for (Ath__wire* w = track->getNextWire(NULL); w != NULL;
-           w = w->getNext()) {
+      for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext()) {
         counts.wire_count++;
         if (w->isPower() || w->getRsegId() == 0)
           continue;

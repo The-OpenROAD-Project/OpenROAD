@@ -494,11 +494,11 @@ int Grid::initCouplingCapLoops_v2(uint couplingDist,
 
   return _base + _pitch * _searchHiTrack;
 }
-uint Ath__wire::getLevel()
+uint Wire::getLevel()
 {
   return this->_track->getGrid()->getLevel();
 }
-uint Ath__wire::getPitch()
+uint Wire::getPitch()
 {
   return this->_track->getGrid()->getPitch();
 }
@@ -534,7 +534,7 @@ uint Grid::placeWire_v2(Ath__searchBox* bb)
 
   uint wireType = bb->getType();
 
-  Ath__wire* w
+  Wire* w
       = makeWire(_dir, ll, ur, bb->getOwnerId(), bb->getOtherId(), wireType);
   Track* track = getTrackPtr(trackNum1, _markerCnt);
   /* DELETE
@@ -549,7 +549,7 @@ uint Grid::placeWire_v2(Ath__searchBox* bb)
   /* DELETE
   uint wCnt = 1;
   for (uint ii = trackNum1 + 1; ii <= trackNum2; ii++) {
-    Ath__wire* w1 = makeWire(w, wireType);
+    Wire* w1 = makeWire(w, wireType);
     w1->_srcId = w->_id;
     w1->_srcWire = w;
     _gridtable->incrMultiTrackWireCnt(w->isPower());

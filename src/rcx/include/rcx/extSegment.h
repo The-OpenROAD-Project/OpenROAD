@@ -66,7 +66,7 @@ class Logger;
 
 namespace rcx {
 using namespace odb;
-class Ath__wire;
+class Wire;
 
 class extMeasure;
 
@@ -90,26 +90,26 @@ class extSegment  // assume cross-section on the z-direction
   int _metOver;
   uint _id;
 
-  Ath__wire* _wire;
-  Ath__wire* _up;
-  Ath__wire* _down;
+  Wire* _wire;
+  Wire* _up;
+  Wire* _down;
 
-  // extSegment(uint dir, Ath__wire *w2, int dist);
+  // extSegment(uint dir, Wire *w2, int dist);
   //  ~extSegment();
 
   // extSegment();
-  // extSegment(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire
+  // extSegment(uint d, Wire *w, int xy, int len, Wire *up, Wire
   // *down, int metOver=-1, int metUnder=-1);
   void set(uint d,
-           Ath__wire* w,
+           Wire* w,
            int xy,
            int len,
-           Ath__wire* up,
-           Ath__wire* down,
+           Wire* up,
+           Wire* down,
            int metOver = -1,
            int metUnder = -1);
-  int GetDist(Ath__wire* w1, Ath__wire* w2);
-  int setUpDown(bool up, Ath__wire* w1);
+  int GetDist(Wire* w1, Wire* w2);
+  int setUpDown(bool up, Wire* w1);
 
   friend class extMeasure;
   friend class extRCModel;
