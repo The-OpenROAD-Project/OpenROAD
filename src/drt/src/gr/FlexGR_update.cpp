@@ -393,6 +393,8 @@ void FlexGR::searchRepair_update(int iter,
 
   logger_->report("[INFO] Number of workers: " + std::to_string(uworkers.size()));
   int numThreads = std::min(8, router_cfg_->MAX_THREADS);
+  numThreads = std::min(numThreads, (int) uworkers.size());
+  
   //int numThreads = 1;
   omp_set_num_threads(numThreads);
   logger_->report("[INFO] Number of threads: " + std::to_string(numThreads));  
@@ -424,8 +426,8 @@ void FlexGR::searchRepair_update(int iter,
   for (int iter = 0; iter < mazeEndIter; iter++) {    
     int xDim, yDim, zDim;
     uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
-    // logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
-    // logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
+    logger_->report("[INFO] Routing iteration " + std::to_string(iter) + " start !");
+    logger_->report("[INFO] xDim: " + std::to_string(xDim) + ", yDim: " + std::to_string(yDim) + ", zDim: " + std::to_string(zDim));
     
     float GPUMazeRouteTimeTot = 0;
     float RestoreTimeTot = 0;
@@ -443,7 +445,6 @@ void FlexGR::searchRepair_update(int iter,
     }
     exception1.rethrow();
 
-
     // Assign unique netId and workerId to each net
     int netId = 0;
     int totalNumNets = 0;
@@ -455,13 +456,24 @@ void FlexGR::searchRepair_update(int iter,
     }
     totalNumNets = netId;
 
+    if (totalNumNets == 0) {
+      logger_->report("[INFO] [Early Exit] Overflow free!");
+      break;
+    }
+
+    std::cout << "Test a" << std::endl;
+
+
     // Generate the batch for each worker in parallel
     std::vector<std::vector<std::vector<grNet*>> > workerBatches(uworkers.size());
 #pragma omp parallel for schedule(dynamic)
     for (int j = 0; j < (int) uworkers.size(); j++) {  // NOLINT
       uworkers[j]->batchGenerationRelax(rerouteNets[j], workerBatches[j]); // Use the lazy mode
     }
-  
+
+    
+    std::cout << "Test b" << std::endl;
+
     // Create global level batches
     std::vector<std::vector<grNet*> > batches;
     int maxNumBatches = 0;
@@ -471,6 +483,8 @@ void FlexGR::searchRepair_update(int iter,
 
     batches.resize(maxNumBatches);
 
+
+    std::cout << "[INFO] maxNumBatches = " << maxNumBatches << std::endl;
 
     // Option 1:  evenly distribute the nets to the batches
 
@@ -666,10 +680,14 @@ void FlexGR::searchRepair_update(int iter,
     std::cout << "Iteration Restore Time: " << RestoreTimeTot << " ms" << std::endl;
   }
 
+  std::cout << "Finish Routing Kernels" << std::endl;
+
   for (auto& worker : uworkers) {
     worker->end();
   }
   uworkers.clear();
+
+  std::cout << "Finish ending" << std::endl;
 
   reportCong2D();
 

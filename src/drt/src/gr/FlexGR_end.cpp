@@ -68,8 +68,10 @@ void FlexGRWorker::endRemoveNets(
   endRemoveNets_nodes(modNets);
 }
 
+
+/*
 void FlexGRWorker::endRemoveNets_objs(
-    const std::set<frNet*, frBlockObjectComp>& modNets)
+  const std::set<frNet*, frBlockObjectComp>& modNets)
 {
   // remove pathSeg and via (all nets based)
   std::vector<grBlockObject*> result;
@@ -101,6 +103,61 @@ void FlexGRWorker::endRemoveNets_objs(
     }
   }
 }
+*/
+
+
+
+// Remove the grShape in the local worker
+void FlexGRWorker::endRemoveNets_objs(
+  const std::set<frNet*, frBlockObjectComp>& modNets)
+{
+  // remove pathSeg and via (all nets based)
+  std::vector<grBlockObject*> result;
+  // if a pathSeg or a via belongs to a modified net, as long as it touches
+  // routeBox we need to remove it (will remove all the way to true pin and
+  // boundary pin)
+  getRegionQuery()->queryGRObj(getRouteBox(), result);
+  std::string errInfo;
+  bool errFlag = false;
+  
+  for (auto rptr : result) {
+    // check type of the object
+    auto objectTypeId = rptr->typeId();
+    if (objectTypeId != grcPathSeg && objectTypeId != grcVia) {
+      errFlag = true;
+      errInfo = "Error: endRemoveNets_objs unsupported type";
+      break;
+    }
+
+    
+    auto cptrTemp = static_cast<grPathSeg*>(rptr);
+
+    // check if the object has a net
+    if (!cptrTemp->hasNet()) {
+      errFlag = true;
+      errInfo = "Error: endRemoveNet hasNet() empty";
+      break;
+    }
+
+    // check if the net is in the modified nets
+    if (modNets.find(cptrTemp->getNet()) == modNets.end()) {
+      continue;
+    }
+    
+    // remove the object
+    if (objectTypeId == grcPathSeg) {
+      auto cptr = static_cast<grPathSeg*>(rptr);
+      endRemoveNets_pathSeg(cptr);
+    } else if (objectTypeId == grcVia) {
+      auto cptr = static_cast<grVia*>(rptr);
+      endRemoveNets_via(cptr);
+    }
+  }
+
+  if (errFlag) {
+    logger_->error(utl::DRT, 264, errInfo);
+  }  
+}
 
 void FlexGRWorker::endRemoveNets_pathSeg(grPathSeg* pathSeg)
 {
@@ -116,6 +173,9 @@ void FlexGRWorker::endRemoveNets_via(grVia* via)
   net->removeGRVia(via);
 }
 
+
+
+// Update the nodes in both fNet and grNet
 void FlexGRWorker::endRemoveNets_nodes(
     const std::set<frNet*, frBlockObjectComp>& modNets)
 {
@@ -126,6 +186,8 @@ void FlexGRWorker::endRemoveNets_nodes(
   }
 }
 
+
+/*
 void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
 {
   auto frRoot = net->getFrRoot();
@@ -165,6 +227,47 @@ void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
       fNode->setParent(nullptr);
     }
   }
+}*/
+
+
+// Remove all the steiner nodes in the frNet segment corresponding to this grNet
+void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
+{
+  auto frRoot = net->getFrRoot();
+
+  std::queue<frNode*> nodeQ;
+  nodeQ.push(frRoot);
+
+  bool isRoot = true;
+  while (!nodeQ.empty()) {
+    auto node = nodeQ.front();
+    nodeQ.pop();
+
+    if (isRoot || node->getType() == frNodeTypeEnum::frcSteiner) {
+      for (auto child : node->getChildren()) {
+        nodeQ.push(child);
+      }
+      
+      if (isRoot) { // set the root to false
+        isRoot = false;
+      }
+    }
+
+    if (node->getType() == frNodeTypeEnum::frcSteiner) {
+      fnet->removeNode(node);
+    }
+  }
+
+  // remove connection for pin nodes
+  // We also include the boundary pins
+  auto& gr2FrPinNode = net->getGR2FrPinNode();
+  for (auto& [gNode, fNode] : gr2FrPinNode) {
+    if (gNode == net->getRoot()) {
+      fNode->clearChildren();
+    } else {
+      fNode->setParent(nullptr);
+    }
+  }
 }
 
 void FlexGRWorker::endAddNets(std::set<frNet*, frBlockObjectComp>& modNets)
@@ -177,6 +280,7 @@ void FlexGRWorker::endAddNets(std::set<frNet*, frBlockObjectComp>& modNets)
   }
 }
 
+
 void FlexGRWorker::endAddNets_stitchRouteBound(grNet* net)
 {
   auto& pinNodePairs = net->getPinNodePairs();
@@ -188,6 +292,9 @@ void FlexGRWorker::endAddNets_stitchRouteBound(grNet* net)
     grNode* routeBoundNode = nullptr;
     if (pinNode == net->getRoot()) {
       routeBoundNode = pinNode->getChildren().front();
+      if (pinNode->getChildren().size() > 1) {
+        logger_->error(utl::DRT, 266, "Error: Root Pin Node has more than one child");
+      }
     } else {
       routeBoundNode = pinNode->getParent();
     }
@@ -196,23 +303,69 @@ void FlexGRWorker::endAddNets_stitchRouteBound(grNet* net)
   }
 }
 
+
+// Check if the node is a steiner node that needs to be reserved
+// This function is very important because it is used to remove the steiner nodes
 void FlexGRWorker::endAddNets_stitchRouteBound_node(grNode* node)
 {
   if (node->getChildren().size() > 1) {
-    return;
+    return; // this is a steiner node that needs to be reserved
   }
+  
   auto child = node->getChildren().front();
   auto parent = node->getParent();
-  auto childLoc = child->getLoc();
-  auto parentLoc = parent->getLoc();
+  // We cannot remove the node if it is a pinGCellNode
+  // This is very important because we need to keep the pinGCellNode
+  if (child->getType() == frNodeTypeEnum::frcPin) {
+    return;
+  }
+
   auto childLNum = child->getLayerNum();
   auto parentLNum = parent->getLayerNum();
-
   if (childLNum != parentLNum) {
     return;
   }
-  // return if not colinear
-  if (childLoc.x() != parentLoc.x() && childLoc.y() != parentLoc.y()) {
+
+  auto childLoc = child->getLoc();
+  auto parentLoc = parent->getLoc();
+  auto currLoc = node->getLoc();
+
+  bool removeFlag = false;
+
+  if (childLoc.x() == currLoc.x() && parentLoc.x() == currLoc.x()) {
+    removeFlag = true;
+  } else if (childLoc.y() == currLoc.y() && parentLoc.y() == currLoc.y()) {
+    removeFlag = true;
+  }
+
+  // for testing only
+  if (1) {
+    std::string errInfo;
+    bool errFlag = false;
+    if (childLoc.x() == parentLoc.x()) {
+      if (childLoc.x() != currLoc.x()) {
+        errFlag = true;
+        errInfo = "Error: endAddNets_stitchRouteBound_node x mismatch";
+        std::cout << errInfo << std::endl;
+        printPinNodePairs(node->getNet());
+        std::cout << "nodeLoc:  x = " << currLoc.x() << ", y = " << currLoc.y() << std::endl;
+        std::cout << "childLoc: x = " << childLoc.x() << ", y = " << childLoc.y() << std::endl;
+        std::cout << "parentLoc: x = " << parentLoc.x() << ", y = " << parentLoc.y() << std::endl;
+        routeNet_printNet(node->getNet());
+      } 
+    } else if (childLoc.y() == parentLoc.y()) {
+      if (childLoc.y() != currLoc.y()) {
+        errFlag = true;
+        errInfo = "Error: endAddNets_stitchRouteBound_node y mismatch";
+      }
+    } 
+
+    if (errFlag) {
+      logger_->error(utl::DRT, 267, errInfo);
+    }
+  }
+
+  if (removeFlag == false) {
     return;
   }
 
@@ -228,6 +381,8 @@ void FlexGRWorker::endAddNets_stitchRouteBound_node(grNode* node)
   node->getNet()->removeNode(node);
 }
 
+
+/*
 // deep copy grNode to frNode
 void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet)
 {
@@ -322,6 +477,102 @@ void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet)
       nodeQ.emplace_back(childFrNode, grandChild);
     }
   }
+}*/
+
+
+void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet)
+{
+  grNode* rootNode = net->getRoot();
+  auto& gr2FrPinNode = net->getGR2FrPinNode();
+
+  // start bfs deep copy nodes from gr to fr
+  std::queue<std::pair<frNode*, grNode*> > nodeQ;  
+  nodeQ.push({nullptr, rootNode});
+
+  while (!nodeQ.empty()) {
+    auto parentFrNode = nodeQ.front().first;
+    auto childGRNode = nodeQ.front().second;
+    nodeQ.pop();
+
+    frNode* childFrNode = nullptr;
+    if (childGRNode->getType() == frNodeTypeEnum::frcBoundaryPin
+        || childGRNode->getType() == frNodeTypeEnum::frcPin) {
+      if (gr2FrPinNode.find(childGRNode) == gr2FrPinNode.end()) {
+        logger_->error(utl::DRT, 274, "Error: corresponding fr pin node not found!");
+      }
+      childFrNode = gr2FrPinNode[childGRNode];
+    } else {
+      // net, loc, layerNum and type are handled by copy constructor
+      auto uChildFrNode = std::make_unique<frNode>(*childGRNode);
+      childFrNode = uChildFrNode.get();
+      fnet->addNode(uChildFrNode);
+    }
+    
+    // update connectivity
+    if (parentFrNode) {
+      parentFrNode->addChild(childFrNode);
+      childFrNode->setParent(parentFrNode);
+    }
+
+    // update connFig
+    if (parentFrNode != nullptr
+        && parentFrNode->getType() != frNodeTypeEnum::frcPin
+        && childFrNode->getType() != frNodeTypeEnum::frcPin) {
+      auto childLoc = childFrNode->getLoc();
+      auto parentLoc = parentFrNode->getLoc();
+      auto childLNum = childFrNode->getLayerNum();
+      auto parentLNum = parentFrNode->getLayerNum();
+      if (childLNum == parentLNum) {
+        // pathSeg
+        auto uPathSeg = std::make_unique<grPathSeg>();
+        auto pathSeg = uPathSeg.get();
+        pathSeg->setLayerNum(childLNum);
+        if (childLoc < parentLoc) {
+          pathSeg->setPoints(childLoc, parentLoc);
+        } else {
+          pathSeg->setPoints(parentLoc, childLoc);
+        }
+        pathSeg->setChild(childFrNode);
+        pathSeg->setParent(parentFrNode);
+        pathSeg->addToNet(fnet);
+
+        // update region query
+        getRegionQuery()->addGRObj(pathSeg);
+
+        // update ownership
+        std::unique_ptr<grShape> uShape(std::move(uPathSeg));
+        fnet->addGRShape(uShape);
+
+        // add to child node
+        childFrNode->setConnFig(pathSeg);
+      } else {
+        // via
+        auto uVia = std::make_unique<grVia>();
+        auto via = uVia.get();
+        via->setChild(childFrNode);
+        via->setParent(parentFrNode);
+        via->addToNet(fnet);
+        via->setOrigin(childLoc);
+        via->setViaDef(design_->getTech()
+                           ->getLayer((childLNum + parentLNum) / 2)
+                           ->getDefaultViaDef());
+
+        // update region query
+        getRegionQuery()->addGRObj(via);
+
+        // update ownership
+        fnet->addGRVia(uVia);
+
+        // add to child node
+        childFrNode->setConnFig(via);
+      }
+    }
+
+    // push grand children to queue
+    for (auto grandChild : childGRNode->getChildren()) {
+      nodeQ.push({childFrNode, grandChild});
+    }
+  }
 }
 
 void FlexGRWorker::endStitchBoundary()
@@ -331,6 +582,7 @@ void FlexGRWorker::endStitchBoundary()
   }
 }
 
+/*
 // grNet remembers boundary pin frNode
 void FlexGRWorker::endStitchBoundary_net(grNet* net)
 {
@@ -404,6 +656,116 @@ void FlexGRWorker::endStitchBoundary_net(grNet* net)
     fnet->removeNode(node);
   }
 }
+*/
+
+void FlexGRWorker::printPinNodePairs(grNet* net)
+{
+  auto& pinNodePairs = net->getPinNodePairs();
+  int xMin = std::numeric_limits<int>::max();
+  int xMax = std::numeric_limits<int>::min();
+  int yMin = std::numeric_limits<int>::max();
+  int yMax = std::numeric_limits<int>::min();
+  for (auto& pinNodePair : pinNodePairs) {
+    auto node = pinNodePair.second;
+    auto loc = node->getLoc();
+    std::cout << "Node Loc:  x = " << loc.x() << " y = " << loc.y() << std::endl;
+    xMin = std::min(xMin, loc.x());
+    xMax = std::max(xMax, loc.x());
+    yMin = std::min(yMin, loc.y());
+    yMax = std::max(yMax, loc.y());
+  }
+
+  std::cout << "[Bounding Box] :  xMin = " << xMin << " "
+            << "xMax = " << xMax << " "
+            << "yMin = " << yMin << " "
+            << "yMax = " << yMax << " "
+            << std::endl;
+}
+
+
+void FlexGRWorker::endStitchBoundary_net(grNet* net)
+{
+  auto fnet = net->getFrNet();
+  auto& pinNodePairs = net->getPinNodePairs();  
+  bool errFlag = false;
+  std::string errInfo;
+  
+  for (auto& pinNodePair : pinNodePairs) {
+    // frNode
+    auto node = pinNodePair.first;
+    if (node->getType() != frNodeTypeEnum::frcBoundaryPin) {
+      continue;
+    }
+
+    if (node->getChildren().size() > 1) {
+      errFlag = true;
+      errInfo = std::string("Error: root boundary pin has more than one child (")
+                + net->getFrNet()->getName() + ") !";
+      break;  
+    }
+
+    auto child = node->getChildren().front();
+    auto parent = node->getParent();
+
+    if (child->getLayerNum() != parent->getLayerNum()) {
+      errFlag = true;
+      errInfo = std::string("Error: boundary pin has different parent and child layerNum (")
+                + net->getFrNet()->getName() + ") !";
+      break;
+    }
+
+    auto childLoc = child->getLoc();
+    auto parentLoc = parent->getLoc();
+    if (childLoc.x() != parentLoc.x() && childLoc.y() != parentLoc.y()) {
+      errFlag = true;
+      errInfo = std::string("Error: boundary pin has non-colinear parent and child loc (")
+                + net->getFrNet()->getName() + ") !";
+
+      // Just for testing, to be deleted
+      auto nodeLoc = node->getLoc();
+      std::cout << "Error: boundary pin has non-colinear parent and child loc\n";
+      std::cout << "Node Loc:  x = " << nodeLoc.x() << " y = " << nodeLoc.y() << std::endl;
+      std::cout << "Parent Loc:  x = " << parentLoc.x() << " y = " << parentLoc.y() << std::endl;
+      std::cout << "Child Loc:  x = " << childLoc.x() << " y = " << childLoc.y() << std::endl;
+      printPinNodePairs(net);
+
+      break;
+    }
+
+    // update connectivity
+    parent->removeChild(node);
+    parent->addChild(child);
+    child->setParent(parent);
+
+    // update connFig
+    // remove node connFig to parent
+    auto vicitmConnFig = static_cast<grShape*>(node->getConnFig());
+    getRegionQuery()->removeGRObj(vicitmConnFig);
+    fnet->removeGRShape(vicitmConnFig);
+
+    // extend child connfig to parent
+    auto childConnFig = static_cast<grShape*>(child->getConnFig());
+    getRegionQuery()->removeGRObj(childConnFig);
+    auto childPathSeg = static_cast<grPathSeg*>(child->getConnFig());
+    auto [bp, ep] = childPathSeg->getPoints();
+    if (bp == childLoc) {
+      ep = parentLoc;
+    } else {
+      bp = parentLoc;
+    }    
+    childPathSeg->setPoints(bp, ep);
+    getRegionQuery()->addGRObj(childConnFig);
+    // update connFig connectivity
+    childConnFig->setParent(parent);
+    // remove node from fnet
+    fnet->removeNode(node);
+  }
+
+  if (errFlag) {
+    logger_->error(utl::DRT, 275, errInfo);
+  }
+}
+
 
 void FlexGRWorker::endWriteBackCMap()
 {
@@ -453,6 +815,7 @@ void FlexGRWorker::endWriteBackCMap()
     }
   }
 }
+
 
 void FlexGRWorker::cleanup()
 {

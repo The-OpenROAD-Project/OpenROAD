@@ -2268,8 +2268,8 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
     return 0.0;
   }
 
-  // Set the GPU device to 1.
-  cudaSetDevice(1);
+  // Set the GPU device to 0.
+  cudaSetDevice(0);
 
   std::vector<Point2D_CUDA> netVec;
   std::vector<int> netPtr;
@@ -2399,10 +2399,12 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
 
     cudaCheckError();
 
-    std::cout << "[INFO] Number of nodes: " << numNodes << std::endl;
-    std::cout << "[INFO] ChunkSize: " << chunkSize << std::endl;
-    std::cout << "[INFO] NumGrids: " << numGrids << std::endl;
-    std::cout << "[INFO] ChunkSize * NumGrids = " << chunkSize * numGrids << std::endl;
+    if (0) {
+      std::cout << "[INFO] Number of nodes: " << numNodes << std::endl;
+      std::cout << "[INFO] ChunkSize: " << chunkSize << std::endl;
+      std::cout << "[INFO] NumGrids: " << numGrids << std::endl;
+      std::cout << "[INFO] ChunkSize * NumGrids = " << chunkSize * numGrids << std::endl;
+    }
 
     initBatchNodeData2D_v3__kernel<<<numBatchBlocks, numThreads>>>(
       d_nodes_, 

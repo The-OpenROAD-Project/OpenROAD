@@ -310,7 +310,6 @@ class FlexGR
   void updateDb();
   void getBatchInfo(int& batchStepX, int& batchStepY);
 
-
   // For GPU-accelerated GGR-TR
   bool gpuFlag_ = true;
   void searchRepair_update(
@@ -404,7 +403,8 @@ class FlexGR
   int validBatchThreshold_ = 200;
   //int maxChunkSize_ = 200;
   // MemPool Cluster Fail for maxChunkSize_ = 200;
-  int maxChunkSize_ = 200;
+  // So we set the maxChunkSize to 100
+  int maxChunkSize_ = 100;
   std::vector<grNet*> nets2Ripup_;
 
   int* d_dX_ = nullptr;
@@ -722,15 +722,7 @@ class FlexGRWorker
   }
 
 
-
-
-
-
-
-
-
-
-
+  void printPinNodePairs(grNet* net);
 
   void main_mt_restore_temp(
     std::vector<grNet*>& rerouteNets) {
