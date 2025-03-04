@@ -10,7 +10,7 @@ worst slack 1.34
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       546
-    final |     +0.6% |      58 |       0 |             0 |         0
+    final |     +0.4% |      58 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 58 instances.
 [INFO RSZ-0098] No setup violations found
@@ -18,9 +18,9 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |   0.145 |   0.000 | _863_/D
-    final |       0 |     105 |            0 |   +12.2% |   0.200 |   0.000 | _876_/D
+    final |       0 |     104 |            0 |   +12.1% |   0.200 |   0.000 | _876_/D
 --------------------------------------------------------------------------------------
-[INFO RSZ-0032] Inserted 105 hold buffers.
+[INFO RSZ-0032] Inserted 104 hold buffers.
 worst slack 0.20
 worst slack 1.25
 max slew
@@ -53,4 +53,4 @@ _461_/Z manhtn 63.8 steiner 84.8 0.00
 req_msg[18] manhtn 61.4 steiner 61.4 0.00
 _847_/Z manhtn 60.3 steiner 60.3 0.00
 _851_/Z manhtn 58.3 steiner 58.3 0.00
-Design area 772 u^2 12% utilization.
+Design area 770 u^2 12% utilization.

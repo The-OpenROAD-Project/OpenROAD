@@ -252,6 +252,14 @@ void RepairDesign::repairDesign(
 void RepairDesign::repairClkNets(double max_wire_length)
 {
   init();
+
+  // Lift sizing restriction for clock buffers
+  std::optional<double> sizing_area_limit_saved = resizer_->sizing_area_limit_;
+  std::optional<double> sizing_leakage_limit_saved
+      = resizer_->sizing_leakage_limit_;
+  resizer_->sizing_area_limit_.reset();
+  resizer_->sizing_leakage_limit_.reset();
+
   slew_margin_ = 0.0;
   cap_margin_ = 0.0;
   buffer_gain_ = 0.0;
@@ -299,6 +307,10 @@ void RepairDesign::repairClkNets(double max_wire_length)
   }
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
+
+  // Restore sizing restrictions
+  resizer_->sizing_area_limit_ = sizing_area_limit_saved;
+  resizer_->sizing_leakage_limit_ = sizing_leakage_limit_saved;
 
   if (length_violations > 0) {
     logger_->info(RSZ, 47, "Found {} long wires.", length_violations);
