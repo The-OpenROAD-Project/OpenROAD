@@ -1590,10 +1590,6 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       source_cell_leakage = cellLeakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
-      if (equiv_cell == source_cell) {
-        continue;
-      }
-
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
       }
