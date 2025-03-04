@@ -682,15 +682,15 @@ _checkIsLocal() {
 _help() {
     cat <<EOF
 
-Usage: $0
+Usage: $0 -all
                                 # Installs all of OpenROAD's dependencies no
                                 #     need to run -base or -common. Requires
                                 #     privileged access.
-                                #
        $0 -base
                                 # Installs OpenROAD's dependencies using
                                 #     package managers (-common must be
-                                #     executed in another command).
+                                #     executed in another command). Requires
+                                #     privileged access.
        $0 -common
                                 # Installs OpenROAD's common dependencies
                                 #     (-base must be executed in another

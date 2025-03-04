@@ -398,7 +398,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
 
 void extMain::setExtControl_v2(AthPool<SEQ>* seqPool)
 {
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
+  OverlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl_v2(_block,
                             _useDbSdb,
@@ -455,14 +455,14 @@ bool extMeasure::IsDebugNet1()
   else
     return false;
 }
-void Ath__gridTable::initCouplingCapLoops_v2(uint dir,
-                                             uint couplingDist,
-                                             int* startXY)
+void GridTable::initCouplingCapLoops_v2(uint dir,
+                                        uint couplingDist,
+                                        int* startXY)
 {
   setCCFlag(couplingDist);
 
   for (uint jj = 1; jj < _colCnt; jj++) {
-    Ath__grid* netGrid = _gridTable[dir][jj];
+    Grid* netGrid = _gridTable[dir][jj];
     if (netGrid == nullptr) {
       continue;
     }
@@ -474,9 +474,9 @@ void Ath__gridTable::initCouplingCapLoops_v2(uint dir,
     }
   }
 }
-int Ath__grid::initCouplingCapLoops_v2(uint couplingDist,
-                                       bool startSearchTrack,
-                                       int startXY)
+int Grid::initCouplingCapLoops_v2(uint couplingDist,
+                                  bool startSearchTrack,
+                                  int startXY)
 {
   uint TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
   bool allNet = _gridtable->allNet();
@@ -494,15 +494,15 @@ int Ath__grid::initCouplingCapLoops_v2(uint couplingDist,
 
   return _base + _pitch * _searchHiTrack;
 }
-uint Ath__wire::getLevel()
+uint Wire::getLevel()
 {
   return this->_track->getGrid()->getLevel();
 }
-uint Ath__wire::getPitch()
+uint Wire::getPitch()
 {
   return this->_track->getGrid()->getPitch();
 }
-uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
+uint Grid::placeWire_v2(SearchBox* bb)
 {
   uint d = !_dir;
 
@@ -534,9 +534,9 @@ uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
 
   uint wireType = bb->getType();
 
-  Ath__wire* w
+  Wire* w
       = makeWire(_dir, ll, ur, bb->getOwnerId(), bb->getOtherId(), wireType);
-  Ath__track* track = getTrackPtr(trackNum1, _markerCnt);
+  Track* track = getTrackPtr(trackNum1, _markerCnt);
   /* DELETE
     int TTTsubt = NO_SUB_TRACKS ? 0 : 1;
     if (TTTsubt>0)
@@ -549,11 +549,11 @@ uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
   /* DELETE
   uint wCnt = 1;
   for (uint ii = trackNum1 + 1; ii <= trackNum2; ii++) {
-    Ath__wire* w1 = makeWire(w, wireType);
+    Wire* w1 = makeWire(w, wireType);
     w1->_srcId = w->_id;
     w1->_srcWire = w;
     _gridtable->incrMultiTrackWireCnt(w->isPower());
-    Ath__track* track = getTrackPtr(ii, _markerCnt);
+    Track* track = getTrackPtr(ii, _markerCnt);
     track->place(w1, m1);
     wCnt++;
   }
