@@ -450,14 +450,7 @@ double DetailedABU::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::delta(const int n,
-                          const std::vector<Node*>& nodes,
-                          const std::vector<int>& curLeft,
-                          const std::vector<int>& curBottom,
-                          const std::vector<unsigned>& curOri,
-                          const std::vector<int>& newLeft,
-                          const std::vector<int>& newBottom,
-                          const std::vector<unsigned>& newOri)
+double DetailedABU::delta(const Journal& journal)
 {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
@@ -473,16 +466,19 @@ double DetailedABU::delta(const int n,
 
   // Compute changed bins and changed occupancy.
   ++abuChangedBinsCounter_;
-  for (int i = 0; i < n; i++) {
-    updateBins(nodes[i],
-               curLeft[i] + 0.5 * nodes[i]->getWidth(),
-               curBottom[i] + 0.5 * nodes[i]->getHeight(),
+  const auto& actions = journal.getActions();
+  for (int i = 0; i < actions.size(); i++) {
+    auto node = actions[i].getNode();
+    updateBins(actions[i].getNode(),
+               actions[i].getOrigLeft() + 0.5 * node->getWidth(),
+               actions[i].getOrigBottom() + 0.5 * node->getHeight(),
                -1);
   }
-  for (int i = 0; i < n; i++) {
-    updateBins(nodes[i],
-               newLeft[i] + 0.5 * nodes[i]->getWidth(),
-               newBottom[i] + 0.5 * nodes[i]->getHeight(),
+  for (int i = 0; i < actions.size(); i++) {
+    auto node = actions[i].getNode();
+    updateBins(actions[i].getNode(),
+               actions[i].getNewLeft() + 0.5 * node->getWidth(),
+               actions[i].getNewBottom() + 0.5 * node->getHeight(),
                +1);
   }
 

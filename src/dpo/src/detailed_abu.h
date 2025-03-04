@@ -54,14 +54,7 @@ class DetailedABU : public DetailedObjective
 
   // Those that must be overridden.
   double curr() override;
-  double delta(int n,
-               const std::vector<Node*>& nodes,
-               const std::vector<int>& curLeft,
-               const std::vector<int>& curBottom,
-               const std::vector<unsigned>& curOri,
-               const std::vector<int>& newLeft,
-               const std::vector<int>& newBottom,
-               const std::vector<unsigned>& newOri) override;
+  double delta(const Journal& journal) override;
   void accept() override;
   void reject() override;
 

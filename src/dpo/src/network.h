@@ -59,6 +59,29 @@ const int EDGETYPE_DEFAULT = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
+class MasterEdge
+{
+ public:
+  MasterEdge(unsigned int type, const odb::Rect& box)
+      : edge_type_idx_(type), bbox_(box)
+  {
+  }
+  unsigned int getEdgeType() const { return edge_type_idx_; }
+  const odb::Rect& getBBox() const { return bbox_; }
+
+ private:
+  unsigned int edge_type_idx_;
+  odb::Rect bbox_;
+};
+
+class Master
+{
+ public:
+  Master() {}
+  odb::Rect boundary_box_;
+  std::vector<MasterEdge> edges_;
+};
+
 class Node
 {
  public:
@@ -98,6 +121,7 @@ class Node
   int getTop() const { return bottom_ + h_; }
   Type getType() const { return type_; }
   int getWidth() const { return w_; }
+  Master* getMaster() const { return master_; }
 
   void setAvailOrient(unsigned avail) { availOrient_ = avail; }
   void setBottom(int bottom) { bottom_ = bottom; }
@@ -113,6 +137,7 @@ class Node
   void setRegionId(int id) { regionId_ = id; }
   void setType(Type type) { type_ = type; }
   void setWidth(int w) { w_ = w; }
+  void setMaster(Master* in) { master_ = in; }
 
   bool adjustCurrOrient(unsigned newOrient);
 
@@ -120,12 +145,11 @@ class Node
   bool isFiller() const { return (type_ == FILLER); }
   bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
-  int getLeftEdgeType() const { return etl_; }
-  int getRightEdgeType() const { return etr_; }
-
-  void setLeftEdgeType(int etl) { etl_ = etl; }
-  void setRightEdgeType(int etr) { etr_ = etr; }
-  void swapEdgeTypes() { std::swap<int>(etl_, etr_); }
+  void addLeftEdgeType(int etl) { etls_.emplace_back(etl); }
+  void addRigthEdgeType(int etr) { etrs_.emplace_back(etr); }
+  const std::vector<int>& getLeftEdgeTypes() const { return etls_; }
+  const std::vector<int>& getRightEdgeTypes() const { return etrs_; }
+  void swapEdgeTypes() { std::swap(etls_, etrs_); }
 
   int getNumPins() const { return (int) pins_.size(); }
   const std::vector<Pin*>& getPins() const { return pins_; }
@@ -147,8 +171,7 @@ class Node
   // Fixed or not fixed.
   Fixity fixed_ = NOT_FIXED;
   // For edge types and spacing tables.
-  int etl_ = EDGETYPE_DEFAULT;
-  int etr_ = EDGETYPE_DEFAULT;
+  std::vector<int> etls_, etrs_;
   // For power.
   int powerTop_ = Architecture::Row::Power_UNK;
   int powerBot_ = Architecture::Row::Power_UNK;
@@ -159,6 +182,8 @@ class Node
   unsigned availOrient_ = Orientation_N;
   // Pins.
   std::vector<Pin*> pins_;
+  // Master and edges
+  Master* master_{nullptr};
 
   friend class Network;
 };
@@ -307,6 +332,9 @@ class Network
   // For creating and adding edges.
   Edge* createAndAddEdge();
 
+  // For creating masters.
+  Master* createAndAddMaster();
+
   void createAndAddBlockage(const odb::Rect& bounds);
 
  private:
@@ -317,7 +345,8 @@ class Network
   std::vector<Node*> nodes_;  // The nodes in the netlist...
   std::unordered_map<int, std::string> nodeNames_;  // Names of nodes...
   std::vector<Pin*> pins_;            // The pins in the network...
-  std::vector<odb::Rect> blockages_;  // The placement blockages ...
+  std::vector<odb::Rect> blockages_;  // The placement blockages ..
+  std::vector<std::unique_ptr<Master>> masters_;
 };
 
 }  // namespace dpo

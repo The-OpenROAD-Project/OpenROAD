@@ -1,7 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, Andrew Kennings
+// Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,45 +30,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
-
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
-#include <vector>
-
-#include "architecture.h"
-#include "detailed_manager.h"
-#include "detailed_segment.h"
-#include "network.h"
-#include "router.h"
-
+#include "journal.h"
 namespace dpo {
-
-////////////////////////////////////////////////////////////////////////////////
-// Forward declarations.
-////////////////////////////////////////////////////////////////////////////////
-class Journal;
-
-////////////////////////////////////////////////////////////////////////////////
-// Classes.
-////////////////////////////////////////////////////////////////////////////////
-class DetailedObjective
+void Journal::clearJournal()
 {
- public:
-  explicit DetailedObjective(const char* name = "objective") : name_(name) {}
-  virtual ~DetailedObjective() = default;
-
-  virtual const std::string& getName() const { return name_; }
-
-  virtual double curr() = 0;
-
-  virtual double delta(const Journal& journal) = 0;
-  virtual void accept() {}
-  virtual void reject() {}
-
- private:
-  const std::string name_;
-};
-
+  actions_.clear();
+  affected_nodes_.clear();
+}
 }  // namespace dpo
