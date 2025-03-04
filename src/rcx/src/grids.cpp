@@ -2427,9 +2427,7 @@ void Ath__gridTable::dumpTrackCounts(FILE* fp)
 Ath__gridTable::Ath__gridTable(Rect* bb,
                                uint rowCnt,
                                uint colCnt,
-                               uint* /* unused: width */,
                                uint* pitch,
-                               uint* /* unused: spacing */,
                                const int* X1,
                                const int* Y1)
 {

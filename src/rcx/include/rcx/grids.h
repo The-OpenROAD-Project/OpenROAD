@@ -574,9 +574,7 @@ class Ath__gridTable
   Ath__gridTable(Rect* bb,
                  uint rowCnt,
                  uint colCnt,
-                 uint* width,
                  uint* pitch,
-                 uint* spacing,
                  const int* X1 = nullptr,
                  const int* Y1 = nullptr);
   ~Ath__gridTable();
