@@ -345,7 +345,7 @@ class Grid
        uint num,
        uint width,
        uint pitch,
-       uint markerCnt = 4);
+       uint markerCnt);
   Grid(GridTable* gt,
        AthPool<Track>* trackPool,
        AthPool<Wire>* wirePool,
@@ -365,7 +365,6 @@ class Grid
                  int yhi,
                  uint markerLen = 0);
   void setPlaced();
-  void setSchema(uint v);
   bool isPlaced();
 
   bool anyTrackAvailable();
@@ -515,7 +514,6 @@ class Grid
   AthPool<Track>* _trackPoolPtr;
   AthPool<Wire>* _wirePoolPtr;
 
-  uint _schema;
   uint _wireType;
 
   uint _currentTrack;
@@ -738,7 +736,6 @@ class GridTable
   uint _colSize;
   AthPool<Track>* _trackPool;
   AthPool<Wire>* _wirePool;
-  uint _schema{1};
   uint _overlapAdjust{Z_noAdjust};
   uint _powerMultiTrackWire{0};
   uint _signalMultiTrackWire{0};

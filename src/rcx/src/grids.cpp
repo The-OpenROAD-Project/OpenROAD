@@ -1284,7 +1284,6 @@ Grid::Grid(GridTable* gt,
   _markerCnt = markerCnt;
   _level = level;
   _layer = num;
-  _schema = 0;
 }
 
 void Grid::setTracks(uint dir,
@@ -1307,10 +1306,6 @@ void Grid::setTracks(uint dir,
     }
   }
 }
-void Grid::setSchema(uint v)
-{
-  _schema = v;
-}
 Grid::Grid(GridTable* gt,
            AthPool<Track>* trackPool,
            AthPool<Wire>* wirePool,
@@ -1332,7 +1327,6 @@ Grid::Grid(GridTable* gt,
 
   setBoundaries(dir, bb->getRect());
   makeTrackTable(width, pitch);
-  _schema = 0;
 }
 void Grid::getBbox(SearchBox* bb)
 {
@@ -1901,11 +1895,7 @@ uint Grid::search(SearchBox* bb, Ath__array1D<uint>* idtable, bool wireIdFlag)
     tstrack = nullptr;
     bool tohi = true;
     while ((tstrack = track->getNextSubTrack(tstrack, tohi)) != nullptr) {
-      if (_schema > 0) {
-        tstrack->search1(loXY, hiXY, loMarker, hiMarker, &wireIdTable);
-      } else {
-        tstrack->search(loXY, hiXY, loMarker, hiMarker, idtable);
-      }
+      tstrack->search1(loXY, hiXY, loMarker, hiMarker, &wireIdTable);
     }
   }
   if (wireIdFlag) {
@@ -1993,10 +1983,6 @@ void Grid::getBuses(Ath__array1D<Box*>* boxTable, uint width)
 
     Track* track = _trackTable[ii];
     if (track == nullptr) {
-      continue;
-    }
-
-    if (!(_schema > 0)) {
       continue;
     }
 
@@ -2413,7 +2399,6 @@ GridTable::GridTable(Rect* bb,
       const int y1 = Y1 ? Y1[jj] : bb->yMin();
       _gridTable[ii][jj]->setTracks(
           ii, 1, pitch[jj], x1, y1, x2, y2, markerLen);
-      _gridTable[ii][jj]->setSchema(_schema);
     }
   }
 }
@@ -2433,31 +2418,19 @@ GridTable::~GridTable()
 }
 int GridTable::xMin()
 {
-  if (_schema > 0) {
-    return _rectBB.xMin();
-  }
-  return _bbox.getRect().xMin();
+  return _rectBB.xMin();
 }
 int GridTable::xMax()
 {
-  if (_schema > 0) {
-    return _rectBB.xMax();
-  }
-  return _bbox.getRect().xMax();
+  return _rectBB.xMax();
 }
 int GridTable::yMin()
 {
-  if (_schema > 0) {
-    return _rectBB.yMin();
-  }
-  return _bbox.getRect().yMin();
+  return _rectBB.yMin();
 }
 int GridTable::yMax()
 {
-  if (_schema > 0) {
-    return _rectBB.yMax();
-  }
-  return _bbox.getRect().yMax();
+  return _rectBB.yMax();
 }
 uint GridTable::getRowNum(int y)
 {
