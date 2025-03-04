@@ -62,7 +62,7 @@ enum Ath__overlapAdjust
 
 class Ath__track;
 class Ath__grid;
-class Ath__gridTable;
+class GridTable;
 struct SEQ;
 
 class Ath__searchBox
@@ -185,7 +185,7 @@ class Ath__wire
 
   friend class Ath__track;
   friend class Ath__grid;
-  friend class Ath__gridTable;
+  friend class GridTable;
 };
 
 class Ath__track
@@ -326,7 +326,7 @@ class Ath__track
   Ath__wire** _marker;
   // --------------------------------------------------------
 
-  friend class Ath__gridTable;
+  friend class GridTable;
   friend class Ath__grid;
   friend class Ath__wire;
 };
@@ -339,7 +339,7 @@ class Ath__grid
                               int startXY = 0);
   uint placeWire_v2(Ath__searchBox* bb);
 
-  Ath__grid(Ath__gridTable* gt,
+  Ath__grid(GridTable* gt,
             AthPool<Ath__track>* trackPool,
             AthPool<Ath__wire>* wirePool,
             Ath__box* bb,
@@ -349,7 +349,7 @@ class Ath__grid
             uint width,
             uint pitch,
             uint markerCnt = 4);
-  Ath__grid(Ath__gridTable* gt,
+  Ath__grid(GridTable* gt,
             AthPool<Ath__track>* trackPool,
             AthPool<Ath__wire>* wirePool,
             uint level,
@@ -357,7 +357,7 @@ class Ath__grid
             uint markerCnt);
   ~Ath__grid();
 
-  Ath__gridTable* getGridTable() { return _gridtable; };
+  GridTable* getGridTable() { return _gridtable; };
   void setBoundaries(uint dir, const odb::Rect& rect);
   void setTracks(uint dir,
                  uint width,
@@ -496,7 +496,7 @@ class Ath__grid
   int getPitch() const { return _pitch; }
 
  private:
-  Ath__gridTable* _gridtable;
+  GridTable* _gridtable;
   Ath__track** _trackTable;
   uint* _blockedTrackTable;
   int _trackCnt;
@@ -533,10 +533,10 @@ class Ath__grid
   uint _currentTrack;
   uint _lastFreeTrack;
 
-  friend class Ath__gridTable;
+  friend class GridTable;
 };
 
-class Ath__gridTable
+class GridTable
 {
   // -------------------------------------------------------------- v2
  public:
@@ -571,13 +571,13 @@ class Ath__gridTable
                         AthPool<SEQ>* seqPool);
 
   // -------------------------------------------------------------
-  Ath__gridTable(Rect* bb,
-                 uint rowCnt,
-                 uint colCnt,
-                 uint* pitch,
-                 const int* X1 = nullptr,
-                 const int* Y1 = nullptr);
-  ~Ath__gridTable();
+  GridTable(Rect* bb,
+            uint rowCnt,
+            uint colCnt,
+            uint* pitch,
+            const int* X1 = nullptr,
+            const int* Y1 = nullptr);
+  ~GridTable();
   Ath__grid* getGrid(uint row, uint col);
   uint getColCnt();
   uint getRowCnt();

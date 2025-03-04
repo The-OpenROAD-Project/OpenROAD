@@ -347,7 +347,7 @@ uint extMain::initSearchForNets(int* X1,
   }
   const uint layerCnt = n + 1;
 
-  _search = new Ath__gridTable(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
+  _search = new GridTable(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
   _search->setBlock(_block);
 
   return layerCnt;

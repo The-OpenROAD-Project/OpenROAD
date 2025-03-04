@@ -455,9 +455,9 @@ bool extMeasure::IsDebugNet1()
   else
     return false;
 }
-void Ath__gridTable::initCouplingCapLoops_v2(uint dir,
-                                             uint couplingDist,
-                                             int* startXY)
+void GridTable::initCouplingCapLoops_v2(uint dir,
+                                        uint couplingDist,
+                                        int* startXY)
 {
   setCCFlag(couplingDist);
 

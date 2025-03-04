@@ -297,7 +297,7 @@ int Ath__wire::getShapeProperty(int id)
 }
 dbNet* Ath__wire::getNet()
 {
-  Ath__gridTable* gtb = _track->getGrid()->getGridTable();
+  GridTable* gtb = _track->getGrid()->getGridTable();
   dbBlock* block = gtb->getBlock();
   if (_otherId == 0) {
     return (odb::dbSBox::getSBox(block, _boxId)->getSWire()->getNet());
@@ -1284,7 +1284,7 @@ void Ath__grid::setBoundaries(uint dir, const odb::Rect& rect)
     _end = rect.xMax();
   }
 }
-Ath__grid::Ath__grid(Ath__gridTable* gt,
+Ath__grid::Ath__grid(GridTable* gt,
                      AthPool<Ath__track>* trackPool,
                      AthPool<Ath__wire>* wirePool,
                      uint level,
@@ -1324,7 +1324,7 @@ void Ath__grid::setSchema(uint v)
 {
   _schema = v;
 }
-Ath__grid::Ath__grid(Ath__gridTable* gt,
+Ath__grid::Ath__grid(GridTable* gt,
                      AthPool<Ath__track>* trackPool,
                      AthPool<Ath__wire>* wirePool,
                      Ath__box* bb,
@@ -2303,24 +2303,24 @@ int Ath__grid::findEmptyTrack(int ll[2], int ur[2])
   return -1;
 }
 
-void Ath__gridTable::releaseWire(uint wireId)
+void GridTable::releaseWire(uint wireId)
 {
   Ath__wire* w = _wirePool->get(wireId);
   _wirePool->free(w);
 }
-Ath__wire* Ath__gridTable::getWirePtr(uint id)
+Ath__wire* GridTable::getWirePtr(uint id)
 {
   return _wirePool->get(id);
 }
-uint Ath__gridTable::getRowCnt()
+uint GridTable::getRowCnt()
 {
   return _rowCnt;
 }
-uint Ath__gridTable::getColCnt()
+uint GridTable::getColCnt()
 {
   return _colCnt;
 }
-void Ath__gridTable::dumpTrackCounts(FILE* fp)
+void GridTable::dumpTrackCounts(FILE* fp)
 {
   fprintf(fp, "Multiple_track_power_wires : %d\n", _powerMultiTrackWire);
   fprintf(fp, "Multiple_track_signal_wires : %d\n", _signalMultiTrackWire);
@@ -2395,12 +2395,12 @@ void Ath__gridTable::dumpTrackCounts(FILE* fp)
           texpand,
           ttsubtn);
 }
-Ath__gridTable::Ath__gridTable(Rect* bb,
-                               uint rowCnt,
-                               uint colCnt,
-                               uint* pitch,
-                               const int* X1,
-                               const int* Y1)
+GridTable::GridTable(Rect* bb,
+                     uint rowCnt,
+                     uint colCnt,
+                     uint* pitch,
+                     const int* X1,
+                     const int* Y1)
 {
   const int memChunk = 1024;
   _trackPool = new AthPool<Ath__track>(memChunk);
@@ -2442,7 +2442,7 @@ Ath__gridTable::Ath__gridTable(Rect* bb,
   }
 }
 
-Ath__gridTable::~Ath__gridTable()
+GridTable::~GridTable()
 {
   delete _trackPool;
   delete _wirePool;
@@ -2455,35 +2455,35 @@ Ath__gridTable::~Ath__gridTable()
   }
   delete[] _gridTable;
 }
-int Ath__gridTable::xMin()
+int GridTable::xMin()
 {
   if (_schema > 0) {
     return _rectBB.xMin();
   }
   return _bbox.getRect().xMin();
 }
-int Ath__gridTable::xMax()
+int GridTable::xMax()
 {
   if (_schema > 0) {
     return _rectBB.xMax();
   }
   return _bbox.getRect().xMax();
 }
-int Ath__gridTable::yMin()
+int GridTable::yMin()
 {
   if (_schema > 0) {
     return _rectBB.yMin();
   }
   return _bbox.getRect().yMin();
 }
-int Ath__gridTable::yMax()
+int GridTable::yMax()
 {
   if (_schema > 0) {
     return _rectBB.yMax();
   }
   return _bbox.getRect().yMax();
 }
-uint Ath__gridTable::getRowNum(int y)
+uint GridTable::getRowNum(int y)
 {
   int dy = y - yMin();
   if (dy < 0) {
@@ -2491,7 +2491,7 @@ uint Ath__gridTable::getRowNum(int y)
   }
   return dy / _rowSize;
 }
-uint Ath__gridTable::getColNum(int x)
+uint GridTable::getColNum(int x)
 {
   int dx = x - xMin();
   if (dx < 0) {
@@ -2500,24 +2500,24 @@ uint Ath__gridTable::getColNum(int x)
 
   return dx / _colSize;
 }
-uint Ath__gridTable::search(Ath__searchBox* bb,
-                            uint row,
-                            uint col,
-                            Ath__array1D<uint>* idTable,
-                            bool wireIdFlag)
+uint GridTable::search(Ath__searchBox* bb,
+                       uint row,
+                       uint col,
+                       Ath__array1D<uint>* idTable,
+                       bool wireIdFlag)
 {
   return _gridTable[row][col]->search(bb, idTable, wireIdFlag);
 }
-uint Ath__gridTable::search(Ath__searchBox* bb,
-                            uint* gxy,
-                            uint row,
-                            uint col,
-                            Ath__array1D<uint>* idtable,
-                            Ath__grid* g)
+uint GridTable::search(Ath__searchBox* bb,
+                       uint* gxy,
+                       uint row,
+                       uint col,
+                       Ath__array1D<uint>* idtable,
+                       Ath__grid* g)
 {
   return _gridTable[row][col]->search(bb, gxy, idtable, g);
 }
-uint Ath__gridTable::search(Ath__searchBox* bb, Ath__array1D<uint>* idTable)
+uint GridTable::search(Ath__searchBox* bb, Ath__array1D<uint>* idTable)
 {
   uint row1 = getRowNum(bb->loXY(1));
   if (row1 > 0) {
@@ -2540,7 +2540,7 @@ uint Ath__gridTable::search(Ath__searchBox* bb, Ath__array1D<uint>* idTable)
   }
   return 0;
 }
-bool Ath__gridTable::getRowCol(int x1, int y1, uint* row, uint* col)
+bool GridTable::getRowCol(int x1, int y1, uint* row, uint* col)
 {
   *row = getRowNum(y1);
   if (*row >= _rowCnt) {
@@ -2554,7 +2554,7 @@ bool Ath__gridTable::getRowCol(int x1, int y1, uint* row, uint* col)
   }
   return true;
 }
-uint Ath__gridTable::setExtrusionMarker(uint startRow, uint startCol)
+uint GridTable::setExtrusionMarker(uint startRow, uint startCol)
 {
   uint cnt = 0;
   for (uint ii = startRow; ii < _rowCnt; ii++) {
@@ -2587,11 +2587,11 @@ uint Ath__grid::removeMarkedNetWires()
   return cnt;
 }
 
-Ath__grid* Ath__gridTable::getGrid(uint row, uint col)
+Ath__grid* GridTable::getGrid(uint row, uint col)
 {
   return _gridTable[row][col];
 }
-bool Ath__gridTable::addBox(uint row, uint col, dbBox* bb)
+bool GridTable::addBox(uint row, uint col, dbBox* bb)
 {
   Ath__grid* g = _gridTable[row][col];
 
@@ -2599,7 +2599,7 @@ bool Ath__gridTable::addBox(uint row, uint col, dbBox* bb)
 
   return true;
 }
-Ath__wire* Ath__gridTable::addBox(dbBox* bb, uint wtype, uint id)
+Ath__wire* GridTable::addBox(dbBox* bb, uint wtype, uint id)
 {
   uint row = 0;
   uint col = 0;
@@ -2609,7 +2609,7 @@ Ath__wire* Ath__gridTable::addBox(dbBox* bb, uint wtype, uint id)
 
   return nullptr;
 }
-Ath__wire* Ath__gridTable::addBox(Ath__box* bb)
+Ath__wire* GridTable::addBox(Ath__box* bb)
 {
   uint row;
   uint col;
@@ -2623,7 +2623,7 @@ Ath__wire* Ath__gridTable::addBox(Ath__box* bb)
 
   return nullptr;
 }
-Ath__wire* Ath__gridTable::getWire_Linear(uint instId)
+Ath__wire* GridTable::getWire_Linear(uint instId)
 {
   // bool ordered= true;
 
@@ -2638,7 +2638,7 @@ Ath__wire* Ath__gridTable::getWire_Linear(uint instId)
   }
   return nullptr;
 }
-void Ath__gridTable::adjustOverlapMakerEnd()
+void GridTable::adjustOverlapMakerEnd()
 {
   if (_overlapAdjust != Z_endAdjust) {
     return;
@@ -2652,7 +2652,7 @@ void Ath__gridTable::adjustOverlapMakerEnd()
   }
 }
 
-void Ath__gridTable::incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2)
+void GridTable::incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2)
 {
   if (w1->isPower() != w2->isPower()) {
     _signalPowerNotAlignedOverlap++;
@@ -2662,23 +2662,23 @@ void Ath__gridTable::incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2)
     _signalNotAlignedOverlap++;
   }
 }
-void Ath__gridTable::incrSignalOverlap()
+void GridTable::incrSignalOverlap()
 {
   _signalOverlap++;
 }
-void Ath__gridTable::incrPowerOverlap()
+void GridTable::incrPowerOverlap()
 {
   _powerOverlap++;
 }
-void Ath__gridTable::incrSignalToPowerOverlap()
+void GridTable::incrSignalToPowerOverlap()
 {
   _signalPowerOverlap++;
 }
-void Ath__gridTable::incrPowerToSignallOverlap()
+void GridTable::incrPowerToSignallOverlap()
 {
   _powerSignalOverlap++;
 }
-void Ath__gridTable::incrMultiTrackWireCnt(bool isPower)
+void GridTable::incrMultiTrackWireCnt(bool isPower)
 {
   if (isPower) {
     _powerMultiTrackWire++;
@@ -2686,7 +2686,7 @@ void Ath__gridTable::incrMultiTrackWireCnt(bool isPower)
     _signalMultiTrackWire++;
   }
 }
-bool Ath__gridTable::isOrdered(bool /* unused: ascending */)
+bool GridTable::isOrdered(bool /* unused: ascending */)
 {
   bool ordered = true;
 
@@ -2709,7 +2709,7 @@ bool Ath__gridTable::isOrdered(bool /* unused: ascending */)
   return ordered;
 }
 
-void Ath__gridTable::removeMarkedNetWires()
+void GridTable::removeMarkedNetWires()
 {
   uint cnt = 0;
   for (uint jj = 1; jj < _colCnt; jj++) {
@@ -2721,27 +2721,27 @@ void Ath__gridTable::removeMarkedNetWires()
   fprintf(stdout, "remove %d sdb wires.\n", cnt);
 }
 
-void Ath__gridTable::setExtControl(dbBlock* block,
-                                   bool useDbSdb,
-                                   uint adj,
-                                   uint npsrc,
-                                   uint nptgt,
-                                   uint ccUp,
-                                   bool allNet,
-                                   uint contextDepth,
-                                   Ath__array1D<int>** contextArray,
-                                   Ath__array1D<SEQ*>*** dgContextArray,
-                                   uint* dgContextDepth,
-                                   uint* dgContextPlanes,
-                                   uint* dgContextTracks,
-                                   uint* dgContextBaseLvl,
-                                   int* dgContextLowLvl,
-                                   int* dgContextHiLvl,
-                                   uint* dgContextBaseTrack,
-                                   int* dgContextLowTrack,
-                                   int* dgContextHiTrack,
-                                   int** dgContextTrackBase,
-                                   AthPool<SEQ>* seqPool)
+void GridTable::setExtControl(dbBlock* block,
+                              bool useDbSdb,
+                              uint adj,
+                              uint npsrc,
+                              uint nptgt,
+                              uint ccUp,
+                              bool allNet,
+                              uint contextDepth,
+                              Ath__array1D<int>** contextArray,
+                              Ath__array1D<SEQ*>*** dgContextArray,
+                              uint* dgContextDepth,
+                              uint* dgContextPlanes,
+                              uint* dgContextTracks,
+                              uint* dgContextBaseLvl,
+                              int* dgContextLowLvl,
+                              int* dgContextHiLvl,
+                              uint* dgContextBaseTrack,
+                              int* dgContextLowTrack,
+                              int* dgContextHiTrack,
+                              int** dgContextTrackBase,
+                              AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;
@@ -2771,28 +2771,28 @@ void Ath__gridTable::setExtControl(dbBlock* block,
   _dgContextTrackBase = dgContextTrackBase;
   _seqPool = seqPool;
 }
-void Ath__gridTable::setExtControl_v2(dbBlock* block,
-                                      bool useDbSdb,
-                                      uint adj,
-                                      uint npsrc,
-                                      uint nptgt,
-                                      uint ccUp,
-                                      bool allNet,
-                                      uint contextDepth,
-                                      Ath__array1D<int>** contextArray,
-                                      uint* contextLength,
-                                      Ath__array1D<SEQ*>*** dgContextArray,
-                                      uint* dgContextDepth,
-                                      uint* dgContextPlanes,
-                                      uint* dgContextTracks,
-                                      uint* dgContextBaseLvl,
-                                      int* dgContextLowLvl,
-                                      int* dgContextHiLvl,
-                                      uint* dgContextBaseTrack,
-                                      int* dgContextLowTrack,
-                                      int* dgContextHiTrack,
-                                      int** dgContextTrackBase,
-                                      AthPool<SEQ>* seqPool)
+void GridTable::setExtControl_v2(dbBlock* block,
+                                 bool useDbSdb,
+                                 uint adj,
+                                 uint npsrc,
+                                 uint nptgt,
+                                 uint ccUp,
+                                 bool allNet,
+                                 uint contextDepth,
+                                 Ath__array1D<int>** contextArray,
+                                 uint* contextLength,
+                                 Ath__array1D<SEQ*>*** dgContextArray,
+                                 uint* dgContextDepth,
+                                 uint* dgContextPlanes,
+                                 uint* dgContextTracks,
+                                 uint* dgContextBaseLvl,
+                                 int* dgContextLowLvl,
+                                 int* dgContextHiLvl,
+                                 uint* dgContextBaseTrack,
+                                 int* dgContextLowTrack,
+                                 int* dgContextHiTrack,
+                                 int** dgContextTrackBase,
+                                 AthPool<SEQ>* seqPool)
 {
   _block = block;
   _useDbSdb = useDbSdb;
@@ -2822,31 +2822,31 @@ void Ath__gridTable::setExtControl_v2(dbBlock* block,
   _dgContextTrackBase = dgContextTrackBase;
   _seqPool = seqPool;
 }
-void Ath__gridTable::reverseTargetTrack()
+void GridTable::reverseTargetTrack()
 {
   _CCtargetHighTracks = _CCtargetHighTracks == 2 ? 0 : 2;
   _targetTrackReversed = _targetTrackReversed ? false : true;
 }
 
-void Ath__gridTable::setMaxArea(int x1, int y1, int x2, int y2)
+void GridTable::setMaxArea(int x1, int y1, int x2, int y2)
 {
   _maxSearchBox.set(x1, y1, x2, y2, 1);
   _setMaxArea = true;
 }
-void Ath__gridTable::resetMaxArea()
+void GridTable::resetMaxArea()
 {
   _setMaxArea = false;
   _maxSearchBox.invalidateBox();
 }
-void Ath__gridTable::getBox(uint wid,
-                            int* x1,
-                            int* y1,
-                            int* x2,
-                            int* y2,
-                            uint* level,
-                            uint* id1,
-                            uint* id2,
-                            uint* wtype)
+void GridTable::getBox(uint wid,
+                       int* x1,
+                       int* y1,
+                       int* x2,
+                       int* y2,
+                       uint* level,
+                       uint* id1,
+                       uint* id2,
+                       uint* wtype)
 {
   Ath__wire* w = getWirePtr(wid);
 
@@ -2857,14 +2857,14 @@ void Ath__gridTable::getBox(uint wid,
   uint dir;
   w->getCoords(x1, y1, x2, y2, &dir);
 }
-uint Ath__gridTable::addBox(int x1,
-                            int y1,
-                            int x2,
-                            int y2,
-                            uint level,
-                            uint id1,
-                            uint id2,
-                            uint wireType)
+uint GridTable::addBox(int x1,
+                       int y1,
+                       int x2,
+                       int y2,
+                       uint level,
+                       uint id1,
+                       uint id2,
+                       uint wireType)
 {
   Ath__searchBox bb(x1, y1, x2, y2, level);
   bb.setOwnerId(id1, id2);
@@ -2876,24 +2876,24 @@ uint Ath__gridTable::addBox(int x1,
   _wireCnt++;
   return trackNum;
 }
-uint Ath__gridTable::getWireCnt()
+uint GridTable::getWireCnt()
 {
   return _wireCnt;
 }
-uint Ath__gridTable::search(int x1,
-                            int y1,
-                            int x2,
-                            int y2,
-                            uint row,
-                            uint col,
-                            Ath__array1D<uint>* idTable,
-                            bool /* unused: wireIdFlag */)
+uint GridTable::search(int x1,
+                       int y1,
+                       int x2,
+                       int y2,
+                       uint row,
+                       uint col,
+                       Ath__array1D<uint>* idTable,
+                       bool /* unused: wireIdFlag */)
 {
   Ath__searchBox bb(x1, y1, x2, y2, col, row);
 
   return search(&bb, row, col, idTable, true);  // single grid
 }
-void Ath__gridTable::getCoords(Ath__searchBox* bb, uint wireId)
+void GridTable::getCoords(Ath__searchBox* bb, uint wireId)
 {
   Ath__wire* w = getWirePtr(wireId);
   w->getCoords(bb);

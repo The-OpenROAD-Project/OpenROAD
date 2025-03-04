@@ -158,7 +158,7 @@ void Ath__grid::dealloc()
   }
 }
 
-void Ath__gridTable::dealloc()
+void GridTable::dealloc()
 {
   for (uint dir = 0; dir < _rowCnt; dir++) {
     for (uint jj = 1; jj < _colCnt; jj++) {

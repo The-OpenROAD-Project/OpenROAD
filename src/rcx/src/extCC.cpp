@@ -533,7 +533,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
   return wireCnt;
 }
 
-void Ath__gridTable::setDefaultWireType(uint v)
+void GridTable::setDefaultWireType(uint v)
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
     for (uint jj = 0; jj < _colCnt; jj++) {
@@ -654,7 +654,7 @@ void Ath__grid::buildDgContext(int gridn, int base)
   }
 }
 
-Ath__array1D<SEQ*>* Ath__gridTable::renewDgContext(uint gridn, uint trackn)
+Ath__array1D<SEQ*>* GridTable::renewDgContext(uint gridn, uint trackn)
 {
   Ath__array1D<SEQ*>* dgContext = _dgContextArray[gridn][trackn];
   for (uint ii = 0; ii < dgContext->getCnt(); ii++) {
@@ -670,7 +670,7 @@ Ath__array1D<SEQ*>* Ath__gridTable::renewDgContext(uint gridn, uint trackn)
   return dgContext;
 }
 
-void Ath__gridTable::buildDgContext(int base, uint level, uint dir)
+void GridTable::buildDgContext(int base, uint level, uint dir)
 {
   *_dgContextBaseLvl = level;
   *_dgContextLowLvl = (int) level - (int) *_dgContextDepth >= 1
@@ -812,7 +812,7 @@ int Ath__grid::dealloc(int hiXY)
   return hiXY;
 }
 
-int Ath__gridTable::dealloc(uint dir, int hiXY)
+int GridTable::dealloc(uint dir, int hiXY)
 {
   for (uint jj = 1; jj < _colCnt; jj++) {
     Ath__grid* netGrid = _gridTable[dir][jj];
@@ -910,14 +910,14 @@ int Ath__grid::getBandWires(int hiXY,
   return baseXY;
 }
 
-int Ath__gridTable::couplingCaps(int hiXY,
-                                 uint couplingDist,
-                                 uint dir,
-                                 uint& wireCnt,
-                                 rcx::CoupleAndCompute coupleAndCompute,
-                                 void* compPtr,
-                                 bool getBandWire,
-                                 int** limitArray)
+int GridTable::couplingCaps(int hiXY,
+                            uint couplingDist,
+                            uint dir,
+                            uint& wireCnt,
+                            rcx::CoupleAndCompute coupleAndCompute,
+                            void* compPtr,
+                            bool getBandWire,
+                            int** limitArray)
 {
   _ttttGetDgOverlap = true;
   setCCFlag(couplingDist);
@@ -983,12 +983,11 @@ int Ath__grid::initCouplingCapLoops(uint couplingDist,
   return _base + _pitch * _searchHiTrack;
 }
 
-void Ath__gridTable::initCouplingCapLoops(
-    uint dir,
-    uint couplingDist,
-    rcx::CoupleAndCompute coupleAndCompute,
-    void* compPtr,
-    int* startXY)
+void GridTable::initCouplingCapLoops(uint dir,
+                                     uint couplingDist,
+                                     rcx::CoupleAndCompute coupleAndCompute,
+                                     void* compPtr,
+                                     int* startXY)
 {
   _ttttGetDgOverlap = true;
   setCCFlag(couplingDist);

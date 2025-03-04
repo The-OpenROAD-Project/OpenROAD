@@ -68,7 +68,7 @@ using odb::uint;
 using utl::Logger;
 
 class extSpef;
-class Ath__gridTable;
+class GridTable;
 
 // CoupleOptions seriously needs to be rewriten to use a class with named
 // members. -cherry 05/09/2021
@@ -1016,7 +1016,7 @@ class extMeasure
   double _peffR;
   bool _skipResCalc = false;
 
-  Ath__gridTable* _search = NULL;
+  GridTable* _search = NULL;
   bool IsDebugNet1();
   static int getMetIndexOverUnder(int met,
                                   int mUnder,
@@ -2788,7 +2788,7 @@ class extMain
   std::vector<odb::dbBTerm*> _connectedBTerm;
   std::vector<odb::dbITerm*> _connectedITerm;
 
-  Ath__gridTable* _search = nullptr;
+  GridTable* _search = nullptr;
 
   int _noVariationIndex;
 
