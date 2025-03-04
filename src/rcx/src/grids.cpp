@@ -1275,7 +1275,6 @@ Grid::Grid(GridTable* gt,
            AthPool<Track>* trackPool,
            AthPool<Wire>* wirePool,
            uint level,
-           uint num,
            uint markerCnt)
 {
   _gridtable = gt;
@@ -1283,7 +1282,6 @@ Grid::Grid(GridTable* gt,
   _wirePoolPtr = wirePool;
   _markerCnt = markerCnt;
   _level = level;
-  _layer = num;
 }
 
 void Grid::setTracks(uint dir,
@@ -2370,9 +2368,7 @@ GridTable::GridTable(Rect* bb,
     _gridTable[ii][0] = nullptr;
 
     for (uint jj = 1; jj < _colCnt; jj++) {
-      uint num = ii * 1000 + jj;
-
-      _gridTable[ii][jj] = new Grid(this, _trackPool, _wirePool, jj, num, 10);
+      _gridTable[ii][jj] = new Grid(this, _trackPool, _wirePool, jj, 10);
       const int x1 = X1 ? X1[jj] : bb->xMin();
       const int y1 = Y1 ? Y1[jj] : bb->yMin();
       _gridTable[ii][jj]->setTracks(

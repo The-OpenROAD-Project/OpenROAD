@@ -339,7 +339,6 @@ class Grid
        AthPool<Track>* trackPool,
        AthPool<Wire>* wirePool,
        uint level,
-       uint num,
        uint markerCnt);
   ~Grid();
 
@@ -489,7 +488,6 @@ class Grid
   int _width;
   int _pitch;
   uint _level;
-  uint _layer;
   uint _dir;
   int _markerLen;
   uint _markerCnt;
