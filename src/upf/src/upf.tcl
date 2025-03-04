@@ -204,8 +204,8 @@ proc set_isolation { args } {
   set applies_to ""
   set clamp_value ""
   set isolation_signal ""
-  set isolation_sense "high"
-  set location "self"
+  set isolation_sense ""
+  set location ""
   set update 0
 
   if { ![info exists keys(-domain)] } {
@@ -225,16 +225,19 @@ proc set_isolation { args } {
     set isolation_signal $keys(-isolation_signal)
   }
 
+  if { [info exists flags(-update)] } {
+    set update 1
+  } else {
+    set isolation_sense "high"
+    set location "self"
+  }
+
   if { [info exists keys(-isolation_sense)] } {
     set isolation_sense $keys(-isolation_sense)
   }
 
   if { [info exists keys(-location)] } {
     set location $keys(-location)
-  }
-
-  if { [info exists flags(-update)] } {
-    set update 1
   }
 
   upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value \
