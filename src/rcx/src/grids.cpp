@@ -247,35 +247,20 @@ void Ath__wire::reset()
   _dir = 0;
   _ext = 0;
 }
-bool Ath__wire::isTilePin()
-{
-  if (_flags == 1) {
-    return true;
-  }
-  return false;
-}
+
 bool Ath__wire::isTileBus()
 {
-  if (_flags == 2) {
-    return true;
-  }
-  return false;
+  return _flags == 2;
 }
 bool Ath__wire::isPower()
 {
-  uint power_wire_id = 11;  // see db/dbSearch.cpp
-  if (_flags == power_wire_id) {
-    return true;
-  }
-  return false;
+  const uint power_wire_id = 11;  // see db/dbSearch.cpp
+  return _flags == power_wire_id;
 }
 bool Ath__wire::isVia()
 {
-  uint via_wire_id = 5;  // see db/dbSearch.cpp
-  if (_flags == via_wire_id) {
-    return true;
-  }
-  return false;
+  const uint via_wire_id = 5;  // see db/dbSearch.cpp
+  return _flags == via_wire_id;
 }
 void Ath__wire::setOtherId(uint id)
 {
@@ -416,8 +401,6 @@ int Ath__wire::wireOverlap(Ath__wire* w, int* len1, int* len2, int* len3)
   int DX = _len;
   int x1 = w->_xy;
   int dx = w->_len;
-
-  //	fprintf(stdout, "%d %d   %d %d  : ", X1, DX,   x1, dx);
 
   int dx1 = X1 - x1;
   //*len1= dx1;
@@ -2349,105 +2332,6 @@ void Ath__gridTable::init1(uint memChunk,
   resetMaxArea();
 }
 
-Ath__gridTable::Ath__gridTable(Ath__box* bb,
-                               uint rowSize,
-                               uint colSize,
-                               uint layer,
-                               uint dir,
-                               uint width,
-                               uint pitch)
-{
-  init1(1024, rowSize, colSize, bb->getDX(), bb->getDY());
-  _bbox.set(bb);
-  _schema = 0;
-  _overlapTouchCheck = 1;
-  _noPowerSource = 0;
-  _noPowerTarget = 0;
-  _CCshorts = 0;
-  _CCtargetHighTracks = 1;
-  _targetTrackReversed = false;
-  _ccContextDepth = 0;
-  _ccContextArray = nullptr;
-  _allNet = true;
-  _useDbSdb = true;
-  _overlapAdjust = Z_noAdjust;
-  _powerMultiTrackWire = 0;
-  _signalMultiTrackWire = 0;
-  _bandWire = nullptr;
-
-  _gridTable = new Ath__grid**[_rowCnt];
-  const odb::Rect rect = bb->getRect();
-  int y1 = rect.yMin();
-  for (uint ii = 0; ii < _rowCnt; ii++) {
-    _gridTable[ii] = new Ath__grid*[_colCnt];
-
-    int y2 = y1 + rowSize;
-    int x1 = rect.xMin();
-    for (uint jj = 0; jj < _colCnt; jj++) {
-      int x2 = x1 + colSize;
-      uint num = ii * 1000 + jj;
-
-      Ath__box box;
-      box.set(x1, y1, x2, y2);
-      _gridTable[ii][jj] = new Ath__grid(
-          this, _trackPool, _wirePool, &box, layer, dir, num, width, pitch, 32);
-
-      x1 = x2;
-    }
-    y1 = y2;
-  }
-}
-Ath__gridTable::Ath__gridTable(dbBox* bb,
-                               uint rowSize,
-                               uint colSize,
-                               uint layer,
-                               uint dir,
-                               uint width,
-                               uint pitch,
-                               uint minWidth)
-{
-  init1(1024, rowSize, colSize, bb->getDX(), bb->getDY());
-  _rectBB = bb->getBox();
-  _schema = 1;
-  _overlapTouchCheck = 1;
-  _noPowerSource = 0;
-  _noPowerTarget = 0;
-  _CCshorts = 0;
-  _CCtargetHighTracks = 1;
-  _targetTrackReversed = false;
-  _ccContextDepth = 0;
-  _ccContextArray = nullptr;
-  _allNet = true;
-  _useDbSdb = true;
-  _overlapAdjust = Z_noAdjust;
-  _powerMultiTrackWire = 0;
-  _signalMultiTrackWire = 0;
-  _bandWire = nullptr;
-
-  uint maxCellNumPerMarker = 16;
-  uint markerCnt = (bb->getDX() / minWidth) / maxCellNumPerMarker;
-
-  _gridTable = new Ath__grid**[_rowCnt];
-  int y1 = bb->yMin();
-  for (uint ii = 0; ii < _rowCnt; ii++) {
-    _gridTable[ii] = new Ath__grid*[_colCnt];
-
-    int y2 = y1 + rowSize;
-    int x1 = bb->xMin();
-    for (uint jj = 0; jj < _colCnt; jj++) {
-      int x2 = x1 + colSize;
-      uint num = ii * 1000 + jj;
-      // Rect rectBB(x1, y1, x2, y2);
-      _gridTable[ii][jj]
-          = new Ath__grid(this, _trackPool, _wirePool, layer, num, markerCnt);
-
-      _gridTable[ii][jj]->setTracks(dir, width, pitch, x1, y1, x2, y2);
-      _gridTable[ii][jj]->setSchema(_schema);
-      x1 = x2;
-    }
-    y1 = y2;
-  }
-}
 void Ath__gridTable::releaseWire(uint wireId)
 {
   Ath__wire* w = _wirePool->get(wireId);
@@ -2597,51 +2481,6 @@ Ath__gridTable::Ath__gridTable(Rect* bb,
   }
 }
 
-Ath__gridTable::Ath__gridTable(Rect* bb,
-                               uint layer,
-                               uint dir,
-                               uint width,
-                               uint pitch,
-                               uint minWidth)
-{
-  init1(1024, bb->dy(), bb->dx(), bb->dx(), bb->dy());
-  _colCnt = 1;
-  _rowCnt = 1;
-  _rectBB.reset(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
-  _schema = 1;
-  _overlapTouchCheck = 1;
-  _noPowerSource = 0;
-  _noPowerTarget = 0;
-  _CCshorts = 0;
-  _CCtargetHighTracks = 1;
-  _targetTrackReversed = false;
-  _ccContextDepth = 0;
-  _ccContextArray = nullptr;
-  _allNet = true;
-  _useDbSdb = true;
-  _overlapAdjust = Z_noAdjust;
-  _powerMultiTrackWire = 0;
-  _signalMultiTrackWire = 0;
-  _bandWire = nullptr;
-
-  uint maxCellNumPerMarker = 16;
-  uint markerCnt = (bb->dx() / minWidth) / maxCellNumPerMarker;
-  if (markerCnt == 0) {
-    markerCnt = 1;
-  }
-
-  Ath__grid* g
-      = new Ath__grid(this, _trackPool, _wirePool, layer, 1, markerCnt);
-
-  g->setTracks(
-      dir, width, pitch, bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
-  g->setSchema(_schema);
-
-  _gridTable = new Ath__grid**[1];
-  _gridTable[0] = new Ath__grid*[1];
-
-  _gridTable[0][0] = g;
-}
 Ath__gridTable::~Ath__gridTable()
 {
   delete _trackPool;

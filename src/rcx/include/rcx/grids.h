@@ -126,7 +126,6 @@ class Ath__wire
   uint getOtherId();
   bool isPower();
   bool isVia();
-  bool isTilePin();
   bool isTileBus();
   uint getOwnerId();
   uint getSrcId();
@@ -572,27 +571,6 @@ class Ath__gridTable
                         AthPool<SEQ>* seqPool);
 
   // -------------------------------------------------------------
-  Ath__gridTable(Ath__box* bb,
-                 uint rowSize,
-                 uint colSize,
-                 uint layer,
-                 uint dir,
-                 uint width,
-                 uint pitch);
-  Ath__gridTable(dbBox* bb,
-                 uint rowSize,
-                 uint colSize,
-                 uint layer,
-                 uint dir,
-                 uint width,
-                 uint pitch,
-                 uint minWidth);
-  Ath__gridTable(Rect* bb,
-                 uint layer,
-                 uint dir,
-                 uint width,
-                 uint pitch,
-                 uint minWidth);
   Ath__gridTable(Rect* bb,
                  uint rowCnt,
                  uint colCnt,
