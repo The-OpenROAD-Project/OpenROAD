@@ -12,7 +12,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0003] Number of I/O w/sink      0
 [INFO PPL-0004] Number of I/O w/o sink    3
 [INFO PPL-0012] I/O nets HPWL: 0.00 um.
-Die Area: (0, 0) (150, 125),  Floorplan Area: (0, 0) (149.91, 124.6)
+Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
 	Number of std cell instances: 400
 	Area of std cell instances: 1808.79
 	Number of macros: 1

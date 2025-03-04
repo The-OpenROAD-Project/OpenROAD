@@ -34,7 +34,6 @@
 #include "dbGDSBoundary.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -59,35 +58,10 @@ bool _dbGDSBoundary::operator<(const _dbGDSBoundary& rhs) const
   return true;
 }
 
-void _dbGDSBoundary::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbGDSBoundary& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_datatype);
-  DIFF_END
-}
-
-void _dbGDSBoundary::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_datatype);
-
-  DIFF_END
-}
-
 _dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db)
 {
   _layer = 0;
   _datatype = 0;
-}
-
-_dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db, const _dbGDSBoundary& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBoundary& obj)
@@ -106,6 +80,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSBoundary& obj)
   stream << obj._xy;
   stream << obj._propattr;
   return stream;
+}
+
+void _dbGDSBoundary::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["xy"].add(_xy);
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

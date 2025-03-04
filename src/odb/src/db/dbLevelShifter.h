@@ -40,14 +40,12 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbPowerDomain;
 
 class _dbLevelShifter : public _dbObject
 {
  public:
-  _dbLevelShifter(_dbDatabase*, const _dbLevelShifter& r);
   _dbLevelShifter(_dbDatabase*);
 
   ~_dbLevelShifter();
@@ -55,10 +53,7 @@ class _dbLevelShifter : public _dbObject
   bool operator==(const _dbLevelShifter& rhs) const;
   bool operator!=(const _dbLevelShifter& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbLevelShifter& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbLevelShifter& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbLevelShifter> _next_entry;

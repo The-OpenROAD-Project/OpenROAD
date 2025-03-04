@@ -331,7 +331,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  bool recoverPower(float recover_power_percent, bool match_cell_footprint);
+  bool recoverPower(float recover_power_percent,
+                    bool match_cell_footprint,
+                    bool verbose);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -341,6 +343,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Caller owns return value.
   NetSeq* findFloatingNets();
   PinSet* findFloatingPins();
+  NetSeq* findOverdrivenNets(bool include_parallel_driven);
   void repairTieFanout(LibertyPort* tie_port,
                        double separation,  // meters
                        bool verbose);
@@ -429,6 +432,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
+  std::pair<int, std::string> cellVTType(dbMaster* master);
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
@@ -438,9 +442,13 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
+  std::optional<float> cellLeakage(LibertyCell* cell);
+  // For debugging - calls getSwappableCells
+  void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
 
  protected:
   void init();
+  double computeDesignArea();
   void initDesignArea();
   void ensureLevelDrvrVertices();
   Instance* bufferInput(const Pin* top_pin, LibertyCell* buffer_cell);
@@ -502,6 +510,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   int findMaxSteinerDist(Vertex* drvr, const Corner* corner);
   float driveResistance(const Pin* drvr_pin);
   float bufferDriveResistance(const LibertyCell* buffer) const;
+  float cellDriveResistance(const LibertyCell* cell) const;
+
   // Max distance from driver to load (in dbu).
   int maxLoadManhattenDistance(Vertex* drvr);
 
@@ -566,7 +576,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  string makeUniqueNetName();
+  string makeUniqueNetName(Instance* parent = nullptr);
   Net* makeUniqueNet();
   string makeUniqueInstName(const char* base_name);
   string makeUniqueInstName(const char* base_name, bool underscore);
@@ -745,6 +755,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
 
+  // Cache results of getSwappableCells() as this is expensive for large PDKs.
+  std::unordered_map<LibertyCell*, LibertyCellSeq> swappable_cells_cache_;
+
   CellTargetLoadMap* target_load_map_ = nullptr;
   VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
@@ -780,6 +793,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::stack<InstanceTuple> cloned_gates_;
   std::unordered_set<Instance*> cloned_inst_set_;
   std::unordered_map<std::string, BufferData> removed_buffer_map_;
+  std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
   // Need to track all changes for buffer removal
   InstanceSet all_sized_inst_set_;
@@ -799,6 +813,17 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool is_callback_registered_ = false;
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
+
+  // Sizing restrictions
+  std::optional<double> sizing_area_limit_;
+  std::optional<double> sizing_leakage_limit_;
+  bool sizing_keep_site_ = false;
+  bool sizing_keep_vt_ = false;
+
+  // VT layer hash
+  std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
+  std::unordered_map<size_t, int>
+      vt_hash_map_;  // maps hash value to unique int
 
   friend class BufferedNet;
   friend class GateCloner;

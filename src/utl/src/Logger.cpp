@@ -44,6 +44,8 @@
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include "utl/prometheus/metrics_server.h"
+#include "utl/prometheus/registry.h"
 
 namespace utl {
 
@@ -69,6 +71,8 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
       counter = 0;
     }
   }
+
+  prometheus_registry_ = std::make_shared<PrometheusRegistry>();
 }
 
 Logger::~Logger()
@@ -318,6 +322,39 @@ void Logger::restoreFromRedirect()
   logger_->sinks().clear();
   logger_->sinks().insert(
       logger_->sinks().begin(), sinks_.begin(), sinks_.end());
+}
+
+void Logger::startPrometheusEndpoint(uint16_t port)
+{
+  if (prometheus_metrics_) {
+    return;
+  }
+
+  prometheus_metrics_ = std::make_unique<PrometheusMetricsServer>(
+      prometheus_registry_, this, port);
+}
+
+std::shared_ptr<PrometheusRegistry> Logger::getRegistry()
+{
+  return prometheus_registry_;
+}
+
+bool Logger::isPrometheusServerReadyToServe()
+{
+  if (!prometheus_metrics_) {
+    return false;
+  }
+
+  return prometheus_metrics_->is_ready() && prometheus_metrics_->port() != 0;
+}
+
+uint16_t Logger::getPrometheusPort()
+{
+  if (!prometheus_metrics_) {
+    return 0;
+  }
+
+  return prometheus_metrics_->port();
 }
 
 void Logger::setFormatter()

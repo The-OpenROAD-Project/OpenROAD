@@ -6,11 +6,13 @@
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 Design area 670 u^2 10% utilization.
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
-Iteration | Resized | Buffers | Cloned Gates |   WNS   |   TNS   | Endpoint
----------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |   0.145 |   0.000 | _863_/D
-    final |       0 |     103 |            0 |   0.174 |   0.000 | _896_/D
----------------------------------------------------------------------------
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |   0.145 |   0.000 | _863_/D
+       10 |       0 |      48 |            0 |    +5.7% |   0.169 |   0.000 | _868_/D
+       20 |       0 |      98 |            0 |   +11.7% |   0.173 |   0.000 | _878_/D
+    final |       0 |     103 |            0 |   +12.3% |   0.174 |   0.000 | _896_/D
+--------------------------------------------------------------------------------------
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
 [INFO RSZ-0032] Inserted 103 hold buffers.
 [ERROR RSZ-0060] Max buffer count reached.

@@ -65,9 +65,11 @@ class Selected;
 class Options;
 
 // A collection of selected objects
+
+// Only a finite set of highlight color is supported for now
+constexpr int num_highlight_set = 16;
 using SelectionSet = std::set<Selected>;
-using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
-                                                   // Color is supported for now
+using HighlightSet = std::array<SelectionSet, num_highlight_set>;
 
 using DBUToString = std::function<std::string(int, bool)>;
 using StringToDBU = std::function<int(const std::string&, bool*)>;
@@ -119,17 +121,33 @@ class Painter
   static inline const Color dark_cyan{0x00, 0x80, 0x80, 0xff};
   static inline const Color dark_magenta{0x80, 0x00, 0x80, 0xff};
   static inline const Color dark_yellow{0x80, 0x80, 0x00, 0xff};
+  static inline const Color orange{0xff, 0xa5, 0x00, 0xff};
+  static inline const Color purple{0x80, 0x00, 0x80, 0xff};
+  static inline const Color lime{0xbf, 0xff, 0x00, 0xff};
+  static inline const Color teal{0x00, 0x80, 0x80, 0xff};
+  static inline const Color pink{0xff, 0xc0, 0xcb, 0xff};
+  static inline const Color brown{0x8b, 0x45, 0x13, 0xff};
+  static inline const Color indigo{0x4b, 0x00, 0x82, 0xff};
+  static inline const Color turquoise{0x40, 0xe0, 0xd0, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
-  static inline const std::array<Painter::Color, 8> highlightColors{
-      Color(Painter::green, 100),
-      Color(Painter::yellow, 100),
-      Color(Painter::cyan, 100),
-      Color(Painter::magenta, 100),
-      Color(Painter::red, 100),
-      Color(Painter::dark_green, 100),
-      Color(Painter::dark_magenta, 100),
-      Color(Painter::blue, 100)};
+  static inline const std::array<Painter::Color, num_highlight_set>
+      highlightColors{Color(Painter::green, 100),
+                      Color(Painter::yellow, 100),
+                      Color(Painter::cyan, 100),
+                      Color(Painter::magenta, 100),
+                      Color(Painter::red, 100),
+                      Color(Painter::dark_green, 100),
+                      Color(Painter::dark_magenta, 100),
+                      Color(Painter::blue, 100),
+                      Color(Painter::orange, 100),
+                      Color(Painter::purple, 100),
+                      Color(Painter::lime, 100),
+                      Color(Painter::teal, 100),
+                      Color(Painter::pink, 100),
+                      Color(Painter::brown, 100),
+                      Color(Painter::indigo, 100),
+                      Color(Painter::turquoise, 100)};
 
   // The color to highlight in
   static inline const Color highlight = yellow;
@@ -803,8 +821,32 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
+  // There are RTTI implementation differences between libstdc++ and libc++,
+  // where the latter seems to generate multiple typeids for classes including
+  // but not limited to sta::Instance* in different compile units. We have been
+  // unable to remedy this.
+  //
+  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
+  // and comparing are done on the type's name instead, which adds a negligible
+  // performance penalty but has the distinct advantage of not crashing when an
+  // Instance is clicked in the GUI.
+  //
+  // In the event the RTTI issue is ever resolved, the following two structs may
+  // be removed.
+  struct TypeInfoHasher
+  {
+    std::size_t operator()(const std::type_index& x) const;
+  };
+  struct TypeInfoComparator
+  {
+    bool operator()(const std::type_index& a, const std::type_index& b) const;
+  };
+
   // Maps types to descriptors
-  std::unordered_map<std::type_index, std::unique_ptr<const Descriptor>>
+  std::unordered_map<std::type_index,
+                     std::unique_ptr<const Descriptor>,
+                     TypeInfoHasher,
+                     TypeInfoComparator>
       descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;

@@ -47,7 +47,6 @@ class _dbDatabase;
 class dbBlockItr;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 class _dbChip : public _dbObject
 {
@@ -63,14 +62,12 @@ class _dbChip : public _dbObject
   dbPropertyItr* _prop_itr;
 
   _dbChip(_dbDatabase* db);
-  _dbChip(_dbDatabase* db, const _dbChip& c);
   ~_dbChip();
 
   bool operator==(const _dbChip& rhs) const;
   bool operator!=(const _dbChip& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbChip& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbChip& chip);

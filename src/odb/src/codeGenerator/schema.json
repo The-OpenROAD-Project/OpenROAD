@@ -156,207 +156,207 @@
   ],
   "relations":[
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerCutClassRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCutClassRule",
       "type":"1_n",
       "tbl_name":"cut_class_rules_tbl_",
       "hash":true
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerSpacingEolRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerSpacingEolRule",
       "type":"1_n",
       "tbl_name":"spacing_eol_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerCutSpacingRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCutSpacingRule",
       "type":"1_n",
       "tbl_name":"cut_spacing_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerMinStepRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerMinStepRule",
       "type":"1_n",
       "tbl_name":"minstep_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerCornerSpacingRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCornerSpacingRule",
       "type":"1_n",
       "tbl_name":"corner_spacing_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerSpacingTablePrlRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerSpacingTablePrlRule",
       "type":"1_n",
       "tbl_name":"spacing_table_prl_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerCutSpacingTableOrthRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCutSpacingTableOrthRule",
       "type":"1_n",
       "tbl_name":"cut_spacing_table_orth_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerCutSpacingTableDefRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCutSpacingTableDefRule",
       "type":"1_n",
       "tbl_name":"cut_spacing_table_def_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerCutEnclosureRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerCutEnclosureRule",
       "type":"1_n",
       "tbl_name":"cut_enc_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerEolExtensionRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerEolExtensionRule",
       "type":"1_n",
       "tbl_name":"eol_ext_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerArraySpacingRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerArraySpacingRule",
       "type":"1_n",
       "tbl_name":"array_spacing_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerEolKeepOutRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerEolKeepOutRule",
       "type":"1_n",
       "tbl_name":"eol_keep_out_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerMaxSpacingRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerMaxSpacingRule",
       "type":"1_n",
       "tbl_name":"max_spacing_rules_tbl_",
       "schema":"db_schema_max_spacing"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerWidthTableRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerWidthTableRule",
       "type":"1_n",
       "tbl_name":"width_table_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerMinCutRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerMinCutRule",
       "type":"1_n",
       "tbl_name":"min_cuts_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerAreaRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerAreaRule",
       "type":"1_n",
       "tbl_name":"area_rules_tbl_"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerForbiddenSpacingRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerForbiddenSpacingRule",
       "type":"1_n",
       "tbl_name":"forbidden_spacing_rules_tbl_",
       "schema":"db_schema_lef58_forbidden_spacing"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerKeepOutZoneRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerKeepOutZoneRule",
       "type":"1_n",
       "tbl_name":"keepout_zone_rules_tbl_",
       "schema":"db_schema_keepout_zone"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerWrongDirSpacingRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerWrongDirSpacingRule",
       "type":"1_n",
       "tbl_name":"wrongdir_spacing_rules_tbl_",
       "schema":"db_schema_wrongdir_spacing"
     },
     {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerTwoWiresForbiddenSpcRule",
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerTwoWiresForbiddenSpcRule",
       "type":"1_n",
       "tbl_name":"two_wires_forbidden_spc_rules_tbl_",
       "schema":"db_schema_lef58_two_wires_forbidden_spacing"
     },
     {
-      "first": "dbDft",
-      "second": "dbScanPin",
+      "parent": "dbDft",
+      "child": "dbScanPin",
       "type": "1_n",
       "tbl_name": "scan_pins_",
       "flags": ["no-get"]
     },
     {
-      "first": "dbScanChain",
-      "second": "dbScanPartition",
+      "parent": "dbScanChain",
+      "child": "dbScanPartition",
       "type": "1_n",
       "tbl_name": "scan_partitions_"
     },
     {
-      "first": "dbScanPartition",
-      "second": "dbScanList",
+      "parent": "dbScanPartition",
+      "child": "dbScanList",
       "type": "1_n",
       "tbl_name": "scan_lists_"
     },
     {
-      "first": "dbScanList",
-      "second": "dbScanInst",
+      "parent": "dbScanList",
+      "child": "dbScanInst",
       "type": "1_n",
       "tbl_name": "scan_insts_"
     },
     {
-      "first": "dbDft",
-      "second": "dbScanChain",
+      "parent": "dbDft",
+      "child": "dbScanChain",
       "type": "1_n",
       "tbl_name": "scan_chains_"
     },
     {
-      "first": "dbGDSStructure",
-      "second": "dbGDSBoundary",
+      "parent": "dbGDSStructure",
+      "child": "dbGDSBoundary",
       "type": "1_n",
       "tbl_name": "boundaries_"
     },
     {
-      "first": "dbGDSStructure",
-      "second": "dbGDSBox",
+      "parent": "dbGDSStructure",
+      "child": "dbGDSBox",
       "type": "1_n",
       "tbl_name": "boxes_"
     },
     {
-      "first": "dbGDSStructure",
-      "second": "dbGDSPath",
+      "parent": "dbGDSStructure",
+      "child": "dbGDSPath",
       "type": "1_n",
       "tbl_name": "paths_"
     },
     {
-      "first": "dbGDSStructure",
-      "second": "dbGDSSRef",
+      "parent": "dbGDSStructure",
+      "child": "dbGDSSRef",
       "type": "1_n",
       "tbl_name": "srefs_"
     },
     {
-      "first": "dbGDSStructure",
-      "second": "dbGDSARef",
+      "parent": "dbGDSStructure",
+      "child": "dbGDSARef",
       "type": "1_n",
       "tbl_name": "arefs_"
     },
     {
-      "first": "dbGDSStructure",
-      "second": "dbGDSText",
+      "parent": "dbGDSStructure",
+      "child": "dbGDSText",
       "type": "1_n",
       "tbl_name": "texts_"
     },
     {
-      "first":"dbMarkerCategory",
-      "second":"dbMarker",
+      "parent":"dbMarkerCategory",
+      "child":"dbMarker",
       "type":"1_n",
       "tbl_name":"marker_tbl_"
     },
     {
-      "first":"dbMarkerCategory",
-      "second":"dbMarkerCategory",
+      "parent":"dbMarkerCategory",
+      "child":"dbMarkerCategory",
       "type":"1_n",
       "tbl_name":"categories_tbl_",
       "hash":true

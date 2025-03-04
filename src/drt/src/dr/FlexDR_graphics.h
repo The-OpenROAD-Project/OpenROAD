@@ -31,6 +31,7 @@
 #include <memory>
 #include <vector>
 
+#include "AbstractDRGraphics.h"
 #include "frBaseTypes.h"
 #include "gui/gui.h"
 
@@ -50,7 +51,7 @@ class frBlockObject;
 struct RouterConfiguration;
 
 // This class draws debugging graphics on the layout
-class FlexDRGraphics : public gui::Renderer
+class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
 {
  public:
   // Debug detailed routing
@@ -59,20 +60,20 @@ class FlexDRGraphics : public gui::Renderer
                  odb::dbDatabase* db,
                  Logger* logger);
 
-  void startWorker(FlexDRWorker* worker);
+  void startWorker(FlexDRWorker* worker) override;
 
-  void startIter(int iter, RouterConfiguration* router_cfg);
+  void startIter(int iter, RouterConfiguration* router_cfg) override;
 
-  void endWorker(int iter);
+  void endWorker(int iter) override;
 
-  void startNet(drNet* net);
+  void startNet(drNet* net) override;
 
-  void midNet(drNet* net);
+  void midNet(drNet* net) override;
 
-  void endNet(drNet* net);
+  void endNet(drNet* net) override;
 
   void searchNode(const FlexGridGraph* grid_graph,
-                  const FlexWavefrontGrid& grid);
+                  const FlexWavefrontGrid& grid) override;
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -85,15 +86,15 @@ class FlexDRGraphics : public gui::Renderer
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 
-  static void init();
+  void init() override;
 
-  void show(bool checkStopConditions);
+  void show(bool checkStopConditions) override;
 
   void update();
 
   void pause(drNet* net);
 
-  void debugWholeDesign();
+  void debugWholeDesign() override;
 
   void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
 

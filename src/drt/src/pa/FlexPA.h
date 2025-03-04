@@ -56,7 +56,7 @@ using ViaRawPriorityTuple
 
 class FlexPinAccessPattern;
 class FlexDPNode;
-class FlexPAGraphics;
+class AbstractPAGraphics;
 
 class FlexPA
 {
@@ -73,7 +73,7 @@ class FlexPA
          RouterConfiguration* router_cfg);
   ~FlexPA();
 
-  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics);
   void setTargetInstances(const frCollection<odb::dbInst*>& insts);
   void setDistributed(const std::string& rhost,
                       uint16_t rport,
@@ -88,7 +88,7 @@ class FlexPA
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
 
-  std::unique_ptr<FlexPAGraphics> graphics_;
+  std::unique_ptr<AbstractPAGraphics> graphics_;
   std::string debugPinName_;
 
   int std_cell_pin_gen_ap_cnt_ = 0;

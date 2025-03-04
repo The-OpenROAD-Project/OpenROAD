@@ -65,10 +65,17 @@ void UniqueInsts::computePrefTrackPatterns()
 
 void UniqueInsts::initMasterToPinLayerRange()
 {
+  std::set<frString> masters;
+  for (odb::dbInst* inst : target_insts_) {
+    masters.insert(inst->getMaster()->getName());
+  }
   const int num_layers = getTech()->getLayers().size();
   const frLayerNum bottom_layer_num = getTech()->getBottomLayerNum();
   for (auto& uMaster : design_->getMasters()) {
     auto master = uMaster.get();
+    if (!masters.empty() && masters.find(master->getName()) == masters.end()) {
+      continue;
+    }
     frLayerNum min_layer_num = std::numeric_limits<frLayerNum>::max();
     frLayerNum max_layer_num = std::numeric_limits<frLayerNum>::min();
     for (auto& u_term : master->getTerms()) {
@@ -129,6 +136,7 @@ bool UniqueInsts::isNDRInst(frInst& inst)
 bool UniqueInsts::addUniqueInst(frInst* inst)
 {
   if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    unique_to_idx_[inst] = unique_.size();
     unique_.push_back(inst);
     inst_to_unique_[inst] = inst;
     inst_to_class_[inst] = nullptr;
@@ -189,7 +197,16 @@ void UniqueInsts::computeUnique()
   computePrefTrackPatterns();
   initMasterToPinLayerRange();
 
+  std::set<frInst*> target_frinsts;
+  for (auto inst : target_insts_) {
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+  }
+
   for (auto& inst : design_->getTopBlock()->getInsts()) {
+    if (!target_insts_.empty()
+        && target_frinsts.find(inst.get()) == target_frinsts.end()) {
+      continue;
+    }
     addUniqueInst(inst.get());
   }
 }

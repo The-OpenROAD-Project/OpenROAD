@@ -55,7 +55,6 @@ class dbPolygonItr;
 class dbMPinItr;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct dbMasterFlags
 {
@@ -106,13 +105,11 @@ class _dbMaster : public _dbObject
   dbMPinItr* _mpin_itr;
 
   _dbMaster(_dbDatabase* db);
-  _dbMaster(_dbDatabase* db, const _dbMaster& m);
   ~_dbMaster();
   bool operator==(const _dbMaster& rhs) const;
   bool operator!=(const _dbMaster& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbMaster& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbMaster& master);

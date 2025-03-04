@@ -44,43 +44,33 @@ using utl::MPL;
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
 // constructors
-SACoreSoftMacro::SACoreSoftMacro(
-    PhysicalHierarchy* tree,
-    const Rect& outline,
-    const std::vector<SoftMacro>& macros,
-    // weight for different penalty
-    float area_weight,
-    float outline_weight,
-    float wirelength_weight,
-    float guidance_weight,
-    float fence_weight,  // each blockage will be modeled by a macro with fences
-    float boundary_weight,
-    float macro_blockage_weight,
-    float notch_weight,
-    // notch threshold
-    float notch_h_threshold,
-    float notch_v_threshold,
-    // probability of each action
-    float pos_swap_prob,
-    float neg_swap_prob,
-    float double_swap_prob,
-    float exchange_prob,
-    float resize_prob,
-    // Fast SA hyperparameter
-    float init_prob,
-    int max_num_step,
-    int num_perturb_per_step,
-    unsigned seed,
-    MplObserver* graphics,
-    utl::Logger* logger)
+SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
+                                 const Rect& outline,
+                                 const std::vector<SoftMacro>& macros,
+                                 const SACoreWeights& core_weights,
+                                 float boundary_weight,
+                                 float macro_blockage_weight,
+                                 float notch_weight,
+                                 // notch threshold
+                                 float notch_h_threshold,
+                                 float notch_v_threshold,
+                                 // probability of each action
+                                 float pos_swap_prob,
+                                 float neg_swap_prob,
+                                 float double_swap_prob,
+                                 float exchange_prob,
+                                 float resize_prob,
+                                 // Fast SA hyperparameter
+                                 float init_prob,
+                                 int max_num_step,
+                                 int num_perturb_per_step,
+                                 unsigned seed,
+                                 MplObserver* graphics,
+                                 utl::Logger* logger)
     : SimulatedAnnealingCore<SoftMacro>(tree,
                                         outline,
                                         macros,
-                                        area_weight,
-                                        outline_weight,
-                                        wirelength_weight,
-                                        guidance_weight,
-                                        fence_weight,
+                                        core_weights,
                                         pos_swap_prob,
                                         neg_swap_prob,
                                         double_swap_prob,
@@ -147,12 +137,6 @@ float SACoreSoftMacro::getNotchPenalty() const
   return notch_penalty_;
 }
 
-float SACoreSoftMacro::getAreaPenalty() const
-{
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  return (width_ * height_) / outline_area;
-}
-
 float SACoreSoftMacro::getNormNotchPenalty() const
 {
   return norm_notch_penalty_;
@@ -162,21 +146,23 @@ float SACoreSoftMacro::getNormNotchPenalty() const
 float SACoreSoftMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
+
   if (norm_area_penalty_ > 0.0) {
-    cost += area_weight_ * getAreaPenalty();
+    cost += core_weights_.area * getAreaPenalty();
   }
   if (norm_outline_penalty_ > 0.0) {
-    cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
+    cost += core_weights_.outline * outline_penalty_ / norm_outline_penalty_;
   }
   if (norm_wirelength_ > 0.0) {
-    cost += wirelength_weight_ * wirelength_ / norm_wirelength_;
+    cost += core_weights_.wirelength * wirelength_ / norm_wirelength_;
   }
   if (norm_guidance_penalty_ > 0.0) {
-    cost += guidance_weight_ * guidance_penalty_ / norm_guidance_penalty_;
+    cost += core_weights_.guidance * guidance_penalty_ / norm_guidance_penalty_;
   }
   if (norm_fence_penalty_ > 0.0) {
-    cost += fence_weight_ * fence_penalty_ / norm_fence_penalty_;
+    cost += core_weights_.fence * fence_penalty_ / norm_fence_penalty_;
   }
+
   if (norm_boundary_penalty_ > 0.0) {
     cost += boundary_weight_ * boundary_penalty_ / norm_boundary_penalty_;
   }
@@ -200,7 +186,8 @@ void SACoreSoftMacro::calPenalty()
   calMacroBlockagePenalty();
   calNotchPenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty({area_weight_, getAreaPenalty()});
+    graphics_->setAreaPenalty(
+        {"Area", core_weights_.area, getAreaPenalty(), norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -436,8 +423,10 @@ void SACoreSoftMacro::calBoundaryPenalty()
   // normalization
   boundary_penalty_ = boundary_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setBoundaryPenalty(
-        {boundary_weight_, boundary_penalty_ / norm_boundary_penalty_});
+    graphics_->setBoundaryPenalty({"Boundary",
+                                   boundary_weight_,
+                                   boundary_penalty_,
+                                   norm_boundary_penalty_});
   }
 }
 
@@ -497,9 +486,10 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   // normalization
   macro_blockage_penalty_ = macro_blockage_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setMacroBlockagePenalty(
-        {macro_blockage_weight_,
-         macro_blockage_penalty_ / norm_macro_blockage_penalty_});
+    graphics_->setMacroBlockagePenalty({"Macro Blockage",
+                                        macro_blockage_weight_,
+                                        macro_blockage_penalty_,
+                                        norm_macro_blockage_penalty_});
   }
 }
 
@@ -742,14 +732,21 @@ void SACoreSoftMacro::calNotchPenalty()
       = notch_penalty_ / (outline_.getWidth() * outline_.getHeight());
   if (graphics_) {
     graphics_->setNotchPenalty(
-        {notch_weight_, notch_penalty_ / norm_notch_penalty_});
+        {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
   }
 }
 
 void SACoreSoftMacro::resizeOneCluster()
 {
-  const int idx = static_cast<int>(
-      std::floor(distribution_(generator_) * pos_seq_.size()));
+  // TODO: See for explanation
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  float random_variable_0_1;
+  do {
+    random_variable_0_1 = distribution_(generator_);
+  } while (random_variable_0_1 >= 1.0);
+
+  const int idx
+      = static_cast<int>(std::floor(random_variable_0_1 * pos_seq_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
@@ -830,97 +827,16 @@ void SACoreSoftMacro::shrink()
 
 void SACoreSoftMacro::printResults() const
 {
-  debugPrint(
-      logger_, MPL, "hierarchical_macro_placement", 2, "SACoreSoftMacro");
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "number of macros : {}",
-             macros_.size());
-  for (const auto& macro : macros_) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               2,
-               "lx = {}, ly = {}, width = {}, height = {}, name = {}",
-               macro.getX(),
-               macro.getY(),
-               macro.getWidth(),
-               macro.getHeight(),
-               macro.getName());
+  reportCoreWeights();
+  report({"Macro Blockage",
+          macro_blockage_weight_,
+          macro_blockage_penalty_,
+          norm_macro_blockage_penalty_});
+  report({"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
+  reportTotalCost();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "width = {}, outline_width = {}",
-             width_,
-             outline_.getWidth());
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "height = {}, outline_height = {}",
-             height_,
-             outline_.getHeight());
-  debugPrint(
-      logger_,
-      MPL,
-      "hierarchical_macro_placement",
-      2,
-      "outline_weight = {}, outline_penalty  = {}, norm_outline_penalty = {}",
-      outline_weight_,
-      outline_penalty_,
-      norm_outline_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "wirelength_weight = {}, wirelength  = {}, norm_wirelength = {}",
-             wirelength_weight_,
-             wirelength_,
-             norm_wirelength_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "guidance_weight = {}, guidance_penalty  = {}, "
-             "norm_guidance_penalty = {}",
-             guidance_weight_,
-             guidance_penalty_,
-             norm_guidance_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "fence_weight = {}, fence_penalty  = {}, norm_fence_penalty = {}",
-             fence_weight_,
-             fence_penalty_,
-             norm_fence_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "macro_blockage_weight = {}, macro_blockage_penalty  = {}, "
-             "norm_macro_blockage_penalty = {}",
-             macro_blockage_weight_,
-             macro_blockage_penalty_,
-             norm_macro_blockage_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "notch_weight = {}, notch_penalty  = {}, norm_notch_penalty = {}",
-             notch_weight_,
-             notch_penalty_,
-             norm_notch_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "final cost = {}",
-             getNormCost());
 }
 
 // fill the dead space by adjust the size of MixedCluster

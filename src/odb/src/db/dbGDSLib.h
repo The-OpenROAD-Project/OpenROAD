@@ -44,7 +44,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbGDSStructure;
 
@@ -63,9 +62,8 @@ class _dbGDSLib : public _dbObject
 
   bool operator==(const _dbGDSLib& rhs) const;
   bool operator!=(const _dbGDSLib& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbGDSLib& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 
   _dbGDSStructure* findStructure(const char* name);
 };

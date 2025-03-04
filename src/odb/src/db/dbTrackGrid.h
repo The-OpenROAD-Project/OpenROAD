@@ -45,7 +45,6 @@ class _dbTechLayer;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 class _dbTrackGrid : public _dbObject
 {
@@ -81,17 +80,12 @@ class _dbTrackGrid : public _dbObject
     return false;
   }
 
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTrackGrid& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
-  // User Code Begin Methods
   void getAverageTrackPattern(bool is_x,
                               int& track_init,
                               int& num_tracks,
                               int& track_step);
-  // User Code End Methods
 };
 
 inline _dbTrackGrid::_dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g)

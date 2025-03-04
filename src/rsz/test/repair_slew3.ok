@@ -12,4 +12,9 @@ u3/A                                    0.03    0.07   -0.04 (VIOLATED)
 u2/Z                                    0.03    0.07   -0.04 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 693um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         4
+    final |    +44.4% |       1 |       0 |             0 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 1 instances.

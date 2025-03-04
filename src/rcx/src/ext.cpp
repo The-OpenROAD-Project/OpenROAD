@@ -34,6 +34,7 @@
 #include "rcx/ext.h"
 
 #include "odb/wOrder.h"
+#include "parse.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extPattern.h"
 #include "utl/Logger.h"

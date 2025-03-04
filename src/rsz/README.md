@@ -395,6 +395,23 @@ report_floating_nets
     [-verbose]
 ```
 
+### Report Overdriven Nets
+
+The `report_overdriven_nets` command reports nets with connected by multiple drivers.
+
+```tcl
+report_overdriven_nets
+    [-include_parallel_driven]
+    [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-include_parallel_driven` | Include nets that are driven by multiple parallel drivers. |
+| `-verbose` | Print the net names. |
+
 ### Eliminate Dead Logic
 
 The `eliminate_dead_logic` command eliminates dead logic, i.e. it removes standard cell instances which can be removed without affecting the function of the design.
@@ -426,6 +443,82 @@ If you are a developer, you might find these useful. More details can be found i
 | `check_max_wire_length` | Check if wirelength is allowed by rsz for minimum delay. |
 | `dblayer_wire_rc` | Get layer RC values. |
 | `set_dblayer_wire_rc` | Set layer RC values. |
+
+### Setting Optimization Configuration
+
+The `set_opt_config` command configures optimization settings that apply to all 
+optimization commands like repair_design and repair_timing.
+
+```tcl
+set_opt_config 
+    [-limit_sizing_area float_value]
+    [-limit_sizing_leakage float_value]
+    [-keep_sizing_site boolean_value]
+    [-keep_sizing_vt boolean_value]
+    [-sizing_area_limit float_value] (deprecated)
+    [-sizing_leakage_limit float_value] (deprecated)
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-limit_sizing_area` | Exclude cells from sizing if their area exceeds <float_value> times the current cell's area. For example, with 2.0, only cells with an area <= 2X the current cell's area are considered. The area is determined from LEF, not Liberty. |
+| `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. |
+| `-keep_sizing_site` | Ensure cells retain their original site type during sizing. This prevents short cells from being replaced by tall cells (or vice versa) in mixed-row designs. |
+| `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
+| `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
+| `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
+
+### Reporting Optimization Configuration
+
+The `report_opt_config` command reports current optimization configuration
+
+```tcl
+report_opt_config 
+```
+
+### Resetting Optimization Configuration
+
+The `reset_opt_config` command resets optimization settings applied from set_opt_config command.
+If no options are specified, all optimization configurations are reset.
+
+```tcl
+reset_opt_config 
+    [-limit_sizing_area]
+    [-limit_sizing_leakage]
+    [-keep_sizing_site]
+    [-keep_sizing_vt]
+    [-sizing_area_limit]
+    [-sizing_leakage_limit]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-limit_sizing_area` | Remove area restriction during sizing. |
+| `-limit_sizing_leakage` | Remove leakage power restriction during sizing. |
+| `-keep_sizing_site` | Remove site restriction during sizing. |
+| `-keep_sizing_vt` | Remove VT type restriction during sizing. |
+| `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
+| `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
+
+### Finding Equivalent Cells
+
+The `report_equiv_cells` command finds all functionally equivalent library cells for a given library cell with relative area and leakage power details.
+
+```tcl
+report_equiv_cells 
+    [-match_cell_footprint]
+    lib_cell
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
 
 ## Example scripts
 

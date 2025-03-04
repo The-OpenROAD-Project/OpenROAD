@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -185,108 +184,6 @@ bool _dbTechLayerCutEnclosureRule::operator<(
   return true;
 }
 
-void _dbTechLayerCutEnclosureRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutEnclosureRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.type_);
-  DIFF_FIELD(flags_.cut_class_valid_);
-  DIFF_FIELD(flags_.above_);
-  DIFF_FIELD(flags_.below_);
-  DIFF_FIELD(flags_.eol_min_length_valid_);
-  DIFF_FIELD(flags_.eol_only_);
-  DIFF_FIELD(flags_.short_edge_on_eol_);
-  DIFF_FIELD(flags_.side_spacing_valid_);
-  DIFF_FIELD(flags_.end_spacing_valid_);
-  DIFF_FIELD(flags_.off_center_line_);
-  DIFF_FIELD(flags_.width_valid_);
-  DIFF_FIELD(flags_.include_abutted_);
-  DIFF_FIELD(flags_.except_extra_cut_);
-  DIFF_FIELD(flags_.prl_);
-  DIFF_FIELD(flags_.no_shared_edge_);
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.extra_cut_valid_);
-  DIFF_FIELD(flags_.extra_only);
-  DIFF_FIELD(flags_.redundant_cut_valid_);
-  DIFF_FIELD(flags_.parallel_valid_);
-  DIFF_FIELD(flags_.second_parallel_valid);
-  DIFF_FIELD(flags_.second_par_within_valid_);
-  DIFF_FIELD(flags_.below_enclosure_valid_);
-  DIFF_FIELD(flags_.concave_corners_valid_);
-  DIFF_FIELD(cut_class_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(eol_min_length_);
-  DIFF_FIELD(first_overhang_);
-  DIFF_FIELD(second_overhang_);
-  DIFF_FIELD(spacing_);
-  DIFF_FIELD(extension_);
-  DIFF_FIELD(forward_extension_);
-  DIFF_FIELD(backward_extension_);
-  DIFF_FIELD(min_width_);
-  DIFF_FIELD(cut_within_);
-  DIFF_FIELD(min_length_);
-  DIFF_FIELD(par_length_);
-  DIFF_FIELD(second_par_length_);
-  DIFF_FIELD(par_within_);
-  DIFF_FIELD(second_par_within_);
-  DIFF_FIELD(below_enclosure_);
-  DIFF_FIELD(num_corners_);
-  DIFF_END
-}
-
-void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
-                                       char side,
-                                       const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.type_);
-  DIFF_OUT_FIELD(flags_.cut_class_valid_);
-  DIFF_OUT_FIELD(flags_.above_);
-  DIFF_OUT_FIELD(flags_.below_);
-  DIFF_OUT_FIELD(flags_.eol_min_length_valid_);
-  DIFF_OUT_FIELD(flags_.eol_only_);
-  DIFF_OUT_FIELD(flags_.short_edge_on_eol_);
-  DIFF_OUT_FIELD(flags_.side_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.end_spacing_valid_);
-  DIFF_OUT_FIELD(flags_.off_center_line_);
-  DIFF_OUT_FIELD(flags_.width_valid_);
-  DIFF_OUT_FIELD(flags_.include_abutted_);
-  DIFF_OUT_FIELD(flags_.except_extra_cut_);
-  DIFF_OUT_FIELD(flags_.prl_);
-  DIFF_OUT_FIELD(flags_.no_shared_edge_);
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.extra_cut_valid_);
-  DIFF_OUT_FIELD(flags_.extra_only);
-  DIFF_OUT_FIELD(flags_.redundant_cut_valid_);
-  DIFF_OUT_FIELD(flags_.parallel_valid_);
-  DIFF_OUT_FIELD(flags_.second_parallel_valid);
-  DIFF_OUT_FIELD(flags_.second_par_within_valid_);
-  DIFF_OUT_FIELD(flags_.below_enclosure_valid_);
-  DIFF_OUT_FIELD(flags_.concave_corners_valid_);
-  DIFF_OUT_FIELD(cut_class_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(eol_min_length_);
-  DIFF_OUT_FIELD(first_overhang_);
-  DIFF_OUT_FIELD(second_overhang_);
-  DIFF_OUT_FIELD(spacing_);
-  DIFF_OUT_FIELD(extension_);
-  DIFF_OUT_FIELD(forward_extension_);
-  DIFF_OUT_FIELD(backward_extension_);
-  DIFF_OUT_FIELD(min_width_);
-  DIFF_OUT_FIELD(cut_within_);
-  DIFF_OUT_FIELD(min_length_);
-  DIFF_OUT_FIELD(par_length_);
-  DIFF_OUT_FIELD(second_par_length_);
-  DIFF_OUT_FIELD(par_within_);
-  DIFF_OUT_FIELD(second_par_within_);
-  DIFF_OUT_FIELD(below_enclosure_);
-  DIFF_OUT_FIELD(num_corners_);
-
-  DIFF_END
-}
-
 _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -307,55 +204,6 @@ _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
   second_par_within_ = 0;
   below_enclosure_ = 0;
   num_corners_ = 0;
-}
-
-_dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutEnclosureRule& r)
-{
-  flags_.type_ = r.flags_.type_;
-  flags_.cut_class_valid_ = r.flags_.cut_class_valid_;
-  flags_.above_ = r.flags_.above_;
-  flags_.below_ = r.flags_.below_;
-  flags_.eol_min_length_valid_ = r.flags_.eol_min_length_valid_;
-  flags_.eol_only_ = r.flags_.eol_only_;
-  flags_.short_edge_on_eol_ = r.flags_.short_edge_on_eol_;
-  flags_.side_spacing_valid_ = r.flags_.side_spacing_valid_;
-  flags_.end_spacing_valid_ = r.flags_.end_spacing_valid_;
-  flags_.off_center_line_ = r.flags_.off_center_line_;
-  flags_.width_valid_ = r.flags_.width_valid_;
-  flags_.include_abutted_ = r.flags_.include_abutted_;
-  flags_.except_extra_cut_ = r.flags_.except_extra_cut_;
-  flags_.prl_ = r.flags_.prl_;
-  flags_.no_shared_edge_ = r.flags_.no_shared_edge_;
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.extra_cut_valid_ = r.flags_.extra_cut_valid_;
-  flags_.extra_only = r.flags_.extra_only;
-  flags_.redundant_cut_valid_ = r.flags_.redundant_cut_valid_;
-  flags_.parallel_valid_ = r.flags_.parallel_valid_;
-  flags_.second_parallel_valid = r.flags_.second_parallel_valid;
-  flags_.second_par_within_valid_ = r.flags_.second_par_within_valid_;
-  flags_.below_enclosure_valid_ = r.flags_.below_enclosure_valid_;
-  flags_.concave_corners_valid_ = r.flags_.concave_corners_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  cut_class_ = r.cut_class_;
-  eol_width_ = r.eol_width_;
-  eol_min_length_ = r.eol_min_length_;
-  first_overhang_ = r.first_overhang_;
-  second_overhang_ = r.second_overhang_;
-  spacing_ = r.spacing_;
-  extension_ = r.extension_;
-  forward_extension_ = r.forward_extension_;
-  backward_extension_ = r.backward_extension_;
-  min_width_ = r.min_width_;
-  cut_within_ = r.cut_within_;
-  min_length_ = r.min_length_;
-  par_length_ = r.par_length_;
-  second_par_length_ = r.second_par_length_;
-  par_within_ = r.par_within_;
-  second_par_within_ = r.second_par_within_;
-  below_enclosure_ = r.below_enclosure_;
-  num_corners_ = r.num_corners_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj)
@@ -411,6 +259,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.below_enclosure_;
   stream << obj.num_corners_;
   return stream;
+}
+
+void _dbTechLayerCutEnclosureRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

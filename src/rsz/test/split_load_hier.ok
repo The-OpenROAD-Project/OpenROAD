@@ -37,6 +37,12 @@ worst slack -0.59
 tns -7.917
 [INFO RSZ-0094] Found 21 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 21 out of 21 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
+--------------------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.593 |       -7.9 |     21 | u1/r21/D
+    final |       0 |      51 |       20 |      0 |     0 |   +31.2% |   -0.529 |       -9.5 |     21 | u1/r15/D
+--------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 11 buffers, 1 to split loads.
 [INFO RSZ-0041] Resized 51 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

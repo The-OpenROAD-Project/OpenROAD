@@ -47,17 +47,18 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbInst;
 class _dbModInst;
 class _dbModNet;
 class _dbModBTerm;
+// User Code Begin Classes
+class dbInst;
+// User Code End Classes
 
 class _dbModule : public _dbObject
 {
  public:
-  _dbModule(_dbDatabase*, const _dbModule& r);
   _dbModule(_dbDatabase*);
 
   ~_dbModule();
@@ -65,8 +66,7 @@ class _dbModule : public _dbObject
   bool operator==(const _dbModule& rhs) const;
   bool operator!=(const _dbModule& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbModule& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
 
   // This is only used when destroying an inst

@@ -35,7 +35,6 @@
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -138,77 +137,6 @@ bool _dbObstruction::operator==(const _dbObstruction& rhs) const
   }
 
   return true;
-}
-
-void _dbObstruction::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbObstruction& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._slot_obs);
-  DIFF_FIELD(_flags._fill_obs);
-  DIFF_FIELD(_flags._except_pg_nets);
-  DIFF_FIELD(_flags._pushed_down);
-  DIFF_FIELD(_flags._has_min_spacing);
-  DIFF_FIELD(_flags._has_effective_width);
-  DIFF_FIELD(_min_spacing);
-  DIFF_FIELD(_effective_width);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_inst);
-  } else {
-    if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.diff("_inst", lhs_inst->_name, rhs_inst->_name);
-    } else if (_inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      diff.out(dbDiff::LEFT, "_inst", lhs_inst->_name);
-    } else if (rhs._inst) {
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.out(dbDiff::RIGHT, "_inst", rhs_inst->_name);
-    }
-  }
-
-  DIFF_OBJECT(_bbox, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-  DIFF_END
-}
-
-void _dbObstruction::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._slot_obs);
-  DIFF_OUT_FIELD(_flags._fill_obs);
-  DIFF_OUT_FIELD(_flags._except_pg_nets);
-  DIFF_OUT_FIELD(_flags._pushed_down);
-  DIFF_OUT_FIELD(_flags._has_min_spacing);
-  DIFF_OUT_FIELD(_flags._has_effective_width);
-  DIFF_OUT_FIELD(_min_spacing);
-  DIFF_OUT_FIELD(_effective_width);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_inst);
-  } else {
-    if (_inst) {
-      _dbBlock* blk = (_dbBlock*) getOwner();
-      _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
-      diff.out(side, "_inst", inst->_name);
-    } else {
-      diff.out(side, "_inst", "(nullptr)");
-    }
-  }
-
-  DIFF_OUT_OBJECT(_bbox, blk->_box_tbl);
-  DIFF_END
 }
 
 bool _dbObstruction::operator<(const _dbObstruction& rhs) const
@@ -477,4 +405,9 @@ dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)
   return (dbObstruction*) block->_obstruction_tbl->getPtr(dbid_);
 }
 
+void _dbObstruction::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
 }  // namespace odb

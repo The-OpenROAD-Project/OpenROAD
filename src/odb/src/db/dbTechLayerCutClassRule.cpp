@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -83,38 +82,6 @@ bool _dbTechLayerCutClassRule::operator<(
   return true;
 }
 
-void _dbTechLayerCutClassRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutClassRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.cuts_valid_);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(width_);
-  DIFF_FIELD(length_);
-  DIFF_FIELD(num_cuts_);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbTechLayerCutClassRule::out(dbDiff& diff,
-                                   char side,
-                                   const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.cuts_valid_);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(width_);
-  DIFF_OUT_FIELD(length_);
-  DIFF_OUT_FIELD(num_cuts_);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  DIFF_END
-}
-
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -122,20 +89,6 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
-}
-
-_dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutClassRule& r)
-{
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.cuts_valid_ = r.flags_.cuts_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  _name = r._name;
-  width_ = r.width_;
-  length_ = r.length_;
-  num_cuts_ = r.num_cuts_;
-  _next_entry = r._next_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
@@ -164,6 +117,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   stream << obj.num_cuts_;
   stream << obj._next_entry;
   return stream;
+}
+
+void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()

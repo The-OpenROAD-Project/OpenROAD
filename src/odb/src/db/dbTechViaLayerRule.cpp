@@ -33,7 +33,6 @@
 #include "dbTechViaLayerRule.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -133,58 +132,6 @@ bool _dbTechViaLayerRule::operator==(const _dbTechViaLayerRule& rhs) const
   }
 
   return true;
-}
-
-void _dbTechViaLayerRule::differences(dbDiff& diff,
-                                      const char* field,
-                                      const _dbTechViaLayerRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._direction);
-  DIFF_FIELD(_flags._has_enclosure);
-  DIFF_FIELD(_flags._has_width);
-  DIFF_FIELD(_flags._has_overhang);
-  DIFF_FIELD(_flags._has_metal_overhang);
-  DIFF_FIELD(_flags._has_resistance);
-  DIFF_FIELD(_flags._has_spacing);
-  DIFF_FIELD(_flags._has_rect);
-  DIFF_FIELD(_overhang1);
-  DIFF_FIELD(_overhang2);
-  DIFF_FIELD(_min_width);
-  DIFF_FIELD(_max_width);
-  DIFF_FIELD(_overhang);
-  DIFF_FIELD(_metal_overhang);
-  DIFF_FIELD(_spacing_x);
-  DIFF_FIELD(_spacing_y);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_rect);
-  DIFF_FIELD(_layer);
-  DIFF_END
-}
-
-void _dbTechViaLayerRule::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._direction);
-  DIFF_OUT_FIELD(_flags._has_enclosure);
-  DIFF_OUT_FIELD(_flags._has_width);
-  DIFF_OUT_FIELD(_flags._has_overhang);
-  DIFF_OUT_FIELD(_flags._has_metal_overhang);
-  DIFF_OUT_FIELD(_flags._has_resistance);
-  DIFF_OUT_FIELD(_flags._has_spacing);
-  DIFF_OUT_FIELD(_flags._has_rect);
-  DIFF_OUT_FIELD(_overhang1);
-  DIFF_OUT_FIELD(_overhang2);
-  DIFF_OUT_FIELD(_min_width);
-  DIFF_OUT_FIELD(_max_width);
-  DIFF_OUT_FIELD(_overhang);
-  DIFF_OUT_FIELD(_metal_overhang);
-  DIFF_OUT_FIELD(_spacing_x);
-  DIFF_OUT_FIELD(_spacing_y);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_rect);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_END
 }
 
 _dbTechViaLayerRule::_dbTechViaLayerRule(_dbDatabase*,
@@ -465,6 +412,12 @@ dbTechViaLayerRule* dbTechViaLayerRule::getTechViaLayerRule(dbTech* tech_,
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaLayerRule*) tech->_via_layer_rule_tbl->getPtr(dbid_);
+}
+
+void _dbTechViaLayerRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

@@ -34,7 +34,6 @@
 #include "dbMetalWidthViaMap.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -80,37 +79,6 @@ bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const
   return true;
 }
 
-void _dbMetalWidthViaMap::differences(dbDiff& diff,
-                                      const char* field,
-                                      const _dbMetalWidthViaMap& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(via_cut_class_);
-  DIFF_FIELD(cut_layer_);
-  DIFF_FIELD(below_layer_width_low_);
-  DIFF_FIELD(below_layer_width_high_);
-  DIFF_FIELD(above_layer_width_low_);
-  DIFF_FIELD(above_layer_width_high_);
-  DIFF_FIELD(via_name_);
-  DIFF_FIELD(pg_via_);
-  DIFF_END
-}
-
-void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(via_cut_class_);
-  DIFF_OUT_FIELD(cut_layer_);
-  DIFF_OUT_FIELD(below_layer_width_low_);
-  DIFF_OUT_FIELD(below_layer_width_high_);
-  DIFF_OUT_FIELD(above_layer_width_low_);
-  DIFF_OUT_FIELD(above_layer_width_high_);
-  DIFF_OUT_FIELD(via_name_);
-  DIFF_OUT_FIELD(pg_via_);
-
-  DIFF_END
-}
-
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
 {
   via_cut_class_ = false;
@@ -119,19 +87,6 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
   above_layer_width_low_ = 0;
   above_layer_width_high_ = 0;
   pg_via_ = false;
-}
-
-_dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
-                                         const _dbMetalWidthViaMap& r)
-{
-  via_cut_class_ = r.via_cut_class_;
-  cut_layer_ = r.cut_layer_;
-  below_layer_width_low_ = r.below_layer_width_low_;
-  below_layer_width_high_ = r.below_layer_width_high_;
-  above_layer_width_low_ = r.above_layer_width_low_;
-  above_layer_width_high_ = r.above_layer_width_high_;
-  via_name_ = r.via_name_;
-  pg_via_ = r.pg_via_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
@@ -158,6 +113,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   stream << obj.via_name_;
   stream << obj.pg_via_;
   return stream;
+}
+
+void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["via_name"].add(via_name_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

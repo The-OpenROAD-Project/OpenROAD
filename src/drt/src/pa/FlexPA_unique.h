@@ -152,7 +152,7 @@ class UniqueInsts
 
   // All the unique instances
   std::vector<frInst*> unique_;
-  // Mapa all instances to their representative unique instance
+  // Maps all instances to their representative unique instance
   std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
   std::unordered_map<frInst*, InstSet*> inst_to_class_;

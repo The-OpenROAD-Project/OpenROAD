@@ -46,20 +46,13 @@ class Logger;
 namespace mpl {
 class Graphics;
 
-// SA for soft macros.  It will be called by MacroPlaceEngine
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
   SACoreSoftMacro(PhysicalHierarchy* tree,
                   const Rect& outline,
                   const std::vector<SoftMacro>& macros,
-                  // weight for different penalty
-                  float area_weight,
-                  float outline_weight,
-                  float wirelength_weight,
-                  float guidance_weight,
-                  float fence_weight,  // each blockage will be modeled by a
-                                       // macro with fences
+                  const SACoreWeights& core_weights,
                   float boundary_weight,
                   float macro_blockage_weight,
                   float notch_weight,
@@ -106,7 +99,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   };
 
  private:
-  float getAreaPenalty() const;
   float calNormCost() const override;
   void calPenalty() override;
 

@@ -204,15 +204,16 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
     // cell and "no other cell" on either the left or the
     // right.  This might solve the problem since it will
     // make the blockage wider.
-    xmin -= arch_->getCellSpacing(nullptr, nd);
-    xmax += arch_->getCellSpacing(nd, nullptr);
+    int pad_left = arch_->getCellSpacing(nullptr, nd);
+    int pad_right = arch_->getCellSpacing(nd, nullptr);
 
     for (int r = 0; r < numSingleHeightRows_; r++) {
       const int yb = arch_->getRow(r)->getBottom();
       const int yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(xmin, xmax);
+        blockages_[r].emplace_back(
+            xmin, xmax, pad_left, pad_right, BlockageType::FixedInstance);
       }
     }
   }
@@ -229,7 +230,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       const int yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(xmin, xmax);
+        blockages_[r].emplace_back(xmin, xmax, 0, 0, BlockageType::Placement);
       }
     }
   }
@@ -267,7 +268,10 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
             if (i1 > i0) {
               blockages_[r].emplace_back(originX + i0 * siteSpacing,
-                                         originX + i1 * siteSpacing);
+                                         originX + i1 * siteSpacing,
+                                         0,
+                                         0,
+                                         BlockageType::Routing);
             }
           }
         }
@@ -284,15 +288,15 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
     std::sort(blockages.begin(), blockages.end(), compareBlockages());
 
-    std::stack<std::pair<double, double>> s;
+    std::stack<Blockage> s;
     s.push(blockages[0]);
     for (int i = 1; i < blockages.size(); i++) {
-      std::pair<double, double> top = s.top();  // copy.
-      if (top.second < blockages[i].first) {
+      Blockage top = s.top();  // copy.
+      if (top.getPaddedXMax() < blockages[i].getPaddedXMin()) {
         s.push(blockages[i]);  // new interval.
       } else {
-        if (top.second < blockages[i].second) {
-          top.second = blockages[i].second;  // extend interval.
+        if (top.getPaddedXMax() < blockages[i].getPaddedXMax()) {
+          top.x_max = blockages[i].getXMax();  // extend interval.
         }
         s.pop();      // remove old.
         s.push(top);  // expanded interval.
@@ -363,10 +367,10 @@ void DetailedMgr::findSegments()
       }
     } else {
       // Divide row.
-      if (blockages_[r][0].first > std::max(arch_->getMinX(), lx)) {
+      if (blockages_[r][0].getPaddedXMin() > std::max(arch_->getMinX(), lx)) {
         int x1 = std::max(arch_->getMinX(), lx);
         int x2 = std::min(std::min(arch_->getMaxX(), rx),
-                          (int) std::floor(blockages_[r][0].first));
+                          (int) std::floor(blockages_[r][0].getPaddedXMin()));
 
         if (x2 > x1) {
           auto segment = new DetailedSeg();
@@ -382,11 +386,13 @@ void DetailedMgr::findSegments()
         }
       }
       for (int i = 1; i < n; i++) {
-        if (blockages_[r][i].first > blockages_[r][i - 1].second) {
-          int x1 = std::max(std::max(arch_->getMinX(), lx),
-                            (int) std::ceil(blockages_[r][i - 1].second));
+        if (blockages_[r][i].getPaddedXMin()
+            > blockages_[r][i - 1].getPaddedXMax()) {
+          int x1
+              = std::max(std::max(arch_->getMinX(), lx),
+                         (int) std::ceil(blockages_[r][i - 1].getPaddedXMax()));
           int x2 = std::min(std::min(arch_->getMaxX(), rx),
-                            (int) std::floor(blockages_[r][i].first));
+                            (int) std::floor(blockages_[r][i].getPaddedXMin()));
 
           if (x2 > x1) {
             auto segment = new DetailedSeg();
@@ -402,11 +408,12 @@ void DetailedMgr::findSegments()
           }
         }
       }
-      if (blockages_[r][n - 1].second < std::min(arch_->getMaxX(), rx)) {
-        int x1
-            = std::min(std::min(arch_->getMaxX(), rx),
-                       std::max(std::max(arch_->getMinX(), lx),
-                                (int) std::ceil(blockages_[r][n - 1].second)));
+      if (blockages_[r][n - 1].getPaddedXMax()
+          < std::min(arch_->getMaxX(), rx)) {
+        int x1 = std::min(
+            std::min(arch_->getMaxX(), rx),
+            std::max(std::max(arch_->getMinX(), lx),
+                     (int) std::ceil(blockages_[r][n - 1].getPaddedXMax())));
         int x2 = std::min(arch_->getMaxX(), rx);
 
         if (x2 > x1) {
@@ -970,21 +977,26 @@ void DetailedMgr::assignCellsToSegments(
 
 bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
 {
-  const int single_height = arch_->getRow(0)->getHeight();
-  const int start_row = std::max(nd->getBottom() / single_height, 0);
-  const int end_row
-      = std::min(nd->getTop() / single_height, numSingleHeightRows_ - 1);
-  for (int r = start_row; r <= end_row; r++) {
-    auto it = std::lower_bound(blockages_[r].begin(),
-                               blockages_[r].end(),
-                               std::make_pair(position, position),
-                               [](const std::pair<double, double>& block,
-                                  const std::pair<double, double>& target) {
-                                 return block.second < target.first;
-                               });
+  const Architecture::Row* first_row = arch_->getRow(0);
+  const int single_height = first_row->getHeight();
+  const int rows_origin_y = first_row->getBottom();
+  const int start_row
+      = std::max((nd->getBottom() - rows_origin_y) / single_height, 0);
+  const int end_row = std::min((nd->getTop() - rows_origin_y) / single_height,
+                               numSingleHeightRows_ - 1);
 
-    if (it != blockages_[r].end() && position >= it->first
-        && position <= it->second) {
+  for (int r = start_row; r < end_row; r++) {
+    auto it = std::lower_bound(
+        blockages_[r].begin(),
+        blockages_[r].end(),
+        Blockage(position, position, 0, 0, BlockageType::None),
+        [](const Blockage& block, const Blockage& target) {
+          return block.getXMax() < target.getXMin();
+        });
+
+    if (it != blockages_[r].end()
+        && (it->isFixedInstance() || it->isPlacement())
+        && position >= it->getXMin() && position <= it->getXMax()) {
       return true;
     }
   }
@@ -1932,7 +1944,7 @@ void DetailedMgr::findRegionIntervals(
     }
 
     // Sort to get intervals left to right.
-    std::sort(intervals[r].begin(), intervals[r].end(), compareBlockages());
+    std::sort(intervals[r].begin(), intervals[r].end(), compareIntervals());
 
     std::stack<std::pair<double, double>> s;
     s.push(intervals[r][0]);
@@ -1956,7 +1968,7 @@ void DetailedMgr::findRegionIntervals(
     }
 
     // Sort to get them left to right.
-    std::sort(intervals[r].begin(), intervals[r].end(), compareBlockages());
+    std::sort(intervals[r].begin(), intervals[r].end(), compareIntervals());
   }
 }
 

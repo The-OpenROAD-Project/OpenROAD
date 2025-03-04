@@ -45,7 +45,6 @@ class _dbTechNonDefaultRule;
 class _dbTechLayer;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbTechSameNetRuleFlags
 {
@@ -71,10 +70,7 @@ class _dbTechSameNetRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechSameNetRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbTechSameNetRule::_dbTechSameNetRule(_dbDatabase*,

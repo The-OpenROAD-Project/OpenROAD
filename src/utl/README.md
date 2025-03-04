@@ -9,6 +9,32 @@ The utility module contains the `man` command.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
+### Prometheus Metrics
+
+OpenROAD includes a metrics endpoint server that can track internal tool metrics over time.
+
+![page](/docs/images/grafana.png)
+
+To use this feature you need to do the following start the prometheus and grafana collectors
+
+[Detailed instructions](/etc/monitoring/README.md):
+```shell
+$ cd etc/monitoring
+$ docker compose up -d
+```
+
+This will start a grafana endpoint ready to collect from the OpenROAD application you would
+like to track. By default it's looking for an http server running on port 8080 on your localhost.
+
+To start the metrics endpoint in OpenROAD, run:
+```tcl
+utl::startPrometheusEndpoint 8080
+```
+
+This is all configurable in the docker compose file, and you should be able to access grafana by going to
+http://localhost:3000 username: admin, password: grafana. Go to the dashboard tab and click service,
+then OpenROAD to see the pre-made dashboard.
+
 ## Man installation
 
 The `man` command can be installed optionally as part of the OpenROAD

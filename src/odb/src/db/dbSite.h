@@ -45,7 +45,6 @@ template <class T>
 class dbTable;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbLib;
 class _dbSite;
 
@@ -87,8 +86,7 @@ class _dbSite : public _dbObject
 
   bool operator==(const _dbSite& rhs) const;
   bool operator!=(const _dbSite& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbSite& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site);

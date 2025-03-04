@@ -37,7 +37,7 @@
 
 #include "name.h"
 #include "odb/dbExtControl.h"
-#include "odb/parse.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 

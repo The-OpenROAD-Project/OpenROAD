@@ -49,7 +49,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbMarkerCategory;
 class _dbTechLayer;
@@ -81,16 +80,12 @@ class _dbMarker : public _dbObject
   };
   // User Code End Enums
 
-  _dbMarker(_dbDatabase*, const _dbMarker& r);
   _dbMarker(_dbDatabase*);
-
-  ~_dbMarker() = default;
 
   bool operator==(const _dbMarker& rhs) const;
   bool operator!=(const _dbMarker& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbMarker& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbMarker& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   _dbBlock* getBlock() const;
 

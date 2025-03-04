@@ -107,6 +107,12 @@ class RepairDesign : dbStaState
                  double cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
+  void reportViolationCounters(bool invalidate_driver_vertices,
+                               int slew_violations,
+                               int cap_violations,
+                               int fanout_violations,
+                               int length_violations,
+                               int repaired_net_count);
 
  protected:
   void init();
@@ -214,7 +220,7 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
@@ -224,7 +230,7 @@ class RepairDesign : dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     int x,
                     int y,
                     LibertyCell* buffer_cell,
@@ -253,6 +259,7 @@ class RepairDesign : dbStaState
   PreChecks* pre_checks_ = nullptr;
   Resizer* resizer_;
   int dbu_ = 0;
+  double initial_design_area_ = 0;
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
   // Gain buffering
@@ -277,7 +284,7 @@ class RepairDesign : dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr int min_print_interval_ = 10;
-  static constexpr int max_print_interval_ = 100;
+  static constexpr int max_print_interval_ = 1000;
 };
 
 }  // namespace rsz
