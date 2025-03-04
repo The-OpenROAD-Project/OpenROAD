@@ -899,39 +899,34 @@ int64_t IOPlacer::computeIncrease(int min_dist,
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
-  bool vertical_pin = (edge == Edge::top || edge == Edge::bottom);
-
   for (int layer : layers) {
-    const std::vector<int>& layer_min_distances
-        = vertical_pin ? core_->getMinDstPinsX().at(layer)
-                       : core_->getMinDstPinsY().at(layer);
-
     std::vector<Point> slots = findLayerSlots(layer, edge);
-
-    int tech_min_dst = *(std::max_element(layer_min_distances.begin(),
-                                          layer_min_distances.end()));
-    int min_dst_pins = computeDistanceBetweenPins(layer, tech_min_dst);
-
-    // if user-defined min distance is not in tracks, use this value to
-    // determine if slots are valid between each other. also ensures to use the
-    // layer pitch if the user-defined min distance is lesser than the pitch.
-    if (!parms_->getMinDistanceInTracks()) {
-      int layer_pitch = core_->getLayerSpacing(layer) * 2;
-      min_dst_pins = std::max(parms_->getMinDistance(), layer_pitch);
-    }
 
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
+    int slot_count = 0;
     Point last = slots[0];
+    int min_dst_pins = parms_->getMinDistance();
+    const bool min_dist_in_tracks = parms_->getMinDistanceInTracks();
     for (auto it = slots.begin(); it != slots.end();) {
       Point pos = *it;
-      if (pos != last && std::abs(last.getX() - pos.getX()) < min_dst_pins
-          && std::abs(last.getY() - pos.getY()) < min_dst_pins) {
-        it = slots.erase(it);
+      bool valid_slot;
+      if (!min_dist_in_tracks) {
+        // If user-defined min distance is not in tracks, use this value to
+        // determine if slots are valid between each other.
+        valid_slot = pos == last
+                     || (std::abs(last.getX() - pos.getX()) >= min_dst_pins
+                         || std::abs(last.getY() - pos.getY()) >= min_dst_pins);
       } else {
+        valid_slot = pos == last || slot_count % min_dst_pins == 0;
+      }
+      if (valid_slot) {
         last = pos;
         ++it;
+      } else {
+        it = slots.erase(it);
       }
+      slot_count++;
     }
 
     if (edge == Edge::top || edge == Edge::left) {
