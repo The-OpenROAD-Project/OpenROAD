@@ -731,7 +731,6 @@ class Ath__gridTable
   }
 
  private:
-  void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);
   uint setExtrusionMarker(uint startRow, uint startCol);
   Ath__wire* getWire_Linear(uint instId);
   bool isOrdered(bool ascending);
@@ -739,6 +738,7 @@ class Ath__gridTable
 
   bool _no_sub_tracks = false;
   bool _v2 = false;
+  // indexed [row][col].  Rows = dirs (2); cols = layers+1 (1-indexing)
   Ath__grid*** _gridTable;
   Ath__box _bbox;
   Ath__box _maxSearchBox;
@@ -750,28 +750,28 @@ class Ath__gridTable
   uint _colSize;
   AthPool<Ath__track>* _trackPool;
   AthPool<Ath__wire>* _wirePool;
-  uint _schema;
-  uint _overlapAdjust;
-  uint _powerMultiTrackWire;
-  uint _signalMultiTrackWire;
-  uint _overlapTouchCheck;
-  uint _noPowerSource;
-  uint _noPowerTarget;
-  uint _CCshorts;
-  uint _CCtargetHighTracks;
+  uint _schema{1};
+  uint _overlapAdjust{Z_noAdjust};
+  uint _powerMultiTrackWire{0};
+  uint _signalMultiTrackWire{0};
+  uint _overlapTouchCheck{1};
+  uint _noPowerSource{0};
+  uint _noPowerTarget{0};
+  uint _CCshorts{0};
+  uint _CCtargetHighTracks{1};
   uint _CCtargetHighMarkedNet;
-  bool _targetTrackReversed;
-  bool _allNet;
+  bool _targetTrackReversed{false};
+  bool _allNet{true};
   bool _handleEmptyOnly;
-  bool _useDbSdb;
+  bool _useDbSdb{true};
   uint _ccFlag;
 
-  uint _ccContextDepth;
+  uint _ccContextDepth{0};
 
   // _v2
   uint* _ccContextLength;
 
-  Ath__array1D<int>** _ccContextArray;
+  Ath__array1D<int>** _ccContextArray{nullptr};
 
   AthPool<SEQ>* _seqPool;
   Ath__array1D<SEQ*>*** _dgContextArray;  // array
@@ -799,7 +799,7 @@ class Ath__gridTable
 
   uint _wireCnt;
 
-  Ath__array1D<Ath__wire*>* _bandWire;
+  Ath__array1D<Ath__wire*>* _bandWire{nullptr};
 
   bool _ttttGetDgOverlap{false};
 };

@@ -2312,26 +2312,6 @@ int Ath__grid::findEmptyTrack(int ll[2], int ur[2])
   return -1;
 }
 
-void Ath__gridTable::init1(uint memChunk,
-                           uint rowSize,
-                           uint colSize,
-                           uint dx,
-                           uint dy)
-{
-  _trackPool = new AthPool<Ath__track>(memChunk);
-  _wirePool = new AthPool<Ath__wire>(memChunk * 1000);
-
-  _wirePool->alloc();  // so all wire ids>0
-
-  _rowSize = rowSize;
-  _colSize = colSize;
-  _rowCnt = dy / rowSize + 1;
-  _colCnt = dx / colSize + 1;
-
-  _wireCnt = 0;
-  resetMaxArea();
-}
-
 void Ath__gridTable::releaseWire(uint wireId)
 {
   Ath__wire* w = _wirePool->get(wireId);
@@ -2431,34 +2411,26 @@ Ath__gridTable::Ath__gridTable(Rect* bb,
                                const int* X1,
                                const int* Y1)
 {
-  // for net wires
-  init1(1024, bb->dy(), bb->dx(), bb->dx(), bb->dy());
+  const int memChunk = 1024;
+  _trackPool = new AthPool<Ath__track>(memChunk);
+  _wirePool = new AthPool<Ath__wire>(memChunk * 1000);
+
+  _wirePool->alloc();  // so all wire ids>0
+
+  _rowSize = bb->dy();
+  _colSize = bb->dx();
+
+  _wireCnt = 0;
+  resetMaxArea();
+
   _rectBB.reset(bb->xMin(), bb->yMin(), bb->xMax(), bb->yMax());
   _rowCnt = rowCnt;
   _colCnt = colCnt;
-  _schema = 1;
-  _overlapTouchCheck = 1;
-  _noPowerSource = 0;
-  _noPowerTarget = 0;
-  _CCshorts = 0;
-  _CCtargetHighTracks = 1;
-  _targetTrackReversed = false;
-  _ccContextDepth = 0;
-  _ccContextArray = nullptr;
-  _allNet = true;
-  _useDbSdb = true;
-  _overlapAdjust = Z_noAdjust;
-  _powerMultiTrackWire = 0;
-  _signalMultiTrackWire = 0;
-  _bandWire = nullptr;
 
-  uint markerLen = 500000;  // EXT-DEFAULT
+  const uint markerLen = 500000;
 
-  // int x1= bb->xMin();
-  // int y1= bb->yMin();
-  int x1, y1;
-  int x2 = bb->xMax();
-  int y2 = bb->yMax();
+  const int x2 = bb->xMax();
+  const int y2 = bb->yMax();
 
   _gridTable = new Ath__grid**[_rowCnt];
   for (uint ii = 0; ii < _rowCnt; ii++) {
@@ -2470,8 +2442,8 @@ Ath__gridTable::Ath__gridTable(Rect* bb,
 
       _gridTable[ii][jj]
           = new Ath__grid(this, _trackPool, _wirePool, jj, num, 10);
-      x1 = X1 ? X1[jj] : bb->xMin();
-      y1 = Y1 ? Y1[jj] : bb->yMin();
+      const int x1 = X1 ? X1[jj] : bb->xMin();
+      const int y1 = Y1 ? Y1[jj] : bb->yMin();
       _gridTable[ii][jj]->setTracks(
           ii, 1, pitch[jj], x1, y1, x2, y2, markerLen);
       _gridTable[ii][jj]->setSchema(_schema);
