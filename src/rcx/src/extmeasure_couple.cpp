@@ -156,7 +156,7 @@ uint extMeasureRC::FindCoupleWiresOnTracks_down(
     return 0;
 
   uint level = opt.metal_level;
-  Ath__grid* upGrid = _search->getGrid(opt.direction, level);
+  Grid* upGrid = _search->getGrid(opt.direction, level);
   // int up_track_num = upGrid->getTrackNum1(w->getBase());
   int end_track = start_track - opt.track_limit - 1;
   if (end_track < 0)
@@ -214,7 +214,7 @@ uint extMeasureRC::FindCoupleWiresOnTracks_up(
 // Ath__array1D<Ath__wire *> **firstWireTable, Ath__array1D<Ath__wire *>
 // *resTable)
 {
-  Ath__grid* upGrid
+  Grid* upGrid
       = _search->getGrid(coupleOptions.direction, coupleOptions.metal_level);
   int end_track = start_track + coupleOptions.track_limit + 1;
 
@@ -260,7 +260,7 @@ bool extMeasureRC::FindDiagonalCoupleSegments(
   for (uint jj = current_level + 1;
        jj < max_level && jj < current_level + diagLimit;
        jj++) {
-    Ath__grid* upgrid = _search->getGrid(dir, jj);
+    Grid* upgrid = _search->getGrid(dir, jj);
 
     int diag_track_num = upgrid->getTrackNum1(w->getBase());
     FindAllSegments_up(fp,
@@ -288,7 +288,7 @@ bool extMeasureRC::FindDiagonalCoupleSegments(
   }
   for (int jj = current_level - 1; jj > 0 && jj > current_level - diagLimit;
        jj--) {
-    Ath__grid* upgrid = _search->getGrid(dir, jj);
+    Grid* upgrid = _search->getGrid(dir, jj);
     int diag_track_num = upgrid->getTrackNum1(w->getBase());
     FindAllSegments_up(fp,
                        w,
@@ -529,7 +529,7 @@ int extMeasureRC::CouplingFlow(uint dir,
 
   for (int level = 1; level < metalLevelCnt; level++) {
     _met = level;
-    Ath__grid* netGrid = _search->getGrid(dir, level);
+    Grid* netGrid = _search->getGrid(dir, level);
     segments.resetAll();
     // DBG _extMain->getPeakMemory("CouplingFlow Level:", level);
 
@@ -994,7 +994,7 @@ uint extMeasureRC::FindAllNeigbors_up(Ath__wire* w,
                                       Ath__array1D<Ath__wire*>** firstWireTable,
                                       Ath__array1D<Ath__wire*>* resTable)
 {
-  Ath__grid* upGrid = _search->getGrid(dir, level);
+  Grid* upGrid = _search->getGrid(dir, level);
   // int up_track_num = upGrid->getTrackNum1(w->getBase());
   int end_track = start_track + limitTrackNum + 1;
 
@@ -1033,7 +1033,7 @@ uint extMeasureRC::FindAllNeigbors_down(
   if (start_track < 0)
     return 0;
 
-  Ath__grid* upGrid = _search->getGrid(dir, level);
+  Grid* upGrid = _search->getGrid(dir, level);
   // int up_track_num = upGrid->getTrackNum1(w->getBase());
   int end_track = start_track - limitTrackNum - 1;
   if (end_track < 0)

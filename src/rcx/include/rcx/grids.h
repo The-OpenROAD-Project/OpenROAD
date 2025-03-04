@@ -61,7 +61,7 @@ enum Ath__overlapAdjust
 };
 
 class Ath__track;
-class Ath__grid;
+class Grid;
 class GridTable;
 struct SEQ;
 
@@ -184,7 +184,7 @@ class Ath__wire
   uint _visited : 1;
 
   friend class Ath__track;
-  friend class Ath__grid;
+  friend class Grid;
   friend class GridTable;
 };
 
@@ -192,7 +192,7 @@ class Ath__track
 {
  public:
   uint getTrackNum() { return _num; };
-  void set(Ath__grid* g,
+  void set(Grid* g,
            int x,
            int y,
            uint n,
@@ -208,7 +208,7 @@ class Ath__track
 
   bool overlapCheck(Ath__wire* w, int markIndex1, int markIndex2);
   bool isAscendingOrdered(uint markerCnt, uint* wCnt);
-  Ath__grid* getGrid();
+  Grid* getGrid();
   Ath__wire* getWire_Linear(uint markerCnt, uint id);
   Ath__wire* getNextWire(Ath__wire* wire);
   uint search(int xy1,
@@ -258,7 +258,7 @@ class Ath__track
   void buildDgContext(Ath__array1D<SEQ*>* dgContext,
                       std::vector<Ath__wire*>& allWire);
   int getBandWires(Ath__array1D<Ath__wire*>* bandWire);
-  uint couplingCaps(Ath__grid* ccGrid,
+  uint couplingCaps(Grid* ccGrid,
                     uint srcTrack,
                     uint trackDist,
                     uint ccThreshold,
@@ -272,7 +272,7 @@ class Ath__track
                    uint ccThreshold,
                    Ath__array1D<Ath__wire*>* wTable,
                    Ath__array1D<Ath__wire*>* nwTable,
-                   Ath__grid* ccGrid,
+                   Grid* ccGrid,
                    Ath__array1D<Ath__wire*>* ccTable,
                    uint met,
                    CoupleAndCompute coupleAndCompute,
@@ -310,7 +310,7 @@ class Ath__track
   uint _targetMarker;
   Ath__wire* _targetWire;
 
-  Ath__grid* _grid;
+  Grid* _grid;
 
   uint _num : 20;
 
@@ -327,11 +327,11 @@ class Ath__track
   // --------------------------------------------------------
 
   friend class GridTable;
-  friend class Ath__grid;
+  friend class Grid;
   friend class Ath__wire;
 };
 
-class Ath__grid
+class Grid
 {
  public:
   int initCouplingCapLoops_v2(uint couplingDist,
@@ -339,23 +339,23 @@ class Ath__grid
                               int startXY = 0);
   uint placeWire_v2(Ath__searchBox* bb);
 
-  Ath__grid(GridTable* gt,
-            AthPool<Ath__track>* trackPool,
-            AthPool<Ath__wire>* wirePool,
-            Ath__box* bb,
-            uint level,
-            uint dir,
-            uint num,
-            uint width,
-            uint pitch,
-            uint markerCnt = 4);
-  Ath__grid(GridTable* gt,
-            AthPool<Ath__track>* trackPool,
-            AthPool<Ath__wire>* wirePool,
-            uint level,
-            uint num,
-            uint markerCnt);
-  ~Ath__grid();
+  Grid(GridTable* gt,
+       AthPool<Ath__track>* trackPool,
+       AthPool<Ath__wire>* wirePool,
+       Ath__box* bb,
+       uint level,
+       uint dir,
+       uint num,
+       uint width,
+       uint pitch,
+       uint markerCnt = 4);
+  Grid(GridTable* gt,
+       AthPool<Ath__track>* trackPool,
+       AthPool<Ath__wire>* wirePool,
+       uint level,
+       uint num,
+       uint markerCnt);
+  ~Grid();
 
   GridTable* getGridTable() { return _gridtable; };
   void setBoundaries(uint dir, const odb::Rect& rect);
@@ -472,7 +472,7 @@ class Ath__grid
   uint search(Ath__searchBox* bb,
               const uint* gxy,
               Ath__array1D<uint>* idtable,
-              Ath__grid* g);
+              Grid* g);
   void adjustOverlapMakerEnd();
   void initContextGrids();
   void initContextTracks();
@@ -578,7 +578,7 @@ class GridTable
             const int* X1 = nullptr,
             const int* Y1 = nullptr);
   ~GridTable();
-  Ath__grid* getGrid(uint row, uint col);
+  Grid* getGrid(uint row, uint col);
   uint getColCnt();
   uint getRowCnt();
   Ath__wire* getWirePtr(uint id);
@@ -643,7 +643,7 @@ class GridTable
               uint row,
               uint col,
               Ath__array1D<uint>* idtable,
-              Ath__grid* g);
+              Grid* g);
   uint getOverlapAdjust() { return _overlapAdjust; };
   uint getOverlapTouchCheck() { return _overlapTouchCheck; };
   uint targetHighTracks() { return _CCtargetHighTracks; };
@@ -739,7 +739,7 @@ class GridTable
   bool _no_sub_tracks = false;
   bool _v2 = false;
   // indexed [row][col].  Rows = dirs (2); cols = layers+1 (1-indexing)
-  Ath__grid*** _gridTable;
+  Grid*** _gridTable;
   Ath__box _bbox;
   Ath__box _maxSearchBox;
   bool _setMaxArea;

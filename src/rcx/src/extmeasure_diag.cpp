@@ -58,7 +58,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir,
 
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++) {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     firstWireTable.resetCnt();
 
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
@@ -149,7 +149,7 @@ int extMeasureRC::FindCouplingNeighbors_down(uint dir,
   Ath__array1D<Ath__wire*> firstWireTable;
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++) {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     firstWireTable.resetCnt();
 
     int tr = netGrid->getTrackCnt() - 1;
@@ -188,7 +188,7 @@ int extMeasureRC::FindCouplingNeighbors_down(uint dir,
   }
   return 0;
 }
-void extMeasureRC::ResetFirstWires(Ath__grid* netGrid,
+void extMeasureRC::ResetFirstWires(Grid* netGrid,
                                    Ath__array1D<Ath__wire*>* firstWireTable,
                                    int tr1,
                                    int trCnt,
@@ -211,7 +211,7 @@ void extMeasureRC::ResetFirstWires(uint m1,
 {
   for (uint level = m1; level < m2; level++)  // for layers above
   {
-    Ath__grid* upGrid = _search->getGrid(dir, level);
+    Grid* upGrid = _search->getGrid(dir, level);
     uint n = upGrid->getTrackCnt();
     ResetFirstWires(upGrid, firstWireTable[level], 0, n, n);
   }
@@ -483,7 +483,7 @@ void extMeasureRC::PrintDiagwires(FILE* fp, Ath__wire* w, uint level)
   }
   fprintf(fp, "\n");
 }
-Ath__wire* extMeasureRC::GetNextWire(Ath__grid* netGrid,
+Ath__wire* extMeasureRC::GetNextWire(Grid* netGrid,
                                      uint tr,
                                      Ath__array1D<Ath__wire*>* firstWireTable)
 {
@@ -500,7 +500,7 @@ Ath__wire* extMeasureRC::GetNextWire(Ath__grid* netGrid,
   return first_wire;
 }
 Ath__wire* extMeasureRC::FindOverlap(Ath__wire* w,
-                                     Ath__grid* netGrid,
+                                     Grid* netGrid,
                                      uint tr,
                                      Ath__array1D<Ath__wire*>* firstWireTable)
 {
@@ -580,7 +580,7 @@ int extMeasureRC::PrintAllGrids(uint dir, FILE* fp, uint mode)
   for (uint jj = 1; jj < colCnt; jj++)  // For all Layers
   {
     const char* vert = dir == 1 ? "H" : "V";
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     fprintf(fp,
             "Metal %d  Dir %d %s Tracks=%d "
             "----------------------------------------- \n",
@@ -619,7 +619,7 @@ int extMeasureRC::ConnectWires(uint dir)
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++)  // For all Layers
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Ath__track* track = netGrid->getTrackPtr(tr);
@@ -704,7 +704,7 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
 
   for (uint jj = 1; jj < levelCnt; jj++)  // For all Layers
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Ath__track* track = netGrid->getTrackPtr(tr);
@@ -730,7 +730,7 @@ int extMeasureRC::FindDiagonalNeighbors(uint dir,
         prev = w;
         for (uint level = m1; level < m2; level++)  // for layers above
         {
-          Ath__grid* upGrid = _search->getGrid(dir, level);
+          Grid* upGrid = _search->getGrid(dir, level);
           int up_track_num = upGrid->getTrackNum1(w->getBase());
           int start_track = up_track_num - limitTrackNum >= 0
                                 ? up_track_num - limitTrackNum
@@ -778,7 +778,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_power(
       continue;
     upWireTable[level]->resetCnt();
 
-    Ath__grid* grid = _search->getGrid(dir, level);
+    Grid* grid = _search->getGrid(dir, level);
     int up_track_num = grid->getTrackNum1(w->getBase());
     int start_track
         = up_track_num - limitTrackNum >= 0 ? up_track_num - limitTrackNum : 0;
@@ -819,7 +819,7 @@ Ath__wire* extMeasureRC::FindDiagonalNeighbors_vertical_up_down(
     uint limitTrackNum,
     Ath__array1D<Ath__wire*>** firstWireTable)
 {
-  Ath__grid* upGrid = _search->getGrid(dir, level);
+  Grid* upGrid = _search->getGrid(dir, level);
   int up_track_num = upGrid->getTrackNum1(w->getBase());
   int start_track
       = up_track_num - limitTrackNum >= 0 ? up_track_num - limitTrackNum : 0;
@@ -863,7 +863,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up(uint dir,
 
   for (uint jj = 1; jj < levelCnt - 1; jj++)  // For all Layers
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Ath__track* track = netGrid->getTrackPtr(tr);
@@ -926,7 +926,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down(uint dir,
 
   for (int jj = levelCnt - 1; jj > 1; jj--)  // For all Layers going down
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Ath__track* track = netGrid->getTrackPtr(tr);
@@ -996,7 +996,7 @@ int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
     if (m2 < 1)
       m2 = 1;
 
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)  // for all  tracks
     {
       Ath__track* track = netGrid->getTrackPtr(tr);
@@ -1019,7 +1019,7 @@ int extMeasureRC::FindDiagonalNeighbors_down(uint dir,
         prev = w;
         for (int level = m1; level >= m2; level--)  // for layers above
         {
-          Ath__grid* upGrid = _search->getGrid(dir, level);
+          Grid* upGrid = _search->getGrid(dir, level);
           int up_track_num = upGrid->getTrackNum1(w->getBase());
           int start_track = up_track_num - limitTrackNum >= 0
                                 ? up_track_num - limitTrackNum

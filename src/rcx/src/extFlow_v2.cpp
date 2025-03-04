@@ -462,7 +462,7 @@ void GridTable::initCouplingCapLoops_v2(uint dir,
   setCCFlag(couplingDist);
 
   for (uint jj = 1; jj < _colCnt; jj++) {
-    Ath__grid* netGrid = _gridTable[dir][jj];
+    Grid* netGrid = _gridTable[dir][jj];
     if (netGrid == nullptr) {
       continue;
     }
@@ -474,9 +474,9 @@ void GridTable::initCouplingCapLoops_v2(uint dir,
     }
   }
 }
-int Ath__grid::initCouplingCapLoops_v2(uint couplingDist,
-                                       bool startSearchTrack,
-                                       int startXY)
+int Grid::initCouplingCapLoops_v2(uint couplingDist,
+                                  bool startSearchTrack,
+                                  int startXY)
 {
   uint TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
   bool allNet = _gridtable->allNet();
@@ -502,7 +502,7 @@ uint Ath__wire::getPitch()
 {
   return this->_track->getGrid()->getPitch();
 }
-uint Ath__grid::placeWire_v2(Ath__searchBox* bb)
+uint Grid::placeWire_v2(Ath__searchBox* bb)
 {
   uint d = !_dir;
 

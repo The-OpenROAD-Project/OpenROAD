@@ -562,7 +562,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
     _verticalPowerTable[ii] = new Ath__array1D<Ath__wire*>(4);
 
   for (uint level = 1; level < colCnt; level++) {
-    Ath__grid* netGrid = _search->getGrid(dir, level);
+    Grid* netGrid = _search->getGrid(dir, level);
     upTable.resetCnt();
 
     uint maxDist = 10 * netGrid->getPitch();

@@ -496,7 +496,7 @@ Ath__track* Ath__track::getLowTrack()
   return _lowTrack;
 }
 
-void Ath__track::set(Ath__grid* g,
+void Ath__track::set(Grid* g,
                      int x,
                      int y,
                      uint n,
@@ -552,7 +552,7 @@ void Ath__track::dealloc(AthPool<Ath__wire>* pool)
   delete[] _eMarker;
 }
 
-int Ath__grid::getAbsTrackNum(const int xy)
+int Grid::getAbsTrackNum(const int xy)
 {
   const int dist = xy - _base;
 
@@ -564,7 +564,7 @@ int Ath__grid::getAbsTrackNum(const int xy)
 
   return n;
 }
-int Ath__grid::getMinMaxTrackNum(const int xy)
+int Grid::getMinMaxTrackNum(const int xy)
 {
   const int dist = xy - _base;
 
@@ -575,7 +575,7 @@ int Ath__grid::getMinMaxTrackNum(const int xy)
   return std::min(dist / _pitch, _trackCnt - 1);
 }
 
-void Ath__grid::initContextTracks()
+void Grid::initContextTracks()
 {
   setSearchDomain(1);
   const bool noPowerTarget = _gridtable->noPowerTarget() > 0;
@@ -591,7 +591,7 @@ void Ath__grid::initContextTracks()
   }
 }
 
-void Ath__grid::initContextGrids()
+void Grid::initContextGrids()
 {
   const uint sdepth = _gridtable->contextDepth();
   if (sdepth == 0) {
@@ -606,7 +606,7 @@ void Ath__grid::initContextGrids()
   }
 }
 
-void Ath__grid::setSearchDomain(const int domainAdjust)
+void Grid::setSearchDomain(const int domainAdjust)
 {
   if (_gridtable->allNet()) {
     _searchLowTrack = 0;
@@ -630,22 +630,20 @@ void Ath__grid::setSearchDomain(const int domainAdjust)
   _searchHiMarker = getBucketNum(mhi);
 }
 
-Ath__track* Ath__grid::addTrack(const uint ii,
-                                const uint markerCnt,
-                                const int base)
+Ath__track* Grid::addTrack(const uint ii, const uint markerCnt, const int base)
 {
   Ath__track* track = _trackPoolPtr->alloc();
   track->set(this, _start, _end, ii, _width, _markerLen, markerCnt, base);
   return track;
 }
-Ath__track* Ath__grid::addTrack(const uint ii, const uint markerCnt)
+Ath__track* Grid::addTrack(const uint ii, const uint markerCnt)
 {
   const int trackBase = _base + _pitch * ii;
   return addTrack(ii, markerCnt, trackBase);
 }
-Ath__track* Ath__grid::getTrackPtr(const uint ii,
-                                   const uint markerCnt,
-                                   const int base)
+Ath__track* Grid::getTrackPtr(const uint ii,
+                              const uint markerCnt,
+                              const int base)
 {
   if (ii >= _trackCnt) {
     return nullptr;
@@ -695,7 +693,7 @@ Ath__track* Ath__grid::getTrackPtr(const uint ii,
   return ttrack;
 }
 
-Ath__track* Ath__grid::getTrackPtr(const uint ii, const uint markerCnt)
+Ath__track* Grid::getTrackPtr(const uint ii, const uint markerCnt)
 {
   const int trackBase = _base + _pitch * ii;
   return getTrackPtr(ii, markerCnt, trackBase);
@@ -1238,7 +1236,7 @@ bool Ath__track::overlapCheck(Ath__wire* w,
   }
   return false;
 }
-void Ath__grid::makeTrackTable(uint width, uint pitch, uint space)
+void Grid::makeTrackTable(uint width, uint pitch, uint space)
 {
   if (width > 0) {
     _width = width;
@@ -1264,7 +1262,7 @@ void Ath__grid::makeTrackTable(uint width, uint pitch, uint space)
   }
 }
 
-void Ath__grid::setBoundaries(uint dir, const odb::Rect& rect)
+void Grid::setBoundaries(uint dir, const odb::Rect& rect)
 {
   _lo[0] = rect.xMin();
   _lo[1] = rect.yMin();
@@ -1284,12 +1282,12 @@ void Ath__grid::setBoundaries(uint dir, const odb::Rect& rect)
     _end = rect.xMax();
   }
 }
-Ath__grid::Ath__grid(GridTable* gt,
-                     AthPool<Ath__track>* trackPool,
-                     AthPool<Ath__wire>* wirePool,
-                     uint level,
-                     uint num,
-                     uint markerCnt)
+Grid::Grid(GridTable* gt,
+           AthPool<Ath__track>* trackPool,
+           AthPool<Ath__wire>* wirePool,
+           uint level,
+           uint num,
+           uint markerCnt)
 {
   _gridtable = gt;
   _trackPoolPtr = trackPool;
@@ -1300,14 +1298,14 @@ Ath__grid::Ath__grid(GridTable* gt,
   _schema = 0;
 }
 
-void Ath__grid::setTracks(uint dir,
-                          uint width,
-                          uint pitch,
-                          int xlo,
-                          int ylo,
-                          int xhi,
-                          int yhi,
-                          uint markerLen)
+void Grid::setTracks(uint dir,
+                     uint width,
+                     uint pitch,
+                     int xlo,
+                     int ylo,
+                     int xhi,
+                     int yhi,
+                     uint markerLen)
 {
   setBoundaries(dir, {xlo, ylo, xhi, yhi});
   makeTrackTable(width, pitch);
@@ -1320,20 +1318,20 @@ void Ath__grid::setTracks(uint dir,
     }
   }
 }
-void Ath__grid::setSchema(uint v)
+void Grid::setSchema(uint v)
 {
   _schema = v;
 }
-Ath__grid::Ath__grid(GridTable* gt,
-                     AthPool<Ath__track>* trackPool,
-                     AthPool<Ath__wire>* wirePool,
-                     Ath__box* bb,
-                     uint level,
-                     uint dir,
-                     uint num,
-                     uint width,
-                     uint pitch,
-                     uint markerCnt)
+Grid::Grid(GridTable* gt,
+           AthPool<Ath__track>* trackPool,
+           AthPool<Ath__wire>* wirePool,
+           Ath__box* bb,
+           uint level,
+           uint dir,
+           uint num,
+           uint width,
+           uint pitch,
+           uint markerCnt)
 {
   _gridtable = gt;
   _trackPoolPtr = trackPool;
@@ -1347,7 +1345,7 @@ Ath__grid::Ath__grid(GridTable* gt,
   makeTrackTable(width, pitch);
   _schema = 0;
 }
-void Ath__grid::getBbox(Ath__searchBox* bb)
+void Grid::getBbox(Ath__searchBox* bb)
 {
   if (_dir == 0) {  // vertical
     bb->set(_base, _start, _max, _end, _level, _dir);
@@ -1355,7 +1353,7 @@ void Ath__grid::getBbox(Ath__searchBox* bb)
     bb->set(_start, _base, _end, _max, _level, _dir);
   }
 }
-void Ath__grid::getBbox(Ath__box* bb)
+void Grid::getBbox(Ath__box* bb)
 {
   if (_dir == 0) {  // vertical
     bb->setRect({_base, _start, _max, _end});
@@ -1364,28 +1362,28 @@ void Ath__grid::getBbox(Ath__box* bb)
   }
 }
 
-void Ath__grid::freeTracksAndTables()
+void Grid::freeTracksAndTables()
 {
   delete[] _trackTable;
   delete[] _blockedTrackTable;
 }
-Ath__grid::~Ath__grid()
+Grid::~Grid()
 {
   freeTracksAndTables();
 }
-uint Ath__grid::getLevel()
+uint Grid::getLevel()
 {
   return _level;
 }
-uint Ath__grid::getDir()
+uint Grid::getDir()
 {
   return _dir;
 }
-int Ath__grid::getTrackHeight(uint track)
+int Grid::getTrackHeight(uint track)
 {
   return _base + track * _pitch;
 }
-Ath__grid* Ath__track::getGrid()
+Grid* Ath__track::getGrid()
 {
   return _grid;
 }
@@ -1422,15 +1420,15 @@ uint Ath__track::removeMarkedNetWires()
   }
   return cnt;
 }
-uint Ath__grid::defaultWireType()
+uint Grid::defaultWireType()
 {
   return _wireType;
 }
-void Ath__grid::setDefaultWireType(uint v)
+void Grid::setDefaultWireType(uint v)
 {
   _wireType = v;  // TODO-OPTIMIZE : can it be 32-bit?
 }
-uint Ath__grid::getBoxes(uint trackIndex, Ath__array1D<uint>* table)
+uint Grid::getBoxes(uint trackIndex, Ath__array1D<uint>* table)
 {
   Ath__track* tr = _trackTable[trackIndex];
   if (tr == nullptr) {
@@ -1450,7 +1448,7 @@ uint Ath__grid::getBoxes(uint trackIndex, Ath__array1D<uint>* table)
   }
   return table->getCnt();
 }
-void Ath__grid::getBoxes(Ath__array1D<uint>* table)
+void Grid::getBoxes(Ath__array1D<uint>* table)
 {
   for (uint ii = 0; ii < _trackCnt; ii++) {
     Ath__track* tr = _trackTable[ii];
@@ -1467,7 +1465,7 @@ void Ath__grid::getBoxes(Ath__array1D<uint>* table)
   }
 }
 
-bool Ath__grid::addOnTrack(uint track, Ath__wire* w, uint mark1, uint mark2)
+bool Grid::addOnTrack(uint track, Ath__wire* w, uint mark1, uint mark2)
 {
   if (_blockedTrackTable[track] > 0) {
     return false;
@@ -1493,12 +1491,12 @@ bool Ath__grid::addOnTrack(uint track, Ath__wire* w, uint mark1, uint mark2)
   }
   return false;
 }
-uint Ath__grid::placeWire(uint initTrack,
-                          Ath__wire* w,
-                          uint mark1,
-                          uint mark2,
-                          int sortedOrder,
-                          int* height)
+uint Grid::placeWire(uint initTrack,
+                     Ath__wire* w,
+                     uint mark1,
+                     uint mark2,
+                     int sortedOrder,
+                     int* height)
 {
   uint check = 20;
   uint track = initTrack;
@@ -1532,29 +1530,26 @@ uint Ath__grid::placeWire(uint initTrack,
   return nextTrack;
 }
 
-uint Ath__grid::addWire(uint initTrack,
-                        Ath__box* box,
-                        int sortedOrder,
-                        int* height)
+uint Grid::addWire(uint initTrack, Ath__box* box, int sortedOrder, int* height)
 {
   uint id, markIndex1, markIndex2;
   Ath__wire* w = makeWire(box, &id, &markIndex1, &markIndex2, 0);
 
   return placeWire(initTrack, w, markIndex1, markIndex2, sortedOrder, height);
 }
-Ath__track* Ath__grid::getTrackPtr(int xy)
+Ath__track* Grid::getTrackPtr(int xy)
 {
   uint trackNum = getMinMaxTrackNum(xy);
 
   return getTrackPtr(trackNum, _markerCnt);
 }
-Ath__track* Ath__grid::getTrackPtr(int* ll)
+Ath__track* Grid::getTrackPtr(int* ll)
 {
   uint trackNum = getMinMaxTrackNum(ll[_dir]);
 
   return getTrackPtr(trackNum, _markerCnt);
 }
-uint Ath__grid::placeBox(uint id, int x1, int y1, int x2, int y2)
+uint Grid::placeBox(uint id, int x1, int y1, int x2, int y2)
 {
   int ll[2] = {x1, y1};
   int ur[2] = {x2, y2};
@@ -1660,7 +1655,7 @@ Ath__wire* Ath__wire::makeWire(AthPool<Ath__wire>* wirePool, int xy1, uint len)
 
   return w;
 }
-Ath__wire* Ath__grid::getPoolWire()
+Ath__wire* Grid::getPoolWire()
 {
   int n;
   int getRecycleFlag = 0;
@@ -1670,7 +1665,7 @@ Ath__wire* Ath__grid::getPoolWire()
   }
   return w;
 }
-Ath__wire* Ath__grid::makeWire(Ath__wire* v, uint type)
+Ath__wire* Grid::makeWire(Ath__wire* v, uint type)
 {
   Ath__wire* w = getPoolWire();
   w->_srcId = 0;
@@ -1693,7 +1688,7 @@ Ath__wire* Ath__grid::makeWire(Ath__wire* v, uint type)
   return w;
 }
 
-uint Ath__grid::placeWire(Ath__searchBox* bb)
+uint Grid::placeWire(Ath__searchBox* bb)
 {
   uint d = !_dir;
 
@@ -1731,7 +1726,7 @@ uint Ath__grid::placeWire(Ath__searchBox* bb)
 
   return trackNum1;
 }
-uint Ath__grid::placeWire(Ath__wire* w)
+uint Grid::placeWire(Ath__wire* w)
 {
   uint m1 = getBucketNum(w->_xy);
 
@@ -1751,7 +1746,7 @@ uint Ath__grid::placeWire(Ath__wire* w)
 
   return trackNum1;
 }
-uint Ath__grid::placeBox(dbBox* box, uint wtype, uint id)
+uint Grid::placeBox(dbBox* box, uint wtype, uint id)
 {
   int ll[2] = {box->xMin(), box->yMin()};
   int ur[2] = {box->xMax(), box->yMax()};
@@ -1786,7 +1781,7 @@ uint Ath__grid::placeBox(dbBox* box, uint wtype, uint id)
   }
   return trackNum1;
 }
-uint Ath__grid::setExtrusionMarker()
+uint Grid::setExtrusionMarker()
 {
   Ath__track *track, *tstr;
   uint cnt = 0;
@@ -1803,7 +1798,7 @@ uint Ath__grid::setExtrusionMarker()
   }
   return cnt;
 }
-uint Ath__grid::placeBox(Ath__box* box)
+uint Grid::placeBox(Ath__box* box)
 {
   const odb::Rect rect = box->getRect();
   int ll[2] = {rect.xMin(), rect.yMin()};
@@ -1822,12 +1817,12 @@ uint Ath__grid::placeBox(Ath__box* box)
 
   return track->_num;
 }
-Ath__wire* Ath__grid::getWirePtr(uint wireId)
+Ath__wire* Grid::getWirePtr(uint wireId)
 {
   return _wirePoolPtr->get(wireId);
 }
-void Ath__grid::getBoxIds(Ath__array1D<uint>* wireIdTable,
-                          Ath__array1D<uint>* idtable)
+void Grid::getBoxIds(Ath__array1D<uint>* wireIdTable,
+                     Ath__array1D<uint>* idtable)
 {
   // remove duplicate entries
 
@@ -1858,8 +1853,8 @@ void Ath__grid::getBoxIds(Ath__array1D<uint>* wireIdTable,
     }
   }
 }
-void Ath__grid::getWireIds(Ath__array1D<uint>* wireIdTable,
-                           Ath__array1D<uint>* idtable)
+void Grid::getWireIds(Ath__array1D<uint>* wireIdTable,
+                      Ath__array1D<uint>* idtable)
 {
   // remove duplicate entries
 
@@ -1888,9 +1883,9 @@ void Ath__grid::getWireIds(Ath__array1D<uint>* wireIdTable,
     }
   }
 }
-uint Ath__grid::search(Ath__searchBox* bb,
-                       Ath__array1D<uint>* idtable,
-                       bool wireIdFlag)
+uint Grid::search(Ath__searchBox* bb,
+                  Ath__array1D<uint>* idtable,
+                  bool wireIdFlag)
 {
   Ath__array1D<uint> wireIdTable(16000);
 
@@ -1934,10 +1929,10 @@ uint Ath__grid::search(Ath__searchBox* bb,
 
   return idtable->getCnt();
 }
-uint Ath__grid::search(Ath__searchBox* bb,
-                       const uint* gxy,
-                       Ath__array1D<uint>* idtable,
-                       Ath__grid* g)
+uint Grid::search(Ath__searchBox* bb,
+                  const uint* gxy,
+                  Ath__array1D<uint>* idtable,
+                  Grid* g)
 {
   Ath__array1D<uint> wireIdTable(1024);
 
@@ -2000,7 +1995,7 @@ uint Ath__grid::search(Ath__searchBox* bb,
 
   return idtable->getCnt();
 }
-void Ath__grid::getBuses(Ath__array1D<Ath__box*>* boxTable, uint width)
+void Grid::getBuses(Ath__array1D<Ath__box*>* boxTable, uint width)
 {
   Ath__array1D<Ath__wire*> wireTable(32);
 
@@ -2042,7 +2037,7 @@ void Ath__grid::getBuses(Ath__array1D<Ath__box*>* boxTable, uint width)
     }
   }
 }
-Ath__wire* Ath__grid::getWire_Linear(uint id)
+Ath__wire* Grid::getWire_Linear(uint id)
 {
   for (uint ii = 0; ii < _trackCnt; ii++) {
     Ath__track* tr = _trackTable[ii];
@@ -2057,7 +2052,7 @@ Ath__wire* Ath__grid::getWire_Linear(uint id)
   }
   return nullptr;
 }
-void Ath__grid::adjustOverlapMakerEnd()
+void Grid::adjustOverlapMakerEnd()
 {
   int TTTnewAdj = 1;
   Ath__track *track, *tstr;
@@ -2078,7 +2073,7 @@ void Ath__grid::adjustOverlapMakerEnd()
   }
 }
 
-bool Ath__grid::isOrdered(bool /* unused: ascending */, uint* cnt)
+bool Grid::isOrdered(bool /* unused: ascending */, uint* cnt)
 {
   bool ordered = true;
   for (uint ii = 0; ii < _trackCnt; ii++) {
@@ -2094,7 +2089,7 @@ bool Ath__grid::isOrdered(bool /* unused: ascending */, uint* cnt)
   }
   return ordered;
 }
-uint Ath__grid::getBucketNum(int xy)
+uint Grid::getBucketNum(int xy)
 {
   int offset = xy - _start;
   if (offset < 0) {
@@ -2110,12 +2105,12 @@ uint Ath__grid::getBucketNum(int xy)
   }
   return b;
 }
-uint Ath__grid::getWidth()
+uint Grid::getWidth()
 {
   return _width;
 }
 
-int Ath__grid::getXYbyWidth(int xy, uint* mark)
+int Grid::getXYbyWidth(int xy, uint* mark)
 {
   int offset = xy - _start;
   if (offset < 0) {
@@ -2131,7 +2126,7 @@ int Ath__grid::getXYbyWidth(int xy, uint* mark)
   }
   return a;
 }
-uint Ath__grid::getTrackNum1(int xy)
+uint Grid::getTrackNum1(int xy)
 {
   int a = xy - _base;
 
@@ -2146,7 +2141,7 @@ uint Ath__grid::getTrackNum1(int xy)
   }
   return b;
 }
-uint Ath__grid::getTrackNum(int* ll, uint d, uint* marker)
+uint Grid::getTrackNum(int* ll, uint d, uint* marker)
 {
   *marker = getBucketNum(ll[d]);
 
@@ -2162,7 +2157,7 @@ uint Ath__grid::getTrackNum(int* ll, uint d, uint* marker)
   }
   return b;
 }
-uint Ath__grid::getTrackNum(Ath__box* box)
+uint Grid::getTrackNum(Ath__box* box)
 {
   const odb::Rect rect = box->getRect();
   int ll[2] = {rect.xMin(), rect.yMin()};
@@ -2174,12 +2169,12 @@ uint Ath__grid::getTrackNum(Ath__box* box)
   }
   return a / _pitch;
 }
-Ath__wire* Ath__grid::makeWire(uint dir,
-                               int* ll,
-                               int* ur,
-                               uint id1,
-                               uint id2,
-                               uint type)
+Ath__wire* Grid::makeWire(uint dir,
+                          int* ll,
+                          int* ur,
+                          uint id1,
+                          uint id2,
+                          uint type)
 {
   Ath__wire* w = getPoolWire();
   w->_srcId = 0;
@@ -2194,7 +2189,7 @@ Ath__wire* Ath__grid::makeWire(uint dir,
 
   return w;
 }
-Ath__wire* Ath__grid::makeWire(int* ll, int* ur, uint id, uint* m1)
+Ath__wire* Grid::makeWire(int* ll, int* ur, uint id, uint* m1)
 {
   uint d = (_dir > 0) ? 0 : 1;
 
@@ -2212,11 +2207,11 @@ Ath__wire* Ath__grid::makeWire(int* ll, int* ur, uint id, uint* m1)
 
   return w;
 }
-Ath__wire* Ath__grid::makeWire(Ath__box* box,
-                               uint* id,
-                               uint* m1,
-                               uint* m2,
-                               uint /* unused: fullTrack */)
+Ath__wire* Grid::makeWire(Ath__box* box,
+                          uint* id,
+                          uint* m1,
+                          uint* m2,
+                          uint /* unused: fullTrack */)
 {
   const odb::Rect rect = box->getRect();
   int ll[2] = {rect.xMin(), rect.yMin()};
@@ -2235,13 +2230,13 @@ Ath__wire* Ath__grid::makeWire(Ath__box* box,
   return w;
 }
 
-uint Ath__grid::getFirstTrack(uint divider)
+uint Grid::getFirstTrack(uint divider)
 {
   int xy = _base + (_max - _base) / divider;
 
   return getAbsTrackNum(xy);
 }
-int Ath__grid::getClosestTrackCoord(int xy)
+int Grid::getClosestTrackCoord(int xy)
 {
   int track1 = getAbsTrackNum(xy);
   int ii;
@@ -2270,7 +2265,7 @@ int Ath__grid::getClosestTrackCoord(int xy)
   }
   return h1 + _width / 2;
 }
-int Ath__grid::findEmptyTrack(int ll[2], int ur[2])
+int Grid::findEmptyTrack(int ll[2], int ur[2])
 {
   uint track1 = getAbsTrackNum(ll[_dir]);
   uint track2 = getAbsTrackNum(ur[_dir]);
@@ -2326,7 +2321,7 @@ void GridTable::dumpTrackCounts(FILE* fp)
   fprintf(fp, "Multiple_track_signal_wires : %d\n", _signalMultiTrackWire);
   fprintf(fp,
           "layer  dir   alloc    live offbase  expand  tsubtn   toptk  stn\n");
-  Ath__grid* tgrid;
+  Grid* tgrid;
   uint topBigTrack = 0;
   uint topSubtNum;
   uint totalSubtNum;
@@ -2423,16 +2418,15 @@ GridTable::GridTable(Rect* bb,
   const int x2 = bb->xMax();
   const int y2 = bb->yMax();
 
-  _gridTable = new Ath__grid**[_rowCnt];
+  _gridTable = new Grid**[_rowCnt];
   for (uint ii = 0; ii < _rowCnt; ii++) {
-    _gridTable[ii] = new Ath__grid*[_colCnt];
+    _gridTable[ii] = new Grid*[_colCnt];
     _gridTable[ii][0] = nullptr;
 
     for (uint jj = 1; jj < _colCnt; jj++) {
       uint num = ii * 1000 + jj;
 
-      _gridTable[ii][jj]
-          = new Ath__grid(this, _trackPool, _wirePool, jj, num, 10);
+      _gridTable[ii][jj] = new Grid(this, _trackPool, _wirePool, jj, num, 10);
       const int x1 = X1 ? X1[jj] : bb->xMin();
       const int y1 = Y1 ? Y1[jj] : bb->yMin();
       _gridTable[ii][jj]->setTracks(
@@ -2513,7 +2507,7 @@ uint GridTable::search(Ath__searchBox* bb,
                        uint row,
                        uint col,
                        Ath__array1D<uint>* idtable,
-                       Ath__grid* g)
+                       Grid* g)
 {
   return _gridTable[row][col]->search(bb, gxy, idtable, g);
 }
@@ -2564,12 +2558,12 @@ uint GridTable::setExtrusionMarker(uint startRow, uint startCol)
   }
   return cnt;
 }
-AthPool<Ath__wire>* Ath__grid::getWirePoolPtr()
+AthPool<Ath__wire>* Grid::getWirePoolPtr()
 {
   return _wirePoolPtr;
 }
 
-uint Ath__grid::removeMarkedNetWires()
+uint Grid::removeMarkedNetWires()
 {
   uint cnt = 0;
   for (uint ii = 0; ii < _trackCnt; ii++) {
@@ -2587,13 +2581,13 @@ uint Ath__grid::removeMarkedNetWires()
   return cnt;
 }
 
-Ath__grid* GridTable::getGrid(uint row, uint col)
+Grid* GridTable::getGrid(uint row, uint col)
 {
   return _gridTable[row][col];
 }
 bool GridTable::addBox(uint row, uint col, dbBox* bb)
 {
-  Ath__grid* g = _gridTable[row][col];
+  Grid* g = _gridTable[row][col];
 
   g->placeBox(bb, 0, 0);
 
@@ -2603,7 +2597,7 @@ Ath__wire* GridTable::addBox(dbBox* bb, uint wtype, uint id)
 {
   uint row = 0;
   uint col = 0;
-  Ath__grid* g = _gridTable[row][col];
+  Grid* g = _gridTable[row][col];
 
   g->placeBox(bb, wtype, id);
 
@@ -2618,7 +2612,7 @@ Ath__wire* GridTable::addBox(Ath__box* bb)
     return nullptr;
   }
 
-  Ath__grid* g = _gridTable[row][col];
+  Grid* g = _gridTable[row][col];
   g->placeBox(bb);
 
   return nullptr;
@@ -2714,7 +2708,7 @@ void GridTable::removeMarkedNetWires()
   uint cnt = 0;
   for (uint jj = 1; jj < _colCnt; jj++) {
     for (int ii = _rowCnt - 1; ii >= 0; ii--) {
-      Ath__grid* netGrid = _gridTable[ii][jj];
+      Grid* netGrid = _gridTable[ii][jj];
       cnt += netGrid->removeMarkedNetWires();
     }
   }

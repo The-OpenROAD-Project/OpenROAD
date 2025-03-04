@@ -58,7 +58,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++)  // For all Layers
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
 
     uint tr = _lowTrackSearch[dir][jj];
     for (; tr < netGrid->getTrackCnt(); tr++) {
@@ -105,7 +105,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
 
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++) {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     firstWireTable.resetCnt();
 
     // for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++)
@@ -192,7 +192,7 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
   Ath__array1D<Ath__wire*> firstWireTable;
   uint colCnt = _search->getColCnt();
   for (uint jj = 1; jj < colCnt; jj++) {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     firstWireTable.resetCnt();
 
     // int tr = netGrid->getTrackCnt() - 1;
@@ -247,7 +247,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
 
   for (uint jj = 1; jj < levelCnt - 1; jj++)  // For all Layers
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     // for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) // for all  tracks
     for (uint tr = _lowTrackToExtract[dir][jj]; tr < _hiTrackToExtract[dir][jj];
          tr++)  // for all  tracks
@@ -313,7 +313,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
 
   for (int jj = levelCnt - 1; jj > 1; jj--)  // For all Layers going down
   {
-    Ath__grid* netGrid = _search->getGrid(dir, jj);
+    Grid* netGrid = _search->getGrid(dir, jj);
     // for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) // for all  tracks
     for (uint tr = _lowTrackToExtract[dir][jj]; tr < _hiTrackToExtract[dir][jj];
          tr++)  // for all  tracks
@@ -392,7 +392,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
 
   for (int level = 1; level < metalLevelCnt; level++) {
     _met = level;
-    Ath__grid* netGrid = _search->getGrid(dir, level);
+    Grid* netGrid = _search->getGrid(dir, level);
     segments.resetAll();
 
     config.reset_calc_flow_flag(level);

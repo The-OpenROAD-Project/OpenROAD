@@ -703,7 +703,7 @@ class extMeasureRC : public extMeasure
                  const char* postfix = "");
   void Print5wires(FILE* fp, Ath__wire* w, uint level = 0);
   Ath__wire* FindOverlap(Ath__wire* w, Ath__wire* first_wire);
-  void ResetFirstWires(Ath__grid* netGrid,
+  void ResetFirstWires(Grid* netGrid,
                        Ath__array1D<Ath__wire*>* firstWireTable,
                        int tr1,
                        int trCnt,
@@ -720,11 +720,11 @@ class extMeasureRC : public extMeasure
                             uint limitTrackNum);
   bool IsSegmentOverlap(int x1, int len1, int x2, int len2);
   bool IsOverlap(Ath__wire* w, Ath__wire* w2);
-  Ath__wire* GetNextWire(Ath__grid* netGrid,
+  Ath__wire* GetNextWire(Grid* netGrid,
                          uint tr,
                          Ath__array1D<Ath__wire*>* firstWireTable);
   Ath__wire* FindOverlap(Ath__wire* w,
-                         Ath__grid* netGrid,
+                         Grid* netGrid,
                          uint tr,
                          Ath__array1D<Ath__wire*>* firstWireTable);
   bool CheckWithNeighbors(Ath__wire* w, Ath__wire* prev);
