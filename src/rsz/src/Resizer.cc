@@ -657,7 +657,7 @@ static void populateBufferCapTestPoints(LibertyCell* cell,
 
 bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
                                    LibertyCell* better,
-                                   float max_drive_resist)
+                                   const float max_drive_resist)
 {
   LibertyPort *win, *wout, *bin, *bout;
   worse->bufferPorts(win, wout);
@@ -680,10 +680,15 @@ bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
   auto last = std::unique(test_points.begin(), test_points.end());
   test_points.erase(last, test_points.end());
 
+  // Ignore cell timing above this C_load/C_in ratio as that is far off
+  // from the target ratio we use in sizing (this cut-off helps prune the
+  // list of candidate buffer sizes better)
+  constexpr float cap_ratio_cutoff = 20.0f;
+
   for (auto p : test_points) {
-    if ((wlimit == 0 || p <= wlimit) &&
-        /* ignore high C_load/C_in region */ p
-            < std::min(bin->capacitance(), win->capacitance()) * 20.0f) {
+    if ((wlimit == 0 || p <= wlimit)
+        && p < std::min(bin->capacitance(), win->capacitance())
+                   * cap_ratio_cutoff) {
       float bd = bufferDelay(better, p, tgt_slew_dcalc_ap_);
       float wd = bufferDelay(worse, p, tgt_slew_dcalc_ap_);
       if (bd + delay_penalty > wd) {
