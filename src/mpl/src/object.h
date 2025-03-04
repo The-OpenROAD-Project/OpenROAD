@@ -48,7 +48,6 @@
 
 namespace odb {
 class Rect;
-class Point;
 class dbInst;
 class dbModule;
 class dbDatabase;
@@ -69,7 +68,6 @@ class SoftMacro;
 class Cluster;
 
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
-using Point = std::pair<float, float>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -363,6 +361,7 @@ class HardMacro
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
   bool isClusterOfUnplacedIOPins() const;
+  bool isClusterOfUnconstrainedIOPins() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -537,6 +536,7 @@ class SoftMacro
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
   bool isClusterOfUnplacedIOPins() const;
+  bool isClusterOfUnconstrainedIOPins() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;

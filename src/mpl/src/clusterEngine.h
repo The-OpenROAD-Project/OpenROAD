@@ -113,15 +113,21 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  std::set<Boundary> blocked_boundaries;    // TODO: remove
+  std::vector<Rect> available_regions_for_pins;
   std::set<Boundary> unblocked_boundaries;  // TODO: remove
 
   float halo_width{0.0f};
   float halo_height{0.0f};
   float macro_with_halo_area{0.0f};
-  Rect global_fence;
-  Rect floorplan_shape;
+
   Rect die_area;
+
+  // The constraint set by the user.
+  Rect global_fence;
+
+  // The actual area used by MPL - computed using the dimensions
+  // of the core versus the global fence set by the user.
+  Rect floorplan_shape;
 
   bool has_io_clusters{true};
   bool has_only_unconstrained_ios{false};

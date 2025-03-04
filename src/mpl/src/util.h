@@ -37,6 +37,8 @@
 
 namespace mpl {
 
+using Point = std::pair<float, float>;
+
 struct SACoreWeights
 {
   float area{0.0f};
@@ -61,5 +63,12 @@ struct PenaltyData
   float value{0.0f};
   float normalization_factor{0.0f};
 };
+
+inline float computeDistance(const Point& a, const Point& b)
+{
+  const float dx = std::abs(a.first - b.first);
+  const float dy = std::abs(a.second - b.second);
+  return std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
+}
 
 }  // namespace mpl

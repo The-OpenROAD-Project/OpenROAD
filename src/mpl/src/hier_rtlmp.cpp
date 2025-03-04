@@ -904,9 +904,18 @@ void HierRTLMP::createPinAccessBlockages()
 
     BoundaryToRegionsMap boundary_to_blocked_regions
         = getBoundaryToBlockedRegionsMap(blocked_regions_for_pins);
-
-    available_regions_for_pins_
+    std::vector<odb::Rect> dbu_available_regions
         = computeAvailableRegions(boundary_to_blocked_regions);
+
+    if (graphics_) {
+      graphics_->setBlockedRegionsForPins(blocked_regions_for_pins);
+      graphics_->setAvailableRegionsForPins(dbu_available_regions);
+    }
+
+    for (const odb::Rect& dbu_available_region : dbu_available_regions) {
+      tree_->available_regions_for_pins.push_back(
+          dbuToMicrons(dbu_available_region));
+    }
 
     createBlockagesForAvailableRegions();
   } else {
@@ -917,15 +926,14 @@ void HierRTLMP::createPinAccessBlockages()
 void HierRTLMP::createBlockagesForAvailableRegions()
 {
   float io_span = 0.0f;
-  for (const odb::Rect& available_region : available_regions_for_pins_) {
-    const Rect region = dbuToMicrons(available_region);
-    io_span += region.getPerimeter() / 2;
+  for (const Rect& available_region : tree_->available_regions_for_pins) {
+    io_span += available_region.getPerimeter() / 2;
   }
 
   const float depth = computePinAccessBaseDepth(io_span);
 
-  for (const odb::Rect& available_region : available_regions_for_pins_) {
-    createPinAccessBlockage(dbuToMicrons(available_region), depth);
+  for (const Rect& available_region : tree_->available_regions_for_pins) {
+    createPinAccessBlockage(available_region, depth);
   }
 }
 
@@ -3257,7 +3265,6 @@ odb::Rect HierRTLMP::getRect(Boundary boundary)
 
   return boundary_rect;
 }
-
 
 template <typename SACore>
 void HierRTLMP::printPlacementResult(Cluster* parent,

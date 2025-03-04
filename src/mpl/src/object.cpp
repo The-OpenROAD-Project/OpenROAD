@@ -851,6 +851,15 @@ bool HardMacro::isClusterOfUnplacedIOPins() const
   return cluster_->isClusterOfUnplacedIOPins();
 }
 
+bool HardMacro::isClusterOfUnconstrainedIOPins() const
+{
+  if (!cluster_) {
+    return false;
+  }
+
+  return cluster_->isClusterOfUnconstrainedIOPins();
+}
+
 // Get Physical Information
 // Note that the default X and Y include halo_width
 void HardMacro::setLocation(const std::pair<float, float>& location)
@@ -1341,6 +1350,15 @@ bool SoftMacro::isClusterOfUnplacedIOPins() const
   }
 
   return cluster_->isClusterOfUnplacedIOPins();
+}
+
+bool SoftMacro::isClusterOfUnconstrainedIOPins() const
+{
+  if (!cluster_) {
+    return false;
+  }
+
+  return cluster_->isClusterOfUnconstrainedIOPins();
 }
 
 void SoftMacro::setLocationF(float x, float y)

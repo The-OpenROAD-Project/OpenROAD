@@ -90,11 +90,15 @@ class Graphics : public gui::Renderer, public MplObserver
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, Rect>& guides) override;
   void setFences(const std::map<int, Rect>& fences) override;
+  void setBlockedRegionsForPins(
+      const std::vector<odb::Rect>& blocked_regions_for_pins) override;
+  void setAvailableRegionsForPins(
+      const std::vector<odb::Rect>& available_regions_for_pins) override;
 
   void eraseDrawing() override;
 
  private:
-  void setXMarksSizeAndPosition(const std::set<Boundary>& blocked_boundaries);
+  void setXMarksSize();
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawBlockedBoundariesIndication(gui::Painter& painter);
@@ -112,13 +116,6 @@ class Graphics : public gui::Renderer, public MplObserver
                                       const T& io);
   template <typename T>
   bool isOutsideTheOutline(const T& macro) const;
-  template <typename T>
-  odb::Point getClosestBoundaryPoint(const T& macro,
-                                     const Rect& die,
-                                     Boundary closest_boundary);
-  template <typename T>
-  Boundary getClosestUnblockedBoundary(const T& macro, const Rect& die);
-  bool isBlockedBoundary(Boundary boundary);
   void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
   void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
@@ -140,7 +137,8 @@ class Graphics : public gui::Renderer, public MplObserver
   odb::Rect outline_;
   int target_cluster_id_{-1};
   std::vector<std::vector<odb::Rect>> outlines_;
-  std::map<Boundary, odb::Point> blocked_boundary_to_mark_;
+  std::vector<odb::Rect> blocked_regions_for_pins_;
+  std::vector<odb::Rect> available_regions_for_pins_;
 
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.
@@ -148,7 +146,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::map<int, Rect> guides_;  // Id -> Guidance Region
   std::map<int, Rect> fences_;  // Id -> Fence
 
-  int x_mark_size_{0};  // For blocked boundaries.
+  int x_mark_size_{0};  // For blocked regions.
 
   bool active_ = true;
   bool coarse_;
