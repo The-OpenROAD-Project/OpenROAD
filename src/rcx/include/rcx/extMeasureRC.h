@@ -709,9 +709,7 @@ class extMeasureRC : public extMeasure
                        int trCnt,
                        uint limitTrackNum);
   // dkf 10022023
-  Wire* FindOverlap(Wire* w,
-                         Ath__array1D<Wire*>* firstWireTable,
-                         int tr);
+  Wire* FindOverlap(Wire* w, Ath__array1D<Wire*>* firstWireTable, int tr);
   // dkf 10032023
   int FindDiagonalNeighbors(uint dir,
                             uint couplingDist,
@@ -721,12 +719,12 @@ class extMeasureRC : public extMeasure
   bool IsSegmentOverlap(int x1, int len1, int x2, int len2);
   bool IsOverlap(Wire* w, Wire* w2);
   Wire* GetNextWire(Grid* netGrid,
-                         uint tr,
-                         Ath__array1D<Wire*>* firstWireTable);
+                    uint tr,
+                    Ath__array1D<Wire*>* firstWireTable);
   Wire* FindOverlap(Wire* w,
-                         Grid* netGrid,
-                         uint tr,
-                         Ath__array1D<Wire*>* firstWireTable);
+                    Grid* netGrid,
+                    uint tr,
+                    Ath__array1D<Wire*>* firstWireTable);
   bool CheckWithNeighbors(Wire* w, Wire* prev);
   Ath__array1D<Wire*>** allocMarkTable(uint n);
   void DeleteMarkTable(Ath__array1D<Wire*>** tbl, uint n);
@@ -821,13 +819,12 @@ class extMeasureRC : public extMeasure
                                         uint lookUpLevel,
                                         uint limitTrackNum,
                                         bool skipCheckNeighbors);
-  int FindDiagonalNeighbors_vertical_power(
-      uint dir,
-      Wire* w,
-      uint couplingDist,
-      uint diag_met_limit,
-      uint limitTrackNum,
-      Ath__array1D<Wire*>** upWireTable);
+  int FindDiagonalNeighbors_vertical_power(uint dir,
+                                           Wire* w,
+                                           uint couplingDist,
+                                           uint diag_met_limit,
+                                           uint limitTrackNum,
+                                           Ath__array1D<Wire*>** upWireTable);
   void Print(FILE* fp, Ath__array1D<Wire*>* segTable, const char* msg);
   // dkf 10122023
   Ath__array1D<Wire*>** _verticalPowerTable;
@@ -853,14 +850,12 @@ class extMeasureRC : public extMeasure
                                           bool skipCheckNeighbors);
 
   // dkf 10162023
-  Wire* FindOverlap_found(Wire* w,
-                               Wire* first_wire,
-                               bool& found);
+  Wire* FindOverlap_found(Wire* w, Wire* first_wire, bool& found);
   Wire* SetUpDown(Wire* w2,
-                       int next_tr,
-                       bool found,
-                       Wire* first_wire,
-                       Ath__array1D<Wire*>* firstWireTable);
+                  int next_tr,
+                  bool found,
+                  Wire* first_wire,
+                  Ath__array1D<Wire*>* firstWireTable);
   uint FindAllNeigbors_up(Wire* w,
                           uint start_track,
                           uint dir,
