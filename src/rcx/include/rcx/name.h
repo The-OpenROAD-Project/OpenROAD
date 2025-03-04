@@ -39,7 +39,7 @@
 #include "odb/util.h"
 #include "util.h"
 
-// amespace rcx {
+namespace rcx {
 
 using uint = unsigned int;
 
@@ -66,7 +66,7 @@ class NameTable
   odb::AthPool<NameBucket>* _bucketPool;
 };
 
-class Ath__nameBucket
+class NameBucket
 {
  private:
   char* _name;
@@ -76,22 +76,22 @@ class Ath__nameBucket
   void set(char* name, uint tag);
   void deallocWord();
 
-  friend class Ath__nameTable;
+  friend class NameTable;
 };
 
-class Ath__nameTable
+class NameTable
 {
  private:
   AthHash<int>* _hashTable;
-  odb::AthPool<Ath__nameBucket>* _bucketPool;
+  odb::AthPool<NameBucket>* _bucketPool;
   // int *nameMap; // TODO
 
   void allocName(char* name, uint nameId, bool hash = false);
   uint addName(char* name, uint dataId);
 
  public:
-  ~Ath__nameTable();
-  Ath__nameTable(uint n, char* zero = NULL);
+  ~NameTable();
+  NameTable(uint n, char* zero = NULL);
 
   void writeDB(FILE* fp, char* nameType);
   bool readDB(FILE* fp);
@@ -107,4 +107,4 @@ class Ath__nameTable
                  int* nn = 0);
 };
 
-// }  // namespace rcx
+}  // namespace rcx

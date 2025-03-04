@@ -30,12 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXTRULESPATTERN_H
-#define ADS_EXTRULESPATTERN_H
+#pragma once
 
 #include "odb/array1.h"
 #include "odb/odb.h"
-#include "odb/parse.h"
 
 namespace utl {
 class Logger;
@@ -248,5 +246,3 @@ class extRulesPat
   double GetViaArea(dbTechVia* tvia);
 };
 }  // namespace rcx
-
-#endif

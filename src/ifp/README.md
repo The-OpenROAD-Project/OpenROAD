@@ -95,6 +95,33 @@ make_tracks
 | `[-x_offset]`, `[-y_offset]` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
 | `[-x_pitch]`, `[-y_pitch]` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
 
+### Make Rows
+
+The `make_rows` command removes existing rows. 
+Use the `make_rows` command to add rows to an existing floorplan. Useful,
+if your floorplan is stored as a floorplan def without rows.
+
+```tcl
+make_rows
+  (-core_area {llx lly urx ury}) | (-core_space (space | {bottom top left right}))
+  -site site_name
+  [-additional_sites site_names]
+  [-flip_sites site_names]
+  [-row_parity NONE|EVEN|ODD]
+```
+
+#### Options
+
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-core_space` | Space around the core in microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
+| `-site` | Site name. |
+| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
+| `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |
+
 ### Insert tieoff cells
 
 This comamnd inserts tiecells.

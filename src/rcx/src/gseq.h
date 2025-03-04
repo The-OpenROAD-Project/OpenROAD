@@ -44,89 +44,89 @@ struct SEQ
   int type;
 };
 
+// Holds a set of bitmaps per plane covering the given area.
 class gs
 {
  public:
   gs(odb::AthPool<SEQ>* seqPool);
   ~gs();
 
-  void configureSlice(int slicenum,
-                      int xres,
-                      int yres,
+  // set the number of planes
+  void setPlanes(int nplanes);
+
+  // Set the bounds and resolution for one plane.
+  void configurePlane(int plane,
+                      int x_resolution,
+                      int y_resolution,
                       int x0,
                       int y0,
                       int x1,
                       int y1);
 
-  // render a rectangle
-  int box(int x0, int y0, int x1, int y1, int slice);
+  // add a rectangle to a plane
+  int box(int x0, int y0, int x1, int y1, int plane);
 
-  // set the number of slices
-  int set_slices(int nslices);
+  // Returns an integer corresponding to the longest uninterrupted
+  // sequence of virtual bits found of the same type (set or unset)
+  //
+  // Parameters: ll - lower left array [0] = x0, [1] = y0
+  //             ur - upper right array [0] = x1, [1] = y1
+  //             order - search by column or by row (GS_COLUMN, GS_ROW)
+  //             plane  - which plane to search
+  //             array - pool of sequence pointers to get a handle from
+  uint getSeq(int* ll,
+              int* ur,
+              uint order,
+              uint plane,
+              odb::Ath__array1D<SEQ*>* array);
 
-  uint get_seq(int* ll,
-               int* ur,
-               uint order,
-               uint plane,
-               odb::Ath__array1D<SEQ*>* array);
-
-  void release(SEQ* s);
-
-  int intersect_rows(int row1, int row2, int store);
-  int union_rows(int row1, int row2, int store);
-  int xor_rows(int row1, int row2, int store);
-
+  // Allocate a SEQ
   SEQ* salloc();
 
+  // Deallocate a SEQ
+  void release(SEQ* s);
+
  private:
-  using gsPixel = char;
-
   using pixint = std::uint64_t;
-  using pixints = unsigned int;
 
-  union pixmap
+  struct pixmap
   {
     pixint lword;
-    pixints word[2];
   };
 
   struct plconfig
   {
-    int width;
-    int height;
-    int xres;
-    int yres;
-    int x0, x1, y0, y1;  // bounding box
+    int width;           // width in pixels
+    int height;          // height in pixels
+    int x_resolution;    // x dbu per pixel
+    int y_resolution;    // y dbu per pixel
+    int x0, x1, y0, y1;  // bounding box in dbu
     int pixwrem;         // how many pixels are used in the last block of a row
     int pixstride;       // how many memory blocks per row
     int pixfullblox;     // how many "full" blocks per row
                          // (equal to stride, or one less if pixwrem > 0)
-    pixmap* plalloc;
     pixmap* plane;
-    pixmap* plptr;
   };
 
   // set the size parameters
-  void setSize(int pl, int xres, int yres, int x0, int x1, int y0, int y1);
+  void setSize(int plane, int xres, int yres, int x0, int x1, int y0, int y1);
 
-  void alloc_mem();
-  void free_mem();
+  void allocMem();
+  void freeMem();
 
-  int check_slice(int sl);
+  bool checkPlane(int plane);
 
-  int get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol);
-  int get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol);
+  bool getSeqRow(int y, int plane, int stpix, int& epix, int& seqcol);
+  bool getSeqCol(int x, int plane, int stpix, int& epix, int& seqcol);
 
-  static constexpr int PIXMAPGRID = 64;
-
-  int nslices_;   // max number of slices
-  int maxslice_;  // maximum used slice
+  int nplanes_;   // max number of planes
+  int maxplane_;  // maximum used plane
 
   int init_;
 
-  plconfig* plc_;
-  plconfig** pldata_;  // size == nslices_ when init_ == ALLOCATED
+  std::vector<plconfig> pldata_;  // size == nplanes_ when init_ == ALLOCATED
 
+  static constexpr int PIXMAPGRID = 64;
   pixint start_[PIXMAPGRID];
   pixint middle_[PIXMAPGRID];
   pixint end_[PIXMAPGRID];

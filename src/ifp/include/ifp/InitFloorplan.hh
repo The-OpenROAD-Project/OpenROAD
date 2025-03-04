@@ -94,6 +94,41 @@ class InitFloorplan
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
 
+  // Rect in DBU to set the die area of the top level block.
+  void makeDie(const odb::Rect& die);
+
+  // utilization is in [0, 100]%. This routine will calculate the required
+  // core area for all the standard cells and macros based on the desired
+  // utilization. It will then add core space to each side, and will set
+  // the die area of the top level block to that calculated value.
+  void makeDieUtilization(double utilization,
+                          double aspect_ratio,
+                          int core_space_bottom,
+                          int core_space_top,
+                          int core_space_left,
+                          int core_space_right);
+
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern. core space is the padding on each side
+  // to inset the rows.
+  void makeRowsWithSpacing(int core_space_bottom,
+                           int core_space_top,
+                           int core_space_left,
+                           int core_space_right,
+                           odb::dbSite* base_site,
+                           const std::vector<odb::dbSite*>& additional_sites
+                           = {},
+                           RowParity row_parity = RowParity::NONE,
+                           const std::set<odb::dbSite*>& flipped_sites = {});
+
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern.
+  void makeRows(const odb::Rect& core,
+                odb::dbSite* base_site,
+                const std::vector<odb::dbSite*>& additional_sites = {},
+                RowParity row_parity = RowParity::NONE,
+                const std::set<odb::dbSite*>& flipped_sites = {});
+
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
                   int x_offset,

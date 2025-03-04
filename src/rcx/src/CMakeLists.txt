@@ -79,6 +79,7 @@ add_library(rcx_lib
   extmeasure_res_v2.cpp
   extmain_v2.cpp
   extmeasure_diag_opt.cpp
+  parse.cpp
   util.cpp
 )
 

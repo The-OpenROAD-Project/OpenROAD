@@ -127,8 +127,10 @@ def clock_tree_synthesis(
 
 
 def report_cts(design, out_file=None):
+    cts = design.getTritonCts()
     if out_file != None:
-        design.getTritonCts.getParms().setMetricsFile(out_file)
+        cts.getParms().setMetricsFile(out_file)
+    cts.reportCtsMetrics()
 
 
 def is_pos_int(x):
