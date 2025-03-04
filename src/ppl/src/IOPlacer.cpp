@@ -976,10 +976,13 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
   std::vector<Point> slots;
   for (int l = 0; l < layer_min_distances.size(); l++) {
     int tech_min_dst = layer_min_distances[l];
-    int min_dst_pins = computeDistanceBetweenPins(l, tech_min_dst);
 
-    min_dst_pins
-        = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst : min_dst_pins;
+    // If Parameters::min_distance_ is zero, use the default min distance of 2
+    // tracks. If it is not zero, use the tech min distance to create all
+    // possible slots.
+    int min_dst_pins = parms_->getMinDistance() == 0
+                           ? default_min_dist_ * tech_min_dst
+                           : tech_min_dst;
 
     if (corner_avoidance_ == -1) {
       corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
