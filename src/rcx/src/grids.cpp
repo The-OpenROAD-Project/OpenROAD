@@ -124,7 +124,7 @@ void Ath__box::set(Ath__box* bb)
   _rect = bb->_rect;
 }
 
-void Ath__searchBox::set(int x1, int y1, int x2, int y2, uint l, int dir)
+void SearchBox::set(int x1, int y1, int x2, int y2, uint l, int dir)
 {
   _ll[0] = x1;
   _ll[1] = y1;
@@ -136,71 +136,71 @@ void Ath__searchBox::set(int x1, int y1, int x2, int y2, uint l, int dir)
   _otherId = 0;
   _type = 0;
 }
-Ath__searchBox::Ath__searchBox(int x1, int y1, int x2, int y2, uint l, int dir)
+SearchBox::SearchBox(int x1, int y1, int x2, int y2, uint l, int dir)
 {
   set(x1, y1, x2, y2, l, dir);
 }
 
-void Ath__searchBox::setLo(uint d, int xy)
+void SearchBox::setLo(uint d, int xy)
 {
   _ll[d] = xy;
 }
-void Ath__searchBox::setHi(uint d, int xy)
+void SearchBox::setHi(uint d, int xy)
 {
   _ur[d] = xy;
 }
-int Ath__searchBox::loXY(uint d) const
+int SearchBox::loXY(uint d) const
 {
   return _ll[d];
 }
-int Ath__searchBox::hiXY(uint d) const
+int SearchBox::hiXY(uint d) const
 {
   return _ur[d];
 }
-int Ath__searchBox::loXY(uint d, int loBound) const
+int SearchBox::loXY(uint d, int loBound) const
 {
   if (_ll[d] < loBound) {
     return loBound;
   }
   return _ll[d];
 }
-int Ath__searchBox::hiXY(uint d, int hiBound) const
+int SearchBox::hiXY(uint d, int hiBound) const
 {
   if (_ur[d] > hiBound) {
     return hiBound;
   }
   return _ur[d];
 }
-uint Ath__searchBox::getDir() const
+uint SearchBox::getDir() const
 {
   return _dir;
 }
-uint Ath__searchBox::getLevel() const
+uint SearchBox::getLevel() const
 {
   return _level;
 }
-uint Ath__searchBox::getOwnerId() const
+uint SearchBox::getOwnerId() const
 {
   return _ownId;
 }
-uint Ath__searchBox::getOtherId() const
+uint SearchBox::getOtherId() const
 {
   return _otherId;
 }
-uint Ath__searchBox::getType() const
+uint SearchBox::getType() const
 {
   return _type;
 }
-void Ath__searchBox::setOwnerId(uint v, uint other)
+void SearchBox::setOwnerId(uint v, uint other)
 {
   _ownId = v;
   _otherId = other;
 }
-void Ath__searchBox::setType(uint v)
+void SearchBox::setType(uint v)
 {
   _type = v;
 }
-void Ath__searchBox::setDir(int dir)
+void SearchBox::setDir(int dir)
 {
   if (dir >= 0) {
     _dir = dir;
@@ -212,14 +212,14 @@ void Ath__searchBox::setDir(int dir)
     }
   }
 }
-uint Ath__searchBox::getLength() const
+uint SearchBox::getLength() const
 {
   if (_dir > 0) {
     return _ur[0] - _ll[0];
   }
   return _ur[1] - _ll[1];
 }
-void Ath__searchBox::setLevel(uint v)
+void SearchBox::setLevel(uint v)
 {
   _level = v;
 }
@@ -456,7 +456,7 @@ void Wire::getCoords(int* x1, int* y1, int* x2, int* y2, uint* dir)
   }
   *dir = _dir;
 }
-void Wire::getCoords(Ath__searchBox* box)
+void Wire::getCoords(SearchBox* box)
 {
   uint level = _track->getGrid()->getLevel();
   if (_dir > 0)  // horizontal
@@ -1336,7 +1336,7 @@ Grid::Grid(GridTable* gt,
   makeTrackTable(width, pitch);
   _schema = 0;
 }
-void Grid::getBbox(Ath__searchBox* bb)
+void Grid::getBbox(SearchBox* bb)
 {
   if (_dir == 0) {  // vertical
     bb->set(_base, _start, _max, _end, _level, _dir);
@@ -1679,7 +1679,7 @@ Wire* Grid::makeWire(Wire* v, uint type)
   return w;
 }
 
-uint Grid::placeWire(Ath__searchBox* bb)
+uint Grid::placeWire(SearchBox* bb)
 {
   uint d = !_dir;
 
@@ -1874,9 +1874,7 @@ void Grid::getWireIds(Ath__array1D<uint>* wireIdTable,
     }
   }
 }
-uint Grid::search(Ath__searchBox* bb,
-                  Ath__array1D<uint>* idtable,
-                  bool wireIdFlag)
+uint Grid::search(SearchBox* bb, Ath__array1D<uint>* idtable, bool wireIdFlag)
 {
   Ath__array1D<uint> wireIdTable(16000);
 
@@ -1920,7 +1918,7 @@ uint Grid::search(Ath__searchBox* bb,
 
   return idtable->getCnt();
 }
-uint Grid::search(Ath__searchBox* bb,
+uint Grid::search(SearchBox* bb,
                   const uint* gxy,
                   Ath__array1D<uint>* idtable,
                   Grid* g)
@@ -2480,7 +2478,7 @@ uint GridTable::getColNum(int x)
 
   return dx / _colSize;
 }
-uint GridTable::search(Ath__searchBox* bb,
+uint GridTable::search(SearchBox* bb,
                        uint row,
                        uint col,
                        Ath__array1D<uint>* idTable,
@@ -2488,7 +2486,7 @@ uint GridTable::search(Ath__searchBox* bb,
 {
   return _gridTable[row][col]->search(bb, idTable, wireIdFlag);
 }
-uint GridTable::search(Ath__searchBox* bb,
+uint GridTable::search(SearchBox* bb,
                        uint* gxy,
                        uint row,
                        uint col,
@@ -2497,7 +2495,7 @@ uint GridTable::search(Ath__searchBox* bb,
 {
   return _gridTable[row][col]->search(bb, gxy, idtable, g);
 }
-uint GridTable::search(Ath__searchBox* bb, Ath__array1D<uint>* idTable)
+uint GridTable::search(SearchBox* bb, Ath__array1D<uint>* idTable)
 {
   uint row1 = getRowNum(bb->loXY(1));
   if (row1 > 0) {
@@ -2846,7 +2844,7 @@ uint GridTable::addBox(int x1,
                        uint id2,
                        uint wireType)
 {
-  Ath__searchBox bb(x1, y1, x2, y2, level);
+  SearchBox bb(x1, y1, x2, y2, level);
   bb.setOwnerId(id1, id2);
   bb.setType(wireType);
 
@@ -2869,11 +2867,11 @@ uint GridTable::search(int x1,
                        Ath__array1D<uint>* idTable,
                        bool /* unused: wireIdFlag */)
 {
-  Ath__searchBox bb(x1, y1, x2, y2, col, row);
+  SearchBox bb(x1, y1, x2, y2, col, row);
 
   return search(&bb, row, col, idTable, true);  // single grid
 }
-void GridTable::getCoords(Ath__searchBox* bb, uint wireId)
+void GridTable::getCoords(SearchBox* bb, uint wireId)
 {
   Wire* w = getWirePtr(wireId);
   w->getCoords(bb);

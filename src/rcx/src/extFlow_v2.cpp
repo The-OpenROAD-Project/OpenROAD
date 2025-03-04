@@ -502,7 +502,7 @@ uint Wire::getPitch()
 {
   return this->_track->getGrid()->getPitch();
 }
-uint Grid::placeWire_v2(Ath__searchBox* bb)
+uint Grid::placeWire_v2(SearchBox* bb)
 {
   uint d = !_dir;
 
