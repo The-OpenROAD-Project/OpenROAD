@@ -61,7 +61,6 @@ class Core
        const std::map<int, int>& min_area_y,
        const std::map<int, int>& min_width_x,
        const std::map<int, int>& min_width_y,
-       const std::map<int, int>& spacing_per_layer,
        const int& database_unit)
       : boundary_(boundary),
         min_dst_pins_x_(min_dst_pins_x),
@@ -74,7 +73,6 @@ class Core
         min_area_y_(min_area_y),
         min_width_x_(min_width_x),
         min_width_y_(min_width_y),
-        spacing_per_layer_(spacing_per_layer),
         database_unit_(database_unit)
   {
   }
@@ -90,8 +88,6 @@ class Core
   std::map<int, int> getMinAreaY() const { return min_area_y_; }
   std::map<int, int> getMinWidthX() const { return min_width_x_; }
   std::map<int, int> getMinWidthY() const { return min_width_y_; }
-  std::map<int, int> getSpacingPerLayer() const { return spacing_per_layer_; }
-  int getLayerSpacing(int layer) { return spacing_per_layer_[layer]; }
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
@@ -108,7 +104,6 @@ class Core
   std::map<int, int> min_area_y_;
   std::map<int, int> min_width_x_;
   std::map<int, int> min_width_y_;
-  std::map<int, int> spacing_per_layer_;
   int database_unit_;
 };
 
