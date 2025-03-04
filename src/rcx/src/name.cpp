@@ -47,7 +47,7 @@ class NameTable::NameBucket
   friend class NameTable;
 };
 
-static void Ath__hashError(const char* msg, int exitFlag)
+static void hashError(const char* msg, int exitFlag)
 {
   fprintf(stderr, "Cannot find %s in hash table\n", msg);
   fprintf(stderr, "\nexiting ...\n");
@@ -140,7 +140,7 @@ uint NameTable::getDataId(const char* name,
     return 0;
   }
 
-  Ath__hashError(name, exitFlag);
+  hashError(name, exitFlag);
   return 0;
 }
 

@@ -48,7 +48,7 @@ using utl::RCX;
 using namespace odb;
 
 /*
-extSegment::extSegment(uint d, Ath__wire *w2, int dist)
+extSegment::extSegment(uint d, Wire *w2, int dist)
 {
     _wire= w2;
     _dir= d;
@@ -56,8 +56,8 @@ extSegment::extSegment(uint d, Ath__wire *w2, int dist)
 }
 */
 /* Working
- extSegment::extSegment(uint dir, Ath__wire *w, int xy, int len, Ath__wire *up,
- Ath__wire *down, int metOver, int metUnder)
+ extSegment::extSegment(uint dir, Wire *w, int xy, int len, Wire *up,
+ Wire *down, int metOver, int metUnder)
  {
      _dir = dir;
      _wire = w;
@@ -83,11 +83,11 @@ extSegment::extSegment(uint d, Ath__wire *w2, int dist)
  }
  */
 void extSegment::set(uint dir,
-                     Ath__wire* w,
+                     Wire* w,
                      int xy,
                      int len,
-                     Ath__wire* up,
-                     Ath__wire* down,
+                     Wire* up,
+                     Wire* down,
                      int metOver,
                      int metUnder)
 {
@@ -113,7 +113,7 @@ void extSegment::set(uint dir,
   _metUnder = metUnder;
   _metOver = metOver;
 }
-int extSegment::setUpDown(bool up, Ath__wire* w1)
+int extSegment::setUpDown(bool up, Wire* w1)
 {
   if (up) {
     _up = w1;
@@ -124,7 +124,7 @@ int extSegment::setUpDown(bool up, Ath__wire* w1)
   _dist_down = GetDist(_down, _wire);
   return _dist_down;
 }
-int extSegment::GetDist(Ath__wire* w1, Ath__wire* w2)
+int extSegment::GetDist(Wire* w1, Wire* w2)
 {
   if (w2 == NULL)
     return -1;

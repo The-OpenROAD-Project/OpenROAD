@@ -104,7 +104,7 @@ void extMeasureRC::PrintOUSeg(FILE* fp,
           down_dist);
 }
 
-void extMeasureRC::PrintCrossOvelaps(Ath__wire* w,
+void extMeasureRC::PrintCrossOvelaps(Wire* w,
                                      uint tgt_met,
                                      int x1,
                                      int len,
@@ -165,7 +165,7 @@ void extMeasureRC::PrintOvelaps(extSegment* w,
     }
   }
 }
-void extMeasureRC::PrintCrossOvelapsOU(Ath__wire* w,
+void extMeasureRC::PrintCrossOvelapsOU(Wire* w,
                                        uint tgt_met,
                                        int x1,
                                        int len,

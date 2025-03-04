@@ -293,9 +293,6 @@ uint extMain::initSearchForNets(int* X1,
                                 Rect& extRect,
                                 bool skipBaseCalc)
 {
-  uint W[32];
-  uint S[32];
-
   Rect maxRect;
   if ((extRect.dx() > 0) && (extRect.dy() > 0)) {
     maxRect = extRect;
@@ -316,9 +313,6 @@ uint extMain::initSearchForNets(int* X1,
 
     n = layer->getRoutingLevel();
     widthTable[n] = layer->getWidth();
-
-    W[n] = 1;
-    S[n] = layer->getSpacing();
 
     pitchTable[n] = layer->getPitch();
 
@@ -353,7 +347,7 @@ uint extMain::initSearchForNets(int* X1,
   }
   const uint layerCnt = n + 1;
 
-  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new GridTable(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
   _search->setBlock(_block);
 
   return layerCnt;
@@ -1109,7 +1103,7 @@ uint extMain::couplingFlow(Rect& extRect,
   int lo_sdb[2];
   int hi_sdb[2];
 
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
+  OverlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,
