@@ -423,8 +423,8 @@ class Ath__grid
   float updateFreeTracks(float v);
 
   void freeTracksAndTables();
-  uint getAbsTrackNum(int xy);
-  uint getMinMaxTrackNum(int xy);
+  int getAbsTrackNum(int xy);
+  int getMinMaxTrackNum(int xy);
   bool addOnTrack(uint track, Ath__wire* w, uint mark1, uint mark2);
   int getTrackHeight(uint track);
   uint getTrackNum(Ath__box* box);
@@ -454,7 +454,7 @@ class Ath__grid
   void getBuses(Ath__array1D<Ath__box*>* boxtable, uint width);
 
   uint removeMarkedNetWires();
-  void setSearchDomain(uint domainAdjust);
+  void setSearchDomain(int domainAdjust);
   uint searchLowMarker() { return _searchLowMarker; };
   uint searchHiMarker() { return _searchHiMarker; };
 
@@ -499,7 +499,7 @@ class Ath__grid
   Ath__gridTable* _gridtable;
   Ath__track** _trackTable;
   uint* _blockedTrackTable;
-  uint _trackCnt;
+  int _trackCnt;
   uint* _subTrackCnt;
   int _base;
   int _max;

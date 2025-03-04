@@ -552,49 +552,40 @@ void Ath__track::dealloc(AthPool<Ath__wire>* pool)
   delete[] _eMarker;
 }
 
-uint Ath__grid::getAbsTrackNum(int xy)
+int Ath__grid::getAbsTrackNum(const int xy)
 {
-  int dist = xy - _base;
+  const int dist = xy - _base;
 
   assert(dist >= 0);
 
-  uint n = dist / _pitch;
+  const uint n = dist / _pitch;
 
   assert(n < _trackCnt);
 
   return n;
 }
-uint Ath__grid::getMinMaxTrackNum(int xy)
+int Ath__grid::getMinMaxTrackNum(const int xy)
 {
-  int dist = xy - _base;
+  const int dist = xy - _base;
 
-  if (dist < 0) {
+  if (dist <= 0) {
     return 0;
   }
 
-  uint n = dist / _pitch;
-
-  if (n >= _trackCnt) {
-    return _trackCnt - 1;
-  }
-
-  return n;
+  return std::min(dist / _pitch, _trackCnt - 1);
 }
 
 void Ath__grid::initContextTracks()
 {
   setSearchDomain(1);
-  Ath__track *track, *btrack;
-  uint ii;
-  bool noPowerTarget = _gridtable->noPowerTarget() > 0 ? true : false;
-  for (ii = _searchLowTrack; ii <= _searchHiTrack; ii++) {
-    btrack = _trackTable[ii];
+  const bool noPowerTarget = _gridtable->noPowerTarget() > 0;
+  for (uint ii = _searchLowTrack; ii <= _searchHiTrack; ii++) {
+    Ath__track* btrack = _trackTable[ii];
     if (btrack == nullptr) {
       continue;
     }
-    track = nullptr;
-    bool tohi = true;
-    while ((track = btrack->getNextSubTrack(track, tohi)) != nullptr) {
+    const bool tohi = true;
+    while (Ath__track* track = btrack->getNextSubTrack(track, tohi)) {
       track->initTargetWire(noPowerTarget);
     }
   }
@@ -602,21 +593,20 @@ void Ath__grid::initContextTracks()
 
 void Ath__grid::initContextGrids()
 {
-  uint sdepth = _gridtable->contextDepth();
+  const uint sdepth = _gridtable->contextDepth();
   if (sdepth == 0) {
     return;
   }
-  uint ii = _dir ? 0 : 1;
-  uint jj;
-  for (jj = 1; jj <= sdepth && (jj + _level) < _gridtable->getColCnt(); jj++) {
-    _gridtable->getGrid(ii, jj + _level)->initContextTracks();
+  const uint i = _dir ? 0 : 1;
+  for (int j = 1; j <= sdepth && (j + _level) < _gridtable->getColCnt(); j++) {
+    _gridtable->getGrid(i, j + _level)->initContextTracks();
   }
-  for (jj = 1; jj <= sdepth && (_level - jj) > 0; jj++) {
-    _gridtable->getGrid(ii, _level - jj)->initContextTracks();
+  for (int j = 1; j <= sdepth && (_level - j) > 0; j++) {
+    _gridtable->getGrid(i, _level - j)->initContextTracks();
   }
 }
 
-void Ath__grid::setSearchDomain(uint domainAdjust)
+void Ath__grid::setSearchDomain(const int domainAdjust)
 {
   if (_gridtable->allNet()) {
     _searchLowTrack = 0;
@@ -625,35 +615,37 @@ void Ath__grid::setSearchDomain(uint domainAdjust)
     _searchHiMarker = _markerCnt - 1;
     return;
   }
-  Ath__box* searchBox = _gridtable->maxSearchBox();
+  const Ath__box* searchBox = _gridtable->maxSearchBox();
   const odb::Rect rect = searchBox->getRect();
   const odb::Orientation2D dir = _dir ? odb::horizontal : odb::vertical;
   const int lo = rect.low(dir.turn_90());
   const int hi = rect.high(dir.turn_90());
-  const int ltrack = (int) getMinMaxTrackNum(lo) - (int) domainAdjust;
-  _searchLowTrack = ltrack < 0 ? 0 : ltrack;
-  _searchHiTrack = getMinMaxTrackNum(hi) + domainAdjust;
-  if (_searchHiTrack >= _trackCnt) {
-    _searchHiTrack = _trackCnt - 1;
-  }
+  const int ltrack = getMinMaxTrackNum(lo) - domainAdjust;
+  _searchLowTrack = std::max(ltrack, 0);
+  _searchHiTrack
+      = std::min(getMinMaxTrackNum(hi) + domainAdjust, _trackCnt - 1);
   const int mlo = rect.low(dir);
   const int mhi = rect.high(dir);
   _searchLowMarker = getBucketNum(mlo);
   _searchHiMarker = getBucketNum(mhi);
 }
 
-Ath__track* Ath__grid::addTrack(uint ii, uint markerCnt, int base)
+Ath__track* Ath__grid::addTrack(const uint ii,
+                                const uint markerCnt,
+                                const int base)
 {
   Ath__track* track = _trackPoolPtr->alloc();
   track->set(this, _start, _end, ii, _width, _markerLen, markerCnt, base);
   return track;
 }
-Ath__track* Ath__grid::addTrack(uint ii, uint markerCnt)
+Ath__track* Ath__grid::addTrack(const uint ii, const uint markerCnt)
 {
-  int trackBase = _base + _pitch * ii;
+  const int trackBase = _base + _pitch * ii;
   return addTrack(ii, markerCnt, trackBase);
 }
-Ath__track* Ath__grid::getTrackPtr(uint ii, uint markerCnt, int base)
+Ath__track* Ath__grid::getTrackPtr(const uint ii,
+                                   const uint markerCnt,
+                                   const int base)
 {
   if (ii >= _trackCnt) {
     return nullptr;
@@ -663,13 +655,12 @@ Ath__track* Ath__grid::getTrackPtr(uint ii, uint markerCnt, int base)
     return nullptr;
   }
 
-  Ath__track* ntrack;
   Ath__track* ttrack = _trackTable[ii];
   while (ttrack) {
     if (ttrack->getBase() == base) {
       break;
     }
-    ntrack = ttrack->getHiTrack();
+    Ath__track* ntrack = ttrack->getHiTrack();
     ttrack = ntrack == _trackTable[ii] ? nullptr : ntrack;
   }
   if (ttrack) {
@@ -682,7 +673,7 @@ Ath__track* Ath__grid::getTrackPtr(uint ii, uint markerCnt, int base)
     return ttrack;
   }
   _subTrackCnt[ii]++;
-  ntrack = _trackTable[ii];
+  Ath__track* ntrack = _trackTable[ii];
   while (true) {
     if (ntrack->getBase() > base) {
       break;
@@ -703,12 +694,14 @@ Ath__track* Ath__grid::getTrackPtr(uint ii, uint markerCnt, int base)
   }
   return ttrack;
 }
-Ath__track* Ath__grid::getTrackPtr(uint ii, uint markerCnt)
+
+Ath__track* Ath__grid::getTrackPtr(const uint ii, const uint markerCnt)
 {
-  int trackBase = _base + _pitch * ii;
+  const int trackBase = _base + _pitch * ii;
   return getTrackPtr(ii, markerCnt, trackBase);
 }
-bool Ath__track::place(Ath__wire* w, int markIndex1, int markIndex2)
+
+bool Ath__track::place(Ath__wire* w, const int markIndex1, const int markIndex2)
 {
   assert(markIndex1 >= 0);
   assert(markIndex2 >= 0);
@@ -725,7 +718,6 @@ bool Ath__track::place(Ath__wire* w, int markIndex1, int markIndex2)
   Ath__wire* a = _marker[markIndex1];
   if (w->_xy < a->_xy) {
     if (w->_xy + w->_len >= a->_xy) {
-      fprintf(stdout, "overlap %d %d \n", w->_xy, a->_xy);
       return false;
     }
     w->setNext(a);
@@ -739,7 +731,6 @@ bool Ath__track::place(Ath__wire* w, int markIndex1, int markIndex2)
       continue;
     }
     if (w->_xy + w->_len >= a->_xy) {
-      fprintf(stdout, "overlap %d %d \n", w->_xy, a->_xy);
       return false;
     }
     w->setNext(e);
