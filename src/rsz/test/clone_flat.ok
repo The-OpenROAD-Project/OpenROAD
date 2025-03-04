@@ -1426,6 +1426,4 @@ worst slack -0.16
 [INFO RSZ-0049] Cloned 12 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack -0.15
-Differences found at line 312.
- wire net123;
- wire net124;
+No differences found.

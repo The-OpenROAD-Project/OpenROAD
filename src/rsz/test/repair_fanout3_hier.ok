@@ -56,6 +56,4 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout5/Z                                10     70    -60 (VIOLATED)
 
-Differences found at line 13.
- BUF_X2 fanout6 (.A(net9),
- CLKBUF_X3 fanout6 (.A(net9),
+No differences found.
