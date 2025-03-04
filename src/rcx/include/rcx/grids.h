@@ -496,8 +496,6 @@ class Grid
   uint _searchLowMarker;
   uint _searchHiMarker;
 
-  uint _widthTable[8];
-  uint _shiftTable[8];
   AthPool<Track>* _trackPoolPtr;
   AthPool<Wire>* _wirePoolPtr;
 
