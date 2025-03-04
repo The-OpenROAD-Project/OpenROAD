@@ -1306,28 +1306,6 @@ void Grid::setTracks(uint dir,
     }
   }
 }
-Grid::Grid(GridTable* gt,
-           AthPool<Track>* trackPool,
-           AthPool<Wire>* wirePool,
-           Box* bb,
-           uint level,
-           uint dir,
-           uint num,
-           uint width,
-           uint pitch,
-           uint markerCnt)
-{
-  _gridtable = gt;
-  _trackPoolPtr = trackPool;
-  _wirePoolPtr = wirePool;
-  _markerCnt = markerCnt;
-
-  _level = level;
-  _layer = num;
-
-  setBoundaries(dir, bb->getRect());
-  makeTrackTable(width, pitch);
-}
 void Grid::getBbox(SearchBox* bb)
 {
   if (_dir == 0) {  // vertical

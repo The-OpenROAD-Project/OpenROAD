@@ -339,16 +339,6 @@ class Grid
   Grid(GridTable* gt,
        AthPool<Track>* trackPool,
        AthPool<Wire>* wirePool,
-       Box* bb,
-       uint level,
-       uint dir,
-       uint num,
-       uint width,
-       uint pitch,
-       uint markerCnt);
-  Grid(GridTable* gt,
-       AthPool<Track>* trackPool,
-       AthPool<Wire>* wirePool,
        uint level,
        uint num,
        uint markerCnt);
