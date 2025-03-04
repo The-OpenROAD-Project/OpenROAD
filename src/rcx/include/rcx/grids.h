@@ -299,7 +299,6 @@ class Track
   Track* _hiTrack;
   Track* _lowTrack;
 
-  // Wire** _marker;
   Wire** _eMarker;
   uint _markerCnt;
   uint _searchMarkerIndex;
@@ -672,11 +671,6 @@ class GridTable
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
   bool targetTrackReversed() { return _targetTrackReversed; };
-  void incrNotAlignedOverlap(Wire* w1, Wire* w2);
-  void incrSignalOverlap();
-  void incrPowerOverlap();
-  void incrSignalToPowerOverlap();
-  void incrPowerToSignallOverlap();
   void incrMultiTrackWireCnt(bool isPower);
   void adjustOverlapMakerEnd();
   void dumpTrackCounts(FILE* fp);
@@ -761,14 +755,6 @@ class GridTable
   int* _dgContextLowTrack;    // array
   int* _dgContextHiTrack;     // array
   int** _dgContextTrackBase;  // array
-
-  int _signalPowerNotAlignedOverlap;
-  int _powerNotAlignedOverlap;
-  int _signalNotAlignedOverlap;
-  int _signalOverlap;
-  int _powerOverlap;
-  int _signalPowerOverlap;
-  int _powerSignalOverlap;
 
   dbBlock* _block;
 

@@ -2579,32 +2579,6 @@ void GridTable::adjustOverlapMakerEnd()
   }
 }
 
-void GridTable::incrNotAlignedOverlap(Wire* w1, Wire* w2)
-{
-  if (w1->isPower() != w2->isPower()) {
-    _signalPowerNotAlignedOverlap++;
-  } else if (w1->isPower()) {
-    _powerNotAlignedOverlap++;
-  } else {
-    _signalNotAlignedOverlap++;
-  }
-}
-void GridTable::incrSignalOverlap()
-{
-  _signalOverlap++;
-}
-void GridTable::incrPowerOverlap()
-{
-  _powerOverlap++;
-}
-void GridTable::incrSignalToPowerOverlap()
-{
-  _signalPowerOverlap++;
-}
-void GridTable::incrPowerToSignallOverlap()
-{
-  _powerSignalOverlap++;
-}
 void GridTable::incrMultiTrackWireCnt(bool isPower)
 {
   if (isPower) {
