@@ -8,6 +8,8 @@ or_integration_tests(
     io_constraints1
     io_constraints2
     io_pads1
+    orientation_improve1
+    orientation_improve2
 )
 
 # Skipped
