@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 1 nets and 1 connections.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of slots           842
+[INFO PPL-0001] Number of available slots 211
 [INFO PPL-0002] Number of I/O             1
 [INFO PPL-0003] Number of I/O w/sink      1
 [INFO PPL-0004] Number of I/O w/o sink    0
