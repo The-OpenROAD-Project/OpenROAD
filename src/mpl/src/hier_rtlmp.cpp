@@ -255,7 +255,7 @@ void HierRTLMP::run()
     graphics_->drawResult();
   }
 
-  Pusher pusher(logger_, tree_->root.get(), block_, boundary_to_io_blockage_);
+  Pusher pusher(logger_, tree_->root.get(), block_, io_blockages_);
   pusher.pushMacrosToCoreBoundaries();
 
   updateMacrosOnDb();
@@ -3214,22 +3214,20 @@ void HierRTLMP::printPlacementResult(Cluster* parent,
 Pusher::Pusher(utl::Logger* logger,
                Cluster* root,
                odb::dbBlock* block,
-               const std::map<Boundary, Rect>& boundary_to_io_blockage)
+               const std::vector<Rect>& io_blockages)
     : logger_(logger), root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
-  setIOBlockages(boundary_to_io_blockage);
+  setIOBlockages(io_blockages);
 }
 
-void Pusher::setIOBlockages(
-    const std::map<Boundary, Rect>& boundary_to_io_blockage)
+void Pusher::setIOBlockages(const std::vector<Rect>& io_blockages)
 {
-  for (const auto& [boundary, box] : boundary_to_io_blockage) {
-    boundary_to_io_blockage_[boundary]
-        = odb::Rect(block_->micronsToDbu(box.getX()),
-                    block_->micronsToDbu(box.getY()),
-                    block_->micronsToDbu(box.getX() + box.getWidth()),
-                    block_->micronsToDbu(box.getY() + box.getHeight()));
+  for (const Rect& blockage : io_blockages) {
+    io_blockages_.push_back(odb::Rect(block_->micronsToDbu(blockage.xMin()),
+                                      block_->micronsToDbu(blockage.yMin()),
+                                      block_->micronsToDbu(blockage.xMax()),
+                                      block_->micronsToDbu(blockage.yMax())));
   }
 }
 
@@ -3403,7 +3401,7 @@ void Pusher::pushMacroClusterToCoreBoundaries(
     // Check based on the shape of the macro cluster to avoid iterating each
     // of its HardMacros.
     if (overlapsWithHardMacro(cluster_box, hard_macros)
-        || overlapsWithIOBlockage(cluster_box, boundary)) {
+        || overlapsWithIOBlockage(cluster_box)) {
       debugPrint(logger_,
                  MPL,
                  "boundary_push",
@@ -3501,19 +3499,12 @@ bool Pusher::overlapsWithHardMacro(
   return false;
 }
 
-bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
-                                    const Boundary boundary)
+bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box)
 {
-  if (boundary_to_io_blockage_.find(boundary)
-      == boundary_to_io_blockage_.end()) {
-    return false;
-  }
-
-  const odb::Rect box = boundary_to_io_blockage_.at(boundary);
-
-  if (cluster_box.xMin() < box.xMax() && cluster_box.yMin() < box.yMax()
-      && cluster_box.xMax() > box.xMin() && cluster_box.yMax() > box.yMin()) {
-    return true;
+  for (const odb::Rect& io_blockage : io_blockages_) {
+    if (cluster_box.overlaps(io_blockage)) {
+      return true;
+    }
   }
 
   return false;

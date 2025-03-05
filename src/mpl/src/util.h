@@ -40,7 +40,6 @@
 namespace mpl {
 
 using Point = std::pair<float, float>;
-using RegionsList = std::vector<odb::Rect>;
 
 struct SACoreWeights
 {
@@ -74,8 +73,9 @@ inline int computeDistance(const odb::Point& from, const odb::Point& to)
   return static_cast<int>(std::sqrt(std::pow(dx, 2) + std::pow(dy, 2)));
 }
 
-inline odb::Point findCenterOfClosestRegion(const odb::Point& from,
-                                            const RegionsList& regions)
+inline odb::Point findCenterOfClosestRegion(
+    const odb::Point& from,
+    const std::vector<odb::Rect>& regions)
 {
   odb::Point to;
   int dist_to_closest_region = std::numeric_limits<int>::max();

@@ -322,8 +322,9 @@ class HierRTLMP
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
-  std::map<Boundary, Rect> boundary_to_io_blockage_;  // TODO: remove
-  RegionsList available_regions_for_pins_;  // For orientation improvement.
+
+  // For orientation improvement.
+  std::vector<odb::Rect> available_regions_for_pins_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -357,12 +358,12 @@ class Pusher
   Pusher(utl::Logger* logger,
          Cluster* root,
          odb::dbBlock* block,
-         const std::map<Boundary, Rect>& boundary_to_io_blockage);
+         const std::vector<Rect>& io_blockages);
 
   void pushMacrosToCoreBoundaries();
 
  private:
-  void setIOBlockages(const std::map<Boundary, Rect>& boundary_to_io_blockage);
+  void setIOBlockages(const std::vector<Rect>& io_blockages);
   bool designHasSingleCentralizedMacroArray();
   void pushMacroClusterToCoreBoundaries(
       Cluster* macro_cluster,
@@ -377,7 +378,7 @@ class Pusher
   bool overlapsWithHardMacro(
       const odb::Rect& cluster_box,
       const std::vector<HardMacro*>& cluster_hard_macros);
-  bool overlapsWithIOBlockage(const odb::Rect& cluster_box, Boundary boundary);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box);
 
   utl::Logger* logger_;
 
@@ -385,7 +386,7 @@ class Pusher
   odb::dbBlock* block_;
   odb::Rect core_;
 
-  std::map<Boundary, odb::Rect> boundary_to_io_blockage_;  // TODO: remove
+  std::vector<odb::Rect> io_blockages_;
   std::vector<HardMacro*> hard_macros_;
 };
 
