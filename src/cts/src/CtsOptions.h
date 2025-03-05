@@ -37,6 +37,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <map>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -45,6 +46,7 @@
 #include "CtsObserver.h"
 #include "Util.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"
 
 namespace stt {
@@ -52,9 +54,16 @@ class SteinerTreeBuilder;
 }
 namespace cts {
 
-class CtsOptions
+class CtsOptions : public odb::dbBlockCallBackObj
 {
  public:
+  enum class MasterType
+  {
+    DUMMY,
+    TREE
+  };
+  using MasterCount = std::map<odb::dbMaster*, int>;
+
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
       : logger_(logger), sttBuilder_(sttBuildder)
   {
@@ -249,9 +258,20 @@ class CtsOptions
   float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
+  std::string getDummyLoadPrefix() const { return dummyload_prefix_; }
   void setCtsLibrary(const char* name) { ctsLibrary_ = name; }
   const char* getCtsLibrary() { return ctsLibrary_.c_str(); }
   bool isCtsLibrarySet() { return !ctsLibrary_.empty(); }
+
+  void recordBuffer(odb::dbMaster* master, MasterType type);
+  const MasterCount& getBufferCount() const { return buffer_count_; }
+  const MasterCount& getDummyCount() const { return dummy_count_; }
+
+  MasterType getType(odb::dbInst* inst) const;
+
+  // Callbacks
+  void inDbInstCreate(odb::dbInst* inst) override;
+  void inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region) override;
 
  private:
   std::string clockNets_ = "";
@@ -311,6 +331,9 @@ class CtsOptions
   bool dummyLoad_ = true;
   float delayBufferDerate_ = 1.0;  // no derate
   std::string ctsLibrary_;
+  MasterCount buffer_count_;
+  std::string dummyload_prefix_ = "clkload";
+  MasterCount dummy_count_;
 };
 
 }  // namespace cts

@@ -35,47 +35,45 @@
 #include <cstdio>
 #include <cstring>
 
+#include "odb/geom.h"
 #include "odb/util.h"
 
 namespace rcx {
 
 using uint = unsigned int;
 
-bool Ath__intersect(int X1, int DX, int x1, int dx, int* ix1, int* ix2);
-
-// TODO center line with width and length and direction
-
-class Ath__box
+class Box
 {
  public:
+  Box();
+  Box(int x1, int y1, int x2, int y2, int units = 1);
+
+  uint getDir() const;
+  int getYhi(int bound) const;
+  int getXhi(int bound) const;
+  int getXlo(int bound) const;
+  int getYlo(int bound) const;
+  uint getWidth(uint* dir) const;
+  uint getDX() const;
+  uint getDY() const;
+  uint getLength() const;
+  uint getOwner() const;
+  uint getLayer() const { return _layer; }
+  uint getId() const { return _id; }
+  odb::Rect getRect() const { return _rect; }
+  void setRect(const odb::Rect& rect) { _rect = rect; }
+
+  void invalidateBox();
+  void set(Box* bb);
+  void set(int x1, int y1, int x2, int y2, int units = 1);
+  void setLayer(uint layer) { _layer = layer; }
+
+ private:
   uint _layer : 4;
   uint _valid : 1;
-  uint _id : 28;
+  uint _id : 27;
 
- public:
-  int _xlo;
-  int _ylo;
-  int _xhi;
-  int _yhi;
-  Ath__box* _next{nullptr};
-
- public:
-  Ath__box();
-  uint getDir();
-  int getYhi(int bound);
-  int getXhi(int bound);
-  int getXlo(int bound);
-  int getYlo(int bound);
-  uint getWidth(uint* dir);
-  Ath__box(int x1, int y1, int x2, int y2, uint units = 1);
-  void set(int x1, int y1, int x2, int y2, uint units = 1);
-  uint getDX();
-  uint getDY();
-  uint getLength();
-  void invalidateBox();
-  void set(Ath__box* bb);
-  bool outside(int x1, int y1, int x2, int y2);
-  uint getOwner();
+  odb::Rect _rect;
 };
 
 }  // namespace rcx

@@ -29,8 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef ADS_extSolverGen_H
-#define ADS_extSolverGen_H
+
+#pragma once
 
 #include "extprocess.h"
 
@@ -205,4 +205,3 @@ class extSolverGen : public extProcess
 };
 
 }  // namespace rcx
-#endif

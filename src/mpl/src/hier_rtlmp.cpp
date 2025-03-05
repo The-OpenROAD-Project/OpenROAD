@@ -2771,12 +2771,12 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
   float wirelength = 0.0f;
 
-  for (odb::dbITerm* iterm : macro->getITerms()) {
-    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+  for (odb::dbITerm* macro_pin : macro->getITerms()) {
+    if (macro_pin->getSigType() != odb::dbSigType::SIGNAL) {
       continue;
     }
 
-    odb::dbNet* net = iterm->getNet();
+    odb::dbNet* net = macro_pin->getNet();
     if (net != nullptr) {
       // Mimic dbNet::getTermBBox() behavior, but considering
       // the pin constraint region instead of its position.
@@ -2799,10 +2799,10 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           odb::Rect region_rect(x, y, x, y);
           net_box.merge(region_rect);
         } else {
-          odb::Point bterm_location(bterm->getBBox().xCenter(),
-                                    bterm->getBBox().yCenter());
-          Boundary closest_boundary
-              = getClosestBoundary(bterm_location, tree_->unblocked_boundaries);
+          odb::Point macro_pin_location(macro_pin->getBBox().xCenter(),
+                                        macro_pin->getBBox().yCenter());
+          Boundary closest_boundary = getClosestBoundary(
+              macro_pin_location, tree_->unblocked_boundaries);
 
           // As we classify the blocked/unblocked state of the boundary based on
           // the extension of the -exclude constraint, it's possible to have
@@ -2814,7 +2814,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           }
 
           odb::Point closest_point
-              = getClosestBoundaryPoint(bterm_location, closest_boundary);
+              = getClosestBoundaryPoint(macro_pin_location, closest_boundary);
           odb::Rect closest_point_rect(closest_point, closest_point);
           net_box.merge(closest_point_rect);
         }

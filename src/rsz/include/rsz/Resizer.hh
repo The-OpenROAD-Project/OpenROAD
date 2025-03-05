@@ -814,9 +814,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
-  // Sizing restrictions
-  std::optional<double> sizing_area_limit_;
-  std::optional<double> sizing_leakage_limit_;
+  // Restrict default sizing such that one sizing move cannot increase area or
+  // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
+  std::optional<double> sizing_area_limit_ = 4.0;
+  std::optional<double> sizing_leakage_limit_ = 4.0;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
 

@@ -5,7 +5,7 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
 [INFO PPL-0044] Pin group: [ resp_val resp_rdy req_rdy ]
-[WARNING PPL-0043] Pin resp_msg[141] not found in group 1.
+[WARNING STA-0366] port 'resp_msg[141]' not found.
 [INFO PPL-0044] Pin group: [ req_msg[15] req_msg[14] resp_msg[15] ]
 [INFO PPL-0001] Number of slots           2494
 [INFO PPL-0002] Number of I/O             54
