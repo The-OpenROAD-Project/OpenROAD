@@ -1085,7 +1085,6 @@ void HierRTLMP::createPinAccessBlockage(const Rect& micron_region,
   io_blockages_.push_back(blockage);
 }
 
-// Isso aqui é melhor ser uma API do Cluster pq vai ser util no SA
 Boundary HierRTLMP::getRegionBoundary(const odb::Rect& constraint_region)
 {
   const odb::Rect& die = block_->getDieArea();
