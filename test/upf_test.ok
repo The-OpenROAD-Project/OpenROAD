@@ -262,11 +262,11 @@ Using 2 tracks default min distance between IO pins.
 [NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.081185
 Placement Analysis
 ---------------------------------
-total displacement         89.0 u
-average displacement        3.6 u
+total displacement         81.5 u
+average displacement        3.3 u
 max displacement           45.4 u
 original HPWL             907.2 u
-legalized HPWL            979.6 u
+legalized HPWL            981.7 u
 delta HPWL                    8 %
 
 Detailed placement improvement.
@@ -288,33 +288,33 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPO-0303] Running algorithm for independent set matching.
 [INFO DPO-0300] Set matching objective is wirelength.
-[INFO DPO-0301] Pass   1 of matching; objective is 9.889725e+05.
-[INFO DPO-0302] End of matching; objective is 9.845325e+05, improvement is 0.45 percent.
+[INFO DPO-0301] Pass   1 of matching; objective is 9.912625e+05.
+[INFO DPO-0302] End of matching; objective is 9.892525e+05, improvement is 0.20 percent.
 [INFO DPO-0303] Running algorithm for global swaps.
-[INFO DPO-0306] Pass   1 of global swaps; hpwl is 9.516750e+05.
-[INFO DPO-0306] Pass   2 of global swaps; hpwl is 9.489850e+05.
-[INFO DPO-0307] End of global swaps; objective is 9.489850e+05, improvement is 3.61 percent.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 9.567275e+05.
+[INFO DPO-0306] Pass   2 of global swaps; hpwl is 9.441225e+05.
+[INFO DPO-0306] Pass   3 of global swaps; hpwl is 9.441225e+05.
+[INFO DPO-0307] End of global swaps; objective is 9.441225e+05, improvement is 4.56 percent.
 [INFO DPO-0303] Running algorithm for vertical swaps.
-[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 9.312075e+05.
-[INFO DPO-0308] Pass   2 of vertical swaps; hpwl is 9.284400e+05.
-[INFO DPO-0309] End of vertical swaps; objective is 9.284400e+05, improvement is 2.16 percent.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 9.414925e+05.
+[INFO DPO-0309] End of vertical swaps; objective is 9.414925e+05, improvement is 0.28 percent.
 [INFO DPO-0303] Running algorithm for reordering.
-[INFO DPO-0304] Pass   1 of reordering; objective is 9.284400e+05.
-[INFO DPO-0305] End of reordering; objective is 9.284400e+05, improvement is 0.00 percent.
+[INFO DPO-0304] Pass   1 of reordering; objective is 9.414925e+05.
+[INFO DPO-0305] End of reordering; objective is 9.414925e+05, improvement is 0.00 percent.
 [INFO DPO-0303] Running algorithm for random improvement.
 [INFO DPO-0324] Random improver is using displacement generator.
 [INFO DPO-0325] Random improver is using hpwl objective.
 [INFO DPO-0326] Random improver cost string is (a).
 [INFO DPO-0332] End of pass, Generator displacement called 500 times.
-[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 35, moves   455 since last reset.
-[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.284400e+05, Scratch cost 9.193750e+05, Incremental cost 9.193750e+05, Mismatch? N
-[INFO DPO-0338] End of pass, Total cost is 9.193750e+05.
-[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.98 percent.
-[INFO DPO-0328] End of random improver; improvement is 0.976369 percent.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 33, moves   456 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.414925e+05, Scratch cost 9.380775e+05, Incremental cost 9.380775e+05, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 9.380775e+05.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.36 percent.
+[INFO DPO-0328] End of random improver; improvement is 0.362722 percent.
 [INFO DPO-0380] Cell flipping.
-[INFO DPO-0382] Changed 15 cell orientations for row compatibility.
-[INFO DPO-0383] Performed 7 cell flips.
-[INFO DPO-0384] End of flipping; objective is 9.319950e+05, improvement is -1.37 percent.
+[INFO DPO-0382] Changed 16 cell orientations for row compatibility.
+[INFO DPO-0383] Performed 11 cell flips.
+[INFO DPO-0384] End of flipping; objective is 9.267125e+05, improvement is 1.21 percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
@@ -322,8 +322,8 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL              979.6 u
-Final HPWL                 910.8 u
-Delta HPWL                  -7.0 %
+Original HPWL              981.7 u
+Final HPWL                 922.2 u
+Delta HPWL                  -6.1 %
 
 No differences found.
