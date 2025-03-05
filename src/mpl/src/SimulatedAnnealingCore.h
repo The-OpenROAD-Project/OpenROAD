@@ -164,11 +164,8 @@ class SimulatedAnnealingCore
   void report(const PenaltyData& penalty) const;
 
   Rect outline_;
-
-  // The max cost for distance to boundary wirelength computation
-  // when one of the SoftMacros is a cluster of unplaced IO pins.
-  float die_hpwl_;
   std::vector<Rect> available_regions_for_pins_;
+  float die_hpwl_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
