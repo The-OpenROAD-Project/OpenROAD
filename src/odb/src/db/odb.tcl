@@ -676,4 +676,20 @@ proc design_is_routed { args } {
   set block [$chip getBlock]
 
   return [$block designIsRouted [info exists flags(-verbose)]]
+
+namespace eval odb {
+proc add_pin_group {pin_list order} {
+  set db [ord::get_db]
+  set chip [$db getChip]
+  set block  [$chip getBlock]
+
+  $block addBTermGroup $pin_list $order
+}
+
+proc add_mirrored_pins {bterm1 bterm2} {
+  if {$bterm1 != "NULL" && $bterm2 != "NULL"} {
+    $bterm1 setMirroredBTerm $bterm2
+    $bterm2 setMirroredBTerm $bterm1
+  }
+}
 }
