@@ -77,7 +77,11 @@ or_integration_tests(
     min_dist_in_tracks2
     multiple_calls
     multi_layers
-    multi_track_pattern
+    multi_track_pattern1
+    multi_track_pattern2
+    multi_track_pattern3
+    multi_track_pattern4
+    multi_track_pattern5
     no_instance_pins
     no_pins
     no_tracks
