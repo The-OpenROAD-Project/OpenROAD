@@ -121,7 +121,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*offset*/ 0,
                /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -132,7 +132,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*offset*/ -70,
                /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 1 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -143,7 +143,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*offset*/ -150,
                /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 2 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 2 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.8,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -152,6 +152,7 @@ void FlexGR::main(odb::dbDatabase* db)
 
   reportCong2D();
 
+  freeCUDAMem();
 
   auto Maze2DRuntimeEnd = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> Maze2DRuntime = Maze2DRuntimeEnd - Maze2DRuntimeStart;
@@ -181,6 +182,8 @@ void FlexGR::main(odb::dbDatabase* db)
                /*TEST*/ false);
   reportCong3D();
   
+  freeCUDAMem3D();
+
   auto Maze3DRuntimeEnd = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> Maze3DRuntime = Maze3DRuntimeEnd - Maze3DRuntimeStart;
   logger_->report("3D Maze runtime: " + std::to_string(Maze3DRuntime.count()) + "s");
@@ -192,8 +195,6 @@ void FlexGR::main(odb::dbDatabase* db)
   writeToGuide();
 
   updateDb();
-
-  freeCUDAMem();
 
   auto grRuntimeEnd = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> grRuntime = grRuntimeEnd - grRuntimeStart;

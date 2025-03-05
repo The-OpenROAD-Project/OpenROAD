@@ -31,8 +31,6 @@
 
 namespace drt {
 
-static const int VERBOSE = 0;
-
 
 struct NetStruct {
   grNet* net = nullptr;

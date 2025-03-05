@@ -33,6 +33,10 @@
 #include <memory>
 #include <vector>
 
+
+#include <cuda_runtime.h>
+#include <cuda.h>
+
 #include "FlexGRCMap.h"
 #include "db/grObj/grNet.h"
 #include "frDesign.h"
@@ -56,6 +60,12 @@ struct Point2D_CUDA {
   Point2D_CUDA(int x, int y) : x(x), y(y) {}
 };
 
+struct Point3D_CUDA {
+  int x;
+  int y;
+  int z;
+  Point3D_CUDA(int x, int y, int z) : x(x), y(y), z(z) {}
+};
 
 
 struct Rect2D_CUDA {
@@ -109,8 +119,60 @@ struct NodeData2D {
   }  flags;
 };
 
+struct NodeData3D {
+  // forward and backward propagation (heuristic and real cost) (32 bits each)
+  uint32_t forward_h_cost; // heuristic cost
+  uint32_t forward_g_cost; // real cost
+  uint32_t backward_h_cost; // heuristic cost
+  uint32_t backward_g_cost; // real cost
+  uint32_t forward_h_cost_prev; 
+  uint32_t forward_g_cost_prev;
+  uint32_t backward_h_cost_prev;
+  uint32_t backward_g_cost_prev;
+  
+  // Store the direction (for turning point cost and path reconstruction)
+  uint8_t forward_direction;
+  uint8_t backward_direction;
+  uint8_t forward_direction_prev;
+  uint8_t backward_direction_prev;
+  int golden_parent_x;
+  int golden_parent_y;
+  int golden_parent_z;
+
+  // Flags (1 bit each, packed into a single 8-bit field)
+  struct Flags {
+    uint8_t src_flag : 1; // 1 if this node is the source
+    uint8_t dst_flag : 1; // 1 if this node is the destination
+    uint8_t forward_update_flag: 1; // 1 if the forward cost is updated
+    uint8_t backward_update_flag: 1; // 1 if the backward cost is updated
+    uint8_t forward_visited_flag: 1; // 1 if the forward node is visited
+    uint8_t backward_visited_flag: 1; // 1 if the backward node is visited
+    uint8_t forward_visited_flag_prev: 1; // 1 if the forward node is visited
+    uint8_t backward_visited_flag_prev: 1; // 1 if the backward node is visited
+  }  flags;
+};
 
 
+// We treat 0xFFFF as "infinite" cost for 32-bit fields
+//__device__ __host__ __constant__ uint32_t INF32 = 0xFFFFFFFF;
+
+
+#define cudaCheckError()                                                   \
+{                                                                          \
+    cudaError_t err = cudaGetLastError();                                  \
+    if (err != cudaSuccess) {                                              \
+        fprintf(stderr, "CUDA error at %s:%d: %s\n",                       \
+                __FILE__, __LINE__, cudaGetErrorString(err));              \
+        exit(1);                                                           \
+    }                                                                      \
+}
+
+constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
+constexpr int GRSUPPLYSIZE = 8;
+constexpr int GRDEMANDSIZE = 16;
+constexpr int GRFRACSIZE = 1;
+constexpr int VERBOSE = 0; 
+constexpr uint32_t INF32 = 0xFFFFFFFF;
 
 
 
@@ -373,9 +435,11 @@ class FlexGR
     std::vector<uint64_t>& h_costMap,
     std::vector<int>& h_xCoords,
     std::vector<int>& h_yCoords,
-    RouterConfiguration* router_cfg,
     float relaxThreshold,
     float congThreshold,
+    unsigned BLOCKCOST,
+    unsigned OVERFLOWCOST,
+    unsigned HISTCOST,
     int xDim, int yDim);
 
   float GPUAccelerated2DMazeRoute_update_v3_old(
@@ -404,16 +468,20 @@ class FlexGR
   //int maxChunkSize_ = 200;
   // MemPool Cluster Fail for maxChunkSize_ = 200;
   // So we set the maxChunkSize to 100
-  int maxChunkSize_ = 150;
+  int maxChunkSize_ = 75;
   std::vector<grNet*> nets2Ripup_;
 
   int* d_dX_ = nullptr;
   int* d_dY_ = nullptr;
+  int* d_dZ_ = nullptr;
   uint64_t* d_costMap_ = nullptr;
   int* d_xCoords_ = nullptr;
   int* d_yCoords_ = nullptr;
+  int* d_zHeights_ = nullptr;
   NodeData2D* d_nodes_ = nullptr;
+  NodeData3D* d_nodes_3D_ = nullptr;
   Point2D_CUDA* d_parents_ = nullptr;
+  Point3D_CUDA* d_parents_3D_ = nullptr;
   int* d_pinIdxVec_ = nullptr;
   int* d_netPtr_ = nullptr;
   Rect2D_CUDA* d_netBBox_ = nullptr;
@@ -422,12 +490,33 @@ class FlexGR
   int h_costMap_size_ = 0;
   int h_xCoords_size_ = 0;
   int h_yCoords_size_ = 0;
+  int h_zHeights_size_ = 0;
   int h_nodes_size_ = 0;
+  int h_nodes_size_3D_ = 0;
   int h_parents_size_ = 0;
+  int h_parents_size_3D_ = 0;
   int h_pinIdxVec_size_ = 0;
   int h_netPtr_size_ = 0;
   int h_netBBoxVec_size_ = 0;
   int h_netBatchIdxVec_size_ = 0;
+
+  float GPUAccelerated3DMazeRoute_update(
+    std::vector<std::unique_ptr<FlexGRWorker> >& uworkers,
+    std::vector<std::vector<grNet*> >& netBatches,
+    std::vector<int>& validBatches,
+    std::vector<Point3D_CUDA>& h_parents_3D,
+    std::vector<uint64_t>& h_costMap_3D,
+    std::vector<int>& h_xCoords,
+    std::vector<int>& h_yCoords,
+    std::vector<int>& h_zHeights,
+    float relaxThreshold,
+    float congThreshold,
+    unsigned BLOCKCOST,
+    unsigned OVERFLOWCOST,
+    unsigned HISTCOST,
+    int maxChunkSize,
+    int xDim, int yDim, int zDim);
+
 
   void allocateCUDAMem(
     std::vector<uint64_t>& h_costMap,
@@ -442,18 +531,23 @@ class FlexGR
     int maxChunkSize,
     int numNodes);
 
-  void freeCUDAMem();
-
-
+  void freeCUDAMem(); 
   
+  void allocateCUDAMem3D(
+    std::vector<uint64_t>& h_costMap,
+    std::vector<int>& h_xCoords,
+    std::vector<int>& h_yCoords,
+    std::vector<int>& h_zHeights,
+    std::vector<Point3D_CUDA>& h_parents,
+    std::vector<int>& pinIdxVec,
+    std::vector<int>& netPtr,
+    std::vector<Rect2D_CUDA>& netBBoxVec,
+    std::vector<int>& netBatchIdxVec,
+    int numGrids,
+    int maxChunkSize,
+    int numNodes);
 
-
-
-
-
-
-
-  
+  void freeCUDAMem3D();
 };
 
 class FlexGRWorker;

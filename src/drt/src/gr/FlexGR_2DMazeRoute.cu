@@ -70,26 +70,9 @@
 
 namespace drt {
 
-constexpr int GRGRIDGRAPHHISTCOSTSIZE = 8;
-constexpr int GRSUPPLYSIZE = 8;
-constexpr int GRDEMANDSIZE = 16;
-constexpr int GRFRACSIZE = 1;
-constexpr int VERBOSE = 0; 
+
 
 namespace cg = cooperative_groups;
-
-#define cudaCheckError()                                                   \
-{                                                                          \
-    cudaError_t err = cudaGetLastError();                                  \
-    if (err != cudaSuccess) {                                              \
-        fprintf(stderr, "CUDA error at %s:%d: %s\n",                       \
-                __FILE__, __LINE__, cudaGetErrorString(err));              \
-        exit(1);                                                           \
-    }                                                                      \
-}
-
-// We treat 0xFFFF as "infinite" cost for 32-bit fields
-__device__ __host__ __constant__ uint32_t INF32 = 0xFFFFFFFF;
 
 
 
@@ -2137,14 +2120,14 @@ void FlexGR::allocateCUDAMem(
     cudaMemcpy(d_dY_, h_dY.data(), 4 * sizeof(int), cudaMemcpyHostToDevice);
   }
 
-  if (h_xCoords.size() > h_costMap_size_) {
+  if (h_xCoords.size() > h_xCoords_size_) {
     h_xCoords_size_ = h_xCoords.size();
     cudaFree(d_xCoords_);
     cudaMalloc(&d_xCoords_, h_xCoords.size() * sizeof(int));
     cudaMemcpy(d_xCoords_, h_xCoords.data(), h_xCoords.size() * sizeof(int), cudaMemcpyHostToDevice); 
   }
 
-  if (h_yCoords.size() > h_costMap_size_) {
+  if (h_yCoords.size() > h_yCoords_size_) {
     h_yCoords_size_ = h_yCoords.size();
     cudaFree(d_yCoords_);
     cudaMalloc(&d_yCoords_, h_yCoords.size() * sizeof(int));
@@ -2242,11 +2225,11 @@ void FlexGR::freeCUDAMem()
   h_xCoords_size_ = 0;
   h_yCoords_size_ = 0;
   h_parents_size_ = 0;
+  h_nodes_size_ = 0;
   h_pinIdxVec_size_ = 0;
   h_netPtr_size_ = 0;
   h_netBBoxVec_size_ = 0;
   h_netBatchIdxVec_size_ = 0;
-  h_nodes_size_ = 0;
 
   cudaCheckError();
 }
@@ -2260,9 +2243,11 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   std::vector<uint64_t>& h_costMap,
   std::vector<int>& h_xCoords,
   std::vector<int>& h_yCoords,
-  RouterConfiguration* router_cfg,
   float relaxThreshold,
   float congThreshold,
+  unsigned BLOCKCOST,
+  unsigned OVERFLOWCOST,
+  unsigned HISTCOST,
   int xDim, int yDim)
 {
   // Start overall timing.
@@ -2388,9 +2373,9 @@ float FlexGR::GPUAccelerated2DMazeRoute_update_v3(
   }
 
   // According to the original code
-  unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
-  unsigned OVERFLOWCOST = 128;
-  unsigned HISTCOST = 4;
+  //unsigned BLOCKCOST = router_cfg->BLOCKCOST * 100;
+  //unsigned OVERFLOWCOST = 128;
+  //unsigned HISTCOST = 4;
 
   
   cudaCheckError();

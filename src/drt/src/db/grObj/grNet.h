@@ -270,6 +270,12 @@ class grNet : public grBlockObject
     return pinGCellAbsIdxs;
   }
 
+  /*
+  const std::vector<FlexMazeIdx>& getPinGCellIdxs() const
+  {
+    return pinGCellIdxs;
+  }*/
+
   const Rect& getRouteAbsBBox() const
   {
     return routeAbsBBox;
@@ -277,6 +283,12 @@ class grNet : public grBlockObject
 
   void setBatchId(int id) { batchId = id; }
   int getBatchId() const { return batchId; }
+
+  void setPreCost(float in) { preCost_ = in; }
+  float getPreCost() const { return preCost_; }
+
+  void setPostCost(float in) { postCost_ = in; }
+  float getPostCost() const { return postCost_; }
 
  protected:
   std::vector<std::unique_ptr<grPin>> pins;
@@ -321,5 +333,9 @@ class grNet : public grBlockObject
   std::vector<FlexMazeIdx> pinGCellIdxs;
   std::vector<FlexMazeIdx> pinGCellAbsIdxs;
   Rect routeAbsBBox;
+
+  float preCost_{0.0};
+  float postCost_{0.0};
+
 };
 }  // namespace drt

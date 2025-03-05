@@ -45,8 +45,6 @@ namespace drt {
 
 using utl::ThreadException;
 
-constexpr int VERBOSE = 0; 
-
 
 bool overlap(const Rect &r1, const Rect &r2)
 {
@@ -428,6 +426,16 @@ void FlexGR::searchRepair_update(int iter,
   float syncTime = 0.0;
   // mazeEndIter = 10;  
 
+
+  unsigned BLOCKCOST = router_cfg_->BLOCKCOST * 100;
+  unsigned OVERFLOWCOST = workerCongCost;
+  unsigned HISTCOST = workerHistCost;
+
+  std::cout << "BLOCKCOST: " << BLOCKCOST << std::endl;
+  std::cout << "OVERFLOWCOST: " << OVERFLOWCOST << std::endl;
+  std::cout << "HISTCOST: " << HISTCOST << std::endl;
+
+
   for (int iter = 0; iter < mazeEndIter; iter++) {    
     int xDim, yDim, zDim;
     uworkers[0]->getCMap()->getDim(xDim, yDim, zDim);
@@ -626,8 +634,9 @@ void FlexGR::searchRepair_update(int iter,
         float relaxThreshold = 2.0;
         // Route the nets in the batches
         float GPURuntime = GPUAccelerated2DMazeRoute_update_v3(
-          uworkers, subBatches, validBatchIds, h_parents, h_costMap, xCoords, yCoords, router_cfg_, 
-          relaxThreshold, congThresh, xDim, yDim);
+          uworkers, subBatches, validBatchIds, h_parents, h_costMap, xCoords, yCoords, 
+          relaxThreshold, congThresh, 
+          BLOCKCOST, OVERFLOWCOST, HISTCOST, xDim, yDim);
         
         if (0) {
         //if (VERBOSE > 0) {
