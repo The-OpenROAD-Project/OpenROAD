@@ -138,6 +138,7 @@ class SimulatedAnnealingCore
                                          const T& io,
                                          float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
+  float computeDistance(const Point& a, const Point& b) const;
   void calGuidancePenalty();
   void calFencePenalty();
 

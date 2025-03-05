@@ -35,9 +35,12 @@
 
 #include <string>
 
+#include "odb/geom.h"
+
 namespace mpl {
 
 using Point = std::pair<float, float>;
+using RegionsList = std::vector<odb::Rect>;
 
 struct SACoreWeights
 {
@@ -64,11 +67,26 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-inline float computeDistance(const Point& a, const Point& b)
+inline int computeDistance(const odb::Point& from, const odb::Point& to)
 {
-  const float dx = std::abs(a.first - b.first);
-  const float dy = std::abs(a.second - b.second);
-  return std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
+  const int dx = std::abs(from.getX() - to.getX());
+  const int dy = std::abs(from.getY() - to.getY());
+  return static_cast<int>(std::sqrt(std::pow(dx, 2) + std::pow(dy, 2)));
+}
+
+inline odb::Point findCenterOfClosestRegion(const odb::Point& from,
+                                            const RegionsList& regions)
+{
+  odb::Point to;
+  int dist_to_closest_region = std::numeric_limits<int>::max();
+  for (const odb::Rect& region : regions) {
+    const int dist_to_region = computeDistance(from, region.center());
+    if (dist_to_region < dist_to_closest_region) {
+      dist_to_closest_region = dist_to_region;
+      to = region.center();
+    }
+  }
+  return to;
 }
 
 }  // namespace mpl

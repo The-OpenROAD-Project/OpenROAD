@@ -62,8 +62,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
                                                   unsigned seed,
                                                   MplObserver* graphics,
                                                   utl::Logger* logger)
-    : outline_(outline),
-      graphics_(graphics)
+    : outline_(outline), graphics_(graphics)
 {
   core_weights_ = weights;
 
@@ -351,6 +350,15 @@ bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
 {
   return macro.getPinX() > outline_.getWidth()
          || macro.getPinY() > outline_.getHeight();
+}
+
+template <class T>
+float SimulatedAnnealingCore<T>::computeDistance(const Point& a,
+                                                 const Point& b) const
+{
+  const float dx = std::abs(a.first - b.first);
+  const float dy = std::abs(a.second - b.second);
+  return std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
 }
 
 template <class T>

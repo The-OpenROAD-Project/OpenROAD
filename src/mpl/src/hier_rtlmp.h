@@ -245,10 +245,6 @@ class HierRTLMP
 
   void correctAllMacrosOrientation();
   float calculateRealMacroWirelength(odb::dbInst* macro);
-  Boundary getClosestBoundary(const odb::Point& from,
-                              const std::set<Boundary>& boundaries);
-  int getDistanceToBoundary(const odb::Point& from, Boundary boundary);
-  odb::Point getClosestBoundaryPoint(const odb::Point& from, Boundary boundary);
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
@@ -327,6 +323,7 @@ class HierRTLMP
   std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
   std::map<Boundary, Rect> boundary_to_io_blockage_;  // TODO: remove
+  RegionsList available_regions_for_pins_;  // For orientation improvement.
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;

@@ -584,7 +584,7 @@ void Graphics::drawBundledNets(gui::Painter& painter,
     const T& target = macros[bundled_net.terminals.second];
 
     if (target.isClusterOfUnconstrainedIOPins()) {
-      drawDistToIoConstraintBoundary(painter, source, target);
+      drawDistToClosestAvailableRegion(painter, source, target);
       continue;
     }
 
@@ -602,38 +602,25 @@ void Graphics::drawBundledNets(gui::Painter& painter,
 }
 
 template <typename T>
-void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
-                                              const T& macro,
-                                              const T& io)
+void Graphics::drawDistToClosestAvailableRegion(gui::Painter& painter,
+                                                const T& macro,
+                                                const T& io)
 {
   if (isOutsideTheOutline(macro)) {
     return;
   }
 
-  const float x1 = macro.getPinX();
-  const float y1 = macro.getPinY();
-
-  odb::Point from(block_->micronsToDbu(x1), block_->micronsToDbu(y1));
+  odb::Point from(block_->micronsToDbu(macro.getPinX()),
+                  block_->micronsToDbu(macro.getPinY()));
   from.addX(outline_.xMin());
   from.addY(outline_.yMin());
 
-  odb::Point to;
-  float dist_to_closest_available_region = std::numeric_limits<float>::max();
-  for (const odb::Rect& dbu_region : available_regions_for_pins_) {
-    const Rect micron_region(block_->dbuToMicrons(dbu_region.xMin()),
-                             block_->dbuToMicrons(dbu_region.yMin()),
-                             block_->dbuToMicrons(dbu_region.xMax()),
-                             block_->dbuToMicrons(dbu_region.yMax()));
-
-    const float dist_to_available_region = computeDistance(
-        /* from */ {x1, y1},
-        /*  to  */ {micron_region.getX(), micron_region.getY()});
-    if (dist_to_available_region < dist_to_closest_available_region) {
-      dist_to_closest_available_region = dist_to_available_region;
-      to = {block_->micronsToDbu(micron_region.getX()),
-            block_->micronsToDbu(micron_region.getY())};
-    }
-  }
+  // Differently from what happens inside the SA core - where all
+  // computations are made using the origin of the current outline as
+  // reference - here we search for the center of the closest region
+  // using the die area origin as reference. I.e., we offset the macro
+  // location instead of offsetting the regions as we do inside SA.
+  odb::Point to = findCenterOfClosestRegion(from, available_regions_for_pins_);
 
   painter.drawLine(from, to);
   painter.drawString(

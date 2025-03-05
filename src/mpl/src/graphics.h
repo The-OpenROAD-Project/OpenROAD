@@ -111,9 +111,9 @@ class Graphics : public gui::Renderer, public MplObserver
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   template <typename T>
-  void drawDistToIoConstraintBoundary(gui::Painter& painter,
-                                      const T& macro,
-                                      const T& io);
+  void drawDistToClosestAvailableRegion(gui::Painter& painter,
+                                        const T& macro,
+                                        const T& io);
   template <typename T>
   bool isOutsideTheOutline(const T& macro) const;
   void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
