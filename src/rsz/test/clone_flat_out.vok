@@ -316,10 +316,6 @@ module hi_fanout (clk1,
  wire net288;
  wire net289;
  wire net291;
- wire net597;
- wire net598;
- wire net599;
- wire net618;
 
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
@@ -663,103 +659,103 @@ module hi_fanout (clk1,
  DFF_X1 load64 (.D(net3),
     .CK(clk1),
     .Q(output64));
- DFF_X1 load65 (.D(net598),
+ DFF_X1 load65 (.D(net0),
     .CK(clk1),
     .Q(output65));
- DFF_X1 load66 (.D(net598),
+ DFF_X1 load66 (.D(net0),
     .CK(clk1),
     .Q(output66));
- DFF_X1 load67 (.D(net598),
+ DFF_X1 load67 (.D(net0),
     .CK(clk1),
     .Q(output67));
- DFF_X1 load68 (.D(net598),
+ DFF_X1 load68 (.D(net0),
     .CK(clk1),
     .Q(output68));
- DFF_X1 load69 (.D(net598),
+ DFF_X1 load69 (.D(net0),
     .CK(clk1),
     .Q(output69));
- DFF_X1 load7 (.D(net598),
+ DFF_X1 load7 (.D(net0),
     .CK(clk1),
     .Q(output7));
- DFF_X1 load70 (.D(net598),
+ DFF_X1 load70 (.D(net0),
     .CK(clk1),
     .Q(output70));
- DFF_X1 load71 (.D(net598),
+ DFF_X1 load71 (.D(net0),
     .CK(clk1),
     .Q(output71));
- DFF_X1 load72 (.D(net598),
+ DFF_X1 load72 (.D(net0),
     .CK(clk1),
     .Q(output72));
- DFF_X1 load73 (.D(net598),
+ DFF_X1 load73 (.D(net0),
     .CK(clk1),
     .Q(output73));
- DFF_X1 load74 (.D(net598),
+ DFF_X1 load74 (.D(net0),
     .CK(clk1),
     .Q(output74));
- DFF_X1 load75 (.D(net598),
+ DFF_X1 load75 (.D(net0),
     .CK(clk1),
     .Q(output75));
- DFF_X1 load76 (.D(net598),
+ DFF_X1 load76 (.D(net0),
     .CK(clk1),
     .Q(output76));
- DFF_X1 load77 (.D(net598),
+ DFF_X1 load77 (.D(net0),
     .CK(clk1),
     .Q(output77));
- DFF_X1 load78 (.D(net598),
+ DFF_X1 load78 (.D(net0),
     .CK(clk1),
     .Q(output78));
- DFF_X1 load79 (.D(net598),
+ DFF_X1 load79 (.D(net0),
     .CK(clk1),
     .Q(output79));
- DFF_X1 load8 (.D(net598),
+ DFF_X1 load8 (.D(net0),
     .CK(clk1),
     .Q(output8));
- DFF_X1 load80 (.D(net598),
+ DFF_X1 load80 (.D(net0),
     .CK(clk1),
     .Q(output80));
- DFF_X1 load81 (.D(net598),
+ DFF_X1 load81 (.D(net0),
     .CK(clk1),
     .Q(output81));
- DFF_X1 load82 (.D(net599),
+ DFF_X1 load82 (.D(net0),
     .CK(clk1),
     .Q(output82));
- DFF_X1 load83 (.D(net599),
+ DFF_X1 load83 (.D(net0),
     .CK(clk1),
     .Q(output83));
- DFF_X1 load84 (.D(net599),
+ DFF_X1 load84 (.D(net0),
     .CK(clk1),
     .Q(output84));
- DFF_X1 load85 (.D(net599),
+ DFF_X1 load85 (.D(net0),
     .CK(clk1),
     .Q(output85));
- DFF_X1 load86 (.D(net599),
+ DFF_X1 load86 (.D(net0),
     .CK(clk1),
     .Q(output86));
- DFF_X1 load87 (.D(net599),
+ DFF_X1 load87 (.D(net0),
     .CK(clk1),
     .Q(output87));
- DFF_X1 load88 (.D(net599),
+ DFF_X1 load88 (.D(net0),
     .CK(clk1),
     .Q(output88));
- DFF_X1 load89 (.D(net599),
+ DFF_X1 load89 (.D(net0),
     .CK(clk1),
     .Q(output89));
- DFF_X1 load9 (.D(net599),
+ DFF_X1 load9 (.D(net0),
     .CK(clk1),
     .Q(output9));
- DFF_X1 load90 (.D(net618),
+ DFF_X1 load90 (.D(net0),
     .CK(clk1),
     .Q(output90));
- DFF_X1 load91 (.D(net618),
+ DFF_X1 load91 (.D(net0),
     .CK(clk1),
     .Q(output91));
- DFF_X1 load92 (.D(net618),
+ DFF_X1 load92 (.D(net0),
     .CK(clk1),
     .Q(output92));
- DFF_X1 load93 (.D(net618),
+ DFF_X1 load93 (.D(net0),
     .CK(clk1),
     .Q(output93));
- DFF_X1 load94 (.D(net618),
+ DFF_X1 load94 (.D(net0),
     .CK(clk1),
     .Q(output94));
  DFF_X1 load95 (.D(net0),
@@ -780,10 +776,10 @@ module hi_fanout (clk1,
  NAND2_X4 nand_inst_0 (.A1(clk_to_nand1),
     .A2(clk_to_nand0),
     .ZN(net0));
- NAND2_X4 clone1 (.A1(net597),
+ NAND2_X4 clone1 (.A1(clk_to_nand0),
     .A2(net289),
     .ZN(net1));
- NAND2_X4 clone2 (.A1(net597),
+ NAND2_X4 clone2 (.A1(clk_to_nand0),
     .A2(net289),
     .ZN(net2));
  NAND2_X4 clone3 (.A1(clk_to_nand1),
@@ -792,10 +788,10 @@ module hi_fanout (clk1,
  NAND2_X2 clone124 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
     .ZN(net124));
- NAND2_X2 clone127 (.A1(net597),
+ NAND2_X2 clone127 (.A1(clk_to_nand0),
     .A2(net289),
     .ZN(net127));
- NAND2_X2 clone129 (.A1(net597),
+ NAND2_X2 clone129 (.A1(clk_to_nand0),
     .A2(net289),
     .ZN(net129));
  NAND2_X2 clone284 (.A1(clk_to_nand0),
@@ -806,18 +802,7 @@ module hi_fanout (clk1,
     .ZN(net288));
  BUF_X8 split289 (.A(clk_to_nand1),
     .Z(net289));
- NAND2_X2 clone291 (.A1(net597),
+ NAND2_X2 clone291 (.A1(clk_to_nand0),
     .A2(net289),
     .ZN(net291));
- BUF_X4 split597 (.A(clk_to_nand0),
-    .Z(net597));
- NAND2_X2 clone598 (.A1(clk_to_nand1),
-    .A2(clk_to_nand0),
-    .ZN(net598));
- NAND2_X2 clone599 (.A1(clk_to_nand1),
-    .A2(clk_to_nand0),
-    .ZN(net599));
- NAND2_X2 clone618 (.A1(clk_to_nand1),
-    .A2(clk_to_nand0),
-    .ZN(net618));
 endmodule

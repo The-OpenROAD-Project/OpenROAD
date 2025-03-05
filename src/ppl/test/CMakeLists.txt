@@ -62,6 +62,8 @@ or_integration_tests(
     group_pins8
     group_pins9
     group_pins10
+    group_pins11
+    group_pins12
     group_pins_error1
     group_pins_warn1
     invalid_layer
