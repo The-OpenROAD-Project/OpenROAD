@@ -310,7 +310,7 @@ void Grid::visitCellBoundaryPixels(
                "hybrid",
                1,
                "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
-               cell.name(),
+               cell.getDbInst()->getName(),
                cell.isHybrid(),
                grid_rect.ylo,
                grid_rect.yhi);
@@ -328,14 +328,14 @@ void Grid::erasePixel(GridNode* cell)
                "hybrid",
                1,
                "Checking cell {} isHybrid {}",
-               cell->name(),
+               cell->getDbInst()->getName(),
                cell->isHybrid());
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
                "Checking cell {} in rows. Y start {} y end {}",
-               cell->name(),
+               cell->getDbInst()->getName(),
                grid_rect.ylo,
                grid_rect.yhi);
 
@@ -538,8 +538,8 @@ void Grid::setGridPaddedLoc(GridNode* cell, GridX x, GridY y) const
 GridX Grid::gridPaddedEndX(const GridNode* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x
-      = cell->xMax() + gridToDbu(padding_->padRight(cell), site_width);
+  const DbuX end_x = cell->getLeft() + cell->getWidth()
+                     + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
