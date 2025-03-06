@@ -75,30 +75,6 @@ struct Master
   std::vector<Edge> edges_;
 };
 
-class GridNode
-{
- public:
-  GridNode() = default;
-  virtual const char* name() const = 0;
-  virtual bool isFixed() const = 0;
-  virtual bool isPlaced() const = 0;
-  virtual bool isHybrid() const = 0;
-  virtual DbuX xMax() const = 0;
-  virtual DbuX getLeft() const = 0;
-  virtual DbuY getBottom() const = 0;
-  virtual DbuX getWidth() const = 0;
-  virtual DbuY getHeight() const = 0;
-  virtual dbInst* getDbInst() const = 0;
-  virtual DbuX siteWidth() const = 0;
-  virtual void setPlaced(bool in) = 0;
-  virtual void setHold(bool in) = 0;
-  virtual void setOrient(dbOrientType in) = 0;
-  virtual void setLeft(DbuX in) = 0;
-  virtual void setBottom(DbuY in) = 0;
-  virtual void setWidth(DbuX in) = 0;
-  virtual void setHeight(DbuY in) = 0;
-};
-
 struct Cell : public GridNode
 {
  public:
