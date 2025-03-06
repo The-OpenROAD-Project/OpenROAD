@@ -1886,6 +1886,11 @@ class dbBTerm : public dbObject
   std::optional<Rect> getConstraintRegion();
 
   ///
+  /// Reset constraint region.
+  ///
+  void resetConstraintRegion();
+
+  ///
   /// Set the bterm which position is mirrored to this bterm
   ///
   void setMirroredBTerm(dbBTerm* mirrored_bterm);
