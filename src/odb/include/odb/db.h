@@ -982,6 +982,24 @@ class dbBlock : public dbObject
   void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
   ///
+  /// Find the rectangle corresponding to the constraint region in a specific
+  /// edge of the die area.
+  ///
+  Rect findConstraintRegion(const std::string& edge, int begin, int end);
+
+  ///
+  /// Add region constraint for dbBTerms according to their IO type.
+  ///
+  void addBTermDirectionConstraint(const std::string& direction,
+                                   const Rect& constraint_region);
+
+  ///
+  /// Add region constraint for dbBTerms according to their names.
+  ///
+  void addBTermNamesConstraint(const std::vector<dbBTerm*>& bterms,
+                               const Rect& constraint_region);
+
+  ///
   /// Get all the instance-terminals of this block.
   ///
   dbSet<dbITerm> getITerms();
