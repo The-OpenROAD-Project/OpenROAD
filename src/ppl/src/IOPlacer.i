@@ -212,12 +212,6 @@ add_ver_layer(odb::dbTechLayer* layer)
 }
 
 void
-add_pin_group(PinList *pin_list, bool order)
-{
-  getIOPlacer()->addPinGroup(pin_list, order);
-}
-
-void
 run_hungarian_matching(bool randomMode)
 {
   getIOPlacer()->runHungarianMatching(randomMode);

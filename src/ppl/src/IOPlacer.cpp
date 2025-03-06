@@ -99,7 +99,6 @@ void IOPlacer::clear()
   top_layer_slots_.clear();
   assignment_.clear();
   excluded_intervals_.clear();
-  pin_groups_.clear();
   *parms_ = Parameters();
 }
 
@@ -2082,11 +2081,12 @@ void IOPlacer::checkPinsInMultipleConstraints()
 void IOPlacer::checkPinsInMultipleGroups()
 {
   std::string pins_in_mult_groups;
-  if (!pin_groups_.empty()) {
+  const auto& bterm_groups = getBlock()->getBTermGroups();
+  if (!bterm_groups.empty()) {
     for (IOPin& io_pin : netlist_->getIOPins()) {
       int group_cnt = 0;
-      for (PinGroup& group : pin_groups_) {
-        const PinList& pin_list = group.pins;
+      for (const auto& group : bterm_groups) {
+        const std::vector<odb::dbBTerm*>& pin_list = group.bterms;
         if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
             != pin_list.end()) {
           group_cnt++;
@@ -2168,19 +2168,6 @@ std::string IOPlacer::getPinSetOrListString(const PinSetOrList& group)
     }
   }
   return pin_names;
-}
-
-void IOPlacer::addPinGroup(PinList* group, bool order)
-{
-  std::string pin_names = getPinSetOrListString(*group);
-
-  if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-    debugPrint(
-        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {} ]", pin_names);
-  } else {
-    logger_->info(utl::PPL, 44, "Pin group: [ {} ]", pin_names);
-  }
-  pin_groups_.push_back({*group, order});
 }
 
 void IOPlacer::findPinAssignment(std::vector<Section>& sections,
@@ -3099,7 +3086,9 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (const auto& [pins, order] : pin_groups_) {
+  for (const auto& [pins, order] : getBlock()->getBTermGroups()) {
+    std::string pin_names = getPinSetOrListString(pins);
+    logger_->info(utl::PPL, 44, "Pin group: [ {} ]", pin_names);
     int group_created = netlist_->createIOGroup(pins, order, group_idx);
     if (group_created != pins.size()) {
       logger_->error(PPL, 94, "Cannot create group of size {}.", pins.size());
