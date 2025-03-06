@@ -80,12 +80,6 @@ using PinSet = std::set<odb::dbBTerm*>;
 using PinList = std::vector<odb::dbBTerm*>;
 using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
 
-struct PinGroup
-{
-  PinList pins;
-  bool order;
-};
-
 struct PinGroupByIndex
 {
   std::vector<int> pin_indices;
@@ -140,7 +134,6 @@ class IOPlacer
   void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addPinGroup(PinList* group, bool order);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,
                              int x_step,
                              int y_step,
@@ -313,7 +306,6 @@ class IOPlacer
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<PinGroup> pin_groups_;
   MirroredPins mirrored_pins_;
   FallbackPins fallback_pins_;
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;

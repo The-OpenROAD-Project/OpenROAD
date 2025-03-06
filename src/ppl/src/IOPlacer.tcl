@@ -623,11 +623,11 @@ proc place_pins { args } {
   }
 
   if { [llength $pin_groups] != 0 } {
-    set group_idx 0
     foreach group $pin_groups {
       set pins [ppl::parse_pin_names "place_pins -group_pins" $group]
-      ppl::add_pin_group $pins 0
-      incr group_idx
+      if { [llength $pins] != 0 } {
+        odb::add_pin_group $pins 0
+      }
     }
   }
 
