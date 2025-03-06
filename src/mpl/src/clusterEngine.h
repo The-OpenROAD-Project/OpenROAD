@@ -114,7 +114,6 @@ struct PhysicalHierarchy
   PhysicalHierarchyMaps maps;
 
   std::vector<Rect> available_regions_for_pins;
-  std::set<Boundary> unblocked_boundaries;  // TODO: remove
 
   float halo_width{0.0f};
   float halo_height{0.0f};

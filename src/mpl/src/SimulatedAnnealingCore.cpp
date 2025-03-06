@@ -291,7 +291,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& target = macros_[net.terminals.second];
 
     if (target.isClusterOfUnconstrainedIOPins()) {
-      addClosestAvailableRegionDistToWL(source, target, net.weight);
+      addClosestAvailableRegionDistToWL(source, net.weight);
       continue;
     }
 
@@ -317,7 +317,6 @@ void SimulatedAnnealingCore<T>::calWirelength()
 template <class T>
 void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
     const T& macro,
-    const T& io,
     const float net_weight)
 {
   if (isOutsideTheOutline(macro)) {

@@ -101,7 +101,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setXMarksSize();
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
-  void drawBlockedBoundariesIndication(gui::Painter& painter);
+  void drawBlockedRegionsIndication(gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
   void drawOffsetRect(const Rect& rect,
                       const std::string& center_text,

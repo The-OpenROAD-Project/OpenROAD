@@ -896,9 +896,10 @@ void HierRTLMP::createPinAccessBlockages()
 
     if (blocked_regions_for_pins.empty()) {
       // If there are no constraints at all, we give freedom to SA so it
-      // doesn't have to deal with pin access blockages in all boundaries.
-      // This will help SA not relying on extreme utilizations to
-      // converge for designs such as sky130hd/uW.
+      // doesn't have to deal with pin access blockages across the entire
+      // extension of all edges of the die area. This should help SA not
+      // relying on extreme utilizations to converge for designs such as
+      // sky130hd/uW.
       return;
     }
 

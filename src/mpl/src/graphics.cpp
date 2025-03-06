@@ -519,7 +519,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  drawBlockedBoundariesIndication(painter);
+  drawBlockedRegionsIndication(painter);
 
   painter.setBrush(gui::Painter::transparent);
   if (only_final_result_) {
@@ -565,7 +565,7 @@ void Graphics::drawGuides(gui::Painter& painter)
   }
 }
 
-void Graphics::drawBlockedBoundariesIndication(gui::Painter& painter)
+void Graphics::drawBlockedRegionsIndication(gui::Painter& painter)
 {
   painter.setPen(gui::Painter::red, true);
   painter.setBrush(gui::Painter::transparent);
