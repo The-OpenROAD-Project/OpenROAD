@@ -179,6 +179,7 @@ class HierRTLMP
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
   void createPinAccessBlockages();
+  bool treeHasOnlyUnconstrainedIOs();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
   void createPinAccessBlockage(const Rect& micron_region, const float depth);
   float computePinAccessBaseDepth(const float io_span);
@@ -323,7 +324,7 @@ class HierRTLMP
   std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
 
-  // For orientation improvement.
+  // Cache needed for orientation improvement.
   std::vector<odb::Rect> available_regions_for_pins_;
 
   // Fast SA hyperparameter

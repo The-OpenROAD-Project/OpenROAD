@@ -890,7 +890,7 @@ void HierRTLMP::createPinAccessBlockages()
     return;
   }
 
-  if (tree_->has_only_unconstrained_ios) {
+  if (treeHasOnlyUnconstrainedIOs()) {
     const std::vector<odb::Rect>& blocked_regions_for_pins
         = block_->getBlockedRegionsForPins();
 
@@ -922,6 +922,17 @@ void HierRTLMP::createPinAccessBlockages()
   } else {
     createBlockagesForConstraintRegions();
   }
+}
+
+bool HierRTLMP::treeHasOnlyUnconstrainedIOs()
+{
+  std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
+  for (Cluster* io_cluster : io_clusters) {
+    if (!io_cluster->isClusterOfUnconstrainedIOPins()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void HierRTLMP::createBlockagesForAvailableRegions()

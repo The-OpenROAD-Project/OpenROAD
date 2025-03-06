@@ -327,7 +327,9 @@ void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
 
   if (available_regions_for_pins_.empty()) {
     logger_->critical(
-        utl::MPL, 47, "The unconstrained pins have no available region!");
+        utl::MPL,
+        47,
+        "There's no available region for the unconstrained pins!");
   }
 
   float dist_to_closest_available_region = std::numeric_limits<float>::max();

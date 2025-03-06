@@ -393,60 +393,52 @@ void ClusteringEngine::createIOClusters()
     tree_->has_io_clusters = false;
   }
 
-  bool design_has_only_unconstrained_ios = true;
-  std::vector<IOClusterAndRegion> cluster_and_region_list;
-
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
-    auto bterm_constraint = bterm->getConstraintRegion();
-    if (bterm_constraint) {
-      design_has_only_unconstrained_ios = false;
-      createClusterOfUnplacedIOs(
-          cluster_and_region_list, bterm, bterm_constraint.value());
+    Cluster* same_constraint_cluster = findIOClusterWithSameConstraint(bterm);
+    if (same_constraint_cluster) {
+      tree_->maps.bterm_to_cluster_id[bterm] = same_constraint_cluster->getId();
     } else {
-      createClusterOfUnplacedIOs(
-          cluster_and_region_list, bterm, block_->getDieArea());
+      createClusterOfUnplacedIOs(bterm);
     }
-  }
-
-  if (design_has_only_unconstrained_ios) {
-    tree_->has_only_unconstrained_ios = true;
   }
 }
 
-// Isso pode ter um nome melhor
-void ClusteringEngine::createClusterOfUnplacedIOs(
-    std::vector<IOClusterAndRegion>& cluster_and_region_list,
-    odb::dbBTerm* bterm,
-    const odb::Rect& bterm_constraint)
+Cluster* ClusteringEngine::findIOClusterWithSameConstraint(odb::dbBTerm* bterm)
 {
-  bool found_cluster_with_same_constraint = false;
-  for (const auto& [cluster, cluster_constraint] : cluster_and_region_list) {
-    if (bterm_constraint == cluster_constraint) {
-      tree_->maps.bterm_to_cluster_id[bterm] = cluster->getId();
-      found_cluster_with_same_constraint = true;
-      break;
+  for (const auto& [cluster, cluster_constraint] :
+       io_cluster_and_region_list_) {
+    if (bterm->getConstraintRegion() == cluster_constraint) {
+      return cluster;
     }
   }
 
-  if (found_cluster_with_same_constraint) {
-    return;
-  }
+  return nullptr;
+}
 
+void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
+{
   auto cluster = std::make_unique<Cluster>(id_, "", logger_);
-  if (bterm_constraint == block_->getDieArea()) {
+  cluster->setParent(tree_->root.get());
+
+  odb::Rect constraint_shape;
+  const std::optional<odb::Rect>& bterm_constraint
+      = bterm->getConstraintRegion();
+  if (bterm_constraint) {
+    constraint_shape = *bterm_constraint;
+    cluster->setName("ios_" + std::to_string(id_));
+  } else {
+    constraint_shape = block_->getDieArea();
     cluster->setName("unconstrained_ios");
     cluster->setAsClusterOfUnconstrainedIOPins();
-  } else {
-    cluster->setName("ios_" + std::to_string(id_));
   }
 
   cluster->setAsClusterOfUnplacedIOPins(
-      {block_->dbuToMicrons(bterm_constraint.xMin()),
-       block_->dbuToMicrons(bterm_constraint.yMin())},
-      block_->dbuToMicrons(bterm_constraint.dx()),
-      block_->dbuToMicrons(bterm_constraint.dy()));
+      {block_->dbuToMicrons(constraint_shape.xMin()),
+       block_->dbuToMicrons(constraint_shape.yMin())},
+      block_->dbuToMicrons(constraint_shape.dx()),
+      block_->dbuToMicrons(constraint_shape.dy()));
 
-  cluster_and_region_list.push_back({cluster.get(), bterm_constraint});
+  io_cluster_and_region_list_.push_back({cluster.get(), constraint_shape});
 
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();

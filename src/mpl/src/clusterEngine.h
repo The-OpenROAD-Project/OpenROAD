@@ -130,7 +130,6 @@ struct PhysicalHierarchy
   Rect floorplan_shape;
 
   bool has_io_clusters{true};
-  bool has_only_unconstrained_ios{false};
   bool has_only_macros{false};
   bool has_std_cells{true};
   bool has_unfixed_macros{true};
@@ -201,10 +200,8 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
-  void createClusterOfUnplacedIOs(
-      std::vector<IOClusterAndRegion>& cluster_and_region_list,
-      odb::dbBTerm* bterm,
-      const odb::Rect& bterm_constraint);
+  Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm);
+  void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
   void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
   void mapIOPinsAndPads();
@@ -290,6 +287,9 @@ class ClusteringEngine
 
   Metrics* design_metrics_{nullptr};
   PhysicalHierarchy* tree_{nullptr};
+
+  // Only for clusters of unplaced IOs.
+  std::vector<IOClusterAndRegion> io_cluster_and_region_list_;
 
   int level_{0};  // Current level
   int id_{0};     // Current "highest" id
