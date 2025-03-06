@@ -37,7 +37,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Grid.h"
+#include "dpl/Grid.h"
 
 #include <boost/polygon/polygon.hpp>
 #include <cmath>

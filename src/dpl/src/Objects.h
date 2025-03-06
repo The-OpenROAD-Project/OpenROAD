@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "Grid.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {

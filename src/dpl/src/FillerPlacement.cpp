@@ -34,8 +34,8 @@
 
 #include <algorithm>
 
-#include "Grid.h"
 #include "Objects.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
