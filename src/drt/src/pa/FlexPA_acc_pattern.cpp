@@ -191,6 +191,12 @@ void FlexPA::prepPattern()
   prepPatternInstRows(std::move(inst_rows));
 }
 
+void FlexPA::deletePatternInst(frInst* unique_inst)
+{
+#pragma omp critical
+  unique_inst_patterns_.erase(unique_inst);
+}
+
 void FlexPA::prepPatternInst(frInst* unique_inst)
 {
 #pragma omp critical

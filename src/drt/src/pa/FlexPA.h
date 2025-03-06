@@ -595,6 +595,8 @@ class FlexPA
 
   void prepPattern();
 
+  void deletePatternInst(frInst* unique_inst);
+
   void prepPatternInst(frInst* unique_inst);
 
   int prepPatternInstHelper(frInst* unique_inst, bool use_x = true);
