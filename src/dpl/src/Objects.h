@@ -78,11 +78,11 @@ struct Master
 struct Cell : public GridNode
 {
  public:
-  const char* name() const override;
+  const char* name() const;
   bool isFixed() const override;
   bool isPlaced() const override { return is_placed_; }
   bool isHybrid() const override;
-  DbuX xMax() const override { return x_ + width_; }
+  DbuX xMax() const { return x_ + width_; }
   DbuX getLeft() const override { return x_; }
   DbuY getBottom() const override { return y_; }
   DbuX getWidth() const override { return width_; }

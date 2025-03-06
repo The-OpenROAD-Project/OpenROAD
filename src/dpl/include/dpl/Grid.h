@@ -54,11 +54,9 @@ class GridNode
 {
  public:
   GridNode() = default;
-  virtual const char* name() const = 0;
   virtual bool isFixed() const = 0;
   virtual bool isPlaced() const = 0;
   virtual bool isHybrid() const = 0;
-  virtual DbuX xMax() const = 0;
   virtual DbuX getLeft() const = 0;
   virtual DbuY getBottom() const = 0;
   virtual DbuX getWidth() const = 0;
