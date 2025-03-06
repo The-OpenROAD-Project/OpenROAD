@@ -84,8 +84,16 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
   logger_ = logger;
   macros_ = macros;
 
-  die_hpwl_ = tree->die_area.getPerimeter() / 2;
+  setDieArea(tree->die_area);
   setAvailableRegionForPins(tree->available_regions_for_pins);
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
+{
+  die_area_ = die_area;
+  die_area_.moveHor(-outline_.xMin());
+  die_area_.moveVer(-outline_.yMin());
 }
 
 template <class T>
@@ -319,8 +327,11 @@ void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
     const T& macro,
     const float net_weight)
 {
+  // To generate maximum cost.
+  const float max_dist = die_area_.getPerimeter() / 2;
+
   if (isOutsideTheOutline(macro)) {
-    wirelength_ += net_weight * die_hpwl_;
+    wirelength_ += net_weight * max_dist;
     return;
   }
 

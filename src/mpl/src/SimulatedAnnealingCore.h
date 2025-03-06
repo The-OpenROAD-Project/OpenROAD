@@ -127,6 +127,7 @@ class SimulatedAnnealingCore
 
   void setAvailableRegionForPins(const std::vector<mpl::Rect>& regions);
   void initSequencePair();
+  void setDieArea(const Rect& die_area);
   void updateBestValidResult();
   void useBestValidResult();
 
@@ -163,8 +164,9 @@ class SimulatedAnnealingCore
   void report(const PenaltyData& penalty) const;
 
   Rect outline_;
+  Rect die_area_;  // Offset to the current outline.
+
   std::vector<Rect> available_regions_for_pins_;
-  float die_hpwl_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
