@@ -688,6 +688,8 @@ proc add_direction_constraint { dir edge begin end } {
 }
 
 proc add_names_constraint { names edge begin end } {
+  set block [get_block]
+
   set pin_list [ppl::parse_pin_names "set_io_pin_constraints" $names]
   set constraint_region [$block findConstraintRegion $edge $begin $end]
   $block addBTermNamesConstraint $pin_list $constraint_region
