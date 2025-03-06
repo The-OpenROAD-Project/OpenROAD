@@ -126,6 +126,7 @@ class SimulatedAnnealingCore
   void fastSA();
 
   void initSequencePair();
+  void setDieArea(const Rect& die_area);
   void setBlockedBoundariesForIOs();
   void updateBestValidResult();
   void useBestValidResult();
@@ -135,7 +136,7 @@ class SimulatedAnnealingCore
   void calOutlinePenalty();
   void calWirelength();
   void addBoundaryDistToWirelength(const T& macro,
-                                   const T& io,
+                                   const T& unplaced_ios,
                                    float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
@@ -163,10 +164,7 @@ class SimulatedAnnealingCore
   void report(const PenaltyData& penalty) const;
 
   Rect outline_;
-
-  // The max cost for distance to boundary wirelength computation
-  // when one of the SoftMacros is a cluster of unplaced IO pins.
-  float die_hpwl_;
+  Rect die_area_;  // Offset to the current outline.
 
   // Boundaries blocked for IO pins
   std::set<Boundary> blocked_boundaries_;

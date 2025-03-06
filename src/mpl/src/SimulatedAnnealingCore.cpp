@@ -85,8 +85,16 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
   logger_ = logger;
   macros_ = macros;
 
+  setDieArea(tree->die_area);
   setBlockedBoundariesForIOs();
-  die_hpwl_ = tree->die_area.getPerimeter() / 2;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
+{
+  die_area_ = die_area;
+  die_area_.moveHor(-outline_.xMin());
+  die_area_.moveVer(-outline_.yMin());
 }
 
 template <class T>
@@ -326,47 +334,42 @@ void SimulatedAnnealingCore<T>::calWirelength()
 template <class T>
 void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
     const T& macro,
-    const T& io,
+    const T& unplaced_ios,
     const float net_weight)
 {
+  // To generate maximum cost.
+  const float max_dist = die_area_.getPerimeter() / 2;
+
   if (isOutsideTheOutline(macro)) {
-    wirelength_ += net_weight * die_hpwl_;
+    wirelength_ += net_weight * max_dist;
     return;
   }
 
   const float x1 = macro.getPinX();
   const float y1 = macro.getPinY();
 
-  Boundary constraint_boundary = io.getCluster()->getConstraintBoundary();
+  Boundary constraint_boundary
+      = unplaced_ios.getCluster()->getConstraintBoundary();
 
   if (constraint_boundary == NONE) {
-    // We need to use the bbox of the SoftMacro and NOT the Cluster to
-    // get shape of the cluster of unconstrained IOs - which has the
-    // shape of the die but it's offset based on the current outline.
-    // Reminder:
-    // - The SoftMacro bbox is the bbox w.r.t to the current outline.
-    // - The Cluster bbox is the bbox w.r.t. to the origin of the actual
-    //   die area.
-    const Rect& offset_die = io.getBBox();
-
-    float dist_to_left = die_hpwl_;
+    float dist_to_left = max_dist;
     if (!left_is_blocked_) {
-      dist_to_left = std::abs(x1 - offset_die.xMin());
+      dist_to_left = std::abs(x1 - die_area_.xMin());
     }
 
-    float dist_to_right = die_hpwl_;
+    float dist_to_right = max_dist;
     if (!right_is_blocked_) {
-      dist_to_right = std::abs(x1 - offset_die.xMax());
+      dist_to_right = std::abs(x1 - die_area_.xMax());
     }
 
-    float dist_to_bottom = die_hpwl_;
+    float dist_to_bottom = max_dist;
     if (!bottom_is_blocked_) {
-      dist_to_right = std::abs(y1 - offset_die.yMin());
+      dist_to_right = std::abs(y1 - die_area_.yMin());
     }
 
-    float dist_to_top = die_hpwl_;
+    float dist_to_top = max_dist;
     if (!top_is_blocked_) {
-      dist_to_top = std::abs(y1 - offset_die.yMax());
+      dist_to_top = std::abs(y1 - die_area_.yMax());
     }
 
     wirelength_
@@ -375,11 +378,11 @@ void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
                {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
   } else if (constraint_boundary == Boundary::L
              || constraint_boundary == Boundary::R) {
-    const float x2 = io.getPinX();
+    const float x2 = unplaced_ios.getPinX();
     wirelength_ += net_weight * std::abs(x2 - x1);
   } else if (constraint_boundary == Boundary::T
              || constraint_boundary == Boundary::B) {
-    const float y2 = io.getPinY();
+    const float y2 = unplaced_ios.getPinY();
     wirelength_ += net_weight * std::abs(y2 - y1);
   }
 }
