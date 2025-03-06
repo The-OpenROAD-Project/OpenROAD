@@ -692,4 +692,33 @@ proc add_mirrored_pins {bterm1 bterm2} {
     $bterm2 setMirroredBTerm $bterm1
   }
 }
+
+proc parse_direction { cmd direction } {
+  if {
+    [regexp -nocase -- {^INPUT$} $direction] ||
+    [regexp -nocase -- {^OUTPUT$} $direction] ||
+    [regexp -nocase -- {^INOUT$} $direction] ||
+    [regexp -nocase -- {^FEEDTHRU$} $direction]
+  } {
+    return [string tolower $direction]
+  } else {
+    utl::error ODB 12 "$cmd: Invalid bterm direction."
+  }
+}
+
+proc check_edge { edge } {
+  if {
+    $edge != "top" && $edge != "bottom" &&
+    $edge != "left" && $edge != "right"
+  } {
+    utl::error ODB 11 "$cmd: $edge is an invalid edge. Use top, bottom, left or right."
+  }
+  return $edge
+}
+
+proc get_block {} {
+  set db [ord::get_db]
+  set chip [$db getChip]
+  return [$chip getBlock]
+}
 }
