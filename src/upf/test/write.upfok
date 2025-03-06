@@ -49,14 +49,14 @@ set_isolation iso_aes_1 \
   -location parent \
   -clamp_value 0 \
   -isolation_signal {isolaten_aes_1} \
-  -isolation_sense high
+  -isolation_sense low
 set_isolation iso_aes_2 \
   -domain {PD_AES_2} \
   -applies_to outputs \
   -location parent \
   -clamp_value 0 \
   -isolation_signal {u_pwr_control/isolaten} \
-  -isolation_sense high
+  -isolation_sense low
 
 ################
 # Level shifters

@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "odb/parse.h"
+#include "parse.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -38,7 +38,7 @@
 
 #include "odb/odb.h"
 
-namespace odb {
+namespace rcx {
 
 static FILE* ATH__openFile(const char* name,
                            const char* mode,
@@ -47,7 +47,7 @@ static FILE* ATH__openFile(const char* name,
   FILE* a = fopen(name, mode);
 
   if (a == nullptr) {
-    logger->error(utl::ODB, 428, "Cannot open file {} for \"{}\"", name, mode);
+    logger->error(utl::RCX, 428, "Cannot open file {} for \"{}\"", name, mode);
   }
   return a;
 }
@@ -62,7 +62,7 @@ static void ATH__closeFile(FILE* fp)
 static char* ATH__allocCharWord(int n, utl::Logger* logger)
 {
   if (n <= 0) {
-    logger->error(utl::ODB, 424, "Cannot zero/negative number of chars");
+    logger->error(utl::RCX, 424, "Cannot zero/negative number of chars");
   }
 
   char* a = new char[n];
@@ -248,7 +248,7 @@ double Ath__parser::getDouble(int ii)
   return atof(get(ii));
 }
 
-void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
+void Ath__parser::getDoubleArray(odb::Ath__array1D<double>* A,
                                  int start,
                                  double mult)
 {
@@ -263,8 +263,8 @@ void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
   }
 }
 
-Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
-                                                   int start1)
+odb::Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
+                                                        int start1)
 {
   if ((keyword != nullptr) && (strcmp(keyword, get(0)) != 0)) {
     return nullptr;
@@ -274,7 +274,7 @@ Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
     return nullptr;
   }
 
-  Ath__array1D<double>* A = new Ath__array1D<double>(getWordCnt());
+  auto* A = new odb::Ath__array1D<double>(getWordCnt());
   int start = 0;
   if (keyword != nullptr) {
     start = start1;
@@ -317,17 +317,6 @@ int Ath__parser::mkDirTree(const char* word, const char* sep)
   mkDir((char*) word);
 
   mkWords(word, sep);
-  /*
-    if (_currentWordCnt > 0) {
-      mkDir(_wordArray[0]);
-      sprintf(_line, "%s", _wordArray[0]);
-    }
-    int pos = 0;
-    for (int ii = 1; ii < _currentWordCnt; ii++) {
-      pos += sprintf(&_line[pos], "/%s", _wordArray[ii]);
-      mkDir(_line);
-    }
-    */
   return _currentWordCnt;
 }
 
@@ -412,7 +401,7 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
 
 void Ath__parser::syntaxError(const char* msg)
 {
-  _logger->error(utl::ODB, 429, "Syntax Error at line {} ({})", _lineNum, msg);
+  _logger->error(utl::RCX, 429, "Syntax Error at line {} ({})", _lineNum, msg);
 }
 
 int Ath__parser::parseNextLine()
@@ -429,4 +418,4 @@ bool Ath__parser::isKeyword(int ii, const char* key1)
   return (get(ii) != nullptr) && (strcmp(get(ii), key1) == 0);
 }
 
-}  // namespace odb
+}  // namespace rcx

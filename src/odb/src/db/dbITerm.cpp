@@ -339,8 +339,14 @@ void dbITerm::connect(dbNet* net_)
                              "one net is currently not supported");
   }
 
+  //
+  // Note we only disconnect the dbnet part.
+  // so we use disconnectDbNet (to blow away
+  // both the hierarchical net and the flat net
+  // use disconnect() ).
+  //
   if (iterm->_net != 0) {
-    disconnect();
+    disconnectDbNet();
   }
 
   for (auto callback : block->_callbacks) {
@@ -404,8 +410,11 @@ void dbITerm::connect(dbModNet* mod_net)
     return;
   }
 
+  // If already connected, disconnect just the modnet (so we don't
+  // accidentally blow away prior flat net connections)
+
   if (iterm->_mnet != 0) {
-    disconnect();
+    disconnectModNet();
   }
 
   iterm->_mnet = _mod_net->getId();
@@ -447,6 +456,7 @@ void dbITerm::connect(dbModNet* mod_net)
   _mod_net->_iterms = iterm->getOID();
 }
 
+// disconnect both modnet and flat net from an iterm
 void dbITerm::disconnect()
 {
   _dbITerm* iterm = (_dbITerm*) this;
@@ -559,6 +569,128 @@ void dbITerm::disconnect()
     }
   }
   iterm->_mnet = 0;
+}
+
+// disconnect the dbNetonly and allow journalling
+
+void dbITerm::disconnectDbNet()
+{
+  _dbITerm* iterm = (_dbITerm*) this;
+
+  if (iterm->_net == 0) {
+    return;
+  }
+
+  _dbInst* inst = iterm->getInst();
+  if (inst->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        1104,
+        "Attempt to disconnect term {} of dont_touch instance {}",
+        getMTerm()->getName(),
+        inst->_name);
+  }
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
+
+  if (net->_flags._dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        1105,
+        "Attempt to disconnect iterm {} of dont_touch net {}",
+        getName(),
+        net->_name);
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbITermPreDisconnect(this);
+  }
+  if (block->_journal) {
+    debugPrint(iterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: disconnect Iterm {}",
+               getId());
+    block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    block->_journal->pushParam(dbITermObj);
+    block->_journal->pushParam(getId());
+    block->_journal->pushParam(net->getOID());
+    // Note we don't remove the mod net part here, just stub
+    // out the modnet id.
+    block->_journal->pushParam(0);
+    block->_journal->endAction();
+  }
+
+  uint id = iterm->getOID();
+
+  if (net->_iterms == id) {
+    net->_iterms = iterm->_next_net_iterm;
+    if (net->_iterms != 0) {
+      _dbITerm* t = block->_iterm_tbl->getPtr(net->_iterms);
+      t->_prev_net_iterm = 0;
+    }
+  } else {
+    if (iterm->_next_net_iterm != 0) {
+      _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_net_iterm);
+      next->_prev_net_iterm = iterm->_prev_net_iterm;
+    }
+    if (iterm->_prev_net_iterm != 0) {
+      _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_net_iterm);
+      prev->_next_net_iterm = iterm->_next_net_iterm;
+    }
+  }
+  iterm->_net = 0;
+  for (auto callback : block->_callbacks) {
+    callback->inDbITermPostDisconnect(this, (dbNet*) net);
+  }
+}
+
+//
+// Disconnect the mod net and allow journaling
+//
+void dbITerm::disconnectModNet()
+{
+  _dbITerm* iterm = (_dbITerm*) this;
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+
+  if (iterm->_mnet != 0) {
+    _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm->_mnet);
+
+    if (block->_journal) {
+      debugPrint(iterm->getImpl()->getLogger(),
+                 utl::ODB,
+                 "DB_ECO",
+                 1,
+                 "ECO: disconnect Iterm {}",
+                 getId());
+      block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+      block->_journal->pushParam(dbITermObj);
+      // empty dbNet part, just the mod net being undone
+      block->_journal->pushParam(0);  // no dbObj id
+      block->_journal->pushParam(0);  // no dbNet id
+      block->_journal->pushParam(mod_net->getOID());
+      block->_journal->endAction();
+    }
+
+    if (mod_net->_iterms == getId()) {
+      mod_net->_iterms = iterm->_next_modnet_iterm;
+      if (mod_net->_iterms != 0) {
+        _dbITerm* t = block->_iterm_tbl->getPtr(mod_net->_iterms);
+        t->_prev_modnet_iterm = 0;
+      }
+    } else {
+      if (iterm->_next_modnet_iterm != 0) {
+        _dbITerm* next = block->_iterm_tbl->getPtr(iterm->_next_modnet_iterm);
+        next->_prev_modnet_iterm = iterm->_prev_modnet_iterm;
+      }
+      if (iterm->_prev_modnet_iterm != 0) {
+        _dbITerm* prev = block->_iterm_tbl->getPtr(iterm->_prev_modnet_iterm);
+        prev->_next_modnet_iterm = iterm->_next_modnet_iterm;
+      }
+    }
+    iterm->_mnet = 0;
+  }
 }
 
 dbSigType dbITerm::getSigType()

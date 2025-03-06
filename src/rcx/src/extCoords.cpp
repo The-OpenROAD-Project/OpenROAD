@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "odb/parse.h"
+#include "grids.h"
+#include "parse.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -140,15 +140,15 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 
 namespace rcx {
 
-void Ath__grid::dealloc()
+void Grid::dealloc()
 {
   for (uint ii = 0; ii <= _searchHiTrack; ii++) {
-    Ath__track* btrack = _trackTable[ii];
+    Track* btrack = _trackTable[ii];
     if (btrack == nullptr) {
       continue;
     }
 
-    Ath__track* track = nullptr;
+    Track* track = nullptr;
     bool tohi = true;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
       track->dealloc(_wirePoolPtr);
@@ -158,11 +158,11 @@ void Ath__grid::dealloc()
   }
 }
 
-void Ath__gridTable::dealloc()
+void GridTable::dealloc()
 {
   for (uint dir = 0; dir < _rowCnt; dir++) {
     for (uint jj = 1; jj < _colCnt; jj++) {
-      Ath__grid* netGrid = _gridTable[dir][jj];
+      Grid* netGrid = _gridTable[dir][jj];
       if (netGrid == nullptr) {
         continue;
       }

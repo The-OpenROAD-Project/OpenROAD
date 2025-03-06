@@ -191,6 +191,8 @@ std::vector<int> IOPlacer::findValidSlots(const Constraint& constraint,
 
 void IOPlacer::randomPlacement()
 {
+  // start the random placement by assigning the pins constrained to specific
+  // regions in the die boundaries or in the top layer grid.
   for (Constraint& constraint : constraints_) {
     const Edge edge = constraint.interval.getEdge();
     bool top_layer = edge == Edge::invalid;
@@ -223,6 +225,7 @@ void IOPlacer::randomPlacement()
         std::move(pin_indices), std::move(valid_slots), edge, top_layer, false);
   }
 
+  // place the pin groups that are not constrained to any region
   for (auto& io_group : netlist_->getIOGroups()) {
     IOPin& io_pin = netlist_->getIoPin(io_group.pin_indices[0]);
     if (io_pin.isPlaced() || io_pin.inFallback()) {
@@ -238,7 +241,6 @@ void IOPlacer::randomPlacement()
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
-
   std::vector<int> pin_indices;
   for (int i = 0; i < netlist_->numIOPins(); i++) {
     IOPin& io_pin = netlist_->getIoPin(i);
@@ -247,16 +249,20 @@ void IOPlacer::randomPlacement()
     }
   }
 
+  // place the remaining pins
   randomPlacement(std::move(pin_indices),
                   std::move(valid_slots),
                   Edge::invalid,
                   false,
                   false);
+
+  // try placing pin groups or constrained pins that failed in the first try
+  // with relaxed constraints.
   placeFallbackPins(true);
 }
 
-void IOPlacer::randomPlacement(std::vector<int> pin_indices,
-                               std::vector<int> slot_indices,
+void IOPlacer::randomPlacement(const std::vector<int>& pin_indices,
+                               const std::vector<int>& slot_indices,
                                const Edge edge,
                                bool top_layer,
                                bool is_group)
@@ -272,50 +278,38 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       return;
     }
 
-    std::string slots_location;
-    if (top_layer) {
-      slots_location = "top layer grid";
-    } else if (edge != Edge::invalid) {
-      slots_location = getEdgeString(edge) + " edge";
-    } else {
-      slots_location = "die boundaries.";
-    }
-
     logger_->error(PPL,
                    72,
                    "The number of pins ({}) exceeds the number of valid "
                    "positions ({}) in the {}.",
                    pin_indices.size(),
                    slot_indices.size(),
-                   slots_location);
+                   getSlotsLocation(edge, top_layer));
   }
 
   const auto seed = parms_->getRandSeed();
 
-  const int num_i_os = pin_indices.size();
-  if (num_i_os == 0) {
+  const int pin_count = pin_indices.size();
+  if (pin_count == 0) {
     return;
   }
+
   const int num_slots = slot_indices.size();
-  const double shift = is_group ? 1 : num_slots / double(num_i_os);
-  std::vector<int> vSlots(num_slots);
-  std::vector<int> io_pin_indices(num_i_os);
+  const double shift = is_group ? 1 : num_slots / double(pin_count);
+  std::vector<int> io_pin_indices(pin_count);
 
-  std::vector<InstancePin> instPins;
-
-  std::mt19937 g;
-  g.seed(seed);
+  std::mt19937 generator;
+  generator.seed(seed);
 
   for (size_t i = 0; i < io_pin_indices.size(); ++i) {
     io_pin_indices[i] = i;
   }
 
   if (io_pin_indices.size() > 1 && !is_group) {
-    utl::shuffle(io_pin_indices.begin(), io_pin_indices.end(), g);
+    utl::shuffle(io_pin_indices.begin(), io_pin_indices.end(), generator);
   }
 
   std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
-
   std::vector<IOPin>& io_pins = netlist_->getIOPins();
   int io_idx = 0;
   for (bool assign_mirrored : {true, false}) {
@@ -391,6 +385,20 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       }
     }
   }
+}
+
+std::string IOPlacer::getSlotsLocation(Edge edge, bool top_layer)
+{
+  std::string slots_location;
+  if (top_layer) {
+    slots_location = "top layer grid";
+  } else if (edge != Edge::invalid) {
+    slots_location = getEdgeString(edge) + " edge";
+  } else {
+    slots_location = "die boundaries.";
+  }
+
+  return slots_location;
 }
 
 int IOPlacer::placeFallbackPins(bool random)
@@ -833,30 +841,7 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
     interval_length -= interval_end - blocked_coord_max;
   }
 
-  int min_dist = std::numeric_limits<int>::min();
-
-  if (interval.getLayer() != -1) {
-    const std::vector<int>& min_distances
-        = vertical_pin ? core_->getMinDstPinsX().at(interval.getLayer())
-                       : core_->getMinDstPinsY().at(interval.getLayer());
-    min_dist = *(std::max_element(min_distances.begin(), min_distances.end()));
-  } else if (vertical_pin) {
-    for (int layer_idx : ver_layers_) {
-      std::vector<int> layer_min_distances
-          = core_->getMinDstPinsX().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
-      min_dist = std::max(layer_min_dist, min_dist);
-    }
-  } else {
-    for (int layer_idx : hor_layers_) {
-      std::vector<int> layer_min_distances
-          = core_->getMinDstPinsY().at(layer_idx);
-      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
-                                                    layer_min_distances.end()));
-      min_dist = std::max(layer_min_dist, min_dist);
-    }
-  }
+  int min_dist = getMinDistanceForInterval(interval);
 
   const int increase = computeIncrease(min_dist, num_pins, interval_length);
 
@@ -865,6 +850,32 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
   } else {
     new_end += increase;
   }
+}
+
+int IOPlacer::getMinDistanceForInterval(const Interval& interval)
+{
+  const bool vertical_pin
+      = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
+  int min_dist = std::numeric_limits<int>::min();
+
+  if (interval.getLayer() != -1) {
+    const std::vector<int>& min_distances
+        = vertical_pin ? core_->getMinDstPinsX().at(interval.getLayer())
+                       : core_->getMinDstPinsY().at(interval.getLayer());
+    min_dist = *(std::max_element(min_distances.begin(), min_distances.end()));
+  } else {
+    const std::set<int>& layers = vertical_pin ? ver_layers_ : hor_layers_;
+    for (int layer_idx : layers) {
+      std::vector<int> layer_min_distances
+          = vertical_pin ? core_->getMinDstPinsX().at(layer_idx)
+                         : core_->getMinDstPinsY().at(layer_idx);
+      const int layer_min_dist = *(std::max_element(layer_min_distances.begin(),
+                                                    layer_min_distances.end()));
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+  }
+
+  return min_dist;
 }
 
 int64_t IOPlacer::computeIncrease(int min_dist,
@@ -888,6 +899,49 @@ int64_t IOPlacer::computeIncrease(int min_dist,
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
+  for (int layer : layers) {
+    std::vector<Point> slots = findLayerSlots(layer, edge);
+
+    // Remove slots that violates the min distance before reversing the vector.
+    // This ensures that mirrored positions will exists for every slot.
+    int slot_count = 0;
+    Point last = slots[0];
+    int min_dst_pins = parms_->getMinDistance();
+    const bool min_dist_in_tracks = parms_->getMinDistanceInTracks();
+    for (auto it = slots.begin(); it != slots.end();) {
+      Point pos = *it;
+      bool valid_slot;
+      if (!min_dist_in_tracks) {
+        // If user-defined min distance is not in tracks, use this value to
+        // determine if slots are valid between each other.
+        valid_slot = pos == last
+                     || (std::abs(last.getX() - pos.getX()) >= min_dst_pins
+                         || std::abs(last.getY() - pos.getY()) >= min_dst_pins);
+      } else {
+        valid_slot = pos == last || slot_count % min_dst_pins == 0;
+      }
+      if (valid_slot) {
+        last = pos;
+        ++it;
+      } else {
+        it = slots.erase(it);
+      }
+      slot_count++;
+    }
+
+    if (edge == Edge::top || edge == Edge::left) {
+      std::reverse(slots.begin(), slots.end());
+    }
+
+    for (const Point& pos : slots) {
+      bool blocked = checkBlocked(edge, pos, layer);
+      slots_.push_back({blocked, false, pos, layer, edge});
+    }
+  }
+}
+
+std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
+{
   Point lb = core_->getBoundary().ll();
   Point ub = core_->getBoundary().ur();
 
@@ -901,118 +955,94 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int max = vertical_pin ? ub_x : ub_y;
 
   corner_avoidance_ = parms_->getCornerAvoidance();
-  bool dist_in_tracks = parms_->getMinDistanceInTracks();
-  for (int layer : layers) {
-    const std::vector<int>& layer_min_distances
-        = vertical_pin ? core_->getMinDstPinsX().at(layer)
-                       : core_->getMinDstPinsY().at(layer);
-    const std::vector<int>& layer_init_tracks
-        = vertical_pin ? core_->getInitTracksX().at(layer)
-                       : core_->getInitTracksY().at(layer);
-    const std::vector<int>& layer_num_tracks
-        = vertical_pin ? core_->getNumTracksX().at(layer)
-                       : core_->getNumTracksY().at(layer);
 
-    std::vector<Point> slots;
-    int min_dst_pins = 0;
-    for (int l = 0; l < layer_min_distances.size(); l++) {
-      int curr_x, curr_y, start_idx, end_idx;
-      int tech_min_dst = layer_min_distances[l];
-      min_dst_pins
-          = dist_in_tracks
-                ? tech_min_dst * parms_->getMinDistance()
-                : tech_min_dst
-                      * std::ceil(static_cast<float>(parms_->getMinDistance())
-                                  / tech_min_dst);
+  const std::vector<int>& layer_min_distances
+      = vertical_pin ? core_->getMinDstPinsX().at(layer)
+                     : core_->getMinDstPinsY().at(layer);
 
-      min_dst_pins = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst
-                                         : min_dst_pins;
+  const std::vector<int>& layer_init_tracks
+      = vertical_pin ? core_->getInitTracksX().at(layer)
+                     : core_->getInitTracksY().at(layer);
 
-      if (corner_avoidance_ == -1) {
-        corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
-        // limit default offset to 1um
-        if (corner_avoidance_ > getBlock()->micronsToDbu(1.0)) {
-          corner_avoidance_ = getBlock()->micronsToDbu(1.0);
-        }
+  const std::vector<int>& layer_num_tracks
+      = vertical_pin ? core_->getNumTracksX().at(layer)
+                     : core_->getNumTracksY().at(layer);
+
+  std::vector<Point> slots;
+  for (int l = 0; l < layer_min_distances.size(); l++) {
+    int tech_min_dst = layer_min_distances[l];
+
+    // If Parameters::min_distance_ is zero, use the default min distance of 2
+    // tracks. If it is not zero, use the tech min distance to create all
+    // possible slots.
+    int min_dst_pins = parms_->getMinDistance() == 0
+                           ? default_min_dist_ * tech_min_dst
+                           : tech_min_dst;
+
+    if (corner_avoidance_ == -1) {
+      corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
+      // limit default offset to 1um
+      if (corner_avoidance_ > getBlock()->micronsToDbu(1.0)) {
+        corner_avoidance_ = getBlock()->micronsToDbu(1.0);
       }
+    }
 
-      int init_tracks = layer_init_tracks[l];
-      int num_tracks = layer_num_tracks[l];
+    int init_tracks = layer_init_tracks[l];
+    int num_tracks = layer_num_tracks[l];
 
-      float thickness_multiplier
-          = vertical_pin ? parms_->getVerticalThicknessMultiplier()
-                         : parms_->getHorizontalThicknessMultiplier();
+    float thickness_multiplier
+        = vertical_pin ? parms_->getVerticalThicknessMultiplier()
+                       : parms_->getHorizontalThicknessMultiplier();
 
-      int half_width = vertical_pin
-                           ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
-                           : int(ceil(core_->getMinWidthY()[layer] / 2.0));
+    int half_width = vertical_pin
+                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
+                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
 
-      half_width *= thickness_multiplier;
+    half_width *= thickness_multiplier;
 
-      int num_tracks_offset
-          = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
+    int num_tracks_offset
+        = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
 
-      start_idx
-          = std::max(0.0,
-                     ceil(static_cast<double>((min + half_width - init_tracks))
-                          / min_dst_pins))
-            + num_tracks_offset;
-      end_idx = std::min((num_tracks - 1),
-                         static_cast<int>((max - half_width - init_tracks)
-                                          / min_dst_pins))
-                - num_tracks_offset;
+    int curr_x, curr_y, start_idx, end_idx;
+    start_idx
+        = std::max(0.0,
+                   ceil(static_cast<double>((min + half_width - init_tracks))
+                        / min_dst_pins))
+          + num_tracks_offset;
+    end_idx = std::min((num_tracks - 1),
+                       static_cast<int>((max - half_width - init_tracks)
+                                        / min_dst_pins))
+              - num_tracks_offset;
+    if (vertical_pin) {
+      curr_x = init_tracks + start_idx * min_dst_pins;
+      curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
+    } else {
+      curr_y = init_tracks + start_idx * min_dst_pins;
+      curr_x = (edge == Edge::left) ? lb_x : ub_x;
+    }
+
+    for (int i = start_idx; i <= end_idx; ++i) {
+      odb::Point pos(curr_x, curr_y);
+      slots.push_back(pos);
       if (vertical_pin) {
-        curr_x = init_tracks + start_idx * min_dst_pins;
-        curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
+        curr_x += min_dst_pins;
       } else {
-        curr_y = init_tracks + start_idx * min_dst_pins;
-        curr_x = (edge == Edge::left) ? lb_x : ub_x;
+        curr_y += min_dst_pins;
       }
-
-      for (int i = start_idx; i <= end_idx; ++i) {
-        odb::Point pos(curr_x, curr_y);
-        slots.push_back(pos);
-        if (vertical_pin) {
-          curr_x += min_dst_pins;
-        } else {
-          curr_y += min_dst_pins;
-        }
-      }
-    }
-
-    std::sort(slots.begin(),
-              slots.end(),
-              [&](const odb::Point& p1, const odb::Point& p2) {
-                if (vertical_pin) {
-                  return p1.getX() < p2.getX();
-                }
-
-                return p1.getY() < p2.getY();
-              });
-
-    // Remove slots that violates the min distance before reversing the vector.
-    // This ensures that mirrored positions will exists for every slot.
-    Point last = slots[0];
-    for (auto it = slots.begin(); it != slots.end();) {
-      Point pos = *it;
-      if (pos != last && std::abs(last.getX() - pos.getX()) < min_dst_pins
-          && std::abs(last.getY() - pos.getY()) < min_dst_pins) {
-        it = slots.erase(it);
-      } else {
-        last = pos;
-        ++it;
-      }
-    }
-
-    if (edge == Edge::top || edge == Edge::left) {
-      std::reverse(slots.begin(), slots.end());
-    }
-
-    for (const Point& pos : slots) {
-      bool blocked = checkBlocked(edge, pos, layer);
-      slots_.push_back({blocked, false, pos, layer, edge});
     }
   }
+
+  std::sort(slots.begin(),
+            slots.end(),
+            [&](const odb::Point& p1, const odb::Point& p2) {
+              if (vertical_pin) {
+                return p1.getX() < p2.getX();
+              }
+
+              return p1.getY() < p2.getY();
+            });
+
+  return slots;
 }
 
 void IOPlacer::defineSlots()
@@ -1056,7 +1086,13 @@ void IOPlacer::defineSlots()
 
   int regular_pin_count
       = static_cast<int>(netlist_->getIOPins().size()) - top_layer_pins_count_;
-  if (regular_pin_count > slots_.size()) {
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  if (regular_pin_count > available_slots) {
     int min_dist = std::numeric_limits<int>::min();
     for (int layer_idx : ver_layers_) {
       std::vector<int> layer_min_distances
@@ -1083,7 +1119,7 @@ void IOPlacer::defineSlots()
         "Number of IO pins ({}) exceeds maximum number of available "
         "positions ({}). Increase the die perimeter from {:.2f}um to {:.2f}um.",
         regular_pin_count,
-        slots_.size(),
+        available_slots,
         getBlock()->dbuToMicrons(die_margin),
         getBlock()->dbuToMicrons(new_margin));
   }
@@ -1527,7 +1563,13 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
 
 void IOPlacer::printConfig(bool annealing)
 {
-  logger_->info(PPL, 1, "Number of slots           {}", slots_.size());
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  logger_->info(PPL, 1, "Number of available slots {}", available_slots);
   if (!top_layer_slots_.empty()) {
     logger_->info(
         PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
@@ -1785,7 +1827,7 @@ void IOPlacer::addDirectionConstraint(Direction direction,
   Interval interval(edge, begin, end);
   logger_->info(utl::PPL,
                 67,
-                "Restrict {} pins to region {}u-{}u, in the {} edge.",
+                "Restrict {} pins to region {:.2f}u-{:.2f}u, in the {} edge.",
                 getDirectionString(direction),
                 getBlock()->dbuToMicrons(begin),
                 getBlock()->dbuToMicrons(end),

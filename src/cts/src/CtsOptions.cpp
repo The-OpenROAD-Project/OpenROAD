@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2025, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,29 +30,43 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "CtsOptions.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+namespace cts {
 
-#include "rcx/extParse.h"
-#include "utl/Logger.h"
-
-namespace odb {
-
-using odb::Ath__parser;
-
-class extParser : public Ath__parser
+CtsOptions::MasterType CtsOptions::getType(odb::dbInst* inst) const
 {
- public:
-  // Constructor
-  extParser(utl::Logger* logger) : Ath__parser(logger) {}
-  void setDbg(int v) { _dbg = v; }
+  if (inst->getName().substr(0, dummyload_prefix_.size())
+      == dummyload_prefix_) {
+    return MasterType::DUMMY;
+  }
 
- private:
-  int _dbg;
-};
+  return MasterType::TREE;
+}
 
-}  // namespace odb
+void CtsOptions::inDbInstCreate(odb::dbInst* inst)
+{
+  recordBuffer(inst->getMaster(), getType(inst));
+}
+
+void CtsOptions::inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region)
+{
+  recordBuffer(inst->getMaster(), getType(inst));
+}
+
+void CtsOptions::recordBuffer(odb::dbMaster* master, MasterType type)
+{
+  switch (type) {
+    case MasterType::DUMMY:
+      dummy_count_[master]++;
+      break;
+    case MasterType::TREE:
+      buffer_count_[master]++;
+      break;
+  }
+}
+
+}  // namespace cts

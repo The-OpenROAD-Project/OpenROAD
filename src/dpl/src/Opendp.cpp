@@ -48,9 +48,9 @@
 #include <map>
 
 #include "DplObserver.h"
-#include "Grid.h"
 #include "Objects.h"
 #include "Padding.h"
+#include "dpl/Grid.h"
 #include "dpl/OptMirror.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -381,8 +381,9 @@ dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
   dbInst* adjacent_inst = nullptr;
 
   // do not return macros, endcaps and tapcells
-  if (pixel != nullptr && pixel->cell && pixel->cell->db_inst_->isCore()) {
-    adjacent_inst = pixel->cell->db_inst_;
+  if (pixel != nullptr && pixel->cell
+      && static_cast<Cell*>(pixel->cell)->db_inst_->isCore()) {
+    adjacent_inst = static_cast<Cell*>(pixel->cell)->db_inst_;
   }
 
   return adjacent_inst;

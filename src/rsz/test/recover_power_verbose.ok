@@ -8,7 +8,7 @@ worst slack 1.198
 Iteration |   Area    |  Resized |   WNS    | Endpt
 ---------------------------------------------------
         0 |     +0.0% |        0 |    1.198 | r2/D
-    final |   -129.6% |        2 |    0.616 | r7/D
+    final |    -13.0% |        2 |    0.616 | r7/D
 ---------------------------------------------------
 [INFO RSZ-0141] Resized 2 instances.
 Repair timing output passed/skipped equivalence test

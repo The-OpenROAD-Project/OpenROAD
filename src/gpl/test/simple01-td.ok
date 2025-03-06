@@ -38,12 +38,13 @@
 [INFO GPL-0030] NumBins: 256
 [NesterovSolve] Iter:    1 overflow: 0.832 HPWL: 3651238
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: true.
-[INFO GPL-0101] Iter: 2, overflow: 0.761, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 3, overflow: 0.761, keep rsz at: 0.3, HPWL: 3932272
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |    -11.5% |      31 |       0 |             0 |         0
+    final |     -1.2% |      31 |       0 |             0 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 31 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.42e-09
 [INFO GPL-0103] Timing-driven: weighted 35 nets.
 [NesterovSolve] Iter:   10 overflow: 0.730 HPWL: 4005677
@@ -67,12 +68,13 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [NesterovSolve] Iter:  190 overflow: 0.674 HPWL: 4128327
 [NesterovSolve] Iter:  200 overflow: 0.652 HPWL: 4181482
 [INFO GPL-0100] Timing-driven iteration 2/5, virtual: true.
-[INFO GPL-0101] Iter: 205, overflow: 0.632, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 206, overflow: 0.632, keep rsz at: 0.3, HPWL: 4214522
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |    -16.3% |      29 |       0 |             0 |         0
+    final |     -1.6% |      29 |       0 |             0 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 29 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.42e-09
 [INFO GPL-0103] Timing-driven: weighted 31 nets.
 [NesterovSolve] Iter:  210 overflow: 0.616 HPWL: 4268407
@@ -84,35 +86,41 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [NesterovSolve] Iter:  270 overflow: 0.331 HPWL: 4450617
 [NesterovSolve] Iter:  280 overflow: 0.305 HPWL: 4478236
 [INFO GPL-0100] Timing-driven iteration 3/5, virtual: false.
-[INFO GPL-0101] Iter: 285, overflow: 0.284, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 286, overflow: 0.284, keep rsz at: 0.3, HPWL: 4471956
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |    -25.5% |      28 |       0 |             0 |         0
+    final |     -2.5% |      28 |       0 |             0 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 28 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0103] Timing-driven: weighted 31 nets.
 [INFO GPL-0107] Timing-driven: repair_design delta area: -14.098 um^2 (-2.55%)
-[INFO GPL-0108] Timing-driven: new target density: 0.6852203
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.6852203
 [NesterovSolve] Iter:  290 overflow: 0.292 HPWL: 2640138
 [NesterovSolve] Iter:  300 overflow: 0.263 HPWL: 2656033
 [NesterovSolve] Iter:  310 overflow: 0.228 HPWL: 2638435
 [INFO GPL-0100] Timing-driven iteration 4/5, virtual: false.
-[INFO GPL-0101] Iter: 316, overflow: 0.202, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 317, overflow: 0.202, keep rsz at: 0.3, HPWL: 2638631
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
-    final |     -9.9% |       4 |       0 |             0 |         0
+    final |     -1.0% |       4 |       0 |             0 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 4 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0103] Timing-driven: weighted 29 nets.
 [INFO GPL-0107] Timing-driven: repair_design delta area: -5.320 um^2 (-0.99%)
-[INFO GPL-0108] Timing-driven: new target density: 0.67964303
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.67964303
 [NesterovSolve] Iter:  320 overflow: 0.188 HPWL: 2622247
 [NesterovSolve] Iter:  330 overflow: 0.180 HPWL: 2655060
 [NesterovSolve] Iter:  340 overflow: 0.151 HPWL: 2683596
 [INFO GPL-0100] Timing-driven iteration 5/5, virtual: false.
-[INFO GPL-0101] Iter: 341, overflow: 0.145, keep rsz at: 0.3
+[INFO GPL-0101]    Iter: 342, overflow: 0.145, keep rsz at: 0.3, HPWL: 2688300
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -121,7 +129,9 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
 [INFO GPL-0103] Timing-driven: weighted 34 nets.
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
-[INFO GPL-0108] Timing-driven: new target density: 0.67964303
+[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.67964303
 [NesterovSolve] Iter:  350 overflow: 0.128 HPWL: 2707448
 [NesterovSolve] Iter:  360 overflow: 0.102 HPWL: 2738598
 [NesterovSolve] Finished with Overflow: 0.098186

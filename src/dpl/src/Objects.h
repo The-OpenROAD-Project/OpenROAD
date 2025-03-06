@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "Grid.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
@@ -75,18 +75,59 @@ struct Master
   std::vector<Edge> edges_;
 };
 
-struct Cell
+class GridNode
 {
-  const char* name() const;
+ public:
+  GridNode() = default;
+  virtual const char* name() const = 0;
+  virtual bool isFixed() const = 0;
+  virtual bool isPlaced() const = 0;
+  virtual bool isHybrid() const = 0;
+  virtual DbuX xMax() const = 0;
+  virtual DbuX getLeft() const = 0;
+  virtual DbuY getBottom() const = 0;
+  virtual DbuX getWidth() const = 0;
+  virtual DbuY getHeight() const = 0;
+  virtual dbInst* getDbInst() const = 0;
+  virtual DbuX siteWidth() const = 0;
+  virtual void setPlaced(bool in) = 0;
+  virtual void setHold(bool in) = 0;
+  virtual void setOrient(dbOrientType in) = 0;
+  virtual void setLeft(DbuX in) = 0;
+  virtual void setBottom(DbuY in) = 0;
+  virtual void setWidth(DbuX in) = 0;
+  virtual void setHeight(DbuY in) = 0;
+};
+
+struct Cell : public GridNode
+{
+ public:
+  const char* name() const override;
+  bool isFixed() const override;
+  bool isPlaced() const override { return is_placed_; }
+  bool isHybrid() const override;
+  DbuX xMax() const override { return x_ + width_; }
+  DbuX getLeft() const override { return x_; }
+  DbuY getBottom() const override { return y_; }
+  DbuX getWidth() const override { return width_; }
+  DbuY getHeight() const override { return height_; }
+  dbInst* getDbInst() const override { return db_inst_; }
+  DbuX siteWidth() const override;
+  void setPlaced(bool in) override { is_placed_ = in; }
+  void setHold(bool in) override { hold_ = in; }
+  void setOrient(dbOrientType in) override { orient_ = in; }
+  void setLeft(DbuX in) override { x_ = in; }
+  void setBottom(DbuY in) override { y_ = in; }
+  void setWidth(DbuX in) override { width_ = in; }
+  void setHeight(DbuY in) override { height_ = in; }
+
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;
   bool isStdCell() const;
-  DbuX siteWidth() const;
-  bool isFixed() const;
-  bool isHybrid() const;
+
   bool isHybridParent() const;
   dbSite* getSite() const;
-  DbuX xMax() const { return x_ + width_; }
+
   bool isBlock() const;
 
   dbInst* db_inst_ = nullptr;

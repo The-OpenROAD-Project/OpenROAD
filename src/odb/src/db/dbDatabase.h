@@ -70,7 +70,13 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 102;  // Current revision number
+const uint db_schema_minor = 104;  // Current revision number
+
+// Revision where support for pin groups was added
+const uint db_schema_block_pin_groups = 104;
+
+// Revision where support for mirrored pins was added
+const uint db_schema_bterm_mirrored_pin = 103;
 
 // Revision where support for LEF58_CELLEDGESPACINGTABLE was added
 const uint db_schema_cell_edge_spc_tbl = 102;

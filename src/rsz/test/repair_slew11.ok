@@ -20,7 +20,7 @@ in1                                    60.65  151.34  -90.69 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |  +2333.3% |       0 |       7 |             1 |         0
+    final |   +233.3% |       0 |       7 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.

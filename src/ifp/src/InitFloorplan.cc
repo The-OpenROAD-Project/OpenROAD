@@ -88,6 +88,26 @@ using odb::uint;
 
 using upf::eval_upf;
 
+namespace {
+void validateCoreSpacing(odb::dbBlock* block,
+                         utl::Logger* logger,
+                         int core_space_bottom,
+                         int core_space_top,
+                         int core_space_left,
+                         int core_space_right)
+{
+  utl::Validator v(logger, IFP);
+  v.check_non_negative(
+      "core_space_bottom (um) ", block->dbuToMicrons(core_space_bottom), 32);
+  v.check_non_negative(
+      "core_space_top (um) ", block->dbuToMicrons(core_space_top), 33);
+  v.check_non_negative(
+      "core_space_left (um) ", block->dbuToMicrons(core_space_left), 34);
+  v.check_non_negative(
+      "core_space_right (um) ", block->dbuToMicrons(core_space_right), 35);
+}
+}  // namespace
+
 InitFloorplan::InitFloorplan(dbBlock* block,
                              Logger* logger,
                              sta::dbNetwork* network)
@@ -107,18 +127,52 @@ void InitFloorplan::initFloorplan(
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
+  makeDieUtilization(utilization,
+                     aspect_ratio,
+                     core_space_bottom,
+                     core_space_top,
+                     core_space_left,
+                     core_space_right);
+  makeRowsWithSpacing(core_space_bottom,
+                      core_space_top,
+                      core_space_left,
+                      core_space_right,
+                      base_site,
+                      additional_sites,
+                      row_parity,
+                      flipped_sites);
+}
+
+// The base_site determines the single-height rows.  For hybrid rows it is
+// a site containing a row pattern.
+void InitFloorplan::initFloorplan(
+    const odb::Rect& die,
+    const odb::Rect& core,
+    odb::dbSite* base_site,
+    const std::vector<odb::dbSite*>& additional_sites,
+    RowParity row_parity,
+    const std::set<odb::dbSite*>& flipped_sites)
+{
+  makeDie(die);
+  makeRows(core, base_site, additional_sites, row_parity, flipped_sites);
+}
+
+void InitFloorplan::makeDieUtilization(double utilization,
+                                       double aspect_ratio,
+                                       int core_space_bottom,
+                                       int core_space_top,
+                                       int core_space_left,
+                                       int core_space_right)
+{
   utl::Validator v(logger_, IFP);
   v.check_non_negative("utilization", utilization, 12);
-  v.check_non_negative(
-      "core_space_bottom (um) ", block_->dbuToMicrons(core_space_bottom), 32);
-  v.check_non_negative(
-      "core_space_top (um) ", block_->dbuToMicrons(core_space_top), 33);
-  v.check_non_negative(
-      "core_space_left (um) ", block_->dbuToMicrons(core_space_left), 34);
-  v.check_non_negative(
-      "core_space_right (um) ", block_->dbuToMicrons(core_space_right), 35);
   v.check_positive("aspect_ratio", aspect_ratio, 36);
-
+  validateCoreSpacing(block_,
+                      logger_,
+                      core_space_bottom,
+                      core_space_top,
+                      core_space_left,
+                      core_space_right);
   utilization /= 100;
   const double design_area = designArea();
   const double core_area = design_area / utilization;
@@ -133,12 +187,17 @@ void InitFloorplan::initFloorplan(
   const int die_ly = 0;
   const int die_ux = core_ux + core_space_right;
   const int die_uy = core_uy + core_space_top;
-  initFloorplan({die_lx, die_ly, die_ux, die_uy},
-                {core_lx, core_ly, core_ux, core_uy},
-                base_site,
-                additional_sites,
-                row_parity,
-                flipped_sites);
+
+  makeDie({die_lx, die_ly, die_ux, die_uy});
+}
+
+void InitFloorplan::makeDie(const odb::Rect& die)
+{
+  Rect die_area(snapToMfgGrid(die.xMin()),
+                snapToMfgGrid(die.yMin()),
+                snapToMfgGrid(die.xMax()),
+                snapToMfgGrid(die.yMax()));
+  block_->setDieArea(die_area);
 }
 
 double InitFloorplan::designArea()
@@ -191,29 +250,61 @@ static int divCeil(int dividend, int divisor)
   return ceil(static_cast<double>(dividend) / divisor);
 }
 
-void InitFloorplan::initFloorplan(
-    const odb::Rect& die,
-    const odb::Rect& core,
+void InitFloorplan::makeRowsWithSpacing(
+    int core_space_bottom,
+    int core_space_top,
+    int core_space_left,
+    int core_space_right,
     odb::dbSite* base_site,
     const std::vector<odb::dbSite*>& additional_sites,
     RowParity row_parity,
     const std::set<odb::dbSite*>& flipped_sites)
 {
-  if (!die.contains(core)) {
+  odb::Rect block_die_area = block_->getDieArea();
+  if (block_die_area.area() == 0) {
+    logger_->error(IFP, 64, "Floorplan die area is 0. Cannot build rows.");
+  }
+
+  validateCoreSpacing(block_,
+                      logger_,
+                      core_space_bottom,
+                      core_space_top,
+                      core_space_left,
+                      core_space_right);
+
+  int lower_left_x = block_die_area.ll().x();
+  int lower_left_y = block_die_area.ll().y();
+  int upper_right_x = block_die_area.ur().x();
+  int upper_right_y = block_die_area.ur().y();
+
+  int core_lx = lower_left_x + core_space_left;
+  int core_ly = lower_left_y + core_space_bottom;
+  int core_ux = upper_right_x - core_space_right;
+  int core_uy = upper_right_y - core_space_top;
+
+  makeRows({core_lx, core_ly, core_ux, core_uy},
+           base_site,
+           additional_sites,
+           row_parity,
+           flipped_sites);
+}
+
+void InitFloorplan::makeRows(const odb::Rect& core,
+                             odb::dbSite* base_site,
+                             const std::vector<odb::dbSite*>& additional_sites,
+                             RowParity row_parity,
+                             const std::set<odb::dbSite*>& flipped_sites)
+{
+  odb::Rect block_die_area = block_->getDieArea();
+  if (block_die_area.area() == 0) {
+    logger_->error(IFP, 63, "Floorplan die area is 0. Cannot build rows.");
+  }
+
+  if (!block_die_area.contains(core)) {
     logger_->error(IFP, 55, "Die area must contain the core area.");
   }
 
   checkInstanceDimensions(core);
-
-  Rect die_area(snapToMfgGrid(die.xMin()),
-                snapToMfgGrid(die.yMin()),
-                snapToMfgGrid(die.xMax()),
-                snapToMfgGrid(die.yMax()));
-  block_->setDieArea(die_area);
-
-  if (!base_site) {
-    return;  // skip row building
-  }
 
   // The same site can appear in more than one LEF file and therefore
   // in more than one dbLib.  We merge them by name to avoid duplicate
@@ -745,11 +836,18 @@ void InitFloorplan::makeTracks()
                              layer->getPitchY(),
                              layer->getFirstLastPitch());
       } else {
-        makeTracks(layer,
-                   layer->getOffsetX(),
-                   layer->getPitchX(),
-                   layer->getOffsetY(),
-                   layer->getPitchY());
+        const int x_pitch = layer->getPitchX();
+        const int y_pitch = layer->getPitchY();
+        if (x_pitch == 0 || y_pitch == 0) {
+          logger_->warn(
+              utl::IFP,
+              56,
+              "No pitch found layer {} so no tracks will be generated.",
+              layer->getName());
+          continue;
+        }
+        makeTracks(
+            layer, layer->getOffsetX(), x_pitch, layer->getOffsetY(), y_pitch);
       }
     }
   }

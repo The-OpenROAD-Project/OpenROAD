@@ -31,17 +31,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "rcx/extRCap.h"
-#include "rcx/extprocess.h"
-#include "wire.h"
-
-#ifdef _WIN32
-#include "direct.h"
-#endif
-
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "parse.h"
+#include "rcx/extRCap.h"
+#include "rcx/extprocess.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER

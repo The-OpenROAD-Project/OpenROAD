@@ -110,28 +110,12 @@ void RepairDesign::repairDesign(double max_wire_length,
                fanout_violations,
                length_violations);
 
-  if (slew_violations > 0) {
-    logger_->info(RSZ, 34, "Found {} slew violations.", slew_violations);
-  }
-  if (fanout_violations > 0) {
-    logger_->info(RSZ, 35, "Found {} fanout violations.", fanout_violations);
-  }
-  if (cap_violations > 0) {
-    logger_->info(RSZ, 36, "Found {} capacitance violations.", cap_violations);
-  }
-  if (length_violations > 0) {
-    logger_->info(RSZ, 37, "Found {} long wires.", length_violations);
-  }
-  if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ,
-                  38,
-                  "Inserted {} buffers in {} nets.",
-                  inserted_buffer_count_,
-                  repaired_net_count);
-  }
-  if (resize_count_ > 0) {
-    logger_->info(RSZ, 39, "Resized {} instances.", resize_count_);
-  }
+  reportViolationCounters(false,
+                          slew_violations,
+                          cap_violations,
+                          fanout_violations,
+                          length_violations,
+                          repaired_net_count);
 }
 
 void RepairDesign::repairDesign(
@@ -378,32 +362,12 @@ void RepairDesign::repairNet(Net* net,
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (slew_violations > 0) {
-    logger_->info(RSZ, 51, "Found {} slew violations.", slew_violations);
-  }
-  if (fanout_violations > 0) {
-    logger_->info(RSZ, 52, "Found {} fanout violations.", fanout_violations);
-  }
-  if (cap_violations > 0) {
-    logger_->info(RSZ, 53, "Found {} capacitance violations.", cap_violations);
-  }
-  if (length_violations > 0) {
-    logger_->info(RSZ, 54, "Found {} long wires.", length_violations);
-  }
-  if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ,
-                  55,
-                  "Inserted {} buffers in {} nets.",
-                  inserted_buffer_count_,
-                  repaired_net_count);
-    resizer_->level_drvr_vertices_valid_ = false;
-  }
-  if (resize_count_ > 0) {
-    logger_->info(RSZ, 56, "Resized {} instances.", resize_count_);
-  }
-  if (resize_count_ > 0) {
-    logger_->info(RSZ, 57, "Resized {} instances.", resize_count_);
-  }
+  reportViolationCounters(true,
+                          slew_violations,
+                          cap_violations,
+                          fanout_violations,
+                          length_violations,
+                          repaired_net_count);
 }
 
 bool RepairDesign::getCin(const Pin* drvr_pin, float& cin)
@@ -2016,7 +1980,13 @@ bool RepairDesign::makeRepeater(
     buffer_ip_net = db_network_->dbToSta(ip_net_db);
 
     for (const Pin* pin : load_pins) {
-      Port* port = network_->port(pin);
+      // skip any hierarchical pins in loads
+      // in loads.
+
+      if (db_network_->hierPin(pin)) {
+        continue;
+      }
+
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         continue;
@@ -2026,18 +1996,14 @@ bool RepairDesign::makeRepeater(
       load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
-      sta_->disconnectPin(const_cast<Pin*>(pin));
-      sta_->connectPin(inst, port, buffer_op_net);
-
-      if (load_mod_net) {
-        // TODO: replace this call with sta_ -> connectPin call.
-        db_network_->connectPin(const_cast<Pin*>(pin),
-                                db_network_->dbToSta(load_mod_net));
-      }
+      // New api call: simultaneously disconnects old flat/hier net
+      // and connects in new one.
+      db_network_->connectPin(const_cast<Pin*>(pin),
+                              buffer_op_net,
+                              db_network_->dbToSta(load_mod_net));
     }
-    sta_->connectPin(
-        buffer, buffer_input_port, db_network_->dbToSta(load_db_net));
-    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
+    db_network_->connectPin(buffer_ip_pin, db_network_->dbToSta(load_db_net));
+    db_network_->connectPin(buffer_op_pin, buffer_op_net);
 
     // Preserve any driver pin hierarchical mod net connection
     // push to the output of the buffer. Rename the mod net.
@@ -2052,16 +2018,10 @@ bool RepairDesign::makeRepeater(
             = resizer_->makeUniqueNetName(owning_instance);
         driver_pin_mod_net->rename(new_mod_net_name.c_str());
       }
-      // Note how we use the sta interface for disconnect/connect
-      // of flat nets (ie dbNet*), so we get the side effects for the timing
-      // analyzer
-      sta_->disconnectPin(driver_pin);
-      Port* port = network_->port(driver_pin);
-      Instance* inst = network_->instance(driver_pin);
-      sta_->connectPin(inst, port, db_network_->dbToSta(flat_net));
+      db_network_->disconnectPin(driver_pin);
+
+      db_network_->connectPin(driver_pin, db_network_->dbToSta(flat_net));
       // connect the propagated hierarchical net to the buffer output
-      // use the db interface
-      // TODO: replace this call with sta_ -> connectPin call.
       db_network_->connectPin(buffer_op_pin,
                               db_network_->dbToSta(driver_pin_mod_net));
     }
@@ -2086,10 +2046,15 @@ bool RepairDesign::makeRepeater(
     // put non repeater loads from op net onto ip net, preserving
     // any hierarchical connection
     std::unique_ptr<NetPinIterator> pin_iter(network_->pinIterator(load_net));
+
     while (pin_iter->hasNext()) {
       const Pin* pin = pin_iter->next();
+
+      if (db_network_->hierPin(pin)) {
+        continue;
+      }
+
       if (!repeater_load_pins.hasKey(pin)) {
-        Port* port = network_->port(pin);
         Instance* inst = network_->instance(pin);
         // do not disconnect/reconnect don't touch instances
         if (resizer_->dontTouch(inst)) {
@@ -2097,17 +2062,16 @@ bool RepairDesign::makeRepeater(
         }
         // preserve any hierarchical connection
         odb::dbModNet* mod_net = db_network_->hierNet(pin);
-        sta_->disconnectPin(const_cast<Pin*>(pin));
-        sta_->connectPin(inst, port, ip_net);
+        db_network_->disconnectPin(const_cast<Pin*>(pin));
+        db_network_->connectPin(const_cast<Pin*>(pin), ip_net);
         if (mod_net) {
-          // TODO: replace this call with sta_ -> connectPin call.
           db_network_->connectPin(const_cast<Pin*>(pin),
                                   db_network_->dbToSta(mod_net));
         }
       }
     }
-    sta_->connectPin(buffer, buffer_input_port, buffer_ip_net);
-    sta_->connectPin(buffer, buffer_output_port, buffer_op_net);
+    db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
+    db_network_->connectPin(buffer_op_pin, buffer_op_net);
   }  // case 2
 
   resizer_->parasiticsInvalid(buffer_ip_net);
@@ -2146,23 +2110,21 @@ LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew, float load_cap)
                   > resizer_->bufferDriveResistance(buffer2);
          });
     for (LibertyCell* buffer : swappable_cells) {
-      if (!resizer_->dontUse(buffer) && resizer_->isLinkCell(buffer)) {
-        float slew = resizer_->bufferSlew(
-            buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
-        debugPrint(logger_,
-                   RSZ,
-                   "buffer_under_slew",
-                   1,
-                   "{:{}s}pt ({} {})",
-                   buffer->name(),
-                   units_->timeUnit()->asString(slew));
-        if (slew < max_slew) {
-          return buffer;
-        }
-        if (slew < min_slew) {
-          min_slew_buffer = buffer;
-          min_slew = slew;
-        }
+      float slew = resizer_->bufferSlew(
+          buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
+      debugPrint(logger_,
+                 RSZ,
+                 "buffer_under_slew",
+                 1,
+                 "{:{}s}pt ({} {})",
+                 buffer->name(),
+                 units_->timeUnit()->asString(slew));
+      if (slew < max_slew) {
+        return buffer;
+      }
+      if (slew < min_slew) {
+        min_slew_buffer = buffer;
+        min_slew = slew;
       }
     }
   }
@@ -2209,7 +2171,7 @@ void RepairDesign::printProgress(int iteration,
     logger_->report(
         "{: >9s} | {: >+8.1f}% | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
         itr_field,
-        area_growth / initial_design_area_ * 1e3,
+        area_growth / initial_design_area_ * 1e2,
         resize_count_,
         inserted_buffer_count_,
         repaired_net_count,
@@ -2220,6 +2182,42 @@ void RepairDesign::printProgress(int iteration,
     logger_->report(
         "--------------------------------------------------------------------"
         "-");
+  }
+}
+
+void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
+                                           int slew_violations,
+                                           int cap_violations,
+                                           int fanout_violations,
+                                           int length_violations,
+                                           int repaired_net_count)
+{
+  if (slew_violations > 0) {
+    logger_->info(utl::RSZ, 34, "Found {} slew violations.", slew_violations);
+  }
+  if (fanout_violations > 0) {
+    logger_->info(
+        utl::RSZ, 35, "Found {} fanout violations.", fanout_violations);
+  }
+  if (cap_violations > 0) {
+    logger_->info(
+        utl::RSZ, 36, "Found {} capacitance violations.", cap_violations);
+  }
+  if (length_violations > 0) {
+    logger_->info(utl::RSZ, 37, "Found {} long wires.", length_violations);
+  }
+  if (resize_count_ > 0) {
+    logger_->info(utl::RSZ, 39, "Resized {} instances.", resize_count_);
+  }
+  if (inserted_buffer_count_ > 0) {
+    logger_->info(utl::RSZ,
+                  invalidate_driver_vertices ? 55 : 38,
+                  "Inserted {} buffers in {} nets.",
+                  inserted_buffer_count_,
+                  repaired_net_count);
+    if (invalidate_driver_vertices) {
+      resizer_->level_drvr_vertices_valid_ = false;
+    }
   }
 }
 

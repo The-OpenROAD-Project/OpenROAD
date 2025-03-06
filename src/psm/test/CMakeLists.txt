@@ -28,6 +28,7 @@ or_integration_tests(
     insert_decap1
     insert_decap2
     insert_decap_with_padding1
+    missing_resistance
     pad_connected_by_abutment
     switch_top_grid
     top_grid_settings

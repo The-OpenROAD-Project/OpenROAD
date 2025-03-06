@@ -41,6 +41,7 @@
 #include "clusterEngine.h"
 #include "object.h"
 #include "odb/geom.h"
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -50,13 +51,6 @@ class Cluster;
 class MplObserver
 {
  public:
-  // The final cost is norm_penalty * weight
-  struct Penalty
-  {
-    float weight;
-    float norm_penalty;
-  };
-
   MplObserver() = default;
   virtual ~MplObserver() = default;
 
@@ -92,14 +86,14 @@ class MplObserver
   virtual void setGuides(const std::map<int, Rect>& guides) {}
   virtual void setFences(const std::map<int, Rect>& fences) {}
 
-  virtual void setAreaPenalty(const Penalty& penalty) {}
-  virtual void setBoundaryPenalty(const Penalty& penalty) {}
-  virtual void setFencePenalty(const Penalty& penalty) {}
-  virtual void setGuidancePenalty(const Penalty& penalty) {}
-  virtual void setMacroBlockagePenalty(const Penalty& penalty) {}
-  virtual void setNotchPenalty(const Penalty& penalty) {}
-  virtual void setOutlinePenalty(const Penalty& penalty) {}
-  virtual void setWirelengthPenalty(const Penalty& penalty) {}
+  virtual void setAreaPenalty(const PenaltyData& penalty) {}
+  virtual void setBoundaryPenalty(const PenaltyData& penalty) {}
+  virtual void setFencePenalty(const PenaltyData& penalty) {}
+  virtual void setGuidancePenalty(const PenaltyData& penalty) {}
+  virtual void setMacroBlockagePenalty(const PenaltyData& penalty) {}
+  virtual void setNotchPenalty(const PenaltyData& penalty) {}
+  virtual void setOutlinePenalty(const PenaltyData& penalty) {}
+  virtual void setWirelengthPenalty(const PenaltyData& penalty) {}
   virtual void penaltyCalculated(float norm_cost) {}
 
   virtual void eraseDrawing() {}

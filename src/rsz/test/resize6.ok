@@ -9,7 +9,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        12
-    final |  +1098.4% |       6 |       0 |             1 |         0
+    final |   +109.8% |       6 |       0 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0039] Resized 6 instances.
