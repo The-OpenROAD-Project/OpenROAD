@@ -181,7 +181,7 @@ bool UniqueInsts::addUniqueInst(frInst* inst)
     unique_inst = inst;
     new_unique_class = true;
   } else {
-    // guarantees everyone on the family has the same unique_inst (the first
+    // guarantees everyone on the class has the same unique_inst (the first
     // that came)
     unique_inst = inst_to_unique_[*unique_class.begin()];
   }
@@ -320,14 +320,13 @@ void UniqueInsts::deleteUniqueInst(frInst* inst)
     }
     unique_.erase(it);
     unique_to_idx_.erase(inst);
-    // TODO: lidar com unique_to_pa_idx
+    unique_to_pa_idx_.erase(inst);
 
   } else if (inst == inst_to_unique_[inst] && unique_class.size() > 1) {
     // the inst does not belong to the class anymore, but is the reference
     // unique_inst, so the reference has to be another inst
-    auto family_begin = inst_to_class_[inst]->begin();
-    frInst* new_head
-        = *family_begin != inst ? *family_begin : *(++family_begin);
+    auto class_begin = inst_to_class_[inst]->begin();
+    frInst* new_head = *class_begin != inst ? *class_begin : *(++class_begin);
     unique_[unique_to_idx_[inst]] = new_head;
     for (frInst* other_inst : unique_class) {
       inst_to_unique_[other_inst] = new_head;
