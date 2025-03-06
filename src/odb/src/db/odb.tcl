@@ -678,10 +678,23 @@ proc design_is_routed { args } {
   return [$block designIsRouted [info exists flags(-verbose)]]
 
 namespace eval odb {
+
+proc add_direction_constraint { dir edge begin end } {
+  set block [get_block]
+
+  set direction [parse_direction "add_direction_constraint" $dir]
+  set constraint_region [$block findConstraintRegion $edge $begin $end]
+  $block addBTermDirectionConstraint $direction $constraint_region
+}
+
+proc add_names_constraint { names edge begin end } {
+  set pin_list [ppl::parse_pin_names "set_io_pin_constraints" $names]
+  set constraint_region [$block findConstraintRegion $edge $begin $end]
+  $block addBTermNamesConstraint $pin_list $constraint_region
+}
+
 proc add_pin_group {pin_list order} {
-  set db [ord::get_db]
-  set chip [$db getChip]
-  set block  [$chip getBlock]
+  set block [get_block]
 
   $block addBTermGroup $pin_list $order
 }
