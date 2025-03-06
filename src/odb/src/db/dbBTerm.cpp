@@ -970,6 +970,12 @@ std::optional<Rect> dbBTerm::getConstraintRegion()
   return bterm->_constraint_region;
 }
 
+void dbBTerm::resetConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region.mergeInit();
+}
+
 void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
