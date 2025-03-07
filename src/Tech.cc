@@ -40,6 +40,7 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "sta/Units.hh"
 
 namespace ord {
 
@@ -102,6 +103,41 @@ void Tech::readLiberty(const std::string& file_name)
                         getSta()->cmdCorner(),
                         sta::MinMaxAll::all(),
                         true /* infer_latches */);
+}
+
+float Tech::timeScale()
+{
+    return getSta()->units()->timeUnit()->scale();
+}
+
+float Tech::resistanceScale()
+{
+    return getSta()->units()->resistanceUnit()->scale();
+}
+
+float Tech::capacitanceScale()
+{
+    return getSta()->units()->capacitanceUnit()->scale();
+}
+
+float Tech::voltageScale()
+{
+    return getSta()->units()->voltageUnit()->scale();
+}
+
+float Tech::currentScale()
+{
+    return getSta()->units()->currentUnit()->scale();
+}
+
+float Tech::powerScale()
+{
+    return getSta()->units()->powerUnit()->scale();
+}
+
+float Tech::distanceScale()
+{
+    return getSta()->units()->distanceUnit()->scale();
 }
 
 }  // namespace ord
