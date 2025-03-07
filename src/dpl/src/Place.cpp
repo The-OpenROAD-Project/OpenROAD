@@ -46,9 +46,9 @@
 
 #include "DplObserver.h"
 #include "Objects.h"
-#include "Padding.h"
 #include "dpl/Grid.h"
 #include "dpl/Opendp.h"
+#include "dpl/Padding.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -400,7 +400,7 @@ void Opendp::placeGroups2()
     if (!single_pass || !multi_pass) {
       // Erase group cells
       for (Cell* cell : group.cells_) {
-        grid_->erasePixel(cell);
+        unplaceCell(cell);
       }
 
       // Determine brick placement by utilization.
@@ -590,7 +590,7 @@ bool Opendp::mapMove(Cell* cell, const GridPt& grid_pt)
              pixel_pt.x,
              pixel_pt.y);
   if (pixel_pt.pixel) {
-    grid_->paintPixel(cell, pixel_pt.x, pixel_pt.y);
+    placeCell(cell, pixel_pt.x, pixel_pt.y);
     if (debug_observer_) {
       debug_observer_->placeInstance(cell->db_inst_);
     }
@@ -622,7 +622,7 @@ void Opendp::shiftMove(Cell* cell)
   // erase region cells
   for (Cell* around_cell : region_cells) {
     if (cell->inGroup() == around_cell->inGroup()) {
-      grid_->erasePixel(around_cell);
+      unplaceCell(around_cell);
     }
   }
 
@@ -653,10 +653,10 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
       const GridX grid_x2 = grid_->gridPaddedX(cell1);
       const GridY grid_y2 = grid_->gridSnapDownY(cell1);
 
-      grid_->erasePixel(cell1);
-      grid_->erasePixel(cell2);
-      grid_->paintPixel(cell1, grid_x1, grid_y1);
-      grid_->paintPixel(cell2, grid_x2, grid_y2);
+      unplaceCell(cell1);
+      unplaceCell(cell2);
+      placeCell(cell1, grid_x1, grid_y1);
+      placeCell(cell2, grid_x2, grid_y2);
       return true;
     }
   }
@@ -680,8 +680,8 @@ bool Opendp::refineMove(Cell* cell)
                      grid_->gridYToDbu(pixel_pt.y));
 
     if (dist_change < 0) {
-      grid_->erasePixel(cell);
-      grid_->paintPixel(cell, pixel_pt.x, pixel_pt.y);
+      unplaceCell(cell);
+      placeCell(cell, pixel_pt.x, pixel_pt.y);
       return true;
     }
   }
@@ -1301,7 +1301,7 @@ void Opendp::legalCellPos(dbInst* db_inst)
   const GridPt legal_grid_pt{grid_->gridX(DbuX{new_pos.x}),
                              grid_->gridSnapDownY(DbuY{new_pos.y})};
   // Transform position on real position
-  grid_->setGridPaddedLoc(&cell, legal_grid_pt.x, legal_grid_pt.y);
+  setGridPaddedLoc(&cell, legal_grid_pt.x, legal_grid_pt.y);
   // Set position of cell on db
   const Rect core = grid_->getCore();
   db_inst->setLocation(core.xMin() + cell.x_.v, core.yMin() + cell.y_.v);
@@ -1371,6 +1371,27 @@ GridPt Opendp::legalGridPt(const Cell* cell, const bool padded) const
 {
   const DbuPt pt = legalPt(cell, padded);
   return GridPt(grid_->gridX(pt.x), grid_->gridSnapDownY(pt.y));
+}
+
+void Opendp::setGridPaddedLoc(Cell* cell, const GridX x, const GridY y)
+{
+  cell->setLeft(gridToDbu(x + padding_->padLeft(cell), grid_->getSiteWidth()));
+  cell->setBottom(grid_->gridYToDbu(y));
+}
+void Opendp::placeCell(Cell* cell, const GridX x, const GridY y)
+{
+  grid_->paintPixel(cell, x, y);
+  setGridPaddedLoc(cell, x, y);
+  cell->setPlaced(true);
+  cell->setOrient(grid_->gridPixel(x, y)->sites.at(
+      cell->getDbInst()->getMaster()->getSite()));
+}
+
+void Opendp::unplaceCell(Cell* cell)
+{
+  grid_->erasePixel(cell);
+  cell->setPlaced(false);
+  cell->setHold(false);
 }
 
 }  // namespace dpl

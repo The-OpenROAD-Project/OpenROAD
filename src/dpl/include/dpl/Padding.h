@@ -33,8 +33,8 @@
 
 #pragma once
 
-#include "dpl/Coordinates.h"
-#include "dpl/Opendp.h"
+#include "Coordinates.h"
+#include "Opendp.h"
 
 namespace dpl {
 class GridNode;
