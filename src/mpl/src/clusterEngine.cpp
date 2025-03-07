@@ -405,8 +405,7 @@ void ClusteringEngine::createIOClusters()
 
 Cluster* ClusteringEngine::findIOClusterWithSameConstraint(odb::dbBTerm* bterm)
 {
-  for (const auto& [cluster, cluster_constraint] :
-       io_cluster_and_region_list_) {
+  for (const auto& [cluster, cluster_constraint] : unplaced_ios_to_region_) {
     if (bterm->getConstraintRegion() == cluster_constraint) {
       return cluster;
     }
@@ -438,7 +437,7 @@ void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
       block_->dbuToMicrons(constraint_shape.dx()),
       block_->dbuToMicrons(constraint_shape.dy()));
 
-  io_cluster_and_region_list_.push_back({cluster.get(), constraint_shape});
+  unplaced_ios_to_region_[cluster.get()] = constraint_shape;
 
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();

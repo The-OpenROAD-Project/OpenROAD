@@ -135,8 +135,7 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
-  void addClosestAvailableRegionDistToWL(const T& macro,
-                                         float net_weight);
+  void addClosestAvailableRegionDistToWL(const T& macro, float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   float computeDistance(const Point& a, const Point& b) const;
   void calGuidancePenalty();

@@ -185,7 +185,6 @@ class ClusteringEngine
 
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
-  using IOClusterAndRegion = std::pair<Cluster*, odb::Rect>;
 
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
@@ -288,7 +287,7 @@ class ClusteringEngine
   PhysicalHierarchy* tree_{nullptr};
 
   // Only for clusters of unplaced IOs.
-  std::vector<IOClusterAndRegion> io_cluster_and_region_list_;
+  std::map<Cluster*, odb::Rect> unplaced_ios_to_region_;
 
   int level_{0};  // Current level
   int id_{0};     // Current "highest" id
