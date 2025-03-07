@@ -89,11 +89,11 @@ struct Cell : public GridNode
   DbuY dy() const override { return height_; }
   dbInst* getDbInst() const override { return db_inst_; }
   DbuX siteWidth() const override;
-  void setPlaced(bool in) override { is_placed_ = in; }
-  void setHold(bool in) override { hold_ = in; }
-  void setOrient(dbOrientType in) override { orient_ = in; }
-  void setLeft(DbuX in) override { x_ = in; }
-  void setBottom(DbuY in) override { y_ = in; }
+  void setPlaced(bool in) { is_placed_ = in; }
+  void setHold(bool in) { hold_ = in; }
+  void setOrient(dbOrientType in) { orient_ = in; }
+  void setLeft(DbuX in) { x_ = in; }
+  void setBottom(DbuY in) { y_ = in; }
 
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;

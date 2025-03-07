@@ -45,8 +45,8 @@
 #include <vector>
 
 #include "Objects.h"
-#include "Padding.h"
 #include "dpl/Opendp.h"
+#include "dpl/Padding.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -349,8 +349,6 @@ void Grid::erasePixel(GridNode* cell)
         pixel->util = 0;
       }
     }
-    cell->setPlaced(false);
-    cell->setHold(false);
   }
 }
 
@@ -361,24 +359,17 @@ void Grid::paintPixel(GridNode* cell, GridX grid_x, GridY grid_y)
   GridY grid_height = gridHeight(cell);
   GridY y_end = grid_y + grid_height;
 
-  setGridPaddedLoc(cell, grid_x, grid_y);
-  cell->setPlaced(true);
-
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
       Pixel* pixel = gridPixel(x, y);
       if (pixel->cell) {
         logger_->error(
             DPL, 13, "Cannot paint grid because it is already occupied.");
-      } else {
-        pixel->cell = cell;
-        pixel->util = 1.0;
       }
+      pixel->cell = cell;
+      pixel->util = 1.0;
     }
   }
-
-  cell->setOrient(gridPixel(grid_x, grid_y)
-                      ->sites.at(cell->getDbInst()->getMaster()->getSite()));
 }
 
 GridX Grid::gridPaddedWidth(const GridNode* cell) const
@@ -527,12 +518,6 @@ DbuY Grid::gridYToDbu(GridY y) const
     return DbuY{core_.yMax()};
   }
   return row_index_to_y_dbu_.at(y.v);
-}
-
-void Grid::setGridPaddedLoc(GridNode* cell, GridX x, GridY y) const
-{
-  cell->setLeft(gridToDbu(x + padding_->padLeft(cell), getSiteWidth()));
-  cell->setBottom(gridYToDbu(y));
 }
 
 GridX Grid::gridPaddedEndX(const GridNode* cell) const

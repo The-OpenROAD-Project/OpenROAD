@@ -63,11 +63,6 @@ class GridNode
   virtual DbuY dy() const = 0;
   virtual dbInst* getDbInst() const = 0;
   virtual DbuX siteWidth() const = 0;
-  virtual void setPlaced(bool in) = 0;
-  virtual void setHold(bool in) = 0;
-  virtual void setOrient(dbOrientType in) = 0;
-  virtual void setLeft(DbuX in) = 0;
-  virtual void setBottom(DbuY in) = 0;
 };
 
 struct GridIntervalX
@@ -151,7 +146,6 @@ class Grid
   GridY gridHeight(const GridNode* cell) const;
   GridY gridHeight(odb::dbMaster* master) const;
   DbuY rowHeight(GridY index);
-  void setGridPaddedLoc(GridNode* cell, GridX x, GridY y) const;
 
   void paintPixel(GridNode* cell, GridX grid_x, GridY grid_y);
   void erasePixel(GridNode* cell);
