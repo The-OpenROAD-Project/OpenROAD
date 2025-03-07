@@ -331,6 +331,7 @@ void Resizer::init()
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
+  swappable_cells_cache_.clear();
 }
 
 // remove all buffers if no buffers are specified
@@ -1523,6 +1524,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
     }
   }
 
+  swappable_cells_cache_[source_cell] = swappable_cells;
   return swappable_cells;
 }
 
