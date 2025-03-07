@@ -690,7 +690,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-void dbSta::reportTimingHistogram(int num_bins) const
+void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
 {
   if (num_bins <= 0) {
     logger_->warn(STA, 70, "The number of bins must be positive.");
@@ -702,7 +702,7 @@ void dbSta::reportTimingHistogram(int num_bins) const
   sta::Unit* time_unit = sta_->units()->timeUnit();
   std::vector<float> slacks;
   for (sta::Vertex* vertex : *sta_->endpoints()) {
-    float slack = sta_->pinSlack(vertex->pin(), sta::MinMax::max());
+    float slack = sta_->vertexSlack(vertex, min_max);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       slacks.push_back(time_unit->staToUser(slack));
     }
