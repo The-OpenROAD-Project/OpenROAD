@@ -62,6 +62,8 @@ namespace utl {
 class PrometheusMetricsServer;
 class PrometheusRegistry;
 
+class Progress;
+
 // Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
@@ -273,10 +275,16 @@ class Logger
   void teeStringBegin();
   std::string teeStringEnd();
 
+  // Progress interface
+  Progress* progress() const { return progress_.get(); }
+  std::unique_ptr<Progress> swapProgress(Progress* progress);
+
  private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
   std::vector<MetricsPolicy> metrics_policies_;
+
+  std::unique_ptr<Progress> progress_;
 
   template <typename... Args>
   void log(ToolId tool,

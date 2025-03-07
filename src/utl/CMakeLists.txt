@@ -72,6 +72,8 @@ add_library(utl_lib
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp
   src/Logger.cpp
+  src/Progress.cpp
+  src/CommandLineProgress.cpp
   src/timer.cpp
   src/prometheus/metrics_server.cpp
 )
