@@ -730,13 +730,16 @@ void dbSta::reportTimingHistogram(int num_bins) const
   for (int bin = 0; bin < num_bins; ++bin) {
     const float bin_start = min_slack + bin * bin_range;
     const float bin_end = min_slack + (bin + 1) * bin_range;
-    int bar_length = max_bin_width * bins[bin] / largest_bin;
+    int bar_length  // Round the bar length to its closest value.
+        = (max_bin_width * bins[bin] + largest_bin / 2) / largest_bin;
     if (bar_length == 0 && bins[bin] > 0) {
       bar_length = 1;  // Better readability when non-zero bins have a bar.
     }
-    logger_->report("[{:>6.3f}, {:>6.3f}): {} ({})",
+    logger_->report("[{:>6.3f}, {:>6.3f}{}: {} ({})",
                     bin_start,
                     bin_end,
+                    // The final bin is also closed from the right.
+                    bin == num_bins - 1 ? "]" : ")",
                     std::string(bar_length, '*'),
                     bins[bin]);
   }
