@@ -178,14 +178,7 @@ void DetailedVerticalSwap::verticalSwap()
       continue;
     }
 
-    const double delta = hpwlObj.delta(mgr_->getNMoved(),
-                                       mgr_->getMovedNodes(),
-                                       mgr_->getCurLeft(),
-                                       mgr_->getCurBottom(),
-                                       mgr_->getCurOri(),
-                                       mgr_->getNewLeft(),
-                                       mgr_->getNewBottom(),
-                                       mgr_->getNewOri());
+    const double delta = hpwlObj.delta(mgr_->getJournal());
 
     const double nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 

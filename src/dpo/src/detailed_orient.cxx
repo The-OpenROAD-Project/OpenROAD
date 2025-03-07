@@ -391,18 +391,33 @@ int DetailedOrient::flipCells()
           || ndi->getRight() + leftPadding > rx) {
         continue;
       }
-
+      uint orig_orient = ndi->getCurrOrient();
+      uint flipped_orient;
+      switch (orig_orient) {
+        case Orientation_N:
+          flipped_orient = Orientation_FN;
+          break;
+        case Orientation_S:
+          flipped_orient = Orientation_FS;
+          break;
+        case Orientation_FN:
+          flipped_orient = Orientation_N;
+          break;
+        case Orientation_FS:
+          flipped_orient = Orientation_S;
+          break;
+        default:
+          continue;
+          break;
+      }
+      ndi->setCurrOrient(flipped_orient);
+      if (mgrPtr_->hasEdgeSpacingViolation(ndi)) {
+        ndi->setCurrOrient(orig_orient);
+        continue;
+      }
       // Check potential violation due to edge spacing.
       lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
-      if (ndl) {
-        lx += arch_->getCellSpacingUsingTable(ndl->getRightEdgeType(),
-                                              ndi->getRightEdgeType());
-      }
       rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
-      if (ndr) {
-        rx -= arch_->getCellSpacingUsingTable(ndi->getLeftEdgeType(),
-                                              ndr->getLeftEdgeType());
-      }
       // Based on edge spacing, the cell must reside within
       // [lx,rx].
       if (ndi->getWidth() > (rx - lx)) {
@@ -424,25 +439,6 @@ int DetailedOrient::flipCells()
       // Update/swap paddings.
       arch_->getCellPadding(ndi, leftPadding, rightPadding);
       arch_->addCellPadding(ndi, rightPadding, leftPadding);
-      // Update the orientation.
-      switch (ndi->getCurrOrient()) {
-        case Orientation_N:
-          ndi->setCurrOrient(Orientation_FN);
-          break;
-        case Orientation_S:
-          ndi->setCurrOrient(Orientation_FS);
-          break;
-        case Orientation_FN:
-          ndi->setCurrOrient(Orientation_N);
-          break;
-        case Orientation_FS:
-          ndi->setCurrOrient(Orientation_S);
-          break;
-        default:
-          // ?
-          break;
-      }
-
       ++nflips;
     }
   }

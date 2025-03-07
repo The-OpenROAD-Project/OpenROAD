@@ -83,7 +83,7 @@ class Architecture
 
   void clear_edge_type();
   void init_edge_type();
-  int add_edge_type(const char* name);
+  int add_edge_type(const std::string& name);
 
   int getMinX() const { return xmin_; }
   int getMaxX() const { return xmax_; }
@@ -104,14 +104,28 @@ class Architecture
   void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
   bool getUseSpacingTable() const { return useSpacingTable_; }
   void clearSpacingTable();
-  int getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
-  void addCellSpacingUsingTable(int firstEdge, int secondEdge, int sep);
+  void initSpacingTable();
+  void addSpacingTableEntry(int first_edge,
+                            int second_edge,
+                            int spc,
+                            bool is_exact,
+                            bool except_abutted);
+  Spacing getMaxSpacing(int edge_type) const;
+  Spacing getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
 
-  const std::vector<Spacing*>& getCellSpacings() const { return cellSpacings_; }
-
-  const std::vector<std::pair<std::string, int>>& getEdgeTypes() const
+  const std::vector<std::vector<Spacing>>& getCellSpacings() const
   {
-    return edgeTypes_;
+    return cellSpacings_;
+  }
+
+  const std::map<std::string, int>& getEdgeTypes() const { return edgeTypes_; }
+  bool hasEdgeType(const std::string& edge_type) const
+  {
+    return edgeTypes_.find(edge_type) != edgeTypes_.end();
+  }
+  int getEdgeTypeIdx(const std::string& edge_type) const
+  {
+    return edgeTypes_.at(edge_type);
   }
 
   // Using padding...
@@ -139,8 +153,8 @@ class Architecture
 
   // Spacing tables...
   bool useSpacingTable_ = false;
-  std::vector<std::pair<std::string, int>> edgeTypes_;
-  std::vector<Spacing*> cellSpacings_;
+  std::map<std::string, int> edgeTypes_;
+  std::vector<std::vector<Spacing>> cellSpacings_;
 
   // Padding...
   bool usePadding_ = false;
@@ -150,16 +164,16 @@ class Architecture
 class Architecture::Spacing
 {
  public:
-  Spacing(int i1, int i2, int sep);
-
-  int getFirstEdge() const { return i1_; }
-  int getSecondEdge() const { return i2_; }
-  int getSeparation() const { return sep_; }
-
- private:
-  int i1_;
-  int i2_;
-  int sep_;
+  Spacing(const int spc_in,
+          const bool is_exact_in,
+          const bool except_abutted_in)
+      : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
+  {
+  }
+  bool operator<(const Spacing& rhs) const { return spc < rhs.spc; }
+  int spc;
+  bool is_exact;
+  bool except_abutted;
 };
 
 class Architecture::Row
