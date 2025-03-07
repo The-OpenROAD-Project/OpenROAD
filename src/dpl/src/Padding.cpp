@@ -155,7 +155,7 @@ GridX Padding::padRight(dbInst* inst) const
 
 DbuX Padding::paddedWidth(const GridNode* cell) const
 {
-  return cell->getWidth()
+  return cell->dx()
          + gridToDbu(padLeft(cell) + padRight(cell), cell->siteWidth());
 }
 

@@ -237,9 +237,9 @@ const char* Opendp::gridInstName(GridY row, GridX col)
     return "core_right";
   }
 
-  const Cell* cell = static_cast<Cell*>(grid_->gridPixel(col, row)->cell);
+  const auto cell = grid_->gridPixel(col, row)->cell;
   if (cell) {
-    return cell->db_inst_->getConstName();
+    return cell->getDbInst()->getConstName();
   }
   return "?";
 }

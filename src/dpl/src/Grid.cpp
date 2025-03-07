@@ -406,7 +406,7 @@ GridY Grid::gridHeight(const GridNode* cell) const
 {
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
-    return GridY{max(1, divCeil(cell->getHeight().v, row_height.v))};
+    return GridY{max(1, divCeil(cell->dy().v, row_height.v))};
   }
   if (!cell->getDbInst()) {
     return GridY{1};
@@ -431,12 +431,12 @@ GridX Grid::gridX(DbuX x) const
 
 GridX Grid::gridX(const GridNode* cell) const
 {
-  return gridX(cell->getLeft());
+  return gridX(cell->xMin());
 }
 
 GridX Grid::gridPaddedX(const GridNode* cell) const
 {
-  return gridX(cell->getLeft()
+  return gridX(cell->xMin()
                - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
 }
 
@@ -513,12 +513,12 @@ GridY Grid::gridEndY(DbuY y) const
 
 GridY Grid::gridSnapDownY(const GridNode* cell) const
 {
-  return gridSnapDownY(cell->getBottom());
+  return gridSnapDownY(cell->yMin());
 }
 
 GridY Grid::gridRoundY(const GridNode* cell) const
 {
-  return gridRoundY(cell->getBottom());
+  return gridRoundY(cell->yMin());
 }
 
 DbuY Grid::gridYToDbu(GridY y) const
@@ -538,26 +538,25 @@ void Grid::setGridPaddedLoc(GridNode* cell, GridX x, GridY y) const
 GridX Grid::gridPaddedEndX(const GridNode* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x = cell->getLeft() + cell->getWidth()
+  const DbuX end_x = cell->xMin() + cell->dx()
                      + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
 GridX Grid::gridEndX(const GridNode* cell) const
 {
-  return GridX{
-      divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
+  return GridX{divCeil((cell->xMin() + cell->dx()).v, getSiteWidth().v)};
 }
 
 GridY Grid::gridEndY(const GridNode* cell) const
 {
-  return gridEndY(cell->getBottom() + cell->getHeight());
+  return gridEndY(cell->yMin() + cell->dy());
 }
 
 bool Grid::cellFitsInCore(GridNode* cell) const
 {
   return gridPaddedWidth(cell) <= getRowSiteCount()
-         && cell->getHeight().v <= core_.dy();
+         && cell->dy().v <= core_.dy();
 }
 
 void Grid::examineRows(dbBlock* block)
