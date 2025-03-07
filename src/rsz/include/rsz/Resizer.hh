@@ -818,6 +818,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
   std::optional<double> sizing_area_limit_ = 4.0;
   std::optional<double> sizing_leakage_limit_ = 4.0;
+  bool default_sizing_area_limit_set_ = true;
+  bool default_sizing_leakage_limit_set_ = true;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
 
