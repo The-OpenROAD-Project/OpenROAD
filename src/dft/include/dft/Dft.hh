@@ -32,6 +32,7 @@
 #pragma once
 
 #include "ClockDomain.hh"
+#include "TestModeConfig.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -117,6 +118,13 @@ class Dft
   // Common function to perform scan replace and scan architect. Shared between
   // preview_dft and insert_dft
   std::vector<std::unique_ptr<ScanChain>> scanArchitect();
+
+  std::vector<std::unique_ptr<ScanChain>> scanArchitect(
+      const TestModeConfig& test_mode_config);
+
+  void previewDft(const TestModeConfig& test_mode_config, bool verbose);
+
+  void insertDft(const TestModeConfig& test_mode_config);
 
   // Global state
   odb::dbDatabase* db_;
