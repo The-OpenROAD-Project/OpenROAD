@@ -37,10 +37,10 @@
 #include <limits>
 #include <vector>
 
-#include "Grid.h"
 #include "Objects.h"
-#include "Padding.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
+#include "dpl/Padding.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -371,7 +371,7 @@ const Cell* Opendp::checkOverlap(Cell& cell) const
       logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
   const Cell* overlap_cell = nullptr;
   grid_->visitCellPixels(cell, true, [&](Pixel* pixel) {
-    const Cell* pixel_cell = pixel->cell;
+    const Cell* pixel_cell = static_cast<Cell*>(pixel->cell);
     if (pixel_cell) {
       if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
         overlap_cell = pixel_cell;
@@ -429,7 +429,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
           // check the 1 site gap pixel
           const Pixel* gap_pixel = grid_->gridPixel(x + GridX{2 * abut_x.v}, y);
           if (gap_pixel) {
-            gap_cell = gap_pixel->cell;
+            gap_cell = static_cast<Cell*>(gap_pixel->cell);
           }
         }
       });
