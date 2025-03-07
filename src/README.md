@@ -240,14 +240,16 @@ The `report_timing_histogram` command reports a visualization of the
 slack distribution in the design.
 
 ```tcl
-report_timing_histogram [-num_bins num_bins]
+report_timing_histogram [-num_bins num_bins] [-setup|-hold]
 ```
 
 ##### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_bins` | Number of histogram bins to display.|
+| `-num_bins` | Number of histogram bins to display (default is 10). |
+| `-setup` | Use setup paths (this is the default). |
+| `-hold` | Use hold paths. |
 
 ## TCL functions
 

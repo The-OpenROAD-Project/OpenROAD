@@ -197,7 +197,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
                        const char* file_name,
                        const char* stage_name);
 
-  void reportTimingHistogram(int num_bins) const;
+  void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 

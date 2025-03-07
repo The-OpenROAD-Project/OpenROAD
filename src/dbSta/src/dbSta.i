@@ -177,12 +177,12 @@ report_cell_usage_cmd(odb::dbModule* mod,
 }
 
 void
-report_timing_histogram_cmd(int num_bins)
+report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
-  sta->reportTimingHistogram(num_bins);
+  sta->reportTimingHistogram(num_bins, min_max);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
