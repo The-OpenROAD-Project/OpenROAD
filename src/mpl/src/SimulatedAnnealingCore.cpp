@@ -33,6 +33,7 @@
 
 #include "SimulatedAnnealingCore.h"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -61,9 +62,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
                                                   unsigned seed,
                                                   MplObserver* graphics,
                                                   utl::Logger* logger)
-    : outline_(outline),
-      blocked_boundaries_(tree->blocked_boundaries),
-      graphics_(graphics)
+    : outline_(outline), graphics_(graphics)
 {
   core_weights_ = weights;
 
@@ -85,26 +84,27 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
   logger_ = logger;
   macros_ = macros;
 
-  setBlockedBoundariesForIOs();
+  setDieArea(tree->die_area);
+  setAvailableRegionForPins(tree->available_regions_for_pins);
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setBlockedBoundariesForIOs()
+void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
 {
-  if (blocked_boundaries_.find(Boundary::L) != blocked_boundaries_.end()) {
-    left_is_blocked_ = true;
-  }
+  die_area_ = die_area;
+  die_area_.moveHor(-outline_.xMin());
+  die_area_.moveVer(-outline_.yMin());
+}
 
-  if (blocked_boundaries_.find(Boundary::R) != blocked_boundaries_.end()) {
-    right_is_blocked_ = true;
-  }
-
-  if (blocked_boundaries_.find(Boundary::B) != blocked_boundaries_.end()) {
-    bottom_is_blocked_ = true;
-  }
-
-  if (blocked_boundaries_.find(Boundary::T) != blocked_boundaries_.end()) {
-    top_is_blocked_ = true;
+template <class T>
+void SimulatedAnnealingCore<T>::setAvailableRegionForPins(
+    const std::vector<mpl::Rect>& regions)
+{
+  for (const Rect& region : regions) {
+    Rect offset_region = region;
+    offset_region.moveHor(-outline_.xMin());
+    offset_region.moveVer(-outline_.yMin());
+    available_regions_for_pins_.push_back(offset_region);
   }
 }
 
@@ -298,8 +298,8 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& source = macros_[net.terminals.first];
     T& target = macros_[net.terminals.second];
 
-    if (target.isClusterOfUnplacedIOPins()) {
-      addBoundaryDistToWirelength(source, target, net.weight);
+    if (target.isClusterOfUnconstrainedIOPins()) {
+      addClosestAvailableRegionDistToWL(source, net.weight);
       continue;
     }
 
@@ -323,59 +323,36 @@ void SimulatedAnnealingCore<T>::calWirelength()
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::addBoundaryDistToWirelength(
+void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
     const T& macro,
-    const T& io,
     const float net_weight)
 {
-  Cluster* io_cluster = io.getCluster();
-  const Rect die = io_cluster->getBBox();
-  const float die_hpwl = die.getWidth() + die.getHeight();
+  // To generate maximum cost.
+  const float max_dist = die_area_.getPerimeter() / 2;
 
   if (isOutsideTheOutline(macro)) {
-    wirelength_ += net_weight * die_hpwl;
+    wirelength_ += net_weight * max_dist;
     return;
   }
 
-  const float x1 = macro.getPinX();
-  const float y1 = macro.getPinY();
-
-  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
-
-  if (constraint_boundary == NONE) {
-    float dist_to_left = die_hpwl;
-    if (!left_is_blocked_) {
-      dist_to_left = std::abs(x1 - die.xMin());
-    }
-
-    float dist_to_right = die_hpwl;
-    if (!right_is_blocked_) {
-      dist_to_right = std::abs(x1 - die.xMax());
-    }
-
-    float dist_to_bottom = die_hpwl;
-    if (!bottom_is_blocked_) {
-      dist_to_right = std::abs(y1 - die.yMin());
-    }
-
-    float dist_to_top = die_hpwl;
-    if (!top_is_blocked_) {
-      dist_to_top = std::abs(y1 - die.yMax());
-    }
-
-    wirelength_
-        += net_weight
-           * std::min(
-               {dist_to_left, dist_to_right, dist_to_bottom, dist_to_top});
-  } else if (constraint_boundary == Boundary::L
-             || constraint_boundary == Boundary::R) {
-    const float x2 = io.getPinX();
-    wirelength_ += net_weight * std::abs(x2 - x1);
-  } else if (constraint_boundary == Boundary::T
-             || constraint_boundary == Boundary::B) {
-    const float y2 = io.getPinY();
-    wirelength_ += net_weight * std::abs(y2 - y1);
+  if (available_regions_for_pins_.empty()) {
+    logger_->critical(
+        utl::MPL,
+        47,
+        "There's no available region for the unconstrained pins!");
   }
+
+  float dist_to_closest_available_region = std::numeric_limits<float>::max();
+  for (const Rect& region : available_regions_for_pins_) {
+    const float dist_to_available_region
+        = computeDistance(/* from */ {macro.getPinX(), macro.getPinY()},
+                          /*  to  */ {region.getX(), region.getY()});
+    if (dist_to_available_region < dist_to_closest_available_region) {
+      dist_to_closest_available_region = dist_to_available_region;
+    }
+  }
+
+  wirelength_ += net_weight * dist_to_closest_available_region;
 }
 
 // We consider the macro outside the outline based on the location of
@@ -385,6 +362,15 @@ bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
 {
   return macro.getPinX() > outline_.getWidth()
          || macro.getPinY() > outline_.getHeight();
+}
+
+template <class T>
+float SimulatedAnnealingCore<T>::computeDistance(const Point& a,
+                                                 const Point& b) const
+{
+  const float dx = std::abs(a.first - b.first);
+  const float dy = std::abs(a.second - b.second);
+  return std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
 }
 
 template <class T>

@@ -35,6 +35,8 @@
 
 #include <string>
 
+#include "odb/geom.h"
+
 namespace mpl {
 
 struct SACoreWeights
@@ -61,5 +63,22 @@ struct PenaltyData
   float value{0.0f};
   float normalization_factor{0.0f};
 };
+
+inline odb::Point findCenterOfClosestRegion(
+    const odb::Point& from,
+    const std::vector<odb::Rect>& regions)
+{
+  odb::Point to;
+  double dist_to_closest_region = std::numeric_limits<double>::max();
+  for (const odb::Rect& region : regions) {
+    const double dist_to_region
+        = std::sqrt(odb::Point::squaredDistance(from, region.center()));
+    if (dist_to_region < dist_to_closest_region) {
+      dist_to_closest_region = dist_to_region;
+      to = region.center();
+    }
+  }
+  return to;
+}
 
 }  // namespace mpl
