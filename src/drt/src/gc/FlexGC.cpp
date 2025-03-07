@@ -201,7 +201,7 @@ void FlexGCWorker::setIgnoreLongSideEOL()
   impl_->ignoreLongSideEOL_ = true;
 }
 
-std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
+std::vector<gcNet*>& FlexGCWorker::getNets()
 {
   return impl_->getNets();
 }
