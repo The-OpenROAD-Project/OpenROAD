@@ -37,9 +37,12 @@
 
 #include <tcl.h>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "sta/Corner.hh"
+#include "sta/Liberty.hh"
 #include "sta/Units.hh"
 
 namespace ord {
@@ -104,6 +107,31 @@ void Tech::readLiberty(const std::string& file_name)
                         sta::MinMaxAll::all(),
                         true /* infer_latches */);
 }
+
+std::string Tech::nominalProcess()
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  return std::to_string(lib->nominalProcess());
+}
+
+std::string Tech::nominalVoltage()
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  return sta->units()->voltageUnit()->asString(lib->nominalVoltage());
+}
+
+std::string Tech::nominalTemperature()
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  return std::to_string(lib->nominalTemperature());
+}
+
 
 float Tech::timeScale()
 {

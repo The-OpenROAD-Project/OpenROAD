@@ -71,6 +71,10 @@ class Tech
   odb::dbTech* getTech();
   sta::dbSta* getSta();
 
+  std::string nominalProcess();
+  std::string nominalVoltage();
+  std::string nominalTemperature();
+
   float timeScale();
   float resistanceScale();
   float capacitanceScale();
