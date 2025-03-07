@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 6 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 24 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+[ 9.433,  9.516): ************************* (1)
+[ 9.516,  9.600):  (0)
+[ 9.600,  9.684):  (0)
+[ 9.684,  9.767): ************************* (1)
+[ 9.767,  9.851]: ************************************************** (2)

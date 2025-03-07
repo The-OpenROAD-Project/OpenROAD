@@ -113,6 +113,18 @@ proc report_cell_usage { args } {
   report_cell_usage_cmd $module $verbose $file_name $stage_name
 }
 
+sta::define_cmd_args "report_timing_histogram" {[-num_bins num_bins]}
+
+proc report_timing_histogram { args } {
+  sta::parse_key_args "report_timing_histogram" args keys {-num_bins} flags {}
+  set num_bins 10
+  if { [info exists keys(-num_bins)] } {
+    set num_bins $keys(-num_bins)
+  }
+  report_timing_histogram_cmd $num_bins
+}
+
+
 # redefine sta::sta_warn/error to call utl::warn/error
 proc sta_error { id msg } {
   utl::error STA $id $msg
