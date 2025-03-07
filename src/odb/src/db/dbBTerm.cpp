@@ -996,4 +996,10 @@ dbBTerm* dbBTerm::getMirroredBTerm()
   return (dbBTerm*) mirrored_bterm;
 }
 
+bool dbBTerm::hasMirroredBTerm()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->_mirrored_bterm != 0;
+}
+
 }  // namespace odb

@@ -1899,6 +1899,11 @@ class dbBTerm : public dbObject
   /// Get the bterm that is mirrored to this bterm
   ///
   dbBTerm* getMirroredBTerm();
+
+  ///
+  /// Returns true if the current BTerm has a mirrored BTerm.
+  ///
+  bool hasMirroredBTerm();
 };
 
 ///////////////////////////////////////////////////////////////////////////////

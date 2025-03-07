@@ -78,7 +78,6 @@ using utl::Logger;
 // A list of pins that will be placed together in the die boundary
 using PinSet = std::set<odb::dbBTerm*>;
 using PinList = std::vector<odb::dbBTerm*>;
-using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
 
 struct PinGroupByIndex
 {
@@ -131,7 +130,6 @@ class IOPlacer
                               int begin,
                               int end);
   void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
-  void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,
@@ -191,7 +189,6 @@ class IOPlacer
   std::string getSlotsLocation(Edge edge, bool top_layer);
   int placeFallbackPins(bool random);
   void assignMirroredPins(IOPin& io_pin,
-                          MirroredPins& mirrored_pins,
                           std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
@@ -306,7 +303,6 @@ class IOPlacer
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  MirroredPins mirrored_pins_;
   FallbackPins fallback_pins_;
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
 
