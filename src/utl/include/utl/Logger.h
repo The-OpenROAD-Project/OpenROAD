@@ -74,6 +74,7 @@ class PrometheusRegistry;
   X(FIN)                \
   X(FLW)                \
   X(GPL)                \
+  X(GPL2)               \
   X(GRT)                \
   X(GUI)                \
   X(IFP)                \
