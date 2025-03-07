@@ -53,14 +53,14 @@ using odb::dbSite;
 class GridNode
 {
  public:
-  GridNode() = default;
+  virtual ~GridNode() = default;
   virtual bool isFixed() const = 0;
   virtual bool isPlaced() const = 0;
   virtual bool isHybrid() const = 0;
-  virtual DbuX getLeft() const = 0;
-  virtual DbuY getBottom() const = 0;
-  virtual DbuX getWidth() const = 0;
-  virtual DbuY getHeight() const = 0;
+  virtual DbuX xMin() const = 0;
+  virtual DbuY yMin() const = 0;
+  virtual DbuX dx() const = 0;
+  virtual DbuY dy() const = 0;
   virtual dbInst* getDbInst() const = 0;
   virtual DbuX siteWidth() const = 0;
   virtual void setPlaced(bool in) = 0;
@@ -68,8 +68,6 @@ class GridNode
   virtual void setOrient(dbOrientType in) = 0;
   virtual void setLeft(DbuX in) = 0;
   virtual void setBottom(DbuY in) = 0;
-  virtual void setWidth(DbuX in) = 0;
-  virtual void setHeight(DbuY in) = 0;
 };
 
 struct GridIntervalX
@@ -119,6 +117,7 @@ class Grid
                 std::shared_ptr<Padding> padding,
                 int max_displacement_x,
                 int max_displacement_y);
+  void allocateGrid();
   void examineRows(dbBlock* block);
   std::unordered_set<int> getRowCoordinates() const;
 
@@ -188,7 +187,6 @@ class Grid
   bool isMultiHeight(dbMaster* master) const;
 
  private:
-  void allocateGrid();
   void markHopeless(dbBlock* block,
                     int max_displacement_x,
                     int max_displacement_y);

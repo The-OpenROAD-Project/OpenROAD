@@ -83,10 +83,10 @@ struct Cell : public GridNode
   bool isPlaced() const override { return is_placed_; }
   bool isHybrid() const override;
   DbuX xMax() const { return x_ + width_; }
-  DbuX getLeft() const override { return x_; }
-  DbuY getBottom() const override { return y_; }
-  DbuX getWidth() const override { return width_; }
-  DbuY getHeight() const override { return height_; }
+  DbuX xMin() const override { return x_; }
+  DbuY yMin() const override { return y_; }
+  DbuX dx() const override { return width_; }
+  DbuY dy() const override { return height_; }
   dbInst* getDbInst() const override { return db_inst_; }
   DbuX siteWidth() const override;
   void setPlaced(bool in) override { is_placed_ = in; }
@@ -94,8 +94,6 @@ struct Cell : public GridNode
   void setOrient(dbOrientType in) override { orient_ = in; }
   void setLeft(DbuX in) override { x_ = in; }
   void setBottom(DbuY in) override { y_ = in; }
-  void setWidth(DbuX in) override { width_ = in; }
-  void setHeight(DbuY in) override { height_ = in; }
 
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;
