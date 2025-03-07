@@ -83,10 +83,7 @@ class HistogramView : public QChartView
   void setData(const SlackHistogramData& data);
   void setData(const EndPointSlackMap& data);
 
-  void mousePressEvent(QMouseEvent* event) override;
-
  signals:
-  void barIndex(int bar_index);
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
 
  private slots:

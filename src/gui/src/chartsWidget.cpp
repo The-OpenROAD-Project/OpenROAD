@@ -290,48 +290,6 @@ HistogramView::HistogramView(QWidget* parent)
 {
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
-
-  connect(this,
-          &HistogramView::barIndex,
-          this,
-          &HistogramView::emitEndPointsInBucket);
-}
-
-void HistogramView::mousePressEvent(QMouseEvent* event)
-{
-  const auto abstract_series = chart()->series();
-  if (abstract_series.isEmpty()) {
-    return;
-  }
-
-  // There's only one series for the slack histogram mode.
-  QStackedBarSeries* series
-      = static_cast<QStackedBarSeries*>(abstract_series.front());
-
-  const QPointF series_value = chart()->mapToValue(event->pos(), series);
-
-  // Using QValueAxis for the x axis results in an offset of half unit between
-  // the chart's origin (not the widget's origin, the actual x,y origin from
-  // the chart) and the first bar.
-  const float attachment_offset = 0.5;
-  const float index_mapped_x
-      = static_cast<float>(series_value.x()) + attachment_offset;
-  const float index_mapped_y = static_cast<float>(series_value.y());
-
-  bool valid_horizontal_range
-      = index_mapped_x >= 0
-        && index_mapped_x <= series->barSets().front()->count();
-
-  QValueAxis* y_axis
-      = static_cast<QValueAxis*>(chart()->axes(Qt::Vertical).first());
-
-  bool valid_vertical_range
-      = index_mapped_y >= 0
-        && index_mapped_y <= static_cast<float>(y_axis->max());
-
-  if (valid_horizontal_range && valid_vertical_range) {
-    emit barIndex(static_cast<int>(index_mapped_x));
-  }
 }
 
 void HistogramView::clear()
@@ -580,6 +538,11 @@ std::pair<QBarSet*, QBarSet*> HistogramView::createBarSets()
 
   connect(neg_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+
+  connect(
+      neg_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
+  connect(
+      pos_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
 
   return {neg_set, pos_set};
 }
