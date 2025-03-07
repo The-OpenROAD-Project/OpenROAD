@@ -692,6 +692,10 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
 void dbSta::reportTimingHistogram(int num_bins) const
 {
+  if (num_bins <= 0) {
+    logger_->warn(STA, 70, "The number of bins must be positive.");
+    return;
+  }
   const int max_bin_width = 50;  // Maximum number of chars to print for a bin.
 
   // Get and sort the slacks.
@@ -702,6 +706,10 @@ void dbSta::reportTimingHistogram(int num_bins) const
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       slacks.push_back(time_unit->staToUser(slack));
     }
+  }
+  if (slacks.empty()) {
+    logger_->warn(STA, 71, "No constrained slacks found.");
+    return;
   }
   std::sort(slacks.begin(), slacks.end());
 
