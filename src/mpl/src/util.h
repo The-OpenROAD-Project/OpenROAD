@@ -39,8 +39,6 @@
 
 namespace mpl {
 
-using Point = std::pair<float, float>;
-
 struct SACoreWeights
 {
   float area{0.0f};
@@ -66,21 +64,15 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-inline int computeDistance(const odb::Point& from, const odb::Point& to)
-{
-  const int dx = std::abs(from.getX() - to.getX());
-  const int dy = std::abs(from.getY() - to.getY());
-  return static_cast<int>(std::sqrt(std::pow(dx, 2) + std::pow(dy, 2)));
-}
-
 inline odb::Point findCenterOfClosestRegion(
     const odb::Point& from,
     const std::vector<odb::Rect>& regions)
 {
   odb::Point to;
-  int dist_to_closest_region = std::numeric_limits<int>::max();
+  double dist_to_closest_region = std::numeric_limits<double>::max();
   for (const odb::Rect& region : regions) {
-    const int dist_to_region = computeDistance(from, region.center());
+    const double dist_to_region
+        = std::sqrt(odb::Point::squaredDistance(from, region.center()));
     if (dist_to_region < dist_to_closest_region) {
       dist_to_closest_region = dist_to_region;
       to = region.center();
