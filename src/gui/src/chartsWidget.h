@@ -35,11 +35,13 @@
 #include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
+#include <QMenu>
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "gui/gui.h"
@@ -83,12 +85,20 @@ class HistogramView : public QChartView
   void setData(const SlackHistogramData& data);
   void setData(const EndPointSlackMap& data);
 
+  void save(const QString& path);
+
+ public slots:
+  void saveImage();
+
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins);
 
  private slots:
   void showToolTip(bool is_hovering, int bar_index);
   void emitEndPointsInBucket(int bar_index);
+
+ protected:
+  void contextMenuEvent(QContextMenuEvent* event) override;
 
  private:
   void setBucketInterval();
@@ -122,6 +132,8 @@ class HistogramView : public QChartView
   QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
+  QMenu* menu_;
+
   // Settings
   float max_slack_;
   float min_slack_;
@@ -151,6 +163,10 @@ class ChartsWidget : public QDockWidget
   void setLogger(utl::Logger* logger);
 
   void setMode(Mode mode);
+
+  void saveImage(const std::string& path,
+                 const std::optional<int>& width_px,
+                 const std::optional<int>& height_px);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,

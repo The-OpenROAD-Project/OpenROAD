@@ -781,6 +781,24 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
       clock_name, filename, corner, width, height);
 }
 
+void Gui::saveHistogramImage(const std::string& filename,
+                             int width_px,
+                             int height_px)
+{
+  if (!enabled()) {
+    return;
+  }
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
+  main_window->getChartsWidget()->saveImage(filename, width, height);
+}
+
 void Gui::selectClockviewerClock(const std::string& clock_name)
 {
   if (!enabled()) {

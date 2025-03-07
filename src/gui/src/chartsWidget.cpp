@@ -42,6 +42,7 @@
 #include <cmath>
 #include <vector>
 
+#include "gui_utils.h"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
@@ -277,12 +278,43 @@ void ChartsWidget::reportEndPoints(const std::set<const sta::Pin*>& report_pins)
   emit endPointsToReport(report_pins, path_group_name_);
 }
 
+void ChartsWidget::saveImage(const std::string& path,
+                             const std::optional<int>& width_px,
+                             const std::optional<int>& height_px)
+{
+  const bool visible = isVisible();
+  if (!visible) {
+    setVisible(true);
+  }
+
+  HistogramView print_view(this);
+  print_view.setLogger(logger_);
+  print_view.setSTA(stagui_.get());
+  print_view.setData(fetchSlackHistogramData());
+  QSize view_size = display_->size();
+  if (width_px.has_value()) {
+    view_size.setWidth(width_px.value());
+  }
+  if (height_px.has_value()) {
+    view_size.setHeight(height_px.value());
+  }
+  print_view.scale(1, 1);  // mysteriously necessary sometimes
+  print_view.resize(view_size);
+  // Ensure the new view is sized correctly by Qt by processing the event
+  // so fit will work
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  print_view.save(QString::fromStdString(path));
+
+  setVisible(visible);
+}
+
 ////// HistogramView ///////
 HistogramView::HistogramView(QWidget* parent)
     : QChartView(new QChart, parent),
       chart_(chart()),
       axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
+      menu_(new QMenu(this)),
       max_slack_(std::numeric_limits<float>::lowest()),
       min_slack_(std::numeric_limits<float>::max()),
       bucket_interval_(0.0f),
@@ -290,6 +322,11 @@ HistogramView::HistogramView(QWidget* parent)
 {
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
+
+  connect(menu_->addAction("Save"),
+          &QAction::triggered,
+          this,
+          &HistogramView::saveImage);
 }
 
 void HistogramView::clear()
@@ -736,6 +773,43 @@ void HistogramView::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
   for (int i = 0; i < buckets_.positive.size(); ++i) {
     neg_set << 0;
     pos_set << buckets_.positive[i].size();
+  }
+}
+
+void HistogramView::save(const QString& path)
+{
+  QString save_path = path;
+  if (path.isEmpty()) {
+    save_path = Utils::requestImageSavePath(this, "Save histogram");
+    if (save_path.isEmpty()) {
+      return;
+    }
+  }
+  save_path = Utils::fixImagePath(save_path, logger_);
+
+  const QRect render_rect = rect();
+
+  Utils::renderImage(save_path,
+                     viewport(),
+                     render_rect.width(),
+                     render_rect.height(),
+                     render_rect,
+                     Qt::white,
+                     logger_);
+}
+
+void HistogramView::saveImage()
+{
+  save("");
+}
+
+void HistogramView::contextMenuEvent(QContextMenuEvent* event)
+{
+  QChartView::contextMenuEvent(event);
+  if (!event->isAccepted()) {
+    if (!buckets_.areEmpty()) {
+      menu_->exec(event->globalPos());
+    }
   }
 }
 
