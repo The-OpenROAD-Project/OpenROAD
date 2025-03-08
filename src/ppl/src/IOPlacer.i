@@ -150,29 +150,11 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_names_constraint(PinSet *pin_list, Edge edge, int begin, int end)
-{
-  getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
-}
-
-void add_direction_constraint(Direction direction, Edge edge,
-                               int begin, int end)
-{
-  getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
-}
-
-void
 add_top_layer_constraint(PinSet *pin_list,
                          int x1, int y1,
                          int x2, int y2)
 {
   getIOPlacer()->addTopLayerConstraint(pin_list, odb::Rect(x1, y1, x2, y2));
-}
-
-void
-add_mirrored_pins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
-{
-  getIOPlacer()->addMirroredPins(bterm1, bterm2);
 }
 
 void
@@ -209,12 +191,6 @@ void
 add_ver_layer(odb::dbTechLayer* layer)
 {
   getIOPlacer()->addVerLayer(layer);
-}
-
-void
-add_pin_group(PinList *pin_list, bool order)
-{
-  getIOPlacer()->addPinGroup(pin_list, order);
 }
 
 void
