@@ -782,6 +782,7 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
 }
 
 void Gui::saveHistogramImage(const std::string& filename,
+                             const std::string& mode,
                              int width_px,
                              int height_px)
 {
@@ -796,7 +797,10 @@ void Gui::saveHistogramImage(const std::string& filename,
   if (height_px > 0) {
     height = height_px;
   }
-  main_window->getChartsWidget()->saveImage(filename, width, height);
+  const ChartsWidget::Mode chart_mode
+      = main_window->getChartsWidget()->modeFromString(mode);
+  main_window->getChartsWidget()->saveImage(
+      filename, chart_mode, width, height);
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name)
@@ -1338,14 +1342,8 @@ void Gui::selectChart(const std::string& name)
     return;
   }
 
-  ChartsWidget::Mode mode;
-  if (name == "Endpoint Slack") {
-    mode = ChartsWidget::Mode::SLACK_HISTOGRAM;
-  } else if (name == "Select Mode") {
-    mode = ChartsWidget::Mode::SELECT;
-  } else {
-    logger_->error(utl::GUI, 105, "Chart {} is unknown.", name);
-  }
+  const ChartsWidget::Mode mode
+      = main_window->getChartsWidget()->modeFromString(name);
   main_window->getChartsWidget()->setMode(mode);
 }
 

@@ -155,7 +155,8 @@ class ChartsWidget : public QDockWidget
   enum Mode
   {
     SELECT,
-    SLACK_HISTOGRAM
+    SETUP_SLACK,
+    HOLD_SLACK
   };
 
   ChartsWidget(QWidget* parent = nullptr);
@@ -165,8 +166,11 @@ class ChartsWidget : public QDockWidget
   void setMode(Mode mode);
 
   void saveImage(const std::string& path,
+                 const Mode mode,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
+
+  Mode modeFromString(const std::string& mode) const;
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
@@ -185,10 +189,10 @@ class ChartsWidget : public QDockWidget
   void setSlackHistogramLayout();
   void setModeMenu();
 
-  SlackHistogramData fetchSlackHistogramData();
-  void removeUnconstrainedPinsAndSetLimits(SlackHistogramData& data);
+  void setData(HistogramView* view, const std::string& path_group) const;
 
-  void clearChart();
+  SlackHistogramData fetchSlackHistogramData() const;
+  void removeUnconstrainedPinsAndSetLimits(SlackHistogramData& data) const;
 
   utl::Logger* logger_;
   sta::dbSta* sta_;

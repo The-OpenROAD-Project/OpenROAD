@@ -109,18 +109,52 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 void ChartsWidget::changeMode()
 {
   filters_menu_->clear();
-  clearChart();
+  display_->clear();
 
-  switch (mode_menu_->currentIndex()) {
+  resetting_menu_ = true;
+
+  const Mode mode = static_cast<Mode>(mode_menu_->currentIndex());
+
+  switch (mode) {
+    case SETUP_SLACK:
+      stagui_->setUseMax(true);
+      break;
+    case HOLD_SLACK:
+      stagui_->setUseMax(false);
+      break;
     case SELECT:
       break;
-    case SLACK_HISTOGRAM:
-      resetting_menu_ = true;
-      setSlackHistogramLayout();
+  }
+
+  setSlackHistogramLayout();
+
+  switch (mode) {
+    case SELECT:
+      break;
+    case SETUP_SLACK:
+    case HOLD_SLACK:
       setSlackHistogram();
-      resetting_menu_ = false;
       break;
   }
+
+  resetting_menu_ = false;
+}
+
+ChartsWidget::Mode ChartsWidget::modeFromString(const std::string& mode) const
+{
+  if (mode == "setup" || mode == "Endpoint Slack" || mode == "Setup Slack") {
+    return SETUP_SLACK;
+  }
+  if (mode == "hold" || mode == "Hold Slack") {
+    return HOLD_SLACK;
+  }
+  if (mode == "Select Mode") {
+    return SELECT;
+  }
+
+  logger_->error(utl::GUI, 4, "{} is not a recognized mode", mode);
+
+  return SELECT;
 }
 
 void ChartsWidget::setMode(Mode mode)
@@ -138,7 +172,8 @@ void ChartsWidget::setSlackHistogramLayout()
 void ChartsWidget::setModeMenu()
 {
   mode_menu_->addItem("Select Mode");
-  mode_menu_->addItem("Endpoint Slack");
+  mode_menu_->addItem("Setup Slack");
+  mode_menu_->addItem("Hold Slack");
 
   connect(mode_menu_,
           qOverload<int>(&QComboBox::currentIndexChanged),
@@ -163,11 +198,6 @@ void ChartsWidget::updatePathGroupMenuIndexes()
   }
 }
 
-void ChartsWidget::clearChart()
-{
-  display_->clear();
-}
-
 void ChartsWidget::setSlackHistogram()
 {
   SlackHistogramData data = fetchSlackHistogramData();
@@ -183,7 +213,7 @@ void ChartsWidget::setSlackHistogram()
   display_->setData(data);
 }
 
-SlackHistogramData ChartsWidget::fetchSlackHistogramData()
+SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
 {
   SlackHistogramData data;
 
@@ -196,7 +226,8 @@ SlackHistogramData ChartsWidget::fetchSlackHistogramData()
   return data;
 }
 
-void ChartsWidget::removeUnconstrainedPinsAndSetLimits(SlackHistogramData& data)
+void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
+    SlackHistogramData& data) const
 {
   StaPins end_points = stagui_->getEndPoints();
   const int all_endpoints_count = end_points.size();
@@ -256,21 +287,29 @@ void ChartsWidget::changePathGroupFilter()
     return;
   }
 
-  clearChart();
-
-  StaPins end_points;
-  EndPointSlackMap end_point_to_slack;
   const int filter_index = filters_menu_->currentIndex();
 
   if (filter_index > 0) {
     path_group_name_ = filter_index_to_path_group_name_.at(filter_index);
-    display_->setData(stagui_->getEndPointToSlackMap(path_group_name_));
   } else {
     path_group_name_.clear();
-    display_->setData(fetchSlackHistogramData());
   }
 
+  setData(display_, path_group_name_);
+
   prev_filter_index_ = filter_index;
+}
+
+void ChartsWidget::setData(HistogramView* view,
+                           const std::string& path_group) const
+{
+  view->clear();
+
+  if (path_group.empty()) {
+    view->setData(fetchSlackHistogramData());
+  } else {
+    view->setData(stagui_->getEndPointToSlackMap(path_group));
+  }
 }
 
 void ChartsWidget::reportEndPoints(const std::set<const sta::Pin*>& report_pins)
@@ -279,6 +318,7 @@ void ChartsWidget::reportEndPoints(const std::set<const sta::Pin*>& report_pins)
 }
 
 void ChartsWidget::saveImage(const std::string& path,
+                             const Mode mode,
                              const std::optional<int>& width_px,
                              const std::optional<int>& height_px)
 {
@@ -287,10 +327,13 @@ void ChartsWidget::saveImage(const std::string& path,
     setVisible(true);
   }
 
+  const Mode current_mode = static_cast<Mode>(mode_menu_->currentIndex());
+  setMode(mode);
+
   HistogramView print_view(this);
   print_view.setLogger(logger_);
   print_view.setSTA(stagui_.get());
-  print_view.setData(fetchSlackHistogramData());
+  setData(&print_view, path_group_name_);
   QSize view_size = display_->size();
   if (width_px.has_value()) {
     view_size.setWidth(width_px.value());
@@ -305,6 +348,7 @@ void ChartsWidget::saveImage(const std::string& path,
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   print_view.save(QString::fromStdString(path));
 
+  setMode(current_mode);
   setVisible(visible);
 }
 

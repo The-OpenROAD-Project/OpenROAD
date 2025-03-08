@@ -650,6 +650,7 @@ class Gui
 
   // Save histogram view
   void saveHistogramImage(const std::string& filename,
+                          const std::string& mode,
                           int width_px = 0,
                           int height_px = 0);
 
