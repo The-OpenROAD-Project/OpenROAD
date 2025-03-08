@@ -1669,7 +1669,8 @@ void dbBlock::addBTermNamesConstraint(const std::vector<dbBTerm*>& bterms,
                                       const Rect& constraint_region)
 {
   for (dbBTerm* bterm : bterms) {
-    if (bterm->getConstraintRegion()) {
+    const auto& bterm_constraint = bterm->getConstraintRegion();
+    if (bterm_constraint && bterm_constraint.value() != constraint_region) {
       getImpl()->getLogger()->error(
           utl::ODB,
           239,

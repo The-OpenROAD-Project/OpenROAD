@@ -150,18 +150,6 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_names_constraint(PinSet *pin_list, Edge edge, int begin, int end)
-{
-  getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
-}
-
-void add_direction_constraint(Direction direction, Edge edge,
-                               int begin, int end)
-{
-  getIOPlacer()->addDirectionConstraint(direction, edge, begin, end);
-}
-
-void
 add_top_layer_constraint(PinSet *pin_list,
                          int x1, int y1,
                          int x2, int y2)

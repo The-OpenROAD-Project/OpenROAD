@@ -124,11 +124,6 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
-  void addDirectionConstraint(Direction direction,
-                              Edge edge,
-                              int begin,
-                              int end);
   void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
@@ -188,8 +183,7 @@ class IOPlacer
                        bool is_group);
   std::string getSlotsLocation(Edge edge, bool top_layer);
   int placeFallbackPins(bool random);
-  void assignMirroredPins(IOPin& io_pin,
-                          std::vector<IOPin>& assignment);
+  void assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
                            std::vector<Slot>& slots);
@@ -213,6 +207,8 @@ class IOPlacer
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
+  Interval findIntervalFromRect(const odb::Rect& rect);
+  void getConstraintsFromDB();
   void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();

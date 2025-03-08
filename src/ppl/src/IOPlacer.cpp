@@ -1775,64 +1775,6 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
-void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
-{
-  Interval interval(edge, begin, end);
-  bool inserted = false;
-  std::string pin_names = getPinSetOrListString(*pins);
-
-  if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
-    debugPrint(logger_,
-               utl::PPL,
-               "pin_groups",
-               1,
-               "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
-               pin_names,
-               getBlock()->dbuToMicrons(begin),
-               getBlock()->dbuToMicrons(end),
-               getEdgeString(edge));
-  } else {
-    logger_->info(
-        utl::PPL,
-        48,
-        "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
-        pin_names,
-        getBlock()->dbuToMicrons(begin),
-        getBlock()->dbuToMicrons(end),
-        getEdgeString(edge));
-  }
-
-  for (Constraint& constraint : constraints_) {
-    if (constraint.interval == interval) {
-      constraint.pin_list.insert(pins->begin(), pins->end());
-      inserted = true;
-      break;
-    }
-  }
-
-  if (!inserted) {
-    constraints_.emplace_back(*pins, Direction::invalid, interval);
-  }
-}
-
-void IOPlacer::addDirectionConstraint(Direction direction,
-                                      Edge edge,
-                                      int begin,
-                                      int end)
-{
-  Interval interval(edge, begin, end);
-  logger_->info(utl::PPL,
-                67,
-                "Restrict {} pins to region {:.2f}u-{:.2f}u, in the {} edge.",
-                getDirectionString(direction),
-                getBlock()->dbuToMicrons(begin),
-                getBlock()->dbuToMicrons(end),
-                getEdgeString(edge));
-
-  Constraint constraint(PinSet(), direction, interval);
-  constraints_.push_back(constraint);
-}
-
 void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
@@ -1940,9 +1882,55 @@ void IOPlacer::initMirroredPins(bool annealing)
   }
 }
 
+Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
+{
+  int begin;
+  int end;
+  Edge edge;
+
+  const odb::Rect die_area = getBlock()->getDieArea();
+  if (rect.xMin() == rect.xMax()) {
+    begin = rect.yMin();
+    end = rect.yMax();
+    edge = die_area.xMin() == rect.xMin() ? Edge::left : Edge::right;
+  } else {
+    begin = rect.xMin();
+    end = rect.xMax();
+    edge = die_area.yMin() == rect.yMin() ? Edge::bottom : Edge::top;
+  }
+
+  return Interval(edge, begin, end);
+}
+
+void IOPlacer::getConstraintsFromDB()
+{
+  std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
+  for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+    auto constraint_region = bterm->getConstraintRegion();
+    if (constraint_region) {
+      Interval interval = findIntervalFromRect(constraint_region.value());
+      pins_per_interval[interval].insert(bterm);
+    }
+  }
+
+  for (const auto& [interval, pins] : pins_per_interval) {
+    std::string pin_names = getPinSetOrListString(pins);
+    logger_->info(
+        utl::PPL,
+        67,
+        "Restrict pins [ {} ] to region {:.2f}u-{:.2f}u at the {} edge.",
+        pin_names,
+        getBlock()->dbuToMicrons(interval.getBegin()),
+        getBlock()->dbuToMicrons(interval.getEnd()),
+        getEdgeString(interval.getEdge()));
+    constraints_.push_back(
+        Constraint(std::move(pins), Direction::invalid, interval));
+  }
+}
+
 void IOPlacer::initConstraints(bool annealing)
 {
-  std::reverse(constraints_.begin(), constraints_.end());
+  getConstraintsFromDB();
   int constraint_idx = 0;
   int constraints_no_slots = 0;
   for (Constraint& constraint : constraints_) {
