@@ -454,6 +454,14 @@ find_floating_pins()
   return resizer->findFloatingPins();
 }
 
+TmpNetSeq *
+find_overdriven_nets(bool include_parallel_driven)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findOverdrivenNets(include_parallel_driven);
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
@@ -520,15 +528,20 @@ bool
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
-             bool match_cell_footprint, bool verbose,
-             bool skip_pin_swap, bool skip_gate_cloning,
-             bool skip_buffering, bool skip_buffer_removal,
+             int max_repairs_per_pass,
+             bool match_cell_footprint,
+             bool verbose,
+             bool skip_pin_swap,
+             bool skip_gate_cloning,
+             bool skip_buffering,
+             bool skip_buffer_removal,
              bool skip_last_gasp)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
-                       max_passes, match_cell_footprint, verbose,
+                       max_passes, max_repairs_per_pass,
+                       match_cell_footprint, verbose,
                        skip_pin_swap, skip_gate_cloning,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);
@@ -591,11 +604,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 bool
-recover_power(float recover_power_percent, bool match_cell_footprint)
+recover_power(float recover_power_percent, bool match_cell_footprint, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->recoverPower(recover_power_percent, match_cell_footprint);
+  return resizer->recoverPower(recover_power_percent, match_cell_footprint, verbose);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -755,6 +768,13 @@ eliminate_dead_logic_cmd(bool clean_nets)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->eliminateDeadLogic(clean_nets);
+}
+
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportEquivalentCells(cell, match_cell_footprint);
 }
 
 } // namespace

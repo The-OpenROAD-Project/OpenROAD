@@ -36,10 +36,13 @@
 #include "dbCore.h"
 #include "odb/odb.h"
 
+// User Code Begin Includes
+#include "odb/geom.h"
+// User Code End Includes
+
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbNet;
 class _dbTechLayer;
@@ -47,16 +50,12 @@ class _dbTechLayer;
 class _dbGuide : public _dbObject
 {
  public:
-  _dbGuide(_dbDatabase*, const _dbGuide& r);
   _dbGuide(_dbDatabase*);
-
-  ~_dbGuide() = default;
 
   bool operator==(const _dbGuide& rhs) const;
   bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGuide& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbGuide& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbId<_dbNet> net_;
   Rect box_;

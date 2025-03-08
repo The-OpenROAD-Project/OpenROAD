@@ -44,28 +44,35 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <cmath>
+#include <fstream>
+#include <map>
 #include <mutex>
 #include <regex>
+#include <string>
+#include <vector>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
+#include "boost/json.hpp"
+#include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "sta/Bfs.hh"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-#include "sta/PathExpanded.hh"
+#include "sta/MinMax.hh"
 #include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
 #include "sta/StaMain.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 ////////////////////////////////////////////////////////////////
@@ -81,6 +88,44 @@ dbSta* makeDbSta()
 }  // namespace ord
 
 namespace sta {
+
+namespace {
+// Holds the usage information of a specific cell which includes (i) name of
+// the cell, (ii) number of instances of the cell, and (iii) area of the cell
+// in microns^2.
+struct CellUsageInfo
+{
+  std::string name;
+  int count = 0;
+  double area = 0.0;
+};
+
+// Holds a snapshot of cell usage information at a given stage.
+struct CellUsageSnapshot
+{
+  std::string stage;
+  std::vector<CellUsageInfo> cells_usage_info;
+};
+
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& json_value,
+                CellUsageInfo const& cell_usage_info)
+{
+  json_value = {{"name", cell_usage_info.name},
+                {"count", cell_usage_info.count},
+                {"area", cell_usage_info.area}};
+}
+
+void tag_invoke(boost::json::value_from_tag,
+                boost::json::value& json_value,
+                CellUsageSnapshot const& cell_usage_snapshot)
+{
+  json_value
+      = {{"stage", cell_usage_snapshot.stage},
+         {"cell_usage_info",
+          boost::json::value_from(cell_usage_snapshot.cells_usage_info)}};
+}
+}  // namespace
 
 using utl::Logger;
 using utl::STA;
@@ -327,7 +372,7 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   return clk_nets;
 }
 
-std::string dbSta::getInstanceTypeText(InstType type)
+std::string dbSta::getInstanceTypeText(InstType type) const
 {
   switch (type) {
     case BLOCK:
@@ -496,19 +541,38 @@ dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
   return STD_COMBINATIONAL;
 }
 
-std::map<dbSta::InstType, dbSta::TypeStats> dbSta::countInstancesByType(
-    odb::dbModule* module)
+void dbSta::addInstanceByTypeInstance(odb::dbInst* inst,
+                                      InstTypeMap& inst_type_stats)
 {
-  std::map<InstType, TypeStats> inst_type_stats;
+  InstType type = getInstanceType(inst);
+  auto& stats = inst_type_stats[type];
+  stats.count++;
+  auto master = inst->getMaster();
+  stats.area += master->getArea();
+}
 
+void dbSta::countInstancesByType(odb::dbModule* module,
+                                 InstTypeMap& inst_type_stats,
+                                 std::vector<dbInst*>& insts)
+{
   for (auto inst : module->getLeafInsts()) {
-    InstType type = getInstanceType(inst);
-    auto& stats = inst_type_stats[type];
-    stats.count++;
-    auto master = inst->getMaster();
-    stats.area += master->getArea();
+    addInstanceByTypeInstance(inst, inst_type_stats);
+    insts.push_back(inst);
   }
-  return inst_type_stats;
+}
+
+void dbSta::countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
+                                             std::vector<dbInst*>& insts)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  for (auto inst : block->getInsts()) {
+    if (!inst->isPhysicalOnly()) {
+      continue;
+    }
+
+    addInstanceByTypeInstance(inst, inst_type_stats);
+    insts.push_back(inst);
+  }
 }
 
 std::string toLowerCase(std::string str)
@@ -519,13 +583,15 @@ std::string toLowerCase(std::string str)
   return str;
 }
 
-void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
+void dbSta::reportCellUsage(odb::dbModule* module,
+                            const bool verbose,
+                            const char* file_name,
+                            const char* stage_name)
 {
-  auto instances_types = countInstancesByType(module);
+  InstTypeMap instances_types;
+  std::vector<dbInst*> insts;
+  countInstancesByType(module, instances_types, insts);
   auto block = db_->getChip()->getBlock();
-  auto insts = module->getLeafInsts();
-  const int total_usage = insts.size();
-  int64_t total_area = 0;
   const double area_to_microns = std::pow(block->getDbUnitsPerMicron(), 2);
 
   const char* header_format = "{:37} {:>7} {:>10}";
@@ -534,6 +600,8 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
     logger_->report("Cell type report for {} ({})",
                     module->getModInst()->getHierarchicalName(),
                     module->getName());
+  } else {
+    countPhysicalOnlyInstancesByType(instances_types, insts);
   }
   logger_->report(header_format, "Cell type report:", "Count", "Area");
 
@@ -541,6 +609,12 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
   std::string metrics_suffix;
   if (block->getTopModule() != module) {
     metrics_suffix = fmt::format("__in_module:{}", module->getName());
+  }
+
+  int total_usage = 0;
+  int64_t total_area = 0;
+  for (auto [type, stats] : instances_types) {
+    total_usage += stats.count;
   }
 
   for (auto [type, stats] : instances_types) {
@@ -576,6 +650,98 @@ void dbSta::report_cell_usage(odb::dbModule* module, const bool verbose)
       logger_->report(
           format, master->getName(), stats.count, stats.area / area_to_microns);
     }
+  }
+
+  std::string file(file_name);
+  if (!file.empty()) {
+    std::map<std::string, CellUsageInfo> name_to_cell_usage_info;
+    for (const dbInst* inst : insts) {
+      const std::string& cell_name = inst->getMaster()->getName();
+      auto [it, inserted] = name_to_cell_usage_info.insert(
+          {cell_name,
+           CellUsageInfo{
+               .name = cell_name,
+               .count = 1,
+               .area = inst->getMaster()->getArea() / area_to_microns,
+           }});
+      if (!inserted) {
+        it->second.count++;
+      }
+    }
+
+    CellUsageSnapshot cell_usage_snapshot{
+        .stage = std::string(stage_name),
+        .cells_usage_info = std::vector<CellUsageInfo>()};
+    cell_usage_snapshot.cells_usage_info.reserve(
+        name_to_cell_usage_info.size());
+    for (const auto& [cell_name, cell_usage_info] : name_to_cell_usage_info) {
+      cell_usage_snapshot.cells_usage_info.push_back(cell_usage_info);
+    }
+    boost::json::value output = boost::json::value_from(cell_usage_snapshot);
+
+    std::ofstream snapshot;
+    snapshot.open(file);
+    if (snapshot.fail()) {
+      logger_->error(STA, 1001, "Could not open snapshot file {}", file_name);
+    } else {
+      snapshot << output.as_object();
+      snapshot.close();
+    }
+  }
+}
+
+void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+{
+  if (num_bins <= 0) {
+    logger_->warn(STA, 70, "The number of bins must be positive.");
+    return;
+  }
+  const int max_bin_width = 50;  // Maximum number of chars to print for a bin.
+
+  // Get and sort the slacks.
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  std::vector<float> slacks;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    float slack = sta_->vertexSlack(vertex, min_max);
+    if (slack != sta::INF) {  // Ignore unconstrained paths.
+      slacks.push_back(time_unit->staToUser(slack));
+    }
+  }
+  if (slacks.empty()) {
+    logger_->warn(STA, 71, "No constrained slacks found.");
+    return;
+  }
+  std::sort(slacks.begin(), slacks.end());
+
+  // Populate each bin with count.
+  std::vector<int> bins(num_bins, 0);
+  const float min_slack = slacks.front();
+  const float bin_range = (slacks.back() - min_slack) / num_bins;
+  for (const float& slack : slacks) {
+    int bin = static_cast<int>((slack - min_slack) / bin_range);
+    if (bin >= num_bins) {  // Special case for paths with the maximum slack.
+      bin = num_bins - 1;
+    }
+    bins[bin]++;
+  }
+
+  // Print the histogram.
+  const int largest_bin = *std::max_element(bins.begin(), bins.end());
+  for (int bin = 0; bin < num_bins; ++bin) {
+    const float bin_start = min_slack + bin * bin_range;
+    const float bin_end = min_slack + (bin + 1) * bin_range;
+    int bar_length  // Round the bar length to its closest value.
+        = (max_bin_width * bins[bin] + largest_bin / 2) / largest_bin;
+    if (bar_length == 0 && bins[bin] > 0) {
+      bar_length = 1;  // Better readability when non-zero bins have a bar.
+    }
+    logger_->report("[{:>6.3f}, {:>6.3f}{}: {} ({})",
+                    bin_start,
+                    bin_end,
+                    // The final bin is also closed from the right.
+                    bin == num_bins - 1 ? "]" : ")",
+                    std::string(bar_length, '*'),
+                    bins[bin]);
   }
 }
 

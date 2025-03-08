@@ -69,6 +69,7 @@ class SoftMacro;
 class Cluster;
 
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
+using Point = std::pair<float, float>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -199,13 +200,22 @@ class Cluster
   void clearHardMacros();
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
-  // Position must be specified when setting an IO cluster
-  void setAsIOCluster(const std::pair<float, float>& pos,
-                      float width,
-                      float height,
-                      Boundary constraint_boundary);
   bool isIOCluster() const;
+
+  bool isClusterOfUnplacedIOPins() const
+  {
+    return is_cluster_of_unplaced_io_pins_;
+  }
+  void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
+                                    float width,
+                                    float height,
+                                    Boundary constraint_boundary);
   Boundary getConstraintBoundary() const { return constraint_boundary_; }
+
+  bool isIOPadCluster() const { return is_io_pad_cluster_; }
+  void setAsIOPadCluster(const std::pair<float, float>& pos,
+                         float width,
+                         float height);
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -257,18 +267,6 @@ class Cluster
   int getCloseCluster(const std::vector<int>& candidate_clusters,
                       float net_threshold);
 
-  // Path synthesis support
-  // After path synthesis, the children cluster of current cluster will
-  // not have any connections outsize the parent cluster
-  // All the outside connections have been converted to the connections
-  // related to pin access
-  void setPinAccess(int cluster_id, Boundary pin_access, float weight);
-  void addBoundaryConnection(Boundary pin_a, Boundary pin_b, float num_net);
-  const std::pair<Boundary, float> getPinAccess(int cluster_id);
-  const std::map<int, std::pair<Boundary, float>> getPinAccessMap() const;
-  const std::map<Boundary, std::map<Boundary, float>> getBoundaryConnection()
-      const;
-
   // virtual connections
   const std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
@@ -300,9 +298,8 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
-  // We model pads as clusters with no area
-  // The position be the center of IOs
-  bool is_io_cluster_ = false;
+  bool is_cluster_of_unplaced_io_pins_{false};
+  bool is_io_pad_cluster_{false};
   Boundary constraint_boundary_ = NONE;
 
   bool is_array_of_interconnected_macros = false;
@@ -365,7 +362,7 @@ class HardMacro
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
-  bool isIOCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -539,7 +536,7 @@ class SoftMacro
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
-  bool isIOCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
@@ -586,14 +583,12 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
-    hpwl = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
-    hpwl = 0;
   }
 
   bool operator==(const BundledNet& net)
@@ -602,19 +597,8 @@ struct BundledNet
            && (terminals.second == net.terminals.second);
   }
 
-  // id for terminals, the id can be the id of hard macro or soft
-  // macro
-  std::pair<int, int> terminals;
-  // Number of bundled connections (can be timing-related weight)
-  float weight;
-  // support for bus synthsis
-  float hpwl;  // HPWL of the Net (in terms of path length)
-  // shortest paths:  to minimize timing
-  // store all the shortest paths between two soft macros
-  std::vector<std::vector<int>> edge_paths;
-  // store all the shortest paths between two soft macros in terms of
-  // boundary edges.  All the internal edges are removed
-  std::vector<std::vector<int>> boundary_edge_paths;
+  std::pair<int, int> terminals;  // source_id <--> target_id (undirected)
+  float weight;  // Number of bundled connections (can be timing-related)
 
   // In our framework, we only bundled connections between clusters.
   // Thus each net must have both src_cluster_id and target_cluster_id

@@ -40,6 +40,7 @@
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "point.h"
+#include "utl/prometheus/gauge.h"
 
 namespace utl {
 class Logger;
@@ -135,11 +136,15 @@ class NesterovPlace
   float wireLengthCoefX_ = 0;
   float wireLengthCoefY_ = 0;
 
+  // observability metrics
+  utl::Gauge<double>* hpwl_gauge_;
+
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
 
   bool isDiverged_ = false;
-  bool isRoutabilityNeed_ = true;
+  bool is_routability_need_ = true;
+  float routability_save_snapshot_ = 0.6;
 
   std::string divergeMsg_;
   int divergeCode_ = 0;

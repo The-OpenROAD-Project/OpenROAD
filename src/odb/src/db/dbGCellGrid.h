@@ -46,7 +46,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 // User Code Begin Classes
 class _dbTechLayer;
@@ -63,18 +62,12 @@ struct dbGCellGridFlags
 class _dbGCellGrid : public _dbObject
 {
  public:
-  _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
-
-  ~_dbGCellGrid() = default;
 
   bool operator==(const _dbGCellGrid& rhs) const;
   bool operator!=(const _dbGCellGrid& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGCellGrid& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGCellGrid& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   dbMatrix<dbGCellGrid::GCellData>& get(const dbId<_dbTechLayer>& lid);
   dbTechLayer* getLayer(const dbId<_dbTechLayer>& lid) const;

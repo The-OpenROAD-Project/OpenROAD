@@ -34,7 +34,6 @@
 #include "dbDft.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
@@ -64,27 +63,6 @@ bool _dbDft::operator<(const _dbDft& rhs) const
   return true;
 }
 
-void _dbDft::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbDft& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(scan_inserted_);
-  DIFF_TABLE(scan_pins_);
-  DIFF_TABLE(scan_chains_);
-  DIFF_END
-}
-
-void _dbDft::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(scan_inserted_);
-  DIFF_OUT_TABLE(scan_pins_);
-  DIFF_OUT_TABLE(scan_chains_);
-
-  DIFF_END
-}
-
 _dbDft::_dbDft(_dbDatabase* db)
 {
   scan_inserted_ = false;
@@ -92,13 +70,6 @@ _dbDft::_dbDft(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanPinObj);
   scan_chains_ = new dbTable<_dbScanChain>(
       db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanChainObj);
-}
-
-_dbDft::_dbDft(_dbDatabase* db, const _dbDft& r)
-{
-  scan_inserted_ = r.scan_inserted_;
-  scan_pins_ = new dbTable<_dbScanPin>(db, this, *r.scan_pins_);
-  scan_chains_ = new dbTable<_dbScanChain>(db, this, *r.scan_chains_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbDft& obj)
@@ -128,6 +99,15 @@ dbObjectTable* _dbDft::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbDft::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_pins_->collectMemInfo(info.children_["scan_pins_"]);
+
+  scan_chains_->collectMemInfo(info.children_["scan_chains_"]);
 }
 
 _dbDft::~_dbDft()

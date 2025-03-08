@@ -456,6 +456,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                      diode_mterm,
                                                      ratio_margin,
                                                      num_threads);
+      updateDbCongestion();
     }
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
@@ -1674,6 +1675,12 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   return cap > 0;
 }
 
+// Find the position of the middle of a GCell closest to the position
+odb::Point GlobalRouter::getPositionOnGrid(const odb::Point& real_position)
+{
+  return grid_->getPositionOnGrid(real_position);
+}
+
 void GlobalRouter::updateResources(const int& init_x,
                                    const int& init_y,
                                    const int& final_x,
@@ -1822,9 +1829,11 @@ bool GlobalRouter::isPinReachable(const Pin& pin, const odb::Point& pos_on_grid)
 
   int edge_cap = 0;
   if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    edge_cap
-        = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
-  } else {
+    if (pin_y != 0) {
+      edge_cap
+          = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
+    }
+  } else if (pin_x != 0) {
     edge_cap
         = fastroute_->getEdgeCapacity(pin_x - 1, pin_y, pin_x, pin_y, layer);
   }
@@ -2431,6 +2440,10 @@ void GlobalRouter::saveGuides()
   int offset_y = grid_origin_.y();
 
   bool guide_is_congested = is_congested_ && !allow_congestion_;
+
+  int net_with_jumpers, total_jumpers;
+  net_with_jumpers = 0;
+  total_jumpers = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2439,6 +2452,7 @@ void GlobalRouter::saveGuides()
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
 
+    int jumper_count = 0;
     if (!route.empty()) {
       db_net->clearGuides();
       for (GSegment& segment : route) {
@@ -2487,14 +2501,26 @@ void GlobalRouter::saveGuides()
               db_net, layer, layer, box, guide_is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
+            jumper_count++;
           }
         }
       }
+    }
+    if (jumper_count) {
+      total_jumpers += jumper_count;
+      net_with_jumpers++;
     }
     auto dbGuides = db_net->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
+  debugPrint(logger_,
+             GRT,
+             "jumper_insertion",
+             2,
+             "Remaining jumpers {} in {} repaired nets after GRT",
+             total_jumpers,
+             net_with_jumpers);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -2995,6 +3021,8 @@ void GlobalRouter::computeWirelength()
   for (auto& net_route : routes_) {
     total_wirelength += computeNetWirelength(net_route.first);
   }
+  logger_->metric("global_route__wirelength",
+                  total_wirelength / block_->getDefUnits());
   if (verbose_)
     logger_->info(GRT,
                   18,

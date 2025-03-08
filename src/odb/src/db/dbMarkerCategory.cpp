@@ -35,7 +35,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbMarker.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -88,37 +87,6 @@ bool _dbMarkerCategory::operator<(const _dbMarkerCategory& rhs) const
   return true;
 }
 
-void _dbMarkerCategory::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbMarkerCategory& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(description_);
-  DIFF_FIELD(source_);
-  DIFF_FIELD(max_markers_);
-  DIFF_TABLE(marker_tbl_);
-  DIFF_TABLE(categories_tbl_);
-  DIFF_HASH_TABLE(categories_hash_);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbMarkerCategory::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(description_);
-  DIFF_OUT_FIELD(source_);
-  DIFF_OUT_FIELD(max_markers_);
-  DIFF_OUT_TABLE(marker_tbl_);
-  DIFF_OUT_TABLE(categories_tbl_);
-  DIFF_OUT_HASH_TABLE(categories_hash_);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  DIFF_END
-}
-
 _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
 {
   _name = nullptr;
@@ -131,20 +99,6 @@ _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
       (GetObjTbl_t) &_dbMarkerCategory::getObjectTable,
       dbMarkerCategoryObj);
   categories_hash_.setTable(categories_tbl_);
-}
-
-_dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db,
-                                     const _dbMarkerCategory& r)
-{
-  _name = r._name;
-  description_ = r.description_;
-  source_ = r.source_;
-  max_markers_ = r.max_markers_;
-  marker_tbl_ = new dbTable<_dbMarker>(db, this, *r.marker_tbl_);
-  categories_tbl_
-      = new dbTable<_dbMarkerCategory>(db, this, *r.categories_tbl_);
-  categories_hash_.setTable(categories_tbl_);
-  _next_entry = r._next_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
@@ -184,6 +138,19 @@ dbObjectTable* _dbMarkerCategory::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbMarkerCategory::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  marker_tbl_->collectMemInfo(info.children_["marker_tbl_"]);
+
+  categories_tbl_->collectMemInfo(info.children_["categories_tbl_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["categories_hash"].add(categories_hash_);
+  // User Code End collectMemInfo
 }
 
 _dbMarkerCategory::~_dbMarkerCategory()

@@ -34,7 +34,6 @@
 #include "dbTechLayerMaxSpacingRule.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -61,39 +60,9 @@ bool _dbTechLayerMaxSpacingRule::operator<(
   return true;
 }
 
-void _dbTechLayerMaxSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerMaxSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(cut_class_);
-  DIFF_FIELD(max_spacing_);
-  DIFF_END
-}
-
-void _dbTechLayerMaxSpacingRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(cut_class_);
-  DIFF_OUT_FIELD(max_spacing_);
-
-  DIFF_END
-}
-
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
 {
   max_spacing_ = 0;
-}
-
-_dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerMaxSpacingRule& r)
-{
-  cut_class_ = r.cut_class_;
-  max_spacing_ = r.max_spacing_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMaxSpacingRule& obj)
@@ -108,6 +77,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
   stream << obj.cut_class_;
   stream << obj.max_spacing_;
   return stream;
+}
+
+void _dbTechLayerMaxSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["cut_class"].add(cut_class_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -45,7 +45,6 @@ class _dbCCSeg;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbCapNodeFlags
 {
@@ -93,10 +92,7 @@ class _dbCapNode : public _dbObject
     return o1->getOID() < o2->getOID();
   }
 
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbCapNode& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbCapNode::_dbCapNode(_dbDatabase*)

@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -88,44 +87,6 @@ bool _dbTechLayerEolKeepOutRule::operator<(
   return true;
 }
 
-void _dbTechLayerEolKeepOutRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerEolKeepOutRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.class_valid_);
-  DIFF_FIELD(flags_.corner_only_);
-  DIFF_FIELD(flags_.except_within_);
-  DIFF_FIELD(eol_width_);
-  DIFF_FIELD(backward_ext_);
-  DIFF_FIELD(forward_ext_);
-  DIFF_FIELD(side_ext_);
-  DIFF_FIELD(within_low_);
-  DIFF_FIELD(within_high_);
-  DIFF_FIELD(class_name_);
-  DIFF_END
-}
-
-void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.class_valid_);
-  DIFF_OUT_FIELD(flags_.corner_only_);
-  DIFF_OUT_FIELD(flags_.except_within_);
-  DIFF_OUT_FIELD(eol_width_);
-  DIFF_OUT_FIELD(backward_ext_);
-  DIFF_OUT_FIELD(forward_ext_);
-  DIFF_OUT_FIELD(side_ext_);
-  DIFF_OUT_FIELD(within_low_);
-  DIFF_OUT_FIELD(within_high_);
-  DIFF_OUT_FIELD(class_name_);
-
-  DIFF_END
-}
-
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -136,23 +97,6 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
   within_low_ = 0;
   within_high_ = 0;
   class_name_ = "";
-}
-
-_dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
-    _dbDatabase* db,
-    const _dbTechLayerEolKeepOutRule& r)
-{
-  flags_.class_valid_ = r.flags_.class_valid_;
-  flags_.corner_only_ = r.flags_.corner_only_;
-  flags_.except_within_ = r.flags_.except_within_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  eol_width_ = r.eol_width_;
-  backward_ext_ = r.backward_ext_;
-  forward_ext_ = r.forward_ext_;
-  side_ext_ = r.side_ext_;
-  within_low_ = r.within_low_;
-  within_high_ = r.within_high_;
-  class_name_ = r.class_name_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
@@ -185,6 +129,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   stream << obj.within_high_;
   stream << obj.class_name_;
   return stream;
+}
+
+void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["class_name"].add(class_name_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

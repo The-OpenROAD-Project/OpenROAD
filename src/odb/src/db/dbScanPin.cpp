@@ -36,7 +36,6 @@
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -72,42 +71,8 @@ bool _dbScanPin::operator<(const _dbScanPin& rhs) const
   return true;
 }
 
-void _dbScanPin::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbScanPin& rhs) const
-{
-  DIFF_BEGIN
-  // User Code Begin Differences
-  std::visit(
-      [&diff, rhs](auto&& pin) {
-        std::visit(
-            [&diff, &pin](auto&& rhs_pin) { diff.diff("pin_", pin, rhs_pin); },
-            rhs.pin_);
-      },
-      pin_);
-  // User Code End Differences
-  DIFF_END
-}
-
-void _dbScanPin::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-
-  // User Code Begin Out
-  std::visit([&diff, side](auto&& ptr) { diff.out(side, "pin_", ptr); }, pin_);
-  // User Code End Out
-  DIFF_END
-}
-
 _dbScanPin::_dbScanPin(_dbDatabase* db)
 {
-}
-
-_dbScanPin::_dbScanPin(_dbDatabase* db, const _dbScanPin& r)
-{
-  // User Code Begin CopyConstructor
-  pin_ = r.pin_;
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj)
@@ -120,6 +85,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
 {
   stream << obj.pin_;
   return stream;
+}
+
+void _dbScanPin::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

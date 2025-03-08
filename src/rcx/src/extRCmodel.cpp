@@ -33,10 +33,11 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -1632,6 +1633,9 @@ double extRCModel::getTotCapOverSub(uint met)
 
 extDistRC* extDistRCTable::getRC_index(int n)
 {
+  if (n < 0) {
+    return nullptr;
+  }
   int cnt = _measureTable->getCnt();
   if (n >= cnt) {
     return nullptr;
@@ -1642,7 +1646,7 @@ extDistRC* extDistRCTable::getRC_index(int n)
 extDistRC* extDistRCTable::getLastRC()
 {
   int cnt = _measureTable->getCnt();
-  return _measureTable->get(cnt - 1);
+  return getRC_index(cnt - 1);
 }
 
 extDistRC* extDistRCTable::getRC(uint s, bool compute)

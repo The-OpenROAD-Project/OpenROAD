@@ -78,34 +78,6 @@ bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
   return true;
 }
 
-void _dbInstHdr::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbInstHdr& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_mterm_cnt);
-  DIFF_FIELD(_id);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_FIELD(_lib);
-  DIFF_FIELD(_master);
-  DIFF_VECTOR(_mterms);
-  DIFF_FIELD(_inst_cnt);
-  DIFF_END
-}
-
-void _dbInstHdr::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_mterm_cnt);
-  DIFF_OUT_FIELD(_id);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-  DIFF_OUT_FIELD(_lib);
-  DIFF_OUT_FIELD(_master);
-  DIFF_OUT_VECTOR(_mterms);
-  DIFF_OUT_FIELD(_inst_cnt);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbInstHdr - Methods
@@ -245,6 +217,14 @@ void dbInstHdr::destroy(dbInstHdr* inst_hdr_)
   assert(inst_hdr->_inst_cnt == 0);
   block->_inst_hdr_hash.remove(inst_hdr);
   block->_inst_hdr_tbl->destroy(inst_hdr);
+}
+
+void _dbInstHdr::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["mterms"].add(_mterms);
 }
 
 }  // namespace odb

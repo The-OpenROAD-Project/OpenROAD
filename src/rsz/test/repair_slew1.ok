@@ -6,4 +6,9 @@
 [INFO ODB-0133]     Created 2 nets and 42 connections.
 Found 21 violations
 [INFO RSZ-0058] Using max wire length 693um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        43
+    final |     +0.6% |       1 |       0 |             0 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 1 instances.

@@ -38,7 +38,6 @@
 
 #include "dbArrayTable.h"
 #include "odb/ZException.h"
-#include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 
 namespace odb {
@@ -514,56 +513,6 @@ bool dbArrayTable<T>::operator==(const dbArrayTable<T>& rhs) const
   }
 
   return true;
-}
-
-template <class T>
-void dbArrayTable<T>::differences(dbDiff& diff,
-                                  const dbArrayTable<T>& rhs) const
-{
-  const dbArrayTable<T>& lhs = *this;
-
-  // These basic parameters should be the same...
-  assert(lhs._page_mask == rhs._page_mask);
-  assert(lhs._page_shift == rhs._page_shift);
-
-  uint page_sz = 1U << lhs._page_shift;
-  uint lhs_max = lhs._page_cnt * page_sz;
-  uint rhs_max = rhs._page_cnt * page_sz;
-
-  uint i;
-  const char* name = dbObject::getTypeName(_type);
-
-  for (i = 1; (i < lhs_max) && (i < rhs_max); ++i) {
-    bool lhs_valid_o = lhs.validId(i);
-    bool rhs_valid_o = rhs.validId(i);
-
-    if (lhs_valid_o && rhs_valid_o) {
-      T* l = lhs.getPtr(i);
-      T* r = rhs.getPtr(i);
-      l->differences(diff, nullptr, *r);
-    } else if (lhs_valid_o) {
-      T* l = lhs.getPtr(i);
-      l->out(diff, dbDiff::LEFT, nullptr);
-      diff.report("> %s [%u] FREE\n", name, i);
-    } else if (rhs_valid_o) {
-      T* r = rhs.getPtr(i);
-      diff.report("< %s [%u] FREE\n", name, i);
-      r->out(diff, dbDiff::RIGHT, nullptr);
-    }
-  }
-}
-
-template <class T>
-void dbArrayTable<T>::out(dbDiff& diff, char side) const
-{
-  uint i;
-
-  for (i = 1; i < _alloc_cnt; ++i) {
-    if (validId(i)) {
-      T* o = getPtr(i);
-      o->out(diff, side, nullptr);
-    }
-  }
 }
 
 template <class T>

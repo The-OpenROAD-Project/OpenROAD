@@ -36,7 +36,6 @@
 
 #include <vector>
 
-#include "odb/dbDiff.h"
 #include "odb/dbStream.h"
 
 namespace odb {
@@ -120,13 +119,6 @@ dbIStream& operator>>(dbIStream& stream, dbTransform& t)
   t._orient = (dbOrientType::Value) orient;
   stream >> t._offset;
   return stream;
-}
-
-dbDiff& operator<<(dbDiff& diff, const dbTransform& t)
-{
-  diff << (int) t._orient;
-  diff << t._offset;
-  return diff;
 }
 
 //

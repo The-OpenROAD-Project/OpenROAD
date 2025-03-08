@@ -33,7 +33,6 @@
 #include "dbTechViaGenerateRule.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -71,29 +70,6 @@ bool _dbTechViaGenerateRule::operator==(const _dbTechViaGenerateRule& rhs) const
   }
 
   return true;
-}
-
-void _dbTechViaGenerateRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechViaGenerateRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._default);
-  DIFF_VECTOR(_layer_rules);
-  DIFF_END
-}
-
-void _dbTechViaGenerateRule::out(dbDiff& diff,
-                                 char side,
-                                 const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._default);
-  DIFF_OUT_VECTOR(_layer_rules);
-  DIFF_END
 }
 
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
@@ -197,6 +173,15 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::getTechViaGenerateRule(
 {
   _dbTech* tech = (_dbTech*) tech_;
   return (dbTechViaGenerateRule*) tech->_via_generate_rule_tbl->getPtr(dbid_);
+}
+
+void _dbTechViaGenerateRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["layer_rules"].add(_layer_rules);
 }
 
 }  // namespace odb

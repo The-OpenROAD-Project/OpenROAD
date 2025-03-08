@@ -40,7 +40,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 class _dbBox;
 
@@ -54,18 +53,12 @@ struct dbPolygonFlags
 class _dbPolygon : public _dbObject
 {
  public:
-  _dbPolygon(_dbDatabase*, const _dbPolygon& r);
   _dbPolygon(_dbDatabase*);
-
-  ~_dbPolygon() = default;
 
   bool operator==(const _dbPolygon& rhs) const;
   bool operator!=(const _dbPolygon& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbPolygon& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbPolygon& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   static Polygon checkPolygon(std::vector<Point> polygon);
   void decompose();

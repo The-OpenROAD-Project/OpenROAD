@@ -7,14 +7,14 @@
 [INFO ODB-0133]     Created 6 nets and 13 connections.
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |    WNS   |   TNS      |  Viol  | Worst
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |            | Endpts | Endpt
----------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |   -6.365 |       -6.4 |      1 | r3/D
-        3 |       0 |       2 |        0 |      0 |     0 |   -1.790 |       -1.9 |      1 | r3/D
-       4* |       0 |       2 |        0 |      0 |     0 |   -1.790 |       -1.9 |      1 | r3/D
-    final |       0 |       2 |        0 |      0 |     0 |   -1.790 |       -1.9 |      1 | r3/D
----------------------------------------------------------------------------------------------------
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
+--------------------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -6.365 |       -6.4 |      1 | r3/D
+        3 |       0 |       2 |        0 |      0 |     0 |    +5.1% |   -1.790 |       -1.9 |      1 | r3/D
+       4* |       0 |       2 |        0 |      0 |     0 |    +5.1% |   -1.790 |       -1.9 |      1 | r3/D
+    final |       0 |       2 |        0 |      0 |     0 |    +5.1% |   -1.790 |       -1.9 |      1 | r3/D
+--------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0041] Resized 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test

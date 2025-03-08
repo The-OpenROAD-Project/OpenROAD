@@ -48,7 +48,6 @@ class dbOStream;
 class dbIStream;
 class dbObjectPage;
 class dbObjectTable;
-class dbDiff;
 class _dbObject;
 
 ///

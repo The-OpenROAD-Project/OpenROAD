@@ -46,7 +46,6 @@ class _dbBox;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbTechViaRuleFlags
 {
@@ -73,10 +72,7 @@ class _dbTechViaRule : public _dbObject
     return strcmp(_name, rhs._name) < 0;
   }
 
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechViaRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaRule& v);

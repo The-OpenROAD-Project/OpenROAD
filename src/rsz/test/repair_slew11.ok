@@ -17,6 +17,11 @@ Pin                                    Limit     Cap   Slack
 in1                                    60.65  151.34  -90.69 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 850um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         4
+    final |   +233.3% |       0 |       7 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
 [INFO RSZ-0037] Found 1 long wires.

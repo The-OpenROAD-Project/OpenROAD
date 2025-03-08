@@ -30,14 +30,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// Generator Code Begin Cpp
-#include "dbModInst.h"
+#include <fstream>
 
+// Generator Code Begin Cpp
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbModITerm.h"
+#include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -91,37 +91,6 @@ bool _dbModInst::operator<(const _dbModInst& rhs) const
   return true;
 }
 
-void _dbModInst::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbModInst& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_module_next);
-  DIFF_FIELD(_master);
-  DIFF_FIELD(_group_next);
-  DIFF_FIELD(_group);
-  DIFF_FIELD(_moditerms);
-  DIFF_END
-}
-
-void _dbModInst::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_module_next);
-  DIFF_OUT_FIELD(_master);
-  DIFF_OUT_FIELD(_group_next);
-  DIFF_OUT_FIELD(_group);
-  DIFF_OUT_FIELD(_moditerms);
-
-  DIFF_END
-}
-
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
   // User Code Begin Constructor
@@ -133,18 +102,6 @@ _dbModInst::_dbModInst(_dbDatabase* db)
   _group = 0;
   _group_next = 0;
   // User Code End Constructor
-}
-
-_dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _parent = r._parent;
-  _module_next = r._module_next;
-  _master = r._master;
-  _group_next = r._group_next;
-  _group = r._group;
-  _moditerms = r._moditerms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
@@ -190,6 +147,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   }
   // User Code End <<
   return stream;
+}
+
+void _dbModInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["moditerm_hash"].add(_moditerm_hash);
+  // User Code End collectMemInfo
 }
 
 _dbModInst::~_dbModInst()
@@ -448,8 +416,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
 // Two modules must have identical number of ports and port names need to match.
 // Functional equivalence is not required.
 // New module is not allowed to have multiple levels of hierarchy for now.
-// Newly instantiated modules are uniquified and old module instances are
-// deleted.
+// Newly instantiated modules are uniquified.
 bool dbModInst::swapMaster(dbModule* new_module)
 {
   _dbModInst* inst = (_dbModInst*) this;
@@ -537,6 +504,11 @@ bool dbModInst::swapMaster(dbModule* new_module)
     return false;
   }
 
+  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
+    std::ofstream outfile("before.txt");
+    getMaster()->getOwner()->debugPrintContent(outfile);
+  }
+
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
       new_module->getName(), this->getName(), getMaster()->getOwner());
   if (new_module_copy) {
@@ -544,8 +516,9 @@ bool dbModInst::swapMaster(dbModule* new_module)
                utl::ODB,
                "replace_design",
                1,
-               "Created uniquified module {}",
-               new_module_copy->getName());
+               "Created uniquified module {} in block {}",
+               new_module_copy->getName(),
+               new_module_copy->getOwner()->getName());
   } else {
     logger->error(utl::ODB,
                   455,
@@ -641,9 +614,19 @@ bool dbModInst::swapMaster(dbModule* new_module)
                    "  connecting iterm {} of mod net {}",
                    new_iterm->getName(),
                    new_mod_net->getName());
+
         if (flat_net) {
+          // Bug Fix:
+          // Explicitly kill connections to new_iterm
+          // kill any old modnet connections and flat nets.
+          //(for example the new_iterm on the new module
+          // might be connected to some modnet).
+          new_iterm->disconnect();  // kills both flat and hier net on new_iterm
+          // Connect the flat net, clears the old
+          // flat net if any, but not the mod net
           new_iterm->connect(flat_net);
         }
+
         if (other_mod_net) {
           new_iterm->connect(other_mod_net);
         }
@@ -659,6 +642,11 @@ bool dbModInst::swapMaster(dbModule* new_module)
                    old_mod_net->getName());
       }
     }
+  }
+
+  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
+    std::ofstream outfile("after_replace.txt");
+    getMaster()->getOwner()->debugPrintContent(outfile);
   }
 
   // TODO: remove old module insts without destroying old module itself

@@ -58,8 +58,10 @@ class OpenRoad;
 using odb::dbDatabase;
 
 using sta::Cell;
+using sta::ConcreteCell;
 using sta::ConcreteNetwork;
 using sta::dbNetwork;
+using sta::VerilogReader;
 
 // Hierarchical network for read_verilog.
 // Verilog cells and module networks are built here.
@@ -70,6 +72,7 @@ class dbVerilogNetwork : public ConcreteNetwork
   dbVerilogNetwork();
   Cell* findAnyCell(const char* name) override;
   void init(dbNetwork* db_network);
+  bool isBlackBox(ConcreteCell* cell);
 
  private:
   NetworkReader* db_network_ = nullptr;
@@ -79,19 +82,17 @@ dbVerilogNetwork* makeDbVerilogNetwork();
 
 void initDbVerilogNetwork(OpenRoad* openroad);
 
+void setDbNetworkLinkFunc(ord::OpenRoad* openroad,
+                          VerilogReader* verilog_reader);
+
 void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
 
 // Read a hierarchical Verilog netlist into a OpenSTA concrete network
 // objects. The hierarchical network is elaborated/flattened by the
 // link_design command and OpenDB objects are created from the flattened
 // network.
-void dbReadVerilog(const char* filename,
-                   dbVerilogNetwork* verilog_network,
-                   sta::VerilogReader* verilog_reader);
-
-void dbLinkDesign(const char* top_cell_name,
+bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   utl::Logger* logger,
                   bool hierarchy);

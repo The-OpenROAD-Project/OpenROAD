@@ -36,7 +36,6 @@
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.hpp"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
@@ -79,35 +78,6 @@ bool _dbScanChain::operator<(const _dbScanChain& rhs) const
   return true;
 }
 
-void _dbScanChain::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbScanChain& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(name_);
-  DIFF_FIELD(scan_in_);
-  DIFF_FIELD(scan_out_);
-  DIFF_FIELD(scan_enable_);
-  DIFF_FIELD(test_mode_);
-  DIFF_FIELD(test_mode_name_);
-  DIFF_TABLE(scan_partitions_);
-  DIFF_END
-}
-
-void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(name_);
-  DIFF_OUT_FIELD(scan_in_);
-  DIFF_OUT_FIELD(scan_out_);
-  DIFF_OUT_FIELD(scan_enable_);
-  DIFF_OUT_FIELD(test_mode_);
-  DIFF_OUT_FIELD(test_mode_name_);
-  DIFF_OUT_TABLE(scan_partitions_);
-
-  DIFF_END
-}
-
 _dbScanChain::_dbScanChain(_dbDatabase* db)
 {
   scan_partitions_ = new dbTable<_dbScanPartition>(
@@ -115,18 +85,6 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbScanChain::getObjectTable,
       dbScanPartitionObj);
-}
-
-_dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
-{
-  name_ = r.name_;
-  scan_in_ = r.scan_in_;
-  scan_out_ = r.scan_out_;
-  scan_enable_ = r.scan_enable_;
-  test_mode_ = r.test_mode_;
-  test_mode_name_ = r.test_mode_name_;
-  scan_partitions_
-      = new dbTable<_dbScanPartition>(db, this, *r.scan_partitions_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
@@ -162,6 +120,13 @@ dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbScanChain::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_partitions_->collectMemInfo(info.children_["scan_partitions_"]);
 }
 
 _dbScanChain::~_dbScanChain()

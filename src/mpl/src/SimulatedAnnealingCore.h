@@ -39,57 +39,48 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "util.h"
 
 namespace utl {
 class Logger;
 }
 
 namespace mpl {
-
 struct BundledNet;
 struct Rect;
 class Graphics;
 
-struct SACoreWeights
-{
-  float area = 0.0f;
-  float outline = 0.0f;
-  float wirelength = 0.0f;
-  float guidance = 0.0f;
-  float fence = 0.0f;
-};
-
-// Class SimulatedAnnealingCore is a base class
-// It will have two derived classes:
-// 1) SACoreHardMacro : SA for hard macros.  It will be called by ShapeEngine
-// and PinAlignEngine 2) SACoreSoftMacro : SA for soft macros.  It will be
-// called by MacroPlaceEngine
+// Base class used for all annealing work within MPL.
+// There are two types of SA Cores w.r.t. type of object that it receives.
+// Each type has two purposes, one related to shaping, the other related
+// to placement.
+//
+// SoftMacro:
+//   - Generate shape curves of std cell or mixed clusters;
+//   - Cluster Placement.
+//
+// HardMacro:
+//   - Generate tilings of macro clusters;
+//   - Macro Placement.
 template <class T>
 class SimulatedAnnealingCore
 {
  public:
-  SimulatedAnnealingCore(
-      PhysicalHierarchy* tree,
-      const Rect& outline,           // boundary constraints
-      const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
-      // weight for different penalty
-      float area_weight,
-      float outline_weight,
-      float wirelength_weight,
-      float guidance_weight,
-      float fence_weight,  // each blockage will be modeled by a macro
-                           // with fences probability of each action
-      float pos_swap_prob,
-      float neg_swap_prob,
-      float double_swap_prob,
-      float exchange_prob,
-      // Fast SA hyperparameter
-      float init_prob,
-      int max_num_step,
-      int num_perturb_per_step,
-      unsigned seed,
-      MplObserver* graphics,
-      utl::Logger* logger);
+  SimulatedAnnealingCore(PhysicalHierarchy* tree,
+                         const Rect& outline,
+                         const std::vector<T>& macros,
+                         const SACoreWeights& weights,
+                         float pos_swap_prob,
+                         float neg_swap_prob,
+                         float double_swap_prob,
+                         float exchange_prob,
+                         // Fast SA hyperparameter
+                         float init_prob,
+                         int max_num_step,
+                         int num_perturb_per_step,
+                         unsigned seed,
+                         MplObserver* graphics,
+                         utl::Logger* logger);
 
   virtual ~SimulatedAnnealingCore() = default;
 
@@ -98,9 +89,7 @@ class SimulatedAnnealingCore
     macros_to_place_ = macros_to_place;
   };
   void setNets(const std::vector<BundledNet>& nets);
-  // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
-  // Guidance corresponds to each macro (macro_id, guide)
   void setGuides(const std::map<int, Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
 
@@ -110,6 +99,7 @@ class SimulatedAnnealingCore
   float getNormCost() const;
   float getWidth() const;
   float getHeight() const;
+  float getAreaPenalty() const;
   float getOutlinePenalty() const;
   float getNormOutlinePenalty() const;
   float getWirelength() const;
@@ -166,6 +156,12 @@ class SimulatedAnnealingCore
   // utilities
   static float calAverage(std::vector<float>& value_list);
 
+  // For debugging
+  void reportCoreWeights() const;
+  void reportTotalCost() const;
+  void reportLocations() const;
+  void report(const PenaltyData& penalty) const;
+
   /////////////////////////////////////////////
   // private member variables
   /////////////////////////////////////////////
@@ -178,17 +174,11 @@ class SimulatedAnnealingCore
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;
 
-  // nets, fences, guides, blockages
   std::vector<BundledNet> nets_;
-  std::map<int, Rect> fences_;
-  std::map<int, Rect> guides_;
+  std::map<int, Rect> fences_;  // Macro Id -> Fence
+  std::map<int, Rect> guides_;  // Macro Id -> Guide
 
-  // weight for different penalty
-  float area_weight_ = 0.0;
-  float outline_weight_ = 0.0;
-  float wirelength_weight_ = 0.0;
-  float guidance_weight_ = 0.0;
-  float fence_weight_ = 0.0;
+  SACoreWeights core_weights_;
 
   float original_notch_weight_ = 0.0;
   float notch_weight_ = 0.0;

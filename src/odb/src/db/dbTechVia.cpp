@@ -116,48 +116,6 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
   return true;
 }
 
-void _dbTechVia::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbTechVia& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._default_via);
-  DIFF_FIELD(_flags._top_of_stack);
-  DIFF_FIELD(_flags._has_params);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_pattern);
-  DIFF_FIELD(_bbox);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(_top);
-  DIFF_FIELD(_bottom);
-  DIFF_FIELD(_non_default_rule);
-  DIFF_FIELD(_generate_rule);
-  DIFF_STRUCT(_via_params);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbTechVia::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._default_via);
-  DIFF_OUT_FIELD(_flags._top_of_stack);
-  DIFF_OUT_FIELD(_flags._has_params);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_pattern);
-  DIFF_OUT_FIELD(_bbox);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_FIELD(_bottom);
-  DIFF_OUT_FIELD(_non_default_rule);
-  DIFF_OUT_FIELD(_generate_rule);
-  DIFF_OUT_STRUCT(_via_params);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbTechVia - Methods
@@ -603,6 +561,15 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
                 bot_minY,
                 bot_maxX,
                 bot_maxY);
+}
+
+void _dbTechVia::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["pattern"].add(_pattern);
 }
 
 }  // namespace odb

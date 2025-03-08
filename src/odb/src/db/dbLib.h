@@ -49,7 +49,6 @@ class _dbSite;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 class _dbLib : public _dbObject
 {
@@ -75,14 +74,12 @@ class _dbLib : public _dbObject
   dbPropertyItr* _prop_itr;
 
   _dbLib(_dbDatabase* db);
-  _dbLib(_dbDatabase* db, const _dbLib& l);
   ~_dbLib();
   bool operator==(const _dbLib& rhs) const;
   bool operator!=(const _dbLib& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbLib& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
   _dbTech* getTech();
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib);

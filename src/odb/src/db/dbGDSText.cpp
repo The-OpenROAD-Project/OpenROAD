@@ -34,7 +34,6 @@
 #include "dbGDSText.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -65,41 +64,10 @@ bool _dbGDSText::operator<(const _dbGDSText& rhs) const
   return true;
 }
 
-void _dbGDSText::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbGDSText& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_datatype);
-  DIFF_FIELD(_origin);
-  DIFF_FIELD(_text);
-  DIFF_END
-}
-
-void _dbGDSText::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_datatype);
-  DIFF_OUT_FIELD(_origin);
-  DIFF_OUT_FIELD(_text);
-
-  DIFF_END
-}
-
 _dbGDSText::_dbGDSText(_dbDatabase* db)
 {
   _layer = 0;
   _datatype = 0;
-}
-
-_dbGDSText::_dbGDSText(_dbDatabase* db, const _dbGDSText& r)
-{
-  _layer = r._layer;
-  _datatype = r._datatype;
-  _origin = r._origin;
-  _text = r._text;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSText& obj)
@@ -124,6 +92,20 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSText& obj)
   stream << obj._transform;
   stream << obj._text;
   return stream;
+}
+
+void _dbGDSText::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  info.children_["text"].add(_text);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

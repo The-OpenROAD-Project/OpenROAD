@@ -181,8 +181,14 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Port* port) const override;
   ObjectId id(const Cell* cell) const override;
 
+  // generic connect pin -> net, supports all pin/net types
+  void connectPin(Pin* pin, Net* net) override;
+  // generic connect pin -> flat_net, hier_net.
+  void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
   // hierarchical support functions
-  dbModule* getNetDriverParentModule(Net* net);
+  dbModule* getNetDriverParentModule(Net* net,
+                                     Pin*& driver_pin,
+                                     bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
   bool ConnectionToModuleExists(dbITerm* source_pin,
@@ -315,6 +321,7 @@ class dbNetwork : public ConcreteNetwork
   void replaceCell(Instance* inst, Cell* cell) override;
   // Deleting instance also deletes instance pins.
   void deleteInstance(Instance* inst) override;
+
   // Connect the port on an instance to a net.
   Pin* connect(Instance* inst, Port* port, Net* net) override;
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;

@@ -1000,7 +1000,7 @@ TEST_F(TestHconn, ConnectionMade)
 
   EXPECT_EQ(initial_db_net_count, 6);
   EXPECT_EQ(initial_mod_net_count, 23);
-  EXPECT_EQ(final_mod_net_count, 27);
+  EXPECT_EQ(final_mod_net_count, 26);
   EXPECT_EQ(final_db_net_count, 7);
 }
 

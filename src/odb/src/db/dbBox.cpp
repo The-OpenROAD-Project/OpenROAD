@@ -256,101 +256,6 @@ bool _dbBox::operator<(const _dbBox& rhs) const
   return false;
 }
 
-void _dbBox::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbBox& rhs) const
-{
-  if (diff.deepDiff()) {
-    return;
-  }
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._owner_type);
-  DIFF_FIELD(_flags._is_tech_via);
-  DIFF_FIELD(_flags._is_block_via);
-  DIFF_FIELD(_flags._layer_id);
-  DIFF_FIELD(_flags._via_id);
-  DIFF_FIELD(_flags._octilinear);
-  DIFF_FIELD(_flags._layer_mask);
-
-  if (isOct()) {
-    DIFF_FIELD(_shape._oct);
-  } else {
-    DIFF_FIELD(_shape._rect);
-  }
-  DIFF_FIELD(_owner);
-  DIFF_FIELD(_next_box);
-  DIFF_FIELD(design_rule_width_);
-  DIFF_END
-}
-
-void _dbBox::out(dbDiff& diff, char side, const char* field) const
-{
-  if (!diff.deepDiff()) {
-    DIFF_OUT_BEGIN
-    DIFF_OUT_FIELD(_flags._owner_type);
-    DIFF_OUT_FIELD(_flags._is_tech_via);
-    DIFF_OUT_FIELD(_flags._is_block_via);
-    DIFF_OUT_FIELD(_flags._layer_id);
-    DIFF_OUT_FIELD(_flags._via_id);
-    DIFF_OUT_FIELD(_flags._octilinear);
-    DIFF_OUT_FIELD(_flags._layer_mask);
-    if (isOct()) {
-      DIFF_OUT_FIELD(_shape._oct);
-    } else {
-      DIFF_OUT_FIELD(_shape._rect);
-    }
-    DIFF_OUT_FIELD(_owner);
-    DIFF_OUT_FIELD(_next_box);
-    DIFF_OUT_FIELD(design_rule_width_);
-    DIFF_END
-  } else {
-    DIFF_OUT_BEGIN
-
-    switch (getType()) {
-      case BLOCK_VIA: {
-        int x, y;
-        getViaXY(x, y);
-        _dbVia* via = getBlockVia();
-        diff.report("%c BLOCK-VIA %s (%d %d)\n", side, via->_name, x, y);
-        break;
-      }
-
-      case TECH_VIA: {
-        int x, y;
-        getViaXY(x, y);
-        _dbTechVia* via = getTechVia();
-        diff.report("%c TECH-VIA %s (%d %d)\n", side, via->_name, x, y);
-        break;
-      }
-
-      case BOX: {
-        if (_flags._layer_id != 0) {
-          _dbTechLayer* lay = getTechLayer();
-          diff.report("%c BOX %s (%d %d) (%d %d)\n",
-                      side,
-                      lay->_name,
-                      _shape._rect.xMin(),
-                      _shape._rect.yMin(),
-                      _shape._rect.xMax(),
-                      _shape._rect.yMax());
-        } else {
-          diff.report("%c BOX (%d %d) (%d %d)\n",
-                      side,
-                      _shape._rect.xMin(),
-                      _shape._rect.yMin(),
-                      _shape._rect.xMax(),
-                      _shape._rect.yMax());
-        }
-
-        break;
-      }
-    }
-
-    DIFF_END
-  }
-}
-
 _dbTechLayer* _dbBox::getTechLayer() const
 {
   if (_flags._layer_id == 0) {
@@ -1145,6 +1050,12 @@ void dbBox::setVisited(bool value)
 {
   _dbBox* box = (_dbBox*) this;
   box->_flags._visited = (value == true) ? 1 : 0;
+}
+
+void _dbBox::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

@@ -8,10 +8,15 @@
 Found 105 slew violations
 Found 1 cap violations
 [INFO RSZ-0058] Using max wire length 2406um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       106
+    final |     +3.2% |       1 |       2 |             1 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack

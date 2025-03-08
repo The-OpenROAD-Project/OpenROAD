@@ -30,15 +30,54 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <boost/asio.hpp>
+#include <boost/beast.hpp>
+#include <ctime>
 #include <filesystem>
 #include <numeric>
 #include <vector>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "utl/CFileUtils.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/prometheus/gauge.h"
 
 namespace utl {
+using ::testing::HasSubstr;
+
+namespace {
+
+// Helper function to make an HTTP request and return the response body.
+std::string MakeHttpRequest(const std::string& host,
+                            const std::string& port,
+                            const std::string& target)
+{
+  boost::asio::io_context io_context;
+  boost::asio::ip::tcp::resolver resolver(io_context);
+  boost::asio::ip::tcp::socket socket(io_context);
+
+  auto const results = resolver.resolve(host, port);
+  boost::asio::connect(socket, results.begin(), results.end());
+
+  // HTTP 1.1 request
+  boost::beast::http::request<boost::beast::http::string_body> req{
+      boost::beast::http::verb::get, target, /*version=*/11};
+  req.set(boost::beast::http::field::host, host);
+  req.set(boost::beast::http::field::user_agent, "BoostBeastTestClient");
+
+  boost::beast::http::write(socket, req);
+
+  boost::beast::flat_buffer buffer;
+  boost::beast::http::response<boost::beast::http::string_body> res;
+  boost::beast::http::read(socket, buffer, res);
+
+  socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+
+  return res.body();
+}
+
+}  // namespace
 
 TEST(Utl, read_all_of_empty_file)
 {
@@ -206,6 +245,36 @@ TEST(Utl, file_handler_exception_handling)
     EXPECT_TRUE(std::filesystem::exists(filename));
     std::filesystem::remove(filename);
   }
+}
+
+TEST(Utl, metrics_server_responds_with_basic_metric)
+{
+  Logger logger;
+  logger.startPrometheusEndpoint(0);
+  std::shared_ptr<PrometheusRegistry> registry = logger.getRegistry();
+  auto& test_gauge_family = BuildGauge()
+                                .Name("test_gauge")
+                                .Help("A test gauge for testing")
+                                .Register(*registry);
+  auto& test_gauge = test_gauge_family.Add({});
+  test_gauge.Set(10101);
+
+  std::time_t t = std::time(0);
+  while (true) {
+    // Timeout after 10 seconds
+    if ((std::time(0) - t) > 10) {
+      EXPECT_LT((std::time(0) - t), 10);
+    }
+
+    if (logger.isPrometheusServerReadyToServe()) {
+      break;
+    }
+  }
+
+  uint16_t port = logger.getPrometheusPort();
+  std::string response
+      = MakeHttpRequest("localhost", fmt::format("{}", port), "/metrics");
+  EXPECT_THAT(response, HasSubstr("10101"));
 }
 
 }  // namespace utl

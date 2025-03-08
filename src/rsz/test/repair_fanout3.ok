@@ -12,6 +12,11 @@ Pin                                   Limit Fanout  Slack
 clk1                                     10     13     -3 (VIOLATED)
 
 [WARNING RSZ-0021] no estimated parasitics. Using wire load models.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        27
+    final |     +2.7% |       0 |       2 |             2 |         0
+---------------------------------------------------------------------
 [INFO RSZ-0035] Found 2 fanout violations.
 [INFO RSZ-0038] Inserted 2 buffers in 2 nets.
 Repair timing output passed/skipped equivalence test

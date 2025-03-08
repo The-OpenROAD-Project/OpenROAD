@@ -64,7 +64,7 @@ def global_placement(
         if timing_driven_net_reweight_overflow != None:
             overflow_list = timing_driven_net_reweight_overflow
         else:
-            overflow_list = [79, 64, 49, 29, 21, 15]
+            overflow_list = [79, 64, 29, 21, 15]
 
         for ov in overflow_list:
             gpl.addTimingNetWeightOverflow(ov)

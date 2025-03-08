@@ -51,10 +51,10 @@ using namespace odb;
 
 extSegment* extMeasureRC::CreateUpDownSegment(
     bool lookUp,
-    Ath__wire* w,
+    Wire* w,
     int xy1,
     int len1,
-    Ath__wire* w2,
+    Wire* w2,
     Ath__array1D<extSegment*>* segTable)
 {
   if (len1 == 0)
@@ -67,12 +67,12 @@ extSegment* extMeasureRC::CreateUpDownSegment(
   s->setUpDown(lookUp, w2);
   return s;
 }
-void extMeasureRC::FindSegmentsTrack(Ath__wire* w1,
+void extMeasureRC::FindSegmentsTrack(Wire* w1,
                                      int xy1,
                                      int len1,
-                                     Ath__wire* w2_next,
+                                     Wire* w2_next,
                                      uint ii,
-                                     Ath__array1D<Ath__wire*>* trackTable,
+                                     Ath__array1D<Wire*>* trackTable,
                                      bool lookUp,
                                      uint dir,
                                      int maxDist,
@@ -105,8 +105,8 @@ void extMeasureRC::FindSegmentsTrack(Ath__wire* w1,
                       segTable);
     return;
   }
-  Ath__wire* prev = NULL;
-  Ath__wire* w2 = w2_next;
+  Wire* prev = NULL;
+  Wire* w2 = w2_next;
   for (; w2 != NULL; w2 = w2->getNext()) {
     // TODO out of range on the right
     if (OverlapOnly(xy1, len1, w2->getXY(), w2->getLen()))
@@ -156,7 +156,7 @@ void extMeasureRC::FindSegmentsTrack(Ath__wire* w1,
       // extSegment *s = new extSegment(dir, w1, xy1, xy2 - xy1, NULL, NULL);
       CreateUpDownSegment(lookUp, w1, xy1, xy2 - xy1, w2, segTable);
 
-      Ath__wire* next = w2->getNext();
+      Wire* next = w2->getNext();
       uint jj = next == NULL ? ii + 1 : ii;
       FindSegmentsTrack(
           w1, xy2, -dx2, next, jj, trackTable, lookUp, dir, maxDist, segTable);
@@ -176,7 +176,7 @@ void extMeasureRC::FindSegmentsTrack(Ath__wire* w1,
       //  w2->getLen(), w2, segTable);
       CreateUpDownSegment(lookUp, w1, w2->getXY(), w2->getLen(), w2, segTable);
 
-      Ath__wire* next = w2->getNext();
+      Wire* next = w2->getNext();
       uint jj = next == NULL ? ii + 1 : ii;
       FindSegmentsTrack(
           w1, xy2, -dx2, next, jj, trackTable, lookUp, dir, maxDist, segTable);
@@ -185,11 +185,11 @@ void extMeasureRC::FindSegmentsTrack(Ath__wire* w1,
 }
 
 extSegment* extMeasureRC::CreateUpDownSegment(
-    Ath__wire* w,
-    Ath__wire* up,
+    Wire* w,
+    Wire* up,
     int xy1,
     int len1,
-    Ath__wire* down,
+    Wire* down,
     Ath__array1D<extSegment*>* segTable,
     int metOver,
     int metUnder)
@@ -413,12 +413,12 @@ uint extMeasureRC::CopySegments(bool up,
   return 0;
 }
 void extMeasureRC::Print(FILE* fp,
-                         Ath__array1D<Ath__wire*>* segTable,
+                         Ath__array1D<Wire*>* segTable,
                          const char* msg)
 {
   // fprintf(fp, "%s\n", msg);
   for (uint ii = 0; ii < segTable->getCnt(); ii++) {
-    Ath__wire* w = segTable->get(ii);
+    Wire* w = segTable->get(ii);
     PrintWire(fp, w, 0);
   }
 }
@@ -436,7 +436,7 @@ void extMeasureRC::Print(FILE* fp,
 void extMeasureRC::Print(FILE* fp, extSegment* s, uint d, bool lookUp)
 {
   int dist = lookUp ? s->_dist : s->_dist_down;
-  Ath__wire* w1 = s->_up;
+  Wire* w1 = s->_up;
   // DELETE int base1 = s->_ll[1];
   if (lookUp && s->_up != NULL)
     w1 = s->_up;
@@ -464,7 +464,7 @@ void extMeasureRC::Print(FILE* fp, extSegment* s, uint d, bool lookUp)
   }
 }
 void extMeasureRC::PrintUpDownNet(FILE* fp,
-                                  Ath__wire* s,
+                                  Wire* s,
                                   int dist,
                                   const char* prefix)
 {
@@ -551,29 +551,28 @@ int extMeasureRC::CouplingFlow_new(uint dir,
   Ath__array1D<extSegment*> belowTable;
   Ath__array1D<extSegment*> whiteTable;
 
-  Ath__array1D<Ath__wire*> UpTable;
+  Ath__array1D<Wire*> UpTable;
 
   uint colCnt = _search->getColCnt();
-  Ath__array1D<Ath__wire*>** firstWireTable = allocMarkTable(colCnt);
+  Ath__array1D<Wire*>** firstWireTable = allocMarkTable(colCnt);
 
   // TODO need to add in constructor/destructor
-  _verticalPowerTable = new Ath__array1D<Ath__wire*>*[colCnt];
+  _verticalPowerTable = new Ath__array1D<Wire*>*[colCnt];
   for (uint ii = 0; ii < colCnt; ii++)
-    _verticalPowerTable[ii] = new Ath__array1D<Ath__wire*>(4);
+    _verticalPowerTable[ii] = new Ath__array1D<Wire*>(4);
 
   for (uint level = 1; level < colCnt; level++) {
-    Ath__grid* netGrid = _search->getGrid(dir, level);
+    Grid* netGrid = _search->getGrid(dir, level);
     upTable.resetCnt();
 
-    uint maxDist = 10 * netGrid->_pitch;
+    uint maxDist = 10 * netGrid->getPitch();
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
-      Ath__track* track = netGrid->getTrackPtr(tr);
+      Track* track = netGrid->getTrackPtr(tr);
       if (track == NULL)
         continue;
 
       ResetFirstWires(level, level + 1, dir, firstWireTable);
-      for (Ath__wire* w = track->getNextWire(NULL); w != NULL;
-           w = w->getNext()) {
+      for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext()) {
         if (w->isPower())
           continue;
 
@@ -645,7 +644,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_upNext,
+                     w->getUpNext(),
                      &upTable);
         BubbleSort(&upTable);
         if (dbgOverlaps) {
@@ -658,7 +657,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_downNext,
+                     w->getDownNext(),
                      &downTable);
         if (dbgOverlaps) {
           fprintf(fp, "Down Segments %d\n", downTable.getCnt());
@@ -670,7 +669,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_aboveNext,
+                     w->getAboveNext(),
                      &aboveTable);
         if (dbgOverlaps) {
           fprintf(fp, "Above Diag Segments %d\n", aboveTable.getCnt());
@@ -682,7 +681,7 @@ int extMeasureRC::CouplingFlow_new(uint dir,
                      w,
                      w->getXY(),
                      w->getLen(),
-                     w->_belowNext,
+                     w->getBelowNext(),
                      &belowTable);
         if (dbgOverlaps) {
           fprintf(fp, "Below Diag Segments %d\n", belowTable.getCnt());
@@ -726,15 +725,6 @@ int extMeasureRC::CouplingFlow_new(uint dir,
         BubbleSort(&segTable);
         if (!CheckOrdered(&segTable))
           fprintf(stdout, "======> segTable NOT SORTED after Buggble\n");
-        /*
-                            if (w->_verticalNext != NULL)
-                            {
-                                uint len = CalcDiagBelow(s,
-           s->_wire->_belowNext); Ath__wire *below = s->_wire->_belowNext; if
-           (below != NULL && below->_belowNext != NULL && _met <= 3) len =
-           CalcDiagBelow(s, below->_belowNext);
-                            }
-        */
         for (uint ii = 0; ii < segTable.getCnt(); ii++) {
           extSegment* s = segTable.get(ii);
           measure_RC_new(s);

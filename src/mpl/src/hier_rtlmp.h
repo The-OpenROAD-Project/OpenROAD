@@ -41,6 +41,7 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "util.h"
 
 namespace odb {
 class dbBlock;
@@ -139,7 +140,6 @@ class HierRTLMP
   void setTargetUtil(float target_util);
   void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
-  void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -147,7 +147,6 @@ class HierRTLMP
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
   void setDebugTargetClusterId(int target_cluster_id);
-  void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
@@ -179,7 +178,7 @@ class HierRTLMP
   void calculateMacroTilings(Cluster* cluster);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
-  std::vector<Cluster*> getIOClusters();
+  std::vector<Cluster*> getClustersOfUnplacedIOPins();
   float computePinAccessBlockagesDepth(const std::vector<Cluster*>& io_clusters,
                                        const Rect& die);
   void createPinAccessBlockage(Boundary constraint_boundary,
@@ -195,11 +194,9 @@ class HierRTLMP
                       float target_dead_space);
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
-  void runHierarchicalMacroPlacement(Cluster* parent);
   void adjustMacroBlockageWeight();
-  void reportSAWeights();
-  void runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent);
-  void runEnhancedHierarchicalMacroPlacement(Cluster* parent);
+  void placeChildren(Cluster* parent);
+  void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
 
   void findOverlappingBlockages(std::vector<Rect>& blockages,
                                 std::vector<Rect>& placement_blockages,
@@ -207,6 +204,9 @@ class HierRTLMP
   void computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
                               const Rect& blockage,
                               const Rect& outline);
+  void createFixedTerminals(Cluster* parent,
+                            std::map<std::string, int>& soft_macro_id_map,
+                            std::vector<SoftMacro>& soft_macros);
   void updateChildrenShapesAndLocations(
       Cluster* parent,
       const std::vector<SoftMacro>& shaped_macros,
@@ -247,14 +247,15 @@ class HierRTLMP
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
-  // Bus Planning
-  void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
-                       std::vector<BundledNet>& nets_old);
-  void adjustCongestionWeight();
-
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
+
+  // For debugging
+  template <typename SACore>
+  void printPlacementResult(Cluster* parent,
+                            const Rect& outline,
+                            SACore* sa_core);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -267,13 +268,6 @@ class HierRTLMP
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
-  // Our experiments show that for most testcases, turn off bus planning
-  // can generate better results.
-
-  // We recommend that you turn on this flag for technology nodes with very
-  // limited routing layers such as SkyWater130.  But for NanGate45,
-  // ASASP7, you should turn off this option.
-  bool bus_planning_on_ = false;
 
   // Parameters related to macro placement
   std::string report_directory_;
@@ -301,17 +295,20 @@ class HierRTLMP
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
-  int snap_layer_ = 4;
+  // For cluster and macro placement.
+  SACoreWeights placement_core_weights_;
 
-  // SA related parameters
-  // weight for different penalty
-  float area_weight_ = 0.1;
-  float outline_weight_ = 1.0;
-  float wirelength_weight_ = 1.0;
-  float guidance_weight_ = 10.0;
-  float fence_weight_ = 10.0;
+  // For generation of shape curves for Mixed / Std Cell clusters
+  // and generation of tilings for Macro clusters.
+  const SACoreWeights shaping_core_weights_{1.0f /* area */,
+                                            1000.0f /* outline */,
+                                            0.0f /* wirelength */,
+                                            0.0f /* guidance */,
+                                            0.0f /* fence */};
+
+  // Soft-Especific Weights
   float boundary_weight_ = 5.0;
-  float notch_weight_ = 1.0;
+  float notch_weight_ = 1.0;  // Used inside Core, but only for Soft.
   float macro_blockage_weight_ = 1.0;
 
   std::map<std::string, Rect> fences_;   // macro_name, fence
@@ -335,9 +332,6 @@ class HierRTLMP
 
   // statistics of the design
   Metrics* metrics_ = nullptr;
-
-  const int bus_net_threshold_ = 32;  // only for bus planning
-  float congestion_weight_ = 0.5;     // for balance timing and congestion
 
   // since we convert from the database unit to the micrometer
   // during calculation, we may loss some accuracy.

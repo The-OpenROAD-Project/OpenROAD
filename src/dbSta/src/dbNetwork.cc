@@ -148,7 +148,7 @@ char* tmpStringCopy(const char* str)
 ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
 {
   if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
-    logger_->error(ORD, 2019, "Error: database id exceeds capacity");
+    logger_->error(ORD, 2019, "Database id exceeds capacity");
   }
 
   switch (typ) {
@@ -181,9 +181,7 @@ ObjectId dbNetwork::getDbNwkObjectId(dbObjectType typ, ObjectId db_id) const
     } break;
     default:
       logger_->error(
-          ORD,
-          2017,
-          "Error: unknown database type passed into unique id generation");
+          ORD, 2017, "Unknown database type passed into unique id generation");
       // note the default "exception undefined case" in database is 0.
       // so we reasonably expect upstream tools to handle this.
       return 0;
@@ -723,7 +721,7 @@ const char* dbNetwork::busName(const Port* port) const
       return modbterm->getName();
     }
   }
-  logger_->error(ORD, 2020, "Error: database badly formed bus name");
+  logger_->error(ORD, 2020, "Database badly formed bus name");
   return nullptr;
 }
 
@@ -1853,7 +1851,7 @@ bool dbNetwork::isLinked() const
   return top_cell_ != nullptr;
 }
 
-bool dbNetwork::linkNetwork(const char*, bool, Report*)
+bool dbNetwork::linkNetwork(const char*, bool make_black_boxes, Report* report)
 {
   // Not called.
   return true;
@@ -2202,6 +2200,121 @@ void dbNetwork::deleteInstance(Instance* inst)
   }
 }
 
+/*
+Generic pin -> net connection with support for both hierarchical
+nets and regular flat nets.
+
+As a side effect this routine will disconnect any prior
+flat/hierarchical connections and then make the new connections
+
+It also checks the legallity of the pin/net combination.
+
+
+*/
+
+void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+{
+  // get the type of the pin
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  odb::dbModBTerm* modbterm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  // get the type of the net
+  dbNet* flat_net_db = nullptr;
+  dbModNet* hier_net_db = nullptr;
+
+  if (flat_net) {
+    staToDb(flat_net, flat_net_db, hier_net_db);
+    if (hier_net_db) {
+      logger_->error(ORD,
+                     2025,
+                     "Illegal net combination. hierarchical flat net supplied "
+                     "as flat net argument to api:connectPin");
+    }
+
+    if (flat_net_db) {
+      if (iterm) {
+        iterm->connect(flat_net_db);
+      } else if (bterm) {
+        bterm->connect(flat_net_db);
+      } else {
+        logger_->error(ORD,
+                       2026,
+                       "Illegal net/pin combination. flat nets can only hook "
+                       "to dbIterm, dbBTerm");
+      }
+    }
+  }
+
+  if (hier_net) {
+    staToDb(hier_net, flat_net_db, hier_net_db);
+    if (flat_net_db) {
+      logger_->error(ORD,
+                     2027,
+                     "Illegal net combination. flat net supplied as hier net "
+                     "argument to api:connectPin");
+    }
+
+    if (hier_net_db) {
+      if (iterm) {
+        iterm->connect(hier_net_db);
+      } else if (bterm) {
+        bterm->connect(hier_net_db);
+      } else if (moditerm) {
+        moditerm->connect(hier_net_db);
+      } else if (modbterm) {
+        modbterm->connect(hier_net_db);
+      } else {
+        logger_->error(ORD,
+                       2028,
+                       "Illegal net combination. hier net expected to be "
+                       "hooked to one of iterm, bterm, moditerm, modbterm");
+      }
+    }
+  }
+}
+
+/*
+Generic pin -> net connection with support for hierarchical
+nets
+*/
+void dbNetwork::connectPin(Pin* pin, Net* net)
+{
+  // get the type of the pin
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  odb::dbModBTerm* modbterm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  // get the type of the net
+  dbNet* dnet = nullptr;
+  dbModNet* mod_net = nullptr;
+  staToDb(net, dnet, mod_net);
+
+  if (iterm && dnet) {
+    iterm->connect(dnet);
+  } else if (bterm && dnet) {
+    bterm->connect(dnet);
+  } else if (iterm && mod_net) {
+    iterm->connect(mod_net);
+  } else if (bterm && mod_net) {
+    bterm->connect(mod_net);
+  } else if (moditerm && mod_net) {
+    moditerm->connect(mod_net);
+  } else if (modbterm && mod_net) {
+    modbterm->connect(mod_net);
+  } else {
+    logger_->error(
+        ORD,
+        2024,
+        "Illegal net/pin combination. Modnets can only be hooked to iterm, "
+        "bterm, moditerm, modbterm, dbNets can only be hooked to iterm, bterm");
+  }
+}
+
 Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
 {
   Pin* pin = nullptr;
@@ -2282,6 +2395,10 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
   return pin;
 }
 
+//
+// remove all connnections to a pin
+//(both hierarchical and flat).
+//
 void dbNetwork::disconnectPin(Pin* pin)
 {
   dbITerm* iterm = nullptr;
@@ -2293,6 +2410,10 @@ void dbNetwork::disconnectPin(Pin* pin)
     iterm->disconnect();
   } else if (bterm) {
     bterm->disconnect();
+  } else if (moditerm) {
+    moditerm->disconnect();
+  } else if (modbterm) {
+    modbterm->disconnect();
   }
 }
 
@@ -2861,7 +2982,7 @@ int dbNetwork::fromIndex(const Port* port) const
     return modbterm->getBusPort()->getFrom();
   }
 
-  logger_->error(ORD, 2021, "Error: bad bus from_index defintion");
+  logger_->error(ORD, 2021, "Bad bus from_index defintion");
   return 0;
 }
 
@@ -2881,7 +3002,7 @@ int dbNetwork::toIndex(const Port* port) const
     }
     return (start_ix - (modbterm->getBusPort()->getSize() - 1));
   }
-  logger_->error(ORD, 2022, "Error: bad bus to_index defintion");
+  logger_->error(ORD, 2022, "Bad bus to_index defintion");
   return 0;
 }
 
@@ -3025,7 +3146,24 @@ Instance* dbNetwork::getOwningInstanceParent(Pin* drvr_pin)
   return topInstance();
 }
 
-dbModule* dbNetwork::getNetDriverParentModule(Net* net)
+/*
+Get the dbModule driving a net.
+
+Sometimes when inserting a buffer we simply want to stop at the current
+owning module boundary. Other times we want to go right the way to
+the module which owns the leaf driver.
+
+
+If hier is true, go right the way through the hierarchy and return
+the dbModule owning the driver.
+
+In non-hier mode, stop at the module boundaries
+
+*/
+
+dbModule* dbNetwork::getNetDriverParentModule(Net* net,
+                                              Pin*& driver_pin,
+                                              bool hier)
 {
   if (hasHierarchy()) {
     dbNet* dnet;
@@ -3034,23 +3172,62 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net)
     if (dnet) {
       //
       // get sink driver instance and return its parent
-      // TODO: clean this up as we cannot trust getDrivingITerm.
       //
-      int drivingITerm = dnet->getDrivingITerm();
-      if (drivingITerm != 0 && drivingITerm != -1) {
-        dbITerm* iterm = dbITerm::getITerm(block_, drivingITerm);
-        dbModNet* modnet = iterm->getModNet();
-        if (modnet != nullptr) {
-          return modnet->getParent();
+      PinSet* drivers = this->drivers(net);
+      if (drivers && !drivers->empty()) {
+        PinSet::Iterator drvr_iter(drivers);
+        const Pin* drvr_pin = drvr_iter.next();
+        driver_pin = const_cast<Pin*>(drvr_pin);
+        odb::dbITerm* iterm;
+        odb::dbBTerm* bterm;
+        odb::dbModITerm* mod_iterm;
+        odb::dbModBTerm* mod_bterm;
+        staToDb(drvr_pin, iterm, bterm, mod_iterm, mod_bterm);
+        (void) (mod_iterm);
+        (void) (mod_bterm);
+        (void) (bterm);
+        if (iterm) {
+          dbInst* db_inst = iterm->getInst();
+          dbModule* db_inst_module = db_inst->getModule();
+          if (db_inst_module) {
+            return db_inst_module;
+          }
         }
       }
-    } else {
-      return modnet->getParent();
+    } else if (modnet) {
+      // in hier mode, go right the way through the hierarchy
+      // and return the dbModule owning the instance doing the
+      // driving
+      Net* sta_net = dbToSta(modnet);
+      PinSet* drivers = this->drivers(sta_net);
+      for (auto pin : *drivers) {
+        dbITerm* iterm = nullptr;
+        dbBTerm* bterm = nullptr;
+        dbModITerm* moditerm = nullptr;
+        dbModBTerm* modbterm = nullptr;
+        staToDb(pin, iterm, bterm, moditerm, modbterm);
+        driver_pin = const_cast<Pin*>(pin);
+        if (hier == false) {
+          return modnet->getParent();
+        }
+        (void) modbterm;
+        if (bterm) {
+          return block_->getTopModule();
+        }
+        if (iterm) {
+          // return the dbmodule containing the driving instance
+          dbInst* dinst = iterm->getInst();
+          return dinst->getModule();
+        }
+        if (moditerm) {
+          // return the dbmodule containing the driving instance
+          return moditerm->getParent()->getParent();
+        }
+      }
     }
-    // default to top module
-    return block_->getTopModule();
   }
-  return nullptr;
+  // default to top module
+  return block_->getTopModule();
 }
 
 void dbNetwork::getParentHierarchy(

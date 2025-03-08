@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerCutClassRuleFlags
@@ -52,7 +51,6 @@ struct dbTechLayerCutClassRuleFlags
 class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
-  _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
   _dbTechLayerCutClassRule(_dbDatabase*);
 
   ~_dbTechLayerCutClassRule();
@@ -63,10 +61,7 @@ class _dbTechLayerCutClassRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerCutClassRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutClassRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerCutClassRuleFlags flags_;
   char* _name;

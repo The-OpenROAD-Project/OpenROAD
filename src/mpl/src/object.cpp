@@ -264,8 +264,12 @@ std::string Cluster::getClusterTypeString() const
 {
   std::string cluster_type;
 
-  if (is_io_cluster_) {
-    return "IO";
+  if (is_cluster_of_unplaced_io_pins_) {
+    return "Unplaced IO Pins";
+  }
+
+  if (is_io_pad_cluster_) {
+    return "IO Pad";
   }
 
   switch (type_) {
@@ -287,7 +291,7 @@ std::string Cluster::getIsLeafString() const
 {
   std::string is_leaf_string;
 
-  if (!is_io_cluster_ && children_.empty()) {
+  if (!isIOCluster() && children_.empty()) {
     is_leaf_string = "Leaf";
   }
 
@@ -327,19 +331,27 @@ void Cluster::copyInstances(const Cluster& cluster)
   }
 }
 
-void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
-                             const float width,
-                             const float height,
-                             const Boundary constraint_boundary)
+void Cluster::setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
+                                           const float width,
+                                           const float height,
+                                           const Boundary constraint_boundary)
 {
-  is_io_cluster_ = true;
+  is_cluster_of_unplaced_io_pins_ = true;
   constraint_boundary_ = constraint_boundary;
+  soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
+}
+
+void Cluster::setAsIOPadCluster(const std::pair<float, float>& pos,
+                                float width,
+                                float height)
+{
+  is_io_pad_cluster_ = true;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
 bool Cluster::isIOCluster() const
 {
-  return is_io_cluster_;
+  return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_;
 }
 
 void Cluster::setAsArrayOfInterconnectedMacros()
@@ -679,55 +691,6 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   return -1;
 }
 
-// Pin Access Support
-void Cluster::setPinAccess(int cluster_id,
-                           Boundary pin_access,
-                           float net_weight)
-{
-  if (cluster_id < 0) {
-    logger_->error(MPL,
-                   38,
-                   "Cannot set pin access for {} boundary.",
-                   toString(pin_access));
-  }
-  pin_access_map_[cluster_id]
-      = std::pair<Boundary, float>(pin_access, net_weight);
-}
-
-const std::pair<Boundary, float> Cluster::getPinAccess(int cluster_id)
-{
-  return pin_access_map_[cluster_id];
-}
-
-const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap() const
-{
-  return pin_access_map_;
-}
-
-const std::map<Boundary, std::map<Boundary, float>>
-Cluster::getBoundaryConnection() const
-{
-  return boundary_connection_map_;
-}
-
-void Cluster::addBoundaryConnection(Boundary pin_a,
-                                    Boundary pin_b,
-                                    float num_net)
-{
-  if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
-    std::map<Boundary, float> pin_map;
-    pin_map[pin_b] = num_net;
-    boundary_connection_map_[pin_a] = std::move(pin_map);
-  } else {
-    if (boundary_connection_map_[pin_a].find(pin_b)
-        == boundary_connection_map_[pin_a].end()) {
-      boundary_connection_map_[pin_a][pin_b] = num_net;
-    } else {
-      boundary_connection_map_[pin_a][pin_b] += num_net;
-    }
-  }
-}
-
 // Print Basic Information
 // Normally we call this after macro placement is done
 void Cluster::printBasicInformation(utl::Logger* logger) const
@@ -865,14 +828,14 @@ bool HardMacro::operator==(const HardMacro& macro) const
 }
 
 // Cluster support to identify if a fixed terminal correponds
-// to an IO cluster when running HardMacro SA.
-bool HardMacro::isIOCluster() const
+// to a cluster of unplaced IO pins when running HardMacro SA.
+bool HardMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
     return false;
   }
 
-  return cluster_->isIOCluster();
+  return cluster_->isClusterOfUnplacedIOPins();
 }
 
 // Get Physical Information
@@ -1298,8 +1261,15 @@ void SoftMacro::resizeRandomly(
   if (width_list_.empty()) {
     return;
   }
-  const int idx = static_cast<int>(
-      std::floor(distribution(generator) * width_list_.size()));
+  // TODO: See for explanation
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  float random_variable_0_1;
+  do {
+    random_variable_0_1 = distribution(generator);
+  } while (random_variable_0_1 >= 1.0);
+
+  const int idx
+      = static_cast<int>(std::floor(random_variable_0_1 * width_list_.size()));
   const float min_width = width_list_[idx].first;
   const float max_width = width_list_[idx].second;
   width_ = min_width + distribution(generator) * (max_width - min_width);
@@ -1351,13 +1321,13 @@ bool SoftMacro::isMixedCluster() const
   return (cluster_->getClusterType() == MixedCluster);
 }
 
-bool SoftMacro::isIOCluster() const
+bool SoftMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
     return false;
   }
 
-  return cluster_->isIOCluster();
+  return cluster_->isClusterOfUnplacedIOPins();
 }
 
 void SoftMacro::setLocationF(float x, float y)
