@@ -73,7 +73,7 @@ const uint db_schema_initial = 57;
 const uint db_schema_minor = 105;  // Current revision number
 
 // Revision where journalling on hierarchy added
-const uint db_schema_block_pin_groups = 105;
+const uint db_schema_hierarchy_journalling = 105;
 
 // Revision where support for pin groups was added
 const uint db_schema_block_pin_groups = 104;
