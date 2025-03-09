@@ -322,11 +322,6 @@ void ChartsWidget::saveImage(const std::string& path,
                              const std::optional<int>& width_px,
                              const std::optional<int>& height_px)
 {
-  const bool visible = isVisible();
-  if (!visible) {
-    setVisible(true);
-  }
-
   const Mode current_mode = static_cast<Mode>(mode_menu_->currentIndex());
   setMode(mode);
 
@@ -334,7 +329,7 @@ void ChartsWidget::saveImage(const std::string& path,
   print_view.setLogger(logger_);
   print_view.setSTA(stagui_.get());
   setData(&print_view, path_group_name_);
-  QSize view_size = display_->size();
+  QSize view_size(500, 500);
   if (width_px.has_value()) {
     view_size.setWidth(width_px.value());
   }
@@ -349,7 +344,6 @@ void ChartsWidget::saveImage(const std::string& path,
   print_view.save(QString::fromStdString(path));
 
   setMode(current_mode);
-  setVisible(visible);
 }
 
 ////// HistogramView ///////

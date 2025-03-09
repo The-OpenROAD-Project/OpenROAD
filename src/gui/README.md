@@ -158,8 +158,8 @@ save_histogram_image
 | ---- | ---- |
 |`filename`| path to save the image to. |
 |`-mode`| chart mode to save, defaults to "setup". |
-|`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
-|`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
+|`-height`| height of the image in pixels, defaults to 500px. |
+|`-width`| width of the image in pixels, defaults to 500px. |
 
 ### Select Objects
 
