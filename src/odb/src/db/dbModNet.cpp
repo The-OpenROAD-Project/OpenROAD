@@ -240,7 +240,9 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
     //	   name,modnet -> getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(modnet->getId());
+    block->_journal->pushParam(parent->getId());
     block->_journal->endAction();
   }
 
@@ -264,6 +266,7 @@ void dbModNet::destroy(dbModNet* mod_net)
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(mod_net->getName());
+    block->_journal->pushParam(mod_net->getId());
     block->_journal->pushParam(module->getId());
     block->_journal->endAction();
   }

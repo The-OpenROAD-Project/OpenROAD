@@ -254,7 +254,9 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(moditerm->getId());
+    block->_journal->pushParam(parent->getId());
     block->_journal->endAction();
   }
 
@@ -345,6 +347,7 @@ void dbModITerm::destroy(dbModITerm* val)
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(val->getName());
+    block->_journal->pushParam(val->getId());
     block->_journal->pushParam(_moditerm->_parent);
     block->_journal->endAction();
   }

@@ -234,7 +234,10 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModInstObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(modinst->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->pushParam(master->getId());
     block->_journal->endAction();
   }
 
@@ -262,6 +265,7 @@ void dbModInst::destroy(dbModInst* modinst)
     _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     _block->_journal->pushParam(dbModInstObj);
     _block->_journal->pushParam(modinst->getName());
+    _block->_journal->pushParam(modinst->getId());
     _block->_journal->pushParam(_module->getId());
     _block->_journal->pushParam(_master->getId());
     _block->_journal->endAction();

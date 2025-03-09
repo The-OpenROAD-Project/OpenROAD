@@ -329,7 +329,9 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(modbterm->getId());
+    block->_journal->pushParam(module->getId());
     block->_journal->endAction();
   }
 
@@ -457,6 +459,7 @@ void dbModBTerm::destroy(dbModBTerm* val)
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(val->getName());
+    block->_journal->pushParam(val->getId());
     block->_journal->pushParam(module->getId());
     block->_journal->endAction();
   }

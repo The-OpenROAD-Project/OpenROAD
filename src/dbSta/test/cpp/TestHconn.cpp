@@ -1005,6 +1005,8 @@ TEST_F(TestHconn, ConnectionMade)
     }
   }
 
+  // Get the final design state statistics
+
   size_t final_db_net_count = block->getNets().size();
   size_t final_mod_net_count = block->getModNets().size();
 

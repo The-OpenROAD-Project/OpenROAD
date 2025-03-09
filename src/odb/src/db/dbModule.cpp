@@ -397,6 +397,7 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
   if (_block->_journal) {
     _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     _block->_journal->pushParam(dbModuleObj);
+    _block->_journal->pushParam(module->_name);
     _block->_journal->pushParam(module->getId());
     _block->_journal->endAction();
   }
@@ -453,11 +454,10 @@ void dbModule::destroy(dbModule* module)
   }
 
   if (block->_journal) {
-    //    printf("Log: delete dbModule %s ",
-    //	   module -> getName());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
     block->_journal->pushParam(module->getName());
+    block->_journal->pushParam(module->getId());
     block->_journal->endAction();
   }
 
