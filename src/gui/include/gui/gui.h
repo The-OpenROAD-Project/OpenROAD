@@ -648,6 +648,12 @@ class Gui
                           int height_px = 0);
   void selectClockviewerClock(const std::string& clock_name);
 
+  // Save histogram view
+  void saveHistogramImage(const std::string& filename,
+                          const std::string& mode,
+                          int width_px = 0,
+                          int height_px = 0);
+
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
