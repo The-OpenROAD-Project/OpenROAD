@@ -10,17 +10,17 @@ module hi_fanout (clk1,
     .Z(net8));
  BUF_X2 fanout7 (.A(net8),
     .Z(net7));
- CLKBUF_X3 fanout6 (.A(net9),
+ BUF_X2 fanout6 (.A(net9),
     .Z(net6));
- BUF_X8 fanout5 (.A(net6),
+ CLKBUF_X3 fanout5 (.A(net6),
     .Z(net0));
- CLKBUF_X3 fanout4 (.A(net9),
+ CLKBUF_X2 fanout4 (.A(net9),
     .Z(net4));
  BUF_X2 fanout3 (.A(net4),
     .Z(net3));
- BUF_X8 fanout2 (.A(net4),
+ CLKBUF_X3 fanout2 (.A(net4),
     .Z(net2));
- BUF_X8 fanout1 (.A(net4),
+ CLKBUF_X3 fanout1 (.A(net4),
     .Z(net0));
  DFF_X1 drvr (.CK(clk1),
     .Q(net1));

@@ -8,7 +8,7 @@
 [INFO PPL-0067] Restrict INPUT pins to region 0.00u-125.00u, in the LEFT edge.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of slots           966
+[INFO PPL-0001] Number of available slots 966
 [INFO PPL-0002] Number of I/O             3
 [INFO PPL-0003] Number of I/O w/sink      0
 [INFO PPL-0004] Number of I/O w/o sink    3

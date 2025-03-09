@@ -45,7 +45,7 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       143
-    final |     +5.4% |       9 |       9 |             1 |         0
+    final |     +3.2% |       9 |       9 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0039] Resized 9 instances.

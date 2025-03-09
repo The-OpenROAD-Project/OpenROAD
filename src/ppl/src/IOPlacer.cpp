@@ -899,31 +899,34 @@ int64_t IOPlacer::computeIncrease(int min_dist,
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
-  bool vertical_pin = (edge == Edge::top || edge == Edge::bottom);
-
   for (int layer : layers) {
-    const std::vector<int>& layer_min_distances
-        = vertical_pin ? core_->getMinDstPinsX().at(layer)
-                       : core_->getMinDstPinsY().at(layer);
-
     std::vector<Point> slots = findLayerSlots(layer, edge);
-
-    int tech_min_dst = *(std::max_element(layer_min_distances.begin(),
-                                          layer_min_distances.end()));
-    int min_dst_pins = computeDistanceBetweenPins(layer, tech_min_dst);
 
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
+    int slot_count = 0;
     Point last = slots[0];
+    int min_dst_pins = parms_->getMinDistance();
+    const bool min_dist_in_tracks = parms_->getMinDistanceInTracks();
     for (auto it = slots.begin(); it != slots.end();) {
       Point pos = *it;
-      if (pos != last && std::abs(last.getX() - pos.getX()) < min_dst_pins
-          && std::abs(last.getY() - pos.getY()) < min_dst_pins) {
-        it = slots.erase(it);
+      bool valid_slot;
+      if (!min_dist_in_tracks) {
+        // If user-defined min distance is not in tracks, use this value to
+        // determine if slots are valid between each other.
+        valid_slot = pos == last
+                     || (std::abs(last.getX() - pos.getX()) >= min_dst_pins
+                         || std::abs(last.getY() - pos.getY()) >= min_dst_pins);
       } else {
+        valid_slot = pos == last || slot_count % min_dst_pins == 0;
+      }
+      if (valid_slot) {
         last = pos;
         ++it;
+      } else {
+        it = slots.erase(it);
       }
+      slot_count++;
     }
 
     if (edge == Edge::top || edge == Edge::left) {
@@ -968,10 +971,13 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
   std::vector<Point> slots;
   for (int l = 0; l < layer_min_distances.size(); l++) {
     int tech_min_dst = layer_min_distances[l];
-    int min_dst_pins = computeDistanceBetweenPins(l, tech_min_dst);
 
-    min_dst_pins
-        = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst : min_dst_pins;
+    // If Parameters::min_distance_ is zero, use the default min distance of 2
+    // tracks. If it is not zero, use the tech min distance to create all
+    // possible slots.
+    int min_dst_pins = parms_->getMinDistance() == 0
+                           ? default_min_dist_ * tech_min_dst
+                           : tech_min_dst;
 
     if (corner_avoidance_ == -1) {
       corner_avoidance_ = num_tracks_offset_ * tech_min_dst;
@@ -1039,23 +1045,6 @@ std::vector<Point> IOPlacer::findLayerSlots(const int layer, const Edge edge)
   return slots;
 }
 
-int IOPlacer::computeDistanceBetweenPins(const int layer,
-                                         const int min_distance)
-{
-  bool dist_in_tracks = parms_->getMinDistanceInTracks();
-  int min_dst_pins
-      = dist_in_tracks
-            ? min_distance * parms_->getMinDistance()
-            : min_distance
-                  * std::ceil(static_cast<float>(parms_->getMinDistance())
-                              / min_distance);
-
-  min_dst_pins
-      = (min_dst_pins == 0) ? default_min_dist_ * min_distance : min_dst_pins;
-
-  return min_dst_pins;
-}
-
 void IOPlacer::defineSlots()
 {
   /*******************************************
@@ -1097,7 +1086,13 @@ void IOPlacer::defineSlots()
 
   int regular_pin_count
       = static_cast<int>(netlist_->getIOPins().size()) - top_layer_pins_count_;
-  if (regular_pin_count > slots_.size()) {
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  if (regular_pin_count > available_slots) {
     int min_dist = std::numeric_limits<int>::min();
     for (int layer_idx : ver_layers_) {
       std::vector<int> layer_min_distances
@@ -1124,7 +1119,7 @@ void IOPlacer::defineSlots()
         "Number of IO pins ({}) exceeds maximum number of available "
         "positions ({}). Increase the die perimeter from {:.2f}um to {:.2f}um.",
         regular_pin_count,
-        slots_.size(),
+        available_slots,
         getBlock()->dbuToMicrons(die_margin),
         getBlock()->dbuToMicrons(new_margin));
   }
@@ -1568,7 +1563,13 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
 
 void IOPlacer::printConfig(bool annealing)
 {
-  logger_->info(PPL, 1, "Number of slots           {}", slots_.size());
+  int available_slots = 0;
+  for (const Slot& slot : slots_) {
+    if (slot.isAvailable()) {
+      available_slots++;
+    }
+  }
+  logger_->info(PPL, 1, "Number of available slots {}", available_slots);
   if (!top_layer_slots_.empty()) {
     logger_->info(
         PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
