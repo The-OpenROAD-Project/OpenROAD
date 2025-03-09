@@ -461,7 +461,7 @@ void dbWire::getSegment(int shape_id, dbShape& shape)
   bool has_cur_ext = false;
   bool ignore_ext = false;
 
-decode_loop : {
+decode_loop: {
   ZASSERT(idx >= 0);
   opcode = wire->_opcodes[idx];
 
@@ -534,7 +534,7 @@ decode_loop : {
   --idx;
   goto decode_loop;
 
-state_machine_update : {
+state_machine_update: {
   if (state == 0) {
     if (opcode & WOP_DEFAULT_WIDTH) {
       found_width = true;
@@ -699,7 +699,7 @@ void dbWire::getSegment(int shape_id, dbTechLayer* layer, dbShape& shape)
   bool has_cur_ext = false;
   bool ignore_ext = false;
 
-decode_loop : {
+decode_loop: {
   ZASSERT(idx >= 0);
   opcode = wire->_opcodes[idx];
 
@@ -744,7 +744,7 @@ decode_loop : {
   --idx;
   goto decode_loop;
 
-state_machine_update : {
+state_machine_update: {
   if (state == 0) {
     if (opcode & WOP_DEFAULT_WIDTH) {
       found_width = true;
