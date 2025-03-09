@@ -318,7 +318,7 @@ void ChartsWidget::reportEndPoints(const std::set<const sta::Pin*>& report_pins)
 }
 
 void ChartsWidget::saveImage(const std::string& path,
-                             const Mode mode,
+                             Mode mode,
                              const std::optional<int>& width_px,
                              const std::optional<int>& height_px)
 {
@@ -801,7 +801,7 @@ void HistogramView::setLimits(const EndPointSlackMap& end_point_to_slack)
   min_slack_ = std::numeric_limits<float>::max();
 
   sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
-  for (const auto [end_point, sta_slack] : end_point_to_slack) {
+  for (const auto& [end_point, sta_slack] : end_point_to_slack) {
     const float slack = time_unit->staToUser(sta_slack);
     min_slack_ = std::min(slack, min_slack_);
     max_slack_ = std::max(slack, max_slack_);
@@ -810,13 +810,13 @@ void HistogramView::setLimits(const EndPointSlackMap& end_point_to_slack)
 
 void HistogramView::populateBarSets(QBarSet& neg_set, QBarSet& pos_set)
 {
-  for (int i = 0; i < buckets_.negative.size(); ++i) {
-    neg_set << buckets_.negative[i].size();
+  for (const auto& bucket : buckets_.negative) {
+    neg_set << bucket.size();
     pos_set << 0;
   }
-  for (int i = 0; i < buckets_.positive.size(); ++i) {
+  for (const auto& bucket : buckets_.positive) {
     neg_set << 0;
-    pos_set << buckets_.positive[i].size();
+    pos_set << bucket.size();
   }
 }
 

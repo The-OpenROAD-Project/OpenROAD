@@ -166,7 +166,7 @@ class ChartsWidget : public QDockWidget
   void setMode(Mode mode);
 
   void saveImage(const std::string& path,
-                 const Mode mode,
+                 Mode mode,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
 
