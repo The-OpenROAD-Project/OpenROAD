@@ -734,7 +734,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
     // the flat net is left out
     block->_journal->pushParam(0U);
     // modnet
-    block->_journal->pushParam(mod_net->getId());
+    block->_journal->pushParam(_mnet);
     block->_journal->endAction();
   }
 

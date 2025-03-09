@@ -3528,7 +3528,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);
       }
-
       // save the top level destination pin for final connection
       top_mod_dest = mod_iterm;
     }

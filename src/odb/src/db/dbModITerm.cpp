@@ -233,6 +233,7 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   _dbModInst* parent = (_dbModInst*) parentInstance;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModITerm* moditerm = block->_moditerm_tbl->create();
+
   // defaults
   moditerm->_mod_net = 0;
   moditerm->_next_net_moditerm = 0;
@@ -300,6 +301,15 @@ void dbModITerm::disconnect()
     return;
   }
   _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_mod_net);
+
+  if (_block->_journal) {
+    _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    _block->_journal->pushParam(dbModITermObj);
+    _block->_journal->pushParam(_moditerm->getId());
+    _block->_journal->pushParam(_moditerm->_mod_net);
+    _block->_journal->endAction();
+  }
+
   _moditerm->_mod_net = 0;
   _dbModITerm* next_moditerm
       = (_moditerm->_next_net_moditerm != 0)
@@ -329,8 +339,16 @@ void dbModITerm::destroy(dbModITerm* val)
 {
   _dbModITerm* _moditerm = (_dbModITerm*) val;
   _dbBlock* block = (_dbBlock*) _moditerm->getOwner();
-
   _dbModInst* mod_inst = block->_modinst_tbl->getPtr(_moditerm->_parent);
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModITermObj);
+    block->_journal->pushParam(val->getName());
+    block->_journal->pushParam(_moditerm->_parent);
+    block->_journal->endAction();
+  }
+
   // snip out the mod iterm, from doubly linked list
   uint prev = _moditerm->_prev_entry;
   uint next = _moditerm->_next_entry;
