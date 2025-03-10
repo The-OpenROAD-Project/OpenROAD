@@ -205,6 +205,36 @@ proc save_clocktree_image { args } {
   gui::save_clocktree_image $path $clock $corner $width $height
 }
 
+sta::define_cmd_args "save_histogram_image" {
+  [-width width] \
+  [-height height] \
+  [-mode mode] \
+  path
+}
+
+proc save_histogram_image { args } {
+  sta::parse_key_args "save_histogram_image" args \
+    keys {-width -height -mode} flags {}
+
+  sta::check_argc_eq1 "save_histogram_image" $args
+  set path [lindex $args 0]
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    set width $keys(-width)
+  }
+  set height 0
+  if { [info exists keys(-height)] } {
+    set height $keys(-height)
+  }
+  set mode "setup"
+  if { [info exists keys(-mode)] } {
+    set mode $keys(-mode)
+  }
+
+  gui::save_histogram_image $path $mode $width $height
+}
+
 sta::define_cmd_args "select" {-type object_type \
                                [-name name_regex] \
                                [-case_insensitive] \

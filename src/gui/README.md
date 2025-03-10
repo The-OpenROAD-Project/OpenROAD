@@ -139,6 +139,28 @@ save_clocktree_image
 |`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
 |`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
 
+### Save Timing Histogram Image
+
+This command saves the screenshot of timing histogram given options
+to `filename`.
+
+```tcl
+save_histogram_image
+    filename
+    [-mode mode]
+    [-width width]
+    [-height height]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+|`filename`| path to save the image to. |
+|`-mode`| chart mode to save, defaults to "setup". |
+|`-height`| height of the image in pixels, defaults to 500px. |
+|`-width`| width of the image in pixels, defaults to 500px. |
+
 ### Select Objects
 
 This command selects object based on options.
