@@ -255,14 +255,8 @@ void dbModNet::destroy(dbModNet* mod_net)
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
 
-  static int debug;
-  debug++;
-
   // journalling
   if (block->_journal) {
-    //    printf("D %d Logging deleting modnet %s id %ld\n",debug,
-    //	   mod_net -> getName(),
-    //	   mod_net -> getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(mod_net->getName());

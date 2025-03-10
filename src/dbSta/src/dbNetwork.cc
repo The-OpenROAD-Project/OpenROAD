@@ -1840,10 +1840,10 @@ dbNet* dbNetwork::flatNet(const Term* term) const
   if (bterm) {
     dbNet* dnet = bterm->getNet();
     return dnet;
-  } else {
-    logger_->error(
-        ORD, 2029, "Illegal term for getting a flat net, must be bterm");
   }
+  logger_->error(
+      ORD, 2029, "Illegal term for getting a flat net, must be bterm");
+
   return nullptr;
 }
 
