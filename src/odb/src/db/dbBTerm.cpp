@@ -968,6 +968,12 @@ std::optional<Rect> dbBTerm::getConstraintRegion()
   return bterm->_constraint_region;
 }
 
+void dbBTerm::resetConstraintRegion()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  bterm->_constraint_region.mergeInit();
+}
+
 void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
@@ -986,6 +992,12 @@ dbBTerm* dbBTerm::getMirroredBTerm()
 
   _dbBTerm* mirrored_bterm = block->_bterm_tbl->getPtr(bterm->_mirrored_bterm);
   return (dbBTerm*) mirrored_bterm;
+}
+
+bool dbBTerm::hasMirroredBTerm()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->_mirrored_bterm != 0;
 }
 
 }  // namespace odb
