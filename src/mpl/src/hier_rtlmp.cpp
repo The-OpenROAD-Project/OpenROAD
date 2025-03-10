@@ -890,6 +890,11 @@ void HierRTLMP::setPinAccessBlockages()
     return;
   }
 
+  // Avoid creating blockages with zero depth.
+  if (metrics_->getStdCellArea() == 0.0) {
+    return;
+  }
+
   std::vector<Cluster*> clusters_of_unplaced_io_pins
       = getClustersOfUnplacedIOPins();
   const Rect die = dbuToMicrons(block_->getDieArea());
@@ -3253,6 +3258,14 @@ void Pusher::pushMacroClusterToCoreBoundaries(
       moveHardMacro(hard_macro, boundary, distance);
     }
 
+    debugPrint(logger_,
+               MPL,
+               "boundary_push",
+               1,
+               "Moved {} in the direction of {}.",
+               macro_cluster->getName(),
+               toString(boundary));
+
     odb::Rect cluster_box(
         block_->micronsToDbu(macro_cluster->getX()),
         block_->micronsToDbu(macro_cluster->getY()),
@@ -3266,14 +3279,6 @@ void Pusher::pushMacroClusterToCoreBoundaries(
     // of its HardMacros.
     if (overlapsWithHardMacro(cluster_box, hard_macros)
         || overlapsWithIOBlockage(cluster_box, boundary)) {
-      debugPrint(logger_,
-                 MPL,
-                 "boundary_push",
-                 1,
-                 "Overlap found when moving {} to {}. Push reverted.",
-                 macro_cluster->getName(),
-                 toString(boundary));
-
       // Move back to original position.
       for (HardMacro* hard_macro : hard_macros) {
         moveHardMacro(hard_macro, boundary, (-distance));
@@ -3356,6 +3361,12 @@ bool Pusher::overlapsWithHardMacro(
         && cluster_box.yMin() < hard_macro->getUYDBU()
         && cluster_box.xMax() > hard_macro->getXDBU()
         && cluster_box.yMax() > hard_macro->getYDBU()) {
+      debugPrint(logger_,
+                 MPL,
+                 "boundary_push",
+                 1,
+                 "\tFound overlap with HardMacro {}. Push will be reverted.",
+                 hard_macro->getName());
       return true;
     }
   }
@@ -3375,6 +3386,12 @@ bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
 
   if (cluster_box.xMin() < box.xMax() && cluster_box.yMin() < box.yMax()
       && cluster_box.xMax() > box.xMin() && cluster_box.yMax() > box.yMin()) {
+    debugPrint(logger_,
+               MPL,
+               "boundary_push",
+               1,
+               "\tFound overlap with IO blockage {}. Push will be reverted.",
+               box);
     return true;
   }
 
