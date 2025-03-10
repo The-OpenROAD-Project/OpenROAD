@@ -765,7 +765,7 @@ void dbJournal::redo_connectObject()
 
     default: {
       _logger->critical(
-          utl::ODB, 1110, "Unknown type of action for redo_connectObject");
+          utl::ODB, 1110, "Unknown type of object for redo_connectObject");
       break;
     }
   }
