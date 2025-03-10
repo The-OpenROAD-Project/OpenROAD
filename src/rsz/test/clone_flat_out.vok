@@ -309,13 +309,13 @@ module hi_fanout (clk1,
  wire net1;
  wire net2;
  wire net3;
- wire net124;
- wire net127;
- wire net129;
- wire net284;
+ wire net123;
+ wire net126;
+ wire net128;
+ wire net283;
+ wire net287;
  wire net288;
- wire net289;
- wire net291;
+ wire net290;
 
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
@@ -323,100 +323,100 @@ module hi_fanout (clk1,
  DFF_X2 drvr_2 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand1));
- DFF_X1 load0 (.D(net124),
+ DFF_X1 load0 (.D(net123),
     .CK(clk1),
     .Q(output0));
- DFF_X1 load1 (.D(net124),
+ DFF_X1 load1 (.D(net123),
     .CK(clk1),
     .Q(output1));
- DFF_X1 load10 (.D(net124),
+ DFF_X1 load10 (.D(net123),
     .CK(clk1),
     .Q(output10));
- DFF_X1 load100 (.D(net124),
+ DFF_X1 load100 (.D(net123),
     .CK(clk1),
     .Q(output100));
- DFF_X1 load101 (.D(net124),
+ DFF_X1 load101 (.D(net123),
     .CK(clk1),
     .Q(output101));
- DFF_X1 load102 (.D(net124),
+ DFF_X1 load102 (.D(net123),
     .CK(clk1),
     .Q(output102));
- DFF_X1 load103 (.D(net124),
+ DFF_X1 load103 (.D(net123),
     .CK(clk1),
     .Q(output103));
- DFF_X1 load104 (.D(net124),
+ DFF_X1 load104 (.D(net123),
     .CK(clk1),
     .Q(output104));
- DFF_X1 load105 (.D(net124),
+ DFF_X1 load105 (.D(net123),
     .CK(clk1),
     .Q(output105));
- DFF_X1 load106 (.D(net124),
+ DFF_X1 load106 (.D(net123),
     .CK(clk1),
     .Q(output106));
- DFF_X1 load107 (.D(net124),
+ DFF_X1 load107 (.D(net123),
     .CK(clk1),
     .Q(output107));
- DFF_X1 load108 (.D(net124),
+ DFF_X1 load108 (.D(net123),
     .CK(clk1),
     .Q(output108));
- DFF_X1 load109 (.D(net124),
+ DFF_X1 load109 (.D(net123),
     .CK(clk1),
     .Q(output109));
- DFF_X1 load11 (.D(net124),
+ DFF_X1 load11 (.D(net123),
     .CK(clk1),
     .Q(output11));
- DFF_X1 load110 (.D(net124),
+ DFF_X1 load110 (.D(net123),
     .CK(clk1),
     .Q(output110));
- DFF_X1 load111 (.D(net124),
+ DFF_X1 load111 (.D(net123),
     .CK(clk1),
     .Q(output111));
- DFF_X1 load112 (.D(net124),
+ DFF_X1 load112 (.D(net123),
     .CK(clk1),
     .Q(output112));
- DFF_X1 load113 (.D(net124),
+ DFF_X1 load113 (.D(net123),
     .CK(clk1),
     .Q(output113));
- DFF_X1 load114 (.D(net127),
+ DFF_X1 load114 (.D(net126),
     .CK(clk1),
     .Q(output114));
- DFF_X1 load115 (.D(net127),
+ DFF_X1 load115 (.D(net126),
     .CK(clk1),
     .Q(output115));
- DFF_X1 load116 (.D(net127),
+ DFF_X1 load116 (.D(net126),
     .CK(clk1),
     .Q(output116));
- DFF_X1 load117 (.D(net127),
+ DFF_X1 load117 (.D(net126),
     .CK(clk1),
     .Q(output117));
- DFF_X1 load118 (.D(net127),
+ DFF_X1 load118 (.D(net126),
     .CK(clk1),
     .Q(output118));
- DFF_X1 load119 (.D(net127),
+ DFF_X1 load119 (.D(net126),
     .CK(clk1),
     .Q(output119));
- DFF_X1 load12 (.D(net127),
+ DFF_X1 load12 (.D(net126),
     .CK(clk1),
     .Q(output12));
- DFF_X1 load120 (.D(net127),
+ DFF_X1 load120 (.D(net126),
     .CK(clk1),
     .Q(output120));
- DFF_X1 load121 (.D(net127),
+ DFF_X1 load121 (.D(net126),
     .CK(clk1),
     .Q(output121));
- DFF_X1 load122 (.D(net129),
+ DFF_X1 load122 (.D(net128),
     .CK(clk1),
     .Q(output122));
- DFF_X1 load123 (.D(net129),
+ DFF_X1 load123 (.D(net128),
     .CK(clk1),
     .Q(output123));
- DFF_X1 load124 (.D(net129),
+ DFF_X1 load124 (.D(net128),
     .CK(clk1),
     .Q(output124));
- DFF_X1 load125 (.D(net129),
+ DFF_X1 load125 (.D(net128),
     .CK(clk1),
     .Q(output125));
- DFF_X1 load126 (.D(net129),
+ DFF_X1 load126 (.D(net128),
     .CK(clk1),
     .Q(output126));
  DFF_X1 load127 (.D(net2),
@@ -434,103 +434,103 @@ module hi_fanout (clk1,
  DFF_X1 load130 (.D(net2),
     .CK(clk1),
     .Q(output130));
- DFF_X1 load131 (.D(net284),
+ DFF_X1 load131 (.D(net283),
     .CK(clk1),
     .Q(output131));
- DFF_X1 load132 (.D(net284),
+ DFF_X1 load132 (.D(net283),
     .CK(clk1),
     .Q(output132));
- DFF_X1 load133 (.D(net284),
+ DFF_X1 load133 (.D(net283),
     .CK(clk1),
     .Q(output133));
- DFF_X1 load134 (.D(net284),
+ DFF_X1 load134 (.D(net283),
     .CK(clk1),
     .Q(output134));
- DFF_X1 load135 (.D(net284),
+ DFF_X1 load135 (.D(net283),
     .CK(clk1),
     .Q(output135));
- DFF_X1 load136 (.D(net284),
+ DFF_X1 load136 (.D(net283),
     .CK(clk1),
     .Q(output136));
- DFF_X1 load137 (.D(net284),
+ DFF_X1 load137 (.D(net283),
     .CK(clk1),
     .Q(output137));
- DFF_X1 load138 (.D(net284),
+ DFF_X1 load138 (.D(net283),
     .CK(clk1),
     .Q(output138));
- DFF_X1 load139 (.D(net284),
+ DFF_X1 load139 (.D(net283),
     .CK(clk1),
     .Q(output139));
- DFF_X1 load14 (.D(net284),
+ DFF_X1 load14 (.D(net283),
     .CK(clk1),
     .Q(output14));
- DFF_X1 load140 (.D(net284),
+ DFF_X1 load140 (.D(net283),
     .CK(clk1),
     .Q(output140));
- DFF_X1 load141 (.D(net284),
+ DFF_X1 load141 (.D(net283),
     .CK(clk1),
     .Q(output141));
- DFF_X1 load142 (.D(net284),
+ DFF_X1 load142 (.D(net283),
     .CK(clk1),
     .Q(output142));
- DFF_X1 load143 (.D(net284),
+ DFF_X1 load143 (.D(net283),
     .CK(clk1),
     .Q(output143));
- DFF_X1 load144 (.D(net284),
+ DFF_X1 load144 (.D(net283),
     .CK(clk1),
     .Q(output144));
- DFF_X1 load145 (.D(net284),
+ DFF_X1 load145 (.D(net283),
     .CK(clk1),
     .Q(output145));
- DFF_X1 load146 (.D(net284),
+ DFF_X1 load146 (.D(net283),
     .CK(clk1),
     .Q(output146));
- DFF_X1 load147 (.D(net284),
+ DFF_X1 load147 (.D(net283),
     .CK(clk1),
     .Q(output147));
- DFF_X1 load148 (.D(net284),
+ DFF_X1 load148 (.D(net283),
     .CK(clk1),
     .Q(output148));
- DFF_X1 load149 (.D(net288),
+ DFF_X1 load149 (.D(net287),
     .CK(clk1),
     .Q(output149));
- DFF_X1 load15 (.D(net288),
+ DFF_X1 load15 (.D(net287),
     .CK(clk1),
     .Q(output15));
- DFF_X1 load16 (.D(net288),
+ DFF_X1 load16 (.D(net287),
     .CK(clk1),
     .Q(output16));
- DFF_X1 load17 (.D(net288),
+ DFF_X1 load17 (.D(net287),
     .CK(clk1),
     .Q(output17));
- DFF_X1 load18 (.D(net288),
+ DFF_X1 load18 (.D(net287),
     .CK(clk1),
     .Q(output18));
- DFF_X1 load19 (.D(net288),
+ DFF_X1 load19 (.D(net287),
     .CK(clk1),
     .Q(output19));
- DFF_X1 load2 (.D(net288),
+ DFF_X1 load2 (.D(net287),
     .CK(clk1),
     .Q(output2));
- DFF_X1 load20 (.D(net288),
+ DFF_X1 load20 (.D(net287),
     .CK(clk1),
     .Q(output20));
- DFF_X1 load21 (.D(net288),
+ DFF_X1 load21 (.D(net287),
     .CK(clk1),
     .Q(output21));
- DFF_X1 load22 (.D(net291),
+ DFF_X1 load22 (.D(net290),
     .CK(clk1),
     .Q(output22));
- DFF_X1 load23 (.D(net291),
+ DFF_X1 load23 (.D(net290),
     .CK(clk1),
     .Q(output23));
- DFF_X1 load24 (.D(net291),
+ DFF_X1 load24 (.D(net290),
     .CK(clk1),
     .Q(output24));
- DFF_X1 load25 (.D(net291),
+ DFF_X1 load25 (.D(net290),
     .CK(clk1),
     .Q(output25));
- DFF_X1 load26 (.D(net291),
+ DFF_X1 load26 (.D(net290),
     .CK(clk1),
     .Q(output26));
  DFF_X1 load27 (.D(net1),
@@ -777,32 +777,32 @@ module hi_fanout (clk1,
     .A2(clk_to_nand0),
     .ZN(net0));
  NAND2_X4 clone1 (.A1(clk_to_nand0),
-    .A2(net289),
+    .A2(net288),
     .ZN(net1));
  NAND2_X4 clone2 (.A1(clk_to_nand0),
-    .A2(net289),
+    .A2(net288),
     .ZN(net2));
  NAND2_X4 clone3 (.A1(clk_to_nand1),
     .A2(clk_to_nand0),
     .ZN(net3));
- NAND2_X2 clone124 (.A1(clk_to_nand0),
+ NAND2_X2 clone123 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
-    .ZN(net124));
- NAND2_X2 clone127 (.A1(clk_to_nand0),
-    .A2(net289),
-    .ZN(net127));
- NAND2_X2 clone129 (.A1(clk_to_nand0),
-    .A2(net289),
-    .ZN(net129));
- NAND2_X2 clone284 (.A1(clk_to_nand0),
+    .ZN(net123));
+ NAND2_X2 clone126 (.A1(clk_to_nand0),
+    .A2(net288),
+    .ZN(net126));
+ NAND2_X2 clone128 (.A1(clk_to_nand0),
+    .A2(net288),
+    .ZN(net128));
+ NAND2_X2 clone283 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
-    .ZN(net284));
- NAND2_X2 clone288 (.A1(clk_to_nand0),
+    .ZN(net283));
+ NAND2_X2 clone287 (.A1(clk_to_nand0),
     .A2(clk_to_nand1),
-    .ZN(net288));
- BUF_X8 split289 (.A(clk_to_nand1),
-    .Z(net289));
- NAND2_X2 clone291 (.A1(clk_to_nand0),
-    .A2(net289),
-    .ZN(net291));
+    .ZN(net287));
+ BUF_X8 split288 (.A(clk_to_nand1),
+    .Z(net288));
+ NAND2_X2 clone290 (.A1(clk_to_nand0),
+    .A2(net288),
+    .ZN(net290));
 endmodule

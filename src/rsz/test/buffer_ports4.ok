@@ -15,12 +15,15 @@ input1/Z                                0.20    1.15   -0.95 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       503
-    final |     +0.7% |       1 |       0 |             0 |         0
+    final |     +0.4% |       2 |       3 |             1 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0039] Resized 2 instances.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-input1/Z                                0.20    0.02    0.17 (MET)
+max_cap3/Z                              0.20    0.10    0.10 (MET)
 

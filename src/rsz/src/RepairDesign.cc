@@ -53,6 +53,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Units.hh"
+#include "utl/scope.h"
 
 namespace rsz {
 
@@ -252,6 +253,14 @@ void RepairDesign::repairDesign(
 void RepairDesign::repairClkNets(double max_wire_length)
 {
   init();
+
+  // Lift sizing restrictions for clock buffers.
+  // Save old values in area_limit and leakage_limit.
+  utl::SetAndRestore<std::optional<double>> area_limit(
+      resizer_->sizing_area_limit_, std::nullopt);
+  utl::SetAndRestore<std::optional<double>> leakage_limit(
+      resizer_->sizing_leakage_limit_, std::nullopt);
+
   slew_margin_ = 0.0;
   cap_margin_ = 0.0;
   buffer_gain_ = 0.0;
@@ -311,6 +320,9 @@ void RepairDesign::repairClkNets(double max_wire_length)
                   repaired_net_count);
     resizer_->level_drvr_vertices_valid_ = false;
   }
+
+  // Restore previous sizing restrictions when area_limit and leakage_limit go
+  // out of scope.  This restore works even in the presence of exceptions.
 }
 
 // Repair one net (for debugging)

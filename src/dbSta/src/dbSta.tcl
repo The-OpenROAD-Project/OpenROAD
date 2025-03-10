@@ -113,6 +113,33 @@ proc report_cell_usage { args } {
   report_cell_usage_cmd $module $verbose $file_name $stage_name
 }
 
+define_cmd_args "report_timing_histogram" {[-num_bins num_bins] [-setup|-hold]}
+
+proc report_timing_histogram { args } {
+  parse_key_args "report_timing_histogram" args \
+    keys {-num_bins} \
+    flags {-setup -hold}
+
+  check_argc_eq0 "report_timing_histogram" $args
+
+  if { [info exists flags(-setup)] && [info exists flags(-hold)] } {
+    utl::error STA 7 "Both -setup and -hold cannot be specified"
+  }
+
+  set num_bins 10
+  if { [info exists keys(-num_bins)] } {
+    set num_bins $keys(-num_bins)
+  }
+
+  set min_max max
+  if { [info exists flags(-hold)] } {
+    set min_max min
+  }
+
+  report_timing_histogram_cmd $num_bins $min_max
+}
+
+
 # redefine sta::sta_warn/error to call utl::warn/error
 proc sta_error { id msg } {
   utl::error STA $id $msg
