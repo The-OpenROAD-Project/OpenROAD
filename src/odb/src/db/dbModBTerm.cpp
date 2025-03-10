@@ -329,7 +329,9 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(modbterm->getId());
+    block->_journal->pushParam(module->getId());
     block->_journal->endAction();
   }
 
@@ -378,6 +380,14 @@ void dbModBTerm::disconnect()
     return;
   }
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modnet);
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(_modbterm->getId());
+    block->_journal->pushParam(_modbterm->_modnet);
+    block->_journal->endAction();
+  }
 
   if (_modbterm->_prev_net_modbterm == 0) {
     // degenerate case, head element, need to update net starting point
@@ -434,7 +444,20 @@ void dbModBTerm::destroy(dbModBTerm* val)
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) val;
   _dbBlock* block = (_dbBlock*) (_modbterm->getOwner());
+
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);
+
+  if (block->_journal) {
+    //    printf("LOG delete dbModBTerm %s %d\n",
+    //	   val -> getName(), val -> getId());
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(val->getName());
+    block->_journal->pushParam(val->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->endAction();
+  }
+
   uint prev = _modbterm->_prev_entry;
   uint next = _modbterm->_next_entry;
   if (prev == 0) {
@@ -451,6 +474,7 @@ void dbModBTerm::destroy(dbModBTerm* val)
   }
   _modbterm->_prev_entry = 0;
   _modbterm->_next_entry = 0;
+
   module->_modbterm_hash.erase(val->getName());
   block->_modbterm_tbl->destroy(_modbterm);
 }

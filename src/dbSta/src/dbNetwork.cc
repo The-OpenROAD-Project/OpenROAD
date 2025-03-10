@@ -619,15 +619,20 @@ int dbNetwork::metersToDbu(double dist) const
 
 ObjectId dbNetwork::id(const Port* port) const
 {
-  if (hierarchy_) {
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
-    dbObjectType type = obj->getObjectType();
-    return getDbNwkObjectId(type, obj->getId());
-  }
   if (!port) {
     // should not match anything else
     return std::numeric_limits<ObjectId>::max();
   }
+
+  if (hierarchy_) {
+    if (isConcretePort(port)) {
+      return ConcreteNetwork::id(port);
+    }
+    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Port*>(port));
+    dbObjectType type = obj->getObjectType();
+    return getDbNwkObjectId(type, obj->getId());
+  }
+  // default
   return ConcreteNetwork::id(port);
 }
 
@@ -1819,6 +1824,29 @@ Pin* dbNetwork::pin(const Term* term) const
   return nullptr;
 }
 
+/*
+Get the flat net for a term
+*/
+
+dbNet* dbNetwork::flatNet(const Term* term) const
+{
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+
+  staToDb(term, iterm, bterm, moditerm, modbterm);
+
+  if (bterm) {
+    dbNet* dnet = bterm->getNet();
+    return dnet;
+  }
+  logger_->error(
+      ORD, 2029, "Illegal term for getting a flat net, must be bterm");
+
+  return nullptr;
+}
+
 Net* dbNetwork::net(const Term* term) const
 {
   dbITerm* iterm = nullptr;
@@ -2586,6 +2614,30 @@ dbITerm* dbNetwork::flatPin(const Pin* pin) const
   (void) moditerm;
   (void) modbterm;
   return iterm;
+}
+
+bool dbNetwork::isFlat(const Pin* pin) const
+{
+  odb::dbITerm* iterm;
+  odb::dbBTerm* bterm;
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+  if (iterm || bterm) {
+    return true;
+  }
+  return false;
+}
+
+bool dbNetwork::isFlat(const Net* net) const
+{
+  odb::dbNet* db_net;
+  odb::dbModNet* mod_net;
+  staToDb(net, db_net, mod_net);
+  if (db_net) {
+    return true;
+  }
+  return false;
 }
 
 dbModITerm* dbNetwork::hierPin(const Pin* pin) const
@@ -3476,7 +3528,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);
       }
-
       // save the top level destination pin for final connection
       top_mod_dest = mod_iterm;
     }

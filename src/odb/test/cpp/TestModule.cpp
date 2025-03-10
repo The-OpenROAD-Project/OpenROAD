@@ -336,19 +336,24 @@ struct F_DETAILED
 BOOST_FIXTURE_TEST_CASE(test_destroy, F_DETAILED)
 {
   BOOST_TEST(block->getModInsts().size() == 3);
-  // dbModInst::destroy()
+
+  // We now require that the module instance be deleted
   dbModInst::destroy(i1);
+  dbModule::destroy(master_mod1);
   BOOST_TEST(parent_mod->findModInst("i1") == nullptr);
+
   BOOST_TEST(block->getModInsts().size() == 2);
-  // dbModule::destroy() master
+  dbModInst::destroy(i2);
   dbModule::destroy(master_mod2);
+
   BOOST_TEST(parent_mod->findModInst("i2") == nullptr);
   BOOST_TEST(block->getModInsts().size() == 1);
-  // dbModule::destroy() parent
+
   dbModule::destroy(parent_mod);
   BOOST_TEST(block->findModule("parent_mod") == nullptr);
   BOOST_TEST(block->getModInsts().size() == 0);
 }
+
 BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
 {
   int i;
@@ -415,6 +420,8 @@ struct F_HIERARCHY
     db = createSimpleDB();
     block = db->getChip()->getBlock();
     lib = db->findLib("lib1");
+
+    odb::dbDatabase::beginEco(block);
 
     // Top level object
     parent_mod = dbModule::create(block, "parent_mod");
@@ -605,6 +612,30 @@ BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
       }
     }
   }
+}
+
+/*
+Test the hierarchical journalling
+*/
+
+BOOST_FIXTURE_TEST_CASE(test_hierarchy_journalling, F_HIERARCHY)
+{
+  // end the eco ready to undo
+  odb::dbDatabase::endEco(block);
+  // undo the construction
+  odb::dbDatabase::undoEco(block);
+  BOOST_TEST(odb::dbDatabase::checkEco(block) == 0);
+  // sanity check nothing left.
+  dbSet<dbModNet> parent_modnets = parent_mod->getModNets();
+  BOOST_TEST(parent_modnets.size() == 0);
+  dbSet<dbModBTerm> parent_modbterms = parent_mod->getModBTerms();
+  BOOST_TEST(parent_modbterms.size() == 0);
+  dbSet<dbModITerm> i1_moditerms = i1->getModITerms();
+  BOOST_TEST(i1_moditerms.size() == 0);
+  dbSet<dbModITerm> i2_moditerms = i2->getModITerms();
+  BOOST_TEST(i2_moditerms.size() == 0);
+  dbSet<dbModITerm> i3_moditerms = i3->getModITerms();
+  BOOST_TEST(i3_moditerms.size() == 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

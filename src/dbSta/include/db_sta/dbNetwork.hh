@@ -260,6 +260,9 @@ class dbNetwork : public ConcreteNetwork
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
 
+  bool isFlat(const Pin* pin) const;
+  bool isFlat(const Net* net) const;
+
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
@@ -268,6 +271,7 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Terminal functions
   Net* net(const Term* term) const override;
+  dbNet* flatNet(const Term* term) const;
   Pin* pin(const Term* term) const override;
   ObjectId id(const Term* term) const override;
 
