@@ -38,6 +38,12 @@
 #include <boost/functional/hash.hpp>
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/algorithms/buffer.hpp> 
 #include <deque>
 #include <functional>
 #include <string>
@@ -80,6 +86,12 @@ enum class TreeType
   RegisterTree = 2  // child tree that drives only registers without ins delays
 };
 
+namespace bg = boost::geometry;
+typedef bg::model::d2::point_xy<int> point_t;
+typedef bg::model::box<point_t> box_t;
+typedef bg::model::linestring<point_t> line_t;
+typedef bg::model::polygon<point_t> polygon_t;
+
 class TreeBuilder
 {
  public:
@@ -101,6 +113,7 @@ class TreeBuilder
   virtual ~TreeBuilder() = default;
 
   virtual void run() = 0;
+  void mergeBlockages();
   void initBlockages();
   void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
   const Clock& getClock() const { return clock_; }
@@ -272,6 +285,7 @@ class TreeBuilder
   utl::Logger* logger_;
   odb::dbDatabase* db_;
   std::vector<odb::dbBox*> bboxList_;
+  std::vector<odb::Rect> blockages_;
   double bufferWidth_ = 0.0;
   double bufferHeight_ = 0.0;
   // keep track of occupied cells to avoid overlap violations

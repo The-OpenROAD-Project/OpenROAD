@@ -48,10 +48,107 @@ namespace cts {
 
 using utl::CTS;
 
+void TreeBuilder::mergeBlockages()
+{
+  bg::strategy::buffer::distance_symmetric<int> distance_strategy_hight(bufferHeight_ * techChar_->getLengthUnit());
+  bg::strategy::buffer::distance_symmetric<int> distance_strategy_width(bufferWidth_ * techChar_->getLengthUnit());
+  bg::strategy::buffer::join_round join_strategy(36);
+  bg::strategy::buffer::end_round end_strategy(36);
+  bg::strategy::buffer::point_circle circle_strategy(36);
+  bg::strategy::buffer::side_straight side_strategy;
+
+  logger_->report("buffer hight: {} \nbuffer width: {}", bufferHeight_ * techChar_->getLengthUnit(), bufferWidth_ * techChar_->getLengthUnit());
+  std::vector<box_t> macros;
+  std::vector<box_t> blockages;
+  std::vector<box_t> temp_blockages;
+
+  // transform macros in boost box
+  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (inst->getMaster()->getType().isBlock()
+        && inst->getPlacementStatus().isPlaced()) {
+      odb::dbBox* bbox = inst->getBBox();
+      box_t boost_box({bbox->xMin(), bbox->yMin()},
+                      {bbox->xMax(), bbox->yMax()});
+      
+      macros.push_back(boost_box);
+      blockages.push_back(boost_box);
+    }
+  }
+
+  for(auto m : macros) {
+    box_t merged_box(m);
+
+    for(auto b : blockages) {
+      // get upper line
+      line_t upper_line {{merged_box.min_corner().x(), merged_box.max_corner().y()},
+                         {merged_box.max_corner().x(), merged_box.max_corner().y()}};
+      // get right line
+      line_t right_line {{merged_box.max_corner().x(), merged_box.min_corner().y()},
+                         {merged_box.max_corner().x(), merged_box.max_corner().y()}};
+
+      // inflate upper line
+      bg::model::multi_polygon<polygon_t> inflated_upper_line;
+      bg::buffer(upper_line, inflated_upper_line,
+                 distance_strategy_hight, side_strategy,
+                 join_strategy, end_strategy, circle_strategy);
+
+      // inflate right line
+      bg::model::multi_polygon<polygon_t> inflated_right_line;
+      bg::buffer(right_line, inflated_right_line,
+                 distance_strategy_width, side_strategy,
+                 join_strategy, end_strategy, circle_strategy);
+
+      // check intersection with right line
+      bool intertesect_to_right = bg::intersects(inflated_right_line[0], b);
+
+      // check intersection with upper line 
+      bool intertesect_to_upper = bg::intersects(inflated_upper_line[0], b);
+
+      if(intertesect_to_right || intertesect_to_upper) { // merge boxes
+        int new_min_x = std::min(merged_box.min_corner().x(),
+                                 b.min_corner().x());
+        int new_max_x = std::max(merged_box.max_corner().x(),
+                                 b.max_corner().x());
+        int new_min_y = std::min(merged_box.min_corner().y(),
+                                 b.min_corner().y());
+        int new_max_y = std::max(merged_box.max_corner().y(),
+                                 b.max_corner().y());
+        merged_box.min_corner().x(new_min_x);
+        merged_box.max_corner().x(new_max_x);
+        merged_box.min_corner().y(new_min_y);
+        merged_box.max_corner().y(new_max_y);
+      } else { // add blockage box to temp
+        temp_blockages.push_back(b);
+      }
+    }
+    temp_blockages.push_back(merged_box);
+    blockages.clear();
+    blockages = temp_blockages;
+    temp_blockages.clear();
+    //add meged box to temp
+    // clear blockages
+    // copy temp blockages
+  }
+  logger_->report("Blockages with merging strategy:");
+  int i = 0;
+
+  for(auto b : blockages) {
+    i += 1;
+    logger_->report("Blockage {}: ({}, {}) -> ({}, {})", i, b.min_corner().x(), b.min_corner().y(), b.max_corner().x(), b.max_corner().y());
+    blockages_.emplace_back( b.min_corner().x(), b.min_corner().y(), b.max_corner().x(), b.max_corner().y());
+  }
+
+
+}
+
 void TreeBuilder::initBlockages()
 {
+  int i = 0;
+  logger_->report("Soft Blockages:");
   for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
+    i += 1;
     odb::dbBox* bbox = blockage->getBBox();
+    logger_->report("Blockage {}: ({}, {}) -> ({}, {})", i, bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
     bboxList_.emplace_back(bbox);
   }
   logger_->info(CTS,
@@ -95,6 +192,7 @@ void TreeBuilder::initBlockages()
     logger_->error(
         CTS, 77, "No physical master cell found for cell {}.", buffer);
   }
+  mergeBlockages();
 }
 
 // Check if location (x, y) is legal by checking if
@@ -132,11 +230,11 @@ bool TreeBuilder::findBlockage(const Point<double>& bufferLoc,
   double bx = bufferLoc.getX() * scalingUnit;
   double by = bufferLoc.getY() * scalingUnit;
 
-  for (odb::dbBox* bbox : bboxList_) {
-    x1 = bbox->xMin();
-    y1 = bbox->yMin();
-    x2 = bbox->xMax();
-    y2 = bbox->yMax();
+  for (odb::Rect bbox : blockages_) {
+    x1 = bbox.xMin();
+    y1 = bbox.yMin();
+    x2 = bbox.xMax();
+    y2 = bbox.yMax();
 
     if (isInsideBbox(bx, by, x1, y1, x2, y2)) {
       x1 = x1 / scalingUnit;
