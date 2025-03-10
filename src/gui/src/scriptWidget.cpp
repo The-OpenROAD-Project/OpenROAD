@@ -43,12 +43,10 @@
 #include <QVBoxLayout>
 #include <mutex>
 
-#include "GUIProgress.h"
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tclCmdInputWidget.h"
-#include "utl/Progress.h"
 
 namespace gui {
 
@@ -197,14 +195,12 @@ void ScriptWidget::setPauserToRunning()
 {
   pauser_->setText("Running");
   pauser_->setStyleSheet("background-color: red");
-  pauser_->setEnabled(true);
 }
 
 void ScriptWidget::resetPauser()
 {
   pauser_->setText("Idle");
   pauser_->setStyleSheet("");
-  pauser_->setEnabled(false);
 }
 
 void ScriptWidget::addCommandToOutput(const QString& cmd)
@@ -303,9 +299,11 @@ void ScriptWidget::writeSettings(QSettings* settings)
 void ScriptWidget::pause(int timeout)
 {
   QString prior_text = pauser_->text();
+  bool prior_enable = pauser_->isEnabled();
   QString prior_style = pauser_->styleSheet();
   pauser_->setText("Continue");
   pauser_->setStyleSheet("background-color: yellow");
+  pauser_->setEnabled(true);
   paused_ = true;
 
   emit executionPaused();
@@ -321,6 +319,7 @@ void ScriptWidget::pause(int timeout)
 
   pauser_->setText(prior_text);
   pauser_->setStyleSheet(prior_style);
+  pauser_->setEnabled(prior_enable);
 
   input_->setReadOnly(false);
 
@@ -371,14 +370,8 @@ void ScriptWidget::updatePauseTimeout()
 
 void ScriptWidget::pauserClicked()
 {
-  if (paused_) {
-    pause_timer_->stop();
-    paused_ = false;
-  } else {
-    if (ProgressWidget::checkInterrupt("all", this)) {
-      logger_->progress()->interrupt();
-    }
-  }
+  pause_timer_->stop();
+  paused_ = false;
 }
 
 void ScriptWidget::outputChanged()
