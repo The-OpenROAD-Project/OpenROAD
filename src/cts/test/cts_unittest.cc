@@ -37,18 +37,18 @@ TEST(Cluster, BranchingPointIsDisabledIfNoBranchesAreProvided)
   std::vector<std::pair<float, float>> means_without_branching
       = {{16, 41}, {33, 18}};
 
-      // Better names
-      //  iter
-      //  number_of_clusters
-      //  max_cluster_size
-      //  maximum_iteration_count
-      //  power
-      clustering_engine.iterKmeans(/*iter=*/1,
-                                   /*n=*/2,
-                                   /*cap=*/2,
-                                   /*max*/ 5,
-                                   /*power*/ 4,
-                                   means_without_branching);
+  // Better names
+  //  iter
+  //  number_of_clusters
+  //  max_cluster_size
+  //  maximum_iteration_count
+  //  power
+  clustering_engine.iterKmeans(/*iter=*/1,
+                               /*n=*/2,
+                               /*cap=*/2,
+                               /*max*/ 5,
+                               /*power*/ 4,
+                               means_without_branching);
 
   CKMeans::Clustering clustering_engine_with_branching(/*sinks=*/
                                                        {{10, 20},
