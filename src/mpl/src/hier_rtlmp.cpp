@@ -284,10 +284,8 @@ void HierRTLMP::runMultilevelAutoclustering()
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, network_, logger_, tritonpart_);
 
-  // Set target structures
-  clustering_engine_->setDesignMetrics(metrics_);
+  // Set target structure
   clustering_engine_->setTree(tree_.get());
-
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -890,8 +888,11 @@ void HierRTLMP::setPinAccessBlockages()
     return;
   }
 
+  const Metrics* top_module_metrics
+      = tree_->maps.module_to_metrics.at(block_->getTopModule()).get();
+
   // Avoid creating blockages with zero depth.
-  if (metrics_->getStdCellArea() == 0.0) {
+  if (top_module_metrics->getStdCellArea() == 0.0) {
     return;
   }
 
