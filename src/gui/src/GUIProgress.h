@@ -106,7 +106,6 @@ class ProgressWidget : public QWidget
 
  protected:
   QProgressBar* progress_bar_;
-  QPushButton* interrupt_;
 };
 
 class ProgressReporterWidget : public ProgressWidget
@@ -116,9 +115,6 @@ class ProgressReporterWidget : public ProgressWidget
  public:
   ProgressReporterWidget(std::shared_ptr<utl::ProgressReporter>& reporter,
                          QWidget* parent = nullptr);
-
- public slots:
-  void interrupt();
 
  private:
   std::weak_ptr<utl::ProgressReporter> reporter_;
@@ -146,6 +142,7 @@ class CombinedProgressWidget : public ProgressWidget
 
   QWidget* details_;
 
+  QPushButton* interrupt_;
   QPushButton* expand_;
 
   std::map<ProgressReporterWidget*, QFrame*> widgets_;

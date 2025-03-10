@@ -219,9 +219,7 @@ void GUIProgress::updateCombined()
 ////////////////////////////////////////
 
 ProgressWidget::ProgressWidget(QWidget* parent)
-    : QWidget(parent),
-      progress_bar_(new QProgressBar(this)),
-      interrupt_(new QPushButton(this))
+    : QWidget(parent), progress_bar_(new QProgressBar(this))
 {
   // connect via queued connnection for threaded reporting
   connect(this,
@@ -235,11 +233,8 @@ ProgressWidget::ProgressWidget(QWidget* parent)
           &QProgressBar::setRange,
           Qt::QueuedConnection);
 
-  interrupt_->setIcon(QIcon(":/cancel.png"));
-
   QHBoxLayout* layout = new QHBoxLayout(this);
   layout->addWidget(progress_bar_, 1);
-  layout->addWidget(interrupt_);
 
   setLayout(layout);
 
@@ -298,19 +293,6 @@ ProgressReporterWidget::ProgressReporterWidget(
     QWidget* parent)
     : ProgressWidget(parent), reporter_(reporter)
 {
-  connect(interrupt_,
-          &QPushButton::clicked,
-          this,
-          &ProgressReporterWidget::interrupt);
-}
-
-void ProgressReporterWidget::interrupt()
-{
-  // could be modified to cancel specific reporters in the future
-  auto reporter = reporter_.lock();
-  if (reporter && checkInterrupt("all")) {
-    reporter->getProgressor()->interrupt();
-  }
 }
 
 ////////////////////////////////////////
@@ -320,6 +302,7 @@ CombinedProgressWidget::CombinedProgressWidget(utl::Progress* progress,
     : ProgressWidget(parent),
       progress_(progress),
       details_(new QWidget(this)),
+      interrupt_(new QPushButton(this)),
       expand_(new QPushButton(this))
 {
   connect(interrupt_,
@@ -327,6 +310,9 @@ CombinedProgressWidget::CombinedProgressWidget(utl::Progress* progress,
           this,
           &CombinedProgressWidget::interrupt);
 
+  interrupt_->setIcon(QIcon(":/cancel.png"));
+
+  layout()->addWidget(interrupt_);
   layout()->addWidget(expand_);
 
   // Minimize margins to to avoid the status bar growing
