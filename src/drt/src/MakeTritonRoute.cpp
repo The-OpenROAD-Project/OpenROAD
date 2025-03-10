@@ -77,7 +77,8 @@ void initTritonRoute(OpenRoad* openroad)
                openroad->getLogger(),
                openroad->getDistributed(),
                openroad->getSteinerTreeBuilder(),
-               std::move(graphics_factory));
+               std::move(graphics_factory),
+               openroad->getOpendp());
 }
 
 }  // namespace ord

@@ -44,6 +44,10 @@ namespace dst {
 class Distributed;
 }
 
+namespace dpl {
+class Opendp;
+}
+
 namespace boost::serialization {
 class access;
 }
@@ -70,7 +74,8 @@ class FlexPA
   FlexPA(frDesign* in,
          Logger* logger,
          dst::Distributed* dist,
-         RouterConfiguration* router_cfg);
+         RouterConfiguration* router_cfg,
+         dpl::Opendp* opendp);
   ~FlexPA();
 
   void setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics);
@@ -106,6 +111,8 @@ class FlexPA
   UniqueInsts unique_insts_;
   using UniqueMTerm = std::pair<const UniqueInsts::InstSet*, frMTerm*>;
   std::map<UniqueMTerm, bool> skip_unique_inst_term_;
+
+  dpl::Opendp* opendp_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
