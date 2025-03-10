@@ -234,10 +234,7 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   parent->_modnets = modnet->getOID();
   parent->_modnet_hash[name] = modnet->getOID();
 
-  // journalling
   if (block->_journal) {
-    //    printf("Logging create dbModNet %s id %d\n",
-    //	   name,modnet -> getId());
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModNetObj);
     block->_journal->pushParam(name);

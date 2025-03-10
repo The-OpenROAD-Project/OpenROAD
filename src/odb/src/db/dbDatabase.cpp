@@ -497,10 +497,8 @@ void dbDatabase::write(std::ostream& file)
 }
 
 /*
-If we are journalling we cannot delete objects
-from the database as they can never be safely
-restored.
- */
+Test to see if journal in use
+*/
 bool dbDatabase::inProcessEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;

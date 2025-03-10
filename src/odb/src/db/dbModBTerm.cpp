@@ -363,9 +363,6 @@ void dbModBTerm::connect(dbModNet* net)
   _modnet->_modbterms = getId();      // set new head
 
   if (_block->_journal) {
-    //    printf("LOG connect dbModBTerm %s %d\n",
-    //	   _modbterm -> _name,
-    //	   _modbterm -> getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
@@ -385,9 +382,6 @@ void dbModBTerm::disconnect()
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modnet);
 
   if (block->_journal) {
-    //    printf("LOG disconnect dbModBTerm %s %d\n",
-    //	   _modbterm -> _name,
-    //	   _modbterm -> getId());
     block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(_modbterm->getId());

@@ -273,12 +273,8 @@ void dbModInst::destroy(dbModInst* modinst)
 
   _master->_mod_inst = dbId<_dbModInst>();  // clear
 
-  //
-  // Bug fix
-  //  dbModule::destroy((dbModule*) _master);
-  // Do not destroy master,
-  // Just the modul instance.
-  //
+  // Note that we only destroy the module instance, not the module
+  // itself
 
   // remove the moditerm connections
   for (auto moditerm : modinst->getModITerms()) {

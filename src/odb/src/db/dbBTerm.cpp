@@ -413,10 +413,8 @@ void dbBTerm::connect(dbModNet* mod_net)
     return;
   }
   if (bterm->_mnet) {
-    // journalling done inside
     bterm->disconnectModNet(bterm, block);
   }
-  // journalling done inside
   bterm->connectModNet(_mod_net, block);
 }
 
@@ -433,12 +431,9 @@ void dbBTerm::connect(dbNet* net_)
                             net->_name);
   }
 
-  // disconnect the db mod net
   if (bterm->_net) {
-    // journalling done in leaf call
     disconnectDbNet();
   }
-  // journal ok
   bterm->connectNet(net, block);
 }
 
@@ -456,10 +451,8 @@ void dbBTerm::disconnect()
           "Attempt to disconnect bterm of dont_touch net {}",
           net->_name);
     }
-    // journalling inside
     bterm->disconnectNet(bterm, block);
     if (bterm->_mnet) {
-      // journalling inside
       bterm->disconnectModNet(bterm, block);
     }
   }
@@ -469,7 +462,6 @@ void dbBTerm::disconnectDbModNet()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
-  // journalling done inside
   bterm->disconnectModNet(bterm, block);
 }
 
@@ -487,7 +479,6 @@ void dbBTerm::disconnectDbNet()
           "Attempt to disconnect bterm of dont_touch net {}",
           net->_name);
     }
-    // journalling done inside
     bterm->disconnectNet(bterm, block);
   }
 }
@@ -707,7 +698,6 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     callback->inDbBTermCreate((dbBTerm*) bterm);
   }
 
-  // journalling done inside
   bterm->connectNet(net, block);
 
   return (dbBTerm*) bterm;
@@ -734,7 +724,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
     // the flat net is left out
     block->_journal->pushParam(0U);
     // modnet
-    block->_journal->pushParam(_mnet);
+    block->_journal->pushParam(mod_net->getId());
     block->_journal->endAction();
   }
 

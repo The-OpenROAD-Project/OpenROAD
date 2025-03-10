@@ -393,7 +393,6 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
   ZALLOCATED(module->_name);
   _block->_module_hash.insert(module);
 
-  // journalling
   if (_block->_journal) {
     _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     _block->_journal->pushParam(dbModuleObj);
@@ -426,10 +425,11 @@ void dbModule::destroy(dbModule* module)
   //
 
   if (_module->_mod_inst != 0) {
-    _module->getLogger()->error(utl::ODB,
-                                389,
-                                "Must destroy module instance before defining "
-                                "module to avoid orphanned references");
+    _module->getLogger()->error(
+        utl::ODB,
+        389,
+        "Must destroy module instance before destroying "
+        "module definition to avoid orphanned references");
     return;
   }
 
