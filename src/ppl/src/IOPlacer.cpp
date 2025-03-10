@@ -110,8 +110,10 @@ odb::dbTechLayer* IOPlacer::getTopLayer() const
 void IOPlacer::clearConstraints()
 {
   constraints_.clear();
-  for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
-    bterm->resetConstraintRegion();
+  if (getBlock() != nullptr) {
+    for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
+      bterm->resetConstraintRegion();
+    }
   }
 }
 
