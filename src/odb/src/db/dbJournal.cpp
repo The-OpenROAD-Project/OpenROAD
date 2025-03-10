@@ -468,7 +468,7 @@ void dbJournal::redo_createObject()
     }
     default: {
       _logger->critical(
-          utl::ODB, 400, "Unknown type of action for redo_createObject");
+          utl::ODB, 1107, "Unknown type of action for redo_createObject");
       break;
     }
   }
@@ -675,7 +675,7 @@ void dbJournal::redo_deleteObject()
     }
     default: {
       _logger->critical(
-          utl::ODB, 401, "Unknown type of action for redo_deleteObject");
+          utl::ODB, 1108, "Unknown type of action for redo_deleteObject");
       break;
     }
   }
@@ -765,7 +765,7 @@ void dbJournal::redo_connectObject()
 
     default: {
       _logger->critical(
-          utl::ODB, 403, "Unknown type of action for redo_connectObject");
+          utl::ODB, 1110, "Unknown type of action for redo_connectObject");
       break;
     }
   }
@@ -842,7 +842,7 @@ void dbJournal::redo_disconnectObject()
 
     default: {
       _logger->critical(
-          utl::ODB, 402, "Unknown type of action for redo_disconnectObject");
+          utl::ODB, 1109, "Unknown type of action for redo_disconnectObject");
       break;
     }
   }
