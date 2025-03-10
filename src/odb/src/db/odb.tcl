@@ -829,7 +829,6 @@ proc add_pin_group {pin_list order} {
 proc add_mirrored_pins {bterm1 bterm2} {
   if {$bterm1 != "NULL" && $bterm2 != "NULL"} {
     $bterm1 setMirroredBTerm $bterm2
-    $bterm2 setMirroredBTerm $bterm1
   }
 }
 
