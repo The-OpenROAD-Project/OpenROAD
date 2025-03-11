@@ -1,6 +1,6 @@
 import drt
 import utl
-
+import openroad
 
 # NOTE: currently no error checking is done on the inputs as it is
 #       done for the tcl version of detailed_route. If we want to use this
@@ -54,7 +54,7 @@ def detailed_route(
     params.singleStepDR = single_step_dr
     params.minAccessPoints = min_access_points
     params.saveGuideUpdates = save_guide_updates
-    params.num_threads = 1
+    params.num_threads = openroad.thread_count()
 
     router.setParams(params)
     router.main()
