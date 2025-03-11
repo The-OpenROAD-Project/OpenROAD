@@ -1912,7 +1912,7 @@ void IOPlacer::getConstraintsFromDB()
     // Constraints derived from mirrored pins are not taken into account here.
     // Only pins with constraints directly assigned by the user should be
     // considered.
-    if (constraint_region && !bterm->hasMirroredConstraint()) {
+    if (constraint_region && !bterm->isMirrored()) {
       Interval interval = findIntervalFromRect(constraint_region.value());
       pins_per_interval[interval].insert(bterm);
     }

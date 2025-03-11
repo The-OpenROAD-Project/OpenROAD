@@ -1912,9 +1912,9 @@ class dbBTerm : public dbObject
   void setMirroredConstraintRegion(const Rect& region);
 
   ///
-  /// Return true if this BTerm has a constraint region derived from a mirrored
-  /// pin.
-  bool hasMirroredConstraint();
+  /// Return true if this BTerm is mirrored with another pin.
+  ///
+  bool isMirrored();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
