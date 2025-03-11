@@ -2,6 +2,7 @@ import drt
 import utl
 import openroad
 
+
 # NOTE: currently no error checking is done on the inputs as it is
 #       done for the tcl version of detailed_route. If we want to use this
 #       as a basis for a Python api, we will have to add that here
