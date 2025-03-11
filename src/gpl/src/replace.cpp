@@ -133,6 +133,11 @@ void Replace::reset()
   gui_debug_initial_ = false;
 }
 
+void Replace::addPlacementCluster(const Cluster& cluster)
+{
+  clusters_.emplace_back(cluster);
+}
+
 void Replace::doIncrementalPlace(int threads)
 {
   if (pbc_ == nullptr) {
@@ -306,7 +311,8 @@ bool Replace::initNesterovPlace(int threads)
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_, threads);
+    nbc_ = std::make_shared<NesterovBaseCommon>(
+        nbVars, pbc_, log_, threads, clusters_);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
