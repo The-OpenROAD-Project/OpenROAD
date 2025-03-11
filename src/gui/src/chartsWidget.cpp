@@ -552,6 +552,16 @@ void HistogramView::setVisualConfig()
 void HistogramView::populateBuckets(const StaPins* end_points,
                                     const EndPointSlackMap* end_point_to_slack)
 {
+  if (end_points) {
+    if (end_points->empty()) {
+      return;
+    }
+  } else if (end_point_to_slack) {
+    if (end_point_to_slack->empty()) {
+      return;
+    }
+  }
+
   sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
 
   float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
