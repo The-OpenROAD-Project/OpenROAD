@@ -270,7 +270,6 @@ class IOPlacer
   void findConstraintRegion(const Interval& interval,
                             const Rect& constraint_box,
                             Rect& region);
-  void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,

@@ -3090,42 +3090,11 @@ void IOPlacer::findConstraintRegion(const Interval& interval,
   }
 }
 
-void IOPlacer::commitConstraintsToDB()
-{
-  for (Constraint& constraint : constraints_) {
-    for (odb::dbBTerm* bterm : constraint.pin_list) {
-      int pin_idx = netlist_->getIoPinIdx(bterm);
-      IOPin& io_pin = netlist_->getIoPin(pin_idx);
-      Rect constraint_region;
-      const Interval& interval = constraint.interval;
-      findConstraintRegion(interval, constraint.box, constraint_region);
-      bterm->setConstraintRegion(constraint_region);
-
-      if (io_pin.isMirrored()) {
-        IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
-        odb::dbBTerm* mirrored_bterm
-            = getBlock()->findBTerm(mirrored_pin.getName().c_str());
-        Edge mirrored_edge = getMirroredEdge(interval.getEdge());
-        Rect mirrored_constraint_region;
-        Interval mirrored_interval(mirrored_edge,
-                                   interval.getBegin(),
-                                   interval.getEnd(),
-                                   interval.getLayer());
-        findConstraintRegion(
-            mirrored_interval, constraint.box, mirrored_constraint_region);
-        mirrored_bterm->setConstraintRegion(mirrored_constraint_region);
-      }
-    }
-  }
-}
-
 void IOPlacer::commitIOPlacementToDB(std::vector<IOPin>& assignment)
 {
   for (const IOPin& pin : assignment) {
     commitIOPinToDB(pin);
   }
-
-  commitConstraintsToDB();
 }
 
 void IOPlacer::commitIOPinToDB(const IOPin& pin)
