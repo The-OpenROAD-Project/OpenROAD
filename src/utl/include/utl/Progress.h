@@ -127,13 +127,15 @@ class ProgressReporter
     NONE
   };
 
-  ProgressReporter(Progress* progress, Logger* logger, const std::string& name);
+  ProgressReporter(Progress* progress,
+                   ReportType type,
+                   Logger* logger,
+                   const std::string& name);
   ~ProgressReporter();
 
   std::string getName() const { return name_; }
   int getValue() const { return value_; }
 
-  void setType(ReportType type) { type_ = type; }
   ReportType getType() const { return type_; }
 
   void setReportInterval(int interval) { report_interval_ = interval; }
@@ -175,7 +177,7 @@ class ProgressReporter
   Logger* logger_;
 
   std::string name_;
-  ReportType type_ = ReportType::NONE;
+  const ReportType type_;
 
   bool use_logger_ = false;
 

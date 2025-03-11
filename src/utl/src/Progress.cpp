@@ -94,7 +94,8 @@ Progress::~Progress()
 
 std::shared_ptr<ProgressReporter> Progress::start(const std::string& name)
 {
-  auto reporter = std::make_shared<ProgressReporter>(this, logger_, name);
+  auto reporter = std::make_shared<ProgressReporter>(
+      this, ProgressReporter::ReportType::NONE, logger_, name);
 
   addReporter(reporter);
 
@@ -108,8 +109,8 @@ std::shared_ptr<ProgressReporter> Progress::startIterationReporting(
     std::optional<int> total_work,
     std::optional<int> interval)
 {
-  auto reporter = std::make_shared<ProgressReporter>(this, logger_, name);
-  reporter->setType(ProgressReporter::ReportType::ITERATION);
+  auto reporter = std::make_shared<ProgressReporter>(
+      this, ProgressReporter::ReportType::ITERATION, logger_, name);
   if (total_work.has_value()) {
     reporter->setTotalWork(total_work.value());
   }
@@ -129,8 +130,8 @@ std::shared_ptr<ProgressReporter> Progress::startPercentageReporting(
     int total_work,
     std::optional<int> interval)
 {
-  auto reporter = std::make_shared<ProgressReporter>(this, logger_, name);
-  reporter->setType(ProgressReporter::ReportType::PERCENTAGE);
+  auto reporter = std::make_shared<ProgressReporter>(
+      this, ProgressReporter::ReportType::PERCENTAGE, logger_, name);
   reporter->setTotalWork(total_work);
   if (interval.has_value()) {
     reporter->setReportInterval(interval.value());
@@ -204,9 +205,10 @@ std::vector<std::shared_ptr<ProgressReporter>> Progress::getReporters()
 ///////////////////////////////////////////////////////////////////
 
 ProgressReporter::ProgressReporter(Progress* progress,
+                                   ReportType type,
                                    Logger* logger,
                                    const std::string& name)
-    : progress_(progress), logger_(logger), name_(name)
+    : progress_(progress), logger_(logger), name_(name), type_(type)
 {
 }
 
