@@ -209,6 +209,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
     stream << bterm._mirrored_bterm;
   }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_has_mirrored_constraint)) {
+    stream << bterm._has_mirrored_constraint;
+  }
 
   return stream;
 }
@@ -240,6 +243,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   }
   if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
     stream >> bterm._mirrored_bterm;
+  }
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_has_mirrored_constraint)) {
+    stream >> bterm._has_mirrored_constraint;
   }
 
   return stream;
