@@ -148,7 +148,8 @@ target_link_libraries(drt_lib
     OpenSTA
     utl_lib
     dst
-    dbSta
+    dbSta_lib
+    dpl_lib
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}

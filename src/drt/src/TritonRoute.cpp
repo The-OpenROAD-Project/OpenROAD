@@ -525,7 +525,8 @@ void TritonRoute::init(
     Logger* logger,
     dst::Distributed* dist,
     stt::SteinerTreeBuilder* stt_builder,
-    std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
+    std::unique_ptr<AbstractGraphicsFactory> graphics_factory,
+    dpl::Opendp* opendp)
 {
   db_ = db;
   logger_ = logger;
@@ -534,6 +535,7 @@ void TritonRoute::init(
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
   graphics_factory_ = std::move(graphics_factory);
+  opendp_ = opendp;
 }
 
 bool TritonRoute::initGuide()
@@ -981,7 +983,7 @@ int TritonRoute::main()
   }
   if (router_cfg_->DO_PA) {
     pa_ = std::make_unique<FlexPA>(
-        getDesign(), logger_, dist_, router_cfg_.get());
+        getDesign(), logger_, dist_, router_cfg_.get(), opendp_);
     pa_->setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     if (debug_->debugPA) {
       pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
@@ -1045,7 +1047,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   router_cfg_->ENABLE_VIA_GEN = true;
   initDesign();
-  FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get());
+  FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get(), opendp_);
   pa.setTargetInstances(target_insts);
   if (debug_->debugPA) {
     pa.setDebug(graphics_factory_->makeUniquePAGraphics());
