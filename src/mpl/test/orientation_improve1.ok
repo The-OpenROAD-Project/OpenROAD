@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/orientation_improve1.lef, created 9 library cells
+[INFO ODB-0128] Design: io_constraints1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 1 components and 2 component-terminals.
+[INFO ODB-0133]     Created 1 nets and 1 connections.
+[INFO PPL-0067] Restrict INPUT pins to region 10.00u-30.00u, in the RIGHT edge.
+Found 1 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 842
+[INFO PPL-0002] Number of I/O             1
+[INFO PPL-0003] Number of I/O w/sink      1
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0012] I/O nets HPWL: 102.57 um.
+Die Area: (0.00, 0.00) (120.00, 120.00),  Floorplan Area: (9.00, 9.80) (110.84, 110.60)
+	Number of std cell instances: 0
+	Area of std cell instances: 0.00
+	Number of macros: 1
+	Area of macros: 10000.00
+	Halo width: 0.30
+	Halo height: 0.30
+	Area of macros with halos: 10120.36
+	Area of std cell instances + Area of macros: 10000.00
+	Floorplan area: 10265.47
+	Design Utilization: 0.97
+	Floorplan Utilization: 0.00
+	Manufacturing Grid: 10
+
+[WARNING MPL-0025] Design has no standard cells!
+No differences found.
