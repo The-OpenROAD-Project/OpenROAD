@@ -73,7 +73,7 @@ const uint db_schema_initial = 57;
 const uint db_schema_minor = 105;  // Current revision number
 
 // Revision where check for mirrored constraint on bterm was added
-const uint db_schema_bterm_has_mirrored_constraint = 105;
+const uint db_schema_bterm_is_mirrored = 105;
 
 // Revision where support for pin groups was added
 const uint db_schema_block_pin_groups = 104;

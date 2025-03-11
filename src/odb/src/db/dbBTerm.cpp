@@ -75,7 +75,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _name = nullptr;
   _sta_vertex_id = 0;
   _constraint_region.mergeInit();
-  _has_mirrored_constraint = false;
+  _is_mirrored = false;
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -209,8 +209,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
     stream << bterm._mirrored_bterm;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_has_mirrored_constraint)) {
-    stream << bterm._has_mirrored_constraint;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
+    stream << bterm._is_mirrored;
   }
 
   return stream;
@@ -244,8 +244,8 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
     stream >> bterm._mirrored_bterm;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_has_mirrored_constraint)) {
-    stream >> bterm._has_mirrored_constraint;
+  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
+    stream >> bterm._is_mirrored;
   }
 
   return stream;
@@ -994,9 +994,17 @@ void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
   _dbBTerm* bterm = (_dbBTerm*) this;
 
   bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
+  ((_dbBTerm*)mirrored_bterm)->_is_mirrored = true;
+
   if (!bterm->_constraint_region.isInverted()
       && mirrored_bterm->getConstraintRegion() == std::nullopt) {
     mirrored_bterm->setMirroredConstraintRegion(bterm->_constraint_region);
+  } else if (mirrored_bterm->getConstraintRegion() != std::nullopt) {
+    getImpl()->getLogger()->warn(utl::ODB,
+                                 26,
+                                 "Pin {} is mirrored with another pin. The "
+                                 "constraint for this pin will be dropped.",
+                                 mirrored_bterm->getName());
   }
 }
 
@@ -1034,13 +1042,12 @@ void dbBTerm::setMirroredConstraintRegion(const Rect& region)
   }
   const Rect mirrored_region = block->findConstraintRegion(edge, begin, end);
   bterm->_constraint_region = mirrored_region;
-  bterm->_has_mirrored_constraint = true;
 }
 
-bool dbBTerm::hasMirroredConstraint()
+bool dbBTerm::isMirrored()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_has_mirrored_constraint;
+  return bterm->_is_mirrored;
 }
 
 }  // namespace odb
