@@ -1909,7 +1909,10 @@ void IOPlacer::getConstraintsFromDB()
   std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
-    if (constraint_region) {
+    // Constraints derived from mirrored pins are not taken into account here.
+    // Only pins with constraints directly assigned by the user should be
+    // considered.
+    if (constraint_region && !bterm->hasMirroredConstraint()) {
       Interval interval = findIntervalFromRect(constraint_region.value());
       pins_per_interval[interval].insert(bterm);
     }
