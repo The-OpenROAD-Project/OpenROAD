@@ -496,18 +496,6 @@ void dbDatabase::write(std::ostream& file)
   file.flush();
 }
 
-/*
-Test to see if journal in use
-*/
-bool dbDatabase::inProcessEco(dbBlock* block_)
-{
-  _dbBlock* block = (_dbBlock*) block_;
-  if (block->_journal) {
-    return true;
-  }
-  return false;
-}
-
 void dbDatabase::beginEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;

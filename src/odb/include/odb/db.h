@@ -426,8 +426,6 @@ class dbDatabase : public dbObject
   ///          unpredictable.
   ///
 
-  static bool inProcessEco(dbBlock* block);
-
   ///
   /// Begin collecting netlist changes on specified block.
   ///
