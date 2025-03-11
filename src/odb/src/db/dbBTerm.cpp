@@ -75,6 +75,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _name = nullptr;
   _sta_vertex_id = 0;
   _constraint_region.mergeInit();
+  _has_mirrored_constraint = false;
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -957,6 +958,12 @@ void dbBTerm::setConstraintRegion(const Rect& constraint_region)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_constraint_region = constraint_region;
+
+  dbBTerm* mirrored_bterm = getMirroredBTerm();
+  if (mirrored_bterm != nullptr && !bterm->_constraint_region.isInverted()
+      && mirrored_bterm->getConstraintRegion() == std::nullopt) {
+    mirrored_bterm->setMirroredConstraintRegion(bterm->_constraint_region);
+  }
 }
 
 std::optional<Rect> dbBTerm::getConstraintRegion()
@@ -981,6 +988,10 @@ void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
   _dbBTerm* bterm = (_dbBTerm*) this;
 
   bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
+  if (!bterm->_constraint_region.isInverted()
+      && mirrored_bterm->getConstraintRegion() == std::nullopt) {
+    mirrored_bterm->setMirroredConstraintRegion(bterm->_constraint_region);
+  }
 }
 
 dbBTerm* dbBTerm::getMirroredBTerm()
@@ -1000,6 +1011,30 @@ bool dbBTerm::hasMirroredBTerm()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   return bterm->_mirrored_bterm != 0;
+}
+
+void dbBTerm::setMirroredConstraintRegion(const Rect& region)
+{
+  dbBlock* block = getBlock();
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  const Rect& die_bounds = block->getDieArea();
+  int begin = region.dx() == 0 ? region.yMin() : region.xMin();
+  int end = region.dx() == 0 ? region.yMax() : region.xMax();
+  std::string edge;
+  if (region.dx() == 0) {
+    edge = region.xMin() == die_bounds.xMin() ? "left" : "right";
+  } else {
+    edge = region.yMin() == die_bounds.yMin() ? "bottom" : "top";
+  }
+  const Rect mirrored_region = block->findConstraintRegion(edge, begin, end);
+  bterm->_constraint_region = mirrored_region;
+  bterm->_has_mirrored_constraint = true;
+}
+
+bool dbBTerm::hasMirroredConstraint()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  return bterm->_has_mirrored_constraint;
 }
 
 }  // namespace odb

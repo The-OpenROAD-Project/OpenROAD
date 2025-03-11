@@ -93,6 +93,7 @@ class _dbBTerm : public _dbObject
   std::uint32_t _sta_vertex_id;  // not saved
   Rect _constraint_region;
   dbId<_dbBTerm> _mirrored_bterm;
+  bool _has_mirrored_constraint;
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);
