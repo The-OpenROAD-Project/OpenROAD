@@ -65,7 +65,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0026] IdealBinCnt:               1112
 [INFO GPL-0027] TotalBinArea:         11467.248 um^2
 [INFO GPL-0028] BinCnt:        32     32
-[INFO GPL-0029] BinSize: (  3.378  3.315 )
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
 [INFO GPL-0030] NumBins: 1024
 [INFO GPL-0031] FillerInit:NumGCells:        91
 [INFO GPL-0032] FillerInit:NumGNets:         29
@@ -76,7 +76,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0026] IdealBinCnt:               1132
 [INFO GPL-0027] TotalBinArea:         11467.248 um^2
 [INFO GPL-0028] BinCnt:        32     32
-[INFO GPL-0029] BinSize: (  3.378  3.315 )
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
 [INFO GPL-0030] NumBins: 1024
 [INFO GPL-0031] FillerInit:NumGCells:       114
 [INFO GPL-0032] FillerInit:NumGNets:         29
@@ -87,7 +87,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0026] IdealBinCnt:               1408
 [INFO GPL-0027] TotalBinArea:         11467.248 um^2
 [INFO GPL-0028] BinCnt:        32     32
-[INFO GPL-0029] BinSize: (  3.378  3.315 )
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
 [INFO GPL-0030] NumBins: 1024
 [NesterovSolve] Iter:    1 overflow: 0.384 HPWL: 1159011
 [NesterovSolve] Iter:    1 overflow: 1.000 HPWL: 1159011 (PD_D1)
