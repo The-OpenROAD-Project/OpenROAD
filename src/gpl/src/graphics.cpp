@@ -88,8 +88,7 @@ Graphics::Graphics(utl::Logger* logger,
   initHeatmap();
   if (inst) {
     for (GCell* cell : nbc_->gCells()) {
-      Instance* cell_inst = cell->instance();
-      if (cell_inst && cell_inst->dbInst() == inst) {
+      if (cell->contains(inst)) {
         selected_ = cell;
         break;
       }
@@ -237,8 +236,8 @@ void Graphics::drawSingleGCell(const GCell* gCell, gui::Painter& painter)
 
   gui::Painter::Color color;
   if (gCell->isInstance()) {
-    color = gCell->instance()->isLocked() ? gui::Painter::dark_cyan
-                                          : gui::Painter::dark_green;
+    color = gCell->isLocked() ? gui::Painter::dark_cyan
+                              : gui::Painter::dark_green;
   } else if (gCell->isFiller()) {
     color = gui::Painter::dark_magenta;
   }
@@ -348,8 +347,7 @@ void Graphics::reportSelected()
   if (!selected_) {
     return;
   }
-  auto instance = selected_->instance();
-  logger_->report("Inst: {}", instance->dbInst()->getName());
+  logger_->report("Inst: {}", selected_->name());
 
   if (np_) {
     auto wlCoeffX = np_->getWireLengthCoefX();
@@ -435,7 +433,11 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     gui::Gui::get()->redraw();
     if (cell->isInstance()) {
       reportSelected();
-      return {gui::Gui::get()->makeSelected(cell->instance()->dbInst())};
+      gui::SelectionSet selected;
+      for (Instance* inst : cell->insts()) {
+        selected.insert(gui::Gui::get()->makeSelected(inst->dbInst()));
+      }
+      return selected;
     }
   }
   return gui::SelectionSet();

@@ -155,7 +155,6 @@ class ClusteringEngine
 
   void run();
 
-  void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
 
   // Methods to update the tree as the hierarchical

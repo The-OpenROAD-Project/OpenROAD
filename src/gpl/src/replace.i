@@ -18,9 +18,19 @@ using gpl::Replace;
 
 %}
 
+%import <std_vector.i>
+%import "dbtypes.i"
+%import "dbenums.i"
 %include "../../Exception.i"
 
 %inline %{
+
+void
+placement_cluster_cmd(const std::vector<odb::dbInst*>& cluster)
+{
+  Replace* replace = getReplace();
+  replace->addPlacementCluster(cluster);
+}
 
 void 
 replace_reset_cmd() 

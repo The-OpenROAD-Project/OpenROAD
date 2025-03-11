@@ -69,6 +69,9 @@ class TimingBase;
 class InitialPlace;
 class NesterovPlace;
 
+using Cluster = std::vector<odb::dbInst*>;
+using Clusters = std::vector<Cluster>;
+
 class Replace
 {
  public:
@@ -86,6 +89,7 @@ class Replace
   void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
+  void addPlacementCluster(const Cluster& cluster);
   int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings
@@ -205,6 +209,7 @@ class Replace
   bool disableRevertIfDiverge_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
+  Clusters clusters_;
 
   // temp variable; OpenDB should have these values.
   int padLeft_ = 0;

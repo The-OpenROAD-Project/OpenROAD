@@ -50,6 +50,9 @@ message(STATUS "Found OR-Tools: ${ortools_DIR} (version: ${ortools_VERSION})")
 swig_lib(NAME      gpl
          NAMESPACE gpl
          I_FILE    src/replace.i
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
          SCRIPTS   src/replace.tcl
 )
 
