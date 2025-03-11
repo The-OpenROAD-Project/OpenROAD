@@ -65,7 +65,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0026] IdealBinCnt:               1112
 [INFO GPL-0027] TotalBinArea:         11467.248 um^2
 [INFO GPL-0028] BinCnt:        32     32
-[INFO GPL-0029] BinSize: (  3.379  3.315 )
+[INFO GPL-0029] BinSize: (  3.378  3.315 )
 [INFO GPL-0030] NumBins: 1024
 [INFO GPL-0031] FillerInit:NumGCells:        91
 [INFO GPL-0032] FillerInit:NumGNets:         29
@@ -76,7 +76,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0026] IdealBinCnt:               1132
 [INFO GPL-0027] TotalBinArea:         11467.248 um^2
 [INFO GPL-0028] BinCnt:        32     32
-[INFO GPL-0029] BinSize: (  3.379  3.315 )
+[INFO GPL-0029] BinSize: (  3.378  3.315 )
 [INFO GPL-0030] NumBins: 1024
 [INFO GPL-0031] FillerInit:NumGCells:       114
 [INFO GPL-0032] FillerInit:NumGNets:         29
@@ -87,187 +87,187 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0026] IdealBinCnt:               1408
 [INFO GPL-0027] TotalBinArea:         11467.248 um^2
 [INFO GPL-0028] BinCnt:        32     32
-[INFO GPL-0029] BinSize: (  3.379  3.315 )
+[INFO GPL-0029] BinSize: (  3.378  3.315 )
 [INFO GPL-0030] NumBins: 1024
-[NesterovSolve] Iter:    1 overflow: 0.384 HPWL: 1159011
-[NesterovSolve] Iter:    1 overflow: 1.000 HPWL: 1159011 (PD_D1)
-[NesterovSolve] Iter:    1 overflow: 0.294 HPWL: 1159011 (PD_D2)
-[NesterovSolve] Finished with Overflow: 0.059938
-[NesterovSolve] Iter:   10 overflow: 1.000 HPWL: 593507 (PD_D1)
-[NesterovSolve] Iter:   10 overflow: 1.000 HPWL: 593507 (PD_D2)
-[NesterovSolve] Iter:   20 overflow: 1.000 HPWL: 568146 (PD_D1)
-[NesterovSolve] Iter:   20 overflow: 1.000 HPWL: 568146 (PD_D2)
-[NesterovSolve] Iter:   30 overflow: 1.000 HPWL: 564664 (PD_D1)
-[NesterovSolve] Iter:   30 overflow: 1.000 HPWL: 564664 (PD_D2)
-[NesterovSolve] Iter:   40 overflow: 1.000 HPWL: 565643 (PD_D1)
-[NesterovSolve] Iter:   40 overflow: 1.000 HPWL: 565643 (PD_D2)
-[NesterovSolve] Iter:   50 overflow: 1.000 HPWL: 565960 (PD_D1)
-[NesterovSolve] Iter:   50 overflow: 1.000 HPWL: 565960 (PD_D2)
-[NesterovSolve] Iter:   60 overflow: 1.000 HPWL: 565831 (PD_D1)
-[NesterovSolve] Iter:   60 overflow: 1.000 HPWL: 565831 (PD_D2)
-[NesterovSolve] Iter:   70 overflow: 1.000 HPWL: 565822 (PD_D1)
-[NesterovSolve] Iter:   70 overflow: 1.000 HPWL: 565822 (PD_D2)
-[NesterovSolve] Iter:   80 overflow: 1.000 HPWL: 565803 (PD_D1)
-[NesterovSolve] Iter:   80 overflow: 1.000 HPWL: 565803 (PD_D2)
-[NesterovSolve] Iter:   90 overflow: 1.000 HPWL: 565778 (PD_D1)
-[NesterovSolve] Iter:   90 overflow: 1.000 HPWL: 565778 (PD_D2)
-[NesterovSolve] Iter:  100 overflow: 1.000 HPWL: 565760 (PD_D1)
-[NesterovSolve] Iter:  100 overflow: 1.000 HPWL: 565760 (PD_D2)
-[NesterovSolve] Iter:  110 overflow: 1.000 HPWL: 565726 (PD_D1)
-[NesterovSolve] Iter:  110 overflow: 1.000 HPWL: 565726 (PD_D2)
-[NesterovSolve] Iter:  120 overflow: 1.000 HPWL: 565705 (PD_D1)
-[NesterovSolve] Iter:  120 overflow: 1.000 HPWL: 565705 (PD_D2)
-[NesterovSolve] Iter:  130 overflow: 1.000 HPWL: 565694 (PD_D1)
-[NesterovSolve] Iter:  130 overflow: 1.000 HPWL: 565694 (PD_D2)
-[NesterovSolve] Iter:  140 overflow: 1.000 HPWL: 565689 (PD_D1)
-[NesterovSolve] Iter:  140 overflow: 1.000 HPWL: 565689 (PD_D2)
-[NesterovSolve] Iter:  150 overflow: 1.000 HPWL: 565682 (PD_D1)
-[NesterovSolve] Iter:  150 overflow: 1.000 HPWL: 565682 (PD_D2)
-[NesterovSolve] Iter:  160 overflow: 1.000 HPWL: 565674 (PD_D1)
-[NesterovSolve] Iter:  160 overflow: 1.000 HPWL: 565674 (PD_D2)
-[NesterovSolve] Iter:  170 overflow: 1.000 HPWL: 565951 (PD_D1)
-[NesterovSolve] Iter:  170 overflow: 1.000 HPWL: 565951 (PD_D2)
-[NesterovSolve] Iter:  180 overflow: 1.000 HPWL: 566417 (PD_D1)
-[NesterovSolve] Iter:  180 overflow: 1.000 HPWL: 566417 (PD_D2)
-[NesterovSolve] Iter:  190 overflow: 1.000 HPWL: 566918 (PD_D1)
-[NesterovSolve] Iter:  190 overflow: 1.000 HPWL: 566918 (PD_D2)
-[NesterovSolve] Iter:  200 overflow: 1.000 HPWL: 567508 (PD_D1)
-[NesterovSolve] Iter:  200 overflow: 1.000 HPWL: 567508 (PD_D2)
-[NesterovSolve] Iter:  210 overflow: 0.963 HPWL: 568013 (PD_D1)
-[NesterovSolve] Iter:  210 overflow: 1.000 HPWL: 568013 (PD_D2)
-[NesterovSolve] Iter:  220 overflow: 0.919 HPWL: 567899 (PD_D1)
-[NesterovSolve] Iter:  220 overflow: 1.000 HPWL: 567899 (PD_D2)
-[NesterovSolve] Iter:  230 overflow: 0.879 HPWL: 567422 (PD_D1)
-[NesterovSolve] Iter:  230 overflow: 1.000 HPWL: 567422 (PD_D2)
-[NesterovSolve] Iter:  240 overflow: 0.842 HPWL: 566998 (PD_D1)
-[NesterovSolve] Iter:  240 overflow: 1.000 HPWL: 566998 (PD_D2)
-[NesterovSolve] Iter:  250 overflow: 0.808 HPWL: 566763 (PD_D1)
-[NesterovSolve] Iter:  250 overflow: 1.000 HPWL: 566763 (PD_D2)
-[NesterovSolve] Iter:  260 overflow: 0.777 HPWL: 566095 (PD_D1)
-[NesterovSolve] Iter:  260 overflow: 1.000 HPWL: 566095 (PD_D2)
-[NesterovSolve] Iter:  270 overflow: 0.748 HPWL: 564051 (PD_D1)
-[NesterovSolve] Iter:  270 overflow: 1.000 HPWL: 564051 (PD_D2)
-[NesterovSolve] Iter:  280 overflow: 0.721 HPWL: 562545 (PD_D1)
-[NesterovSolve] Iter:  280 overflow: 1.000 HPWL: 562545 (PD_D2)
-[NesterovSolve] Iter:  290 overflow: 0.696 HPWL: 561901 (PD_D1)
-[NesterovSolve] Iter:  290 overflow: 1.000 HPWL: 561901 (PD_D2)
-[NesterovSolve] Iter:  300 overflow: 0.673 HPWL: 560725 (PD_D1)
-[NesterovSolve] Iter:  300 overflow: 1.000 HPWL: 560725 (PD_D2)
-[NesterovSolve] Iter:  310 overflow: 0.651 HPWL: 559529 (PD_D1)
-[NesterovSolve] Iter:  310 overflow: 1.000 HPWL: 559529 (PD_D2)
-[NesterovSolve] Iter:  320 overflow: 0.631 HPWL: 558656 (PD_D1)
-[NesterovSolve] Iter:  320 overflow: 1.000 HPWL: 558656 (PD_D2)
-[NesterovSolve] Iter:  330 overflow: 0.612 HPWL: 558257 (PD_D1)
-[NesterovSolve] Iter:  330 overflow: 1.000 HPWL: 558257 (PD_D2)
-[NesterovSolve] Iter:  340 overflow: 0.594 HPWL: 556135 (PD_D1)
-[NesterovSolve] Iter:  340 overflow: 1.000 HPWL: 556135 (PD_D2)
-[NesterovSolve] Iter:  350 overflow: 0.577 HPWL: 556149 (PD_D1)
-[NesterovSolve] Iter:  350 overflow: 1.000 HPWL: 556149 (PD_D2)
-[NesterovSolve] Iter:  360 overflow: 0.561 HPWL: 556081 (PD_D1)
-[NesterovSolve] Iter:  360 overflow: 1.000 HPWL: 556081 (PD_D2)
-[NesterovSolve] Iter:  370 overflow: 0.545 HPWL: 554090 (PD_D1)
-[NesterovSolve] Iter:  370 overflow: 1.000 HPWL: 554090 (PD_D2)
-[NesterovSolve] Iter:  380 overflow: 0.531 HPWL: 553447 (PD_D1)
-[NesterovSolve] Iter:  380 overflow: 1.000 HPWL: 553447 (PD_D2)
-[NesterovSolve] Iter:  390 overflow: 0.517 HPWL: 548340 (PD_D1)
-[NesterovSolve] Iter:  390 overflow: 1.000 HPWL: 548340 (PD_D2)
-[NesterovSolve] Iter:  400 overflow: 0.504 HPWL: 547584 (PD_D1)
-[NesterovSolve] Iter:  400 overflow: 1.000 HPWL: 547584 (PD_D2)
-[NesterovSolve] Iter:  410 overflow: 0.492 HPWL: 546938 (PD_D1)
-[NesterovSolve] Iter:  410 overflow: 1.000 HPWL: 546938 (PD_D2)
-[NesterovSolve] Iter:  420 overflow: 0.480 HPWL: 544381 (PD_D1)
-[NesterovSolve] Iter:  420 overflow: 1.000 HPWL: 544381 (PD_D2)
-[NesterovSolve] Iter:  430 overflow: 0.469 HPWL: 542611 (PD_D1)
-[NesterovSolve] Iter:  430 overflow: 1.000 HPWL: 542611 (PD_D2)
-[NesterovSolve] Iter:  440 overflow: 0.458 HPWL: 540759 (PD_D1)
-[NesterovSolve] Iter:  440 overflow: 1.000 HPWL: 540759 (PD_D2)
-[NesterovSolve] Iter:  450 overflow: 0.448 HPWL: 539150 (PD_D1)
-[NesterovSolve] Iter:  450 overflow: 1.000 HPWL: 539150 (PD_D2)
-[NesterovSolve] Iter:  460 overflow: 0.438 HPWL: 537365 (PD_D1)
-[NesterovSolve] Iter:  460 overflow: 1.000 HPWL: 537365 (PD_D2)
-[NesterovSolve] Iter:  470 overflow: 0.429 HPWL: 534147 (PD_D1)
-[NesterovSolve] Iter:  470 overflow: 1.000 HPWL: 534147 (PD_D2)
-[NesterovSolve] Iter:  480 overflow: 0.420 HPWL: 535187 (PD_D1)
-[NesterovSolve] Iter:  480 overflow: 1.000 HPWL: 535187 (PD_D2)
-[NesterovSolve] Iter:  490 overflow: 0.412 HPWL: 530647 (PD_D1)
-[NesterovSolve] Iter:  490 overflow: 0.993 HPWL: 530647 (PD_D2)
-[NesterovSolve] Iter:  500 overflow: 0.403 HPWL: 529093 (PD_D1)
-[NesterovSolve] Iter:  500 overflow: 0.973 HPWL: 529093 (PD_D2)
-[NesterovSolve] Iter:  510 overflow: 0.395 HPWL: 528996 (PD_D1)
-[NesterovSolve] Iter:  510 overflow: 0.954 HPWL: 528996 (PD_D2)
-[NesterovSolve] Iter:  520 overflow: 0.388 HPWL: 524553 (PD_D1)
-[NesterovSolve] Iter:  520 overflow: 0.935 HPWL: 524553 (PD_D2)
-[NesterovSolve] Iter:  530 overflow: 0.380 HPWL: 524224 (PD_D1)
-[NesterovSolve] Iter:  530 overflow: 0.918 HPWL: 524224 (PD_D2)
-[NesterovSolve] Iter:  540 overflow: 0.373 HPWL: 523949 (PD_D1)
-[NesterovSolve] Iter:  540 overflow: 0.901 HPWL: 523949 (PD_D2)
-[NesterovSolve] Iter:  550 overflow: 0.367 HPWL: 520478 (PD_D1)
-[NesterovSolve] Iter:  550 overflow: 0.884 HPWL: 520478 (PD_D2)
-[NesterovSolve] Iter:  560 overflow: 0.360 HPWL: 520247 (PD_D1)
-[NesterovSolve] Iter:  560 overflow: 0.868 HPWL: 520247 (PD_D2)
-[NesterovSolve] Iter:  570 overflow: 0.354 HPWL: 517813 (PD_D1)
-[NesterovSolve] Iter:  570 overflow: 0.853 HPWL: 517813 (PD_D2)
-[NesterovSolve] Iter:  580 overflow: 0.348 HPWL: 517137 (PD_D1)
-[NesterovSolve] Iter:  580 overflow: 0.838 HPWL: 517137 (PD_D2)
-[NesterovSolve] Iter:  590 overflow: 0.342 HPWL: 516742 (PD_D1)
-[NesterovSolve] Iter:  590 overflow: 0.824 HPWL: 516742 (PD_D2)
-[NesterovSolve] Iter:  600 overflow: 0.336 HPWL: 516719 (PD_D1)
-[NesterovSolve] Iter:  600 overflow: 0.810 HPWL: 516719 (PD_D2)
-[NesterovSolve] Iter:  610 overflow: 0.330 HPWL: 516793 (PD_D1)
-[NesterovSolve] Iter:  610 overflow: 0.797 HPWL: 516793 (PD_D2)
-[NesterovSolve] Iter:  620 overflow: 0.325 HPWL: 517069 (PD_D1)
-[NesterovSolve] Iter:  620 overflow: 0.784 HPWL: 517069 (PD_D2)
-[NesterovSolve] Iter:  630 overflow: 0.320 HPWL: 517326 (PD_D1)
-[NesterovSolve] Iter:  630 overflow: 0.772 HPWL: 517326 (PD_D2)
-[NesterovSolve] Iter:  640 overflow: 0.315 HPWL: 517883 (PD_D1)
-[NesterovSolve] Iter:  640 overflow: 0.760 HPWL: 517883 (PD_D2)
-[NesterovSolve] Iter:  650 overflow: 0.310 HPWL: 518930 (PD_D1)
-[NesterovSolve] Iter:  650 overflow: 0.748 HPWL: 518930 (PD_D2)
-[NesterovSolve] Iter:  660 overflow: 0.305 HPWL: 520776 (PD_D1)
-[NesterovSolve] Iter:  660 overflow: 0.737 HPWL: 520776 (PD_D2)
-[NesterovSolve] Iter:  670 overflow: 0.301 HPWL: 523033 (PD_D1)
-[NesterovSolve] Iter:  670 overflow: 0.726 HPWL: 523033 (PD_D2)
-[NesterovSolve] Iter:  680 overflow: 0.296 HPWL: 525730 (PD_D1)
-[NesterovSolve] Iter:  680 overflow: 0.715 HPWL: 525730 (PD_D2)
-[NesterovSolve] Iter:  690 overflow: 0.292 HPWL: 528859 (PD_D1)
-[NesterovSolve] Iter:  690 overflow: 0.705 HPWL: 528859 (PD_D2)
-[NesterovSolve] Iter:  700 overflow: 0.288 HPWL: 533606 (PD_D1)
-[NesterovSolve] Iter:  700 overflow: 0.694 HPWL: 533606 (PD_D2)
-[NesterovSolve] Iter:  710 overflow: 0.284 HPWL: 540072 (PD_D1)
-[NesterovSolve] Iter:  710 overflow: 0.685 HPWL: 540072 (PD_D2)
-[NesterovSolve] Iter:  720 overflow: 0.280 HPWL: 550234 (PD_D1)
-[NesterovSolve] Iter:  720 overflow: 0.675 HPWL: 550234 (PD_D2)
-[NesterovSolve] Iter:  730 overflow: 0.276 HPWL: 574815 (PD_D1)
-[NesterovSolve] Iter:  730 overflow: 0.666 HPWL: 574815 (PD_D2)
-[NesterovSolve] Iter:  740 overflow: 0.272 HPWL: 634775 (PD_D1)
-[NesterovSolve] Iter:  740 overflow: 0.433 HPWL: 634775 (PD_D2)
-[NesterovSolve] Iter:  750 overflow: 0.269 HPWL: 651909 (PD_D1)
-[NesterovSolve] Iter:  750 overflow: 0.427 HPWL: 651909 (PD_D2)
-[NesterovSolve] Iter:  760 overflow: 0.265 HPWL: 679321 (PD_D1)
-[NesterovSolve] Iter:  760 overflow: 0.291 HPWL: 679321 (PD_D2)
-[NesterovSolve] Iter:  770 overflow: 0.262 HPWL: 699366 (PD_D1)
-[NesterovSolve] Iter:  770 overflow: 0.240 HPWL: 699366 (PD_D2)
-[NesterovSolve] Iter:  780 overflow: 0.258 HPWL: 708573 (PD_D1)
-[NesterovSolve] Iter:  780 overflow: 0.192 HPWL: 708573 (PD_D2)
-[NesterovSolve] PowerDomain PD_D2 finished with Overflow: 0.099741
-[NesterovSolve] Iter:  790 overflow: 0.255 HPWL: 723742 (PD_D1)
-[NesterovSolve] Iter:  800 overflow: 0.252 HPWL: 726526 (PD_D1)
-[NesterovSolve] Iter:  810 overflow: 0.249 HPWL: 734537 (PD_D1)
-[NesterovSolve] Iter:  820 overflow: 0.246 HPWL: 757059 (PD_D1)
-[NesterovSolve] Iter:  830 overflow: 0.233 HPWL: 802452 (PD_D1)
-[NesterovSolve] Iter:  840 overflow: 0.170 HPWL: 839377 (PD_D1)
-[NesterovSolve] Iter:  850 overflow: 0.175 HPWL: 830714 (PD_D1)
-[NesterovSolve] Iter:  860 overflow: 0.152 HPWL: 845021 (PD_D1)
-[NesterovSolve] Iter:  870 overflow: 0.150 HPWL: 871420 (PD_D1)
-[NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.081185
+[NesterovSolve] Iter:    1 overflow: 0.385 HPWL: 1158991
+[NesterovSolve] Iter:    1 overflow: 1.000 HPWL: 1158991 (PD_D1)
+[NesterovSolve] Iter:    1 overflow: 0.294 HPWL: 1158991 (PD_D2)
+[NesterovSolve] Finished with Overflow: 0.059600
+[NesterovSolve] Iter:   10 overflow: 1.000 HPWL: 593514 (PD_D1)
+[NesterovSolve] Iter:   10 overflow: 1.000 HPWL: 593514 (PD_D2)
+[NesterovSolve] Iter:   20 overflow: 1.000 HPWL: 566582 (PD_D1)
+[NesterovSolve] Iter:   20 overflow: 1.000 HPWL: 566582 (PD_D2)
+[NesterovSolve] Iter:   30 overflow: 1.000 HPWL: 564659 (PD_D1)
+[NesterovSolve] Iter:   30 overflow: 1.000 HPWL: 564659 (PD_D2)
+[NesterovSolve] Iter:   40 overflow: 1.000 HPWL: 565689 (PD_D1)
+[NesterovSolve] Iter:   40 overflow: 1.000 HPWL: 565689 (PD_D2)
+[NesterovSolve] Iter:   50 overflow: 1.000 HPWL: 565990 (PD_D1)
+[NesterovSolve] Iter:   50 overflow: 1.000 HPWL: 565990 (PD_D2)
+[NesterovSolve] Iter:   60 overflow: 1.000 HPWL: 565822 (PD_D1)
+[NesterovSolve] Iter:   60 overflow: 1.000 HPWL: 565822 (PD_D2)
+[NesterovSolve] Iter:   70 overflow: 1.000 HPWL: 565801 (PD_D1)
+[NesterovSolve] Iter:   70 overflow: 1.000 HPWL: 565801 (PD_D2)
+[NesterovSolve] Iter:   80 overflow: 1.000 HPWL: 565795 (PD_D1)
+[NesterovSolve] Iter:   80 overflow: 1.000 HPWL: 565795 (PD_D2)
+[NesterovSolve] Iter:   90 overflow: 1.000 HPWL: 565771 (PD_D1)
+[NesterovSolve] Iter:   90 overflow: 1.000 HPWL: 565771 (PD_D2)
+[NesterovSolve] Iter:  100 overflow: 1.000 HPWL: 565740 (PD_D1)
+[NesterovSolve] Iter:  100 overflow: 1.000 HPWL: 565740 (PD_D2)
+[NesterovSolve] Iter:  110 overflow: 1.000 HPWL: 565714 (PD_D1)
+[NesterovSolve] Iter:  110 overflow: 1.000 HPWL: 565714 (PD_D2)
+[NesterovSolve] Iter:  120 overflow: 1.000 HPWL: 565680 (PD_D1)
+[NesterovSolve] Iter:  120 overflow: 1.000 HPWL: 565680 (PD_D2)
+[NesterovSolve] Iter:  130 overflow: 1.000 HPWL: 565671 (PD_D1)
+[NesterovSolve] Iter:  130 overflow: 1.000 HPWL: 565671 (PD_D2)
+[NesterovSolve] Iter:  140 overflow: 1.000 HPWL: 565674 (PD_D1)
+[NesterovSolve] Iter:  140 overflow: 1.000 HPWL: 565674 (PD_D2)
+[NesterovSolve] Iter:  150 overflow: 1.000 HPWL: 565676 (PD_D1)
+[NesterovSolve] Iter:  150 overflow: 1.000 HPWL: 565676 (PD_D2)
+[NesterovSolve] Iter:  160 overflow: 1.000 HPWL: 565659 (PD_D1)
+[NesterovSolve] Iter:  160 overflow: 1.000 HPWL: 565659 (PD_D2)
+[NesterovSolve] Iter:  170 overflow: 1.000 HPWL: 565945 (PD_D1)
+[NesterovSolve] Iter:  170 overflow: 1.000 HPWL: 565945 (PD_D2)
+[NesterovSolve] Iter:  180 overflow: 1.000 HPWL: 566389 (PD_D1)
+[NesterovSolve] Iter:  180 overflow: 1.000 HPWL: 566389 (PD_D2)
+[NesterovSolve] Iter:  190 overflow: 1.000 HPWL: 566895 (PD_D1)
+[NesterovSolve] Iter:  190 overflow: 1.000 HPWL: 566895 (PD_D2)
+[NesterovSolve] Iter:  200 overflow: 1.000 HPWL: 567473 (PD_D1)
+[NesterovSolve] Iter:  200 overflow: 1.000 HPWL: 567473 (PD_D2)
+[NesterovSolve] Iter:  210 overflow: 0.963 HPWL: 567983 (PD_D1)
+[NesterovSolve] Iter:  210 overflow: 1.000 HPWL: 567983 (PD_D2)
+[NesterovSolve] Iter:  220 overflow: 0.919 HPWL: 567862 (PD_D1)
+[NesterovSolve] Iter:  220 overflow: 1.000 HPWL: 567862 (PD_D2)
+[NesterovSolve] Iter:  230 overflow: 0.879 HPWL: 567394 (PD_D1)
+[NesterovSolve] Iter:  230 overflow: 1.000 HPWL: 567394 (PD_D2)
+[NesterovSolve] Iter:  240 overflow: 0.842 HPWL: 566954 (PD_D1)
+[NesterovSolve] Iter:  240 overflow: 1.000 HPWL: 566954 (PD_D2)
+[NesterovSolve] Iter:  250 overflow: 0.808 HPWL: 566699 (PD_D1)
+[NesterovSolve] Iter:  250 overflow: 1.000 HPWL: 566699 (PD_D2)
+[NesterovSolve] Iter:  260 overflow: 0.777 HPWL: 566027 (PD_D1)
+[NesterovSolve] Iter:  260 overflow: 1.000 HPWL: 566027 (PD_D2)
+[NesterovSolve] Iter:  270 overflow: 0.748 HPWL: 563992 (PD_D1)
+[NesterovSolve] Iter:  270 overflow: 1.000 HPWL: 563992 (PD_D2)
+[NesterovSolve] Iter:  280 overflow: 0.721 HPWL: 562499 (PD_D1)
+[NesterovSolve] Iter:  280 overflow: 1.000 HPWL: 562499 (PD_D2)
+[NesterovSolve] Iter:  290 overflow: 0.696 HPWL: 561843 (PD_D1)
+[NesterovSolve] Iter:  290 overflow: 1.000 HPWL: 561843 (PD_D2)
+[NesterovSolve] Iter:  300 overflow: 0.673 HPWL: 560655 (PD_D1)
+[NesterovSolve] Iter:  300 overflow: 1.000 HPWL: 560655 (PD_D2)
+[NesterovSolve] Iter:  310 overflow: 0.651 HPWL: 559452 (PD_D1)
+[NesterovSolve] Iter:  310 overflow: 1.000 HPWL: 559452 (PD_D2)
+[NesterovSolve] Iter:  320 overflow: 0.631 HPWL: 558619 (PD_D1)
+[NesterovSolve] Iter:  320 overflow: 1.000 HPWL: 558619 (PD_D2)
+[NesterovSolve] Iter:  330 overflow: 0.612 HPWL: 558172 (PD_D1)
+[NesterovSolve] Iter:  330 overflow: 1.000 HPWL: 558172 (PD_D2)
+[NesterovSolve] Iter:  340 overflow: 0.594 HPWL: 556058 (PD_D1)
+[NesterovSolve] Iter:  340 overflow: 1.000 HPWL: 556058 (PD_D2)
+[NesterovSolve] Iter:  350 overflow: 0.577 HPWL: 556075 (PD_D1)
+[NesterovSolve] Iter:  350 overflow: 1.000 HPWL: 556075 (PD_D2)
+[NesterovSolve] Iter:  360 overflow: 0.561 HPWL: 555988 (PD_D1)
+[NesterovSolve] Iter:  360 overflow: 1.000 HPWL: 555988 (PD_D2)
+[NesterovSolve] Iter:  370 overflow: 0.545 HPWL: 554028 (PD_D1)
+[NesterovSolve] Iter:  370 overflow: 1.000 HPWL: 554028 (PD_D2)
+[NesterovSolve] Iter:  380 overflow: 0.531 HPWL: 553387 (PD_D1)
+[NesterovSolve] Iter:  380 overflow: 1.000 HPWL: 553387 (PD_D2)
+[NesterovSolve] Iter:  390 overflow: 0.517 HPWL: 548306 (PD_D1)
+[NesterovSolve] Iter:  390 overflow: 1.000 HPWL: 548306 (PD_D2)
+[NesterovSolve] Iter:  400 overflow: 0.504 HPWL: 547510 (PD_D1)
+[NesterovSolve] Iter:  400 overflow: 1.000 HPWL: 547510 (PD_D2)
+[NesterovSolve] Iter:  410 overflow: 0.492 HPWL: 546892 (PD_D1)
+[NesterovSolve] Iter:  410 overflow: 1.000 HPWL: 546892 (PD_D2)
+[NesterovSolve] Iter:  420 overflow: 0.480 HPWL: 544293 (PD_D1)
+[NesterovSolve] Iter:  420 overflow: 1.000 HPWL: 544293 (PD_D2)
+[NesterovSolve] Iter:  430 overflow: 0.469 HPWL: 542510 (PD_D1)
+[NesterovSolve] Iter:  430 overflow: 1.000 HPWL: 542510 (PD_D2)
+[NesterovSolve] Iter:  440 overflow: 0.458 HPWL: 540715 (PD_D1)
+[NesterovSolve] Iter:  440 overflow: 1.000 HPWL: 540715 (PD_D2)
+[NesterovSolve] Iter:  450 overflow: 0.448 HPWL: 539081 (PD_D1)
+[NesterovSolve] Iter:  450 overflow: 1.000 HPWL: 539081 (PD_D2)
+[NesterovSolve] Iter:  460 overflow: 0.438 HPWL: 537364 (PD_D1)
+[NesterovSolve] Iter:  460 overflow: 1.000 HPWL: 537364 (PD_D2)
+[NesterovSolve] Iter:  470 overflow: 0.429 HPWL: 534121 (PD_D1)
+[NesterovSolve] Iter:  470 overflow: 1.000 HPWL: 534121 (PD_D2)
+[NesterovSolve] Iter:  480 overflow: 0.420 HPWL: 535128 (PD_D1)
+[NesterovSolve] Iter:  480 overflow: 1.000 HPWL: 535128 (PD_D2)
+[NesterovSolve] Iter:  490 overflow: 0.412 HPWL: 530326 (PD_D1)
+[NesterovSolve] Iter:  490 overflow: 0.993 HPWL: 530326 (PD_D2)
+[NesterovSolve] Iter:  500 overflow: 0.403 HPWL: 528821 (PD_D1)
+[NesterovSolve] Iter:  500 overflow: 0.973 HPWL: 528821 (PD_D2)
+[NesterovSolve] Iter:  510 overflow: 0.395 HPWL: 528977 (PD_D1)
+[NesterovSolve] Iter:  510 overflow: 0.954 HPWL: 528977 (PD_D2)
+[NesterovSolve] Iter:  520 overflow: 0.388 HPWL: 524370 (PD_D1)
+[NesterovSolve] Iter:  520 overflow: 0.935 HPWL: 524370 (PD_D2)
+[NesterovSolve] Iter:  530 overflow: 0.380 HPWL: 524330 (PD_D1)
+[NesterovSolve] Iter:  530 overflow: 0.917 HPWL: 524330 (PD_D2)
+[NesterovSolve] Iter:  540 overflow: 0.373 HPWL: 523878 (PD_D1)
+[NesterovSolve] Iter:  540 overflow: 0.900 HPWL: 523878 (PD_D2)
+[NesterovSolve] Iter:  550 overflow: 0.367 HPWL: 520538 (PD_D1)
+[NesterovSolve] Iter:  550 overflow: 0.884 HPWL: 520538 (PD_D2)
+[NesterovSolve] Iter:  560 overflow: 0.360 HPWL: 520351 (PD_D1)
+[NesterovSolve] Iter:  560 overflow: 0.868 HPWL: 520351 (PD_D2)
+[NesterovSolve] Iter:  570 overflow: 0.354 HPWL: 517374 (PD_D1)
+[NesterovSolve] Iter:  570 overflow: 0.853 HPWL: 517374 (PD_D2)
+[NesterovSolve] Iter:  580 overflow: 0.348 HPWL: 516988 (PD_D1)
+[NesterovSolve] Iter:  580 overflow: 0.838 HPWL: 516988 (PD_D2)
+[NesterovSolve] Iter:  590 overflow: 0.342 HPWL: 516729 (PD_D1)
+[NesterovSolve] Iter:  590 overflow: 0.824 HPWL: 516729 (PD_D2)
+[NesterovSolve] Iter:  600 overflow: 0.336 HPWL: 516694 (PD_D1)
+[NesterovSolve] Iter:  600 overflow: 0.810 HPWL: 516694 (PD_D2)
+[NesterovSolve] Iter:  610 overflow: 0.330 HPWL: 516808 (PD_D1)
+[NesterovSolve] Iter:  610 overflow: 0.797 HPWL: 516808 (PD_D2)
+[NesterovSolve] Iter:  620 overflow: 0.325 HPWL: 516881 (PD_D1)
+[NesterovSolve] Iter:  620 overflow: 0.784 HPWL: 516881 (PD_D2)
+[NesterovSolve] Iter:  630 overflow: 0.320 HPWL: 517569 (PD_D1)
+[NesterovSolve] Iter:  630 overflow: 0.772 HPWL: 517569 (PD_D2)
+[NesterovSolve] Iter:  640 overflow: 0.315 HPWL: 517912 (PD_D1)
+[NesterovSolve] Iter:  640 overflow: 0.760 HPWL: 517912 (PD_D2)
+[NesterovSolve] Iter:  650 overflow: 0.310 HPWL: 518917 (PD_D1)
+[NesterovSolve] Iter:  650 overflow: 0.748 HPWL: 518917 (PD_D2)
+[NesterovSolve] Iter:  660 overflow: 0.305 HPWL: 520757 (PD_D1)
+[NesterovSolve] Iter:  660 overflow: 0.736 HPWL: 520757 (PD_D2)
+[NesterovSolve] Iter:  670 overflow: 0.301 HPWL: 523037 (PD_D1)
+[NesterovSolve] Iter:  670 overflow: 0.725 HPWL: 523037 (PD_D2)
+[NesterovSolve] Iter:  680 overflow: 0.296 HPWL: 525709 (PD_D1)
+[NesterovSolve] Iter:  680 overflow: 0.715 HPWL: 525709 (PD_D2)
+[NesterovSolve] Iter:  690 overflow: 0.292 HPWL: 528860 (PD_D1)
+[NesterovSolve] Iter:  690 overflow: 0.704 HPWL: 528860 (PD_D2)
+[NesterovSolve] Iter:  700 overflow: 0.288 HPWL: 533603 (PD_D1)
+[NesterovSolve] Iter:  700 overflow: 0.694 HPWL: 533603 (PD_D2)
+[NesterovSolve] Iter:  710 overflow: 0.284 HPWL: 540052 (PD_D1)
+[NesterovSolve] Iter:  710 overflow: 0.685 HPWL: 540052 (PD_D2)
+[NesterovSolve] Iter:  720 overflow: 0.280 HPWL: 550192 (PD_D1)
+[NesterovSolve] Iter:  720 overflow: 0.675 HPWL: 550192 (PD_D2)
+[NesterovSolve] Iter:  730 overflow: 0.276 HPWL: 574812 (PD_D1)
+[NesterovSolve] Iter:  730 overflow: 0.666 HPWL: 574812 (PD_D2)
+[NesterovSolve] Iter:  740 overflow: 0.272 HPWL: 634625 (PD_D1)
+[NesterovSolve] Iter:  740 overflow: 0.432 HPWL: 634625 (PD_D2)
+[NesterovSolve] Iter:  750 overflow: 0.269 HPWL: 652528 (PD_D1)
+[NesterovSolve] Iter:  750 overflow: 0.427 HPWL: 652528 (PD_D2)
+[NesterovSolve] Iter:  760 overflow: 0.265 HPWL: 678141 (PD_D1)
+[NesterovSolve] Iter:  760 overflow: 0.288 HPWL: 678141 (PD_D2)
+[NesterovSolve] Iter:  770 overflow: 0.262 HPWL: 700148 (PD_D1)
+[NesterovSolve] Iter:  770 overflow: 0.232 HPWL: 700148 (PD_D2)
+[NesterovSolve] Iter:  780 overflow: 0.258 HPWL: 708603 (PD_D1)
+[NesterovSolve] Iter:  780 overflow: 0.193 HPWL: 708603 (PD_D2)
+[NesterovSolve] PowerDomain PD_D2 finished with Overflow: 0.081638
+[NesterovSolve] Iter:  790 overflow: 0.255 HPWL: 723541 (PD_D1)
+[NesterovSolve] Iter:  800 overflow: 0.252 HPWL: 726421 (PD_D1)
+[NesterovSolve] Iter:  810 overflow: 0.249 HPWL: 734158 (PD_D1)
+[NesterovSolve] Iter:  820 overflow: 0.246 HPWL: 757072 (PD_D1)
+[NesterovSolve] Iter:  830 overflow: 0.229 HPWL: 803521 (PD_D1)
+[NesterovSolve] Iter:  840 overflow: 0.177 HPWL: 837613 (PD_D1)
+[NesterovSolve] Iter:  850 overflow: 0.176 HPWL: 831665 (PD_D1)
+[NesterovSolve] Iter:  860 overflow: 0.152 HPWL: 846810 (PD_D1)
+[NesterovSolve] Iter:  870 overflow: 0.150 HPWL: 875516 (PD_D1)
+[NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.081265
 Placement Analysis
 ---------------------------------
-total displacement         89.0 u
-average displacement        3.6 u
-max displacement           45.4 u
-original HPWL             907.2 u
-legalized HPWL            979.6 u
-delta HPWL                    8 %
+total displacement         85.8 u
+average displacement        3.4 u
+max displacement           45.5 u
+original HPWL             906.2 u
+legalized HPWL            965.6 u
+delta HPWL                    7 %
 
 Detailed placement improvement.
 Importing netlist into detailed improver.
@@ -288,33 +288,33 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPO-0303] Running algorithm for independent set matching.
 [INFO DPO-0300] Set matching objective is wirelength.
-[INFO DPO-0301] Pass   1 of matching; objective is 9.889725e+05.
-[INFO DPO-0302] End of matching; objective is 9.845325e+05, improvement is 0.45 percent.
+[INFO DPO-0301] Pass   1 of matching; objective is 9.786975e+05.
+[INFO DPO-0302] End of matching; objective is 9.742575e+05, improvement is 0.45 percent.
 [INFO DPO-0303] Running algorithm for global swaps.
-[INFO DPO-0306] Pass   1 of global swaps; hpwl is 9.516750e+05.
-[INFO DPO-0306] Pass   2 of global swaps; hpwl is 9.489850e+05.
-[INFO DPO-0307] End of global swaps; objective is 9.489850e+05, improvement is 3.61 percent.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 9.450875e+05.
+[INFO DPO-0306] Pass   2 of global swaps; hpwl is 9.447175e+05.
+[INFO DPO-0307] End of global swaps; objective is 9.447175e+05, improvement is 3.03 percent.
 [INFO DPO-0303] Running algorithm for vertical swaps.
-[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 9.312075e+05.
-[INFO DPO-0308] Pass   2 of vertical swaps; hpwl is 9.284400e+05.
-[INFO DPO-0309] End of vertical swaps; objective is 9.284400e+05, improvement is 2.16 percent.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 9.248000e+05.
+[INFO DPO-0308] Pass   2 of vertical swaps; hpwl is 9.226600e+05.
+[INFO DPO-0309] End of vertical swaps; objective is 9.226600e+05, improvement is 2.33 percent.
 [INFO DPO-0303] Running algorithm for reordering.
-[INFO DPO-0304] Pass   1 of reordering; objective is 9.284400e+05.
-[INFO DPO-0305] End of reordering; objective is 9.284400e+05, improvement is 0.00 percent.
+[INFO DPO-0304] Pass   1 of reordering; objective is 9.226600e+05.
+[INFO DPO-0305] End of reordering; objective is 9.226600e+05, improvement is 0.00 percent.
 [INFO DPO-0303] Running algorithm for random improvement.
 [INFO DPO-0324] Random improver is using displacement generator.
 [INFO DPO-0325] Random improver is using hpwl objective.
 [INFO DPO-0326] Random improver cost string is (a).
 [INFO DPO-0332] End of pass, Generator displacement called 500 times.
-[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 35, moves   455 since last reset.
-[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.284400e+05, Scratch cost 9.193750e+05, Incremental cost 9.193750e+05, Mismatch? N
-[INFO DPO-0338] End of pass, Total cost is 9.193750e+05.
-[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.98 percent.
-[INFO DPO-0328] End of random improver; improvement is 0.976369 percent.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 38, moves   450 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.226600e+05, Scratch cost 9.226600e+05, Incremental cost 9.226600e+05, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 9.226600e+05.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.00 percent.
+[INFO DPO-0328] End of random improver; improvement is 0.000000 percent.
 [INFO DPO-0380] Cell flipping.
 [INFO DPO-0382] Changed 15 cell orientations for row compatibility.
-[INFO DPO-0383] Performed 7 cell flips.
-[INFO DPO-0384] End of flipping; objective is 9.319950e+05, improvement is -1.37 percent.
+[INFO DPO-0383] Performed 9 cell flips.
+[INFO DPO-0384] End of flipping; objective is 9.203575e+05, improvement is 0.25 percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
@@ -322,8 +322,8 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL              979.6 u
-Final HPWL                 910.8 u
-Delta HPWL                  -7.0 %
+Original HPWL              965.6 u
+Final HPWL                 906.1 u
+Delta HPWL                  -6.2 %
 
 No differences found.
