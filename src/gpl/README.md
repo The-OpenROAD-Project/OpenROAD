@@ -166,6 +166,15 @@ cluster_flops
 | `-num_paths` | KIV, default value is 0, type `int`. |
 
 
+### Placement Clusters
+
+This command defines instances that should be placed as a single cluster.  It is intended for use with small clusters of gates.
+
+```tcl
+placement_cluster
+    instance_patterns
+```
+
 ### Debug Mode
 
 The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
