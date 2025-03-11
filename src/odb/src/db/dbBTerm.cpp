@@ -994,7 +994,7 @@ void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
   _dbBTerm* bterm = (_dbBTerm*) this;
 
   bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
-  ((_dbBTerm*)mirrored_bterm)->_is_mirrored = true;
+  ((_dbBTerm*) mirrored_bterm)->_is_mirrored = true;
 
   if (!bterm->_constraint_region.isInverted()
       && mirrored_bterm->getConstraintRegion() == std::nullopt) {
