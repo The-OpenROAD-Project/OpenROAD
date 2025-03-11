@@ -373,7 +373,7 @@ void Logger::setFormatter()
 std::unique_ptr<Progress> Logger::swapProgress(Progress* progress)
 {
   std::unique_ptr<Progress> current_progress = std::move(progress_);
-  progress_ = std::unique_ptr<Progress>(progress);
+  progress_.reset(progress);
 
   return current_progress;
 }
