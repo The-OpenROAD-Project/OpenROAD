@@ -297,6 +297,15 @@ void select_clockviewer_clock(const char* clock_name)
   gui->selectClockviewerClock(clock_name);
 }
 
+void save_histogram_image(const char* filename, const char* mode, int width_px = 0, int height_px = 0)
+{
+  if (!check_gui("save_histogram_image")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->saveHistogramImage(filename, mode, width_px, height_px);
+}
+
 void clear_rulers()
 {
   if (!check_gui("clear_rulers")) {

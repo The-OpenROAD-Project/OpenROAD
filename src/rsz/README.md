@@ -446,8 +446,9 @@ If you are a developer, you might find these useful. More details can be found i
 
 ### Setting Optimization Configuration
 
-The `set_opt_config` command configures optimization settings that apply to all 
-optimization commands like repair_design and repair_timing.
+The `set_opt_config` command configures optimization settings that apply to
+data cell selection, affecting all optimization commands like repair_design and repair_timing.
+However, this does not apply to clock cell selection in clock_tree_synthesis or repair_clock_nets.
 
 ```tcl
 set_opt_config 
