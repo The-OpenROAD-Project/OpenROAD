@@ -108,28 +108,28 @@ void Tech::readLiberty(const std::string& file_name)
                         true /* infer_latches */);
 }
 
-std::string Tech::nominalProcess()
+float Tech::nominalProcess()
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
-  return std::to_string(lib->nominalProcess());
+  return lib->nominalProcess();
 }
 
-std::string Tech::nominalVoltage()
+float Tech::nominalVoltage()
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
-  return sta->units()->voltageUnit()->asString(lib->nominalVoltage());
+  return lib->nominalVoltage();
 }
 
-std::string Tech::nominalTemperature()
+float Tech::nominalTemperature()
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
-  return std::to_string(lib->nominalTemperature());
+  return lib->nominalTemperature();
 }
 
 
