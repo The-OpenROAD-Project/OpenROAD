@@ -991,7 +991,7 @@ proc set_debug { args } {
   }
 
   set subdivide_step [info exists flags(-subdivide_step)]
-  
+
   rsz::set_debug_cmd $net $subdivide_step
 }
 
