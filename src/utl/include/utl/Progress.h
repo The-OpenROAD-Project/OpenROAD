@@ -61,15 +61,13 @@ class Progress
     sighandler_t org_signal_handler;
 
     std::queue<std::time_t> interrupts;
-    constexpr static int max_interrupts = 3;
+    constexpr static int max_idle_interrupts = 2;
+    constexpr static int max_in_progress_interrupts = 3;
     constexpr static int max_prune_delay = 10;
   };
 
   Progress(Logger* logger);
   virtual ~Progress();
-
-  // Start an activity without any progress information
-  std::shared_ptr<ProgressReporter> start(const std::string& name);
 
   // Start an activity with progress based on number of iterations
   std::shared_ptr<ProgressReporter> startIterationReporting(
@@ -87,7 +85,8 @@ class Progress
   void interrupt();
 
   // returns true is reporters are active
-  bool inProgress() { return !getReporters().empty(); }
+  int countReporters();
+  bool inProgress() { return countReporters() > 0; }
 
   // get all current reporters
   std::vector<std::shared_ptr<ProgressReporter>> getReporters();

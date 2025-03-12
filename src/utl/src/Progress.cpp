@@ -55,13 +55,16 @@ static void controlC_handler(int sig)
     signal_halt->interrupts.pop();
   }
 
-  if (signal_halt->interrupts.size()
-      >= Progress::ProgressHalt::max_interrupts) {
+  const int max_interrupts
+      = signal_halt->progress->inProgress()
+            ? Progress::ProgressHalt::max_in_progress_interrupts
+            : Progress::ProgressHalt::max_idle_interrupts;
+
+  if (signal_halt->interrupts.size() >= max_interrupts) {
     // halt the application
     signal(sig, SIG_DFL);
     raise(sig);
-  } else if (signal_halt->interrupts.size() + 1
-             >= Progress::ProgressHalt::max_interrupts) {
+  } else if (signal_halt->interrupts.size() + 1 >= max_interrupts) {
     // let user know one more will terminate openroad
     signal_halt->logger->warn(
         utl::UTL, 14, "OpenROAD will terminate after the next control+C");
@@ -90,18 +93,6 @@ Progress::~Progress()
 {
   signal(SIGINT, signal_halt_.org_signal_handler);
   signal_halt = prev_signal_halt_;
-}
-
-std::shared_ptr<ProgressReporter> Progress::start(const std::string& name)
-{
-  auto reporter = std::make_shared<ProgressReporter>(
-      this, ProgressReporter::ReportType::NONE, logger_, name);
-
-  addReporter(reporter);
-
-  start(reporter);
-
-  return reporter;
 }
 
 std::shared_ptr<ProgressReporter> Progress::startIterationReporting(
@@ -200,6 +191,23 @@ std::vector<std::shared_ptr<ProgressReporter>> Progress::getReporters()
   }
 
   return reporters;
+}
+
+int Progress::countReporters()
+{
+  std::unique_lock<std::mutex> lock(reporters_lock_);
+
+  int count = 0;
+
+  std::vector<std::shared_ptr<ProgressReporter>> reporters;
+
+  for (const auto& reporter : reporters_) {
+    if (!reporter.expired()) {
+      count++;
+    }
+  }
+
+  return count;
 }
 
 ///////////////////////////////////////////////////////////////////
