@@ -7,6 +7,7 @@
 #include "logic_cut.h"
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "abc_library_factory.h"
@@ -603,19 +604,19 @@ void MapConstantCells(AbcLibrary& abc_library,
                       abc::Abc_Ntk_t* abc_network,
                       utl::Logger* logger)
 {
-  abc::SC_Cell* const_0 = abc_library.ConstantZeroCell();
-  std::string const_0_output_pin_name = abc::SC_CellPinName(const_0, 0);
-
-  abc::SC_Cell* const_1 = abc_library.ConstantOneCell();
-  std::string const_1_output_pin_name = abc::SC_CellPinName(const_1, 0);
-
-  if (!const_0) {
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> const_0
+      = abc_library.ConstantZeroCell();
+  if (!const_0.first || !const_0.second) {
     logger->error(utl::RMP, 1026, "cannot find 0 valued constant tie cell.");
   }
 
-  if (!const_1) {
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> const_1
+      = abc_library.ConstantOneCell();
+  if (!const_1.first || !const_1.second) {
     logger->error(utl::RMP, 1027, "cannot find 1 valued constant tie cell.");
   }
+  std::string const_0_output_pin_name = const_0.second->pName;
+  std::string const_1_output_pin_name = const_1.second->pName;
 
   auto library = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
 
@@ -623,13 +624,13 @@ void MapConstantCells(AbcLibrary& abc_library,
   abc::Mio_Gate_t* zero_cell = abc::Mio_LibraryReadConst0(library);
   free(zero_cell->pName);
   free(zero_cell->pOutName);
-  zero_cell->pName = strdup(const_0->pName);
+  zero_cell->pName = strdup(const_0.first->pName);
   zero_cell->pOutName = strdup(const_0_output_pin_name.c_str());
 
   abc::Mio_Gate_t* one_cell = abc::Mio_LibraryReadConst1(library);
   free(one_cell->pName);
   free(one_cell->pOutName);
-  one_cell->pName = strdup(const_1->pName);
+  one_cell->pName = strdup(const_1.first->pName);
   one_cell->pOutName = strdup(const_1_output_pin_name.c_str());
 }
 
