@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "BufferedNet.hh"
+#include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -1498,17 +1499,20 @@ void RepairDesign::subdivideRegion(LoadRegion& region, int max_fanout)
     int y_min = region.bbox_.yMin();
     int y_max = region.bbox_.yMax();
     region.regions_.resize(2);
-    int64_t x_mid = (x_min + x_max) / 2;
-    int64_t y_mid = (y_min + y_max) / 2;
+    int x_mid = (x_min + x_max) / 2;
+    int y_mid = (y_min + y_max) / 2;
     bool horz_partition;
+    odb::Line cut;
     if (region.bbox_.dx() > region.bbox_.dy()) {
       region.regions_[0].bbox_ = Rect(x_min, y_min, x_mid, y_max);
       region.regions_[1].bbox_ = Rect(x_mid, y_min, x_max, y_max);
+      cut = odb::Line{x_mid, y_min, x_mid, y_max};
       horz_partition = true;
     } else {
       region.regions_[0].bbox_ = Rect(x_min, y_min, x_max, y_mid);
       region.regions_[1].bbox_ = Rect(x_min, y_mid, x_max, y_max);
       horz_partition = false;
+      cut = odb::Line{x_min, y_mid, x_max, y_mid};
     }
     for (const Pin* pin : region.pins_) {
       Point loc = db_network_->location(pin);
@@ -1522,6 +1526,9 @@ void RepairDesign::subdivideRegion(LoadRegion& region, int max_fanout)
       } else {
         logger_->critical(RSZ, 83, "pin outside regions");
       }
+    }
+    if (graphics_) {
+      graphics_->subdivide(cut);
     }
     region.pins_.clear();
     for (LoadRegion& sub : region.regions_) {
@@ -2231,6 +2238,11 @@ void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
       resizer_->level_drvr_vertices_valid_ = false;
     }
   }
+}
+
+void RepairDesign::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
+{
+  graphics_ = graphics;
 }
 
 }  // namespace rsz

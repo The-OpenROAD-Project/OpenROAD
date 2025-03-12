@@ -980,6 +980,14 @@ proc repair_setup_pin { end_pin } {
   repair_setup_pin_cmd $end_pin
 }
 
+proc set_debug { args } {
+  sta::parse_key_args "set_debug" args \
+    keys { } \
+    flags { } ;# checker off
+
+  rsz::set_debug_cmd
+}
+
 proc report_swappable_pins { } {
   report_swappable_pins_cmd
 }

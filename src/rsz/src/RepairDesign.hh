@@ -113,6 +113,7 @@ class RepairDesign : dbStaState
                                int fanout_violations,
                                int length_violations,
                                int repaired_net_count);
+  void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
   void init();
@@ -280,6 +281,7 @@ class RepairDesign : dbStaState
   const MinMax* max_ = MinMax::max();
 
   int print_interval_ = 0;
+  std::shared_ptr<ResizerObserver> graphics_;
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;

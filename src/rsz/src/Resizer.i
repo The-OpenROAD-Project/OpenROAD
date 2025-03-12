@@ -44,6 +44,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
+#include "Graphics.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -775,6 +776,13 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportEquivalentCells(cell, match_cell_footprint);
+}
+
+void set_debug_cmd()
+{
+  Resizer* resizer = getResizer();
+  auto graphics = std::make_shared<Graphics>();
+  resizer->setDebugGraphics(std::move(graphics));
 }
 
 } // namespace
