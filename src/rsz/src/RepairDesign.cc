@@ -671,7 +671,7 @@ void RepairDesign::repairNet(Net* net,
         repaired_net = true;
 
         debugPrint(logger_, RSZ, "repair_net", 3, "fanout violation");
-        LoadRegion region = findLoadRegions(drvr_pin, max_fanout);
+        LoadRegion region = findLoadRegions(net, drvr_pin, max_fanout);
         corner_ = corner;
         makeRegionRepeaters(region,
                             max_fanout,
@@ -1481,12 +1481,21 @@ LoadRegion::LoadRegion(PinSeq& pins, Rect& bbox) : pins_(pins), bbox_(bbox)
 {
 }
 
-LoadRegion RepairDesign::findLoadRegions(const Pin* drvr_pin, int max_fanout)
+LoadRegion RepairDesign::findLoadRegions(const Net* net,
+                                         const Pin* drvr_pin,
+                                         int max_fanout)
 {
   PinSeq loads = findLoads(drvr_pin);
   Rect bbox = findBbox(loads);
   LoadRegion region(loads, bbox);
+  if (graphics_) {
+    odb::dbNet* db_net = db_network_->staToDb(net);
+    graphics_->subdivideStart(db_net);
+  }
   subdivideRegion(region, max_fanout);
+  if (graphics_) {
+    graphics_->subdivideDone();
+  }
   return region;
 }
 
@@ -2242,7 +2251,7 @@ void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
 
 void RepairDesign::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
 {
-  graphics_ = graphics;
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace rsz

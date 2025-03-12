@@ -199,7 +199,9 @@ class RepairDesign : dbStaState
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt* dcalc_ap);
-  LoadRegion findLoadRegions(const Pin* drvr_pin, int max_fanout);
+  LoadRegion findLoadRegions(const Net* net,
+                             const Pin* drvr_pin,
+                             int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
   void makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,

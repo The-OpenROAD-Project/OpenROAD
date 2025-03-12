@@ -4609,8 +4609,8 @@ void Resizer::copyDontUseFromLiberty()
 
 void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
 {
-  graphics_ = graphics;
   repair_design_->setDebugGraphics(graphics);
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace rsz
