@@ -1,8 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,42 +30,38 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include "AbstractGraphicsFactory.h"
-#include "db/obj/frBlockObject.h"
-#include "dr/FlexDR_graphics.h"
-#include "frBaseTypes.h"
+#include "ResizerObserver.hh"
 #include "gui/gui.h"
-#include "pa/FlexPA_graphics.h"
-#include "ta/FlexTA_graphics.h"
 
-namespace drt {
-class GraphicsFactory : public AbstractGraphicsFactory
+namespace rsz {
+
+class Graphics : public gui::Renderer, public ResizerObserver
 {
  public:
-  GraphicsFactory();
-  ~GraphicsFactory() override;
-  void reset(frDebugSettings* settings,
-             frDesign* design,
-             odb::dbDatabase* db,
-             Logger* logger,
-             RouterConfiguration* router_cfg) override;
-  bool guiActive() override;
-  std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() override;
-  std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() override;
-  std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() override;
+  Graphics();
+
+  // ResizerObserver
+  void setNet(odb::dbNet* net) override;
+  void stopOnSubdivideStep(bool stop) override;
+  void subdivideStart(odb::dbNet* net) override;
+  void subdivide(const odb::Line& line) override;
+  void subdivideDone() override;
+
+  // Renderer
+  void drawObjects(gui::Painter& painter) override;
 
  private:
-  frDebugSettings* settings_;
-  frDesign* design_;
-  odb::dbDatabase* db_;
-  Logger* logger_;
-  RouterConfiguration* router_cfg_;
+  odb::dbNet* net_{nullptr};
+  std::vector<odb::Line> lines_;
+  // Ingore this net if true
+  bool subdivide_ignore_{false};
+  // stop at each step?
+  bool stop_on_subdivide_step_{false};
 };
 
-}  // namespace drt
+}  // namespace rsz

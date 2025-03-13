@@ -3406,13 +3406,17 @@ class dbITerm : public dbObject
   dbBTerm* getBTerm();
 
   ///
-  /// Connect this iterm to this net.
+  /// Connect this iterm to a single "flat" net.
   ///
   void connect(dbNet* net);
 
-  // connect this iterm to a dbmodNet
+  // connect this iterm to a single dbmodNet
 
   void connect(dbModNet* net);
+
+  // simultaneously connect this iterm to both a dbnet and a mod net.
+
+  void connect(dbNet* db_net, dbModNet* db_mod_net);
 
   ///
   /// Disconnect this iterm from the net it is connected to.

@@ -1,8 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,42 +30,65 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "Graphics.hh"
 
-#include <memory>
-#include <vector>
+namespace rsz {
 
-#include "AbstractGraphicsFactory.h"
-#include "db/obj/frBlockObject.h"
-#include "dr/FlexDR_graphics.h"
-#include "frBaseTypes.h"
-#include "gui/gui.h"
-#include "pa/FlexPA_graphics.h"
-#include "ta/FlexTA_graphics.h"
-
-namespace drt {
-class GraphicsFactory : public AbstractGraphicsFactory
+Graphics::Graphics()
 {
- public:
-  GraphicsFactory();
-  ~GraphicsFactory() override;
-  void reset(frDebugSettings* settings,
-             frDesign* design,
-             odb::dbDatabase* db,
-             Logger* logger,
-             RouterConfiguration* router_cfg) override;
-  bool guiActive() override;
-  std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() override;
-  std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() override;
-  std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() override;
+  gui::Gui::get()->registerRenderer(this);
+}
 
- private:
-  frDebugSettings* settings_;
-  frDesign* design_;
-  odb::dbDatabase* db_;
-  Logger* logger_;
-  RouterConfiguration* router_cfg_;
-};
+void Graphics::setNet(odb::dbNet* net)
+{
+  net_ = net;
+  if (!net) {
+    subdivide_ignore_ = false;
+  }
+}
 
-}  // namespace drt
+void Graphics::stopOnSubdivideStep(const bool stop)
+{
+  stop_on_subdivide_step_ = stop;
+}
+
+void Graphics::subdivideStart(odb::dbNet* net)
+{
+  lines_.clear();
+  if (net_) {
+    subdivide_ignore_ = (net != net_);
+  }
+}
+
+void Graphics::subdivide(const odb::Line& line)
+{
+  if (subdivide_ignore_) {
+    return;
+  }
+  lines_.emplace_back(line);
+  if (stop_on_subdivide_step_) {
+    gui::Gui::get()->redraw();
+    gui::Gui::get()->pause();
+  }
+}
+
+void Graphics::subdivideDone()
+{
+  if (!subdivide_ignore_) {
+    gui::Gui::get()->redraw();
+    gui::Gui::get()->pause();
+  }
+}
+
+void Graphics::drawObjects(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::red, true);
+  for (const odb::Line& line : lines_) {
+    painter.drawLine(line.pt0(), line.pt1());
+  }
+}
+
+}  // namespace rsz

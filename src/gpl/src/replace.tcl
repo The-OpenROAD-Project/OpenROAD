@@ -418,6 +418,30 @@ proc global_placement_debug { args } {
   gpl::set_debug_cmd $pause $update $draw_bins $initial $inst $start_iter
 }
 
+sta::define_cmd_args "placement_cluster" {}
+
+proc placement_cluster { args } {
+  sta::parse_key_args "placement_cluster" args \
+    keys {} \
+    flags {}
+
+  if { $args == {} } {
+    utl::error GPL 94 "placement_cluster requires a list of instances."
+  }
+
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
+  set insts []
+  foreach inst_name $args {
+    lappend insts {*}[gpl::parse_inst_names placement_cluster $inst_name]
+  }
+  utl::info GPL 96 "Created placement cluster of [llength $insts] instances."
+
+  gpl::placement_cluster_cmd $insts
+}
+
 namespace eval gpl {
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {
@@ -456,5 +480,19 @@ proc get_global_placement_uniform_density { args } {
     utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."
   }
   return $uniform_density
+}
+
+proc parse_inst_names { cmd names } {
+  set dbBlock [ord::get_db_block]
+  set inst_list {}
+  foreach inst [get_cells $names] {
+    lappend inst_list [sta::sta_to_db_inst $inst]
+  }
+
+  if { [llength $inst_list] == 0 } {
+    utl::error GPL 95 "Instances {$names} for $cmd command were not found."
+  }
+
+  return $inst_list
 }
 }

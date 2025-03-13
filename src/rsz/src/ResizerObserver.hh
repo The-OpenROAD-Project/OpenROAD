@@ -1,8 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2025, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,42 +30,27 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <memory>
-#include <vector>
+#include "odb/db.h"
+#include "odb/geom.h"
 
-#include "AbstractGraphicsFactory.h"
-#include "db/obj/frBlockObject.h"
-#include "dr/FlexDR_graphics.h"
-#include "frBaseTypes.h"
-#include "gui/gui.h"
-#include "pa/FlexPA_graphics.h"
-#include "ta/FlexTA_graphics.h"
+namespace rsz {
 
-namespace drt {
-class GraphicsFactory : public AbstractGraphicsFactory
+class ResizerObserver
 {
  public:
-  GraphicsFactory();
-  ~GraphicsFactory() override;
-  void reset(frDebugSettings* settings,
-             frDesign* design,
-             odb::dbDatabase* db,
-             Logger* logger,
-             RouterConfiguration* router_cfg) override;
-  bool guiActive() override;
-  std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() override;
-  std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() override;
-  std::unique_ptr<AbstractPAGraphics> makeUniquePAGraphics() override;
+  virtual ~ResizerObserver() = default;
 
- private:
-  frDebugSettings* settings_;
-  frDesign* design_;
-  odb::dbDatabase* db_;
-  Logger* logger_;
-  RouterConfiguration* router_cfg_;
+  virtual void setNet(odb::dbNet* net) {}
+  virtual void stopOnSubdivideStep(bool stop) {}
+
+  virtual void subdivideStart(odb::dbNet* net) {}
+  virtual void subdivide(const odb::Line& line) {}
+  virtual void subdivideDone() {}
 };
 
-}  // namespace drt
+}  // namespace rsz

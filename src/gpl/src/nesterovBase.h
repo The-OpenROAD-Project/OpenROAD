@@ -39,6 +39,7 @@
 #include <variant>
 #include <vector>
 
+#include "gpl/Replace.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
@@ -81,17 +82,18 @@ class GCell
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
 
-  Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
+
+  std::string name() const;
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
 
-  void setClusteredInstance(const std::vector<Instance*>& insts);
-  void setInstance(Instance* inst);
-  void clearInstances();
-  void setFiller();
+  void updateLocations();
+
+  bool isLocked() const;
+  void lock();
 
   // normal coordinates
   int lx() const;
@@ -131,10 +133,10 @@ class GCell
   float densityScale() const { return densityScale_; }
 
   bool isInstance() const;
-  bool isClusteredInstance() const;
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
+  bool contains(odb::dbInst* db_inst) const;
 
   void print(utl::Logger* logger) const;
 
@@ -802,7 +804,8 @@ class NesterovBaseCommon
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
-                     int num_threads);
+                     int num_threads,
+                     const Clusters& clusters);
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
@@ -911,7 +914,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t delta_area_;
   uint new_gcells_count_;
-  nesterovDbCbk* db_cbk_;
+  nesterovDbCbk* db_cbk_{nullptr};
 };
 
 // Stores instances belonging to a specific power domain
