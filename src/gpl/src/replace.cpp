@@ -361,6 +361,8 @@ bool Replace::initNesterovPlace(int threads)
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
+    npVars.debug_update_db_every_iteration
+        = gui_debug_update_db_every_iteration;
     npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
@@ -495,7 +497,8 @@ void Replace::setDebug(int pause_iterations,
                        bool draw_bins,
                        bool initial,
                        odb::dbInst* inst,
-                       int start_iter)
+                       int start_iter,
+                       bool update_db)
 {
   gui_debug_ = true;
   gui_debug_pause_iterations_ = pause_iterations;
@@ -504,6 +507,7 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
+  gui_debug_update_db_every_iteration = update_db;
 }
 
 void Replace::setDisableRevertIfDiverge(bool mode)
