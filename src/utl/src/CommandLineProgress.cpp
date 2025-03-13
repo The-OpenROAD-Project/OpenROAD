@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2025, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -33,37 +33,30 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%module utl_py
-
-%{
+#include "CommandLineProgress.h"
 
 #include "utl/Logger.h"
-#include "LoggerCommon.h"
 
-namespace ord {
-// Defined in OpenRoad.i
-utl::Logger *
-getLogger();
+namespace utl {
+
+CommandLineProgress::CommandLineProgress(Logger* logger) : Progress(logger)
+{
 }
 
-using utl::ToolId;
-using utl::Logger;
-using ord::getLogger;
+void CommandLineProgress::start(std::shared_ptr<ProgressReporter>& reporter)
+{
+}
 
-using namespace utl;
+void CommandLineProgress::update(ProgressReporter* reporter)
+{
+}
 
-%}
+void CommandLineProgress::end(ProgressReporter* reporter)
+{
+}
 
-#define __attribute__(x)
+void CommandLineProgress::deleted(ProgressReporter* reporter)
+{
+}
 
-// this maps ToolId to unsigned long
-%include typemaps.i
-%apply unsigned long { ToolId };
-
-%include "../../Exception-py.i"
-
-%ignore utl::Logger::progress;
-%ignore utl::Logger::swapProgress;
-
-%include "utl/Logger.h"
-%include "LoggerCommon.h"
+}  // namespace utl
