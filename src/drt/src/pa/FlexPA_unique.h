@@ -111,6 +111,7 @@ class UniqueInsts
    */
   void initPinAccess();
   void initUniqueInstPinAccess(frInst* unique_inst);
+  void deleteUniqueInstPinAccess(frInst* unique_inst);
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.

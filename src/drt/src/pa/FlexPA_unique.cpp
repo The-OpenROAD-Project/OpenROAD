@@ -233,6 +233,12 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
+void UniqueInsts::deleteUniqueInstPinAccess(frInst* unique_inst)
+{
+#pragma omp critical
+  unique_to_pa_idx_.erase(unique_inst);
+}
+
 void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
 {
   for (auto& inst_term : unique_inst->getInstTerms()) {
