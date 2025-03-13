@@ -1430,7 +1430,6 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
     vertex_weight.push_back(computeMicronArea(std_cell));
   }
 
-
   std::vector<std::vector<int>> hyperedges;
   for (odb::dbNet* net : block_->getNets()) {
     if (net->getSigType().isSupply()) {
@@ -1493,7 +1492,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   // the constraint until we find a reasonable split.
   constexpr float balance_constraint_relaxation_factor = 10.0f;
   std::vector<int> solution;
-  // do {
+  do {
     debugPrint(
         logger_,
         MPL,
@@ -1516,11 +1515,9 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
                                                      hyperedge_weights);
 
     balance_constraint += balance_constraint_relaxation_factor;
-  // } while (partitionerSolutionIsFullyUnbalanced(solution,
-  //                                               num_fixed_vertices));
+  } while (partitionerSolutionIsFullyUnbalanced(solution, num_fixed_vertices));
 
   parent->clearLeafStdCells();
-  // parent->clearLeafMacros();
 
   const std::string cluster_name = parent->getName();
   parent->setName(cluster_name + std::string("_0"));
@@ -1535,25 +1532,28 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
     }
   }
 
-  splitMacrosBetweenPartitions(parent, cluster_part_1.get());
+  Cluster* raw_part_1 = cluster_part_1.get();
+
+  splitMacrosBetweenPartitions(parent, raw_part_1);
 
   updateInstancesAssociation(parent);
   setClusterMetrics(parent);
+
   incorporateNewCluster(std::move(cluster_part_1), parent->getParent());
 
   // Recursive break the cluster
   // until the size of the cluster is less than max_num_inst_
   breakLargeFlatCluster(parent);
-  breakLargeFlatCluster(cluster_part_1.get());
+  breakLargeFlatCluster(raw_part_1);
 }
 
 void ClusteringEngine::splitMacrosBetweenPartitions(Cluster* parent,
-                                             Cluster* new_cluster)
+                                                    Cluster* partition)
 {
   std::map<odb::dbInst*, int> parent_macro_to_iterm_count
       = getMacroToStdCellPinCount(parent);
   std::map<odb::dbInst*, int> partition_macro_to_iterm_count
-      = getMacroToStdCellPinCount(new_cluster);
+      = getMacroToStdCellPinCount(partition);
 
   std::vector<odb::dbInst*> macros = parent->getLeafMacros();
   parent->clearLeafMacros();
@@ -1563,7 +1563,7 @@ void ClusteringEngine::splitMacrosBetweenPartitions(Cluster* parent,
         > partition_macro_to_iterm_count[macro]) {
       parent->addLeafMacro(macro);
     } else {
-      new_cluster->addLeafMacro(macro);
+      partition->addLeafMacro(macro);
     }
   }
 }
@@ -1571,7 +1571,6 @@ void ClusteringEngine::splitMacrosBetweenPartitions(Cluster* parent,
 std::map<odb::dbInst*, int> ClusteringEngine::getMacroToStdCellPinCount(
     Cluster* cluster)
 {
-
   std::set<odb::dbNet*> non_supply_nets;
   for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
     for (odb::dbITerm* iterm : std_cell->getITerms()) {
@@ -2103,7 +2102,8 @@ void ClusteringEngine::classifyMacrosByConnSignature(
   if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
     logger_->report("\nPrint Connection Signature\n");
     for (Cluster* cluster : macro_clusters) {
-      logger_->report("Macro Signature: {}", cluster->getName());
+      logger_->report(
+          "Macro {} ({}) Signature: ", cluster->getName(), cluster->getId());
       for (auto& [cluster_id, weight] : cluster->getConnection()) {
         logger_->report(" {} {} ",
                         tree_->maps.id_to_cluster[cluster_id]->getName(),
