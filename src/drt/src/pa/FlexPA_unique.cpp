@@ -133,7 +133,7 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
-bool UniqueInsts::addUniqueInst(frInst* inst)
+bool UniqueInsts::addInst(frInst* inst)
 {
   if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
     unique_to_idx_[inst] = unique_.size();
@@ -207,7 +207,7 @@ void UniqueInsts::computeUnique()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    addUniqueInst(inst.get());
+    addInst(inst.get());
   }
 }
 
@@ -297,11 +297,12 @@ bool UniqueInsts::hasUnique(frInst* inst) const
   return inst_to_unique_.find(inst) != inst_to_unique_.end();
 }
 
-// deleteUniqueInst has to be called both when an instance is deleted and might
+// deleteInst has to be called both when an instance is deleted and might
 // be needed when moved
-void UniqueInsts::deleteUniqueInst(frInst* inst)
+frInst* UniqueInsts::deleteInst(frInst* inst)
 {
   UniqueInsts::InstSet& unique_class = *inst_to_class_[inst];
+  frInst* class_head = inst;
   if (unique_class.size() == 1) {
     auto it = std::find(unique_.begin(), unique_.end(), inst);
     if (it == unique_.end()) {
@@ -321,26 +322,29 @@ void UniqueInsts::deleteUniqueInst(frInst* inst)
     unique_.erase(it);
     unique_to_idx_.erase(inst);
     unique_to_pa_idx_.erase(inst);
+    class_head = nullptr;
 
   } else if (inst == inst_to_unique_[inst] && unique_class.size() > 1) {
     // the inst does not belong to the class anymore, but is the reference
     // unique_inst, so the reference has to be another inst
     auto class_begin = inst_to_class_[inst]->begin();
-    frInst* new_head = *class_begin != inst ? *class_begin : *(++class_begin);
-    unique_[unique_to_idx_[inst]] = new_head;
+    // new class head
+    class_head = *class_begin != inst ? *class_begin : *(++class_begin);
+    unique_[unique_to_idx_[inst]] = class_head;
     for (frInst* other_inst : unique_class) {
-      inst_to_unique_[other_inst] = new_head;
+      inst_to_unique_[other_inst] = class_head;
     }
-    unique_to_idx_[new_head] = unique_to_idx_[inst];
+    unique_to_idx_[class_head] = unique_to_idx_[inst];
     unique_to_idx_.erase(inst);
     if (unique_to_pa_idx_.find(inst) != unique_to_pa_idx_.end()) {
-      unique_to_pa_idx_[new_head] = unique_to_pa_idx_[inst];
+      unique_to_pa_idx_[class_head] = unique_to_pa_idx_[inst];
       unique_to_pa_idx_.erase(inst);
     }
   }
   inst_to_class_[inst]->erase(inst);
   inst_to_class_.erase(inst);
   inst_to_unique_.erase(inst);
+  return class_head;
 }
 
 int UniqueInsts::getIndex(frInst* inst)
