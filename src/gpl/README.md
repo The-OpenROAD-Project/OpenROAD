@@ -186,6 +186,8 @@ global_placement_debug
     [-inst]
     [-draw_bins]
     [-initial]
+    [-start_iter]
+    [-update_db]
 ```
 
 #### Options
@@ -197,6 +199,8 @@ global_placement_debug
 | `-inst` | Targets a specific instance name for debugging focus. Allowed value is a string, the default behavior focuses on no specific instance. |
 | `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
 | `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
+| `-start_iter` | Start debug mode from such iteration. |
+| `-update_db` | Updates OpenROAD db during every gpl iteration, allowing for up to date location of instances. |
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
 This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
