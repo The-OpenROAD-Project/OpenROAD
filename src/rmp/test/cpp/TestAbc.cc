@@ -551,7 +551,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
 
   DelayOptimizationStrategy strat(sta_.get());
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
-      = strat.Optimize(mapped_abc_network.get(), &logger_);
+      = strat.Optimize(mapped_abc_network.get(), abc_library, &logger_);
 
   rmp::UniqueName unique_name;
   EXPECT_NO_THROW(cut.InsertMappedAbcNetwork(
