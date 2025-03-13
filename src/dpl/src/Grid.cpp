@@ -342,7 +342,7 @@ void Grid::erasePixel(GridNode* cell)
     for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
       for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
         Pixel* pixel = gridPixel(x, y);
-        if (nullptr == pixel) {
+        if (pixel == nullptr || pixel->cell != cell) {
           continue;
         }
         pixel->cell = nullptr;
@@ -354,7 +354,7 @@ void Grid::erasePixel(GridNode* cell)
 
 void Grid::paintPixel(GridNode* cell, GridX grid_x, GridY grid_y)
 {
-  assert(!cell->is_placed_);
+  assert(!cell->isPlaced());
   GridX x_end = grid_x + gridPaddedWidth(cell);
   GridY grid_height = gridHeight(cell);
   GridY y_end = grid_y + grid_height;
@@ -362,10 +362,6 @@ void Grid::paintPixel(GridNode* cell, GridX grid_x, GridY grid_y)
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
       Pixel* pixel = gridPixel(x, y);
-      if (pixel->cell) {
-        logger_->error(
-            DPL, 13, "Cannot paint grid because it is already occupied.");
-      }
       pixel->cell = cell;
       pixel->util = 1.0;
     }

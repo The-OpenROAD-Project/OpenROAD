@@ -38,9 +38,9 @@
 #include <vector>
 
 #include "Objects.h"
-#include "dpl/Padding.h"
 #include "dpl/Grid.h"
 #include "dpl/Opendp.h"
+#include "dpl/Padding.h"
 #include "utl/Logger.h"
 namespace dpl {
 
