@@ -132,40 +132,39 @@ float Tech::nominalTemperature()
   return lib->nominalTemperature();
 }
 
-
 float Tech::timeScale()
 {
-    return getSta()->units()->timeUnit()->scale();
+  return getSta()->units()->timeUnit()->scale();
 }
 
 float Tech::resistanceScale()
 {
-    return getSta()->units()->resistanceUnit()->scale();
+  return getSta()->units()->resistanceUnit()->scale();
 }
 
 float Tech::capacitanceScale()
 {
-    return getSta()->units()->capacitanceUnit()->scale();
+  return getSta()->units()->capacitanceUnit()->scale();
 }
 
 float Tech::voltageScale()
 {
-    return getSta()->units()->voltageUnit()->scale();
+  return getSta()->units()->voltageUnit()->scale();
 }
 
 float Tech::currentScale()
 {
-    return getSta()->units()->currentUnit()->scale();
+  return getSta()->units()->currentUnit()->scale();
 }
 
 float Tech::powerScale()
 {
-    return getSta()->units()->powerUnit()->scale();
+  return getSta()->units()->powerUnit()->scale();
 }
 
 float Tech::distanceScale()
 {
-    return getSta()->units()->distanceUnit()->scale();
+  return getSta()->units()->distanceUnit()->scale();
 }
 
 }  // namespace ord
