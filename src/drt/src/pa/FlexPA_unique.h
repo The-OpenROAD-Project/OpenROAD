@@ -109,7 +109,8 @@ class UniqueInsts
    * @brief Initializes pin access structures
    * Fills unique_to_pa_idx_adds pin access unique points to pins
    */
-  void genPinAccess();
+  void initPinAccess();
+  void initUniqueInstPinAccess(frInst* unique_inst);
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.

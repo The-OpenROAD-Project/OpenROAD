@@ -233,25 +233,35 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::genPinAccess()
+void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
 {
-  for (auto& inst : unique_) {
-    for (auto& inst_term : inst->getInstTerms()) {
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
-          unique_to_pa_idx_[inst] = pin->getNumPinAccess();
-        } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "genPinAccess error.");
-        }
-        checkFigsOnGrid(pin.get());
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
+  for (auto& inst_term : unique_inst->getInstTerms()) {
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      if (unique_to_pa_idx_.find(unique_inst) == unique_to_pa_idx_.end()) {
+        unique_to_pa_idx_[unique_inst] = pin->getNumPinAccess();
+      } else if (unique_to_pa_idx_[unique_inst] != pin->getNumPinAccess()) {
+        logger_->error(DRT,
+                       69,
+                       "{} has a conflicting number of pinAccess ({} and {}).",
+                       unique_inst->getName(),
+                       unique_to_pa_idx_[unique_inst],
+                       pin->getNumPinAccess());
       }
+      checkFigsOnGrid(pin.get());
+      auto pa = std::make_unique<frPinAccess>();
+      pin->addPinAccess(std::move(pa));
     }
-    inst->setPinAccessIdx(unique_to_pa_idx_[inst]);
   }
-  for (auto& [inst, unique_inst] : inst_to_unique_) {
+  unique_inst->setPinAccessIdx(unique_to_pa_idx_[unique_inst]);
+  for (frInst* inst : *inst_to_class_[unique_inst]) {
     inst->setPinAccessIdx(unique_inst->getPinAccessIdx());
+  }
+}
+
+void UniqueInsts::initPinAccess()
+{
+  for (frInst* unique_inst : unique_) {
+    initUniqueInstPinAccess(unique_inst);
   }
 
   // IO terms
@@ -268,7 +278,7 @@ void UniqueInsts::genPinAccess()
 void UniqueInsts::init()
 {
   computeUnique();
-  genPinAccess();
+  initPinAccess();
 }
 
 void UniqueInsts::report() const
