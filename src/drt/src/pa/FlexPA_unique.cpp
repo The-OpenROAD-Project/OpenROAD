@@ -324,7 +324,7 @@ frInst* UniqueInsts::deleteInst(frInst* inst)
     unique_to_pa_idx_.erase(inst);
     class_head = nullptr;
 
-  } else if (inst == inst_to_unique_[inst] && unique_class.size() > 1) {
+  } else if (inst == inst_to_unique_[inst]) {
     // the inst does not belong to the class anymore, but is the reference
     // unique_inst, so the reference has to be another inst
     auto class_begin = inst_to_class_[inst]->begin();
