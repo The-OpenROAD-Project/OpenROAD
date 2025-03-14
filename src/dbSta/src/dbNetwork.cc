@@ -3570,7 +3570,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
-void dbNetwork::replaceDesign(dbModInst* mod_inst, dbModule* module)
+void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
 {
   mod_inst->swapMaster(module);
 }
