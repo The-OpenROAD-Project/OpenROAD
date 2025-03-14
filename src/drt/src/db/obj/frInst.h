@@ -50,6 +50,9 @@ class frInst : public frRef
       : name_(name), master_(master), db_inst_(db_inst)
   {
   }
+  // used for archive serialization
+  frInst() : name_(""), master_(nullptr), db_inst_(nullptr) {}
+
   // getters
   const frString& getName() const { return name_; }
   frMaster* getMaster() const { return master_; }
