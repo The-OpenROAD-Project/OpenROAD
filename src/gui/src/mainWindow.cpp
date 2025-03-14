@@ -51,6 +51,7 @@
 #include <string>
 #include <vector>
 
+#include "GUIProgress.h"
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
 #include "chartsWidget.h"
@@ -72,6 +73,7 @@
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/Progress.h"
 #include "utl/algorithms.h"
 
 // must be loaded in global namespace
@@ -253,6 +255,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           [=](const SelectionSet& selected) { addHighlighted(selected); });
   connect(
       inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
+  connect(script_,
+          &ScriptWidget::commandAboutToExecute,
+          inspector_,
+          &Inspector::setReadOnly);
+  connect(script_,
+          &ScriptWidget::commandExecuted,
+          inspector_,
+          &Inspector::unsetReadOnly);
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
@@ -441,6 +451,10 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<BufferTree>();
   gui->unregisterDescriptor<odb::dbITerm*>();
   gui->unregisterDescriptor<odb::dbMTerm*>();
+
+  if (cli_progress_ != nullptr) {
+    logger_->swapProgress(cli_progress_.release());
+  }
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -1510,6 +1524,10 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 void MainWindow::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
+
+  auto progress = std::make_unique<GUIProgress>(logger_, this);
+  cli_progress_ = logger_->swapProgress(progress.release());
+
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewers_->setLogger(logger);

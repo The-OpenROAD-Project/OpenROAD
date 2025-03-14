@@ -5,7 +5,7 @@
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
-The following 29 cells are equivalent to sky130_fd_sc_hd__buf_1:
+The following 10 cells are equivalent to sky130_fd_sc_hd__buf_1:
 =============================================================================
           Cell                              Area   Area Leakage  Leakage  VT
                                            (um^2)  Ratio  (W)     Ratio  Type
@@ -14,77 +14,39 @@ sky130_fd_sc_hd__clkbuf_1                   3.754  1.00 1.18e-12  1.00   EL
 sky130_fd_sc_hd__buf_2                      5.005  1.33 3.93e-12  3.33   EL
 sky130_fd_sc_hd__clkbuf_2                   5.005  1.33 4.15e-12  3.52   EL
 sky130_fd_sc_hd__clkbuf_4                   7.507  2.00 4.60e-12  3.90   EL
-sky130_fd_sc_hd__buf_4                      7.507  2.00 4.80e-12  4.07   EL
-sky130_fd_sc_hd__dlygate4sd2_1              8.758  2.33 5.26e-12  4.45   EL
-sky130_fd_sc_hd__dlygate4sd1_1              8.758  2.33 5.79e-12  4.90   EL
 sky130_fd_sc_hd__clkdlybuf4s25_1           10.010  2.67 3.77e-12  3.19   EL
 sky130_fd_sc_hd__clkdlybuf4s50_1           10.010  2.67 3.91e-12  3.31   EL
 sky130_fd_sc_hd__dlygate4sd3_1             10.010  2.67 4.18e-12  3.54   EL
 sky130_fd_sc_hd__clkdlybuf4s18_1           10.010  2.67 4.28e-12  3.63   EL
 sky130_fd_sc_hd__clkdlybuf4s15_1           10.010  2.67 4.56e-12  3.86   EL
-sky130_fd_sc_hd__clkdlybuf4s18_2           10.010  2.67 4.95e-12  4.19   EL
-sky130_fd_sc_hd__clkdlybuf4s25_2           10.010  2.67 4.98e-12  4.21   EL
 sky130_fd_sc_hd__clkdlybuf4s50_2           11.261  3.00 4.36e-12  3.69   EL
-sky130_fd_sc_hd__clkdlybuf4s15_2           11.261  3.00 4.77e-12  4.04   EL
-sky130_fd_sc_hd__buf_6                     11.261  3.00 6.05e-12  5.12   EL
-sky130_fd_sc_hd__dlymetal6s4s_1            12.512  3.33 1.31e-11 11.05   EL
-sky130_fd_sc_hd__dlymetal6s2s_1            12.512  3.33 1.31e-11 11.05   EL
-sky130_fd_sc_hd__dlymetal6s6s_1            12.512  3.33 1.31e-11 11.05   EL
-sky130_fd_sc_hd__clkbuf_8                  13.763  3.67 7.19e-12  6.09   EL
-sky130_fd_sc_hd__buf_8                     15.014  4.00 7.42e-12  6.28   EL
-sky130_fd_sc_hd__probe_p_8                 15.014  4.00 7.42e-12  6.28   EL
-sky130_fd_sc_hd__probec_p_8                15.014  4.00 7.42e-12  6.28   EL
-sky130_fd_sc_hd__bufbuf_8                  18.768  5.00 1.14e-11  9.67   EL
-sky130_fd_sc_hd__buf_12                    20.019  5.33 9.40e-12  7.96   EL
-sky130_fd_sc_hd__clkbuf_16                 25.024  6.67 1.23e-11 10.43   EL
-sky130_fd_sc_hd__buf_16                    27.526  7.33 1.27e-11 10.73   EL
-sky130_fd_sc_hd__bufbuf_16                 32.531  8.67 1.95e-11 16.47   EL
 -----------------------------------------------------------------------------
-The following 19 cells are equivalent to sky130_fd_sc_hd__buf_1 with matching cell_footprint:
+The following 7 cells are equivalent to sky130_fd_sc_hd__buf_1 with matching cell_footprint:
 =============================================================================
           Cell                              Area   Area Leakage  Leakage  VT
                                            (um^2)  Ratio  (W)     Ratio  Type
 =============================================================================
 sky130_fd_sc_hd__buf_2                      5.005  1.33 3.93e-12  3.33   EL
-sky130_fd_sc_hd__buf_4                      7.507  2.00 4.80e-12  4.07   EL
-sky130_fd_sc_hd__dlygate4sd2_1              8.758  2.33 5.26e-12  4.45   EL
-sky130_fd_sc_hd__dlygate4sd1_1              8.758  2.33 5.79e-12  4.90   EL
 sky130_fd_sc_hd__clkdlybuf4s25_1           10.010  2.67 3.77e-12  3.19   EL
 sky130_fd_sc_hd__clkdlybuf4s50_1           10.010  2.67 3.91e-12  3.31   EL
 sky130_fd_sc_hd__dlygate4sd3_1             10.010  2.67 4.18e-12  3.54   EL
 sky130_fd_sc_hd__clkdlybuf4s18_1           10.010  2.67 4.28e-12  3.63   EL
 sky130_fd_sc_hd__clkdlybuf4s15_1           10.010  2.67 4.56e-12  3.86   EL
-sky130_fd_sc_hd__clkdlybuf4s18_2           10.010  2.67 4.95e-12  4.19   EL
-sky130_fd_sc_hd__clkdlybuf4s25_2           10.010  2.67 4.98e-12  4.21   EL
 sky130_fd_sc_hd__clkdlybuf4s50_2           11.261  3.00 4.36e-12  3.69   EL
-sky130_fd_sc_hd__clkdlybuf4s15_2           11.261  3.00 4.77e-12  4.04   EL
-sky130_fd_sc_hd__buf_6                     11.261  3.00 6.05e-12  5.12   EL
-sky130_fd_sc_hd__buf_8                     15.014  4.00 7.42e-12  6.28   EL
-sky130_fd_sc_hd__bufbuf_8                  18.768  5.00 1.14e-11  9.67   EL
-sky130_fd_sc_hd__buf_12                    20.019  5.33 9.40e-12  7.96   EL
-sky130_fd_sc_hd__buf_16                    27.526  7.33 1.27e-11 10.73   EL
-sky130_fd_sc_hd__bufbuf_16                 32.531  8.67 1.95e-11 16.47   EL
 -----------------------------------------------------------------------------
 [INFO RSZ-0100] Cells with area > 3.0X current cell will not be considered for sizing
-The following 14 cells are equivalent to sky130_fd_sc_hd__buf_1 with matching cell_footprint:
+The following 7 cells are equivalent to sky130_fd_sc_hd__buf_1 with matching cell_footprint:
 =============================================================================
           Cell                              Area   Area Leakage  Leakage  VT
                                            (um^2)  Ratio  (W)     Ratio  Type
 =============================================================================
 sky130_fd_sc_hd__buf_2                      5.005  1.33 3.93e-12  3.33   EL
-sky130_fd_sc_hd__buf_4                      7.507  2.00 4.80e-12  4.07   EL
-sky130_fd_sc_hd__dlygate4sd2_1              8.758  2.33 5.26e-12  4.45   EL
-sky130_fd_sc_hd__dlygate4sd1_1              8.758  2.33 5.79e-12  4.90   EL
 sky130_fd_sc_hd__clkdlybuf4s25_1           10.010  2.67 3.77e-12  3.19   EL
 sky130_fd_sc_hd__clkdlybuf4s50_1           10.010  2.67 3.91e-12  3.31   EL
 sky130_fd_sc_hd__dlygate4sd3_1             10.010  2.67 4.18e-12  3.54   EL
 sky130_fd_sc_hd__clkdlybuf4s18_1           10.010  2.67 4.28e-12  3.63   EL
 sky130_fd_sc_hd__clkdlybuf4s15_1           10.010  2.67 4.56e-12  3.86   EL
-sky130_fd_sc_hd__clkdlybuf4s18_2           10.010  2.67 4.95e-12  4.19   EL
-sky130_fd_sc_hd__clkdlybuf4s25_2           10.010  2.67 4.98e-12  4.21   EL
 sky130_fd_sc_hd__clkdlybuf4s50_2           11.261  3.00 4.36e-12  3.69   EL
-sky130_fd_sc_hd__clkdlybuf4s15_2           11.261  3.00 4.77e-12  4.04   EL
-sky130_fd_sc_hd__buf_6                     11.261  3.00 6.05e-12  5.12   EL
 -----------------------------------------------------------------------------
 [INFO RSZ-0102] Cell sizing restriction based on area has been removed.
 [INFO RSZ-0103] Cell sizing restriction based on leakage has been removed.

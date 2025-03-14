@@ -7,8 +7,10 @@
 #include "abc_library_factory.h"
 
 #include <cmath>
+#include <optional>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -80,7 +82,8 @@ static bool isCompatibleWithAbc(sta::LibertyCell* cell)
     return false;
   }
 
-  if (CountOutputPins(cell) != 1) {
+  // ABC requires at least one output pin.
+  if (CountOutputPins(cell) == 0) {
     return false;
   }
 
@@ -462,6 +465,9 @@ bool AbcLibrary::IsSupportedCell(const std::string& cell_name)
     int num_gates = abc::SC_LibCellNum(abc_library_.get());
     for (int i = 0; i < num_gates; i++) {
       abc::SC_Cell* cell = abc::SC_LibCell(abc_library_.get(), i);
+      if (cell->n_outputs != 1) {
+        continue;
+      }
       supported_cells_.insert(cell->pName);
     }
   }
@@ -476,67 +482,92 @@ void AbcLibrary::InitializeConstGates()
     if (current_cell->n_inputs != 0) {
       continue;
     }
-    if (current_cell->n_outputs != 1) {
-      continue;
-    }
+    for (int i = current_cell->n_inputs;
+         i < current_cell->n_inputs + current_cell->n_outputs;
+         i++) {
+      abc::SC_Pin* pin = abc::SC_CellPin(current_cell, 0);
+      // In ABC land we store the right hand side of the truth
+      // table in a bit vector sort of thing. Since the const
+      // cell has less than 6 inputs its truth table should be
+      // in entry zero.
+      abc::word constant_0 = 0;
+      abc::word constant_1 = ~constant_0;
+      abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
+      if (truth_table == constant_0) {
+        const0_gates_.insert(current_cell->pName);
+      }
 
-    abc::SC_Pin* pin = abc::SC_CellPin(current_cell, 0);
-    // In ABC land we store the right hand side of the truth
-    // table in a bit vector sort of thing. Since the const
-    // cell has less than 6 inputs its truth table should be
-    // in entry zero.
-    abc::word constant_0 = 0;
-    abc::word constant_1 = ~constant_0;
-    abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
-    if (truth_table == constant_0) {
-      const0_gates_.insert(current_cell->pName);
-    }
-
-    if (truth_table == constant_1) {
-      const1_gates_.insert(current_cell->pName);
+      if (truth_table == constant_1) {
+        const1_gates_.insert(current_cell->pName);
+      }
     }
   }
 }
 
 // Find cell matching truth table for constant cells either 0 or 1
 // where 1 is represented as all 1s in binary.
-abc::SC_Cell* FindConstantCell(abc::SC_Lib* library, abc::word constant)
+std::pair<abc::SC_Cell*, abc::SC_Pin*> FindConstantCell(abc::SC_Lib* library,
+                                                        abc::word constant)
 {
-  abc::SC_Cell* result = nullptr;
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> result = {nullptr, nullptr};
+  std::optional<float> min_area;
   for (int i = 0; i < abc::SC_LibCellNum(library); i++) {
     abc::SC_Cell* current_cell = abc::SC_LibCell(library, i);
     if (current_cell->n_inputs != 0) {
       continue;
     }
-    if (current_cell->n_outputs != 1) {
-      continue;
-    }
 
-    abc::SC_Pin* pin = abc::SC_CellPin(current_cell, 0);
-    // In ABC land we store the right hand side of the truth
-    // table in a bit vector sort of thing. Since the const
-    // cell has less than 6 inputs its truth table should be
-    // in entry zero.
-    abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
-    if (truth_table == constant) {
-      return current_cell;
+    for (int i = current_cell->n_inputs;
+         i < current_cell->n_inputs + current_cell->n_outputs;
+         i++) {
+      abc::SC_Pin* pin = abc::SC_CellPin(current_cell, i);
+      // In ABC land we store the right hand side of the truth
+      // table in a bit vector sort of thing. Since the const
+      // cell has less than 6 inputs its truth table should be
+      // in entry zero.
+      abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
+
+      // If the truth table matches the constant value then this is
+      // the cell we are looking for. Try to choose the cell with the
+      // smallest area.
+      if (truth_table == constant) {
+        if (min_area.has_value()) {
+          if (current_cell->area < min_area.value()) {
+            result.first = current_cell;
+            result.second = pin;
+            min_area = current_cell->area;
+          }
+        } else {
+          result.first = current_cell;
+          result.second = pin;
+          min_area = current_cell->area;
+        }
+      }
     }
   }
 
   return result;
 }
 
-abc::SC_Cell* AbcLibrary::ConstantZeroCell()
+std::pair<abc::SC_Cell*, abc::SC_Pin*> AbcLibrary::ConstantZeroCell()
 {
+  if (const0_cell_) {
+    return const0_cell_.value();
+  }
   abc::word constant_0 = 0;
-  return FindConstantCell(abc_library_.get(), constant_0);
+  const0_cell_ = FindConstantCell(abc_library_.get(), constant_0);
+  return const0_cell_.value();
 }
 
-abc::SC_Cell* AbcLibrary::ConstantOneCell()
+std::pair<abc::SC_Cell*, abc::SC_Pin*> AbcLibrary::ConstantOneCell()
 {
+  if (const1_cell_) {
+    return const1_cell_.value();
+  }
   abc::word constant_0 = 0;
   abc::word constant_1 = ~constant_0;
-  return FindConstantCell(abc_library_.get(), constant_1);
+  const1_cell_ = FindConstantCell(abc_library_.get(), constant_1);
+  return const1_cell_.value();
 }
 
 bool AbcLibrary::IsConst0Cell(const std::string& cell_name)

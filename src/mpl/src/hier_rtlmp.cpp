@@ -284,10 +284,8 @@ void HierRTLMP::runMultilevelAutoclustering()
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, network_, logger_, tritonpart_);
 
-  // Set target structures
-  clustering_engine_->setDesignMetrics(metrics_);
+  // Set target structure
   clustering_engine_->setTree(tree_.get());
-
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -918,7 +916,17 @@ void HierRTLMP::createPinAccessBlockages()
       tree_->available_regions_for_pins.push_back(
           dbuToMicrons(dbu_available_region));
     }
+  }
 
+  const Metrics* top_module_metrics
+      = tree_->maps.module_to_metrics.at(block_->getTopModule()).get();
+
+  // Avoid creating blockages with zero depth.
+  if (top_module_metrics->getStdCellArea() == 0.0) {
+    return;
+  }
+
+  if (!available_regions_for_pins_.empty()) {
     createBlockagesForAvailableRegions();
   } else {
     createBlockagesForConstraintRegions();
@@ -3402,6 +3410,14 @@ void Pusher::pushMacroClusterToCoreBoundaries(
       moveHardMacro(hard_macro, boundary, distance);
     }
 
+    debugPrint(logger_,
+               MPL,
+               "boundary_push",
+               1,
+               "Moved {} in the direction of {}.",
+               macro_cluster->getName(),
+               toString(boundary));
+
     odb::Rect cluster_box(
         block_->micronsToDbu(macro_cluster->getX()),
         block_->micronsToDbu(macro_cluster->getY()),
@@ -3415,14 +3431,6 @@ void Pusher::pushMacroClusterToCoreBoundaries(
     // of its HardMacros.
     if (overlapsWithHardMacro(cluster_box, hard_macros)
         || overlapsWithIOBlockage(cluster_box)) {
-      debugPrint(logger_,
-                 MPL,
-                 "boundary_push",
-                 1,
-                 "Overlap found when moving {} to {}. Push reverted.",
-                 macro_cluster->getName(),
-                 toString(boundary));
-
       // Move back to original position.
       for (HardMacro* hard_macro : hard_macros) {
         moveHardMacro(hard_macro, boundary, (-distance));
@@ -3505,6 +3513,12 @@ bool Pusher::overlapsWithHardMacro(
         && cluster_box.yMin() < hard_macro->getUYDBU()
         && cluster_box.xMax() > hard_macro->getXDBU()
         && cluster_box.yMax() > hard_macro->getYDBU()) {
+      debugPrint(logger_,
+                 MPL,
+                 "boundary_push",
+                 1,
+                 "\tFound overlap with HardMacro {}. Push will be reverted.",
+                 hard_macro->getName());
       return true;
     }
   }
@@ -3516,8 +3530,15 @@ bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box)
 {
   for (const odb::Rect& io_blockage : io_blockages_) {
     if (cluster_box.overlaps(io_blockage)) {
+      debugPrint(logger_,
+          MPL,
+          "boundary_push",
+          1,
+          "\tFound overlap with IO blockage {}. Push will be reverted.",
+          io_blockage);
       return true;
     }
+
   }
 
   return false;

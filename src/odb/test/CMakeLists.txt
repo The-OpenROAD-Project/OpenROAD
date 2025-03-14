@@ -35,10 +35,10 @@ or_integration_tests(
     read_def58
     read_lef
     read_zipped
-    replace_design1
-    replace_design2
-    replace_design3
-    replace_design4
+    replace_hier_mod1
+    replace_hier_mod2
+    replace_hier_mod3
+    replace_hier_mod4
     rounding
     row_settings
     sky130hd_multi_patterned

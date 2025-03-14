@@ -120,7 +120,7 @@
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 165
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 48.10 um
+[INFO CTS-0101]  Average sink wire length 45.88 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 30
 [INFO CTS-0098] Clock net "CELL\/clk2"

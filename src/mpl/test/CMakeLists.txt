@@ -15,6 +15,9 @@ or_integration_tests(
     io_pads1
     orientation_improve1
     orientation_improve2
+    boundary_push1
+    boundary_push2
+    boundary_push3
 )
 
 # Skipped

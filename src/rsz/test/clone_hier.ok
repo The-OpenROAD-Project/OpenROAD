@@ -152,49 +152,54 @@ worst slack -0.16
       135 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.091 |      -19.3 |     16 | load82/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      137 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     15 | load90/D
-      138 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     14 | load90/D
-      139 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     13 | load90/D
-      140 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     13 | load90/D
-      140 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     12 | load90/D
-      141 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     11 | load90/D
-      142 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |     10 | load90/D
-      143 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |      9 | load90/D
-      144 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |      8 | load90/D
-      145 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.092 |      -19.4 |      7 | load90/D
+      137 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.101 |      -19.5 |     15 | load82/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      147 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      6 | load95/D
-      148 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-      149 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      4 | load95/D
-      150 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      4 | load95/D
-      150 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      3 | load95/D
-      151 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      2 | load95/D
+      139 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |     13 | load90/D
+      140 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |     13 | load90/D
+      140 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |     12 | load90/D
+      141 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |     11 | load90/D
+      142 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |     10 | load90/D
+      143 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |      9 | load90/D
+      144 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |      8 | load90/D
+      145 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |      7 | load90/D
+      146 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.092 |      -19.4 |      6 | load90/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      152 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      2 | load95/D
+      148 |       0 |       0 |        0 |      4 |     1 |    +0.8% |   -0.101 |      -19.5 |      5 | load90/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      153 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      2 | load95/D
+      150 |       0 |       0 |        0 |      5 |     1 |    +1.0% |   -0.095 |      -19.5 |      4 | load95/D
+      150 |       0 |       0 |        0 |      5 |     1 |    +1.0% |   -0.095 |      -19.5 |      3 | load95/D
+      151 |       0 |       0 |        0 |      5 |     1 |    +1.0% |   -0.095 |      -19.5 |      2 | load95/D
+      152 |       0 |       0 |        0 |      5 |     1 |    +1.0% |   -0.095 |      -19.5 |      1 | load95/D
+      153 |       0 |       0 |        0 |      5 |     1 |    +1.0% |   -0.095 |      -19.5 |      0 | load95/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      154 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      2 | load95/D
+      155 |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      0 | load95/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      155 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      2 | load95/D
+      156 |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      0 | load95/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
-      156 |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      2 | load95/D
-     157* |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-     158* |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-     159* |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-     160* |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-     160* |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-     161* |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
-    final |       0 |       0 |        0 |      3 |     1 |    +0.6% |   -0.096 |      -19.4 |      5 | load95/D
+      157 |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      0 | load95/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
+      158 |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      0 | load95/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q
+[WARNING RSZ-0075] makeBufferedNet failed for driver cloneU1/nand_inst_0/ZN
+      159 |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      0 | load95/D
+     160* |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
+     160* |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
+     161* |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
+     162* |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
+     163* |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
+     164* |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
+    final |       0 |       1 |        0 |      5 |     1 |    +1.0% |   -0.092 |      -19.5 |      5 | load95/D
 --------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0041] Resized 1 instances.
 [INFO RSZ-0043] Swapped pins on 1 instances.
-[INFO RSZ-0049] Cloned 3 instances.
+[INFO RSZ-0049] Cloned 5 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -0.10
+worst slack -0.09
 No differences found.

@@ -18,9 +18,19 @@ using gpl::Replace;
 
 %}
 
+%import <std_vector.i>
+%import "dbtypes.i"
+%import "dbenums.i"
 %include "../../Exception.i"
 
 %inline %{
+
+void
+placement_cluster_cmd(const std::vector<odb::dbInst*>& cluster)
+{
+  Replace* replace = getReplace();
+  replace->addPlacementCluster(cluster);
+}
 
 void 
 replace_reset_cmd() 
@@ -287,7 +297,8 @@ set_debug_cmd(int pause_iterations,
               bool draw_bins,
               bool initial,
               const char* inst_name,
-              int start_iter)
+              int start_iter,
+              bool update_db)
 {
   Replace* replace = getReplace();
   odb::dbInst* inst = nullptr;
@@ -296,7 +307,7 @@ set_debug_cmd(int pause_iterations,
     inst = block->findInst(inst_name);
   }
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst, start_iter);
+                    initial, inst, start_iter, update_db);
 }
 
 %} // inline
