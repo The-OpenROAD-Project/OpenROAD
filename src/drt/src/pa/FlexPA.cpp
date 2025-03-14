@@ -96,6 +96,16 @@ void FlexPA::init()
   initAllSkipInstTerm();
 }
 
+void FlexPA::deleteInst(frInst* inst)
+{
+  const bool is_own_unique = (inst == unique_insts_.getUnique(inst));
+  frInst* class_head = unique_insts_.deleteInst(inst);
+  if (!class_head) {
+    // Precisa pegar o corner case que a unique inst em si é deletada.
+    deletePatternInst(inst);
+  }
+}
+
 void FlexPA::applyPatternsFile(const char* file_path)
 {
   unique_inst_patterns_.clear();
