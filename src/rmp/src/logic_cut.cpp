@@ -485,6 +485,13 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
     while (pin_iterator->hasNext()) {
       sta::Pin* pin = pin_iterator->next();
       sta::Net* connected_net = network->net(pin);
+      if (connected_net == nullptr) {
+        // This net is not connected to anything, so we cannot delete it.
+        // This can happen if you have an unconnected output port.
+        // For example one of Sky130's tie cell has both high and low outputs
+        // and only one is connected to a net.
+        continue;
+      }
       // If pin isn't a primary input or output add to deleted list. The only
       // way this can happen is if a net is only used within the cutset, and
       // in that case we want to delete it.

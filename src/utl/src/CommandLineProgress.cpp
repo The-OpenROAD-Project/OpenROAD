@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -33,60 +33,30 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "CommandLineProgress.h"
 
-#include <memory>
-#include <string>
+#include "utl/Logger.h"
 
-namespace odb {
-class dbDatabase;
-class dbTech;
-}  // namespace odb
+namespace utl {
 
-namespace sta {
-class dbSta;
-}  // namespace sta
-
-extern "C" {
-struct Tcl_Interp;
+CommandLineProgress::CommandLineProgress(Logger* logger) : Progress(logger)
+{
 }
 
-namespace ord {
-
-class OpenRoad;
-
-class Tech
+void CommandLineProgress::start(std::shared_ptr<ProgressReporter>& reporter)
 {
- public:
-  // interp is only passed by standalone OR as it gets its
-  // interpreter from Tcl_Main.
-  Tech(Tcl_Interp* interp = nullptr,
-       const char* log_filename = nullptr,
-       const char* metrics_filename = nullptr);
-  ~Tech();
+}
 
-  void readLef(const std::string& file_name);
-  void readLiberty(const std::string& file_name);
-  odb::dbDatabase* getDB();
-  odb::dbTech* getTech();
-  sta::dbSta* getSta();
+void CommandLineProgress::update(ProgressReporter* reporter)
+{
+}
 
-  float nominalProcess();
-  float nominalVoltage();
-  float nominalTemperature();
+void CommandLineProgress::end(ProgressReporter* reporter)
+{
+}
 
-  float timeScale();
-  float resistanceScale();
-  float capacitanceScale();
-  float voltageScale();
-  float currentScale();
-  float powerScale();
-  float distanceScale();
+void CommandLineProgress::deleted(ProgressReporter* reporter)
+{
+}
 
- private:
-  OpenRoad* app_;
-
-  friend class Design;
-};
-
-}  // namespace ord
+}  // namespace utl

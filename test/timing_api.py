@@ -33,3 +33,15 @@ for lib in tech.getDB().getLibs():
             print("  ", mterm.getName())
             for m in timing.getTimingFanoutFrom(mterm):
                 print("    ", m.getName())
+
+print(tech.nominalProcess())
+print(tech.nominalVoltage())
+print(tech.nominalTemperature())
+
+print(tech.timeScale())
+print(tech.resistanceScale())
+print(tech.capacitanceScale())
+print(tech.voltageScale())
+print(tech.currentScale())
+print(tech.powerScale())
+print(tech.distanceScale())

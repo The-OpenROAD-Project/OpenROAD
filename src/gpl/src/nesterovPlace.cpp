@@ -424,6 +424,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     // For JPEG Saving
     // debug
+    if (npVars_.debug && npVars_.debug_update_db_every_iteration) {
+      updateDb();
+    }
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
       bool update

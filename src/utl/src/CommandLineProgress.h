@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2025, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -35,58 +35,23 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include <csignal>
 
-namespace odb {
-class dbDatabase;
-class dbTech;
-}  // namespace odb
+#include "utl/Progress.h"
 
-namespace sta {
-class dbSta;
-}  // namespace sta
+namespace utl {
 
-extern "C" {
-struct Tcl_Interp;
-}
+class Logger;
 
-namespace ord {
-
-class OpenRoad;
-
-class Tech
+class CommandLineProgress : public Progress
 {
  public:
-  // interp is only passed by standalone OR as it gets its
-  // interpreter from Tcl_Main.
-  Tech(Tcl_Interp* interp = nullptr,
-       const char* log_filename = nullptr,
-       const char* metrics_filename = nullptr);
-  ~Tech();
-
-  void readLef(const std::string& file_name);
-  void readLiberty(const std::string& file_name);
-  odb::dbDatabase* getDB();
-  odb::dbTech* getTech();
-  sta::dbSta* getSta();
-
-  float nominalProcess();
-  float nominalVoltage();
-  float nominalTemperature();
-
-  float timeScale();
-  float resistanceScale();
-  float capacitanceScale();
-  float voltageScale();
-  float currentScale();
-  float powerScale();
-  float distanceScale();
-
- private:
-  OpenRoad* app_;
-
-  friend class Design;
+  CommandLineProgress(Logger* logger);
+  ~CommandLineProgress() override = default;
+  void start(std::shared_ptr<ProgressReporter>& reporter) override;
+  void update(ProgressReporter* reporter) override;
+  void end(ProgressReporter* reporter) override;
+  void deleted(ProgressReporter* reporter) override;
 };
 
-}  // namespace ord
+}  // namespace utl
