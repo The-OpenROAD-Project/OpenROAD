@@ -1928,8 +1928,7 @@ void IOPlacer::getConstraintsFromDB()
         getBlock()->dbuToMicrons(interval.getBegin()),
         getBlock()->dbuToMicrons(interval.getEnd()),
         getEdgeString(interval.getEdge()));
-    constraints_.push_back(
-        Constraint(std::move(pins), Direction::invalid, interval));
+    constraints_.emplace_back(pins, Direction::invalid, interval);
   }
 }
 
