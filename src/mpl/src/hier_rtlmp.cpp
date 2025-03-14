@@ -3094,10 +3094,10 @@ void Pusher::setIOBlockages(
 {
   for (const auto& [boundary, box] : boundary_to_io_blockage) {
     boundary_to_io_blockage_[boundary]
-        = odb::Rect(block_->micronsToDbu(box.getX()),
-                    block_->micronsToDbu(box.getY()),
-                    block_->micronsToDbu(box.getX() + box.getWidth()),
-                    block_->micronsToDbu(box.getY() + box.getHeight()));
+        = odb::Rect(block_->micronsToDbu(box.xMin()),
+                    block_->micronsToDbu(box.yMin()),
+                    block_->micronsToDbu(box.xMax()),
+                    block_->micronsToDbu(box.yMax()));
   }
 }
 
