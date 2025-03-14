@@ -985,19 +985,19 @@ class dbBlock : public dbObject
   /// Find the rectangle corresponding to the constraint region in a specific
   /// edge of the die area.
   ///
-  Rect findConstraintRegion(const std::string& edge, int begin, int end);
+  Rect findConstraintRegion(const Direction2D::Value& edge, int begin, int end);
 
   ///
   /// Add region constraint for dbBTerms according to their IO type.
   ///
-  void addBTermDirectionConstraint(const std::string& direction,
-                                   const Rect& constraint_region);
+  void addBTermConstraintByDirection(dbIoType direction,
+                                     const Rect& constraint_region);
 
   ///
   /// Add region constraint for dbBTerms according to their names.
   ///
-  void addBTermNamesConstraint(const std::vector<dbBTerm*>& bterms,
-                               const Rect& constraint_region);
+  void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
+                             const Rect& constraint_region);
 
   ///
   /// Get all the instance-terminals of this block.
@@ -1904,12 +1904,6 @@ class dbBTerm : public dbObject
   /// Returns true if the current BTerm has a mirrored BTerm.
   ///
   bool hasMirroredBTerm();
-
-  ///
-  /// Set the constraint region of this BTerm based on the a given region.
-  ///
-
-  void setMirroredConstraintRegion(const Rect& region);
 
   ///
   /// Return true if this BTerm is mirrored with another pin.
