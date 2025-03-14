@@ -999,6 +999,16 @@ class dbBlock : public dbObject
   void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
                              const Rect& constraint_region);
 
+  /// 
+  /// Find the Direction2D value corresponding to a given edge name.
+  /// 
+  Direction2D::Value findDirectionByEdge(const std::string& edge);
+
+  /// 
+  /// Find the dbIoType value corresponding to a given direction name.
+  ///
+  dbIoType getIoTypeByDirection(const std::string& direction);
+
   ///
   /// Get all the instance-terminals of this block.
   ///

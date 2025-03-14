@@ -808,16 +808,20 @@ proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
 
   set direction [parse_direction "add_direction_constraint" $dir]
-  set constraint_region [$block findConstraintRegion $edge $begin $end]
-  $block addBTermDirectionConstraint $direction $constraint_region
+  set edge_dir [parse_edge $edge]
+  set constraint_region [$block findConstraintRegion $edge_dir $begin $end]
+
+  $block addBTermConstraintByDirection $direction $constraint_region
 }
 
 proc add_names_constraint { names edge begin end } {
   set block [get_block]
 
   set pin_list [ppl::parse_pin_names "set_io_pin_constraints" $names]
-  set constraint_region [$block findConstraintRegion $edge $begin $end]
-  $block addBTermNamesConstraint $pin_list $constraint_region
+  set edge_dir [parse_edge $edge]
+  set constraint_region [$block findConstraintRegion $edge_dir $begin $end]
+
+  $block addBTermsToConstraint $pin_list $constraint_region
 }
 
 proc add_pin_group {pin_list order} {
@@ -833,26 +837,31 @@ proc add_mirrored_pins {bterm1 bterm2} {
 }
 
 proc parse_direction { cmd direction } {
+  set block [get_block]
   if {
     [regexp -nocase -- {^INPUT$} $direction] ||
     [regexp -nocase -- {^OUTPUT$} $direction] ||
     [regexp -nocase -- {^INOUT$} $direction] ||
     [regexp -nocase -- {^FEEDTHRU$} $direction]
   } {
-    return [string tolower $direction]
+    return [$block getIoTypeByDirection $direction]
   } else {
     utl::error ODB 12 "$cmd: Invalid bterm direction."
   }
 }
 
-proc check_edge { edge } {
+proc parse_edge { edge } {
+  set edge [string tolower $edge]
+  set block [get_block]
+
   if {
     $edge != "top" && $edge != "bottom" &&
     $edge != "left" && $edge != "right"
   } {
     utl::error ODB 11 "$cmd: $edge is an invalid edge. Use top, bottom, left or right."
   }
-  return $edge
+
+  return [$block findDirectionByEdge $edge]
 }
 
 proc get_block {} {
