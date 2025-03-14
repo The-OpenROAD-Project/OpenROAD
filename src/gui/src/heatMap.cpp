@@ -409,7 +409,8 @@ void HeatMapDataSource::clearMap()
 
 void HeatMapDataSource::setupMap()
 {
-  if (getBlock() == nullptr) {
+  if (getBlock() == nullptr  ||
+      getBlock()->getDieArea().area() == 0) {
     return;
   }
 
