@@ -203,11 +203,11 @@ write_verilog_cmd(const char *filename,
 }
 
 void
-replace_design_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
+replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  db_network->replaceDesign(mod_inst, module);
+  db_network->replaceHierModule(mod_inst, module);
 }
 
 %} // inline

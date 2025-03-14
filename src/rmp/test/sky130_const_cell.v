@@ -5,11 +5,9 @@ module top(clk, c);
   output c;
 
   wire flop_net;
-  wire _unconnected_;
 
   sky130_fd_sc_hd__conb_1 _403_ (
-    .HI(flop_net),
-    .LO(_unconnected_)
+    .HI(flop_net)
   );
 
   sky130_fd_sc_hd__dfxtp_1 output_flop (
