@@ -792,6 +792,7 @@ class NesterovPlaceVars
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
   int debug_start_iter = 0;
+  bool debug_update_db_every_iteration = false;
 
   void reset();
 };
