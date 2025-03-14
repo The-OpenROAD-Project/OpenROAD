@@ -1627,46 +1627,37 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
-Rect dbBlock::findConstraintRegion(const std::string& edge, int begin, int end)
+Rect dbBlock::findConstraintRegion(const Direction2D::Value& edge,
+                                   int begin,
+                                   int end)
 {
   Rect constraint_region;
   const Rect& die_bounds = getDieArea();
-  if (edge == "bottom") {
+  if (edge == Direction2D::South) {
     constraint_region = Rect(begin, die_bounds.yMin(), end, die_bounds.yMin());
-  } else if (edge == "top") {
+  } else if (edge == Direction2D::North) {
     constraint_region = Rect(begin, die_bounds.yMax(), end, die_bounds.yMax());
-  } else if (edge == "left") {
+  } else if (edge == Direction2D::West) {
     constraint_region = Rect(die_bounds.xMin(), begin, die_bounds.xMin(), end);
-  } else if (edge == "right") {
+  } else if (edge == Direction2D::East) {
     constraint_region = Rect(die_bounds.xMax(), begin, die_bounds.xMax(), end);
   }
 
   return constraint_region;
 }
 
-void dbBlock::addBTermDirectionConstraint(const std::string& direction,
-                                          const Rect& constraint_region)
+void dbBlock::addBTermConstraintByDirection(dbIoType direction,
+                                            const Rect& constraint_region)
 {
-  odb::dbIoType dir;
-  if (direction == "input") {
-    dir = odb::dbIoType::INPUT;
-  } else if (direction == "output") {
-    dir = odb::dbIoType::OUTPUT;
-  } else if (direction == "inout") {
-    dir = odb::dbIoType::INOUT;
-  } else {
-    dir = odb::dbIoType::FEEDTHRU;
-  }
-
   for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getIoType().getValue() == dir.getValue()) {
+    if (bterm->getIoType() == direction) {
       bterm->setConstraintRegion(constraint_region);
     }
   }
 }
 
-void dbBlock::addBTermNamesConstraint(const std::vector<dbBTerm*>& bterms,
-                                      const Rect& constraint_region)
+void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
+                                    const Rect& constraint_region)
 {
   for (dbBTerm* bterm : bterms) {
     const auto& bterm_constraint = bterm->getConstraintRegion();

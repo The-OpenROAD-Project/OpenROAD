@@ -103,6 +103,7 @@ class _dbBTerm : public _dbObject
   void connectModNet(_dbModNet* net, _dbBlock* block);
   void disconnectNet(_dbBTerm* bterm, _dbBlock* block);
   void disconnectModNet(_dbBTerm* bterm, _dbBlock* block);
+  void setMirroredConstraintRegion(const Rect& region, _dbBlock* block);
 
   bool operator==(const _dbBTerm& rhs) const;
   bool operator!=(const _dbBTerm& rhs) const { return !operator==(rhs); }
