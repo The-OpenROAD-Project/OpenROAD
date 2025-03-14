@@ -1673,6 +1673,24 @@ void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
   }
 }
 
+Direction2D::Value dbBlock::findDirectionByEdge(const std::string& edge)
+{
+  if (edge == "bottom") {
+    return Direction2D::South;
+  } else if (edge == "top") {
+    return Direction2D::North;
+  } else if (edge == "left") {
+    return Direction2D::West;
+  }
+  
+  return Direction2D::East;
+}
+
+dbIoType dbBlock::getIoTypeByDirection(const std::string& direction)
+{
+  return dbIoType(direction.c_str());
+}
+
 dbSet<dbITerm> dbBlock::getITerms()
 {
   _dbBlock* block = (_dbBlock*) this;
