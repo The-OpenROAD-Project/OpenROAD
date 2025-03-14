@@ -47,6 +47,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "ResizerObserver.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -4604,6 +4605,12 @@ void Resizer::copyDontUseFromLiberty()
       }
     }
   }
+}
+
+void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
+{
+  repair_design_->setDebugGraphics(graphics);
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace rsz

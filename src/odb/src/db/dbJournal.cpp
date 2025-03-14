@@ -405,10 +405,74 @@ void dbJournal::redo_createObject()
                  b->getId(),
                  merge);
       dbCCSeg::create(a, b, merge);
+      break;
     }
 
-    default:
+    case dbModuleObj: {
+      std::string name;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) obj_id;
+      dbModule::create(_block, name.c_str());
       break;
+    }
+
+    case dbModITermObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      dbModInst* parent_mod_inst = dbModInst::getModInst(_block, parent_obj_id);
+      dbModITerm::create(parent_mod_inst, name.c_str());
+      break;
+    }
+
+    case dbModBTermObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
+      dbModBTerm::create(parent_module, name.c_str());
+      break;
+    }
+
+    case dbModInstObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      uint master_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      _log.pop(master_obj_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
+      dbModule* master_module = dbModule::getModule(_block, master_obj_id);
+      dbModInst::create(parent_module, master_module, name.c_str());
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_obj_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
+      dbModNet::create(parent_module, name.c_str());
+      break;
+    }
+    default: {
+      _logger->critical(
+          utl::ODB, 1107, "Unknown type of action for redo_createObject");
+      break;
+    }
   }
 }
 
@@ -550,8 +614,72 @@ void dbJournal::redo_deleteObject()
       }
       break;
     }
-    default:
+
+    case dbModuleObj: {
+      uint module_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(module_id);
+      (void) name;
+      auto module = dbModule::getModule(_block, module_id);
+      dbModule::destroy(module);
       break;
+    }
+
+    case dbModITermObj: {
+      uint obj_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) name;
+      auto moditerm = dbModITerm::getModITerm(_block, obj_id);
+      dbModITerm::destroy(moditerm);
+      break;
+    }
+
+    case dbModBTermObj: {
+      uint obj_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) name;
+      auto modbterm = dbModBTerm::getModBTerm(_block, obj_id);
+      dbModBTerm::destroy(modbterm);
+      break;
+    }
+
+    case dbModInstObj: {
+      uint obj_id;
+      uint parent_id;
+      uint master_id;
+      std::string name;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_id);
+      _log.pop(master_id);
+      (void) name;
+      auto modinst = dbModInst::getModInst(_block, obj_id);
+      dbModInst::destroy(modinst);
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint obj_id;
+      uint parent_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_id);
+      (void) name;
+      auto modnet = dbModNet::getModNet(_block, obj_id);
+      dbModNet::destroy(modnet);
+      break;
+    }
+    default: {
+      _logger->critical(
+          utl::ODB, 1108, "Unknown type of action for redo_deleteObject");
+      break;
+    }
   }
 }
 
@@ -610,8 +738,38 @@ void dbJournal::redo_connectObject()
       bterm->connect(net);
       break;
     }
-    default:
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      uint modnet_id;
+      _log.pop(modbterm_id);
+      _log.pop(modnet_id);
+      dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      if (modnet_id != 0) {
+        dbModNet* modnet = dbModNet::getModNet(_block, modnet_id);
+        modbterm->connect(modnet);
+      }
       break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      uint modnet_id;
+      _log.pop(moditerm_id);
+      _log.pop(modnet_id);
+      dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      if (modnet_id != 0) {
+        dbModNet* modnet = dbModNet::getModNet(_block, modnet_id);
+        moditerm->connect(modnet);
+      }
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 1110, "Unknown type of object for redo_connectObject");
+      break;
+    }
   }
 }
 
@@ -625,15 +783,23 @@ void dbJournal::redo_disconnectObject()
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
+      uint mnet_id;
       _log.pop(net_id);
+      _log.pop(mnet_id);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  2,
                  "REDO ECO: disconnect dbITermObj, iterm_id {}",
                  iterm_id);
-      // note: this will disconnect the modnet and the dbNet
-      iterm->disconnect();
+      if (net_id != 0 && mnet_id != 0) {
+        // note: this will disconnect the modnet and the dbNet
+        iterm->disconnect();
+      } else if (net_id != 0) {
+        iterm->disconnectDbNet();
+      } else if (mnet_id != 0) {
+        iterm->disconnectModNet();
+      }
       break;
     }
 
@@ -654,8 +820,33 @@ void dbJournal::redo_disconnectObject()
       break;
     }
 
-    default:
+    case dbModBTermObj: {
+      uint modbterm_id;
+      uint modnet_id;
+      _log.pop(modbterm_id);
+      _log.pop(modnet_id);
+      (void) modnet_id;
+      auto modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      modbterm->disconnect();
       break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      uint modnet_id;
+      _log.pop(moditerm_id);
+      _log.pop(modnet_id);
+      (void) modnet_id;
+      auto moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      moditerm->disconnect();
+      break;
+    }
+
+    default: {
+      _logger->critical(
+          utl::ODB, 1109, "Unknown type of action for redo_disconnectObject");
+      break;
+    }
   }
 }
 
@@ -1498,6 +1689,7 @@ void dbJournal::undo_createObject()
       dbGuide::destroy(guide);
       break;
     }
+
     case dbInstObj: {
       uint lib_id;
       uint master_id;
@@ -1522,18 +1714,106 @@ void dbJournal::undo_createObject()
       break;
     }
 
+    case dbModuleObj: {
+      std::string name;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      (void) name;
+      dbModule* mod = dbModule::getModule(_block, obj_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create module {} at id {}",
+                 mod->getName(),
+                 obj_id);
+      dbModule::destroy(mod);
+      break;
+    }
+
+    case dbModInstObj: {
+      uint obj_id;
+      std::string name;
+      uint parent_id;
+      uint master_id;
+
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_id);
+      _log.pop(master_id);
+
+      (void) name;
+      dbModInst* mod_inst = dbModInst::getModInst(_block, obj_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create mod inst {} at id {}",
+                 mod_inst->getName(),
+                 obj_id);
+      dbModInst::destroy(mod_inst);
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint mod_net_id;
+      uint parent_id;
+      _log.pop(name);
+      _log.pop(mod_net_id);
+      _log.pop(parent_id);
+      (void) name;
+      dbModNet* mod_net = dbModNet::getModNet(_block, mod_net_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create mod net {} at id {}",
+                 mod_net->getName(),
+                 mod_net_id);
+      dbModNet::destroy(mod_net);
+      break;
+    }
+
     case dbModBTermObj: {
+      std::string name;
       uint modbterm_id;
+      uint parent_id;
+      _log.pop(name);
       _log.pop(modbterm_id);
+      _log.pop(parent_id);
+      (void) name;
+      (void) parent_id;
       dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create modbterm {} at id {}",
+                 modbterm->getName(),
+                 modbterm_id);
       dbModBTerm::destroy(modbterm);
       break;
     }
 
     case dbModITermObj: {
+      std::string name;
       uint moditerm_id;
+      uint mod_inst_parent_id;
+      _log.pop(name);
       _log.pop(moditerm_id);
+      _log.pop(mod_inst_parent_id);
       dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
+      (void) name;
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create moditerm {} at id {}",
+                 moditerm->getName(),
+                 moditerm_id);
       dbModITerm::destroy(moditerm);
       break;
     }
@@ -1633,6 +1913,97 @@ void dbJournal::undo_deleteObject()
       net_impl->_non_default_rule = ndr_id;
       break;
     }
+
+    case dbModuleObj: {
+      std::string name;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      dbModule::create(_block, name.c_str());
+      break;
+    }
+
+    case dbModInstObj: {
+      std::string name;
+      uint obj_id;
+      uint master_module_id;
+      uint parent_module_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(parent_module_id);
+      _log.pop(master_module_id);
+      dbModule* parent_module = dbModule::getModule(_block, parent_module_id);
+      dbModule* master_module = dbModule::getModule(_block, master_module_id);
+      auto mod_inst
+          = dbModInst::create(parent_module, master_module, name.c_str());
+      (void) mod_inst;
+      break;
+    }
+
+    case dbModNetObj: {
+      std::string name;
+      uint module_id;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(module_id);
+      // get the parent module
+      dbModule* module = dbModule::getModule(_block, module_id);
+      auto net = dbModNet::create(module, name.c_str());
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbModnet {} {}",
+                 name.c_str(),
+                 net->getId());
+      (void) net;
+      break;
+    }
+
+    case dbModBTermObj: {
+      std::string name;
+      uint module_id;
+      uint obj_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(module_id);
+      // get the parent module
+      dbModule* parent_module = dbModule::getModule(_block, module_id);
+      auto modbterm = dbModBTerm::create(parent_module, name.c_str());
+
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbModBTerm {} {}",
+                 name.c_str(),
+                 modbterm->getId());
+      (void) modbterm;
+      break;
+    }
+
+    case dbModITermObj: {
+      std::string name;
+      uint obj_id;
+      uint modinst_id;
+      _log.pop(name);
+      _log.pop(obj_id);
+      _log.pop(modinst_id);
+      // get the parent module
+      dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
+      auto moditerm = dbModITerm::create(mod_inst, name.c_str());
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbModiterm {} {}",
+                 name.c_str(),
+                 moditerm->getId());
+      (void) moditerm;
+      break;
+    }
+
     default: {
       _logger->critical(utl::ODB,
                         417,
@@ -1664,6 +2035,15 @@ void dbJournal::undo_connectObject()
       dbModBTerm* modbterm = dbModBTerm::getModBTerm(_block, modbterm_id);
       uint net_id;
       _log.pop(net_id);
+
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: connect dbModBTerm {} {}",
+                 modbterm->getName(),
+                 modbterm_id);
+
       modbterm->disconnect();
       break;
     }
@@ -1673,9 +2053,14 @@ void dbJournal::undo_connectObject()
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
       uint net_id;
-      _log.pop(net_id);
+      uint mnet_id;
+      _log.pop(net_id);   // the db net
+      _log.pop(mnet_id);  // the modnet
+      (void) (net_id);
+      (void) (mnet_id);
       // disconnects everything: modnet and dbnet
       iterm->disconnect();
+
       break;
     }
 
@@ -1684,7 +2069,11 @@ void dbJournal::undo_connectObject()
       _log.pop(bterm_id);
       dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
       uint net_id;
-      _log.pop(net_id);
+      uint mnet_id;
+      _log.pop(net_id);   // the db net
+      _log.pop(mnet_id);  // the modnet
+      (void) (net_id);
+      (void) (mnet_id);
       bterm->disconnect();
       break;
     }
@@ -1720,7 +2109,14 @@ void dbJournal::undo_disconnectObject()
         dbModNet* mod_net = dbModNet::getModNet(_block, mnet_id);
         iterm->connect(mod_net);
       }
-
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: disconnect dbITerm {} {} {}",
+                 iterm->getName(),
+                 net_id,
+                 mnet_id);
       break;
     }
 
@@ -1730,13 +2126,41 @@ void dbJournal::undo_disconnectObject()
       dbBTerm* bterm = dbBTerm::getBTerm(_block, bterm_id);
       uint net_id;
       _log.pop(net_id);
-      dbNet* net = dbNet::getNet(_block, net_id);
-      bterm->connect(net);
+      if (net_id != 0) {
+        dbNet* net = dbNet::getNet(_block, net_id);
+        bterm->connect(net);
+      }
       uint mnet_id;
       _log.pop(mnet_id);
       if (mnet_id != 0) {
         dbModNet* mnet = dbModNet::getModNet(_block, mnet_id);
         bterm->connect(mnet);
+      }
+      break;
+    }
+
+    case dbModBTermObj: {
+      uint modbterm_id;
+      uint modnet_id;
+      _log.pop(modbterm_id);
+      _log.pop(modnet_id);
+      dbModBTerm* mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      if (modnet_id != 0U) {
+        dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
+        mod_bterm->connect(mnet);
+      }
+      break;
+    }
+
+    case dbModITermObj: {
+      uint moditerm_id;
+      uint modnet_id;
+      _log.pop(moditerm_id);
+      _log.pop(modnet_id);
+      dbModITerm* mod_iterm = dbModITerm::getModITerm(_block, moditerm_id);
+      if (modnet_id != 0U) {
+        dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
+        mod_iterm->connect(mnet);
       }
       break;
     }

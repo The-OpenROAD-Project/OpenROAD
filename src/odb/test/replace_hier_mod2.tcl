@@ -1,5 +1,5 @@
 #
-# replace_design2
+# replace_hier_mod2
 #
 # This gcd instantiates two LCU units:
 # 1) LCU_16_BRENT_KUNG instance _551_ (62 cells)
@@ -22,9 +22,9 @@ report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 
 #set_debug_level ODB replace_design 1
-replace_design _551_ LCU_16_KOGGE_STONE
+replace_hier_module _551_ LCU_16_KOGGE_STONE
 
 report_checks -through _carry_out_and_/C -field input
 report_cell_usage _551_
 
-run_equivalence_test replace_design2 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod2 ./Nangate45/work_around_yosys/ "None"

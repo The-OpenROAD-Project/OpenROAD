@@ -77,15 +77,22 @@ struct Sink
 };
 
 Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
-                       const float xBranch,
-                       const float yBranch,
                        Logger* logger)
-    : logger_(logger), branching_point_(xBranch, yBranch)
 {
+  logger_ = logger;
   sinks_.reserve(sinks.size());
   for (size_t i = 0; i < sinks.size(); ++i) {
     sinks_.emplace_back(sinks[i].first, sinks[i].second, i);
   }
+}
+
+Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
+                       const float xBranch,
+                       const float yBranch,
+                       Logger* logger)
+    : Clustering(sinks, logger)
+{
+  branching_point_ = {xBranch, yBranch};
   srand(56);
 }
 
@@ -126,11 +133,15 @@ void Clustering::iterKmeans(const unsigned iter,
 
 void Clustering::fixSegmentLengths(std::vector<std::pair<float, float>>& means)
 {
+  if (!branching_point_) {
+    return;
+  }
   // First, fix the middle positions
   const unsigned midIdx = means.size() / 2 - 1;
 
-  fixSegment(branching_point_, segment_length_ / 2.0, means[midIdx]);
-  fixSegment(branching_point_, segment_length_ / 2.0, means[midIdx + 1]);
+  fixSegment(branching_point_.value(), segment_length_ / 2.0, means[midIdx]);
+  fixSegment(
+      branching_point_.value(), segment_length_ / 2.0, means[midIdx + 1]);
 
   // Fix lower branch
   for (unsigned i = midIdx; i > 0; --i) {

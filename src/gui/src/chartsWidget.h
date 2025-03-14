@@ -126,7 +126,7 @@ class HistogramView : public QChartView
   void setLimits(const EndPointSlackMap& end_point_to_slack);
 
   utl::Logger* logger_;
-  STAGuiInterface* sta_;
+  STAGuiInterface* sta_{nullptr};
 
   QChart* chart_;
   QValueAxis* axis_x_;

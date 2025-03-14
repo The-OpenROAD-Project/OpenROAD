@@ -59,6 +59,7 @@ add_library(rsz_lib
 
 target_sources(rsz
   PRIVATE
+    Graphics.cc
     MakeResizer.cc
     SteinerRenderer.cc
 )
@@ -70,6 +71,7 @@ target_include_directories(rsz
     # A side-effect of including OpenSTA swig files
     ${OPENSTA_HOME}
     ${OPENSTA_HOME}/include/sta
+    .
 )
 
 target_include_directories(rsz_lib

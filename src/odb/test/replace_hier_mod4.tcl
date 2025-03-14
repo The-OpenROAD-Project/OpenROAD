@@ -1,5 +1,5 @@
 #
-# replace_design4
+# replace_hier_mod4
 #
 # Test if uninstantiated module can be swapped
 #
@@ -38,9 +38,9 @@ set_max_delay -to carry_out 1.0
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
 report_cell_usage gcd_1/_552_
 
-replace_design gcd_1/_552_ LCU_16_BRENT_KUNG
+replace_hier_module gcd_1/_552_ LCU_16_BRENT_KUNG
 
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
 report_cell_usage gcd_1/_552_
 
-run_equivalence_test replace_design4 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod4 ./Nangate45/work_around_yosys/ "None"

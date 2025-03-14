@@ -44,6 +44,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
+#include "Graphics.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -775,6 +776,23 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportEquivalentCells(cell, match_cell_footprint);
+}
+
+void set_debug_cmd(const char* net_name,
+                   const bool subdivide_step)
+{
+  Resizer* resizer = getResizer();
+
+  odb::dbNet* net = nullptr;
+  if (net_name) {
+    auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+    net = block->findNet(net_name);
+  }
+
+  auto graphics = std::make_shared<Graphics>();
+  graphics->setNet(net);
+  graphics->stopOnSubdivideStep(subdivide_step);
+  resizer->setDebugGraphics(std::move(graphics));
 }
 
 } // namespace

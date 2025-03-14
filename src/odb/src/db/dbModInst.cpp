@@ -36,6 +36,7 @@
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
+#include "dbJournal.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
 #include "dbModule.h"
@@ -229,6 +230,17 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   }
 
   _dbModInst* modinst = block->_modinst_tbl->create();
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModInstObj);
+    block->_journal->pushParam(name);
+    block->_journal->pushParam(modinst->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->pushParam(master->getId());
+    block->_journal->endAction();
+  }
+
   modinst->_name = strdup(name);
   ZALLOCATED(modinst->_name);
   modinst->_master = master->getOID();
@@ -244,12 +256,25 @@ dbModInst* dbModInst::create(dbModule* parentModule,
 void dbModInst::destroy(dbModInst* modinst)
 {
   _dbModInst* _modinst = (_dbModInst*) modinst;
-  _dbBlock* block = (_dbBlock*) _modinst->getOwner();
-  _dbModule* module = (_dbModule*) modinst->getParent();
+  _dbBlock* _block = (_dbBlock*) _modinst->getOwner();
+  _dbModule* _module = (_dbModule*) modinst->getParent();
 
-  _dbModule* master = (_dbModule*) modinst->getMaster();
-  master->_mod_inst = dbId<_dbModInst>();  // clear
-  dbModule::destroy((dbModule*) master);
+  _dbModule* _master = (_dbModule*) modinst->getMaster();
+
+  if (_block->_journal) {
+    _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    _block->_journal->pushParam(dbModInstObj);
+    _block->_journal->pushParam(modinst->getName());
+    _block->_journal->pushParam(modinst->getId());
+    _block->_journal->pushParam(_module->getId());
+    _block->_journal->pushParam(_master->getId());
+    _block->_journal->endAction();
+  }
+
+  _master->_mod_inst = dbId<_dbModInst>();  // clear
+
+  // Note that we only destroy the module instance, not the module
+  // itself
 
   // remove the moditerm connections
   for (auto moditerm : modinst->getModITerms()) {
@@ -257,17 +282,18 @@ void dbModInst::destroy(dbModInst* modinst)
   }
   // remove the moditerms
   for (auto moditerm : modinst->getModITerms()) {
-    block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
+    _block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
   }
+
   // unlink from parent start
   uint id = _modinst->getOID();
   _dbModInst* prev = nullptr;
-  uint cur = module->_modinsts;
+  uint cur = _module->_modinsts;
   while (cur) {
-    _dbModInst* c = block->_modinst_tbl->getPtr(cur);
+    _dbModInst* c = _block->_modinst_tbl->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        module->_modinsts = _modinst->_module_next;
+        _module->_modinsts = _modinst->_module_next;
       } else {
         prev->_module_next = _modinst->_module_next;
       }
@@ -280,10 +306,11 @@ void dbModInst::destroy(dbModInst* modinst)
   if (_modinst->_group) {
     modinst->getGroup()->removeModInst(modinst);
   }
+
   dbProperty::destroyProperties(_modinst);
-  _dbModule* parent = (_dbModule*) (modinst->getParent());
-  parent->_modinst_hash.erase(modinst->getName());
-  block->_modinst_tbl->destroy(_modinst);
+  _dbModule* _parent = (_dbModule*) (modinst->getParent());
+  _parent->_modinst_hash.erase(modinst->getName());
+  _block->_modinst_tbl->destroy(_modinst);
 }
 
 dbSet<dbModInst>::iterator dbModInst::destroy(dbSet<dbModInst>::iterator& itr)
@@ -396,6 +423,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
     dbModBTerm::destroy(mod_bterm);
     dbModNet* moditerm_m_net = mod_iterm->getModNet();
     mod_iterm->disconnect();
+
     dbModITerm::destroy(mod_iterm);
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0

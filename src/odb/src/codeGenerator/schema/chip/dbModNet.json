@@ -55,7 +55,7 @@
 	      
 	  ],
 	  "constructors":[],
-	  "cpp_includes":["dbBlock.h","dbVector.h","dbModule.h","dbModInst.h","dbITerm.h", "dbModITerm.h","dbModBTerm.h","dbHashTable.hpp"],
+	  "cpp_includes":["dbBlock.h","dbVector.h","dbModule.h","dbModInst.h","dbITerm.h", "dbModITerm.h","dbModBTerm.h","dbHashTable.hpp", "dbJournal.h"],
 	  "h_includes": [
               "dbVector.h"
 	  ]

@@ -189,7 +189,7 @@ void UniqueInsts::computeUnique()
 
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst));
   }
 
   for (auto& inst : design_->getTopBlock()->getInsts()) {

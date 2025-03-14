@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cmath>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -50,6 +51,7 @@ struct Sink;
 class Clustering
 {
  public:
+  Clustering(const std::vector<std::pair<float, float>>& sinks, Logger* logger);
   Clustering(const std::vector<std::pair<float, float>>& sinks,
              float xBranch,
              float yBranch,
@@ -90,7 +92,7 @@ class Clustering
   std::vector<std::vector<Sink*>> clusters_;
 
   float segment_length_ = 0.0;
-  std::pair<float, float> branching_point_;
+  std::optional<std::pair<float, float>> branching_point_;
 };
 
 }  // namespace cts::CKMeans

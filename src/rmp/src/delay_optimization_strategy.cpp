@@ -79,16 +79,12 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
 
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     const abc::Abc_Ntk_t* ntk,
+    AbcLibrary& abc_library,
     utl::Logger* logger)
 {
   auto library = static_cast<abc::Mio_Library_t*>(ntk->pManFunc);
   // Install library for NtkMap
   abc::Abc_FrameSetLibGen(library);
-
-  // Set up libraries for buffering
-  AbcLibraryFactory library_factory(logger);
-  library_factory.AddDbSta(sta_);
-  AbcLibrary abc_sc_library = library_factory.Build();
 
   AbcPrintStats(ntk);
 
@@ -123,7 +119,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
 
   abc::Abc_NtkCleanup(current_network.get(), /*fVerbose=*/false);
 
-  current_network = BufferNetwork(current_network.get(), abc_sc_library);
+  current_network = BufferNetwork(current_network.get(), abc_library);
 
   current_network = WrapUnique(abc::Abc_NtkToNetlist(current_network.get()));
 

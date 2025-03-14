@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbSta.hh"
 #include "logic_optimization_strategy.h"
@@ -23,6 +24,7 @@ class DelayOptimizationStrategy : public LogicOptimizationStrategy
 
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
       const abc::Abc_Ntk_t* ntk,
+      AbcLibrary& abc_library,
       utl::Logger* logger) override;
 
  private:

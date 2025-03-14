@@ -304,7 +304,7 @@ module hi_fanout (clk1,
  output output99;
 
 
- DFF_X1 drvr_1 (.D(data),
+ DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
  DFF_X1 drvr_2 (.D(data),
@@ -703,46 +703,46 @@ module hi_fanout (clk1,
  DFF_X1 load81 (.D(net116),
     .CK(clk1),
     .Q(output81));
- DFF_X1 load82 (.D(net0),
+ DFF_X1 load82 (.D(net146),
     .CK(clk1),
     .Q(output82));
- DFF_X1 load83 (.D(net0),
+ DFF_X1 load83 (.D(net146),
     .CK(clk1),
     .Q(output83));
- DFF_X1 load84 (.D(net0),
+ DFF_X1 load84 (.D(net146),
     .CK(clk1),
     .Q(output84));
- DFF_X1 load85 (.D(net0),
+ DFF_X1 load85 (.D(net146),
     .CK(clk1),
     .Q(output85));
- DFF_X1 load86 (.D(net0),
+ DFF_X1 load86 (.D(net146),
     .CK(clk1),
     .Q(output86));
- DFF_X1 load87 (.D(net0),
+ DFF_X1 load87 (.D(net146),
     .CK(clk1),
     .Q(output87));
- DFF_X1 load88 (.D(net0),
+ DFF_X1 load88 (.D(net146),
     .CK(clk1),
     .Q(output88));
- DFF_X1 load89 (.D(net0),
+ DFF_X1 load89 (.D(net146),
     .CK(clk1),
     .Q(output89));
- DFF_X1 load9 (.D(net0),
+ DFF_X1 load9 (.D(net146),
     .CK(clk1),
     .Q(output9));
- DFF_X1 load90 (.D(net0),
+ DFF_X1 load90 (.D(net162),
     .CK(clk1),
     .Q(output90));
- DFF_X1 load91 (.D(net0),
+ DFF_X1 load91 (.D(net162),
     .CK(clk1),
     .Q(output91));
- DFF_X1 load92 (.D(net0),
+ DFF_X1 load92 (.D(net162),
     .CK(clk1),
     .Q(output92));
- DFF_X1 load93 (.D(net0),
+ DFF_X1 load93 (.D(net162),
     .CK(clk1),
     .Q(output93));
- DFF_X1 load94 (.D(net0),
+ DFF_X1 load94 (.D(net162),
     .CK(clk1),
     .Q(output94));
  DFF_X1 load95 (.D(net0),
@@ -760,19 +760,25 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net0),
     .CK(clk1),
     .Q(output99));
- submodule cloneU1 (.net116_o(net116),
+ submodule cloneU1 (.net162_o(net162),
+    .net146_o(net146),
+    .net116_o(net116),
     .net78_o(net78),
     .net2_o(net2),
     .ip0(clk_to_nand0),
     .ip1(clk_to_nand1),
     .op0(net0));
 endmodule
-module submodule (net116_o,
+module submodule (net162_o,
+    net146_o,
+    net116_o,
     net78_o,
     net2_o,
     ip0,
     ip1,
     op0);
+ output net162_o;
+ output net146_o;
  output net116_o;
  output net78_o;
  output net2_o;
@@ -780,9 +786,13 @@ module submodule (net116_o,
  input ip1;
  output op0;
 
- wire net146_o;
- wire net136_o;
 
+ NAND2_X2 clone7 (.A1(ip1),
+    .A2(ip0),
+    .ZN(net162_o));
+ NAND2_X2 clone5 (.A1(ip1),
+    .A2(ip0),
+    .ZN(net146_o));
  NAND2_X2 clone3 (.A1(ip1),
     .A2(ip0),
     .ZN(net116_o));

@@ -137,7 +137,8 @@ class FlexPA
   void init();
   void initTrackCoords();
   void initViaRawPriority();
-  void initSkipInstTerm();
+  void initAllSkipInstTerm();
+  void initSkipInstTerm(frInst* unique_inst);
   // prep
   void prep();
 

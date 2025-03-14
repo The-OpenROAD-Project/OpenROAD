@@ -164,42 +164,39 @@ void FlexPA::initTrackCoords()
   }
 }
 
-void FlexPA::initSkipInstTerm()
+void FlexPA::initAllSkipInstTerm()
 {
   const auto& unique = unique_insts_.getUnique();
-
-  // Populate the map single-threaded so no further resizing is needed.
-  for (frInst* inst : unique) {
-    for (auto& inst_term : inst->getInstTerms()) {
-      auto term = inst_term->getTerm();
-      auto inst_class = unique_insts_.getClass(inst);
-      skip_unique_inst_term_[{inst_class, term}] = false;
-    }
-  }
-
-  const int unique_size = unique.size();
 #pragma omp parallel for schedule(dynamic)
-  for (int unique_inst_idx = 0; unique_inst_idx < unique_size;
-       unique_inst_idx++) {
-    frInst* inst = unique[unique_inst_idx];
-    for (auto& inst_term : inst->getInstTerms()) {
-      frMTerm* term = inst_term->getTerm();
-      const UniqueInsts::InstSet* inst_class = unique_insts_.getClass(inst);
+  for (frInst* unique_inst : unique) {
+    initSkipInstTerm(unique_inst);
+  }
+}
 
-      // We have to be careful that the skip conditions are true not only of
-      // the unique instance but also all the equivalent instances.
-      bool skip = isSkipInstTermLocal(inst_term.get());
-      if (skip) {
-        for (frInst* inst : *inst_class) {
-          frInstTerm* it = inst->getInstTerm(inst_term->getIndexInOwner());
-          skip = isSkipInstTermLocal(it);
-          if (!skip) {
-            break;
-          }
+void FlexPA::initSkipInstTerm(frInst* unique_inst)
+{
+  for (auto& inst_term : unique_inst->getInstTerms()) {
+    frMTerm* term = inst_term->getTerm();
+    const UniqueInsts::InstSet* inst_class
+        = unique_insts_.getClass(unique_inst);
+
+#pragma omp critical
+    skip_unique_inst_term_[{inst_class, term}] = false;
+
+    // We have to be careful that the skip conditions are true not only of
+    // the unique instance but also all the equivalent instances.
+    bool skip = isSkipInstTermLocal(inst_term.get());
+    if (skip) {
+      for (frInst* inst : *inst_class) {
+        frInstTerm* it = inst->getInstTerm(inst_term->getIndexInOwner());
+        skip = isSkipInstTermLocal(it);
+        if (!skip) {
+          break;
         }
       }
-      skip_unique_inst_term_.at({inst_class, term}) = skip;
     }
+#pragma omp critical
+    skip_unique_inst_term_.at({inst_class, term}) = skip;
   }
 }
 

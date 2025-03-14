@@ -37,6 +37,7 @@
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbITerm.h"
+#include "dbJournal.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -232,6 +233,16 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   }
   parent->_modnets = modnet->getOID();
   parent->_modnet_hash[name] = modnet->getOID();
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(name);
+    block->_journal->pushParam(modnet->getId());
+    block->_journal->pushParam(parent->getId());
+    block->_journal->endAction();
+  }
+
   return (dbModNet*) modnet;
 }
 
@@ -240,6 +251,16 @@ void dbModNet::destroy(dbModNet* mod_net)
   _dbModNet* _modnet = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+
+  // journalling
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(mod_net->getName());
+    block->_journal->pushParam(mod_net->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->endAction();
+  }
 
   uint prev = _modnet->_prev_entry;
   uint next = _modnet->_next_entry;

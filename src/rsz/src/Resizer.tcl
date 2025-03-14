@@ -980,6 +980,21 @@ proc repair_setup_pin { end_pin } {
   repair_setup_pin_cmd $end_pin
 }
 
+proc set_debug { args } {
+  sta::parse_key_args "set_debug" args \
+    keys { -net } \
+    flags { -subdivide_step } ;# checker off
+
+  set net ""
+  if { [info exists keys(-net)] } {
+    set net $keys(-net)
+  }
+
+  set subdivide_step [info exists flags(-subdivide_step)]
+
+  rsz::set_debug_cmd $net $subdivide_step
+}
+
 proc report_swappable_pins { } {
   report_swappable_pins_cmd
 }

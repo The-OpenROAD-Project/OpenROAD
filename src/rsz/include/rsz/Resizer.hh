@@ -138,6 +138,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class ResizerObserver;
 
 class SpefWriter;
 
@@ -445,6 +446,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
+  void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
   void init();
@@ -827,6 +829,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
   std::unordered_map<size_t, int>
       vt_hash_map_;  // maps hash value to unique int
+
+  std::shared_ptr<ResizerObserver> graphics_;
 
   friend class BufferedNet;
   friend class GateCloner;

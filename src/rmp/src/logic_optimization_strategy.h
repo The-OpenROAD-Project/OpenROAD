@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
@@ -47,8 +48,11 @@ class LogicOptimizationStrategy
   // 1. Apply logic optimization techniques (e.g., technology mapping,
   //    buffering, area/delay optimization) to the copy.
   // 2. Return a new network that is optimized according to the strategy.
-  virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t>
-  Optimize(const abc::Abc_Ntk_t* ntk, utl::Logger* logger) = 0;
+  virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
+      const abc::Abc_Ntk_t* ntk,
+      AbcLibrary& abc_library,
+      utl::Logger* logger)
+      = 0;
 };
 
 }  // namespace rmp

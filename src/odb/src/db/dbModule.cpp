@@ -37,6 +37,7 @@
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
+#include "dbJournal.h"
 #include "dbModBTerm.h"
 #include "dbModInst.h"
 #include "dbModulePortItr.h"
@@ -391,6 +392,15 @@ dbModule* dbModule::create(dbBlock* block, const char* name)
   module->_name = strdup(name);
   ZALLOCATED(module->_name);
   _block->_module_hash.insert(module);
+
+  if (_block->_journal) {
+    _block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    _block->_journal->pushParam(dbModuleObj);
+    _block->_journal->pushParam(module->_name);
+    _block->_journal->pushParam(module->getId());
+    _block->_journal->endAction();
+  }
+
   return (dbModule*) module;
 }
 
@@ -404,9 +414,22 @@ void dbModule::destroy(dbModule* module)
         utl::ODB, 298, "The top module can't be destroyed.");
   }
 
+  //
+  //
+  // We only destroy the contents of the module
+  // We assume that the module instance (if any) of this module
+  // has already been deleted.
+  // We do this because a module may now have multiple instances
+  // So we cannot always delete a module if it module instances
+  // have not been cleaned up.
+  //
+
   if (_module->_mod_inst != 0) {
-    // Destroying the modInst will destroy this module too.
-    dbModInst::destroy(module->getModInst());
+    _module->getLogger()->error(
+        utl::ODB,
+        389,
+        "Must destroy module instance before destroying "
+        "module definition to avoid orphanned references");
     return;
   }
 
@@ -428,6 +451,14 @@ void dbModule::destroy(dbModule* module)
 
   for (auto modnet : module->getModNets()) {
     block->_modnet_tbl->destroy((_dbModNet*) modnet);
+  }
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModuleObj);
+    block->_journal->pushParam(module->getName());
+    block->_journal->pushParam(module->getId());
+    block->_journal->endAction();
   }
 
   dbProperty::destroyProperties(_module);

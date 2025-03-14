@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_set>
@@ -33,8 +34,8 @@ class AbcLibrary
   bool IsConst0Cell(const std::string& cell_name);
   bool IsConst1Cell(const std::string& cell_name);
   bool IsConstCell(const std::string& cell_name);
-  abc::SC_Cell* ConstantZeroCell();
-  abc::SC_Cell* ConstantOneCell();
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantZeroCell();
+  std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantOneCell();
 
  private:
   void InitializeConstGates();
@@ -43,6 +44,8 @@ class AbcLibrary
   std::set<std::string> supported_cells_;
   std::unordered_set<std::string> const1_gates_;
   std::unordered_set<std::string> const0_gates_;
+  std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const0_cell_;
+  std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const1_cell_;
   bool const_gates_initalized_ = false;
 };
 
