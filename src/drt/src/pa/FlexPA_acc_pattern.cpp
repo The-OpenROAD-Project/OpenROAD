@@ -190,31 +190,31 @@ void FlexPA::prepPattern()
   prepPatternInstRows(std::move(inst_rows));
 }
 
-void FlexPA::prepPatternInst(frInst* inst)
+void FlexPA::prepPatternInst(frInst* unique_inst)
 {
-  int num_valid_pattern = prepPatternInstHelper(inst);
+  int num_valid_pattern = prepPatternInstHelper(unique_inst, true);
 
   if (num_valid_pattern > 0) {
     return;
   }
-  num_valid_pattern = prepPatternInstHelper(inst, false);
+  num_valid_pattern = prepPatternInstHelper(unique_inst, false);
 
   if (num_valid_pattern == 0) {
     logger_->warn(DRT,
                   87,
                   "No valid pattern for unique instance {}, master is {}.",
-                  inst->getName(),
-                  inst->getMaster()->getName());
+                  unique_inst->getName(),
+                  unique_inst->getMaster()->getName());
   }
 }
 
 // the input inst must be unique instance
-int FlexPA::prepPatternInstHelper(frInst* inst, const bool use_x)
+int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
-  int pin_access_idx = unique_insts_.getPAIndex(inst);
-  for (auto& inst_term : inst->getInstTerms()) {
+  int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+  for (auto& inst_term : unique_inst->getInstTerms()) {
     if (isSkipInstTerm(inst_term.get())) {
       continue;
     }
@@ -233,7 +233,7 @@ int FlexPA::prepPatternInstHelper(frInst* inst, const bool use_x)
       }
       n_aps += cnt;
       if (cnt != 0) {
-        const double coord = use_x ? sum_x_coord / cnt : sum_y_coord / cnt;
+        const double coord = (use_x ? sum_x_coord : sum_y_coord) / (double) cnt;
         pins.push_back({(int) std::round(coord), {pin.get(), inst_term.get()}});
       }
     }
@@ -254,7 +254,7 @@ int FlexPA::prepPatternInstHelper(frInst* inst, const bool use_x)
     pin_inst_term_pairs.push_back(m);
   }
 
-  return genPatterns(inst, pin_inst_term_pairs);
+  return genPatterns(unique_inst, pin_inst_term_pairs);
 }
 
 int FlexPA::genPatterns(
