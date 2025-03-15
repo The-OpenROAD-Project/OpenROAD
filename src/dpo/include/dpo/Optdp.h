@@ -58,6 +58,8 @@ class Network;
 class Node;
 class Edge;
 class Pin;
+class Master;
+class Grid;
 
 using dpl::Opendp;
 using odb::dbDatabase;
@@ -84,6 +86,7 @@ class Optdp
   void import();
   void updateDbInstLocations();
 
+  void initSpacingTable();
   void initPadding();
   void createLayerMap();
   void createNdrMap();
@@ -91,9 +94,11 @@ class Optdp
   void createNetwork();
   void createArchitecture();
   void createRouteInformation();
+  void createGrid();
   void setUpNdrRules();
   void setUpPlacementRegions();
   unsigned dbToDpoOrient(const dbOrientType& orient);
+  Master* getMaster(odb::dbMaster* db_master);
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -104,11 +109,13 @@ class Optdp
   Network* network_ = nullptr;    // The netlist, cells, etc.
   RoutingParams* routeinfo_
       = nullptr;  // Route info we might consider (future).
+  Grid* grid_ = nullptr;
 
   // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;
   std::unordered_map<odb::dbNet*, Edge*> netMap_;
   std::unordered_map<odb::dbBTerm*, Node*> termMap_;
+  std::unordered_map<odb::dbMaster*, Master*> masterMap_;
 
   // For monitoring power alignment.
   std::unordered_set<odb::dbTechLayer*> pwrLayers_;

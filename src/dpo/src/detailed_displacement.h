@@ -59,14 +59,7 @@ class DetailedDisplacement : public DetailedObjective
 
   void init();
   double curr() override;
-  double delta(int n,
-               const std::vector<Node*>& nodes,
-               const std::vector<int>& curLeft,
-               const std::vector<int>& curBottom,
-               const std::vector<unsigned>& curOri,
-               const std::vector<int>& newLeft,
-               const std::vector<int>& newBottom,
-               const std::vector<unsigned>& newOri) override;
+  double delta(const Journal& journal);
   void getCandidates(std::vector<Node*>& candidates);
 
   // Other.
