@@ -48,7 +48,14 @@ target_sources(rmp
     blifParser.cpp
     blif.cpp
     Restructure.cpp
+    Cut.cpp
+    CutGen.cpp
+    FuncExpr2Kit.cpp
+    LibRead.cpp
+    Ntk2Cut.cpp
+    Cut2Ntk.cpp
     MakeRestructure.cpp
+    PhysRemap.cpp
 )
 
 messages(
