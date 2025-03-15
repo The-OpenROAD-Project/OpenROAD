@@ -1,6 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2025, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,63 +24,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
 #include <vector>
 
-#include "db/gcObj/gcShape.h"
-
-namespace drt {
-class gcNet;
-class gcPin : public gcBlockObject
+template <typename T>
+class TypedArena
 {
  public:
-  // constructors
-  gcPin(const gtl::polygon_90_with_holes_data<frCoord>& shapeIn,
-        frLayerNum layerNumIn,
-        gcNet* netIn)
-      : polygon_(shapeIn, layerNumIn, this, netIn), net_(netIn)
-  {
-  }
-  // setters
-  void setNet(gcNet* in) { net_ = in; }
-  void addPolygonEdges(std::vector<gcSegment*>& in)
-  {
-    polygon_edges_.push_back(in);
-  }
-  void addPolygonCorners(std::vector<gcCorner*>& in)
-  {
-    polygon_corners_.push_back(in);
-  }
-  void addMaxRectangle(gcRect* in) { max_rectangles_.push_back(in); }
+  static const auto BLOCK_SIZE = (std::size_t) 64 * 1024;
 
-  // getters
-  gcPolygon* getPolygon() { return &polygon_; }
-  const gcPolygon* getPolygon() const { return &polygon_; }
-  const std::vector<std::vector<gcSegment*>>& getPolygonEdges() const
-  {
-    return polygon_edges_;
-  }
-  const std::vector<std::vector<gcCorner*>>& getPolygonCorners() const
-  {
-    return polygon_corners_;
-  }
-  const std::vector<gcRect*>& getMaxRectangles() const
-  {
-    return max_rectangles_;
-  }
+  TypedArena() = default;
+  TypedArena(const TypedArena&) = delete;
 
-  gcNet* getNet() { return net_; }
-  // others
-  frBlockObjectEnum typeId() const override { return gccPin; }
+  template <typename... Args>
+  T* make(Args&&... args)
+  {
+    if (data_.empty() || data_.back().size() == data_.back().capacity()) {
+      data_.push_back({});
+      data_.back().reserve(BLOCK_SIZE / sizeof(T));
+    }
+    data_.back().emplace_back(std::forward<Args>(args)...);
+    return &data_.back().back();
+  }
 
  private:
-  gcPolygon polygon_;
-  gcNet* net_{nullptr};
-  // assisting structures
-  std::vector<std::vector<gcSegment*>> polygon_edges_;
-  std::vector<std::vector<gcCorner*>> polygon_corners_;
-  std::vector<gcRect*> max_rectangles_;
+  std::vector<std::vector<T>> data_;
 };
-}  // namespace drt
+
+template <typename... Ts>
+class Arena
+{
+};
+
+template <typename T, typename... Ts>
+class Arena<T, Ts...> : public TypedArena<T>, public Arena<Ts...>
+{
+ public:
+  Arena() = default;
+  Arena(const Arena&) = delete;
+
+  template <typename U, typename... Args>
+  U* make(Args&&... args)
+  {
+    return TypedArena<U>::make(args...);
+  }
+};
+
+template <>
+class Arena<>
+{
+};
