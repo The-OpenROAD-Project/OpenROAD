@@ -75,7 +75,7 @@ class UniqueInsts
    * @brief Adds the instance to the unique instances structures,
    * inserting new data if it is actually a new unique instance.
    *
-   * @returns if this instance if the first of its unique class.
+   * @returns True if the instance is the first of its unique class.
    */
   bool addInst(frInst* inst);
 
