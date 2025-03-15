@@ -1,6 +1,7 @@
 add_library(dft_config_lib
   # Keep sorted
   DftConfig.cpp
+  TestModeConfig.cpp
   ScanArchitectConfig.cpp
   ScanStitchConfig.cpp
 )
@@ -15,4 +16,5 @@ target_link_libraries(dft_config_lib
     odb
     utl_lib
     dft_utils_formatting_lib
+    dft_utils_macros_lib
 )

@@ -72,6 +72,7 @@ target_link_libraries(dft
     dft_clock_domain_lib
     dft_utils_lib
     dft_stitch_lib
+    dft_utils_macros_lib
 )
 
 
