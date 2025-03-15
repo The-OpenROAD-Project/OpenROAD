@@ -69,6 +69,7 @@ class UniqueInsts
 
   const std::vector<frInst*>& getUnique() const;
   frInst* getUnique(int idx) const;
+  frInst* getUnique(frInst* inst) const;
   bool hasUnique(frInst* inst) const;
 
   void report() const;

@@ -308,4 +308,9 @@ frInst* UniqueInsts::getUnique(int idx) const
   return unique_[idx];
 }
 
+frInst* UniqueInsts::getUnique(frInst* inst) const
+{
+  return inst_to_unique_.at(inst);
+}
+
 }  // namespace drt
