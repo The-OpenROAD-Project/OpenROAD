@@ -100,9 +100,19 @@ void FlexPA::deleteInst(frInst* inst)
 {
   const bool is_own_unique = (inst == unique_insts_.getUnique(inst));
   frInst* class_head = unique_insts_.deleteInst(inst);
+  // whole class has to be deleted
   if (!class_head) {
-    // Precisa pegar o corner case que a unique inst em si é deletada.
-    deletePatternInst(inst);
+    unique_inst_patterns_.erase(inst);
+    auto unique_class = unique_insts_.getClass(inst);
+    for (auto& inst_term : inst->getInstTerms()) {
+      skip_unique_inst_term_.erase({unique_class, inst_term->getTerm()});
+    }
+    return;
+  }
+  // new class representative has to be chosen
+  if (is_own_unique) {
+    unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
+    unique_inst_patterns_.erase(inst);
   }
 }
 
