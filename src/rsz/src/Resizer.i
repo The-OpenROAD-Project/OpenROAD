@@ -45,7 +45,8 @@
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
-
+#include "ord/OpenRoad.hh"
+  
 namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
