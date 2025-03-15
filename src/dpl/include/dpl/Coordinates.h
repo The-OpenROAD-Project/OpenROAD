@@ -44,7 +44,7 @@
 #include <functional>
 #include <ostream>
 
-#include "dpl/Opendp.h"
+#include "Opendp.h"
 
 namespace dpl {
 
