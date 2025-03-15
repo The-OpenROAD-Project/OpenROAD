@@ -1627,6 +1627,70 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
+Rect dbBlock::findConstraintRegion(const Direction2D::Value& edge,
+                                   int begin,
+                                   int end)
+{
+  Rect constraint_region;
+  const Rect& die_bounds = getDieArea();
+  if (edge == Direction2D::South) {
+    constraint_region = Rect(begin, die_bounds.yMin(), end, die_bounds.yMin());
+  } else if (edge == Direction2D::North) {
+    constraint_region = Rect(begin, die_bounds.yMax(), end, die_bounds.yMax());
+  } else if (edge == Direction2D::West) {
+    constraint_region = Rect(die_bounds.xMin(), begin, die_bounds.xMin(), end);
+  } else if (edge == Direction2D::East) {
+    constraint_region = Rect(die_bounds.xMax(), begin, die_bounds.xMax(), end);
+  }
+
+  return constraint_region;
+}
+
+void dbBlock::addBTermConstraintByDirection(dbIoType direction,
+                                            const Rect& constraint_region)
+{
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getIoType() == direction) {
+      bterm->setConstraintRegion(constraint_region);
+    }
+  }
+}
+
+void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
+                                    const Rect& constraint_region)
+{
+  for (dbBTerm* bterm : bterms) {
+    const auto& bterm_constraint = bterm->getConstraintRegion();
+    if (bterm_constraint && bterm_constraint.value() != constraint_region) {
+      getImpl()->getLogger()->error(
+          utl::ODB,
+          239,
+          "Pin {} is assigned to multiple constraints.",
+          bterm->getName());
+    } else {
+      bterm->setConstraintRegion(constraint_region);
+    }
+  }
+}
+
+Direction2D::Value dbBlock::findDirectionByEdge(const std::string& edge)
+{
+  if (edge == "bottom") {
+    return Direction2D::South;
+  } else if (edge == "top") {
+    return Direction2D::North;
+  } else if (edge == "left") {
+    return Direction2D::West;
+  }
+  
+  return Direction2D::East;
+}
+
+dbIoType dbBlock::getIoTypeByDirection(const std::string& direction)
+{
+  return dbIoType(direction.c_str());
+}
+
 dbSet<dbITerm> dbBlock::getITerms()
 {
   _dbBlock* block = (_dbBlock*) this;
