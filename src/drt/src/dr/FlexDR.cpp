@@ -53,6 +53,7 @@
 #include "gc/FlexGC.h"
 #include "io/io.h"
 #include "serialization.h"
+#include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/exception.h"
 
@@ -1827,6 +1828,9 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
 int FlexDR::main()
 {
   ProfileTask profile("DR:main");
+  auto reporter = logger_->progress()->startIterationReporting(
+      "detailed routing", std::min(64, router_cfg_->END_ITERATION), {});
+
   init();
   frTime t;
   bool incremental = false;
@@ -1880,10 +1884,15 @@ int FlexDR::main()
           utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
               .getStream());
     }
+    if (reporter->incrementProgress()) {
+      break;
+    }
     ++iter_;
   }
 
   end(/* done */ true);
+  reporter->end(true);
+
   if (!router_cfg_->GUIDE_REPORT_FILE.empty()) {
     reportGuideCoverage();
   }

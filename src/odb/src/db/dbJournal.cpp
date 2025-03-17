@@ -405,6 +405,7 @@ void dbJournal::redo_createObject()
                  b->getId(),
                  merge);
       dbCCSeg::create(a, b, merge);
+      break;
     }
 
     case dbModuleObj: {
@@ -465,6 +466,7 @@ void dbJournal::redo_createObject()
       _log.pop(parent_obj_id);
       dbModule* parent_module = dbModule::getModule(_block, parent_obj_id);
       dbModNet::create(parent_module, name.c_str());
+      break;
     }
     default: {
       _logger->critical(

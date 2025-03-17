@@ -149,22 +149,23 @@ proc sta_warn { id msg } {
   utl::warn STA $id $msg
 }
 
-define_cmd_args "replace_design" {instance module}
-proc replace_design { instance module } {
-  set design [get_design $module]
+define_cmd_args "replace_hier_module" {instance module}
+proc replace_hier_module { instance module } {
+  set design [get_hier_module $module]
   if { $design != "NULL" } {
     set modinst [[ord::get_db_block] findModInst $instance]
     if { $modinst == "NULL" } {
       sta_error 1003 "Unable to find $instance"
     }
-    replace_design_cmd $modinst $design
+    replace_hier_module_cmd $modinst $design
     return 1
   }
   return 0
 }
+interp alias {} replace_design {} replace_hier_module
 
-define_cmd_args "get_design" {design_name}
-proc get_design { arg } {
+define_cmd_args "get_hier_module" {design_name}
+proc get_hier_module { arg } {
   if { [llength $arg] > 1 } {
     sta_error 200 "module must be a single module."
   }
@@ -188,6 +189,7 @@ proc get_design { arg } {
 
   return $design
 }
+interp alias {} get_design {} get_hier_module
 
 # namespace
 }
