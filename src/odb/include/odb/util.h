@@ -232,7 +232,7 @@ void cutRows(dbBlock* block,
              int halo_y,
              utl::Logger* logger);
 
-// Generates a string with the macro placement in mpl2 input format for
+// Generates a string with the macro placement in mpl input format for
 // individual macro placement
 std::string generateMacroPlacementString(dbBlock* block);
 
