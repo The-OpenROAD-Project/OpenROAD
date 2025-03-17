@@ -65,21 +65,21 @@ HungarianMatching::HungarianMatching(const Section& section,
   logger_ = logger;
 }
 
-void HungarianMatching::findAssignment()
+void HungarianMatching::findAssignment(MirroredPins& mirrored_pins)
 {
-  createMatrix();
+  createMatrix(mirrored_pins);
   if (!hungarian_matrix_.empty()) {
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
   }
 }
 
-void HungarianMatching::createMatrix()
+void HungarianMatching::createMatrix(MirroredPins& mirrored_pins)
 {
   hungarian_matrix_.resize(non_blocked_slots_);
   int slot_index = 0;
   for (int i = begin_slot_; i <= end_slot_; ++i) {
     int pinIndex = 0;
-    Point newPos = slots_[i].pos;
+    Point slot_pos = slots_[i].pos;
     if (slots_[i].blocked) {
       continue;
     }
@@ -88,7 +88,12 @@ void HungarianMatching::createMatrix()
     for (int idx : pin_indices_) {
       const IOPin& io_pin = netlist_->getIoPin(idx);
       if (!io_pin.isInGroup()) {
-        int hpwl = netlist_->computeIONetHPWL(idx, newPos);
+        int hpwl = netlist_->computeIONetHPWL(idx, slot_pos);
+        if (mirrored_pins.find(io_pin.getBTerm()) != mirrored_pins.end()) {
+          odb::Point mirrored_pos = core_->getMirroredPosition(slot_pos);
+          hpwl += netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(),
+                                             mirrored_pos);
+        }
         hungarian_matrix_[slot_index][pinIndex] = hpwl;
         pinIndex++;
       }

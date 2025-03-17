@@ -2223,7 +2223,7 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections,
   }
 
   for (auto& match : hg_vec) {
-    match.findAssignment();
+    match.findAssignment(mirrored_pins_);
   }
 
   if (!mirrored_pins_.empty()) {
