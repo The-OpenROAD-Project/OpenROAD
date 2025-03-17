@@ -98,19 +98,21 @@ void FlexPA::init()
 
 void FlexPA::deleteInst(frInst* inst)
 {
-  const bool is_own_unique = (inst == unique_insts_.getUnique(inst));
+  const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  // if inst is the class head the new class head will be returned by
+  // deleteInst()
   frInst* class_head = unique_insts_.deleteInst(inst);
+  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   // whole class has to be deleted
   if (!class_head) {
     unique_inst_patterns_.erase(inst);
-    auto unique_class = unique_insts_.getClass(inst);
     for (auto& inst_term : inst->getInstTerms()) {
       skip_unique_inst_term_.erase({unique_class, inst_term->getTerm()});
     }
     return;
   }
   // new class representative has to be chosen
-  if (is_own_unique) {
+  if (is_class_head) {
     unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
     unique_inst_patterns_.erase(inst);
   }
