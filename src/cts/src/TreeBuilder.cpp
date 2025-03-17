@@ -69,15 +69,18 @@ void TreeBuilder::mergeBlockages()
     }
   }
 
+  // bloat blockage to merge if there is not enought space between them
+
   float bloat_h = (float) (bufferHeight_ * techChar_->getLengthUnit()) / 2.0;
   float bloat_w = (float) (bufferWidth_ * techChar_->getLengthUnit()) / 2.0;
 
   gtl::bloat(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
+  // shrink back to get the correct blockage bounding box
   gtl::shrink(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
 
-  std::vector<boost::polygon::rectangle_data<float>> bp_blockages;
+  std::vector<gtl::rectangle_data<float>> bp_blockages;
   macros_p.get_rectangles(bp_blockages);
-  for (auto r : bp_blockages) {
+  for (gtl::rectangle_data<float> r : bp_blockages) {
     blockages_.emplace_back(
         r.get(gtl::direction_2d(gtl::direction_2d_enum::WEST)),
         r.get(gtl::direction_2d(gtl::direction_2d_enum::SOUTH)),
