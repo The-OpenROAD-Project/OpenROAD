@@ -36,14 +36,14 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
+#include <boost/geometry/algorithms/buffer.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/strategies/strategies.hpp>
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/strategies/strategies.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/algorithms/buffer.hpp> 
 #include <deque>
 #include <functional>
 #include <string>
@@ -87,10 +87,10 @@ enum class TreeType
 };
 
 namespace bg = boost::geometry;
-typedef bg::model::d2::point_xy<int> point_t;
-typedef bg::model::box<point_t> box_t;
-typedef bg::model::linestring<point_t> line_t;
-typedef bg::model::polygon<point_t> polygon_t;
+using point_t = bg::model::d2::point_xy<int>;
+using box_t = bg::model::box<point_t>;
+using line_t = bg::model::linestring<point_t>;
+using polygon_t = bg::model::polygon<point_t>;
 
 class TreeBuilder
 {
