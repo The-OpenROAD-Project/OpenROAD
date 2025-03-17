@@ -212,7 +212,6 @@ class IOPlacer
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
   std::vector<Point> findLayerSlots(int layer, Edge edge);
-  int computeDistanceBetweenPins(int layer, int min_distance);
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);

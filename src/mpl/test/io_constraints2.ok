@@ -7,7 +7,7 @@
 [INFO ODB-0253]     Updated 401 components.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of slots           966
+[INFO PPL-0001] Number of available slots 264
 [INFO PPL-0002] Number of I/O             3
 [INFO PPL-0003] Number of I/O w/sink      0
 [INFO PPL-0004] Number of I/O w/o sink    3

@@ -61,18 +61,18 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "sta/Bfs.hh"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-#include "sta/PathExpanded.hh"
+#include "sta/MinMax.hh"
 #include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
-#include "sta/Search.hh"
 #include "sta/StaMain.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 ////////////////////////////////////////////////////////////////
@@ -687,6 +687,61 @@ void dbSta::reportCellUsage(odb::dbModule* module,
       snapshot << output.as_object();
       snapshot.close();
     }
+  }
+}
+
+void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+{
+  if (num_bins <= 0) {
+    logger_->warn(STA, 70, "The number of bins must be positive.");
+    return;
+  }
+  const int max_bin_width = 50;  // Maximum number of chars to print for a bin.
+
+  // Get and sort the slacks.
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  std::vector<float> slacks;
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    float slack = sta_->vertexSlack(vertex, min_max);
+    if (slack != sta::INF) {  // Ignore unconstrained paths.
+      slacks.push_back(time_unit->staToUser(slack));
+    }
+  }
+  if (slacks.empty()) {
+    logger_->warn(STA, 71, "No constrained slacks found.");
+    return;
+  }
+  std::sort(slacks.begin(), slacks.end());
+
+  // Populate each bin with count.
+  std::vector<int> bins(num_bins, 0);
+  const float min_slack = slacks.front();
+  const float bin_range = (slacks.back() - min_slack) / num_bins;
+  for (const float& slack : slacks) {
+    int bin = static_cast<int>((slack - min_slack) / bin_range);
+    if (bin >= num_bins) {  // Special case for paths with the maximum slack.
+      bin = num_bins - 1;
+    }
+    bins[bin]++;
+  }
+
+  // Print the histogram.
+  const int largest_bin = *std::max_element(bins.begin(), bins.end());
+  for (int bin = 0; bin < num_bins; ++bin) {
+    const float bin_start = min_slack + bin * bin_range;
+    const float bin_end = min_slack + (bin + 1) * bin_range;
+    int bar_length  // Round the bar length to its closest value.
+        = (max_bin_width * bins[bin] + largest_bin / 2) / largest_bin;
+    if (bar_length == 0 && bins[bin] > 0) {
+      bar_length = 1;  // Better readability when non-zero bins have a bar.
+    }
+    logger_->report("[{:>6.3f}, {:>6.3f}{}: {} ({})",
+                    bin_start,
+                    bin_end,
+                    // The final bin is also closed from the right.
+                    bin == num_bins - 1 ? "]" : ")",
+                    std::string(bar_length, '*'),
+                    bins[bin]);
   }
 }
 

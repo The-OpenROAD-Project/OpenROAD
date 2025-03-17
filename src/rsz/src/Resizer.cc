@@ -47,6 +47,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "ResizerObserver.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -268,11 +269,17 @@ void Resizer::initBlock()
       swappable_cells_cache_.clear();
     }
     sizing_area_limit_ = area_prop->getValue();
+    default_sizing_area_limit_set_ = false;
   } else {
-    if (sizing_area_limit_) {
-      swappable_cells_cache_.clear();
+    if (default_sizing_area_limit_set_ && sizing_area_limit_) {
+      dbDoubleProperty::create(
+          block_, "limit_sizing_area", *sizing_area_limit_);
+    } else {
+      if (sizing_area_limit_) {
+        swappable_cells_cache_.clear();
+      }
+      sizing_area_limit_.reset();
     }
-    sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
       = dbDoubleProperty::find(block_, "limit_sizing_leakage");
@@ -282,11 +289,17 @@ void Resizer::initBlock()
       swappable_cells_cache_.clear();
     }
     sizing_leakage_limit_ = leakage_prop->getValue();
+    default_sizing_leakage_limit_set_ = false;
   } else {
-    if (sizing_leakage_limit_) {
-      swappable_cells_cache_.clear();
+    if (default_sizing_leakage_limit_set_ && sizing_leakage_limit_) {
+      dbDoubleProperty::create(
+          block_, "limit_sizing_leakage", *sizing_leakage_limit_);
+    } else {
+      if (sizing_leakage_limit_) {
+        swappable_cells_cache_.clear();
+      }
+      sizing_leakage_limit_.reset();
     }
-    sizing_leakage_limit_.reset();
   }
   dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
   if (site_prop) {
@@ -608,7 +621,7 @@ void Resizer::balanceRowUsage()
     auto master = inst->getMaster();
     auto site = master->getSite();
     // Ignore multi-height cells for now
-    if (site->hasRowPattern()) {
+    if (site && site->hasRowPattern()) {
       continue;
     }
 
@@ -4003,11 +4016,13 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin != out_pin) {
-      Instance* load_inst = network_->instance(pin);
-      Port* load_port = db_network_->port(pin);
-      load_pin = std::make_pair(network_->name(load_inst),
-                                network_->name(load_port));
-      load_pins.emplace_back(load_pin);
+      if (db_network_->isFlat(pin)) {
+        Instance* load_inst = network_->instance(pin);
+        Port* load_port = db_network_->port(pin);
+        load_pin = std::make_pair(network_->name(load_inst),
+                                  network_->name(load_port));
+        load_pins.emplace_back(load_pin);
+      }
     }
   }
   data.load_pins = std::move(load_pins);
@@ -4592,6 +4607,12 @@ void Resizer::copyDontUseFromLiberty()
       }
     }
   }
+}
+
+void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
+{
+  repair_design_->setDebugGraphics(graphics);
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace rsz

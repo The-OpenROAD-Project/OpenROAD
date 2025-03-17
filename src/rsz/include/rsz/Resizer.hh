@@ -138,6 +138,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class ResizerObserver;
 
 class SpefWriter;
 
@@ -445,6 +446,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
+  void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
   void init();
@@ -814,9 +816,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
-  // Sizing restrictions
-  std::optional<double> sizing_area_limit_;
-  std::optional<double> sizing_leakage_limit_;
+  // Restrict default sizing such that one sizing move cannot increase area or
+  // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
+  std::optional<double> sizing_area_limit_ = 4.0;
+  std::optional<double> sizing_leakage_limit_ = 4.0;
+  bool default_sizing_area_limit_set_ = true;
+  bool default_sizing_leakage_limit_set_ = true;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
 
@@ -824,6 +829,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
   std::unordered_map<size_t, int>
       vt_hash_map_;  // maps hash value to unique int
+
+  std::shared_ptr<ResizerObserver> graphics_;
 
   friend class BufferedNet;
   friend class GateCloner;

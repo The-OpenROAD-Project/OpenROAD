@@ -139,19 +139,20 @@ class FlexPA
   void init();
   void initTrackCoords();
   void initViaRawPriority();
-  void initSkipInstTerm();
+  void initAllSkipInstTerm();
+  void initSkipInstTerm(frInst* unique_inst);
   // prep
   void prep();
 
-  bool isStdCell(frInst* inst);
-  bool isMacroCell(frInst* inst);
+  bool isStdCell(frInst* unique_inst);
+  bool isMacroCell(frInst* unique_inst);
 
   /**
    * @brief generates all access points of a single unique instance
    *
-   * @param inst the unique instance
+   * @param unique_inst the unique instance
    */
-  void genInstAccessPoints(frInst* inst);
+  void genInstAccessPoints(frInst* unique_inst);
 
   /**
    * @brief generates all access points of all unique instances
@@ -595,11 +596,26 @@ class FlexPA
 
   void prepPattern();
 
-  void deletePatternInst(frInst* unique_inst);
-
+  /**
+   * @brief generates valid access patterns for the unique inst, considers both
+   * x and y of prepPatternInstHelper.
+   *
+   * @param unique_inst unique inst
+   */
   void prepPatternInst(frInst* unique_inst);
 
-  int prepPatternInstHelper(frInst* unique_inst, bool use_x = true);
+  /**
+   * @brief generates valid access patterns for the unique inst
+   *
+   * @param unique_inst unique inst
+   * @param use_x whether the x or y average coordinate of the access points of
+   * a pin will be used for sorting it.
+   *
+   * @returns the number of access patterns found.
+   */
+  int prepPatternInstHelper(frInst* unique_inst, bool use_x);
+
+  void deletePatternInst(frInst* unique_inst);
 
   int genPatterns(frInst* unique_inst,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
