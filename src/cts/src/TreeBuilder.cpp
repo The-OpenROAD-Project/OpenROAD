@@ -57,11 +57,11 @@ void TreeBuilder::mergeBlockages()
   for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster()->getType().isBlock()
         && inst->getPlacementStatus().isPlaced()) {
-          odb::dbBox* bbox = inst->getBBox();
+      odb::dbBox* bbox = inst->getBBox();
       std::array<point_tp, 4> pts = {point_tp(bbox->xMin(), bbox->yMin()),
-        point_tp(bbox->xMax(), bbox->yMin()),
-        point_tp(bbox->xMax(), bbox->yMax()),
-        point_tp(bbox->xMin(), bbox->yMax()) };
+                                     point_tp(bbox->xMax(), bbox->yMin()),
+                                     point_tp(bbox->xMax(), bbox->yMax()),
+                                     point_tp(bbox->xMin(), bbox->yMax())};
 
       polygon_tp poly;
       poly.set(pts.begin(), pts.end());
@@ -69,19 +69,20 @@ void TreeBuilder::mergeBlockages()
     }
   }
 
-  float bloat_h = (float)(bufferHeight_ * techChar_->getLengthUnit()) / 2.0;
-  float bloat_w = (float)(bufferWidth_ * techChar_->getLengthUnit()) / 2.0;
+  float bloat_h = (float) (bufferHeight_ * techChar_->getLengthUnit()) / 2.0;
+  float bloat_w = (float) (bufferWidth_ * techChar_->getLengthUnit()) / 2.0;
 
   gtl::bloat(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
   gtl::shrink(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
 
   std::vector<boost::polygon::rectangle_data<float>> bp_blockages;
   macros_p.get_rectangles(bp_blockages);
-  for(auto r : bp_blockages) {
-    blockages_.emplace_back(r.get(gtl::direction_2d(gtl::direction_2d_enum::WEST)),
-    r.get(gtl::direction_2d(gtl::direction_2d_enum::SOUTH)),
-    r.get(gtl::direction_2d(gtl::direction_2d_enum::EAST)),
-    r.get(gtl::direction_2d(gtl::direction_2d_enum::NORTH)));
+  for (auto r : bp_blockages) {
+    blockages_.emplace_back(
+        r.get(gtl::direction_2d(gtl::direction_2d_enum::WEST)),
+        r.get(gtl::direction_2d(gtl::direction_2d_enum::SOUTH)),
+        r.get(gtl::direction_2d(gtl::direction_2d_enum::EAST)),
+        r.get(gtl::direction_2d(gtl::direction_2d_enum::NORTH)));
   }
 }
 
