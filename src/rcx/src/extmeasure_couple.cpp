@@ -106,7 +106,7 @@ uint extMeasureRC::GetCoupleSegments(bool lookUp,
   // increasing track number vertical  or horizontal
   if (lookUp && opt.metal_level == w->getLevel()) {
     Wire* w2 = FindOverlapWire(w, w->getNext());
-    if (w2 != NULL)
+    if (w2 != nullptr)
       wireTable.add(w2);
   }
 
@@ -132,7 +132,7 @@ uint extMeasureRC::GetCoupleSegments(bool lookUp,
   FindSegmentsTrack(w,
                     w->getXY(),
                     w->getLen(),
-                    NULL,
+                    nullptr,
                     0,
                     &wireTable,
                     lookUp,
@@ -167,15 +167,15 @@ uint extMeasureRC::FindCoupleWiresOnTracks_down(
   {
     Wire* first = GetNextWire(upGrid, next_tr, firstWireTable[level]);
     Wire* w2 = FindOverlapWire(w, first);
-    if (w2 == NULL)
+    if (w2 == nullptr)
       continue;
 
     firstWireTable[level]->set(next_tr, w2);
 
     bool w2_next_covered = false;
     Wire* w2_next = w2->getNext();
-    if (w2_next != NULL)  // TODO: because more 2 wires at different distance
-                          // can reside in same track
+    if (w2_next != nullptr)  // TODO: because more 2 wires at different distance
+                             // can reside in same track
     {
       if (OverlapOnly(
               w->getXY(), w->getLen(), w2_next->getXY(), w2_next->getLen())) {
@@ -226,7 +226,7 @@ uint extMeasureRC::FindCoupleWiresOnTracks_up(
   {
     Wire* first = GetNextWire(upGrid, next_tr, firstWireTable[level]);
     Wire* w2 = FindOverlapWire(w, first);
-    if (w2 == NULL)
+    if (w2 == nullptr)
       continue;
     firstWireTable[level]->set(next_tr, w2);
     resTable->add(w2);
@@ -511,7 +511,7 @@ int extMeasureRC::CouplingFlow(uint dir,
   uint metalLevelCnt = _search->getColCnt();
 
   CouplingConfig config(_extMain, metalLevelCnt);
-  _segFP = NULL;
+  _segFP = nullptr;
   if (config.debug_enabled) {
     config.debug_fp = OpenPrintFile(dir, "Segments");
     _segFP = config.debug_fp;
@@ -537,11 +537,12 @@ int extMeasureRC::CouplingFlow(uint dir,
     uint maxDist = 10 * netGrid->getPitch();
     for (uint tr = 0; tr < netGrid->getTrackCnt(); tr++) {
       Track* track = netGrid->getTrackPtr(tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       ResetFirstWires(level, metalLevelCnt, dir, firstWireTable);
-      for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext()) {
+      for (Wire* w = track->getNextWire(nullptr); w != nullptr;
+           w = w->getNext()) {
         counts.wire_count++;
         if (w->isPower() || w->getRsegId() == 0)
           continue;
@@ -588,7 +589,7 @@ int extMeasureRC::CouplingFlow(uint dir,
             Release(_whiteSegTable[_met]);
 
             extSegment* white = _seqmentPool->alloc();
-            white->set(dir, w, s->_xy, s->_len, NULL, NULL);
+            white->set(dir, w, s->_xy, s->_len, nullptr, nullptr);
 
             _whiteSegTable[_met]->add(white);
             PrintOverlapSeg(_segFP, s, _met, "\nNEW --");
@@ -638,7 +639,7 @@ int extMeasureRC::CouplingFlow(uint dir,
     // oneCntTable=%d\n",
     //        dir, wireCnt, notOrderCnt, oneEmptyTable, oneCntTable);
   }
-  if (_segFP != NULL)
+  if (_segFP != nullptr)
     fclose(_segFP);
 
   de_allocateTables(metalLevelCnt);
@@ -689,7 +690,7 @@ bool extMeasureRC::CalcRes(extSegment* s)
   if (IsDebugNet()) {
     _netId = _netSrcId;
     OpenDebugFile();
-    if (_debugFP != NULL) {
+    if (_debugFP != nullptr) {
       fprintf(stdout,
               "CalcRes %d met= %d  len= %d  dist= %d r1= %d r2= %d\n",
               _totSignalSegCnt,
@@ -759,7 +760,7 @@ bool extMeasureRC::FindDiagonalSegments(extSegment* s,
     return false;
 
   extSegment* white = _seqmentPool->alloc();
-  white->set(_dir, s->_wire, w1->_xy, w1->_len, NULL, NULL);
+  white->set(_dir, s->_wire, w1->_xy, w1->_len, nullptr, nullptr);
 
   if (!lookUp)
     white->_up = s->_wire;
@@ -785,21 +786,37 @@ bool extMeasureRC::FindDiagonalSegments(extSegment* s,
       return false;
     }
     if (lookUp)
-      CreateCouplingSEgments(
-          s->_wire, &resultTable, &vertTable, &whiteTable, dbgOverlaps, NULL);
+      CreateCouplingSEgments(s->_wire,
+                             &resultTable,
+                             &vertTable,
+                             &whiteTable,
+                             dbgOverlaps,
+                             nullptr);
     else
-      CreateCouplingSEgments(
-          s->_wire, &resultTable, &whiteTable, &vertTable, dbgOverlaps, NULL);
+      CreateCouplingSEgments(s->_wire,
+                             &resultTable,
+                             &whiteTable,
+                             &vertTable,
+                             dbgOverlaps,
+                             nullptr);
   } else {
     if (lookUp)
-      CreateCouplingSEgments(
-          s->_wire, &resultTable, segDiagTable, &whiteTable, dbgOverlaps, NULL);
+      CreateCouplingSEgments(s->_wire,
+                             &resultTable,
+                             segDiagTable,
+                             &whiteTable,
+                             dbgOverlaps,
+                             nullptr);
     else
-      CreateCouplingSEgments(
-          s->_wire, &resultTable, &whiteTable, segDiagTable, dbgOverlaps, NULL);
+      CreateCouplingSEgments(s->_wire,
+                             &resultTable,
+                             &whiteTable,
+                             segDiagTable,
+                             dbgOverlaps,
+                             nullptr);
   }
   const char* msg = lookUp ? "Up" : "Down";
-  if (fp != NULL) {
+  if (fp != nullptr) {
     if (tgt_met > 0)
       fprintf(fp, "%s Vertical Overlap %d ----- \n", msg, resultTable.getCnt());
     else
@@ -808,7 +825,7 @@ bool extMeasureRC::FindDiagonalSegments(extSegment* s,
 
   for (uint ii = 0; ii < resultTable.getCnt(); ii++) {
     extSegment* s1 = resultTable.get(ii);
-    if (s1->_up == NULL || s1->_down == NULL) {
+    if (s1->_up == nullptr || s1->_down == nullptr) {
       // delete s1;
       _seqmentPool->free(s1);
       continue;
@@ -834,7 +851,8 @@ void extMeasureRC::OverlapDown(int overMet,
                                uint dir)
 {
   extSegment* ov = _seqmentPool->alloc();
-  ov->set(dir, coupSeg->_wire, overlapSeg->_xy, overlapSeg->_len, NULL, NULL);
+  ov->set(
+      dir, coupSeg->_wire, overlapSeg->_xy, overlapSeg->_len, nullptr, nullptr);
 
   Release(_whiteSegTable[_met]);
   _whiteSegTable[_met]->add(ov);
@@ -872,14 +890,14 @@ uint extMeasureRC::FindAllSegments_vertical(
 {
   bool dbgOverlaps = true;
   Wire* w2_next = lookUp ? w->getAboveNext() : w->getBelowNext();
-  if (w2_next == NULL)
+  if (w2_next == nullptr)
     return 0;
 
   Ath__array1D<Wire*> wTable;
   wTable.add(w2_next);
   Wire* w2_next_next
       = lookUp ? w2_next->getAboveNext() : w2_next->getBelowNext();
-  if (w2_next_next != NULL)
+  if (w2_next_next != nullptr)
     wTable.add(w2_next_next);
   // TODO, optimize, not accurate
 
@@ -902,7 +920,7 @@ uint extMeasureRC::FindAllSegments_vertical(
                     &sTable);
   for (uint ii = 0; ii < sTable.getCnt(); ii++) {
     extSegment* s = sTable.get(ii);
-    if (!lookUp && s->_down != NULL && !s->_down->isPower())
+    if (!lookUp && s->_down != nullptr && !s->_down->isPower())
       continue;
     aboveTable->add(s);
   }
@@ -936,7 +954,7 @@ uint extMeasureRC::FindAllSegments_up(FILE* fp,
   // same track
   if (lookUp && level == w->getLevel()) {
     Wire* w2 = FindOverlapWire(w, w->getNext());
-    if (w2 != NULL)
+    if (w2 != nullptr)
       UpTable.add(w2);
   }
   // -----------------------------------------------------------
@@ -970,7 +988,7 @@ uint extMeasureRC::FindAllSegments_up(FILE* fp,
   FindSegmentsTrack(w,
                     w->getXY(),
                     w->getLen(),
-                    NULL,
+                    nullptr,
                     0,
                     &UpTable,
                     lookUp,
@@ -1002,7 +1020,7 @@ uint extMeasureRC::FindAllNeigbors_up(Wire* w,
   {
     Wire* first = GetNextWire(upGrid, next_tr, firstWireTable[level]);
     Wire* w2 = FindOverlapWire(w, first);
-    if (w2 == NULL)
+    if (w2 == nullptr)
       continue;
     firstWireTable[level]->set(next_tr, w2);
     resTable->add(w2);
@@ -1041,14 +1059,14 @@ uint extMeasureRC::FindAllNeigbors_down(Wire* w,
   {
     Wire* first = GetNextWire(upGrid, next_tr, firstWireTable[level]);
     Wire* w2 = FindOverlapWire(w, first);
-    if (w2 == NULL)
+    if (w2 == nullptr)
       continue;
 
     firstWireTable[level]->set(next_tr, w2);
 
     bool w2_next_covered = false;
     Wire* w2_next = w2->getNext();
-    if (w2_next != NULL) {
+    if (w2_next != nullptr) {
       // TODO: because more 2 wires at different distance
       // can reside in same track
       if (OverlapOnly(
@@ -1087,8 +1105,8 @@ uint extMeasureRC::CreateCouplingSEgments(Wire* w,
               if (upTable->getCnt() == 0 || downTable->getCnt() == 0)
               {
                   oneEmptyTable++;
-                  // CreateUpDownSegment(w, NULL, w->getXY(), w->getLen(), NULL,
-     &segTable);
+                  // CreateUpDownSegment(w, nullptr, w->getXY(), w->getLen(),
+     nullptr, &segTable);
               }
               if (upTable->getCnt() == 1 || downTable->getCnt() == 1)
                   oneCntTable++;
@@ -1101,7 +1119,7 @@ uint extMeasureRC::CreateCouplingSEgments(Wire* w,
   if (upTable->getCnt() == 0
       && downTable->getCnt() == 0)  // OpenEnded both sides
   {
-    CreateUpDownSegment(w, NULL, w->getXY(), w->getLen(), NULL, segTable);
+    CreateUpDownSegment(w, nullptr, w->getXY(), w->getLen(), nullptr, segTable);
   } else if (upTable->getCnt() == 0
              && downTable->getCnt() > 0)  // OpenEnded Down
     cnt1 += CopySegments(false, downTable, 0, downTable->getCnt(), segTable);
@@ -1151,7 +1169,7 @@ bool extMeasureRC::GetCrossOvelaps(Wire* w,
     int len1 = p->_ur[!dir] - p->_ll[!dir];
 
     extSegment* s = _seqmentPool->alloc();
-    s->set(dir, w, p->_ll[!dir], len1, NULL, NULL);
+    s->set(dir, w, p->_ll[!dir], len1, nullptr, nullptr);
 
     if (p->type == 0)
       whiteTable->add(s);
@@ -1217,7 +1235,7 @@ int extMeasureRC::wireOverlap(int X1,
 bool extMeasureRC::PrintInit(FILE* fp, bool dbgOverlaps, Wire* w, int x, int y)
 {
   if (dbgOverlaps) {
-    if (fp == NULL)
+    if (fp == nullptr)
       return false;
 
     fprintf(fp, "\n");
@@ -1236,7 +1254,7 @@ void extMeasureRC::PrintTable_coupleWires(FILE* fp1,
                                           const char* msg,
                                           int level)
 {
-  if (fp1 == NULL)
+  if (fp1 == nullptr)
     return;
 
   if (dbgOverlaps && UpTable->getCnt() > 0) {
@@ -1260,7 +1278,7 @@ void extMeasureRC::PrintTable_segments(FILE* fp1,
                                        const char* msg,
                                        int level)
 {
-  if (fp1 == NULL)
+  if (fp1 == nullptr)
     return;
 
   if (dbgOverlaps && segmentTable->getCnt() > 0) {
@@ -1331,7 +1349,7 @@ void extMeasureRC::OverUnder(extSegment* cc,
 {
   if (segTable->getCnt() == 0)
     return;
-  if (_segFP != NULL)
+  if (_segFP != nullptr)
     fprintf(_segFP,
             "\n%7.3f %7.3f  %dL M%d cnt=%d\n",
             GetDBcoords(cc->_xy),
@@ -1369,20 +1387,20 @@ dbRSeg* extMeasureRC::GetRSeg(extSegment* cc)
 {
   uint rsegId = cc->_wire->getRsegId();
   if (rsegId == 0)
-    return NULL;
+    return nullptr;
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, rsegId);
-  if (rseg1 == NULL)
-    return NULL;
+  if (rseg1 == nullptr)
+    return nullptr;
 
   return rseg1;
 }
 dbRSeg* extMeasureRC::GetRSeg(uint rsegId)
 {
   if (rsegId == 0)
-    return NULL;
+    return nullptr;
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, rsegId);
-  if (rseg1 == NULL)
-    return NULL;
+  if (rseg1 == nullptr)
+    return nullptr;
 
   return rseg1;
 }
@@ -1394,7 +1412,7 @@ void extMeasureRC::OpenEnded2(extSegment* cc,
                               FILE* segFP)
 {
   dbRSeg* rseg1 = GetRSeg(cc);
-  if (rseg1 == NULL)
+  if (rseg1 == nullptr)
     return;
 
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
@@ -1427,10 +1445,10 @@ void extMeasureRC::OpenEnded1(extSegment* cc,
   if (dist < 0)
     dist = cc->_dist_down;
 
-  dbRSeg* rseg2 = cc->_down != NULL ? GetRSeg(cc->_down->getRsegId())
-                                    : GetRSeg(cc->_up->getRsegId());
+  dbRSeg* rseg2 = cc->_down != nullptr ? GetRSeg(cc->_down->getRsegId())
+                                       : GetRSeg(cc->_up->getRsegId());
 
-  dbCCSeg* ccCap = NULL;
+  dbCCSeg* ccCap = nullptr;
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
     extDistRC* rc = OverUnderRC(rcModel,
@@ -1443,7 +1461,7 @@ void extMeasureRC::OpenEnded1(extSegment* cc,
                                 metOver,
                                 segFP);
 
-    if (rc == NULL)
+    if (rc == nullptr)
       continue;
     double fr2 = 2 * len * rc->_fringe;
     double cc = 2 * len * rc->_coupling;
@@ -1479,8 +1497,8 @@ void extMeasureRC::OverUnder(extSegment* cc,
   dbRSeg* rseg_down = GetRSeg(cc->_down->getRsegId());
   dbRSeg* rseg_up = GetRSeg(cc->_up->getRsegId());
 
-  dbCCSeg* ccCap_up = NULL;
-  dbCCSeg* ccCap_down = NULL;
+  dbCCSeg* ccCap_up = nullptr;
+  dbCCSeg* ccCap_down = nullptr;
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
     extDistRC* rc_up = OverUnderRC(rcModel,
@@ -1547,8 +1565,8 @@ void extMeasureRC::Model1(extSegment* cc,
   if (dist < cc->_dist_down)
     dist = cc->_dist_down;
 
-  dbCCSeg* ccCap_up = NULL;
-  dbCCSeg* ccCap_down = NULL;
+  dbCCSeg* ccCap_up = nullptr;
+  dbCCSeg* ccCap_down = nullptr;
   for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
     extDistRC* rc_up = OverUnderRC(rcModel,
@@ -1614,7 +1632,7 @@ double extMeasureRC::updateCoupCap(dbRSeg* rseg1,
                                    int jj,
                                    double v)
 {
-  if (rseg2 == NULL) {
+  if (rseg2 == nullptr) {
     double tot = _extMain->updateTotalCap(rseg1, v, jj);
     return tot;
   }
@@ -1643,7 +1661,7 @@ extDistRC* extMeasureRC::OverUnderRC(extMetRCTable* rcModel,
                                      int metOver,
                                      FILE* segFP)
 {
-  extDistRC* rc = NULL;
+  extDistRC* rc = nullptr;
   if (metOver <= 0)
     rc = getOverRC_Dist(rcModel, width, met, metUnder, dist, open);
   else if (metUnder <= 0)
