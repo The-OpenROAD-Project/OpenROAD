@@ -1419,7 +1419,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
           sections[i].used_slots++;
           io_pin.assignToSection();
           if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-            assignMirroredPin(io_pin);
+            assignMirroredPinToSection(io_pin);
           }
         }
         total_pins_assigned += group_size;
@@ -1532,6 +1532,11 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
     std::vector<int> dst(sections.size());
     for (int i = 0; i < sections.size(); i++) {
       dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos);
+      if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+        odb::Point mirrored_pos = core_->getMirroredPosition(sections[i].pos);
+        dst[i] += netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(),
+                                             mirrored_pos);
+      }
     }
     for (auto i : sortIndexes(dst)) {
       if (sections[i].used_slots < sections[i].num_slots) {
@@ -1541,7 +1546,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         io_pin.assignToSection();
 
         if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-          assignMirroredPin(io_pin);
+          assignMirroredPinToSection(io_pin);
         }
         break;
       }
@@ -1551,13 +1556,13 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
   return pin_assigned;
 }
 
-void IOPlacer::assignMirroredPin(IOPin& io_pin)
+void IOPlacer::assignMirroredPinToSection(IOPin& io_pin)
 {
   odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
   int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
   IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
   // Mark mirrored pin as assigned to section to prevent assigning it to
-  // another section that is not aligned with his pair
+  // another section that is not aligned with its pair
   mirrored_pin.assignToSection();
 }
 
