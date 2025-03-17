@@ -598,11 +598,24 @@ class FlexPA
 
   void prepPattern();
 
-  void deletePatternInst(frInst* unique_inst);
-
+  /**
+   * @brief generates valid access patterns for the unique inst, considers both
+   * x and y of prepPatternInstHelper.
+   *
+   * @param unique_inst unique inst
+   */
   void prepPatternInst(frInst* unique_inst);
 
-  int prepPatternInstHelper(frInst* unique_inst, bool use_x = true);
+  /**
+   * @brief generates valid access patterns for the unique inst
+   *
+   * @param unique_inst unique inst
+   * @param use_x whether the x or y average coordinate of the access points of
+   * a pin will be used for sorting it.
+   *
+   * @returns the number of access patterns found.
+   */
+  int prepPatternInstHelper(frInst* unique_inst, bool use_x);
 
   int genPatterns(frInst* unique_inst,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);

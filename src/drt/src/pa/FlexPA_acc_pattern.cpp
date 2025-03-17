@@ -67,7 +67,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
 {
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst));
   }
   for (auto& inst : design_->getTopBlock()->getInsts()) {
     if (!target_insts_.empty()
@@ -191,19 +191,13 @@ void FlexPA::prepPattern()
   prepPatternInstRows(std::move(inst_rows));
 }
 
-void FlexPA::deletePatternInst(frInst* unique_inst)
-{
-#pragma omp critical
-  unique_inst_patterns_.erase(unique_inst);
-}
-
 void FlexPA::prepPatternInst(frInst* unique_inst)
 {
 #pragma omp critical
   unique_inst_patterns_[unique_inst]
       = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
 
-  int num_valid_pattern = prepPatternInstHelper(unique_inst);
+  int num_valid_pattern = prepPatternInstHelper(unique_inst, true);
 
   if (num_valid_pattern > 0) {
     return;
@@ -244,7 +238,7 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
       }
       n_aps += cnt;
       if (cnt != 0) {
-        const double coord = use_x ? sum_x_coord / cnt : sum_y_coord / cnt;
+        const double coord = (use_x ? sum_x_coord : sum_y_coord) / (double) cnt;
         pins.push_back({(int) std::round(coord), {pin.get(), inst_term.get()}});
       }
     }
