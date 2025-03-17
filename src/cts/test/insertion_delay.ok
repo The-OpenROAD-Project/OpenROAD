@@ -14,7 +14,6 @@
 [INFO CTS-0011]  Clock net "clk_regs" for registers has 278 sinks.
 [INFO CTS-0008] TritonCTS found 2 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 0 placement blockages have been identified.
 [INFO CTS-0201] 1 placed hard macros will be treated like blockages.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 1.
@@ -33,7 +32,6 @@
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 1.
-[INFO CTS-0200] 0 placement blockages have been identified.
 [INFO CTS-0201] 1 placed hard macros will be treated like blockages.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
 [INFO CTS-0028]  Total number of sinks: 278.

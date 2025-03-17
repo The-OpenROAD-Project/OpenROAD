@@ -12,7 +12,7 @@
 [INFO CTS-0010]  Clock net "clk" has 288 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 5 placement blockages have been identified.
+[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 288.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 10 and with maximum cluster diameter of 60.0 um.
@@ -21,7 +21,6 @@
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
 [INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
-[DEBUG CTS-legalizer] preSinkClustering legalizeOneBuffer clkbuf_leaf_10: [(7.220, 8.032)] => [(7.220, 8.400)]
 [INFO CTS-0019]  Total number of sinks after clustering: 29.
 [INFO CTS-0024]  Normalized sink region: [(1.26757, 0.912143), (13.4493, 11.6927)].
 [INFO CTS-0025]     Width:  12.1817.
@@ -37,19 +36,17 @@
     Sub-region size: 6.0909 X 5.3903
 [INFO CTS-0034]     Segment length (rounded): 2.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(3.358, 6.302)]=>[(3.571, 6.277)] parentPt:[(7.358, 6.064)] new branchPt is outside blockage
-[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(11.178, 8.122)]=>[(11.095, 7.800)] parentPt:[(11.358, 6.064)] new branchPt is outside blockage
-[DEBUG CTS-legalizer] createClockSubNets: root clkbuf_0: [(7.358, 6.064)]
-[DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_0_ : [(3.571, 6.277)]
-[DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_1_ : [(11.358, 6.064)]
-[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_0_ : [(3.571, 4.277)]
-[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_0__f: [(3.571, 4.277)]
-[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_1_ : [(3.571, 8.277)]
-[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_1__f: [(3.571, 8.277)]
-[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_2_ : [(10.858, 4.564)]
-[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_2__f: [(10.858, 4.564)]
-[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_3_ : [(11.095, 7.800)]
-[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_3__f: [(11.095, 7.800)]
+[DEBUG CTS-legalizer] createClockSubNets: root clkbuf_0: [(7.358, 6.302)]
+[DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_0_ : [(3.358, 6.302)]
+[DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_1_ : [(11.358, 6.302)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_0_ : [(3.511, 4.455)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_0__f: [(3.511, 4.455)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_1_ : [(3.757, 7.904)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_1__f: [(3.757, 7.904)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_2_ : [(11.156, 4.505)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_2__f: [(11.156, 4.505)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_3_ : [(11.178, 8.122)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_3__f: [(11.178, 8.122)]
 [INFO CTS-0035]  Number of sinks covered: 29.
 [INFO CTS-0018]     Created 34 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
@@ -60,7 +57,7 @@
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 292
 [INFO CTS-0100]  Leaf buffers 29
-[INFO CTS-0101]  Average sink wire length 130.69 um
+[INFO CTS-0101]  Average sink wire length 129.19 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Leaf load cells 4
 Found 0 unconnected buffers.
