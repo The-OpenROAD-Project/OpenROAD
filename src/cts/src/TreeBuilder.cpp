@@ -57,7 +57,6 @@ void TreeBuilder::mergeBlockages()
   bg::strategy::buffer::point_circle circle_strategy(36);
   bg::strategy::buffer::side_straight side_strategy;
 
-  logger_->report("buffer hight: {} \nbuffer width: {}", bufferHeight_ * techChar_->getLengthUnit(), bufferWidth_ * techChar_->getLengthUnit());
   std::vector<box_t> macros;
   std::vector<box_t> blockages;
   std::vector<box_t> temp_blockages;
@@ -121,20 +120,16 @@ void TreeBuilder::mergeBlockages()
         temp_blockages.push_back(b);
       }
     }
+    //add meged box to temp
     temp_blockages.push_back(merged_box);
+    // clear blockages
     blockages.clear();
+    // copy temp blockages
     blockages = temp_blockages;
     temp_blockages.clear();
-    //add meged box to temp
-    // clear blockages
-    // copy temp blockages
   }
-  logger_->report("Blockages with merging strategy:");
-  int i = 0;
 
   for(auto b : blockages) {
-    i += 1;
-    logger_->report("Blockage {}: ({}, {}) -> ({}, {})", i, b.min_corner().x(), b.min_corner().y(), b.max_corner().x(), b.max_corner().y());
     blockages_.emplace_back( b.min_corner().x(), b.min_corner().y(), b.max_corner().x(), b.max_corner().y());
   }
 
@@ -143,35 +138,6 @@ void TreeBuilder::mergeBlockages()
 
 void TreeBuilder::initBlockages()
 {
-  int i = 0;
-  logger_->report("Soft Blockages:");
-  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
-    i += 1;
-    odb::dbBox* bbox = blockage->getBBox();
-    logger_->report("Blockage {}: ({}, {}) -> ({}, {})", i, bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
-    bboxList_.emplace_back(bbox);
-  }
-  logger_->info(CTS,
-                200,
-                "{} placement blockages have been identified.",
-                bboxList_.size());
-
-  if (bboxList_.empty()) {
-    // Some HMs may not have explicit blockages
-    // Treat them as such only if they are placed
-    for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
-      if (inst->getMaster()->getType().isBlock()
-          && inst->getPlacementStatus().isPlaced()) {
-        odb::dbBox* bbox = inst->getBBox();
-        bboxList_.emplace_back(bbox);
-      }
-    }
-    logger_->info(CTS,
-                  201,
-                  "{} placed hard macros will be treated like blockages.",
-                  bboxList_.size());
-  }
-
   // add tree buffer width and height for legalization
   std::string buffer;
   if (!options_->getTreeBuffer().empty()) {
@@ -192,7 +158,13 @@ void TreeBuilder::initBlockages()
     logger_->error(
         CTS, 77, "No physical master cell found for cell {}.", buffer);
   }
+
   mergeBlockages();
+
+  logger_->info(CTS,
+    201,
+    "{} placed hard macros will be treated like blockages.",
+    blockages_.size());
 }
 
 // Check if location (x, y) is legal by checking if

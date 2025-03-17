@@ -284,7 +284,6 @@ class TreeBuilder
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;
-  std::vector<odb::dbBox*> bboxList_;
   std::vector<odb::Rect> blockages_;
   double bufferWidth_ = 0.0;
   double bufferHeight_ = 0.0;
