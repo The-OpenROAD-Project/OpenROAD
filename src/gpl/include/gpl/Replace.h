@@ -144,7 +144,8 @@ class Replace
                 bool draw_bins,
                 bool initial,
                 odb::dbInst* inst,
-                int start_iter);
+                int start_iter,
+                bool update_db);
 
  private:
   bool initNesterovPlace(int threads);
@@ -221,5 +222,6 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
+  bool gui_debug_update_db_every_iteration = false;
 };
 }  // namespace gpl

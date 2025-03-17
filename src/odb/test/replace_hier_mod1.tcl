@@ -5,7 +5,7 @@ read_liberty -corner slow Nangate45/Nangate45_slow.lib
 read_liberty -corner fast Nangate45/Nangate45_fast.lib
 read_lef Nangate45/Nangate45.lef
 
-read_verilog replace_design1.v
+read_verilog replace_hier_mod1.v
 #read_def repair_setup1.def
 link_design top -hier
 create_clock -period 0.3 clk
@@ -21,12 +21,12 @@ estimate_parasitics -placement
 
 report_checks -through u1z -through r2/D
 
-write_verilog_for_eqy replace_design1 before "None"
+write_verilog_for_eqy replace_hier_mod1 before "None"
 
-replace_design bc1 inv_chain
+replace_hier_module bc1 inv_chain
 estimate_parasitics -placement
 
-run_equivalence_test replace_design1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod1 ./Nangate45/work_around_yosys/ "None"
 
 report_checks -through u1z -through r2/D
 

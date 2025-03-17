@@ -22,7 +22,7 @@ MAN3 = man3
 
 # Exclude these set of keywords
 EXCLUDE_KEYWORDS = ant cts dft dpl drt fin gpl grt gui ifp mpl \
-				   mpl2 odb pad par pdn ppl psm rcx rmp rsz sta \
+				   odb pad par pdn ppl psm rcx rmp rsz sta \
 				   stt tap upf utl
 EXCLUDE_FILES := $(addsuffix .md,$(EXCLUDE_KEYWORDS))
 
