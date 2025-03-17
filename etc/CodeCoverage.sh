@@ -16,7 +16,7 @@ EOF
 _lcov() {
     ctest --test-dir build -j $(nproc)
 
-    # sta has a private test suite; mpl is obsoleted by mpl2;
+    # sta has a private test suite
     # drt's gr is not in use
     mkdir -p coverage-output
     lcov \
@@ -31,7 +31,6 @@ _lcov() {
         --exclude "*/third-party/*" \
         --exclude "*/sta/*" \
         --exclude "*/test/*" \
-        --exclude "*/mpl/*" \
         --exclude "*/drt/src/gr/*" \
         --exclude "*/drt/src/db/grObj/*" \
         --output-file ./coverage-output/main_coverage.info
