@@ -455,6 +455,7 @@ def parse_direction(design, direction):
     else:
         utl.error(utl.PPL, 328, f"Invalid pin direction {direction}.")
 
+
 def parse_edge(design, edge):
     dbBlock = design.getBlock()
     if (
