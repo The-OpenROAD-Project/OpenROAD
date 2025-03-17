@@ -50,102 +50,38 @@ using utl::CTS;
 
 void TreeBuilder::mergeBlockages()
 {
-  bg::strategy::buffer::distance_symmetric<int> distance_strategy_hight(
-      bufferHeight_ * techChar_->getLengthUnit());
-  bg::strategy::buffer::distance_symmetric<int> distance_strategy_width(
-      bufferWidth_ * techChar_->getLengthUnit());
-  bg::strategy::buffer::join_round join_strategy(36);
-  bg::strategy::buffer::end_round end_strategy(36);
-  bg::strategy::buffer::point_circle circle_strategy(36);
-  bg::strategy::buffer::side_straight side_strategy;
+  using namespace gtl::operators;
 
-  std::vector<box_t> macros;
-  std::vector<box_t> blockages;
-  std::vector<box_t> temp_blockages;
-
-  // transform macros in boost box
+  polygon_set macros_p;
+  // transform macros in boost polygon
   for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster()->getType().isBlock()
         && inst->getPlacementStatus().isPlaced()) {
-      odb::dbBox* bbox = inst->getBBox();
-      box_t boost_box({bbox->xMin(), bbox->yMin()},
-                      {bbox->xMax(), bbox->yMax()});
+          odb::dbBox* bbox = inst->getBBox();
+      std::array<point_tp, 4> pts = {point_tp(bbox->xMin(), bbox->yMin()),
+        point_tp(bbox->xMax(), bbox->yMin()),
+        point_tp(bbox->xMax(), bbox->yMax()),
+        point_tp(bbox->xMin(), bbox->yMax()) };
 
-      macros.push_back(boost_box);
-      blockages.push_back(boost_box);
+      polygon_tp poly;
+      poly.set(pts.begin(), pts.end());
+      macros_p += poly;
     }
   }
 
-  for (auto m : macros) {
-    box_t merged_box(m);
+  float bloat_h = (float)(bufferHeight_ * techChar_->getLengthUnit()) / 2.0;
+  float bloat_w = (float)(bufferWidth_ * techChar_->getLengthUnit()) / 2.0;
 
-    for (auto b : blockages) {
-      // get upper line
-      line_t upper_line{
-          {merged_box.min_corner().x(), merged_box.max_corner().y()},
-          {merged_box.max_corner().x(), merged_box.max_corner().y()}};
-      // get right line
-      line_t right_line{
-          {merged_box.max_corner().x(), merged_box.min_corner().y()},
-          {merged_box.max_corner().x(), merged_box.max_corner().y()}};
+  gtl::bloat(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
+  gtl::shrink(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
 
-      // inflate upper line
-      bg::model::multi_polygon<polygon_t> inflated_upper_line;
-      bg::buffer(upper_line,
-                 inflated_upper_line,
-                 distance_strategy_hight,
-                 side_strategy,
-                 join_strategy,
-                 end_strategy,
-                 circle_strategy);
-
-      // inflate right line
-      bg::model::multi_polygon<polygon_t> inflated_right_line;
-      bg::buffer(right_line,
-                 inflated_right_line,
-                 distance_strategy_width,
-                 side_strategy,
-                 join_strategy,
-                 end_strategy,
-                 circle_strategy);
-
-      // check intersection with right line
-      bool intertesect_to_right = bg::intersects(inflated_right_line[0], b);
-
-      // check intersection with upper line
-      bool intertesect_to_upper = bg::intersects(inflated_upper_line[0], b);
-
-      if (intertesect_to_right || intertesect_to_upper) {  // merge boxes
-        int new_min_x
-            = std::min(merged_box.min_corner().x(), b.min_corner().x());
-        int new_max_x
-            = std::max(merged_box.max_corner().x(), b.max_corner().x());
-        int new_min_y
-            = std::min(merged_box.min_corner().y(), b.min_corner().y());
-        int new_max_y
-            = std::max(merged_box.max_corner().y(), b.max_corner().y());
-        merged_box.min_corner().x(new_min_x);
-        merged_box.max_corner().x(new_max_x);
-        merged_box.min_corner().y(new_min_y);
-        merged_box.max_corner().y(new_max_y);
-      } else {  // add blockage box to temp
-        temp_blockages.push_back(b);
-      }
-    }
-    // add meged box to temp
-    temp_blockages.push_back(merged_box);
-    // clear blockages
-    blockages.clear();
-    // copy temp blockages
-    blockages = temp_blockages;
-    temp_blockages.clear();
-  }
-
-  for (auto b : blockages) {
-    blockages_.emplace_back(b.min_corner().x(),
-                            b.min_corner().y(),
-                            b.max_corner().x(),
-                            b.max_corner().y());
+  std::vector<boost::polygon::rectangle_data<float>> bp_blockages;
+  macros_p.get_rectangles(bp_blockages);
+  for(auto r : bp_blockages) {
+    blockages_.emplace_back(r.get(gtl::direction_2d(gtl::direction_2d_enum::WEST)),
+    r.get(gtl::direction_2d(gtl::direction_2d_enum::SOUTH)),
+    r.get(gtl::direction_2d(gtl::direction_2d_enum::EAST)),
+    r.get(gtl::direction_2d(gtl::direction_2d_enum::NORTH)));
   }
 }
 

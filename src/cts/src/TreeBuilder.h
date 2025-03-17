@@ -36,12 +36,7 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
-#include <boost/geometry/algorithms/buffer.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/linestring.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/strategies/strategies.hpp>
+#include <boost/polygon/polygon.hpp>
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
 #include <deque>
@@ -86,11 +81,10 @@ enum class TreeType
   RegisterTree = 2  // child tree that drives only registers without ins delays
 };
 
-namespace bg = boost::geometry;
-using point_t = bg::model::d2::point_xy<int>;
-using box_t = bg::model::box<point_t>;
-using line_t = bg::model::linestring<point_t>;
-using polygon_t = bg::model::polygon<point_t>;
+namespace gtl = boost::polygon;
+using polygon_set = gtl::polygon_90_set_data<float>;
+using polygon_tp = gtl::polygon_90_with_holes_data<float>;
+using point_tp = polygon_tp::point_type;
 
 class TreeBuilder
 {
