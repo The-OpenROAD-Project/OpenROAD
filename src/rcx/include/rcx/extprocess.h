@@ -217,7 +217,7 @@ class extMasterConductor
                           double width,
                           double X,
                           double volt,
-                          extProcess* p = NULL);
+                          extProcess* p = nullptr);
   double writeRaphaelPoly3D(FILE* fp,
                             uint wireNum,
                             double width,

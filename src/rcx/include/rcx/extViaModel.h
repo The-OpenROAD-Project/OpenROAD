@@ -78,7 +78,7 @@ class extViaModel
   }
   extViaModel()
   {
-    _viaName = NULL;
+    _viaName = nullptr;
     _res = 0;
     _cutCnt = 0;
     _dx = 0;

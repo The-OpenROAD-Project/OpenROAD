@@ -94,11 +94,6 @@ void ClusteringEngine::run()
   }
 }
 
-void ClusteringEngine::setDesignMetrics(Metrics* design_metrics)
-{
-  design_metrics_ = design_metrics;
-}
-
 void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 {
   tree_ = tree;

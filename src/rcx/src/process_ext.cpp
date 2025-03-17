@@ -122,7 +122,7 @@ std::list<std::string> corners;
 while (iss >> word) {
     corners.push_back(word);
 }
-extRCModel* m = new extRCModel("MINTYPMAX", NULL);
+extRCModel* m = new extRCModel("MINTYPMAX", nullptr);
 uint cornerCnt= m->initModel(corners, metal_cnt);
 fprintf(stdout, "Initialed %d corners <%s>\n", cornerCnt, corner_names);
 _ext->setCurrentModel(m);

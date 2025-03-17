@@ -63,7 +63,7 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
     uint tr = _lowTrackSearch[dir][jj];
     for (; tr < netGrid->getTrackCnt(); tr++) {
       Track* track = netGrid->getTrackPtr(tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       if (track->getBase() > bounds.hi_search[dir]) {
@@ -74,7 +74,8 @@ int extMeasureRC::ConnectWires(uint dir, BoundaryData& bounds)
         if (_extMain->_dbgOption > 1) {
           // fprintf(stdout, "Track %d M%d %d \n", tr, jj,
           // track->getBase());
-          for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext())
+          for (Wire* w = track->getNextWire(nullptr); w != nullptr;
+               w = w->getNext())
             PrintWire(stdout, w, jj);
         }
       }
@@ -111,7 +112,7 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
     for (uint tr = _lowTrackToExtract[dir][jj]; tr < _hiTrackSearch[dir][jj];
          tr++) {
       Track* track = netGrid->getTrackPtr(tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       if (track->getBase() > bounds.extractLimitXY) {
@@ -121,7 +122,8 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
       ResetFirstWires(
           netGrid, &firstWireTable, tr, netGrid->getTrackCnt(), limitTrackNum);
 
-      for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext()) {
+      for (Wire* w = track->getNextWire(nullptr); w != nullptr;
+           w = w->getNext()) {
         bool found = false;
         uint start_next_track
             = tr;  // in case that track holds wires with different base
@@ -137,16 +139,16 @@ int extMeasureRC::FindCouplingNeighbors(uint dir, BoundaryData& bounds)
 
           // PrintWire(stdout, first_wire, jj);
           Wire* w2 = FindOverlap_found(w, first_wire, found);
-          if (w2 != NULL && found) {
+          if (w2 != nullptr && found) {
             firstWireTable.set(next_tr, w2);
 
             w->setUpNext(w2);
             break;
-          } else if (w2 != NULL && !found) {
+          } else if (w2 != nullptr && !found) {
             firstWireTable.set(next_tr, w2);
             w->setUpNext(w2);
             break;
-          } else if (first_wire != NULL) {
+          } else if (first_wire != nullptr) {
             firstWireTable.set(next_tr, first_wire);
             break;
           }
@@ -198,29 +200,29 @@ int extMeasureRC::FindCouplingNeighbors_down_opt(uint dir, BoundaryData& bounds)
     int tr = _hiTrackToExtract[dir][jj];
     for (; tr >= _lowTrackToExtract[dir][jj]; tr--) {
       Track* track = netGrid->getTrackPtr((uint) tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       int start_track_index = tr - 10 >= 0 ? tr - 10 : 0;
       ResetFirstWires(
           netGrid, &firstWireTable, start_track_index, tr, limitTrackNum);
 
-      Wire* first_wire1 = track->getNextWire(NULL);
-      for (Wire* w = first_wire1; w != NULL; w = w->getNext()) {
+      Wire* first_wire1 = track->getNextWire(nullptr);
+      for (Wire* w = first_wire1; w != nullptr; w = w->getNext()) {
         bool found = false;
         for (int next_tr = tr - 1;
              !found && tr - next_tr < limitTrackNum && next_tr >= 0;
              next_tr--) {
           Wire* first_wire = GetNextWire(netGrid, next_tr, &firstWireTable);
           Wire* w2 = FindOverlap_found(w, first_wire, found);
-          if (w2 != NULL && found) {
+          if (w2 != nullptr && found) {
             firstWireTable.set(next_tr, w2);
             w->setDownNext(w2);
             break;
-          } else if (w2 != NULL && !found) {
+          } else if (w2 != nullptr && !found) {
             firstWireTable.set(next_tr, w2);
             break;
-          } else if (first_wire != NULL) {
+          } else if (first_wire != nullptr) {
             firstWireTable.set(next_tr, first_wire);
             break;
           }
@@ -250,7 +252,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
          tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       uint m1 = jj + 1;
@@ -260,9 +262,9 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
 
       ResetFirstWires(m1, m2, dir, firstWireTable);
 
-      Wire* prev = NULL;
-      Wire* first_wire1 = track->getNextWire(NULL);
-      for (Wire* w = first_wire1; w != NULL;
+      Wire* prev = nullptr;
+      Wire* first_wire1 = track->getNextWire(nullptr);
+      for (Wire* w = first_wire1; w != nullptr;
            w = w->getNext())  // for all wires in the track
       {
         if (w->isPower() || w->getAboveNext())
@@ -282,7 +284,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_up_opt(uint dir,
                                                             couplingDist,
                                                             limitTrackNum,
                                                             firstWireTable);
-          if (w2 != NULL) {
+          if (w2 != nullptr) {
             w->setAboveNext(w2);
             break;
           }
@@ -315,7 +317,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
          tr++)  // for all  tracks
     {
       Track* track = netGrid->getTrackPtr(tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       int m1 = jj - 1;
@@ -325,12 +327,12 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
 
       ResetFirstWires(m2, m1, dir, firstWireTable);
 
-      Wire* prev = NULL;
-      Wire* first_wire1 = track->getNextWire(NULL);
-      for (Wire* w = first_wire1; w != NULL;
+      Wire* prev = nullptr;
+      Wire* first_wire1 = track->getNextWire(nullptr);
+      for (Wire* w = first_wire1; w != nullptr;
            w = w->getNext())  // for all wires in the track
       {
-        if (w->isPower() || w->getAboveNext() != NULL)
+        if (w->isPower() || w->getAboveNext() != nullptr)
           continue;
 
         prev = w;
@@ -347,7 +349,7 @@ int extMeasureRC::FindDiagonalNeighbors_vertical_down_opt(
                                                             couplingDist,
                                                             limitTrackNum,
                                                             firstWireTable);
-          if (w2 != NULL) {
+          if (w2 != nullptr) {
             w->setBelowNext(w2);
             break;
           }
@@ -370,7 +372,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
   uint couplingDist = bounds.maxCouplingTracks;
 
   CouplingConfig config(_extMain, metalLevelCnt);
-  _segFP = NULL;
+  _segFP = nullptr;
   if (config.debug_enabled) {
     config.debug_fp = OpenPrintFile(dir, "Segments");
     _segFP = config.debug_fp;
@@ -398,11 +400,12 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
          tr < _hiTrackToExtract[dir][level];
          tr++) {
       Track* track = netGrid->getTrackPtr(tr);
-      if (track == NULL)
+      if (track == nullptr)
         continue;
 
       ResetFirstWires(level, metalLevelCnt, dir, firstWireTable);
-      for (Wire* w = track->getNextWire(NULL); w != NULL; w = w->getNext()) {
+      for (Wire* w = track->getNextWire(nullptr); w != nullptr;
+           w = w->getNext()) {
         counts.wire_count++;
         if (w->isPower() || w->getRsegId() == 0)
           continue;
@@ -448,7 +451,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
               continue;
 
             extSegment* white = _seqmentPool->alloc();
-            white->set(dir, w, s->_xy, s->_len, NULL, NULL);
+            white->set(dir, w, s->_xy, s->_len, nullptr, nullptr);
             _whiteSegTable[_met]->add(white);
 
             PrintOverlapSeg(_segFP, s, _met, "\nNEW --");
@@ -503,7 +506,7 @@ int extMeasureRC::CouplingFlow_opt(uint dir,
     // oneCntTable=%d\n",
     //        dir, wireCnt, notOrderCnt, oneEmptyTable, oneCntTable);
   }
-  if (_segFP != NULL)
+  if (_segFP != nullptr)
     fclose(_segFP);
 
   de_allocateTables(metalLevelCnt);

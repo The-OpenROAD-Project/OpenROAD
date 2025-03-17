@@ -66,6 +66,6 @@ Major Flow Steps:
   // NOTE: dependent on odb::orderWires
  
 
-    couplingFlow_v2(maxRect, _couplingFlag, NULL);
+    couplingFlow_v2(maxRect, _couplingFlag, nullptr);
 
 

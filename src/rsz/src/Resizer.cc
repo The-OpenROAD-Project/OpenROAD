@@ -47,6 +47,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "ResizerObserver.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -4015,11 +4016,13 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin != out_pin) {
-      Instance* load_inst = network_->instance(pin);
-      Port* load_port = db_network_->port(pin);
-      load_pin = std::make_pair(network_->name(load_inst),
-                                network_->name(load_port));
-      load_pins.emplace_back(load_pin);
+      if (db_network_->isFlat(pin)) {
+        Instance* load_inst = network_->instance(pin);
+        Port* load_port = db_network_->port(pin);
+        load_pin = std::make_pair(network_->name(load_inst),
+                                  network_->name(load_port));
+        load_pins.emplace_back(load_pin);
+      }
     }
   }
   data.load_pins = std::move(load_pins);
@@ -4604,6 +4607,12 @@ void Resizer::copyDontUseFromLiberty()
       }
     }
   }
+}
+
+void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
+{
+  repair_design_->setDebugGraphics(graphics);
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace rsz
