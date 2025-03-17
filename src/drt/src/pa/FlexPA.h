@@ -615,8 +615,6 @@ class FlexPA
    */
   int prepPatternInstHelper(frInst* unique_inst, bool use_x);
 
-  void deletePatternInst(frInst* unique_inst);
-
   int genPatterns(frInst* unique_inst,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
