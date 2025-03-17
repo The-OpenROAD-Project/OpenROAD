@@ -1375,18 +1375,19 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
   bool group_assigned = false;
   int total_pins_assigned = 0;
 
-  IOPin& io_pin = net->getIoPin(io_group[0]);
+  IOPin& first_pin = net->getIoPin(io_group[0]);
 
-  if (!io_pin.isAssignedToSection() && !io_pin.inFallback()) {
+  if (!first_pin.isAssignedToSection() && !first_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
+        IOPin& pin = net->getIoPin(pin_idx);
         int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
-          dst[i] = pin_hpwl;
+          dst[i] = pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
           break;
         }
-        dst[i] += pin_hpwl;
+        dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
       }
     }
 
@@ -1531,12 +1532,8 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
       && !io_pin.inFallback()) {
     std::vector<int> dst(sections.size());
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos);
-      if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-        odb::Point mirrored_pos = core_->getMirroredPosition(sections[i].pos);
-        dst[i] += netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(),
-                                             mirrored_pos);
-      }
+      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos)
+               + getMirroredPinCost(io_pin, sections[i].pos);
     }
     for (auto i : sortIndexes(dst)) {
       if (sections[i].used_slots < sections[i].num_slots) {
@@ -1564,6 +1561,15 @@ void IOPlacer::assignMirroredPinToSection(IOPin& io_pin)
   // Mark mirrored pin as assigned to section to prevent assigning it to
   // another section that is not aligned with its pair
   mirrored_pin.assignToSection();
+}
+
+int IOPlacer::getMirroredPinCost(IOPin& io_pin, const odb::Point& position)
+{
+  if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+    odb::Point mirrored_pos = core_->getMirroredPosition(position);
+    return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
+  }
+  return 0;
 }
 
 void IOPlacer::printConfig(bool annealing)
