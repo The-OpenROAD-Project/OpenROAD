@@ -596,6 +596,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     out_net = db_network_->makeNet(net_name.c_str(), parent);
   }
 
+  dbNet* in_net_db = db_network_->staToDb(in_net);
+
   // Disconnect the original drvr pin from everything (hierarchical nets
   // and flat nets).
   odb::dbITerm* drvr_pin_iterm;
@@ -611,6 +613,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // disconnect the iterm from both the modnet and the dbnet
     // note we will rewire the drvr_pin to connect to the new buffer later.
     drvr_pin_iterm->disconnect();
+    drvr_pin_iterm->connect(in_net_db);
   }
   if (drvr_pin_moditerm) {
     drvr_pin_moditerm->disconnect();
