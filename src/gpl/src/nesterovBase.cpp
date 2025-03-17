@@ -1707,7 +1707,7 @@ void NesterovBase::initFillerGCells()
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
-  // if(pb_->group() == NULL) {
+  // if(pb_->group() == nullptr) {
   //   // nonPlaceInstsArea should not have density downscaling!!!
   //   whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
   // } else {
