@@ -1682,7 +1682,7 @@ Direction2D::Value dbBlock::findDirectionByEdge(const std::string& edge)
   } else if (edge == "left") {
     return Direction2D::West;
   }
-  
+
   return Direction2D::East;
 }
 
