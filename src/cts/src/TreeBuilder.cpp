@@ -50,8 +50,10 @@ using utl::CTS;
 
 void TreeBuilder::mergeBlockages()
 {
-  bg::strategy::buffer::distance_symmetric<int> distance_strategy_hight(bufferHeight_ * techChar_->getLengthUnit());
-  bg::strategy::buffer::distance_symmetric<int> distance_strategy_width(bufferWidth_ * techChar_->getLengthUnit());
+  bg::strategy::buffer::distance_symmetric<int> distance_strategy_hight(
+      bufferHeight_ * techChar_->getLengthUnit());
+  bg::strategy::buffer::distance_symmetric<int> distance_strategy_width(
+      bufferWidth_ * techChar_->getLengthUnit());
   bg::strategy::buffer::join_round join_strategy(36);
   bg::strategy::buffer::end_round end_strategy(36);
   bg::strategy::buffer::point_circle circle_strategy(36);
@@ -68,59 +70,69 @@ void TreeBuilder::mergeBlockages()
       odb::dbBox* bbox = inst->getBBox();
       box_t boost_box({bbox->xMin(), bbox->yMin()},
                       {bbox->xMax(), bbox->yMax()});
-      
+
       macros.push_back(boost_box);
       blockages.push_back(boost_box);
     }
   }
 
-  for(auto m : macros) {
+  for (auto m : macros) {
     box_t merged_box(m);
 
-    for(auto b : blockages) {
+    for (auto b : blockages) {
       // get upper line
-      line_t upper_line {{merged_box.min_corner().x(), merged_box.max_corner().y()},
-                         {merged_box.max_corner().x(), merged_box.max_corner().y()}};
+      line_t upper_line{
+          {merged_box.min_corner().x(), merged_box.max_corner().y()},
+          {merged_box.max_corner().x(), merged_box.max_corner().y()}};
       // get right line
-      line_t right_line {{merged_box.max_corner().x(), merged_box.min_corner().y()},
-                         {merged_box.max_corner().x(), merged_box.max_corner().y()}};
+      line_t right_line{
+          {merged_box.max_corner().x(), merged_box.min_corner().y()},
+          {merged_box.max_corner().x(), merged_box.max_corner().y()}};
 
       // inflate upper line
       bg::model::multi_polygon<polygon_t> inflated_upper_line;
-      bg::buffer(upper_line, inflated_upper_line,
-                 distance_strategy_hight, side_strategy,
-                 join_strategy, end_strategy, circle_strategy);
+      bg::buffer(upper_line,
+                 inflated_upper_line,
+                 distance_strategy_hight,
+                 side_strategy,
+                 join_strategy,
+                 end_strategy,
+                 circle_strategy);
 
       // inflate right line
       bg::model::multi_polygon<polygon_t> inflated_right_line;
-      bg::buffer(right_line, inflated_right_line,
-                 distance_strategy_width, side_strategy,
-                 join_strategy, end_strategy, circle_strategy);
+      bg::buffer(right_line,
+                 inflated_right_line,
+                 distance_strategy_width,
+                 side_strategy,
+                 join_strategy,
+                 end_strategy,
+                 circle_strategy);
 
       // check intersection with right line
       bool intertesect_to_right = bg::intersects(inflated_right_line[0], b);
 
-      // check intersection with upper line 
+      // check intersection with upper line
       bool intertesect_to_upper = bg::intersects(inflated_upper_line[0], b);
 
-      if(intertesect_to_right || intertesect_to_upper) { // merge boxes
-        int new_min_x = std::min(merged_box.min_corner().x(),
-                                 b.min_corner().x());
-        int new_max_x = std::max(merged_box.max_corner().x(),
-                                 b.max_corner().x());
-        int new_min_y = std::min(merged_box.min_corner().y(),
-                                 b.min_corner().y());
-        int new_max_y = std::max(merged_box.max_corner().y(),
-                                 b.max_corner().y());
+      if (intertesect_to_right || intertesect_to_upper) {  // merge boxes
+        int new_min_x
+            = std::min(merged_box.min_corner().x(), b.min_corner().x());
+        int new_max_x
+            = std::max(merged_box.max_corner().x(), b.max_corner().x());
+        int new_min_y
+            = std::min(merged_box.min_corner().y(), b.min_corner().y());
+        int new_max_y
+            = std::max(merged_box.max_corner().y(), b.max_corner().y());
         merged_box.min_corner().x(new_min_x);
         merged_box.max_corner().x(new_max_x);
         merged_box.min_corner().y(new_min_y);
         merged_box.max_corner().y(new_max_y);
-      } else { // add blockage box to temp
+      } else {  // add blockage box to temp
         temp_blockages.push_back(b);
       }
     }
-    //add meged box to temp
+    // add meged box to temp
     temp_blockages.push_back(merged_box);
     // clear blockages
     blockages.clear();
@@ -129,11 +141,12 @@ void TreeBuilder::mergeBlockages()
     temp_blockages.clear();
   }
 
-  for(auto b : blockages) {
-    blockages_.emplace_back( b.min_corner().x(), b.min_corner().y(), b.max_corner().x(), b.max_corner().y());
+  for (auto b : blockages) {
+    blockages_.emplace_back(b.min_corner().x(),
+                            b.min_corner().y(),
+                            b.max_corner().x(),
+                            b.max_corner().y());
   }
-
-
 }
 
 void TreeBuilder::initBlockages()
@@ -162,9 +175,9 @@ void TreeBuilder::initBlockages()
   mergeBlockages();
 
   logger_->info(CTS,
-    201,
-    "{} placed hard macros will be treated like blockages.",
-    blockages_.size());
+                201,
+                "{} placed hard macros will be treated like blockages.",
+                blockages_.size());
 }
 
 // Check if location (x, y) is legal by checking if
