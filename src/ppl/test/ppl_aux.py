@@ -383,15 +383,13 @@ def set_io_pin_constraint(
                 "Both 'direction' and 'pin_names' constraints not allowed.",
             )
 
-        edge_dir = parse_edge(design, edge)
-        constraint_region = dbBlock.findConstraintRegion(edge_dir, begin, end)
+        constraint_region = dbBlock.findConstraintRegion(edge, begin, end)
 
         if direction != None:
-            dir = parse_direction(design, direction)
             # utl.info(utl.PPL, 349, f"Restrict {direction} pins to region " +
             #          f"{design.micronToDBU(begin)}-{design.micronToDBU(end)}, " +
             #          f"in the {edge} edge.")
-            dbBlock.addBTermConstraintByDirection(dir, constraint_region)
+            dbBlock.addBTermConstraintByDirection(direction, constraint_region)
 
         if pin_names != None:
             pin_list = parse_pin_names(design, pin_names)
@@ -441,32 +439,6 @@ def set_io_pin_constraint(
 
     else:
         utl.warn(utl.PPL, 373, f"Constraint with region {region} has an invalid edge.")
-
-
-def parse_direction(design, direction):
-    dbBlock = design.getBlock()
-    if (
-        re.fullmatch("INPUT", direction, re.I) != None
-        or re.fullmatch("OUTPUT", direction, re.I) != None
-        or re.fullmatch("INOUT", direction, re.I) != None
-        or re.fullmatch("FEEDTHRU", direction, re.I) != None
-    ):
-        return dbBlock.getIoTypeByDirection(direction.lower())
-    else:
-        utl.error(utl.PPL, 328, f"Invalid pin direction {direction}.")
-
-
-def parse_edge(design, edge):
-    dbBlock = design.getBlock()
-    if (
-        re.fullmatch("top", edge, re.I) != None
-        or re.fullmatch("bottom", edge, re.I) != None
-        or re.fullmatch("left", edge, re.I) != None
-        or re.fullmatch("right", edge, re.I) != None
-    ):
-        return dbBlock.findDirectionByEdge(edge)
-    else:
-        utl.error(utl.PPL, 329, f"Invalid edge {edge}. Use top, bottom, left or right.")
 
 
 def is_pos_float(x):

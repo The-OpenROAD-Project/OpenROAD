@@ -1627,19 +1627,19 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
-Rect dbBlock::findConstraintRegion(const Direction2D::Value& edge,
+Rect dbBlock::findConstraintRegion(const Direction2D& edge,
                                    int begin,
                                    int end)
 {
   Rect constraint_region;
   const Rect& die_bounds = getDieArea();
-  if (edge == Direction2D::South) {
+  if (edge == south) {
     constraint_region = Rect(begin, die_bounds.yMin(), end, die_bounds.yMin());
-  } else if (edge == Direction2D::North) {
+  } else if (edge == north) {
     constraint_region = Rect(begin, die_bounds.yMax(), end, die_bounds.yMax());
-  } else if (edge == Direction2D::West) {
+  } else if (edge == west) {
     constraint_region = Rect(die_bounds.xMin(), begin, die_bounds.xMin(), end);
-  } else if (edge == Direction2D::East) {
+  } else if (edge == east) {
     constraint_region = Rect(die_bounds.xMax(), begin, die_bounds.xMax(), end);
   }
 
@@ -1671,28 +1671,6 @@ void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
       bterm->setConstraintRegion(constraint_region);
     }
   }
-}
-
-Direction2D::Value dbBlock::findDirectionByEdge(const std::string& edge)
-{
-  if (edge == "bottom") {
-    return Direction2D::South;
-  }
-
-  if (edge == "top") {
-    return Direction2D::North;
-  }
-
-  if (edge == "left") {
-    return Direction2D::West;
-  }
-
-  return Direction2D::East;
-}
-
-dbIoType dbBlock::getIoTypeByDirection(const std::string& direction)
-{
-  return dbIoType(direction.c_str());
 }
 
 dbSet<dbITerm> dbBlock::getITerms()

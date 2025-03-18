@@ -985,7 +985,7 @@ class dbBlock : public dbObject
   /// Find the rectangle corresponding to the constraint region in a specific
   /// edge of the die area.
   ///
-  Rect findConstraintRegion(const Direction2D::Value& edge, int begin, int end);
+  Rect findConstraintRegion(const Direction2D& edge, int begin, int end);
 
   ///
   /// Add region constraint for dbBTerms according to their IO type.
@@ -998,16 +998,6 @@ class dbBlock : public dbObject
   ///
   void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
                              const Rect& constraint_region);
-
-  ///
-  /// Find the Direction2D value corresponding to a given edge name.
-  ///
-  Direction2D::Value findDirectionByEdge(const std::string& edge);
-
-  ///
-  /// Find the dbIoType value corresponding to a given direction name.
-  ///
-  dbIoType getIoTypeByDirection(const std::string& direction);
 
   ///
   /// Get all the instance-terminals of this block.
