@@ -251,14 +251,13 @@ void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
       } else if (unique_to_pa_idx_[unique_inst] != pin->getNumPinAccess()) {
         logger_->error(DRT,
                        69,
-                       "{} has a conflicting number of pinAccess ({} and {}).",
+                       "{} has a conflicting pinAccess idx ({} and {}).",
                        unique_inst->getName(),
                        unique_to_pa_idx_[unique_inst],
                        pin->getNumPinAccess());
       }
       checkFigsOnGrid(pin.get());
-      auto pa = std::make_unique<frPinAccess>();
-      pin->addPinAccess(std::move(pa));
+      pin->addPinAccess(std::make_unique<frPinAccess>());
     }
   }
   unique_inst->setPinAccessIdx(unique_to_pa_idx_[unique_inst]);
@@ -277,8 +276,7 @@ void UniqueInsts::initPinAccess()
   if (target_insts_.empty()) {
     for (auto& term : getDesign()->getTopBlock()->getTerms()) {
       for (auto& pin : term->getPins()) {
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
+        pin->addPinAccess(std::make_unique<frPinAccess>());
       }
     }
   }

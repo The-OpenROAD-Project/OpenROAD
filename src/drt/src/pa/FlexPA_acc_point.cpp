@@ -1316,12 +1316,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
   std::set<std::pair<Point, frLayerNum>> apset;
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  }
 
   if (graphics_) {
     std::set<frInst*, frBlockObjectComp>* inst_class = nullptr;
@@ -1361,10 +1355,10 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   updatePinStats(aps, pin, inst_term);
   const int n_aps = aps.size();
   if (n_aps == 0) {
-    if (is_std_cell_pin) {
+    if (inst_term && isStdCell(inst_term->getInst())) {
       std_cell_pin_no_ap_cnt_++;
     }
-    if (is_macro_cell_pin) {
+    if (inst_term && isMacroCell(inst_term->getInst())) {
       macro_cell_pin_no_ap_cnt_++;
     }
   } else {
