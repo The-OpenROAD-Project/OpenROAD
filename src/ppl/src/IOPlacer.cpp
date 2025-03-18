@@ -1897,7 +1897,8 @@ void IOPlacer::initMirroredPins(bool annealing)
 
 void IOPlacer::initExcludedIntervals()
 {
-  for (const odb::Rect& excluded_region : getBlock()->getBlockedRegionsForPins()) {
+  for (const odb::Rect& excluded_region :
+       getBlock()->getBlockedRegionsForPins()) {
     Interval excluded_interv = findIntervalFromRect(excluded_region);
     excluded_intervals_.push_back(excluded_interv);
   }
