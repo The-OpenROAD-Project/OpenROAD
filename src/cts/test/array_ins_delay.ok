@@ -106,25 +106,25 @@
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 225
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 9172.05 um
+[INFO CTS-0101]  Average sink wire length 9153.89 um
 [INFO CTS-0102]  Path depth 18 - 18
 [INFO CTS-0207]  Leaf load cells 4
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 2254
 [INFO CTS-0100]  Leaf buffers 227
-[INFO CTS-0101]  Average sink wire length 4115.91 um
+[INFO CTS-0101]  Average sink wire length 4120.02 um
 [INFO CTS-0102]  Path depth 17 - 17
 [INFO CTS-0207]  Leaf load cells 4
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 50 long wires.
-[INFO RSZ-0048] Inserted 110 buffers in 50 nets.
+[INFO RSZ-0048] Inserted 109 buffers in 50 nets.
 Placement Analysis
 ---------------------------------
-total displacement       5070.6 u
-average displacement        1.6 u
-max displacement          152.7 u
-original HPWL          182660.1 u
-legalized HPWL         183524.6 u
+total displacement       4698.2 u
+average displacement        1.5 u
+max displacement          153.5 u
+original HPWL          182314.0 u
+legalized HPWL         183132.9 u
 delta HPWL                    0 %
 
 Clock clk
@@ -160,7 +160,7 @@ Path Type: max
    0.03    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    0.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    0.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -195,7 +195,7 @@ Path Type: max
    0.03    5.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    5.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    5.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    5.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    5.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -243,7 +243,7 @@ Path Type: max
    0.03    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    0.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    0.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    0.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
@@ -278,7 +278,7 @@ Path Type: max
    0.03    5.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
    0.03    5.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
    0.03    5.72 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    5.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.03    5.76 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
    0.03    5.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
    0.04    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
    0.03    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)

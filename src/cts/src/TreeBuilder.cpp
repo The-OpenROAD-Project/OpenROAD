@@ -35,6 +35,8 @@
 
 #include "TreeBuilder.h"
 
+#include <boost/polygon/polygon.hpp>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -42,6 +44,7 @@
 #include <memory>
 #include <vector>
 
+#include "odb/geom_boost.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -50,42 +53,40 @@ using utl::CTS;
 
 void TreeBuilder::mergeBlockages()
 {
-  using namespace gtl::operators;
+  namespace gtl = boost::polygon;
+  using boost::polygon::operators::operator+=;
 
-  polygon_set macros_p;
-  // transform macros in boost polygon
-  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  gtl::polygon_90_set_data<int> blockage_polygons;
+  // Add the macros into the polygon set
+  for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->getType().isBlock()
         && inst->getPlacementStatus().isPlaced()) {
-      odb::dbBox* bbox = inst->getBBox();
-      std::array<point_tp, 4> pts = {point_tp(bbox->xMin(), bbox->yMin()),
-                                     point_tp(bbox->xMax(), bbox->yMin()),
-                                     point_tp(bbox->xMax(), bbox->yMax()),
-                                     point_tp(bbox->xMin(), bbox->yMax())};
-
-      polygon_tp poly;
-      poly.set(pts.begin(), pts.end());
-      macros_p += poly;
+      blockage_polygons += inst->getBBox()->getBox();
     }
   }
 
-  // bloat blockage to merge if there is not enought space between them
+  // Add the hard blockages into the polygon set
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      blockage_polygons += blockage->getBBox()->getBox();
+    }
+  }
 
-  float bloat_h = (float) (bufferHeight_ * techChar_->getLengthUnit()) / 2.0;
-  float bloat_w = (float) (bufferWidth_ * techChar_->getLengthUnit()) / 2.0;
+  // bloat blockages to merge if there is not enough space between them
+  const int bloat_h
+      = std::ceil(bufferHeight_ * techChar_->getLengthUnit() / 2.0);
+  const int bloat_w
+      = std::ceil(bufferWidth_ * techChar_->getLengthUnit() / 2.0);
 
-  gtl::bloat(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
-  // shrink back to get the correct blockage bounding box
-  gtl::shrink(macros_p, bloat_w, bloat_w, bloat_h, bloat_h);
+  // Remove the gaps less than twice the bloat dimension
+  gtl::bloat(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
+  gtl::shrink(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
 
-  std::vector<gtl::rectangle_data<float>> bp_blockages;
-  macros_p.get_rectangles(bp_blockages);
-  for (gtl::rectangle_data<float> r : bp_blockages) {
-    blockages_.emplace_back(
-        r.get(gtl::direction_2d(gtl::direction_2d_enum::WEST)),
-        r.get(gtl::direction_2d(gtl::direction_2d_enum::SOUTH)),
-        r.get(gtl::direction_2d(gtl::direction_2d_enum::EAST)),
-        r.get(gtl::direction_2d(gtl::direction_2d_enum::NORTH)));
+  std::vector<odb::Rect> blockage_rects;
+  blockage_polygons.get_rectangles(blockage_rects);
+  for (const odb::Rect& rect : blockage_rects) {
+    blockages_.emplace_back(rect);
   }
 }
 
