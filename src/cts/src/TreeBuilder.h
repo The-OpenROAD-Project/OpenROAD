@@ -36,7 +36,6 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
-#include <boost/polygon/polygon.hpp>
 #include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
 #include <deque>
@@ -80,11 +79,6 @@ enum class TreeType
   MacroTree = 1,    // parent tree that drives only macro cells with ins delays
   RegisterTree = 2  // child tree that drives only registers without ins delays
 };
-
-namespace gtl = boost::polygon;
-using polygon_set = gtl::polygon_90_set_data<float>;
-using polygon_tp = gtl::polygon_90_with_holes_data<float>;
-using point_tp = polygon_tp::point_type;
 
 class TreeBuilder
 {
