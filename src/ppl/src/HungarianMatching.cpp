@@ -65,15 +65,15 @@ HungarianMatching::HungarianMatching(const Section& section,
   logger_ = logger;
 }
 
-void HungarianMatching::findAssignment(MirroredPins& mirrored_pins)
+void HungarianMatching::findAssignment()
 {
-  createMatrix(mirrored_pins);
+  createMatrix();
   if (!hungarian_matrix_.empty()) {
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
   }
 }
 
-void HungarianMatching::createMatrix(MirroredPins& mirrored_pins)
+void HungarianMatching::createMatrix()
 {
   hungarian_matrix_.resize(non_blocked_slots_);
   int slot_index = 0;
@@ -89,7 +89,7 @@ void HungarianMatching::createMatrix(MirroredPins& mirrored_pins)
       IOPin& io_pin = netlist_->getIoPin(idx);
       if (!io_pin.isInGroup()) {
         int hpwl = netlist_->computeIONetHPWL(idx, slot_pos)
-                   + getMirroredPinCost(io_pin, slot_pos, mirrored_pins);
+                   + getMirroredPinCost(io_pin, slot_pos);
         hungarian_matrix_[slot_index][pinIndex] = hpwl;
         pinIndex++;
       }
@@ -182,16 +182,16 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   slots_[slot_index].used = true;
 }
 
-void HungarianMatching::findAssignmentForGroups(MirroredPins& mirrored_pins)
+void HungarianMatching::findAssignmentForGroups()
 {
-  createMatrixForGroups(mirrored_pins);
+  createMatrixForGroups();
 
   if (!hungarian_matrix_.empty()) {
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
   }
 }
 
-void HungarianMatching::createMatrixForGroups(MirroredPins& mirrored_pins)
+void HungarianMatching::createMatrixForGroups()
 {
   std::vector<int> group_sizes;
   std::vector<int> group_slot_capacity;
@@ -253,7 +253,7 @@ void HungarianMatching::createMatrixForGroups(MirroredPins& mirrored_pins)
             break;
           }
           group_hpwl
-              += pin_hpwl + getMirroredPinCost(io_pin, slot_pos, mirrored_pins);
+              += pin_hpwl + getMirroredPinCost(io_pin, slot_pos);
         }
         if (pins.size() > group_slot_capacity[slot_index]) {
           group_hpwl = std::numeric_limits<int>::max();
@@ -360,10 +360,9 @@ bool HungarianMatching::groupHasMirroredPin(const std::vector<int>& group)
 }
 
 int HungarianMatching::getMirroredPinCost(IOPin& io_pin,
-                                          const odb::Point& position,
-                                          MirroredPins& mirrored_pins)
+                                          const odb::Point& position)
 {
-  if (mirrored_pins.find(io_pin.getBTerm()) != mirrored_pins.end()) {
+  if (io_pin.getBTerm()->hasMirroredBTerm()) {
     odb::Point mirrored_pos = core_->getMirroredPosition(position);
     return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
   }

@@ -1563,7 +1563,7 @@ void IOPlacer::assignMirroredPinToSection(IOPin& io_pin)
 
 int IOPlacer::getMirroredPinCost(IOPin& io_pin, const odb::Point& position)
 {
-  if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+  if (io_pin.getBTerm()->hasMirroredBTerm()) {
     odb::Point mirrored_pos = core_->getMirroredPosition(position);
     return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
   }
@@ -2174,7 +2174,7 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections,
   }
 
   for (auto& match : hg_vec) {
-    match.findAssignmentForGroups(mirrored_pins_);
+    match.findAssignmentForGroups();
   }
 
   for (auto& match : hg_vec) {
@@ -2188,7 +2188,7 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections,
   }
 
   for (auto& match : hg_vec) {
-    match.findAssignment(mirrored_pins_);
+    match.findAssignment();
   }
 
   for (bool mirrored_pins : {true, false}) {

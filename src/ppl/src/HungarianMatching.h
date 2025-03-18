@@ -69,17 +69,9 @@ class HungarianMatching
                     Logger* logger,
                     odb::dbDatabase* db);
   virtual ~HungarianMatching() = default;
-<<<<<<< HEAD
-  void findAssignment(MirroredPins& mirrored_pins);
-  void findAssignmentForGroups(MirroredPins& mirrored_pins);
-  void getFinalAssignment(std::vector<IOPin>& assignment,
-                          MirroredPins& mirrored_pins,
-                          bool assign_mirrored);
-=======
   void findAssignment();
   void findAssignmentForGroups();
   void getFinalAssignment(std::vector<IOPin>& assignment, bool assign_mirrored);
->>>>>>> master
   void getAssignmentForGroups(std::vector<IOPin>& assignment,
                               bool only_mirrored);
 
