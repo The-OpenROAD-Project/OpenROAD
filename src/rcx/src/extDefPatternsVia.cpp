@@ -215,19 +215,19 @@ uint extRCModel::ViaRulePat(extMainOptions* opt,
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
 
-    if (via->getNonDefaultRule() != NULL)
+    if (via->getNonDefaultRule() != nullptr)
       continue;
-    if (via->getViaGenerateRule() != NULL)
+    if (via->getViaGenerateRule() != nullptr)
       continue;
 
     const char* viaName = via->getConstName();
     cnt++;
 
     dbTechLayer* top_layer = via->getTopLayer();
-    if (top_layer == NULL)
+    if (top_layer == nullptr)
       continue;
     dbTechLayer* bot_layer = via->getBottomLayer();
-    if (bot_layer == NULL)
+    if (bot_layer == nullptr)
       continue;
     uint met = top_layer->getRoutingLevel();
     int underMet = bot_layer->getRoutingLevel();
@@ -246,7 +246,7 @@ uint extRCModel::ViaRulePat(extMainOptions* opt,
     if (startPatterns)
       startPatterns = false;
 
-    p->setMets(underMet, bot_layer, -1, NULL);
+    p->setMets(underMet, bot_layer, -1, nullptr);
 
     cnt += p->CreatePatternVia(via, 0, 0, 1);
 
@@ -271,21 +271,21 @@ dbNet* extRulesPat::createNetSingleWireAndVia(const char* netName,
   dbTechLayer* top_layer = via->getTopLayer();
 
   dbNet* net = dbNet::create(_block, netName);
-  if (net == NULL) {
+  if (net == nullptr) {
     fprintf(stdout, "Cannot create net %s, duplicate\n", netName);
-    return NULL;
+    return nullptr;
   }
   net->setSigType(dbSigType::SIGNAL);
   dbBTerm* hiBTerm = extRulesPat::createBterm(
       false, net, ll, ur, "_HI", bot_layer, width, vertical, true /*input*/);
   dbBTerm* loBTerm = extRulesPat::createBterm(
       true, net, ll, ur, "_LO", top_layer, width, vertical, false /*input*/);
-  if ((loBTerm == NULL) || (hiBTerm == NULL)) {
+  if ((loBTerm == nullptr) || (hiBTerm == nullptr)) {
     dbNet::destroy(net);
     fprintf(stdout,
             "Cannot create net %s, because failed to create bterms\n",
             netName);
-    return NULL;
+    return nullptr;
   }
   dbWireEncoder encoder;
   encoder.begin(dbWire::create(net));
