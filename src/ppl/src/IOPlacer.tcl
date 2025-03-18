@@ -463,34 +463,7 @@ proc place_pins { args } {
     set lef_units [$dbTech getLefUnits]
 
     foreach region $regions {
-      if { [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] } {
-        set edge_ [ppl::parse_edge "-exclude" $edge]
-
-        if {
-          [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end]
-        } {
-          if { $begin == "*" } {
-            set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
-          }
-          if { $end == "*" } {
-            set end [ppl::get_edge_extreme "-exclude" 0 $edge]
-          }
-          set begin [expr { int($begin * $lef_units) }]
-          set end [expr { int($end * $lef_units) }]
-
-          ppl::exclude_interval $edge_ $begin $end
-        } elseif { $interval == "*" } {
-          set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
-          set end [ppl::get_edge_extreme "-exclude" 0 $edge]
-
-          ppl::exclude_interval $edge_ $begin $end
-        } else {
-          utl::error PPL 25 "-exclude: $interval is an invalid region."
-        }
-      } else {
-        utl::error PPL 26 "-exclude: invalid syntax in $region.\
-          Use (top|bottom|left|right):interval."
-      }
+      exclude_io_pin_region -region $region
     }
   }
 

@@ -1895,6 +1895,14 @@ void IOPlacer::initMirroredPins(bool annealing)
   }
 }
 
+void IOPlacer::initExcludedIntervals()
+{
+  for (const odb::Rect& excluded_region : getBlock()->getBlockedRegionsForPins()) {
+    Interval excluded_interv = findIntervalFromRect(excluded_region);
+    excluded_intervals_.push_back(excluded_interv);
+  }
+}
+
 Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 {
   int begin;
@@ -2211,7 +2219,7 @@ void IOPlacer::updateSlots()
 void IOPlacer::runHungarianMatching(bool random_mode)
 {
   slots_per_section_ = parms_->getSlotsPerSection();
-
+  initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
@@ -2355,6 +2363,7 @@ void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
 void IOPlacer::runAnnealing(bool random)
 {
   slots_per_section_ = parms_->getSlotsPerSection();
+  initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 

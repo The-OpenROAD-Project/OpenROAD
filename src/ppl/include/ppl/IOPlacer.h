@@ -207,6 +207,7 @@ class IOPlacer
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
+  void initExcludedIntervals();
   Interval findIntervalFromRect(const odb::Rect& rect);
   void getConstraintsFromDB();
   void initConstraints(bool annealing = false);
