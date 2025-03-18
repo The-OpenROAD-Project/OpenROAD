@@ -69,13 +69,18 @@ class HungarianMatching
                     Logger* logger,
                     odb::dbDatabase* db);
   virtual ~HungarianMatching() = default;
+<<<<<<< HEAD
   void findAssignment(MirroredPins& mirrored_pins);
   void findAssignmentForGroups(MirroredPins& mirrored_pins);
   void getFinalAssignment(std::vector<IOPin>& assignment,
                           MirroredPins& mirrored_pins,
                           bool assign_mirrored);
+=======
+  void findAssignment();
+  void findAssignmentForGroups();
+  void getFinalAssignment(std::vector<IOPin>& assignment, bool assign_mirrored);
+>>>>>>> master
   void getAssignmentForGroups(std::vector<IOPin>& assignment,
-                              MirroredPins& mirrored_pins,
                               bool only_mirrored);
 
  private:
@@ -100,17 +105,13 @@ class HungarianMatching
   Logger* logger_;
   odb::dbDatabase* db_;
 
-  void createMatrix(MirroredPins& mirrored_pins);
-  void createMatrixForGroups(MirroredPins& mirrored_pins);
-  void assignMirroredPins(IOPin& io_pin,
-                          MirroredPins& mirrored_pins,
-                          std::vector<IOPin>& assignment);
+  void createMatrix();
+  void createMatrixForGroups();
+  void assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
-  bool groupHasMirroredPin(const std::vector<int>& group,
-                           MirroredPins& mirrored_pins);
+  bool groupHasMirroredPin(const std::vector<int>& group);
   int getMirroredPinCost(IOPin& io_pin,
-                         const odb::Point& position,
-                         MirroredPins& mirrored_pins);
+                         const odb::Point& position);
   Edge getMirroredEdge(const Edge& edge);
 };
 

@@ -104,7 +104,6 @@ inline bool samePos(Point& a, Point& b)
 }
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
-                                           MirroredPins& mirrored_pins,
                                            bool assign_mirrored)
 {
   size_t rows = non_blocked_slots_;
@@ -133,8 +132,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
 
         // Make this check here to avoid messing up the correlation between the
         // pin sorting and the hungarian matrix values
-        if ((assign_mirrored
-             && mirrored_pins.find(io_pin.getBTerm()) == mirrored_pins.end())
+        if ((assign_mirrored && !io_pin.getBTerm()->hasMirroredBTerm())
             || io_pin.isPlaced()) {
           continue;
         }
@@ -146,7 +144,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         slots_[slot_index].used = true;
 
         if (assign_mirrored) {
-          assignMirroredPins(io_pin, mirrored_pins, assignment);
+          assignMirroredPins(io_pin, assignment);
         }
         break;
       }
@@ -156,10 +154,9 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
 }
 
 void HungarianMatching::assignMirroredPins(IOPin& io_pin,
-                                           MirroredPins& mirrored_pins,
                                            std::vector<IOPin>& assignment)
 {
-  odb::dbBTerm* mirrored_term = mirrored_pins[io_pin.getBTerm()];
+  odb::dbBTerm* mirrored_term = io_pin.getBTerm()->getMirroredBTerm();
   int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
   IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
 
@@ -277,7 +274,6 @@ void HungarianMatching::createMatrixForGroups(MirroredPins& mirrored_pins)
 }
 
 void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
-                                               MirroredPins& mirrored_pins,
                                                bool only_mirrored)
 {
   if (hungarian_matrix_.empty()) {
@@ -289,8 +285,8 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
   int slot_index = 0;
   for (const auto& [pins, order] : pin_groups_) {
     bool assigned = false;
-    if ((only_mirrored && !groupHasMirroredPin(pins, mirrored_pins))
-        || (!only_mirrored && groupHasMirroredPin(pins, mirrored_pins))) {
+    if ((only_mirrored && !groupHasMirroredPin(pins))
+        || (!only_mirrored && groupHasMirroredPin(pins))) {
       continue;
     }
 
@@ -319,8 +315,8 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
         pin_cnt = (edge_ == Edge::top || edge_ == Edge::left) && order
                       ? pin_cnt - 1
                       : pin_cnt + 1;
-        if (mirrored_pins.find(io_pin.getBTerm()) != mirrored_pins.end()) {
-          assignMirroredPins(io_pin, mirrored_pins, assignment);
+        if (io_pin.getBTerm()->hasMirroredBTerm()) {
+          assignMirroredPins(io_pin, assignment);
         }
       }
       assigned = true;
@@ -351,12 +347,11 @@ int HungarianMatching::getSlotIdxByPosition(const odb::Point& position,
   return slot_idx;
 }
 
-bool HungarianMatching::groupHasMirroredPin(const std::vector<int>& group,
-                                            MirroredPins& mirrored_pins)
+bool HungarianMatching::groupHasMirroredPin(const std::vector<int>& group)
 {
   for (int pin_idx : group) {
     IOPin& io_pin = netlist_->getIoPin(pin_idx);
-    if (mirrored_pins.find(io_pin.getBTerm()) != mirrored_pins.end()) {
+    if (io_pin.getBTerm()->hasMirroredBTerm()) {
       return true;
     }
   }
