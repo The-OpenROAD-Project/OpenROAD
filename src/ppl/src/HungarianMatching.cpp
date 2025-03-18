@@ -252,8 +252,7 @@ void HungarianMatching::createMatrixForGroups()
             group_hpwl = hungarian_fail_;
             break;
           }
-          group_hpwl
-              += pin_hpwl + getMirroredPinCost(io_pin, slot_pos);
+          group_hpwl += pin_hpwl + getMirroredPinCost(io_pin, slot_pos);
         }
         if (pins.size() > group_slot_capacity[slot_index]) {
           group_hpwl = std::numeric_limits<int>::max();
