@@ -117,7 +117,8 @@ void TreeBuilder::initBlockages()
 
   logger_->info(CTS,
                 201,
-                "{} blockages from hard placement blocakges and placed macros will be used.",
+                "{} blockages from hard placement blocakges and placed macros "
+                "will be used.",
                 blockages_.size());
 }
 
