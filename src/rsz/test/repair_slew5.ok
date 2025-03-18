@@ -44,9 +44,9 @@ x7/A                                    0.15    0.18   -0.03 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        14
-    final |   +175.5% |       9 |       0 |             0 |         0
+    final |   +171.7% |       7 |       0 |             0 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 9 instances.
+[INFO RSZ-0039] Resized 7 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack

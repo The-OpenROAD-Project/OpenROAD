@@ -46,6 +46,4 @@ tns -8.686
 [INFO RSZ-0045] Inserted 5 buffers, 1 to split loads.
 [INFO RSZ-0041] Resized 42 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Differences found at line 5.
- BUF_X1 rebuffer8 (.A(r1q),
- BUF_X4 rebuffer12 (.A(net1),
+No differences found.
