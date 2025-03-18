@@ -221,7 +221,8 @@ class IOPlacer
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
-  void assignMirroredPin(IOPin& io_pin);
+  void assignMirroredPinToSection(IOPin& io_pin);
+  int getMirroredPinCost(IOPin& io_pin, const odb::Point& position);
   int assignGroupsToSections(int& mirrored_pins_cnt);
   int updateSection(Section& section, std::vector<Slot>& slots);
   int updateConstraintSections(Constraint& constraint);
