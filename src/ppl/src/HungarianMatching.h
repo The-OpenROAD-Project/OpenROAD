@@ -70,7 +70,7 @@ class HungarianMatching
                     odb::dbDatabase* db);
   virtual ~HungarianMatching() = default;
   void findAssignment(MirroredPins& mirrored_pins);
-  void findAssignmentForGroups();
+  void findAssignmentForGroups(MirroredPins& mirrored_pins);
   void getFinalAssignment(std::vector<IOPin>& assignment,
                           MirroredPins& mirrored_pins,
                           bool assign_mirrored);
@@ -96,18 +96,21 @@ class HungarianMatching
   int non_blocked_slots_;
   int group_slots_;
   Edge edge_;
-  const int hungarian_fail = std::numeric_limits<int>::max();
+  const int hungarian_fail_ = std::numeric_limits<int>::max();
   Logger* logger_;
   odb::dbDatabase* db_;
 
   void createMatrix(MirroredPins& mirrored_pins);
-  void createMatrixForGroups();
+  void createMatrixForGroups(MirroredPins& mirrored_pins);
   void assignMirroredPins(IOPin& io_pin,
                           MirroredPins& mirrored_pins,
                           std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool groupHasMirroredPin(const std::vector<int>& group,
                            MirroredPins& mirrored_pins);
+  int getMirroredPinCost(IOPin& io_pin,
+                         const odb::Point& position,
+                         MirroredPins& mirrored_pins);
   Edge getMirroredEdge(const Edge& edge);
 };
 

@@ -1384,7 +1384,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         IOPin& pin = net->getIoPin(pin_idx);
         int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
-          dst[i] = pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
+          dst[i] = pin_hpwl;
           break;
         }
         dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
@@ -2214,7 +2214,7 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections,
   }
 
   for (auto& match : hg_vec) {
-    match.findAssignmentForGroups();
+    match.findAssignmentForGroups(mirrored_pins_);
   }
 
   for (auto& match : hg_vec) {
