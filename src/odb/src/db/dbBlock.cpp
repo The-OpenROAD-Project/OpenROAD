@@ -1627,9 +1627,7 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
-Rect dbBlock::findConstraintRegion(const Direction2D& edge,
-                                   int begin,
-                                   int end)
+Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)
 {
   Rect constraint_region;
   const Rect& die_bounds = getDieArea();
