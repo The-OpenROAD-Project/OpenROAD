@@ -1212,7 +1212,7 @@ bool FlexPA::genPinAccessCostBounded(
       && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1223,7 +1223,7 @@ bool FlexPA::genPinAccessCostBounded(
              >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1366,7 +1366,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
       logger_->error(DRT, 254, "inst_term can not be nullptr");
     }
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1471,12 +1471,13 @@ void FlexPA::genAllAccessPoints()
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
-  for (auto& inst : unique) {
+  for (frInst* inst : unique) {
     const dbTransform xform = inst->getTransform();
     const Point offset(xform.getOffset());
     dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
-    const auto pin_access_idx = unique_insts_.getPAIndex(inst);
+    const auto pin_access_idx = inst->getPinAccessIdx();
+    ;
     for (auto& inst_term : inst->getInstTerms()) {
       // if (isSkipInstTerm(inst_term.get())) {
       //   continue;

@@ -246,21 +246,20 @@ void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
 {
   for (auto& inst_term : unique_inst->getInstTerms()) {
     for (auto& pin : inst_term->getTerm()->getPins()) {
-      if (unique_to_pa_idx_.find(unique_inst) == unique_to_pa_idx_.end()) {
-        unique_to_pa_idx_[unique_inst] = pin->getNumPinAccess();
-      } else if (unique_to_pa_idx_[unique_inst] != pin->getNumPinAccess()) {
+      if (unique_inst->getPinAccessIdx() != -1
+          && unique_inst->getPinAccessIdx() != pin->getNumPinAccess()) {
         logger_->error(DRT,
                        69,
                        "{} has a conflicting pinAccess idx ({} and {}).",
                        unique_inst->getName(),
-                       unique_to_pa_idx_[unique_inst],
+                       unique_inst->getPinAccessIdx(),
                        pin->getNumPinAccess());
       }
+      unique_inst->setPinAccessIdx(pin->getNumPinAccess());
       checkFigsOnGrid(pin.get());
       pin->addPinAccess(std::make_unique<frPinAccess>());
     }
   }
-  unique_inst->setPinAccessIdx(unique_to_pa_idx_[unique_inst]);
   for (frInst* inst : *inst_to_class_[unique_inst]) {
     inst->setPinAccessIdx(unique_inst->getPinAccessIdx());
   }
@@ -326,7 +325,6 @@ frInst* UniqueInsts::deleteInst(frInst* inst)
     }
     unique_.erase(it);
     unique_to_idx_.erase(inst);
-    unique_to_pa_idx_.erase(inst);
     class_head = nullptr;
 
   } else if (inst == inst_to_unique_[inst]) {
@@ -341,10 +339,6 @@ frInst* UniqueInsts::deleteInst(frInst* inst)
     }
     unique_to_idx_[class_head] = unique_to_idx_[inst];
     unique_to_idx_.erase(inst);
-    if (unique_to_pa_idx_.find(inst) != unique_to_pa_idx_.end()) {
-      unique_to_pa_idx_[class_head] = unique_to_pa_idx_[inst];
-      unique_to_pa_idx_.erase(inst);
-    }
   }
   inst_to_class_[inst]->erase(inst);
   inst_to_class_.erase(inst);
@@ -356,11 +350,6 @@ int UniqueInsts::getIndex(frInst* inst)
 {
   frInst* unique_inst = inst_to_unique_[inst];
   return unique_to_idx_[unique_inst];
-}
-
-int UniqueInsts::getPAIndex(frInst* inst) const
-{
-  return unique_to_pa_idx_.at(inst);
 }
 
 const std::vector<frInst*>& UniqueInsts::getUnique() const

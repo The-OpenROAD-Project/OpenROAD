@@ -150,7 +150,7 @@ class frInst : public frRef
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
   odb::dbInst* db_inst_;
   dbTransform xform_;
-  int pinAccessIdx_{0};
+  int pinAccessIdx_{-1};
   bool toBeDeleted_{false};
 };
 
