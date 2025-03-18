@@ -932,13 +932,11 @@ void _dbBTerm::setMirroredConstraintRegion(const Rect& region, _dbBlock* block)
   const Rect& die_bounds = block->_die_area;
   int begin = region.dx() == 0 ? region.yMin() : region.xMin();
   int end = region.dx() == 0 ? region.yMax() : region.xMax();
-  Direction2D::Value edge;
+  Direction2D edge;
   if (region.dx() == 0) {
-    edge = region.xMin() == die_bounds.xMin() ? Direction2D::West
-                                              : Direction2D::East;
+    edge = region.xMin() == die_bounds.xMin() ? west : east;
   } else {
-    edge = region.yMin() == die_bounds.yMin() ? Direction2D::South
-                                              : Direction2D::North;
+    edge = region.yMin() == die_bounds.yMin() ? south : north;
   }
   const Rect mirrored_region
       = ((dbBlock*) block)->findConstraintRegion(edge, begin, end);
