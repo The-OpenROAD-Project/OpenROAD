@@ -34,11 +34,12 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "util.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -211,8 +212,6 @@ double extMain::getViaResistance_b(dbVia* tvia, dbNet* net)
 
 void extMain::getViaCapacitance(dbShape svia, dbNet* net)
 {
-  bool USE_DB_UNITS = false;
-
   std::vector<dbShape> shapes;
   dbShape::getViaBoxes(svia, shapes);
 
@@ -248,10 +247,6 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
       Width[level] = width;
       Level[level] = level;
     }
-    if (USE_DB_UNITS) {
-      width = GetDBcoords2(width);
-      len = GetDBcoords2(len);
-    }
 
     if (net->getId() == _debug_net_id) {
       debugPrint(
@@ -278,10 +273,6 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
     int w = Width[jj];
     int len = Len[jj];
 
-    if (USE_DB_UNITS) {
-      w = GetDBcoords2(w);
-      len = GetDBcoords2(len);
-    }
     for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
       double areaCap;
       double c1 = getFringe(jj, w, ii, areaCap);
@@ -324,7 +315,7 @@ void extMain::getShapeRC(dbNet* net,
       for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
         extMetRCTable* rcTable = _metRCTable.get(ii);
         extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
-        if (viaModel != NULL) {
+        if (viaModel != nullptr) {
           viaResTable[ii] = viaModel->_res;
           viaModelFound = true;
         }
@@ -343,7 +334,7 @@ void extMain::getShapeRC(dbNet* net,
       }
     } else {
       dbVia* bvia = s.getVia();
-      if (bvia != NULL) {
+      if (bvia != nullptr) {
         level = bvia->getBottomLayer()->getRoutingLevel();
         res = getViaResistance_b(bvia, net);
 
@@ -1742,7 +1733,7 @@ bool extMain::setCorners(const char* rulesFileName)
 
 #ifndef NDEBUG
   uint scaleCornerCnt = 0;
-  if (_scaledCornerTable != NULL)
+  if (_scaledCornerTable != nullptr)
     scaleCornerCnt = _scaledCornerTable->getCnt();
   assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
 #endif
@@ -2046,9 +2037,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
   }
 
   /*
-    if (_geomSeq != NULL) {
+    if (_geomSeq != nullptr) {
       delete _geomSeq;
-      _geomSeq = NULL;
+      _geomSeq = nullptr;
     }
 
   */

@@ -48,11 +48,9 @@
 #include "gc/FlexGC.h"
 #include "global.h"
 #include "gr/FlexGR.h"
-#include "gui/gui.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/dbShape.h"
-#include "ord/OpenRoad.hh"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -61,14 +59,14 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "utl/ScopedTemporaryFile.h"
 
 namespace drt {
 
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
-      router_cfg_(std::make_unique<RouterConfiguration>()),
-      gui_(gui::Gui::get())
+      router_cfg_(std::make_unique<RouterConfiguration>())
 {
   if (distributed_) {
     dist_pool_.emplace(1);
@@ -306,8 +304,25 @@ void TritonRoute::updateGlobals(const char* file_name)
 
 void TritonRoute::resetDb(const char* file_name)
 {
+  std::ifstream stream;
+  stream.open(file_name, std::ios::binary);
+  try {
+    if (db_->getChip() && db_->getChip()->getBlock()) {
+      logger_->error(
+          DRT,
+          9947,
+          "You can't load a new db file as the db is already populated");
+    }
+
+    stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                      | std::ios::eofbit);
+
+    db_->read(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(
+        DRT, 9954, "odb file {} is invalid: {}", file_name, f.what());
+  }
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
-  ord::OpenRoad::openRoad()->readDb(file_name);
   initDesign();
   if (!db_->getChip()->getBlock()->getAccessPoints().empty()) {
     initGuide();
@@ -345,9 +360,10 @@ static void deserializeUpdates(frDesign* design,
   file.close();
 }
 
-void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
+void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs,
+                               int num_threads)
 {
-  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates(updatesStrs.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < updatesStrs.size(); i++) {
@@ -356,9 +372,9 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs)
   applyUpdates(updates);
 }
 
-void TritonRoute::updateDesign(const std::string& path)
+void TritonRoute::updateDesign(const std::string& path, int num_threads)
 {
-  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates;
   deserializeUpdates(design_.get(), path, updates);
   applyUpdates(updates);
@@ -830,7 +846,8 @@ void TritonRoute::sendDesignDist()
     std::string design_path = fmt::format("{}DESIGN.db", shared_volume_);
     std::string router_cfg_path
         = fmt::format("{}DESIGN.router_cfg", shared_volume_);
-    ord::OpenRoad::openRoad()->writeDb(design_path.c_str());
+
+    db_->write(utl::StreamHandler(design_path.c_str(), true).getStream());
     writeGlobals(router_cfg_path);
     dst::JobMessage msg(dst::JobMessage::UPDATE_DESIGN,
                         dst::JobMessage::BROADCAST),
@@ -884,7 +901,8 @@ void TritonRoute::sendGlobalsUpdates(const std::string& router_cfg_path,
   }
 }
 
-void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path)
+void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
+                                    int num_threads)
 {
   if (!distributed_) {
     return;
@@ -899,7 +917,7 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path)
     serializeTask = std::make_unique<ProfileTask>("DIST: SERIALIZE_UPDATES");
   }
   const auto& designUpdates = design_->getUpdates();
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  omp_set_num_threads(num_threads);
   std::vector<std::string> updates(designUpdates.size());
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < designUpdates.size(); i++) {
@@ -947,7 +965,6 @@ int TritonRoute::main()
         = fmt::format("{}/init_router_cfg.bin", debug_->dumpDir);
     writeGlobals(router_cfg_path);
   }
-  router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_) {
     if (router_cfg_->DO_PA) {
       asio::post(pa_pool, [this]() {
@@ -1003,8 +1020,9 @@ int TritonRoute::main()
     }
   }
   if (debug_->debugDumpDR) {
-    ord::OpenRoad::openRoad()->writeDb(
-        fmt::format("{}/design.odb", debug_->dumpDir).c_str());
+    db_->write(utl::StreamHandler(
+                   fmt::format("{}/design.odb", debug_->dumpDir).c_str(), true)
+                   .getStream());
   }
   if (!initGuide()) {
     gr();
@@ -1018,7 +1036,7 @@ int TritonRoute::main()
   ta();
   if (distributed_) {
     asio::post(*dist_pool_,
-               boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
+               [this] { sendDesignUpdates("", router_cfg_->MAX_THREADS); });
   }
   dr();
   if (!router_cfg_->SINGLE_STEP_DR) {
@@ -1042,7 +1060,6 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
     });
   }
   clearDesign();
-  router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   router_cfg_->ENABLE_VIA_GEN = true;
   initDesign();
   FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get());
@@ -1059,11 +1076,12 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   writer.updateDb(db_, router_cfg_.get(), true);
 }
 
-void TritonRoute::fixMaxSpacing()
+void TritonRoute::fixMaxSpacing(int num_threads)
 {
   initDesign();
   initGuide();
   prep();
+  router_cfg_->MAX_THREADS = num_threads;
   dr_ = std::make_unique<FlexDR>(
       this, getDesign(), logger_, db_, router_cfg_.get());
   dr_->init();
@@ -1075,7 +1093,6 @@ void TritonRoute::fixMaxSpacing()
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                                 const Rect& requiredDrcBox)
 {
-  router_cfg_->MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
   auto offset = 0;
@@ -1143,10 +1160,12 @@ void TritonRoute::checkDRC(const char* filename,
                            int y1,
                            int x2,
                            int y2,
-                           const std::string& marker_name)
+                           const std::string& marker_name,
+                           int num_threads)
 {
   router_cfg_->GC_IGNORE_PDN_LAYER_NUM = -1;
   router_cfg_->REPAIR_PDN_LAYER_NUM = -1;
+  router_cfg_->MAX_THREADS = num_threads;
   initDesign();
   auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
   if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
@@ -1238,6 +1257,7 @@ void TritonRoute::setParams(const ParamStruct& params)
   }
   router_cfg_->SAVE_GUIDE_UPDATES = params.saveGuideUpdates;
   router_cfg_->REPAIR_PDN_LAYER_NAME = params.repairPDNLayerName;
+  router_cfg_->MAX_THREADS = params.num_threads;
 }
 
 void TritonRoute::addWorkerResults(

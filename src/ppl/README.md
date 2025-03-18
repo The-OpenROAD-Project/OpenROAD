@@ -313,7 +313,6 @@ If you are a developer, you might find these useful. More details can be found i
 | `parse_pin_names` | Parse pin names. |
 | `get_edge_extreme` | Get extremes of edge. |
 | `exclude_intervals` | Set exclude interval. |
-| `add_pins_to_constraint` | Add pins to constrained region. |
 | `add_pins_to_top_layer` | Add pins to top layer. | 
 
 ## Example scripts

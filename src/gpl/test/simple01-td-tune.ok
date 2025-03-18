@@ -42,7 +42,11 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |    +16.2% |     278 |       0 |             0 |         0
+=======
+    final |     -1.3% |      31 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 278 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.22e-09
@@ -69,7 +73,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |    +16.8% |     278 |       0 |             0 |         0
+=======
+    final |     -1.8% |      29 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 278 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.22e-09
@@ -83,10 +91,30 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |    +16.8% |     278 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 278 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.21e-09
+=======
+    final |     -1.9% |      29 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 29 instances.
+[INFO GPL-0106] Timing-driven: worst slack 1.41e-09
+[INFO GPL-0103] Timing-driven: weighted 35 nets.
+[NesterovSolve] Iter:  220 overflow: 0.584 HPWL: 4328333
+[NesterovSolve] Iter:  230 overflow: 0.542 HPWL: 4396817
+[NesterovSolve] Iter:  240 overflow: 0.497 HPWL: 4448439
+[INFO GPL-0100] Timing-driven iteration 4/7, virtual: true.
+[INFO GPL-0101]    Iter: 241, overflow: 0.492, keep rsz at: 0.3, HPWL: 4450361
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       356
+    final |     -1.9% |      29 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0039] Resized 29 instances.
+[INFO GPL-0106] Timing-driven: worst slack 1.41e-09
+>>>>>>> master
 [INFO GPL-0103] Timing-driven: weighted 31 nets.
 [NesterovSolve] Iter:  220 overflow: 0.584 HPWL: 4325683
 [NesterovSolve] Iter:  230 overflow: 0.543 HPWL: 4389727

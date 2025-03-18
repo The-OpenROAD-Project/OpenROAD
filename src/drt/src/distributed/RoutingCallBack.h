@@ -46,7 +46,6 @@
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"
 #include "global.h"
-#include "ord/OpenRoad.hh"
 #include "pa/FlexPA.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
@@ -82,7 +81,7 @@ class RoutingCallBack : public dst::JobCallBack
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (init_) {
       init_ = false;
-      omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+      omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
     }
     auto workers = desc->getWorkers();
     int size = workers.size();
@@ -138,7 +137,8 @@ class RoutingCallBack : public dst::JobCallBack
       frTime t;
       logger_->report("Design Update");
       if (desc->isDesignUpdate()) {
-        router_->updateDesign(desc->getUpdates());
+        router_->updateDesign(desc->getUpdates(),
+                              router_->getRouterConfiguration()->MAX_THREADS);
       } else {
         router_->resetDb(desc->getDesignPath().c_str());
       }
@@ -188,7 +188,7 @@ class RoutingCallBack : public dst::JobCallBack
         break;
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
-        omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+        omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < instRows.size(); i++) {  // NOLINT
           pa_.genInstRowPattern(instRows.at(i));

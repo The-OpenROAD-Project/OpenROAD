@@ -3021,6 +3021,8 @@ void GlobalRouter::computeWirelength()
   for (auto& net_route : routes_) {
     total_wirelength += computeNetWirelength(net_route.first);
   }
+  logger_->metric("global_route__wirelength",
+                  total_wirelength / block_->getDefUnits());
   if (verbose_)
     logger_->info(GRT,
                   18,

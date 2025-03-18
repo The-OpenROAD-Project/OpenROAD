@@ -44,7 +44,9 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
-
+#include "Graphics.hh"
+#include "ord/OpenRoad.hh"
+  
 namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
@@ -782,6 +784,23 @@ report_fast_buffer_sizes()
 {
   Resizer *resizer = getResizer();
   resizer->reportFastBufferSizes();
+}
+
+void set_debug_cmd(const char* net_name,
+                   const bool subdivide_step)
+{
+  Resizer* resizer = getResizer();
+
+  odb::dbNet* net = nullptr;
+  if (net_name) {
+    auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+    net = block->findNet(net_name);
+  }
+
+  auto graphics = std::make_shared<Graphics>();
+  graphics->setNet(net);
+  graphics->stopOnSubdivideStep(subdivide_step);
+  resizer->setDebugGraphics(std::move(graphics));
 }
 
 } // namespace

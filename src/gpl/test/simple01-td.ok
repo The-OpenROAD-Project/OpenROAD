@@ -42,7 +42,11 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |    +16.2% |     278 |       0 |             0 |         0
+=======
+    final |     -1.3% |      31 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 278 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.22e-09
@@ -72,7 +76,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
+<<<<<<< HEAD
     final |    +16.8% |     278 |       0 |             0 |         0
+=======
+    final |     -1.8% |      29 |       0 |             0 |         0
+>>>>>>> master
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 278 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.21e-09

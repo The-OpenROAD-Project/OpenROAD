@@ -91,7 +91,13 @@ class Ath__array1D
     }
     return size_;
   }
-  T& get(int i)
+  T& get(const int i)
+  {
+    assert((i >= 0) && (i < current_));
+
+    return array_[i];
+  }
+  const T& get(const int i) const
   {
     assert((i >= 0) && (i < current_));
 
@@ -157,14 +163,14 @@ class Ath__array1D
 
     return array_[current_];
   }
-  int getSize() { return size_; }
+  int getSize() const { return size_; }
   void resetIterator(int v = 0) { iter_cnt_ = v; }
   void resetCnt(int v = 0)
   {
     current_ = v;
     iter_cnt_ = v;
   }
-  int getCnt() { return current_; }
+  int getCnt() const { return current_; }
   void set(int ii, T t)
   {
     if (ii >= size_) {

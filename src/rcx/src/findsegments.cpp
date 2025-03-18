@@ -42,13 +42,13 @@ namespace rcx {
 using utl::RCX;
 using namespace odb;
 
-int extMeasureRC::GetDx1Dx2(Ath__wire* w1, Ath__wire* w2, int& dx2)
+int extMeasureRC::GetDx1Dx2(Wire* w1, Wire* w2, int& dx2)
 {
   int dx1 = w2->getXY() - w1->getXY();
   dx2 = w2->getLen() - w1->getLen() + dx1;
   return dx1;
 }
-int extMeasureRC::GetDistance(Ath__wire* w1, Ath__wire* w2)
+int extMeasureRC::GetDistance(Wire* w1, Wire* w2)
 {
   if (w2->getBase() >= w1->getBase()) {
     int dx1 = w2->getBase() - (w1->getBase() + w1->getWidth());
@@ -58,7 +58,7 @@ int extMeasureRC::GetDistance(Ath__wire* w1, Ath__wire* w2)
     return dx1;
   }
 }
-int extMeasureRC::GetDx1Dx2(int xy1, int len1, Ath__wire* w2, int& dx2)
+int extMeasureRC::GetDx1Dx2(int xy1, int len1, Wire* w2, int& dx2)
 {
   int dx1 = w2->getXY() - xy1;
   dx2 = w2->getLen() - len1 + dx1;
@@ -94,43 +94,44 @@ bool extMeasureRC::Enclosed(int x1, int x2, int y1, int y2)
 uint extMeasureRC::FindSegments(bool lookUp,
                                 uint dir,
                                 int maxDist,
-                                Ath__wire* w1,
+                                Wire* w1,
                                 int xy1,
                                 int len1,
-                                Ath__wire* w2_next,
+                                Wire* w2_next,
                                 Ath__array1D<extSegment*>* segTable)
 {
-  if (w2_next == NULL)
+  if (w2_next == nullptr)
     return 0;
 
   int dist = GetDistance(w1, w2_next);
   if (dist > maxDist) {
     extSegment* s = _seqmentPool->alloc();
-    s->set(dir, w1, xy1, len1, NULL, NULL);
+    s->set(dir, w1, xy1, len1, nullptr, nullptr);
 
     segTable->add(s);
     return 0;
   }
   if (xy1 + len1 < w2_next->getXY())  // no overlap and w2 too far on the right
   {
-    Ath__wire* next_up_down = lookUp ? w2_next->_upNext : w2_next->_downNext;
+    Wire* next_up_down = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
   }
 
-  Ath__wire* prev = NULL;
-  Ath__wire* w2 = w2_next;
-  for (; w2 != NULL; w2 = w2->getNext()) {
+  Wire* prev = nullptr;
+  Wire* w2 = w2_next;
+  for (; w2 != nullptr; w2 = w2->getNext()) {
     if (OverlapOnly(xy1, len1, w2->getXY(), w2->getLen()))
       break;
 
-    if (prev != NULL && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))
+    if (prev != nullptr
+        && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))
       return 0;
 
     prev = w2;
   }
-  if (w2 == NULL) {
-    Ath__wire* next_up_down = lookUp ? w2_next->_upNext : w2_next->_downNext;
+  if (w2 == nullptr) {
+    Wire* next_up_down = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
   }
@@ -143,46 +144,46 @@ uint extMeasureRC::FindSegments(bool lookUp,
     if (dx2 >= 0) {  // covered Right
 
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, xy1, len1, NULL, NULL);
+      s->set(dir, w1, xy1, len1, nullptr, nullptr);
 
       segTable->add(s);
       s->setUpDown(lookUp, w2);
     } else {  // not covered right
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, xy1, xy2 - xy1, NULL, NULL);
+      s->set(dir, w1, xy1, xy2 - xy1, nullptr, nullptr);
       s->setUpDown(lookUp, w2);
       segTable->add(s);
 
-      Ath__wire* next = w2->getNext();
-      if (next != NULL
+      Wire* next = w2->getNext();
+      if (next != nullptr
           && next->getXY() <= w1->getXY() + w1->getLen()) {  // overlap
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       } else {
-        next = lookUp ? w2_next->_upNext : w2_next->_downNext;
+        next = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       }
     }
   } else {  // Open Left
-    Ath__wire* next = lookUp ? w2_next->_upNext : w2_next->_downNext;
+    Wire* next = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(
         lookUp, dir, maxDist, w1, xy1, dx1, next, segTable);  // white space
     if (dx2 >= 0) {                                           // covered Right
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), NULL, NULL);
+      s->set(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), nullptr, nullptr);
       segTable->add(s);
       s->setUpDown(lookUp, w2);
     } else {  // not covered right
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, w2->getXY(), w2->getLen(), NULL, NULL);
+      s->set(dir, w1, w2->getXY(), w2->getLen(), nullptr, nullptr);
       segTable->add(s);
       s->setUpDown(lookUp, w2);
 
-      Ath__wire* next = w2->getNext();
-      if (next != NULL
+      Wire* next = w2->getNext();
+      if (next != nullptr
           && next->getXY() <= w1->getXY() + w1->getLen()) {  // overlap
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       } else {
-        next = lookUp ? w2_next->_upNext : w2_next->_downNext;
+        next = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       }
     }

@@ -37,9 +37,13 @@
 
 #include <tcl.h>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "sta/Corner.hh"
+#include "sta/Liberty.hh"
+#include "sta/Units.hh"
 
 namespace ord {
 
@@ -102,6 +106,65 @@ void Tech::readLiberty(const std::string& file_name)
                         getSta()->cmdCorner(),
                         sta::MinMaxAll::all(),
                         true /* infer_latches */);
+}
+
+float Tech::nominalProcess()
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  return lib->nominalProcess();
+}
+
+float Tech::nominalVoltage()
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  return lib->nominalVoltage();
+}
+
+float Tech::nominalTemperature()
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyLibrary* lib = network->defaultLibertyLibrary();
+  return lib->nominalTemperature();
+}
+
+float Tech::timeScale()
+{
+  return getSta()->units()->timeUnit()->scale();
+}
+
+float Tech::resistanceScale()
+{
+  return getSta()->units()->resistanceUnit()->scale();
+}
+
+float Tech::capacitanceScale()
+{
+  return getSta()->units()->capacitanceUnit()->scale();
+}
+
+float Tech::voltageScale()
+{
+  return getSta()->units()->voltageUnit()->scale();
+}
+
+float Tech::currentScale()
+{
+  return getSta()->units()->currentUnit()->scale();
+}
+
+float Tech::powerScale()
+{
+  return getSta()->units()->powerUnit()->scale();
+}
+
+float Tech::distanceScale()
+{
+  return getSta()->units()->distanceUnit()->scale();
 }
 
 }  // namespace ord

@@ -37,6 +37,7 @@
   lib,
   clangStdenv,
   fetchFromGitHub,
+  fetchzip,
   libsForQt5,
   boost183,
   eigen,
@@ -87,6 +88,10 @@
           sed -Ei.bak 's/NOT absl_FOUND/NOT TARGET absl::base/' cmake/ortoolsConfig.cmake.in
         '';
     });
+  fetchedGtest = fetchzip {
+    url = "https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip";
+    sha256 = "sha256-t0RchAHTJbuI5YW4uyBPykTvcjy90JW9AOPNjIhwh6U=";
+  };
   self = clangStdenv.mkDerivation (finalAttrs: {
     name = "openroad";
 
@@ -97,6 +102,7 @@
       "-DTCL_HEADER=${tcl}/include/tcl.h"
       "-DUSE_SYSTEM_BOOST:BOOL=ON"
       "-DVERBOSE=1"
+      "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${fetchedGtest}"
     ];
     
     postPatch = ''

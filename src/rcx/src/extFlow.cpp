@@ -33,10 +33,11 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "gseq.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -215,7 +216,7 @@ void extMain::getNetSboxes(dbNet* net,
   }
 }
 
-bool extMain::matchDir(uint dir, Rect& r)
+bool extMain::matchDir(uint dir, const Rect& r)
 {
   uint dd = 0;  // vertical
   if (r.dx() >= r.dy()) {
@@ -292,14 +293,6 @@ uint extMain::initSearchForNets(int* X1,
                                 Rect& extRect,
                                 bool skipBaseCalc)
 {
-  bool USE_DB_UNITS = false;
-  uint W[32];
-  uint S[32];
-
-  dbSet<dbTechLayer> layers = _tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-  dbTrackGrid* tg = nullptr;
-
   Rect maxRect;
   if ((extRect.dx() > 0) && (extRect.dy() > 0)) {
     maxRect = extRect;
@@ -311,42 +304,18 @@ uint extMain::initSearchForNets(int* X1,
     }
   }
 
-  if (USE_DB_UNITS) {
-    GetDBcoords2(maxRect);
-    GetDBcoords2(extRect);
-  }
-
   std::vector<int> trackXY(32000);
   uint n = 0;
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
-
+  for (dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
 
     n = layer->getRoutingLevel();
-    int w = GetDBcoords2(layer->getWidth());
     widthTable[n] = layer->getWidth();
 
-    if (USE_DB_UNITS) {
-      widthTable[n] = w;
-    }
-
-    W[n] = 1;
-    int s = GetDBcoords2(layer->getSpacing());
-    S[n] = layer->getSpacing();
-
-    if (USE_DB_UNITS) {
-      S[n] = s;
-    }
-
-    int p = GetDBcoords2(layer->getPitch());
     pitchTable[n] = layer->getPitch();
 
-    if (USE_DB_UNITS) {
-      pitchTable[n] = p;
-    }
     if (pitchTable[n] <= 0) {
       logger_->error(RCX,
                      82,
@@ -365,7 +334,7 @@ uint extMain::initSearchForNets(int* X1,
       continue;
     }
 
-    tg = _block->findTrackGrid(layer);
+    dbTrackGrid* tg = _block->findTrackGrid(layer);
     if (tg) {
       tg->getGridX(trackXY);
       X1[n] = trackXY[0] - layer->getWidth() / 2;
@@ -376,9 +345,9 @@ uint extMain::initSearchForNets(int* X1,
       Y1[n] = maxRect.yMin();
     }
   }
-  uint layerCnt = n + 1;
+  const uint layerCnt = n + 1;
 
-  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, pitchTable, S, X1, Y1);
+  _search = new GridTable(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
   _search->setBlock(_block);
 
   return layerCnt;
@@ -667,8 +636,6 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
                                    FILE* fp,
                                    dbCreateNetUtil* netUtil)
 {
-  bool USE_DB_UNITS = false;
-
   dbWire* wire = net->getWire();
 
   if (wire == nullptr) {
@@ -697,49 +664,38 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
       if (netUtil != nullptr) {
         netUtil->createNetSingleWire(r, level, net->getId(), shapeId);
       } else {
-        if (USE_DB_UNITS) {
-          _search->addBox(GetDBcoords2(r.xMin()),
-                          GetDBcoords2(r.yMin()),
-                          GetDBcoords2(r.xMax()),
-                          GetDBcoords2(r.yMax()),
-                          level,
-                          net->getId(),
-                          shapeId,
-                          wtype);
-        } else {
-          const uint trackNum = _search->addBox(r.xMin(),
-                                                r.yMin(),
-                                                r.xMax(),
-                                                r.yMax(),
-                                                level,
-                                                net->getId(),
-                                                shapeId,
-                                                wtype);
-          if (net->getId() == _debug_net_id) {
-            const int dx = r.xMax() - r.xMin();
-            const int dy = r.yMax() - r.yMin();
-            debugPrint(
-                logger_,
-                RCX,
-                "debug_net",
-                1,
-                "\t[Search:W]"
-                "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
-                "{:.3f}  {:.3f} {:.3f} net {}",
-                trackNum,
-                level,
-                dx,
-                dy,
-                r.xMin(),
-                r.yMin(),
-                r.xMax(),
-                r.yMax(),
-                GetDBcoords1(r.xMin()),
-                GetDBcoords1(r.yMin()),
-                GetDBcoords1(r.xMax()),
-                GetDBcoords1(r.yMax()),
-                net->getId());
-          }
+        const uint trackNum = _search->addBox(r.xMin(),
+                                              r.yMin(),
+                                              r.xMax(),
+                                              r.yMax(),
+                                              level,
+                                              net->getId(),
+                                              shapeId,
+                                              wtype);
+        if (net->getId() == _debug_net_id) {
+          const int dx = r.xMax() - r.xMin();
+          const int dy = r.yMax() - r.yMin();
+          debugPrint(
+              logger_,
+              RCX,
+              "debug_net",
+              1,
+              "\t[Search:W]"
+              "\tonSearch: tr={} L{}  DX={} DY={} {} {}  {} {} -- {:.3f} "
+              "{:.3f}  {:.3f} {:.3f} net {}",
+              trackNum,
+              level,
+              dx,
+              dy,
+              r.xMin(),
+              r.yMin(),
+              r.xMax(),
+              r.yMax(),
+              GetDBcoords1(r.xMin()),
+              GetDBcoords1(r.yMin()),
+              GetDBcoords1(r.xMax()),
+              GetDBcoords1(r.yMax()),
+              net->getId());
         }
       }
 
@@ -753,7 +709,6 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype)
 {
   wtype = 5;  // Via Type
 
-  bool USE_DB_UNITS = false;
   uint cnt = 0;
 
   std::vector<dbShape> shapes;
@@ -785,18 +740,7 @@ uint extMain::addViaBoxes(dbShape& sVia, dbNet* net, uint shapeId, uint wtype)
       continue;
     }
 
-    if (USE_DB_UNITS) {
-      _search->addBox(GetDBcoords2(x1),
-                      GetDBcoords2(y1),
-                      GetDBcoords2(x2),
-                      GetDBcoords2(y2),
-                      level,
-                      net->getId(),
-                      shapeId,
-                      wtype);
-    } else {
-      _search->addBox(x1, y1, x2, y2, level, net->getId(), shapeId, wtype);
-    }
+    _search->addBox(x1, y1, x2, y2, level, net->getId(), shapeId, wtype);
   }
   return cnt;
 }
@@ -930,56 +874,40 @@ uint extMain::getDir(int x1, int y1, int x2, int y2)
   return dd;
 }
 
-uint extMain::addShapeOnGS(dbNet* net,
-                           uint sId,
-                           Rect& r,
-                           bool plane,
+void extMain::addShapeOnGS(const Rect& r,
+                           const bool plane,
                            dbTechLayer* layer,
-                           bool gsRotated,
-                           bool swap_coords,
-                           int dir)
+                           const bool gsRotated,
+                           const bool swap_coords,
+                           const int dir)
 {
-  if (dir >= 0) {
-    if (!plane) {
-      if (matchDir(dir, r)) {
-        return 0;
-      }
-    }
+  if (dir >= 0 && !plane && matchDir(dir, r)) {
+    return;
   }
 
-  uint level = layer->getRoutingLevel();
-  int n = 0;
+  const uint level = layer->getRoutingLevel();
   if (!gsRotated) {
-    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
+    _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
   } else {
     if (!swap_coords) {  // horizontal
-      n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
+      _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
     } else {
-      n = _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
+      _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
     }
   }
-  if (n == 0) {
-    return 1;
-  }
-  return 0;
 }
 
-uint extMain::addNetShapesGs(dbNet* net,
-                             bool gsRotated,
-                             bool swap_coords,
-                             int dir)
+void extMain::addNetShapesGs(dbNet* net,
+                             const bool gsRotated,
+                             const bool swap_coords,
+                             const int dir)
 {
-  bool USE_DB_UNITS = false;
-  uint cnt = 0;
   dbWire* wire = net->getWire();
   if (wire == nullptr) {
-    return 0;
+    return;
   }
 
-  bool plane = false;
-  if (net->getSigType() == dbSigType::ANALOG) {
-    plane = true;
-  }
+  const bool plane = net->getSigType() == dbSigType::ANALOG;
 
   dbWireShapeItr shapes;
   dbShape s;
@@ -988,54 +916,27 @@ uint extMain::addNetShapesGs(dbNet* net,
       continue;
     }
 
-    int shapeId = shapes.getShapeId();
-
     Rect r = s.getBox();
 
-    if (USE_DB_UNITS) {
-      this->GetDBcoords2(r);
-    }
-
-    cnt += addShapeOnGS(
-        net, shapeId, r, plane, s.getTechLayer(), gsRotated, swap_coords, dir);
+    addShapeOnGS(r, plane, s.getTechLayer(), gsRotated, swap_coords, dir);
   }
-  return cnt;
 }
 
-uint extMain::addNetSboxesGs(dbNet* net,
-                             bool gsRotated,
-                             bool swap_coords,
-                             int dir)
+void extMain::addNetSboxesGs(dbNet* net,
+                             const bool gsRotated,
+                             const bool swap_coords,
+                             const int dir)
 {
-  uint cnt = 0;
-
-  dbSet<dbSWire> swires = net->getSWires();
-  dbSet<dbSWire>::iterator itr;
-
-  for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire* swire = *itr;
-    dbSet<dbSBox> wires = swire->getWires();
-    dbSet<dbSBox>::iterator box_itr;
-
-    for (box_itr = wires.begin(); box_itr != wires.end(); ++box_itr) {
-      dbSBox* s = *box_itr;
-
+  for (dbSWire* swire : net->getSWires()) {
+    for (dbSBox* s : swire->getWires()) {
       if (s->isVia()) {
         continue;
       }
 
       Rect r = s->getBox();
-      cnt += addShapeOnGS(nullptr,
-                          s->getId(),
-                          r,
-                          true,
-                          s->getTechLayer(),
-                          gsRotated,
-                          swap_coords,
-                          dir);
+      addShapeOnGS(r, true, s->getTechLayer(), gsRotated, swap_coords, dir);
     }
   }
-  return cnt;
 }
 
 int extMain::getXY_gs(int base, int XY, uint minRes)
@@ -1045,23 +946,21 @@ int extMain::getXY_gs(int base, int XY, uint minRes)
   return v;
 }
 
-uint extMain::initPlanes(uint dir,
-                         int* wLL,
-                         int* wUR,
-                         uint layerCnt,
-                         uint* pitchTable,
-                         uint* widthTable,
+void extMain::initPlanes(const uint dir,
+                         const int* wLL,
+                         const int* wUR,
+                         const uint layerCnt,
+                         const uint* pitchTable,
+                         const uint* widthTable,
                          const uint* dirTable,
-                         int* bb_ll)
+                         const int* bb_ll)
 {
   bool rotatedFlag = getRotatedFlag();
 
-  {
-    delete _geomSeq;
-  }
+  delete _geomSeq;
   _geomSeq = new gs(_seqPool);
 
-  _geomSeq->set_slices(layerCnt);
+  _geomSeq->setPlanes(layerCnt);
 
   for (uint ii = 1; ii < layerCnt; ii++) {
     uint layerDir = dirTable[ii];
@@ -1083,24 +982,23 @@ uint extMain::initPlanes(uint dir,
     ur[dir] = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
 
     if (!rotatedFlag) {
-      _geomSeq->configureSlice(ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
+      _geomSeq->configurePlane(ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
     } else {
       if (dir > 0) {  // horizontal segment extraction
-        _geomSeq->configureSlice(
+        _geomSeq->configurePlane(
             ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
       } else {
         if (layerDir > 0) {
-          _geomSeq->configureSlice(
+          _geomSeq->configurePlane(
               ii, pitchTable[ii], widthTable[ii], ll[1], ll[0], ur[1], ur[0]);
 
         } else {
-          _geomSeq->configureSlice(
+          _geomSeq->configurePlane(
               ii, widthTable[ii], pitchTable[ii], ll[1], ll[0], ur[1], ur[0]);
         }
       }
     }
   }
-  return layerCnt;
 }
 
 bool extMain::getRotatedFlag()
@@ -1115,53 +1013,40 @@ bool extMain::enableRotatedFlag()
   return _rotatedGs;
 }
 
-uint extMain::fill_gs4(int dir,
-                       int* ll,
-                       int* ur,
-                       int* lo_gs,
-                       int* hi_gs,
-                       uint layerCnt,
-                       uint* dirTable,
-                       uint* pitchTable,
-                       uint* widthTable)
+void extMain::fill_gs4(const int dir,
+                       const int* ll,
+                       const int* ur,
+                       const int* lo_gs,
+                       const int* hi_gs,
+                       const uint layerCnt,
+                       const uint* dirTable,
+                       const uint* pitchTable,
+                       const uint* widthTable)
 {
-  bool rotatedGs = getRotatedFlag();
+  const bool rotatedGs = getRotatedFlag();
 
   initPlanes(dir, lo_gs, hi_gs, layerCnt, pitchTable, widthTable, dirTable, ll);
 
   const int gs_dir = dir;
 
-  uint pcnt = 0;
-  dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator net_itr;
-
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet* net = *net_itr;
-
-    if (!((net->getSigType().isSupply()))) {
+  for (dbNet* net : _block->getNets()) {
+    if (!net->getSigType().isSupply()) {
       continue;
     }
-    pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
+    addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
-  uint scnt = 0;
 
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    dbNet* net = *net_itr;
-
-    if ((net->getSigType().isSupply())) {
+  for (dbNet* net : _block->getNets()) {
+    if (net->getSigType().isSupply()) {
       continue;
     }
-    scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
+    addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
   if (_v2 && _overCell) {
-    Ath__array1D<uint> instGsTable(nets.size());
-    Ath__array1D<uint> tmpNetIdTable(nets.size());
+    const int num_insts = _block->getInsts().size();
+    Ath__array1D<uint> instGsTable(num_insts);
 
-    dbSet<dbInst> insts = _block->getInsts();
-    dbSet<dbInst>::iterator inst_itr;
-    for (inst_itr = insts.begin(); inst_itr != insts.end(); ++inst_itr) {
-      dbInst* inst = *inst_itr;
-
+    for (dbInst* inst : _block->getInsts()) {
       dbBox* R = inst->getBBox();
 
       int R_ll[2] = {R->xMin(), R->yMin()};
@@ -1172,10 +1057,11 @@ uint extMain::fill_gs4(int dir,
 
       instGsTable.add(inst->getId());
     }
-    if (instGsTable.getCnt() > 0)
-      addInstsGs(&instGsTable, &tmpNetIdTable, dir);
+    if (instGsTable.getCnt() > 0) {
+      Ath__array1D<uint> tmpInstIdTable(num_insts);
+      addInstsGeometries(&instGsTable, &tmpInstIdTable, dir);
+    }
   }
-  return pcnt + scnt;
 }
 
 uint extMain::couplingFlow(Rect& extRect,
@@ -1217,7 +1103,7 @@ uint extMain::couplingFlow(Rect& extRect,
   int lo_sdb[2];
   int hi_sdb[2];
 
-  Ath__overlapAdjust overlapAdj = Z_noAdjust;
+  OverlapAdjust overlapAdj = Z_noAdjust;
   _useDbSdb = true;
   _search->setExtControl(_block,
                          _useDbSdb,

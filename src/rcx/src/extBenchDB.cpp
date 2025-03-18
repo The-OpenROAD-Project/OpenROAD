@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "rcx/extViaModel.h"
@@ -83,7 +84,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
   extMetRCTable* rcModel = extRulesModel->initCapTables(layerCnt, widthCnt);
 
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
-  extMeasure m(NULL);
+  extMeasure m(nullptr);
   m._diagModel = 1;
   uint openWireNumber = 1;
 
@@ -178,7 +179,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
       m._overUnder = true;
       m._over = false;
 
-    } else if (strstr(overUnderToken, "o") != NULL) {
+    } else if (strstr(overUnderToken, "o") != nullptr) {
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
       if (p->getFirstChar() == 'R') {
@@ -189,7 +190,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
       m._underMet = overMet;
       m._overUnder = false;
       m._over = true;
-    } else if (strstr(overUnderToken, "uu") != NULL) {
+    } else if (strstr(overUnderToken, "uu") != nullptr) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
       diag = true;
@@ -198,7 +199,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
       m._underMet = -1;
       m._overUnder = false;
       m._over = false;
-    } else if (strstr(overUnderToken, "u") != NULL) {
+    } else if (strstr(overUnderToken, "u") != nullptr) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
 
@@ -278,7 +279,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
           wLen,
           netName);
     }
-    if (strstr(netName, "cntxM") != NULL)
+    if (strstr(netName, "cntxM") != nullptr)
       continue;
 
     extDistRC* rc = rcPool->alloc();
@@ -346,8 +347,8 @@ double extMain::getTotalCouplingCap(dbNet* net,
       dbCCSeg* cc = *ccitr;
       dbNet* srcNet = cc->getSourceCapNode()->getNet();
       dbNet* tgtNet = cc->getTargetCapNode()->getNet();
-      if ((strstr(srcNet->getConstName(), filterNet) == NULL)
-          && (strstr(tgtNet->getConstName(), filterNet) == NULL))
+      if ((strstr(srcNet->getConstName(), filterNet) == nullptr)
+          && (strstr(tgtNet->getConstName(), filterNet) == nullptr))
         continue;
 
       cap += cc->getCapacitance(corner);
@@ -414,8 +415,8 @@ uint extMain::benchVerilog_assign(FILE* fp)
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
 
-    const char* bterm1 = NULL;
-    const char* bterm2 = NULL;
+    const char* bterm1 = nullptr;
+    const char* bterm2 = nullptr;
     dbSet<dbBTerm> bterms = net->getBTerms();
     dbSet<dbBTerm>::iterator itr;
     for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
@@ -473,11 +474,11 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
     dbSet<dbTechNonDefaultRule> nd_rules = opt->_tech->getNonDefaultRules();
     dbSet<dbTechNonDefaultRule>::iterator nditr;
     dbTechLayerRule* tst_rule;
-    //		dbTechNonDefaultRule  *wdth_rule = NULL;
+    //		dbTechNonDefaultRule  *wdth_rule = nullptr;
 
     for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
       tst_rule = (*nditr)->getLayerRule(layer);
-      if (tst_rule == NULL)
+      if (tst_rule == nullptr)
         continue;
 
       double w = tst_rule->getWidth();
@@ -538,7 +539,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
           measure->setTargetParams(w, s, 0.0, 0, 0, w2, s2);
           // measureResistance(measure, ro, top_widthR, bot_widthR, thicknessR);
           // measurePatternVar(measure, top_width, bot_width, thickness,
-          // measure->_wireCnt, NULL);
+          // measure->_wireCnt, nullptr);
           writeBenchWires_DB(measure);
 
           cnt++;
@@ -585,7 +586,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
                                                     measure->setTargetParams(w,
        s, 0.0, t, h, w2, s2); measureResistance(measure, ro, top_widthR,
        bot_widthR, thicknessR); measurePatternVar(measure, top_width, bot_width,
-       thickness, measure->_wireCnt, NULL);
+       thickness, measure->_wireCnt, nullptr);
 
                                                     cnt++;
                                             }
