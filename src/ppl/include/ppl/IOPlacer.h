@@ -78,13 +78,6 @@ using utl::Logger;
 // A list of pins that will be placed together in the die boundary
 using PinSet = std::set<odb::dbBTerm*>;
 using PinList = std::vector<odb::dbBTerm*>;
-using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
-
-struct PinGroup
-{
-  PinList pins;
-  bool order;
-};
 
 struct PinGroupByIndex
 {
@@ -131,16 +124,9 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
-  void addDirectionConstraint(Direction direction,
-                              Edge edge,
-                              int begin,
-                              int end);
   void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
-  void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addPinGroup(PinList* group, bool order);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,
                              int x_step,
                              int y_step,
@@ -197,9 +183,7 @@ class IOPlacer
                        bool is_group);
   std::string getSlotsLocation(Edge edge, bool top_layer);
   int placeFallbackPins(bool random);
-  void assignMirroredPins(IOPin& io_pin,
-                          MirroredPins& mirrored_pins,
-                          std::vector<IOPin>& assignment);
+  void assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
                            std::vector<Slot>& slots);
@@ -223,6 +207,8 @@ class IOPlacer
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
+  Interval findIntervalFromRect(const odb::Rect& rect);
+  void getConstraintsFromDB();
   void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
@@ -284,7 +270,6 @@ class IOPlacer
   void findConstraintRegion(const Interval& interval,
                             const Rect& constraint_box,
                             Rect& region);
-  void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,
@@ -313,8 +298,6 @@ class IOPlacer
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<PinGroup> pin_groups_;
-  MirroredPins mirrored_pins_;
   FallbackPins fallback_pins_;
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
 
