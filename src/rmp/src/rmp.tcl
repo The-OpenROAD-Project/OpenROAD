@@ -104,3 +104,14 @@ proc restructure { args } {
   rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value \
     $depth_threshold_value $workdir_name $abc_logfile
 }
+
+sta::define_cmd_args "resynth" { }
+
+proc resynth { args } {
+  sta::parse_key_args "resynth" args \
+    keys {} \
+    flags {}
+
+  rmp::resynth_cmd
+}
+

@@ -6,18 +6,20 @@
 #include <vector>
 
 #include "abc_library_factory.h"
+#include "base/main/main.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "delay_optimization_strategy.h"
 #include "logic_cut.h"
 #include "logic_extractor.h"
+#include "rmp/unique_name.h"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "sta/StaMain.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
-#include "unique_name.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
@@ -45,7 +47,9 @@ std::vector<sta::Vertex*> GetNegativeEndpoints(sta::dbSta* sta)
   return result;
 }
 
-void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
+void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
+                                       UniqueName& name_generator,
+                                       utl::Logger* logger)
 {
   sta->ensureGraph();
   sta->ensureLevelized();
@@ -65,21 +69,21 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
   sta->search()->arrivalsInvalid();
   sta->search()->endpointsInvalid();
 
-  rmp::UniqueName unique_name;
+  LogicExtractorFactory logic_extractor(sta, logger);
   for (sta::Vertex* negative_endpoint : candidate_vertices) {
-    LogicExtractorFactory logic_extractor(sta, logger);
     logic_extractor.AppendEndpoint(negative_endpoint);
-    LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
-
-    utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
-        = cut.BuildMappedAbcNetwork(abc_library, network, logger);
-
-    DelayOptimizationStrategy strategy(sta);
-    utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
-        = strategy.Optimize(mapped_abc_network.get(), abc_library, logger);
-
-    cut.InsertMappedAbcNetwork(
-        remapped.get(), abc_library, network, unique_name, logger);
   }
+
+  LogicCut cut = logic_extractor.BuildLogicCut(abc_library);
+
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, logger);
+
+  DelayOptimizationStrategy strategy(sta);
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
+      = strategy.Optimize(mapped_abc_network.get(), abc_library, logger);
+
+  cut.InsertMappedAbcNetwork(
+      remapped.get(), abc_library, network, name_generator, logger);
 }
 }  // namespace rmp
