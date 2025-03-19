@@ -35,6 +35,7 @@
 
 #include "Slots.h"
 
+#include <boost/functional/hash.hpp>
 #include <vector>
 
 namespace ppl {
@@ -64,6 +65,14 @@ bool Interval::operator==(const Interval& interval) const
 {
   return edge_ == interval.getEdge() && begin_ == interval.getBegin()
          && end_ == interval.getEnd() && layer_ == interval.getLayer();
+}
+
+std::size_t IntervalHash::operator()(const Interval& interval) const
+{
+  return boost::hash<std::tuple<Edge, int, int, int>>()({interval.getEdge(),
+                                                         interval.getBegin(),
+                                                         interval.getEnd(),
+                                                         interval.getLayer()});
 }
 
 }  // namespace ppl
