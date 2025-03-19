@@ -49,9 +49,9 @@
 
 #include "DplObserver.h"
 #include "Objects.h"
-#include "dpl/Padding.h"
 #include "dpl/Grid.h"
 #include "dpl/OptMirror.h"
+#include "dpl/Padding.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
