@@ -381,8 +381,7 @@ dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
   dbInst* adjacent_inst = nullptr;
 
   // do not return macros, endcaps and tapcells
-  if (pixel != nullptr && pixel->cell
-      && static_cast<Cell*>(pixel->cell)->db_inst_->isCore()) {
+  if (pixel != nullptr && pixel->cell && pixel->cell->getDbInst()->isCore()) {
     adjacent_inst = pixel->cell->getDbInst();
   }
 
