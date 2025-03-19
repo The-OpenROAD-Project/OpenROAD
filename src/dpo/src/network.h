@@ -44,9 +44,10 @@
 #include <vector>
 
 #include "architecture.h"
+#include "dpl/Coordinates.h"
+#include "dpl/Grid.h"
 #include "odb/geom.h"
 #include "orientation.h"
-
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,6 +56,11 @@ namespace dpo {
 class Pin;
 
 const int EDGETYPE_DEFAULT = 0;
+using dpl::DbuX;
+using dpl::DbuY;
+using dpl::GridNode;
+using dpl::GridX;
+using dpl::GridY;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -82,7 +88,7 @@ class Master
   std::vector<MasterEdge> edges_;
 };
 
-class Node
+class Node : public dpl::GridNode
 {
  public:
   enum Type
@@ -103,6 +109,14 @@ class Node
   };
 
   Node();
+  bool isPlaced() const override { return false; }
+  bool isHybrid() const override { return false; }
+  DbuX xMin() const override { return DbuX(left_); }
+  DbuY yMin() const override { return DbuY(bottom_); }
+  DbuX dx() const override { return DbuX(w_); }
+  DbuY dy() const override { return DbuY(h_); }
+  odb::dbInst* getDbInst() const override { return db_inst_; }
+  DbuX siteWidth() const override { return DbuX(0); }
 
   int getArea() const { return w_ * h_; }
   unsigned getAvailOrient() const { return availOrient_; }
@@ -138,12 +152,13 @@ class Node
   void setType(Type type) { type_ = type; }
   void setWidth(int w) { w_ = w; }
   void setMaster(Master* in) { master_ = in; }
+  void setDbInst(odb::dbInst* inst) { db_inst_ = inst; }
 
   bool adjustCurrOrient(unsigned newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
   bool isFiller() const { return (type_ == FILLER); }
-  bool isFixed() const { return (fixed_ != NOT_FIXED); }
+  bool isFixed() const override { return (fixed_ != NOT_FIXED); }
 
   void addLeftEdgeType(int etl) { etls_.emplace_back(etl); }
   void addRigthEdgeType(int etr) { etrs_.emplace_back(etr); }
@@ -184,6 +199,9 @@ class Node
   std::vector<Pin*> pins_;
   // Master and edges
   Master* master_{nullptr};
+
+  // dbInst
+  odb::dbInst* db_inst_{nullptr};
 
   friend class Network;
 };

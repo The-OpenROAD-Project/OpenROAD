@@ -44,7 +44,7 @@
 #include <memory>
 #include <vector>
 
-#include "Grid.h"
+#include "dpl/Grid.h"
 #include "journal.h"
 #include "network.h"
 #include "rectangle.h"
@@ -66,6 +66,7 @@ class Architecture;
 class DetailedSeg;
 class Network;
 class RoutingParams;
+using dpl::Grid;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Structures.
@@ -307,8 +308,8 @@ class DetailedMgr
 
   // Journal operations
   const Journal& getJournal() const { return journal; }
-  void eraseFromGrid(const Node* node) { grid_->erasePixel(node); }
-  void paintInGrid(Node* node) { grid_->paintPixel(node); }
+  void eraseFromGrid(Node* node);
+  void paintInGrid(Node* node);
   void undo(const JournalAction& action, bool positions_only = false);
   void redo(const JournalAction& action, bool positions_only = false);
   struct compareNodesX

@@ -51,6 +51,8 @@
 #include "architecture.h"
 #include "detailed.h"
 #include "detailed_manager.h"
+#include "dpl/Grid.h"
+#include "dpl/Padding.h"
 #include "legalize_shift.h"
 #include "network.h"
 #include "orientation.h"
@@ -213,8 +215,8 @@ void Optdp::updateDbInstLocations()
     if (it_n != instMap_.end()) {
       const Node* nd = it_n->second;
 
-      const int y = nd->getBottom();
-      const int x = nd->getLeft();
+      const int y = nd->getBottom() + grid_->getCore().yMin();
+      const int x = nd->getLeft() + grid_->getCore().xMin();
 
       dbOrientType orient = dbOrientType::R0;
       switch (nd->getCurrOrient()) {
@@ -573,7 +575,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
 void Optdp::createNetwork()
 {
   dbBlock* block = db_->getChip()->getBlock();
-
+  auto core = block->getCoreArea();
   pwrLayers_.clear();
   gndLayers_.clear();
 
@@ -629,7 +631,9 @@ void Optdp::createNetwork()
   int nBlockages = 0;
   for (dbBlockage* blockage : block->getBlockages()) {
     if (!blockage->isSoft()) {
-      network_->createAndAddBlockage(blockage->getBBox()->getBox());
+      auto box = blockage->getBBox()->getBox();
+      box.moveDelta(-core.xMin(), -core.yMin());
+      network_->createAndAddBlockage(box);
       ++nBlockages;
     }
   }
@@ -678,6 +682,7 @@ void Optdp::createNetwork()
 
     // Fill in data.
     ndi->setType(Node::CELL);
+    ndi->setDbInst(inst);
     ndi->setMaster(getMaster(inst->getMaster()));
     // Set left and right edge types:
     {
@@ -715,10 +720,10 @@ void Optdp::createNetwork()
     ndi->setHeight(inst->getMaster()->getHeight());
     ndi->setWidth(inst->getMaster()->getWidth());
 
-    ndi->setOrigLeft(inst->getBBox()->xMin());
-    ndi->setOrigBottom(inst->getBBox()->yMin());
-    ndi->setLeft(inst->getBBox()->xMin());
-    ndi->setBottom(inst->getBBox()->yMin());
+    ndi->setOrigLeft(inst->getBBox()->xMin() - core.xMin());
+    ndi->setOrigBottom(inst->getBBox()->yMin() - core.yMin());
+    ndi->setLeft(ndi->getOrigLeft());
+    ndi->setBottom(ndi->getOrigBottom());
 
     // Set the top and bottom power.
     auto it_m = masterPwrs_.find(inst->getMaster());
@@ -759,10 +764,10 @@ void Optdp::createNetwork()
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
-    ndi->setOrigLeft(bterm->getBBox().xMin());
-    ndi->setOrigBottom(bterm->getBBox().yMin());
-    ndi->setLeft(bterm->getBBox().xMin());
-    ndi->setBottom(bterm->getBBox().yMin());
+    ndi->setOrigLeft(bterm->getBBox().xMin() - core.xMin());
+    ndi->setOrigBottom(bterm->getBBox().yMin() - core.yMin());
+    ndi->setLeft(ndi->getOrigLeft());
+    ndi->setBottom(ndi->getOrigBottom());
 
     // Not relevant for terminal.
     ndi->setBottomPower(Architecture::Row::Power_UNK);
@@ -900,8 +905,7 @@ void Optdp::createNetwork()
 void Optdp::createArchitecture()
 {
   dbBlock* block = db_->getChip()->getBlock();
-
-  odb::Rect dieRect = block->getDieArea();
+  auto core = block->getCoreArea();
 
   auto min_row_height = std::numeric_limits<int>::max();
   for (dbRow* row : block->getRows()) {
@@ -927,8 +931,8 @@ void Optdp::createArchitecture()
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(origin.x());
-    archRow->setBottom(origin.y());
+    archRow->setSubRowOrigin(origin.x() - core.xMin());
+    archRow->setBottom(origin.y() - core.yMin());
     archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
     archRow->setSiteWidth(site->getWidth());
@@ -984,10 +988,6 @@ void Optdp::createArchitecture()
       ymin = std::min(ymin, row->getBottom());
       ymax = std::max(ymax, row->getTop());
     }
-    if (xmin != dieRect.xMin() || xmax != dieRect.xMax()) {
-      xmin = dieRect.xMin();
-      xmax = dieRect.xMax();
-    }
     arch_->setMinX(xmin);
     arch_->setMaxX(xmax);
     arch_->setMinY(ymin);
@@ -1001,7 +1001,7 @@ void Optdp::createArchitecture()
     int siteWidth = arch_->getRow(r)->getSiteWidth();
     const int endGap = siteWidth - siteSpacing;
     if (originX < arch_->getMinX()) {
-      originX = (int) std::ceil(arch_->getMinX());
+      originX = arch_->getMinX();
       if (arch_->getRow(r)->getLeft() != originX) {
         arch_->getRow(r)->setSubRowOrigin(originX);
       }
@@ -1054,6 +1054,7 @@ void Optdp::createArchitecture()
         }
 
         Rect rect = sbox->getBox();
+        rect.moveDelta(core.xMin(), core.yMin());
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
           int yb = arch_->getRow(r)->getBottom();
           int yt = arch_->getRow(r)->getTop();
@@ -1075,8 +1076,10 @@ void Optdp::createGrid()
 {
   grid_->init(logger_);
   grid_->initBlock(db_->getChip()->getBlock());
+  grid_->clear();
   grid_->examineRows(db_->getChip()->getBlock());
-  grid_->allocateGrid();
+  grid_->initGrid(
+      db_, db_->getChip()->getBlock(), std::make_shared<dpl::Padding>(), 0, 0);
 }
 ////////////////////////////////////////////////////////////////
 void Optdp::setUpPlacementRegions()
@@ -1087,7 +1090,7 @@ void Optdp::setUpPlacementRegions()
   int ymax = arch_->getMaxY();
 
   dbBlock* block = db_->getChip()->getBlock();
-
+  auto core = block->getCoreArea();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   Architecture::Region* rptr = nullptr;
   int count = 0;
@@ -1119,6 +1122,7 @@ void Optdp::setUpPlacementRegions()
       auto boundaries = parent->getBoundaries();
       for (dbBox* boundary : boundaries) {
         Rect box = boundary->getBox();
+        box.moveDelta(-core.xMin(), -core.yMin());
 
         xmin = std::max(arch_->getMinX(), box.xMin());
         xmax = std::min(arch_->getMaxX(), box.xMax());

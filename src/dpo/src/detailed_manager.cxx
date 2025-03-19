@@ -327,14 +327,14 @@ void DetailedMgr::findSegments()
   // Create the segments into which movable cells are placed.  I do make
   // segment ends line up with sites and that segments don't extend off
   // the chip.
-
+  auto core = grid_->getCore();
   logger_->info(DPO,
                 322,
                 "Image ({:d}, {:d}) - ({:d}, {:d})",
-                arch_->getMinX(),
-                arch_->getMinY(),
-                arch_->getMaxX(),
-                arch_->getMaxY());
+                arch_->getMinX() + core.xMin(),
+                arch_->getMinY() + core.yMin(),
+                arch_->getMaxX() + core.xMin(),
+                arch_->getMaxY() + core.yMin());
 
   for (auto segment : segments_) {
     delete segment;
@@ -971,7 +971,7 @@ void DetailedMgr::assignCellsToSegments(
         nd->setBottom(yy);
       }
     }
-    grid_->paintPixel(nd);
+    paintInGrid(nd);
   }
   logger_->info(DPO,
                 310,
@@ -1098,10 +1098,10 @@ void DetailedMgr::restoreOriginalPositions()
 {
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
-    grid_->erasePixel(nd);
+    eraseFromGrid(nd);
     nd->setBottom(origBottom_[nd->getId()]);
     nd->setLeft(origLeft_[nd->getId()]);
-    grid_->paintPixel(nd);
+    paintInGrid(nd);
   }
 }
 
@@ -1454,21 +1454,21 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
         cell_edges::getOrientType(node->getCurrOrient()));
     bool is_vertical_edge = edge1_box.getDir() == 0;
     odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
-    int xMin = grid_->gridX(query_rect.xMin());
-    int xMax = grid_->gridEndX(query_rect.xMax());
-    int yMin = grid_->gridEndY(query_rect.yMin()) - 1;
-    int yMax = grid_->gridEndY(query_rect.yMax());
+    auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
+    auto xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
+    auto yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
+    auto yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
     std::set<Node*> checked_cells;
     // Loop over the area covered by queryRect to find neighboring edges and
     // check violations.
-    for (int y1 = yMin; y1 <= yMax; y1++) {
-      for (int x1 = xMin; x1 <= xMax; x1++) {
-        const Pixel* pixel = grid_->gridPixel(x1, y1);
-        if (pixel == nullptr || pixel->node == nullptr || pixel->node == node) {
+    for (auto y1 = yMin; y1 <= yMax; y1++) {
+      for (auto x1 = xMin; x1 <= xMax; x1++) {
+        const auto pixel = grid_->gridPixel(x1, y1);
+        if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == node) {
           // Skip if pixel is empty or occupied only by the current cell.
           continue;
         }
-        auto cell2 = pixel->node;
+        auto cell2 = static_cast<Node*>(pixel->cell);
         if (checked_cells.find(cell2) != checked_cells.end()) {
           // Skip if cell was already checked
           continue;
@@ -1484,10 +1484,10 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
           int spc = spc_entry.spc;
           odb::Rect edge2_box = cell_edges::transformEdgeRect(
               edge2.getBBox(),
-              pixel->node,
-              pixel->node->getLeft(),
-              pixel->node->getBottom(),
-              cell_edges::getOrientType(pixel->node->getCurrOrient()));
+              cell2,
+              cell2->getLeft(),
+              cell2->getBottom(),
+              cell_edges::getOrientType(cell2->getCurrOrient()));
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;
@@ -3476,13 +3476,13 @@ bool DetailedMgr::addToMoveList(Node* ndi,
     return false;
   }
   // commit move and add to journal
-  grid_->erasePixel(ndi);
+  eraseFromGrid(ndi);
   if (curSeg >= 0) {
     removeCellFromSegment(ndi, curSeg);
   }
   ndi->setLeft(newLeft);
   ndi->setBottom(newBottom);
-  grid_->paintPixel(ndi);
+  paintInGrid(ndi);
   if (newSeg >= 0) {
     addCellToSegment(ndi, newSeg);
   }
@@ -3514,13 +3514,13 @@ bool DetailedMgr::addToMoveList(Node* ndi,
     return false;
   }
   // commit move and add to journal
-  grid_->erasePixel(ndi);
+  eraseFromGrid(ndi);
   for (const auto& curSeg : curSegs) {
     removeCellFromSegment(ndi, curSeg);
   }
   ndi->setLeft(newLeft);
   ndi->setBottom(newBottom);
-  grid_->paintPixel(ndi);
+  paintInGrid(ndi);
   for (const auto& newSeg : newSegs) {
     addCellToSegment(ndi, newSeg);
   }
@@ -3555,6 +3555,18 @@ void DetailedMgr::rejectMove()
   clearMoveList();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::eraseFromGrid(Node* node)
+{
+  grid_->erasePixel(node);
+}
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::paintInGrid(Node* node)
+{
+  const auto grid_x = grid_->gridX(DbuX(node->getLeft()));
+  const auto grid_y = grid_->gridRoundY(DbuY(node->getBottom()));
+  grid_->paintPixel(node, grid_x, grid_y);
+}
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::undo(const JournalAction& action, const bool positions_only)
 {

@@ -104,10 +104,8 @@ void DetailedABU::init()
   abuTargUt_ = mgrPtr_->getTargetUt();  // XXX: Need to set this somehow!!!
 
   abuGridUnit_ = BIN_DIM * arch_->getRow(0)->getHeight();
-  abuGridNumX_
-      = (int) ceil((arch_->getMaxX() - arch_->getMinX()) / abuGridUnit_);
-  abuGridNumY_
-      = (int) ceil((arch_->getMaxY() - arch_->getMinY()) / abuGridUnit_);
+  abuGridNumX_ = (int) ceil((arch_->getWidth()) / abuGridUnit_);
+  abuGridNumY_ = (int) ceil((arch_->getHeight()) / abuGridUnit_);
   abuNumBins_ = abuGridNumX_ * abuGridNumY_;
   abuBins_.resize(abuNumBins_);
 
