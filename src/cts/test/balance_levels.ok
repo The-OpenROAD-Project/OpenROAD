@@ -10,8 +10,7 @@
 [INFO CTS-0010]  Clock net "CELL/clk2" has 150 sinks.
 [INFO CTS-0008] TritonCTS found 3 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 1.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 5 and with maximum cluster diameter of 60.0 um.
@@ -29,8 +28,7 @@
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 1.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
 [INFO CTS-0028]  Total number of sinks: 150.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 5 and with maximum cluster diameter of 60.0 um.
@@ -63,8 +61,7 @@
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 150.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net CELL\/clk2.
 [INFO CTS-0028]  Total number of sinks: 150.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 5 and with maximum cluster diameter of 60.0 um.
