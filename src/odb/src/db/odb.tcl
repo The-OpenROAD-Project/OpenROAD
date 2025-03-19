@@ -803,6 +803,10 @@ proc exclude_io_pin_region { args } {
 
   sta::check_argc_eq0 "exclude_io_pin_region" $args
 
+  if { ![info exists keys(-region)] } {
+    utl::error PPL 10 "The -region keyword is required for exclude_io_pin_region command."
+  }
+
   set regions $list(-region)
 
   if { [llength $regions] != 0 } {
