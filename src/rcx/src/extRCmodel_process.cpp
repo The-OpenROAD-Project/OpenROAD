@@ -66,7 +66,7 @@ uint extRCModel::measureWithVar(extMeasure* measure)
 
   //	extMasterConductor* m= _process->getMasterConductor(met);
   if (top_ext != 0.0 || bot_ext != 0.0) {
-    xvar = NULL;
+    xvar = nullptr;
     measure->_metExtFlag = true;
   }
 
@@ -122,14 +122,14 @@ uint extRCModel::measureWithVar(extMeasure* measure)
         if (r == 0.0) {
           //					top_width= w;
           //					top_widthR= w;
-          if (xvar != NULL) {
+          if (xvar != nullptr) {
             double a = xvar->getP(w);
             if (a != 0.0)
               ro = a;
           }
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
-        } else if (xvar != NULL && !_maxMinFlag) {
+        } else if (xvar != nullptr && !_maxMinFlag) {
           uint ss;
           if (measure->_diag)
             ss = 5;
@@ -190,7 +190,7 @@ uint extRCModel::measureWithVar(extMeasure* measure)
                           bot_width,
                           thickness,
                           measure->_wireCnt,
-                          NULL,
+                          nullptr,
                           res * 0.5);
 
         //				measure->setTargetParams(w, s, 0.0, t,
@@ -217,7 +217,7 @@ uint extRCModel::linesOver(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -269,7 +269,7 @@ uint extRCModel::linesDiagUnder(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -340,7 +340,7 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
 
   //        extMasterConductor* m= _process->getMasterConductor(met);
   if (top_ext != 0.0 || bot_ext != 0.0) {
-    xvar = NULL;
+    xvar = nullptr;
     measure->_metExtFlag = true;
   }
 
@@ -398,14 +398,14 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
               //                                        		top_width=
               //                                        w;
               //                                        top_widthR= w;
-              if (xvar != NULL) {
+              if (xvar != nullptr) {
                 double a = xvar->getP(w);
                 if (a != 0.0)
                   ro = a;
               }
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
-            } else if (xvar != NULL && !_maxMinFlag) {
+            } else if (xvar != nullptr && !_maxMinFlag) {
               uint ss;
               //							if
               //(sIndex < scnt-1)
@@ -456,7 +456,7 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
                               bot_width,
                               thickness,
                               measure->_wireCnt,
-                              NULL,
+                              nullptr,
                               res * 0.5);
 
             cnt++;
@@ -477,7 +477,7 @@ uint extRCModel::linesUnder(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -548,7 +548,7 @@ uint extRCModel::linesOverUnder(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -759,7 +759,7 @@ double extRCModel::writeWirePatterns(FILE* fp,
                                      double& max_x)
 {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
-  extMasterConductor* mOver = NULL;
+  extMasterConductor* mOver = nullptr;
   if (_diagModel > 0)
     mOver = _process->getMasterConductor(measure->_overMet);
 
@@ -865,7 +865,7 @@ double extRCModel::writeWirePatterns_w3(FILE* fp,
                                         double& max_x)
 {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
-  extMasterConductor* mOver = NULL;
+  extMasterConductor* mOver = nullptr;
   if (_diagModel > 0)
     mOver = _process->getMasterConductor(measure->_overMet);
 
@@ -1041,7 +1041,7 @@ bool extRCModel::measurePatternVar_3D(extMeasure* m,
 
   FILE* wfp = mkPatternFile();
 
-  if (wfp == NULL)
+  if (wfp == nullptr)
     return false;  // should be an exception!! and return!
 
   double maxHeight

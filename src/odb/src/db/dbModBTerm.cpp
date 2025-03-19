@@ -410,6 +410,7 @@ void dbModBTerm::disconnect()
   //
   _modbterm->_next_net_modbterm = 0;
   _modbterm->_prev_net_modbterm = 0;
+  _modbterm->_modnet = 0;
 }
 
 bool dbModBTerm::isBusPort() const

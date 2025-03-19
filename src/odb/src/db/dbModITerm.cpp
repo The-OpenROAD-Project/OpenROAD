@@ -329,6 +329,7 @@ void dbModITerm::disconnect()
   if (next_moditerm) {
     next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
   }
+  _moditerm->_mod_net = 0;
 }
 
 dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
