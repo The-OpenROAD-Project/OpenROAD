@@ -1,6 +1,7 @@
 or_integration_tests(
   "rsz"
   TESTS
+    gain_buffering1_hier
     repair_fanout1_hier
     repair_fanout2_hier
     repair_fanout3_hier      
