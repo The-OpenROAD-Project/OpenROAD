@@ -1152,9 +1152,11 @@ bool FlexPA::EnoughAccessPoints(
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
+  bool enough_sparse_points = false;
+  bool enough_far_from_edge_points = false;
 
-  if (is_io_pin && (int) aps.size() > 0) {
-    return true;
+  if (is_io_pin) {
+    return (aps.size() > 0);
   }
 
   /* This is a Max Clique problem, each ap is a node, draw an edge between two
@@ -1180,14 +1182,27 @@ bool FlexPA::EnoughAccessPoints(
 
   if (is_std_cell_pin
       && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
-    return true;
+    enough_sparse_points = true;
   }
   if (is_macro_cell_pin
       && n_sparse_access_points
              >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    return true;
+    enough_sparse_points = true;
   }
-  return false;
+
+  Rect cell_box = inst_term->getInst()->getBBox();
+  for (auto& ap : aps) {
+    const int colision_dist
+        = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
+    Rect ap_colision_box;
+    Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
+    if (cell_box.contains(ap_colision_box)) {
+      enough_far_from_edge_points = true;
+      break;
+    }
+  }
+
+  return (enough_sparse_points && enough_far_from_edge_points);
 }
 
 template <typename T>
