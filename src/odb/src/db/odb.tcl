@@ -795,7 +795,7 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-sta::define_cmd_args "exclude_io_pin_region" { [-region region] }
+sta::define_cmd_args "exclude_io_pin_region" { -region region }
 
 proc exclude_io_pin_region { args } {
   ord::parse_list_args "exclude_io_pin_region" args list {-region}
@@ -840,6 +840,8 @@ proc exclude_io_pin_region { args } {
           Use (top|bottom|left|right):interval."
       }
     }
+  } else {
+    utl::error PPL 10 "The -region keyword is required for exclude_io_pin_region command."
   }
 }
 

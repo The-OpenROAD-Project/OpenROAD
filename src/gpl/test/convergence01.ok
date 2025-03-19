@@ -54,42 +54,14 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
-    final |     -1.7% |      14 |       0 |             0 |         0
+    final |     -8.0% |      32 |       0 |             0 |         0
 ---------------------------------------------------------------------
-[INFO RSZ-0039] Resized 14 instances.
+[INFO RSZ-0039] Resized 32 instances.
 [INFO GPL-0106] Timing-driven: worst slack 6.35e-09
 [INFO GPL-0103] Timing-driven: weighted 4 nets.
-[INFO GPL-0107] Timing-driven: repair_design delta area: -1.021 um^2 (-6.57%)
+[INFO GPL-0107] Timing-driven: repair_design delta area: -2.799 um^2 (-18.03%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
-[INFO GPL-0110] Timing-driven: new target density: 0.49125
-[NesterovSolve] Iter:   10 overflow: 0.320 HPWL: 16378
-[NesterovSolve] Iter:   20 overflow: 0.410 HPWL: 10908
-[NesterovSolve] Iter:   30 overflow: 0.459 HPWL: 6522
-[NesterovSolve] Iter:   40 overflow: 0.732 HPWL: 2020
-[NesterovSolve] Iter:   50 overflow: 0.723 HPWL: 1808
-[NesterovSolve] Iter:   60 overflow: 0.691 HPWL: 2234
-[NesterovSolve] Iter:   70 overflow: 0.736 HPWL: 1553
-[NesterovSolve] Iter:   80 overflow: 0.745 HPWL: 555
-[NesterovSolve] Iter:   90 overflow: 0.740 HPWL: 1217
-[NesterovSolve] Iter:  100 overflow: 0.735 HPWL: 1486
-[NesterovSolve] Iter:  110 overflow: 0.734 HPWL: 1212
-[NesterovSolve] Iter:  120 overflow: 0.730 HPWL: 836
-[NesterovSolve] Iter:  130 overflow: 0.724 HPWL: 884
-[NesterovSolve] Iter:  140 overflow: 0.693 HPWL: 1145
-[NesterovSolve] Iter:  150 overflow: 0.674 HPWL: 1551
-[NesterovSolve] Iter:  160 overflow: 0.661 HPWL: 1980
-[NesterovSolve] Iter:  170 overflow: 0.622 HPWL: 3154
-[NesterovSolve] Iter:  180 overflow: 0.557 HPWL: 4742
-[NesterovSolve] Iter:  190 overflow: 0.471 HPWL: 6560
-[NesterovSolve] Iter:  200 overflow: 0.466 HPWL: 6406
-[NesterovSolve] Iter:  210 overflow: 0.449 HPWL: 6085
-[NesterovSolve] Iter:  220 overflow: 0.367 HPWL: 7773
-[NesterovSolve] Iter:  230 overflow: 0.301 HPWL: 7983
-[NesterovSolve] Iter:  240 overflow: 0.304 HPWL: 7259
-[NesterovSolve] Iter:  250 overflow: 0.250 HPWL: 7613
-[NesterovSolve] Iter:  260 overflow: 0.198 HPWL: 8360
-[NesterovSolve] Iter:  270 overflow: 0.171 HPWL: 8182
-[NesterovSolve] Iter:  280 overflow: 0.119 HPWL: 7902
-[NesterovSolve] Finished with Overflow: 0.099497
+[INFO GPL-0110] Timing-driven: new target density: 0.476
+[NesterovSolve] Finished with Overflow: 0.093288
 No differences found.
