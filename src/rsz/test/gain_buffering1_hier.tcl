@@ -24,4 +24,4 @@ repair_design -buffer_gain 4.0
 report_checks -fields {fanout}
 set verilog_file [make_result_file gain_buffering1_hier_out.v]
 write_verilog $verilog_file
-difff_files $verilog_file gain_buffering1_hier_out.vok
+diff_files $verilog_file gain_buffering1_hier_out.vok
