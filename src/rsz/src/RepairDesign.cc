@@ -568,12 +568,10 @@ bool RepairDesign::performGainBuffering(Net* net,
       // note any hierarchical nets.
       // and move them to the output of the buffer.
       odb::dbModNet* driver_mod_net = db_network_->hierNet(driver_pin);
-      odb::dbNet* driver_flat_net = db_network_->flatNet(driver_pin);
       if (driver_mod_net) {
-        // TODO: provide api to disconnect one net at a time from a pin
-        db_network_->disconnectPin(driver_pin);
-        db_network_->connectPin(driver_pin,
-                                db_network_->dbToSta(driver_flat_net));
+        // only disconnect the modnet, we hook it to the output of the buffer.
+        db_network_->disconnectPin(driver_pin,
+                                   db_network_->dbToSta(driver_mod_net));
       }
 
       // make sure any nets created are scoped within hierarchy
