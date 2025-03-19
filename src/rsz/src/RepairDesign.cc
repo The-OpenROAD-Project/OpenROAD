@@ -553,22 +553,60 @@ bool RepairDesign::performGainBuffering(Net* net,
         break;
       }
 
-      Net* new_net = resizer_->makeUniqueNet();
+      // Get scope of driver, put any new buffers in that scope
+      sta::Pin* driver_pin = nullptr;
+      odb::dbModule* driver_parent = db_network_->getNetDriverParentModule(
+          net, driver_pin, db_network_->hasHierarchy());
+      odb::dbModInst* parent_mod_inst = driver_parent->getModInst();
+      Instance* parent;
+      if (parent_mod_inst) {
+        parent = db_network_->dbToSta(parent_mod_inst);
+      } else {
+        parent = db_network_->topInstance();
+      }
+
+      // note any hierarchical nets.
+      // and move them to the output of the buffer.
+      odb::dbModNet* driver_mod_net = db_network_->hierNet(driver_pin);
+      odb::dbNet* driver_flat_net = db_network_->flatNet(driver_pin);
+      if (driver_mod_net) {
+        // TODO: provide api to disconnect one net at a time from a pin
+        db_network_->disconnectPin(driver_pin);
+        db_network_->connectPin(driver_pin,
+                                db_network_->dbToSta(driver_flat_net));
+      }
+
+      // make sure any nets created are scoped within hierarchy
+      // backwards compatible. new naming only used for hierarchy code.
+
+      std::string net_name = db_network_->hasHierarchy()
+                                 ? resizer_->makeUniqueNetName(parent)
+                                 : resizer_->makeUniqueNetName();
+      Net* new_net = db_network_->makeNet(net_name.c_str(), parent);
+
       dbNet* net_db = db_network_->staToDb(net);
       dbNet* new_net_db = db_network_->staToDb(new_net);
       new_net_db->setSigType(net_db->getSigType());
 
       string buffer_name = resizer_->makeUniqueInstName("gain");
       const Point drvr_loc = db_network_->location(drvr_pin);
-      Instance* inst = resizer_->makeBuffer(*size,
-                                            buffer_name.c_str(),
-                                            // TODO: non-top module handling?
-                                            db_network_->topInstance(),
-                                            drvr_loc);
+
+      // create instance in driver parent
+      Instance* inst
+          = resizer_->makeBuffer(*size, buffer_name.c_str(), parent, drvr_loc);
+
       LibertyPort *size_in, *size_out;
       (*size)->bufferPorts(size_in, size_out);
-      sta_->connectPin(inst, size_in, net);
-      sta_->connectPin(inst, size_out, new_net);
+      Pin* buffer_ip_pin = nullptr;
+      Pin* buffer_op_pin = nullptr;
+      resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
+      db_network_->connectPin(buffer_ip_pin, net);
+      db_network_->connectPin(buffer_op_pin, new_net);
+      // put the mod net on the output of the buffer.
+      if (driver_mod_net) {
+        db_network_->connectPin(buffer_op_pin,
+                                db_network_->dbToSta(driver_mod_net));
+      }
 
       repaired_net = true;
       inserted_buffer_count_++;
@@ -581,15 +619,21 @@ bool RepairDesign::performGainBuffering(Net* net,
         if (it->level > max_level) {
           max_level = it->level;
         }
+
+        odb::dbModNet* sink_mod_net = db_network_->hierNet(it->pin);
         sta_->disconnectPin(it->pin);
         sta_->connectPin(sink_inst, sink_port, new_net);
+        if (sink_mod_net) {
+          db_network_->connectPin(it->pin, db_network_->dbToSta(sink_mod_net));
+        }
+
         if (it->level == 0) {
           Pin* new_pin = network_->findPin(sink_inst, sink_port);
           tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
         }
       }
 
-      Pin* new_input_pin = network_->findPin(inst, size_in);
+      Pin* new_input_pin = buffer_ip_pin;  // network_->findPin(inst, size_in);
 
       Delay buffer_delay = resizer_->bufferDelay(
           *size, load_acc, resizer_->tgt_slew_dcalc_ap_);
@@ -608,7 +652,6 @@ bool RepairDesign::performGainBuffering(Net* net,
       load += size_in->capacitance();
     }
   }
-
   sta_->ensureLevelized();
   sta::Level max_level = 0;
   for (auto vertex : tree_boundary) {
