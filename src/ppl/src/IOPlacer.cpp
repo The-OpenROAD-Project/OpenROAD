@@ -1373,18 +1373,19 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
   bool group_assigned = false;
   int total_pins_assigned = 0;
 
-  IOPin& io_pin = net->getIoPin(io_group[0]);
+  IOPin& first_pin = net->getIoPin(io_group[0]);
 
-  if (!io_pin.isAssignedToSection() && !io_pin.inFallback()) {
+  if (!first_pin.isAssignedToSection() && !first_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
+        IOPin& pin = net->getIoPin(pin_idx);
         int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
         }
-        dst[i] += pin_hpwl;
+        dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
       }
     }
 
@@ -1417,7 +1418,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
           sections[i].used_slots++;
           io_pin.assignToSection();
           if (io_pin.getBTerm()->hasMirroredBTerm()) {
-            assignMirroredPin(io_pin);
+            assignMirroredPinToSection(io_pin);
           }
         }
         total_pins_assigned += group_size;
@@ -1529,7 +1530,8 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
       && !io_pin.inFallback()) {
     std::vector<int> dst(sections.size());
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos);
+      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos)
+               + getMirroredPinCost(io_pin, sections[i].pos);
     }
     for (auto i : sortIndexes(dst)) {
       if (sections[i].used_slots < sections[i].num_slots) {
@@ -1539,7 +1541,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         io_pin.assignToSection();
 
         if (io_pin.getBTerm()->hasMirroredBTerm()) {
-          assignMirroredPin(io_pin);
+          assignMirroredPinToSection(io_pin);
         }
         break;
       }
@@ -1549,14 +1551,23 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
   return pin_assigned;
 }
 
-void IOPlacer::assignMirroredPin(IOPin& io_pin)
+void IOPlacer::assignMirroredPinToSection(IOPin& io_pin)
 {
   odb::dbBTerm* mirrored_term = io_pin.getBTerm()->getMirroredBTerm();
   int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
   IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
   // Mark mirrored pin as assigned to section to prevent assigning it to
-  // another section that is not aligned with his pair
+  // another section that is not aligned with its pair
   mirrored_pin.assignToSection();
+}
+
+int IOPlacer::getMirroredPinCost(IOPin& io_pin, const odb::Point& position)
+{
+  if (io_pin.getBTerm()->hasMirroredBTerm()) {
+    odb::Point mirrored_pos = core_->getMirroredPosition(position);
+    return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
+  }
+  return 0;
 }
 
 void IOPlacer::printConfig(bool annealing)
@@ -1884,6 +1895,15 @@ void IOPlacer::initMirroredPins(bool annealing)
   }
 }
 
+void IOPlacer::initExcludedIntervals()
+{
+  for (const odb::Rect& excluded_region :
+       getBlock()->getBlockedRegionsForPins()) {
+    Interval excluded_interv = findIntervalFromRect(excluded_region);
+    excluded_intervals_.push_back(excluded_interv);
+  }
+}
+
 Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 {
   int begin;
@@ -2200,7 +2220,7 @@ void IOPlacer::updateSlots()
 void IOPlacer::runHungarianMatching(bool random_mode)
 {
   slots_per_section_ = parms_->getSlotsPerSection();
-
+  initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
@@ -2344,6 +2364,7 @@ void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
 void IOPlacer::runAnnealing(bool random)
 {
   slots_per_section_ = parms_->getSlotsPerSection();
+  initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
   getBlockedRegionsFromMacros();
 
