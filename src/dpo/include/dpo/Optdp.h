@@ -49,7 +49,7 @@ class Logger;
 namespace dpl {
 class Opendp;
 class Grid;
-}
+}  // namespace dpl
 
 namespace dpo {
 
@@ -61,8 +61,8 @@ class Edge;
 class Pin;
 class Master;
 
-using dpl::Opendp;
 using dpl::Grid;
+using dpl::Opendp;
 using odb::dbDatabase;
 using odb::dbOrientType;
 using utl::Logger;
