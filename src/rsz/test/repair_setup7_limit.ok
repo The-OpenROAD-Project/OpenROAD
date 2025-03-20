@@ -13,7 +13,7 @@ Optimization config:
 -keep_sizing_site:     false
 -keep_sizing_vt:       false
 ***********************************
-worst slack -1.95
+worst slack max -1.95
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -26,4 +26,4 @@ worst slack -1.95
 [INFO RSZ-0041] Resized 12 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack -0.93
+worst slack max -0.93
