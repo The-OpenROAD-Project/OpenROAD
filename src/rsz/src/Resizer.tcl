@@ -457,21 +457,23 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
                                       [-buffer_gain gain] \
+                                      [-initial_sizing] \
                                       [-match_cell_footprint] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose}
+    flags {-match_cell_footprint -verbose -initial_sizing}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
   set cap_margin [rsz::parse_percent_margin_arg "-cap_margin" keys]
-  set buffer_gain 0.0
+
+  set initial_sizing [info exists flags(-initial_sizing)]
   if { [info exists keys(-buffer_gain)] } {
-    set buffer_gain $keys(-buffer_gain)
-    sta::check_positive_float "-buffer_gain" $buffer_gain
+    set initial_sizing true
+    utl::warn "RSZ" 149 "-buffer_gain is deprecated"
   }
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
@@ -481,7 +483,7 @@ proc repair_design { args } {
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $buffer_gain $match_cell_footprint $verbose
+    $initial_sizing $match_cell_footprint $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -820,12 +822,15 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-keep_sizing_site] \
                                           [-keep_sizing_vt] \
                                           [-sizing_area_limit] \
-                                          [-sizing_leakage_limit] }
+                                          [-sizing_leakage_limit] \
+                                          [-sizing_cap_ratio] \
+                                          [-buffer_sizing_cap_ratio]}
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt} flags {}
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt 
+      -sizing_cap_ratio -buffer_sizing_cap_ratio} flags {}
   
 
   set area_limit "NULL"
@@ -865,6 +870,20 @@ proc set_opt_config { args } {
     utl::info RSZ 106 \
       "Cell's VT type will be preserved for sizing"
   }
+
+  if { [info exists keys(-sizing_cap_ratio)] } {
+    set value $keys(-sizing_cap_ratio)
+    rsz::set_positive_double_prop $value "-sizing_cap_ratio" "sizing_cap_ratio"
+    utl::info RSZ 145 \
+      "Initial sizing will use capacitance ratio of value $value"
+  }
+
+  if { [info exists keys(-buffer_sizing_cap_ratio)] } {
+    set value $keys(-buffer_sizing_cap_ratio)
+    rsz::set_positive_double_prop $value "-buffer_sizing_cap_ratio" "buffer_sizing_cap_ratio"
+    utl::info RSZ 147 \
+      "Initial buffer sizing will use capacitance ratio of value $value"
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
@@ -872,12 +891,15 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-keep_sizing_site] \
                                             [-keep_sizing_vt] \
                                             [-sizing_area_limit] \
-                                            [-sizing_leakage_limit] }
+                                            [-sizing_leakage_limit] \
+                                            [-sizing_cap_ratio] \
+                                            [-buffer_sizing_cap_ratio]}
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
-                     -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt}
+                     -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
+                     -sizing_cap_ratio -buffer_sizing_cap_ratio}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -901,6 +923,14 @@ proc reset_opt_config { args } {
   if { $reset_all || [info exists flags(-keep_sizing_vt)] } {
     rsz::clear_bool_prop "keep_sizing_vt"
     utl::info RSZ 107 "Cell sizing restriction based on VT type has been removed."
+  }
+  if { $reset_all || [info exists flags(-sizing_cap_ratio)] } {
+    rsz::clear_double_prop "sizing_cap_ratio"
+    utl::info RSZ 146 "Cell sizing capacitance ratio has been unset"
+  }
+  if { $reset_all || [info exists flags(-buffer_sizing_cap_ratio)] } {
+    rsz::clear_double_prop "buffer_sizing_cap_ratio"
+    utl::info RSZ 148 "Buffer sizing capacitance ratio has been unset"
   }
 }
 
@@ -936,12 +966,26 @@ proc report_opt_config { args } {
     set keep_sizing_vt [expr { $keep_vt_value ? "true" : "false" }]
   }
 
+  set sizing_cap_ratio "unset"
+  set cap_ratio_prop [odb::dbDoubleProperty_find $block "sizing_cap_ratio"]
+  if { $cap_ratio_prop ne "NULL" && $cap_ratio_prop ne "" } {
+    set sizing_cap_ratio [$cap_ratio_prop getValue]
+  }
+
+  set buffer_cap_ratio "unset"
+  set buffer_cap_ratio_prop [odb::dbDoubleProperty_find $block "buffer_sizing_cap_ratio"]
+  if { $buffer_cap_ratio_prop ne "NULL" && $buffer_cap_ratio_prop ne "" } {
+    set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
+  }
+
   puts "***********************************"
   puts "Optimization config:"
-  puts "-limit_sizing_area:    $area_limit_value"
-  puts "-limit_sizing_leakage: $leakage_limit_value"
-  puts "-keep_sizing_site:     $keep_site_value"
-  puts "-keep_sizing_vt:       $keep_sizing_vt"
+  puts "-limit_sizing_area:       $area_limit_value"
+  puts "-limit_sizing_leakage:    $leakage_limit_value"
+  puts "-keep_sizing_site:        $keep_site_value"
+  puts "-keep_sizing_vt:          $keep_sizing_vt"
+  puts "-sizing_cap_ratio:        $sizing_cap_ratio"
+  puts "-buffer_sizing_cap_ratio: $buffer_cap_ratio"
   puts "***********************************"
 }
 
