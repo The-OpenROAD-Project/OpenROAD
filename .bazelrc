@@ -1,0 +1,9 @@
+common --noenable_bzlmod
+
+build --cxxopt "-std=c++17"
+build --cxxopt "-ffp-contract=off"
+build --host_cxxopt "-std=c++17"
+build --host_cxxopt "-ffp-contract=off"
+build --crosstool_top=@llvm_toolchain//:toolchain
+
+try-import %workspace$/user.bazelrc
