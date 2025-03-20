@@ -1152,7 +1152,7 @@ bool FlexPA::EnoughAccessPoints(
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
-  bool enough_sparse_points = false;
+  bool enough_sparse_acc_points = false;
   bool enough_far_from_edge_points = false;
 
   if (is_io_pin) {
@@ -1182,12 +1182,12 @@ bool FlexPA::EnoughAccessPoints(
 
   if (is_std_cell_pin
       && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
-    enough_sparse_points = true;
+    enough_sparse_acc_points = true;
   }
   if (is_macro_cell_pin
       && n_sparse_access_points
              >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    enough_sparse_points = true;
+    enough_sparse_acc_points = true;
   }
 
   Rect cell_box = inst_term->getInst()->getBBox();
@@ -1202,7 +1202,7 @@ bool FlexPA::EnoughAccessPoints(
     }
   }
 
-  return (enough_sparse_points && enough_far_from_edge_points);
+  return (enough_sparse_acc_points && enough_far_from_edge_points);
 }
 
 template <typename T>
