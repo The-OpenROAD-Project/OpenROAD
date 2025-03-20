@@ -13,5 +13,5 @@ Found 0 macro blocks.
 [INFO PPL-0006] Number of I/O Groups    1
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 1684.43 um.
+[INFO PPL-0012] I/O nets HPWL: 1620.93 um.
 No differences found.

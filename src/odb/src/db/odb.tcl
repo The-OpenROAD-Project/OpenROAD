@@ -682,7 +682,7 @@ sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
                                               [-pin_names names] \
                                               [-region region] \
                                               [-mirrored_pins pins] \
-                                              [-group]
+                                              [-group] \
                                               [-order]}
 
 proc set_io_pin_constraint { args } {
@@ -792,6 +792,56 @@ proc set_io_pin_constraint { args } {
       set bterm2 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin2]
       odb::add_mirrored_pins $bterm1 $bterm2
     }
+  }
+}
+
+sta::define_cmd_args "exclude_io_pin_region" { -region region }
+
+proc exclude_io_pin_region { args } {
+  ord::parse_list_args "exclude_io_pin_region" args list {-region}
+  sta::parse_key_args "exclude_io_pin_region" args keys {-region} flags {}
+
+  sta::check_argc_eq0 "exclude_io_pin_region" $args
+
+  set regions $list(-region)
+
+  if { [llength $regions] != 0 } {
+    set block [odb::get_block]
+    set db_tech [ord::get_db_tech]
+    set lef_units [$db_tech getLefUnits]
+
+    foreach region $regions {
+      if { [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] } {
+        if {
+          [regexp -all {([0-9]+[.]*[0-9]*|[*]+)-([0-9]+[.]*[0-9]*|[*]+)} $interval - begin end]
+        } {
+          if { $begin == "*" } {
+            set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
+          }
+          if { $end == "*" } {
+            set end [ppl::get_edge_extreme "-exclude" 0 $edge]
+          }
+          set begin [expr { int($begin * $lef_units) }]
+          set end [expr { int($end * $lef_units) }]
+          
+          set excluded_region [$block findConstraintRegion $edge $begin $end]
+          $block addBlockedRegionForPins $excluded_region
+        } elseif { $interval == "*" } {
+          set begin [ppl::get_edge_extreme "-exclude" 1 $edge]
+          set end [ppl::get_edge_extreme "-exclude" 0 $edge]
+
+          set excluded_region [$block findConstraintRegion $edge $begin $end]
+          $block addBlockedRegionForPins $excluded_region
+        } else {
+          utl::error ODB 27 "-exclude: $interval is an invalid region."
+        }
+      } else {
+        utl::error ODB 28 "-exclude: invalid syntax in $region.\
+          Use (top|bottom|left|right):interval."
+      }
+    }
+  } else {
+    utl::error PPL 10 "The -region keyword is required for exclude_io_pin_region command."
   }
 }
 
