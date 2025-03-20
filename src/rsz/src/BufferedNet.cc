@@ -100,7 +100,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
     max_load_slew_ = INF;
   }
 
-  required_path_.init();
+  required_path_ = nullptr;
   required_delay_ = 0.0;
 }
 
@@ -127,7 +127,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = ref->fanout() + ref2->fanout();
   max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
 
-  required_path_.init();
+  required_path_ = nullptr;
   required_delay_ = 0.0;
 }
 
@@ -157,7 +157,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = ref->fanout();
   max_load_slew_ = ref->maxLoadSlew();
 
-  required_path_.init();
+  required_path_ = nullptr;
   required_delay_ = 0.0;
 }
 
@@ -187,7 +187,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
 
-  required_path_.init();
+  required_path_ = nullptr;
   required_delay_ = 0.0;
 }
 
@@ -278,17 +278,18 @@ void BufferedNet::setMaxLoadSlew(float max_slew)
   max_load_slew_ = max_slew;
 }
 
-void BufferedNet::setRequiredPath(const PathRef& path_ref)
+void BufferedNet::setRequiredPath(const Path* path)
 {
-  required_path_ = path_ref;
+  required_path_ = path;
 }
 
-Required BufferedNet::required(const StaState* sta) const
+Required BufferedNet::required(const StaState* ) const
 {
-  if (required_path_.isNull()) {
-    return INF;
+  if (required_path_) {
+    return required_path_->required() - required_delay_;
   }
-  return required_path_.required(sta) - required_delay_;
+  else
+    return INF;
 }
 
 void BufferedNet::setRequiredDelay(Delay delay)

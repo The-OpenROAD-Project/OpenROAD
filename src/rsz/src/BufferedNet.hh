@@ -42,7 +42,7 @@
 #include "spdlog/fmt/fmt.h"
 #include "sta/Delay.hh"
 #include "sta/Network.hh"
-#include "sta/PathRef.hh"
+#include "sta/Path.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -60,7 +60,7 @@ using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::LibertyCell;
 using sta::Network;
-using sta::PathRef;
+using sta::Path;
 using sta::Pin;
 using sta::Required;
 using sta::RiseFall;
@@ -154,8 +154,8 @@ class BufferedNet
 
   // Rebuffer
   Required required(const StaState* sta) const;
-  const PathRef& requiredPath() const { return required_path_; }
-  void setRequiredPath(const PathRef& path_ref);
+  const Path* requiredPath() const { return required_path_; }
+  void setRequiredPath(const Path* path);
   Delay requiredDelay() const { return required_delay_; }
   void setRequiredDelay(Delay delay);
   // Downstream buffer count.
@@ -183,8 +183,8 @@ class BufferedNet
   float max_load_slew_;
 
   // Rebuffer annotations
-  // PathRef for worst required path at load.
-  PathRef required_path_;
+  // Path for worst required path at load.
+  const Path *required_path_;
   // Max delay from here to the loads.
   Delay required_delay_;
 };

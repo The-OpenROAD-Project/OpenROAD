@@ -67,7 +67,7 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/PathRef.hh"
+#include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
@@ -1060,7 +1060,7 @@ void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
 ////////////////////////////////////////////////////////////////
 
 // Highlight path in the gui.
-void dbSta::highlight(PathRef* path)
+void dbSta::highlight(Path* path)
 {
   path_renderer_->highlight(path);
 }

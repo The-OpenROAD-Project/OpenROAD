@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "sta/PathRef.hh"
+#include "sta/Path.hh"
 
 namespace sta {
 
@@ -15,7 +15,7 @@ class AbstractPathRenderer
  public:
   virtual ~AbstractPathRenderer() = default;
 
-  virtual void highlight(PathRef* path) = 0;
+  virtual void highlight(Path* path) = 0;
 };
 
 }  // namespace sta

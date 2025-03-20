@@ -59,6 +59,7 @@ using sta::fuzzyLessEqual;
 using sta::INF;
 using sta::NetConnectedPinIterator;
 using sta::PinSeq;
+using sta::Path;
 
 // Return inserted buffer count.
 int RepairSetup::rebuffer(const Pin* drvr_pin)
@@ -111,8 +112,8 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
       int i = 1;
       for (const BufferedNetPtr& p : Z) {
         // Find slack for drvr_pin into option.
-        const PathRef& req_path = p->requiredPath();
-        if (!req_path.isNull()) {
+        const Path* req_path = p->requiredPath();
+        if (req_path) {
           Slack slack_penalized = slackPenalized(p, i);
           if (best_option == nullptr
               || fuzzyGreater(slack_penalized, best_slack_penalized)) {
@@ -186,12 +187,12 @@ Slack RepairSetup::slackPenalized(const BufferedNetPtr& bnet,
                                   // Only used for debug print.
                                   int index)
 {
-  const PathRef& req_path = bnet->requiredPath();
-  if (!req_path.isNull()) {
+  const Path* req_path = bnet->requiredPath();
+  if (req_path) {
     Delay drvr_delay = resizer_->gateDelay(drvr_port_,
-                                           req_path.transition(sta_),
+                                           req_path->transition(sta_),
                                            bnet->cap(),
-                                           req_path.dcalcAnalysisPt(sta_));
+                                           req_path->dcalcAnalysisPt(sta_));
     Slack slack = bnet->required(sta_) - drvr_delay;
     int buffer_count = bnet->bufferCount();
     double buffer_penalty = buffer_count * rebuffer_buffer_penalty_;
@@ -321,10 +322,10 @@ BufferedNetSeq RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     case BufferedNetType::load: {
       const Pin* load_pin = bnet->loadPin();
       Vertex* vertex = graph_->pinLoadVertex(load_pin);
-      PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
-      const DcalcAnalysisPt* dcalc_ap = req_path.isNull()
-                                            ? resizer_->tgt_slew_dcalc_ap_
-                                            : req_path.dcalcAnalysisPt(sta_);
+      Path* req_path = sta_->vertexWorstSlackPath(vertex, max_);
+      const DcalcAnalysisPt* dcalc_ap = req_path
+        ? req_path->dcalcAnalysisPt(sta_)
+        : resizer_->tgt_slew_dcalc_ap_;
       bnet->setCapacitance(resizer_->pinCapacitance(load_pin, dcalc_ap));
       bnet->setRequiredPath(req_path);
       debugPrint(logger_,
@@ -357,10 +358,10 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
     int wire_length_dbu
         = abs(wire_end.x() - p_loc.x()) + abs(wire_end.y() - p_loc.y());
     double wire_length = resizer_->dbuToMeters(wire_length_dbu);
-    const PathRef& req_path = p->requiredPath();
-    const Corner* corner = req_path.isNull()
-                               ? sta_->cmdCorner()
-                               : req_path.dcalcAnalysisPt(sta_)->corner();
+    const Path* req_path = p->requiredPath();
+    const Corner* corner = req_path
+      ? req_path->dcalcAnalysisPt(sta_)->corner()
+      : sta_->cmdCorner();
     int wire_layer = bnet_wire->layer();
     double layer_res, layer_cap;
     bnet_wire->wireRC(corner, resizer_, layer_res, layer_cap);
@@ -391,12 +392,12 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
       Required best_req = -INF;
       BufferedNetPtr best_option = nullptr;
       for (const BufferedNetPtr& z : Z1) {
-        PathRef req_path = z->requiredPath();
+        const Path* req_path = z->requiredPath();
         // Do not buffer unconstrained paths.
-        if (!req_path.isNull()) {
-          const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
+        if (req_path) {
+          const DcalcAnalysisPt* dcalc_ap = req_path->dcalcAnalysisPt(sta_);
           Delay buffer_delay = resizer_->bufferDelay(
-              buffer_cell, req_path.transition(sta_), z->cap(), dcalc_ap);
+              buffer_cell, req_path->transition(sta_), z->cap(), dcalc_ap);
           Required req = z->required(sta_) - buffer_delay;
           if (fuzzyGreater(req, best_req)) {
             best_req = req;
@@ -406,17 +407,17 @@ BufferedNetSeq RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
       }
       if (best_option) {
         Required required = INF;
-        PathRef req_path = best_option->requiredPath();
+        const Path* req_path = best_option->requiredPath();
         float buffer_cap = 0.0;
         Delay buffer_delay = 0.0;
-        if (!req_path.isNull()) {
-          const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
+        if (req_path) {
+          const DcalcAnalysisPt* dcalc_ap = req_path->dcalcAnalysisPt(sta_);
           buffer_cap = bufferInputCapacitance(buffer_cell, dcalc_ap);
           buffer_delay = resizer_->bufferDelay(buffer_cell,
-                                               req_path.transition(sta_),
+                                               req_path->transition(sta_),
                                                best_option->cap(),
                                                dcalc_ap);
-          required = req_path.required(sta_) - buffer_delay;
+          required = req_path->required() - buffer_delay;
         }
         // Don't add this buffer option if it has worse input cap and req than
         // another existing buffer option.
