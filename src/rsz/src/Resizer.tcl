@@ -759,62 +759,62 @@ proc eliminate_dead_logic { } {
 }
 
 namespace eval rsz {
-  proc get_block {} {
-    set db [ord::get_db]
-    if { $db eq "NULL" } {
-      utl::error "RSZ" 200 "db needs to be defined for set_opt_config and related commands."
-    }
-    set chip [$db getChip]
-    if { $chip eq "NULL" } {
-      utl::error "RSZ" 201 "chip needs to be defined for set_opt_config and related commands."
-    }
-    set block [$chip getBlock]
-    if { $block eq "NULL" } {
-      utl::error "RSZ" 202 "block needs to be defined for set_opt_config and related commands."
-    }
-    return $block
+proc get_block { } {
+  set db [ord::get_db]
+  if { $db eq "NULL" } {
+    utl::error "RSZ" 200 "db needs to be defined for set_opt_config and related commands."
   }
+  set chip [$db getChip]
+  if { $chip eq "NULL" } {
+    utl::error "RSZ" 201 "chip needs to be defined for set_opt_config and related commands."
+  }
+  set block [$chip getBlock]
+  if { $block eq "NULL" } {
+    utl::error "RSZ" 202 "block needs to be defined for set_opt_config and related commands."
+  }
+  return $block
+}
 
-  proc set_positive_double_prop {value opt_name prop_name} {
-    sta::check_positive_float $opt_name $value
-    set block [get_block]
-    set prop [odb::dbDoubleProperty_find $block $prop_name]
-    if { $prop eq "NULL" } {
-      odb::dbDoubleProperty_create $block $prop_name $value
-    } else {
-      $prop setValue $value
-    }
+proc set_positive_double_prop { value opt_name prop_name } {
+  sta::check_positive_float $opt_name $value
+  set block [get_block]
+  set prop [odb::dbDoubleProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbDoubleProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
   }
+}
 
-  proc set_boolean_prop {value opt_name prop_name} {
-    if { ![string is boolean $value] } {
-      utl::error "RSZ" 209 \
-        "$opt_name argument should be Boolean"
-    }
-    set block [get_block]
-    set prop [odb::dbBoolProperty_find $block $prop_name]
-    if { $prop eq "NULL" } {
-      odb::dbBoolProperty_create $block $prop_name $value
-    } else {
-      $prop setValue $value
-    }
+proc set_boolean_prop { value opt_name prop_name } {
+  if { ![string is boolean $value] } {
+    utl::error "RSZ" 209 \
+      "$opt_name argument should be Boolean"
   }
+  set block [get_block]
+  set prop [odb::dbBoolProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbBoolProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
 
-  proc clear_double_prop {name} {
-    set block [get_block]
-    set prop [odb::dbDoubleProperty_find $block $name]
-    if { $prop ne "NULL" && $prop ne "" } {
-      odb::dbProperty_destroy $prop
-    }
+proc clear_double_prop { name } {
+  set block [get_block]
+  set prop [odb::dbDoubleProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
   }
+}
 
-  proc clear_bool_prop {name} {
-    set block [get_block]
-    set prop [odb::dbBoolProperty_find $block $name]
-    if { $prop ne "NULL" && $prop ne "" } {
-      odb::dbProperty_destroy $prop
-    }
+proc clear_bool_prop { name } {
+  set block [get_block]
+  set prop [odb::dbBoolProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
   }
+}
 }
 
 sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
@@ -831,7 +831,6 @@ proc set_opt_config { args } {
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
       -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt 
       -sizing_cap_ratio -buffer_sizing_cap_ratio} flags {}
-  
 
   set area_limit "NULL"
   if { [info exists keys(-limit_sizing_area)] } {
