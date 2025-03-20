@@ -738,15 +738,14 @@ void dbModule::copyModuleInsts(dbModule* old_module,
     std::string old_inst_name = old_inst->getName();
     // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
-    std::string new_inst_name;
-    if (first_idx != std::string::npos) {
-      new_inst_name = std::string(new_mod_inst->getName()) + '/'
-                      + old_inst_name.substr(first_idx + 1);
-    } else {
-      // old module was not instantiated so there is no hier divider
+    std::string new_inst_name = (first_idx != std::string::npos)
+                                    ? old_inst_name.substr(first_idx + 1)
+                                    : old_inst_name;
+    if (new_mod_inst) {
       new_inst_name
-          = std::string(new_mod_inst->getName()) + '/' + old_inst_name;
+          = std::string(new_mod_inst->getName()) + '/' + new_inst_name;
     }
+
     dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
                                       new_inst_name.c_str(),
@@ -790,13 +789,12 @@ void dbModule::copyModuleInsts(dbModule* old_module,
         std::string net_name = old_net->getName();
         // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
         size_t first_idx = net_name.find_first_of('/');
-        std::string new_net_name;
-        if (first_idx != std::string::npos) {
-          new_net_name = std::string(new_mod_inst->getName()) + '/'
-                         + net_name.substr(first_idx + 1);
-        } else {
-          // old module was not instantiated so there is no hier divider
-          new_net_name = std::string(new_mod_inst->getName()) + '/' + net_name;
+        std::string new_net_name = (first_idx != std::string::npos)
+                                       ? net_name.substr(first_idx + 1)
+                                       : net_name;
+        if (new_mod_inst) {
+          new_net_name
+              = std::string(new_mod_inst->getName()) + '/' + new_net_name;
         }
         dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
         if (new_net) {
@@ -962,6 +960,44 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
                     old_mod_iterm->getName());
     }
   }
+}
+
+// Copy contents of module from current top block to a child block
+// such that the module can be deleted from the caller.
+// This is used after a module is swapped for a new module.
+// The old module shouldn't be deleted because this may be needed later.
+// Saving it to a child block serves two purposes:
+// 1. It is saved for future module swap
+// 2. Optimization avoids iterating any unused instances of the old module
+// Return true if copy is successful.
+bool dbModule::copyToChildBlock(dbModule* module, dbBlock* top_block)
+{
+  utl::Logger* logger = module->getImpl()->getLogger();
+
+  // Create a new child block under top block.
+  // This block contains only one module
+  std::string block_name = module->getName();
+  // TODO: strip out instance name from block name
+  dbTech* tech = top_block->getTech();
+  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
+  child_block->setDefUnits(tech->getLefUnits());
+  child_block->setBusDelimiters('[', ']');
+  dbModule* new_module = child_block->getTopModule();
+  if (!new_module) {
+    logger->error(utl::ODB,
+                  476,
+                  "top module {} could not be found under child block {}",
+                  block_name,
+                  block_name);
+    return false;
+  }
+
+  modBTMap mod_bt_map;
+  copyModulePorts(module, new_module, mod_bt_map);
+  ITMap it_map;
+  copyModuleInsts(module, new_module, nullptr, it_map);
+  copyModuleModNets(module, new_module, mod_bt_map, it_map);
+  return true;
 }
 
 // User Code End dbModulePublicMethods

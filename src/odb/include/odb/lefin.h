@@ -87,9 +87,9 @@ class lefinReader
   bool _create_tech;
   bool _create_lib;
   bool _skip_obstructions;
-  char _left_bus_delimeter;
-  char _right_bus_delimeter;
-  char _hier_delimeter;
+  char _left_bus_delimiter;
+  char _right_bus_delimiter;
+  char _hier_delimiter;
   int _layer_cnt;
   int _master_cnt;
   int _via_cnt;

@@ -132,7 +132,7 @@ void extSpef::setLogger(Logger* logger)
   logger_ = logger;
 }
 
-char* extSpef::getDelimeter()
+char* extSpef::getDelimiter()
 {
   return _delimiter;
 }
@@ -501,9 +501,9 @@ void extSpef::writePort(const uint node)
   fprintf(_outFP, " *C %f %f\n", db2nm * pt.x(), db2nm * pt.y());
 }
 
-void extSpef::writeSingleRC(const double val, const bool delimeter)
+void extSpef::writeSingleRC(const double val, const bool delimiter)
 {
-  if (delimeter) {
+  if (delimiter) {
     fprintf(_outFP, "%s%g", _delimiter, val * _cap_unit);
   } else {
     fprintf(_outFP, "%g", val * _cap_unit);
@@ -1311,7 +1311,7 @@ const char* extSpef::addEscChar(const char* iname, const bool esc_bus_brkts)
   while (iname[ii] != '\0') {
     char ch = iname[ii];
     if (!std::isalnum(ch) && ch != '_' && ch != '\\' && ch != '/'
-        &&  // hier delimeters are already escaped if needed
+        &&  // hier delimiters are already escaped if needed
         (esc_bus_brkts || (ch != '[' && ch != ']'))
         // Check if there is an escape char before
         // the non-alphanumeric character

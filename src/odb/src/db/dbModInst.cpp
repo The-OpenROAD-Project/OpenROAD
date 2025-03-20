@@ -445,23 +445,21 @@ void dbModInst::RemoveUnusedPortsAndPins()
 // Functional equivalence is not required.
 // New module is not allowed to have multiple levels of hierarchy for now.
 // Newly instantiated modules are uniquified.
-bool dbModInst::swapMaster(dbModule* new_module)
+dbModInst* dbModInst::swapMaster(dbModule* new_module)
 {
-  _dbModInst* inst = (_dbModInst*) this;
   utl::Logger* logger = getImpl()->getLogger();
-
   dbModule* old_module = getMaster();
-  const char* old_module_name = old_module->getName();
-  const char* new_module_name = new_module->getName();
+  std::string old_module_name = old_module->getName();
+  std::string new_module_name = new_module->getName();
 
   // Check if module names differ
-  if (strcmp(old_module_name, new_module_name) == 0) {
+  if (old_module_name == new_module_name) {
     logger->warn(utl::ODB,
                  470,
                  "The modules cannot be swapped because the new module {} is "
                  "identical to the existing module",
                  new_module_name);
-    return false;
+    return nullptr;
   }
 
   // Check if number of module ports match
@@ -476,19 +474,15 @@ bool dbModInst::swapMaster(dbModule* new_module)
                  old_bterms.size(),
                  new_module_name,
                  new_bterms.size());
-    return false;
+    return nullptr;
   }
 
   // Check if module port names match
-  std::vector<_dbModBTerm*> new_ports;
-  std::vector<_dbModBTerm*> old_ports;
-  dbSet<dbModBTerm>::iterator iter;
-  for (iter = old_bterms.begin(); iter != old_bterms.end(); ++iter) {
-    old_ports.push_back((_dbModBTerm*) *iter);
-  }
-  for (iter = new_bterms.begin(); iter != new_bterms.end(); ++iter) {
-    new_ports.push_back((_dbModBTerm*) *iter);
-  }
+  std::vector<_dbModBTerm*> old_ports, new_ports;
+  for (auto bterm : old_bterms)
+    old_ports.push_back((_dbModBTerm*) bterm);
+  for (auto bterm : new_bterms)
+    new_ports.push_back((_dbModBTerm*) bterm);
   std::sort(new_ports.begin(),
             new_ports.end(),
             [](_dbModBTerm* port1, _dbModBTerm* port2) {
@@ -529,7 +523,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
                  old_port_name,
                  new_module_name,
                  new_port_name);
-    return false;
+    return nullptr;
   }
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
@@ -552,9 +546,20 @@ bool dbModInst::swapMaster(dbModule* new_module)
                   455,
                   "Unique module {} cannot be created",
                   new_module->getName());
+    return nullptr;
   }
+
+  std::string new_name = this->getName();
+  dbModule* parent = this->getParent();
+  dbModInst::destroy(this);
+  dbModInst* new_mod_inst
+      = dbModInst::create(parent, new_module_copy, new_name.c_str());
+  if (!new_mod_inst) {
+    logger->error(utl::ODB, 471, "Mod instance {} cannot be created", new_name);
+    return nullptr;
+  }
+
   dbModule::copy(new_module, new_module_copy, this);
-  _dbModule* new_master = (_dbModule*) new_module_copy;
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
     dbSet<dbInst> insts = new_module_copy->getInsts();
     dbSet<dbInst>::iterator inst_iter;
@@ -574,8 +579,7 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   // Map old mod nets to new mod nets based on new_module_copy
   std::map<dbModNet*, dbModNet*> mod_map;  // old mod net -> new mod net
-  for (iter = old_bterms.begin(); iter != old_bterms.end(); ++iter) {
-    dbModBTerm* old_bterm = *iter;
+  for (dbModBTerm* old_bterm : old_bterms) {
     dbModBTerm* new_bterm = new_module_copy->findModBTerm(old_bterm->getName());
     if (new_bterm == nullptr) {
       logger->error(utl::ODB,
@@ -600,8 +604,6 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   // Patch connections such that boundary nets connect to new module iterms
   // instead of old module iterms
-  inst->_master = new_master->getOID();
-  new_master->_mod_inst = inst->getOID();
   debugPrint(logger,
              utl::ODB,
              "replace_design",
@@ -674,13 +676,13 @@ bool dbModInst::swapMaster(dbModule* new_module)
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
     std::ofstream outfile("after_replace.txt");
-    getMaster()->getOwner()->debugPrintContent(outfile);
+    new_mod_inst->getMaster()->getOwner()->debugPrintContent(outfile);
   }
 
-  // TODO: remove old module insts without destroying old module itself
-  // dbModule::destroy(old_module);
+  dbModule::copyToChildBlock(old_module, parent->getOwner());
+  dbModule::destroy(old_module);
 
-  return true;
+  return new_mod_inst;
 }
 
 // User Code End dbModInstPublicMethods

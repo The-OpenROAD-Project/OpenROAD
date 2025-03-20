@@ -204,7 +204,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   if (_version < defout::DEF_5_6) {
     fprintf(_out, "NAMESCASESENSITIVE ON ;\n");
   }
-  char hd = block->getHierarchyDelimeter();
+  char hd = block->getHierarchyDelimiter();
 
   if (hd == 0) {
     hd = '|';
@@ -213,7 +213,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   fprintf(_out, "DIVIDERCHAR \"%c\" ;\n", hd);
 
   char left_bus, right_bus;
-  block->getBusDelimeters(left_bus, right_bus);
+  block->getBusDelimiters(left_bus, right_bus);
 
   if ((left_bus == 0) || (right_bus == 0)) {
     left_bus = '[';

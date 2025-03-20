@@ -3570,9 +3570,9 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
-void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
+dbModInst* dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
 {
-  mod_inst->swapMaster(module);
+  return mod_inst->swapMaster(module);
 }
 
 }  // namespace sta
