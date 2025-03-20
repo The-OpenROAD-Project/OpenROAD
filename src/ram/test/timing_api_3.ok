@@ -1,0 +1,5359 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0127] Reading DEF file: gcd_nangate45.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 734 components and 2762 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1468 connections.
+[INFO ODB-0133]     Created 497 nets and 1294 connections.
+[INFO ODB-0134] Finished DEF file: gcd_nangate45.def
+FILLER_0_0_1/VDD    False
+FILLER_0_0_1/VSS    False
+FILLER_0_0_108/VDD    False
+FILLER_0_0_108/VSS    False
+FILLER_0_0_120/VDD    False
+FILLER_0_0_120/VSS    False
+FILLER_0_0_128/VDD    False
+FILLER_0_0_128/VSS    False
+FILLER_0_0_133/VDD    False
+FILLER_0_0_133/VSS    False
+FILLER_0_0_149/VDD    False
+FILLER_0_0_149/VSS    False
+FILLER_0_0_157/VDD    False
+FILLER_0_0_157/VSS    False
+FILLER_0_0_159/VDD    False
+FILLER_0_0_159/VSS    False
+FILLER_0_0_17/VDD    False
+FILLER_0_0_17/VSS    False
+FILLER_0_0_21/VDD    False
+FILLER_0_0_21/VSS    False
+FILLER_0_10_104/VDD    False
+FILLER_0_10_104/VSS    False
+FILLER_0_10_120/VDD    False
+FILLER_0_10_120/VSS    False
+FILLER_0_10_124/VDD    False
+FILLER_0_10_124/VSS    False
+FILLER_0_10_4/VDD    False
+FILLER_0_10_4/VSS    False
+FILLER_0_10_61/VDD    False
+FILLER_0_10_61/VSS    False
+FILLER_0_10_70/VDD    False
+FILLER_0_10_70/VSS    False
+FILLER_0_10_78/VDD    False
+FILLER_0_10_78/VSS    False
+FILLER_0_10_87/VDD    False
+FILLER_0_10_87/VSS    False
+FILLER_0_10_95/VDD    False
+FILLER_0_10_95/VSS    False
+FILLER_0_11_123/VDD    False
+FILLER_0_11_123/VSS    False
+FILLER_0_11_145/VDD    False
+FILLER_0_11_145/VSS    False
+FILLER_0_11_150/VDD    False
+FILLER_0_11_150/VSS    False
+FILLER_0_11_152/VDD    False
+FILLER_0_11_152/VSS    False
+FILLER_0_11_156/VDD    False
+FILLER_0_11_156/VSS    False
+FILLER_0_11_21/VDD    False
+FILLER_0_11_21/VSS    False
+FILLER_0_11_29/VDD    False
+FILLER_0_11_29/VSS    False
+FILLER_0_11_35/VDD    False
+FILLER_0_11_35/VSS    False
+FILLER_0_11_55/VDD    False
+FILLER_0_11_55/VSS    False
+FILLER_0_11_59/VDD    False
+FILLER_0_11_59/VSS    False
+FILLER_0_11_61/VDD    False
+FILLER_0_11_61/VSS    False
+FILLER_0_11_98/VDD    False
+FILLER_0_11_98/VSS    False
+FILLER_0_12_1/VDD    False
+FILLER_0_12_1/VSS    False
+FILLER_0_12_11/VDD    False
+FILLER_0_12_11/VSS    False
+FILLER_0_12_122/VDD    False
+FILLER_0_12_122/VSS    False
+FILLER_0_12_149/VDD    False
+FILLER_0_12_149/VSS    False
+FILLER_0_12_15/VDD    False
+FILLER_0_12_15/VSS    False
+FILLER_0_12_157/VDD    False
+FILLER_0_12_157/VSS    False
+FILLER_0_12_159/VDD    False
+FILLER_0_12_159/VSS    False
+FILLER_0_12_19/VDD    False
+FILLER_0_12_19/VSS    False
+FILLER_0_12_23/VDD    False
+FILLER_0_12_23/VSS    False
+FILLER_0_12_32/VDD    False
+FILLER_0_12_32/VSS    False
+FILLER_0_12_44/VDD    False
+FILLER_0_12_44/VSS    False
+FILLER_0_12_59/VDD    False
+FILLER_0_12_59/VSS    False
+FILLER_0_12_75/VDD    False
+FILLER_0_12_75/VSS    False
+FILLER_0_12_77/VDD    False
+FILLER_0_12_77/VSS    False
+FILLER_0_12_9/VDD    False
+FILLER_0_12_9/VSS    False
+FILLER_0_13_1/VDD    False
+FILLER_0_13_1/VSS    False
+FILLER_0_13_105/VDD    False
+FILLER_0_13_105/VSS    False
+FILLER_0_13_114/VDD    False
+FILLER_0_13_114/VSS    False
+FILLER_0_13_116/VDD    False
+FILLER_0_13_116/VSS    False
+FILLER_0_13_13/VDD    False
+FILLER_0_13_13/VSS    False
+FILLER_0_13_135/VDD    False
+FILLER_0_13_135/VSS    False
+FILLER_0_13_151/VDD    False
+FILLER_0_13_151/VSS    False
+FILLER_0_13_159/VDD    False
+FILLER_0_13_159/VSS    False
+FILLER_0_13_17/VDD    False
+FILLER_0_13_17/VSS    False
+FILLER_0_13_22/VDD    False
+FILLER_0_13_22/VSS    False
+FILLER_0_13_28/VDD    False
+FILLER_0_13_28/VSS    False
+FILLER_0_13_65/VDD    False
+FILLER_0_13_65/VSS    False
+FILLER_0_13_73/VDD    False
+FILLER_0_13_73/VSS    False
+FILLER_0_13_77/VDD    False
+FILLER_0_13_77/VSS    False
+FILLER_0_14_122/VDD    False
+FILLER_0_14_122/VSS    False
+FILLER_0_14_139/VDD    False
+FILLER_0_14_139/VSS    False
+FILLER_0_14_155/VDD    False
+FILLER_0_14_155/VSS    False
+FILLER_0_14_159/VDD    False
+FILLER_0_14_159/VSS    False
+FILLER_0_14_20/VDD    False
+FILLER_0_14_20/VSS    False
+FILLER_0_14_55/VDD    False
+FILLER_0_14_55/VSS    False
+FILLER_0_14_73/VDD    False
+FILLER_0_14_73/VSS    False
+FILLER_0_14_87/VDD    False
+FILLER_0_14_87/VSS    False
+FILLER_0_14_89/VDD    False
+FILLER_0_14_89/VSS    False
+FILLER_0_15_134/VDD    False
+FILLER_0_15_134/VSS    False
+FILLER_0_15_150/VDD    False
+FILLER_0_15_150/VSS    False
+FILLER_0_15_158/VDD    False
+FILLER_0_15_158/VSS    False
+FILLER_0_15_26/VDD    False
+FILLER_0_15_26/VSS    False
+FILLER_0_15_49/VDD    False
+FILLER_0_15_49/VSS    False
+FILLER_0_15_87/VDD    False
+FILLER_0_15_87/VSS    False
+FILLER_0_15_91/VDD    False
+FILLER_0_15_91/VSS    False
+FILLER_0_16_102/VDD    False
+FILLER_0_16_102/VSS    False
+FILLER_0_16_110/VDD    False
+FILLER_0_16_110/VSS    False
+FILLER_0_16_125/VDD    False
+FILLER_0_16_125/VSS    False
+FILLER_0_16_157/VDD    False
+FILLER_0_16_157/VSS    False
+FILLER_0_16_159/VDD    False
+FILLER_0_16_159/VSS    False
+FILLER_0_16_27/VDD    False
+FILLER_0_16_27/VSS    False
+FILLER_0_16_31/VDD    False
+FILLER_0_16_31/VSS    False
+FILLER_0_16_51/VDD    False
+FILLER_0_16_51/VSS    False
+FILLER_0_16_57/VDD    False
+FILLER_0_16_57/VSS    False
+FILLER_0_16_63/VDD    False
+FILLER_0_16_63/VSS    False
+FILLER_0_16_83/VDD    False
+FILLER_0_16_83/VSS    False
+FILLER_0_16_87/VDD    False
+FILLER_0_16_87/VSS    False
+FILLER_0_16_89/VDD    False
+FILLER_0_16_89/VSS    False
+FILLER_0_16_94/VDD    False
+FILLER_0_16_94/VSS    False
+FILLER_0_17_1/VDD    False
+FILLER_0_17_1/VSS    False
+FILLER_0_17_104/VDD    False
+FILLER_0_17_104/VSS    False
+FILLER_0_17_112/VDD    False
+FILLER_0_17_112/VSS    False
+FILLER_0_17_13/VDD    False
+FILLER_0_17_13/VSS    False
+FILLER_0_17_132/VDD    False
+FILLER_0_17_132/VSS    False
+FILLER_0_17_135/VDD    False
+FILLER_0_17_135/VSS    False
+FILLER_0_17_151/VDD    False
+FILLER_0_17_151/VSS    False
+FILLER_0_17_159/VDD    False
+FILLER_0_17_159/VSS    False
+FILLER_0_17_19/VDD    False
+FILLER_0_17_19/VSS    False
+FILLER_0_17_47/VDD    False
+FILLER_0_17_47/VSS    False
+FILLER_0_17_5/VDD    False
+FILLER_0_17_5/VSS    False
+FILLER_0_17_55/VDD    False
+FILLER_0_17_55/VSS    False
+FILLER_0_17_59/VDD    False
+FILLER_0_17_59/VSS    False
+FILLER_0_17_79/VDD    False
+FILLER_0_17_79/VSS    False
+FILLER_0_17_83/VDD    False
+FILLER_0_17_83/VSS    False
+FILLER_0_17_9/VDD    False
+FILLER_0_17_9/VSS    False
+FILLER_0_17_91/VDD    False
+FILLER_0_17_91/VSS    False
+FILLER_0_17_95/VDD    False
+FILLER_0_17_95/VSS    False
+FILLER_0_17_99/VDD    False
+FILLER_0_17_99/VSS    False
+FILLER_0_18_1/VDD    False
+FILLER_0_18_1/VSS    False
+FILLER_0_18_106/VDD    False
+FILLER_0_18_106/VSS    False
+FILLER_0_18_110/VDD    False
+FILLER_0_18_110/VSS    False
+FILLER_0_18_116/VDD    False
+FILLER_0_18_116/VSS    False
+FILLER_0_18_118/VDD    False
+FILLER_0_18_118/VSS    False
+FILLER_0_18_127/VDD    False
+FILLER_0_18_127/VSS    False
+FILLER_0_18_131/VDD    False
+FILLER_0_18_131/VSS    False
+FILLER_0_18_137/VDD    False
+FILLER_0_18_137/VSS    False
+FILLER_0_18_153/VDD    False
+FILLER_0_18_153/VSS    False
+FILLER_0_18_157/VDD    False
+FILLER_0_18_157/VSS    False
+FILLER_0_18_159/VDD    False
+FILLER_0_18_159/VSS    False
+FILLER_0_18_27/VDD    False
+FILLER_0_18_27/VSS    False
+FILLER_0_18_31/VDD    False
+FILLER_0_18_31/VSS    False
+FILLER_0_18_43/VDD    False
+FILLER_0_18_43/VSS    False
+FILLER_0_18_51/VDD    False
+FILLER_0_18_51/VSS    False
+FILLER_0_18_56/VDD    False
+FILLER_0_18_56/VSS    False
+FILLER_0_18_58/VDD    False
+FILLER_0_18_58/VSS    False
+FILLER_0_18_66/VDD    False
+FILLER_0_18_66/VSS    False
+FILLER_0_18_74/VDD    False
+FILLER_0_18_74/VSS    False
+FILLER_0_18_78/VDD    False
+FILLER_0_18_78/VSS    False
+FILLER_0_18_80/VDD    False
+FILLER_0_18_80/VSS    False
+FILLER_0_18_85/VDD    False
+FILLER_0_18_85/VSS    False
+FILLER_0_18_89/VDD    False
+FILLER_0_18_89/VSS    False
+FILLER_0_18_9/VDD    False
+FILLER_0_18_9/VSS    False
+FILLER_0_18_94/VDD    False
+FILLER_0_18_94/VSS    False
+FILLER_0_19_1/VDD    False
+FILLER_0_19_1/VSS    False
+FILLER_0_19_125/VDD    False
+FILLER_0_19_125/VSS    False
+FILLER_0_19_146/VDD    False
+FILLER_0_19_146/VSS    False
+FILLER_0_19_154/VDD    False
+FILLER_0_19_154/VSS    False
+FILLER_0_19_158/VDD    False
+FILLER_0_19_158/VSS    False
+FILLER_0_19_33/VDD    False
+FILLER_0_19_33/VSS    False
+FILLER_0_19_41/VDD    False
+FILLER_0_19_41/VSS    False
+FILLER_0_19_45/VDD    False
+FILLER_0_19_45/VSS    False
+FILLER_0_1_1/VDD    False
+FILLER_0_1_1/VSS    False
+FILLER_0_1_134/VDD    False
+FILLER_0_1_134/VSS    False
+FILLER_0_1_150/VDD    False
+FILLER_0_1_150/VSS    False
+FILLER_0_1_158/VDD    False
+FILLER_0_1_158/VSS    False
+FILLER_0_1_17/VDD    False
+FILLER_0_1_17/VSS    False
+FILLER_0_1_32/VDD    False
+FILLER_0_1_32/VSS    False
+FILLER_0_1_36/VDD    False
+FILLER_0_1_36/VSS    False
+FILLER_0_1_38/VDD    False
+FILLER_0_1_38/VSS    False
+FILLER_0_20_1/VDD    False
+FILLER_0_20_1/VSS    False
+FILLER_0_20_103/VDD    False
+FILLER_0_20_103/VSS    False
+FILLER_0_20_107/VDD    False
+FILLER_0_20_107/VSS    False
+FILLER_0_20_134/VDD    False
+FILLER_0_20_134/VSS    False
+FILLER_0_20_139/VDD    False
+FILLER_0_20_139/VSS    False
+FILLER_0_20_155/VDD    False
+FILLER_0_20_155/VSS    False
+FILLER_0_20_159/VDD    False
+FILLER_0_20_159/VSS    False
+FILLER_0_20_33/VDD    False
+FILLER_0_20_33/VSS    False
+FILLER_0_20_40/VDD    False
+FILLER_0_20_40/VSS    False
+FILLER_0_20_48/VDD    False
+FILLER_0_20_48/VSS    False
+FILLER_0_20_52/VDD    False
+FILLER_0_20_52/VSS    False
+FILLER_0_20_91/VDD    False
+FILLER_0_20_91/VSS    False
+FILLER_0_20_96/VDD    False
+FILLER_0_20_96/VSS    False
+FILLER_0_2_1/VDD    False
+FILLER_0_2_1/VSS    False
+FILLER_0_2_100/VDD    False
+FILLER_0_2_100/VSS    False
+FILLER_0_2_104/VDD    False
+FILLER_0_2_104/VSS    False
+FILLER_0_2_109/VDD    False
+FILLER_0_2_109/VSS    False
+FILLER_0_2_11/VDD    False
+FILLER_0_2_11/VSS    False
+FILLER_0_2_120/VDD    False
+FILLER_0_2_120/VSS    False
+FILLER_0_2_124/VDD    False
+FILLER_0_2_124/VSS    False
+FILLER_0_2_126/VDD    False
+FILLER_0_2_126/VSS    False
+FILLER_0_2_134/VDD    False
+FILLER_0_2_134/VSS    False
+FILLER_0_2_150/VDD    False
+FILLER_0_2_150/VSS    False
+FILLER_0_2_158/VDD    False
+FILLER_0_2_158/VSS    False
+FILLER_0_2_69/VDD    False
+FILLER_0_2_69/VSS    False
+FILLER_0_2_77/VDD    False
+FILLER_0_2_77/VSS    False
+FILLER_0_2_81/VDD    False
+FILLER_0_2_81/VSS    False
+FILLER_0_2_85/VDD    False
+FILLER_0_2_85/VSS    False
+FILLER_0_2_9/VDD    False
+FILLER_0_2_9/VSS    False
+FILLER_0_3_1/VDD    False
+FILLER_0_3_1/VSS    False
+FILLER_0_3_144/VDD    False
+FILLER_0_3_144/VSS    False
+FILLER_0_3_17/VDD    False
+FILLER_0_3_17/VSS    False
+FILLER_0_3_58/VDD    False
+FILLER_0_3_58/VSS    False
+FILLER_0_3_61/VDD    False
+FILLER_0_3_61/VSS    False
+FILLER_0_3_65/VDD    False
+FILLER_0_3_65/VSS    False
+FILLER_0_3_76/VDD    False
+FILLER_0_3_76/VSS    False
+FILLER_0_3_97/VDD    False
+FILLER_0_3_97/VSS    False
+FILLER_0_4_1/VDD    False
+FILLER_0_4_1/VSS    False
+FILLER_0_4_141/VDD    False
+FILLER_0_4_141/VSS    False
+FILLER_0_4_143/VDD    False
+FILLER_0_4_143/VSS    False
+FILLER_0_4_154/VDD    False
+FILLER_0_4_154/VSS    False
+FILLER_0_4_158/VDD    False
+FILLER_0_4_158/VSS    False
+FILLER_0_4_60/VDD    False
+FILLER_0_4_60/VSS    False
+FILLER_0_4_64/VDD    False
+FILLER_0_4_64/VSS    False
+FILLER_0_4_81/VDD    False
+FILLER_0_4_81/VSS    False
+FILLER_0_4_83/VDD    False
+FILLER_0_4_83/VSS    False
+FILLER_0_5_103/VDD    False
+FILLER_0_5_103/VSS    False
+FILLER_0_5_107/VDD    False
+FILLER_0_5_107/VSS    False
+FILLER_0_5_109/VDD    False
+FILLER_0_5_109/VSS    False
+FILLER_0_5_11/VDD    False
+FILLER_0_5_11/VSS    False
+FILLER_0_5_135/VDD    False
+FILLER_0_5_135/VSS    False
+FILLER_0_5_155/VDD    False
+FILLER_0_5_155/VSS    False
+FILLER_0_5_159/VDD    False
+FILLER_0_5_159/VSS    False
+FILLER_0_5_25/VDD    False
+FILLER_0_5_25/VSS    False
+FILLER_0_5_32/VDD    False
+FILLER_0_5_32/VSS    False
+FILLER_0_5_69/VDD    False
+FILLER_0_5_69/VSS    False
+FILLER_0_5_74/VDD    False
+FILLER_0_5_74/VSS    False
+FILLER_0_5_78/VDD    False
+FILLER_0_5_78/VSS    False
+FILLER_0_5_82/VDD    False
+FILLER_0_5_82/VSS    False
+FILLER_0_5_86/VDD    False
+FILLER_0_5_86/VSS    False
+FILLER_0_5_95/VDD    False
+FILLER_0_5_95/VSS    False
+FILLER_0_6_109/VDD    False
+FILLER_0_6_109/VSS    False
+FILLER_0_6_11/VDD    False
+FILLER_0_6_11/VSS    False
+FILLER_0_6_111/VDD    False
+FILLER_0_6_111/VSS    False
+FILLER_0_6_117/VDD    False
+FILLER_0_6_117/VSS    False
+FILLER_0_6_134/VDD    False
+FILLER_0_6_134/VSS    False
+FILLER_0_6_139/VDD    False
+FILLER_0_6_139/VSS    False
+FILLER_0_6_150/VDD    False
+FILLER_0_6_150/VSS    False
+FILLER_0_6_157/VDD    False
+FILLER_0_6_157/VSS    False
+FILLER_0_6_159/VDD    False
+FILLER_0_6_159/VSS    False
+FILLER_0_6_16/VDD    False
+FILLER_0_6_16/VSS    False
+FILLER_0_6_20/VDD    False
+FILLER_0_6_20/VSS    False
+FILLER_0_6_24/VDD    False
+FILLER_0_6_24/VSS    False
+FILLER_0_6_31/VDD    False
+FILLER_0_6_31/VSS    False
+FILLER_0_6_33/VDD    False
+FILLER_0_6_33/VSS    False
+FILLER_0_6_4/VDD    False
+FILLER_0_6_4/VSS    False
+FILLER_0_6_43/VDD    False
+FILLER_0_6_43/VSS    False
+FILLER_0_6_55/VDD    False
+FILLER_0_6_55/VSS    False
+FILLER_0_6_60/VDD    False
+FILLER_0_6_60/VSS    False
+FILLER_0_6_64/VDD    False
+FILLER_0_6_64/VSS    False
+FILLER_0_6_82/VDD    False
+FILLER_0_6_82/VSS    False
+FILLER_0_7_1/VDD    False
+FILLER_0_7_1/VSS    False
+FILLER_0_7_102/VDD    False
+FILLER_0_7_102/VSS    False
+FILLER_0_7_104/VDD    False
+FILLER_0_7_104/VSS    False
+FILLER_0_7_108/VDD    False
+FILLER_0_7_108/VSS    False
+FILLER_0_7_116/VDD    False
+FILLER_0_7_116/VSS    False
+FILLER_0_7_135/VDD    False
+FILLER_0_7_135/VSS    False
+FILLER_0_7_151/VDD    False
+FILLER_0_7_151/VSS    False
+FILLER_0_7_159/VDD    False
+FILLER_0_7_159/VSS    False
+FILLER_0_7_31/VDD    False
+FILLER_0_7_31/VSS    False
+FILLER_0_7_51/VDD    False
+FILLER_0_7_51/VSS    False
+FILLER_0_7_61/VDD    False
+FILLER_0_7_61/VSS    False
+FILLER_0_7_77/VDD    False
+FILLER_0_7_77/VSS    False
+FILLER_0_7_85/VDD    False
+FILLER_0_7_85/VSS    False
+FILLER_0_7_89/VDD    False
+FILLER_0_7_89/VSS    False
+FILLER_0_7_98/VDD    False
+FILLER_0_7_98/VSS    False
+FILLER_0_8_113/VDD    False
+FILLER_0_8_113/VSS    False
+FILLER_0_8_147/VDD    False
+FILLER_0_8_147/VSS    False
+FILLER_0_8_155/VDD    False
+FILLER_0_8_155/VSS    False
+FILLER_0_8_159/VDD    False
+FILLER_0_8_159/VSS    False
+FILLER_0_8_17/VDD    False
+FILLER_0_8_17/VSS    False
+FILLER_0_8_19/VDD    False
+FILLER_0_8_19/VSS    False
+FILLER_0_8_28/VDD    False
+FILLER_0_8_28/VSS    False
+FILLER_0_8_34/VDD    False
+FILLER_0_8_34/VSS    False
+FILLER_0_8_62/VDD    False
+FILLER_0_8_62/VSS    False
+FILLER_0_8_83/VDD    False
+FILLER_0_8_83/VSS    False
+FILLER_0_8_87/VDD    False
+FILLER_0_8_87/VSS    False
+FILLER_0_8_89/VDD    False
+FILLER_0_8_89/VSS    False
+FILLER_0_8_98/VDD    False
+FILLER_0_8_98/VSS    False
+FILLER_0_9_155/VDD    False
+FILLER_0_9_155/VSS    False
+FILLER_0_9_34/VDD    False
+FILLER_0_9_34/VSS    False
+FILLER_0_9_5/VDD    False
+FILLER_0_9_5/VSS    False
+FILLER_0_9_53/VDD    False
+FILLER_0_9_53/VSS    False
+FILLER_0_9_57/VDD    False
+FILLER_0_9_57/VSS    False
+FILLER_0_9_65/VDD    False
+FILLER_0_9_65/VSS    False
+FILLER_0_9_7/VDD    False
+FILLER_0_9_7/VSS    False
+PHY_EDGE_ROW_0_Left_21/VDD    False
+PHY_EDGE_ROW_0_Left_21/VSS    False
+PHY_EDGE_ROW_0_Right_0/VDD    False
+PHY_EDGE_ROW_0_Right_0/VSS    False
+PHY_EDGE_ROW_10_Left_31/VDD    False
+PHY_EDGE_ROW_10_Left_31/VSS    False
+PHY_EDGE_ROW_10_Right_10/VDD    False
+PHY_EDGE_ROW_10_Right_10/VSS    False
+PHY_EDGE_ROW_11_Left_32/VDD    False
+PHY_EDGE_ROW_11_Left_32/VSS    False
+PHY_EDGE_ROW_11_Right_11/VDD    False
+PHY_EDGE_ROW_11_Right_11/VSS    False
+PHY_EDGE_ROW_12_Left_33/VDD    False
+PHY_EDGE_ROW_12_Left_33/VSS    False
+PHY_EDGE_ROW_12_Right_12/VDD    False
+PHY_EDGE_ROW_12_Right_12/VSS    False
+PHY_EDGE_ROW_13_Left_34/VDD    False
+PHY_EDGE_ROW_13_Left_34/VSS    False
+PHY_EDGE_ROW_13_Right_13/VDD    False
+PHY_EDGE_ROW_13_Right_13/VSS    False
+PHY_EDGE_ROW_14_Left_35/VDD    False
+PHY_EDGE_ROW_14_Left_35/VSS    False
+PHY_EDGE_ROW_14_Right_14/VDD    False
+PHY_EDGE_ROW_14_Right_14/VSS    False
+PHY_EDGE_ROW_15_Left_36/VDD    False
+PHY_EDGE_ROW_15_Left_36/VSS    False
+PHY_EDGE_ROW_15_Right_15/VDD    False
+PHY_EDGE_ROW_15_Right_15/VSS    False
+PHY_EDGE_ROW_16_Left_37/VDD    False
+PHY_EDGE_ROW_16_Left_37/VSS    False
+PHY_EDGE_ROW_16_Right_16/VDD    False
+PHY_EDGE_ROW_16_Right_16/VSS    False
+PHY_EDGE_ROW_17_Left_38/VDD    False
+PHY_EDGE_ROW_17_Left_38/VSS    False
+PHY_EDGE_ROW_17_Right_17/VDD    False
+PHY_EDGE_ROW_17_Right_17/VSS    False
+PHY_EDGE_ROW_18_Left_39/VDD    False
+PHY_EDGE_ROW_18_Left_39/VSS    False
+PHY_EDGE_ROW_18_Right_18/VDD    False
+PHY_EDGE_ROW_18_Right_18/VSS    False
+PHY_EDGE_ROW_19_Left_40/VDD    False
+PHY_EDGE_ROW_19_Left_40/VSS    False
+PHY_EDGE_ROW_19_Right_19/VDD    False
+PHY_EDGE_ROW_19_Right_19/VSS    False
+PHY_EDGE_ROW_1_Left_22/VDD    False
+PHY_EDGE_ROW_1_Left_22/VSS    False
+PHY_EDGE_ROW_1_Right_1/VDD    False
+PHY_EDGE_ROW_1_Right_1/VSS    False
+PHY_EDGE_ROW_20_Left_41/VDD    False
+PHY_EDGE_ROW_20_Left_41/VSS    False
+PHY_EDGE_ROW_20_Right_20/VDD    False
+PHY_EDGE_ROW_20_Right_20/VSS    False
+PHY_EDGE_ROW_2_Left_23/VDD    False
+PHY_EDGE_ROW_2_Left_23/VSS    False
+PHY_EDGE_ROW_2_Right_2/VDD    False
+PHY_EDGE_ROW_2_Right_2/VSS    False
+PHY_EDGE_ROW_3_Left_24/VDD    False
+PHY_EDGE_ROW_3_Left_24/VSS    False
+PHY_EDGE_ROW_3_Right_3/VDD    False
+PHY_EDGE_ROW_3_Right_3/VSS    False
+PHY_EDGE_ROW_4_Left_25/VDD    False
+PHY_EDGE_ROW_4_Left_25/VSS    False
+PHY_EDGE_ROW_4_Right_4/VDD    False
+PHY_EDGE_ROW_4_Right_4/VSS    False
+PHY_EDGE_ROW_5_Left_26/VDD    False
+PHY_EDGE_ROW_5_Left_26/VSS    False
+PHY_EDGE_ROW_5_Right_5/VDD    False
+PHY_EDGE_ROW_5_Right_5/VSS    False
+PHY_EDGE_ROW_6_Left_27/VDD    False
+PHY_EDGE_ROW_6_Left_27/VSS    False
+PHY_EDGE_ROW_6_Right_6/VDD    False
+PHY_EDGE_ROW_6_Right_6/VSS    False
+PHY_EDGE_ROW_7_Left_28/VDD    False
+PHY_EDGE_ROW_7_Left_28/VSS    False
+PHY_EDGE_ROW_7_Right_7/VDD    False
+PHY_EDGE_ROW_7_Right_7/VSS    False
+PHY_EDGE_ROW_8_Left_29/VDD    False
+PHY_EDGE_ROW_8_Left_29/VSS    False
+PHY_EDGE_ROW_8_Right_8/VDD    False
+PHY_EDGE_ROW_8_Right_8/VSS    False
+PHY_EDGE_ROW_9_Left_30/VDD    False
+PHY_EDGE_ROW_9_Left_30/VSS    False
+PHY_EDGE_ROW_9_Right_9/VDD    False
+PHY_EDGE_ROW_9_Right_9/VSS    False
+_345_/A    False
+_345_/A -4.62e-11 -3.73e-11 1.24e-10 1.17e-10
+Corner 0 3.25e-15 2.94e-15
+_345_/ZN    False
+_345_/ZN -3.73e-11 -4.62e-11 1.17e-10 1.24e-10
+Corner 0 0 0
+_345_/VDD    False
+_345_/VSS    False
+_347_/A1    False
+_347_/A1 -2.91e-11 -3.14e-11 2.52e-10 2.48e-10
+Corner 0 1.6e-15 1.53e-15
+_347_/A2    False
+_347_/A2 -4.53e-11 -2.18e-11 2.68e-10 2.38e-10
+Corner 0 1.66e-15 1.5e-15
+_347_/ZN    False
+_347_/ZN -3.14e-11 -4.53e-11 2.38e-10 2.52e-10
+Corner 0 0 0
+_347_/VDD    False
+_347_/VSS    False
+_348_/A    False
+_348_/A -3.82e-11 -4.19e-11 1.23e-10 1.27e-10
+Corner 0 1.7e-15 1.55e-15
+_348_/ZN    False
+_348_/ZN -4.19e-11 -3.82e-11 1.27e-10 1.23e-10
+Corner 0 0 0
+_348_/VDD    False
+_348_/VSS    False
+_349_/A1    False
+_349_/A1 -4.19e-11 -3.82e-11 2.23e-10 2.28e-10
+Corner 0 3.29e-15 2.7e-15
+_349_/A2    False
+_349_/A2 -3.22e-11 -2.91e-11 2.13e-10 2.19e-10
+Corner 0 3.35e-15 3.18e-15
+_349_/ZN    False
+_349_/ZN -3.82e-11 -4.19e-11 2.19e-10 2.13e-10
+Corner 0 0 0
+_349_/VDD    False
+_349_/VSS    False
+_350_/A1    False
+_350_/A1 -3.73e-11 -4.62e-11 2.61e-10 2.67e-10
+Corner 0 1.71e-15 1.41e-15
+_350_/A2    False
+_350_/A2 -5.44e-11 -3.92e-11 2.78e-10 2.6e-10
+Corner 0 1.65e-15 1.56e-15
+_350_/ZN    False
+_350_/ZN -4.62e-11 -5.44e-11 2.6e-10 2.61e-10
+Corner 0 0 0
+_350_/VDD    False
+_350_/VSS    False
+_351_/A    False
+_351_/A -3.14e-11 -4.53e-11 2.38e-10 2.52e-10
+Corner 0 3.18e-15 2.88e-15
+_351_/B1    False
+_351_/B1 -3.82e-11 -4.19e-11 2.5e-10 2.56e-10
+Corner 0 3.1e-15 2.7e-15
+_351_/B2    False
+_351_/B2 -4.62e-11 -5.44e-11 2.6e-10 2.61e-10
+Corner 0 3.33e-15 3.31e-15
+_351_/ZN    False
+_351_/ZN -5.44e-11 -4.62e-11 2.52e-10 2.38e-10
+Corner 0 0 0
+_351_/VDD    False
+_351_/VSS    False
+_352_/A    False
+_352_/A -5.16e-11 -3.54e-11 1.23e-10 1.16e-10
+Corner 0 3.25e-15 2.94e-15
+_352_/ZN    False
+_352_/ZN -3.54e-11 -5.16e-11 1.16e-10 1.23e-10
+Corner 0 0 0
+_352_/VDD    False
+_352_/VSS    False
+_353_/A1    False
+_353_/A1 -5.06e-11 -5.54e-11 2.6e-10 2.66e-10
+Corner 0 3.05e-15 2.93e-15
+_353_/A2    False
+_353_/A2 -3.54e-11 -5.16e-11 2.45e-10 2.62e-10
+Corner 0 3.45e-15 3.14e-15
+_353_/ZN    False
+_353_/ZN -5.54e-11 -5.06e-11 2.62e-10 2.45e-10
+Corner 0 0 0
+_353_/VDD    False
+_353_/VSS    False
+_354_/A    False
+_354_/A -5.29e-11 -3.97e-11 1.69e-10 1.52e-10
+Corner 0 3.25e-15 2.94e-15
+_354_/ZN    False
+_354_/ZN -3.97e-11 -5.29e-11 1.52e-10 1.69e-10
+Corner 0 0 0
+_354_/VDD    False
+_354_/VSS    False
+_355_/A1    False
+_355_/A1 -4.91e-11 -4.8e-11 2.51e-10 2.58e-10
+Corner 0 5.95e-15 5.7e-15
+_355_/A2    False
+_355_/A2 -3.97e-11 -5.29e-11 2.42e-10 2.63e-10
+Corner 0 6.2e-15 5.62e-15
+_355_/ZN    False
+_355_/ZN -5.29e-11 -4.91e-11 2.58e-10 2.42e-10
+Corner 0 0 0
+_355_/VDD    False
+_355_/VSS    False
+_356_/A1    False
+_356_/A1 -5.29e-11 -4.21e-11 2.58e-10 2.42e-10
+Corner 0 5.95e-15 5.7e-15
+_356_/A2    False
+_356_/A2 -5.54e-11 -5.06e-11 2.62e-10 2.45e-10
+Corner 0 6.2e-15 5.62e-15
+_356_/ZN    False
+_356_/ZN -5.06e-11 -5.54e-11 2.42e-10 2.58e-10
+Corner 0 0 0
+_356_/VDD    False
+_356_/VSS    False
+_357_/A    False
+_357_/A -4.86e-11 -3.85e-11 1.3e-10 1.23e-10
+Corner 0 3.25e-15 2.94e-15
+_357_/ZN    False
+_357_/ZN -3.85e-11 -4.86e-11 1.23e-10 1.3e-10
+Corner 0 0 0
+_357_/VDD    False
+_357_/VSS    False
+_358_/A1    False
+_358_/A1 -3.85e-11 -4.86e-11 2.11e-10 2.24e-10
+Corner 0 5.95e-15 5.7e-15
+_358_/A2    False
+_358_/A2 -4.81e-11 -4.87e-11 2.2e-10 2.24e-10
+Corner 0 6.2e-15 5.62e-15
+_358_/ZN    False
+_358_/ZN -4.87e-11 -4.81e-11 2.24e-10 2.11e-10
+Corner 0 0 0
+_358_/VDD    False
+_358_/VSS    False
+_359_/A    False
+_359_/A -4.93e-11 -3.84e-11 1.66e-10 1.51e-10
+Corner 0 1.7e-15 1.55e-15
+_359_/ZN    False
+_359_/ZN -3.84e-11 -4.93e-11 1.51e-10 1.66e-10
+Corner 0 0 0
+_359_/VDD    False
+_359_/VSS    False
+_360_/A1    False
+_360_/A1 -3.84e-11 -4.93e-11 2.4e-10 2.47e-10
+Corner 0 3.05e-15 2.93e-15
+_360_/A2    False
+_360_/A2 -2.93e-11 -2.8e-11 2.31e-10 2.25e-10
+Corner 0 3.45e-15 3.14e-15
+_360_/ZN    False
+_360_/ZN -4.93e-11 -3.84e-11 2.25e-10 2.31e-10
+Corner 0 0 0
+_360_/VDD    False
+_360_/VSS    False
+_361_/A1    False
+_361_/A1 -4.87e-11 -4.81e-11 2.46e-10 2.39e-10
+Corner 0 3.05e-15 2.93e-15
+_361_/A2    False
+_361_/A2 -4.93e-11 -3.84e-11 2.25e-10 2.31e-10
+Corner 0 3.45e-15 3.14e-15
+_361_/ZN    False
+_361_/ZN -4.81e-11 -4.93e-11 2.31e-10 2.25e-10
+Corner 0 0 0
+_361_/VDD    False
+_361_/VSS    False
+_362_/A1    False
+_362_/A1 -4.81e-11 -4.93e-11 2.77e-10 2.88e-10
+Corner 0 6.77e-15 5.59e-15
+_362_/A2    False
+_362_/A2 -5.06e-11 -5.54e-11 2.81e-10 3.08e-10
+Corner 0 6.68e-15 6.34e-15
+_362_/ZN    False
+_362_/ZN -5.54e-11 -5.06e-11 2.88e-10 2.77e-10
+Corner 0 0 0
+_362_/VDD    False
+_362_/VSS    False
+_363_/A1    False
+_363_/A1 -5.44e-11 -4.62e-11 2.86e-10 2.63e-10
+Corner 0 3.05e-15 2.93e-15
+_363_/A2    False
+_363_/A2 -5.54e-11 -5.06e-11 2.88e-10 2.77e-10
+Corner 0 3.45e-15 3.14e-15
+_363_/ZN    False
+_363_/ZN -5.06e-11 -5.54e-11 2.63e-10 2.86e-10
+Corner 0 0 0
+_363_/VDD    False
+_363_/VSS    False
+_364_/A    False
+_364_/A -4.59e-11 -4.91e-11 2.99e-10 2.87e-10
+Corner 0 1.7e-15 1.55e-15
+_364_/ZN    False
+_364_/ZN -4.91e-11 -4.59e-11 2.87e-10 2.99e-10
+Corner 0 0 0
+_364_/VDD    False
+_364_/VSS    False
+_365_/A    False
+_365_/A -4.29e-11 -4.09e-11 2.82e-10 2.83e-10
+Corner 0 1.67e-15 1.52e-15
+_365_/B1    False
+_365_/B1 -4.91e-11 -4.59e-11 2.87e-10 2.99e-10
+Corner 0 1.66e-15 1.46e-15
+_365_/B2    False
+_365_/B2 -3.41e-11 -4.67e-11 2.81e-10 2.95e-10
+Corner 0 1.57e-15 1.56e-15
+_365_/ZN    False
+_365_/ZN -4.67e-11 -4.91e-11 2.83e-10 2.81e-10
+Corner 0 0 0
+_365_/VDD    False
+_365_/VSS    False
+_366_/A    False
+_366_/A -4.67e-11 -4.91e-11 2.83e-10 2.81e-10
+Corner 0 1.7e-15 1.55e-15
+_366_/ZN    False
+_366_/ZN -4.91e-11 -4.67e-11 2.81e-10 2.83e-10
+Corner 0 0 0
+_366_/VDD    False
+_366_/VSS    False
+_367_/A1    False
+_367_/A1 -4.91e-11 -4.67e-11 2.81e-10 2.83e-10
+Corner 0 5.95e-15 5.7e-15
+_367_/A2    False
+_367_/A2 -5.06e-11 -5.54e-11 2.63e-10 2.86e-10
+Corner 0 6.2e-15 5.62e-15
+_367_/ZN    False
+_367_/ZN -5.54e-11 -5.06e-11 2.83e-10 2.63e-10
+Corner 0 0 0
+_367_/VDD    False
+_367_/VSS    False
+_369_/A    False
+_369_/A -4.21e-11 -3.25e-11 2.28e-10 2.32e-10
+Corner 0 2.23e-15 2.13e-15
+_369_/B    False
+_369_/B -5.52e-11 -4.49e-11 2.44e-10 2.44e-10
+Corner 0 2.57e-15 2.37e-15
+_369_/ZN    False
+_369_/ZN -5.52e-11 -2.32e-11 2.32e-10 2.28e-10
+Corner 0 0 0
+_369_/VDD    False
+_369_/VSS    False
+_370_/A    False
+_370_/A -5.72e-11 -2.28e-11 2.54e-10 2.42e-10
+Corner 0 4e-15 3.8e-15
+_370_/B    False
+_370_/B -5.02e-11 -3.95e-11 2.48e-10 2.59e-10
+Corner 0 4.84e-15 4.42e-15
+_370_/ZN    False
+_370_/ZN -5.72e-11 -2.28e-11 2.42e-10 2.48e-10
+Corner 0 0 0
+_370_/VDD    False
+_370_/VSS    False
+_371_/A1    False
+_371_/A1 -5.72e-11 -2.28e-11 2.95e-10 2.84e-10
+Corner 0 3.05e-15 2.93e-15
+_371_/A2    False
+_371_/A2 -5.52e-11 -2.32e-11 3.03e-10 2.74e-10
+Corner 0 3.45e-15 3.14e-15
+_371_/ZN    False
+_371_/ZN -2.32e-11 -5.72e-11 2.74e-10 2.95e-10
+Corner 0 0 0
+_371_/VDD    False
+_371_/VSS    False
+_372_/A    False
+_372_/A -4.12e-11 -3.84e-11 2.01e-10 2.11e-10
+Corner 0 4e-15 3.8e-15
+_372_/B    False
+_372_/B -5.07e-11 -4.52e-11 2.13e-10 2.18e-10
+Corner 0 4.84e-15 4.42e-15
+_372_/ZN    False
+_372_/ZN -5.07e-11 -4.52e-11 2.21e-10 2.01e-10
+Corner 0 0 0
+_372_/VDD    False
+_372_/VSS    False
+_373_/A    False
+_373_/A -5.56e-11 -3.24e-11 2.55e-10 2.38e-10
+Corner 0 4e-15 3.8e-15
+_373_/B    False
+_373_/B -3.53e-11 -2.73e-11 2.37e-10 2.36e-10
+Corner 0 4.84e-15 4.42e-15
+_373_/ZN    False
+_373_/ZN -5.56e-11 -3.71e-11 2.36e-10 2.37e-10
+Corner 0 0 0
+_373_/VDD    False
+_373_/VSS    False
+_374_/A1    False
+_374_/A1 -5.56e-11 -3.71e-11 2.93e-10 2.74e-10
+Corner 0 5.95e-15 5.7e-15
+_374_/A2    False
+_374_/A2 -4.44e-11 -3.59e-11 2.9e-10 2.72e-10
+Corner 0 6.2e-15 5.62e-15
+_374_/ZN    False
+_374_/ZN -3.71e-11 -5.56e-11 2.72e-10 2.9e-10
+Corner 0 0 0
+_374_/VDD    False
+_374_/VSS    False
+_375_/A1    False
+_375_/A1 -1.77e-11 -5.56e-11 2.72e-10 2.94e-10
+Corner 0 6.77e-15 5.59e-15
+_375_/A2    False
+_375_/A2 -2.32e-11 -5.72e-11 2.74e-10 2.95e-10
+Corner 0 6.68e-15 6.34e-15
+_375_/ZN    False
+_375_/ZN -5.72e-11 -2.32e-11 2.94e-10 2.72e-10
+Corner 0 0 0
+_375_/VDD    False
+_375_/VSS    False
+_376_/A1    False
+_376_/A1 -5.72e-11 -2.32e-11 2.94e-10 2.72e-10
+Corner 0 5.95e-15 5.7e-15
+_376_/A2    False
+_376_/A2 -5.54e-11 -5.06e-11 2.96e-10 2.89e-10
+Corner 0 6.2e-15 5.62e-15
+_376_/ZN    False
+_376_/ZN -5.06e-11 -5.72e-11 2.72e-10 2.94e-10
+Corner 0 0 0
+_376_/VDD    False
+_376_/VSS    False
+_377_/A    False
+_377_/A -4.64e-11 -4.67e-11 1.3e-10 1.27e-10
+Corner 0 1.7e-15 1.55e-15
+_377_/ZN    False
+_377_/ZN -4.67e-11 -4.64e-11 1.27e-10 1.3e-10
+Corner 0 0 0
+_377_/VDD    False
+_377_/VSS    False
+_378_/A1    False
+_378_/A1 -4.67e-11 -4.64e-11 2.45e-10 2.47e-10
+Corner 0 3.05e-15 2.93e-15
+_378_/A2    False
+_378_/A2 -5.33e-11 -3.18e-11 2.51e-10 2.32e-10
+Corner 0 3.45e-15 3.14e-15
+_378_/ZN    False
+_378_/ZN -4.64e-11 -5.33e-11 2.32e-10 2.45e-10
+Corner 0 0 0
+_378_/VDD    False
+_378_/VSS    False
+_379_/A    False
+_379_/A -4.88e-11 -3.02e-11 1.74e-10 1.57e-10
+Corner 0 1.7e-15 1.55e-15
+_379_/ZN    False
+_379_/ZN -3.02e-11 -4.88e-11 1.57e-10 1.74e-10
+Corner 0 0 0
+_379_/VDD    False
+_379_/VSS    False
+_380_/A    False
+_380_/A -4.64e-11 -5.33e-11 2.32e-10 2.75e-10
+Corner 0 3.18e-15 2.88e-15
+_380_/B1    False
+_380_/B1 -4.13e-11 -4.23e-11 2.47e-10 2.73e-10
+Corner 0 3.1e-15 2.7e-15
+_380_/B2    False
+_380_/B2 -3.02e-11 -4.88e-11 2.36e-10 2.79e-10
+Corner 0 3.33e-15 3.31e-15
+_380_/ZN    False
+_380_/ZN -5.33e-11 -4.64e-11 2.73e-10 2.32e-10
+Corner 0 0 0
+_380_/VDD    False
+_380_/VSS    False
+_381_/A    False
+_381_/A -4.82e-11 -3.39e-11 1.28e-10 1.27e-10
+Corner 0 1.7e-15 1.55e-15
+_381_/ZN    False
+_381_/ZN -3.39e-11 -4.82e-11 1.27e-10 1.28e-10
+Corner 0 0 0
+_381_/VDD    False
+_381_/VSS    False
+_382_/A1    False
+_382_/A1 -3.39e-11 -4.82e-11 2.37e-10 2.23e-10
+Corner 0 3.29e-15 2.7e-15
+_382_/A2    False
+_382_/A2 -2.57e-11 -3.5e-11 2.29e-10 2.1e-10
+Corner 0 3.35e-15 3.18e-15
+_382_/ZN    False
+_382_/ZN -4.82e-11 -3.39e-11 2.1e-10 2.29e-10
+Corner 0 0 0
+_382_/VDD    False
+_382_/VSS    False
+_383_/A    False
+_383_/A -4.82e-11 -3.39e-11 3.11e-10 2.97e-10
+Corner 0 1.7e-15 1.55e-15
+_383_/ZN    False
+_383_/ZN -3.39e-11 -4.82e-11 2.97e-10 3.11e-10
+Corner 0 0 0
+_383_/VDD    False
+_383_/VSS    False
+_384_/A1    False
+_384_/A1 -5.33e-11 -4.64e-11 3.12e-10 3.01e-10
+Corner 0 3.05e-15 2.93e-15
+_384_/A2    False
+_384_/A2 -3.39e-11 -4.82e-11 2.97e-10 3.11e-10
+Corner 0 3.45e-15 3.14e-15
+_384_/ZN    False
+_384_/ZN -4.82e-11 -5.33e-11 3.01e-10 2.97e-10
+Corner 0 0 0
+_384_/VDD    False
+_384_/VSS    False
+_385_/A1    False
+_385_/A1 -3.71e-11 -5.34e-11 2.93e-10 2.9e-10
+Corner 0 6.77e-15 5.59e-15
+_385_/A2    False
+_385_/A2 -4.82e-11 -5.33e-11 3.01e-10 2.97e-10
+Corner 0 6.68e-15 6.34e-15
+_385_/ZN    False
+_385_/ZN -5.34e-11 -4.82e-11 2.9e-10 2.93e-10
+Corner 0 0 0
+_385_/VDD    False
+_385_/VSS    False
+_386_/A    False
+_386_/A -2.44e-11 -4.24e-12 1.29e-10 1.25e-10
+Corner 0 1.7e-15 1.55e-15
+_386_/ZN    False
+_386_/ZN -4.24e-12 -2.44e-11 1.25e-10 1.29e-10
+Corner 0 0 0
+_386_/VDD    False
+_386_/VSS    False
+_387_/A1    False
+_387_/A1 -4.24e-12 -2.44e-11 2.74e-10 2.94e-10
+Corner 0 1.6e-15 1.53e-15
+_387_/A2    False
+_387_/A2 3.16e-12 -7.67e-12 2.67e-10 2.77e-10
+Corner 0 1.66e-15 1.5e-15
+_387_/ZN    False
+_387_/ZN -2.44e-11 -4.24e-12 2.77e-10 2.67e-10
+Corner 0 0 0
+_387_/VDD    False
+_387_/VSS    False
+_388_/A    False
+_388_/A -5.07e-11 -4.52e-11 2.21e-10 2.01e-10
+Corner 0 3.25e-15 2.94e-15
+_388_/ZN    False
+_388_/ZN -4.52e-11 -5.07e-11 2.01e-10 2.21e-10
+Corner 0 0 0
+_388_/VDD    False
+_388_/VSS    False
+_389_/A    False
+_389_/A -2.96e-11 -2.59e-11 1.32e-10 1.25e-10
+Corner 0 1.7e-15 1.55e-15
+_389_/ZN    False
+_389_/ZN -2.59e-11 -2.96e-11 1.25e-10 1.32e-10
+Corner 0 0 0
+_389_/VDD    False
+_389_/VSS    False
+_390_/A1    False
+_390_/A1 -2.59e-11 -2.96e-11 2.18e-10 2.34e-10
+Corner 0 1.6e-15 1.53e-15
+_390_/A2    False
+_390_/A2 -5.36e-11 -3.64e-11 2.46e-10 2.41e-10
+Corner 0 1.66e-15 1.5e-15
+_390_/ZN    False
+_390_/ZN -3.64e-11 -5.36e-11 2.34e-10 2.18e-10
+Corner 0 0 0
+_390_/VDD    False
+_390_/VSS    False
+_391_/A    False
+_391_/A -2.44e-11 -4.24e-12 2.77e-10 2.67e-10
+Corner 0 1.67e-15 1.52e-15
+_391_/B1    False
+_391_/B1 -4.52e-11 -5.07e-11 3.01e-10 2.99e-10
+Corner 0 1.66e-15 1.46e-15
+_391_/B2    False
+_391_/B2 -3.64e-11 -5.36e-11 3.04e-10 2.97e-10
+Corner 0 1.57e-15 1.56e-15
+_391_/ZN    False
+_391_/ZN -5.36e-11 -4.52e-11 2.67e-10 2.77e-10
+Corner 0 0 0
+_391_/VDD    False
+_391_/VSS    False
+_392_/A1    False
+_392_/A1 -5.34e-11 -4.82e-11 2.9e-10 2.93e-10
+Corner 0 3.29e-15 2.7e-15
+_392_/A2    False
+_392_/A2 -5.36e-11 -4.52e-11 2.67e-10 2.77e-10
+Corner 0 3.35e-15 3.18e-15
+_392_/ZN    False
+_392_/ZN -4.82e-11 -5.36e-11 2.77e-10 2.67e-10
+Corner 0 0 0
+_392_/VDD    False
+_392_/VSS    False
+_393_/A1    False
+_393_/A1 -5.06e-11 -5.72e-11 2.72e-10 2.94e-10
+Corner 0 5.95e-15 5.7e-15
+_393_/A2    False
+_393_/A2 -4.82e-11 -5.36e-11 2.77e-10 2.67e-10
+Corner 0 6.2e-15 5.62e-15
+_393_/ZN    False
+_393_/ZN -5.72e-11 -5.06e-11 2.67e-10 2.72e-10
+Corner 0 0 0
+_393_/VDD    False
+_393_/VSS    False
+_394_/A    False
+_394_/A -4.82e-11 -3e-11 1.2e-10 1.16e-10
+Corner 0 3.25e-15 2.94e-15
+_394_/ZN    False
+_394_/ZN -3e-11 -4.82e-11 1.16e-10 1.2e-10
+Corner 0 0 0
+_394_/VDD    False
+_394_/VSS    False
+_395_/A    False
+_395_/A -3e-11 -4.82e-11 2.04e-10 2.08e-10
+Corner 0 4e-15 3.8e-15
+_395_/B    False
+_395_/B -4.83e-11 -4.19e-11 2.22e-10 2.06e-10
+Corner 0 4.84e-15 4.42e-15
+_395_/ZN    False
+_395_/ZN -4.67e-11 -4.83e-11 2.06e-10 2.04e-10
+Corner 0 0 0
+_395_/VDD    False
+_395_/VSS    False
+_396_/A    False
+_396_/A -5.44e-11 -3.26e-11 1.19e-10 1.13e-10
+Corner 0 3.25e-15 2.94e-15
+_396_/ZN    False
+_396_/ZN -3.26e-11 -5.44e-11 1.13e-10 1.19e-10
+Corner 0 0 0
+_396_/VDD    False
+_396_/VSS    False
+_397_/A    False
+_397_/A -3.26e-11 -5.44e-11 2.12e-10 2.23e-10
+Corner 0 2.23e-15 2.13e-15
+_397_/B    False
+_397_/B -3.32e-11 -4.32e-11 2.12e-10 2.16e-10
+Corner 0 2.57e-15 2.37e-15
+_397_/ZN    False
+_397_/ZN -1.98e-11 -5.44e-11 2.16e-10 2.12e-10
+Corner 0 0 0
+_397_/VDD    False
+_397_/VSS    False
+_398_/A1    False
+_398_/A1 -3.6e-11 -4.83e-11 2.94e-10 2.75e-10
+Corner 0 1.71e-15 1.41e-15
+_398_/A2    False
+_398_/A2 -1.98e-11 -5.44e-11 2.87e-10 2.77e-10
+Corner 0 1.65e-15 1.56e-15
+_398_/ZN    False
+_398_/ZN -5.44e-11 -3.6e-11 2.75e-10 2.87e-10
+Corner 0 0 0
+_398_/VDD    False
+_398_/VSS    False
+_399_/A    False
+_399_/A -3.36e-11 -3.42e-11 2.02e-10 1.95e-10
+Corner 0 4e-15 3.8e-15
+_399_/B    False
+_399_/B -5.35e-11 -3.99e-11 2.24e-10 2.06e-10
+Corner 0 4.84e-15 4.42e-15
+_399_/ZN    False
+_399_/ZN -5.35e-11 -4.63e-11 1.95e-10 2.02e-10
+Corner 0 0 0
+_399_/VDD    False
+_399_/VSS    False
+_400_/A    False
+_400_/A -3.26e-11 -1.8e-11 1.96e-10 2.07e-10
+Corner 0 4e-15 3.8e-15
+_400_/B    False
+_400_/B -5.73e-11 -3.14e-11 2.22e-10 2.16e-10
+Corner 0 4.84e-15 4.42e-15
+_400_/ZN    False
+_400_/ZN -5.73e-11 -2.61e-11 2.07e-10 1.96e-10
+Corner 0 0 0
+_400_/VDD    False
+_400_/VSS    False
+_401_/A1    False
+_401_/A1 -5.35e-11 -2.12e-11 2.47e-10 2.41e-10
+Corner 0 1.6e-15 1.53e-15
+_401_/A2    False
+_401_/A2 -5.73e-11 -2.61e-11 2.51e-10 2.41e-10
+Corner 0 1.66e-15 1.5e-15
+_401_/ZN    False
+_401_/ZN -2.61e-11 -5.73e-11 2.41e-10 2.47e-10
+Corner 0 0 0
+_401_/VDD    False
+_401_/VSS    False
+_402_/A    False
+_402_/A -2.61e-11 -5.73e-11 2.41e-10 2.47e-10
+Corner 0 1.7e-15 1.55e-15
+_402_/ZN    False
+_402_/ZN -5.73e-11 -2.61e-11 2.47e-10 2.41e-10
+Corner 0 0 0
+_402_/VDD    False
+_402_/VSS    False
+_403_/A1    False
+_403_/A1 -5.44e-11 -3.6e-11 3.11e-10 2.89e-10
+Corner 0 1.66e-15 1.57e-15
+_403_/A2    False
+_403_/A2 -5.73e-11 -2.61e-11 2.94e-10 2.86e-10
+Corner 0 1.73e-15 1.57e-15
+_403_/ZN    False
+_403_/ZN -5.73e-11 -3.6e-11 2.94e-10 2.86e-10
+Corner 0 0 0
+_403_/VDD    False
+_403_/VSS    False
+_404_/A1    False
+_404_/A1 -5.72e-11 -5.06e-11 2.73e-10 2.85e-10
+Corner 0 5.95e-15 5.7e-15
+_404_/A2    False
+_404_/A2 -5.73e-11 -3.6e-11 2.94e-10 2.87e-10
+Corner 0 6.2e-15 5.62e-15
+_404_/ZN    False
+_404_/ZN -5.06e-11 -5.73e-11 2.85e-10 2.73e-10
+Corner 0 0 0
+_404_/VDD    False
+_404_/VSS    False
+_405_/A1    False
+_405_/A1 3.53e-11 2.14e-12 2.39e-10 2.66e-10
+Corner 0 1.6e-15 1.53e-15
+_405_/A2    False
+_405_/A2 1.84e-11 7.21e-12 2.56e-10 2.61e-10
+Corner 0 1.66e-15 1.5e-15
+_405_/ZN    False
+_405_/ZN 2.14e-12 1.84e-11 2.61e-10 2.39e-10
+Corner 0 0 0
+_405_/VDD    False
+_405_/VSS    False
+_406_/A1    False
+_406_/A1 1.11e-11 -7.95e-12 2.04e-10 2.15e-10
+Corner 0 1.6e-15 1.53e-15
+_406_/A2    False
+_406_/A2 1.26e-11 2.15e-12 2.03e-10 2.05e-10
+Corner 0 1.66e-15 1.5e-15
+_406_/ZN    False
+_406_/ZN -7.95e-12 1.11e-11 2.05e-10 2.03e-10
+Corner 0 0 0
+_406_/VDD    False
+_406_/VSS    False
+_407_/A    False
+_407_/A 2.14e-12 1.84e-11 2.61e-10 2.39e-10
+Corner 0 1.67e-15 1.52e-15
+_407_/B1    False
+_407_/B1 -4.67e-11 -2.41e-12 2.93e-10 2.59e-10
+Corner 0 1.66e-15 1.46e-15
+_407_/B2    False
+_407_/B2 -7.95e-12 1.11e-11 2.71e-10 2.63e-10
+Corner 0 1.57e-15 1.56e-15
+_407_/ZN    False
+_407_/ZN -2.41e-12 -4.67e-11 2.39e-10 2.61e-10
+Corner 0 0 0
+_407_/VDD    False
+_407_/VSS    False
+_408_/A    False
+_408_/A -1.55e-11 -3.81e-11 1.84e-10 1.53e-10
+Corner 0 1.7e-15 1.55e-15
+_408_/ZN    False
+_408_/ZN -3.81e-11 -1.55e-11 1.53e-10 1.84e-10
+Corner 0 0 0
+_408_/VDD    False
+_408_/VSS    False
+_409_/A1    False
+_409_/A1 -3.81e-11 -1.55e-11 2.46e-10 2.52e-10
+Corner 0 1.71e-15 1.41e-15
+_409_/A2    False
+_409_/A2 -2.9e-11 1.94e-11 2.37e-10 2.17e-10
+Corner 0 1.65e-15 1.56e-15
+_409_/ZN    False
+_409_/ZN -1.55e-11 -3.81e-11 2.17e-10 2.37e-10
+Corner 0 0 0
+_409_/VDD    False
+_409_/VSS    False
+_410_/A    False
+_410_/A -5.44e-11 -1.84e-11 1.28e-10 1.22e-10
+Corner 0 1.7e-15 1.55e-15
+_410_/ZN    False
+_410_/ZN -1.84e-11 -5.44e-11 1.22e-10 1.28e-10
+Corner 0 0 0
+_410_/VDD    False
+_410_/VSS    False
+_411_/A1    False
+_411_/A1 -1.84e-11 -5.44e-11 2.52e-10 2.46e-10
+Corner 0 9.18e-16 8.75e-16
+_411_/A2    False
+_411_/A2 -2.86e-11 -4.13e-11 2.62e-10 2.33e-10
+Corner 0 9.75e-16 8.94e-16
+_411_/ZN    False
+_411_/ZN -2.86e-11 -5.44e-11 2.52e-10 2.33e-10
+Corner 0 0 0
+_411_/VDD    False
+_411_/VSS    False
+_412_/A    False
+_412_/A -1.55e-11 -3.81e-11 2.17e-10 2.37e-10
+Corner 0 1.63e-15 1.54e-15
+_412_/B1    False
+_412_/B1 -3.02e-11 -4.63e-11 2.26e-10 2.47e-10
+Corner 0 1.65e-15 1.45e-15
+_412_/B2    False
+_412_/B2 -2.86e-11 -5.44e-11 2.56e-10 2.64e-10
+Corner 0 1.68e-15 1.41e-15
+_412_/ZN    False
+_412_/ZN -5.44e-11 -3.02e-11 2.37e-10 2.17e-10
+Corner 0 0 0
+_412_/VDD    False
+_412_/VSS    False
+_413_/A    False
+_413_/A -5.44e-11 -3.02e-11 3.01e-10 2.57e-10
+Corner 0 1.7e-15 1.55e-15
+_413_/ZN    False
+_413_/ZN -3.02e-11 -5.44e-11 2.57e-10 3.01e-10
+Corner 0 0 0
+_413_/VDD    False
+_413_/VSS    False
+_414_/A    False
+_414_/A -2.41e-12 -4.67e-11 2.39e-10 2.61e-10
+Corner 0 3.14e-15 2.94e-15
+_414_/B1    False
+_414_/B1 -3.02e-11 -5.44e-11 2.57e-10 3.01e-10
+Corner 0 3.13e-15 2.73e-15
+_414_/B2    False
+_414_/B2 -1.96e-11 -3.33e-11 2.75e-10 2.87e-10
+Corner 0 3.48e-15 2.95e-15
+_414_/ZN    False
+_414_/ZN -5.44e-11 -3.02e-11 2.61e-10 2.39e-10
+Corner 0 0 0
+_414_/VDD    False
+_414_/VSS    False
+_415_/A1    False
+_415_/A1 -5.44e-11 -3.02e-11 2.61e-10 2.39e-10
+Corner 0 5.95e-15 5.7e-15
+_415_/A2    False
+_415_/A2 -5.06e-11 -5.73e-11 2.85e-10 2.73e-10
+Corner 0 6.2e-15 5.62e-15
+_415_/ZN    False
+_415_/ZN -5.73e-11 -5.44e-11 2.39e-10 2.61e-10
+Corner 0 0 0
+_415_/VDD    False
+_415_/VSS    False
+_416_/A    False
+_416_/A 2.75e-11 4.46e-11 1.89e-10 1.88e-10
+Corner 0 4e-15 3.8e-15
+_416_/B    False
+_416_/B 2.05e-12 3.06e-11 2.16e-10 2.02e-10
+Corner 0 4.84e-15 4.42e-15
+_416_/ZN    False
+_416_/ZN 2.05e-12 3.74e-11 1.88e-10 1.89e-10
+Corner 0 0 0
+_416_/VDD    False
+_416_/VSS    False
+_417_/A    False
+_417_/A 2.05e-12 3.74e-11 2.59e-10 2.44e-10
+Corner 0 1.7e-15 1.55e-15
+_417_/ZN    False
+_417_/ZN 3.74e-11 2.05e-12 2.44e-10 2.59e-10
+Corner 0 0 0
+_417_/VDD    False
+_417_/VSS    False
+_418_/A    False
+_418_/A 1.82e-11 2.19e-11 1.23e-10 1.16e-10
+Corner 0 3.25e-15 2.94e-15
+_418_/ZN    False
+_418_/ZN 2.19e-11 1.82e-11 1.16e-10 1.23e-10
+Corner 0 0 0
+_418_/VDD    False
+_418_/VSS    False
+_419_/A    False
+_419_/A 2.19e-11 1.82e-11 2.07e-10 2.17e-10
+Corner 0 4e-15 3.8e-15
+_419_/B    False
+_419_/B 5.64e-12 2.8e-11 2.25e-10 2.11e-10
+Corner 0 4.84e-15 4.42e-15
+_419_/ZN    False
+_419_/ZN 5.64e-12 1.82e-11 2.11e-10 2.07e-10
+Corner 0 0 0
+_419_/VDD    False
+_419_/VSS    False
+_420_/A1    False
+_420_/A1 3.74e-11 2.05e-12 2.44e-10 2.59e-10
+Corner 0 3.29e-15 2.7e-15
+_420_/A2    False
+_420_/A2 2.23e-11 1.96e-11 2.62e-10 2.64e-10
+Corner 0 3.35e-15 3.18e-15
+_420_/ZN    False
+_420_/ZN 2.05e-12 2.23e-11 2.59e-10 2.44e-10
+Corner 0 0 0
+_420_/VDD    False
+_420_/VSS    False
+_421_/A1    False
+_421_/A1 -5.73e-11 -5.44e-11 2.62e-10 2.81e-10
+Corner 0 5.95e-15 5.7e-15
+_421_/A2    False
+_421_/A2 2.05e-12 2.23e-11 2.59e-10 2.44e-10
+Corner 0 6.2e-15 5.62e-15
+_421_/ZN    False
+_421_/ZN -5.44e-11 -5.73e-11 2.44e-10 2.59e-10
+Corner 0 0 0
+_421_/VDD    False
+_421_/VSS    False
+_422_/A1    False
+_422_/A1 6.2e-11 5.38e-11 2.39e-10 2.5e-10
+Corner 0 1.6e-15 1.53e-15
+_422_/A2    False
+_422_/A2 4.56e-11 6.24e-11 2.55e-10 2.41e-10
+Corner 0 1.66e-15 1.5e-15
+_422_/ZN    False
+_422_/ZN 5.38e-11 4.56e-11 2.41e-10 2.39e-10
+Corner 0 0 0
+_422_/VDD    False
+_422_/VSS    False
+_423_/A    False
+_423_/A 3.99e-11 2.9e-11 1.29e-10 1.24e-10
+Corner 0 1.7e-15 1.55e-15
+_423_/ZN    False
+_423_/ZN 2.9e-11 3.99e-11 1.24e-10 1.29e-10
+Corner 0 0 0
+_423_/VDD    False
+_423_/VSS    False
+_424_/A1    False
+_424_/A1 2.9e-11 3.99e-11 2.13e-10 2.23e-10
+Corner 0 1.6e-15 1.53e-15
+_424_/A2    False
+_424_/A2 2.03e-11 5.39e-11 2.21e-10 2.09e-10
+Corner 0 1.66e-15 1.5e-15
+_424_/ZN    False
+_424_/ZN 3.99e-11 2.03e-11 2.09e-10 2.13e-10
+Corner 0 0 0
+_424_/VDD    False
+_424_/VSS    False
+_425_/A    False
+_425_/A 5.38e-11 4.56e-11 2.41e-10 2.39e-10
+Corner 0 1.67e-15 1.52e-15
+_425_/B1    False
+_425_/B1 5.64e-12 1.82e-11 2.78e-10 2.62e-10
+Corner 0 1.66e-15 1.46e-15
+_425_/B2    False
+_425_/B2 3.99e-11 2.03e-11 2.55e-10 2.73e-10
+Corner 0 1.57e-15 1.56e-15
+_425_/ZN    False
+_425_/ZN 1.82e-11 5.64e-12 2.39e-10 2.41e-10
+Corner 0 0 0
+_425_/VDD    False
+_425_/VSS    False
+_426_/A    False
+_426_/A 1.82e-11 5.64e-12 2.39e-10 2.41e-10
+Corner 0 1.7e-15 1.55e-15
+_426_/ZN    False
+_426_/ZN 5.64e-12 1.82e-11 2.41e-10 2.39e-10
+Corner 0 0 0
+_426_/VDD    False
+_426_/VSS    False
+_427_/A1    False
+_427_/A1 -5.44e-11 -5.73e-11 2.44e-10 2.59e-10
+Corner 0 5.95e-15 5.7e-15
+_427_/A2    False
+_427_/A2 5.64e-12 1.82e-11 2.41e-10 2.39e-10
+Corner 0 6.2e-15 5.62e-15
+_427_/ZN    False
+_427_/ZN -5.73e-11 -5.44e-11 2.39e-10 2.41e-10
+Corner 0 0 0
+_427_/VDD    False
+_427_/VSS    False
+_428_/A    False
+_428_/A 4.07e-11 5.28e-11 1.21e-10 1.22e-10
+Corner 0 1.7e-15 1.55e-15
+_428_/ZN    False
+_428_/ZN 5.28e-11 4.07e-11 1.22e-10 1.21e-10
+Corner 0 0 0
+_428_/VDD    False
+_428_/VSS    False
+_429_/A    False
+_429_/A 5.28e-11 4.07e-11 2.27e-10 2.3e-10
+Corner 0 2.23e-15 2.13e-15
+_429_/B    False
+_429_/B 6.6e-11 5.58e-11 2.16e-10 2.18e-10
+Corner 0 2.57e-15 2.37e-15
+_429_/ZN    False
+_429_/ZN 5.28e-11 4.07e-11 2.18e-10 2.16e-10
+Corner 0 0 0
+_429_/VDD    False
+_429_/VSS    False
+_430_/A    False
+_430_/A 5.67e-11 6.21e-11 2.18e-10 2.16e-10
+Corner 0 1.7e-15 1.55e-15
+_430_/ZN    False
+_430_/ZN 6.21e-11 5.67e-11 2.16e-10 2.18e-10
+Corner 0 0 0
+_430_/VDD    False
+_430_/VSS    False
+_431_/A1    False
+_431_/A1 -5.73e-11 -5.44e-11 2.55e-10 2.51e-10
+Corner 0 5.95e-15 5.7e-15
+_431_/A2    False
+_431_/A2 6.21e-11 5.67e-11 2.34e-10 2.36e-10
+Corner 0 6.2e-15 5.62e-15
+_431_/ZN    False
+_431_/ZN -5.44e-11 -5.73e-11 2.36e-10 2.34e-10
+Corner 0 0 0
+_431_/VDD    False
+_431_/VSS    False
+_432_/A1    False
+_432_/A1 6.36e-11 5.43e-11 2.19e-10 2.12e-10
+Corner 0 1.6e-15 1.53e-15
+_432_/A2    False
+_432_/A2 7.74e-11 6.82e-11 2.05e-10 1.98e-10
+Corner 0 1.66e-15 1.5e-15
+_432_/ZN    False
+_432_/ZN 5.43e-11 6.36e-11 1.98e-10 2.05e-10
+Corner 0 0 0
+_432_/VDD    False
+_432_/VSS    False
+_433_/A1    False
+_433_/A1 -4.95e-11 -5.73e-11 2.36e-10 2.34e-10
+Corner 0 5.95e-15 5.7e-15
+_433_/A2    False
+_433_/A2 1.16e-10 1.04e-10 1.98e-10 2.05e-10
+Corner 0 6.2e-15 5.62e-15
+_433_/ZN    False
+_433_/ZN -5.73e-11 -4.95e-11 2.05e-10 1.98e-10
+Corner 0 0 0
+_433_/VDD    False
+_433_/VSS    False
+_434_/A    False
+_434_/A 3.9e-11 4.98e-11 1.19e-10 1.15e-10
+Corner 0 3.25e-15 2.94e-15
+_434_/ZN    False
+_434_/ZN 4.98e-11 3.9e-11 1.15e-10 1.19e-10
+Corner 0 0 0
+_434_/VDD    False
+_434_/VSS    False
+_435_/A    False
+_435_/A 4.98e-11 3.9e-11 1.99e-10 2.16e-10
+Corner 0 4e-15 3.8e-15
+_435_/B    False
+_435_/B 3.19e-11 4.48e-11 2.19e-10 2.12e-10
+Corner 0 4.84e-15 4.42e-15
+_435_/ZN    False
+_435_/ZN 3.19e-11 3.84e-11 2.14e-10 1.99e-10
+Corner 0 0 0
+_435_/VDD    False
+_435_/VSS    False
+_436_/A    False
+_436_/A 8.46e-11 9.72e-11 2.14e-10 2.06e-10
+Corner 0 1.7e-15 1.55e-15
+_436_/ZN    False
+_436_/ZN 9.72e-11 8.46e-11 2.06e-10 2.14e-10
+Corner 0 0 0
+_436_/VDD    False
+_436_/VSS    False
+_437_/A1    False
+_437_/A1 -5.73e-11 -4.95e-11 2.05e-10 1.98e-10
+Corner 0 5.95e-15 5.7e-15
+_437_/A2    False
+_437_/A2 9.72e-11 8.46e-11 2.06e-10 2.14e-10
+Corner 0 6.2e-15 5.62e-15
+_437_/ZN    False
+_437_/ZN -4.95e-11 -5.73e-11 1.98e-10 2.05e-10
+Corner 0 0 0
+_437_/VDD    False
+_437_/VSS    False
+_438_/A1    False
+_438_/A1 -5.44e-11 -5.09e-11 2.41e-10 2.36e-10
+Corner 0 1.59e-15 1.56e-15
+_438_/A2    False
+_438_/A2 1.08e-10 1.11e-10 2.06e-10 2.07e-10
+Corner 0 1.62e-15 1.53e-15
+_438_/A3    False
+_438_/A3 8.37e-11 1.12e-10 2.16e-10 1.99e-10
+Corner 0 1.65e-15 1.49e-15
+_438_/ZN    False
+_438_/ZN -5.09e-11 -5.44e-11 1.99e-10 2.06e-10
+Corner 0 0 0
+_438_/VDD    False
+_438_/VSS    False
+_439_/A1    False
+_439_/A1 -5.09e-11 -5.44e-11 3.26e-10 3.37e-10
+Corner 0 1.66e-15 1.57e-15
+_439_/A2    False
+_439_/A2 -4.95e-11 -5.73e-11 3.28e-10 3.41e-10
+Corner 0 1.73e-15 1.57e-15
+_439_/ZN    False
+_439_/ZN -5.09e-11 -5.73e-11 3.26e-10 3.37e-10
+Corner 0 0 0
+_439_/VDD    False
+_439_/VSS    False
+_440_/A    False
+_440_/A 1.13e-10 1.29e-10 1.91e-10 1.98e-10
+Corner 0 2.23e-15 2.13e-15
+_440_/B    False
+_440_/B 8.7e-11 1.19e-10 2.19e-10 2.12e-10
+Corner 0 2.57e-15 2.37e-15
+_440_/ZN    False
+_440_/ZN 8.7e-11 1.15e-10 1.98e-10 1.91e-10
+Corner 0 0 0
+_440_/VDD    False
+_440_/VSS    False
+_441_/A    False
+_441_/A 1.1e-10 1.11e-10 2.19e-10 2.13e-10
+Corner 0 1.7e-15 1.55e-15
+_441_/ZN    False
+_441_/ZN 1.11e-10 1.1e-10 2.13e-10 2.19e-10
+Corner 0 0 0
+_441_/VDD    False
+_441_/VSS    False
+_442_/A    False
+_442_/A 8.7e-11 1.15e-10 1.98e-10 1.91e-10
+Corner 0 2.23e-15 2.13e-15
+_442_/B    False
+_442_/B 1.11e-10 1.1e-10 2.13e-10 2.19e-10
+Corner 0 2.57e-15 2.37e-15
+_442_/ZN    False
+_442_/ZN 8.7e-11 1.1e-10 1.91e-10 1.98e-10
+Corner 0 0 0
+_442_/VDD    False
+_442_/VSS    False
+_443_/A    False
+_443_/A 8.7e-11 1.1e-10 3.12e-10 2.99e-10
+Corner 0 1.7e-15 1.55e-15
+_443_/ZN    False
+_443_/ZN 1.1e-10 8.7e-11 2.99e-10 3.12e-10
+Corner 0 0 0
+_443_/VDD    False
+_443_/VSS    False
+_444_/A    False
+_444_/A 6.31e-11 6.68e-11 2.31e-10 2.25e-10
+Corner 0 1.7e-15 1.55e-15
+_444_/ZN    False
+_444_/ZN 6.68e-11 6.31e-11 2.25e-10 2.31e-10
+Corner 0 0 0
+_444_/VDD    False
+_444_/VSS    False
+_445_/A    False
+_445_/A 4.86e-11 6.22e-11 2.52e-10 2.38e-10
+Corner 0 2.23e-15 2.13e-15
+_445_/B    False
+_445_/B 8.48e-11 8.58e-11 2.25e-10 2.31e-10
+Corner 0 2.57e-15 2.37e-15
+_445_/ZN    False
+_445_/ZN 4.86e-11 6.22e-11 2.3e-10 2.25e-10
+Corner 0 0 0
+_445_/VDD    False
+_445_/VSS    False
+_446_/A    False
+_446_/A 4.86e-11 6.22e-11 3.52e-10 3.28e-10
+Corner 0 1.7e-15 1.55e-15
+_446_/ZN    False
+_446_/ZN 6.22e-11 4.86e-11 3.28e-10 3.52e-10
+Corner 0 0 0
+_446_/VDD    False
+_446_/VSS    False
+_447_/A1    False
+_447_/A1 3.28e-11 4.34e-11 2.67e-10 2.66e-10
+Corner 0 1.6e-15 1.53e-15
+_447_/A2    False
+_447_/A2 6.68e-11 6.31e-11 2.41e-10 2.59e-10
+Corner 0 1.66e-15 1.5e-15
+_447_/ZN    False
+_447_/ZN 4.34e-11 3.28e-11 2.59e-10 2.41e-10
+Corner 0 0 0
+_447_/VDD    False
+_447_/VSS    False
+_448_/A1    False
+_448_/A1 4.34e-11 3.28e-11 2.59e-10 2.41e-10
+Corner 0 1.6e-15 1.53e-15
+_448_/A2    False
+_448_/A2 1.17e-10 1.08e-10 2.24e-10 2.11e-10
+Corner 0 1.66e-15 1.5e-15
+_448_/ZN    False
+_448_/ZN 3.28e-11 4.34e-11 2.11e-10 2.24e-10
+Corner 0 0 0
+_448_/VDD    False
+_448_/VSS    False
+_449_/A    False
+_449_/A 3.28e-11 4.34e-11 2.11e-10 2.24e-10
+Corner 0 2.23e-15 2.13e-15
+_449_/B    False
+_449_/B 7.06e-11 7.96e-11 2.42e-10 2.58e-10
+Corner 0 2.57e-15 2.37e-15
+_449_/ZN    False
+_449_/ZN 3.28e-11 4.34e-11 2.24e-10 2.11e-10
+Corner 0 0 0
+_449_/VDD    False
+_449_/VSS    False
+_450_/A    False
+_450_/A 1.29e-11 2.38e-11 2.83e-10 2.72e-10
+Corner 0 2.23e-15 2.13e-15
+_450_/B    False
+_450_/B 5.25e-11 7.48e-11 2.42e-10 2.48e-10
+Corner 0 2.57e-15 2.37e-15
+_450_/ZN    False
+_450_/ZN 1.29e-11 2.38e-11 2.47e-10 2.42e-10
+Corner 0 0 0
+_450_/VDD    False
+_450_/VSS    False
+_451_/A    False
+_451_/A 1.29e-11 2.38e-11 3.69e-10 3.45e-10
+Corner 0 1.7e-15 1.55e-15
+_451_/ZN    False
+_451_/ZN 2.38e-11 1.29e-11 3.45e-10 3.69e-10
+Corner 0 0 0
+_451_/VDD    False
+_451_/VSS    False
+_452_/A1    False
+_452_/A1 -3.03e-11 -5.85e-12 2.96e-10 2.63e-10
+Corner 0 3.05e-15 2.93e-15
+_452_/A2    False
+_452_/A2 -2.42e-11 1.03e-11 2.88e-10 2.7e-10
+Corner 0 3.45e-15 3.14e-15
+_452_/ZN    False
+_452_/ZN -5.85e-12 -3.03e-11 2.63e-10 2.88e-10
+Corner 0 0 0
+_452_/VDD    False
+_452_/VSS    False
+_453_/A1    False
+_453_/A1 1.2e-11 1.85e-11 3.06e-10 2.89e-10
+Corner 0 1.6e-15 1.53e-15
+_453_/A2    False
+_453_/A2 9.67e-11 9.91e-11 2.44e-10 2.45e-10
+Corner 0 1.66e-15 1.5e-15
+_453_/ZN    False
+_453_/ZN 1.85e-11 1.2e-11 2.45e-10 2.44e-10
+Corner 0 0 0
+_453_/VDD    False
+_453_/VSS    False
+_454_/A    False
+_454_/A 9.22e-11 1.03e-10 2.32e-10 2.28e-10
+Corner 0 2.23e-15 2.18e-15
+_454_/B    False
+_454_/B 1.85e-11 1.2e-11 2.45e-10 2.44e-10
+Corner 0 2.41e-15 2.36e-15
+_454_/Z    False
+_454_/Z 1.85e-11 1.2e-11 2.28e-10 2.32e-10
+Corner 0 0 0
+_454_/VDD    False
+_454_/VSS    False
+_455_/A    False
+_455_/A 1.46e-11 4.13e-11 2.73e-10 2.32e-10
+Corner 0 1.7e-15 1.55e-15
+_455_/ZN    False
+_455_/ZN 4.13e-11 1.46e-11 2.32e-10 2.73e-10
+Corner 0 0 0
+_455_/VDD    False
+_455_/VSS    False
+_456_/A    False
+_456_/A 7.05e-11 5.24e-11 2.1e-10 2.29e-10
+Corner 0 3.14e-15 2.94e-15
+_456_/B1    False
+_456_/B1 -5.85e-12 -3.03e-11 2.63e-10 2.88e-10
+Corner 0 3.13e-15 2.73e-15
+_456_/B2    False
+_456_/B2 4.13e-11 1.46e-11 2.32e-10 2.73e-10
+Corner 0 3.48e-15 2.95e-15
+_456_/ZN    False
+_456_/ZN -3.03e-11 -5.85e-12 2.29e-10 2.1e-10
+Corner 0 0 0
+_456_/VDD    False
+_456_/VSS    False
+_457_/A    False
+_457_/A -7.31e-13 2.68e-11 2.29e-10 2.1e-10
+Corner 0 4e-15 3.8e-15
+_457_/B    False
+_457_/B 4.61e-11 7.59e-11 2.54e-10 2.37e-10
+Corner 0 4.84e-15 4.42e-15
+_457_/ZN    False
+_457_/ZN -7.31e-13 2.37e-11 2.1e-10 2.29e-10
+Corner 0 0 0
+_457_/VDD    False
+_457_/VSS    False
+_458_/A    False
+_458_/A -7.31e-13 2.37e-11 3.33e-10 3.31e-10
+Corner 0 1.7e-15 1.55e-15
+_458_/ZN    False
+_458_/ZN 2.37e-11 -7.31e-13 3.31e-10 3.33e-10
+Corner 0 0 0
+_458_/VDD    False
+_458_/VSS    False
+_459_/A1    False
+_459_/A1 5.94e-11 8.61e-11 2.36e-10 2.39e-10
+Corner 0 1.6e-15 1.53e-15
+_459_/A2    False
+_459_/A2 -3.03e-11 -5.85e-12 2.54e-10 2.58e-10
+Corner 0 1.66e-15 1.5e-15
+_459_/ZN    False
+_459_/ZN -5.85e-12 -3.03e-11 2.39e-10 2.36e-10
+Corner 0 0 0
+_459_/VDD    False
+_459_/VSS    False
+_460_/A1    False
+_460_/A1 1.03e-10 8.24e-11 2.34e-10 2.18e-10
+Corner 0 1.6e-15 1.53e-15
+_460_/A2    False
+_460_/A2 -5.85e-12 -3.03e-11 2.39e-10 2.36e-10
+Corner 0 1.66e-15 1.5e-15
+_460_/ZN    False
+_460_/ZN -3.03e-11 -5.85e-12 2.18e-10 2.34e-10
+Corner 0 0 0
+_460_/VDD    False
+_460_/VSS    False
+_461_/A    False
+_461_/A 1.08e-10 9.71e-11 2.01e-10 2.21e-10
+Corner 0 2.23e-15 2.13e-15
+_461_/B    False
+_461_/B -3.03e-11 -5.85e-12 2.18e-10 2.34e-10
+Corner 0 2.57e-15 2.37e-15
+_461_/ZN    False
+_461_/ZN -3.03e-11 -9.89e-12 2.21e-10 2.01e-10
+Corner 0 0 0
+_461_/VDD    False
+_461_/VSS    False
+_462_/A    False
+_462_/A 8.15e-11 1.09e-10 2.07e-10 1.96e-10
+Corner 0 2.23e-15 2.13e-15
+_462_/B    False
+_462_/B -3.15e-11 -2.07e-11 2.98e-10 3.01e-10
+Corner 0 2.57e-15 2.37e-15
+_462_/ZN    False
+_462_/ZN -3.15e-11 -2.07e-11 1.96e-10 2.07e-10
+Corner 0 0 0
+_462_/VDD    False
+_462_/VSS    False
+_463_/A    False
+_463_/A -3.15e-11 -2.07e-11 3.18e-10 3.1e-10
+Corner 0 1.7e-15 1.55e-15
+_463_/ZN    False
+_463_/ZN -2.07e-11 -3.15e-11 3.1e-10 3.18e-10
+Corner 0 0 0
+_463_/VDD    False
+_463_/VSS    False
+_464_/A    False
+_464_/A 8.24e-11 7.56e-11 2.52e-10 2.33e-10
+Corner 0 3.14e-15 2.94e-15
+_464_/B1    False
+_464_/B1 -3.67e-11 -3.93e-11 3.16e-10 3.15e-10
+Corner 0 3.13e-15 2.73e-15
+_464_/B2    False
+_464_/B2 7.68e-11 8.4e-11 2.28e-10 2.2e-10
+Corner 0 3.48e-15 2.95e-15
+_464_/ZN    False
+_464_/ZN -3.93e-11 -3.67e-11 2.2e-10 2.28e-10
+Corner 0 0 0
+_464_/VDD    False
+_464_/VSS    False
+_465_/A    False
+_465_/A 9.43e-11 1.17e-10 1.95e-10 2.02e-10
+Corner 0 2.23e-15 2.13e-15
+_465_/B    False
+_465_/B -3.93e-11 -3.67e-11 2.2e-10 2.28e-10
+Corner 0 2.57e-15 2.37e-15
+_465_/ZN    False
+_465_/ZN -3.93e-11 -3.67e-11 2.02e-10 1.95e-10
+Corner 0 0 0
+_465_/VDD    False
+_465_/VSS    False
+_466_/A1    False
+_466_/A1 -3.86e-11 -3.43e-11 2.67e-10 2.72e-10
+Corner 0 1.6e-15 1.53e-15
+_466_/A2    False
+_466_/A2 1.95e-12 2.48e-11 2.47e-10 2.41e-10
+Corner 0 1.66e-15 1.5e-15
+_466_/ZN    False
+_466_/ZN -3.43e-11 -3.86e-11 2.41e-10 2.47e-10
+Corner 0 0 0
+_466_/VDD    False
+_466_/VSS    False
+_467_/A1    False
+_467_/A1 -3.43e-11 -3.86e-11 2.41e-10 2.47e-10
+Corner 0 3.05e-15 2.93e-15
+_467_/A2    False
+_467_/A2 1.49e-11 2.52e-11 2.37e-10 2.17e-10
+Corner 0 3.45e-15 3.14e-15
+_467_/ZN    False
+_467_/ZN -3.86e-11 -3.43e-11 2.17e-10 2.37e-10
+Corner 0 0 0
+_467_/VDD    False
+_467_/VSS    False
+_468_/A    False
+_468_/A 6.4e-11 6.36e-11 2.16e-10 2.12e-10
+Corner 0 1.7e-15 1.55e-15
+_468_/ZN    False
+_468_/ZN 6.36e-11 6.4e-11 2.12e-10 2.16e-10
+Corner 0 0 0
+_468_/VDD    False
+_468_/VSS    False
+_469_/A    False
+_469_/A -1.62e-11 -5.53e-12 2.17e-10 2.37e-10
+Corner 0 4e-15 3.8e-15
+_469_/B    False
+_469_/B 8.61e-11 9.41e-11 2.12e-10 2.16e-10
+Corner 0 4.84e-15 4.42e-15
+_469_/ZN    False
+_469_/ZN -1.62e-11 -5.53e-12 2.16e-10 2.12e-10
+Corner 0 0 0
+_469_/VDD    False
+_469_/VSS    False
+_470_/A    False
+_470_/A -1.62e-11 -5.53e-12 3.43e-10 3.28e-10
+Corner 0 1.7e-15 1.55e-15
+_470_/ZN    False
+_470_/ZN -5.53e-12 -1.62e-11 3.28e-10 3.43e-10
+Corner 0 0 0
+_470_/VDD    False
+_470_/VSS    False
+_471_/A1    False
+_471_/A1 -3.86e-11 -3.43e-11 2.5e-10 2.79e-10
+Corner 0 1.6e-15 1.53e-15
+_471_/A2    False
+_471_/A2 6.36e-11 6.4e-11 2.42e-10 2.55e-10
+Corner 0 1.66e-15 1.5e-15
+_471_/ZN    False
+_471_/ZN -3.43e-11 -3.86e-11 2.55e-10 2.42e-10
+Corner 0 0 0
+_471_/VDD    False
+_471_/VSS    False
+_472_/A1    False
+_472_/A1 -3.43e-11 -3.86e-11 2.55e-10 2.42e-10
+Corner 0 3.05e-15 2.93e-15
+_472_/A2    False
+_472_/A2 1.22e-10 1.24e-10 2.05e-10 2.03e-10
+Corner 0 3.45e-15 3.14e-15
+_472_/ZN    False
+_472_/ZN -3.86e-11 -3.43e-11 2.03e-10 2.05e-10
+Corner 0 0 0
+_472_/VDD    False
+_472_/VSS    False
+_473_/A    False
+_473_/A -3.86e-11 -3.43e-11 2.03e-10 2.05e-10
+Corner 0 4e-15 3.8e-15
+_473_/B    False
+_473_/B 9.81e-11 1.19e-10 2.06e-10 2.04e-10
+Corner 0 4.84e-15 4.42e-15
+_473_/ZN    False
+_473_/ZN -3.86e-11 -3.43e-11 2.04e-10 2.03e-10
+Corner 0 0 0
+_473_/VDD    False
+_473_/VSS    False
+_474_/A    False
+_474_/A 8.64e-11 1.13e-10 1.88e-10 1.89e-10
+Corner 0 2.23e-15 2.13e-15
+_474_/B    False
+_474_/B -1.96e-11 -1.23e-11 2.39e-10 2.61e-10
+Corner 0 2.57e-15 2.37e-15
+_474_/ZN    False
+_474_/ZN -1.96e-11 -1.23e-11 1.89e-10 1.88e-10
+Corner 0 0 0
+_474_/VDD    False
+_474_/VSS    False
+_475_/A    False
+_475_/A -1.96e-11 -1.23e-11 3.14e-10 3.02e-10
+Corner 0 1.7e-15 1.55e-15
+_475_/ZN    False
+_475_/ZN -1.23e-11 -1.96e-11 3.02e-10 3.14e-10
+Corner 0 0 0
+_475_/VDD    False
+_475_/VSS    False
+_476_/A1    False
+_476_/A1 -3.51e-11 -3.44e-11 2.62e-10 2.85e-10
+Corner 0 1.6e-15 1.53e-15
+_476_/A2    False
+_476_/A2 7.02e-11 8.79e-11 2.13e-10 2.2e-10
+Corner 0 1.66e-15 1.5e-15
+_476_/ZN    False
+_476_/ZN -3.44e-11 -3.51e-11 2.2e-10 2.13e-10
+Corner 0 0 0
+_476_/VDD    False
+_476_/VSS    False
+_477_/A1    False
+_477_/A1 -3.44e-11 -3.51e-11 2.2e-10 2.13e-10
+Corner 0 3.05e-15 2.93e-15
+_477_/A2    False
+_477_/A2 1.14e-10 1.06e-10 2.09e-10 2.13e-10
+Corner 0 3.45e-15 3.14e-15
+_477_/ZN    False
+_477_/ZN -3.51e-11 -3.44e-11 2.13e-10 2.09e-10
+Corner 0 0 0
+_477_/VDD    False
+_477_/VSS    False
+_478_/A    False
+_478_/A -3.51e-11 -3.44e-11 2.13e-10 2.09e-10
+Corner 0 4e-15 3.8e-15
+_478_/B    False
+_478_/B 9.44e-11 1.11e-10 2.11e-10 2.07e-10
+Corner 0 4.84e-15 4.42e-15
+_478_/ZN    False
+_478_/ZN -3.51e-11 -3.44e-11 2.07e-10 2.11e-10
+Corner 0 0 0
+_478_/VDD    False
+_478_/VSS    False
+_479_/A    False
+_479_/A 7.38e-11 7.64e-11 2.16e-10 2.18e-10
+Corner 0 2.23e-15 2.13e-15
+_479_/B    False
+_479_/B -4.66e-11 -3.85e-11 2.39e-10 2.41e-10
+Corner 0 2.57e-15 2.37e-15
+_479_/ZN    False
+_479_/ZN -4.66e-11 -3.83e-11 2.18e-10 2.16e-10
+Corner 0 0 0
+_479_/VDD    False
+_479_/VSS    False
+_480_/A    False
+_480_/A -4.66e-11 -3.83e-11 3.48e-10 3.33e-10
+Corner 0 1.7e-15 1.55e-15
+_480_/ZN    False
+_480_/ZN -3.83e-11 -4.66e-11 3.33e-10 3.48e-10
+Corner 0 0 0
+_480_/VDD    False
+_480_/VSS    False
+_481_/A    False
+_481_/A 1.42e-10 1.52e-10 1.88e-10 1.89e-10
+Corner 0 2.23e-15 2.13e-15
+_481_/B    False
+_481_/B 1.54e-10 1.65e-10 1.79e-10 1.8e-10
+Corner 0 2.57e-15 2.37e-15
+_481_/ZN    False
+_481_/ZN 1.42e-10 1.52e-10 1.8e-10 1.79e-10
+Corner 0 0 0
+_481_/VDD    False
+_481_/VSS    False
+_482_/A1    False
+_482_/A1 1.99e-10 2.44e-10 2.08e-10 1.59e-10
+Corner 0 1.52e-15 1.52e-15
+_482_/A2    False
+_482_/A2 2.04e-10 2.44e-10 2.03e-10 1.59e-10
+Corner 0 1.6e-15 1.54e-15
+_482_/A3    False
+_482_/A3 1.88e-10 2.36e-10 2.19e-10 1.67e-10
+Corner 0 1.64e-15 1.54e-15
+_482_/A4    False
+_482_/A4 1.99e-10 2.35e-10 2.08e-10 1.68e-10
+Corner 0 1.66e-15 1.49e-15
+_482_/ZN    False
+_482_/ZN 2.35e-10 1.88e-10 1.59e-10 2.03e-10
+Corner 0 0 0
+_482_/VDD    False
+_482_/VSS    False
+_483_/A1    False
+_483_/A1 2e-10 2.46e-10 2.08e-10 1.57e-10
+Corner 0 1.59e-15 1.56e-15
+_483_/A2    False
+_483_/A2 1.97e-10 2.45e-10 2.11e-10 1.58e-10
+Corner 0 1.62e-15 1.53e-15
+_483_/A3    False
+_483_/A3 1.88e-10 2.34e-10 2.19e-10 1.69e-10
+Corner 0 1.65e-15 1.49e-15
+_483_/ZN    False
+_483_/ZN 2.34e-10 1.88e-10 1.57e-10 2.08e-10
+Corner 0 0 0
+_483_/VDD    False
+_483_/VSS    False
+_484_/A1    False
+_484_/A1 2.35e-10 1.88e-10 1.59e-10 2.03e-10
+Corner 0 1.76e-15 1.4e-15
+_484_/A2    False
+_484_/A2 2.7e-10 2.4e-10 1.34e-10 1.67e-10
+Corner 0 1.66e-15 1.48e-15
+_484_/A3    False
+_484_/A3 2.34e-10 1.88e-10 1.57e-10 2.08e-10
+Corner 0 1.62e-15 1.55e-15
+_484_/ZN    False
+_484_/ZN 1.88e-10 2.34e-10 1.67e-10 1.34e-10
+Corner 0 0 0
+_484_/VDD    False
+_484_/VSS    False
+_485_/A    False
+_485_/A 2.26e-10 2.04e-10 1.31e-10 1.23e-10
+Corner 0 1.7e-15 1.55e-15
+_485_/ZN    False
+_485_/ZN 2.04e-10 2.26e-10 1.23e-10 1.31e-10
+Corner 0 0 0
+_485_/VDD    False
+_485_/VSS    False
+_486_/A1    False
+_486_/A1 2.07e-10 2.31e-10 2.01e-10 1.72e-10
+Corner 0 1.52e-15 1.52e-15
+_486_/A2    False
+_486_/A2 2.04e-10 2.31e-10 2.04e-10 1.72e-10
+Corner 0 1.6e-15 1.54e-15
+_486_/A3    False
+_486_/A3 2.05e-10 2.3e-10 2.03e-10 1.73e-10
+Corner 0 1.64e-15 1.54e-15
+_486_/A4    False
+_486_/A4 2.04e-10 2.26e-10 2.04e-10 1.77e-10
+Corner 0 1.66e-15 1.49e-15
+_486_/ZN    False
+_486_/ZN 2.26e-10 2.04e-10 1.72e-10 2.01e-10
+Corner 0 0 0
+_486_/VDD    False
+_486_/VSS    False
+_487_/A1    False
+_487_/A1 2.04e-10 2.3e-10 2.03e-10 1.72e-10
+Corner 0 1.52e-15 1.52e-15
+_487_/A2    False
+_487_/A2 2.07e-10 2.35e-10 2e-10 1.67e-10
+Corner 0 1.6e-15 1.54e-15
+_487_/A3    False
+_487_/A3 1.94e-10 2.27e-10 2.13e-10 1.76e-10
+Corner 0 1.64e-15 1.54e-15
+_487_/A4    False
+_487_/A4 1.94e-10 2.27e-10 2.14e-10 1.76e-10
+Corner 0 1.66e-15 1.49e-15
+_487_/ZN    False
+_487_/ZN 2.27e-10 1.94e-10 1.67e-10 2e-10
+Corner 0 0 0
+_487_/VDD    False
+_487_/VSS    False
+_488_/A1    False
+_488_/A1 2.26e-10 2.04e-10 1.72e-10 2.01e-10
+Corner 0 1.71e-15 1.41e-15
+_488_/A2    False
+_488_/A2 2.27e-10 1.94e-10 1.67e-10 2e-10
+Corner 0 1.65e-15 1.56e-15
+_488_/ZN    False
+_488_/ZN 1.94e-10 2.26e-10 2e-10 1.67e-10
+Corner 0 0 0
+_488_/VDD    False
+_488_/VSS    False
+_489_/A1    False
+_489_/A1 1.88e-10 2.34e-10 1.67e-10 1.34e-10
+Corner 0 1.6e-15 1.53e-15
+_489_/A2    False
+_489_/A2 1.94e-10 2.26e-10 2e-10 1.67e-10
+Corner 0 1.66e-15 1.5e-15
+_489_/ZN    False
+_489_/ZN 2.26e-10 1.88e-10 1.34e-10 1.67e-10
+Corner 0 0 0
+_489_/VDD    False
+_489_/VSS    False
+_490_/A    False
+_490_/A 2.26e-10 1.88e-10 1.44e-10 1.71e-10
+Corner 0 1.7e-15 1.55e-15
+_490_/ZN    False
+_490_/ZN 1.88e-10 2.26e-10 1.71e-10 1.44e-10
+Corner 0 0 0
+_490_/VDD    False
+_490_/VSS    False
+_492_/A    False
+_492_/A 1.04e-10 1.17e-10 2.34e-10 1.82e-10
+Corner 0 1.7e-15 1.55e-15
+_492_/ZN    False
+_492_/ZN 1.17e-10 1.04e-10 1.82e-10 2.34e-10
+Corner 0 0 0
+_492_/VDD    False
+_492_/VSS    False
+_493_/A1    False
+_493_/A1 2.3e-10 1.81e-10 1.82e-10 2.34e-10
+Corner 0 9.47e-16 7.92e-16
+_493_/A2    False
+_493_/A2 2.99e-10 2.67e-10 1.13e-10 1.47e-10
+Corner 0 9.42e-16 8.95e-16
+_493_/ZN    False
+_493_/ZN 2.3e-10 1.81e-10 1.13e-10 1.47e-10
+Corner 0 0 0
+_493_/VDD    False
+_493_/VSS    False
+_497_/A1    False
+_497_/A1 1.59e-10 2.35e-10 2.48e-10 1.76e-10
+Corner 0 1.6e-15 1.53e-15
+_497_/A2    False
+_497_/A2 2.96e-10 3.09e-10 1.11e-10 1.02e-10
+Corner 0 1.66e-15 1.5e-15
+_497_/ZN    False
+_497_/ZN 2.35e-10 1.59e-10 1.02e-10 1.11e-10
+Corner 0 0 0
+_497_/VDD    False
+_497_/VSS    False
+_498_/A1    False
+_498_/A1 1.88e-10 2.26e-10 1.71e-10 1.44e-10
+Corner 0 1.67e-15 1.46e-15
+_498_/A2    False
+_498_/A2 2.3e-10 1.81e-10 1.13e-10 1.47e-10
+Corner 0 1.58e-15 1.56e-15
+_498_/B1    False
+_498_/B1 3.28e-10 3.15e-10 8.54e-11 9.81e-11
+Corner 0 1.67e-15 1.41e-15
+_498_/B2    False
+_498_/B2 2.35e-10 1.59e-10 1.02e-10 1.11e-10
+Corner 0 1.62e-15 1.55e-15
+_498_/ZN    False
+_498_/ZN 1.59e-10 1.88e-10 9.81e-11 8.54e-11
+Corner 0 0 0
+_498_/VDD    False
+_498_/VSS    False
+_500_/A1    False
+_500_/A1 1.17e-10 1.04e-10 2.17e-10 2.46e-10
+Corner 0 8.8e-16 8.66e-16
+_500_/A2    False
+_500_/A2 1.37e-10 1.34e-10 1.96e-10 2.15e-10
+Corner 0 9.28e-16 8.81e-16
+_500_/A3    False
+_500_/A3 1.7e-10 1.84e-10 1.64e-10 1.65e-10
+Corner 0 9.65e-16 8.83e-16
+_500_/ZN    False
+_500_/ZN 1.17e-10 1.04e-10 1.64e-10 1.65e-10
+Corner 0 0 0
+_500_/VDD    False
+_500_/VSS    False
+_501_/A    False
+_501_/A 3.02e-10 2.7e-10 9.75e-11 1.24e-10
+Corner 0 1.63e-15 1.54e-15
+_501_/B1    False
+_501_/B1 1.83e-10 1.59e-10 1.64e-10 1.65e-10
+Corner 0 1.65e-15 1.45e-15
+_501_/B2    False
+_501_/B2 3.07e-10 2.83e-10 9.36e-11 1.22e-10
+Corner 0 1.68e-15 1.41e-15
+_501_/ZN    False
+_501_/ZN 1.59e-10 1.83e-10 1.22e-10 9.36e-11
+Corner 0 0 0
+_501_/VDD    False
+_501_/VSS    False
+_503_/A    False
+_503_/A 1.92e-10 2.45e-10 2.29e-10 1.72e-10
+Corner 0 1.7e-15 1.55e-15
+_503_/ZN    False
+_503_/ZN 2.45e-10 1.92e-10 1.72e-10 2.29e-10
+Corner 0 0 0
+_503_/VDD    False
+_503_/VSS    False
+_504_/A    False
+_504_/A 1.66e-10 2.02e-10 1.22e-10 9.36e-11
+Corner 0 1.67e-15 1.52e-15
+_504_/B1    False
+_504_/B1 2.45e-10 1.92e-10 1.72e-10 2.29e-10
+Corner 0 1.66e-15 1.46e-15
+_504_/B2    False
+_504_/B2 3.34e-10 3.26e-10 8.32e-11 9.43e-11
+Corner 0 1.57e-15 1.56e-15
+_504_/ZN    False
+_504_/ZN 1.92e-10 1.66e-10 9.36e-11 8.32e-11
+Corner 0 0 0
+_504_/VDD    False
+_504_/VSS    False
+_505_/A1    False
+_505_/A1 1.59e-10 1.83e-10 1.32e-10 1.07e-10
+Corner 0 1.6e-15 1.53e-15
+_505_/A2    False
+_505_/A2 3.04e-10 3.07e-10 1.12e-10 1.08e-10
+Corner 0 1.66e-15 1.5e-15
+_505_/ZN    False
+_505_/ZN 1.83e-10 1.59e-10 1.07e-10 1.12e-10
+Corner 0 0 0
+_505_/VDD    False
+_505_/VSS    False
+_506_/A    False
+_506_/A 1.83e-10 1.59e-10 1.07e-10 1.12e-10
+Corner 0 1.67e-15 1.52e-15
+_506_/B1    False
+_506_/B1 2.4e-10 1.99e-10 1.34e-10 1.67e-10
+Corner 0 1.66e-15 1.46e-15
+_506_/B2    False
+_506_/B2 2.35e-10 1.84e-10 1.15e-10 1.49e-10
+Corner 0 1.57e-15 1.56e-15
+_506_/ZN    False
+_506_/ZN 1.59e-10 1.83e-10 1.12e-10 1.07e-10
+Corner 0 0 0
+_506_/VDD    False
+_506_/VSS    False
+_507_/A1    False
+_507_/A1 1.04e-10 7.77e-11 2.42e-10 2.77e-10
+Corner 0 1.6e-15 1.53e-15
+_507_/A2    False
+_507_/A2 8.63e-11 8.23e-11 2.6e-10 2.72e-10
+Corner 0 1.66e-15 1.5e-15
+_507_/ZN    False
+_507_/ZN 7.77e-11 8.63e-11 2.72e-10 2.42e-10
+Corner 0 0 0
+_507_/VDD    False
+_507_/VSS    False
+_508_/A    False
+_508_/A 7.77e-11 8.63e-11 2.72e-10 2.42e-10
+Corner 0 1.67e-15 1.52e-15
+_508_/B1    False
+_508_/B1 3.19e-11 7.12e-11 2.99e-10 2.56e-10
+Corner 0 1.66e-15 1.46e-15
+_508_/B2    False
+_508_/B2 5.43e-11 6.36e-11 2.91e-10 2.7e-10
+Corner 0 1.57e-15 1.56e-15
+_508_/ZN    False
+_508_/ZN 6.36e-11 3.19e-11 2.42e-10 2.72e-10
+Corner 0 0 0
+_508_/VDD    False
+_508_/VSS    False
+_509_/A1    False
+_509_/A1 5.28e-11 4.07e-11 2.81e-10 2.64e-10
+Corner 0 1.71e-15 1.41e-15
+_509_/A2    False
+_509_/A2 4.26e-11 3.84e-11 2.9e-10 2.72e-10
+Corner 0 1.65e-15 1.56e-15
+_509_/ZN    False
+_509_/ZN 3.84e-11 4.26e-11 2.64e-10 2.81e-10
+Corner 0 0 0
+_509_/VDD    False
+_509_/VSS    False
+_510_/A    False
+_510_/A 6.36e-11 3.19e-11 2.42e-10 2.72e-10
+Corner 0 1.63e-15 1.54e-15
+_510_/B1    False
+_510_/B1 5.27e-11 3.45e-11 2.51e-10 2.72e-10
+Corner 0 1.65e-15 1.45e-15
+_510_/B2    False
+_510_/B2 5.89e-11 4.26e-11 2.64e-10 2.9e-10
+Corner 0 1.68e-15 1.41e-15
+_510_/ZN    False
+_510_/ZN 3.19e-11 5.27e-11 2.72e-10 2.42e-10
+Corner 0 0 0
+_510_/VDD    False
+_510_/VSS    False
+_511_/A1    False
+_511_/A1 9.87e-12 5.17e-11 2.98e-10 2.79e-10
+Corner 0 1.6e-15 1.53e-15
+_511_/A2    False
+_511_/A2 3.84e-11 5.71e-11 2.85e-10 2.81e-10
+Corner 0 1.66e-15 1.5e-15
+_511_/ZN    False
+_511_/ZN 5.17e-11 9.87e-12 2.79e-10 2.85e-10
+Corner 0 0 0
+_511_/VDD    False
+_511_/VSS    False
+_512_/A    False
+_512_/A 3.19e-11 5.27e-11 2.72e-10 2.42e-10
+Corner 0 1.67e-15 1.52e-15
+_512_/B1    False
+_512_/B1 9.27e-12 1.87e-11 2.85e-10 2.63e-10
+Corner 0 1.66e-15 1.46e-15
+_512_/B2    False
+_512_/B2 5.17e-11 1.14e-11 2.79e-10 2.85e-10
+Corner 0 1.57e-15 1.56e-15
+_512_/ZN    False
+_512_/ZN 1.14e-11 9.27e-12 2.42e-10 2.72e-10
+Corner 0 0 0
+_512_/VDD    False
+_512_/VSS    False
+_513_/A    False
+_513_/A 1.14e-11 9.27e-12 2.42e-10 2.72e-10
+Corner 0 3.25e-15 2.94e-15
+_513_/ZN    False
+_513_/ZN 9.27e-12 1.14e-11 2.72e-10 2.42e-10
+Corner 0 0 0
+_513_/VDD    False
+_513_/VSS    False
+_514_/A    False
+_514_/A 5.34e-11 9.87e-12 2.79e-10 2.91e-10
+Corner 0 1.7e-15 1.55e-15
+_514_/ZN    False
+_514_/ZN 9.87e-12 5.34e-11 2.91e-10 2.79e-10
+Corner 0 0 0
+_514_/VDD    False
+_514_/VSS    False
+_515_/A1    False
+_515_/A1 1.92e-11 4.07e-11 2.73e-10 2.83e-10
+Corner 0 2.98e-15 2.93e-15
+_515_/A2    False
+_515_/A2 1.76e-11 5.57e-11 2.96e-10 2.86e-10
+Corner 0 3.29e-15 3.1e-15
+_515_/A3    False
+_515_/A3 9.87e-12 5.34e-11 2.91e-10 2.79e-10
+Corner 0 3.56e-15 3.24e-15
+_515_/ZN    False
+_515_/ZN 4.07e-11 9.87e-12 2.79e-10 2.73e-10
+Corner 0 0 0
+_515_/VDD    False
+_515_/VSS    False
+_516_/A1    False
+_516_/A1 3.18e-11 4.16e-11 2.74e-10 2.59e-10
+Corner 0 2.98e-15 2.93e-15
+_516_/A2    False
+_516_/A2 6.17e-11 3.99e-11 2.83e-10 2.9e-10
+Corner 0 3.29e-15 3.1e-15
+_516_/A3    False
+_516_/A3 1.8e-10 2.15e-10 2.26e-10 1.91e-10
+Corner 0 3.56e-15 3.24e-15
+_516_/ZN    False
+_516_/ZN 3.99e-11 3.18e-11 1.91e-10 2.26e-10
+Corner 0 0 0
+_516_/VDD    False
+_516_/VSS    False
+_517_/A1    False
+_517_/A1 2.39e-10 2.34e-10 1.71e-10 1.8e-10
+Corner 0 5.95e-15 5.7e-15
+_517_/A2    False
+_517_/A2 3.99e-11 3.18e-11 1.94e-10 2.34e-10
+Corner 0 6.2e-15 5.62e-15
+_517_/ZN    False
+_517_/ZN 3.18e-11 3.99e-11 1.8e-10 1.71e-10
+Corner 0 0 0
+_517_/VDD    False
+_517_/VSS    False
+_519_/A    False
+_519_/A 2.52e-10 2.37e-10 1.64e-10 1.77e-10
+Corner 0 9.46e-16 9.07e-16
+_519_/B    False
+_519_/B 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.45e-16 9e-16
+_519_/S    False
+_519_/S 1.24e-10 1.91e-10 2.7e-10 2.2e-10
+Corner 0 1.92e-15 1.81e-15
+_519_/Z    False
+_519_/Z 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+_519_/VDD    False
+_519_/VSS    False
+_520_/A1    False
+_520_/A1 3.39e-11 4.23e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_520_/A2    False
+_520_/A2 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 1.66e-15 1.5e-15
+_520_/ZN    False
+_520_/ZN 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 0 0
+_520_/VDD    False
+_520_/VSS    False
+_522_/A    False
+_522_/A 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 1.67e-15 1.52e-15
+_522_/B1    False
+_522_/B1 2.92e-10 2.96e-10 1.27e-10 1.23e-10
+Corner 0 1.66e-15 1.46e-15
+_522_/B2    False
+_522_/B2 4.44e-11 5.08e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_522_/ZN    False
+_522_/ZN 3.39e-11 4.23e-11 1.18e-10 1.27e-10
+Corner 0 0 0
+_522_/VDD    False
+_522_/VSS    False
+_523_/A    False
+_523_/A 2.36e-10 2.34e-10 1.8e-10 1.8e-10
+Corner 0 9.46e-16 9.07e-16
+_523_/B    False
+_523_/B 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.45e-16 9e-16
+_523_/S    False
+_523_/S 1.22e-10 1.89e-10 2.71e-10 2.21e-10
+Corner 0 1.92e-15 1.81e-15
+_523_/Z    False
+_523_/Z 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+_523_/VDD    False
+_523_/VSS    False
+_524_/A1    False
+_524_/A1 3.26e-11 4.07e-11 1.82e-10 1.72e-10
+Corner 0 1.6e-15 1.53e-15
+_524_/A2    False
+_524_/A2 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 1.66e-15 1.5e-15
+_524_/ZN    False
+_524_/ZN 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 0 0
+_524_/VDD    False
+_524_/VSS    False
+_525_/A    False
+_525_/A 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 1.67e-15 1.52e-15
+_525_/B1    False
+_525_/B1 3.02e-10 2.95e-10 1.17e-10 1.24e-10
+Corner 0 1.66e-15 1.46e-15
+_525_/B2    False
+_525_/B2 4.29e-11 4.94e-11 1.73e-10 1.69e-10
+Corner 0 1.57e-15 1.56e-15
+_525_/ZN    False
+_525_/ZN 3.26e-11 4.07e-11 1.2e-10 1.17e-10
+Corner 0 0 0
+_525_/VDD    False
+_525_/VSS    False
+_526_/A1    False
+_526_/A1 1.47e-10 2e-10 2.58e-10 1.99e-10
+Corner 0 1.6e-15 1.53e-15
+_526_/A2    False
+_526_/A2 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_526_/ZN    False
+_526_/ZN 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 0 0
+_526_/VDD    False
+_526_/VSS    False
+_527_/A    False
+_527_/A 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_527_/B1    False
+_527_/B1 1.62e-10 2.16e-10 2.44e-10 1.98e-10
+Corner 0 1.66e-15 1.46e-15
+_527_/B2    False
+_527_/B2 2.54e-10 2.48e-10 1.51e-10 1.66e-10
+Corner 0 1.57e-15 1.56e-15
+_527_/ZN    False
+_527_/ZN 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+_527_/VDD    False
+_527_/VSS    False
+_528_/A1    False
+_528_/A1 3.39e-11 4.19e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_528_/A2    False
+_528_/A2 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_528_/ZN    False
+_528_/ZN 4.19e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 0 0
+_528_/VDD    False
+_528_/VSS    False
+_529_/A    False
+_529_/A 4.19e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_529_/B1    False
+_529_/B1 2.96e-10 2.89e-10 1.23e-10 1.3e-10
+Corner 0 1.66e-15 1.46e-15
+_529_/B2    False
+_529_/B2 4.44e-11 5.08e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_529_/ZN    False
+_529_/ZN 3.39e-11 4.19e-11 1.16e-10 1.22e-10
+Corner 0 0 0
+_529_/VDD    False
+_529_/VSS    False
+_530_/A1    False
+_530_/A1 1.47e-10 2e-10 2.58e-10 1.99e-10
+Corner 0 1.6e-15 1.53e-15
+_530_/A2    False
+_530_/A2 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_530_/ZN    False
+_530_/ZN 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 0 0
+_530_/VDD    False
+_530_/VSS    False
+_531_/A    False
+_531_/A 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_531_/B1    False
+_531_/B1 1.62e-10 2.16e-10 2.44e-10 1.98e-10
+Corner 0 1.66e-15 1.46e-15
+_531_/B2    False
+_531_/B2 2.54e-10 2.45e-10 1.52e-10 1.69e-10
+Corner 0 1.57e-15 1.56e-15
+_531_/ZN    False
+_531_/ZN 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+_531_/VDD    False
+_531_/VSS    False
+_532_/A1    False
+_532_/A1 3.39e-11 4.19e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_532_/A2    False
+_532_/A2 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_532_/ZN    False
+_532_/ZN 4.19e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 0 0
+_532_/VDD    False
+_532_/VSS    False
+_533_/A    False
+_533_/A 4.19e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_533_/B1    False
+_533_/B1 3.03e-10 2.96e-10 1.16e-10 1.23e-10
+Corner 0 1.66e-15 1.46e-15
+_533_/B2    False
+_533_/B2 4.44e-11 5.08e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_533_/ZN    False
+_533_/ZN 3.39e-11 4.19e-11 1.16e-10 1.16e-10
+Corner 0 0 0
+_533_/VDD    False
+_533_/VSS    False
+_536_/A    False
+_536_/A 2.35e-10 2.33e-10 1.81e-10 1.81e-10
+Corner 0 9.46e-16 9.07e-16
+_536_/B    False
+_536_/B 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.45e-16 9e-16
+_536_/S    False
+_536_/S 1.24e-10 1.91e-10 2.7e-10 2.2e-10
+Corner 0 1.92e-15 1.81e-15
+_536_/Z    False
+_536_/Z 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+_536_/VDD    False
+_536_/VSS    False
+_537_/A1    False
+_537_/A1 3.39e-11 4.23e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_537_/A2    False
+_537_/A2 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 1.66e-15 1.5e-15
+_537_/ZN    False
+_537_/ZN 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 0 0
+_537_/VDD    False
+_537_/VSS    False
+_538_/A    False
+_538_/A 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 1.67e-15 1.52e-15
+_538_/B1    False
+_538_/B1 2.92e-10 2.89e-10 1.27e-10 1.3e-10
+Corner 0 1.66e-15 1.46e-15
+_538_/B2    False
+_538_/B2 4.44e-11 5.08e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_538_/ZN    False
+_538_/ZN 3.39e-11 4.23e-11 1.18e-10 1.27e-10
+Corner 0 0 0
+_538_/VDD    False
+_538_/VSS    False
+_539_/A1    False
+_539_/A1 1.47e-10 2e-10 2.58e-10 1.99e-10
+Corner 0 1.6e-15 1.53e-15
+_539_/A2    False
+_539_/A2 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_539_/ZN    False
+_539_/ZN 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 0 0
+_539_/VDD    False
+_539_/VSS    False
+_540_/A    False
+_540_/A 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_540_/B1    False
+_540_/B1 1.62e-10 2.16e-10 2.44e-10 1.98e-10
+Corner 0 1.66e-15 1.46e-15
+_540_/B2    False
+_540_/B2 2.49e-10 2.4e-10 1.57e-10 1.74e-10
+Corner 0 1.57e-15 1.56e-15
+_540_/ZN    False
+_540_/ZN 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+_540_/VDD    False
+_540_/VSS    False
+_541_/A1    False
+_541_/A1 3.39e-11 4.19e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_541_/A2    False
+_541_/A2 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_541_/ZN    False
+_541_/ZN 4.19e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 0 0
+_541_/VDD    False
+_541_/VSS    False
+_542_/A    False
+_542_/A 4.19e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_542_/B1    False
+_542_/B1 2.91e-10 2.91e-10 1.27e-10 1.28e-10
+Corner 0 1.66e-15 1.46e-15
+_542_/B2    False
+_542_/B2 4.44e-11 5.08e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_542_/ZN    False
+_542_/ZN 3.39e-11 4.19e-11 1.16e-10 1.22e-10
+Corner 0 0 0
+_542_/VDD    False
+_542_/VSS    False
+_543_/A    False
+_543_/A 2.1e-10 2.09e-10 2.05e-10 2.05e-10
+Corner 0 9.46e-16 9.07e-16
+_543_/B    False
+_543_/B 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.45e-16 9e-16
+_543_/S    False
+_543_/S 1.24e-10 1.91e-10 2.7e-10 2.2e-10
+Corner 0 1.92e-15 1.81e-15
+_543_/Z    False
+_543_/Z 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+_543_/VDD    False
+_543_/VSS    False
+_544_/A1    False
+_544_/A1 3.39e-11 4.23e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_544_/A2    False
+_544_/A2 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 1.66e-15 1.5e-15
+_544_/ZN    False
+_544_/ZN 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 0 0
+_544_/VDD    False
+_544_/VSS    False
+_545_/A    False
+_545_/A 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 1.67e-15 1.52e-15
+_545_/B1    False
+_545_/B1 2.93e-10 2.88e-10 1.25e-10 1.32e-10
+Corner 0 1.66e-15 1.46e-15
+_545_/B2    False
+_545_/B2 4.44e-11 5.07e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_545_/ZN    False
+_545_/ZN 3.39e-11 4.23e-11 1.18e-10 1.25e-10
+Corner 0 0 0
+_545_/VDD    False
+_545_/VSS    False
+_546_/A    False
+_546_/A 2.5e-10 2.36e-10 1.65e-10 1.78e-10
+Corner 0 9.46e-16 9.07e-16
+_546_/B    False
+_546_/B 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.45e-16 9e-16
+_546_/S    False
+_546_/S 1.24e-10 1.91e-10 2.7e-10 2.2e-10
+Corner 0 1.92e-15 1.81e-15
+_546_/Z    False
+_546_/Z 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+_546_/VDD    False
+_546_/VSS    False
+_547_/A1    False
+_547_/A1 3.39e-11 4.23e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_547_/A2    False
+_547_/A2 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 1.66e-15 1.5e-15
+_547_/ZN    False
+_547_/ZN 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 0 0
+_547_/VDD    False
+_547_/VSS    False
+_548_/A    False
+_548_/A 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 1.67e-15 1.52e-15
+_548_/B1    False
+_548_/B1 2.94e-10 2.9e-10 1.25e-10 1.29e-10
+Corner 0 1.66e-15 1.46e-15
+_548_/B2    False
+_548_/B2 4.44e-11 5.07e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_548_/ZN    False
+_548_/ZN 3.39e-11 4.23e-11 1.18e-10 1.25e-10
+Corner 0 0 0
+_548_/VDD    False
+_548_/VSS    False
+_549_/A    False
+_549_/A 2.36e-10 2.34e-10 1.8e-10 1.8e-10
+Corner 0 9.46e-16 9.07e-16
+_549_/B    False
+_549_/B 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.45e-16 9e-16
+_549_/S    False
+_549_/S 1.24e-10 1.91e-10 2.7e-10 2.2e-10
+Corner 0 1.92e-15 1.81e-15
+_549_/Z    False
+_549_/Z 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+_549_/VDD    False
+_549_/VSS    False
+_550_/A1    False
+_550_/A1 3.39e-11 4.23e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_550_/A2    False
+_550_/A2 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 1.66e-15 1.5e-15
+_550_/ZN    False
+_550_/ZN 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 0 0
+_550_/VDD    False
+_550_/VSS    False
+_551_/A    False
+_551_/A 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 1.67e-15 1.52e-15
+_551_/B1    False
+_551_/B1 2.96e-10 2.91e-10 1.22e-10 1.28e-10
+Corner 0 1.66e-15 1.46e-15
+_551_/B2    False
+_551_/B2 4.44e-11 5.07e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_551_/ZN    False
+_551_/ZN 3.39e-11 4.23e-11 1.18e-10 1.22e-10
+Corner 0 0 0
+_551_/VDD    False
+_551_/VSS    False
+_552_/A1    False
+_552_/A1 1.47e-10 2e-10 2.58e-10 1.99e-10
+Corner 0 1.6e-15 1.53e-15
+_552_/A2    False
+_552_/A2 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_552_/ZN    False
+_552_/ZN 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 0 0
+_552_/VDD    False
+_552_/VSS    False
+_553_/A    False
+_553_/A 2e-10 1.47e-10 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_553_/B1    False
+_553_/B1 1.62e-10 2.16e-10 2.44e-10 1.98e-10
+Corner 0 1.66e-15 1.46e-15
+_553_/B2    False
+_553_/B2 2.52e-10 2.3e-10 1.53e-10 1.84e-10
+Corner 0 1.57e-15 1.56e-15
+_553_/ZN    False
+_553_/ZN 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+_553_/VDD    False
+_553_/VSS    False
+_554_/A1    False
+_554_/A1 3.39e-11 4.18e-11 1.81e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_554_/A2    False
+_554_/A2 1.47e-10 1.62e-10 1.16e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_554_/ZN    False
+_554_/ZN 4.18e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 0 0
+_554_/VDD    False
+_554_/VSS    False
+_555_/A    False
+_555_/A 4.18e-11 3.39e-11 1.22e-10 1.16e-10
+Corner 0 1.67e-15 1.52e-15
+_555_/B1    False
+_555_/B1 2.96e-10 2.88e-10 1.23e-10 1.31e-10
+Corner 0 1.66e-15 1.46e-15
+_555_/B2    False
+_555_/B2 4.44e-11 5.07e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_555_/ZN    False
+_555_/ZN 3.39e-11 4.18e-11 1.16e-10 1.22e-10
+Corner 0 0 0
+_555_/VDD    False
+_555_/VSS    False
+_556_/A    False
+_556_/A 2.57e-10 2.4e-10 1.59e-10 1.74e-10
+Corner 0 9.46e-16 9.07e-16
+_556_/B    False
+_556_/B 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.45e-16 9e-16
+_556_/S    False
+_556_/S 1.24e-10 1.91e-10 2.7e-10 2.2e-10
+Corner 0 1.92e-15 1.81e-15
+_556_/Z    False
+_556_/Z 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+_556_/VDD    False
+_556_/VSS    False
+_557_/A1    False
+_557_/A1 3.39e-11 4.23e-11 1.8e-10 1.71e-10
+Corner 0 1.6e-15 1.53e-15
+_557_/A2    False
+_557_/A2 1.46e-10 1.24e-10 1.18e-10 1.5e-10
+Corner 0 1.66e-15 1.5e-15
+_557_/ZN    False
+_557_/ZN 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 0 0
+_557_/VDD    False
+_557_/VSS    False
+_558_/A    False
+_558_/A 4.23e-11 3.39e-11 1.5e-10 1.18e-10
+Corner 0 1.67e-15 1.52e-15
+_558_/B1    False
+_558_/B1 3.05e-10 3.01e-10 1.13e-10 1.19e-10
+Corner 0 1.66e-15 1.46e-15
+_558_/B2    False
+_558_/B2 4.44e-11 5.08e-11 1.72e-10 1.67e-10
+Corner 0 1.57e-15 1.56e-15
+_558_/ZN    False
+_558_/ZN 3.39e-11 4.23e-11 1.18e-10 1.13e-10
+Corner 0 0 0
+_558_/VDD    False
+_558_/VSS    False
+_559_/A    False
+_559_/A 2.36e-10 2.34e-10 1.8e-10 1.8e-10
+Corner 0 9.46e-16 9.07e-16
+_559_/B    False
+_559_/B 2.96e-10 2.62e-10 1.2e-10 1.52e-10
+Corner 0 9.45e-16 9e-16
+_559_/S    False
+_559_/S 1.22e-10 1.88e-10 2.72e-10 2.22e-10
+Corner 0 1.92e-15 1.81e-15
+_559_/Z    False
+_559_/Z 1.44e-10 1.22e-10 1.2e-10 1.52e-10
+Corner 0 0 0
+_559_/VDD    False
+_559_/VSS    False
+_560_/A1    False
+_560_/A1 3.18e-11 3.99e-11 1.83e-10 1.73e-10
+Corner 0 1.6e-15 1.53e-15
+_560_/A2    False
+_560_/A2 1.44e-10 1.22e-10 1.2e-10 1.52e-10
+Corner 0 1.66e-15 1.5e-15
+_560_/ZN    False
+_560_/ZN 3.99e-11 3.18e-11 1.52e-10 1.2e-10
+Corner 0 0 0
+_560_/VDD    False
+_560_/VSS    False
+_561_/A    False
+_561_/A 3.99e-11 3.18e-11 1.52e-10 1.2e-10
+Corner 0 1.67e-15 1.52e-15
+_561_/B1    False
+_561_/B1 3.03e-10 3e-10 1.16e-10 1.2e-10
+Corner 0 1.66e-15 1.46e-15
+_561_/B2    False
+_561_/B2 4.2e-11 4.87e-11 1.74e-10 1.7e-10
+Corner 0 1.57e-15 1.56e-15
+_561_/ZN    False
+_561_/ZN 3.18e-11 3.99e-11 1.2e-10 1.16e-10
+Corner 0 0 0
+_561_/VDD    False
+_561_/VSS    False
+_562_/A    False
+_562_/A 2.35e-10 2.33e-10 1.81e-10 1.81e-10
+Corner 0 9.46e-16 9.07e-16
+_562_/B    False
+_562_/B 2.96e-10 2.62e-10 1.2e-10 1.52e-10
+Corner 0 9.45e-16 9e-16
+_562_/S    False
+_562_/S 1.22e-10 1.88e-10 2.72e-10 2.22e-10
+Corner 0 1.92e-15 1.81e-15
+_562_/Z    False
+_562_/Z 1.44e-10 1.22e-10 1.2e-10 1.52e-10
+Corner 0 0 0
+_562_/VDD    False
+_562_/VSS    False
+_563_/A1    False
+_563_/A1 3.18e-11 3.99e-11 1.83e-10 1.73e-10
+Corner 0 1.6e-15 1.53e-15
+_563_/A2    False
+_563_/A2 1.44e-10 1.22e-10 1.2e-10 1.52e-10
+Corner 0 1.66e-15 1.5e-15
+_563_/ZN    False
+_563_/ZN 3.99e-11 3.18e-11 1.52e-10 1.2e-10
+Corner 0 0 0
+_563_/VDD    False
+_563_/VSS    False
+_564_/A    False
+_564_/A 3.99e-11 3.18e-11 1.52e-10 1.2e-10
+Corner 0 1.67e-15 1.52e-15
+_564_/B1    False
+_564_/B1 2.94e-10 2.91e-10 1.24e-10 1.29e-10
+Corner 0 1.66e-15 1.46e-15
+_564_/B2    False
+_564_/B2 4.2e-11 4.87e-11 1.74e-10 1.7e-10
+Corner 0 1.57e-15 1.56e-15
+_564_/ZN    False
+_564_/ZN 3.18e-11 3.99e-11 1.2e-10 1.24e-10
+Corner 0 0 0
+_564_/VDD    False
+_564_/VSS    False
+_565_/A    False
+_565_/A 2.36e-10 2.34e-10 1.8e-10 1.8e-10
+Corner 0 9.46e-16 9.07e-16
+_565_/B    False
+_565_/B 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.45e-16 9e-16
+_565_/S    False
+_565_/S 1.22e-10 1.89e-10 2.71e-10 2.21e-10
+Corner 0 1.92e-15 1.81e-15
+_565_/Z    False
+_565_/Z 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+_565_/VDD    False
+_565_/VSS    False
+_566_/A1    False
+_566_/A1 3.26e-11 4.07e-11 1.82e-10 1.72e-10
+Corner 0 1.6e-15 1.53e-15
+_566_/A2    False
+_566_/A2 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 1.66e-15 1.5e-15
+_566_/ZN    False
+_566_/ZN 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 0 0
+_566_/VDD    False
+_566_/VSS    False
+_567_/A    False
+_567_/A 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 1.67e-15 1.52e-15
+_567_/B1    False
+_567_/B1 3.02e-10 2.96e-10 1.16e-10 1.23e-10
+Corner 0 1.66e-15 1.46e-15
+_567_/B2    False
+_567_/B2 4.29e-11 4.94e-11 1.73e-10 1.69e-10
+Corner 0 1.57e-15 1.56e-15
+_567_/ZN    False
+_567_/ZN 3.26e-11 4.07e-11 1.2e-10 1.16e-10
+Corner 0 0 0
+_567_/VDD    False
+_567_/VSS    False
+_568_/A    False
+_568_/A 2.59e-10 2.41e-10 1.57e-10 1.73e-10
+Corner 0 9.46e-16 9.07e-16
+_568_/B    False
+_568_/B 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.45e-16 9e-16
+_568_/S    False
+_568_/S 1.22e-10 1.89e-10 2.71e-10 2.21e-10
+Corner 0 1.92e-15 1.81e-15
+_568_/Z    False
+_568_/Z 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+_568_/VDD    False
+_568_/VSS    False
+_569_/A1    False
+_569_/A1 3.26e-11 4.07e-11 1.82e-10 1.72e-10
+Corner 0 1.6e-15 1.53e-15
+_569_/A2    False
+_569_/A2 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 1.66e-15 1.5e-15
+_569_/ZN    False
+_569_/ZN 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 0 0
+_569_/VDD    False
+_569_/VSS    False
+_570_/A    False
+_570_/A 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 1.67e-15 1.52e-15
+_570_/B1    False
+_570_/B1 2.97e-10 2.99e-10 1.22e-10 1.21e-10
+Corner 0 1.66e-15 1.46e-15
+_570_/B2    False
+_570_/B2 4.29e-11 4.94e-11 1.73e-10 1.69e-10
+Corner 0 1.57e-15 1.56e-15
+_570_/ZN    False
+_570_/ZN 3.26e-11 4.07e-11 1.2e-10 1.22e-10
+Corner 0 0 0
+_570_/VDD    False
+_570_/VSS    False
+_571_/A    False
+_571_/A 2.36e-10 2.34e-10 1.8e-10 1.8e-10
+Corner 0 9.46e-16 9.07e-16
+_571_/B    False
+_571_/B 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.45e-16 9e-16
+_571_/S    False
+_571_/S 1.22e-10 1.89e-10 2.71e-10 2.21e-10
+Corner 0 1.92e-15 1.81e-15
+_571_/Z    False
+_571_/Z 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+_571_/VDD    False
+_571_/VSS    False
+_572_/A1    False
+_572_/A1 3.26e-11 4.07e-11 1.82e-10 1.72e-10
+Corner 0 1.6e-15 1.53e-15
+_572_/A2    False
+_572_/A2 1.44e-10 1.22e-10 1.2e-10 1.51e-10
+Corner 0 1.66e-15 1.5e-15
+_572_/ZN    False
+_572_/ZN 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 0 0
+_572_/VDD    False
+_572_/VSS    False
+_573_/A    False
+_573_/A 4.07e-11 3.26e-11 1.51e-10 1.2e-10
+Corner 0 1.67e-15 1.52e-15
+_573_/B1    False
+_573_/B1 3.04e-10 3e-10 1.15e-10 1.19e-10
+Corner 0 1.66e-15 1.46e-15
+_573_/B2    False
+_573_/B2 4.29e-11 4.94e-11 1.73e-10 1.69e-10
+Corner 0 1.57e-15 1.56e-15
+_573_/ZN    False
+_573_/ZN 3.26e-11 4.07e-11 1.19e-10 1.15e-10
+Corner 0 0 0
+_573_/VDD    False
+_573_/VSS    False
+_574_/A1    False
+_574_/A1 9.27e-12 1.14e-11 2.72e-10 2.82e-10
+Corner 0 3.05e-15 2.93e-15
+_574_/A2    False
+_574_/A2 4.16e-11 9.87e-12 2.79e-10 3.13e-10
+Corner 0 3.45e-15 3.14e-15
+_574_/ZN    False
+_574_/ZN 9.87e-12 9.27e-12 2.82e-10 2.72e-10
+Corner 0 0 0
+_574_/VDD    False
+_574_/VSS    False
+_575_/A1    False
+_575_/A1 9.87e-12 9.27e-12 2.9e-10 2.8e-10
+Corner 0 6.25e-15 6.16e-15
+_575_/A2    False
+_575_/A2 1.74e-10 2.13e-10 2.33e-10 1.76e-10
+Corner 0 6.91e-15 6.55e-15
+_575_/A3    False
+_575_/A3 2.03e-10 1.89e-10 2.04e-10 2e-10
+Corner 0 7.16e-15 6.53e-15
+_575_/ZN    False
+_575_/ZN 9.27e-12 9.87e-12 1.76e-10 2.04e-10
+Corner 0 0 0
+_575_/VDD    False
+_575_/VSS    False
+_576_/A    False
+_576_/A 9.27e-12 9.87e-12 1.95e-10 2.1e-10
+Corner 0 1.18e-14 1.08e-14
+_576_/ZN    False
+_576_/ZN 9.87e-12 9.27e-12 2.1e-10 1.95e-10
+Corner 0 0 0
+_576_/VDD    False
+_576_/VSS    False
+_577_/A1    False
+_577_/A1 1.16e-11 1.01e-11 2.1e-10 1.95e-10
+Corner 0 1.6e-15 1.53e-15
+_577_/A2    False
+_577_/A2 2.04e-10 2.08e-10 1.8e-10 1.79e-10
+Corner 0 1.66e-15 1.5e-15
+_577_/ZN    False
+_577_/ZN 1.01e-11 1.16e-11 1.79e-10 1.8e-10
+Corner 0 0 0
+_577_/VDD    False
+_577_/VSS    False
+_578_/A1    False
+_578_/A1 1.33e-11 3.67e-11 2.79e-10 2.42e-10
+Corner 0 5.65e-15 5.63e-15
+_578_/A2    False
+_578_/A2 4.07e-11 3.47e-11 2.9e-10 2.73e-10
+Corner 0 5.79e-15 5.58e-15
+_578_/A3    False
+_578_/A3 1.56e-10 2.09e-10 2.35e-10 1.74e-10
+Corner 0 5.91e-15 5.54e-15
+_578_/A4    False
+_578_/A4 1.84e-10 1.86e-10 2.08e-10 1.98e-10
+Corner 0 6.1e-15 5.5e-15
+_578_/ZN    False
+_578_/ZN 3.47e-11 1.33e-11 1.74e-10 2.08e-10
+Corner 0 0 0
+_578_/VDD    False
+_578_/VSS    False
+_580_/A    False
+_580_/A 1.01e-11 1.16e-11 1.79e-10 1.8e-10
+Corner 0 1.67e-15 1.52e-15
+_580_/B1    False
+_580_/B1 4.04e-11 1.92e-11 1.97e-10 2.27e-10
+Corner 0 1.66e-15 1.46e-15
+_580_/B2    False
+_580_/B2 2.55e-10 2.61e-10 1.59e-10 1.56e-10
+Corner 0 1.57e-15 1.56e-15
+_580_/ZN    False
+_580_/ZN 1.16e-11 1.01e-11 1.56e-10 1.59e-10
+Corner 0 0 0
+_580_/VDD    False
+_580_/VSS    False
+_581_/A1    False
+_581_/A1 2.19e-10 1.81e-10 1.84e-10 2.37e-10
+Corner 0 6.77e-15 5.59e-15
+_581_/A2    False
+_581_/A2 1.49e-10 1.92e-10 2.54e-10 2.26e-10
+Corner 0 6.68e-15 6.34e-15
+_581_/ZN    False
+_581_/ZN 1.81e-10 1.49e-10 2.26e-10 1.84e-10
+Corner 0 0 0
+_581_/VDD    False
+_581_/VSS    False
+_583_/A1    False
+_583_/A1 1.16e-11 1.01e-11 1.56e-10 1.59e-10
+Corner 0 1.6e-15 1.53e-15
+_583_/A2    False
+_583_/A2 1.83e-10 1.53e-10 2.26e-10 1.87e-10
+Corner 0 1.66e-15 1.5e-15
+_583_/ZN    False
+_583_/ZN 1.01e-11 1.16e-11 1.59e-10 1.56e-10
+Corner 0 0 0
+_583_/VDD    False
+_583_/VSS    False
+_584_/A1    False
+_584_/A1 1.87e-10 2.41e-10 2.27e-10 1.76e-10
+Corner 0 1.6e-15 1.53e-15
+_584_/A2    False
+_584_/A2 3.29e-10 3.19e-10 8.5e-11 9.82e-11
+Corner 0 1.66e-15 1.5e-15
+_584_/ZN    False
+_584_/ZN 2.41e-10 1.87e-10 9.82e-11 8.5e-11
+Corner 0 0 0
+_584_/VDD    False
+_584_/VSS    False
+_585_/A1    False
+_585_/A1 1.71e-10 2.05e-10 1.91e-10 1.79e-10
+Corner 0 6.77e-15 5.59e-15
+_585_/A2    False
+_585_/A2 1.03e-10 1.61e-10 2.58e-10 2.23e-10
+Corner 0 6.68e-15 6.34e-15
+_585_/ZN    False
+_585_/ZN 1.61e-10 1.03e-10 1.79e-10 1.91e-10
+Corner 0 0 0
+_585_/VDD    False
+_585_/VSS    False
+_587_/A1    False
+_587_/A1 1.95e-10 1.55e-10 1.8e-10 1.91e-10
+Corner 0 1.6e-15 1.53e-15
+_587_/A2    False
+_587_/A2 2.9e-10 2.93e-10 1.29e-10 1.26e-10
+Corner 0 1.66e-15 1.5e-15
+_587_/ZN    False
+_587_/ZN 1.55e-10 1.95e-10 1.26e-10 1.29e-10
+Corner 0 0 0
+_587_/VDD    False
+_587_/VSS    False
+_588_/A1    False
+_588_/A1 1.01e-11 1.16e-11 1.59e-10 1.56e-10
+Corner 0 1.59e-15 1.56e-15
+_588_/A2    False
+_588_/A2 2.41e-10 1.87e-10 9.82e-11 8.5e-11
+Corner 0 1.62e-15 1.53e-15
+_588_/A3    False
+_588_/A3 1.55e-10 1.95e-10 1.26e-10 1.29e-10
+Corner 0 1.65e-15 1.49e-15
+_588_/ZN    False
+_588_/ZN 1.16e-11 1.01e-11 8.5e-11 9.82e-11
+Corner 0 0 0
+_588_/VDD    False
+_588_/VSS    False
+_589_/A1    False
+_589_/A1 3.47e-11 1.62e-11 1.97e-10 2.32e-10
+Corner 0 1.67e-15 1.46e-15
+_589_/A2    False
+_589_/A2 2.62e-10 2.58e-10 1.45e-10 1.61e-10
+Corner 0 1.58e-15 1.56e-15
+_589_/B1    False
+_589_/B1 2.6e-11 1.66e-11 1.78e-10 2.06e-10
+Corner 0 1.67e-15 1.41e-15
+_589_/B2    False
+_589_/B2 1.55e-10 1.68e-10 1.91e-10 1.98e-10
+Corner 0 1.62e-15 1.55e-15
+_589_/ZN    False
+_589_/ZN 1.62e-11 2.6e-11 1.61e-10 1.45e-10
+Corner 0 0 0
+_589_/VDD    False
+_589_/VSS    False
+_590_/A1    False
+_590_/A1 1.62e-11 2.6e-11 1.61e-10 1.45e-10
+Corner 0 1.6e-15 1.53e-15
+_590_/A2    False
+_590_/A2 1.82e-10 1.5e-10 2.28e-10 1.89e-10
+Corner 0 1.66e-15 1.5e-15
+_590_/ZN    False
+_590_/ZN 2.6e-11 1.62e-11 1.45e-10 1.61e-10
+Corner 0 0 0
+_590_/VDD    False
+_590_/VSS    False
+_591_/A1    False
+_591_/A1 1.86e-10 2.38e-10 2.29e-10 1.78e-10
+Corner 0 1.6e-15 1.53e-15
+_591_/A2    False
+_591_/A2 3.28e-10 3.15e-10 8.69e-11 1e-10
+Corner 0 1.66e-15 1.5e-15
+_591_/ZN    False
+_591_/ZN 2.38e-10 1.86e-10 1e-10 8.69e-11
+Corner 0 0 0
+_591_/VDD    False
+_591_/VSS    False
+_592_/A1    False
+_592_/A1 1.95e-10 1.52e-10 1.81e-10 1.93e-10
+Corner 0 1.6e-15 1.53e-15
+_592_/A2    False
+_592_/A2 2.74e-10 2.88e-10 1.46e-10 1.29e-10
+Corner 0 1.66e-15 1.5e-15
+_592_/ZN    False
+_592_/ZN 1.52e-10 1.95e-10 1.29e-10 1.46e-10
+Corner 0 0 0
+_592_/VDD    False
+_592_/VSS    False
+_593_/A1    False
+_593_/A1 2.6e-11 1.62e-11 1.45e-10 1.61e-10
+Corner 0 1.59e-15 1.56e-15
+_593_/A2    False
+_593_/A2 2.38e-10 1.86e-10 1e-10 8.69e-11
+Corner 0 1.62e-15 1.53e-15
+_593_/A3    False
+_593_/A3 1.52e-10 1.95e-10 1.29e-10 1.46e-10
+Corner 0 1.65e-15 1.49e-15
+_593_/ZN    False
+_593_/ZN 1.62e-11 2.6e-11 8.69e-11 1e-10
+Corner 0 0 0
+_593_/VDD    False
+_593_/VSS    False
+_594_/A1    False
+_594_/A1 3.82e-11 1.7e-11 1.95e-10 2.3e-10
+Corner 0 1.67e-15 1.46e-15
+_594_/A2    False
+_594_/A2 2.58e-10 2.51e-10 1.51e-10 1.66e-10
+Corner 0 1.58e-15 1.56e-15
+_594_/B1    False
+_594_/B1 2.95e-11 1.75e-11 1.76e-10 2.04e-10
+Corner 0 1.67e-15 1.41e-15
+_594_/B2    False
+_594_/B2 1.2e-10 1.21e-10 2.3e-10 2.25e-10
+Corner 0 1.62e-15 1.55e-15
+_594_/ZN    False
+_594_/ZN 1.7e-11 2.95e-11 1.66e-10 1.51e-10
+Corner 0 0 0
+_594_/VDD    False
+_594_/VSS    False
+_595_/A1    False
+_595_/A1 1.7e-11 2.95e-11 1.66e-10 1.51e-10
+Corner 0 1.6e-15 1.53e-15
+_595_/A2    False
+_595_/A2 1.83e-10 1.53e-10 2.26e-10 1.87e-10
+Corner 0 1.66e-15 1.5e-15
+_595_/ZN    False
+_595_/ZN 2.95e-11 1.7e-11 1.51e-10 1.66e-10
+Corner 0 0 0
+_595_/VDD    False
+_595_/VSS    False
+_596_/A1    False
+_596_/A1 3.32e-10 3.21e-10 8.36e-11 9.57e-11
+Corner 0 1.6e-15 1.53e-15
+_596_/A2    False
+_596_/A2 1.88e-10 2.37e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_596_/ZN    False
+_596_/ZN 2.37e-10 1.88e-10 9.57e-11 8.36e-11
+Corner 0 0 0
+_596_/VDD    False
+_596_/VSS    False
+_597_/A1    False
+_597_/A1 1.95e-10 1.55e-10 1.79e-10 1.91e-10
+Corner 0 1.6e-15 1.53e-15
+_597_/A2    False
+_597_/A2 2.95e-10 2.96e-10 1.24e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_597_/ZN    False
+_597_/ZN 1.55e-10 1.95e-10 1.22e-10 1.24e-10
+Corner 0 0 0
+_597_/VDD    False
+_597_/VSS    False
+_598_/A1    False
+_598_/A1 2.95e-11 1.7e-11 1.51e-10 1.66e-10
+Corner 0 1.59e-15 1.56e-15
+_598_/A2    False
+_598_/A2 2.37e-10 1.88e-10 9.57e-11 8.36e-11
+Corner 0 1.62e-15 1.53e-15
+_598_/A3    False
+_598_/A3 1.55e-10 1.95e-10 1.22e-10 1.24e-10
+Corner 0 1.65e-15 1.49e-15
+_598_/ZN    False
+_598_/ZN 1.7e-11 2.95e-11 8.36e-11 9.57e-11
+Corner 0 0 0
+_598_/VDD    False
+_598_/VSS    False
+_599_/A1    False
+_599_/A1 1.18e-11 1.13e-11 2.1e-10 1.95e-10
+Corner 0 1.6e-15 1.53e-15
+_599_/A2    False
+_599_/A2 9.57e-11 1.01e-10 2.24e-10 2.11e-10
+Corner 0 1.66e-15 1.5e-15
+_599_/ZN    False
+_599_/ZN 1.13e-11 1.18e-11 1.95e-10 2.1e-10
+Corner 0 0 0
+_599_/VDD    False
+_599_/VSS    False
+_600_/A    False
+_600_/A 1.13e-11 1.18e-11 1.95e-10 2.1e-10
+Corner 0 1.67e-15 1.52e-15
+_600_/B1    False
+_600_/B1 4.16e-11 1.94e-11 1.97e-10 2.27e-10
+Corner 0 1.66e-15 1.46e-15
+_600_/B2    False
+_600_/B2 2.69e-10 2.61e-10 1.47e-10 1.57e-10
+Corner 0 1.57e-15 1.56e-15
+_600_/ZN    False
+_600_/ZN 1.18e-11 1.13e-11 1.57e-10 1.47e-10
+Corner 0 0 0
+_600_/VDD    False
+_600_/VSS    False
+_601_/A1    False
+_601_/A1 1.18e-11 1.13e-11 1.57e-10 1.47e-10
+Corner 0 1.6e-15 1.53e-15
+_601_/A2    False
+_601_/A2 1.83e-10 1.53e-10 2.26e-10 1.87e-10
+Corner 0 1.66e-15 1.5e-15
+_601_/ZN    False
+_601_/ZN 1.13e-11 1.18e-11 1.47e-10 1.57e-10
+Corner 0 0 0
+_601_/VDD    False
+_601_/VSS    False
+_602_/A1    False
+_602_/A1 3.32e-10 3.21e-10 8.37e-11 9.57e-11
+Corner 0 1.6e-15 1.53e-15
+_602_/A2    False
+_602_/A2 1.88e-10 2.37e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_602_/ZN    False
+_602_/ZN 2.37e-10 1.88e-10 9.57e-11 8.37e-11
+Corner 0 0 0
+_602_/VDD    False
+_602_/VSS    False
+_603_/A1    False
+_603_/A1 1.95e-10 1.55e-10 1.8e-10 1.91e-10
+Corner 0 1.6e-15 1.53e-15
+_603_/A2    False
+_603_/A2 2.91e-10 2.94e-10 1.28e-10 1.25e-10
+Corner 0 1.66e-15 1.5e-15
+_603_/ZN    False
+_603_/ZN 1.55e-10 1.95e-10 1.25e-10 1.28e-10
+Corner 0 0 0
+_603_/VDD    False
+_603_/VSS    False
+_604_/A1    False
+_604_/A1 1.13e-11 1.18e-11 1.47e-10 1.57e-10
+Corner 0 1.59e-15 1.56e-15
+_604_/A2    False
+_604_/A2 2.37e-10 1.88e-10 9.57e-11 8.37e-11
+Corner 0 1.62e-15 1.53e-15
+_604_/A3    False
+_604_/A3 1.55e-10 1.95e-10 1.25e-10 1.28e-10
+Corner 0 1.65e-15 1.49e-15
+_604_/ZN    False
+_604_/ZN 1.18e-11 1.13e-11 8.37e-11 9.57e-11
+Corner 0 0 0
+_604_/VDD    False
+_604_/VSS    False
+_605_/A1    False
+_605_/A1 3.62e-11 1.77e-11 1.96e-10 2.3e-10
+Corner 0 1.67e-15 1.46e-15
+_605_/A2    False
+_605_/A2 2.51e-10 2.52e-10 1.56e-10 1.66e-10
+Corner 0 1.58e-15 1.56e-15
+_605_/B1    False
+_605_/B1 2.75e-11 1.81e-11 1.77e-10 2.05e-10
+Corner 0 1.67e-15 1.41e-15
+_605_/B2    False
+_605_/B2 8.2e-11 8.37e-11 2.47e-10 2.42e-10
+Corner 0 1.62e-15 1.55e-15
+_605_/ZN    False
+_605_/ZN 1.77e-11 2.75e-11 1.66e-10 1.56e-10
+Corner 0 0 0
+_605_/VDD    False
+_605_/VSS    False
+_606_/A1    False
+_606_/A1 1.77e-11 2.75e-11 1.66e-10 1.56e-10
+Corner 0 1.6e-15 1.53e-15
+_606_/A2    False
+_606_/A2 1.83e-10 1.51e-10 2.27e-10 1.88e-10
+Corner 0 1.66e-15 1.5e-15
+_606_/ZN    False
+_606_/ZN 2.75e-11 1.77e-11 1.56e-10 1.66e-10
+Corner 0 0 0
+_606_/VDD    False
+_606_/VSS    False
+_607_/A1    False
+_607_/A1 3.33e-10 3.19e-10 8.4e-11 9.62e-11
+Corner 0 1.6e-15 1.53e-15
+_607_/A2    False
+_607_/A2 1.89e-10 2.35e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_607_/ZN    False
+_607_/ZN 2.35e-10 1.89e-10 9.62e-11 8.4e-11
+Corner 0 0 0
+_607_/VDD    False
+_607_/VSS    False
+_608_/A1    False
+_608_/A1 1.96e-10 1.54e-10 1.79e-10 1.92e-10
+Corner 0 1.6e-15 1.53e-15
+_608_/A2    False
+_608_/A2 2.43e-10 2.59e-10 1.76e-10 1.58e-10
+Corner 0 1.66e-15 1.5e-15
+_608_/ZN    False
+_608_/ZN 1.54e-10 1.96e-10 1.58e-10 1.76e-10
+Corner 0 0 0
+_608_/VDD    False
+_608_/VSS    False
+_609_/A1    False
+_609_/A1 2.75e-11 1.77e-11 1.56e-10 1.66e-10
+Corner 0 1.59e-15 1.56e-15
+_609_/A2    False
+_609_/A2 2.35e-10 1.89e-10 9.62e-11 8.4e-11
+Corner 0 1.62e-15 1.53e-15
+_609_/A3    False
+_609_/A3 1.54e-10 1.96e-10 1.58e-10 1.76e-10
+Corner 0 1.65e-15 1.49e-15
+_609_/ZN    False
+_609_/ZN 1.77e-11 2.75e-11 8.4e-11 9.62e-11
+Corner 0 0 0
+_609_/VDD    False
+_609_/VSS    False
+_610_/A1    False
+_610_/A1 1.23e-11 1.07e-11 2.1e-10 1.95e-10
+Corner 0 1.6e-15 1.53e-15
+_610_/A2    False
+_610_/A2 5.08e-11 4.1e-11 2.28e-10 2.32e-10
+Corner 0 1.66e-15 1.5e-15
+_610_/ZN    False
+_610_/ZN 1.07e-11 1.23e-11 1.95e-10 2.1e-10
+Corner 0 0 0
+_610_/VDD    False
+_610_/VSS    False
+_611_/A    False
+_611_/A 1.07e-11 1.23e-11 1.95e-10 2.1e-10
+Corner 0 1.67e-15 1.52e-15
+_611_/B1    False
+_611_/B1 3.98e-11 1.84e-11 1.99e-10 2.28e-10
+Corner 0 1.66e-15 1.46e-15
+_611_/B2    False
+_611_/B2 2.56e-10 2.56e-10 1.59e-10 1.62e-10
+Corner 0 1.57e-15 1.56e-15
+_611_/ZN    False
+_611_/ZN 1.23e-11 1.07e-11 1.62e-10 1.59e-10
+Corner 0 0 0
+_611_/VDD    False
+_611_/VSS    False
+_612_/A1    False
+_612_/A1 1.23e-11 1.07e-11 1.62e-10 1.59e-10
+Corner 0 1.6e-15 1.53e-15
+_612_/A2    False
+_612_/A2 1.83e-10 1.53e-10 2.26e-10 1.87e-10
+Corner 0 1.66e-15 1.5e-15
+_612_/ZN    False
+_612_/ZN 1.07e-11 1.23e-11 1.59e-10 1.62e-10
+Corner 0 0 0
+_612_/VDD    False
+_612_/VSS    False
+_613_/A1    False
+_613_/A1 3.32e-10 3.21e-10 8.37e-11 9.58e-11
+Corner 0 1.6e-15 1.53e-15
+_613_/A2    False
+_613_/A2 1.88e-10 2.37e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_613_/ZN    False
+_613_/ZN 2.37e-10 1.88e-10 9.58e-11 8.37e-11
+Corner 0 0 0
+_613_/VDD    False
+_613_/VSS    False
+_614_/A1    False
+_614_/A1 1.95e-10 1.55e-10 1.8e-10 1.91e-10
+Corner 0 1.6e-15 1.53e-15
+_614_/A2    False
+_614_/A2 2.88e-10 2.92e-10 1.31e-10 1.27e-10
+Corner 0 1.66e-15 1.5e-15
+_614_/ZN    False
+_614_/ZN 1.55e-10 1.95e-10 1.27e-10 1.31e-10
+Corner 0 0 0
+_614_/VDD    False
+_614_/VSS    False
+_615_/A1    False
+_615_/A1 1.07e-11 1.23e-11 1.59e-10 1.62e-10
+Corner 0 1.59e-15 1.56e-15
+_615_/A2    False
+_615_/A2 2.37e-10 1.88e-10 9.58e-11 8.37e-11
+Corner 0 1.62e-15 1.53e-15
+_615_/A3    False
+_615_/A3 1.55e-10 1.95e-10 1.27e-10 1.31e-10
+Corner 0 1.65e-15 1.49e-15
+_615_/ZN    False
+_615_/ZN 1.23e-11 1.07e-11 8.37e-11 9.58e-11
+Corner 0 0 0
+_615_/VDD    False
+_615_/VSS    False
+_616_/A1    False
+_616_/A1 3.53e-11 1.68e-11 1.97e-10 2.31e-10
+Corner 0 1.67e-15 1.46e-15
+_616_/A2    False
+_616_/A2 2.54e-10 2.51e-10 1.54e-10 1.68e-10
+Corner 0 1.58e-15 1.56e-15
+_616_/B1    False
+_616_/B1 3.16e-11 2.22e-11 1.72e-10 2.01e-10
+Corner 0 1.67e-15 1.41e-15
+_616_/B2    False
+_616_/B2 6.99e-11 8.35e-11 2.1e-10 2.29e-10
+Corner 0 1.62e-15 1.55e-15
+_616_/ZN    False
+_616_/ZN 1.68e-11 3.16e-11 1.68e-10 1.54e-10
+Corner 0 0 0
+_616_/VDD    False
+_616_/VSS    False
+_617_/A1    False
+_617_/A1 1.68e-11 3.16e-11 1.68e-10 1.54e-10
+Corner 0 1.6e-15 1.53e-15
+_617_/A2    False
+_617_/A2 1.83e-10 1.51e-10 2.27e-10 1.88e-10
+Corner 0 1.66e-15 1.5e-15
+_617_/ZN    False
+_617_/ZN 3.16e-11 1.68e-11 1.54e-10 1.68e-10
+Corner 0 0 0
+_617_/VDD    False
+_617_/VSS    False
+_618_/A1    False
+_618_/A1 3.33e-10 3.19e-10 8.4e-11 9.63e-11
+Corner 0 1.6e-15 1.53e-15
+_618_/A2    False
+_618_/A2 1.89e-10 2.35e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_618_/ZN    False
+_618_/ZN 2.35e-10 1.89e-10 9.63e-11 8.4e-11
+Corner 0 0 0
+_618_/VDD    False
+_618_/VSS    False
+_619_/A1    False
+_619_/A1 1.96e-10 1.53e-10 1.79e-10 1.92e-10
+Corner 0 1.6e-15 1.53e-15
+_619_/A2    False
+_619_/A2 2.75e-10 2.88e-10 1.45e-10 1.28e-10
+Corner 0 1.66e-15 1.5e-15
+_619_/ZN    False
+_619_/ZN 1.53e-10 1.96e-10 1.28e-10 1.45e-10
+Corner 0 0 0
+_619_/VDD    False
+_619_/VSS    False
+_620_/A1    False
+_620_/A1 3.16e-11 1.68e-11 1.54e-10 1.68e-10
+Corner 0 1.59e-15 1.56e-15
+_620_/A2    False
+_620_/A2 2.35e-10 1.89e-10 9.63e-11 8.4e-11
+Corner 0 1.62e-15 1.53e-15
+_620_/A3    False
+_620_/A3 1.53e-10 1.96e-10 1.28e-10 1.45e-10
+Corner 0 1.65e-15 1.49e-15
+_620_/ZN    False
+_620_/ZN 1.68e-11 3.16e-11 8.4e-11 9.63e-11
+Corner 0 0 0
+_620_/VDD    False
+_620_/VSS    False
+_621_/A1    False
+_621_/A1 3.23e-11 5e-11 2.21e-10 2.01e-10
+Corner 0 1.6e-15 1.53e-15
+_621_/A2    False
+_621_/A2 9.87e-12 9.37e-12 2.11e-10 1.97e-10
+Corner 0 1.66e-15 1.5e-15
+_621_/ZN    False
+_621_/ZN 9.37e-12 9.87e-12 1.97e-10 2.11e-10
+Corner 0 0 0
+_621_/VDD    False
+_621_/VSS    False
+_622_/A    False
+_622_/A 9.37e-12 9.87e-12 1.97e-10 2.11e-10
+Corner 0 1.67e-15 1.52e-15
+_622_/B1    False
+_622_/B1 2.62e-10 2.6e-10 1.53e-10 1.58e-10
+Corner 0 1.66e-15 1.46e-15
+_622_/B2    False
+_622_/B2 3.83e-11 1.36e-11 2.01e-10 2.33e-10
+Corner 0 1.57e-15 1.56e-15
+_622_/ZN    False
+_622_/ZN 9.87e-12 9.37e-12 1.58e-10 1.53e-10
+Corner 0 0 0
+_622_/VDD    False
+_622_/VSS    False
+_623_/A1    False
+_623_/A1 9.87e-12 9.37e-12 1.58e-10 1.53e-10
+Corner 0 1.6e-15 1.53e-15
+_623_/A2    False
+_623_/A2 1.83e-10 1.53e-10 2.26e-10 1.87e-10
+Corner 0 1.66e-15 1.5e-15
+_623_/ZN    False
+_623_/ZN 9.37e-12 9.87e-12 1.53e-10 1.58e-10
+Corner 0 0 0
+_623_/VDD    False
+_623_/VSS    False
+_624_/A1    False
+_624_/A1 3.32e-10 3.21e-10 8.37e-11 9.58e-11
+Corner 0 1.6e-15 1.53e-15
+_624_/A2    False
+_624_/A2 1.88e-10 2.37e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_624_/ZN    False
+_624_/ZN 2.37e-10 1.88e-10 9.58e-11 8.37e-11
+Corner 0 0 0
+_624_/VDD    False
+_624_/VSS    False
+_625_/A1    False
+_625_/A1 1.95e-10 1.55e-10 1.8e-10 1.91e-10
+Corner 0 1.6e-15 1.53e-15
+_625_/A2    False
+_625_/A2 2.89e-10 2.92e-10 1.3e-10 1.26e-10
+Corner 0 1.66e-15 1.5e-15
+_625_/ZN    False
+_625_/ZN 1.55e-10 1.95e-10 1.26e-10 1.3e-10
+Corner 0 0 0
+_625_/VDD    False
+_625_/VSS    False
+_626_/A1    False
+_626_/A1 9.37e-12 9.87e-12 1.53e-10 1.58e-10
+Corner 0 1.59e-15 1.56e-15
+_626_/A2    False
+_626_/A2 2.37e-10 1.88e-10 9.58e-11 8.37e-11
+Corner 0 1.62e-15 1.53e-15
+_626_/A3    False
+_626_/A3 1.55e-10 1.95e-10 1.26e-10 1.3e-10
+Corner 0 1.65e-15 1.49e-15
+_626_/ZN    False
+_626_/ZN 9.87e-12 9.37e-12 8.37e-11 9.58e-11
+Corner 0 0 0
+_626_/VDD    False
+_626_/VSS    False
+_627_/A1    False
+_627_/A1 3.5e-11 1.68e-11 1.97e-10 2.31e-10
+Corner 0 1.67e-15 1.46e-15
+_627_/A2    False
+_627_/A2 2.56e-10 2.54e-10 1.51e-10 1.64e-10
+Corner 0 1.58e-15 1.56e-15
+_627_/B1    False
+_627_/B1 2.75e-11 1.81e-11 1.77e-10 2.05e-10
+Corner 0 1.67e-15 1.41e-15
+_627_/B2    False
+_627_/B2 3.76e-11 3.93e-11 1.96e-10 2.07e-10
+Corner 0 1.62e-15 1.55e-15
+_627_/ZN    False
+_627_/ZN 1.68e-11 2.75e-11 1.64e-10 1.51e-10
+Corner 0 0 0
+_627_/VDD    False
+_627_/VSS    False
+_628_/A1    False
+_628_/A1 1.68e-11 2.75e-11 1.64e-10 1.51e-10
+Corner 0 1.6e-15 1.53e-15
+_628_/A2    False
+_628_/A2 1.83e-10 1.51e-10 2.27e-10 1.88e-10
+Corner 0 1.66e-15 1.5e-15
+_628_/ZN    False
+_628_/ZN 2.75e-11 1.68e-11 1.51e-10 1.64e-10
+Corner 0 0 0
+_628_/VDD    False
+_628_/VSS    False
+_629_/A1    False
+_629_/A1 3.33e-10 3.19e-10 8.4e-11 9.63e-11
+Corner 0 1.6e-15 1.53e-15
+_629_/A2    False
+_629_/A2 1.89e-10 2.35e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_629_/ZN    False
+_629_/ZN 2.35e-10 1.89e-10 9.63e-11 8.4e-11
+Corner 0 0 0
+_629_/VDD    False
+_629_/VSS    False
+_630_/A1    False
+_630_/A1 1.96e-10 1.53e-10 1.79e-10 1.92e-10
+Corner 0 1.6e-15 1.53e-15
+_630_/A2    False
+_630_/A2 2.74e-10 2.88e-10 1.46e-10 1.29e-10
+Corner 0 1.66e-15 1.5e-15
+_630_/ZN    False
+_630_/ZN 1.53e-10 1.96e-10 1.29e-10 1.46e-10
+Corner 0 0 0
+_630_/VDD    False
+_630_/VSS    False
+_631_/A1    False
+_631_/A1 2.75e-11 1.68e-11 1.51e-10 1.64e-10
+Corner 0 1.59e-15 1.56e-15
+_631_/A2    False
+_631_/A2 2.35e-10 1.89e-10 9.63e-11 8.4e-11
+Corner 0 1.62e-15 1.53e-15
+_631_/A3    False
+_631_/A3 1.53e-10 1.96e-10 1.29e-10 1.46e-10
+Corner 0 1.65e-15 1.49e-15
+_631_/ZN    False
+_631_/ZN 1.68e-11 2.75e-11 8.4e-11 9.63e-11
+Corner 0 0 0
+_631_/VDD    False
+_631_/VSS    False
+_632_/A1    False
+_632_/A1 1.25e-11 9.27e-12 2.1e-10 1.95e-10
+Corner 0 1.6e-15 1.53e-15
+_632_/A2    False
+_632_/A2 2.43e-11 1.86e-11 2.02e-10 1.95e-10
+Corner 0 1.66e-15 1.5e-15
+_632_/ZN    False
+_632_/ZN 9.27e-12 1.25e-11 1.95e-10 2.02e-10
+Corner 0 0 0
+_632_/VDD    False
+_632_/VSS    False
+_633_/A    False
+_633_/A 9.27e-12 1.25e-11 1.95e-10 2.02e-10
+Corner 0 1.67e-15 1.52e-15
+_633_/B1    False
+_633_/B1 3.84e-11 1.91e-11 1.99e-10 2.29e-10
+Corner 0 1.66e-15 1.46e-15
+_633_/B2    False
+_633_/B2 2.6e-10 2.54e-10 1.54e-10 1.65e-10
+Corner 0 1.57e-15 1.56e-15
+_633_/ZN    False
+_633_/ZN 1.25e-11 9.27e-12 1.65e-10 1.54e-10
+Corner 0 0 0
+_633_/VDD    False
+_633_/VSS    False
+_634_/A1    False
+_634_/A1 1.25e-11 9.27e-12 1.65e-10 1.54e-10
+Corner 0 1.6e-15 1.53e-15
+_634_/A2    False
+_634_/A2 1.84e-10 1.51e-10 2.26e-10 1.88e-10
+Corner 0 1.66e-15 1.5e-15
+_634_/ZN    False
+_634_/ZN 9.27e-12 1.25e-11 1.54e-10 1.65e-10
+Corner 0 0 0
+_634_/VDD    False
+_634_/VSS    False
+_635_/A1    False
+_635_/A1 3.33e-10 3.19e-10 8.41e-11 9.63e-11
+Corner 0 1.6e-15 1.53e-15
+_635_/A2    False
+_635_/A2 1.89e-10 2.35e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_635_/ZN    False
+_635_/ZN 2.35e-10 1.89e-10 9.63e-11 8.41e-11
+Corner 0 0 0
+_635_/VDD    False
+_635_/VSS    False
+_636_/A1    False
+_636_/A1 1.96e-10 1.53e-10 1.8e-10 1.92e-10
+Corner 0 1.6e-15 1.53e-15
+_636_/A2    False
+_636_/A2 2.74e-10 2.88e-10 1.46e-10 1.29e-10
+Corner 0 1.66e-15 1.5e-15
+_636_/ZN    False
+_636_/ZN 1.53e-10 1.96e-10 1.29e-10 1.46e-10
+Corner 0 0 0
+_636_/VDD    False
+_636_/VSS    False
+_637_/A1    False
+_637_/A1 9.27e-12 1.25e-11 1.54e-10 1.65e-10
+Corner 0 1.59e-15 1.56e-15
+_637_/A2    False
+_637_/A2 2.35e-10 1.89e-10 9.63e-11 8.41e-11
+Corner 0 1.62e-15 1.53e-15
+_637_/A3    False
+_637_/A3 1.53e-10 1.96e-10 1.29e-10 1.46e-10
+Corner 0 1.65e-15 1.49e-15
+_637_/ZN    False
+_637_/ZN 1.25e-11 9.27e-12 8.41e-11 9.63e-11
+Corner 0 0 0
+_637_/VDD    False
+_637_/VSS    False
+_638_/A1    False
+_638_/A1 6.05e-11 6.88e-11 2.16e-10 2.12e-10
+Corner 0 1.67e-15 1.46e-15
+_638_/A2    False
+_638_/A2 3.3e-11 2.7e-11 1.71e-10 1.96e-10
+Corner 0 1.58e-15 1.56e-15
+_638_/B1    False
+_638_/B1 5.73e-11 3.1e-11 1.77e-10 2.14e-10
+Corner 0 1.67e-15 1.41e-15
+_638_/B2    False
+_638_/B2 2.66e-10 2.52e-10 1.45e-10 1.64e-10
+Corner 0 1.62e-15 1.55e-15
+_638_/ZN    False
+_638_/ZN 2.7e-11 3.3e-11 1.64e-10 1.45e-10
+Corner 0 0 0
+_638_/VDD    False
+_638_/VSS    False
+_639_/A1    False
+_639_/A1 2.7e-11 3.3e-11 1.64e-10 1.45e-10
+Corner 0 1.6e-15 1.53e-15
+_639_/A2    False
+_639_/A2 1.83e-10 1.53e-10 2.26e-10 1.87e-10
+Corner 0 1.66e-15 1.5e-15
+_639_/ZN    False
+_639_/ZN 3.3e-11 2.7e-11 1.45e-10 1.64e-10
+Corner 0 0 0
+_639_/VDD    False
+_639_/VSS    False
+_640_/A1    False
+_640_/A1 3.32e-10 3.21e-10 8.36e-11 9.58e-11
+Corner 0 1.6e-15 1.53e-15
+_640_/A2    False
+_640_/A2 1.88e-10 2.37e-10 2.28e-10 1.8e-10
+Corner 0 1.66e-15 1.5e-15
+_640_/ZN    False
+_640_/ZN 2.37e-10 1.88e-10 9.58e-11 8.36e-11
+Corner 0 0 0
+_640_/VDD    False
+_640_/VSS    False
+_641_/A1    False
+_641_/A1 1.95e-10 1.55e-10 1.79e-10 1.91e-10
+Corner 0 1.6e-15 1.53e-15
+_641_/A2    False
+_641_/A2 2.94e-10 2.96e-10 1.24e-10 1.22e-10
+Corner 0 1.66e-15 1.5e-15
+_641_/ZN    False
+_641_/ZN 1.55e-10 1.95e-10 1.22e-10 1.24e-10
+Corner 0 0 0
+_641_/VDD    False
+_641_/VSS    False
+_642_/A1    False
+_642_/A1 3.3e-11 2.7e-11 1.45e-10 1.64e-10
+Corner 0 1.59e-15 1.56e-15
+_642_/A2    False
+_642_/A2 2.37e-10 1.88e-10 9.58e-11 8.36e-11
+Corner 0 1.62e-15 1.53e-15
+_642_/A3    False
+_642_/A3 1.55e-10 1.95e-10 1.22e-10 1.24e-10
+Corner 0 1.65e-15 1.49e-15
+_642_/ZN    False
+_642_/ZN 2.7e-11 3.3e-11 8.36e-11 9.58e-11
+Corner 0 0 0
+_642_/VDD    False
+_642_/VSS    False
+_643_/A1    False
+_643_/A1 2.48e-11 2.69e-11 2.04e-10 2.03e-10
+Corner 0 1.6e-15 1.53e-15
+_643_/A2    False
+_643_/A2 1.1e-11 1.06e-11 2.12e-10 1.96e-10
+Corner 0 1.66e-15 1.5e-15
+_643_/ZN    False
+_643_/ZN 1.06e-11 1.1e-11 1.96e-10 2.04e-10
+Corner 0 0 0
+_643_/VDD    False
+_643_/VSS    False
+_644_/A    False
+_644_/A 1.06e-11 1.1e-11 1.96e-10 2.04e-10
+Corner 0 1.67e-15 1.52e-15
+_644_/B1    False
+_644_/B1 2.75e-10 2.72e-10 1.41e-10 1.48e-10
+Corner 0 1.66e-15 1.46e-15
+_644_/B2    False
+_644_/B2 3.96e-11 1.41e-11 1.99e-10 2.35e-10
+Corner 0 1.57e-15 1.56e-15
+_644_/ZN    False
+_644_/ZN 1.1e-11 1.06e-11 1.48e-10 1.41e-10
+Corner 0 0 0
+_644_/VDD    False
+_644_/VSS    False
+_645_/A1    False
+_645_/A1 1.1e-11 1.06e-11 1.48e-10 1.41e-10
+Corner 0 1.6e-15 1.53e-15
+_645_/A2    False
+_645_/A2 1.84e-10 1.54e-10 2.27e-10 1.86e-10
+Corner 0 1.66e-15 1.5e-15
+_645_/ZN    False
+_645_/ZN 1.06e-11 1.1e-11 1.41e-10 1.48e-10
+Corner 0 0 0
+_645_/VDD    False
+_645_/VSS    False
+_646_/A1    False
+_646_/A1 1.61e-10 1.03e-10 2.11e-10 2.31e-10
+Corner 0 9.18e-16 8.75e-16
+_646_/A2    False
+_646_/A2 2.45e-10 2.41e-10 1.71e-10 1.66e-10
+Corner 0 9.75e-16 8.94e-16
+_646_/ZN    False
+_646_/ZN 1.61e-10 1.03e-10 1.71e-10 1.66e-10
+Corner 0 0 0
+_646_/VDD    False
+_646_/VSS    False
+_647_/A    False
+_647_/A 1.61e-10 1.03e-10 1.71e-10 1.66e-10
+Corner 0 1.63e-15 1.54e-15
+_647_/B1    False
+_647_/B1 3.31e-10 3.11e-10 8.64e-11 1.06e-10
+Corner 0 1.65e-15 1.45e-15
+_647_/B2    False
+_647_/B2 1.87e-10 2.22e-10 2.3e-10 1.95e-10
+Corner 0 1.68e-15 1.41e-15
+_647_/ZN    False
+_647_/ZN 1.03e-10 1.61e-10 1.06e-10 8.64e-11
+Corner 0 0 0
+_647_/VDD    False
+_647_/VSS    False
+_648_/A1    False
+_648_/A1 1.06e-11 1.1e-11 1.41e-10 1.48e-10
+Corner 0 1.6e-15 1.53e-15
+_648_/A2    False
+_648_/A2 1.03e-10 1.61e-10 1.06e-10 8.64e-11
+Corner 0 1.66e-15 1.5e-15
+_648_/ZN    False
+_648_/ZN 1.1e-11 1.06e-11 8.64e-11 1.06e-10
+Corner 0 0 0
+_648_/VDD    False
+_648_/VSS    False
+_649_/A1    False
+_649_/A1 5.16e-11 6.09e-11 1.89e-10 1.88e-10
+Corner 0 1.67e-15 1.46e-15
+_649_/A2    False
+_649_/A2 2.84e-11 2.57e-11 1.74e-10 1.99e-10
+Corner 0 1.58e-15 1.56e-15
+_649_/B1    False
+_649_/B1 5.28e-11 2.97e-11 1.8e-10 2.17e-10
+Corner 0 1.67e-15 1.41e-15
+_649_/B2    False
+_649_/B2 2.52e-10 2.43e-10 1.56e-10 1.74e-10
+Corner 0 1.62e-15 1.55e-15
+_649_/ZN    False
+_649_/ZN 2.57e-11 2.84e-11 1.74e-10 1.56e-10
+Corner 0 0 0
+_649_/VDD    False
+_649_/VSS    False
+_650_/A1    False
+_650_/A1 2.57e-11 2.84e-11 1.74e-10 1.56e-10
+Corner 0 1.6e-15 1.53e-15
+_650_/A2    False
+_650_/A2 1.81e-10 1.49e-10 2.29e-10 1.9e-10
+Corner 0 1.66e-15 1.5e-15
+_650_/ZN    False
+_650_/ZN 2.84e-11 2.57e-11 1.56e-10 1.74e-10
+Corner 0 0 0
+_650_/VDD    False
+_650_/VSS    False
+_651_/A1    False
+_651_/A1 3.31e-10 3.16e-10 8.63e-11 9.84e-11
+Corner 0 1.6e-15 1.53e-15
+_651_/A2    False
+_651_/A2 1.87e-10 2.32e-10 2.3e-10 1.82e-10
+Corner 0 1.66e-15 1.5e-15
+_651_/ZN    False
+_651_/ZN 2.32e-10 1.87e-10 9.84e-11 8.63e-11
+Corner 0 0 0
+_651_/VDD    False
+_651_/VSS    False
+_652_/A1    False
+_652_/A1 1.94e-10 1.51e-10 1.82e-10 1.94e-10
+Corner 0 1.6e-15 1.53e-15
+_652_/A2    False
+_652_/A2 2.73e-10 2.87e-10 1.47e-10 1.29e-10
+Corner 0 1.66e-15 1.5e-15
+_652_/ZN    False
+_652_/ZN 1.51e-10 1.94e-10 1.29e-10 1.47e-10
+Corner 0 0 0
+_652_/VDD    False
+_652_/VSS    False
+_653_/A1    False
+_653_/A1 2.84e-11 2.57e-11 1.56e-10 1.74e-10
+Corner 0 1.59e-15 1.56e-15
+_653_/A2    False
+_653_/A2 2.32e-10 1.87e-10 9.84e-11 8.63e-11
+Corner 0 1.62e-15 1.53e-15
+_653_/A3    False
+_653_/A3 1.51e-10 1.94e-10 1.29e-10 1.47e-10
+Corner 0 1.65e-15 1.49e-15
+_653_/ZN    False
+_653_/ZN 2.57e-11 2.84e-11 8.63e-11 9.84e-11
+Corner 0 0 0
+_653_/VDD    False
+_653_/VSS    False
+_654_/A1    False
+_654_/A1 2.9e-11 2.69e-11 2.07e-10 2.11e-10
+Corner 0 1.6e-15 1.53e-15
+_654_/A2    False
+_654_/A2 1.17e-11 1.06e-11 2.12e-10 1.95e-10
+Corner 0 1.66e-15 1.5e-15
+_654_/ZN    False
+_654_/ZN 1.06e-11 1.17e-11 1.95e-10 2.07e-10
+Corner 0 0 0
+_654_/VDD    False
+_654_/VSS    False
+_655_/A    False
+_655_/A 1.06e-11 1.17e-11 1.95e-10 2.07e-10
+Corner 0 1.67e-15 1.52e-15
+_655_/B1    False
+_655_/B1 2.73e-10 2.68e-10 1.41e-10 1.51e-10
+Corner 0 1.66e-15 1.46e-15
+_655_/B2    False
+_655_/B2 6.19e-11 4.09e-11 1.76e-10 2.08e-10
+Corner 0 1.57e-15 1.56e-15
+_655_/ZN    False
+_655_/ZN 1.17e-11 1.06e-11 1.51e-10 1.41e-10
+Corner 0 0 0
+_655_/VDD    False
+_655_/VSS    False
+_656_/A1    False
+_656_/A1 1.17e-11 1.06e-11 1.51e-10 1.41e-10
+Corner 0 1.6e-15 1.53e-15
+_656_/A2    False
+_656_/A2 1.84e-10 1.55e-10 2.26e-10 1.85e-10
+Corner 0 1.66e-15 1.5e-15
+_656_/ZN    False
+_656_/ZN 1.06e-11 1.17e-11 1.41e-10 1.51e-10
+Corner 0 0 0
+_656_/VDD    False
+_656_/VSS    False
+_657_/A1    False
+_657_/A1 1.62e-10 1.04e-10 2.1e-10 2.3e-10
+Corner 0 9.18e-16 8.75e-16
+_657_/A2    False
+_657_/A2 2.44e-10 2.41e-10 1.71e-10 1.66e-10
+Corner 0 9.75e-16 8.94e-16
+_657_/ZN    False
+_657_/ZN 1.62e-10 1.04e-10 1.71e-10 1.66e-10
+Corner 0 0 0
+_657_/VDD    False
+_657_/VSS    False
+_658_/A    False
+_658_/A 1.62e-10 1.04e-10 1.71e-10 1.66e-10
+Corner 0 1.63e-15 1.54e-15
+_658_/B1    False
+_658_/B1 3.32e-10 3.11e-10 8.55e-11 1.06e-10
+Corner 0 1.65e-15 1.45e-15
+_658_/B2    False
+_658_/B2 1.87e-10 2.23e-10 2.3e-10 1.94e-10
+Corner 0 1.68e-15 1.41e-15
+_658_/ZN    False
+_658_/ZN 1.04e-10 1.62e-10 1.06e-10 8.55e-11
+Corner 0 0 0
+_658_/VDD    False
+_658_/VSS    False
+_659_/A1    False
+_659_/A1 1.06e-11 1.17e-11 1.41e-10 1.51e-10
+Corner 0 1.6e-15 1.53e-15
+_659_/A2    False
+_659_/A2 1.04e-10 1.62e-10 1.06e-10 8.55e-11
+Corner 0 1.66e-15 1.5e-15
+_659_/ZN    False
+_659_/ZN 1.17e-11 1.06e-11 8.55e-11 1.06e-10
+Corner 0 0 0
+_659_/VDD    False
+_659_/VSS    False
+_660_/A1    False
+_660_/A1 3.29e-11 3.68e-11 2.18e-10 2.16e-10
+Corner 0 1.67e-15 1.46e-15
+_660_/A2    False
+_660_/A2 3.67e-11 2.76e-11 1.68e-10 1.96e-10
+Corner 0 1.58e-15 1.56e-15
+_660_/B1    False
+_660_/B1 6.11e-11 3.16e-11 1.74e-10 2.14e-10
+Corner 0 1.67e-15 1.41e-15
+_660_/B2    False
+_660_/B2 2.61e-10 2.52e-10 1.5e-10 1.65e-10
+Corner 0 1.62e-15 1.55e-15
+_660_/ZN    False
+_660_/ZN 2.76e-11 3.29e-11 1.65e-10 1.5e-10
+Corner 0 0 0
+_660_/VDD    False
+_660_/VSS    False
+_661_/A1    False
+_661_/A1 2.76e-11 3.29e-11 1.65e-10 1.5e-10
+Corner 0 1.6e-15 1.53e-15
+_661_/A2    False
+_661_/A2 1.83e-10 1.57e-10 2.26e-10 1.84e-10
+Corner 0 1.66e-15 1.5e-15
+_661_/ZN    False
+_661_/ZN 3.29e-11 2.76e-11 1.5e-10 1.65e-10
+Corner 0 0 0
+_661_/VDD    False
+_661_/VSS    False
+_662_/A1    False
+_662_/A1 1.61e-10 1.06e-10 2.09e-10 2.29e-10
+Corner 0 9.18e-16 8.75e-16
+_662_/A2    False
+_662_/A2 2.67e-10 2.51e-10 1.48e-10 1.58e-10
+Corner 0 9.75e-16 8.94e-16
+_662_/ZN    False
+_662_/ZN 1.61e-10 1.06e-10 1.48e-10 1.58e-10
+Corner 0 0 0
+_662_/VDD    False
+_662_/VSS    False
+_663_/A    False
+_663_/A 1.61e-10 1.06e-10 1.48e-10 1.58e-10
+Corner 0 1.63e-15 1.54e-15
+_663_/B1    False
+_663_/B1 3.31e-10 3.13e-10 8.51e-11 1.05e-10
+Corner 0 1.65e-15 1.45e-15
+_663_/B2    False
+_663_/B2 1.87e-10 2.25e-10 2.29e-10 1.93e-10
+Corner 0 1.68e-15 1.41e-15
+_663_/ZN    False
+_663_/ZN 1.06e-10 1.61e-10 1.05e-10 8.51e-11
+Corner 0 0 0
+_663_/VDD    False
+_663_/VSS    False
+_664_/A1    False
+_664_/A1 3.29e-11 2.76e-11 1.5e-10 1.65e-10
+Corner 0 1.6e-15 1.53e-15
+_664_/A2    False
+_664_/A2 1.06e-10 1.61e-10 1.05e-10 8.51e-11
+Corner 0 1.66e-15 1.5e-15
+_664_/ZN    False
+_664_/ZN 2.76e-11 3.29e-11 8.51e-11 1.05e-10
+Corner 0 0 0
+_664_/VDD    False
+_664_/VSS    False
+_665_/A1    False
+_665_/A1 4.17e-11 3.37e-11 1.98e-10 2.05e-10
+Corner 0 1.59e-15 1.56e-15
+_665_/A2    False
+_665_/A2 3.74e-11 3.2e-11 1.99e-10 2.06e-10
+Corner 0 1.62e-15 1.53e-15
+_665_/A3    False
+_665_/A3 1.2e-11 1.43e-11 2.15e-10 1.97e-10
+Corner 0 1.65e-15 1.49e-15
+_665_/ZN    False
+_665_/ZN 1.43e-11 1.2e-11 1.97e-10 1.98e-10
+Corner 0 0 0
+_665_/VDD    False
+_665_/VSS    False
+_666_/A1    False
+_666_/A1 4.35e-11 1.33e-11 1.96e-10 2.37e-10
+Corner 0 9.47e-16 7.92e-16
+_666_/A2    False
+_666_/A2 2.53e-10 2.36e-10 1.64e-10 1.86e-10
+Corner 0 9.42e-16 8.95e-16
+_666_/ZN    False
+_666_/ZN 4.35e-11 1.33e-11 1.64e-10 1.86e-10
+Corner 0 0 0
+_666_/VDD    False
+_666_/VSS    False
+_667_/A1    False
+_667_/A1 1.43e-11 1.2e-11 1.97e-10 1.98e-10
+Corner 0 1.6e-15 1.53e-15
+_667_/A2    False
+_667_/A2 4.35e-11 1.33e-11 1.64e-10 1.86e-10
+Corner 0 1.66e-15 1.5e-15
+_667_/ZN    False
+_667_/ZN 1.2e-11 1.43e-11 1.86e-10 1.64e-10
+Corner 0 0 0
+_667_/VDD    False
+_667_/VSS    False
+_668_/A1    False
+_668_/A1 1.2e-11 1.43e-11 1.86e-10 1.64e-10
+Corner 0 1.6e-15 1.53e-15
+_668_/A2    False
+_668_/A2 1.84e-10 1.55e-10 2.26e-10 1.85e-10
+Corner 0 1.66e-15 1.5e-15
+_668_/ZN    False
+_668_/ZN 1.43e-11 1.2e-11 1.64e-10 1.86e-10
+Corner 0 0 0
+_668_/VDD    False
+_668_/VSS    False
+_669_/A1    False
+_669_/A1 1.62e-10 1.04e-10 2.1e-10 2.3e-10
+Corner 0 9.18e-16 8.75e-16
+_669_/A2    False
+_669_/A2 2.44e-10 2.41e-10 1.71e-10 1.66e-10
+Corner 0 9.75e-16 8.94e-16
+_669_/ZN    False
+_669_/ZN 1.62e-10 1.04e-10 1.71e-10 1.66e-10
+Corner 0 0 0
+_669_/VDD    False
+_669_/VSS    False
+_670_/A    False
+_670_/A 1.62e-10 1.04e-10 1.71e-10 1.66e-10
+Corner 0 1.63e-15 1.54e-15
+_670_/B1    False
+_670_/B1 3.32e-10 3.11e-10 8.56e-11 1.06e-10
+Corner 0 1.65e-15 1.45e-15
+_670_/B2    False
+_670_/B2 1.87e-10 2.23e-10 2.3e-10 1.94e-10
+Corner 0 1.68e-15 1.41e-15
+_670_/ZN    False
+_670_/ZN 1.04e-10 1.62e-10 1.06e-10 8.56e-11
+Corner 0 0 0
+_670_/VDD    False
+_670_/VSS    False
+_671_/A1    False
+_671_/A1 1.43e-11 1.2e-11 1.64e-10 1.86e-10
+Corner 0 1.6e-15 1.53e-15
+_671_/A2    False
+_671_/A2 1.04e-10 1.62e-10 1.06e-10 8.56e-11
+Corner 0 1.66e-15 1.5e-15
+_671_/ZN    False
+_671_/ZN 1.2e-11 1.43e-11 8.56e-11 1.06e-10
+Corner 0 0 0
+_671_/VDD    False
+_671_/VSS    False
+_672_/D    False
+_672_/D 1.92e-10 1.66e-10 9.36e-11 8.32e-11
+Corner 0 1.13e-15 1.05e-15
+_672_/CK    True
+_672_/CK 9.51e-11 1e+30 1.67e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_672_/Q    False
+_672_/Q 9.51e-11 1.49e-10 2.27e-10 1.72e-10
+Corner 0 0 0
+_672_/QN    False
+_672_/QN 1.37e-10 1.34e-10 1.67e-10 1.72e-10
+Corner 0 0 0
+_672_/VDD    False
+_672_/VSS    False
+_673_/D    False
+_673_/D 1.59e-10 1.83e-10 1.12e-10 1.07e-10
+Corner 0 1.14e-15 1.06e-15
+_673_/CK    True
+_673_/CK 1.7e-10 1e+30 1.08e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_673_/Q    False
+_673_/Q 1.7e-10 1.84e-10 1.12e-10 1.08e-10
+Corner 0 0 0
+_673_/QN    False
+_673_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_673_/VDD    False
+_673_/VSS    False
+_674_/D    False
+_674_/D 1.59e-10 1.88e-10 9.81e-11 8.54e-11
+Corner 0 1.13e-15 1.05e-15
+_674_/CK    True
+_674_/CK 1.04e-10 1e+30 1.68e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_674_/Q    False
+_674_/Q 1.04e-10 1.17e-10 1.91e-10 1.68e-10
+Corner 0 0 0
+_674_/QN    False
+_674_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_674_/VDD    False
+_674_/VSS    False
+_675_/D    False
+_675_/D 3.39e-11 4.23e-11 1.18e-10 1.27e-10
+Corner 0 1.14e-15 1.06e-15
+_675_/CK    True
+_675_/CK -4.19e-11 1e+30 1.23e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_675_/Q    False
+_675_/Q -3.82e-11 -4.19e-11 1.23e-10 1.27e-10
+Corner 0 0 0
+_675_/QN    False
+_675_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_675_/VDD    False
+_675_/VSS    False
+_676_/D    False
+_676_/D 3.26e-11 4.07e-11 1.2e-10 1.17e-10
+Corner 0 1.14e-15 1.06e-15
+_676_/CK    True
+_676_/CK -4.62e-11 1e+30 1.17e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_676_/Q    False
+_676_/Q -4.62e-11 -3.73e-11 1.24e-10 1.17e-10
+Corner 0 0 0
+_676_/QN    False
+_676_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_676_/VDD    False
+_676_/VSS    False
+_677_/D    False
+_677_/D 3.39e-11 4.19e-11 1.16e-10 1.22e-10
+Corner 0 1.14e-15 1.06e-15
+_677_/CK    True
+_677_/CK -4.86e-11 1e+30 1.23e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_677_/Q    False
+_677_/Q -4.86e-11 -3.85e-11 1.3e-10 1.23e-10
+Corner 0 0 0
+_677_/QN    False
+_677_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_677_/VDD    False
+_677_/VSS    False
+_678_/D    False
+_678_/D 3.39e-11 4.19e-11 1.16e-10 1.16e-10
+Corner 0 1.14e-15 1.06e-15
+_678_/CK    True
+_678_/CK -5.16e-11 1e+30 1.16e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_678_/Q    False
+_678_/Q -5.16e-11 -4.8e-11 1.23e-10 1.16e-10
+Corner 0 0 0
+_678_/QN    False
+_678_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_678_/VDD    False
+_678_/VSS    False
+_679_/D    False
+_679_/D 3.39e-11 4.23e-11 1.18e-10 1.27e-10
+Corner 0 1.14e-15 1.06e-15
+_679_/CK    True
+_679_/CK -5.02e-11 1e+30 1.27e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_679_/Q    False
+_679_/Q -5.02e-11 -4.67e-11 1.3e-10 1.27e-10
+Corner 0 0 0
+_679_/QN    False
+_679_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_679_/VDD    False
+_679_/VSS    False
+_680_/D    False
+_680_/D 3.39e-11 4.19e-11 1.16e-10 1.22e-10
+Corner 0 1.14e-15 1.06e-15
+_680_/CK    True
+_680_/CK -4.82e-11 1e+30 1.27e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_680_/Q    False
+_680_/Q -4.82e-11 -4.23e-11 1.28e-10 1.27e-10
+Corner 0 0 0
+_680_/QN    False
+_680_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_680_/VDD    False
+_680_/VSS    False
+_681_/D    False
+_681_/D 3.39e-11 4.23e-11 1.18e-10 1.25e-10
+Corner 0 1.14e-15 1.06e-15
+_681_/CK    True
+_681_/CK -3.53e-11 1e+30 1.25e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_681_/Q    False
+_681_/Q -3.53e-11 -2.73e-11 1.32e-10 1.25e-10
+Corner 0 0 0
+_681_/QN    False
+_681_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_681_/VDD    False
+_681_/VSS    False
+_682_/D    False
+_682_/D 3.39e-11 4.23e-11 1.18e-10 1.25e-10
+Corner 0 1.14e-15 1.06e-15
+_682_/CK    True
+_682_/CK -4.12e-11 1e+30 1.25e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_682_/Q    False
+_682_/Q -4.12e-11 -3.84e-11 1.29e-10 1.25e-10
+Corner 0 0 0
+_682_/QN    False
+_682_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_682_/VDD    False
+_682_/VSS    False
+_683_/D    False
+_683_/D 3.39e-11 4.23e-11 1.18e-10 1.22e-10
+Corner 0 1.14e-15 1.06e-15
+_683_/CK    True
+_683_/CK -5.44e-11 1e+30 1.22e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_683_/Q    False
+_683_/Q -5.44e-11 -1.84e-11 1.28e-10 1.22e-10
+Corner 0 0 0
+_683_/QN    False
+_683_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_683_/VDD    False
+_683_/VSS    False
+_684_/D    False
+_684_/D 3.39e-11 4.18e-11 1.16e-10 1.22e-10
+Corner 0 1.14e-15 1.06e-15
+_684_/CK    True
+_684_/CK -3.42e-11 1e+30 1.23e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_684_/Q    False
+_684_/Q -3.36e-11 -3.42e-11 1.31e-10 1.23e-10
+Corner 0 0 0
+_684_/QN    False
+_684_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_684_/VDD    False
+_684_/VSS    False
+_685_/D    False
+_685_/D 3.39e-11 4.23e-11 1.18e-10 1.13e-10
+Corner 0 1.14e-15 1.06e-15
+_685_/CK    True
+_685_/CK -5.44e-11 1e+30 1.13e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_685_/Q    False
+_685_/Q -5.44e-11 -3.26e-11 1.19e-10 1.13e-10
+Corner 0 0 0
+_685_/QN    False
+_685_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_685_/VDD    False
+_685_/VSS    False
+_686_/D    False
+_686_/D 3.18e-11 3.99e-11 1.2e-10 1.16e-10
+Corner 0 1.14e-15 1.06e-15
+_686_/CK    True
+_686_/CK -4.82e-11 1e+30 1.16e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_686_/Q    False
+_686_/Q -4.82e-11 -3e-11 1.2e-10 1.16e-10
+Corner 0 0 0
+_686_/QN    False
+_686_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_686_/VDD    False
+_686_/VSS    False
+_687_/D    False
+_687_/D 3.18e-11 3.99e-11 1.2e-10 1.24e-10
+Corner 0 1.14e-15 1.06e-15
+_687_/CK    True
+_687_/CK 2.75e-11 1e+30 1.24e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_687_/Q    False
+_687_/Q 2.75e-11 2.9e-11 1.29e-10 1.24e-10
+Corner 0 0 0
+_687_/QN    False
+_687_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_687_/VDD    False
+_687_/VSS    False
+_688_/D    False
+_688_/D 3.26e-11 4.07e-11 1.2e-10 1.16e-10
+Corner 0 1.14e-15 1.06e-15
+_688_/CK    True
+_688_/CK 1.82e-11 1e+30 1.16e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_688_/Q    False
+_688_/Q 1.82e-11 2.19e-11 1.23e-10 1.16e-10
+Corner 0 0 0
+_688_/QN    False
+_688_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_688_/VDD    False
+_688_/VSS    False
+_689_/D    False
+_689_/D 3.26e-11 4.07e-11 1.2e-10 1.22e-10
+Corner 0 1.14e-15 1.06e-15
+_689_/CK    True
+_689_/CK 4.07e-11 1e+30 1.21e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_689_/Q    False
+_689_/Q 4.07e-11 5.28e-11 1.21e-10 1.22e-10
+Corner 0 0 0
+_689_/QN    False
+_689_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_689_/VDD    False
+_689_/VSS    False
+_690_/D    False
+_690_/D 3.26e-11 4.07e-11 1.19e-10 1.15e-10
+Corner 0 1.14e-15 1.06e-15
+_690_/CK    True
+_690_/CK 3.9e-11 1e+30 1.15e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_690_/Q    False
+_690_/Q 3.9e-11 4.98e-11 1.19e-10 1.15e-10
+Corner 0 0 0
+_690_/QN    False
+_690_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_690_/VDD    False
+_690_/VSS    False
+_691_/D    False
+_691_/D 1.16e-11 1.01e-11 8.5e-11 9.82e-11
+Corner 0 1.14e-15 1.06e-15
+_691_/CK    True
+_691_/CK -3.22e-11 1e+30 1.26e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_691_/Q    False
+_691_/Q -3.22e-11 -2.91e-11 1.29e-10 1.26e-10
+Corner 0 0 0
+_691_/QN    False
+_691_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_691_/VDD    False
+_691_/VSS    False
+_692_/D    False
+_692_/D 1.62e-11 2.6e-11 8.69e-11 1e-10
+Corner 0 1.13e-15 1.05e-15
+_692_/CK    True
+_692_/CK -5.44e-11 1e+30 1.29e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_692_/Q    False
+_692_/Q -5.44e-11 -3.92e-11 1.46e-10 1.29e-10
+Corner 0 0 0
+_692_/QN    False
+_692_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_692_/VDD    False
+_692_/VSS    False
+_693_/D    False
+_693_/D 1.7e-11 2.95e-11 8.36e-11 9.57e-11
+Corner 0 1.14e-15 1.06e-15
+_693_/CK    True
+_693_/CK -4.93e-11 1e+30 1.22e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_693_/Q    False
+_693_/Q -4.93e-11 -4.87e-11 1.24e-10 1.22e-10
+Corner 0 0 0
+_693_/QN    False
+_693_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_693_/VDD    False
+_693_/VSS    False
+_694_/D    False
+_694_/D 1.18e-11 1.13e-11 8.37e-11 9.57e-11
+Corner 0 1.14e-15 1.06e-15
+_694_/CK    True
+_694_/CK -5.54e-11 1e+30 1.25e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_694_/Q    False
+_694_/Q -5.29e-11 -5.54e-11 1.28e-10 1.25e-10
+Corner 0 0 0
+_694_/QN    False
+_694_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_694_/VDD    False
+_694_/VSS    False
+_695_/D    False
+_695_/D 1.77e-11 2.75e-11 8.4e-11 9.62e-11
+Corner 0 1.13e-15 1.05e-15
+_695_/CK    True
+_695_/CK -5.72e-11 1e+30 1.58e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_695_/Q    False
+_695_/Q -5.72e-11 -3.18e-11 1.76e-10 1.58e-10
+Corner 0 0 0
+_695_/QN    False
+_695_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_695_/VDD    False
+_695_/VSS    False
+_696_/D    False
+_696_/D 1.23e-11 1.07e-11 8.37e-11 9.58e-11
+Corner 0 1.14e-15 1.06e-15
+_696_/CK    True
+_696_/CK -5.52e-11 1e+30 1.27e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_696_/Q    False
+_696_/Q -5.52e-11 -4.49e-11 1.31e-10 1.27e-10
+Corner 0 0 0
+_696_/QN    False
+_696_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_696_/VDD    False
+_696_/VSS    False
+_697_/D    False
+_697_/D 1.68e-11 3.16e-11 8.4e-11 9.63e-11
+Corner 0 1.13e-15 1.05e-15
+_697_/CK    True
+_697_/CK -5.56e-11 1e+30 1.28e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_697_/Q    False
+_697_/Q -5.56e-11 -3.64e-11 1.45e-10 1.28e-10
+Corner 0 0 0
+_697_/QN    False
+_697_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_697_/VDD    False
+_697_/VSS    False
+_698_/D    False
+_698_/D 9.87e-12 9.37e-12 8.37e-11 9.58e-11
+Corner 0 1.14e-15 1.06e-15
+_698_/CK    True
+_698_/CK -5.07e-11 1e+30 1.26e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_698_/Q    False
+_698_/Q -5.07e-11 -4.52e-11 1.3e-10 1.26e-10
+Corner 0 0 0
+_698_/QN    False
+_698_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_698_/VDD    False
+_698_/VSS    False
+_699_/D    False
+_699_/D 1.68e-11 2.75e-11 8.4e-11 9.63e-11
+Corner 0 1.13e-15 1.05e-15
+_699_/CK    True
+_699_/CK -5.73e-11 1e+30 1.29e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_699_/Q    False
+_699_/Q -5.73e-11 -4.13e-11 1.46e-10 1.29e-10
+Corner 0 0 0
+_699_/QN    False
+_699_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_699_/VDD    False
+_699_/VSS    False
+_700_/D    False
+_700_/D 1.25e-11 9.27e-12 8.41e-11 9.63e-11
+Corner 0 1.13e-15 1.05e-15
+_700_/CK    True
+_700_/CK -5.35e-11 1e+30 1.29e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_700_/Q    False
+_700_/Q -5.35e-11 -3.99e-11 1.46e-10 1.29e-10
+Corner 0 0 0
+_700_/QN    False
+_700_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_700_/VDD    False
+_700_/VSS    False
+_701_/D    False
+_701_/D 2.7e-11 3.3e-11 8.36e-11 9.58e-11
+Corner 0 1.14e-15 1.06e-15
+_701_/CK    True
+_701_/CK -4.32e-11 1e+30 1.22e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_701_/Q    False
+_701_/Q -3.32e-11 -4.32e-11 1.24e-10 1.22e-10
+Corner 0 0 0
+_701_/QN    False
+_701_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_701_/VDD    False
+_701_/VSS    False
+_702_/D    False
+_702_/D 1.1e-11 1.06e-11 8.64e-11 1.06e-10
+Corner 0 1.13e-15 1.05e-15
+_702_/CK    True
+_702_/CK -4.83e-11 1e+30 1.66e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_702_/Q    False
+_702_/Q -4.83e-11 -4.19e-11 1.71e-10 1.66e-10
+Corner 0 0 0
+_702_/QN    False
+_702_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_702_/VDD    False
+_702_/VSS    False
+_703_/D    False
+_703_/D 2.57e-11 2.84e-11 8.63e-11 9.84e-11
+Corner 0 1.13e-15 1.05e-15
+_703_/CK    True
+_703_/CK 2.05e-12 1e+30 1.29e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_703_/Q    False
+_703_/Q 2.05e-12 3.06e-11 1.47e-10 1.29e-10
+Corner 0 0 0
+_703_/QN    False
+_703_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_703_/VDD    False
+_703_/VSS    False
+_704_/D    False
+_704_/D 1.17e-11 1.06e-11 8.55e-11 1.06e-10
+Corner 0 1.13e-15 1.05e-15
+_704_/CK    True
+_704_/CK 5.64e-12 1e+30 1.66e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_704_/Q    False
+_704_/Q 5.64e-12 2.8e-11 1.71e-10 1.66e-10
+Corner 0 0 0
+_704_/QN    False
+_704_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_704_/VDD    False
+_704_/VSS    False
+_705_/D    False
+_705_/D 2.76e-11 3.29e-11 8.51e-11 1.05e-10
+Corner 0 1.14e-15 1.06e-15
+_705_/CK    True
+_705_/CK 5.58e-11 1e+30 1.48e-10 1e+30
+Corner 0 9.5e-16 8.56e-16
+_705_/Q    False
+_705_/Q 6.6e-11 5.58e-11 1.48e-10 1.58e-10
+Corner 0 0 0
+_705_/QN    False
+_705_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_705_/VDD    False
+_705_/VSS    False
+_706_/D    False
+_706_/D 1.2e-11 1.43e-11 8.56e-11 1.06e-10
+Corner 0 1.13e-15 1.05e-15
+_706_/CK    True
+_706_/CK 3.19e-11 1e+30 1.66e-10 1e+30
+Corner 0 9.3e-16 8.38e-16
+_706_/Q    False
+_706_/Q 3.19e-11 4.48e-11 1.71e-10 1.66e-10
+Corner 0 0 0
+_706_/QN    False
+_706_/QN 1e+30 1e+30 1e+30 1e+30
+Corner 0 0 0
+_706_/VDD    False
+_706_/VSS    False
+clkbuf_0_clk/A    True
+clkbuf_0_clk/A -5.73e-11 1e+30 1.08e-10 1e+30
+Corner 0 3.4e-15 3e-15
+clkbuf_0_clk/Z    True
+clkbuf_0_clk/Z -5.73e-11 1e+30 1.08e-10 1e+30
+Corner 0 0 0
+clkbuf_0_clk/VDD    False
+clkbuf_0_clk/VSS    False
+clkbuf_2_0__f_clk/A    True
+clkbuf_2_0__f_clk/A -5.72e-11 1e+30 1.13e-10 1e+30
+Corner 0 3.4e-15 3e-15
+clkbuf_2_0__f_clk/Z    True
+clkbuf_2_0__f_clk/Z -5.72e-11 1e+30 1.13e-10 1e+30
+Corner 0 0 0
+clkbuf_2_0__f_clk/VDD    False
+clkbuf_2_0__f_clk/VSS    False
+clkbuf_2_1__f_clk/A    True
+clkbuf_2_1__f_clk/A -5.73e-11 1e+30 1.22e-10 1e+30
+Corner 0 3.4e-15 3e-15
+clkbuf_2_1__f_clk/Z    True
+clkbuf_2_1__f_clk/Z -5.73e-11 1e+30 1.22e-10 1e+30
+Corner 0 0 0
+clkbuf_2_1__f_clk/VDD    False
+clkbuf_2_1__f_clk/VSS    False
+clkbuf_2_2__f_clk/A    True
+clkbuf_2_2__f_clk/A -5.44e-11 1e+30 1.15e-10 1e+30
+Corner 0 3.4e-15 3e-15
+clkbuf_2_2__f_clk/Z    True
+clkbuf_2_2__f_clk/Z -5.44e-11 1e+30 1.15e-10 1e+30
+Corner 0 0 0
+clkbuf_2_2__f_clk/VDD    False
+clkbuf_2_2__f_clk/VSS    False
+clkbuf_2_3__f_clk/A    True
+clkbuf_2_3__f_clk/A -4.83e-11 1e+30 1.08e-10 1e+30
+Corner 0 3.4e-15 3e-15
+clkbuf_2_3__f_clk/Z    True
+clkbuf_2_3__f_clk/Z -4.83e-11 1e+30 1.08e-10 1e+30
+Corner 0 0 0
+clkbuf_2_3__f_clk/VDD    False
+clkbuf_2_3__f_clk/VSS    False
+clone35/A1    False
+clone35/A1 2.22e-11 2.84e-11 2.82e-10 2.72e-10
+Corner 0 2.98e-15 2.93e-15
+clone35/A2    False
+clone35/A2 1.87e-10 2.32e-10 2.25e-10 1.68e-10
+Corner 0 3.29e-15 3.1e-15
+clone35/A3    False
+clone35/A3 2.16e-10 2.09e-10 1.96e-10 1.91e-10
+Corner 0 3.56e-15 3.24e-15
+clone35/ZN    False
+clone35/ZN 2.84e-11 2.22e-11 1.68e-10 1.96e-10
+Corner 0 0 0
+clone35/VDD    False
+clone35/VSS    False
+clone39/A1    False
+clone39/A1 2.48e-10 2.44e-10 1.67e-10 1.72e-10
+Corner 0 5.95e-15 5.7e-15
+clone39/A2    False
+clone39/A2 4.87e-11 4.2e-11 1.91e-10 2.26e-10
+Corner 0 6.2e-15 5.62e-15
+clone39/ZN    False
+clone39/ZN 4.2e-11 4.87e-11 1.72e-10 1.67e-10
+Corner 0 0 0
+clone39/VDD    False
+clone39/VSS    False
+input1/A    False
+input1/A 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.75e-16 8.75e-16
+input1/Z    False
+input1/Z 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+input1/VDD    False
+input1/VSS    False
+input10/A    False
+input10/A 3.32e-10 3.21e-10 8.36e-11 9.57e-11
+Corner 0 9.75e-16 8.75e-16
+input10/Z    False
+input10/Z 3.32e-10 3.21e-10 8.36e-11 9.57e-11
+Corner 0 0 0
+input10/VDD    False
+input10/VSS    False
+input11/A    False
+input11/A 3.32e-10 3.21e-10 8.37e-11 9.57e-11
+Corner 0 9.75e-16 8.75e-16
+input11/Z    False
+input11/Z 3.32e-10 3.21e-10 8.37e-11 9.57e-11
+Corner 0 0 0
+input11/VDD    False
+input11/VSS    False
+input12/A    False
+input12/A 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.75e-16 8.75e-16
+input12/Z    False
+input12/Z 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+input12/VDD    False
+input12/VSS    False
+input13/A    False
+input13/A 3.33e-10 3.19e-10 8.4e-11 9.62e-11
+Corner 0 9.75e-16 8.75e-16
+input13/Z    False
+input13/Z 3.33e-10 3.19e-10 8.4e-11 9.62e-11
+Corner 0 0 0
+input13/VDD    False
+input13/VSS    False
+input14/A    False
+input14/A 3.32e-10 3.21e-10 8.37e-11 9.58e-11
+Corner 0 9.75e-16 8.75e-16
+input14/Z    False
+input14/Z 3.32e-10 3.21e-10 8.37e-11 9.58e-11
+Corner 0 0 0
+input14/VDD    False
+input14/VSS    False
+input15/A    False
+input15/A 3.33e-10 3.19e-10 8.4e-11 9.63e-11
+Corner 0 9.75e-16 8.75e-16
+input15/Z    False
+input15/Z 3.33e-10 3.19e-10 8.4e-11 9.63e-11
+Corner 0 0 0
+input15/VDD    False
+input15/VSS    False
+input16/A    False
+input16/A 3.32e-10 3.21e-10 8.37e-11 9.58e-11
+Corner 0 9.75e-16 8.75e-16
+input16/Z    False
+input16/Z 3.32e-10 3.21e-10 8.37e-11 9.58e-11
+Corner 0 0 0
+input16/VDD    False
+input16/VSS    False
+input17/A    False
+input17/A 3.33e-10 3.19e-10 8.4e-11 9.63e-11
+Corner 0 9.75e-16 8.75e-16
+input17/Z    False
+input17/Z 3.33e-10 3.19e-10 8.4e-11 9.63e-11
+Corner 0 0 0
+input17/VDD    False
+input17/VSS    False
+input18/A    False
+input18/A 3.33e-10 3.19e-10 8.41e-11 9.63e-11
+Corner 0 9.75e-16 8.75e-16
+input18/Z    False
+input18/Z 3.33e-10 3.19e-10 8.41e-11 9.63e-11
+Corner 0 0 0
+input18/VDD    False
+input18/VSS    False
+input19/A    False
+input19/A 3.32e-10 3.21e-10 8.36e-11 9.58e-11
+Corner 0 9.75e-16 8.75e-16
+input19/Z    False
+input19/Z 3.32e-10 3.21e-10 8.36e-11 9.58e-11
+Corner 0 0 0
+input19/VDD    False
+input19/VSS    False
+input2/A    False
+input2/A 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.75e-16 8.75e-16
+input2/Z    False
+input2/Z 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+input2/VDD    False
+input2/VSS    False
+input20/A    False
+input20/A 3.31e-10 3.11e-10 8.64e-11 1.06e-10
+Corner 0 9.75e-16 8.75e-16
+input20/Z    False
+input20/Z 3.31e-10 3.11e-10 8.64e-11 1.06e-10
+Corner 0 0 0
+input20/VDD    False
+input20/VSS    False
+input21/A    False
+input21/A 3.31e-10 3.16e-10 8.63e-11 9.84e-11
+Corner 0 9.75e-16 8.75e-16
+input21/Z    False
+input21/Z 3.31e-10 3.16e-10 8.63e-11 9.84e-11
+Corner 0 0 0
+input21/VDD    False
+input21/VSS    False
+input22/A    False
+input22/A 3.32e-10 3.11e-10 8.55e-11 1.06e-10
+Corner 0 9.75e-16 8.75e-16
+input22/Z    False
+input22/Z 3.32e-10 3.11e-10 8.55e-11 1.06e-10
+Corner 0 0 0
+input22/VDD    False
+input22/VSS    False
+input23/A    False
+input23/A 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 9.75e-16 8.75e-16
+input23/Z    False
+input23/Z 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+input23/VDD    False
+input23/VSS    False
+input24/A    False
+input24/A 3.31e-10 3.13e-10 8.51e-11 1.05e-10
+Corner 0 9.75e-16 8.75e-16
+input24/Z    False
+input24/Z 3.31e-10 3.13e-10 8.51e-11 1.05e-10
+Corner 0 0 0
+input24/VDD    False
+input24/VSS    False
+input25/A    False
+input25/A 3.32e-10 3.11e-10 8.56e-11 1.06e-10
+Corner 0 9.75e-16 8.75e-16
+input25/Z    False
+input25/Z 3.32e-10 3.11e-10 8.56e-11 1.06e-10
+Corner 0 0 0
+input25/VDD    False
+input25/VSS    False
+input26/A    False
+input26/A 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 9.75e-16 8.75e-16
+input26/Z    False
+input26/Z 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+input26/VDD    False
+input26/VSS    False
+input27/A    False
+input27/A 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.75e-16 8.75e-16
+input27/Z    False
+input27/Z 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+input27/VDD    False
+input27/VSS    False
+input28/A    False
+input28/A 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 9.75e-16 8.75e-16
+input28/Z    False
+input28/Z 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+input28/VDD    False
+input28/VSS    False
+input29/A    False
+input29/A 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.75e-16 8.75e-16
+input29/Z    False
+input29/Z 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+input29/VDD    False
+input29/VSS    False
+input3/A    False
+input3/A 2.96e-10 2.62e-10 1.2e-10 1.52e-10
+Corner 0 9.75e-16 8.75e-16
+input3/Z    False
+input3/Z 2.96e-10 2.62e-10 1.2e-10 1.52e-10
+Corner 0 0 0
+input3/VDD    False
+input3/VSS    False
+input30/A    False
+input30/A 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.75e-16 8.75e-16
+input30/Z    False
+input30/Z 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+input30/VDD    False
+input30/VSS    False
+input31/A    False
+input31/A 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 9.75e-16 8.75e-16
+input31/Z    False
+input31/Z 2.98e-10 2.64e-10 1.18e-10 1.5e-10
+Corner 0 0 0
+input31/VDD    False
+input31/VSS    False
+input32/A    False
+input32/A 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 9.75e-16 8.75e-16
+input32/Z    False
+input32/Z 2.89e-10 2.78e-10 1.16e-10 1.22e-10
+Corner 0 0 0
+input32/VDD    False
+input32/VSS    False
+input33/A    False
+input33/A 2.96e-10 3.09e-10 8.32e-11 9.43e-11
+Corner 0 9.75e-16 8.75e-16
+input33/Z    False
+input33/Z 2.96e-10 3.09e-10 8.32e-11 9.43e-11
+Corner 0 0 0
+input33/VDD    False
+input33/VSS    False
+input34/A    False
+input34/A 2.99e-10 2.67e-10 8.54e-11 9.81e-11
+Corner 0 9.75e-16 8.75e-16
+input34/Z    False
+input34/Z 2.99e-10 2.67e-10 8.54e-11 9.81e-11
+Corner 0 0 0
+input34/VDD    False
+input34/VSS    False
+input35/A    False
+input35/A 3.07e-10 2.83e-10 9.36e-11 1.22e-10
+Corner 0 9.75e-16 8.75e-16
+input35/Z    False
+input35/Z 3.07e-10 2.83e-10 9.36e-11 1.22e-10
+Corner 0 0 0
+input35/VDD    False
+input35/VSS    False
+input4/A    False
+input4/A 2.96e-10 2.62e-10 1.2e-10 1.52e-10
+Corner 0 9.75e-16 8.75e-16
+input4/Z    False
+input4/Z 2.96e-10 2.62e-10 1.2e-10 1.52e-10
+Corner 0 0 0
+input4/VDD    False
+input4/VSS    False
+input5/A    False
+input5/A 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.75e-16 8.75e-16
+input5/Z    False
+input5/Z 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+input5/VDD    False
+input5/VSS    False
+input6/A    False
+input6/A 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.75e-16 8.75e-16
+input6/Z    False
+input6/Z 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+input6/VDD    False
+input6/VSS    False
+input7/A    False
+input7/A 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 9.75e-16 8.75e-16
+input7/Z    False
+input7/Z 2.96e-10 2.63e-10 1.2e-10 1.51e-10
+Corner 0 0 0
+input7/VDD    False
+input7/VSS    False
+input8/A    False
+input8/A 3.29e-10 3.19e-10 8.5e-11 9.82e-11
+Corner 0 9.75e-16 8.75e-16
+input8/Z    False
+input8/Z 3.29e-10 3.19e-10 8.5e-11 9.82e-11
+Corner 0 0 0
+input8/VDD    False
+input8/VSS    False
+input9/A    False
+input9/A 3.28e-10 3.15e-10 8.69e-11 1e-10
+Corner 0 9.75e-16 8.75e-16
+input9/Z    False
+input9/Z 3.28e-10 3.15e-10 8.69e-11 1e-10
+Corner 0 0 0
+input9/VDD    False
+input9/VSS    False
+output36/A    False
+output36/A 9.51e-11 1.49e-10 3.65e-10 3.11e-10
+Corner 0 9.75e-16 8.75e-16
+output36/Z    False
+output36/Z 9.51e-11 1.49e-10 3.65e-10 3.11e-10
+Corner 0 0 0
+output36/VDD    False
+output36/VSS    False
+output37/A    False
+output37/A 1.42e-10 1.52e-10 2.87e-10 2.85e-10
+Corner 0 9.75e-16 8.75e-16
+output37/Z    False
+output37/Z 1.42e-10 1.52e-10 2.87e-10 2.85e-10
+Corner 0 0 0
+output37/VDD    False
+output37/VSS    False
+output38/A    False
+output38/A -5.53e-12 -1.62e-11 3.28e-10 3.43e-10
+Corner 0 9.75e-16 8.75e-16
+output38/Z    False
+output38/Z -5.53e-12 -1.62e-11 3.28e-10 3.43e-10
+Corner 0 0 0
+output38/VDD    False
+output38/VSS    False
+output39/A    False
+output39/A -3.86e-11 -3.43e-11 3.1e-10 3.13e-10
+Corner 0 9.75e-16 8.75e-16
+output39/Z    False
+output39/Z -3.86e-11 -3.43e-11 3.1e-10 3.13e-10
+Corner 0 0 0
+output39/VDD    False
+output39/VSS    False
+output40/A    False
+output40/A -1.23e-11 -1.96e-11 3.02e-10 3.14e-10
+Corner 0 9.75e-16 8.75e-16
+output40/Z    False
+output40/Z -1.23e-11 -1.96e-11 3.02e-10 3.14e-10
+Corner 0 0 0
+output40/VDD    False
+output40/VSS    False
+output41/A    False
+output41/A -3.51e-11 -3.44e-11 3.13e-10 3.22e-10
+Corner 0 9.75e-16 8.75e-16
+output41/Z    False
+output41/Z -3.51e-11 -3.44e-11 3.13e-10 3.22e-10
+Corner 0 0 0
+output41/VDD    False
+output41/VSS    False
+output42/A    False
+output42/A -3.83e-11 -4.66e-11 3.33e-10 3.48e-10
+Corner 0 9.75e-16 8.75e-16
+output42/Z    False
+output42/Z -3.83e-11 -4.66e-11 3.33e-10 3.48e-10
+Corner 0 0 0
+output42/VDD    False
+output42/VSS    False
+output43/A    False
+output43/A -5.09e-11 -5.73e-11 3.26e-10 3.37e-10
+Corner 0 9.75e-16 8.75e-16
+output43/Z    False
+output43/Z -5.09e-11 -5.73e-11 3.26e-10 3.37e-10
+Corner 0 0 0
+output43/VDD    False
+output43/VSS    False
+output44/A    False
+output44/A 1.1e-10 8.7e-11 2.99e-10 3.12e-10
+Corner 0 9.75e-16 8.75e-16
+output44/Z    False
+output44/Z 1.1e-10 8.7e-11 2.99e-10 3.12e-10
+Corner 0 0 0
+output44/VDD    False
+output44/VSS    False
+output45/A    False
+output45/A 6.22e-11 4.86e-11 3.28e-10 3.52e-10
+Corner 0 9.75e-16 8.75e-16
+output45/Z    False
+output45/Z 6.22e-11 4.86e-11 3.28e-10 3.52e-10
+Corner 0 0 0
+output45/VDD    False
+output45/VSS    False
+output46/A    False
+output46/A 3.28e-11 4.34e-11 3.31e-10 3.17e-10
+Corner 0 9.75e-16 8.75e-16
+output46/Z    False
+output46/Z 3.28e-11 4.34e-11 3.31e-10 3.17e-10
+Corner 0 0 0
+output46/VDD    False
+output46/VSS    False
+output47/A    False
+output47/A 2.38e-11 1.29e-11 3.45e-10 3.69e-10
+Corner 0 9.75e-16 8.75e-16
+output47/Z    False
+output47/Z 2.38e-11 1.29e-11 3.45e-10 3.69e-10
+Corner 0 0 0
+output47/VDD    False
+output47/VSS    False
+output48/A    False
+output48/A 1.85e-11 1.2e-11 3.05e-10 3.1e-10
+Corner 0 9.75e-16 8.75e-16
+output48/Z    False
+output48/Z 1.85e-11 1.2e-11 3.05e-10 3.1e-10
+Corner 0 0 0
+output48/VDD    False
+output48/VSS    False
+output49/A    False
+output49/A 2.37e-11 -7.31e-13 3.31e-10 3.33e-10
+Corner 0 9.75e-16 8.75e-16
+output49/Z    False
+output49/Z 2.37e-11 -7.31e-13 3.31e-10 3.33e-10
+Corner 0 0 0
+output49/VDD    False
+output49/VSS    False
+output50/A    False
+output50/A -3.03e-11 -9.89e-12 3.28e-10 3.09e-10
+Corner 0 9.75e-16 8.75e-16
+output50/Z    False
+output50/Z -3.03e-11 -9.89e-12 3.28e-10 3.09e-10
+Corner 0 0 0
+output50/VDD    False
+output50/VSS    False
+output51/A    False
+output51/A -2.07e-11 -3.15e-11 3.1e-10 3.18e-10
+Corner 0 9.75e-16 8.75e-16
+output51/Z    False
+output51/Z -2.07e-11 -3.15e-11 3.1e-10 3.18e-10
+Corner 0 0 0
+output51/VDD    False
+output51/VSS    False
+output52/A    False
+output52/A -3.93e-11 -3.67e-11 3.08e-10 3.02e-10
+Corner 0 9.75e-16 8.75e-16
+output52/Z    False
+output52/Z -3.93e-11 -3.67e-11 3.08e-10 3.02e-10
+Corner 0 0 0
+output52/VDD    False
+output52/VSS    False
+output53/A    False
+output53/A 1.17e-10 1.04e-10 2.9e-10 2.76e-10
+Corner 0 9.75e-16 8.75e-16
+output53/Z    False
+output53/Z 1.17e-10 1.04e-10 2.9e-10 2.76e-10
+Corner 0 0 0
+output53/VDD    False
+output53/VSS    False
+rebuffer1/A    False
+rebuffer1/A 4.61e-11 7.59e-11 2.54e-10 2.37e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer1/Z    False
+rebuffer1/Z 4.61e-11 7.59e-11 2.54e-10 2.37e-10
+Corner 0 0 0
+rebuffer1/VDD    False
+rebuffer1/VSS    False
+rebuffer10/A    False
+rebuffer10/A 2.43e-10 2.59e-10 1.76e-10 1.58e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer10/Z    False
+rebuffer10/Z 2.43e-10 2.59e-10 1.76e-10 1.58e-10
+Corner 0 0 0
+rebuffer10/VDD    False
+rebuffer10/VSS    False
+rebuffer2/A    False
+rebuffer2/A 4.86e-11 6.22e-11 2.52e-10 2.38e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer2/Z    False
+rebuffer2/Z 4.86e-11 6.22e-11 2.52e-10 2.38e-10
+Corner 0 0 0
+rebuffer2/VDD    False
+rebuffer2/VSS    False
+rebuffer20/A    False
+rebuffer20/A -5.06e-11 -5.54e-11 2.6e-10 2.66e-10
+Corner 0 3.4e-15 3e-15
+rebuffer20/Z    False
+rebuffer20/Z -5.06e-11 -5.54e-11 2.6e-10 2.66e-10
+Corner 0 0 0
+rebuffer20/VDD    False
+rebuffer20/VSS    False
+rebuffer21/A    False
+rebuffer21/A -4.91e-11 -4.8e-11 2.51e-10 2.58e-10
+Corner 0 1.78e-15 1.59e-15
+rebuffer21/Z    False
+rebuffer21/Z -4.91e-11 -4.8e-11 2.51e-10 2.58e-10
+Corner 0 0 0
+rebuffer21/VDD    False
+rebuffer21/VSS    False
+rebuffer28/A    False
+rebuffer28/A -4.13e-11 -4.23e-11 2.47e-10 2.73e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer28/Z    False
+rebuffer28/Z -4.13e-11 -4.23e-11 2.47e-10 2.73e-10
+Corner 0 0 0
+rebuffer28/VDD    False
+rebuffer28/VSS    False
+rebuffer29/A    False
+rebuffer29/A -5.02e-11 -3.95e-11 2.48e-10 2.59e-10
+Corner 0 3.4e-15 3e-15
+rebuffer29/Z    False
+rebuffer29/Z -5.02e-11 -3.95e-11 2.48e-10 2.59e-10
+Corner 0 0 0
+rebuffer29/VDD    False
+rebuffer29/VSS    False
+rebuffer3/A    False
+rebuffer3/A 3.28e-11 4.34e-11 2.67e-10 2.66e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer3/Z    False
+rebuffer3/Z 3.28e-11 4.34e-11 2.67e-10 2.66e-10
+Corner 0 0 0
+rebuffer3/VDD    False
+rebuffer3/VSS    False
+rebuffer30/A    False
+rebuffer30/A -3.67e-11 -3.93e-11 2.98e-10 3.01e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer30/Z    False
+rebuffer30/Z -3.67e-11 -3.93e-11 2.98e-10 3.01e-10
+Corner 0 0 0
+rebuffer30/VDD    False
+rebuffer30/VSS    False
+rebuffer33/A    False
+rebuffer33/A 3.5e-11 1.36e-11 1.97e-10 2.28e-10
+Corner 0 3.4e-15 3e-15
+rebuffer33/Z    False
+rebuffer33/Z 3.5e-11 1.36e-11 1.97e-10 2.28e-10
+Corner 0 0 0
+rebuffer33/VDD    False
+rebuffer33/VSS    False
+rebuffer34/A    False
+rebuffer34/A 3.47e-11 1.62e-11 1.95e-10 2.27e-10
+Corner 0 3.4e-15 3e-15
+rebuffer34/Z    False
+rebuffer34/Z 3.47e-11 1.62e-11 1.95e-10 2.27e-10
+Corner 0 0 0
+rebuffer34/VDD    False
+rebuffer34/VSS    False
+rebuffer37/A    False
+rebuffer37/A 7.06e-11 7.96e-11 2.42e-10 2.58e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer37/Z    False
+rebuffer37/Z 7.06e-11 7.96e-11 2.42e-10 2.58e-10
+Corner 0 0 0
+rebuffer37/VDD    False
+rebuffer37/VSS    False
+rebuffer38/A    False
+rebuffer38/A 5.08e-11 4.1e-11 2.28e-10 2.32e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer38/Z    False
+rebuffer38/Z 5.08e-11 4.1e-11 2.28e-10 2.32e-10
+Corner 0 0 0
+rebuffer38/VDD    False
+rebuffer38/VSS    False
+rebuffer4/A    False
+rebuffer4/A 1.29e-11 2.38e-11 2.83e-10 2.72e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer4/Z    False
+rebuffer4/Z 1.29e-11 2.38e-11 2.83e-10 2.72e-10
+Corner 0 0 0
+rebuffer4/VDD    False
+rebuffer4/VSS    False
+rebuffer5/A    False
+rebuffer5/A -5.36e-11 -3.64e-11 2.46e-10 2.41e-10
+Corner 0 9.75e-16 8.75e-16
+rebuffer5/Z    False
+rebuffer5/Z -5.36e-11 -3.64e-11 2.46e-10 2.41e-10
+Corner 0 0 0
+rebuffer5/VDD    False
+rebuffer5/VSS    False
+rebuffer6/A    False
+rebuffer6/A 2.1e-10 2.09e-10 2.05e-10 2.05e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer6/Z    False
+rebuffer6/Z 2.1e-10 2.09e-10 2.05e-10 2.05e-10
+Corner 0 0 0
+rebuffer6/VDD    False
+rebuffer6/VSS    False
+rebuffer7/A    False
+rebuffer7/A -2.42e-11 1.03e-11 2.88e-10 2.7e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer7/Z    False
+rebuffer7/Z -2.42e-11 1.03e-11 2.88e-10 2.7e-10
+Corner 0 0 0
+rebuffer7/VDD    False
+rebuffer7/VSS    False
+rebuffer8/A    False
+rebuffer8/A 5.25e-11 7.48e-11 2.42e-10 2.48e-10
+Corner 0 7.8e-16 6.99e-16
+rebuffer8/Z    False
+rebuffer8/Z 5.25e-11 7.48e-11 2.42e-10 2.48e-10
+Corner 0 0 0
+rebuffer8/VDD    False
+rebuffer8/VSS    False
+rebuffer9/A    False
+rebuffer9/A -4.81e-11 -4.87e-11 2.2e-10 2.24e-10
+Corner 0 3.4e-15 3e-15
+rebuffer9/Z    False
+rebuffer9/Z -4.81e-11 -4.87e-11 2.2e-10 2.24e-10
+Corner 0 0 0
+rebuffer9/VDD    False
+rebuffer9/VSS    False

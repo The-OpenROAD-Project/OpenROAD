@@ -1,0 +1,174 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN mpd_top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 112450 112450 ) ;
+ROW ROW_0_2 unithd 73600 2720 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_1_2 unithd 73600 5440 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_2_2 unithd 73600 8160 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_3_2 unithd 73600 10880 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_4_2 unithd 73600 13600 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_5_2 unithd 73600 16320 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_6_2 unithd 73600 19040 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_7_2 unithd 73600 21760 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_8_2 unithd 73600 24480 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_9_2 unithd 73600 27200 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_10_2 unithd 73600 29920 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_11_2 unithd 73600 32640 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_12 unithd 2300 35360 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_13 unithd 2300 38080 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_14 unithd 2300 40800 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_15 unithd 2300 43520 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_16 unithd 2300 46240 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_17 unithd 2300 48960 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_18 unithd 2300 51680 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_19 unithd 2300 54400 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_20 unithd 2300 57120 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_21 unithd 2300 59840 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_22 unithd 2300 62560 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_23 unithd 2300 65280 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_24 unithd 2300 68000 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_25 unithd 2300 70720 FS DO 235 BY 1 STEP 460 0 ;
+ROW ROW_26 unithd 2300 73440 N DO 235 BY 1 STEP 460 0 ;
+ROW ROW_27_2 unithd 73600 76160 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_28_2 unithd 73600 78880 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_29_2 unithd 73600 81600 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_30_2 unithd 73600 84320 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_31_2 unithd 73600 87040 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_32_2 unithd 73600 89760 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_33_2 unithd 73600 92480 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_34_2 unithd 73600 95200 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_35_2 unithd 73600 97920 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_36_2 unithd 73600 100640 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_37_2 unithd 73600 103360 FS DO 80 BY 1 STEP 460 0 ;
+ROW ROW_38_2 unithd 73600 106080 N DO 80 BY 1 STEP 460 0 ;
+ROW ROW_0_PD_D1 unithd 2300 2720 N DO 120 BY 1 STEP 460 0 ;
+ROW ROW_1_PD_D1 unithd 2300 5440 FS DO 120 BY 1 STEP 460 0 ;
+ROW ROW_2_PD_D1 unithd 2300 8160 N DO 120 BY 1 STEP 460 0 ;
+ROW ROW_3_PD_D1 unithd 2300 10880 FS DO 120 BY 1 STEP 460 0 ;
+ROW ROW_4_PD_D1 unithd 2300 13600 N DO 120 BY 1 STEP 460 0 ;
+ROW ROW_5_PD_D1 unithd 2300 16320 FS DO 120 BY 1 STEP 460 0 ;
+ROW ROW_33_PD_D2 unithd 2300 92480 FS DO 120 BY 1 STEP 460 0 ;
+ROW ROW_34_PD_D2 unithd 2300 95200 N DO 120 BY 1 STEP 460 0 ;
+ROW ROW_35_PD_D2 unithd 2300 97920 FS DO 120 BY 1 STEP 460 0 ;
+ROW ROW_36_PD_D2 unithd 2300 100640 N DO 120 BY 1 STEP 460 0 ;
+ROW ROW_37_PD_D2 unithd 2300 103360 FS DO 120 BY 1 STEP 460 0 ;
+ROW ROW_38_PD_D2 unithd 2300 106080 N DO 120 BY 1 STEP 460 0 ;
+TRACKS X 230 DO 244 STEP 460 LAYER li1 ;
+TRACKS Y 170 DO 330 STEP 340 LAYER li1 ;
+TRACKS X 170 DO 331 STEP 340 LAYER met1 ;
+TRACKS Y 170 DO 331 STEP 340 LAYER met1 ;
+TRACKS X 230 DO 244 STEP 460 LAYER met2 ;
+TRACKS Y 230 DO 244 STEP 460 LAYER met2 ;
+TRACKS X 340 DO 165 STEP 680 LAYER met3 ;
+TRACKS Y 340 DO 165 STEP 680 LAYER met3 ;
+TRACKS X 460 DO 122 STEP 920 LAYER met4 ;
+TRACKS Y 460 DO 122 STEP 920 LAYER met4 ;
+TRACKS X 1700 DO 33 STEP 3400 LAYER met5 ;
+TRACKS Y 1700 DO 33 STEP 3400 LAYER met5 ;
+REGIONS 2 ;
+    - PD_D1 ( 2300 2720 ) ( 57500 19040 ) + TYPE FENCE ;
+    - PD_D2 ( 2300 92480 ) ( 57500 108800 ) + TYPE FENCE ;
+END REGIONS
+COMPONENTS 28 ;
+    - _1_ sky130_fd_sc_hd__xnor2_1 + PLACED ( 90160 54400 ) FS ;
+    - _2_ sky130_fd_sc_hd__xnor2_1 + PLACED ( 81420 57120 ) N ;
+    - _3_ sky130_fd_sc_hd__xnor2_1 + PLACED ( 72680 57120 ) N ;
+    - _4_ sky130_fd_sc_hd__and2_1 + PLACED ( 78200 59840 ) FS ;
+    - d1/_0_ sky130_fd_sc_hd__and2_1 + PLACED ( 55200 16320 ) FS ;
+    - d1/_0__d1_out3_d1_out3_o_isolation sky130_fd_sc_hd__lpflow_inputiso0n_1 + PLACED ( 87860 54400 ) FS ;
+    - d1/_0__d1_out3_d1_out3_o_isolation_inv_control sky130_fd_sc_hd__clkinv_1 + PLACED ( 86480 54400 ) FS ;
+    - d1/_1_ sky130_fd_sc_hd__buf_4 + PLACED ( 46460 16320 ) S ;
+    - d1/_1__d1_out1_d1_out1_o_isolation sky130_fd_sc_hd__lpflow_inputiso0n_1 + PLACED ( 46920 54400 ) FS ;
+    - d1/_1__d1_out1_d1_out1_o_isolation_inv_control sky130_fd_sc_hd__clkinv_1 + PLACED ( 74520 54400 ) S ;
+    - d1/_2_ sky130_fd_sc_hd__buf_4 + PLACED ( 52440 16320 ) S ;
+    - d1/_2__d1_out2_d1_out2_o_isolation sky130_fd_sc_hd__lpflow_inputiso0n_1 + PLACED ( 70380 54400 ) FS ;
+    - d1/_2__d1_out2_d1_out2_o_isolation_inv_control sky130_fd_sc_hd__clkinv_1 + PLACED ( 73140 54400 ) S ;
+    - d2/_0_ sky130_fd_sc_hd__and2_1 + PLACED ( 47380 92480 ) FS ;
+    - d2/_0__d2_out3_d2_out3_o_isolation sky130_fd_sc_hd__lpflow_inputiso0n_1 + PLACED ( 55200 95200 ) N ;
+    - d2/_0__d2_out3_d2_out3_o_isolation_inv_control sky130_fd_sc_hd__clkinv_1 + PLACED ( 55660 92480 ) FS ;
+    - d2/_1_ sky130_fd_sc_hd__buf_4 + PLACED ( 49680 92480 ) FS ;
+    - d2/_1__d2_out1_d2_out1_o_isolation sky130_fd_sc_hd__lpflow_inputiso0n_1 + PLACED ( 52900 95200 ) N ;
+    - d2/_1__d2_out1_d2_out1_o_isolation_inv_control sky130_fd_sc_hd__clkinv_1 + PLACED ( 53820 92480 ) S ;
+    - d2/_2_ sky130_fd_sc_hd__buf_4 + PLACED ( 47840 95200 ) N ;
+    - d2/_2__d2_out2_d2_out2_o_isolation sky130_fd_sc_hd__lpflow_inputiso0n_1 + PLACED ( 50600 95200 ) N ;
+    - d2/_2__d2_out2_d2_out2_o_isolation_inv_control sky130_fd_sc_hd__clkinv_1 + PLACED ( 52440 92480 ) S ;
+    - d3/_0_ sky130_fd_sc_hd__and2_1 + PLACED ( 70380 57120 ) N ;
+    - d3/_1_ sky130_fd_sc_hd__buf_4 + PLACED ( 68080 59840 ) FS ;
+    - d3/_2_ sky130_fd_sc_hd__buf_4 + PLACED ( 78200 57120 ) N ;
+    - d4/_0_ sky130_fd_sc_hd__and2_1 + PLACED ( 65780 59840 ) FS ;
+    - d4/_1_ sky130_fd_sc_hd__buf_4 + PLACED ( 73600 59840 ) FS ;
+    - d4/_2_ sky130_fd_sc_hd__buf_4 + PLACED ( 67620 57120 ) N ;
+END COMPONENTS
+PINS 7 ;
+    - d1_iso_control + NET d1_iso_control + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 56100 ) N ;
+    - d2_iso_control + NET d2_iso_control + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 53380 ) N ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 52020 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 58820 ) N ;
+    - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 54740 ) N ;
+    - out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 57460 ) N ;
+    - out3 + NET out3 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met3 ( -400 -150 ) ( 400 150 )
+        + PLACED ( 112050 60180 ) N ;
+END PINS
+NETS 32 ;
+    - _0_ ( _4_ B ) ( _3_ Y ) + USE SIGNAL ;
+    - d1/_0__d1_out3_d1_out3_o_isolation_inv_control ( d1/_0__d1_out3_d1_out3_o_isolation SLEEP_B ) ( d1/_0__d1_out3_d1_out3_o_isolation_inv_control Y ) + USE SIGNAL ;
+    - d1/_1__d1_out1_d1_out1_o_isolation_inv_control ( d1/_1__d1_out1_d1_out1_o_isolation SLEEP_B ) ( d1/_1__d1_out1_d1_out1_o_isolation_inv_control Y ) + USE SIGNAL ;
+    - d1/_2__d1_out2_d1_out2_o_isolation_inv_control ( d1/_2__d1_out2_d1_out2_o_isolation SLEEP_B ) ( d1/_2__d1_out2_d1_out2_o_isolation_inv_control Y ) + USE SIGNAL ;
+    - d1_iso_control ( PIN d1_iso_control ) ( d1/_0__d1_out3_d1_out3_o_isolation_inv_control A ) ( d1/_1__d1_out1_d1_out1_o_isolation_inv_control A ) ( d1/_2__d1_out2_d1_out2_o_isolation_inv_control A ) + USE SIGNAL ;
+    - d1_out1 ( d1/_1__d1_out1_d1_out1_o_isolation A ) ( d1/_1_ X ) + USE SIGNAL ;
+    - d1_out1_o ( d2/_0_ A ) ( d2/_2_ A ) ( d1/_1__d1_out1_d1_out1_o_isolation X ) + USE SIGNAL ;
+    - d1_out2 ( d1/_2__d1_out2_d1_out2_o_isolation A ) ( d1/_2_ X ) + USE SIGNAL ;
+    - d1_out2_o ( d3/_0_ A ) ( d3/_2_ A ) ( d1/_2__d1_out2_d1_out2_o_isolation X ) + USE SIGNAL ;
+    - d1_out3 ( d1/_0__d1_out3_d1_out3_o_isolation A ) ( d1/_0_ X ) + USE SIGNAL ;
+    - d1_out3_o ( _1_ B ) ( d1/_0__d1_out3_d1_out3_o_isolation X ) + USE SIGNAL ;
+    - d2/_0__d2_out3_d2_out3_o_isolation_inv_control ( d2/_0__d2_out3_d2_out3_o_isolation SLEEP_B ) ( d2/_0__d2_out3_d2_out3_o_isolation_inv_control Y ) + USE SIGNAL ;
+    - d2/_1__d2_out1_d2_out1_o_isolation_inv_control ( d2/_1__d2_out1_d2_out1_o_isolation SLEEP_B ) ( d2/_1__d2_out1_d2_out1_o_isolation_inv_control Y ) + USE SIGNAL ;
+    - d2/_2__d2_out2_d2_out2_o_isolation_inv_control ( d2/_2__d2_out2_d2_out2_o_isolation SLEEP_B ) ( d2/_2__d2_out2_d2_out2_o_isolation_inv_control Y ) + USE SIGNAL ;
+    - d2_iso_control ( PIN d2_iso_control ) ( d2/_0__d2_out3_d2_out3_o_isolation_inv_control A ) ( d2/_1__d2_out1_d2_out1_o_isolation_inv_control A ) ( d2/_2__d2_out2_d2_out2_o_isolation_inv_control A ) + USE SIGNAL ;
+    - d2_out1 ( d2/_1__d2_out1_d2_out1_o_isolation A ) ( d2/_1_ X ) + USE SIGNAL ;
+    - d2_out1_o ( d3/_0_ B ) ( d3/_1_ A ) ( d2/_1__d2_out1_d2_out1_o_isolation X ) + USE SIGNAL ;
+    - d2_out2 ( d2/_2__d2_out2_d2_out2_o_isolation A ) ( d2/_2_ X ) + USE SIGNAL ;
+    - d2_out2_o ( d4/_0_ A ) ( d4/_2_ A ) ( d2/_2__d2_out2_d2_out2_o_isolation X ) + USE SIGNAL ;
+    - d2_out3 ( d2/_0__d2_out3_d2_out3_o_isolation A ) ( d2/_0_ X ) + USE SIGNAL ;
+    - d2_out3_o ( _1_ A ) ( d2/_0__d2_out3_d2_out3_o_isolation X ) + USE SIGNAL ;
+    - d3_out1 ( d4/_1_ A ) ( d4/_0_ B ) ( d3/_1_ X ) + USE SIGNAL ;
+    - d3_out2 ( d3/_2_ X ) ( _2_ B ) + USE SIGNAL ;
+    - d3_out3 ( d3/_0_ X ) ( _3_ A ) + USE SIGNAL ;
+    - d4_out1 ( d4/_1_ X ) ( _4_ A ) + USE SIGNAL ;
+    - d4_out2 ( d4/_2_ X ) ( _3_ B ) + USE SIGNAL ;
+    - d4_out3 ( d4/_0_ X ) ( _2_ A ) + USE SIGNAL ;
+    - in1 ( PIN in1 ) ( d2/_1_ A ) ( d2/_0_ B ) ( d1/_1_ A ) ( d1/_0_ B ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( d1/_2_ A ) ( d1/_0_ A ) + USE SIGNAL ;
+    - out1 ( PIN out1 ) ( _1_ Y ) + USE SIGNAL ;
+    - out2 ( PIN out2 ) ( _2_ Y ) + USE SIGNAL ;
+    - out3 ( PIN out3 ) ( _4_ X ) + USE SIGNAL ;
+END NETS
+GROUPS 2 ;
+    - PD_D1 d1/_2_ d1/_1_ d1/_0_ + REGION PD_D1 ;
+    - PD_D2 d2/_0__d2_out3_d2_out3_o_isolation_inv_control d2/_0__d2_out3_d2_out3_o_isolation d2/_1__d2_out1_d2_out1_o_isolation_inv_control
+         d2/_1__d2_out1_d2_out1_o_isolation d2/_2__d2_out2_d2_out2_o_isolation_inv_control d2/_2__d2_out2_d2_out2_o_isolation d2/_2_
+         d2/_1_ d2/_0_ + REGION PD_D2 ;
+END GROUPS
+END DESIGN

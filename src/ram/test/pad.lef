@@ -1,0 +1,65 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+SITE IO_SITE
+  CLASS PAD ;
+  SIZE 1 BY 150 ;
+END IO_SITE
+
+MACRO PAD
+  CLASS PAD ;
+  ORIGIN 0 0 ;
+  SIZE 25 BY 100 ;
+  SYMMETRY X Y ;
+  SITE IO_SITE ;
+  PIN PAD
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
+  END PAD
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
+  END Y
+  PIN TRIEN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
+  END TRIEN
+  PIN RXEN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
+  END RXEN
+  PIN DATA
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
+  END DATA
+  PIN NDIN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT 1.15 0 28.85 0.5 ;
+    END
+  END NDIN
+END PAD
+

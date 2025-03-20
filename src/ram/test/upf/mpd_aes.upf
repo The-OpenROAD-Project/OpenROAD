@@ -1,0 +1,71 @@
+create_power_domain PD_TOP \
+  -elements {.}  \
+
+create_power_domain PD_AES_1 \
+  -elements {u_aes_1} \
+
+create_power_domain PD_AES_2 \
+  -elements {u_aes_2} \
+
+create_logic_port power_down_aes_1 -direction in
+
+create_power_switch psw_aes_1 \
+  -domain PD_AES_1 \
+  -output_supply_port vout \
+  -input_supply_port vin \
+  -control_port {sleep power_down_aes_1} \
+  -on_state {ON vin {!sleep}}
+
+create_power_switch psw_aes_2 \
+  -domain PD_AES_2 \
+  -output_supply_port vout \
+  -input_supply_port vin \
+  -control_port {sleep power_down_aes_2} \
+  -on_state {ON vin {!sleep}}
+
+create_logic_port isolation_sig_aes1
+create_logic_port isolation_sig_aes2
+
+set_isolation iso_aes_1 \
+  -domain PD_AES_1 \
+  -applies_to outputs \
+  -clamp_value 0
+
+set_isolation iso_aes_2 \
+  -domain PD_AES_2 \
+  -applies_to outputs \
+  -clamp_value 0
+
+set_isolation iso_aes_1 \
+  -domain PD_AES_1 \
+  -update \
+  -isolation_signal isolation_sig_aes1 \
+  -isolation_sense low
+
+set_isolation iso_aes_2 \
+  -domain PD_AES_2 \
+  -update \
+  -isolation_signal isolation_sig_aes2 \
+  -isolation_sense low
+
+set_isolation iso_aes_1 \
+  -domain PD_AES_1 \
+  -update \
+  -location parent
+
+set_isolation iso_aes_2 \
+  -domain PD_AES_2 \
+  -update \
+  -location parent
+
+
+use_interface_cell \
+  -domain PD_AES_1 \
+  -strategy iso_aes_1 \
+  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+
+
+use_interface_cell \
+  -domain PD_AES_2 \
+  -strategy iso_aes_2 \
+  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}

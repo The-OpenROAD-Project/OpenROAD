@@ -291,6 +291,7 @@ add_subdirectory(gpl)
 add_subdirectory(dpl)
 add_subdirectory(dpo)
 add_subdirectory(fin)
+add_subdirectory(ram)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
 add_subdirectory(cts)
@@ -309,6 +310,7 @@ add_subdirectory(pdn)
 add_subdirectory(dft)
 add_subdirectory(mpl2)
 add_subdirectory(par)
+add_subdirectory(tool)
 
 ################################################################
 
@@ -348,6 +350,7 @@ target_link_libraries(openroad
   dpl
   dpo
   fin
+  ram
   rsz
   ppl
   stt
@@ -370,6 +373,7 @@ target_link_libraries(openroad
   utl
   pdn
   dft
+  tool
   mpl2
   par
   ${ABC_LIBRARY}
@@ -441,6 +445,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     drt_py
     dpo_py
     fin_py
+#    ram_py
     rcx_py
     rmp_py
     stt_py

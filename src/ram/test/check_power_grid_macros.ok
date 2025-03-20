@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45_data/fakeram45_64x32.lef, created 1 library cells
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 269 pins.
+[INFO ODB-0131]     Created 547 components and 1304 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1094 connections.
+[INFO ODB-0133]     Created 269 nets and 0 connections.
+[INFO PSM-0040] All shapes on net VDD are connected.

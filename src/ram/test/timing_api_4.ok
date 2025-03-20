@@ -1,0 +1,1895 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0127] Reading DEF file: get_core_die_areas.def
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 5 components and 27 component-terminals.
+[INFO ODB-0133]     Created 10 nets and 14 connections.
+[INFO ODB-0134] Finished DEF file: get_core_die_areas.def
+clk1 9.5e-16 8.56e-16
+clk2 9.5e-16 8.56e-16
+clk3 9.5e-16 8.56e-16
+in1 1.14e-15 1.06e-15
+in2 1.14e-15 1.06e-15
+out 0 0
+r1q 9.18e-16 8.75e-16
+r2q 9.75e-16 8.75e-16
+u1z 9.75e-16 8.94e-16
+u2z 1.14e-15 1.06e-15
+r1 DFF_X1 True
+r2 DFF_X1 True
+r3 DFF_X1 True
+u1 BUF_X1 False
+u2 AND2_X1 False
+AND2_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AND2_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AND2_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AND3_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  6.04e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AND3_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AND3_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  2.41e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AND4_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AND4_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  1.2e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AND4_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  2.41e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+ANTENNA_X1
+A  0 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI211_X1
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  1.45e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI211_X2
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.9e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI211_X4
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI21_X1
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  2.53e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI21_X2
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  5.07e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI21_X4
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  1.01e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI221_X1
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  1.38e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI221_X2
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.76e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI221_X4
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI222_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  1.3e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI222_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.56e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI222_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI22_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  2.46e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI22_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  4.91e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AOI22_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  9.8e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+BUF_X1
+A  0 1.99e-10
+     Z
+Z  6.07e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+BUF_X16
+A  0 1.99e-10
+     Z
+Z  9.66e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+BUF_X2
+A  0 1.99e-10
+     Z
+Z  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+BUF_X32
+A  0 1.99e-10
+     Z
+Z  1.9e-12 1.99e-10
+VDD  0 0
+VSS  0 0
+BUF_X4
+A  0 1.99e-10
+     Z
+Z  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+BUF_X8
+A  0 1.99e-10
+     Z
+Z  4.84e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKBUF_X1
+A  0 1.99e-10
+     Z
+Z  6.07e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKBUF_X2
+A  0 1.99e-10
+     Z
+Z  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKBUF_X3
+A  0 1.99e-10
+     Z
+Z  1.82e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATETST_X1
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+SE  0 1.99e-10
+GCK  6.07e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATETST_X2
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+SE  0 1.99e-10
+GCK  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATETST_X4
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+SE  0 1.99e-10
+GCK  2.43e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATETST_X8
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+SE  0 1.99e-10
+GCK  4.85e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATE_X1
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+GCK  6.07e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATE_X2
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+GCK  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATE_X4
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+GCK  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+CLKGATE_X8
+CK  0 1.99e-10
+     GCK
+E  0 1.99e-10
+GCK  4.85e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+DFFRS_X1
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.07e-14 1.99e-10
+QN  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+DFFRS_X2
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+DFFR_X1
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.06e-14 1.99e-10
+QN  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+DFFR_X2
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+DFFS_X1
+D  0 1.99e-10
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.07e-14 1.99e-10
+QN  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+DFFS_X2
+D  0 1.99e-10
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+DFF_X1
+D  0 1.99e-10
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.07e-14 1.99e-10
+QN  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+DFF_X2
+D  0 1.99e-10
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+DLH_X1
+D  0 1.99e-10
+     Q
+G  0 1.99e-10
+     Q
+Q  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+DLH_X2
+D  0 1.99e-10
+     Q
+G  0 1.99e-10
+     Q
+Q  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+DLL_X1
+D  0 1.99e-10
+     Q
+GN  0 1.99e-10
+     Q
+Q  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+DLL_X2
+D  0 1.99e-10
+     Q
+GN  0 1.99e-10
+     Q
+Q  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+FA_X1
+A  0 1.99e-10
+     CO
+     S
+B  0 1.99e-10
+     CO
+     S
+CI  0 1.99e-10
+     CO
+     S
+CO  6.01e-14 1.99e-10
+S  6.03e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+TAPCELL_X1
+VDD  0 0
+VSS  0 0
+FILLCELL_X1
+VDD  0 0
+VSS  0 0
+FILLCELL_X16
+VDD  0 0
+VSS  0 0
+FILLCELL_X2
+VDD  0 0
+VSS  0 0
+FILLCELL_X32
+VDD  0 0
+VSS  0 0
+FILLCELL_X4
+VDD  0 0
+VSS  0 0
+FILLCELL_X8
+VDD  0 0
+VSS  0 0
+HA_X1
+A  0 1.99e-10
+     CO
+     S
+B  0 1.99e-10
+     CO
+     S
+CO  6.06e-14 1.99e-10
+S  2.53e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+INV_X1
+A  0 1.99e-10
+     ZN
+ZN  6.07e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+INV_X16
+A  0 1.99e-10
+     ZN
+ZN  9.69e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+INV_X2
+A  0 1.99e-10
+     ZN
+ZN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+INV_X32
+A  0 1.99e-10
+     ZN
+ZN  1.92e-12 1.99e-10
+VDD  0 0
+VSS  0 0
+INV_X4
+A  0 1.99e-10
+     ZN
+ZN  2.43e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+INV_X8
+A  0 1.99e-10
+     ZN
+ZN  4.85e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+LOGIC0_X1
+Z  0 1.99e-10
+VDD  0 0
+VSS  0 0
+LOGIC1_X1
+Z  0 1.99e-10
+VDD  0 0
+VSS  0 0
+MUX2_X1
+A  0 1.99e-10
+     Z
+B  0 1.99e-10
+     Z
+S  0 1.99e-10
+     Z
+Z  6.05e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+MUX2_X2
+A  0 1.99e-10
+     Z
+B  0 1.99e-10
+     Z
+S  0 1.99e-10
+     Z
+Z  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND2_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  5.94e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND2_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  1.19e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND2_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  2.37e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND3_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  5.84e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND3_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  1.16e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND3_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  2.33e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND4_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  5.6e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND4_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  1.12e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NAND4_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  2.23e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR2_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  2.67e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR2_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  5.34e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR2_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  1.07e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR3_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  1.6e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR3_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  3.17e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR3_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  6.33e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR4_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  1.05e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR4_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  2.09e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+NOR4_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  4.15e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI211_X1
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.56e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI211_X2
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  5.08e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI211_X4
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  1.02e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI21_X1
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  2.61e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI21_X2
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  5.21e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI21_X4
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  1.04e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI221_X1
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.22e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI221_X2
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  4.39e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI221_X4
+A  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI222_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.01e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI222_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  3.96e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI222_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+C1  0 1.99e-10
+     ZN
+C2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI22_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  2.32e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI22_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  4.63e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI22_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+ZN  9.25e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OAI33_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+B1  0 1.99e-10
+     ZN
+B2  0 1.99e-10
+     ZN
+B3  0 1.99e-10
+     ZN
+ZN  1.15e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OR2_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OR2_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OR2_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OR3_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OR3_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OR3_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OR4_X1
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+OR4_X2
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+OR4_X4
+A1  0 1.99e-10
+     ZN
+A2  0 1.99e-10
+     ZN
+A3  0 1.99e-10
+     ZN
+A4  0 1.99e-10
+     ZN
+ZN  2.42e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFFRS_X1
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+SE  0 1.99e-10
+SI  0 1.99e-10
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.03e-14 1.99e-10
+QN  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFFRS_X2
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+SE  0 1.99e-10
+SI  0 1.99e-10
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFFR_X1
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+SE  0 1.99e-10
+SI  0 1.99e-10
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.04e-14 1.99e-10
+QN  6.04e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFFR_X2
+D  0 1.99e-10
+RN  0 1.99e-10
+     Q
+     QN
+SE  0 1.99e-10
+SI  0 1.99e-10
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFFS_X1
+D  0 1.99e-10
+SE  0 1.99e-10
+SI  0 1.99e-10
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.01e-14 1.99e-10
+QN  6.06e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFFS_X2
+D  0 1.99e-10
+SE  0 1.99e-10
+SI  0 1.99e-10
+SN  0 1.99e-10
+     Q
+     QN
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFF_X1
+D  0 1.99e-10
+SE  0 1.99e-10
+SI  0 1.99e-10
+CK  0 1.99e-10
+     Q
+     QN
+Q  6.06e-14 1.99e-10
+QN  6.04e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+SDFF_X2
+D  0 1.99e-10
+SE  0 1.99e-10
+SI  0 1.99e-10
+CK  0 1.99e-10
+     Q
+     QN
+Q  1.21e-13 1.99e-10
+QN  1.21e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+TBUF_X1
+A  0 1.99e-10
+     Z
+EN  0 1.99e-10
+     Z
+Z  5.16e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+TBUF_X16
+A  0 1.99e-10
+     Z
+EN  0 1.99e-10
+     Z
+Z  8.2e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+TBUF_X2
+A  0 1.99e-10
+     Z
+EN  0 1.99e-10
+     Z
+Z  1.04e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+TBUF_X4
+A  0 1.99e-10
+     Z
+EN  0 1.99e-10
+     Z
+Z  2.07e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+TBUF_X8
+A  0 1.99e-10
+     Z
+EN  0 1.99e-10
+     Z
+Z  4.13e-13 1.99e-10
+VDD  0 0
+VSS  0 0
+TINV_X1
+EN  0 1.99e-10
+     ZN
+I  0 1.99e-10
+     ZN
+ZN  2.26e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+TLAT_X1
+D  0 1.99e-10
+     Q
+G  0 1.99e-10
+     Q
+OE  0 1.99e-10
+     Q
+Q  2.26e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+XNOR2_X1
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+ZN  2.6e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+XNOR2_X2
+A  0 1.99e-10
+     ZN
+B  0 1.99e-10
+     ZN
+ZN  5.2e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+XOR2_X1
+A  0 1.99e-10
+     Z
+B  0 1.99e-10
+     Z
+Z  2.53e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+XOR2_X2
+A  0 1.99e-10
+     Z
+B  0 1.99e-10
+     Z
+Z  5.05e-14 1.99e-10
+VDD  0 0
+VSS  0 0
+AND2_X1
+   AND2_X1
+   AND2_X2
+   AND2_X4
+AND2_X2
+   AND2_X1
+   AND2_X2
+   AND2_X4
+AND2_X4
+   AND2_X1
+   AND2_X2
+   AND2_X4
+AND3_X1
+   AND3_X1
+   AND3_X2
+   AND3_X4
+AND3_X2
+   AND3_X1
+   AND3_X2
+   AND3_X4
+AND3_X4
+   AND3_X1
+   AND3_X2
+   AND3_X4
+AND4_X1
+   AND4_X1
+   AND4_X2
+   AND4_X4
+AND4_X2
+   AND4_X1
+   AND4_X2
+   AND4_X4
+AND4_X4
+   AND4_X1
+   AND4_X2
+   AND4_X4
+ANTENNA_X1
+   ANTENNA_X1
+AOI211_X1
+   AOI211_X1
+   AOI211_X2
+AOI211_X2
+   AOI211_X1
+   AOI211_X2
+AOI211_X4
+   AOI211_X4
+AOI21_X1
+   AOI21_X1
+   AOI21_X2
+   AOI21_X4
+AOI21_X2
+   AOI21_X1
+   AOI21_X2
+   AOI21_X4
+AOI21_X4
+   AOI21_X1
+   AOI21_X2
+   AOI21_X4
+AOI221_X1
+   AOI221_X1
+   AOI221_X2
+AOI221_X2
+   AOI221_X1
+   AOI221_X2
+AOI221_X4
+   AOI221_X4
+AOI222_X1
+   AOI222_X1
+   AOI222_X2
+AOI222_X2
+   AOI222_X1
+   AOI222_X2
+AOI222_X4
+   AOI222_X4
+AOI22_X1
+   AOI22_X1
+   AOI22_X2
+   AOI22_X4
+AOI22_X2
+   AOI22_X1
+   AOI22_X2
+   AOI22_X4
+AOI22_X4
+   AOI22_X1
+   AOI22_X2
+   AOI22_X4
+BUF_X1
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+BUF_X16
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+BUF_X2
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+BUF_X32
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+BUF_X4
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+BUF_X8
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+CLKBUF_X1
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+CLKBUF_X2
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+CLKBUF_X3
+   BUF_X1
+   CLKBUF_X1
+   BUF_X2
+   CLKBUF_X2
+   CLKBUF_X3
+   BUF_X4
+   BUF_X8
+   BUF_X16
+   BUF_X32
+CLKGATETST_X1
+   CLKGATETST_X1
+   CLKGATETST_X2
+   CLKGATETST_X4
+   CLKGATETST_X8
+CLKGATETST_X2
+   CLKGATETST_X1
+   CLKGATETST_X2
+   CLKGATETST_X4
+   CLKGATETST_X8
+CLKGATETST_X4
+   CLKGATETST_X1
+   CLKGATETST_X2
+   CLKGATETST_X4
+   CLKGATETST_X8
+CLKGATETST_X8
+   CLKGATETST_X1
+   CLKGATETST_X2
+   CLKGATETST_X4
+   CLKGATETST_X8
+CLKGATE_X1
+   CLKGATE_X1
+   CLKGATE_X2
+   CLKGATE_X4
+   CLKGATE_X8
+CLKGATE_X2
+   CLKGATE_X1
+   CLKGATE_X2
+   CLKGATE_X4
+   CLKGATE_X8
+CLKGATE_X4
+   CLKGATE_X1
+   CLKGATE_X2
+   CLKGATE_X4
+   CLKGATE_X8
+CLKGATE_X8
+   CLKGATE_X1
+   CLKGATE_X2
+   CLKGATE_X4
+   CLKGATE_X8
+DFFRS_X1
+   DFFRS_X1
+   DFFRS_X2
+DFFRS_X2
+   DFFRS_X1
+   DFFRS_X2
+DFFR_X1
+   DFFR_X1
+   DFFR_X2
+DFFR_X2
+   DFFR_X1
+   DFFR_X2
+DFFS_X1
+   DFFS_X1
+   DFFS_X2
+DFFS_X2
+   DFFS_X1
+   DFFS_X2
+DFF_X1
+   DFF_X1
+   DFF_X2
+DFF_X2
+   DFF_X1
+   DFF_X2
+DLH_X1
+   DLH_X1
+   DLH_X2
+DLH_X2
+   DLH_X1
+   DLH_X2
+DLL_X1
+   DLL_X1
+   DLL_X2
+DLL_X2
+   DLL_X1
+   DLL_X2
+FA_X1
+   FA_X1
+TAPCELL_X1
+   TAPCELL_X1
+FILLCELL_X1
+   FILLCELL_X1
+FILLCELL_X16
+   FILLCELL_X16
+FILLCELL_X2
+   FILLCELL_X2
+FILLCELL_X32
+   FILLCELL_X32
+FILLCELL_X4
+   FILLCELL_X4
+FILLCELL_X8
+   FILLCELL_X8
+HA_X1
+   HA_X1
+INV_X1
+   INV_X1
+   INV_X2
+   INV_X4
+   INV_X8
+   INV_X16
+   INV_X32
+INV_X16
+   INV_X1
+   INV_X2
+   INV_X4
+   INV_X8
+   INV_X16
+   INV_X32
+INV_X2
+   INV_X1
+   INV_X2
+   INV_X4
+   INV_X8
+   INV_X16
+   INV_X32
+INV_X32
+   INV_X1
+   INV_X2
+   INV_X4
+   INV_X8
+   INV_X16
+   INV_X32
+INV_X4
+   INV_X1
+   INV_X2
+   INV_X4
+   INV_X8
+   INV_X16
+   INV_X32
+INV_X8
+   INV_X1
+   INV_X2
+   INV_X4
+   INV_X8
+   INV_X16
+   INV_X32
+LOGIC0_X1
+   LOGIC0_X1
+LOGIC1_X1
+   LOGIC1_X1
+MUX2_X1
+   MUX2_X1
+   MUX2_X2
+MUX2_X2
+   MUX2_X1
+   MUX2_X2
+NAND2_X1
+   NAND2_X1
+   NAND2_X2
+   NAND2_X4
+NAND2_X2
+   NAND2_X1
+   NAND2_X2
+   NAND2_X4
+NAND2_X4
+   NAND2_X1
+   NAND2_X2
+   NAND2_X4
+NAND3_X1
+   NAND3_X1
+   NAND3_X2
+   NAND3_X4
+NAND3_X2
+   NAND3_X1
+   NAND3_X2
+   NAND3_X4
+NAND3_X4
+   NAND3_X1
+   NAND3_X2
+   NAND3_X4
+NAND4_X1
+   NAND4_X1
+   NAND4_X2
+   NAND4_X4
+NAND4_X2
+   NAND4_X1
+   NAND4_X2
+   NAND4_X4
+NAND4_X4
+   NAND4_X1
+   NAND4_X2
+   NAND4_X4
+NOR2_X1
+   NOR2_X1
+   NOR2_X2
+   NOR2_X4
+NOR2_X2
+   NOR2_X1
+   NOR2_X2
+   NOR2_X4
+NOR2_X4
+   NOR2_X1
+   NOR2_X2
+   NOR2_X4
+NOR3_X1
+   NOR3_X1
+   NOR3_X2
+   NOR3_X4
+NOR3_X2
+   NOR3_X1
+   NOR3_X2
+   NOR3_X4
+NOR3_X4
+   NOR3_X1
+   NOR3_X2
+   NOR3_X4
+NOR4_X1
+   NOR4_X1
+   NOR4_X2
+   NOR4_X4
+NOR4_X2
+   NOR4_X1
+   NOR4_X2
+   NOR4_X4
+NOR4_X4
+   NOR4_X1
+   NOR4_X2
+   NOR4_X4
+OAI211_X1
+   OAI211_X1
+   OAI211_X2
+   OAI211_X4
+OAI211_X2
+   OAI211_X1
+   OAI211_X2
+   OAI211_X4
+OAI211_X4
+   OAI211_X1
+   OAI211_X2
+   OAI211_X4
+OAI21_X1
+   OAI21_X1
+   OAI21_X2
+   OAI21_X4
+OAI21_X2
+   OAI21_X1
+   OAI21_X2
+   OAI21_X4
+OAI21_X4
+   OAI21_X1
+   OAI21_X2
+   OAI21_X4
+OAI221_X1
+   OAI221_X1
+   OAI221_X2
+OAI221_X2
+   OAI221_X1
+   OAI221_X2
+OAI221_X4
+   OAI221_X4
+OAI222_X1
+   OAI222_X1
+   OAI222_X2
+OAI222_X2
+   OAI222_X1
+   OAI222_X2
+OAI222_X4
+   OAI222_X4
+OAI22_X1
+   OAI22_X1
+   OAI22_X2
+   OAI22_X4
+OAI22_X2
+   OAI22_X1
+   OAI22_X2
+   OAI22_X4
+OAI22_X4
+   OAI22_X1
+   OAI22_X2
+   OAI22_X4
+OAI33_X1
+   OAI33_X1
+OR2_X1
+   OR2_X1
+   OR2_X2
+   OR2_X4
+OR2_X2
+   OR2_X1
+   OR2_X2
+   OR2_X4
+OR2_X4
+   OR2_X1
+   OR2_X2
+   OR2_X4
+OR3_X1
+   OR3_X1
+   OR3_X2
+   OR3_X4
+OR3_X2
+   OR3_X1
+   OR3_X2
+   OR3_X4
+OR3_X4
+   OR3_X1
+   OR3_X2
+   OR3_X4
+OR4_X1
+   OR4_X1
+   OR4_X2
+   OR4_X4
+OR4_X2
+   OR4_X1
+   OR4_X2
+   OR4_X4
+OR4_X4
+   OR4_X1
+   OR4_X2
+   OR4_X4
+SDFFRS_X1
+   SDFFRS_X1
+   SDFFRS_X2
+SDFFRS_X2
+   SDFFRS_X1
+   SDFFRS_X2
+SDFFR_X1
+   SDFFR_X1
+   SDFFR_X2
+SDFFR_X2
+   SDFFR_X1
+   SDFFR_X2
+SDFFS_X1
+   SDFFS_X1
+   SDFFS_X2
+SDFFS_X2
+   SDFFS_X1
+   SDFFS_X2
+SDFF_X1
+   SDFF_X1
+   SDFF_X2
+SDFF_X2
+   SDFF_X1
+   SDFF_X2
+TBUF_X1
+   TBUF_X1
+   TBUF_X16
+   TBUF_X2
+   TBUF_X4
+   TBUF_X8
+TBUF_X16
+   TBUF_X1
+   TBUF_X16
+   TBUF_X2
+   TBUF_X4
+   TBUF_X8
+TBUF_X2
+   TBUF_X1
+   TBUF_X16
+   TBUF_X2
+   TBUF_X4
+   TBUF_X8
+TBUF_X4
+   TBUF_X1
+   TBUF_X16
+   TBUF_X2
+   TBUF_X4
+   TBUF_X8
+TBUF_X8
+   TBUF_X1
+   TBUF_X16
+   TBUF_X2
+   TBUF_X4
+   TBUF_X8
+TINV_X1
+   TINV_X1
+TLAT_X1
+   TLAT_X1
+XNOR2_X1
+   XNOR2_X1
+   XNOR2_X2
+XNOR2_X2
+   XNOR2_X1
+   XNOR2_X2
+XOR2_X1
+   XOR2_X1
+   XOR2_X2
+XOR2_X2
+   XOR2_X1
+   XOR2_X2

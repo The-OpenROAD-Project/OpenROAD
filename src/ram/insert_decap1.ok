@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 538 components and 2577 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1076 connections.
+[INFO ODB-0133]     Created 475 nets and 1498 connections.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.40e+00 V
+Worstcase voltage: 1.40e+00 V
+Average voltage  : 1.40e+00 V
+Average IR drop  : 1.25e-11 V
+Worstcase IR drop: 2.85e-11 V
+Percentage drop  : 0.00 %
+######################################
+[INFO DPL-0056] Placed 657 decap cells. Total capacitance: 0.000611
+No differences found.

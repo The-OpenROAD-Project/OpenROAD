@@ -95,6 +95,10 @@ namespace fin {
 class Finale;
 }
 
+namespace ram {
+class RamGen;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -150,6 +154,11 @@ namespace dft {
 class Dft;
 }
 
+namespace tool{
+class Tool;
+}
+
+
 namespace ord {
 
 using std::string;
@@ -182,6 +191,7 @@ class OpenRoad
   dpl::Opendp* getOpendp() { return opendp_; }
   dpo::Optdp* getOptdp() { return optdp_; }
   fin::Finale* getFinale() { return finale_; }
+  ram::RamGen* getRamGen() { return ram_gen_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   mpl2::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
@@ -198,6 +208,7 @@ class OpenRoad
   dst::Distributed* getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
   dft::Dft* getDft() { return dft_; }
+  tool::Tool* getTool() { return tool_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -278,6 +289,7 @@ class OpenRoad
   dpl::Opendp* opendp_ = nullptr;
   dpo::Optdp* optdp_ = nullptr;
   fin::Finale* finale_ = nullptr;
+  ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   mpl2::MacroPlacer2* macro_placer2_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
@@ -295,6 +307,7 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
+  tool::Tool* tool_ = nullptr;
 
   std::set<OpenRoadObserver*> observers_;
 

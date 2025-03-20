@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 624 components and 2752 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1248 connections.
+[INFO ODB-0133]     Created 581 nets and 1504 connections.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
+########## IR report #################
+Net              : VDD
+Corner           : min
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 8.95e-01 V
+Average voltage  : 9.09e-01 V
+Average IR drop  : 1.91e-01 V
+Worstcase IR drop: 2.05e-01 V
+Percentage drop  : 18.60 %
+######################################
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
+########## IR report #################
+Net              : VDD
+Corner           : max
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 9.12e-01 V
+Average voltage  : 9.25e-01 V
+Average IR drop  : 1.75e-01 V
+Worstcase IR drop: 1.88e-01 V
+Percentage drop  : 17.08 %
+######################################

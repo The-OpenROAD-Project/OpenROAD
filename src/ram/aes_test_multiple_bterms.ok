@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 390 pins.
+[INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 39670 connections.
+[INFO ODB-0133]     Created 18908 nets and 62165 connections.
+[INFO PSM-0040] All shapes on net VDD are connected.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.10e+00 V
+Average voltage  : 1.10e+00 V
+Average IR drop  : 2.39e-04 V
+Worstcase IR drop: 2.55e-03 V
+Percentage drop  : 0.23 %
+######################################
+[INFO PSM-0040] All shapes on net VSS are connected.
+########## IR report #################
+Net              : VSS
+Corner           : default
+Supply voltage   : 0.00e+00 V
+Worstcase voltage: 4.35e-03 V
+Average voltage  : 3.61e-04 V
+Average IR drop  : 3.61e-04 V
+Worstcase IR drop: 4.35e-03 V
+Percentage drop  : 0.40 %
+######################################

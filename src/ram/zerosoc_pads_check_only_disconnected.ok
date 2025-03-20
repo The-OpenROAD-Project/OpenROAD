@@ -1,0 +1,27 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130hd_data/ram/sky130_sram_2kbyte_1rw1r_32x512_8.lef, created 1 library cells
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sky130_dummy_io.lef at line 2.
+
+[INFO ODB-0227] LEF file: sky130hd_data/io/sky130_dummy_io.lef, created 32 library cells
+[INFO ODB-0128] Design: asic_top
+[INFO ODB-0130]     Created 40 pins.
+[INFO ODB-0131]     Created 44595 components and 163942 component-terminals.
+[INFO ODB-0132]     Created 48 special nets and 113998 connections.
+[INFO ODB-0133]     Created 13655 nets and 49143 connections.
+[WARNING PSM-0038] Unconnected node on net vdd at location (2101.210um, 1562.500um), layer: met4.
+[WARNING PSM-0038] Unconnected node on net vdd at location (2101.210um, 1567.500um), layer: met4.
+[WARNING PSM-0038] Unconnected node on net vdd at location (2101.210um, 1562.500um), layer: met5.
+[WARNING PSM-0038] Unconnected node on net vdd at location (2101.210um, 1568.500um), layer: met5.
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_48/VCCD at location (2101.210um, 1562.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_49/VCCD at location (2101.210um, 1563.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_50/VCCD at location (2101.210um, 1564.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_51/VCCD at location (2101.210um, 1565.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_52/VCCD at location (2101.210um, 1566.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_53/VCCD at location (2101.210um, 1567.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_54/VCCD at location (2101.210um, 1568.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_55/VCCD at location (2101.210um, 1569.500um).
+[WARNING PSM-0039] Unconnected instance IO_FILL_IO_EAST_13_56/VCCD at location (2101.210um, 1570.500um).
+[ERROR PSM-0069] Check connectivity failed on vdd.
+PSM-0069

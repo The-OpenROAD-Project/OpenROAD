@@ -57,6 +57,7 @@
 #include "dpo/MakeOptdp.h"
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
+#include "ram/MakeRam.h"
 #include "gpl/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
@@ -85,6 +86,7 @@
 #include "triton_route/MakeTritonRoute.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
+#include "tool/MakeTool.hh"
 #include "utl/ScopedTemporaryFile.h"
 
 namespace sta {
@@ -139,6 +141,7 @@ OpenRoad::~OpenRoad()
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
+  deleteRamGen(ram_gen_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
@@ -147,6 +150,7 @@ OpenRoad::~OpenRoad()
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
+  deleteTool(tool_);
   delete logger_;
 }
 
@@ -196,6 +200,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   opendp_ = makeOpendp();
   optdp_ = makeOptdp();
   finale_ = makeFinale();
+  ram_gen_ = makeRamGen();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
   tritonCts_ = makeTritonCts();
@@ -213,6 +218,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
+  tool_ = makeTool();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -233,6 +239,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initOpendp(this);
   initOptdp(this);
   initFinale(this);
+  initRamGen(this);
   initGlobalRouter(this);
   initTritonCts(this);
   initTapcell(this);
@@ -249,6 +256,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initDistributed(this);
   initSteinerTreeBuilder(this);
   dft::initDft(this);
+  initTool(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

@@ -1,0 +1,29 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 24 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 22107 components and 115805 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 44214 connections.
+[INFO ODB-0133]     Created 21542 nets and 71591 connections.
+[WARNING STA-1212] asap7_data/asap7.lib line 13177, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13210, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13243, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13276, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13309, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13342, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 13375, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 14771, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 14804, timing group from output port.
+[WARNING STA-1212] asap7_data/asap7.lib line 14837, timing group from output port.
+[INFO PSM-0040] All shapes on net VDD are connected.
+[INFO PSM-0073] Using bump pattern with x-pitch 140.0000um, y-pitch 140.0000um, and size 70.0000um with an reduction factor of 3x.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Supply voltage   : 7.00e-01 V
+Worstcase voltage: 7.00e-01 V
+Average voltage  : 7.00e-01 V
+Average IR drop  : 3.11e-06 V
+Worstcase IR drop: 7.80e-06 V
+Percentage drop  : 0.00 %
+######################################

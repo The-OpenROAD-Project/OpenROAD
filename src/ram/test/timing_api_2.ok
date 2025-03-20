@@ -1,0 +1,3270 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0127] Reading DEF file: gcd_nangate45.def
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 734 components and 2762 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1468 connections.
+[INFO ODB-0133]     Created 497 nets and 1294 connections.
+[INFO ODB-0134] Finished DEF file: gcd_nangate45.def
+FILLER_0_0_1 FILLCELL_X16 False False False False
+0 0
+FILLER_0_0_108 FILLCELL_X2 False False False False
+0 0
+FILLER_0_0_120 FILLCELL_X8 False False False False
+0 0
+FILLER_0_0_128 FILLCELL_X2 False False False False
+0 0
+FILLER_0_0_133 FILLCELL_X16 False False False False
+0 0
+FILLER_0_0_149 FILLCELL_X8 False False False False
+0 0
+FILLER_0_0_157 FILLCELL_X2 False False False False
+0 0
+FILLER_0_0_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_0_17 FILLCELL_X4 False False False False
+0 0
+FILLER_0_0_21 FILLCELL_X2 False False False False
+0 0
+FILLER_0_10_104 FILLCELL_X16 False False False False
+0 0
+FILLER_0_10_120 FILLCELL_X4 False False False False
+0 0
+FILLER_0_10_124 FILLCELL_X1 False False False False
+0 0
+FILLER_0_10_4 FILLCELL_X1 False False False False
+0 0
+FILLER_0_10_61 FILLCELL_X2 False False False False
+0 0
+FILLER_0_10_70 FILLCELL_X8 False False False False
+0 0
+FILLER_0_10_78 FILLCELL_X2 False False False False
+0 0
+FILLER_0_10_87 FILLCELL_X8 False False False False
+0 0
+FILLER_0_10_95 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_123 FILLCELL_X2 False False False False
+0 0
+FILLER_0_11_145 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_150 FILLCELL_X2 False False False False
+0 0
+FILLER_0_11_152 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_156 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_21 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_29 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_35 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_55 FILLCELL_X4 False False False False
+0 0
+FILLER_0_11_59 FILLCELL_X2 False False False False
+0 0
+FILLER_0_11_61 FILLCELL_X1 False False False False
+0 0
+FILLER_0_11_98 FILLCELL_X2 False False False False
+0 0
+FILLER_0_12_1 FILLCELL_X8 False False False False
+0 0
+FILLER_0_12_11 FILLCELL_X1 False False False False
+0 0
+FILLER_0_12_122 FILLCELL_X8 False False False False
+0 0
+FILLER_0_12_149 FILLCELL_X8 False False False False
+0 0
+FILLER_0_12_15 FILLCELL_X4 False False False False
+0 0
+FILLER_0_12_157 FILLCELL_X2 False False False False
+0 0
+FILLER_0_12_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_12_19 FILLCELL_X2 False False False False
+0 0
+FILLER_0_12_23 FILLCELL_X4 False False False False
+0 0
+FILLER_0_12_32 FILLCELL_X1 False False False False
+0 0
+FILLER_0_12_44 FILLCELL_X1 False False False False
+0 0
+FILLER_0_12_59 FILLCELL_X16 False False False False
+0 0
+FILLER_0_12_75 FILLCELL_X2 False False False False
+0 0
+FILLER_0_12_77 FILLCELL_X1 False False False False
+0 0
+FILLER_0_12_9 FILLCELL_X2 False False False False
+0 0
+FILLER_0_13_1 FILLCELL_X2 False False False False
+0 0
+FILLER_0_13_105 FILLCELL_X2 False False False False
+0 0
+FILLER_0_13_114 FILLCELL_X2 False False False False
+0 0
+FILLER_0_13_116 FILLCELL_X1 False False False False
+0 0
+FILLER_0_13_13 FILLCELL_X2 False False False False
+0 0
+FILLER_0_13_135 FILLCELL_X16 False False False False
+0 0
+FILLER_0_13_151 FILLCELL_X8 False False False False
+0 0
+FILLER_0_13_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_13_17 FILLCELL_X2 False False False False
+0 0
+FILLER_0_13_22 FILLCELL_X1 False False False False
+0 0
+FILLER_0_13_28 FILLCELL_X1 False False False False
+0 0
+FILLER_0_13_65 FILLCELL_X8 False False False False
+0 0
+FILLER_0_13_73 FILLCELL_X4 False False False False
+0 0
+FILLER_0_13_77 FILLCELL_X2 False False False False
+0 0
+FILLER_0_14_122 FILLCELL_X1 False False False False
+0 0
+FILLER_0_14_139 FILLCELL_X16 False False False False
+0 0
+FILLER_0_14_155 FILLCELL_X4 False False False False
+0 0
+FILLER_0_14_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_14_20 FILLCELL_X2 False False False False
+0 0
+FILLER_0_14_55 FILLCELL_X1 False False False False
+0 0
+FILLER_0_14_73 FILLCELL_X4 False False False False
+0 0
+FILLER_0_14_87 FILLCELL_X2 False False False False
+0 0
+FILLER_0_14_89 FILLCELL_X1 False False False False
+0 0
+FILLER_0_15_134 FILLCELL_X16 False False False False
+0 0
+FILLER_0_15_150 FILLCELL_X8 False False False False
+0 0
+FILLER_0_15_158 FILLCELL_X2 False False False False
+0 0
+FILLER_0_15_26 FILLCELL_X1 False False False False
+0 0
+FILLER_0_15_49 FILLCELL_X16 False False False False
+0 0
+FILLER_0_15_87 FILLCELL_X4 False False False False
+0 0
+FILLER_0_15_91 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_102 FILLCELL_X8 False False False False
+0 0
+FILLER_0_16_110 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_125 FILLCELL_X32 False False False False
+0 0
+FILLER_0_16_157 FILLCELL_X2 False False False False
+0 0
+FILLER_0_16_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_27 FILLCELL_X4 False False False False
+0 0
+FILLER_0_16_31 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_51 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_57 FILLCELL_X2 False False False False
+0 0
+FILLER_0_16_63 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_83 FILLCELL_X4 False False False False
+0 0
+FILLER_0_16_87 FILLCELL_X2 False False False False
+0 0
+FILLER_0_16_89 FILLCELL_X1 False False False False
+0 0
+FILLER_0_16_94 FILLCELL_X4 False False False False
+0 0
+FILLER_0_17_1 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_104 FILLCELL_X8 False False False False
+0 0
+FILLER_0_17_112 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_13 FILLCELL_X2 False False False False
+0 0
+FILLER_0_17_132 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_135 FILLCELL_X16 False False False False
+0 0
+FILLER_0_17_151 FILLCELL_X8 False False False False
+0 0
+FILLER_0_17_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_19 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_47 FILLCELL_X4 False False False False
+0 0
+FILLER_0_17_5 FILLCELL_X4 False False False False
+0 0
+FILLER_0_17_55 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_59 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_79 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_83 FILLCELL_X8 False False False False
+0 0
+FILLER_0_17_9 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_91 FILLCELL_X1 False False False False
+0 0
+FILLER_0_17_95 FILLCELL_X4 False False False False
+0 0
+FILLER_0_17_99 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_1 FILLCELL_X8 False False False False
+0 0
+FILLER_0_18_106 FILLCELL_X4 False False False False
+0 0
+FILLER_0_18_110 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_116 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_118 FILLCELL_X1 False False False False
+0 0
+FILLER_0_18_127 FILLCELL_X4 False False False False
+0 0
+FILLER_0_18_131 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_137 FILLCELL_X16 False False False False
+0 0
+FILLER_0_18_153 FILLCELL_X4 False False False False
+0 0
+FILLER_0_18_157 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_18_27 FILLCELL_X4 False False False False
+0 0
+FILLER_0_18_31 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_43 FILLCELL_X8 False False False False
+0 0
+FILLER_0_18_51 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_56 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_58 FILLCELL_X1 False False False False
+0 0
+FILLER_0_18_66 FILLCELL_X8 False False False False
+0 0
+FILLER_0_18_74 FILLCELL_X4 False False False False
+0 0
+FILLER_0_18_78 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_80 FILLCELL_X1 False False False False
+0 0
+FILLER_0_18_85 FILLCELL_X4 False False False False
+0 0
+FILLER_0_18_89 FILLCELL_X2 False False False False
+0 0
+FILLER_0_18_9 FILLCELL_X1 False False False False
+0 0
+FILLER_0_18_94 FILLCELL_X1 False False False False
+0 0
+FILLER_0_19_1 FILLCELL_X32 False False False False
+0 0
+FILLER_0_19_125 FILLCELL_X2 False False False False
+0 0
+FILLER_0_19_146 FILLCELL_X8 False False False False
+0 0
+FILLER_0_19_154 FILLCELL_X4 False False False False
+0 0
+FILLER_0_19_158 FILLCELL_X2 False False False False
+0 0
+FILLER_0_19_33 FILLCELL_X8 False False False False
+0 0
+FILLER_0_19_41 FILLCELL_X4 False False False False
+0 0
+FILLER_0_19_45 FILLCELL_X2 False False False False
+0 0
+FILLER_0_1_1 FILLCELL_X16 False False False False
+0 0
+FILLER_0_1_134 FILLCELL_X16 False False False False
+0 0
+FILLER_0_1_150 FILLCELL_X8 False False False False
+0 0
+FILLER_0_1_158 FILLCELL_X2 False False False False
+0 0
+FILLER_0_1_17 FILLCELL_X4 False False False False
+0 0
+FILLER_0_1_32 FILLCELL_X4 False False False False
+0 0
+FILLER_0_1_36 FILLCELL_X2 False False False False
+0 0
+FILLER_0_1_38 FILLCELL_X1 False False False False
+0 0
+FILLER_0_20_1 FILLCELL_X32 False False False False
+0 0
+FILLER_0_20_103 FILLCELL_X1 False False False False
+0 0
+FILLER_0_20_107 FILLCELL_X4 False False False False
+0 0
+FILLER_0_20_134 FILLCELL_X2 False False False False
+0 0
+FILLER_0_20_139 FILLCELL_X16 False False False False
+0 0
+FILLER_0_20_155 FILLCELL_X4 False False False False
+0 0
+FILLER_0_20_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_20_33 FILLCELL_X4 False False False False
+0 0
+FILLER_0_20_40 FILLCELL_X8 False False False False
+0 0
+FILLER_0_20_48 FILLCELL_X4 False False False False
+0 0
+FILLER_0_20_52 FILLCELL_X1 False False False False
+0 0
+FILLER_0_20_91 FILLCELL_X1 False False False False
+0 0
+FILLER_0_20_96 FILLCELL_X1 False False False False
+0 0
+FILLER_0_2_1 FILLCELL_X8 False False False False
+0 0
+FILLER_0_2_100 FILLCELL_X4 False False False False
+0 0
+FILLER_0_2_104 FILLCELL_X2 False False False False
+0 0
+FILLER_0_2_109 FILLCELL_X4 False False False False
+0 0
+FILLER_0_2_11 FILLCELL_X1 False False False False
+0 0
+FILLER_0_2_120 FILLCELL_X4 False False False False
+0 0
+FILLER_0_2_124 FILLCELL_X2 False False False False
+0 0
+FILLER_0_2_126 FILLCELL_X1 False False False False
+0 0
+FILLER_0_2_134 FILLCELL_X16 False False False False
+0 0
+FILLER_0_2_150 FILLCELL_X8 False False False False
+0 0
+FILLER_0_2_158 FILLCELL_X2 False False False False
+0 0
+FILLER_0_2_69 FILLCELL_X8 False False False False
+0 0
+FILLER_0_2_77 FILLCELL_X4 False False False False
+0 0
+FILLER_0_2_81 FILLCELL_X1 False False False False
+0 0
+FILLER_0_2_85 FILLCELL_X2 False False False False
+0 0
+FILLER_0_2_9 FILLCELL_X2 False False False False
+0 0
+FILLER_0_3_1 FILLCELL_X16 False False False False
+0 0
+FILLER_0_3_144 FILLCELL_X16 False False False False
+0 0
+FILLER_0_3_17 FILLCELL_X2 False False False False
+0 0
+FILLER_0_3_58 FILLCELL_X1 False False False False
+0 0
+FILLER_0_3_61 FILLCELL_X4 False False False False
+0 0
+FILLER_0_3_65 FILLCELL_X1 False False False False
+0 0
+FILLER_0_3_76 FILLCELL_X2 False False False False
+0 0
+FILLER_0_3_97 FILLCELL_X2 False False False False
+0 0
+FILLER_0_4_1 FILLCELL_X2 False False False False
+0 0
+FILLER_0_4_141 FILLCELL_X2 False False False False
+0 0
+FILLER_0_4_143 FILLCELL_X1 False False False False
+0 0
+FILLER_0_4_154 FILLCELL_X4 False False False False
+0 0
+FILLER_0_4_158 FILLCELL_X2 False False False False
+0 0
+FILLER_0_4_60 FILLCELL_X4 False False False False
+0 0
+FILLER_0_4_64 FILLCELL_X1 False False False False
+0 0
+FILLER_0_4_81 FILLCELL_X2 False False False False
+0 0
+FILLER_0_4_83 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_103 FILLCELL_X4 False False False False
+0 0
+FILLER_0_5_107 FILLCELL_X2 False False False False
+0 0
+FILLER_0_5_109 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_11 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_135 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_155 FILLCELL_X4 False False False False
+0 0
+FILLER_0_5_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_25 FILLCELL_X2 False False False False
+0 0
+FILLER_0_5_32 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_69 FILLCELL_X1 False False False False
+0 0
+FILLER_0_5_74 FILLCELL_X4 False False False False
+0 0
+FILLER_0_5_78 FILLCELL_X2 False False False False
+0 0
+FILLER_0_5_82 FILLCELL_X4 False False False False
+0 0
+FILLER_0_5_86 FILLCELL_X2 False False False False
+0 0
+FILLER_0_5_95 FILLCELL_X8 False False False False
+0 0
+FILLER_0_6_109 FILLCELL_X2 False False False False
+0 0
+FILLER_0_6_11 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_111 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_117 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_134 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_139 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_150 FILLCELL_X4 False False False False
+0 0
+FILLER_0_6_157 FILLCELL_X2 False False False False
+0 0
+FILLER_0_6_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_16 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_20 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_24 FILLCELL_X2 False False False False
+0 0
+FILLER_0_6_31 FILLCELL_X2 False False False False
+0 0
+FILLER_0_6_33 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_4 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_43 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_55 FILLCELL_X2 False False False False
+0 0
+FILLER_0_6_60 FILLCELL_X4 False False False False
+0 0
+FILLER_0_6_64 FILLCELL_X1 False False False False
+0 0
+FILLER_0_6_82 FILLCELL_X2 False False False False
+0 0
+FILLER_0_7_1 FILLCELL_X1 False False False False
+0 0
+FILLER_0_7_102 FILLCELL_X2 False False False False
+0 0
+FILLER_0_7_104 FILLCELL_X1 False False False False
+0 0
+FILLER_0_7_108 FILLCELL_X8 False False False False
+0 0
+FILLER_0_7_116 FILLCELL_X2 False False False False
+0 0
+FILLER_0_7_135 FILLCELL_X16 False False False False
+0 0
+FILLER_0_7_151 FILLCELL_X8 False False False False
+0 0
+FILLER_0_7_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_7_31 FILLCELL_X1 False False False False
+0 0
+FILLER_0_7_51 FILLCELL_X1 False False False False
+0 0
+FILLER_0_7_61 FILLCELL_X16 False False False False
+0 0
+FILLER_0_7_77 FILLCELL_X8 False False False False
+0 0
+FILLER_0_7_85 FILLCELL_X4 False False False False
+0 0
+FILLER_0_7_89 FILLCELL_X2 False False False False
+0 0
+FILLER_0_7_98 FILLCELL_X4 False False False False
+0 0
+FILLER_0_8_113 FILLCELL_X2 False False False False
+0 0
+FILLER_0_8_147 FILLCELL_X8 False False False False
+0 0
+FILLER_0_8_155 FILLCELL_X4 False False False False
+0 0
+FILLER_0_8_159 FILLCELL_X1 False False False False
+0 0
+FILLER_0_8_17 FILLCELL_X2 False False False False
+0 0
+FILLER_0_8_19 FILLCELL_X1 False False False False
+0 0
+FILLER_0_8_28 FILLCELL_X1 False False False False
+0 0
+FILLER_0_8_34 FILLCELL_X2 False False False False
+0 0
+FILLER_0_8_62 FILLCELL_X1 False False False False
+0 0
+FILLER_0_8_83 FILLCELL_X4 False False False False
+0 0
+FILLER_0_8_87 FILLCELL_X2 False False False False
+0 0
+FILLER_0_8_89 FILLCELL_X1 False False False False
+0 0
+FILLER_0_8_98 FILLCELL_X2 False False False False
+0 0
+FILLER_0_9_155 FILLCELL_X2 False False False False
+0 0
+FILLER_0_9_34 FILLCELL_X1 False False False False
+0 0
+FILLER_0_9_5 FILLCELL_X2 False False False False
+0 0
+FILLER_0_9_53 FILLCELL_X1 False False False False
+0 0
+FILLER_0_9_57 FILLCELL_X1 False False False False
+0 0
+FILLER_0_9_65 FILLCELL_X1 False False False False
+0 0
+FILLER_0_9_7 FILLCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_0_Left_21 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_0_Right_0 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_10_Left_31 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_10_Right_10 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_11_Left_32 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_11_Right_11 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_12_Left_33 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_12_Right_12 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_13_Left_34 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_13_Right_13 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_14_Left_35 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_14_Right_14 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_15_Left_36 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_15_Right_15 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_16_Left_37 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_16_Right_16 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_17_Left_38 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_17_Right_17 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_18_Left_39 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_18_Right_18 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_19_Left_40 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_19_Right_19 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_1_Left_22 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_1_Right_1 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_20_Left_41 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_20_Right_20 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_2_Left_23 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_2_Right_2 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_3_Left_24 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_3_Right_3 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_4_Left_25 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_4_Right_4 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_5_Left_26 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_5_Right_5 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_6_Left_27 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_6_Right_6 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_7_Left_28 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_7_Right_7 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_8_Left_29 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_8_Right_8 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_9_Left_30 TAPCELL_X1 False False False False
+0 0
+PHY_EDGE_ROW_9_Right_9 TAPCELL_X1 False False False False
+0 0
+_345_ INV_X2 False False False True
+2.73e-08 5.08e-06
+_345_/A 1.4e-10 1.31e-10 1.59e-11 False
+_345_/ZN 1.51e-10 1.53e-10 1.23e-11 False
+_347_ NAND2_X1 False False False False
+1.51e-08 1.84e-06
+_347_/A1 1.51e-10 1.53e-10 1.23e-11 False
+_347_/A2 1.65e-10 1.41e-10 1.46e-11 False
+_347_/ZN 1.7e-10 1.83e-10 1.27e-11 False
+_348_ INV_X1 False False False True
+1.36e-08 5.37e-06
+_348_/A 1.34e-10 1.27e-10 8.6e-12 False
+_348_/ZN 1.6e-10 1.51e-10 2.62e-11 False
+_349_ NOR2_X2 False False False False
+4.24e-08 3.44e-06
+_349_/A1 1.6e-10 1.51e-10 2.62e-11 False
+_349_/A2 1.48e-10 1.37e-10 2.24e-11 False
+_349_/ZN 1.79e-10 1.71e-10 1.88e-11 False
+_350_ NOR2_X1 False False False False
+2.12e-08 2.09e-06
+_350_/A1 1.51e-10 1.53e-10 1.23e-11 False
+_350_/A2 1.65e-10 1.41e-10 1.46e-11 False
+_350_/ZN 1.84e-10 1.79e-10 2.3e-11 False
+_351_ OAI21_X2 False False False False
+5.86e-08 6.5e-06
+_351_/A 1.7e-10 1.83e-10 1.27e-11 False
+_351_/B1 1.79e-10 1.71e-10 1.88e-11 False
+_351_/B2 1.84e-10 1.79e-10 2.3e-11 False
+_351_/ZN 2.14e-10 2.05e-10 2.12e-11 False
+_352_ INV_X2 False False False True
+2.67e-08 4.95e-06
+_352_/A 1.41e-10 1.32e-10 1.49e-11 False
+_352_/ZN 1.51e-10 1.53e-10 1.23e-11 False
+_353_ NAND2_X2 False False False False
+3.98e-08 4.3e-06
+_353_/A1 1.7e-10 1.61e-10 5.62e-12 False
+_353_/A2 1.51e-10 1.53e-10 1.23e-11 False
+_353_/ZN 1.79e-10 1.85e-10 1.44e-11 False
+_354_ INV_X2 False False False True
+2.7e-08 2.99e-06
+_354_/A 1.48e-10 1.37e-10 2.19e-11 False
+_354_/ZN 1.56e-10 1.61e-10 1.19e-11 False
+_355_ NAND2_X4 False False False False
+7.67e-08 5.74e-06
+_355_/A1 1.67e-10 1.6e-10 1e-11 False
+_355_/A2 1.56e-10 1.61e-10 1.19e-11 False
+_355_/ZN 1.79e-10 1.8e-10 9.92e-12 False
+_356_ NAND2_X4 False False False False
+1.07e-07 8.68e-06
+_356_/A1 1.79e-10 1.8e-10 9.92e-12 False
+_356_/A2 1.79e-10 1.85e-10 1.44e-11 False
+_356_/ZN 2.03e-10 1.94e-10 9.93e-12 False
+_357_ INV_X2 False False False True
+2.67e-08 6.02e-06
+_357_/A 1.44e-10 1.34e-10 1.84e-11 False
+_357_/ZN 1.57e-10 1.6e-10 1.5e-11 False
+_358_ NAND2_X4 False False False False
+6.13e-08 5.11e-06
+_358_/A1 1.57e-10 1.6e-10 1.5e-11 False
+_358_/A2 1.68e-10 1.6e-10 7.02e-12 False
+_358_/ZN 1.74e-10 1.81e-10 8.86e-12 False
+_359_ INV_X1 False False False True
+1.35e-08 1.69e-06
+_359_/A 1.44e-10 1.34e-10 1.85e-11 False
+_359_/ZN 1.55e-10 1.59e-10 1.33e-11 False
+_360_ NAND2_X2 False False False False
+2.92e-08 2.98e-06
+_360_/A1 1.55e-10 1.59e-10 1.33e-11 False
+_360_/A2 1.44e-10 1.34e-10 1.84e-11 False
+_360_/ZN 1.73e-10 1.69e-10 9.83e-12 False
+_361_ NAND2_X2 False False False False
+5.45e-08 7.08e-06
+_361_/A1 1.74e-10 1.81e-10 8.86e-12 False
+_361_/A2 1.73e-10 1.69e-10 9.83e-12 False
+_361_/ZN 2.01e-10 1.91e-10 1.51e-11 False
+_362_ NOR2_X4 False False False False
+8.22e-08 7.62e-06
+_362_/A1 2.01e-10 1.91e-10 1.51e-11 False
+_362_/A2 2.03e-10 1.94e-10 9.93e-12 False
+_362_/ZN 2.17e-10 2.11e-10 1.18e-11 False
+_363_ NAND2_X2 False False False False
+2.74e-08 6.76e-06
+_363_/A1 2.14e-10 2.05e-10 2.12e-11 False
+_363_/A2 2.17e-10 2.11e-10 1.18e-11 False
+_363_/ZN 2.29e-10 2.33e-10 1.25e-11 False
+_364_ INV_X1 False False False True
+1.67e-08 1.17e-06
+_364_/A 1.79e-10 1.8e-10 9.92e-12 False
+_364_/ZN 1.92e-10 1.86e-10 6.73e-12 False
+_365_ OAI21_X1 False False False False
+2.97e-08 2.82e-06
+_365_/A 1.79e-10 1.85e-10 1.44e-11 False
+_365_/B1 1.92e-10 1.86e-10 6.73e-12 False
+_365_/B2 1.74e-10 1.81e-10 8.86e-12 False
+_365_/ZN 2.11e-10 2.04e-10 1.84e-11 False
+_366_ INV_X1 False False False True
+1.34e-08 4.12e-06
+_366_/A 2.11e-10 2.04e-10 1.84e-11 False
+_366_/ZN 2.27e-10 2.28e-10 1.61e-11 False
+_367_ NAND2_X4 False False False False
+1.04e-07 1.49e-05
+_367_/A1 2.27e-10 2.28e-10 1.61e-11 False
+_367_/A2 2.29e-10 2.33e-10 1.25e-11 False
+_367_/ZN 2.53e-10 2.45e-10 1.13e-11 False
+_369_ XNOR2_X1 False False False False
+3.77e-08 7.51e-06
+_369_/A 1.4e-10 1.32e-10 1.42e-11 False
+_369_/B 1.5e-10 1.38e-10 2.41e-11 False
+_369_/ZN 2.02e-10 1.86e-10 3.71e-11 False
+_370_ XNOR2_X2 False False False False
+7.53e-08 1.04e-05
+_370_/A 1.68e-10 1.43e-10 1.52e-11 False
+_370_/B 1.62e-10 1.56e-10 6.27e-12 False
+_370_/ZN 2.07e-10 1.91e-10 2.15e-11 False
+_371_ NAND2_X2 False False False False
+3.63e-08 8.46e-06
+_371_/A1 2.07e-10 1.91e-10 2.15e-11 False
+_371_/A2 2.02e-10 1.86e-10 3.71e-11 False
+_371_/ZN 2.11e-10 2.27e-10 1.34e-11 False
+_372_ XNOR2_X2 False False False False
+7.5e-08 1.38e-05
+_372_/A 1.42e-10 1.33e-10 1.63e-11 False
+_372_/B 1.5e-10 1.38e-10 2.37e-11 False
+_372_/ZN 1.98e-10 1.82e-10 3.27e-11 False
+_373_ XNOR2_X2 False False False False
+7.53e-08 1.31e-05
+_373_/A 1.66e-10 1.41e-10 1.36e-11 False
+_373_/B 1.44e-10 1.34e-10 1.81e-11 False
+_373_/ZN 2.1e-10 1.86e-10 3.01e-11 False
+_374_ NAND2_X4 False False False False
+7.19e-08 1.69e-05
+_374_/A1 2.1e-10 1.86e-10 3.01e-11 False
+_374_/A2 1.98e-10 1.82e-10 3.27e-11 False
+_374_/ZN 2.07e-10 2.3e-10 1.33e-11 False
+_375_ NOR2_X4 False False False False
+9.66e-08 5.91e-06
+_375_/A1 2.07e-10 2.3e-10 1.33e-11 False
+_375_/A2 2.11e-10 2.27e-10 1.34e-11 False
+_375_/ZN 2.55e-10 2.22e-10 1.46e-11 False
+_376_ NAND2_X4 False False False False
+6.09e-08 3.73e-06
+_376_/A1 2.55e-10 2.22e-10 1.46e-11 False
+_376_/A2 2.53e-10 2.45e-10 1.13e-11 False
+_376_/ZN 2.62e-10 2.69e-10 9.07e-12 False
+_377_ INV_X1 False False False True
+1.36e-08 4.29e-06
+_377_/A 1.41e-10 1.32e-10 1.51e-11 False
+_377_/ZN 1.6e-10 1.59e-10 2.05e-11 False
+_378_ NAND2_X2 False False False False
+3.03e-08 3.19e-06
+_378_/A1 1.6e-10 1.59e-10 2.05e-11 False
+_378_/A2 1.68e-10 1.43e-10 1.52e-11 False
+_378_/ZN 1.76e-10 1.84e-10 1.12e-11 False
+_379_ INV_X1 False False False True
+1.35e-08 1.78e-06
+_379_/A 1.5e-10 1.38e-10 2.41e-11 False
+_379_/ZN 1.61e-10 1.66e-10 1.4e-11 False
+_380_ OAI21_X2 False False False False
+6.17e-08 6e-06
+_380_/A 1.76e-10 1.84e-10 1.12e-11 False
+_380_/B1 1.75e-10 1.64e-10 1.09e-11 False
+_380_/B2 1.61e-10 1.66e-10 1.4e-11 False
+_380_/ZN 2.06e-10 1.96e-10 2.15e-11 False
+_381_ INV_X1 False False False True
+1.33e-08 4.26e-06
+_381_/A 1.4e-10 1.32e-10 1.42e-11 False
+_381_/ZN 1.6e-10 1.57e-10 2.11e-11 False
+_382_ NOR2_X2 False False False False
+4.28e-08 3.29e-06
+_382_/A1 1.6e-10 1.57e-10 2.11e-11 False
+_382_/A2 1.5e-10 1.38e-10 2.41e-11 False
+_382_/ZN 1.85e-10 1.72e-10 1.89e-11 False
+_383_ INV_X1 False False False True
+1.2e-08 1.83e-06
+_383_/A 1.85e-10 1.72e-10 1.89e-11 False
+_383_/ZN 1.89e-10 1.97e-10 1.07e-11 False
+_384_ NAND2_X2 False False False False
+4.81e-08 6.15e-06
+_384_/A1 2.06e-10 1.96e-10 2.15e-11 False
+_384_/A2 1.89e-10 1.97e-10 1.07e-11 False
+_384_/ZN 2.17e-10 2.26e-10 1.31e-11 False
+_385_ NOR2_X4 False False False False
+9.51e-08 4.57e-06
+_385_/A1 2.07e-10 2.3e-10 1.33e-11 False
+_385_/A2 2.17e-10 2.26e-10 1.31e-11 False
+_385_/ZN 2.5e-10 2.26e-10 1.18e-11 False
+_386_ INV_X1 False False False True
+1.36e-08 3.65e-06
+_386_/A 1.42e-10 1.33e-10 1.63e-11 False
+_386_/ZN 1.58e-10 1.58e-10 1.74e-11 False
+_387_ NAND2_X1 False False False False
+1.51e-08 1.32e-06
+_387_/A1 1.58e-10 1.58e-10 1.74e-11 False
+_387_/A2 1.5e-10 1.38e-10 2.37e-11 False
+_387_/ZN 1.73e-10 1.73e-10 9.84e-12 False
+_388_ INV_X2 False False False True
+2.9e-08 5.28e-06
+_388_/A 1.98e-10 1.82e-10 3.27e-11 False
+_388_/ZN 1.99e-10 2.08e-10 9e-12 False
+_389_ INV_X1 False False False True
+1.36e-08 3.58e-06
+_389_/A 1.44e-10 1.34e-10 1.81e-11 False
+_389_/ZN 1.59e-10 1.61e-10 1.71e-11 False
+_390_ NAND2_X1 False False False False
+1.51e-08 1.84e-06
+_390_/A1 1.59e-10 1.61e-10 1.71e-11 False
+_390_/A2 1.9e-10 1.68e-10 7.1e-12 False
+_390_/ZN 1.86e-10 2.05e-10 1.26e-11 False
+_391_ OAI21_X1 False False False False
+3.22e-08 3.85e-06
+_391_/A 1.73e-10 1.73e-10 9.84e-12 False
+_391_/B1 1.99e-10 2.08e-10 9e-12 False
+_391_/B2 1.86e-10 2.05e-10 1.26e-11 False
+_391_/ZN 2.46e-10 2.15e-10 2.6e-11 False
+_392_ NOR2_X2 False False False False
+3.85e-08 8.6e-06
+_392_/A1 2.5e-10 2.26e-10 1.18e-11 False
+_392_/A2 2.46e-10 2.15e-10 2.6e-11 False
+_392_/ZN 2.55e-10 2.61e-10 2.2e-11 False
+_393_ NAND2_X4 False False False False
+9.66e-08 1.9e-05
+_393_/A1 2.62e-10 2.69e-10 9.07e-12 False
+_393_/A2 2.55e-10 2.61e-10 2.2e-11 False
+_393_/ZN 2.85e-10 2.76e-10 1.2e-11 False
+_394_ INV_X2 False False False True
+2.73e-08 6.13e-06
+_394_/A 1.34e-10 1.27e-10 1.14e-11 False
+_394_/ZN 1.48e-10 1.47e-10 1.47e-11 False
+_395_ XNOR2_X2 False False False False
+7.23e-08 1.29e-05
+_395_/A 1.48e-10 1.47e-10 1.47e-11 False
+_395_/B 1.64e-10 1.4e-10 1.45e-11 False
+_395_/ZN 2.09e-10 1.87e-10 2.98e-11 False
+_396_ INV_X2 False False False True
+2.73e-08 5.3e-06
+_396_/A 1.37e-10 1.3e-10 1.14e-11 False
+_396_/ZN 1.48e-10 1.49e-10 1.27e-11 False
+_397_ XNOR2_X1 False False False False
+3.61e-08 5.96e-06
+_397_/A 1.48e-10 1.49e-10 1.27e-11 False
+_397_/B 1.44e-10 1.35e-10 1.87e-11 False
+_397_/ZN 1.91e-10 1.88e-10 2.63e-11 False
+_398_ NOR2_X1 False False False False
+2.1e-08 5.59e-06
+_398_/A1 2.09e-10 1.87e-10 2.98e-11 False
+_398_/A2 1.91e-10 1.88e-10 2.63e-11 False
+_398_/ZN 2.35e-10 2.26e-10 3.14e-11 False
+_399_ XNOR2_X2 False False False False
+7.56e-08 1.06e-05
+_399_/A 1.46e-10 1.36e-10 1.98e-11 False
+_399_/B 1.67e-10 1.42e-10 1.43e-11 False
+_399_/ZN 2.08e-10 1.87e-10 2.35e-11 False
+_400_ XNOR2_X2 False False False False
+7.5e-08 1.23e-05
+_400_/A 1.42e-10 1.33e-10 1.63e-11 False
+_400_/B 1.67e-10 1.42e-10 1.45e-11 False
+_400_/ZN 2.1e-10 1.89e-10 2.79e-11 False
+_401_ NAND2_X1 False False False False
+1.8e-08 2.97e-06
+_401_/A1 2.08e-10 1.87e-10 2.35e-11 False
+_401_/A2 2.1e-10 1.89e-10 2.79e-11 False
+_401_/ZN 2.07e-10 2.27e-10 9.88e-12 False
+_402_ INV_X1 False False False True
+1.63e-08 3.7e-06
+_402_/A 2.07e-10 2.27e-10 9.88e-12 False
+_402_/ZN 2.44e-10 2.17e-10 1.06e-11 False
+_403_ AND2_X2 False False False False
+4.62e-08 7.27e-06
+_403_/A1 2.35e-10 2.26e-10 3.14e-11 False
+_403_/A2 2.44e-10 2.17e-10 1.06e-11 False
+_403_/ZN 2.83e-10 2.59e-10 1.52e-11 False
+_404_ NAND2_X4 False False False False
+2.25e-08 3.52e-06
+_404_/A1 2.85e-10 2.76e-10 1.2e-11 False
+_404_/A2 2.83e-10 2.59e-10 1.52e-11 False
+_404_/ZN 2.9e-10 2.98e-10 9.16e-12 False
+_405_ NAND2_X1 False False False False
+1.51e-08 1.31e-06
+_405_/A1 1.48e-10 1.47e-10 1.47e-11 False
+_405_/A2 1.64e-10 1.4e-10 1.45e-11 False
+_405_/ZN 1.61e-10 1.79e-10 9.47e-12 False
+_406_ NAND2_X1 False False False False
+1.51e-08 2.48e-06
+_406_/A1 1.48e-10 1.49e-10 1.27e-11 False
+_406_/A2 1.44e-10 1.35e-10 1.87e-11 False
+_406_/ZN 1.71e-10 1.69e-10 1.69e-11 False
+_407_ OAI21_X1 False False False False
+3.22e-08 3.73e-06
+_407_/A 1.61e-10 1.79e-10 9.47e-12 False
+_407_/B1 2.09e-10 1.87e-10 2.98e-11 False
+_407_/B2 1.71e-10 1.69e-10 1.69e-11 False
+_407_/ZN 2.23e-10 2.31e-10 2.5e-11 False
+_408_ INV_X1 False False False True
+1.35e-08 1.33e-06
+_408_/A 1.67e-10 1.42e-10 1.43e-11 False
+_408_/ZN 1.58e-10 1.78e-10 1.03e-11 False
+_409_ NOR2_X1 False False False False
+2.12e-08 1.34e-06
+_409_/A1 1.58e-10 1.78e-10 1.03e-11 False
+_409_/A2 1.46e-10 1.36e-10 1.98e-11 False
+_409_/ZN 1.99e-10 1.67e-10 1.52e-11 False
+_410_ INV_X1 False False False True
+1.36e-08 3.32e-06
+_410_/A 1.42e-10 1.33e-10 1.63e-11 False
+_410_/ZN 1.57e-10 1.58e-10 1.58e-11 False
+_411_ AND2_X1 False False False False
+2.41e-08 3.13e-06
+_411_/A1 1.57e-10 1.58e-10 1.58e-11 False
+_411_/A2 1.67e-10 1.42e-10 1.45e-11 False
+_411_/ZN 2.08e-10 1.91e-10 1.5e-11 False
+_412_ AOI21_X1 False False False False
+2.11e-08 5.02e-06
+_412_/A 1.99e-10 1.67e-10 1.52e-11 False
+_412_/B1 2.08e-10 1.87e-10 2.35e-11 False
+_412_/B2 2.08e-10 1.91e-10 1.5e-11 False
+_412_/ZN 2.39e-10 2.33e-10 3.77e-11 False
+_413_ INV_X1 False False False True
+1.57e-08 2.68e-06
+_413_/A 2.39e-10 2.33e-10 3.77e-11 False
+_413_/ZN 2.52e-10 2.52e-10 1.07e-11 False
+_414_ AOI21_X2 False False False False
+4.29e-08 1.19e-05
+_414_/A 2.23e-10 2.31e-10 2.5e-11 False
+_414_/B1 2.52e-10 2.52e-10 1.07e-11 False
+_414_/B2 2.35e-10 2.26e-10 3.14e-11 False
+_414_/ZN 2.9e-10 2.7e-10 3.13e-11 False
+_415_ NAND2_X4 False False False False
+1.26e-07 1.66e-05
+_415_/A1 2.9e-10 2.7e-10 3.13e-11 False
+_415_/A2 2.9e-10 2.98e-10 9.16e-12 False
+_415_/ZN 3.15e-10 3.09e-10 1.12e-11 False
+_416_ XNOR2_X2 False False False False
+7.5e-08 1.09e-05
+_416_/A 1.4e-10 1.31e-10 1.63e-11 False
+_416_/B 1.65e-10 1.4e-10 1.52e-11 False
+_416_/ZN 2.06e-10 1.85e-10 2.37e-11 False
+_417_ INV_X1 False False False True
+1.45e-08 3.54e-06
+_417_/A 2.06e-10 1.85e-10 2.37e-11 False
+_417_/ZN 2.03e-10 2.18e-10 1.06e-11 False
+_418_ INV_X2 False False False True
+2.73e-08 5.4e-06
+_418_/A 1.39e-10 1.3e-10 1.47e-11 False
+_418_/ZN 1.5e-10 1.52e-10 1.3e-11 False
+_419_ XNOR2_X2 False False False False
+7.23e-08 1.41e-05
+_419_/A 1.5e-10 1.52e-10 1.3e-11 False
+_419_/B 1.65e-10 1.4e-10 1.45e-11 False
+_419_/ZN 2.12e-10 1.93e-10 3.36e-11 False
+_420_ NOR2_X2 False False False False
+4.21e-08 9.29e-06
+_420_/A1 2.03e-10 2.18e-10 1.06e-11 False
+_420_/A2 2.12e-10 1.93e-10 3.36e-11 False
+_420_/ZN 2.52e-10 2.3e-10 2.57e-11 False
+_421_ NAND2_X4 False False False False
+4.28e-08 8.05e-06
+_421_/A1 3.15e-10 3.09e-10 1.12e-11 False
+_421_/A2 2.52e-10 2.3e-10 2.57e-11 False
+_421_/ZN 3.25e-10 3.28e-10 9.4e-12 False
+_422_ NAND2_X1 False False False False
+1.51e-08 1.31e-06
+_422_/A1 1.5e-10 1.52e-10 1.3e-11 False
+_422_/A2 1.65e-10 1.4e-10 1.45e-11 False
+_422_/ZN 1.66e-10 1.8e-10 9.47e-12 False
+_423_ INV_X1 False False False True
+1.36e-08 3.65e-06
+_423_/A 1.4e-10 1.31e-10 1.63e-11 False
+_423_/ZN 1.56e-10 1.56e-10 1.74e-11 False
+_424_ NAND2_X1 False False False False
+1.51e-08 2.48e-06
+_424_/A1 1.56e-10 1.56e-10 1.74e-11 False
+_424_/A2 1.65e-10 1.4e-10 1.52e-11 False
+_424_/ZN 1.79e-10 1.87e-10 1.68e-11 False
+_425_ OAI21_X1 False False False False
+3.22e-08 3.85e-06
+_425_/A 1.66e-10 1.8e-10 9.47e-12 False
+_425_/B1 2.12e-10 1.93e-10 3.36e-11 False
+_425_/B2 1.79e-10 1.87e-10 1.68e-11 False
+_425_/ZN 2.3e-10 2.35e-10 2.6e-11 False
+_426_ INV_X1 False False False True
+1.29e-08 4.4e-06
+_426_/A 2.3e-10 2.35e-10 2.6e-11 False
+_426_/ZN 2.61e-10 2.48e-10 1.68e-11 False
+_427_ NAND2_X4 False False False False
+1.02e-07 1.51e-05
+_427_/A1 3.25e-10 3.28e-10 9.4e-12 False
+_427_/A2 2.61e-10 2.48e-10 1.68e-11 False
+_427_/ZN 3.43e-10 3.38e-10 1.06e-11 False
+_428_ INV_X1 False False False True
+1.36e-08 4.6e-06
+_428_/A 1.32e-10 1.25e-10 8.6e-12 False
+_428_/ZN 1.54e-10 1.48e-10 2.21e-11 False
+_429_ XNOR2_X1 False False False False
+3.61e-08 6.01e-06
+_429_/A 1.54e-10 1.48e-10 2.21e-11 False
+_429_/B 1.41e-10 1.32e-10 1.73e-11 False
+_429_/ZN 2e-10 1.89e-10 2.66e-11 False
+_430_ INV_X1 False False False True
+1.42e-08 7.28e-06
+_430_/A 2e-10 1.89e-10 2.66e-11 False
+_430_/ZN 2.2e-10 2.21e-10 2.17e-11 False
+_431_ NAND2_X4 False False False False
+6.87e-08 1.18e-05
+_431_/A1 3.43e-10 3.38e-10 1.06e-11 False
+_431_/A2 2.2e-10 2.21e-10 2.17e-11 False
+_431_/ZN 3.52e-10 3.56e-10 1.02e-11 False
+_432_ NAND2_X1 False False False False
+1.51e-08 3.99e-06
+_432_/A1 1.54e-10 1.48e-10 2.21e-11 False
+_432_/A2 1.41e-10 1.32e-10 1.73e-11 False
+_432_/ZN 1.82e-10 1.86e-10 2.68e-11 False
+_433_ NAND2_X4 False False False False
+1.1e-07 1.19e-05
+_433_/A1 3.52e-10 3.56e-10 1.02e-11 False
+_433_/A2 1.82e-10 1.86e-10 2.68e-11 False
+_433_/ZN 3.69e-10 3.64e-10 1.05e-11 False
+_434_ INV_X2 False False False True
+2.73e-08 5.79e-06
+_434_/A 1.35e-10 1.28e-10 1.14e-11 False
+_434_/ZN 1.48e-10 1.48e-10 1.39e-11 False
+_435_ XNOR2_X2 False False False False
+7.23e-08 1.17e-05
+_435_/A 1.48e-10 1.48e-10 1.39e-11 False
+_435_/B 1.65e-10 1.4e-10 1.45e-11 False
+_435_/ZN 2.08e-10 1.86e-10 2.62e-11 False
+_436_ INV_X1 False False False True
+1.42e-08 5.65e-06
+_436_/A 2.08e-10 1.86e-10 2.62e-11 False
+_436_/ZN 2.12e-10 2.26e-10 1.68e-11 False
+_437_ NAND2_X4 False False False False
+6.85e-08 8.27e-06
+_437_/A1 3.69e-10 3.64e-10 1.05e-11 False
+_437_/A2 2.12e-10 2.26e-10 1.68e-11 False
+_437_/ZN 3.75e-10 3.79e-10 8.03e-12 False
+_438_ NAND3_X1 False False False False
+2.33e-08 5.39e-06
+_438_/A1 3.52e-10 3.56e-10 1.02e-11 False
+_438_/A2 1.82e-10 1.86e-10 2.68e-11 False
+_438_/A3 2.08e-10 1.86e-10 2.62e-11 False
+_438_/ZN 3.75e-10 3.74e-10 1.52e-11 False
+_439_ AND2_X2 False False False False
+5.52e-08 1.01e-05
+_439_/A1 3.75e-10 3.74e-10 1.52e-11 False
+_439_/A2 3.75e-10 3.79e-10 8.03e-12 False
+_439_/ZN 4.03e-10 4.04e-10 6.03e-12 False
+_440_ XNOR2_X1 False False False False
+3.74e-08 5.12e-06
+_440_/A 1.4e-10 1.31e-10 1.59e-11 False
+_440_/B 1.65e-10 1.41e-10 1.46e-11 False
+_440_/ZN 2.07e-10 1.84e-10 2.11e-11 False
+_441_ INV_X1 False False False True
+1.22e-08 1.58e-06
+_441_/A 1.79e-10 1.71e-10 1.88e-11 False
+_441_/ZN 1.86e-10 1.9e-10 8.86e-12 False
+_442_ XNOR2_X1 False False False False
+3.54e-08 9.05e-06
+_442_/A 2.07e-10 1.84e-10 2.11e-11 False
+_442_/B 1.86e-10 1.9e-10 8.86e-12 False
+_442_/ZN 2.52e-10 2.3e-10 2.61e-11 False
+_443_ INV_X1 False False False True
+1.44e-08 2.87e-06
+_443_/A 2.52e-10 2.3e-10 2.61e-11 False
+_443_/ZN 2.42e-10 2.59e-10 6.38e-12 False
+_444_ INV_X1 False False False True
+1.37e-08 3.14e-06
+_444_/A 2.01e-10 1.91e-10 1.51e-11 False
+_444_/ZN 2.11e-10 2.14e-10 1.24e-11 False
+_445_ XNOR2_X1 False False False False
+3.4e-08 9.29e-06
+_445_/A 2.49e-10 2.38e-10 9.3e-12 False
+_445_/B 2.11e-10 2.14e-10 1.24e-11 False
+_445_/ZN 2.91e-10 2.78e-10 2.61e-11 False
+_446_ INV_X1 False False False True
+1.46e-08 2.93e-06
+_446_/A 2.91e-10 2.78e-10 2.61e-11 False
+_446_/ZN 2.9e-10 2.98e-10 6.38e-12 False
+_447_ NAND2_X1 False False False False
+2.08e-08 2.67e-06
+_447_/A1 2.47e-10 2.36e-10 8.06e-12 False
+_447_/A2 2.11e-10 2.14e-10 1.24e-11 False
+_447_/ZN 2.49e-10 2.59e-10 9.19e-12 False
+_448_ NAND2_X1 False False False False
+2.53e-08 3.21e-06
+_448_/A1 2.49e-10 2.59e-10 9.19e-12 False
+_448_/A2 1.74e-10 1.81e-10 8.86e-12 False
+_448_/ZN 2.73e-10 2.62e-10 1.06e-11 False
+_449_ XNOR2_X1 False False False False
+3.64e-08 9.62e-06
+_449_/A 2.73e-10 2.62e-10 1.06e-11 False
+_449_/B 2.35e-10 2.25e-10 9.79e-12 False
+_449_/ZN 3.14e-10 3e-10 2.3e-11 False
+_450_ XNOR2_X1 False False False False
+3.61e-08 1.25e-05
+_450_/A 2.85e-10 2.76e-10 9.11e-12 False
+_450_/B 2.44e-10 2.24e-10 9.98e-12 False
+_450_/ZN 3.26e-10 3.16e-10 2.61e-11 False
+_451_ INV_X1 False False False True
+1.44e-08 3.96e-06
+_451_/A 3.26e-10 3.16e-10 2.61e-11 False
+_451_/ZN 3.28e-10 3.33e-10 6.38e-12 False
+_452_ NAND2_X2 False False False False
+3.61e-08 7.35e-06
+_452_/A1 2.53e-10 2.45e-10 1.13e-11 False
+_452_/A2 2.46e-10 2.26e-10 1.17e-11 False
+_452_/ZN 2.62e-10 2.68e-10 1.12e-11 False
+_453_ NAND2_X1 False False False False
+2.68e-08 3.88e-06
+_453_/A1 2.62e-10 2.68e-10 1.12e-11 False
+_453_/A2 1.76e-10 1.84e-10 1.12e-11 False
+_453_/ZN 2.83e-10 2.76e-10 1.1e-11 False
+_454_ XOR2_X1 False False False False
+3.49e-08 1.05e-05
+_454_/A 2.02e-10 1.86e-10 3.71e-11 False
+_454_/B 2.83e-10 2.76e-10 1.1e-11 False
+_454_/Z 3.28e-10 3.31e-10 2.18e-11 False
+_455_ INV_X1 False False False True
+1.37e-08 2.63e-06
+_455_/A 2.06e-10 1.96e-10 2.15e-11 False
+_455_/ZN 2.14e-10 2.18e-10 1.09e-11 False
+_456_ AOI21_X2 False False False False
+5.77e-08 1.05e-05
+_456_/A 1.85e-10 1.72e-10 1.89e-11 False
+_456_/B1 2.62e-10 2.68e-10 1.12e-11 False
+_456_/B2 2.14e-10 2.18e-10 1.09e-11 False
+_456_/ZN 2.99e-10 2.78e-10 2.67e-11 False
+_457_ XNOR2_X2 False False False False
+7.42e-08 2.03e-05
+_457_/A 2.99e-10 2.78e-10 2.67e-11 False
+_457_/B 2.55e-10 2.26e-10 1.48e-11 False
+_457_/ZN 3.41e-10 3.17e-10 1.85e-11 False
+_458_ INV_X1 False False False True
+1.43e-08 4e-06
+_458_/A 3.41e-10 3.17e-10 1.85e-11 False
+_458_/ZN 3.28e-10 3.48e-10 6.09e-12 False
+_459_ NAND2_X1 False False False False
+1.61e-08 3.07e-06
+_459_/A1 2.1e-10 1.86e-10 3.01e-11 False
+_459_/A2 2.99e-10 2.78e-10 2.67e-11 False
+_459_/ZN 2.95e-10 3.16e-10 9.56e-12 False
+_460_ NAND2_X1 False False False False
+2.73e-08 4.19e-06
+_460_/A1 1.86e-10 2.05e-10 1.26e-11 False
+_460_/A2 2.95e-10 3.16e-10 9.56e-12 False
+_460_/ZN 3.35e-10 3.1e-10 1.15e-11 False
+_461_ XNOR2_X1 False False False False
+3.69e-08 1.18e-05
+_461_/A 1.99e-10 2.08e-10 9e-12 False
+_461_/B 3.35e-10 3.1e-10 1.15e-11 False
+_461_/ZN 3.77e-10 3.54e-10 2.27e-11 False
+_462_ XNOR2_X1 False False False False
+3.66e-08 1.35e-05
+_462_/A 2.1e-10 1.89e-10 2.79e-11 False
+_462_/B 3.26e-10 3.16e-10 1.63e-11 False
+_462_/ZN 3.71e-10 3.6e-10 2.61e-11 False
+_463_ INV_X1 False False False True
+1.43e-08 4.28e-06
+_463_/A 3.71e-10 3.6e-10 2.61e-11 False
+_463_/ZN 3.72e-10 3.78e-10 6.64e-12 False
+_464_ AOI21_X2 False False False False
+5.25e-08 7.88e-06
+_464_/A 2.08e-10 1.91e-10 1.5e-11 False
+_464_/B1 3.26e-10 3.16e-10 1.63e-11 False
+_464_/B2 2.1e-10 1.89e-10 2.79e-11 False
+_464_/ZN 3.42e-10 3.41e-10 1.95e-11 False
+_465_ XNOR2_X1 False False False False
+3.58e-08 1.18e-05
+_465_/A 2.08e-10 1.87e-10 2.35e-11 False
+_465_/B 3.42e-10 3.41e-10 1.95e-11 False
+_465_/ZN 3.86e-10 3.8e-10 2.3e-11 False
+_466_ NAND2_X1 False False False False
+1.08e-08 2.95e-06
+_466_/A1 2.85e-10 2.76e-10 1.2e-11 False
+_466_/A2 2.44e-10 2.17e-10 1.06e-11 False
+_466_/ZN 2.94e-10 3.01e-10 1.23e-11 False
+_467_ NAND2_X2 False False False False
+5e-08 8.93e-06
+_467_/A1 2.94e-10 3.01e-10 1.23e-11 False
+_467_/A2 2.39e-10 2.33e-10 3.77e-11 False
+_467_/ZN 3.19e-10 3.1e-10 1.23e-11 False
+_468_ INV_X1 False False False True
+1.42e-08 5.87e-06
+_468_/A 1.91e-10 1.88e-10 2.63e-11 False
+_468_/ZN 2.14e-10 2.1e-10 1.74e-11 False
+_469_ XNOR2_X2 False False False False
+7.5e-08 2.04e-05
+_469_/A 3.19e-10 3.1e-10 1.23e-11 False
+_469_/B 2.14e-10 2.1e-10 1.74e-11 False
+_469_/ZN 3.56e-10 3.47e-10 1.86e-11 False
+_470_ INV_X1 False False False True
+1.43e-08 4.01e-06
+_470_/A 3.56e-10 3.47e-10 1.86e-11 False
+_470_/ZN 3.58e-10 3.63e-10 5.87e-12 False
+_471_ NAND2_X1 False False False False
+1.73e-08 3.91e-06
+_471_/A1 3.19e-10 3.1e-10 1.23e-11 False
+_471_/A2 2.14e-10 2.1e-10 1.74e-11 False
+_471_/ZN 3.29e-10 3.35e-10 1.26e-11 False
+_472_ NAND2_X2 False False False False
+5.48e-08 6.97e-06
+_472_/A1 3.29e-10 3.35e-10 1.26e-11 False
+_472_/A2 1.71e-10 1.69e-10 1.69e-11 False
+_472_/ZN 3.51e-10 3.43e-10 1.05e-11 False
+_473_ XNOR2_X2 False False False False
+7.53e-08 1.89e-05
+_473_/A 3.51e-10 3.43e-10 1.05e-11 False
+_473_/B 2.09e-10 1.87e-10 2.98e-11 False
+_473_/ZN 3.86e-10 3.77e-10 1.67e-11 False
+_474_ XNOR2_X1 False False False False
+3.66e-08 1.35e-05
+_474_/A 2.06e-10 1.85e-10 2.37e-11 False
+_474_/B 3.15e-10 3.09e-10 1.12e-11 False
+_474_/ZN 3.59e-10 3.52e-10 2.64e-11 False
+_475_ INV_X1 False False False True
+1.43e-08 4.23e-06
+_475_/A 3.59e-10 3.52e-10 2.64e-11 False
+_475_/ZN 3.64e-10 3.66e-10 6.39e-12 False
+_476_ NAND2_X1 False False False False
+1.72e-08 3.99e-06
+_476_/A1 3.15e-10 3.09e-10 1.12e-11 False
+_476_/A2 2.06e-10 1.85e-10 2.37e-11 False
+_476_/ZN 3.29e-10 3.31e-10 1.25e-11 False
+_477_ NAND2_X2 False False False False
+5.49e-08 7.07e-06
+_477_/A1 3.29e-10 3.31e-10 1.25e-11 False
+_477_/A2 1.79e-10 1.87e-10 1.68e-11 False
+_477_/ZN 3.47e-10 3.43e-10 1.05e-11 False
+_478_ XNOR2_X2 False False False False
+7.54e-08 1.91e-05
+_478_/A 3.47e-10 3.43e-10 1.05e-11 False
+_478_/B 2.12e-10 1.93e-10 3.36e-11 False
+_478_/ZN 3.83e-10 3.77e-10 1.67e-11 False
+_479_ XNOR2_X1 False False False False
+3.66e-08 1.32e-05
+_479_/A 2.2e-10 2.21e-10 2.17e-11 False
+_479_/B 3.43e-10 3.38e-10 1.06e-11 False
+_479_/ZN 3.86e-10 3.78e-10 2.64e-11 False
+_480_ INV_X1 False False False True
+1.43e-08 4.15e-06
+_480_/A 3.86e-10 3.78e-10 2.64e-11 False
+_480_/ZN 3.9e-10 3.93e-10 6.35e-12 False
+_481_ XNOR2_X1 False False False False
+3.6e-08 5.4e-06
+_481_/A 1.6e-10 1.51e-10 2.62e-11 False
+_481_/B 1.48e-10 1.37e-10 2.24e-11 False
+_481_/ZN 2.05e-10 1.91e-10 2.3e-11 False
+_482_ NAND4_X1 False False False False
+2.35e-08 2.02e-06
+_482_/A1 1.54e-10 1.48e-10 2.21e-11 False
+_482_/A2 1.48e-10 1.48e-10 1.39e-11 False
+_482_/A3 1.6e-10 1.51e-10 2.62e-11 False
+_482_/A4 1.51e-10 1.53e-10 1.23e-11 False
+_482_/ZN 1.75e-10 1.91e-10 1.47e-11 False
+_483_ NAND3_X1 False False False False
+2.26e-08 2.11e-06
+_483_/A1 1.48e-10 1.49e-10 1.27e-11 False
+_483_/A2 1.48e-10 1.47e-10 1.47e-11 False
+_483_/A3 1.56e-10 1.56e-10 1.74e-11 False
+_483_/ZN 1.76e-10 1.78e-10 1.16e-11 False
+_484_ NOR3_X1 False False False False
+3.19e-08 3.64e-07
+_484_/A1 1.75e-10 1.91e-10 1.47e-11 False
+_484_/A2 1.39e-10 1.3e-10 1.47e-11 False
+_484_/A3 1.76e-10 1.78e-10 1.16e-11 False
+_484_/ZN 2.27e-10 1.87e-10 2.59e-11 False
+_485_ INV_X1 False False False True
+1.33e-08 2.82e-06
+_485_/A 1.46e-10 1.36e-10 1.98e-11 False
+_485_/ZN 1.57e-10 1.6e-10 1.39e-11 False
+_486_ NAND4_X1 False False False False
+2.47e-08 2.07e-06
+_486_/A1 1.59e-10 1.61e-10 1.71e-11 False
+_486_/A2 1.58e-10 1.58e-10 1.74e-11 False
+_486_/A3 1.57e-10 1.58e-10 1.58e-11 False
+_486_/A4 1.57e-10 1.6e-10 1.39e-11 False
+_486_/ZN 1.83e-10 1.87e-10 1.45e-11 False
+_487_ NAND4_X1 False False False False
+2.53e-08 2.21e-06
+_487_/A1 1.57e-10 1.6e-10 1.5e-11 False
+_487_/A2 1.51e-10 1.53e-10 1.23e-11 False
+_487_/A3 1.6e-10 1.59e-10 2.05e-11 False
+_487_/A4 1.6e-10 1.57e-10 2.11e-11 False
+_487_/ZN 1.81e-10 1.92e-10 1.44e-11 False
+_488_ NOR2_X1 False False False False
+2.67e-08 3.95e-07
+_488_/A1 1.83e-10 1.87e-10 1.45e-11 False
+_488_/A2 1.81e-10 1.92e-10 1.44e-11 False
+_488_/ZN 2.23e-10 1.93e-10 1.55e-11 False
+_489_ NAND2_X1 False False False False
+3.86e-09 1.12e-08
+_489_/A1 2.27e-10 1.87e-10 2.59e-11 False
+_489_/A2 2.23e-10 1.93e-10 1.55e-11 False
+_489_/ZN 2.12e-10 2.47e-10 1.3e-11 False
+_490_ INV_X1 False False False True
+1.86e-08 6.47e-09
+_490_/A 2.12e-10 2.47e-10 1.3e-11 False
+_490_/ZN 2.61e-10 2.2e-10 7.74e-12 False
+_492_ INV_X1 False False False True
+1.25e-08 2.54e-06
+_492_/A 1.84e-10 1.51e-10 3.53e-11 False
+_492_/ZN 1.85e-10 2.07e-10 2.2e-11 False
+_493_ OR2_X1 False False False False
+2.24e-08 1.16e-06
+_493_/A1 1.85e-10 2.07e-10 2.2e-11 False
+_493_/A2 1.17e-10 1.19e-10 1.26e-11 False
+_493_/ZN 2.16e-10 2.58e-10 1.05e-11 False
+_497_ NAND2_X1 False False False False
+1.85e-08 7.8e-07
+_497_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_497_/A2 1.14e-10 1.17e-10 1.04e-11 False
+_497_/ZN 2.07e-10 2.65e-10 1.52e-11 False
+_498_ OAI22_X1 False False False False
+3.4e-08 1.25e-06
+_498_/A1 2.61e-10 2.2e-10 7.74e-12 False
+_498_/A2 2.16e-10 2.58e-10 1.05e-11 False
+_498_/B1 1.17e-10 1.19e-10 1.26e-11 False
+_498_/B2 2.07e-10 2.65e-10 1.52e-11 False
+_498_/ZN 3.09e-10 2.75e-10 2.68e-11 False
+_500_ AND3_X1 False False False False
+1.99e-08 6.98e-09
+_500_/A1 1.85e-10 2.07e-10 2.2e-11 False
+_500_/A2 1.57e-10 1.66e-10 3.98e-11 False
+_500_/A3 1.33e-10 1.26e-10 1.03e-11 False
+_500_/ZN 2.32e-10 2.42e-10 1.25e-11 False
+_501_ AOI21_X1 False False False False
+2.4e-08 9.65e-07
+_501_/A 1.17e-10 1.19e-10 1.26e-11 False
+_501_/B1 2.32e-10 2.42e-10 1.25e-11 False
+_501_/B2 1.1e-10 1.14e-10 7e-12 False
+_501_/ZN 2.76e-10 2.5e-10 2.89e-11 False
+_503_ INV_X1 False False False True
+1.58e-08 7.86e-07
+_503_/A 2.45e-10 1.81e-10 9.46e-11 False
+_503_/ZN 2.04e-10 2.52e-10 1.35e-11 False
+_504_ OAI21_X1 False False False False
+2.2e-08 8e-07
+_504_/A 2.76e-10 2.5e-10 2.89e-11 False
+_504_/B1 2.04e-10 2.52e-10 1.35e-11 False
+_504_/B2 1.14e-10 1.17e-10 1.04e-11 False
+_504_/ZN 2.79e-10 2.97e-10 1.6e-11 False
+_505_ NAND2_X1 False False False False
+3.81e-09 1.16e-08
+_505_/A1 2.76e-10 2.5e-10 2.89e-11 False
+_505_/A2 1.33e-10 1.26e-10 1.03e-11 False
+_505_/ZN 2.65e-10 2.92e-10 9.32e-12 False
+_506_ OAI21_X1 False False False False
+4.66e-08 1.46e-08
+_506_/A 2.65e-10 2.92e-10 9.32e-12 False
+_506_/B1 2.12e-10 2.47e-10 1.3e-11 False
+_506_/B2 2.16e-10 2.58e-10 1.05e-11 False
+_506_/ZN 3.11e-10 2.82e-10 1.59e-11 False
+_507_ NAND2_X1 False False False False
+1.51e-08 1.31e-06
+_507_/A1 1.48e-10 1.48e-10 1.39e-11 False
+_507_/A2 1.65e-10 1.4e-10 1.45e-11 False
+_507_/ZN 1.61e-10 1.8e-10 9.47e-12 False
+_508_ OAI21_X1 False False False False
+3.22e-08 2.85e-06
+_508_/A 1.61e-10 1.8e-10 9.47e-12 False
+_508_/B1 2.08e-10 1.86e-10 2.62e-11 False
+_508_/B2 1.82e-10 1.86e-10 2.68e-11 False
+_508_/ZN 2.21e-10 2.25e-10 1.83e-11 False
+_509_ NOR2_X1 False False False False
+2.1e-08 4.24e-06
+_509_/A1 2e-10 1.89e-10 2.66e-11 False
+_509_/A2 2.08e-10 1.86e-10 2.62e-11 False
+_509_/ZN 2.24e-10 2.24e-10 2.31e-11 False
+_510_ AOI21_X1 False False False False
+2.14e-08 4.28e-06
+_510_/A 2.21e-10 2.25e-10 1.83e-11 False
+_510_/B1 2.3e-10 2.35e-10 2.6e-11 False
+_510_/B2 2.24e-10 2.24e-10 2.31e-11 False
+_510_/ZN 2.65e-10 2.48e-10 2.14e-11 False
+_511_ NAND2_X1 False False False False
+1.02e-08 2.22e-06
+_511_/A1 2.52e-10 2.3e-10 2.57e-11 False
+_511_/A2 2.24e-10 2.24e-10 2.31e-11 False
+_511_/ZN 2.5e-10 2.73e-10 1.29e-11 False
+_512_ OAI21_X1 False False False False
+2.83e-08 6.09e-06
+_512_/A 2.65e-10 2.48e-10 2.14e-11 False
+_512_/B1 2.9e-10 2.7e-10 3.13e-11 False
+_512_/B2 2.5e-10 2.73e-10 1.29e-11 False
+_512_/ZN 3.14e-10 3.12e-10 2.56e-11 False
+_513_ INV_X2 False False False True
+2.7e-08 1.32e-05
+_513_/A 3.14e-10 3.12e-10 2.56e-11 False
+_513_/ZN 3.38e-10 3.32e-10 1.62e-11 False
+_514_ INV_X1 False False False True
+1.8e-08 2.05e-06
+_514_/A 2.5e-10 2.73e-10 1.29e-11 False
+_514_/ZN 2.92e-10 2.61e-10 1.12e-11 False
+_515_ NAND3_X2 False False False False
+7.74e-09 5.36e-07
+_515_/A1 2.85e-10 2.76e-10 1.2e-11 False
+_515_/A2 2.83e-10 2.59e-10 1.52e-11 False
+_515_/A3 2.92e-10 2.61e-10 1.12e-11 False
+_515_/ZN 3.04e-10 3.26e-10 2.24e-11 False
+_516_ NAND3_X2 False False False False
+3.39e-08 7.53e-06
+_516_/A1 3.38e-10 3.32e-10 1.62e-11 False
+_516_/A2 3.04e-10 3.26e-10 2.24e-11 False
+_516_/A3 1.84e-10 1.51e-10 3.53e-11 False
+_516_/ZN 3.62e-10 3.7e-10 2.23e-11 False
+_517_ NAND2_X4 False False False False
+9.84e-08 9.84e-06
+_517_/A1 1.57e-10 1.66e-10 3.98e-11 False
+_517_/A2 3.62e-10 3.7e-10 2.23e-11 False
+_517_/ZN 4.05e-10 3.89e-10 2.12e-11 False
+_519_ MUX2_X1 False False False False
+3.6e-08 1.94e-06
+_519_/A 1.48e-10 1.37e-10 2.24e-11 False
+_519_/B 1.08e-10 1.13e-10 5.5e-12 False
+_519_/S 2.45e-10 1.81e-10 9.46e-11 False
+_519_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_520_ NAND2_X1 False False False False
+1.79e-08 1.29e-06
+_520_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_520_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_520_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_522_ OAI21_X1 False False False False
+2.91e-08 2.06e-06
+_522_/A 4.08e-10 4.2e-10 1.03e-11 False
+_522_/B1 1.6e-10 1.51e-10 2.62e-11 False
+_522_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_522_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_523_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_523_/A 1.65e-10 1.41e-10 1.46e-11 False
+_523_/B 1.08e-10 1.13e-10 5.5e-12 False
+_523_/S 2.45e-10 1.81e-10 9.46e-11 False
+_523_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_524_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_524_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_524_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_524_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_525_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_525_/A 4.08e-10 4.2e-10 1.03e-11 False
+_525_/B1 1.51e-10 1.53e-10 1.23e-11 False
+_525_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_525_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_526_ NAND2_X1 False False False False
+1.85e-08 7.91e-07
+_526_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_526_/A2 1.1e-10 1.14e-10 6.98e-12 False
+_526_/ZN 2.07e-10 2.64e-10 1.53e-11 False
+_527_ OAI21_X1 False False False False
+2.92e-08 1.37e-06
+_527_/A 2.07e-10 2.64e-10 1.53e-11 False
+_527_/B1 2.45e-10 1.81e-10 9.46e-11 False
+_527_/B2 1.55e-10 1.59e-10 1.33e-11 False
+_527_/ZN 2.91e-10 2.65e-10 2.3e-11 False
+_528_ NAND2_X1 False False False False
+1.65e-08 1.25e-06
+_528_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_528_/A2 2.91e-10 2.65e-10 2.3e-11 False
+_528_/ZN 4.08e-10 4.2e-10 1.17e-11 False
+_529_ OAI21_X1 False False False False
+3.04e-08 1.99e-06
+_529_/A 4.08e-10 4.2e-10 1.17e-11 False
+_529_/B1 1.57e-10 1.6e-10 1.5e-11 False
+_529_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_529_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_530_ NAND2_X1 False False False False
+1.85e-08 7.91e-07
+_530_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_530_/A2 1.1e-10 1.14e-10 6.98e-12 False
+_530_/ZN 2.07e-10 2.64e-10 1.53e-11 False
+_531_ OAI21_X1 False False False False
+2.92e-08 1.37e-06
+_531_/A 2.07e-10 2.64e-10 1.53e-11 False
+_531_/B1 2.45e-10 1.81e-10 9.46e-11 False
+_531_/B2 1.56e-10 1.61e-10 1.19e-11 False
+_531_/ZN 2.91e-10 2.65e-10 2.3e-11 False
+_532_ NAND2_X1 False False False False
+1.65e-08 1.25e-06
+_532_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_532_/A2 2.91e-10 2.65e-10 2.3e-11 False
+_532_/ZN 4.08e-10 4.2e-10 1.17e-11 False
+_533_ OAI21_X1 False False False False
+3.04e-08 2e-06
+_533_/A 4.08e-10 4.2e-10 1.17e-11 False
+_533_/B1 1.51e-10 1.53e-10 1.23e-11 False
+_533_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_533_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_536_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_536_/A 1.68e-10 1.43e-10 1.52e-11 False
+_536_/B 1.08e-10 1.13e-10 5.5e-12 False
+_536_/S 2.45e-10 1.81e-10 9.46e-11 False
+_536_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_537_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_537_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_537_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_537_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_538_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_538_/A 4.08e-10 4.2e-10 1.03e-11 False
+_538_/B1 1.6e-10 1.59e-10 2.05e-11 False
+_538_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_538_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_539_ NAND2_X1 False False False False
+1.85e-08 7.91e-07
+_539_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_539_/A2 1.1e-10 1.14e-10 6.98e-12 False
+_539_/ZN 2.07e-10 2.64e-10 1.53e-11 False
+_540_ OAI21_X1 False False False False
+2.92e-08 1.37e-06
+_540_/A 2.07e-10 2.64e-10 1.53e-11 False
+_540_/B1 2.45e-10 1.81e-10 9.46e-11 False
+_540_/B2 1.61e-10 1.66e-10 1.4e-11 False
+_540_/ZN 2.91e-10 2.65e-10 2.3e-11 False
+_541_ NAND2_X1 False False False False
+1.65e-08 1.25e-06
+_541_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_541_/A2 2.91e-10 2.65e-10 2.3e-11 False
+_541_/ZN 4.08e-10 4.2e-10 1.17e-11 False
+_542_ OAI21_X1 False False False False
+3.04e-08 2e-06
+_542_/A 4.08e-10 4.2e-10 1.17e-11 False
+_542_/B1 1.6e-10 1.57e-10 2.11e-11 False
+_542_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_542_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_543_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_543_/A 1.94e-10 1.68e-10 6.58e-12 False
+_543_/B 1.08e-10 1.13e-10 5.5e-12 False
+_543_/S 2.45e-10 1.81e-10 9.46e-11 False
+_543_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_544_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_544_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_544_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_544_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_545_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_545_/A 4.08e-10 4.2e-10 1.03e-11 False
+_545_/B1 1.59e-10 1.61e-10 1.71e-11 False
+_545_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_545_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_546_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_546_/A 1.5e-10 1.38e-10 2.37e-11 False
+_546_/B 1.08e-10 1.13e-10 5.5e-12 False
+_546_/S 2.45e-10 1.81e-10 9.46e-11 False
+_546_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_547_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_547_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_547_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_547_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_548_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_548_/A 4.08e-10 4.2e-10 1.03e-11 False
+_548_/B1 1.58e-10 1.58e-10 1.74e-11 False
+_548_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_548_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_549_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_549_/A 1.67e-10 1.42e-10 1.45e-11 False
+_549_/B 1.08e-10 1.13e-10 5.5e-12 False
+_549_/S 2.45e-10 1.81e-10 9.46e-11 False
+_549_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_550_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_550_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_550_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_550_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_551_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_551_/A 4.08e-10 4.2e-10 1.03e-11 False
+_551_/B1 1.57e-10 1.58e-10 1.58e-11 False
+_551_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_551_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_552_ NAND2_X1 False False False False
+1.85e-08 7.91e-07
+_552_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_552_/A2 1.1e-10 1.14e-10 6.98e-12 False
+_552_/ZN 2.07e-10 2.64e-10 1.53e-11 False
+_553_ OAI21_X1 False False False False
+2.92e-08 1.37e-06
+_553_/A 2.07e-10 2.64e-10 1.53e-11 False
+_553_/B1 2.45e-10 1.81e-10 9.46e-11 False
+_553_/B2 1.58e-10 1.78e-10 1.03e-11 False
+_553_/ZN 2.91e-10 2.65e-10 2.3e-11 False
+_554_ NAND2_X1 False False False False
+1.65e-08 1.25e-06
+_554_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_554_/A2 2.91e-10 2.65e-10 2.3e-11 False
+_554_/ZN 4.08e-10 4.2e-10 1.17e-11 False
+_555_ OAI21_X1 False False False False
+3.04e-08 2e-06
+_555_/A 4.08e-10 4.2e-10 1.17e-11 False
+_555_/B1 1.57e-10 1.6e-10 1.39e-11 False
+_555_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_555_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_556_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_556_/A 1.44e-10 1.35e-10 1.87e-11 False
+_556_/B 1.08e-10 1.13e-10 5.5e-12 False
+_556_/S 2.45e-10 1.81e-10 9.46e-11 False
+_556_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_557_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_557_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_557_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_557_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_558_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_558_/A 4.08e-10 4.2e-10 1.03e-11 False
+_558_/B1 1.48e-10 1.49e-10 1.27e-11 False
+_558_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_558_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_559_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_559_/A 1.64e-10 1.4e-10 1.45e-11 False
+_559_/B 1.08e-10 1.13e-10 5.5e-12 False
+_559_/S 2.45e-10 1.81e-10 9.46e-11 False
+_559_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_560_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_560_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_560_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_560_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_561_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_561_/A 4.08e-10 4.2e-10 1.03e-11 False
+_561_/B1 1.48e-10 1.47e-10 1.47e-11 False
+_561_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_561_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_562_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_562_/A 1.65e-10 1.4e-10 1.52e-11 False
+_562_/B 1.08e-10 1.13e-10 5.5e-12 False
+_562_/S 2.45e-10 1.81e-10 9.46e-11 False
+_562_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_563_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_563_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_563_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_563_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_564_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_564_/A 4.08e-10 4.2e-10 1.03e-11 False
+_564_/B1 1.56e-10 1.56e-10 1.74e-11 False
+_564_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_564_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_565_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_565_/A 1.65e-10 1.4e-10 1.45e-11 False
+_565_/B 1.08e-10 1.13e-10 5.5e-12 False
+_565_/S 2.45e-10 1.81e-10 9.46e-11 False
+_565_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_566_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_566_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_566_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_566_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_567_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_567_/A 4.08e-10 4.2e-10 1.03e-11 False
+_567_/B1 1.5e-10 1.52e-10 1.3e-11 False
+_567_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_567_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_568_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_568_/A 1.41e-10 1.32e-10 1.73e-11 False
+_568_/B 1.08e-10 1.13e-10 5.5e-12 False
+_568_/S 2.45e-10 1.81e-10 9.46e-11 False
+_568_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_569_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_569_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_569_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_569_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_570_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_570_/A 4.08e-10 4.2e-10 1.03e-11 False
+_570_/B1 1.54e-10 1.48e-10 2.21e-11 False
+_570_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_570_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_571_ MUX2_X1 False False False False
+3.6e-08 1.95e-06
+_571_/A 1.65e-10 1.4e-10 1.45e-11 False
+_571_/B 1.08e-10 1.13e-10 5.5e-12 False
+_571_/S 2.45e-10 1.81e-10 9.46e-11 False
+_571_/Z 2.94e-10 3.09e-10 1.2e-11 False
+_572_ NAND2_X1 False False False False
+1.79e-08 1.3e-06
+_572_/A1 4.05e-10 3.89e-10 2.12e-11 False
+_572_/A2 2.94e-10 3.09e-10 1.2e-11 False
+_572_/ZN 4.08e-10 4.2e-10 1.03e-11 False
+_573_ OAI21_X1 False False False False
+2.91e-08 2.07e-06
+_573_/A 4.08e-10 4.2e-10 1.03e-11 False
+_573_/B1 1.48e-10 1.48e-10 1.39e-11 False
+_573_/B2 4.05e-10 3.89e-10 2.1e-11 False
+_573_/ZN 4.39e-10 4.25e-10 1.61e-11 False
+_574_ NAND2_X2 False False False False
+6.43e-08 1.2e-05
+_574_/A1 3.38e-10 3.32e-10 1.62e-11 False
+_574_/A2 3.04e-10 3.26e-10 2.24e-11 False
+_574_/ZN 3.56e-10 3.59e-10 1.7e-11 False
+_575_ NAND3_X4 False False False False
+4.29e-08 4.22e-06
+_575_/A1 3.56e-10 3.59e-10 1.7e-11 False
+_575_/A2 1.84e-10 1.51e-10 3.53e-11 False
+_575_/A3 1.57e-10 1.66e-10 3.98e-11 False
+_575_/ZN 3.85e-10 3.84e-10 2.1e-11 False
+_576_ INV_X8 False False False True
+1.46e-07 3.62e-06
+_576_/A 3.85e-10 3.84e-10 2.1e-11 False
+_576_/ZN 4.02e-10 3.94e-10 9.09e-12 False
+_577_ NAND2_X1 False False False False
+1.4e-08 3.63e-07
+_577_/A1 4.02e-10 3.94e-10 9.09e-12 False
+_577_/A2 2.05e-10 1.91e-10 2.3e-11 False
+_577_/ZN 4.07e-10 4.13e-10 9.79e-12 False
+_578_ NAND4_X4 False False False False
+5e-08 4.82e-06
+_578_/A1 3.38e-10 3.32e-10 1.62e-11 False
+_578_/A2 3.04e-10 3.26e-10 2.24e-11 False
+_578_/A3 1.84e-10 1.51e-10 3.53e-11 False
+_578_/A4 1.57e-10 1.66e-10 3.98e-11 False
+_578_/ZN 3.57e-10 3.69e-10 2.11e-11 False
+_580_ OAI21_X1 False False False False
+4.24e-08 9.23e-07
+_580_/A 4.07e-10 4.13e-10 9.79e-12 False
+_580_/B1 3.82e-10 4e-10 8.17e-12 False
+_580_/B2 1.6e-10 1.51e-10 2.62e-11 False
+_580_/ZN 4.33e-10 4.25e-10 1.79e-11 False
+_581_ NOR2_X4 False False False False
+9.43e-08 4.83e-06
+_581_/A1 1.85e-10 2.07e-10 2.2e-11 False
+_581_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_581_/ZN 2.58e-10 2.74e-10 3.86e-11 False
+_583_ NAND2_X1 False False False False
+5.59e-09 8.71e-08
+_583_/A1 4.33e-10 4.25e-10 1.79e-11 False
+_583_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_583_/ZN 4.41e-10 4.47e-10 1.22e-11 False
+_584_ NAND2_X1 False False False False
+1.85e-08 7.82e-07
+_584_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_584_/A2 1.1e-10 1.14e-10 6.98e-12 False
+_584_/ZN 2.07e-10 2.64e-10 1.52e-11 False
+_585_ NOR2_X4 False False False False
+8.01e-08 7.06e-06
+_585_/A1 1.84e-10 1.51e-10 3.53e-11 False
+_585_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_585_/ZN 2.42e-10 2.72e-10 3.47e-11 False
+_587_ NAND2_X1 False False False False
+1.33e-08 5.86e-07
+_587_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_587_/A2 1.48e-10 1.37e-10 2.24e-11 False
+_587_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_588_ NAND3_X1 False False False False
+3.96e-08 1.16e-06
+_588_/A1 4.41e-10 4.47e-10 1.22e-11 False
+_588_/A2 2.07e-10 2.64e-10 1.52e-11 False
+_588_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_588_/ZN 4.62e-10 4.57e-10 1.13e-11 False
+_589_ OAI22_X1 False False False False
+4.79e-08 1.04e-06
+_589_/A1 3.82e-10 4e-10 8.17e-12 False
+_589_/A2 1.51e-10 1.53e-10 1.23e-11 False
+_589_/B1 3.85e-10 3.84e-10 2.1e-11 False
+_589_/B2 2.52e-10 2.3e-10 2.61e-11 False
+_589_/ZN 4.26e-10 4.06e-10 2.91e-11 False
+_590_ NAND2_X1 False False False False
+5.59e-09 9.87e-08
+_590_/A1 4.26e-10 4.06e-10 2.91e-11 False
+_590_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_590_/ZN 4.21e-10 4.42e-10 1.22e-11 False
+_591_ NAND2_X1 False False False False
+1.85e-08 7.82e-07
+_591_/A1 2.45e-10 1.81e-10 9.46e-11 False
+_591_/A2 1.1e-10 1.14e-10 6.98e-12 False
+_591_/ZN 2.07e-10 2.64e-10 1.52e-11 False
+_592_ NAND2_X1 False False False False
+1.33e-08 5.87e-07
+_592_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_592_/A2 1.65e-10 1.41e-10 1.46e-11 False
+_592_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_593_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_593_/A1 4.21e-10 4.42e-10 1.22e-11 False
+_593_/A2 2.07e-10 2.64e-10 1.52e-11 False
+_593_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_593_/ZN 4.57e-10 4.38e-10 1.13e-11 False
+_594_ OAI22_X1 False False False False
+4.85e-08 1.01e-06
+_594_/A1 3.82e-10 4e-10 8.17e-12 False
+_594_/A2 1.57e-10 1.6e-10 1.5e-11 False
+_594_/B1 3.85e-10 3.84e-10 2.1e-11 False
+_594_/B2 2.91e-10 2.78e-10 2.61e-11 False
+_594_/ZN 4.26e-10 4.06e-10 2.91e-11 False
+_595_ NAND2_X1 False False False False
+5.59e-09 9.43e-08
+_595_/A1 4.26e-10 4.06e-10 2.91e-11 False
+_595_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_595_/ZN 4.21e-10 4.42e-10 1.22e-11 False
+_596_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_596_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_596_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_596_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_597_ NAND2_X1 False False False False
+1.33e-08 5.86e-07
+_597_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_597_/A2 1.44e-10 1.34e-10 1.85e-11 False
+_597_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_598_ NAND3_X1 False False False False
+3.96e-08 1.16e-06
+_598_/A1 4.21e-10 4.42e-10 1.22e-11 False
+_598_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_598_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_598_/ZN 4.57e-10 4.38e-10 1.07e-11 False
+_599_ NAND2_X1 False False False False
+1.43e-08 4.57e-07
+_599_/A1 4.02e-10 3.94e-10 9.09e-12 False
+_599_/A2 3.14e-10 3e-10 2.3e-11 False
+_599_/ZN 4.07e-10 4.13e-10 9.67e-12 False
+_600_ OAI21_X1 False False False False
+4.28e-08 1.02e-06
+_600_/A 4.07e-10 4.13e-10 9.67e-12 False
+_600_/B1 3.82e-10 4e-10 8.17e-12 False
+_600_/B2 1.51e-10 1.53e-10 1.23e-11 False
+_600_/ZN 4.33e-10 4.25e-10 1.79e-11 False
+_601_ NAND2_X1 False False False False
+5.59e-09 9.53e-08
+_601_/A1 4.33e-10 4.25e-10 1.79e-11 False
+_601_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_601_/ZN 4.39e-10 4.47e-10 1.22e-11 False
+_602_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_602_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_602_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_602_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_603_ NAND2_X1 False False False False
+1.33e-08 5.88e-07
+_603_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_603_/A2 1.48e-10 1.37e-10 2.19e-11 False
+_603_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_604_ NAND3_X1 False False False False
+3.96e-08 1.16e-06
+_604_/A1 4.39e-10 4.47e-10 1.22e-11 False
+_604_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_604_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_604_/ZN 4.62e-10 4.56e-10 1.07e-11 False
+_605_ OAI22_X1 False False False False
+4.78e-08 1.15e-06
+_605_/A1 3.82e-10 4e-10 8.17e-12 False
+_605_/A2 1.6e-10 1.59e-10 2.05e-11 False
+_605_/B1 3.85e-10 3.84e-10 2.1e-11 False
+_605_/B2 3.26e-10 3.16e-10 2.61e-11 False
+_605_/ZN 4.26e-10 4.06e-10 2.91e-11 False
+_606_ NAND2_X1 False False False False
+5.59e-09 1.05e-07
+_606_/A1 4.26e-10 4.06e-10 2.91e-11 False
+_606_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_606_/ZN 4.21e-10 4.42e-10 1.22e-11 False
+_607_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_607_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_607_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_607_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_608_ NAND2_X1 False False False False
+1.33e-08 5.89e-07
+_608_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_608_/A2 1.99e-10 1.71e-10 7.99e-12 False
+_608_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_609_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_609_/A1 4.21e-10 4.42e-10 1.22e-11 False
+_609_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_609_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_609_/ZN 4.57e-10 4.38e-10 1.07e-11 False
+_610_ NAND2_X1 False False False False
+1.45e-08 5.08e-07
+_610_/A1 4.02e-10 3.94e-10 9.09e-12 False
+_610_/A2 3.62e-10 3.62e-10 8.22e-12 False
+_610_/ZN 4.07e-10 4.13e-10 9.32e-12 False
+_611_ OAI21_X1 False False False False
+4.28e-08 1.08e-06
+_611_/A 4.07e-10 4.13e-10 9.32e-12 False
+_611_/B1 3.83e-10 4.01e-10 8.95e-12 False
+_611_/B2 1.6e-10 1.57e-10 2.11e-11 False
+_611_/ZN 4.32e-10 4.25e-10 1.79e-11 False
+_612_ NAND2_X1 False False False False
+5.59e-09 9.98e-08
+_612_/A1 4.32e-10 4.25e-10 1.79e-11 False
+_612_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_612_/ZN 4.4e-10 4.47e-10 1.22e-11 False
+_613_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_613_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_613_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_613_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_614_ NAND2_X1 False False False False
+1.33e-08 5.9e-07
+_614_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_614_/A2 1.5e-10 1.38e-10 2.41e-11 False
+_614_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_615_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_615_/A1 4.4e-10 4.47e-10 1.22e-11 False
+_615_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_615_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_615_/ZN 4.62e-10 4.56e-10 1.07e-11 False
+_616_ OAI22_X1 False False False False
+4.78e-08 1.16e-06
+_616_/A1 3.83e-10 4.01e-10 8.95e-12 False
+_616_/A2 1.59e-10 1.61e-10 1.71e-11 False
+_616_/B1 3.81e-10 3.81e-10 1.84e-11 False
+_616_/B2 3.41e-10 3.17e-10 1.85e-11 False
+_616_/ZN 4.26e-10 4.02e-10 2.9e-11 False
+_617_ NAND2_X1 False False False False
+5.59e-09 1.06e-07
+_617_/A1 4.26e-10 4.02e-10 2.9e-11 False
+_617_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_617_/ZN 4.17e-10 4.43e-10 1.22e-11 False
+_618_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_618_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_618_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_618_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_619_ NAND2_X1 False False False False
+1.33e-08 5.88e-07
+_619_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_619_/A2 1.66e-10 1.41e-10 1.36e-11 False
+_619_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_620_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_620_/A1 4.17e-10 4.43e-10 1.22e-11 False
+_620_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_620_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_620_/ZN 4.58e-10 4.34e-10 1.07e-11 False
+_621_ NAND2_X1 False False False False
+4.84e-09 5.18e-07
+_621_/A1 3.77e-10 3.54e-10 2.27e-11 False
+_621_/A2 4.02e-10 3.94e-10 9.09e-12 False
+_621_/ZN 4.1e-10 4.15e-10 9.26e-12 False
+_622_ OAI21_X1 False False False False
+4.16e-08 1.13e-06
+_622_/A 4.1e-10 4.15e-10 9.26e-12 False
+_622_/B1 1.58e-10 1.58e-10 1.74e-11 False
+_622_/B2 3.83e-10 4.01e-10 8.95e-12 False
+_622_/ZN 4.35e-10 4.27e-10 1.79e-11 False
+_623_ NAND2_X1 False False False False
+5.59e-09 1.03e-07
+_623_/A1 4.35e-10 4.27e-10 1.79e-11 False
+_623_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_623_/ZN 4.41e-10 4.49e-10 1.22e-11 False
+_624_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_624_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_624_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_624_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_625_ NAND2_X1 False False False False
+1.33e-08 5.9e-07
+_625_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_625_/A2 1.5e-10 1.38e-10 2.37e-11 False
+_625_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_626_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_626_/A1 4.41e-10 4.49e-10 1.22e-11 False
+_626_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_626_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_626_/ZN 4.64e-10 4.58e-10 1.07e-11 False
+_627_ OAI22_X1 False False False False
+4.78e-08 1.18e-06
+_627_/A1 3.83e-10 4.01e-10 8.95e-12 False
+_627_/A2 1.57e-10 1.58e-10 1.58e-11 False
+_627_/B1 3.85e-10 3.84e-10 2.1e-11 False
+_627_/B2 3.71e-10 3.6e-10 2.61e-11 False
+_627_/ZN 4.26e-10 4.06e-10 2.91e-11 False
+_628_ NAND2_X1 False False False False
+5.59e-09 1.07e-07
+_628_/A1 4.26e-10 4.06e-10 2.91e-11 False
+_628_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_628_/ZN 4.21e-10 4.43e-10 1.22e-11 False
+_629_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_629_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_629_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_629_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_630_ NAND2_X1 False False False False
+1.33e-08 5.88e-07
+_630_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_630_/A2 1.67e-10 1.42e-10 1.45e-11 False
+_630_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_631_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_631_/A1 4.21e-10 4.43e-10 1.22e-11 False
+_631_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_631_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_631_/ZN 4.58e-10 4.38e-10 1.07e-11 False
+_632_ NAND2_X1 False False False False
+1.45e-08 5.09e-07
+_632_/A1 4.02e-10 3.94e-10 9.09e-12 False
+_632_/A2 3.86e-10 3.8e-10 2.3e-11 False
+_632_/ZN 4.07e-10 4.13e-10 9.73e-12 False
+_633_ OAI21_X1 False False False False
+4.28e-08 1.08e-06
+_633_/A 4.07e-10 4.13e-10 9.73e-12 False
+_633_/B1 3.83e-10 4.01e-10 8.95e-12 False
+_633_/B2 1.57e-10 1.6e-10 1.39e-11 False
+_633_/ZN 4.33e-10 4.25e-10 1.79e-11 False
+_634_ NAND2_X1 False False False False
+5.59e-09 9.99e-08
+_634_/A1 4.33e-10 4.25e-10 1.79e-11 False
+_634_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_634_/ZN 4.4e-10 4.47e-10 1.22e-11 False
+_635_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_635_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_635_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_635_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_636_ NAND2_X1 False False False False
+1.33e-08 5.87e-07
+_636_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_636_/A2 1.67e-10 1.42e-10 1.43e-11 False
+_636_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_637_ NAND3_X1 False False False False
+3.96e-08 1.16e-06
+_637_/A1 4.4e-10 4.47e-10 1.22e-11 False
+_637_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_637_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_637_/ZN 4.62e-10 4.56e-10 1.07e-11 False
+_638_ OAI22_X1 False False False False
+4.66e-08 1.13e-06
+_638_/A1 3.56e-10 3.47e-10 1.86e-11 False
+_638_/A2 3.81e-10 3.81e-10 1.84e-11 False
+_638_/B1 3.57e-10 3.69e-10 2.11e-11 False
+_638_/B2 1.48e-10 1.49e-10 1.27e-11 False
+_638_/ZN 4.15e-10 4.03e-10 2.94e-11 False
+_639_ NAND2_X1 False False False False
+5.59e-09 1.06e-07
+_639_/A1 4.15e-10 4.03e-10 2.94e-11 False
+_639_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_639_/ZN 4.18e-10 4.32e-10 1.22e-11 False
+_640_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_640_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_640_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_640_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_641_ NAND2_X1 False False False False
+1.33e-08 5.88e-07
+_641_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_641_/A2 1.44e-10 1.35e-10 1.87e-11 False
+_641_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_642_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_642_/A1 4.18e-10 4.32e-10 1.22e-11 False
+_642_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_642_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_642_/ZN 4.47e-10 4.34e-10 1.07e-11 False
+_643_ NAND2_X1 False False False False
+4.84e-09 5.13e-07
+_643_/A1 3.86e-10 3.77e-10 1.67e-11 False
+_643_/A2 4.02e-10 3.94e-10 9.09e-12 False
+_643_/ZN 4.1e-10 4.15e-10 9.26e-12 False
+_644_ OAI21_X1 False False False False
+4.16e-08 1.13e-06
+_644_/A 4.1e-10 4.15e-10 9.26e-12 False
+_644_/B1 1.48e-10 1.47e-10 1.47e-11 False
+_644_/B2 3.83e-10 4.01e-10 8.95e-12 False
+_644_/ZN 4.34e-10 4.27e-10 1.79e-11 False
+_645_ NAND2_X1 False False False False
+5.59e-09 1.03e-07
+_645_/A1 4.34e-10 4.27e-10 1.79e-11 False
+_645_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_645_/ZN 4.41e-10 4.49e-10 1.22e-11 False
+_646_ AND2_X1 False False False False
+2.44e-08 8.53e-07
+_646_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_646_/A2 1.64e-10 1.4e-10 1.45e-11 False
+_646_/ZN 2.81e-10 3.08e-10 8.95e-12 False
+_647_ AOI21_X1 False False False False
+2.91e-08 1.37e-06
+_647_/A 2.81e-10 3.08e-10 8.95e-12 False
+_647_/B1 1.1e-10 1.14e-10 6.94e-12 False
+_647_/B2 2.45e-10 1.81e-10 9.46e-11 False
+_647_/ZN 3.46e-10 2.92e-10 2.42e-11 False
+_648_ NAND2_X1 False False False False
+2.4e-08 9.95e-07
+_648_/A1 4.41e-10 4.49e-10 1.22e-11 False
+_648_/A2 3.46e-10 2.92e-10 2.42e-11 False
+_648_/ZN 4.62e-10 4.53e-10 9.53e-12 False
+_649_ OAI22_X1 False False False False
+4.66e-08 1.14e-06
+_649_/A1 3.59e-10 3.52e-10 2.64e-11 False
+_649_/A2 3.81e-10 3.81e-10 1.84e-11 False
+_649_/B1 3.57e-10 3.69e-10 2.11e-11 False
+_649_/B2 1.56e-10 1.56e-10 1.74e-11 False
+_649_/ZN 4.15e-10 4.03e-10 2.94e-11 False
+_650_ NAND2_X1 False False False False
+5.59e-09 1.07e-07
+_650_/A1 4.15e-10 4.03e-10 2.94e-11 False
+_650_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_650_/ZN 4.18e-10 4.32e-10 1.22e-11 False
+_651_ NAND2_X1 False False False False
+2.2e-08 7.55e-07
+_651_/A1 1.1e-10 1.14e-10 6.85e-12 False
+_651_/A2 2.45e-10 1.81e-10 9.46e-11 False
+_651_/ZN 2.11e-10 2.65e-10 1.57e-11 False
+_652_ NAND2_X1 False False False False
+1.33e-08 5.88e-07
+_652_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_652_/A2 1.65e-10 1.4e-10 1.52e-11 False
+_652_/ZN 2.93e-10 2.59e-10 1.16e-11 False
+_653_ NAND3_X1 False False False False
+3.96e-08 1.17e-06
+_653_/A1 4.18e-10 4.32e-10 1.22e-11 False
+_653_/A2 2.11e-10 2.65e-10 1.57e-11 False
+_653_/A3 2.93e-10 2.59e-10 1.16e-11 False
+_653_/ZN 4.47e-10 4.34e-10 1.07e-11 False
+_654_ NAND2_X1 False False False False
+4.84e-09 5.15e-07
+_654_/A1 3.83e-10 3.77e-10 1.67e-11 False
+_654_/A2 4.02e-10 3.94e-10 9.09e-12 False
+_654_/ZN 4.1e-10 4.15e-10 9.26e-12 False
+_655_ OAI21_X1 False False False False
+4.16e-08 1.13e-06
+_655_/A 4.1e-10 4.15e-10 9.26e-12 False
+_655_/B1 1.5e-10 1.52e-10 1.3e-11 False
+_655_/B2 3.57e-10 3.69e-10 2.11e-11 False
+_655_/ZN 4.34e-10 4.27e-10 1.84e-11 False
+_656_ NAND2_X1 False False False False
+5.59e-09 1.04e-07
+_656_/A1 4.34e-10 4.27e-10 1.84e-11 False
+_656_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_656_/ZN 4.42e-10 4.49e-10 1.22e-11 False
+_657_ AND2_X1 False False False False
+2.44e-08 8.53e-07
+_657_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_657_/A2 1.65e-10 1.4e-10 1.45e-11 False
+_657_/ZN 2.81e-10 3.08e-10 8.95e-12 False
+_658_ AOI21_X1 False False False False
+2.91e-08 1.37e-06
+_658_/A 2.81e-10 3.08e-10 8.95e-12 False
+_658_/B1 1.1e-10 1.14e-10 6.94e-12 False
+_658_/B2 2.45e-10 1.81e-10 9.46e-11 False
+_658_/ZN 3.46e-10 2.92e-10 2.42e-11 False
+_659_ NAND2_X1 False False False False
+2.4e-08 9.95e-07
+_659_/A1 4.42e-10 4.49e-10 1.22e-11 False
+_659_/A2 3.46e-10 2.92e-10 2.42e-11 False
+_659_/ZN 4.62e-10 4.54e-10 9.53e-12 False
+_660_ OAI22_X1 False False False False
+4.66e-08 1.14e-06
+_660_/A1 3.86e-10 3.78e-10 2.64e-11 False
+_660_/A2 3.81e-10 3.81e-10 1.84e-11 False
+_660_/B1 3.57e-10 3.69e-10 2.11e-11 False
+_660_/B2 1.54e-10 1.48e-10 2.21e-11 False
+_660_/ZN 4.15e-10 4.07e-10 2.94e-11 False
+_661_ NAND2_X1 False False False False
+5.59e-09 1.07e-07
+_661_/A1 4.15e-10 4.07e-10 2.94e-11 False
+_661_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_661_/ZN 4.22e-10 4.32e-10 1.22e-11 False
+_662_ AND2_X1 False False False False
+2.44e-08 8.53e-07
+_662_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_662_/A2 1.41e-10 1.32e-10 1.73e-11 False
+_662_/ZN 2.81e-10 3.08e-10 8.95e-12 False
+_663_ AOI21_X1 False False False False
+2.91e-08 1.37e-06
+_663_/A 2.81e-10 3.08e-10 8.95e-12 False
+_663_/B1 1.1e-10 1.14e-10 6.94e-12 False
+_663_/B2 2.45e-10 1.81e-10 9.46e-11 False
+_663_/ZN 3.46e-10 2.92e-10 2.42e-11 False
+_664_ NAND2_X1 False False False False
+2.4e-08 9.99e-07
+_664_/A1 4.22e-10 4.32e-10 1.22e-11 False
+_664_/A2 3.46e-10 2.92e-10 2.42e-11 False
+_664_/ZN 4.45e-10 4.34e-10 9.55e-12 False
+_665_ NAND3_X1 False False False False
+4.74e-09 6.02e-07
+_665_/A1 3.75e-10 3.79e-10 8.03e-12 False
+_665_/A2 3.75e-10 3.74e-10 1.52e-11 False
+_665_/A3 4.02e-10 3.94e-10 9.09e-12 False
+_665_/ZN 4.13e-10 4.22e-10 1.14e-11 False
+_666_ OR2_X1 False False False False
+2.25e-08 5.32e-07
+_666_/A1 3.57e-10 3.69e-10 2.11e-11 False
+_666_/A2 1.48e-10 1.48e-10 1.39e-11 False
+_666_/ZN 3.84e-10 4.19e-10 7.36e-12 False
+_667_ NAND2_X1 False False False False
+3.62e-08 8.11e-07
+_667_/A1 4.13e-10 4.22e-10 1.14e-11 False
+_667_/A2 3.84e-10 4.19e-10 7.36e-12 False
+_667_/ZN 4.36e-10 4.25e-10 9.34e-12 False
+_668_ NAND2_X1 False False False False
+5.6e-09 1.02e-07
+_668_/A1 4.36e-10 4.25e-10 9.34e-12 False
+_668_/A2 2.58e-10 2.74e-10 3.86e-11 False
+_668_/ZN 4.39e-10 4.48e-10 1.22e-11 False
+_669_ AND2_X1 False False False False
+2.44e-08 8.53e-07
+_669_/A1 2.42e-10 2.72e-10 3.47e-11 False
+_669_/A2 1.65e-10 1.4e-10 1.45e-11 False
+_669_/ZN 2.81e-10 3.08e-10 8.95e-12 False
+_670_ AOI21_X1 False False False False
+2.91e-08 1.37e-06
+_670_/A 2.81e-10 3.08e-10 8.95e-12 False
+_670_/B1 1.1e-10 1.14e-10 6.94e-12 False
+_670_/B2 2.45e-10 1.81e-10 9.46e-11 False
+_670_/ZN 3.46e-10 2.92e-10 2.42e-11 False
+_671_ NAND2_X1 False False False False
+2.4e-08 9.94e-07
+_671_/A1 4.39e-10 4.48e-10 1.22e-11 False
+_671_/A2 3.46e-10 2.92e-10 2.42e-11 False
+_671_/ZN 4.62e-10 4.5e-10 9.53e-12 False
+_672_ DFF_X2 True True False False
+1.15e-07 3.25e-05
+_672_/D 2.79e-10 2.97e-10 1.6e-11 True
+_672_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_672_/Q 2.45e-10 1.81e-10 9.46e-11 False
+_672_/QN 1.57e-10 1.66e-10 3.98e-11 False
+_673_ DFF_X1 True True False False
+7.61e-08 1.5e-05
+_673_/D 3.11e-10 2.82e-10 1.59e-11 True
+_673_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_673_/Q 1.33e-10 1.26e-10 1.03e-11 False
+_673_/QN 1.02e-10 1.03e-10 6.29e-12 True
+_674_ DFF_X2 True True False False
+1.14e-07 2.24e-05
+_674_/D 3.09e-10 2.75e-10 2.68e-11 True
+_674_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_674_/Q 1.84e-10 1.51e-10 3.53e-11 False
+_674_/QN 1.12e-10 1.27e-10 7.72e-12 True
+_675_ DFF_X1 True True False False
+7.92e-08 1.57e-05
+_675_/D 4.39e-10 4.25e-10 1.61e-11 True
+_675_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_675_/Q 1.34e-10 1.27e-10 8.6e-12 False
+_675_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_676_ DFF_X1 True True False False
+7.92e-08 1.75e-05
+_676_/D 4.39e-10 4.25e-10 1.61e-11 True
+_676_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_676_/Q 1.4e-10 1.31e-10 1.59e-11 False
+_676_/QN 1.03e-10 1.04e-10 6.29e-12 True
+_677_ DFF_X1 True True False False
+7.92e-08 1.8e-05
+_677_/D 4.39e-10 4.25e-10 1.61e-11 True
+_677_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_677_/Q 1.44e-10 1.34e-10 1.84e-11 False
+_677_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_678_ DFF_X1 True True False False
+7.92e-08 1.72e-05
+_678_/D 4.39e-10 4.25e-10 1.61e-11 True
+_678_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_678_/Q 1.41e-10 1.32e-10 1.49e-11 False
+_678_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_679_ DFF_X1 True True False False
+7.92e-08 1.73e-05
+_679_/D 4.39e-10 4.25e-10 1.61e-11 True
+_679_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_679_/Q 1.41e-10 1.32e-10 1.51e-11 False
+_679_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_680_ DFF_X1 True True False False
+7.92e-08 1.71e-05
+_680_/D 4.39e-10 4.25e-10 1.61e-11 True
+_680_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_680_/Q 1.4e-10 1.32e-10 1.42e-11 False
+_680_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_681_ DFF_X1 True True False False
+7.92e-08 1.8e-05
+_681_/D 4.39e-10 4.25e-10 1.61e-11 True
+_681_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_681_/Q 1.44e-10 1.34e-10 1.81e-11 False
+_681_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_682_ DFF_X1 True True False False
+7.92e-08 1.76e-05
+_682_/D 4.39e-10 4.25e-10 1.61e-11 True
+_682_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_682_/Q 1.42e-10 1.33e-10 1.63e-11 False
+_682_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_683_ DFF_X1 True True False False
+7.92e-08 1.76e-05
+_683_/D 4.39e-10 4.25e-10 1.61e-11 True
+_683_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_683_/Q 1.42e-10 1.33e-10 1.63e-11 False
+_683_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_684_ DFF_X1 True True False False
+7.92e-08 1.83e-05
+_684_/D 4.39e-10 4.25e-10 1.61e-11 True
+_684_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_684_/Q 1.46e-10 1.36e-10 1.98e-11 False
+_684_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_685_ DFF_X1 True True False False
+7.92e-08 1.64e-05
+_685_/D 4.39e-10 4.25e-10 1.61e-11 True
+_685_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_685_/Q 1.37e-10 1.3e-10 1.14e-11 False
+_685_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_686_ DFF_X1 True True False False
+7.92e-08 1.64e-05
+_686_/D 4.39e-10 4.25e-10 1.61e-11 True
+_686_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_686_/Q 1.34e-10 1.27e-10 1.14e-11 False
+_686_/QN 1.02e-10 1.03e-10 6.29e-12 True
+_687_ DFF_X1 True True False False
+7.92e-08 1.76e-05
+_687_/D 4.39e-10 4.25e-10 1.61e-11 True
+_687_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_687_/Q 1.4e-10 1.31e-10 1.63e-11 False
+_687_/QN 1.02e-10 1.03e-10 6.29e-12 True
+_688_ DFF_X1 True True False False
+7.92e-08 1.72e-05
+_688_/D 4.39e-10 4.25e-10 1.61e-11 True
+_688_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_688_/Q 1.39e-10 1.3e-10 1.47e-11 False
+_688_/QN 1.03e-10 1.04e-10 6.29e-12 True
+_689_ DFF_X1 True True False False
+7.92e-08 1.57e-05
+_689_/D 4.39e-10 4.25e-10 1.61e-11 True
+_689_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_689_/Q 1.32e-10 1.25e-10 8.6e-12 False
+_689_/QN 1.03e-10 1.04e-10 6.29e-12 True
+_690_ DFF_X1 True True False False
+7.92e-08 1.64e-05
+_690_/D 4.39e-10 4.25e-10 1.61e-11 True
+_690_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_690_/Q 1.35e-10 1.28e-10 1.14e-11 False
+_690_/QN 1.03e-10 1.04e-10 6.29e-12 True
+_691_ DFF_X1 True True False False
+7.92e-08 1.47e-05
+_691_/D 4.62e-10 4.57e-10 1.13e-11 True
+_691_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_691_/Q 1.48e-10 1.37e-10 2.24e-11 False
+_691_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_692_ DFF_X2 True True False False
+1.15e-07 1.73e-05
+_692_/D 4.57e-10 4.38e-10 1.13e-11 True
+_692_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_692_/Q 1.65e-10 1.41e-10 1.46e-11 False
+_692_/QN 1.13e-10 1.28e-10 7.72e-12 True
+_693_ DFF_X1 True True False False
+7.92e-08 1.42e-05
+_693_/D 4.57e-10 4.38e-10 1.07e-11 True
+_693_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_693_/Q 1.44e-10 1.34e-10 1.85e-11 False
+_693_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_694_ DFF_X1 True True False False
+7.92e-08 1.47e-05
+_694_/D 4.62e-10 4.56e-10 1.07e-11 True
+_694_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_694_/Q 1.48e-10 1.37e-10 2.19e-11 False
+_694_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_695_ DFF_X2 True True False False
+1.15e-07 1.75e-05
+_695_/D 4.57e-10 4.38e-10 1.07e-11 True
+_695_/CK 4.49e-11 2.77e-10 8.61e-12 False
+_695_/Q 1.68e-10 1.43e-10 1.52e-11 False
+_695_/QN 1.15e-10 1.3e-10 7.72e-12 True
+_696_ DFF_X1 True True False False
+7.92e-08 1.5e-05
+_696_/D 4.62e-10 4.56e-10 1.07e-11 True
+_696_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_696_/Q 1.5e-10 1.38e-10 2.41e-11 False
+_696_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_697_ DFF_X2 True True False False
+1.15e-07 1.7e-05
+_697_/D 4.58e-10 4.34e-10 1.07e-11 True
+_697_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_697_/Q 1.66e-10 1.41e-10 1.36e-11 False
+_697_/QN 1.15e-10 1.3e-10 7.72e-12 True
+_698_ DFF_X1 True True False False
+7.92e-08 1.49e-05
+_698_/D 4.64e-10 4.58e-10 1.07e-11 True
+_698_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_698_/Q 1.5e-10 1.38e-10 2.37e-11 False
+_698_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_699_ DFF_X2 True True False False
+1.15e-07 1.73e-05
+_699_/D 4.58e-10 4.38e-10 1.07e-11 True
+_699_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_699_/Q 1.67e-10 1.42e-10 1.45e-11 False
+_699_/QN 1.15e-10 1.3e-10 7.72e-12 True
+_700_ DFF_X2 True True False False
+1.15e-07 1.72e-05
+_700_/D 4.62e-10 4.56e-10 1.07e-11 True
+_700_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_700_/Q 1.67e-10 1.42e-10 1.43e-11 False
+_700_/QN 1.15e-10 1.3e-10 7.72e-12 True
+_701_ DFF_X1 True True False False
+7.92e-08 1.43e-05
+_701_/D 4.47e-10 4.34e-10 1.07e-11 True
+_701_/CK 4.49e-11 2.77e-10 8.59e-12 False
+_701_/Q 1.44e-10 1.35e-10 1.87e-11 False
+_701_/QN 1.05e-10 1.06e-10 6.29e-12 True
+_702_ DFF_X2 True True False False
+1.15e-07 1.73e-05
+_702_/D 4.62e-10 4.53e-10 9.53e-12 True
+_702_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_702_/Q 1.64e-10 1.4e-10 1.45e-11 False
+_702_/QN 1.12e-10 1.27e-10 7.72e-12 True
+_703_ DFF_X2 True True False False
+1.15e-07 1.75e-05
+_703_/D 4.47e-10 4.34e-10 1.07e-11 True
+_703_/CK 4.3e-11 2.76e-10 7.06e-12 False
+_703_/Q 1.65e-10 1.4e-10 1.52e-11 False
+_703_/QN 1.12e-10 1.27e-10 7.72e-12 True
+_704_ DFF_X2 True True False False
+1.15e-07 1.73e-05
+_704_/D 4.62e-10 4.54e-10 9.53e-12 True
+_704_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_704_/Q 1.65e-10 1.4e-10 1.45e-11 False
+_704_/QN 1.13e-10 1.28e-10 7.72e-12 True
+_705_ DFF_X1 True True False False
+7.92e-08 1.41e-05
+_705_/D 4.45e-10 4.34e-10 9.55e-12 True
+_705_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_705_/Q 1.41e-10 1.32e-10 1.73e-11 False
+_705_/QN 1.03e-10 1.04e-10 6.29e-12 True
+_706_ DFF_X2 True True False False
+1.15e-07 1.73e-05
+_706_/D 4.62e-10 4.5e-10 9.53e-12 True
+_706_/CK 4.37e-11 2.77e-10 7.56e-12 False
+_706_/Q 1.65e-10 1.4e-10 1.45e-11 False
+_706_/QN 1.13e-10 1.28e-10 7.72e-12 True
+clkbuf_0_clk BUF_X4 False True True False
+8.61e-08 7.46e-05
+clkbuf_0_clk/A 0 2.3e-10 0 False
+clkbuf_0_clk/Z 2.17e-11 2.53e-10 1.08e-11 False
+clkbuf_2_0__f_clk BUF_X4 False True True False
+8.61e-08 6.21e-05
+clkbuf_2_0__f_clk/A 2.17e-11 2.53e-10 1.08e-11 False
+clkbuf_2_0__f_clk/Z 4.49e-11 2.77e-10 8.61e-12 False
+clkbuf_2_1__f_clk BUF_X4 False True True False
+8.61e-08 6.2e-05
+clkbuf_2_1__f_clk/A 2.17e-11 2.53e-10 1.08e-11 False
+clkbuf_2_1__f_clk/Z 4.49e-11 2.77e-10 8.59e-12 False
+clkbuf_2_2__f_clk BUF_X4 False True True False
+8.61e-08 5.67e-05
+clkbuf_2_2__f_clk/A 2.17e-11 2.53e-10 1.08e-11 False
+clkbuf_2_2__f_clk/Z 4.37e-11 2.77e-10 7.56e-12 False
+clkbuf_2_3__f_clk BUF_X4 False True True False
+8.61e-08 5.37e-05
+clkbuf_2_3__f_clk/A 2.17e-11 2.53e-10 1.08e-11 False
+clkbuf_2_3__f_clk/Z 4.3e-11 2.76e-10 7.06e-12 False
+clone35 NAND3_X2 False False False False
+2.14e-08 1.72e-06
+clone35/A1 3.56e-10 3.59e-10 1.7e-11 False
+clone35/A2 1.84e-10 1.51e-10 3.53e-11 False
+clone35/A3 1.57e-10 1.66e-10 3.98e-11 False
+clone35/ZN 3.81e-10 3.81e-10 1.84e-11 False
+clone39 NAND2_X4 False False False False
+9.84e-08 9.72e-06
+clone39/A1 1.57e-10 1.66e-10 3.98e-11 False
+clone39/A2 3.62e-10 3.7e-10 2.23e-11 False
+clone39/ZN 4.05e-10 3.89e-10 2.1e-11 False
+input1 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input1/A 9.2e-11 9.2e-11 0 False
+input1/Z 1.08e-10 1.13e-10 5.5e-12 False
+input10 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input10/A 9.2e-11 9.2e-11 0 False
+input10/Z 1.1e-10 1.14e-10 6.85e-12 False
+input11 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input11/A 9.2e-11 9.2e-11 0 False
+input11/Z 1.1e-10 1.14e-10 6.85e-12 False
+input12 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input12/A 9.2e-11 9.2e-11 0 False
+input12/Z 1.08e-10 1.13e-10 5.5e-12 False
+input13 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input13/A 9.2e-11 9.2e-11 0 False
+input13/Z 1.1e-10 1.14e-10 6.85e-12 False
+input14 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input14/A 9.2e-11 9.2e-11 0 False
+input14/Z 1.1e-10 1.14e-10 6.85e-12 False
+input15 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input15/A 9.2e-11 9.2e-11 0 False
+input15/Z 1.1e-10 1.14e-10 6.85e-12 False
+input16 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input16/A 9.2e-11 9.2e-11 0 False
+input16/Z 1.1e-10 1.14e-10 6.85e-12 False
+input17 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input17/A 9.2e-11 9.2e-11 0 False
+input17/Z 1.1e-10 1.14e-10 6.85e-12 False
+input18 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input18/A 9.2e-11 9.2e-11 0 False
+input18/Z 1.1e-10 1.14e-10 6.85e-12 False
+input19 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input19/A 9.2e-11 9.2e-11 0 False
+input19/Z 1.1e-10 1.14e-10 6.85e-12 False
+input2 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input2/A 9.2e-11 9.2e-11 0 False
+input2/Z 1.08e-10 1.13e-10 5.5e-12 False
+input20 BUF_X1 False False True False
+2.14e-08 7.14e-07
+input20/A 9.2e-11 9.2e-11 0 False
+input20/Z 1.1e-10 1.14e-10 6.94e-12 False
+input21 BUF_X1 False False True False
+2.14e-08 7.06e-07
+input21/A 9.2e-11 9.2e-11 0 False
+input21/Z 1.1e-10 1.14e-10 6.85e-12 False
+input22 BUF_X1 False False True False
+2.14e-08 7.14e-07
+input22/A 9.2e-11 9.2e-11 0 False
+input22/Z 1.1e-10 1.14e-10 6.94e-12 False
+input23 BUF_X1 False False True False
+2.14e-08 7.16e-07
+input23/A 9.2e-11 9.2e-11 0 False
+input23/Z 1.1e-10 1.14e-10 6.98e-12 False
+input24 BUF_X1 False False True False
+2.14e-08 7.14e-07
+input24/A 9.2e-11 9.2e-11 0 False
+input24/Z 1.1e-10 1.14e-10 6.94e-12 False
+input25 BUF_X1 False False True False
+2.14e-08 7.14e-07
+input25/A 9.2e-11 9.2e-11 0 False
+input25/Z 1.1e-10 1.14e-10 6.94e-12 False
+input26 BUF_X1 False False True False
+2.14e-08 7.16e-07
+input26/A 9.2e-11 9.2e-11 0 False
+input26/Z 1.1e-10 1.14e-10 6.98e-12 False
+input27 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input27/A 9.2e-11 9.2e-11 0 False
+input27/Z 1.08e-10 1.13e-10 5.5e-12 False
+input28 BUF_X1 False False True False
+2.14e-08 7.16e-07
+input28/A 9.2e-11 9.2e-11 0 False
+input28/Z 1.1e-10 1.14e-10 6.98e-12 False
+input29 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input29/A 9.2e-11 9.2e-11 0 False
+input29/Z 1.08e-10 1.13e-10 5.5e-12 False
+input3 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input3/A 9.2e-11 9.2e-11 0 False
+input3/Z 1.08e-10 1.13e-10 5.5e-12 False
+input30 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input30/A 9.2e-11 9.2e-11 0 False
+input30/Z 1.08e-10 1.13e-10 5.5e-12 False
+input31 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input31/A 9.2e-11 9.2e-11 0 False
+input31/Z 1.08e-10 1.13e-10 5.5e-12 False
+input32 BUF_X1 False False True False
+2.14e-08 7.16e-07
+input32/A 9.2e-11 9.2e-11 0 False
+input32/Z 1.1e-10 1.14e-10 6.98e-12 False
+input33 BUF_X1 False False True False
+2.14e-08 9.45e-07
+input33/A 9.2e-11 9.2e-11 0 False
+input33/Z 1.14e-10 1.17e-10 1.04e-11 False
+input34 BUF_X1 False False True False
+2.14e-08 1.08e-06
+input34/A 9.2e-11 9.2e-11 0 False
+input34/Z 1.17e-10 1.19e-10 1.26e-11 False
+input35 BUF_X1 False False True False
+2.14e-08 7.18e-07
+input35/A 9.2e-11 9.2e-11 0 False
+input35/Z 1.1e-10 1.14e-10 7e-12 False
+input4 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input4/A 9.2e-11 9.2e-11 0 False
+input4/Z 1.08e-10 1.13e-10 5.5e-12 False
+input5 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input5/A 9.2e-11 9.2e-11 0 False
+input5/Z 1.08e-10 1.13e-10 5.5e-12 False
+input6 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input6/A 9.2e-11 9.2e-11 0 False
+input6/Z 1.08e-10 1.13e-10 5.5e-12 False
+input7 BUF_X1 False False True False
+2.14e-08 6.05e-07
+input7/A 9.2e-11 9.2e-11 0 False
+input7/Z 1.08e-10 1.13e-10 5.5e-12 False
+input8 BUF_X1 False False True False
+2.14e-08 7.16e-07
+input8/A 9.2e-11 9.2e-11 0 False
+input8/Z 1.1e-10 1.14e-10 6.98e-12 False
+input9 BUF_X1 False False True False
+2.14e-08 7.16e-07
+input9/A 9.2e-11 9.2e-11 0 False
+input9/Z 1.1e-10 1.14e-10 6.98e-12 False
+output36 BUF_X1 False False True False
+2.07e-08 7.57e-07
+output36/A 2.45e-10 1.81e-10 9.46e-11 False
+output36/Z 2.73e-10 2.19e-10 7.18e-12 False
+output37 BUF_X1 False False True False
+2.15e-08 2.55e-06
+output37/A 2.05e-10 1.91e-10 2.3e-11 False
+output37/Z 2.26e-10 2.16e-10 4.22e-12 False
+output38 BUF_X1 False False True False
+2.14e-08 5.51e-06
+output38/A 3.58e-10 3.63e-10 5.87e-12 False
+output38/Z 3.74e-10 3.84e-10 3.6e-12 False
+output39 BUF_X1 False False True False
+2.14e-08 5.49e-06
+output39/A 3.86e-10 3.77e-10 1.67e-11 False
+output39/Z 4.07e-10 4.02e-10 3.9e-12 False
+output40 BUF_X1 False False True False
+2.14e-08 5.65e-06
+output40/A 3.64e-10 3.66e-10 6.39e-12 False
+output40/Z 3.8e-10 3.88e-10 3.61e-12 False
+output41 BUF_X1 False False True False
+2.14e-08 5.53e-06
+output41/A 3.83e-10 3.77e-10 1.67e-11 False
+output41/Z 4.03e-10 4.02e-10 3.9e-12 False
+output42 BUF_X1 False False True False
+2.14e-08 5.54e-06
+output42/A 3.9e-10 3.93e-10 6.35e-12 False
+output42/Z 4.06e-10 4.15e-10 3.61e-12 False
+output43 BUF_X1 False False True False
+2.12e-08 4.09e-06
+output43/A 4.03e-10 4.04e-10 6.03e-12 False
+output43/Z 4.19e-10 4.25e-10 3.6e-12 False
+output44 BUF_X1 False False True False
+2.15e-08 3.83e-06
+output44/A 2.42e-10 2.59e-10 6.38e-12 False
+output44/Z 2.58e-10 2.81e-10 3.61e-12 False
+output45 BUF_X1 False False True False
+2.16e-08 3.92e-06
+output45/A 2.9e-10 2.98e-10 6.38e-12 False
+output45/Z 3.06e-10 3.19e-10 3.61e-12 False
+output46 BUF_X1 False False True False
+2.15e-08 4.54e-06
+output46/A 3.14e-10 3e-10 2.3e-11 False
+output46/Z 3.35e-10 3.25e-10 4.22e-12 False
+output47 BUF_X1 False False True False
+2.14e-08 5.29e-06
+output47/A 3.28e-10 3.33e-10 6.38e-12 False
+output47/Z 3.44e-10 3.55e-10 3.61e-12 False
+output48 BUF_X1 False False True False
+2.14e-08 5.55e-06
+output48/A 3.28e-10 3.31e-10 2.18e-11 False
+output48/Z 3.5e-10 3.56e-10 4.16e-12 False
+output49 BUF_X1 False False True False
+2.14e-08 5.49e-06
+output49/A 3.28e-10 3.48e-10 6.09e-12 False
+output49/Z 3.44e-10 3.69e-10 3.6e-12 False
+output50 BUF_X1 False False True False
+2.14e-08 5.58e-06
+output50/A 3.77e-10 3.54e-10 2.27e-11 False
+output50/Z 3.98e-10 3.78e-10 4.21e-12 False
+output51 BUF_X1 False False True False
+2.14e-08 5.7e-06
+output51/A 3.72e-10 3.78e-10 6.64e-12 False
+output51/Z 3.89e-10 3.99e-10 3.62e-12 False
+output52 BUF_X1 False False True False
+2.14e-08 5.57e-06
+output52/A 3.86e-10 3.8e-10 2.3e-11 False
+output52/Z 4.07e-10 4.05e-10 4.22e-12 False
+output53 BUF_X1 False False True False
+2.36e-08 3.27e-09
+output53/A 2.32e-10 2.42e-10 1.25e-11 False
+output53/Z 2.51e-10 2.64e-10 3.78e-12 False
+rebuffer1 CLKBUF_X1 False False True False
+1.12e-08 5.95e-06
+rebuffer1/A 2.1e-10 1.86e-10 3.01e-11 False
+rebuffer1/Z 2.55e-10 2.26e-10 1.48e-11 False
+rebuffer10 CLKBUF_X1 False False True False
+1.15e-08 1.33e-06
+rebuffer10/A 1.68e-10 1.43e-10 1.52e-11 False
+rebuffer10/Z 1.99e-10 1.71e-10 7.99e-12 False
+rebuffer2 CLKBUF_X1 False False True False
+1.07e-08 3.22e-06
+rebuffer2/A 2.14e-10 2.05e-10 2.12e-11 False
+rebuffer2/Z 2.49e-10 2.38e-10 9.3e-12 False
+rebuffer20 BUF_X4 False False True False
+8.78e-08 4.58e-06
+rebuffer20/A 1.48e-10 1.37e-10 2.19e-11 False
+rebuffer20/Z 1.7e-10 1.61e-10 5.62e-12 False
+rebuffer21 BUF_X2 False False True False
+4.41e-08 5.87e-06
+rebuffer21/A 1.41e-10 1.32e-10 1.49e-11 False
+rebuffer21/Z 1.67e-10 1.6e-10 1e-11 False
+rebuffer28 CLKBUF_X1 False False True False
+1.16e-08 2.78e-06
+rebuffer28/A 1.4e-10 1.32e-10 1.42e-11 False
+rebuffer28/Z 1.75e-10 1.64e-10 1.09e-11 False
+rebuffer29 BUF_X4 False False True False
+8.76e-08 8.34e-06
+rebuffer29/A 1.41e-10 1.32e-10 1.51e-11 False
+rebuffer29/Z 1.62e-10 1.56e-10 6.27e-12 False
+rebuffer3 CLKBUF_X1 False False True False
+1.07e-08 2.81e-06
+rebuffer3/A 2.14e-10 2.05e-10 2.12e-11 False
+rebuffer3/Z 2.47e-10 2.36e-10 8.06e-12 False
+rebuffer30 CLKBUF_X1 False False True False
+1.15e-08 8.31e-06
+rebuffer30/A 2.85e-10 2.76e-10 1.2e-11 False
+rebuffer30/Z 3.26e-10 3.16e-10 1.63e-11 False
+rebuffer33 BUF_X4 False False True False
+7.86e-08 4.03e-06
+rebuffer33/A 3.57e-10 3.69e-10 2.11e-11 False
+rebuffer33/Z 3.83e-10 4.01e-10 8.95e-12 False
+rebuffer34 BUF_X4 False False True False
+7.86e-08 3.77e-06
+rebuffer34/A 3.57e-10 3.69e-10 2.11e-11 False
+rebuffer34/Z 3.82e-10 4e-10 8.17e-12 False
+rebuffer37 CLKBUF_X1 False False True False
+1.15e-08 3.16e-06
+rebuffer37/A 2.03e-10 1.94e-10 9.93e-12 False
+rebuffer37/Z 2.35e-10 2.25e-10 9.79e-12 False
+rebuffer38 CLKBUF_X1 False False True False
+1.12e-08 7.6e-06
+rebuffer38/A 3.28e-10 3.31e-10 2.18e-11 False
+rebuffer38/Z 3.62e-10 3.62e-10 8.22e-12 False
+rebuffer4 CLKBUF_X1 False False True False
+1.11e-08 4.37e-06
+rebuffer4/A 2.53e-10 2.45e-10 1.13e-11 False
+rebuffer4/Z 2.85e-10 2.76e-10 9.11e-12 False
+rebuffer5 BUF_X1 False False True False
+2.19e-08 1.49e-06
+rebuffer5/A 1.66e-10 1.41e-10 1.36e-11 False
+rebuffer5/Z 1.9e-10 1.68e-10 7.1e-12 False
+rebuffer6 CLKBUF_X1 False False True False
+1.15e-08 1.1e-06
+rebuffer6/A 1.66e-10 1.41e-10 1.36e-11 False
+rebuffer6/Z 1.94e-10 1.68e-10 6.58e-12 False
+rebuffer7 CLKBUF_X1 False False True False
+1.12e-08 4.9e-06
+rebuffer7/A 2.07e-10 1.91e-10 2.15e-11 False
+rebuffer7/Z 2.46e-10 2.26e-10 1.17e-11 False
+rebuffer8 CLKBUF_X1 False False True False
+1.12e-08 4.23e-06
+rebuffer8/A 2.07e-10 1.91e-10 2.15e-11 False
+rebuffer8/Z 2.44e-10 2.24e-10 9.98e-12 False
+rebuffer9 BUF_X4 False False True False
+8.78e-08 5.51e-06
+rebuffer9/A 1.44e-10 1.34e-10 1.85e-11 False
+rebuffer9/Z 1.68e-10 1.6e-10 7.02e-12 False
+clk 54170
+req_msg[0] 7000
+req_msg[10] 12480
+req_msg[11] 5500
+req_msg[12] 3350
+req_msg[13] 10830
+req_msg[14] 8150
+req_msg[15] 3940
+req_msg[16] 5780
+req_msg[17] 4740
+req_msg[18] 9740
+req_msg[19] 3920
+req_msg[1] 4260
+req_msg[20] 4200
+req_msg[21] 3360
+req_msg[22] 3560
+req_msg[23] 5360
+req_msg[24] 5320
+req_msg[25] 6720
+req_msg[26] 17440
+req_msg[27] 5200
+req_msg[28] 3910
+req_msg[29] 4280
+req_msg[2] 4160
+req_msg[30] 5890
+req_msg[31] 4600
+req_msg[3] 5080
+req_msg[4] 6840
+req_msg[5] 5320
+req_msg[6] 6440
+req_msg[7] 5600
+req_msg[8] 5820
+req_msg[9] 7260
+req_rdy 3660
+req_val 10160
+reset 10520
+resp_msg[0] 3180
+resp_msg[10] 6900
+resp_msg[11] 4740
+resp_msg[12] 3830
+resp_msg[13] 9150
+resp_msg[14] 8770
+resp_msg[15] 2980
+resp_msg[1] 20680
+resp_msg[2] 3640
+resp_msg[3] 7460
+resp_msg[4] 8220
+resp_msg[5] 3280
+resp_msg[6] 10860
+resp_msg[7] 8480
+resp_msg[8] 5340
+resp_msg[9] 5000
+resp_rdy 5240
+resp_val 5300
+VDD 673940
+VSS 673940
+_000_ 3100
+_001_ 5820
+_002_ 7840
+_003_ 61100
+_004_ 2720
+_005_ 2720
+_006_ 8260
+_007_ 4240
+_008_ 1960
+_009_ 1960
+_010_ 4600
+_011_ 5320
+_012_ 4560
+_013_ 3100
+_014_ 3940
+_015_ 1960
+_016_ 2800
+_017_ 5820
+_018_ 3480
+_019_ 2800
+_020_ 4520
+_021_ 3760
+_022_ 6800
+_023_ 2620
+_024_ 4520
+_025_ 4240
+_026_ 3960
+_027_ 3840
+_028_ 6900
+_029_ 4980
+_030_ 1960
+_031_ 4680
+_032_ 2060
+_033_ 3760
+_034_ 5160
+_035_ 2440
+_036_ 17900
+_038_ 3600
+_039_ 21780
+_040_ 7920
+_041_ 5460
+_042_ 15960
+_043_ 23980
+_044_ 8780
+_045_ 7120
+_046_ 8980
+_047_ 3760
+_048_ 18780
+_049_ 9560
+_050_ 9400
+_051_ 2060
+_052_ 7260
+_053_ 1700
+_054_ 7440
+_055_ 7040
+_056_ 5900
+_057_ 2280
+_058_ 16720
+_060_ 6980
+_061_ 14840
+_062_ 2240
+_063_ 10600
+_064_ 10180
+_065_ 10480
+_066_ 3220
+_067_ 5140
+_068_ 16380
+_069_ 9020
+_070_ 19040
+_071_ 7640
+_072_ 35220
+_073_ 6420
+_074_ 5860
+_075_ 1420
+_076_ 2440
+_077_ 10960
+_078_ 3580
+_079_ 4880
+_080_ 24920
+_081_ 13520
+_082_ 8040
+_083_ 2660
+_084_ 34940
+_085_ 28840
+_086_ 10880
+_087_ 23640
+_088_ 8840
+_089_ 12340
+_090_ 11520
+_091_ 10340
+_092_ 3060
+_093_ 4820
+_094_ 8300
+_095_ 2340
+_096_ 3480
+_097_ 11580
+_098_ 4320
+_099_ 17460
+_100_ 7500
+_101_ 17740
+_102_ 5900
+_103_ 6900
+_104_ 8720
+_105_ 8720
+_106_ 15580
+_107_ 13380
+_108_ 4900
+_109_ 15000
+_110_ 16720
+_111_ 7020
+_112_ 3000
+_113_ 2080
+_114_ 32080
+_115_ 12020
+_116_ 4980
+_117_ 1700
+_118_ 13240
+_119_ 34740
+_120_ 3600
+_121_ 6600
+_122_ 5080
+_123_ 17840
+_124_ 6040
+_125_ 25880
+_126_ 20960
+_127_ 1140
+_128_ 8840
+_129_ 14960
+_130_ 4440
+_131_ 3000
+_132_ 21520
+_133_ 7260
+_134_ 5080
+_135_ 7780
+_136_ 4460
+_137_ 14800
+_138_ 16000
+_139_ 1900
+_140_ 2820
+_141_ 8360
+_142_ 6820
+_143_ 3980
+_144_ 7100
+_145_ 20240
+_146_ 2120
+_147_ 4440
+_148_ 4980
+_149_ 8880
+_150_ 27960
+_151_ 7700
+_152_ 10480
+_153_ 8780
+_154_ 3420
+_155_ 2900
+_156_ 13280
+_157_ 17100
+_158_ 380
+_159_ 4800
+_160_ 13880
+_161_ 20000
+_162_ 12780
+_163_ 25640
+_164_ 25980
+_165_ 1520
+_167_ 12140
+_168_ 11200
+_172_ 9200
+_174_ 14200
+_176_ 2060
+_177_ 2740
+_178_ 6840
+_179_ 21020
+_180_ 10580
+_181_ 6280
+_182_ 8980
+_183_ 3100
+_184_ 11700
+_185_ 6620
+_186_ 15020
+_187_ 36040
+_188_ 249500
+_190_ 2820
+_191_ 1960
+_193_ 380
+_194_ 6360
+_195_ 1600
+_196_ 6140
+_197_ 1320
+_198_ 2340
+_199_ 1700
+_200_ 2280
+_203_ 380
+_204_ 5000
+_205_ 2340
+_206_ 3480
+_207_ 2080
+_208_ 3700
+_209_ 5980
+_210_ 380
+_211_ 3200
+_212_ 5120
+_213_ 2240
+_214_ 2460
+_215_ 8280
+_216_ 2920
+_217_ 760
+_218_ 1900
+_219_ 3200
+_220_ 2340
+_221_ 380
+_222_ 6840
+_223_ 5620
+_224_ 7180
+_225_ 5620
+_226_ 1600
+_227_ 2440
+_228_ 1320
+_229_ 16180
+_230_ 85360
+_231_ 108700
+_232_ 1320
+_233_ 78680
+_235_ 2720
+_236_ 183540
+_238_ 7940
+_239_ 1320
+_240_ 234580
+_242_ 6280
+_243_ 3760
+_244_ 5520
+_245_ 1320
+_246_ 1900
+_247_ 7440
+_248_ 8900
+_249_ 2720
+_250_ 940
+_251_ 2080
+_252_ 2740
+_253_ 2660
+_254_ 1320
+_255_ 11300
+_256_ 1900
+_257_ 3320
+_258_ 1700
+_259_ 2280
+_260_ 1600
+_261_ 4620
+_262_ 1700
+_263_ 4700
+_264_ 940
+_265_ 2360
+_266_ 3420
+_267_ 1700
+_268_ 8900
+_269_ 2820
+_270_ 6980
+_271_ 1800
+_272_ 1900
+_273_ 4260
+_274_ 3000
+_275_ 2060
+_276_ 5700
+_277_ 7040
+_278_ 3760
+_279_ 3560
+_280_ 7280
+_281_ 4080
+_282_ 940
+_283_ 6800
+_284_ 1700
+_285_ 11940
+_286_ 1700
+_287_ 2240
+_288_ 2720
+_289_ 2060
+_290_ 5620
+_291_ 5900
+_292_ 3020
+_293_ 1700
+_294_ 2940
+_295_ 1900
+_296_ 2080
+_297_ 2720
+_298_ 5240
+_299_ 6180
+_300_ 1320
+_301_ 3240
+_302_ 760
+_303_ 2180
+_304_ 5780
+_305_ 2820
+_306_ 2560
+_307_ 6120
+_308_ 3220
+_309_ 5900
+_310_ 6180
+_311_ 0
+_312_ 0
+_313_ 0
+_314_ 0
+_315_ 0
+_316_ 0
+_317_ 0
+_318_ 0
+_319_ 0
+_320_ 0
+_321_ 0
+_322_ 0
+_323_ 0
+_324_ 0
+_325_ 0
+_326_ 0
+_327_ 0
+_328_ 0
+_329_ 0
+_330_ 0
+_331_ 0
+_332_ 0
+_333_ 0
+_334_ 0
+_335_ 0
+_336_ 0
+_337_ 0
+_338_ 0
+_339_ 0
+_340_ 0
+_341_ 0
+_342_ 0
+_343_ 0
+_344_ 0
+clknet_0_clk 85380
+clknet_2_0__leaf_clk 88260
+clknet_2_1__leaf_clk 89860
+clknet_2_2__leaf_clk 73920
+clknet_2_3__leaf_clk 65320
+ctrl.state.out\[1\] 5080
+ctrl.state.out\[2\] 34660
+dpath.a_lt_b$in0\[0\] 16840
+dpath.a_lt_b$in0\[10\] 20040
+dpath.a_lt_b$in0\[11\] 20520
+dpath.a_lt_b$in0\[12\] 20800
+dpath.a_lt_b$in0\[13\] 20180
+dpath.a_lt_b$in0\[14\] 33420
+dpath.a_lt_b$in0\[15\] 13820
+dpath.a_lt_b$in0\[1\] 26180
+dpath.a_lt_b$in0\[2\] 11480
+dpath.a_lt_b$in0\[3\] 7500
+dpath.a_lt_b$in0\[4\] 15720
+dpath.a_lt_b$in0\[5\] 20600
+dpath.a_lt_b$in0\[6\] 9340
+dpath.a_lt_b$in0\[7\] 17620
+dpath.a_lt_b$in0\[8\] 22200
+dpath.a_lt_b$in0\[9\] 29200
+dpath.a_lt_b$in1\[0\] 2340
+dpath.a_lt_b$in1\[10\] 380
+dpath.a_lt_b$in1\[11\] 1960
+dpath.a_lt_b$in1\[12\] 8740
+dpath.a_lt_b$in1\[13\] 3660
+dpath.a_lt_b$in1\[14\] 380
+dpath.a_lt_b$in1\[15\] 380
+dpath.a_lt_b$in1\[1\] 9740
+dpath.a_lt_b$in1\[2\] 8500
+dpath.a_lt_b$in1\[3\] 9020
+dpath.a_lt_b$in1\[4\] 5560
+dpath.a_lt_b$in1\[5\] 9260
+dpath.a_lt_b$in1\[6\] 10060
+dpath.a_lt_b$in1\[7\] 5280
+dpath.a_lt_b$in1\[8\] 6120
+dpath.a_lt_b$in1\[9\] 7860
+net1 7560
+net10 2560
+net11 1140
+net12 2180
+net13 2660
+net14 3480
+net15 1700
+net16 3100
+net17 1700
+net18 1700
+net19 5760
+net2 13860
+net20 2460
+net21 6740
+net22 14300
+net23 2340
+net24 7500
+net25 1800
+net26 380
+net27 8800
+net28 380
+net29 3580
+net3 5900
+net30 5520
+net31 5140
+net32 5700
+net33 6740
+net34 8120
+net35 380
+net36 346300
+net37 17280
+net38 380
+net39 18900
+net4 4360
+net40 3420
+net41 14620
+net42 5240
+net43 8600
+net44 800
+net45 10820
+net46 10340
+net47 3800
+net48 15460
+net49 11920
+net5 17240
+net50 14380
+net51 380
+net52 17220
+net53 7120
+net54 5140
+net55 7180
+net56 3960
+net57 760
+net58 3100
+net59 8160
+net6 1900
+net60 8060
+net61 1780
+net62 5660
+net63 8060
+net7 2340
+net73 2240
+net74 4720
+net8 380
+net81 1900
+net82 2180
+net83 3860
+net86 51700
+net87 49990
+net88 70180
+net9 380
+net90 5220
+net91 4240
+net92 224740
