@@ -120,9 +120,6 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
 
 void IRDropDataSource::setBlock(odb::dbBlock* block)
 {
-  if (block && block->getParent()) {
-    return;  // not the top block so ignore it
-  }
   gui::HeatMapDataSource::setBlock(block);
   if (block != nullptr) {
     tech_ = block->getTech();

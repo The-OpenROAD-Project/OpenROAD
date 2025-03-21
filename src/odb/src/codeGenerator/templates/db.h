@@ -1,4 +1,4 @@
-{% import 'macros.jinja' as macros %}
+{% import 'macros' as macros %}
 //Generator Code Begin ClassDeclarations
 {% for klass in schema.classes|sort(attribute='name') %}
 class {{klass.name}};

@@ -177,7 +177,7 @@ struct CouplingDimensionParams
         max_distance(0),
         coupling_distance(0),
         track_limit(10),
-        dbgFP(nullptr)
+        dbgFP(NULL)
   {
   }
 

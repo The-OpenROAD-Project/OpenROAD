@@ -67,7 +67,7 @@ void extMeasureRC::PrintCrossSeg(FILE* fp,
                                  int metUnder,
                                  const char* prefix)
 {
-  if (fp == nullptr)
+  if (fp == NULL)
     return;
   char buf[200];
   GetOUname(buf, met, metOver, metUnder);
@@ -89,7 +89,7 @@ void extMeasureRC::PrintOUSeg(FILE* fp,
                               int up_dist,
                               int down_dist)
 {
-  if (fp == nullptr)
+  if (fp == NULL)
     return;
   char buf[200];
   GetOUname(buf, met, metOver, metUnder);
@@ -114,7 +114,7 @@ void extMeasureRC::PrintCrossOvelaps(Wire* w,
                                      int metOver,
                                      int metUnder)
 {
-  if (_segFP != nullptr && segTable->getCnt() > 0) {
+  if (_segFP != NULL && segTable->getCnt() > 0) {
     fprintf(_segFP, "%s %dL cnt %d \n", prefix, totLen, segTable->getCnt());
     PrintCrossSeg(_segFP, x1, len, w->getLevel(), -1, -1, "\t");
     for (uint ii = 0; ii < segTable->getCnt(); ii++) {
@@ -134,7 +134,7 @@ void extMeasureRC::PrintOverlapSeg(FILE* fp,
                                    int tgt_met,
                                    const char* prefix)
 {
-  if (fp != nullptr)
+  if (fp != NULL)
     fprintf(fp,
             "%s%7.3f %7.3f  %dL\n",
             prefix,
@@ -149,7 +149,7 @@ void extMeasureRC::PrintOvelaps(extSegment* w,
                                 Ath__array1D<extSegment*>* segTable,
                                 const char* ou)
 {
-  if (_segFP != nullptr && segTable->getCnt() > 0) {
+  if (_segFP != NULL && segTable->getCnt() > 0) {
     fprintf(_segFP,
             "\n%7.3f %7.3f  %dL M%d%sM%d cnt=%d\n",
             GetDBcoords(w->_xy),
@@ -175,7 +175,7 @@ void extMeasureRC::PrintCrossOvelapsOU(Wire* w,
                                        int metOver,
                                        int metUnder)
 {
-  if (_segFP != nullptr && segTable->getCnt() > 0) {
+  if (_segFP != NULL && segTable->getCnt() > 0) {
     for (uint ii = 0; ii < segTable->getCnt(); ii++) {
       extSegment* s = segTable->get(ii);
       if (s->_metOver == metOver && s->_metUnder == metUnder)
@@ -258,11 +258,11 @@ bool extMeasureRC::PrintCurrentCoords(FILE* fp, const char* msg, uint rseg)
 }
 FILE* extMeasureRC::OpenDebugFile()
 {
-  if (_debugFP == nullptr && _netId > 0) {
+  if (_debugFP == NULL && _netId > 0) {
     char buff[100];
     sprintf(buff, "%d.rc", _netId);
     _debugFP = fopen(buff, "w");
-    if (_debugFP == nullptr) {
+    if (_debugFP == NULL) {
       // warning(0, "Cannot Open file %s with permissions w", buff);
       exit(0);
     }
@@ -499,7 +499,7 @@ void extMeasureRC::segInfo(FILE* fp, const char* msg, uint netId, int rsegId)
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
   uint shapeId = rseg->getTargetCapNode()->getShapeId();
   const char* wire
-      = rseg != nullptr
+      = rseg != NULL
                 && extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())
                        > 0
             ? "Via "
@@ -613,7 +613,7 @@ void extMeasureRC::DebugPrintNetids(FILE* fp,
   const char* src = rsegId == _rsegSrcId ? "SRC" : "DST";
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
   uint shapeId = rseg->getTargetCapNode()->getShapeId();
-  // DELETE const char* wire = rseg != nullptr &&
+  // DELETE const char* wire = rseg != NULL &&
   // extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())> 0 ? "Via " :
   // "Wire";
   dbNet* net = rseg->getNet();

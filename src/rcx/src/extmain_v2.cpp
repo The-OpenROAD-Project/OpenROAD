@@ -126,7 +126,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
     infoBeforeCouplingExt();
 
     Rect maxRect = _block->getDieArea();
-    couplingFlow_v2(maxRect, _couplingFlag, nullptr);
+    couplingFlow_v2(maxRect, _couplingFlag, NULL);
     // Print out stats on db Ojects created during extraction
     couplingExtEnd_v2();
   }
@@ -304,7 +304,7 @@ bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 
     extRCModel* m = createCornerMap(rulesFileName);
 
-    if (!ReadModels_v2(rulesFileName, m, 0, nullptr))
+    if (!ReadModels_v2(rulesFileName, m, 0, NULL))
       return false;
   }
   _currentModel = getRCmodel(0);
@@ -854,7 +854,7 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
     for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
       extMetRCTable* rcTable = _metRCTable.get(ii);
       extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
-      if (viaModel != nullptr) {
+      if (viaModel != NULL) {
         _tmpResTable[ii] = viaModel->_res;
         viaModelFound = true;
       }
@@ -938,11 +938,11 @@ void extMain::getShapeRC_v2(dbNet* net,
 {
   if (s.isVia()) {
     dbTechVia* tvia = s.getTechVia();
-    if (tvia != nullptr) {
+    if (tvia != NULL) {
       getViaRes_v2(net, tvia);
     } else {
       dbVia* bvia = s.getVia();
-      if (bvia != nullptr)
+      if (bvia != NULL)
         getDbViaRes_v2(net, s);
     }
   } else {

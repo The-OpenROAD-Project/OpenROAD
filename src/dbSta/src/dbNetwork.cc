@@ -1034,42 +1034,14 @@ Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 
 Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
 {
-  dbModule* scope = nullptr;
-
   if (instance == top_instance_) {
-    scope = block_->getTopModule();
     dbNet* dnet = block_->findNet(net_name);
-    if (dnet) {
-      return dbToSta(dnet);
-    }
-    dbModNet* modnet = scope->getModNet(net_name);
-    if (modnet) {
-      return dbToSta(modnet);
-    }
-    return nullptr;
+    return dbToSta(dnet);
   }
-
-  dbInst* db_inst = nullptr;
-  dbModInst* mod_inst = nullptr;
-  staToDb(instance, db_inst, mod_inst);
-
-  // check to see if net is in flat space
   std::string flat_net_name = pathName(instance);
   flat_net_name += pathDivider() + std::string(net_name);
   dbNet* dnet = block_->findNet(flat_net_name.c_str());
-  if (dnet) {
-    return dbToSta(dnet);
-  }
-
-  if (mod_inst) {
-    scope = mod_inst->getMaster();
-    dbModNet* modnet = scope->getModNet(net_name);
-    if (modnet) {
-      return dbToSta(modnet);
-    }
-  }
-
-  return nullptr;
+  return dbToSta(dnet);
 }
 
 void dbNetwork::findInstNetsMatching(const Instance* instance,
@@ -2449,43 +2421,6 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
     }
   }
   return pin;
-}
-
-//
-// remove a net connection to a pin.
-// Figure out type of net (modnet or flat net)
-// and just delete that type.
-//
-void dbNetwork::disconnectPin(Pin* pin, Net* net)
-{
-  dbModNet* mod_net = nullptr;
-  dbNet* db_net = nullptr;
-  staToDb(net, db_net, mod_net);
-
-  dbITerm* iterm = nullptr;
-  dbBTerm* bterm = nullptr;
-  dbModITerm* moditerm = nullptr;
-  dbModBTerm* modbterm = nullptr;
-  staToDb(pin, iterm, bterm, moditerm, modbterm);
-  if (iterm) {
-    if (db_net) {
-      iterm->disconnectDbNet();
-    }
-    if (mod_net) {
-      iterm->disconnectModNet();
-    }
-  } else if (bterm) {
-    if (db_net) {
-      bterm->disconnectDbNet();
-    }
-    if (mod_net) {
-      bterm->disconnectDbModNet();
-    }
-  } else if (moditerm) {
-    moditerm->disconnect();
-  } else if (modbterm) {
-    modbterm->disconnect();
-  }
 }
 
 //

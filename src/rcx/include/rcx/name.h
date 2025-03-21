@@ -91,7 +91,7 @@ class NameTable
 
  public:
   ~NameTable();
-  NameTable(uint n, char* zero = nullptr);
+  NameTable(uint n, char* zero = NULL);
 
   void writeDB(FILE* fp, char* nameType);
   bool readDB(FILE* fp);

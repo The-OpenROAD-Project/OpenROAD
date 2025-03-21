@@ -17,6 +17,7 @@
     "src/grt/test/",
     "src/ifp/test/",
     "src/mpl/test/",
+    "src/mpl2/test/",
     "src/odb/",
     "src/par/examples/",
     "src/par/test/",

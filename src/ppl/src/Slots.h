@@ -67,11 +67,6 @@ class Interval
   int layer_;
 };
 
-struct IntervalHash
-{
-  std::size_t operator()(const Interval& interval) const;
-};
-
 struct TopLayerGrid
 {
   int layer = -1;

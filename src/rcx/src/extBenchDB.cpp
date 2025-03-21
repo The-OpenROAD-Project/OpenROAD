@@ -84,7 +84,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
   extMetRCTable* rcModel = extRulesModel->initCapTables(layerCnt, widthCnt);
 
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
-  extMeasure m(nullptr);
+  extMeasure m(NULL);
   m._diagModel = 1;
   uint openWireNumber = 1;
 
@@ -179,7 +179,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
       m._overUnder = true;
       m._over = false;
 
-    } else if (strstr(overUnderToken, "o") != nullptr) {
+    } else if (strstr(overUnderToken, "o") != NULL) {
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
       if (p->getFirstChar() == 'R') {
@@ -190,7 +190,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
       m._underMet = overMet;
       m._overUnder = false;
       m._over = true;
-    } else if (strstr(overUnderToken, "uu") != nullptr) {
+    } else if (strstr(overUnderToken, "uu") != NULL) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
       diag = true;
@@ -199,7 +199,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
       m._underMet = -1;
       m._overUnder = false;
       m._over = false;
-    } else if (strstr(overUnderToken, "u") != nullptr) {
+    } else if (strstr(overUnderToken, "u") != NULL) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
 
@@ -279,7 +279,7 @@ uint extMain::GenExtRules(const char* rulesFileName)
           wLen,
           netName);
     }
-    if (strstr(netName, "cntxM") != nullptr)
+    if (strstr(netName, "cntxM") != NULL)
       continue;
 
     extDistRC* rc = rcPool->alloc();
@@ -347,8 +347,8 @@ double extMain::getTotalCouplingCap(dbNet* net,
       dbCCSeg* cc = *ccitr;
       dbNet* srcNet = cc->getSourceCapNode()->getNet();
       dbNet* tgtNet = cc->getTargetCapNode()->getNet();
-      if ((strstr(srcNet->getConstName(), filterNet) == nullptr)
-          && (strstr(tgtNet->getConstName(), filterNet) == nullptr))
+      if ((strstr(srcNet->getConstName(), filterNet) == NULL)
+          && (strstr(tgtNet->getConstName(), filterNet) == NULL))
         continue;
 
       cap += cc->getCapacitance(corner);
@@ -415,8 +415,8 @@ uint extMain::benchVerilog_assign(FILE* fp)
   for (itr = nets.begin(); itr != nets.end(); ++itr) {
     dbNet* net = *itr;
 
-    const char* bterm1 = nullptr;
-    const char* bterm2 = nullptr;
+    const char* bterm1 = NULL;
+    const char* bterm2 = NULL;
     dbSet<dbBTerm> bterms = net->getBTerms();
     dbSet<dbBTerm>::iterator itr;
     for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
@@ -474,11 +474,11 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
     dbSet<dbTechNonDefaultRule> nd_rules = opt->_tech->getNonDefaultRules();
     dbSet<dbTechNonDefaultRule>::iterator nditr;
     dbTechLayerRule* tst_rule;
-    //		dbTechNonDefaultRule  *wdth_rule = nullptr;
+    //		dbTechNonDefaultRule  *wdth_rule = NULL;
 
     for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
       tst_rule = (*nditr)->getLayerRule(layer);
-      if (tst_rule == nullptr)
+      if (tst_rule == NULL)
         continue;
 
       double w = tst_rule->getWidth();
@@ -539,7 +539,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
           measure->setTargetParams(w, s, 0.0, 0, 0, w2, s2);
           // measureResistance(measure, ro, top_widthR, bot_widthR, thicknessR);
           // measurePatternVar(measure, top_width, bot_width, thickness,
-          // measure->_wireCnt, nullptr);
+          // measure->_wireCnt, NULL);
           writeBenchWires_DB(measure);
 
           cnt++;
@@ -586,7 +586,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
                                                     measure->setTargetParams(w,
        s, 0.0, t, h, w2, s2); measureResistance(measure, ro, top_widthR,
        bot_widthR, thicknessR); measurePatternVar(measure, top_width, bot_width,
-       thickness, measure->_wireCnt, nullptr);
+       thickness, measure->_wireCnt, NULL);
 
                                                     cnt++;
                                             }

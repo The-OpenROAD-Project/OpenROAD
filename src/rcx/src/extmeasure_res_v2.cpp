@@ -434,14 +434,14 @@ int extMeasure::computeResDist(SEQ* s,
     if (!add_all_diag) {
       for (uint jj = 0; jj < tmpTable.getCnt(); jj++)
         len += computeRes(tmpTable.get(jj),
-                          nullptr,
+                          NULL,
                           targetMet,
                           _dir,
                           planeIndex,
                           trackn,
                           &residueTable);
     } else {
-      len += computeRes(s, nullptr, targetMet, _dir, planeIndex, trackn,
+      len += computeRes(s, NULL, targetMet, _dir, planeIndex, trackn,
     &residueTable);
     }
     seq_release(&tmpTable);
@@ -449,7 +449,7 @@ int extMeasure::computeResDist(SEQ* s,
     residueTable.resetCnt();
     */
   }
-  if (diagTable != nullptr)
+  if (diagTable != NULL)
     tableCopyP(tmpTable, diagTable);
   else
     seq_release(tmpTable);
@@ -513,7 +513,7 @@ uint extMeasure::computeRes(SEQ* s,
     fprintf(stdout, "track=%d =================\n", trackn);
 
   Ath__array1D<SEQ*> overlapSeq(16);
-  if (dgContext != nullptr) {
+  if (dgContext != NULL) {
     if (dgContext->getCnt() == 0)
       return 0;
     getDgOverlap_res(s, _dir, dgContext, &overlapSeq, residueSeq);
@@ -556,22 +556,22 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
     dist1 = dist2;
     dist2 = min_dist;
   }
-  if (_measureTable == nullptr)
-    return nullptr;
+  if (_measureTable == NULL)
+    return NULL;
 
   if (_measureTable->getCnt() <= 0)
-    return nullptr;
+    return NULL;
 
   extDistRC* rc1 = _measureTableR[0]->geti(0);
   rc1->_diag = 0.0;
-  if (rc1 == nullptr)
-    return nullptr;
+  if (rc1 == NULL)
+    return NULL;
 
   if (dist1 + dist2 == 0) {  // ASSUMPTION: 0 dist exists as first
     return rc1;
   }
   if (dist1 >= _maxDist && dist2 >= _maxDist) {
-    return nullptr;
+    return NULL;
   }
   if (dist2 > _maxDist) {
     dist2 = dist1;
@@ -581,7 +581,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   uint index_dist = 0;
   bool found = false;
   extDistRC* rc2 = _measureTableR[1]->geti(0);
-  if (rc2 == nullptr)
+  if (rc2 == NULL)
     return rc1;
 
   if (dist1 <= rc1->_sep) {
@@ -596,7 +596,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   } else {
     index_dist = 2;
   }
-  extDistRC* rc = nullptr;
+  extDistRC* rc = NULL;
   if (!found) {
     // find first dist
 
@@ -624,7 +624,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
     _computeTable = _computeTableR[index_dist];
     extDistRC* res = findIndexed_res(dist1, dist2);
     res->_diag = 0;
-    if (rc != nullptr && dist1 < rc->_sep) {
+    if (rc != NULL && dist1 < rc->_sep) {
       _measureTable = _measureTableR[index_dist - 1];
       _computeTable = _computeTableR[index_dist - 1];
       extDistRC* res1 = findIndexed_res(dist1, dist2);
@@ -634,7 +634,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
     }
     return res;
   }
-  return nullptr;
+  return NULL;
 }
 
 void extMeasure::getDgOverlap_res(SEQ* sseq,
@@ -796,11 +796,11 @@ void extMeasure::calcRes(int rsegId1,
   uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
-    if (rcModel->_resOver[tgtMet] == nullptr)
+    if (rcModel->_resOver[tgtMet] == NULL)
       continue;
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
-    if (rc != nullptr) {
+    if (rc != NULL) {
       double R1 = rc->_diag > 0 ? rc->_diag : rc->_res;
       double R = len * R1;
       double prev = _rc[ii]->_res;
@@ -844,7 +844,7 @@ void extMeasure::calcRes0(double* deltaRes,
   uint modelCnt = _metRCTable.getCnt();
   for (uint ii = 0; ii < modelCnt; ii++) {
     extMetRCTable* rcModel = _metRCTable.get(ii);
-    if (rcModel->_resOver[tgtMet] == nullptr)
+    if (rcModel->_resOver[tgtMet] == NULL)
       continue;
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
@@ -890,11 +890,11 @@ void extMain::calcRes0(double* deltaRes,
     uint modelIndex = _modelMap.get(jj);
     extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
 
-    if (rcModel->_resOver[tgtMet] == nullptr)
+    if (rcModel->_resOver[tgtMet] == NULL)
       continue;
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, width, dist1, dist2);
-    if (rc == nullptr)
+    if (rc == NULL)
       continue;
     double R = len * rc->_res;
     deltaRes[jj] = R;
@@ -907,10 +907,10 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
     table = _measureTable;
 
   if (table->getCnt() == 0)
-    return nullptr;
+    return NULL;
 
   int target_dist_index = -1;
-  extDistRC* rc = nullptr;
+  extDistRC* rc = NULL;
   uint ii = 0;
   for (; ii < table->getCnt(); ii++) {
     rc = table->get(ii);
@@ -927,7 +927,7 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
     rc = table->get(0);  // assume first rec is 0,0
     return rc;
   }
-  extDistRC* last_rc = nullptr;
+  extDistRC* last_rc = NULL;
   for (uint ii = target_dist_index; ii < table->getCnt(); ii++) {
     extDistRC* rc1 = table->get(ii);
     if (rc->_coupling != rc1->_coupling) {
@@ -937,7 +937,7 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
       return rc1;
     }
     if (dist2 < rc1->_sep) {
-      if (last_rc != nullptr)
+      if (last_rc != NULL)
         return last_rc;
       return rc1;
     }
@@ -947,7 +947,7 @@ extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
     rc = table->get(0);  // assume first rec is 0,0
     return rc;
   }
-  return nullptr;
+  return NULL;
 }
 extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
 {
@@ -972,7 +972,7 @@ extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
 {
   int wIndex = getWidthIndex(w);
   if (wIndex < 0)
-    return nullptr;
+    return NULL;
 
   // extDistRC *rc= _rcDistTable[mou][wIndex]->findRes(dist1, dist2, false);
   extDistRC* rc = _rcDistTable[mou][wIndex]->getComputeRC_res(dist1, dist2);
@@ -983,7 +983,7 @@ extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w)
 {
   int wIndex = getWidthIndex(w);
   if (wIndex < 0)
-    return nullptr;
+    return NULL;
 
   return _rcDistTable[mou][wIndex];
 }

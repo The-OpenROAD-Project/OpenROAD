@@ -510,7 +510,7 @@ bool Ext::define_rcx_corners(const std::string& corner_list)
 bool Ext::rc_estimate(const std::string& ext_model_file,
                       const std::string& out_file_prefix)
 {
-  extRCModel* m = new extRCModel("MINTYPMAX", nullptr);
+  extRCModel* m = new extRCModel("MINTYPMAX", NULL);
 
   double version = 0.0;
   std::list<std::string> corner_list

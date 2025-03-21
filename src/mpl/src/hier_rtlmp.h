@@ -164,6 +164,11 @@ class HierRTLMP
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
   void clear();
+  void FDPlacement(std::vector<Rect>& blocks,
+                   const std::vector<BundledNet>& nets,
+                   float outline_width,
+                   float outline_height,
+                   const std::string& file_name);
 
   // Coarse Shaping
   void runCoarseShaping();

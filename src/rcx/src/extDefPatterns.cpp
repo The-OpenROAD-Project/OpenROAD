@@ -299,12 +299,12 @@ void extRulesPat::setMets(int underMet,
 {
   _under_layer = under_layer;
   _underMet = underMet;
-  if (under_layer != nullptr)
+  if (under_layer != NULL)
     _under_minSpaceCntx = getMinWidthSpacing(under_layer, _under_minWidthCntx);
 
   _over_layer = over_layer;
   _overMet = overMet;
-  if (over_layer != nullptr)
+  if (over_layer != NULL)
     _over_minSpaceCntx = getMinWidthSpacing(over_layer, _over_minWidthCntx);
 }
 void extRulesPat::UpdateBBox()
@@ -776,7 +776,7 @@ uint extMain::DefWires(extMainOptions* opt)
 
   dbChip* chip = dbChip::create(_db);
   assert(chip);
-  _block = dbBlock::create(chip, opt->_name, nullptr, '/');
+  _block = dbBlock::create(chip, opt->_name, NULL, '/');
   assert(_block);
 
   _block->setBusDelimiters('[', ']');
@@ -843,7 +843,7 @@ uint extRCModel::OverRulePat(extMainOptions* opt,
       continue;
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == NULL)
       continue;
 
     p->setLayerInfo(layer, met);
@@ -858,8 +858,8 @@ uint extRCModel::OverRulePat(extMainOptions* opt,
         continue;
 
       dbTechLayer* under_layer
-          = underMet > 0 ? opt->_tech->findRoutingLayer(underMet) : nullptr;
-      p->setMets(underMet, under_layer, -1, nullptr);
+          = underMet > 0 ? opt->_tech->findRoutingLayer(underMet) : NULL;
+      p->setMets(underMet, under_layer, -1, NULL);
 
       if (diag)
         cnt += p->CreatePatterns_diag();
@@ -911,7 +911,7 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
       continue;
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == NULL)
       continue;
 
     p->setLayerInfo(layer, met);
@@ -925,10 +925,10 @@ uint extRCModel::UnderRulePat(extMainOptions* opt,
         continue;
 
       dbTechLayer* over_layer = opt->_tech->findRoutingLayer(overMet);
-      if (over_layer == nullptr)
+      if (over_layer == NULL)
         continue;
 
-      p->setMets(-1, nullptr, overMet, over_layer);
+      p->setMets(-1, NULL, overMet, over_layer);
 
       if (!diag)
         cnt += p->CreatePatterns();
@@ -977,7 +977,7 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
       continue;
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == NULL)
       continue;
 
     p->setLayerInfo(layer, met);
@@ -991,10 +991,10 @@ uint extRCModel::DiagUnderRulePat(extMainOptions* opt,
         continue;
 
       dbTechLayer* over_layer = opt->_tech->findRoutingLayer(overMet);
-      if (over_layer == nullptr)
+      if (over_layer == NULL)
         continue;
 
-      p->setMets(-1, nullptr, overMet, over_layer);
+      p->setMets(-1, NULL, overMet, over_layer);
 
       cnt += p->CreatePatterns_diag();
       p->UpdateBBox();
@@ -1036,7 +1036,7 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
       continue;
 
     dbTechLayer* layer = opt->_tech->findRoutingLayer(met);
-    if (layer == nullptr)
+    if (layer == NULL)
       continue;
 
     p->setLayerInfo(layer, met);
@@ -1048,7 +1048,7 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
         continue;
 
       dbTechLayer* under_layer = opt->_tech->findRoutingLayer(underMet);
-      if (under_layer == nullptr)
+      if (under_layer == NULL)
         continue;
 
       for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
@@ -1060,7 +1060,7 @@ uint extRCModel::OverUnderRulePat(extMainOptions* opt,
           continue;
 
         dbTechLayer* over_layer = opt->_tech->findRoutingLayer(overMet);
-        if (over_layer == nullptr)
+        if (over_layer == NULL)
           continue;
 
         p->setMets(underMet, under_layer, overMet, over_layer);
@@ -1196,21 +1196,21 @@ dbNet* extRulesPat::createNetSingleWire(const char* netName,
                                         dbTechLayer* layer)
 {
   dbNet* net = dbNet::create(_block, netName);
-  if (net == nullptr) {
+  if (net == NULL) {
     fprintf(stdout, "Cannot create net %s, duplicate\n", netName);
-    return nullptr;
+    return NULL;
   }
   net->setSigType(dbSigType::SIGNAL);
   dbBTerm* loBTerm = extRulesPat::createBterm(
       false, net, ll, ur, "_lo", layer, width, vertical, true /*input*/);
   dbBTerm* hiBTerm = extRulesPat::createBterm(
       true, net, ll, ur, "_hi", layer, width, vertical, false /*input*/);
-  if ((loBTerm == nullptr) || (hiBTerm == nullptr)) {
+  if ((loBTerm == NULL) || (hiBTerm == NULL)) {
     dbNet::destroy(net);
     fprintf(stdout,
             "Cannot create net %s, because failed to create bterms\n",
             netName);
-    return nullptr;
+    return NULL;
   }
 
   dbWireEncoder encoder;
@@ -1237,7 +1237,7 @@ dbTechLayerRule* extRulesPat::GetRule(int routingLayer, int width)
 {
   dbTechLayerRule*& rule = _rules[routingLayer][width];
 
-  if (rule != nullptr)
+  if (rule != NULL)
     return rule;
 
   // Create a non-default-rule for this width
@@ -1252,8 +1252,8 @@ dbTechLayerRule* extRulesPat::GetRule(int routingLayer, int width)
       break;
   }
 
-  if (nd_rule == nullptr)
-    return nullptr;
+  if (nd_rule == NULL)
+    return NULL;
   fprintf(stdout, " NewRule %s,layer=%d width=%d\n", rule_name, routingLayer,
 width); fflush(stdout);
   // rule->getImpl()->getLogger()->info(utl::ODB,
@@ -1268,18 +1268,18 @@ width); fflush(stdout);
   for (i = 1; i <= _tech->getRoutingLayerCount(); i++) {
     dbTechLayer* layer = _routingLayers[i];
 
-    if (layer != nullptr) {
+    if (layer != NULL) {
       dbTechLayerRule* lr = dbTechLayerRule::create(nd_rule, layer);
       lr->setWidth(width);
       lr->setSpacing(layer->getSpacing());
 
       dbTechLayerRule*& r = _rules[i][width];
-      if (r == nullptr)
+      if (r == NULL)
         r = lr;
     }
   }
 
-  assert(rule != nullptr);
+  assert(rule != NULL);
   return rule;
 }
 */

@@ -127,7 +127,7 @@ set_macro_guidance_region
 
 ## Example scripts
 
-Example of a script demonstrating how to run `mpl` on a sample design of `bp_fe_top` as follows:
+Example of a script demonstrating how to run `mpl2` on a sample design of `bp_fe_top` as follows:
 
 ```shell
 ./test/bp_fe_top.tcl
@@ -155,7 +155,7 @@ Simply run the following script:
 
 ## FAQs
 
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+hier-rtlmp+OR+hier+OR+mpl) about this tool.
+Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+hier-rtlmp+OR+hier+OR+mpl2) about this tool.
 
 ## License
 

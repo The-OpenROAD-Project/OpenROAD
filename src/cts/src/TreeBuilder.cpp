@@ -35,8 +35,6 @@
 
 #include "TreeBuilder.h"
 
-#include <boost/polygon/polygon.hpp>
-#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -44,54 +42,39 @@
 #include <memory>
 #include <vector>
 
-#include "odb/geom_boost.h"
 #include "utl/Logger.h"
 
 namespace cts {
 
 using utl::CTS;
 
-void TreeBuilder::mergeBlockages()
-{
-  namespace gtl = boost::polygon;
-  using boost::polygon::operators::operator+=;
-
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  gtl::polygon_90_set_data<int> blockage_polygons;
-  // Add the macros into the polygon set
-  for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getMaster()->getType().isBlock()
-        && inst->getPlacementStatus().isPlaced()) {
-      blockage_polygons += inst->getBBox()->getBox();
-    }
-  }
-
-  // Add the hard blockages into the polygon set
-  for (odb::dbBlockage* blockage : block->getBlockages()) {
-    if (!blockage->isSoft()) {
-      blockage_polygons += blockage->getBBox()->getBox();
-    }
-  }
-
-  // bloat blockages to merge if there is not enough space between them
-  const int bloat_h
-      = std::ceil(bufferHeight_ * techChar_->getLengthUnit() / 2.0);
-  const int bloat_w
-      = std::ceil(bufferWidth_ * techChar_->getLengthUnit() / 2.0);
-
-  // Remove the gaps less than twice the bloat dimension
-  gtl::bloat(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
-  gtl::shrink(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
-
-  std::vector<odb::Rect> blockage_rects;
-  blockage_polygons.get_rectangles(blockage_rects);
-  for (const odb::Rect& rect : blockage_rects) {
-    blockages_.emplace_back(rect);
-  }
-}
-
 void TreeBuilder::initBlockages()
 {
+  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
+    odb::dbBox* bbox = blockage->getBBox();
+    bboxList_.emplace_back(bbox);
+  }
+  logger_->info(CTS,
+                200,
+                "{} placement blockages have been identified.",
+                bboxList_.size());
+
+  if (bboxList_.empty()) {
+    // Some HMs may not have explicit blockages
+    // Treat them as such only if they are placed
+    for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+      if (inst->getMaster()->getType().isBlock()
+          && inst->getPlacementStatus().isPlaced()) {
+        odb::dbBox* bbox = inst->getBBox();
+        bboxList_.emplace_back(bbox);
+      }
+    }
+    logger_->info(CTS,
+                  201,
+                  "{} placed hard macros will be treated like blockages.",
+                  bboxList_.size());
+  }
+
   // add tree buffer width and height for legalization
   std::string buffer;
   if (!options_->getTreeBuffer().empty()) {
@@ -112,14 +95,6 @@ void TreeBuilder::initBlockages()
     logger_->error(
         CTS, 77, "No physical master cell found for cell {}.", buffer);
   }
-
-  mergeBlockages();
-
-  logger_->info(CTS,
-                201,
-                "{} blockages from hard placement blockages and placed macros "
-                "will be used.",
-                blockages_.size());
 }
 
 // Check if location (x, y) is legal by checking if
@@ -157,11 +132,11 @@ bool TreeBuilder::findBlockage(const Point<double>& bufferLoc,
   double bx = bufferLoc.getX() * scalingUnit;
   double by = bufferLoc.getY() * scalingUnit;
 
-  for (odb::Rect bbox : blockages_) {
-    x1 = bbox.xMin();
-    y1 = bbox.yMin();
-    x2 = bbox.xMax();
-    y2 = bbox.yMax();
+  for (odb::dbBox* bbox : bboxList_) {
+    x1 = bbox->xMin();
+    y1 = bbox->yMin();
+    x2 = bbox->xMax();
+    y2 = bbox->yMax();
 
     if (isInsideBbox(bx, by, x1, y1, x2, y2)) {
       x1 = x1 / scalingUnit;

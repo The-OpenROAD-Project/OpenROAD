@@ -57,7 +57,7 @@ extViaModel* extMetRCTable::addViaModel(char* name,
   int n1;
   if (_viaModelHash.get(name, n1)) {
     if (n1 < 0)
-      return nullptr;
+      return NULL;
     extViaModel* v = _viaModel.get(n1);
     return v;
   }
@@ -73,11 +73,11 @@ extViaModel* extMetRCTable::getViaModel(char* name)
   int n1;
   if (_viaModelHash.get(name, n1)) {
     if (n1 < 0)
-      return nullptr;
+      return NULL;
     extViaModel* v = _viaModel.get(n1);
     return v;
   }
-  return nullptr;
+  return NULL;
 }
 void extViaModel::printViaRule(FILE* fp)
 {
@@ -145,7 +145,7 @@ bool extMetRCTable::GetViaRes(Ath__parser* p,
     return true;
   }
   extViaModel* viaModel = getViaModel((char*) viaName);
-  if (viaModel == nullptr) {
+  if (viaModel == NULL) {
     fprintf(
         stderr, "not defined viaModel: %s -- netName %s \n", viaName, netName);
     return false;
@@ -192,16 +192,16 @@ uint extMetRCTable::SetDefaultTechViaRes(dbTech* tech, bool dbg)
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
 
-    if (via->getNonDefaultRule() != nullptr)
+    if (via->getNonDefaultRule() != NULL)
       continue;
-    if (via->getViaGenerateRule() != nullptr)
+    if (via->getViaGenerateRule() != NULL)
       continue;
 
     const char* viaName = via->getConstName();
     cnt++;
 
     extViaModel* viaModel = getViaModel((char*) viaName);
-    if (viaModel == nullptr)
+    if (viaModel == NULL)
       continue;
 
     via->setResistance(viaModel->_res);

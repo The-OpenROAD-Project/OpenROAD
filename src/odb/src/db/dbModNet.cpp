@@ -121,16 +121,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._bterms;
   }
-  // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
-    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
-    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
-    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
-    if (obj._name) {
-      module->_modnet_hash[obj._name] = dbId<_dbModNet>(obj.getId());
-    }
-  }
-  // User Code End >>
   return stream;
 }
 

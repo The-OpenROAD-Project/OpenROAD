@@ -75,7 +75,7 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
   }
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
-  FILE* outFP = nullptr;
+  FILE* outFP = NULL;
 
   bool binary = false;
   uint fileCnt = spef_file_list.size();
@@ -85,10 +85,10 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     std::string str = *it;
     const char* filename = str.c_str();
     readSPEF((char*) filename,
-             nullptr,
+             NULL,
              /*force*/ true,
              false,
-             nullptr,
+             NULL,
              false,
              false,
              false,
@@ -97,16 +97,16 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
              1.0,
              false,
              false,
-             nullptr,
+             NULL,
              false,
              -1,
              0.0,
              0.0,
-             nullptr,
-             nullptr,
-             nullptr,
-             nullptr,
-             nullptr,
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             NULL,
              -1,
              0,
              false,
@@ -125,7 +125,7 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     // if (cnt == 1)
     //    out = "2.model";
     extRulesModel->ReadRCDB(_block, widthCnt, diagOption, out);
-    if (outFP == nullptr)
+    if (outFP == NULL)
       outFP = extRulesModel->InitWriteRules(
           out_file, corner_list, comment, binary, fileCnt);
 
@@ -214,12 +214,12 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
                              fp,
                              binary);
 
-    if (rcTable->_capDiagUnder[ii] != nullptr) {
+    if (rcTable->_capDiagUnder[ii] != NULL) {
       if (diagModel == 1)
         cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
       if (diagModel == 2)
         cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
-    } else if ((m > 0) && (rcTable0->_capDiagUnder[ii] != nullptr)) {
+    } else if ((m > 0) && (rcTable0->_capDiagUnder[ii] != NULL)) {
       if (diagModel == 1)
         cnt += rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
       if (diagModel == 2)
@@ -273,10 +273,10 @@ uint extRCModel::writeRulesPattern(uint ou,
                                    bool binary)
 {
   uint cnt = 0;
-  extDistWidthRCTable* table = nullptr;
-  if (table_m != nullptr)
+  extDistWidthRCTable* table = NULL;
+  if (table_m != NULL)
     table = table_m;
-  else if ((modelIndex > 0) && (table_0 != nullptr))
+  else if ((modelIndex > 0) && (table_0 != NULL))
     table = table_0;
   else if (modelIndex == 0) {
     fprintf(stdout,
@@ -466,7 +466,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
   int layerCnt = getLayerCnt();
   bool diag = getDiagFlag();
 
-  //	FILE *fp= openFile("./", name, nullptr, "w");
+  //	FILE *fp= openFile("./", name, NULL, "w");
   FILE* fp = fopen(name, "w");
 
   fprintf(fp, "Extraction Rules for rcx\n\n");
@@ -492,7 +492,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
   }
   fprintf(fp, "\n");
 
-  if (comment != nullptr && strlen(comment) > 0)
+  if (comment != NULL && strlen(comment) > 0)
     fprintf(fp, "\nCOMMENT : %s \n\n", comment);
 
   return fp;
@@ -511,7 +511,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
   extMetRCTable* rcModel = initCapTables(layerCnt, widthCnt);
 
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
-  extMeasure m(nullptr);
+  extMeasure m(NULL);
   m._diagModel = 1;
   uint openWireNumber = 1;
 
@@ -604,7 +604,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
       m._underMet = overMet;
       m._overUnder = true;
       m._over = false;
-    } else if (strstr(overUnderToken, "o") != nullptr) {
+    } else if (strstr(overUnderToken, "o") != NULL) {
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
       if (p->getFirstChar() == 'R') {
@@ -615,7 +615,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
       m._underMet = overMet;
       m._overUnder = false;
       m._over = true;
-    } else if (strstr(overUnderToken, "uu") != nullptr) {
+    } else if (strstr(overUnderToken, "uu") != NULL) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
       diag = true;
@@ -624,7 +624,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
       m._underMet = -1;
       m._overUnder = false;
       m._over = false;
-    } else if (strstr(overUnderToken, "u") != nullptr) {
+    } else if (strstr(overUnderToken, "u") != NULL) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
 
@@ -703,7 +703,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
           wLen,
           netName);
     }
-    if (strstr(netName, "cntxM") != nullptr)
+    if (strstr(netName, "cntxM") != NULL)
       continue;
 
     extDistRC* rc = rcPool->alloc();
@@ -825,7 +825,7 @@ std::list<std::string> extModelGen::GetCornerNames(const char* filename,
 /*
 AFILE extModelGen::InitWriteRules_old(AFILE *fp, bool binary, uint modelIndex)
 {
-//	FILE *fp= openFile("./", name, nullptr, "w");
+//	FILE *fp= openFile("./", name, NULL, "w");
 #ifndef _WIN32
         //AFILE *fp= ATH__fopen(name, "w", AF_ENCRYPT);
         AFILE *fp= ATH__fopen(name, "w");

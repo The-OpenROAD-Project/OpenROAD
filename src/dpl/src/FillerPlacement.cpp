@@ -34,8 +34,8 @@
 
 #include <algorithm>
 
+#include "Grid.h"
 #include "Objects.h"
-#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -177,13 +177,13 @@ void Opendp::placeRowFillers(GridY row,
     dbTechLayer* implant = nullptr;
     if (j > 0) {
       auto pixel = grid_->gridPixel(j - 1, row);
-      if (pixel->cell && pixel->cell->getDbInst()) {
-        implant = getImplant(pixel->cell->getDbInst()->getMaster());
+      if (pixel->cell && pixel->cell->db_inst_) {
+        implant = getImplant(pixel->cell->db_inst_->getMaster());
       }
     } else if (k < row_site_count) {
       auto pixel = grid_->gridPixel(k, row);
-      if (pixel->cell && pixel->cell->getDbInst()) {
-        implant = getImplant(pixel->cell->getDbInst()->getMaster());
+      if (pixel->cell && pixel->cell->db_inst_) {
+        implant = getImplant(pixel->cell->db_inst_->getMaster());
       }
     } else {  // totally empty row - use anything
       implant = filler_masters_by_implant.begin()->first;
@@ -237,9 +237,9 @@ const char* Opendp::gridInstName(GridY row, GridX col)
     return "core_right";
   }
 
-  const auto cell = grid_->gridPixel(col, row)->cell;
+  const Cell* cell = grid_->gridPixel(col, row)->cell;
   if (cell) {
-    return cell->getDbInst()->getConstName();
+    return cell->db_inst_->getConstName();
   }
   return "?";
 }
