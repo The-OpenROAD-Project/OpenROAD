@@ -218,24 +218,7 @@ void Optdp::updateDbInstLocations()
       const int y = nd->getBottom() + grid_->getCore().yMin();
       const int x = nd->getLeft() + grid_->getCore().xMin();
 
-      dbOrientType orient = dbOrientType::R0;
-      switch (nd->getCurrOrient()) {
-        case Orientation_N:
-          orient = dbOrientType::R0;
-          break;
-        case Orientation_FN:
-          orient = dbOrientType::MY;
-          break;
-        case Orientation_FS:
-          orient = dbOrientType::MX;
-          break;
-        case Orientation_S:
-          orient = dbOrientType::R180;
-          break;
-        default:
-          // ?
-          break;
-      }
+      dbOrientType orient = dpoToDbOrient(nd->getCurrOrient());
       if (inst->getOrient() != orient) {
         inst->setOrient(orient);
       }
@@ -1156,38 +1139,46 @@ void Optdp::setUpPlacementRegions()
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
 ////////////////////////////////////////////////////////////////
-unsigned Optdp::dbToDpoOrient(const dbOrientType& dbOrient)
+unsigned dbToDpoOrient(const dbOrientType& dbOrient)
 {
-  unsigned orient = dpo::Orientation_N;
   switch (dbOrient) {
-    case dbOrientType::R0:
-      orient = dpo::Orientation_N;
-      break;
     case dbOrientType::MY:
-      orient = dpo::Orientation_FN;
-      break;
+      return dpo::Orientation_FN;
     case dbOrientType::MX:
-      orient = dpo::Orientation_FS;
-      break;
+      return dpo::Orientation_FS;
     case dbOrientType::R180:
-      orient = dpo::Orientation_S;
-      break;
+      return dpo::Orientation_S;
     case dbOrientType::R90:
-      orient = dpo::Orientation_E;
-      break;
+      return dpo::Orientation_E;
     case dbOrientType::MXR90:
-      orient = dpo::Orientation_FE;
-      break;
+      return dpo::Orientation_FE;
     case dbOrientType::R270:
-      orient = dpo::Orientation_W;
-      break;
+      return dpo::Orientation_W;
     case dbOrientType::MYR90:
-      orient = dpo::Orientation_FW;
-      break;
+      return dpo::Orientation_FW;
     default:
-      break;
+      return dpo::Orientation_N;
   }
-  return orient;
 }
-
+odb::dbOrientType dpoToDbOrient(const unsigned orient)
+{
+  switch (orient) {
+    case dpo::Orientation_FN:
+      return dbOrientType::MY;
+    case dpo::Orientation_FS:
+      return dbOrientType::MX;
+    case dpo::Orientation_S:
+      return dbOrientType::R180;
+    case dpo::Orientation_E:
+      return dbOrientType::R90;
+    case dpo::Orientation_FE:
+      return dbOrientType::MXR90;
+    case dpo::Orientation_W:
+      return dbOrientType::R270;
+    case dpo::Orientation_FW:
+      return dbOrientType::MYR90;
+    default:
+      return dbOrientType::R0;
+  }
+}
 }  // namespace dpo

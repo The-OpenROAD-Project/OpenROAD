@@ -1375,28 +1375,6 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
   transform.apply(result);
   return result;
 }
-odb::dbOrientType getOrientType(unsigned int orient_in)
-{
-  odb::dbOrientType orient = odb::dbOrientType::R0;
-  switch (orient_in) {
-    case Orientation_N:
-      orient = odb::dbOrientType::R0;
-      break;
-    case Orientation_FN:
-      orient = odb::dbOrientType::MY;
-      break;
-    case Orientation_FS:
-      orient = odb::dbOrientType::MX;
-      break;
-    case Orientation_S:
-      orient = odb::dbOrientType::R180;
-      break;
-    default:
-      // ?
-      break;
-  }
-  return orient;
-}
 odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
 {
   odb::Rect query_rect(edge_box);
@@ -1428,12 +1406,12 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
   for (const auto& edge1 : master->edges_) {
     int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
                   + 1;  // +1 to account for EXACT rules
-    odb::Rect edge1_box = cell_edges::transformEdgeRect(
-        edge1.getBBox(),
-        node,
-        x_real,
-        y_real,
-        cell_edges::getOrientType(node->getCurrOrient()));
+    odb::Rect edge1_box
+        = cell_edges::transformEdgeRect(edge1.getBBox(),
+                                        node,
+                                        x_real,
+                                        y_real,
+                                        dpoToDbOrient(node->getCurrOrient()));
     bool is_vertical_edge = edge1_box.getDir() == 0;
     odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
     auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
@@ -1469,7 +1447,7 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
               cell2,
               cell2->getLeft(),
               cell2->getBottom(),
-              cell_edges::getOrientType(cell2->getCurrOrient()));
+              dpoToDbOrient(cell2->getCurrOrient()));
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;

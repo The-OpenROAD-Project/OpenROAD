@@ -98,7 +98,6 @@ class Optdp
   void createGrid();
   void setUpNdrRules();
   void setUpPlacementRegions();
-  unsigned dbToDpoOrient(const dbOrientType& orient);
   Master* getMaster(odb::dbMaster* db_master);
 
   odb::dbDatabase* db_ = nullptr;
