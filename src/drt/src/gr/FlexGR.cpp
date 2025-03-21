@@ -121,7 +121,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*offset*/ 0,
                /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 5 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 0.5 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -132,7 +132,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*offset*/ -70,
                /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 1 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 5 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 1 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -143,7 +143,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*offset*/ -150,
                /*mazeEndIter*/ Maze_End_Iter_2D,
                /*workerCongCost*/ 2 * router_cfg_->CONGCOST,
-               /*workerHistCost*/ 5 * router_cfg_->HISTCOST,
+               /*workerHistCost*/ 2 * router_cfg_->HISTCOST,
                /*congThresh*/ 0.8,
                /*is2DRouting*/ true,
                /*mode*/ RipUpMode::ALL,
@@ -160,13 +160,14 @@ void FlexGR::main(odb::dbDatabase* db)
 
   layerAssign();
 
-  gpuFlag_ = false;
+  gpuFlag_ = true;
 
   // populate region query for 3D
   getRegionQuery()->initGRObj();
 
   reportCong3D();
 
+  logger_->report("[INFO] 3D Maze routing starts ...");
 
   auto Maze3DRuntimeStart = std::chrono::high_resolution_clock::now();
 

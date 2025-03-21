@@ -702,8 +702,10 @@ void FlexGR::searchRepair_update(int iter,
   uworkers.clear();
 
   std::cout << "Finish ending" << std::endl;
-
-  reportCong2D();
+  
+  if (is2DRouting == true) {
+    reportCong2D();
+  }
 
   /*
   for (int iter = 0; iter < mazeEndIter; iter++) {
