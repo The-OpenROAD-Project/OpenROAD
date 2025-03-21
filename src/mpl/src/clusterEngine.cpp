@@ -42,7 +42,6 @@ void ClusteringEngine::run()
   createRoot();
   setBaseThresholds();
 
-  mapIOPinsAndPads();
   createDataFlow();
 
   createIOClusters();
@@ -77,7 +76,8 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 }
 
 // Check if macro placement is both needed and feasible.
-// Also report some design data relevant for the user.
+// Also report some design data relevant for the user and
+// initialize the tree with data from the design.
 void ClusteringEngine::init()
 {
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
@@ -102,6 +102,8 @@ void ClusteringEngine::init()
                    inst_area_with_halos,
                    tree_->floorplan_shape.getArea());
   }
+
+  tree_->io_pads = getIOPads();
 
   reportDesignData();
 }
@@ -205,6 +207,17 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   tree_->maps.module_to_metrics[module] = std::move(metrics);
 
   return tree_->maps.module_to_metrics[module].get();
+}
+
+std::vector<odb::dbInst*> ClusteringEngine::getIOPads() const
+{
+  std::vector<odb::dbInst*> io_pads;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isPad()) {
+      io_pads.push_back(inst);
+    }
+  }
+  return io_pads;
 }
 
 void ClusteringEngine::reportDesignData()
@@ -341,7 +354,7 @@ void ClusteringEngine::setBaseThresholds()
 // - If an IO pin has no constraints, it is constrained to all boundaries.
 void ClusteringEngine::createIOClusters()
 {
-  if (!tree_->maps.pad_to_bterm.empty()) {
+  if (!tree_->io_pads.empty()) {
     createIOPadClusters();
     return;
   }
@@ -493,38 +506,9 @@ void ClusteringEngine::setIOClusterDimensions(const odb::Rect& die,
   }
 }
 
-void ClusteringEngine::mapIOPinsAndPads()
-{
-  bool design_has_io_pads = false;
-  for (auto inst : block_->getInsts()) {
-    if (inst->getMaster()->isPad()) {
-      design_has_io_pads = true;
-      break;
-    }
-  }
-
-  if (!design_has_io_pads) {
-    return;
-  }
-
-  for (odb::dbNet* net : block_->getNets()) {
-    if (net->getBTerms().size() == 0) {
-      continue;
-    }
-
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      for (odb::dbITerm* iterm : net->getITerms()) {
-        odb::dbInst* inst = iterm->getInst();
-        tree_->maps.pad_to_bterm[inst] = bterm;
-        tree_->maps.bterm_to_pad[bterm] = inst;
-      }
-    }
-  }
-}
-
 void ClusteringEngine::createIOPadClusters()
 {
-  for (const auto& [bterm, pad] : tree_->maps.bterm_to_pad) {
+  for (odb::dbInst* pad : tree_->io_pads) {
     createIOPadCluster(pad);
   }
 }
@@ -611,7 +595,7 @@ VerticesMaps ClusteringEngine::computeVertices()
 {
   VerticesMaps vertices_maps;
 
-  if (tree_->maps.bterm_to_pad.empty()) {
+  if (tree_->io_pads.empty()) {
     computeIOVertices(vertices_maps);
   } else {
     computePadVertices(vertices_maps);
@@ -642,7 +626,7 @@ void ClusteringEngine::computeIOVertices(VerticesMaps& vertices_maps)
 
 void ClusteringEngine::computePadVertices(VerticesMaps& vertices_maps)
 {
-  for (const auto& [bterm, pad] : tree_->maps.bterm_to_pad) {
+  for (odb::dbInst* pad : tree_->io_pads) {
     const int id = static_cast<int>(vertices_maps.stoppers.size());
     odb::dbIntProperty::create(pad, "vertex_id", id);
     vertices_maps.id_to_std_cell[id] = pad;
@@ -1785,7 +1769,7 @@ void ClusteringEngine::updateConnections()
     }
 
     bool net_has_io_pin = false;
-    if (tree_->maps.bterm_to_pad.empty()) {
+    if (!tree_->io_pads.empty()) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
         net_has_io_pin = true;

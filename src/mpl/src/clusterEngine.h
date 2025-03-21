@@ -77,15 +77,12 @@ struct PhysicalHierarchyMaps
 
   InstToHardMap inst_to_hard;
   ModuleToMetricsMap module_to_metrics;
-
-  // Only for designs with IO Pads
-  std::map<odb::dbInst*, odb::dbBTerm*> pad_to_bterm;
-  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_pad;
 };
 
 struct PhysicalHierarchy
 {
   std::unique_ptr<Cluster> root;
+  std::vector<odb::dbInst*> io_pads;
   PhysicalHierarchyMaps maps;
 
   // This is set according to the ppl -exclude constraints
@@ -160,6 +157,7 @@ class ClusteringEngine
   void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
+  std::vector<odb::dbInst*> getIOPads() const;
   void reportDesignData();
   void createRoot();
   void setBaseThresholds();
@@ -180,7 +178,6 @@ class ClusteringEngine
                               int& y,
                               int& width,
                               int& height);
-  void mapIOPinsAndPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
