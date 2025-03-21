@@ -135,8 +135,9 @@ void lefinReader::createLibrary()
 {
   _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimiter);
   _lib->setLefUnits(_lef_units);
-  if (_left_bus_delimiter)
+  if (_left_bus_delimiter) {
     _lib->setBusDelimiters(_left_bus_delimiter, _right_bus_delimiter);
+  }
 }
 
 static void create_path_box(dbObject* obj,

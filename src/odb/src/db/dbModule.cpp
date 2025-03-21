@@ -735,16 +735,17 @@ void dbModule::copyModuleInsts(dbModule* old_module,
        ++inst_iter) {
     dbInst* old_inst = *inst_iter;
     // Change unique instance name from old_inst/leaf to new_inst/leaf
+    std::string new_inst_name;
+    if (new_mod_inst) {
+      new_inst_name = new_mod_inst->getName();
+      new_inst_name += '/';
+    }
     std::string old_inst_name = old_inst->getName();
     // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
-    std::string new_inst_name = (first_idx != std::string::npos)
-                                    ? old_inst_name.substr(first_idx + 1)
-                                    : old_inst_name;
-    if (new_mod_inst) {
-      new_inst_name
-          = std::string(new_mod_inst->getName()) + '/' + new_inst_name;
-    }
+    new_inst_name += (first_idx != std::string::npos)
+                         ? old_inst_name.substr(first_idx + 1)
+                         : old_inst_name;
 
     dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
@@ -786,16 +787,18 @@ void dbModule::copyModuleInsts(dbModule* old_module,
       dbNet* old_net = old_iterm->getNet();
       if (old_net) {
         // Create a local net only if it connects to iterms inside this module
-        std::string net_name = old_net->getName();
-        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
-        size_t first_idx = net_name.find_first_of('/');
-        std::string new_net_name = (first_idx != std::string::npos)
-                                       ? net_name.substr(first_idx + 1)
-                                       : net_name;
+        std::string new_net_name;
         if (new_mod_inst) {
-          new_net_name
-              = std::string(new_mod_inst->getName()) + '/' + new_net_name;
+          new_net_name = new_mod_inst->getName();
+          new_net_name += '/';
         }
+        std::string old_net_name = old_net->getName();
+        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
+        size_t first_idx = old_net_name.find_first_of('/');
+        new_net_name += (first_idx != std::string::npos)
+                            ? old_net_name.substr(first_idx + 1)
+                            : old_net_name;
+
         dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
         if (new_net) {
           new_iterm->connect(new_net);

@@ -479,10 +479,12 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
   // Check if module port names match
   std::vector<_dbModBTerm*> old_ports, new_ports;
-  for (auto bterm : old_bterms)
+  for (auto bterm : old_bterms) {
     old_ports.push_back((_dbModBTerm*) bterm);
-  for (auto bterm : new_bterms)
+  }
+  for (auto bterm : new_bterms) {
     new_ports.push_back((_dbModBTerm*) bterm);
+  }
   std::sort(new_ports.begin(),
             new_ports.end(),
             [](_dbModBTerm* port1, _dbModBTerm* port2) {
