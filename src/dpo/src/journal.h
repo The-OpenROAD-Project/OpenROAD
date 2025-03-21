@@ -99,6 +99,7 @@ class Journal
   void clearJournal();
   const std::set<Node*>& getAffectedNodes() const { return affected_nodes_; }
   const std::vector<JournalAction>& getActions() const { return actions_; }
+  size_t size() const { return actions_.size(); }
 
  private:
   std::vector<JournalAction> actions_;

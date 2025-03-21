@@ -90,21 +90,6 @@ DetailedMgr::DetailedMgr(Architecture* arch,
 
   // For generating a move list...
   moveLimit_ = 100;
-  nMoved_ = 0;
-  curLeft_.resize(moveLimit_);
-  curBottom_.resize(moveLimit_);
-  newLeft_.resize(moveLimit_);
-  newBottom_.resize(moveLimit_);
-  curOri_.resize(moveLimit_);
-  newOri_.resize(moveLimit_);
-  curSeg_.resize(moveLimit_);
-  newSeg_.resize(moveLimit_);
-  movedNodes_.resize(moveLimit_);
-  for (size_t i = 0; i < moveLimit_; i++) {
-    curSeg_[i] = std::vector<int>();
-    newSeg_[i] = std::vector<int>();
-  }
-
   // The purpose of this reverse map is to be able to remove the cell from
   // all segments that it has been placed into.  It only works (i.e., is
   // only up-to-date) if you use the proper routines to add and remove cells
@@ -3444,7 +3429,6 @@ bool DetailedMgr::trySwap1(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::clearMoveList()
 {
-  nMoved_ = 0;
   journal.clearJournal();
 }
 
@@ -3459,7 +3443,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
                                 const int newSeg)
 {
   // Limit maximum number of cells that can move at once.
-  if (nMoved_ >= moveLimit_) {
+  if (journal.size() >= moveLimit_) {
     return false;
   }
 
@@ -3492,7 +3476,6 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   action.setNewLocation(newLeft, newBottom);
   action.setNewSegs({newSeg});
   journal.addAction(action);
-  ++nMoved_;
   return true;
 }
 
@@ -3507,7 +3490,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
                                 const std::vector<int>& newSegs)
 {
   // Most number of cells that can move.
-  if (nMoved_ >= moveLimit_) {
+  if (journal.size() >= moveLimit_) {
     return false;
   }
   // commit move and add to journal
@@ -3529,7 +3512,6 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   action.setNewLocation(newLeft, newBottom);
   action.setNewSegs(newSegs);
   journal.addAction(action);
-  ++nMoved_;
   return true;
 }
 

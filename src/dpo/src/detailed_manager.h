@@ -262,15 +262,6 @@ class DetailedMgr
   void shuffle(std::vector<Node*>& nodes);
   int getRandom(int limit) const { return (*rng_)() % limit; }
 
-  const std::vector<int>& getCurLeft() const { return curLeft_; }
-  const std::vector<int>& getCurBottom() const { return curBottom_; }
-  const std::vector<unsigned>& getCurOri() const { return curOri_; }
-  const std::vector<int>& getNewLeft() const { return newLeft_; }
-  const std::vector<int>& getNewBottom() const { return newBottom_; }
-  const std::vector<unsigned>& getNewOri() const { return newOri_; }
-  const std::vector<Node*>& getMovedNodes() const { return movedNodes_; }
-  int getNMoved() const { return nMoved_; }
-
   void getSpaceAroundCell(int seg,
                           int ix,
                           double& space,
@@ -451,16 +442,6 @@ class DetailedMgr
   std::vector<Rectangle> boxes_;
 
   // For generating a move list... (size = moveLimit_)
-  std::vector<int> curLeft_;
-  std::vector<int> curBottom_;
-  std::vector<int> newLeft_;
-  std::vector<int> newBottom_;
-  std::vector<unsigned> curOri_;
-  std::vector<unsigned> newOri_;
-  std::vector<std::vector<int>> curSeg_;
-  std::vector<std::vector<int>> newSeg_;
-  std::vector<Node*> movedNodes_;
-  int nMoved_;
   int moveLimit_;
 };
 
