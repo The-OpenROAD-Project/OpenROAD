@@ -905,9 +905,6 @@ void DetailedMgr::assignCellsToSegments(
   double movementX = 0.;
   double movementY = 0.;
   for (Node* nd : nodesToConsider) {
-    // place in grid
-
-    //
     const int nRowsSpanned = arch_->getCellHeightInRows(nd);
 
     if (nRowsSpanned == 1) {

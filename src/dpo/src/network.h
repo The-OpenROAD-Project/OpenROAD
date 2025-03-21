@@ -83,12 +83,12 @@ class MasterEdge
 class Master
 {
  public:
-  Master() {}
+  Master() = default;
   odb::Rect boundary_box_;
   std::vector<MasterEdge> edges_;
 };
 
-class Node : public dpl::GridNode
+class Node : public GridNode
 {
  public:
   enum Type
