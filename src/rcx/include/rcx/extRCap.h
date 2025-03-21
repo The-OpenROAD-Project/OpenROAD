@@ -1016,7 +1016,7 @@ class extMeasure
   double _peffR;
   bool _skipResCalc = false;
 
-  GridTable* _search = nullptr;
+  GridTable* _search = NULL;
   bool IsDebugNet1();
   static int getMetIndexOverUnder(int met,
                                   int mUnder,

@@ -63,20 +63,20 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
       _extMain->updateRes(rseg1, totR1, jj);
     }
   }
-  if (s->_down == nullptr && s->_up == nullptr) {
+  if (s->_down == NULL && s->_up == NULL) {
     _dist = -1;
     _rsegSrcId = s->_wire->getRsegId();
     _rsegTgtId = -1;
 
     dbRSeg* rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
-    computeAndStoreRC_new(rseg1, nullptr, 0);
+    computeAndStoreRC_new(rseg1, NULL, 0);
   }
-  if (s->_down != nullptr && s->_down->isPower()) {
+  if (s->_down != NULL && s->_down->isPower()) {
     _netTgtId = s->_wire->getNet()->getId();
     _rsegTgtId = s->_wire->getRsegId();
     dbRSeg* rseg2 = dbRSeg::getRSeg(_block, _rsegTgtId);
 
-    dbRSeg* rseg1 = nullptr;
+    dbRSeg* rseg1 = NULL;
     if (s->_down->isPower())
       _rsegSrcId = -1;
     else {
@@ -84,23 +84,23 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
       rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
     }
     _dist = s->_dist_down;
-    _diagResDist = s->_up != nullptr ? s->_dist : -1;
-    _diagResLen = s->_up != nullptr ? s->_len : 0;
+    _diagResDist = s->_up != NULL ? s->_dist : -1;
+    _diagResLen = s->_up != NULL ? s->_len : 0;
 
     computeAndStoreRC_new(rseg1, rseg2, 0);
   }
-  if (s->_up != nullptr) {
+  if (s->_up != NULL) {
     // measure_init_cap(s, true);
     _netSrcId = s->_wire->getNet()->getId();
     _rsegSrcId = s->_wire->getRsegId();
     dbRSeg* rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
 
     _dist = s->_dist;
-    _diagResDist = s->_down != nullptr ? s->_dist_down : -1;
-    _diagResLen = s->_down != nullptr ? s->_len : 0;
+    _diagResDist = s->_down != NULL ? s->_dist_down : -1;
+    _diagResLen = s->_down != NULL ? s->_len : 0;
 
     _netTgtId = s->_up->getNet()->getId();
-    dbRSeg* rseg2 = nullptr;
+    dbRSeg* rseg2 = NULL;
     if (s->_up->isPower())
       _rsegTgtId = -1;
     else {
@@ -109,9 +109,9 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
         rseg2 = dbRSeg::getRSeg(_block, _rsegTgtId);
     }
     computeAndStoreRC_new(rseg1, rseg2, 0);
-  } else if (s->_down != nullptr) {
+  } else if (s->_down != NULL) {
     // Symmetric of looking up!!
-    //  assume up is nullptr
+    //  assume up is NULL
     // measure_init_cap(s, true);
 
     _netSrcId = s->_wire->getNet()->getId();
@@ -125,7 +125,7 @@ bool extMeasureRC::measure_RC_new(extSegment* s, bool skip_res_calc)
     _netTgtId = -1;
     _rsegTgtId = -1;
     // dbRSeg *rseg2 = dbRSeg::getRSeg(_block, _rsegTgtId);
-    dbRSeg* rseg2 = nullptr;
+    dbRSeg* rseg2 = NULL;
 
     computeAndStoreRC_new(rseg1, rseg2, 0);
   }
@@ -140,13 +140,13 @@ bool extMeasureRC::measure_init(extSegment* s)
     _ur[ii] = s->_ur[ii];
   }
   _len = s->_len;
-  _dist = s->_up != nullptr ? s->_dist : -1;
+  _dist = s->_up != NULL ? s->_dist : -1;
   _width = s->_width;
   _netSrcId = s->_wire->getNet()->getId();
   _rsegSrcId = s->_wire->getRsegId();
 
   _netTgtId = 0;
-  if (s->_up != nullptr) {
+  if (s->_up != NULL) {
     _netTgtId = s->_up->getNet()->getId();
     _rsegTgtId = s->_up->getRsegId();
   }
@@ -155,7 +155,7 @@ bool extMeasureRC::measure_init(extSegment* s)
 
   _diagResDist = -1;
   _diagResLen = 0;
-  if (s->_down != nullptr) {
+  if (s->_down != NULL) {
     _diagResDist = s->_dist_down;
     _diagResLen = s->_len;
   }
@@ -177,7 +177,7 @@ bool extMeasureRC::measure_init_cap(extSegment* s, bool up)
 
   if (up) {
     _rsegSrcId = s->_wire->getRsegId();
-    if (s->_up != nullptr) {
+    if (s->_up != NULL) {
       _rsegTgtId = s->_up->getRsegId();
       // _r = dbRSeg::getRSeg(_block, _rsegSrcId);
       _dist = s->_dist;
@@ -187,7 +187,7 @@ bool extMeasureRC::measure_init_cap(extSegment* s, bool up)
     }
   } else {
     _rsegTgtId = s->_wire->getRsegId();
-    if (s->_down != nullptr) {
+    if (s->_down != NULL) {
       _rsegSrcId = s->_down->getRsegId();
       _dist = s->_dist_down;
     } else {
@@ -210,9 +210,9 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
   _rsegSrcId = rsegId;
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, _rsegSrcId);
 
-  bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
+  bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
 
-  if (!(!rvia1 && rseg1 != nullptr))
+  if (!(!rvia1 && rseg1 != NULL))
     return false;
 
   for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
@@ -226,7 +226,7 @@ bool extMeasureRC::measureRC_res_init(uint rsegId)
 
 uint extMeasureRC::CalcDiagBelow(extSegment* s, Wire* dw)
 {
-  if (dw == nullptr)
+  if (dw == NULL)
     return 0;
   if (!dw->isPower())
     return 0;

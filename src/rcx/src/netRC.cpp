@@ -315,7 +315,7 @@ void extMain::getShapeRC(dbNet* net,
       for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
         extMetRCTable* rcTable = _metRCTable.get(ii);
         extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
-        if (viaModel != nullptr) {
+        if (viaModel != NULL) {
           viaResTable[ii] = viaModel->_res;
           viaModelFound = true;
         }
@@ -334,7 +334,7 @@ void extMain::getShapeRC(dbNet* net,
       }
     } else {
       dbVia* bvia = s.getVia();
-      if (bvia != nullptr) {
+      if (bvia != NULL) {
         level = bvia->getBottomLayer()->getRoutingLevel();
         res = getViaResistance_b(bvia, net);
 
@@ -1733,7 +1733,7 @@ bool extMain::setCorners(const char* rulesFileName)
 
 #ifndef NDEBUG
   uint scaleCornerCnt = 0;
-  if (_scaledCornerTable != nullptr)
+  if (_scaledCornerTable != NULL)
     scaleCornerCnt = _scaledCornerTable->getCnt();
   assert(_cornerCnt == _extDbCnt + scaleCornerCnt);
 #endif
@@ -2037,9 +2037,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
   }
 
   /*
-    if (_geomSeq != nullptr) {
+    if (_geomSeq != NULL) {
       delete _geomSeq;
-      _geomSeq = nullptr;
+      _geomSeq = NULL;
     }
 
   */

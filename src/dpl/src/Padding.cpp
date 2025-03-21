@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "dpl/Padding.h"
+#include "Padding.h"
 
 #include "Objects.h"
 
@@ -111,9 +111,9 @@ bool Padding::isPaddedType(dbInst* inst) const
   return false;
 }
 
-GridX Padding::padLeft(const GridNode* cell) const
+GridX Padding::padLeft(const Cell* cell) const
 {
-  return padLeft(cell->getDbInst());
+  return padLeft(cell->db_inst_);
 }
 
 GridX Padding::padLeft(dbInst* inst) const
@@ -132,9 +132,9 @@ GridX Padding::padLeft(dbInst* inst) const
   return GridX{0};
 }
 
-GridX Padding::padRight(const GridNode* cell) const
+GridX Padding::padRight(const Cell* cell) const
 {
-  return padRight(cell->getDbInst());
+  return padRight(cell->db_inst_);
 }
 
 GridX Padding::padRight(dbInst* inst) const
@@ -153,9 +153,9 @@ GridX Padding::padRight(dbInst* inst) const
   return GridX{0};
 }
 
-DbuX Padding::paddedWidth(const GridNode* cell) const
+DbuX Padding::paddedWidth(const Cell* cell) const
 {
-  return cell->dx()
+  return cell->width_
          + gridToDbu(padLeft(cell) + padRight(cell), cell->siteWidth());
 }
 

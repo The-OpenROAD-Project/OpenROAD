@@ -53,7 +53,7 @@ void extMeasureRC::VerticalCap(Ath__array1D<extSegment*>* segTable,
     extSegment* s = segTable->get(0);
     Wire* w2 = look_up ? s->_up : s->_down;
 
-    if (w2 == nullptr)
+    if (w2 == NULL)
       continue;
     uint rsegId1 = s->_wire->getRsegId();
     uint rsegId2 = w2->getRsegId();
@@ -98,7 +98,7 @@ bool extMeasureRC::DiagCap(FILE* fp,
   for (uint ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
     Wire* w2 = lookUp ? s->_up : s->_down;
-    if (w2 == nullptr)
+    if (w2 == NULL)
       continue;
     if (PowerOnly && !w2->isPower())
       continue;
@@ -127,7 +127,7 @@ bool extMeasureRC::DiagCap(FILE* fp,
 }
 dbRSeg* extMeasureRC::GetRseg(int id)
 {
-  dbRSeg* rseg1 = id > 0 ? dbRSeg::getRSeg(_block, id) : nullptr;
+  dbRSeg* rseg1 = id > 0 ? dbRSeg::getRSeg(_block, id) : NULL;
   return rseg1;
 }
 bool extMeasureRC::VerticalCap(uint met,
@@ -152,7 +152,7 @@ bool extMeasureRC::VerticalCap(uint met,
     // NOT working extDistRC* rc = getVerticalUnderRC(rcModel, diagDist,
     // tgtWidth, tgtMet);
     extDistRC* rc = getDiagUnderCC(rcModel, diagDist, tgtMet);
-    if (rc == nullptr)
+    if (rc == NULL)
       return false;
 
     capTable[ii] = len * rc->_fringe;
@@ -186,7 +186,7 @@ bool extMeasureRC::DiagCouplingCap(uint met,
       tgtMet = met;
     }
     extDistRC* rc = getDiagUnderCC(rcModel, diagDist, tgtMet);
-    if (rc == nullptr)
+    if (rc == NULL)
       return false;
 
     capTable[ii]

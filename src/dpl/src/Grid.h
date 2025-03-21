@@ -43,27 +43,12 @@
 #include <vector>
 
 #include "Coordinates.h"
-#include "Opendp.h"
+#include "dpl/Opendp.h"
 
 namespace dpl {
 
 using odb::dbOrientType;
 using odb::dbSite;
-
-class GridNode
-{
- public:
-  virtual ~GridNode() = default;
-  virtual bool isFixed() const = 0;
-  virtual bool isPlaced() const = 0;
-  virtual bool isHybrid() const = 0;
-  virtual DbuX xMin() const = 0;
-  virtual DbuY yMin() const = 0;
-  virtual DbuX dx() const = 0;
-  virtual DbuY dy() const = 0;
-  virtual dbInst* getDbInst() const = 0;
-  virtual DbuX siteWidth() const = 0;
-};
 
 struct GridIntervalX
 {
@@ -79,7 +64,7 @@ struct GridIntervalY
 
 struct Pixel
 {
-  GridNode* cell = nullptr;
+  Cell* cell = nullptr;
   Group* group = nullptr;
   double util = 0.0;
   bool is_valid = false;     // false for dummy cells
@@ -112,17 +97,16 @@ class Grid
                 std::shared_ptr<Padding> padding,
                 int max_displacement_x,
                 int max_displacement_y);
-  void allocateGrid();
   void examineRows(dbBlock* block);
   std::unordered_set<int> getRowCoordinates() const;
 
   GridX gridX(DbuX x) const;
   GridX gridEndX(DbuX x) const;
 
-  GridX gridX(const GridNode* cell) const;
-  GridX gridEndX(const GridNode* cell) const;
-  GridX gridPaddedX(const GridNode* cell) const;
-  GridX gridPaddedEndX(const GridNode* cell) const;
+  GridX gridX(const Cell* cell) const;
+  GridX gridEndX(const Cell* cell) const;
+  GridX gridPaddedX(const Cell* cell) const;
+  GridX gridPaddedEndX(const Cell* cell) const;
 
   GridY gridSnapDownY(DbuY y) const;
   GridY gridRoundY(DbuY y) const;
@@ -130,30 +114,31 @@ class Grid
 
   // Snap outwards to fully contain
   GridRect gridCovering(const Rect& rect) const;
-  GridRect gridCovering(const GridNode* cell) const;
-  GridRect gridCoveringPadded(const GridNode* cell) const;
+  GridRect gridCovering(const Cell* cell) const;
+  GridRect gridCoveringPadded(const Cell* cell) const;
 
   // Snap inwards to be fully contained
   GridRect gridWithin(const DbuRect& rect) const;
 
-  GridY gridSnapDownY(const GridNode* cell) const;
-  GridY gridRoundY(const GridNode* cell) const;
-  GridY gridEndY(const GridNode* cell) const;
+  GridY gridSnapDownY(const Cell* cell) const;
+  GridY gridRoundY(const Cell* cell) const;
+  GridY gridEndY(const Cell* cell) const;
 
   DbuY gridYToDbu(GridY y) const;
 
-  GridX gridPaddedWidth(const GridNode* cell) const;
-  GridY gridHeight(const GridNode* cell) const;
+  GridX gridPaddedWidth(const Cell* cell) const;
+  GridY gridHeight(const Cell* cell) const;
   GridY gridHeight(odb::dbMaster* master) const;
   DbuY rowHeight(GridY index);
+  void setGridPaddedLoc(Cell* cell, GridX x, GridY y) const;
 
-  void paintPixel(GridNode* cell, GridX grid_x, GridY grid_y);
-  void erasePixel(GridNode* cell);
-  void visitCellPixels(GridNode& cell,
+  void paintPixel(Cell* cell, GridX grid_x, GridY grid_y);
+  void erasePixel(Cell* cell);
+  void visitCellPixels(Cell& cell,
                        bool padded,
                        const std::function<void(Pixel* pixel)>& visitor) const;
   void visitCellBoundaryPixels(
-      GridNode& cell,
+      Cell& cell,
       const std::function<
           void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
       const;
@@ -176,11 +161,12 @@ class Grid
   GridY getRowCount(DbuY row_height) const;
 
   Rect getCore() const { return core_; }
-  bool cellFitsInCore(GridNode* cell) const;
+  bool cellFitsInCore(Cell* cell) const;
 
   bool isMultiHeight(dbMaster* master) const;
 
  private:
+  void allocateGrid();
   void markHopeless(dbBlock* block,
                     int max_displacement_x,
                     int max_displacement_y);

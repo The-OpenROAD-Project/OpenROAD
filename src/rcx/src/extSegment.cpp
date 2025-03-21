@@ -126,9 +126,9 @@ int extSegment::setUpDown(bool up, Wire* w1)
 }
 int extSegment::GetDist(Wire* w1, Wire* w2)
 {
-  if (w2 == nullptr)
+  if (w2 == NULL)
     return -1;
-  if (w1 == nullptr)
+  if (w1 == NULL)
     return -1;
   return w2->getBase() - (w1->getBase() + w1->getWidth());
 }

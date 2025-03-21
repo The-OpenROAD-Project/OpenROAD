@@ -1819,11 +1819,6 @@ Descriptor::Properties DbBTermDescriptor::getDBProperties(
     props.push_back({"Constraint Region", constraint.value()});
   }
 
-  props.push_back({"Is Mirrored", bterm->isMirrored()});
-  if (odb::dbBTerm* mirrored = bterm->getMirroredBTerm()) {
-    props.push_back({"Mirrored", gui->makeSelected(mirrored)});
-  }
-
   SelectionSet pins;
   for (auto* pin : bterm->getBPins()) {
     pins.insert(gui->makeSelected(pin));

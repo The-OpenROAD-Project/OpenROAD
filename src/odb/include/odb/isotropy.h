@@ -81,8 +81,6 @@ class Direction1D
   // [East/North/Up -> High] [West/South/Down -> Low]
   constexpr explicit Direction1D(const Direction3D& other);
 
-  Direction1D& operator=(const Direction1D& other) = default;
-
   constexpr operator Value() const { return static_cast<Value>(value_); }
   Direction1D flipped() const { return Value(value_ ^ 1); }
 
@@ -94,7 +92,7 @@ class Direction1D
   bool operator>=(const Direction1D& d) const { return value_ >= d.value_; }
 
  private:
-  unsigned char value_ = Low;
+  const unsigned char value_ = Low;
 };
 
 // Models the axis orientation in two dimensional space.  The
@@ -114,15 +112,13 @@ class Orientation2D
   // [West / East -> Horizontal] [South / North -> Vertical]
   constexpr explicit Orientation2D(const Direction2D& other);
 
-  Orientation2D& operator=(const Orientation2D& other) = default;
-
   constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Horizontal -> Vertical] [Vertical -> Horizontal]
   Orientation2D turn_90() const { return Value(value_ ^ 1); }
 
   // [Horizontal: Low->West, High->East] [Vertical: Low->South, High->North]
-  constexpr Direction2D getDirection(const Direction1D& dir) const;
+  constexpr Direction2D getDirection(Direction1D dir) const;
 
   bool operator==(const Orientation2D& d) const { return value_ == d.value_; }
   bool operator!=(const Orientation2D& d) const { return value_ != d.value_; }
@@ -132,7 +128,7 @@ class Orientation2D
   bool operator>=(const Orientation2D& d) const { return value_ >= d.value_; }
 
  private:
-  unsigned char value_ = Horizontal;
+  const unsigned char value_ = Horizontal;
 };
 
 // Models a direction in two dimensional space.  The possible values
@@ -151,8 +147,6 @@ class Direction2D
   constexpr Direction2D() = default;
   constexpr Direction2D(const Direction2D& other) = default;
   constexpr Direction2D(const Value value) : value_(value) {}
-
-  Direction2D& operator=(const Direction2D& other) = default;
 
   bool operator==(const Direction2D& d) const { return value_ == d.value_; }
   bool operator!=(const Direction2D& d) const { return value_ != d.value_; }
@@ -184,7 +178,7 @@ class Direction2D
   bool is_negative() const { return !is_positive(); }
 
  private:
-  unsigned char value_ = West;
+  const unsigned char value_ = West;
 };
 
 // This is axis orientation in three dimensional space.  This implicitly
@@ -205,12 +199,10 @@ class Orientation3D
   constexpr explicit Orientation3D(const Direction2D& other);
   constexpr explicit Orientation3D(const Direction3D& other);
 
-  Orientation3D& operator=(const Orientation3D& other) = default;
-
   constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Proximal: Low->down, High->Up] [others as Orientation2D]
-  constexpr Direction3D getDirection(const Direction1D& dir) const;
+  constexpr Direction3D getDirection(Direction1D dir) const;
 
   bool operator==(const Orientation3D&& d) const { return value_ == d.value_; }
   bool operator!=(const Orientation3D&& d) const { return value_ != d.value_; }
@@ -220,7 +212,7 @@ class Orientation3D
   bool operator>=(const Orientation3D&& d) const { return value_ >= d.value_; }
 
  private:
-  unsigned char value_ = Orientation2D::Horizontal;
+  const unsigned char value_ = Orientation2D::Horizontal;
 };
 
 // Models a direction in three dimensional space.  This implicitly
@@ -241,8 +233,6 @@ class Direction3D
   constexpr Direction3D(const Direction2D::Value value) : value_(value) {}
   constexpr Direction3D(const Value value) : value_(value) {}
 
-  Direction3D& operator=(const Direction3D& other) = default;
-
   bool operator==(const Direction3D& d) const { return value_ == d.value_; }
   bool operator!=(const Direction3D& d) const { return value_ != d.value_; }
   bool operator<(const Direction3D& d) const { return value_ < d.value_; }
@@ -261,7 +251,7 @@ class Direction3D
   bool is_negative() const { return !is_positive(); }
 
  private:
-  unsigned char value_ = Direction2D::West;
+  const unsigned char value_ = Direction2D::West;
 };
 
 constexpr Direction1D::Direction1D(const Direction2D& other) : value_(other & 1)
@@ -277,7 +267,7 @@ constexpr Orientation2D::Orientation2D(const Direction2D& other)
 {
 }
 
-constexpr Direction2D Orientation2D::getDirection(const Direction1D& dir) const
+constexpr Direction2D Orientation2D::getDirection(Direction1D dir) const
 {
   return Direction2D(Direction2D::Value((value_ << 1) + dir));
 }
@@ -292,7 +282,7 @@ constexpr Orientation3D::Orientation3D(const Direction3D& other)
 {
 }
 
-constexpr Direction3D Orientation3D::getDirection(const Direction1D& dir) const
+constexpr Direction3D Orientation3D::getDirection(Direction1D dir) const
 {
   return Direction3D(Direction3D::Value((value_ << 1) + dir));
 }

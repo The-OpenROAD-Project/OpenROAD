@@ -1405,10 +1405,10 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   return n_aps;
 }
 
-void FlexPA::genInstAccessPoints(frInst* unique_inst)
+void FlexPA::genInstAccessPoints(frInst* inst)
 {
   ProfileTask profile("PA:uniqueInstance");
-  for (auto& inst_term : unique_inst->getInstTerms()) {
+  for (auto& inst_term : inst->getInstTerms()) {
     // only do for normal and clock terms
     if (isSkipInstTerm(inst_term.get())) {
       continue;
@@ -1437,19 +1437,21 @@ void FlexPA::genAllAccessPoints()
 
   const std::vector<frInst*>& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {  // NOLINT
+  for (int i = 0; i < (int) unique.size(); i++) {  // NOLINT
     try {
+      frInst* inst = unique[i];
+
       // only do for core and block cells
-      if (!isStdCell(unique_inst) && !isMacroCell(unique_inst)) {
+      if (!isStdCell(inst) && !isMacroCell(inst)) {
         continue;
       }
 
-      genInstAccessPoints(unique_inst);
+      genInstAccessPoints(inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
 
-      int inst_terms_cnt = static_cast<int>(unique_inst->getInstTerms().size());
+      int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
 #pragma omp critical
       for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;

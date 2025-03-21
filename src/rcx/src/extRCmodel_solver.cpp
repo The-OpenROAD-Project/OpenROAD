@@ -199,7 +199,7 @@ uint extRCModel::readRCvalues(const char* corner,
   extMetRCTable* met_rc = getMetRCTable(corner_index);
   AthPool<extDistRC>* rcPool = met_rc->getRCPool();
 
-  extMeasure m(nullptr);
+  extMeasure m(NULL);
   m._diagModel = 1;
   // DELETE uint openWireNumber = 1;
   // DELETE int n = 0;
@@ -303,7 +303,7 @@ uint extRCModel::readRCvalues(const char* corner,
               wLen,
               fullPatternName);
     }
-    // if (strstr(netName, "cntxM") != nullptr)
+    // if (strstr(netName, "cntxM") != NULL)
     //  continue;
 
     extDistRC* rc = rcPool->alloc();
@@ -480,7 +480,7 @@ uint extRCModel::allocateTables(uint m, uint met, uint diagModel)
 {
   double dbFactor = 1.0;
   uint cnt = 0;
-  Ath__array1D<double>* wTable = nullptr;
+  Ath__array1D<double>* wTable = NULL;
 
   _modelTable[m]->allocOverTable(met, wTable, dbFactor);
   _modelTable[m]->allocOverUnderTable(met, false, wTable, dbFactor);
@@ -499,35 +499,35 @@ uint extRCModel::allocateTables(uint m, uint met, uint diagModel)
 extDistWidthRCTable*** extMetRCTable::allocTable()
 {
   extDistWidthRCTable*** table = new extDistWidthRCTable**[_layerCnt];
-  if (table == nullptr) {
+  if (table == NULL) {
     fprintf(stderr,
             "Cannot allocate memory for oblject: extDistWidthRCTable\n");
     exit(0);
   }
   for (uint ii = 0; ii < _layerCnt; ii++) {
     table[ii] = new extDistWidthRCTable*[_wireCnt];
-    if (table[ii] == nullptr) {
+    if (table[ii] == NULL) {
       fprintf(stderr,
               "Cannot allocate memory for oblject: extDistWidthRCTable\n");
       exit(0);
     }
     for (uint jj = 0; jj < _wireCnt; jj++) {
-      table[ii][jj] = nullptr;
+      table[ii][jj] = NULL;
     }
   }
   return table;
 }
 void extMetRCTable::deleteTable(extDistWidthRCTable*** table)
 {
-  if (table == nullptr)
+  if (table == NULL)
     return;
 
   for (uint ii = 0; ii < _layerCnt; ii++) {
-    if (table[ii] == nullptr)
+    if (table[ii] == NULL)
       continue;
 
     for (uint jj = 0; jj < _wireCnt; jj++) {
-      if (table[ii][jj] != nullptr)
+      if (table[ii][jj] != NULL)
         delete table[ii][jj];
     }
     delete table[ii];

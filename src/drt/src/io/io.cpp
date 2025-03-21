@@ -123,34 +123,34 @@ void io::Parser::setTracks(odb::dbBlock* block)
   }
 }
 
-frInst* io::Parser::setInst(odb::dbInst* db_inst)
+void io::Parser::setInst(odb::dbInst* inst)
 {
-  frMaster* master
-      = getDesign()->name2master_.at(db_inst->getMaster()->getName());
-  auto inst = std::make_unique<frInst>(db_inst->getName(), master, db_inst);
+  frMaster* master = getDesign()->name2master_.at(inst->getMaster()->getName());
+  auto uInst = std::make_unique<frInst>(inst->getName(), master, inst);
+  auto tmpInst = uInst.get();
 
   int x, y;
-  db_inst->getLocation(x, y);
-  inst->setOrigin(Point(x, y));
-  inst->setOrient(db_inst->getOrient());
+  inst->getLocation(x, y);
+  tmpInst->setOrigin(Point(x, y));
+  tmpInst->setOrient(inst->getOrient());
   int numInstTerms = 0;
-  inst->setPinAccessIdx(db_inst->getPinAccessIdx());
-  for (auto& term : inst->getMaster()->getTerms()) {
+  tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
+  for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
+    auto term = uTerm.get();
     std::unique_ptr<frInstTerm> instTerm
-        = std::make_unique<frInstTerm>(inst.get(), term.get());
+        = std::make_unique<frInstTerm>(tmpInst, term);
     instTerm->setIndexInOwner(numInstTerms++);
     int pinCnt = term->getPins().size();
     instTerm->setAPSize(pinCnt);
-    inst->addInstTerm(std::move(instTerm));
+    tmpInst->addInstTerm(std::move(instTerm));
   }
-  for (auto& blk : inst->getMaster()->getBlockages()) {
+  for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
+    auto blk = uBlk.get();
     std::unique_ptr<frInstBlockage> instBlk
-        = std::make_unique<frInstBlockage>(inst.get(), blk.get());
-    inst->addInstBlockage(std::move(instBlk));
+        = std::make_unique<frInstBlockage>(tmpInst, blk);
+    tmpInst->addInstBlockage(std::move(instBlk));
   }
-  frInst* raw_inst = inst.get();
-  getBlock()->addInst(std::move(inst));
-  return raw_inst;
+  getBlock()->addInst(std::move(uInst));
 }
 
 void io::Parser::setInsts(odb::dbBlock* block)
@@ -1244,7 +1244,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
     }
   }
   for (auto db_inst : db->getChip()->getBlock()->getInsts()) {
-    auto inst = getBlock()->findInst(db_inst);
+    auto inst = getBlock()->findInst(db_inst->getName());
     if (inst == nullptr) {
       continue;
     }
@@ -3089,7 +3089,7 @@ void io::Parser::updateDesign()
   auto block = db_->getChip()->getBlock();
   getBlock()->removeDeletedInsts();
   for (auto db_inst : block->getInsts()) {
-    auto inst = getBlock()->findInst(db_inst);
+    auto inst = getBlock()->findInst(db_inst->getName());
     if (inst == nullptr) {
       setInst(db_inst);
     }

@@ -37,7 +37,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "dpl/Grid.h"
+#include "Grid.h"
 
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
@@ -45,8 +45,8 @@
 #include <vector>
 
 #include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
-#include "dpl/Padding.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -209,11 +209,11 @@ Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 }
 
 void Grid::visitCellPixels(
-    GridNode& cell,
+    Cell& cell,
     bool padded,
     const std::function<void(Pixel* pixel)>& visitor) const
 {
-  dbInst* inst = cell.getDbInst();
+  dbInst* inst = cell.db_inst_;
   auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
   const Rect core = getCore();
@@ -253,12 +253,12 @@ void Grid::visitCellPixels(
 }
 
 void Grid::visitCellBoundaryPixels(
-    GridNode& cell,
+    Cell& cell,
     const std::function<
         void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
     const
 {
-  dbInst* inst = cell.getDbInst();
+  dbInst* inst = cell.db_inst_;
 
   auto visit = [&visitor, this](const GridX x_start,
                                 const GridX x_end,
@@ -310,7 +310,7 @@ void Grid::visitCellBoundaryPixels(
                "hybrid",
                1,
                "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
-               cell.getDbInst()->getName(),
+               cell.name(),
                cell.isHybrid(),
                grid_rect.ylo,
                grid_rect.yhi);
@@ -319,56 +319,69 @@ void Grid::visitCellBoundaryPixels(
   }
 }
 
-void Grid::erasePixel(GridNode* cell)
+void Grid::erasePixel(Cell* cell)
 {
-  if (!(cell->isFixed() || !cell->isPlaced())) {
+  if (!(cell->isFixed() || !cell->is_placed_)) {
     const auto grid_rect = gridCoveringPadded(cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
                "Checking cell {} isHybrid {}",
-               cell->getDbInst()->getName(),
+               cell->name(),
                cell->isHybrid());
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
                "Checking cell {} in rows. Y start {} y end {}",
-               cell->getDbInst()->getName(),
+               cell->name(),
                grid_rect.ylo,
                grid_rect.yhi);
 
     for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
       for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
         Pixel* pixel = gridPixel(x, y);
-        if (pixel == nullptr || pixel->cell != cell) {
+        if (nullptr == pixel) {
           continue;
         }
         pixel->cell = nullptr;
         pixel->util = 0;
       }
     }
+    cell->is_placed_ = false;
+    cell->hold_ = false;
   }
 }
 
-void Grid::paintPixel(GridNode* cell, GridX grid_x, GridY grid_y)
+void Grid::paintPixel(Cell* cell, GridX grid_x, GridY grid_y)
 {
-  assert(!cell->isPlaced());
+  assert(!cell->is_placed_);
   GridX x_end = grid_x + gridPaddedWidth(cell);
   GridY grid_height = gridHeight(cell);
   GridY y_end = grid_y + grid_height;
 
+  setGridPaddedLoc(cell, grid_x, grid_y);
+  cell->is_placed_ = true;
+
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
       Pixel* pixel = gridPixel(x, y);
-      pixel->cell = cell;
-      pixel->util = 1.0;
+      if (pixel->cell) {
+        logger_->error(
+            DPL, 13, "Cannot paint grid because it is already occupied.");
+      } else {
+        pixel->cell = cell;
+        pixel->util = 1.0;
+      }
     }
   }
+
+  cell->orient_ = gridPixel(grid_x, grid_y)
+                      ->sites.at(cell->db_inst_->getMaster()->getSite());
 }
 
-GridX Grid::gridPaddedWidth(const GridNode* cell) const
+GridX Grid::gridPaddedWidth(const Cell* cell) const
 {
   return GridX{divCeil(padding_->paddedWidth(cell).v, getSiteWidth().v)};
 }
@@ -389,16 +402,16 @@ GridY Grid::gridHeight(odb::dbMaster* master) const
   return GridY{static_cast<int>(site->getRowPattern().size())};
 }
 
-GridY Grid::gridHeight(const GridNode* cell) const
+GridY Grid::gridHeight(const Cell* cell) const
 {
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
-    return GridY{max(1, divCeil(cell->dy().v, row_height.v))};
+    return GridY{max(1, divCeil(cell->height_.v, row_height.v))};
   }
-  if (!cell->getDbInst()) {
+  if (!cell->db_inst_) {
     return GridY{1};
   }
-  auto site = cell->getDbInst()->getMaster()->getSite();
+  auto site = cell->db_inst_->getMaster()->getSite();
   if (!site->hasRowPattern()) {
     return GridY{1};
   }
@@ -416,15 +429,14 @@ GridX Grid::gridX(DbuX x) const
   return GridX{x.v / getSiteWidth().v};
 }
 
-GridX Grid::gridX(const GridNode* cell) const
+GridX Grid::gridX(const Cell* cell) const
 {
-  return gridX(cell->xMin());
+  return gridX(cell->x_);
 }
 
-GridX Grid::gridPaddedX(const GridNode* cell) const
+GridX Grid::gridPaddedX(const Cell* cell) const
 {
-  return gridX(cell->xMin()
-               - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
+  return gridX(cell->x_ - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
 }
 
 GridY Grid::getRowCount(DbuY row_height) const
@@ -440,7 +452,7 @@ GridRect Grid::gridCovering(const Rect& rect) const
           .yhi = gridEndY(DbuY{rect.yMax()})};
 }
 
-GridRect Grid::gridCovering(const GridNode* cell) const
+GridRect Grid::gridCovering(const Cell* cell) const
 {
   return {.xlo = gridX(cell),
           .ylo = gridSnapDownY(cell),
@@ -448,7 +460,7 @@ GridRect Grid::gridCovering(const GridNode* cell) const
           .yhi = gridEndY(cell)};
 }
 
-GridRect Grid::gridCoveringPadded(const GridNode* cell) const
+GridRect Grid::gridCoveringPadded(const Cell* cell) const
 {
   return {.xlo = gridPaddedX(cell),
           .ylo = gridSnapDownY(cell),
@@ -498,14 +510,14 @@ GridY Grid::gridEndY(DbuY y) const
   return GridY{static_cast<int>(it - row_index_to_y_dbu_.begin())};
 }
 
-GridY Grid::gridSnapDownY(const GridNode* cell) const
+GridY Grid::gridSnapDownY(const Cell* cell) const
 {
-  return gridSnapDownY(cell->yMin());
+  return gridSnapDownY(cell->y_);
 }
 
-GridY Grid::gridRoundY(const GridNode* cell) const
+GridY Grid::gridRoundY(const Cell* cell) const
 {
-  return gridRoundY(cell->yMin());
+  return gridRoundY(cell->y_);
 }
 
 DbuY Grid::gridYToDbu(GridY y) const
@@ -516,28 +528,34 @@ DbuY Grid::gridYToDbu(GridY y) const
   return row_index_to_y_dbu_.at(y.v);
 }
 
-GridX Grid::gridPaddedEndX(const GridNode* cell) const
+void Grid::setGridPaddedLoc(Cell* cell, GridX x, GridY y) const
+{
+  cell->x_ = gridToDbu(x + padding_->padLeft(cell), getSiteWidth());
+  cell->y_ = gridYToDbu(y);
+}
+
+GridX Grid::gridPaddedEndX(const Cell* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x = cell->xMin() + cell->dx()
-                     + gridToDbu(padding_->padRight(cell), site_width);
+  const DbuX end_x
+      = cell->xMax() + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
-GridX Grid::gridEndX(const GridNode* cell) const
+GridX Grid::gridEndX(const Cell* cell) const
 {
-  return GridX{divCeil((cell->xMin() + cell->dx()).v, getSiteWidth().v)};
+  return GridX{divCeil((cell->x_ + cell->width_).v, getSiteWidth().v)};
 }
 
-GridY Grid::gridEndY(const GridNode* cell) const
+GridY Grid::gridEndY(const Cell* cell) const
 {
-  return gridEndY(cell->yMin() + cell->dy());
+  return gridEndY(cell->y_ + cell->height_);
 }
 
-bool Grid::cellFitsInCore(GridNode* cell) const
+bool Grid::cellFitsInCore(Cell* cell) const
 {
   return gridPaddedWidth(cell) <= getRowSiteCount()
-         && cell->dy().v <= core_.dy();
+         && cell->height_.v <= core_.dy();
 }
 
 void Grid::examineRows(dbBlock* block)

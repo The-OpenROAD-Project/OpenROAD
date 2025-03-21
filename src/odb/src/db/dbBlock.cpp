@@ -1627,50 +1627,6 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
-Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)
-{
-  Rect constraint_region;
-  const Rect& die_bounds = getDieArea();
-  if (edge == south) {
-    constraint_region = Rect(begin, die_bounds.yMin(), end, die_bounds.yMin());
-  } else if (edge == north) {
-    constraint_region = Rect(begin, die_bounds.yMax(), end, die_bounds.yMax());
-  } else if (edge == west) {
-    constraint_region = Rect(die_bounds.xMin(), begin, die_bounds.xMin(), end);
-  } else if (edge == east) {
-    constraint_region = Rect(die_bounds.xMax(), begin, die_bounds.xMax(), end);
-  }
-
-  return constraint_region;
-}
-
-void dbBlock::addBTermConstraintByDirection(dbIoType direction,
-                                            const Rect& constraint_region)
-{
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getIoType() == direction) {
-      bterm->setConstraintRegion(constraint_region);
-    }
-  }
-}
-
-void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
-                                    const Rect& constraint_region)
-{
-  for (dbBTerm* bterm : bterms) {
-    const auto& bterm_constraint = bterm->getConstraintRegion();
-    if (bterm_constraint && bterm_constraint.value() != constraint_region) {
-      getImpl()->getLogger()->error(
-          utl::ODB,
-          239,
-          "Pin {} is assigned to multiple constraints.",
-          bterm->getName());
-    } else {
-      bterm->setConstraintRegion(constraint_region);
-    }
-  }
-}
-
 dbSet<dbITerm> dbBlock::getITerms()
 {
   _dbBlock* block = (_dbBlock*) this;

@@ -353,9 +353,6 @@ class Opendp
   void mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
                           std::vector<IRDrop>& ir_drops);
   void prepareDecapAndGaps();
-  void placeCell(Cell* cell, GridX x, GridY y);
-  void unplaceCell(Cell* cell);
-  void setGridPaddedLoc(Cell* cell, GridX x, GridY y);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;

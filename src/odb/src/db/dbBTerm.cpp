@@ -75,7 +75,6 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
   _name = nullptr;
   _sta_vertex_id = 0;
   _constraint_region.mergeInit();
-  _is_mirrored = false;
 }
 
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
@@ -209,9 +208,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
     stream << bterm._mirrored_bterm;
   }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
-    stream << bterm._is_mirrored;
-  }
 
   return stream;
 }
@@ -243,9 +239,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   }
   if (bterm.getDatabase()->isSchema(db_schema_bterm_mirrored_pin)) {
     stream >> bterm._mirrored_bterm;
-  }
-  if (bterm.getDatabase()->isSchema(db_schema_bterm_is_mirrored)) {
-    stream >> bterm._is_mirrored;
   }
 
   return stream;
@@ -926,23 +919,6 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
   }
 }
 
-void _dbBTerm::setMirroredConstraintRegion(const Rect& region, _dbBlock* block)
-{
-  _dbBTerm* bterm = (_dbBTerm*) this;
-  const Rect& die_bounds = block->_die_area;
-  int begin = region.dx() == 0 ? region.yMin() : region.xMin();
-  int end = region.dx() == 0 ? region.yMax() : region.xMax();
-  Direction2D edge;
-  if (region.dx() == 0) {
-    edge = region.xMin() == die_bounds.xMin() ? west : east;
-  } else {
-    edge = region.yMin() == die_bounds.yMin() ? south : north;
-  }
-  const Rect mirrored_region
-      = ((dbBlock*) block)->findConstraintRegion(edge, begin, end);
-  bterm->_constraint_region = mirrored_region;
-}
-
 void _dbBTerm::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
@@ -981,14 +957,6 @@ void dbBTerm::setConstraintRegion(const Rect& constraint_region)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   bterm->_constraint_region = constraint_region;
-
-  dbBTerm* mirrored_bterm = getMirroredBTerm();
-  if (mirrored_bterm != nullptr && !bterm->_constraint_region.isInverted()
-      && mirrored_bterm->getConstraintRegion() == std::nullopt) {
-    _dbBlock* block = (_dbBlock*) getBlock();
-    _dbBTerm* mirrored = (_dbBTerm*) mirrored_bterm;
-    mirrored->setMirroredConstraintRegion(bterm->_constraint_region, block);
-  }
 }
 
 std::optional<Rect> dbBTerm::getConstraintRegion()
@@ -1002,32 +970,11 @@ std::optional<Rect> dbBTerm::getConstraintRegion()
   return bterm->_constraint_region;
 }
 
-void dbBTerm::resetConstraintRegion()
-{
-  _dbBTerm* bterm = (_dbBTerm*) this;
-  bterm->_constraint_region.mergeInit();
-}
-
 void dbBTerm::setMirroredBTerm(dbBTerm* mirrored_bterm)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
 
   bterm->_mirrored_bterm = mirrored_bterm->getImpl()->getOID();
-  _dbBTerm* mirrored = (_dbBTerm*) mirrored_bterm;
-  mirrored->_is_mirrored = true;
-  mirrored->_mirrored_bterm = bterm->getImpl()->getOID();
-
-  if (!bterm->_constraint_region.isInverted()
-      && mirrored_bterm->getConstraintRegion() == std::nullopt) {
-    _dbBlock* block = (_dbBlock*) getBlock();
-    mirrored->setMirroredConstraintRegion(bterm->_constraint_region, block);
-  } else if (mirrored_bterm->getConstraintRegion() != std::nullopt) {
-    getImpl()->getLogger()->warn(utl::ODB,
-                                 26,
-                                 "Pin {} is mirrored with another pin. The "
-                                 "constraint for this pin will be dropped.",
-                                 mirrored_bterm->getName());
-  }
 }
 
 dbBTerm* dbBTerm::getMirroredBTerm()
@@ -1041,18 +988,6 @@ dbBTerm* dbBTerm::getMirroredBTerm()
 
   _dbBTerm* mirrored_bterm = block->_bterm_tbl->getPtr(bterm->_mirrored_bterm);
   return (dbBTerm*) mirrored_bterm;
-}
-
-bool dbBTerm::hasMirroredBTerm()
-{
-  _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_mirrored_bterm != 0 && !bterm->_is_mirrored;
-}
-
-bool dbBTerm::isMirrored()
-{
-  _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->_is_mirrored;
 }
 
 }  // namespace odb

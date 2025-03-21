@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "dpl/Grid.h"
+#include "Grid.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
@@ -75,7 +75,7 @@ struct Master
   std::vector<Edge> edges_;
 };
 
-struct Cell : public GridNode
+struct Cell
 {
  public:
   // setters
