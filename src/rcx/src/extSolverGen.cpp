@@ -30,6 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
+
+#include "parse.h"
 #include "rcx/extModelGen.h"
 
 namespace rcx {
@@ -138,7 +140,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
 
         setTargetParams(w, s, 0.0, t, h);
         measurePatternVar_3D(
-            _met, top_width, bot_width, thickness, _wireCnt, NULL);
+            _met, top_width, bot_width, thickness, _wireCnt, nullptr);
 
         cnt++;
         if (jj == 0 && _overMet <= 0 && _underMet == 0) {
@@ -159,7 +161,7 @@ uint extSolverGen::widthsSpacingsLoop(uint diagMet)
 
           setTargetParams(w, s, 0.0, t, h, diag_min_width, diag_s);
           measurePatternVar_3D(
-              _met, top_width, bot_width, thickness, _wireCnt, NULL);
+              _met, top_width, bot_width, thickness, _wireCnt, nullptr);
           cnt++;
           if (_wireCnt == 1)
             break;
@@ -396,7 +398,7 @@ bool extSolverGen::measurePatternVar_3D(int met,
 
   FILE* wfp = mkPatternFile();
 
-  if (wfp == NULL)
+  if (wfp == nullptr)
     return false;  // should be an exception!! and return!
 
   double maxHeight = adjustMasterDielectricsForHeight(met, thicknessChange);
@@ -481,7 +483,7 @@ double extSolverGen::writeWirePatterns(FILE* fp,
 {
   // assume _wireCnt>=5
   extMasterConductor* m = getMasterConductor(_met);
-  extMasterConductor* mOver = NULL;
+  extMasterConductor* mOver = nullptr;
   if (_diagModel > 0)
     mOver = getMasterConductor(_overMet);
 
@@ -563,7 +565,7 @@ double extSolverGen::writeWirePatterns_w3(FILE* fp,
                                           double& max_x)
 {
   extMasterConductor* m = getMasterConductor(_met);
-  extMasterConductor* mOver = NULL;
+  extMasterConductor* mOver = nullptr;
   if (_diagModel > 0)
     mOver = getMasterConductor(_overMet);
 
@@ -719,7 +721,7 @@ FILE* extSolverGen::mkPatternFile()
 {
   _parser->mkDirTree(_wireDirName, "/");
 
-  FILE* fp = openFile(_wireDirName, _wireFileName, NULL, "w");
+  FILE* fp = openFile(_wireDirName, _wireFileName, nullptr, "w");
   if (fp == nullptr) {
     return nullptr;
   }

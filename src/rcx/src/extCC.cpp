@@ -33,19 +33,19 @@
 #include <algorithm>
 #include <vector>
 
-#include "rcx/gseq.h"
-#include "wire.h"
+#include "grids.h"
+#include "gseq.h"
 
 namespace rcx {
 
-uint Ath__track::trackContextOn(int orig,
-                                int end,
-                                int base,
-                                int width,
-                                uint firstContextTrack,
-                                Ath__array1D<int>* context)
+uint Track::trackContextOn(int orig,
+                           int end,
+                           int base,
+                           int width,
+                           uint firstContextTrack,
+                           Ath__array1D<int>* context)
 {
-  Ath__wire* swire = getTargetWire();
+  Wire* swire = getTargetWire();
   if (!swire) {
     return 0;
   }
@@ -67,7 +67,7 @@ uint Ath__track::trackContextOn(int orig,
   return p2 - p1;
 }
 
-void Ath__grid::gridContextOn(int orig, int len, int base, int width)
+void Grid::gridContextOn(int orig, int len, int base, int width)
 {
   Ath__array1D<int>* context = _gridtable->contextArray()[_level];
   context->resetCnt(0);
@@ -75,7 +75,7 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
   int end = orig + len;
   uint lowTrack = getMinMaxTrackNum(orig);
   uint hiTrack = getMinMaxTrackNum(orig + len);
-  Ath__track *track, *btrack;
+  Track *track, *btrack;
   uint jj;
   uint firstContextTrack = 1;
   bool tohi = _gridtable->targetHighTracks() > 0 ? true : false;
@@ -93,7 +93,7 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
   context->add(end);
 }
 
-void Ath__grid::contextsOn(int orig, int len, int base, int width)
+void Grid::contextsOn(int orig, int len, int base, int width)
 {
   uint sdepth = _gridtable->contextDepth();
   if (sdepth == 0) {
@@ -111,19 +111,19 @@ void Ath__grid::contextsOn(int orig, int len, int base, int width)
 
 // Extraction Coupling Caps
 
-uint Ath__track::findOverlap(Ath__wire* origWire,
-                             uint ccThreshold,
-                             Ath__array1D<Ath__wire*>* wTable,
-                             Ath__array1D<Ath__wire*>* nwTable,
-                             Ath__grid* ccGrid,
-                             Ath__array1D<Ath__wire*>* ccTable,
-                             uint met,
-                             rcx::CoupleAndCompute coupleAndCompute,
-                             void* compPtr)
+uint Track::findOverlap(Wire* origWire,
+                        uint ccThreshold,
+                        Ath__array1D<Wire*>* wTable,
+                        Ath__array1D<Wire*>* nwTable,
+                        Grid* ccGrid,
+                        Ath__array1D<Wire*>* ccTable,
+                        uint met,
+                        rcx::CoupleAndCompute coupleAndCompute,
+                        void* compPtr)
 {
   rcx::CoupleOptions coupleOptions{};
 
-  AthPool<Ath__wire>* wirePool = _grid->getWirePoolPtr();
+  AthPool<Wire>* wirePool = _grid->getWirePoolPtr();
 
   uint NoPowerTarget = _grid->getGridTable()->noPowerTarget();
   bool srcMarked = origWire->getNet()->isMarked();
@@ -132,7 +132,7 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
   bool needMarkedNetW2 = !allNet && TargetHighMarkedNet && !srcMarked;
   int TTTnoInNetCC = 0;
   int len1, len2, len3, rc;
-  Ath__wire* w2 = getTargetWire();
+  Wire* w2 = getTargetWire();
   bool targetHiTrack
       = _grid->getGridTable()->targetHighTracks() > 0 ? true : false;
   bool targetReversed = _grid->getGridTable()->targetTrackReversed();
@@ -143,7 +143,7 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
   bool notExtractedW2;
   int exid;
   for (uint ii = 0; ii < last; ii++) {
-    Ath__wire* w1 = wTable->get(ii);
+    Wire* w1 = wTable->get(ii);
 
     if (w2 == nullptr) {
       nwTable->add(w1);
@@ -175,10 +175,10 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
       if (inThreshold == true && rc == 0) {
         if (len1 > 0) {
           // create empty wire and ADD on emptyTable!
-          Ath__wire* newEmptyWire = origWire->makeWire(wirePool, w1->_xy, len1);
+          Wire* newEmptyWire = origWire->makeWire(wirePool, w1->_xy, len1);
           nwTable->add(newEmptyWire);
         }
-        Ath__wire* wtwo = w2->_srcId ? _grid->getWirePtr(w2->_srcId) : w2;
+        Wire* wtwo = w2->_srcId ? _grid->getWirePtr(w2->_srcId) : w2;
         // create cc and ADD on ccTable
         if (!notExtractedW2 && len2 > 0 && !skipCCgen
             && (!TTTnoInNetCC || wtwo->isPower() || origWire->isPower()
@@ -186,13 +186,12 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
             && (!targetReversed || wtwo->isPower()
                 || !wtwo->getNet()->isMarked())) {
           if (coupleAndCompute == nullptr) {
-            Ath__wire* ovWire
-                = origWire->makeCoupleWire(ccGrid->getWirePoolPtr(),
-                                           targetHiTrack,
-                                           wtwo,
-                                           w1->_xy + len1,
-                                           len2,
-                                           ccGrid->defaultWireType());
+            Wire* ovWire = origWire->makeCoupleWire(ccGrid->getWirePoolPtr(),
+                                                    targetHiTrack,
+                                                    wtwo,
+                                                    w1->_xy + len1,
+                                                    len2,
+                                                    ccGrid->defaultWireType());
 
             if (ovWire == nullptr) {
               _grid->getGridTable()->incrCCshorts();
@@ -202,8 +201,8 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
               ovWire->_flags = ccGrid->defaultWireType();
             }
           } else {
-            Ath__wire* topwire = targetHiTrack ? wtwo : origWire;
-            Ath__wire* botwire = targetHiTrack ? origWire : wtwo;
+            Wire* topwire = targetHiTrack ? wtwo : origWire;
+            Wire* botwire = targetHiTrack ? origWire : wtwo;
             int dist = topwire->_base - (botwire->_base + botwire->_width);
 
             if (dist > 0) {
@@ -287,13 +286,13 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
   return nwTable->getCnt();
 }
 
-uint Ath__track::initTargetTracks(uint srcTrack, uint trackDist, bool tohi)
+uint Track::initTargetTracks(uint srcTrack, uint trackDist, bool tohi)
 {
   uint delt = 0;
   uint trackFound = 0;
   bool noPowerTarget
       = _grid->getGridTable()->noPowerTarget() > 0 ? true : false;
-  Ath__track* tstrack = this;
+  Track* tstrack = this;
   while (nextSubTrackInRange(tstrack, delt, trackDist, srcTrack, tohi)) {
     tstrack->initTargetWire(noPowerTarget);
     trackFound = 1;
@@ -301,12 +300,12 @@ uint Ath__track::initTargetTracks(uint srcTrack, uint trackDist, bool tohi)
   return trackFound;
 }
 
-Ath__track* Ath__track::nextTrackInRange(uint& delt,
-                                         uint trackDist,
-                                         uint srcTrack,
-                                         bool tohi)
+Track* Track::nextTrackInRange(uint& delt,
+                               uint trackDist,
+                               uint srcTrack,
+                               bool tohi)
 {
-  Ath__track* ttrack = nullptr;
+  Track* ttrack = nullptr;
   uint tgtTnum;
   while (ttrack == nullptr) {
     delt++;
@@ -322,17 +321,17 @@ Ath__track* Ath__track::nextTrackInRange(uint& delt,
   return ttrack;
 }
 
-int Ath__track::nextSubTrackInRange(Ath__track*& tstrack,
-                                    uint& delt,
-                                    uint trackDist,
-                                    uint srcTrack,
-                                    bool tohi)
+int Track::nextSubTrackInRange(Track*& tstrack,
+                               uint& delt,
+                               uint trackDist,
+                               uint srcTrack,
+                               bool tohi)
 {
   tstrack = getNextSubTrack(tstrack, tohi);
   if (tstrack) {
     return 1;
   }
-  Ath__track* ttrack = nextTrackInRange(delt, trackDist, srcTrack, tohi);
+  Track* ttrack = nextTrackInRange(delt, trackDist, srcTrack, tohi);
   if (ttrack == nullptr) {
     return 0;
   }
@@ -340,35 +339,35 @@ int Ath__track::nextSubTrackInRange(Ath__track*& tstrack,
   return 1;
 }
 
-uint Ath__track::couplingCaps(Ath__grid* ccGrid,
-                              uint srcTrack,
-                              uint trackDist,
-                              uint ccThreshold,
-                              Ath__array1D<uint>* ccIdTable,
-                              uint met,
-                              CoupleAndCompute coupleAndCompute,
-                              void* compPtr,
-                              bool ttttGetDgOverlap)
+uint Track::couplingCaps(Grid* ccGrid,
+                         uint srcTrack,
+                         uint trackDist,
+                         uint ccThreshold,
+                         Ath__array1D<uint>* ccIdTable,
+                         uint met,
+                         CoupleAndCompute coupleAndCompute,
+                         void* compPtr,
+                         bool ttttGetDgOverlap)
 {
-  Ath__track* tstrack;
+  Track* tstrack;
   bool tohi = _grid->getGridTable()->targetHighTracks() > 0 ? true : false;
   initTargetTracks(srcTrack, trackDist, tohi);
 
   uint dir = _grid->getDir();
   rcx::CoupleOptions coupleOptions{};
 
-  Ath__array1D<Ath__wire*> w1Table;
-  Ath__array1D<Ath__wire*> w2Table;
-  Ath__array1D<Ath__wire*>*wTable, *nwTable, *twTable;
-  Ath__array1D<Ath__wire*> ccTable;
+  Ath__array1D<Wire*> w1Table;
+  Ath__array1D<Wire*> w2Table;
+  Ath__array1D<Wire*>*wTable, *nwTable, *twTable;
+  Ath__array1D<Wire*> ccTable;
 
   bool useDbSdb = _grid->getGridTable()->usingDbSdb();
   int noPowerSource = _grid->getGridTable()->noPowerSource();
   uint TargetHighMarkedNet = _grid->getGridTable()->targetHighMarkedNet();
   bool allNet = _grid->getGridTable()->allNet();
-  AthPool<Ath__wire>* wirePool = _grid->getWirePoolPtr();
+  AthPool<Wire>* wirePool = _grid->getWirePoolPtr();
   uint wireCnt = 0;
-  Ath__wire* origWire = nullptr;
+  Wire* origWire = nullptr;
   uint delt;
   int exid;
 
@@ -379,9 +378,9 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
     coupleAndCompute(coupleOptions, compPtr);
   }
   int nexy, nelen;
-  Ath__wire* wire = nullptr;
-  Ath__wire* pwire = nullptr;
-  Ath__wire* nwire = getNextWire(wire);
+  Wire* wire = nullptr;
+  Wire* pwire = nullptr;
+  Wire* nwire = getNextWire(wire);
   for (wire = nwire; wire; pwire = wire, wire = nwire) {
     nwire = getNextWire(wire);
     if (!wire->isPower() && nwire && nwire->isPower()
@@ -441,7 +440,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
     if (nelen <= 0) {  // or nelen < wire->_width
       continue;
     }
-    Ath__wire* newEmptyWire = wire->makeWire(wirePool, nexy, nelen);
+    Wire* newEmptyWire = wire->makeWire(wirePool, nexy, nelen);
     wTable->add(newEmptyWire);
 
     delt = 0;
@@ -473,7 +472,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
       int wBoxId = 0;
 
       for (uint kk = 0; kk < wTable->getCnt(); kk++) {
-        Ath__wire* empty = wTable->get(kk);
+        Wire* empty = wTable->get(kk);
 
         coupleOptions[0] = met;
 
@@ -526,14 +525,14 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
   }
   if (coupleAndCompute == nullptr) {
     for (uint kk = 0; kk < ccTable.getCnt(); kk++) {
-      Ath__wire* v = ccTable.get(kk);
+      Wire* v = ccTable.get(kk);
       ccIdTable->add(v->_id);
     }
   }
   return wireCnt;
 }
 
-void Ath__gridTable::setDefaultWireType(uint v)
+void GridTable::setDefaultWireType(uint v)
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
     for (uint jj = 0; jj < _colCnt; jj++) {
@@ -546,11 +545,11 @@ void Ath__gridTable::setDefaultWireType(uint v)
   }
 }
 
-void Ath__track::getTrackWires(std::vector<Ath__wire*>& ctxwire)
+void Track::getTrackWires(std::vector<Wire*>& ctxwire)
 {
   uint midx;
-  Ath__wire* wire;
-  Ath__wire* srcwire;
+  Wire* wire;
+  Wire* srcwire;
   for (midx = 0; midx < _markerCnt; midx++) {
     wire = _marker[midx];
     while (wire) {
@@ -567,18 +566,18 @@ void Ath__track::getTrackWires(std::vector<Ath__wire*>& ctxwire)
 class compareAthWire
 {
  public:
-  bool operator()(Ath__wire* wire1, Ath__wire* wire2)
+  bool operator()(Wire* wire1, Wire* wire2)
   {
     return (wire1->getXY() < wire2->getXY() ? true : false);
   }
 };
 
 // FIXME MATT
-void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
-                                std::vector<Ath__wire*>& allWire)
+void Track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
+                           std::vector<Wire*>& allWire)
 {
-  std::vector<Ath__wire*> ctxwire;
-  Ath__track* track = nullptr;
+  std::vector<Wire*> ctxwire;
+  Track* track = nullptr;
   bool tohi = true;
   uint tcnt = 0;
   while ((track = getNextSubTrack(track, tohi))) {
@@ -593,7 +592,7 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
     std::sort(ctxwire.begin(), ctxwire.end(), compareAthWire());
   }
   uint jj;
-  Ath__wire* nwire;
+  Wire* nwire;
   uint xidx = 0;
   uint yidx = 1;
   uint lidx, bidx;
@@ -622,9 +621,9 @@ void Ath__track::buildDgContext(Ath__array1D<SEQ*>* dgContext,
   }
 }
 
-void Ath__grid::buildDgContext(int gridn, int base)
+void Grid::buildDgContext(int gridn, int base)
 {
-  std::vector<Ath__wire*> allCtxwire;
+  std::vector<Wire*> allCtxwire;
 
   uint btrackN = getMinMaxTrackNum(base);
   uint dgContextTrackRange = _gridtable->getCcFlag();
@@ -640,7 +639,7 @@ void Ath__grid::buildDgContext(int gridn, int base)
   for (tt = lowtrack; tt <= hitrack; tt++) {
     Ath__array1D<SEQ*>* dgContext
         = _gridtable->renewDgContext(gridn, dgContextTrackRange + tt);
-    Ath__track* ttrack = _trackTable[btrackN + tt];
+    Track* ttrack = _trackTable[btrackN + tt];
     if (!ttrack) {
       continue;
     }
@@ -648,13 +647,13 @@ void Ath__grid::buildDgContext(int gridn, int base)
         = ttrack->getBase();
     ttrack->buildDgContext(dgContext, allCtxwire);
   }
-  std::vector<Ath__wire*>::size_type jj;
+  std::vector<Wire*>::size_type jj;
   for (jj = 0; jj < allCtxwire.size(); jj++) {
     allCtxwire[jj]->_ext = 0;
   }
 }
 
-Ath__array1D<SEQ*>* Ath__gridTable::renewDgContext(uint gridn, uint trackn)
+Ath__array1D<SEQ*>* GridTable::renewDgContext(uint gridn, uint trackn)
 {
   Ath__array1D<SEQ*>* dgContext = _dgContextArray[gridn][trackn];
   for (uint ii = 0; ii < dgContext->getCnt(); ii++) {
@@ -670,7 +669,7 @@ Ath__array1D<SEQ*>* Ath__gridTable::renewDgContext(uint gridn, uint trackn)
   return dgContext;
 }
 
-void Ath__gridTable::buildDgContext(int base, uint level, uint dir)
+void GridTable::buildDgContext(int base, uint level, uint dir)
 {
   *_dgContextBaseLvl = level;
   *_dgContextLowLvl = (int) level - (int) *_dgContextDepth >= 1
@@ -699,13 +698,13 @@ void Ath__gridTable::buildDgContext(int base, uint level, uint dir)
   }
 }
 
-int Ath__grid::couplingCaps(int hiXY,
-                            uint couplingDist,
-                            uint& wireCnt,
-                            rcx::CoupleAndCompute coupleAndCompute,
-                            void* compPtr,
-                            int* limitArray,
-                            bool ttttGetDgOverlap)
+int Grid::couplingCaps(int hiXY,
+                       uint couplingDist,
+                       uint& wireCnt,
+                       rcx::CoupleAndCompute coupleAndCompute,
+                       void* compPtr,
+                       int* limitArray,
+                       bool ttttGetDgOverlap)
 {
   uint coupleTrackNum = couplingDist;  // EXT-OPTIMIZE
   uint ccThreshold = coupleTrackNum * _pitch;
@@ -738,7 +737,7 @@ int Ath__grid::couplingCaps(int hiXY,
       return baseXY;
     }
 
-    Ath__track* btrack = _trackTable[ii];
+    Track* btrack = _trackTable[ii];
     if (btrack == nullptr) {
       continue;
     }
@@ -750,7 +749,7 @@ int Ath__grid::couplingCaps(int hiXY,
       coupleAndCompute(coupleOptionsNull, compPtr);  // try print dgContext
     }
 
-    Ath__track* track = nullptr;
+    Track* track = nullptr;
     bool tohi = true;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
       _gridtable->setHandleEmptyOnly(false);
@@ -786,7 +785,7 @@ int Ath__grid::couplingCaps(int hiXY,
   return hiXY;
 }
 
-int Ath__grid::dealloc(int hiXY)
+int Grid::dealloc(int hiXY)
 {
   for (uint ii = _lastFreeTrack; ii <= _searchHiTrack; ii++) {
     int baseXY = _base + _pitch * ii;  // TO_VERIFY for continuation of track
@@ -795,12 +794,12 @@ int Ath__grid::dealloc(int hiXY)
       return baseXY;
     }
 
-    Ath__track* btrack = _trackTable[ii];
+    Track* btrack = _trackTable[ii];
     if (btrack == nullptr) {
       continue;
     }
 
-    Ath__track* track = nullptr;
+    Track* track = nullptr;
     bool tohi = true;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
       track->dealloc(_wirePoolPtr);
@@ -812,10 +811,10 @@ int Ath__grid::dealloc(int hiXY)
   return hiXY;
 }
 
-int Ath__gridTable::dealloc(uint dir, int hiXY)
+int GridTable::dealloc(uint dir, int hiXY)
 {
   for (uint jj = 1; jj < _colCnt; jj++) {
-    Ath__grid* netGrid = _gridTable[dir][jj];
+    Grid* netGrid = _gridTable[dir][jj];
     if (netGrid == nullptr) {
       continue;
     }
@@ -825,11 +824,11 @@ int Ath__gridTable::dealloc(uint dir, int hiXY)
   return hiXY;
 }
 
-int Ath__track::getBandWires(Ath__array1D<Ath__wire*>* bandWire)
+int Track::getBandWires(Ath__array1D<Wire*>* bandWire)
 {
   uint midx;
-  Ath__wire* wire;
-  Ath__wire* srcwire;
+  Wire* wire;
+  Wire* srcwire;
   int cnt = 0;
   for (midx = 0; midx < _markerCnt; midx++) {
     wire = _marker[midx];
@@ -846,11 +845,11 @@ int Ath__track::getBandWires(Ath__array1D<Ath__wire*>* bandWire)
   return cnt;
 }
 
-int Ath__grid::getBandWires(int hiXY,
-                            uint couplingDist,
-                            uint& wireCnt,
-                            Ath__array1D<Ath__wire*>* bandWire,
-                            int* limitArray)
+int Grid::getBandWires(int hiXY,
+                       uint couplingDist,
+                       uint& wireCnt,
+                       Ath__array1D<Wire*>* bandWire,
+                       int* limitArray)
 {
   uint coupleTrackNum = couplingDist;  // EXT-OPTIMIZE
   uint ccThreshold = coupleTrackNum * _pitch;
@@ -882,8 +881,8 @@ int Ath__grid::getBandWires(int hiXY,
   }
   int jj;
   bool tohi = true;
-  Ath__track* ttrack;
-  Ath__track* strack;
+  Track* ttrack;
+  Track* strack;
   bandWire->resetCnt(0);
 
   limitArray[0] = _lastFreeTrack;
@@ -910,21 +909,21 @@ int Ath__grid::getBandWires(int hiXY,
   return baseXY;
 }
 
-int Ath__gridTable::couplingCaps(int hiXY,
-                                 uint couplingDist,
-                                 uint dir,
-                                 uint& wireCnt,
-                                 rcx::CoupleAndCompute coupleAndCompute,
-                                 void* compPtr,
-                                 bool getBandWire,
-                                 int** limitArray)
+int GridTable::couplingCaps(int hiXY,
+                            uint couplingDist,
+                            uint dir,
+                            uint& wireCnt,
+                            rcx::CoupleAndCompute coupleAndCompute,
+                            void* compPtr,
+                            bool getBandWire,
+                            int** limitArray)
 {
   _ttttGetDgOverlap = true;
   setCCFlag(couplingDist);
 
   if (getBandWire) {
     if (_bandWire == nullptr) {
-      _bandWire = new Ath__array1D<Ath__wire*>(4096);
+      _bandWire = new Ath__array1D<Wire*>(4096);
     }
   } else {
     if (_bandWire) {
@@ -934,7 +933,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
   }
   int minExtracted = hiXY;
   for (uint jj = 1; jj < _colCnt; jj++) {
-    Ath__grid* netGrid = _gridTable[dir][jj];
+    Grid* netGrid = _gridTable[dir][jj];
     if (netGrid == nullptr) {
       continue;
     }
@@ -960,11 +959,11 @@ int Ath__gridTable::couplingCaps(int hiXY,
   return minExtracted;
 }
 
-int Ath__grid::initCouplingCapLoops(uint couplingDist,
-                                    rcx::CoupleAndCompute coupleAndCompute,
-                                    void* compPtr,
-                                    bool startSearchTrack,
-                                    int startXY)
+int Grid::initCouplingCapLoops(uint couplingDist,
+                               rcx::CoupleAndCompute coupleAndCompute,
+                               void* compPtr,
+                               bool startSearchTrack,
+                               int startXY)
 {
   uint TargetHighMarkedNet = _gridtable->targetHighMarkedNet();
   bool allNet = _gridtable->allNet();
@@ -983,18 +982,17 @@ int Ath__grid::initCouplingCapLoops(uint couplingDist,
   return _base + _pitch * _searchHiTrack;
 }
 
-void Ath__gridTable::initCouplingCapLoops(
-    uint dir,
-    uint couplingDist,
-    rcx::CoupleAndCompute coupleAndCompute,
-    void* compPtr,
-    int* startXY)
+void GridTable::initCouplingCapLoops(uint dir,
+                                     uint couplingDist,
+                                     rcx::CoupleAndCompute coupleAndCompute,
+                                     void* compPtr,
+                                     int* startXY)
 {
   _ttttGetDgOverlap = true;
   setCCFlag(couplingDist);
 
   for (uint jj = 1; jj < _colCnt; jj++) {
-    Ath__grid* netGrid = _gridTable[dir][jj];
+    Grid* netGrid = _gridTable[dir][jj];
     if (netGrid == nullptr) {
       continue;
     }

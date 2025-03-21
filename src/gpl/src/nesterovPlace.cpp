@@ -424,6 +424,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     // For JPEG Saving
     // debug
+    if (npVars_.debug && npVars_.debug_update_db_every_iteration) {
+      updateDb();
+    }
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
       bool update
@@ -568,6 +571,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nbc_->resetNewGcellsCount();
           nesterov->updateAreas();
           nesterov->updateDensitySize();
+        }
+
+        // update snapshot after non-virtual TD
+        int64_t hpwl = nbc_->getHpwl();
+        if (average_overflow_unscaled_ <= 0.25) {
+          min_hpwl_ = hpwl;
+          diverge_snapshot_average_overflow_unscaled_
+              = average_overflow_unscaled_;
+          diverge_snapshot_iter_ = iter + 1;
+          is_min_hpwl_ = true;
         }
       }
 

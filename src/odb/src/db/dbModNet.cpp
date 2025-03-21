@@ -37,6 +37,7 @@
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbITerm.h"
+#include "dbJournal.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -120,6 +121,16 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._bterms;
   }
+  // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
+    if (obj._name) {
+      module->_modnet_hash[obj._name] = dbId<_dbModNet>(obj.getId());
+    }
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -232,6 +243,16 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   }
   parent->_modnets = modnet->getOID();
   parent->_modnet_hash[name] = modnet->getOID();
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(name);
+    block->_journal->pushParam(modnet->getId());
+    block->_journal->pushParam(parent->getId());
+    block->_journal->endAction();
+  }
+
   return (dbModNet*) modnet;
 }
 
@@ -240,6 +261,16 @@ void dbModNet::destroy(dbModNet* mod_net)
   _dbModNet* _modnet = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+
+  // journalling
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(mod_net->getName());
+    block->_journal->pushParam(mod_net->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->endAction();
+  }
 
   uint prev = _modnet->_prev_entry;
   uint next = _modnet->_next_entry;

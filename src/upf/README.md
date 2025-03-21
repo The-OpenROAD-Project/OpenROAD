@@ -53,7 +53,7 @@ create_power_domain
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-elements` | List of module paths that belong this this domain OR `*` for top domain. |
+| `-elements` | List of module paths that belong this this domain OR `.` for top domain. |
 | `name` | Domain name. |
 
 ### Create Logic Port
@@ -123,8 +123,8 @@ set_isolation
 | `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`), default value is `both`. |
 | `-clamp_value` | Value the isolation can drive (`0`, `1`). |
 | `-isolation_signal` | The control signal for this strategy. |
-| `-isolation_sense` | The active level of isolation control signal. |
-| `-location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`). |
+| `-isolation_sense` | The active level of isolation control signal (`high`, `low`), default value is `high`. |
+| `-location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`), default value is `self`. |
 | `-update` | Only available if using existing strategy, will error if the strategy doesn't exist. |
 | `name` | Isolation strategy name. |
 

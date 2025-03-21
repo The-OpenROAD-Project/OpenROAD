@@ -34,8 +34,6 @@
 
 #include "odb/array1.h"
 #include "odb/odb.h"
-#include "odb/parse.h"
-#include "rcx/extParse.h"
 
 namespace utl {
 class Logger;
@@ -44,11 +42,11 @@ class Logger;
 namespace rcx {
 
 using odb::Ath__array1D;
-using odb::Ath__parser;
 using odb::uint;
 using utl::Logger;
 
 class extProcess;
+class Ath__parser;
 
 class extConductor
 {
@@ -219,7 +217,7 @@ class extMasterConductor
                           double width,
                           double X,
                           double volt,
-                          extProcess* p = NULL);
+                          extProcess* p = nullptr);
   double writeRaphaelPoly3D(FILE* fp,
                             uint wireNum,
                             double width,

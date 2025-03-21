@@ -83,7 +83,7 @@ class TimingBase
 
   std::vector<int> timingNetWeightOverflow_;
   std::vector<int> timingOverflowChk_;
-  float net_weight_max_ = 1.9;
+  float net_weight_max_ = 5;
   void initTimingOverflowChk();
 };
 

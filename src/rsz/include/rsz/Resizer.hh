@@ -138,6 +138,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class ResizerObserver;
 
 class SpefWriter;
 
@@ -272,6 +273,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool dontTouch(const Net* net);
   bool dontTouch(const Pin* pin);
   void reportDontTouch();
+
+  void reportFastBufferSizes();
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
@@ -442,9 +445,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void invalidateParasitics(const Pin* pin, const Net* net);
   void eraseParasitics(const Net* net);
   void eliminateDeadLogic(bool clean_nets);
-  std::optional<float> cellLeakage(const LibertyCell* cell);
+  std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
   void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
+  void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
   void init();
@@ -457,7 +461,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isTristateDriver(const Pin* pin);
   void checkLibertyForAllCorners();
   void copyDontUseFromLiberty();
+  bool bufferSizeOutmatched(LibertyCell* worse,
+                            LibertyCell* better,
+                            float max_drive_resist);
   void findBuffers();
+  void findFastBuffers();
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const vector<odb::dbInst*>& bin,
@@ -500,9 +508,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void resizePreamble();
   LibertyCellSeq getSwappableCells(LibertyCell* source_cell);
 
+  bool getCin(const LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
   int resizeToTargetSlew(const Pin* drvr_pin);
+
+  // Resize drvr_pin instance to target cap ratio.
+  // Return 1 if resized.
+  int resizeToCapRatio(const Pin* drvr_pin, bool upsize_only);
 
   ////////////////////////////////////////////////////////////////
 
@@ -751,6 +764,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   const MinMax* max_ = MinMax::max();
   LibertyCellSeq buffer_cells_;
   LibertyCell* buffer_lowest_drive_ = nullptr;
+  std::set<LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   LibertyCellSeq clk_buffers_;
@@ -793,6 +807,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::stack<InstanceTuple> cloned_gates_;
   std::unordered_set<Instance*> cloned_inst_set_;
   std::unordered_map<std::string, BufferData> removed_buffer_map_;
+  std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
   // Need to track all changes for buffer removal
   InstanceSet all_sized_inst_set_;
@@ -813,9 +828,12 @@ class Resizer : public dbStaState, public dbNetworkObserver
   bool isCallBackRegistered() { return is_callback_registered_; }
   void setCallBackRegistered(bool val) { is_callback_registered_ = val; }
 
-  // Sizing restrictions
-  std::optional<double> sizing_area_limit_;
-  std::optional<double> sizing_leakage_limit_;
+  // Restrict default sizing such that one sizing move cannot increase area or
+  // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
+  std::optional<double> sizing_area_limit_ = 4.0;
+  std::optional<double> sizing_leakage_limit_ = 4.0;
+  bool default_sizing_area_limit_set_ = true;
+  bool default_sizing_leakage_limit_set_ = true;
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
 
@@ -823,6 +841,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unordered_map<dbMaster*, std::pair<int, std::string>> vt_map_;
   std::unordered_map<size_t, int>
       vt_hash_map_;  // maps hash value to unique int
+
+  std::shared_ptr<ResizerObserver> graphics_;
 
   friend class BufferedNet;
   friend class GateCloner;

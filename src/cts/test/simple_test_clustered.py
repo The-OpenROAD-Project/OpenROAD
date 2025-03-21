@@ -25,3 +25,5 @@ cts_aux.clock_tree_synthesis(
     sink_clustering_max_diameter=60.0,
     num_static_layers=1,
 )
+
+cts_aux.report_cts(design)

@@ -982,6 +982,24 @@ class dbBlock : public dbObject
   void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
 
   ///
+  /// Find the rectangle corresponding to the constraint region in a specific
+  /// edge of the die area.
+  ///
+  Rect findConstraintRegion(const Direction2D& edge, int begin, int end);
+
+  ///
+  /// Add region constraint for dbBTerms according to their IO type.
+  ///
+  void addBTermConstraintByDirection(dbIoType direction,
+                                     const Rect& constraint_region);
+
+  ///
+  /// Add region constraint for dbBTerms according to their names.
+  ///
+  void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
+                             const Rect& constraint_region);
+
+  ///
   /// Get all the instance-terminals of this block.
   ///
   dbSet<dbITerm> getITerms();
@@ -1868,6 +1886,11 @@ class dbBTerm : public dbObject
   std::optional<Rect> getConstraintRegion();
 
   ///
+  /// Reset constraint region.
+  ///
+  void resetConstraintRegion();
+
+  ///
   /// Set the bterm which position is mirrored to this bterm
   ///
   void setMirroredBTerm(dbBTerm* mirrored_bterm);
@@ -1876,6 +1899,16 @@ class dbBTerm : public dbObject
   /// Get the bterm that is mirrored to this bterm
   ///
   dbBTerm* getMirroredBTerm();
+
+  ///
+  /// Returns true if the current BTerm has a mirrored BTerm.
+  ///
+  bool hasMirroredBTerm();
+
+  ///
+  /// Return true if this BTerm is mirrored with another pin.
+  ///
+  bool isMirrored();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3406,13 +3439,17 @@ class dbITerm : public dbObject
   dbBTerm* getBTerm();
 
   ///
-  /// Connect this iterm to this net.
+  /// Connect this iterm to a single "flat" net.
   ///
   void connect(dbNet* net);
 
-  // connect this iterm to a dbmodNet
+  // connect this iterm to a single dbmodNet
 
   void connect(dbModNet* net);
+
+  // simultaneously connect this iterm to both a dbnet and a mod net.
+
+  void connect(dbNet* db_net, dbModNet* db_mod_net);
 
   ///
   /// Disconnect this iterm from the net it is connected to.

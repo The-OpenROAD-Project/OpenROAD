@@ -33,10 +33,11 @@
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "parse.h"
 #include "rcx/extRCap.h"
 #include "rcx/extprocess.h"
 #include "utl/Logger.h"
-#include "wire.h"
 
 namespace rcx {
 
@@ -884,7 +885,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   // dkf 09202024 skip width map table when  not knowing number of widths is not
   // know in advance after reading rules of different width width mapping should
   // be re-done before writting rules
-  bool skip_width_map_table = widthTable == NULL;
+  bool skip_width_map_table = widthTable == nullptr;
 
   if (!skip_width_map_table && widthTable->getCnt() == 0) {
     return;
@@ -1503,11 +1504,11 @@ extMetRCTable::extMetRCTable(uint layerCnt,
   _capOverUnder_open = allocTable();
 
   for (uint ii = 0; ii < layerCnt; ii++) {
-    _resOver[ii] = NULL;
-    _capOver[ii] = NULL;
-    _capDiagUnder[ii] = NULL;
-    _capUnder[ii] = NULL;
-    _capOverUnder[ii] = NULL;
+    _resOver[ii] = nullptr;
+    _capOver[ii] = nullptr;
+    _capDiagUnder[ii] = nullptr;
+    _capUnder[ii] = nullptr;
+    _capOverUnder[ii] = nullptr;
   }
   _rcPoolPtr = rcPool;
   _rate = -1000.0;
@@ -1632,6 +1633,9 @@ double extRCModel::getTotCapOverSub(uint met)
 
 extDistRC* extDistRCTable::getRC_index(int n)
 {
+  if (n < 0) {
+    return nullptr;
+  }
   int cnt = _measureTable->getCnt();
   if (n >= cnt) {
     return nullptr;
@@ -1642,7 +1646,7 @@ extDistRC* extDistRCTable::getRC_index(int n)
 extDistRC* extDistRCTable::getLastRC()
 {
   int cnt = _measureTable->getCnt();
-  return _measureTable->get(cnt - 1);
+  return getRC_index(cnt - 1);
 }
 
 extDistRC* extDistRCTable::getRC(uint s, bool compute)
@@ -3112,7 +3116,7 @@ void extMetRCTable::addRCw(extMeasure* m)
 */
 void extMetRCTable::addRCw(extMeasure* m)
 {
-  extDistWidthRCTable* table = NULL;
+  extDistWidthRCTable* table = nullptr;
   int n;
   if (m->_overUnder) {
     n = extRCModel::getMetIndexOverUnder(m->_met,
@@ -3152,7 +3156,7 @@ void extMetRCTable::addRCw(extMeasure* m)
     else
       table = _capUnder[m->_met];
   }
-  if (table != NULL)
+  if (table != nullptr)
     table->addRCw(n, m->_w_nm, m->_tmpRC);
 }
 
@@ -3807,7 +3811,7 @@ bool extRCModel::measurePatternVar(extMeasure* m,
   if (_writeFiles) {
     FILE* wfp = mkPatternFile();
 
-    if (wfp == NULL)
+    if (wfp == nullptr)
       return false;  // should be an exception!! and return!
 
     double maxHeight

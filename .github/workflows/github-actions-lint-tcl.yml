@@ -10,9 +10,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install tclint
+      - name: Install Dependencies
         run: |
-          python -m pip install tclint==0.4.2
+          python3 -m pip install -U --user tclint==0.4.2
 
       - name: Lint
         run: |
