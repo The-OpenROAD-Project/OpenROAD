@@ -44,6 +44,7 @@ target_sources(ram
     src/ram.cpp
     src/layout.cpp
     src/MakeRam.cpp
+    src/hierarchy_builder.cpp
     src/make_8x8.cpp
 )
 target_include_directories(ram

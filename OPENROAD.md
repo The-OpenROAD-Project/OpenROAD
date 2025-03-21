@@ -12,6 +12,21 @@ read_liberty /che/OpenROAD-flow-scripts/tools/OpenROAD/src/ram/test/sky130hd/sky
 read_lef     /che/OpenROAD-flow-scripts/tools/OpenROAD/src/ram/test/sky130hd/sky130hd.tlef
 read_lef     /che/OpenROAD-flow-scripts/tools/OpenROAD/src/ram/test/sky130hd/sky130_fd_sc_hd_merged.lef
 
+
+# Generate a standard 32-word x 32-bit RAM
+generate_ram_netlist -bytes_per_word 4 -word_count 32 -memory_type 1RW -read_ports 1
+
+generate_ram_netlist -bytes_per_word 4 -word_count 32 -read_ports 1
+
+# Generate a larger RAM with optimized area
+generate_ram_macro -size 128x32 -memory_type 1RW1R -output_def ram128.def
+
+# Generate a register file
+generate_register_file -word_count 32 -word_width 32
+
+
+
+
 generate_ram_netlist \
     -bytes_per_word 1 \
     -word_count 8 \
@@ -21,9 +36,9 @@ generate_ram_netlist \
     -inv_cell sky130_fd_sc_hd__inv_1
 
 generate_ram_netlist \
-    -bytes_per_word 2 \
-    -word_count 8 \
-    -read_ports 2 \
+    -bytes_per_word 4 \
+    -word_count 32 \
+    -read_ports 1 \
     -storage_cell sky130_fd_sc_hd__dlxtp_1 \
     -tristate_cell sky130_fd_sc_hd__ebufn_2 \
     -inv_cell sky130_fd_sc_hd__inv_1
