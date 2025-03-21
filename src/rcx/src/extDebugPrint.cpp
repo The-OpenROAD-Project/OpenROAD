@@ -486,7 +486,7 @@ void extDistRC::printDebug(const char* from,
 {
   if (rcUnit != nullptr) {
     debugPrint(
-        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is not NULL");
+        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is not nullptr");
   }
 
   debugPrint(logger_,
@@ -504,7 +504,8 @@ void extDistRC::printDebug(const char* from,
              len,
              dist);
   if (rcUnit == nullptr) {
-    debugPrint(logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is NULL");
+    debugPrint(
+        logger_, RCX, "debug_net", 1, "[DistRC:C]\t--\trcUnit is nullptr");
   } else {
     rcUnit->printDebugRC("   ", logger_);
   }

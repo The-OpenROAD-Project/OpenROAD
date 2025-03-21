@@ -45,7 +45,8 @@
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
-
+#include "ord/OpenRoad.hh"
+  
 namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
@@ -776,6 +777,13 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportEquivalentCells(cell, match_cell_footprint);
+}
+
+void
+report_fast_buffer_sizes()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportFastBufferSizes();
 }
 
 void set_debug_cmd(const char* net_name,

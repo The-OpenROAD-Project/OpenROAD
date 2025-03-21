@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "Grid.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
@@ -75,18 +75,33 @@ struct Master
   std::vector<Edge> edges_;
 };
 
-struct Cell
+struct Cell : public GridNode
 {
+ public:
   const char* name() const;
+  bool isFixed() const override;
+  bool isPlaced() const override { return is_placed_; }
+  bool isHybrid() const override;
+  DbuX xMax() const { return x_ + width_; }
+  DbuX xMin() const override { return x_; }
+  DbuY yMin() const override { return y_; }
+  DbuX dx() const override { return width_; }
+  DbuY dy() const override { return height_; }
+  dbInst* getDbInst() const override { return db_inst_; }
+  DbuX siteWidth() const override;
+  void setPlaced(bool in) { is_placed_ = in; }
+  void setHold(bool in) { hold_ = in; }
+  void setOrient(const dbOrientType& in) { orient_ = in; }
+  void setLeft(DbuX in) { x_ = in; }
+  void setBottom(DbuY in) { y_ = in; }
+
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;
   bool isStdCell() const;
-  DbuX siteWidth() const;
-  bool isFixed() const;
-  bool isHybrid() const;
+
   bool isHybridParent() const;
   dbSite* getSite() const;
-  DbuX xMax() const { return x_ + width_; }
+
   bool isBlock() const;
 
   dbInst* db_inst_ = nullptr;
