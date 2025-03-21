@@ -1,4 +1,3 @@
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
@@ -33,55 +32,97 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 %{
-#include "ord/OpenRoad.hh"
-#include "ram/ram.h"
-#include "utl/Logger.h"
-%}
-%include "../../Exception.i"
-%inline %{
-void
-generate_ram_netlist_cmd(int bytes_per_word,
-                         int word_count,
-                         const char* storage_cell_name,
-                         const char* tristate_cell_name,
-                         const char* inv_cell_name,
-                         const int read_ports)
-{
-  auto* app = ord::OpenRoad::openRoad();
-  auto* ram_gen = app->getRamGen();
-  auto* db = app->getDb();
-  odb::dbMaster* storage_cell = nullptr;
-  if (storage_cell_name[0] != '\0') {
-    storage_cell = db->findMaster(storage_cell_name);
-    if (!storage_cell) {
-      app->getLogger()->error(utl::RAM,
-                              4,
-                              "Storage cell {} can't be found",
-                              storage_cell_name);
+  #include "ord/OpenRoad.hh"
+  #include "ram/ram.h"
+  #include "utl/Logger.h"
+  %}
+  %include "../../Exception.i"
+  %inline %{
+  // Original implementation for backward compatibility
+  void
+  generate_ram_netlist_cmd(int bytes_per_word,
+                           int word_count,
+                           const char* storage_cell_name,
+                           const char* tristate_cell_name,
+                           const char* inv_cell_name,
+                           const int read_ports)
+  {
+    auto* app = ord::OpenRoad::openRoad();
+    auto* ram_gen = app->getRamGen();
+    auto* db = app->getDb();
+    
+    odb::dbMaster* storage_cell = nullptr;
+    if (storage_cell_name[0] != '\0') {
+      storage_cell = db->findMaster(storage_cell_name);
+      if (!storage_cell) {
+        app->getLogger()->error(utl::RAM,
+                                4,
+                                "Storage cell {} can't be found",
+                                storage_cell_name);
+      }
     }
-  }
-  odb::dbMaster* tristate_cell = nullptr;
-  if (tristate_cell_name[0] != '\0') {
-    tristate_cell = db->findMaster(tristate_cell_name);
-    if (!tristate_cell) {
-      app->getLogger()->error(utl::RAM,
-                              7,
-                              "Tristate cell {} can't be found",
-                              tristate_cell_name);
+    
+    odb::dbMaster* tristate_cell = nullptr;
+    if (tristate_cell_name[0] != '\0') {
+      tristate_cell = db->findMaster(tristate_cell_name);
+      if (!tristate_cell) {
+        app->getLogger()->error(utl::RAM,
+                                7,
+                                "Tristate cell {} can't be found",
+                                tristate_cell_name);
+      }
     }
-  }
-  odb::dbMaster* inv_cell = nullptr;
-  if (inv_cell_name[0] != '\0') {
-    inv_cell = db->findMaster(inv_cell_name);
-    if (!inv_cell) {
-      app->getLogger()->error(utl::RAM,
-                              8,
-                              "Inv cell {} can't be found",
-                              inv_cell_name);
+    
+    odb::dbMaster* inv_cell = nullptr;
+    if (inv_cell_name[0] != '\0') {
+      inv_cell = db->findMaster(inv_cell_name);
+      if (!inv_cell) {
+        app->getLogger()->error(utl::RAM,
+                                8,
+                                "Inv cell {} can't be found",
+                                inv_cell_name);
+      }
     }
+    
+    // Call the original implementation
+    ram_gen->generate(bytes_per_word, word_count, read_ports,
+                      storage_cell, tristate_cell, inv_cell);
   }
-  ram_gen->generate(bytes_per_word, word_count, read_ports,
-                    storage_cell, tristate_cell, inv_cell);
-}
-%} // inline
-
+  
+  // Implementation for the DFFRAM-style generation
+  void
+  generate_dffram_cmd(int bytes_per_word,
+                     int word_count,
+                     int read_ports,
+                     int memory_type,
+                     const char* output_def,
+                     bool optimize_layout)
+  {
+    auto* app = ord::OpenRoad::openRoad();
+    auto* ram_gen = app->getRamGen();
+    
+    // Convert memory_type to enum
+    ram::MemoryType mem_type = static_cast<ram::MemoryType>(memory_type);
+    
+    // Generate the DFFRAM-style memory
+    ram_gen->generateDFFRAM(bytes_per_word, word_count, read_ports, mem_type,
+                          output_def, optimize_layout);
+    
+    app->getLogger()->info(utl::RAM, 100, "DFFRAM-style memory generation completed");
+  }
+  
+  // Implementation for register file generation
+  void
+  generate_register_file_cmd(int word_count,
+                            int word_width,
+                            const char* output_def)
+  {
+    auto* app = ord::OpenRoad::openRoad();
+    auto* ram_gen = app->getRamGen();
+    
+    // Generate register file
+    ram_gen->generateRegisterFile(word_count, word_width, output_def);
+    
+    app->getLogger()->info(utl::RAM, 110, "Register file generation completed");
+  }
+  %} // inline
