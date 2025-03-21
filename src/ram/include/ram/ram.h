@@ -224,6 +224,14 @@ class HierarchyBuilder {
 public:
   HierarchyBuilder(odb::dbBlock* block, const MemoryConfig& config, Logger* logger, sta::dbNetwork* network = nullptr);
   
+  void setMasters(odb::dbMaster* storage_cell,
+    odb::dbMaster* tristate_cell,
+    odb::dbMaster* inv_cell,
+    odb::dbMaster* and2_cell,
+    odb::dbMaster* clock_gate_cell,
+    odb::dbMaster* mux2_cell = nullptr);
+
+
   // Build the memory hierarchy (similar to DFFRAM's create_hierarchy)
   std::unique_ptr<Element> buildHierarchy();
   
@@ -305,9 +313,11 @@ private:
   sta::dbNetwork* network_;
   std::map<std::string, odb::dbNet*> nets_cache_;
   std::map<std::string, odb::dbMaster*> masters_cache_;
+  bool masters_are_set_ = false;
   
   // Find masters
   void findMasters();
+
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match, const char* name);
   odb::dbMaster* getMaster(const std::string& name);
   
@@ -320,23 +330,22 @@ private:
   odb::dbMaster* mux2_cell_ = nullptr;
 };
 
-// Layout builder class
+// In ram.h - Updated LayoutBuilder class declaration
+
 class LayoutBuilder {
 public:
+  // Updated constructor with pre-found masters
   LayoutBuilder(odb::dbBlock* block, const MemoryConfig& config, 
-               const RowConfig& row_config, Logger* logger);
-               
-  // Build the complete layout
+               const RowConfig& row_config, Logger* logger,
+               odb::dbMaster* tap_cell = nullptr,
+               const std::vector<odb::dbMaster*>& filler_cells = {});
+  
   void buildLayout(std::unique_ptr<Element> hierarchy);
+  void optimizeLayout();
+  bool writeToDefFile(const std::string& filename) const;
   
   // Get the built layout
   Layout* getLayout() const { return layout_.get(); }
-  
-  // Optimize the layout
-  void optimizeLayout();
-  
-  // Write the layout to DEF
-  bool writeToDefFile(const std::string& filename) const;
   
 private:
   odb::dbBlock* block_;
@@ -345,17 +354,27 @@ private:
   Logger* logger_;
   std::unique_ptr<Layout> layout_;
   
-  // Internal methods
-  void setupRows();
+  // NEW: Store provided masters
+  odb::dbMaster* provided_tap_cell_ = nullptr;
+  std::vector<odb::dbMaster*> provided_filler_cells_;
+  
+  // NEW: Database validation helper
+  bool validateDatabase() const;
+  
+  // Updated to return success/failure
+  bool setupRows();
   void placeBitCells();
   void placeDecoders();
   void placeControlLogic();
   void fillEmptySpaces();
   
-  // Find appropriate masters
+  // Search methods (used as fallback)
   std::vector<odb::dbMaster*> findFillerCells();
   odb::dbMaster* findTapCell();
 };
+
+
+
 
 // Main RAM generator class
 class RamGen {
@@ -393,6 +412,9 @@ class RamGen {
  private:
   // Initialize technology cells
   void setupTechnologyCells();
+  
+  // Robust database validation - new method
+  bool validateDatabase(const char* caller_name);
   
   // Create output DEF file
   bool writeDefFile(const std::string& filename) const;
