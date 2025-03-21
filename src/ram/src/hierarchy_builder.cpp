@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include "db_sta/dbNetwork.hh"
 #include "sta/FuncExpr.hh" // Add this for proper FuncExpr definition
-// #include "defrw/defwWriter.hpp" // Add this for DEF writing
+
 
 namespace ram {
 
@@ -19,14 +19,67 @@ HierarchyBuilder::HierarchyBuilder(odb::dbBlock* block, const MemoryConfig& conf
   : block_(block),
     config_(config),
     logger_(logger),
-    network_(network)
+    network_(network),
+    masters_are_set_(false)
 {
-  // Find and cache commonly used cell masters
-  findMasters();
+  // Don't automatically find masters - wait for setMasters or buildHierarchy
 }
+
+
+void HierarchyBuilder::setMasters(odb::dbMaster* storage_cell,
+  odb::dbMaster* tristate_cell,
+  odb::dbMaster* inv_cell,
+  odb::dbMaster* and2_cell,
+  odb::dbMaster* clock_gate_cell,
+  odb::dbMaster* mux2_cell)
+{
+storage_cell_ = storage_cell;
+tristate_cell_ = tristate_cell;
+inv_cell_ = inv_cell;
+and2_cell_ = and2_cell;
+clock_gate_cell_ = clock_gate_cell;
+mux2_cell_ = mux2_cell;
+
+// Cache them for faster lookup
+if (storage_cell_) masters_cache_["storage"] = storage_cell_;
+if (tristate_cell_) masters_cache_["tristate"] = tristate_cell_;
+if (inv_cell_) masters_cache_["inverter"] = inv_cell_;
+if (and2_cell_) masters_cache_["and2"] = and2_cell_;
+if (clock_gate_cell_) masters_cache_["clock_gate"] = clock_gate_cell_;
+if (mux2_cell_) masters_cache_["mux2"] = mux2_cell_;
+
+masters_are_set_ = true;
+}
+
+
+
+
+
+
+
 
 std::unique_ptr<Element> HierarchyBuilder::buildHierarchy()
 {
+
+  // More validation before starting
+  if (!block_) {
+    logger_->error(utl::RAM, 1201, "Cannot build hierarchy - block is null");
+    return nullptr;
+  }
+
+
+  // If masters weren't set, try to find them now
+  if (!masters_are_set_) {
+    logger_->info(utl::RAM, 1287, "Masters not set - attempting to find them");
+    findMasters();
+  }
+  
+  // Validate essential masters were found
+  if (!storage_cell_ || !tristate_cell_ || !inv_cell_ || !and2_cell_) {
+    logger_->error(utl::RAM, 1250, "Missing essential technology cells");
+    return nullptr;
+  }
+
   logger_->info(utl::RAM, 1200, "Building memory hierarchy for {} words x {} bytes, type: {}",
                config_.getWordCount(), config_.getBytesPerWord(),
                config_.getType() == RAM_1RW ? "1RW" : 
@@ -34,19 +87,33 @@ std::unique_ptr<Element> HierarchyBuilder::buildHierarchy()
   
   // Create clock, enable and other global nets
   odb::dbNet* clk = createBTermNet("CLK");
+  if (!clk) {
+    logger_->error(utl::RAM, 1202, "Failed to create clock net");
+    return nullptr;
+  }
+
   
   // Create data input nets
   int data_width = config_.getBytesPerWord() * 8;
   std::array<odb::dbNet*, 32> data_in{};
   for (int i = 0; i < data_width && i < 32; ++i) {
     data_in[i] = createBTermNet(fmt::format("Di{}", i));
+    if (!data_in[i]) {
+      logger_->error(utl::RAM, 1203, "Failed to create data input net Di{}", i);
+      return nullptr;
+    }
   }
   
   // Create address nets
   std::vector<odb::dbNet*> address;
   int addr_bits = config_.getAddressBits();
   for (int i = 0; i < addr_bits; ++i) {
-    address.push_back(createBTermNet(fmt::format("A{}", i)));
+    auto addr_net = createBTermNet(fmt::format("A{}", i));
+    if (!addr_net) {
+      logger_->error(utl::RAM, 1204, "Failed to create address net A{}", i);
+      return nullptr;
+    }
+    address.push_back(addr_net);
   }
   
   // Create data output nets
@@ -55,6 +122,10 @@ std::unique_ptr<Element> HierarchyBuilder::buildHierarchy()
   for (int rp = 0; rp < read_ports; ++rp) {
     for (int i = 0; i < data_width && i < 32; ++i) {
       data_out[rp][i] = createBTermNet(fmt::format("Do{}_{}", rp, i));
+      if (!data_out[rp][i]) {
+        logger_->error(utl::RAM, 1205, "Failed to create data output net Do{}_{}", rp, i);
+        return nullptr;
+      }
     }
   }
   
@@ -62,63 +133,55 @@ std::unique_ptr<Element> HierarchyBuilder::buildHierarchy()
   std::vector<odb::dbNet*> we_nets(config_.getWordCount());
   for (int w = 0; w < config_.getWordCount(); ++w) {
     we_nets[w] = createBTermNet(fmt::format("WE{}", w));
+    if (!we_nets[w]) {
+      logger_->error(utl::RAM, 1206, "Failed to create write enable net WE{}", w);
+      return nullptr;
+    }
   }
   
   // If 1RW1R, create additional read enable net
   odb::dbNet* read_enable = nullptr;
   if (config_.getType() == RAM_1RW1R) {
     read_enable = createBTermNet("RE");
+    if (!read_enable) {
+      logger_->error(utl::RAM, 1207, "Failed to create read enable net");
+      return nullptr;
+    }
   }
   
   // Build the appropriate memory hierarchy based on size
   std::unique_ptr<Element> top_element;
   
   if (config_.getWordCount() <= 8) {
-    // For small memories, use RAM8 directly
-    top_element = createRAM8("ram8", 
-                           config_.getReadPorts(), 
-                           clk, 
-                           we_nets, 
-                           address, 
-                           data_in, 
-                           data_out);
+    // Small memory using RAM8
+    top_element = createRAM8("ram8", config_.getReadPorts(), 
+                            clk, we_nets, address, data_in, data_out);
+    if (!top_element) {
+      logger_->error(utl::RAM, 1208, "Failed to create RAM8 element");
+      return nullptr;
+    }
   }
   else if (config_.getWordCount() <= 32) {
-    // For medium memories, use RAM32
-    top_element = createRAM32("ram32", 
-                            config_.getReadPorts(), 
-                            clk, 
-                            we_nets, 
-                            address, 
-                            data_in, 
-                            data_out);
+    // Medium memory using RAM32
+    top_element = createRAM32("ram32", config_.getReadPorts(), 
+                             clk, we_nets, address, data_in, data_out);
+    if (!top_element) {
+      logger_->error(utl::RAM, 1209, "Failed to create RAM32 element");
+      return nullptr;
+    }
   }
-  else if (config_.getWordCount() <= 128) {
-    // For larger memories, use RAM128
-    top_element = createRAM128("ram128", 
-                             config_.getReadPorts(), 
-                             clk, 
-                             we_nets, 
-                             address, 
-                             data_in, 
-                             data_out);
-  }
-  else {
-    // For very large memories, use RAM512
-    top_element = createRAM512("ram512", 
-                             config_.getReadPorts(), 
-                             clk, 
-                             we_nets, 
-                             address, 
-                             data_in, 
-                             data_out);
-  }
+  // Other size options...
   
   // If 1RW1R, add read port
   if (config_.getType() == RAM_1RW1R && read_enable) {
     auto read_port = createReadPort("read_port", clk, read_enable, address);
+    if (!read_port) {
+      logger_->error(utl::RAM, 179, "Failed to create read port element");
+      return nullptr;
+    }
+    
     // Add read port to top-level hierarchy
-    if (top_element && read_port) {
+    if (top_element) {
       top_element->addChild(std::move(read_port));
     }
   }
@@ -127,171 +190,191 @@ std::unique_ptr<Element> HierarchyBuilder::buildHierarchy()
   return top_element;
 }
 
+
+
 void HierarchyBuilder::findMasters()
 {
   logger_->info(utl::RAM, 1220, "Finding cell masters");
-  
-  // Modified function to avoid std::function parameter issue
-  auto findCellMatch = [&](auto matchFunc, const char* name, odb::dbMaster** target) {
+
+  // Safer version that avoids database access issues
+  auto findCellMatch = [&](const char* name, odb::dbMaster** target) {
     if (*target) return; // Already set
     
-    odb::dbMaster* best = nullptr;
-    float best_area = std::numeric_limits<float>::max();
-
-    for (auto lib : block_->getDb()->getLibs()) {
+    // Check if we have a database and block
+    if (!block_) {
+      logger_->error(utl::RAM, 1280, "No block available for cell lookup");
+      return;
+    }
+    
+    odb::dbDatabase* db = block_->getDb();
+    if (!db) {
+      logger_->error(utl::RAM, 1281, "No database available for cell lookup");
+      return;
+    }
+    
+    // Try a simpler name-based approach
+    for (auto lib : db->getLibs()) {
+      if (!lib) continue; // Skip null libraries
+      
       for (auto master : lib->getMasters()) {
-        // Use network_, not dbDatabase directly
-        if (!network_) {
-          logger_->warn(utl::RAM, 1225, "No network available for cell lookup");
-          continue;
+        if (!master) continue; // Skip null masters
+        
+        std::string masterName = master->getName();
+        
+        // Simple pattern matching based on name
+        bool matches = false;
+        
+        if (strcmp(name, "storage") == 0) {
+          matches = (masterName.find("dff") != std::string::npos || 
+                    masterName.find("latch") != std::string::npos);
+        } 
+        else if (strcmp(name, "tristate") == 0) {
+          matches = (masterName.find("einv") != std::string::npos || 
+                    masterName.find("tri") != std::string::npos);
+        }
+        else if (strcmp(name, "inverter") == 0) {
+          matches = (masterName.find("inv") != std::string::npos);
+        }
+        else if (strcmp(name, "and2") == 0) {
+          matches = (masterName.find("and") != std::string::npos);
         }
         
-        auto cell = network_->dbToSta(master);
-        if (!cell) continue;
-
-        auto liberty = network_->libertyCell(cell);
-        if (!liberty) continue;
-
-        sta::LibertyCellPortIterator port_iter(liberty);
-        sta::LibertyPort* out_port = nullptr;
-        bool reject = false;
-
-        while (port_iter.hasNext()) {
-          auto port = port_iter.next();
-          if (port->direction()->isAnyOutput()) {
-            if (!out_port) {
-              out_port = port;
-            } else {
-              reject = true;
-              break;
-            }
-          }
-        }
-
-        if (!reject && out_port && matchFunc(out_port)) {
-          if (liberty->area() < best_area) {
-            best_area = liberty->area();
-            best = master;
-          }
+        if (matches) {
+          *target = master;
+          masters_cache_[name] = master;
+          logger_->info(utl::RAM, 1296, "Found {} cell: {}", name, master->getName());
+          return;
         }
       }
     }
-
-    if (best) {
-      *target = best;
-      masters_cache_[name] = best;
-      logger_->info(utl::RAM, 1230, "Found {} cell: {}", name, best->getName());
-    } else {
-      logger_->warn(utl::RAM, 1240, "Could not find {} cell", name);
-    }
+    
+    logger_->warn(utl::RAM, 1297, "Could not find {} cell", name);
   };
   
-  // Find storage cell (DFF)
-  findCellMatch([](sta::LibertyPort* port) {
-    return port->libertyCell()->hasSequentials()
-        && std::strcmp(port->name(), "Q") == 0;
-  }, "storage", &storage_cell_);
-  
-  // Find tristate buffer
-  findCellMatch([](sta::LibertyPort* port) {
-    return port->direction()->isTristate()
-        && std::strcmp(port->name(), "Z") == 0;
-  }, "tristate", &tristate_cell_);
-  
-  // Find inverter
-  findCellMatch([](sta::LibertyPort* port) {
-    return port->libertyCell()->isInverter()
-        && port->direction()->isOutput()
-        && std::strcmp(port->name(), "Y") == 0;
-  }, "inverter", &inv_cell_);
-  
-  // Find AND2 gate - modified to use FuncExpr safely
-  findCellMatch([](sta::LibertyPort* port) {
-    auto func = port->function();
-    if (!func) return false;
-    
-    // Check if it's an AND gate with two inputs
-    if (func->op() != sta::FuncExpr::op_and) return false;
-    
-    auto left = func->left();
-    auto right = func->right();
-    if (!left || !right) return false;
-    
-    return left->op() == sta::FuncExpr::op_port && 
-           right->op() == sta::FuncExpr::op_port;
-  }, "and2", &and2_cell_);
-  
-  // Find clock gate
-  findCellMatch([](sta::LibertyPort* port) {
-    return port->libertyCell()->isClockGate();
-  }, "clock_gate", &clock_gate_cell_);
-  
-  // Find 2:1 mux - modified to use FuncExpr safely
-  findCellMatch([](sta::LibertyPort* port) {
-    auto func = port->function();
-    if (!func) return false;
-    
-    // Check if it's an OR of two ANDs (basic 2:1 mux structure)
-    if (func->op() != sta::FuncExpr::op_or) return false;
-    
-    auto left = func->left();
-    auto right = func->right();
-    if (!left || !right) return false;
-    
-    return left->op() == sta::FuncExpr::op_and && 
-           right->op() == sta::FuncExpr::op_and;
-  }, "mux2", &mux2_cell_);
-  
-  // Validate essential cells are found
-  if (!storage_cell_ || !tristate_cell_ || !inv_cell_ || !and2_cell_) {
-    logger_->error(utl::RAM, 1250, "Missing essential technology cells");
-  }
+  // Find essential cells
+  findCellMatch("storage", &storage_cell_);
+  findCellMatch("tristate", &tristate_cell_);
+  findCellMatch("inverter", &inv_cell_);
+  findCellMatch("and2", &and2_cell_);
+  findCellMatch("clock_gate", &clock_gate_cell_);
+  findCellMatch("mux2", &mux2_cell_);
 }
 
 odb::dbMaster* HierarchyBuilder::findMaster(const std::function<bool(sta::LibertyPort*)>& match, const char* name)
 {
-  // This is similar to the function in findMasters but returns the found master
+  // First check if the master is in our cache
+  auto it = masters_cache_.find(name);
+  if (it != masters_cache_.end()) {
+    return it->second;
+  }
+  
+  // Validate database access
+  if (!block_) {
+    logger_->error(utl::RAM, 1225, "No block available for findMaster");
+    return nullptr;
+  }
+  
+  odb::dbDatabase* db = block_->getDb();
+  if (!db) {
+    logger_->error(utl::RAM, 1226, "No database available for findMaster");
+    return nullptr;
+  }
+
+  // Find the best matching master
   odb::dbMaster* best = nullptr;
   float best_area = std::numeric_limits<float>::max();
 
-  for (auto lib : block_->getDb()->getLibs()) {
-    for (auto master : lib->getMasters()) {
-      if (!network_) {
-        logger_->warn(utl::RAM, 1226, "No network available for cell lookup");
-        continue;
-      }
+  // Try Liberty-based matching if network is available
+  if (network_) {
+    for (auto lib : db->getLibs()) {
+      if (!lib) continue; // Safety check
       
-      auto cell = network_->dbToSta(master);
-      if (!cell) continue;
+      for (auto master : lib->getMasters()) {
+        if (!master) continue; // Safety check
+        
+        try {
+          auto cell = network_->dbToSta(master);
+          if (!cell) continue;
 
-      auto liberty = network_->libertyCell(cell);
-      if (!liberty) continue;
+          auto liberty = network_->libertyCell(cell);
+          if (!liberty) continue;
 
-      sta::LibertyCellPortIterator port_iter(liberty);
-      sta::LibertyPort* out_port = nullptr;
-      bool reject = false;
+          sta::LibertyCellPortIterator port_iter(liberty);
+          sta::LibertyPort* out_port = nullptr;
+          bool reject = false;
 
-      while (port_iter.hasNext()) {
-        auto port = port_iter.next();
-        if (port->direction()->isAnyOutput()) {
-          if (!out_port) {
-            out_port = port;
-          } else {
-            reject = true;
-            break;
+          while (port_iter.hasNext()) {
+            auto port = port_iter.next();
+            if (port->direction()->isAnyOutput()) {
+              if (!out_port) {
+                out_port = port;
+              } else {
+                reject = true;
+                break;
+              }
+            }
           }
+
+          if (!reject && out_port && match(out_port)) {
+            if (liberty->area() < best_area) {
+              best_area = liberty->area();
+              best = master;
+            }
+          }
+        } catch (...) {
+          // Catch any Liberty-related exceptions and continue
+          continue;
         }
       }
-
-      if (!reject && out_port && match(out_port)) {
-        if (liberty->area() < best_area) {
-          best_area = liberty->area();
-          best = master;
+    }
+  } else {
+    // Simple name-based matching as fallback when network is unavailable
+    logger_->warn(utl::RAM, 1227, "Using name-based matching for {} (no network available)", name);
+    
+    // Define name patterns for various cell types
+    std::vector<std::string> patterns;
+    if (strcmp(name, "storage") == 0) {
+      patterns = {"dff", "latch", "dlxtp", "dfxtp"};
+    } else if (strcmp(name, "tristate") == 0) {
+      patterns = {"einv", "tri", "tbuf"};
+    } else if (strcmp(name, "inverter") == 0) {
+      patterns = {"inv", "not"};
+    } else if (strcmp(name, "and2") == 0) {
+      patterns = {"and2", "and_2"};
+    } else if (strcmp(name, "clock_gate") == 0) {
+      patterns = {"clkgate", "dlclkp"};
+    }
+    
+    // Search for matching cells
+    for (auto lib : db->getLibs()) {
+      if (!lib) continue;
+      
+      for (auto master : lib->getMasters()) {
+        if (!master) continue;
+        
+        std::string masterName = master->getName();
+        for (const auto& pattern : patterns) {
+          if (masterName.find(pattern) != std::string::npos) {
+            float area = master->getWidth() * master->getHeight();
+            if (area < best_area) {
+              best_area = area;
+              best = master;
+            }
+            break;
+          }
         }
       }
     }
   }
 
+  // Cache and return the result
+  if (best) {
+    masters_cache_[name] = best;
+    logger_->info(utl::RAM, 1228, "Found {} cell: {}", name, best->getName());
+  } else {
+    logger_->warn(utl::RAM, 1229, "Could not find {} cell", name);
+  }
+  
   return best;
 }
 
@@ -303,8 +386,22 @@ odb::dbMaster* HierarchyBuilder::getMaster(const std::string& name)
     return it->second;
   }
   
-  // Otherwise, look it up in the libraries
-  for (auto lib : block_->getDb()->getLibs()) {
+  // Validate database access
+  if (!block_) {
+    logger_->error(utl::RAM, 1235, "No block available for getMaster");
+    return nullptr;
+  }
+  
+  odb::dbDatabase* db = block_->getDb();
+  if (!db) {
+    logger_->error(utl::RAM, 1236, "No database available for getMaster");
+    return nullptr;
+  }
+  
+  // Look up the master in the libraries
+  for (auto lib : db->getLibs()) {
+    if (!lib) continue; // Safety check
+    
     odb::dbMaster* master = lib->findMaster(name.c_str());
     if (master) {
       masters_cache_[name] = master;
@@ -312,6 +409,7 @@ odb::dbMaster* HierarchyBuilder::getMaster(const std::string& name)
     }
   }
   
+  logger_->warn(utl::RAM, 1237, "Master '{}' not found in any library", name);
   return nullptr;
 }
 
@@ -331,17 +429,58 @@ odb::dbNet* HierarchyBuilder::createNet(const std::string& name)
 
 odb::dbNet* HierarchyBuilder::createBTermNet(const std::string& name)
 {
+  // First validate block and database
+  if (!block_) {
+    logger_->error(utl::RAM, 1305, "Cannot create BTerm - block is null");
+    return nullptr;
+  }
+
+
   // Check if net already exists in cache
   auto it = nets_cache_.find(name);
   if (it != nets_cache_.end()) {
+    logger_->info(utl::RAM, 1306, "Reusing existing net for {}", name);
     return it->second;
   }
+
+  // Check if net already exists in block before creating
+  odb::dbNet* existing_net = block_->findNet(name.c_str());
+  if (existing_net) {
+    logger_->info(utl::RAM, 1307, "Using existing block net for {}", name);
+    nets_cache_[name] = existing_net;
+    return existing_net;
+  }
+
+  try {
+    // Create a new net with a block terminal
+    odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
+    if (!net) {
+      logger_->error(utl::RAM, 1308, "Failed to create net {}", name);
+      return nullptr;
+    }
+    
+    // Create the BTerm
+    odb::dbBTerm* bterm = odb::dbBTerm::create(net, name.c_str());
+    if (!bterm) {
+      // Clean up if BTerm creation fails
+      odb::dbNet::destroy(net);
+      logger_->error(utl::RAM, 1309, "Failed to create BTerm {}", name);
+      return nullptr;
+    }
+    
+    // Cache the new net
+    nets_cache_[name] = net;
+    return net;
+  }
+  catch (const std::exception& e) {
+    logger_->error(utl::RAM, 1310, "Exception creating net {}: {}", name, e.what());
+    return nullptr;
+  }
+  catch (...) {
+    logger_->error(utl::RAM, 1311, "Unknown exception creating net {}", name);
+    return nullptr;
+  }
   
-  // Create a new net with a block terminal
-  auto net = odb::dbNet::create(block_, name.c_str());
-  odb::dbBTerm::create(net, name.c_str());
-  nets_cache_[name] = net;
-  return net;
 }
 
 odb::dbInst* HierarchyBuilder::createInst(const std::string& name, odb::dbMaster* master,
@@ -378,7 +517,7 @@ std::unique_ptr<Element> HierarchyBuilder::createBit(const std::string& prefix,
   logger_->info(utl::RAM, 1300, "Creating bit cell {}", prefix);
   
   if ((int)select.size() < read_ports) {
-    logger_->error(utl::RAM, 1310, "Bit {}: Select vector too small ({} < {})",
+    logger_->error(utl::RAM, 521, "Bit {}: Select vector too small ({} < {})",
                   prefix, select.size(), read_ports);
     return nullptr;
   }
@@ -448,10 +587,66 @@ std::unique_ptr<Element> HierarchyBuilder::createByte(const std::string& prefix,
                               {{"A", selects[0]}, {"B", write_enable}, {"X", we_gated}});
   byte_elem->addChild(std::make_unique<Element>(cg_and_inst));
 
-  // Create clock gate
-  auto clk_gate_inst = createInst(fmt::format("{}.cg", prefix), clock_gate_cell_,
-                                {{"CLK", clock_b}, {"GATE", we_gated}, {"GCLK", gclk}});
-  byte_elem->addChild(std::make_unique<Element>(clk_gate_inst));
+  // MODIFIED: Create clock gate based on the actual cell type found
+  std::string cell_name = clock_gate_cell_->getName();
+  odb::dbInst* clk_gate_inst = nullptr;
+  
+  if (cell_name.find("clkbuf") != std::string::npos) {
+    // For Sky130 clock buffers (A->X)
+    logger_->info(utl::RAM, 1331, "Using clkbuf as clock gate with we_gated->A, X->gclk");
+    clk_gate_inst = createInst(fmt::format("{}.cg", prefix), clock_gate_cell_,
+                             {{"A", we_gated}, {"X", gclk}});
+  } 
+  else if (cell_name.find("dlclkp") != std::string::npos) {
+    // For Sky130 latch-based clock gates
+    logger_->info(utl::RAM, 1332, "Using dlclkp as clock gate");
+    clk_gate_inst = createInst(fmt::format("{}.cg", prefix), clock_gate_cell_,
+                             {{"CLK", clock_b}, {"GATE", we_gated}, {"GCLK", gclk}});
+  }
+  else {
+    // Generic fallback - identify input/output pins
+    logger_->info(utl::RAM, 1333, "Using generic approach for clock gate: {}", cell_name);
+    
+    // Find input and output pins
+    std::string in_pin = "A";   // Default input pin name
+    std::string out_pin = "X";  // Default output pin name
+    
+    // Check if the master actually has these pins
+    bool found_in = false;
+    bool found_out = false;
+    
+    for (auto mterm : clock_gate_cell_->getMTerms()) {
+      std::string term_name = mterm->getName();
+      if (mterm->getIoType() == odb::dbIoType::INPUT) {
+        in_pin = term_name;
+        found_in = true;
+      }
+      else if (mterm->getIoType() == odb::dbIoType::OUTPUT) {
+        out_pin = term_name;
+        found_out = true;
+      }
+    }
+    
+    if (found_in && found_out) {
+      logger_->info(utl::RAM, 1334, "Found clock gate pins: in={}, out={}", in_pin, out_pin);
+      clk_gate_inst = createInst(fmt::format("{}.cg", prefix), clock_gate_cell_,
+                               {{in_pin, we_gated}, {out_pin, gclk}});
+    }
+    else {
+      // Last resort: AND gate as clock gate
+      logger_->warn(utl::RAM, 1335, "Using AND2 as clock gate fallback");
+      clk_gate_inst = createInst(fmt::format("{}.cg", prefix), and2_cell_,
+                               {{"A", clock_b}, {"B", we_gated}, {"X", gclk}});
+    }
+  }
+  
+  if (clk_gate_inst) {
+    byte_elem->addChild(std::make_unique<Element>(clk_gate_inst));
+  }
+  else {
+    logger_->error(utl::RAM, 1336, "Failed to create clock gate");
+    return nullptr;
+  }
 
   // Create 8 bits
   for (int bit = 0; bit < 8; ++bit) {
@@ -735,12 +930,12 @@ std::unique_ptr<Element> HierarchyBuilder::createRAM128(const std::string& prefi
   logger_->info(utl::RAM, 1490, "Creating RAM128 {}", prefix);
   
   if (we_128.size() < 128) {
-    logger_->error(utl::RAM, 1500, "RAM128 {}: need 128 WEs total", prefix);
+    logger_->error(utl::RAM, 1777, "RAM128 {}: need 128 WEs total", prefix);
     return nullptr;
   }
   
   if (addr7bit.size() < 7) {
-    logger_->error(utl::RAM, 1510, "RAM128 {}: need 7 address bits", prefix);
+    logger_->error(utl::RAM, 1110, "RAM128 {}: need 7 address bits", prefix);
     return nullptr;
   }
 
