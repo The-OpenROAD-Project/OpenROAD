@@ -69,6 +69,9 @@ class TimingBase;
 class InitialPlace;
 class NesterovPlace;
 
+using Cluster = std::vector<odb::dbInst*>;
+using Clusters = std::vector<Cluster>;
+
 class Replace
 {
  public:
@@ -86,6 +89,7 @@ class Replace
   void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
+  void addPlacementCluster(const Cluster& cluster);
   int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings
@@ -140,7 +144,8 @@ class Replace
                 bool draw_bins,
                 bool initial,
                 odb::dbInst* inst,
-                int start_iter);
+                int start_iter,
+                bool update_db);
 
  private:
   bool initNesterovPlace(int threads);
@@ -194,7 +199,7 @@ class Replace
 
   int routabilityMaxInflationIter_ = 4;
 
-  float timingNetWeightMax_ = 1.9;
+  float timingNetWeightMax_ = 5;
   float keepResizeBelowOverflow_ = 0.3;
 
   bool timingDrivenMode_ = true;
@@ -205,6 +210,7 @@ class Replace
   bool disableRevertIfDiverge_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
+  Clusters clusters_;
 
   // temp variable; OpenDB should have these values.
   int padLeft_ = 0;
@@ -216,5 +222,6 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
+  bool gui_debug_update_db_every_iteration = false;
 };
 }  // namespace gpl

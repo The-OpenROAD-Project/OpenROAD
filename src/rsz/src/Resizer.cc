@@ -47,6 +47,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "ResizerObserver.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -268,11 +269,17 @@ void Resizer::initBlock()
       swappable_cells_cache_.clear();
     }
     sizing_area_limit_ = area_prop->getValue();
+    default_sizing_area_limit_set_ = false;
   } else {
-    if (sizing_area_limit_) {
-      swappable_cells_cache_.clear();
+    if (default_sizing_area_limit_set_ && sizing_area_limit_) {
+      dbDoubleProperty::create(
+          block_, "limit_sizing_area", *sizing_area_limit_);
+    } else {
+      if (sizing_area_limit_) {
+        swappable_cells_cache_.clear();
+      }
+      sizing_area_limit_.reset();
     }
-    sizing_area_limit_.reset();
   }
   dbDoubleProperty* leakage_prop
       = dbDoubleProperty::find(block_, "limit_sizing_leakage");
@@ -282,11 +289,17 @@ void Resizer::initBlock()
       swappable_cells_cache_.clear();
     }
     sizing_leakage_limit_ = leakage_prop->getValue();
+    default_sizing_leakage_limit_set_ = false;
   } else {
-    if (sizing_leakage_limit_) {
-      swappable_cells_cache_.clear();
+    if (default_sizing_leakage_limit_set_ && sizing_leakage_limit_) {
+      dbDoubleProperty::create(
+          block_, "limit_sizing_leakage", *sizing_leakage_limit_);
+    } else {
+      if (sizing_leakage_limit_) {
+        swappable_cells_cache_.clear();
+      }
+      sizing_leakage_limit_.reset();
     }
-    sizing_leakage_limit_.reset();
   }
   dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
   if (site_prop) {
@@ -626,6 +639,177 @@ void Resizer::balanceRowUsage()
 }
 
 ////////////////////////////////////////////////////////////////
+
+// Inspect the timing arcs on a buffer size to find the capacitance
+// points on the piecewise linear delay model
+static void populateBufferCapTestPoints(LibertyCell* cell,
+                                        LibertyPort* in,
+                                        LibertyPort* out,
+                                        std::vector<float>& points)
+{
+  for (TimingArcSet* arc_set : cell->timingArcSets()) {
+    TimingRole* role = arc_set->role();
+    if (role == TimingRole::combinational() && arc_set->from() == in
+        && arc_set->to() == out) {
+      for (TimingArc* arc : arc_set->arcs()) {
+        auto model = dynamic_cast<sta::GateTableModel*>(arc->model());
+        if (model) {
+          auto dm = model->delayModel();
+          for (const sta::TableAxis* axis :
+               {dm->axis1(), dm->axis2(), dm->axis3()}) {
+            if (axis
+                && axis->variable()
+                       == sta::TableAxisVariable::
+                           total_output_net_capacitance) {
+              points.insert(
+                  points.end(), axis->values()->begin(), axis->values()->end());
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+bool Resizer::bufferSizeOutmatched(LibertyCell* worse,
+                                   LibertyCell* better,
+                                   const float max_drive_resist)
+{
+  LibertyPort *win, *wout, *bin, *bout;
+  worse->bufferPorts(win, wout);
+  better->bufferPorts(bin, bout);
+
+  float extra_input_cap
+      = std::max(bin->capacitance() - win->capacitance(), 0.0f);
+  float delay_penalty = max_drive_resist * extra_input_cap;
+  float wlimit = maxLoad(network_->cell(worse));
+
+  std::vector<float> test_points;
+  populateBufferCapTestPoints(worse, win, wout, test_points);
+  populateBufferCapTestPoints(better, bin, bout, test_points);
+
+  if (test_points.empty()) {
+    return false;
+  }
+
+  std::sort(test_points.begin(), test_points.end());
+  auto last = std::unique(test_points.begin(), test_points.end());
+  test_points.erase(last, test_points.end());
+
+  // Ignore cell timing above this C_load/C_in ratio as that is far off
+  // from the target ratio we use in sizing (this cut-off helps prune the
+  // list of candidate buffer sizes better)
+  constexpr float cap_ratio_cutoff = 20.0f;
+
+  for (auto p : test_points) {
+    if ((wlimit == 0 || p <= wlimit)
+        && p < std::min(bin->capacitance(), win->capacitance())
+                   * cap_ratio_cutoff) {
+      float bd = bufferDelay(better, p, tgt_slew_dcalc_ap_);
+      float wd = bufferDelay(worse, p, tgt_slew_dcalc_ap_);
+      if (bd + delay_penalty > wd) {
+        debugPrint(logger_,
+                   RSZ,
+                   "gain_buffering",
+                   3,
+                   "{} is better than {} at {}: {} vs {} + {}",
+                   worse->name(),
+                   better->name(),
+                   units_->capacitanceUnit()->asString(p),
+                   units_->timeUnit()->asString(wd),
+                   units_->timeUnit()->asString(bd),
+                   units_->timeUnit()->asString(delay_penalty));
+        return false;
+      }
+    }
+  }
+
+  // We haven't found a load amount (within bounds) for which `worse` wouldn't
+  // be slower than `better`
+  return true;
+}
+
+void Resizer::findFastBuffers()
+{
+  if (!buffer_fast_sizes_.empty()) {
+    return;
+  }
+
+  float R_max = bufferDriveResistance(buffer_lowest_drive_);
+  LibertyCellSeq sizes_by_inp_cap;
+  sizes_by_inp_cap = buffer_cells_;
+  sort(sizes_by_inp_cap,
+       [](const LibertyCell* buffer1, const LibertyCell* buffer2) {
+         LibertyPort *port1, *port2, *scratch;
+         buffer1->bufferPorts(port1, scratch);
+         buffer2->bufferPorts(port2, scratch);
+         return port1->capacitance() < port2->capacitance();
+       });
+
+  LibertyCellSeq fast_buffers;
+  for (auto size : sizes_by_inp_cap) {
+    if (fast_buffers.empty()) {
+      fast_buffers.push_back(size);
+    } else {
+      if (!bufferSizeOutmatched(size, fast_buffers.back(), R_max)) {
+        while (!fast_buffers.empty()
+               && bufferSizeOutmatched(fast_buffers.back(), size, R_max)) {
+          debugPrint(logger_,
+                     RSZ,
+                     "gain_buffering",
+                     2,
+                     "{} trumps {}",
+                     size->name(),
+                     fast_buffers.back()->name());
+          fast_buffers.pop_back();
+        }
+        fast_buffers.push_back(size);
+      } else {
+        debugPrint(logger_,
+                   RSZ,
+                   "gain_buffering",
+                   2,
+                   "{} trumps {}",
+                   fast_buffers.back()->name(),
+                   size->name());
+      }
+    }
+  }
+
+  debugPrint(logger_, RSZ, "gain_buffering", 1, "pre-selected buffers:");
+  for (auto size : fast_buffers) {
+    debugPrint(logger_, RSZ, "gain_buffering", 1, " - {}", size->name());
+  }
+
+  buffer_fast_sizes_ = {fast_buffers.begin(), fast_buffers.end()};
+}
+
+void Resizer::reportFastBufferSizes()
+{
+  resizePreamble();
+
+  logger_->report(
+      "  Name                    |   Area  | Input cap | Intrin delay | Driver "
+      "resist");
+  logger_->report(
+      "------------------------------------------------------------------------"
+      "--------");
+
+  for (auto size : buffer_fast_sizes_) {
+    LibertyPort *in, *out;
+    size->bufferPorts(in, out);
+    logger_->report(
+        "  {: <23s} | {: >7s} | {: >9s} | {: >12s} | {: >13s}",
+        size->name(),
+        units_->scalarUnit()->asString(size->area(), 3),
+        units_->capacitanceUnit()->asString(in->capacitance(), 3),
+        delayAsString(out->intrinsicDelay(sta_), sta_, 3),
+        units_->resistanceUnit()->asString(out->driveResistance(), 3));
+  }
+  logger_->report(
+      "------------------------------------------------------------------------"
+      "--------");
+}
 
 void Resizer::findBuffers()
 {
@@ -1282,6 +1466,7 @@ void Resizer::resizePreamble()
   checkLibertyForAllCorners();
   findBuffers();
   findTargetLoads();
+  findFastBuffers();
 }
 
 // Convert static cell leakage to std::optional.
@@ -1450,10 +1635,6 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
       source_cell_leakage = cellLeakage(source_cell);
     }
     for (LibertyCell* equiv_cell : *equiv_cells) {
-      if (equiv_cell == source_cell) {
-        continue;
-      }
-
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
       }
@@ -1509,6 +1690,8 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
 
       swappable_cells.push_back(equiv_cell);
     }
+  } else {
+    swappable_cells.push_back(source_cell);
   }
 
   return swappable_cells;
@@ -1714,6 +1897,82 @@ int Resizer::resizeToTargetSlew(const Pin* drvr_pin)
         if (replaceCell(inst, target_cell, true) && !revisiting_inst) {
           return 1;
         }
+      }
+    }
+  }
+  return 0;
+}
+
+bool Resizer::getCin(const LibertyCell* cell, float& cin)
+{
+  sta::LibertyCellPortIterator port_iter(cell);
+  int nports = 0;
+  cin = 0;
+  while (port_iter.hasNext()) {
+    const LibertyPort* port = port_iter.next();
+    if (port->direction() == sta::PortDirection::input()) {
+      cin += port->capacitance();
+      nports++;
+    }
+  }
+  if (nports) {
+    cin /= nports;
+    return true;
+  }
+  return false;
+}
+
+int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
+{
+  float max_cap_ratio = 4.0f;
+  Instance* inst = network_->instance(drvr_pin);
+  LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
+  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
+      && isLogicStdCell(inst)) {
+    float cin, load_cap;
+    ensureWireParasitic(drvr_pin);
+
+    // Includes net parasitic capacitance.
+    load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
+    if (load_cap > 0.0 && getCin(cell, cin)) {
+      if (cell->isBuffer()) {
+        max_cap_ratio = 9.0f;
+      }
+
+      LibertyCellSeq equiv_cells = getSwappableCells(cell);
+      LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
+      float highest_cin = 0;
+      for (LibertyCell* size : equiv_cells) {
+        float size_cin;
+        if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
+            && getCin(size, size_cin)) {
+          if (load_cap < size_cin * max_cap_ratio) {
+            if (upsize_only && size == cell) {
+              // The current size of the cell fits the criteria, apply no
+              // sizing
+              return 0;
+            }
+
+            if (!best || size->area() < best->area()) {
+              best = size;
+            }
+          }
+
+          if (size_cin > highest_cin) {
+            highest_cin = size_cin;
+            highest_cin_cell = size;
+          }
+        }
+      }
+
+      if (best) {
+        if (best != cell) {
+          replaceCell(inst, best, true);
+          return 1;
+        }
+      } else if (highest_cin_cell) {
+        replaceCell(inst, highest_cin_cell, true);
+        return 1;
       }
     }
   }
@@ -4003,11 +4262,13 @@ void Resizer::journalRemoveBuffer(Instance* buffer)
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin != out_pin) {
-      Instance* load_inst = network_->instance(pin);
-      Port* load_port = db_network_->port(pin);
-      load_pin = std::make_pair(network_->name(load_inst),
-                                network_->name(load_port));
-      load_pins.emplace_back(load_pin);
+      if (db_network_->isFlat(pin)) {
+        Instance* load_inst = network_->instance(pin);
+        Port* load_port = db_network_->port(pin);
+        load_pin = std::make_pair(network_->name(load_inst),
+                                  network_->name(load_port));
+        load_pins.emplace_back(load_pin);
+      }
     }
   }
   data.load_pins = std::move(load_pins);
@@ -4592,6 +4853,12 @@ void Resizer::copyDontUseFromLiberty()
       }
     }
   }
+}
+
+void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
+{
+  repair_design_->setDebugGraphics(graphics);
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace rsz

@@ -27,6 +27,7 @@
 
 #include "FlexPA_unique.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "distributed/frArchive.h"
@@ -132,7 +133,7 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
-void UniqueInsts::addUniqueInst(frInst* inst)
+bool UniqueInsts::addInst(frInst* inst)
 {
   if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
     unique_to_idx_[inst] = unique_.size();
@@ -167,17 +168,25 @@ void UniqueInsts::addUniqueInst(frInst* inst)
   }
 
   // Fills data structure that relate a instance to its unique instance
-  UniqueInsts::InstSet& unique_family
+  UniqueInsts::InstSet& unique_class
       = master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
-  if (unique_family.empty()) {
+  inst_to_class_[inst] = &unique_class;
+
+  frInst* unique_inst = nullptr;
+  bool new_unique_class = unique_class.empty();
+  if (new_unique_class) {
     int i = unique_.size();
     unique_.push_back(inst);
     unique_to_idx_[inst] = i;
+    unique_inst = inst;
+  } else {
+    // guarantees everyone on the class has the same unique_inst (the first
+    // that came)
+    unique_inst = inst_to_unique_[*unique_class.begin()];
   }
-  unique_family.insert(inst);
-  frInst* unique_inst = *(unique_family.begin());
+  unique_class.insert(inst);
   inst_to_unique_[inst] = unique_inst;
-  inst_to_class_[inst] = &unique_family;
+  return new_unique_class;
 }
 
 // must init all unique, including filler, macro, etc. to ensure frInst
@@ -189,7 +198,7 @@ void UniqueInsts::computeUnique()
 
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst));
   }
 
   for (auto& inst : design_->getTopBlock()->getInsts()) {
@@ -197,7 +206,7 @@ void UniqueInsts::computeUnique()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    addUniqueInst(inst.get());
+    addInst(inst.get());
   }
 }
 
@@ -277,7 +286,7 @@ void UniqueInsts::report() const
   logger_->report("#unique  instances     = {}", unique_.size());
 }
 
-std::set<frInst*, frBlockObjectComp>* UniqueInsts::getClass(frInst* inst) const
+UniqueInsts::InstSet* UniqueInsts::getClass(frInst* inst) const
 {
   return inst_to_class_.at(inst);
 }
@@ -285,6 +294,54 @@ std::set<frInst*, frBlockObjectComp>* UniqueInsts::getClass(frInst* inst) const
 bool UniqueInsts::hasUnique(frInst* inst) const
 {
   return inst_to_unique_.find(inst) != inst_to_unique_.end();
+}
+
+// deleteInst has to be called both when an instance is deleted and might
+// be needed when moved
+frInst* UniqueInsts::deleteInst(frInst* inst)
+{
+  UniqueInsts::InstSet& unique_class = *inst_to_class_[inst];
+  frInst* class_head = inst_to_unique_[inst];
+  if (unique_class.size() == 1) {
+    auto it = std::find(unique_.begin(), unique_.end(), inst);
+    if (it == unique_.end()) {
+      logger_->error(DRT,
+                     25,
+                     "{} not found on unique insts, although being the only "
+                     "one of its unique class");
+    }
+
+    // readjusts unique_to_idx_ to compensate for posterior unique deletion
+    for (int i = unique_to_idx_[inst]; i < unique_.size(); i++) {
+      auto unique_inst = unique_[i];
+      unique_to_idx_[unique_inst]--;
+    }
+    unique_.erase(it);
+    unique_to_idx_.erase(inst);
+    unique_to_pa_idx_.erase(inst);
+    class_head = nullptr;
+
+  } else if (inst == inst_to_unique_[inst]) {
+    // the inst does not belong to the class anymore, but is the reference
+    // unique_inst, so the reference has to be another inst
+    auto class_begin = inst_to_class_[inst]->begin();
+    // new class head
+    class_head = *class_begin != inst ? *class_begin : *(++class_begin);
+    unique_[unique_to_idx_[inst]] = class_head;
+    for (frInst* other_inst : unique_class) {
+      inst_to_unique_[other_inst] = class_head;
+    }
+    unique_to_idx_[class_head] = unique_to_idx_[inst];
+    unique_to_idx_.erase(inst);
+    if (unique_to_pa_idx_.find(inst) != unique_to_pa_idx_.end()) {
+      unique_to_pa_idx_[class_head] = unique_to_pa_idx_[inst];
+      unique_to_pa_idx_.erase(inst);
+    }
+  }
+  inst_to_class_[inst]->erase(inst);
+  inst_to_class_.erase(inst);
+  inst_to_unique_.erase(inst);
+  return class_head;
 }
 
 int UniqueInsts::getIndex(frInst* inst)

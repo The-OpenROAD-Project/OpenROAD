@@ -91,7 +91,7 @@ struct Cell : public GridNode
   DbuX siteWidth() const override;
   void setPlaced(bool in) { is_placed_ = in; }
   void setHold(bool in) { hold_ = in; }
-  void setOrient(dbOrientType in) { orient_ = in; }
+  void setOrient(const dbOrientType& in) { orient_ = in; }
   void setLeft(DbuX in) { x_ = in; }
   void setBottom(DbuY in) { y_ = in; }
 

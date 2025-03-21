@@ -28,8 +28,6 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <boost/asio/thread_pool.hpp>
 #include <list>
 #include <memory>
@@ -50,10 +48,6 @@ class dbNet;
 
 namespace utl {
 class Logger;
-}
-
-namespace gui {
-class Gui;
 }
 
 namespace stt {
@@ -102,6 +96,7 @@ struct ParamStruct
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
+  int num_threads;
 };
 
 class TritonRoute
@@ -177,15 +172,15 @@ class TritonRoute
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void clearDesign();
-  void updateDesign(const std::vector<std::string>& updates);
-  void updateDesign(const std::string& path);
+  void updateDesign(const std::vector<std::string>& updates, int num_threads);
+  void updateDesign(const std::string& path, int num_threads);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
   int getWorkerResultsSize();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
-  void sendDesignUpdates(const std::string& router_cfg_path);
+  void sendDesignUpdates(const std::string& router_cfg_path, int num_threads);
   void sendGlobalsUpdates(const std::string& router_cfg_path,
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
@@ -197,11 +192,12 @@ class TritonRoute
                 int y1,
                 int x2,
                 int y2,
-                const std::string& marker_name);
+                const std::string& marker_name,
+                int num_threads);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }
-  void fixMaxSpacing();
+  void fixMaxSpacing(int num_threads);
 
  private:
   std::unique_ptr<frDesign> design_;
@@ -213,7 +209,6 @@ class TritonRoute
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_{nullptr};
   int num_drvs_{-1};
-  gui::Gui* gui_{nullptr};
   dst::Distributed* dist_{nullptr};
   bool distributed_{false};
   std::string dist_ip_;
