@@ -242,33 +242,40 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::genPinAccess()
+void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
 {
-  for (auto& inst : unique_) {
-    for (auto& inst_term : inst->getInstTerms()) {
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
-          unique_to_pa_idx_[inst] = pin->getNumPinAccess();
-        } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "genPinAccess error.");
-        }
-        checkFigsOnGrid(pin.get());
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
+  for (auto& inst_term : unique_inst->getInstTerms()) {
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      if (unique_inst->getPinAccessIdx() != -1
+          && unique_inst->getPinAccessIdx() != pin->getNumPinAccess()) {
+        logger_->error(DRT,
+                       69,
+                       "{} has a conflicting pinAccess idx ({} and {}).",
+                       unique_inst->getName(),
+                       unique_inst->getPinAccessIdx(),
+                       pin->getNumPinAccess());
       }
+      unique_inst->setPinAccessIdx(pin->getNumPinAccess());
+      checkFigsOnGrid(pin.get());
+      pin->addPinAccess(std::make_unique<frPinAccess>());
     }
-    inst->setPinAccessIdx(unique_to_pa_idx_[inst]);
   }
-  for (auto& [inst, unique_inst] : inst_to_unique_) {
+  for (frInst* inst : *inst_to_class_[unique_inst]) {
     inst->setPinAccessIdx(unique_inst->getPinAccessIdx());
+  }
+}
+
+void UniqueInsts::initPinAccess()
+{
+  for (frInst* unique_inst : unique_) {
+    initUniqueInstPinAccess(unique_inst);
   }
 
   // IO terms
   if (target_insts_.empty()) {
     for (auto& term : getDesign()->getTopBlock()->getTerms()) {
       for (auto& pin : term->getPins()) {
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
+        pin->addPinAccess(std::make_unique<frPinAccess>());
       }
     }
   }
@@ -277,7 +284,7 @@ void UniqueInsts::genPinAccess()
 void UniqueInsts::init()
 {
   computeUnique();
-  genPinAccess();
+  initPinAccess();
 }
 
 void UniqueInsts::report() const
@@ -318,7 +325,6 @@ frInst* UniqueInsts::deleteInst(frInst* inst)
     }
     unique_.erase(it);
     unique_to_idx_.erase(inst);
-    unique_to_pa_idx_.erase(inst);
     class_head = nullptr;
 
   } else if (inst == inst_to_unique_[inst]) {
@@ -333,10 +339,6 @@ frInst* UniqueInsts::deleteInst(frInst* inst)
     }
     unique_to_idx_[class_head] = unique_to_idx_[inst];
     unique_to_idx_.erase(inst);
-    if (unique_to_pa_idx_.find(inst) != unique_to_pa_idx_.end()) {
-      unique_to_pa_idx_[class_head] = unique_to_pa_idx_[inst];
-      unique_to_pa_idx_.erase(inst);
-    }
   }
   inst_to_class_[inst]->erase(inst);
   inst_to_class_.erase(inst);
@@ -350,11 +352,6 @@ int UniqueInsts::getIndex(frInst* inst)
   return unique_to_idx_[unique_inst];
 }
 
-int UniqueInsts::getPAIndex(frInst* inst) const
-{
-  return unique_to_pa_idx_.at(inst);
-}
-
 const std::vector<frInst*>& UniqueInsts::getUnique() const
 {
   return unique_;
@@ -363,6 +360,11 @@ const std::vector<frInst*>& UniqueInsts::getUnique() const
 frInst* UniqueInsts::getUnique(int idx) const
 {
   return unique_[idx];
+}
+
+frInst* UniqueInsts::getUnique(frInst* inst) const
+{
+  return inst_to_unique_.at(inst);
 }
 
 }  // namespace drt
