@@ -72,8 +72,19 @@ class UniqueInsts
   bool hasUnique(frInst* inst) const;
 
   /**
+   * @brief Computes the unique class of an inst.
+   *
+   * @param inst inst to have its unique class computed
+   *
+   * @returns the unique class.
+   */
+  UniqueInsts::InstSet& computeUniqueClass(frInst* inst);
+
+  /**
    * @brief Adds the instance to the unique instances structures,
    * inserting new data if it is actually a new unique instance.
+   *
+   * @param inst instance to be added.
    *
    * @returns True if the instance is the first of its unique class.
    */
