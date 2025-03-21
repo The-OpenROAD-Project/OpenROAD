@@ -894,10 +894,14 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     }
 
     // Connect iterms to new mod net
-    dbSet<dbITerm> iterms = old_net->getITerms();
-    dbSet<dbITerm>::iterator it_iter;
-    for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
-      dbITerm* old_iterm = *it_iter;
+    debugPrint(logger,
+               utl::ODB,
+               "replace_design",
+               1,
+               "  old net {} has {} iterms",
+               old_net->getName(),
+               old_net->getITerms().size());
+    for (dbITerm* old_iterm : old_net->getITerms()) {
       dbITerm* new_iterm = nullptr;
       if (it_map.count(old_iterm) > 0) {
         new_iterm = it_map[old_iterm];
@@ -976,6 +980,12 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
 bool dbModule::copyToChildBlock(dbModule* module, dbBlock* top_block)
 {
   utl::Logger* logger = module->getImpl()->getLogger();
+
+  debugPrint(logger,
+             utl::ODB,
+             "replace_design",
+             1,
+             ">>> Copying old module to a child block <<<");
 
   // Create a new child block under top block.
   // This block contains only one module
