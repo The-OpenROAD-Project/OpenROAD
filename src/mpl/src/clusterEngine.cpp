@@ -524,33 +524,15 @@ void ClusteringEngine::mapIOPinsAndPads()
 
 void ClusteringEngine::createIOPadClusters()
 {
-  for (const auto& io_pad_path : data_connections_.io_and_regs) {
-    // Registers or Macros
-    const PathInsts& connected_insts = io_pad_path.second;
-    bool path_is_empty = true;
-    for (const std::set<odb::dbInst*>& insts_of_curr_hop_dist :
-         connected_insts) {
-      if (!insts_of_curr_hop_dist.empty()) {
-        path_is_empty = false;
-        break;
-      }
-    }
-
-    if (path_is_empty) {
-      continue;
-    }
-
-    odb::dbBTerm* bterm = io_pad_path.first;
-    odb::dbInst* pad = tree_->maps.bterm_to_pad.at(bterm);
-
-    createIOPadCluster(pad, bterm);
+  for (const auto& [bterm, pad] : tree_->maps.bterm_to_pad) {
+    createIOPadCluster(pad);
   }
 }
 
-void ClusteringEngine::createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm)
+void ClusteringEngine::createIOPadCluster(odb::dbInst* pad)
 {
   auto cluster = std::make_unique<Cluster>(id_, pad->getName(), logger_);
-  tree_->maps.bterm_to_cluster_id[bterm] = id_;
+  tree_->maps.inst_to_cluster_id[pad] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();
 
   const odb::Rect& pad_bbox = pad->getBBox()->getBox();
@@ -628,7 +610,13 @@ bool ClusteringEngine::stdCellsHaveLiberty()
 VerticesMaps ClusteringEngine::computeVertices()
 {
   VerticesMaps vertices_maps;
-  computeIOVertices(vertices_maps);
+
+  if (tree_->maps.bterm_to_pad.empty()) {
+    computeIOVertices(vertices_maps);
+  } else {
+    computePadVertices(vertices_maps);
+  }
+
   computeStdCellVertices(vertices_maps);
   computeMacroPinVertices(vertices_maps);
 
@@ -648,6 +636,16 @@ void ClusteringEngine::computeIOVertices(VerticesMaps& vertices_maps)
     const int id = static_cast<int>(vertices_maps.stoppers.size());
     odb::dbIntProperty::create(bterm, "vertex_id", id);
     vertices_maps.id_to_bterm[id] = bterm;
+    vertices_maps.stoppers.push_back(true);
+  }
+}
+
+void ClusteringEngine::computePadVertices(VerticesMaps& vertices_maps)
+{
+  for (const auto& [bterm, pad] : tree_->maps.bterm_to_pad) {
+    const int id = static_cast<int>(vertices_maps.stoppers.size());
+    odb::dbIntProperty::create(pad, "vertex_id", id);
+    vertices_maps.id_to_std_cell[id] = pad;
     vertices_maps.stoppers.push_back(true);
   }
 }
@@ -717,11 +715,7 @@ DataFlowHypergraph ClusteringEngine::computeHypergraph(
       if (inst->isBlock()) {
         vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
       } else if (inst->isPad()) {
-        // To properly consider the path of a signal that travels from a PAD
-        // to the core we use the path's bterm as the vertex.
-        odb::dbBTerm* pad_bterm = tree_->maps.pad_to_bterm.at(inst);
-        vertex_id
-            = odb::dbIntProperty::find(pad_bterm, "vertex_id")->getValue();
+        vertex_id = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
       } else {
         odb::dbIntProperty* int_prop
             = odb::dbIntProperty::find(inst, "vertex_id");
@@ -1035,18 +1029,35 @@ void ClusteringEngine::incorporateNewCluster(std::unique_ptr<Cluster> cluster,
   parent->addChild(std::move(cluster));
 }
 
+// We don't change the association of ignored instances throughout
+// the multilevel autoclustering process. I.e., ignored instances
+// should remain at the root.
+//
+// Attention: A pad is a special ignored instance in the sense that
+// it will be associated with a pad cluster. By not changing the
+// association of ignored instances during autoclustering, we prevent
+// the autoclustering process from messing up the association of
+// PAD inst -> PAD Cluster as these last ones are created beforehand.
 void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
 {
   const int cluster_id = cluster->getId();
   const ClusterType cluster_type = cluster->getClusterType();
   if (cluster_type == HardMacroCluster || cluster_type == MixedCluster) {
     for (odb::dbInst* inst : cluster->getLeafMacros()) {
+      if (isIgnoredInst(inst)) {
+        continue;
+      }
+
       tree_->maps.inst_to_cluster_id[inst] = cluster_id;
     }
   }
 
   if (cluster_type == StdCellCluster || cluster_type == MixedCluster) {
     for (odb::dbInst* inst : cluster->getLeafStdCells()) {
+      if (isIgnoredInst(inst)) {
+        continue;
+      }
+
       tree_->maps.inst_to_cluster_id[inst] = cluster_id;
     }
   }
@@ -1069,19 +1080,18 @@ void ClusteringEngine::updateInstancesAssociation(odb::dbModule* module,
                                                   int cluster_id,
                                                   bool include_macro)
 {
-  if (include_macro) {
-    for (odb::dbInst* inst : module->getInsts()) {
-      tree_->maps.inst_to_cluster_id[inst] = cluster_id;
+  for (odb::dbInst* inst : module->getInsts()) {
+    if (isIgnoredInst(inst)) {
+      continue;
     }
-  } else {  // only consider standard cells
-    for (odb::dbInst* inst : module->getInsts()) {
-      if (isIgnoredInst(inst) || inst->isBlock()) {
-        continue;
-      }
 
-      tree_->maps.inst_to_cluster_id[inst] = cluster_id;
+    if (!include_macro && inst->isBlock()) {
+      continue;
     }
+
+    tree_->maps.inst_to_cluster_id[inst] = cluster_id;
   }
+
   for (odb::dbModInst* child_module_inst : module->getChildren()) {
     updateInstancesAssociation(
         child_module_inst->getMaster(), cluster_id, include_macro);
@@ -1775,14 +1785,16 @@ void ClusteringEngine::updateConnections()
     }
 
     bool net_has_io_pin = false;
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
-      net_has_io_pin = true;
+    if (tree_->maps.bterm_to_pad.empty()) {
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        const int cluster_id = tree_->maps.bterm_to_cluster_id.at(bterm);
+        net_has_io_pin = true;
 
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        driver_cluster_id = cluster_id;
-      } else {
-        load_clusters_ids.push_back(cluster_id);
+        if (bterm->getIoType() == odb::dbIoType::INPUT) {
+          driver_cluster_id = cluster_id;
+        } else {
+          load_clusters_ids.push_back(cluster_id);
+        }
       }
     }
 

@@ -165,7 +165,7 @@ class ClusteringEngine
   void setBaseThresholds();
   void createIOClusters();
   void createIOPadClusters();
-  void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
+  void createIOPadCluster(odb::dbInst* pad);
   void classifyBoundariesStateForIOs();
   std::map<Boundary, float> computeBlockageExtensionMap();
   Boundary getConstraintBoundary(const odb::Rect& die,
@@ -230,6 +230,7 @@ class ClusteringEngine
   bool stdCellsHaveLiberty();
   VerticesMaps computeVertices();
   void computeIOVertices(VerticesMaps& vertices_maps);
+  void computePadVertices(VerticesMaps& vertices_maps);
   void computeStdCellVertices(VerticesMaps& vertices_maps);
   void computeMacroPinVertices(VerticesMaps& vertices_maps);
   DataFlowHypergraph computeHypergraph(int num_of_vertices);
