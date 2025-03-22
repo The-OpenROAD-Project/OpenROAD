@@ -1241,6 +1241,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   sat::Model model;
   sat::SatParameters parameters;
+  parameters.set_num_workers(num_threads_);
   model.Add(NewSatParameters(parameters));
   sat::CpSolverResponse response = sat::SolveCpModel(cp_model.Build(), &model);
 
