@@ -452,10 +452,10 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
       out_db_net->setDoNotTouch(false);
     }
   }
-  bool out_net_ports = hasPort(out_net);
+  bool out_net_ports = out_net && hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
-    if (hasPort(in_net)) {
+    if (in_net && hasPort(in_net)) {
       return false;
     }
     survivor = out_net;
@@ -469,10 +469,11 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   }
 
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
+      && (!removed || !sdc_->isConstrained(removed))
+      && !sdc_->isConstrained(buffer)) {
     odb::dbNet* db_survivor = db_network_->staToDb(survivor);
     odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return db_survivor->canMergeNet(db_removed);
+    return !db_removed || db_survivor->canMergeNet(db_removed);
   }
   return false;
 }
@@ -486,7 +487,7 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
   Pin* out_pin = db_network_->findPin(buffer, out_port);
   Net* in_net = db_network_->net(in_pin);
   Net* out_net = db_network_->net(out_pin);
-  bool out_net_ports = hasPort(out_net);
+  bool out_net_ports = out_net && hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
     survivor = out_net;
@@ -508,11 +509,15 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  db_survivor->mergeNet(db_removed);
+  if (db_removed) {
+    db_survivor->mergeNet(db_removed);
+  }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
   sta_->deleteInstance(buffer);
-  sta_->deleteNet(removed);
+  if (removed) {
+    sta_->deleteNet(removed);
+  }
   parasitics_invalid_.erase(removed);
   parasiticsInvalid(survivor);
   updateParasitics();
