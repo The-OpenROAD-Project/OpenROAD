@@ -7,6 +7,7 @@ or_integration_tests(
     gcd_no_one_site_gaps
     ibex
     multi_height1
+    edge_spacing
     regions1
     regions2
 )

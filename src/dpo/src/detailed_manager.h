@@ -44,10 +44,11 @@
 #include <memory>
 #include <vector>
 
+#include "dpl/Grid.h"
+#include "journal.h"
 #include "network.h"
 #include "rectangle.h"
 #include "utility.h"
-
 namespace utl {
 class Logger;
 }
@@ -65,6 +66,7 @@ class Architecture;
 class DetailedSeg;
 class Network;
 class RoutingParams;
+using dpl::Grid;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Structures.
@@ -107,7 +109,10 @@ struct Blockage
 class DetailedMgr
 {
  public:
-  DetailedMgr(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedMgr(Architecture* arch,
+              Network* network,
+              RoutingParams* rt,
+              Grid* grid);
   virtual ~DetailedMgr();
 
   void cleanup();
@@ -161,6 +166,7 @@ class DetailedMgr
   void assignCellsToSegments(const std::vector<Node*>& nodesToConsider);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
+  bool hasEdgeSpacingViolation(const Node* node) const;
   int checkSiteAlignment();
   int checkRowAlignment();
   int checkRegionAssignment();
@@ -300,6 +306,12 @@ class DetailedMgr
   int getMoveLimit() { return moveLimit_; }
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
+  // Journal operations
+  const Journal& getJournal() const { return journal; }
+  void eraseFromGrid(Node* node);
+  void paintInGrid(Node* node);
+  void undo(const JournalAction& action, bool positions_only = false);
+  void redo(const JournalAction& action, bool positions_only = false);
   struct compareNodesX
   {
     // Needs cell centers.
@@ -351,6 +363,7 @@ class DetailedMgr
   };
 
   // Different routines for trying moves and swaps.
+  bool verifyMove();
   bool tryMove1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
   bool tryMove2(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
   bool tryMove3(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
@@ -390,6 +403,8 @@ class DetailedMgr
   Architecture* arch_;
   Network* network_;
   RoutingParams* rt_;
+  Grid* grid_;
+  Journal journal;
 
   // For output.
   utl::Logger* logger_ = nullptr;

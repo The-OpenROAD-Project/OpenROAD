@@ -132,7 +132,7 @@ bool Node::adjustCurrOrient(const unsigned newOri)
     pin->setOffsetY(pin->getOffsetY() * mY);
   }
   if (changeEdgeTypes) {
-    std::swap(etl_, etr_);
+    std::swap(etls_, etrs_);
   }
   currentOrient_ = newOri;
   return true;
@@ -177,6 +177,13 @@ Edge* Network::createAndAddEdge()
   ptr->setId(id);
   edges_.push_back(ptr);
   return ptr;
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Master* Network::createAndAddMaster()
+{
+  masters_.emplace_back(std::make_unique<Master>());
+  return masters_.back().get();
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

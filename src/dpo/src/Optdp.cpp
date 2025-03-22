@@ -51,6 +51,8 @@
 #include "architecture.h"
 #include "detailed.h"
 #include "detailed_manager.h"
+#include "dpl/Grid.h"
+#include "dpl/Padding.h"
 #include "legalize_shift.h"
 #include "network.h"
 #include "orientation.h"
@@ -112,7 +114,7 @@ void Optdp::improvePlacement(const int seed,
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
   // A manager to track cells.
-  dpo::DetailedMgr mgr(arch_, network_, routeinfo_);
+  dpo::DetailedMgr mgr(arch_, network_, routeinfo_, grid_);
   mgr.setLogger(logger_);
   // Various settings.
   mgr.setSeed(seed);
@@ -186,13 +188,16 @@ void Optdp::import()
   network_ = new Network;
   arch_ = new Architecture;
   routeinfo_ = new RoutingParams;
+  grid_ = new Grid;
 
   // createLayerMap(); // Does nothing right now.
   // createNdrMap(); // Does nothing right now.
-  setupMasterPowers();   // Call prior to network and architecture creation.
+  setupMasterPowers();  // Call prior to network and architecture creation.
+  initSpacingTable();
   createNetwork();       // Create network; _MUST_ do before architecture.
   createArchitecture();  // Create architecture.
   // createRouteInformation(); // Does nothing right now.
+  createGrid();
   initPadding();  // Need to do after network creation.
   // setUpNdrRules(); // Does nothing right now.
   setUpPlacementRegions();  // Regions.
@@ -210,8 +215,8 @@ void Optdp::updateDbInstLocations()
     if (it_n != instMap_.end()) {
       const Node* nd = it_n->second;
 
-      const int y = nd->getBottom();
-      const int x = nd->getLeft();
+      const int y = nd->getBottom() + grid_->getCore().yMin();
+      const int x = nd->getLeft() + grid_->getCore().xMin();
 
       dbOrientType orient = dbOrientType::R0;
       switch (nd->getCurrOrient()) {
@@ -244,12 +249,40 @@ void Optdp::updateDbInstLocations()
 }
 
 ////////////////////////////////////////////////////////////////
+void Optdp::initSpacingTable()
+{
+  auto db_spacing_tbl = db_->getTech()->getCellEdgeSpacingTable();
+  arch_->setUseSpacingTable(!db_spacing_tbl.empty());
+  if (db_spacing_tbl.empty()) {
+    return;
+  }
+  // initialize edge types
+  arch_->init_edge_type();
+  for (const auto& entry : db_spacing_tbl) {
+    arch_->add_edge_type(entry->getFirstEdgeType());
+    arch_->add_edge_type(entry->getSecondEdgeType());
+  }
+  // fill the spacing table
+  arch_->initSpacingTable();
+  // Fill Table
+  for (const auto& entry : db_spacing_tbl) {
+    std::string first_edge = entry->getFirstEdgeType();
+    std::string second_edge = entry->getSecondEdgeType();
+    const int spc = entry->getSpacing();
+    const bool exact = entry->isExact();
+    const bool except_abutted = entry->isExceptAbutted();
+    const int idx1 = arch_->getEdgeTypes().at(first_edge);
+    const int idx2 = arch_->getEdgeTypes().at(second_edge);
+    arch_->addSpacingTableEntry(idx1, idx2, spc, exact, except_abutted);
+  }
+}
+
+////////////////////////////////////////////////////////////////
 void Optdp::initPadding()
 {
   // Grab information from OpenDP.
 
-  // Need to turn off spacing tables and turn on padding.
-  arch_->setUseSpacingTable(false);
+  // Need to turn on padding.
   arch_->setUsePadding(true);
   arch_->init_edge_type();
 
@@ -369,11 +402,180 @@ void Optdp::setupMasterPowers()
   }
 }
 
+namespace edge_calc {
+/**
+ * @brief Calculates the difference between the passed parent_segment and the
+ * vector segs The parent segment containts all the segments in the segs vector.
+ * This function computes the difference between the parent segment and the
+ * child segments. It first sorts the segs vector and merges intersecting ones.
+ * Then it calculates the difference and returns a list of segments.
+ */
+std::vector<Rect> difference(const Rect& parent_segment,
+                             const std::vector<Rect>& segs)
+{
+  if (segs.empty()) {
+    return {parent_segment};
+  }
+  bool is_horizontal = parent_segment.yMin() == parent_segment.yMax();
+  std::vector<Rect> sorted_segs = segs;
+  // Sort segments by start coordinate
+  std::sort(
+      sorted_segs.begin(),
+      sorted_segs.end(),
+      [is_horizontal](const Rect& a, const Rect& b) {
+        return (is_horizontal ? a.xMin() < b.xMin() : a.yMin() < b.yMin());
+      });
+  // Merge overlapping segments
+  auto prev_seg = sorted_segs.begin();
+  auto curr_seg = prev_seg;
+  for (++curr_seg; curr_seg != sorted_segs.end();) {
+    if (curr_seg->intersects(*prev_seg)) {
+      prev_seg->merge(*curr_seg);
+      curr_seg = sorted_segs.erase(curr_seg);
+    } else {
+      prev_seg = curr_seg++;
+    }
+  }
+  // Get the difference
+  const int start
+      = is_horizontal ? parent_segment.xMin() : parent_segment.yMin();
+  const int end = is_horizontal ? parent_segment.xMax() : parent_segment.yMax();
+  int current_pos = start;
+  std::vector<Rect> result;
+  for (const Rect& seg : sorted_segs) {
+    int seg_start = is_horizontal ? seg.xMin() : seg.yMin();
+    int seg_end = is_horizontal ? seg.xMax() : seg.yMax();
+    if (seg_start > current_pos) {
+      if (is_horizontal) {
+        result.emplace_back(current_pos,
+                            parent_segment.yMin(),
+                            seg_start,
+                            parent_segment.yMax());
+      } else {
+        result.emplace_back(parent_segment.xMin(),
+                            current_pos,
+                            parent_segment.xMax(),
+                            seg_start);
+      }
+    }
+    current_pos = seg_end;
+  }
+  // Add the remaining end segment if it exists
+  if (current_pos < end) {
+    if (is_horizontal) {
+      result.emplace_back(
+          current_pos, parent_segment.yMin(), end, parent_segment.yMax());
+    } else {
+      result.emplace_back(
+          parent_segment.xMin(), current_pos, parent_segment.xMax(), end);
+    }
+  }
+
+  return result;
+}
+
+Rect getBoundarySegment(const Rect& bbox,
+                        const odb::dbMasterEdgeType::EdgeDir dir)
+{
+  Rect segment(bbox);
+  switch (dir) {
+    case odb::dbMasterEdgeType::RIGHT:
+      segment.set_xlo(bbox.xMax());
+      break;
+    case odb::dbMasterEdgeType::LEFT:
+      segment.set_xhi(bbox.xMin());
+      break;
+    case odb::dbMasterEdgeType::TOP:
+      segment.set_ylo(bbox.yMax());
+      break;
+    case odb::dbMasterEdgeType::BOTTOM:
+      segment.set_yhi(bbox.yMin());
+      break;
+  }
+  return segment;
+}
+
+}  // namespace edge_calc
+
+Master* Optdp::getMaster(odb::dbMaster* db_master)
+{
+  auto min_row_height = std::numeric_limits<int>::max();
+  for (dbRow* row : db_->getChip()->getBlock()->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
+  }
+
+  const auto it = masterMap_.find(db_master);
+  if (it != masterMap_.end()) {
+    return it->second;
+  }
+  auto master = network_->createAndAddMaster();
+  masterMap_[db_master] = master;
+  db_master->getPlacementBoundary(master->boundary_box_);
+  master->edges_.clear();
+  if (!arch_->getUseSpacingTable()) {
+    return master;
+  }
+  if (db_master->getType()
+      == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
+    return nullptr;
+  }
+  Rect bbox;
+  db_master->getPlacementBoundary(bbox);
+  std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<Rect>> typed_segs;
+  int num_rows = std::lround(db_master->getHeight() / (double) min_row_height);
+  for (auto edge : db_master->getEdgeTypes()) {
+    auto dir = edge->getEdgeDir();
+    Rect edge_rect = edge_calc::getBoundarySegment(bbox, dir);
+    if (dir == odb::dbMasterEdgeType::TOP
+        || dir == odb::dbMasterEdgeType::BOTTOM) {
+      if (edge->getRangeBegin() != -1) {
+        edge_rect.set_xlo(edge_rect.xMin() + edge->getRangeBegin());
+        edge_rect.set_xhi(edge_rect.xMin() + edge->getRangeEnd());
+      }
+    } else {
+      auto dy = edge_rect.dy();
+      auto row_height = dy / num_rows;
+      auto half_row_height = row_height / 2;
+      if (edge->getCellRow() != -1) {
+        edge_rect.set_ylo(edge_rect.yMin()
+                          + (edge->getCellRow() - 1) * row_height);
+        edge_rect.set_yhi(
+            std::min(edge_rect.yMax(), edge_rect.yMin() + row_height));
+      } else if (edge->getHalfRow() != -1) {
+        edge_rect.set_ylo(edge_rect.yMin()
+                          + (edge->getHalfRow() - 1) * half_row_height);
+        edge_rect.set_yhi(
+            std::min(edge_rect.yMax(), edge_rect.yMin() + half_row_height));
+      }
+    }
+    typed_segs[dir].push_back(edge_rect);
+    if (arch_->hasEdgeType(edge->getEdgeType())) {
+      // consider only edge types defined in the spacing table
+      master->edges_.emplace_back(arch_->getEdgeTypeIdx(edge->getEdgeType()),
+                                  edge_rect);
+    }
+  }
+  if (!arch_->hasEdgeType("DEFAULT")) {
+    return master;
+  }
+  // Add the remaining DEFAULT un-typed segments
+  for (size_t dir_idx = 0; dir_idx <= 3; dir_idx++) {
+    const auto dir = (odb::dbMasterEdgeType::EdgeDir) dir_idx;
+    const auto parent_seg = edge_calc::getBoundarySegment(bbox, dir);
+    const auto default_segs
+        = edge_calc::difference(parent_seg, typed_segs[dir]);
+    for (const auto& seg : default_segs) {
+      master->edges_.emplace_back(0, seg);
+    }
+  }
+  return master;
+}
+
 ////////////////////////////////////////////////////////////////
 void Optdp::createNetwork()
 {
   dbBlock* block = db_->getChip()->getBlock();
-
+  auto core = block->getCoreArea();
   pwrLayers_.clear();
   gndLayers_.clear();
 
@@ -429,7 +631,9 @@ void Optdp::createNetwork()
   int nBlockages = 0;
   for (dbBlockage* blockage : block->getBlockages()) {
     if (!blockage->isSoft()) {
-      network_->createAndAddBlockage(blockage->getBBox()->getBox());
+      auto box = blockage->getBBox()->getBox();
+      box.moveDelta(-core.xMin(), -core.yMin());
+      network_->createAndAddBlockage(box);
       ++nBlockages;
     }
   }
@@ -478,6 +682,22 @@ void Optdp::createNetwork()
 
     // Fill in data.
     ndi->setType(Node::CELL);
+    ndi->setDbInst(inst);
+    ndi->setMaster(getMaster(inst->getMaster()));
+    // Set left and right edge types:
+    {
+      for (auto edge_type : inst->getMaster()->getEdgeTypes()) {
+        if (arch_->hasEdgeType(edge_type->getEdgeType())) {
+          if (edge_type->getEdgeDir() == odb::dbMasterEdgeType::RIGHT) {
+            ndi->addRigthEdgeType(
+                arch_->getEdgeTypeIdx(edge_type->getEdgeType()));
+          } else if (edge_type->getEdgeDir() == odb::dbMasterEdgeType::LEFT) {
+            ndi->addLeftEdgeType(
+                arch_->getEdgeTypeIdx(edge_type->getEdgeType()));
+          }
+        }
+      }
+    }
     ndi->setId(n);
     ndi->setFixed(inst->isFixed() ? Node::FIXED_XY : Node::NOT_FIXED);
 
@@ -500,14 +720,10 @@ void Optdp::createNetwork()
     ndi->setHeight(inst->getMaster()->getHeight());
     ndi->setWidth(inst->getMaster()->getWidth());
 
-    ndi->setOrigLeft(inst->getBBox()->xMin());
-    ndi->setOrigBottom(inst->getBBox()->yMin());
-    ndi->setLeft(inst->getBBox()->xMin());
-    ndi->setBottom(inst->getBBox()->yMin());
-
-    // Won't use edge types.
-    ndi->setRightEdgeType(EDGETYPE_DEFAULT);
-    ndi->setLeftEdgeType(EDGETYPE_DEFAULT);
+    ndi->setOrigLeft(inst->getBBox()->xMin() - core.xMin());
+    ndi->setOrigBottom(inst->getBBox()->yMin() - core.yMin());
+    ndi->setLeft(ndi->getOrigLeft());
+    ndi->setBottom(ndi->getOrigBottom());
 
     // Set the top and bottom power.
     auto it_m = masterPwrs_.find(inst->getMaster());
@@ -548,14 +764,10 @@ void Optdp::createNetwork()
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
-    ndi->setOrigLeft(bterm->getBBox().xMin());
-    ndi->setOrigBottom(bterm->getBBox().yMin());
-    ndi->setLeft(bterm->getBBox().xMin());
-    ndi->setBottom(bterm->getBBox().yMin());
-
-    // Not relevant for terminal.
-    ndi->setRightEdgeType(EDGETYPE_DEFAULT);
-    ndi->setLeftEdgeType(EDGETYPE_DEFAULT);
+    ndi->setOrigLeft(bterm->getBBox().xMin() - core.xMin());
+    ndi->setOrigBottom(bterm->getBBox().yMin() - core.yMin());
+    ndi->setLeft(ndi->getOrigLeft());
+    ndi->setBottom(ndi->getOrigBottom());
 
     // Not relevant for terminal.
     ndi->setBottomPower(Architecture::Row::Power_UNK);
@@ -693,8 +905,7 @@ void Optdp::createNetwork()
 void Optdp::createArchitecture()
 {
   dbBlock* block = db_->getChip()->getBlock();
-
-  odb::Rect dieRect = block->getDieArea();
+  auto core = block->getCoreArea();
 
   auto min_row_height = std::numeric_limits<int>::max();
   for (dbRow* row : block->getRows()) {
@@ -720,8 +931,8 @@ void Optdp::createArchitecture()
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(origin.x());
-    archRow->setBottom(origin.y());
+    archRow->setSubRowOrigin(origin.x() - core.xMin());
+    archRow->setBottom(origin.y() - core.yMin());
     archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
     archRow->setSiteWidth(site->getWidth());
@@ -777,10 +988,6 @@ void Optdp::createArchitecture()
       ymin = std::min(ymin, row->getBottom());
       ymax = std::max(ymax, row->getTop());
     }
-    if (xmin != dieRect.xMin() || xmax != dieRect.xMax()) {
-      xmin = dieRect.xMin();
-      xmax = dieRect.xMax();
-    }
     arch_->setMinX(xmin);
     arch_->setMaxX(xmax);
     arch_->setMinY(ymin);
@@ -792,15 +999,15 @@ void Optdp::createArchitecture()
     int originX = arch_->getRow(r)->getLeft();
     int siteSpacing = arch_->getRow(r)->getSiteSpacing();
     int siteWidth = arch_->getRow(r)->getSiteWidth();
-
+    const int endGap = siteWidth - siteSpacing;
     if (originX < arch_->getMinX()) {
-      originX = (int) std::ceil(arch_->getMinX());
+      originX = arch_->getMinX();
       if (arch_->getRow(r)->getLeft() != originX) {
         arch_->getRow(r)->setSubRowOrigin(originX);
       }
     }
-    if (originX + numSites * siteSpacing + siteWidth > arch_->getMaxX()) {
-      numSites = (arch_->getMaxX() - siteWidth - originX) / siteSpacing;
+    if (originX + numSites * siteSpacing + endGap > arch_->getMaxX()) {
+      numSites = (arch_->getMaxX() - endGap - originX) / siteSpacing;
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
       }
@@ -847,6 +1054,7 @@ void Optdp::createArchitecture()
         }
 
         Rect rect = sbox->getBox();
+        rect.moveDelta(core.xMin(), core.yMin());
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
           int yb = arch_->getRow(r)->getBottom();
           int yt = arch_->getRow(r)->getTop();
@@ -864,6 +1072,16 @@ void Optdp::createArchitecture()
   arch_->postProcess(network_);
 }
 ////////////////////////////////////////////////////////////////
+void Optdp::createGrid()
+{
+  grid_->init(logger_);
+  grid_->initBlock(db_->getChip()->getBlock());
+  grid_->clear();
+  grid_->examineRows(db_->getChip()->getBlock());
+  grid_->initGrid(
+      db_, db_->getChip()->getBlock(), std::make_shared<dpl::Padding>(), 0, 0);
+}
+////////////////////////////////////////////////////////////////
 void Optdp::setUpPlacementRegions()
 {
   int xmin = arch_->getMinX();
@@ -872,7 +1090,7 @@ void Optdp::setUpPlacementRegions()
   int ymax = arch_->getMaxY();
 
   dbBlock* block = db_->getChip()->getBlock();
-
+  auto core = block->getCoreArea();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   Architecture::Region* rptr = nullptr;
   int count = 0;
@@ -904,6 +1122,7 @@ void Optdp::setUpPlacementRegions()
       auto boundaries = parent->getBoundaries();
       for (dbBox* boundary : boundaries) {
         Rect box = boundary->getBox();
+        box.moveDelta(-core.xMin(), -core.yMin());
 
         xmin = std::max(arch_->getMinX(), box.xMin());
         xmax = std::min(arch_->getMaxX(), box.xMax());
