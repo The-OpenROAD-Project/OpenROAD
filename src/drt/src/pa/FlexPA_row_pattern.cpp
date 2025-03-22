@@ -296,7 +296,7 @@ void FlexPA::genInstRowPatternCommit(
   if (inst_cnt != -1) {
     std::string inst_names;
     for (frInst* inst : insts) {
-      inst_names += '\n' + inst->getName();
+      inst_names += '\n' + inst->getName() + "/" + inst->getMaster()->getName();
     }
     logger_->error(DRT,
                    85,
