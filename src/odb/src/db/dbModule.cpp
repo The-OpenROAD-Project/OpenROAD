@@ -936,35 +936,30 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
   // dbModBTerm is the port seen from inside the dbModule ("child")
   // dbModITerm is the port seen from outside from the dbModInst ("parent")
   dbSet<dbModITerm> mod_iterms = new_mod_inst->getModITerms();
-  dbSet<dbModITerm>::iterator iterm_iter;
-  for (iterm_iter = mod_iterms.begin(); iterm_iter != mod_iterms.end();
-       ++iterm_iter) {
-    dbModITerm* old_mod_iterm = *iterm_iter;
+  std::string msg = fmt::format(
+      "copyModuleBoundaryIO for new mod inst {} with {} mod iterms",
+      new_mod_inst->getName(),
+      mod_iterms.size());
+  debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+  for (dbModITerm* new_mod_iterm : mod_iterms) {
     // Connect outside dbModITerm to inside dbModBTerm
     dbModBTerm* new_mod_bterm
-        = new_module->findModBTerm(old_mod_iterm->getName());
+        = new_module->findModBTerm(new_mod_iterm->getName());
     if (new_mod_bterm) {
-      old_mod_iterm->setChildModBTerm(new_mod_bterm);
-      new_mod_bterm->setParentModITerm(old_mod_iterm);
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "Created parent/chlld port connection");
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "  parent mod iterm is {}, child mod bterm is {}",
-                 old_mod_iterm->getName(),
-                 new_mod_bterm->getName());
+      new_mod_iterm->setChildModBTerm(new_mod_bterm);
+      new_mod_bterm->setParentModITerm(new_mod_iterm);
+      msg = "Created parent/child port connection";
+      debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+      msg = fmt::format("  parent mod iterm: {}, child mod bterm: {}",
+                        new_mod_iterm->getName(),
+                        new_mod_bterm->getName());
+      debugPrint(logger, utl::ODB, "replace_design", 1, msg);
     } else {
-      logger->error(utl::ODB,
-                    463,
-                    "Parent/child port connection cannot be created for parent "
-                    "mod iterm {} because child mod bterm {} does not exist",
-                    old_mod_iterm->getName(),
-                    old_mod_iterm->getName());
+      msg = fmt::format(
+          "Parent/child port connection cannot be created for parent "
+          "mod iterm {} because child mod bterm does not exist",
+          new_mod_iterm->getName());
+      logger->error(utl::ODB, 463, msg);
     }
   }
 }
