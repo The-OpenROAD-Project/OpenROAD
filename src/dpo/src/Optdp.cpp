@@ -809,12 +809,12 @@ void Optdp::createNetwork()
         // Due to old bookshelf, my offsets are from the
         // center of the cell whereas in DEF, it's from
         // the bottom corner.
-        double ww = (mTerm->getBBox().xMax() - mTerm->getBBox().xMin());
-        double hh = (mTerm->getBBox().yMax() - mTerm->getBBox().yMax());
+        double ww = mTerm->getBBox().dx();
+        double hh = mTerm->getBBox().dy();
         double xx = (mTerm->getBBox().xMax() + mTerm->getBBox().xMin()) * 0.5;
-        double yy = (mTerm->getBBox().yMax() + mTerm->getBBox().yMax()) * 0.5;
-        double dx = xx - ((double) master->getWidth() / 2.);
-        double dy = yy - ((double) master->getHeight() / 2.);
+        double yy = (mTerm->getBBox().yMax() + mTerm->getBBox().yMin()) * 0.5;
+        double dx = xx - (master->getWidth() / 2.0);
+        double dy = yy - (master->getHeight() / 2.0);
 
         ptr->setOffsetX(dx);
         ptr->setOffsetY(dy);

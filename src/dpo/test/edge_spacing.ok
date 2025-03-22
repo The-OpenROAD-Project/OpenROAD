@@ -46,15 +46,15 @@ Importing netlist into detailed improver.
 [INFO DPO-0325] Random improver is using hpwl objective.
 [INFO DPO-0326] Random improver cost string is (a).
 [INFO DPO-0332] End of pass, Generator displacement called 500 times.
-[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 204, moves     0 since last reset.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 236, moves     0 since last reset.
 [INFO DPO-0333] End of pass, Objective hpwl, Initial cost 1.288485e+10, Scratch cost 1.288485e+10, Incremental cost 1.288485e+10, Mismatch? N
 [INFO DPO-0338] End of pass, Total cost is 1.288485e+10.
 [INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.00 percent.
-[INFO DPO-0328] End of random improver; improvement is 0.000035 percent.
+[INFO DPO-0328] End of random improver; improvement is 0.000000 percent.
 [INFO DPO-0380] Cell flipping.
-[INFO DPO-0382] Changed 13 cell orientations for row compatibility.
+[INFO DPO-0382] Changed 0 cell orientations for row compatibility.
 [INFO DPO-0383] Performed 2 cell flips.
-[INFO DPO-0384] End of flipping; objective is 1.288485e+10, improvement is 0.00 percent.
+[INFO DPO-0384] End of flipping; objective is 1.288484e+10, improvement is 0.00 percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
@@ -63,7 +63,7 @@ Importing netlist into detailed improver.
 Detailed Improvement Results
 ------------------------------------------
 Original HPWL                8.4 u
-Final HPWL                   5.9 u
-Delta HPWL                 -29.8 %
+Final HPWL                   7.1 u
+Delta HPWL                 -15.7 %
 
 No differences found.

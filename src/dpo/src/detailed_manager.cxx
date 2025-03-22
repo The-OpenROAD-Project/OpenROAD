@@ -3522,7 +3522,10 @@ void DetailedMgr::paintInGrid(Node* node)
 {
   const auto grid_x = grid_->gridX(DbuX(node->getLeft()));
   const auto grid_y = grid_->gridRoundY(DbuY(node->getBottom()));
+  auto pixel = grid_->gridPixel(grid_x, grid_y);
   grid_->paintPixel(node, grid_x, grid_y);
+  node->adjustCurrOrient(dbToDpoOrient(
+      pixel->sites.at(node->getDbInst()->getMaster()->getSite())));
 }
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::undo(const JournalAction& action, const bool positions_only)

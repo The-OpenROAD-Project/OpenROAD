@@ -107,7 +107,7 @@ Importing netlist into detailed improver.
 [INFO DPO-0327] Pass   5 of random improver; improvement in cost is -nan percent.
 [INFO DPO-0328] End of random improver; improvement is -nan percent.
 [INFO DPO-0380] Cell flipping.
-[INFO DPO-0382] Changed 2 cell orientations for row compatibility.
+[INFO DPO-0382] Changed 0 cell orientations for row compatibility.
 [INFO DPO-0383] Performed 0 cell flips.
 [INFO DPO-0384] End of flipping; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.
