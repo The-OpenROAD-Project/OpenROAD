@@ -325,6 +325,22 @@ void Resizer::initBlock()
     }
     sizing_keep_vt_ = false;
   }
+
+  dbDoubleProperty* cap_ratio_prop
+      = dbDoubleProperty::find(block_, "sizing_cap_ratio");
+  if (cap_ratio_prop) {
+    sizing_cap_ratio_ = cap_ratio_prop->getValue();
+  } else {
+    sizing_cap_ratio_ = default_sizing_cap_ratio_;
+  }
+
+  dbDoubleProperty* buffer_cap_ratio_prop
+      = dbDoubleProperty::find(block_, "buffer_sizing_cap_ratio");
+  if (buffer_cap_ratio_prop) {
+    buffer_sizing_cap_ratio_ = buffer_cap_ratio_prop->getValue();
+  } else {
+    buffer_sizing_cap_ratio_ = default_buffer_sizing_cap_ratio_;
+  }
 }
 
 void Resizer::init()
@@ -1924,7 +1940,6 @@ bool Resizer::getCin(const LibertyCell* cell, float& cin)
 
 int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
 {
-  float max_cap_ratio = 4.0f;
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
@@ -1935,9 +1950,8 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
     // Includes net parasitic capacitance.
     load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
     if (load_cap > 0.0 && getCin(cell, cin)) {
-      if (cell->isBuffer()) {
-        max_cap_ratio = 9.0f;
-      }
+      float cap_ratio
+          = cell->isBuffer() ? buffer_sizing_cap_ratio_ : sizing_cap_ratio_;
 
       LibertyCellSeq equiv_cells = getSwappableCells(cell);
       LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
@@ -1946,7 +1960,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
         float size_cin;
         if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
             && getCin(size, size_cin)) {
-          if (load_cap < size_cin * max_cap_ratio) {
+          if (load_cap < size_cin * cap_ratio) {
             if (upsize_only && size == cell) {
               // The current size of the cell fits the criteria, apply no
               // sizing
