@@ -258,7 +258,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
     }
     return false;
   }
-  if (rowOri == Orientation_FS || Orientation_S) {
+  if (rowOri == Orientation_FS || rowOri == Orientation_S) {
     if (cellOri == Orientation_FS || cellOri == Orientation_S) {
       return true;
     }
