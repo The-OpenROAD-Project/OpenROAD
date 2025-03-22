@@ -87,6 +87,7 @@
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "ora/MakeOra.hh"
 
 namespace sta {
 extern const char* openroad_swig_tcl_inits[];
@@ -147,6 +148,7 @@ OpenRoad::~OpenRoad()
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
+  deleteOra(ora_);
   delete logger_;
   delete verilog_reader_;
 }
@@ -213,6 +215,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
+  ora_ = makeOra();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -248,6 +251,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initDistributed(this);
   initSteinerTreeBuilder(this);
   dft::initDft(this);
+  initOra(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
