@@ -36,8 +36,6 @@
 #include <lemon/list_graph.h>
 #include <lemon/network_simplex.h>
 #include <omp.h>
-#include <ortools/linear_solver/linear_solver.h>
-#include <ortools/sat/cp_model.h>
 
 #include <algorithm>
 #include <random>
@@ -46,6 +44,8 @@
 #include "db_sta/dbSta.hh"
 #include "graphics.h"
 #include "odb/dbTransform.h"
+#include "ortools/linear_solver/linear_solver.h"
+#include "ortools/sat/cp_model.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"

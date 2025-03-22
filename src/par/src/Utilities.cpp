@@ -37,8 +37,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Utilities.h"
 
-#include <ortools/linear_solver/linear_solver.h>
-
 #include <algorithm>
 #include <cassert>
 #include <climits>
@@ -50,6 +48,8 @@
 #include <numeric>
 #include <string>
 #include <vector>
+
+#include "ortools/linear_solver/linear_solver.h"
 
 namespace par {
 
@@ -494,7 +494,7 @@ bool OptimalPartCplex(
                            upper_block_balance[block_id][i]));
       balance_expr.end();
     }  // finish traversing blocks
-  }    // finish dimension check
+  }  // finish dimension check
   // Fixed vertices constraint
   for (const auto& [vertex_id, block_id] : fixed_vertices) {
     mymodel.add(var_x[block_id][vertex_id] == 1);
