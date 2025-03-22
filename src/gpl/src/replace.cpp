@@ -124,7 +124,7 @@ void Replace::reset()
 
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
-  timingNetWeightMax_ = 1.9;
+  timingNetWeightMax_ = 5;
 
   gui_debug_ = false;
   gui_debug_pause_iterations_ = 10;
