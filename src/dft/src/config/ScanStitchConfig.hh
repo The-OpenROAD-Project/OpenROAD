@@ -31,13 +31,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <optional>
+
+#include "Macros.hh"
 #include "utl/Logger.h"
 
 namespace dft {
 
 class ScanStitchConfig
 {
+  DISABLE_COPY_AND_MOVE(ScanStitchConfig);
+
  public:
+  ScanStitchConfig() = default;
+
   void setEnableNamePattern(std::string_view enable_name_pattern);
   std::string_view getEnableNamePattern() const;
 
@@ -49,6 +56,11 @@ class ScanStitchConfig
 
   // Prints using logger->report the config used by Scan Stitch
   void report(utl::Logger* logger) const;
+
+  // Checks that the config is in a valid state. Reports issues in the logger
+  // TODO: For ScanStitchConfig we don't have anything to validate now, it
+  // always returns std::nullopt
+  void validate(utl::Logger* logger) const;
 
  private:
   std::string enable_name_pattern_ = "scan_enable_{}";

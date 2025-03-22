@@ -10,6 +10,7 @@ target_link_libraries(dft_clock_domain_lib
   PRIVATE
     utl_lib
     dft_config_lib
+    dft_utils_macros_lib
 )
 
 add_library(dft_clock_domain_hash_lib
@@ -25,4 +26,5 @@ target_link_libraries(dft_clock_domain_hash_lib
     utl_lib
     dft_config_lib
     dft_clock_domain_lib
+    dft_utils_macros_lib
 )

@@ -34,11 +34,16 @@
 
 %{
 
+#include <functional>
+
 #include "dft/Dft.hh"
 #include "DftConfig.hh"
 #include "ord/OpenRoad.hh"
 #include "ScanArchitect.hh"
 #include "ClockDomain.hh"
+#include "TestModeConfig.hh"
+
+namespace {
 
 dft::Dft * getDft()
 {
@@ -49,6 +54,19 @@ utl::Logger* getLogger()
 {
   return ord::OpenRoad::openRoad()->getLogger();
 }
+
+void withTestMode(std::string_view test_mode, std::function<void(dft::TestModeConfig*)> fn) {
+  dft::TestModeConfig* test_mode_config = getDft()
+    ->getMutableDftConfig()
+    ->getOrDefaultMutableTestModeConfig(std::string(test_mode), getLogger());
+  if (!test_mode_config) {
+    getLogger()->error(utl::DFT, 41, "Test mode {} not defiend", test_mode); 
+    return;
+  }
+  fn(test_mode_config);
+}
+
+} // namespace
 
 %}
 
@@ -114,38 +132,52 @@ void insert_dft()
   getDft()->insertDft();
 }
 
-void set_dft_config_max_length(int max_length)
+void set_dft_config_max_length(const char* test_mode, int max_length)
 {
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
+  withTestMode(test_mode, [max_length](dft::TestModeConfig* test_mode_config) {
+    test_mode_config->getMutableScanArchitectConfig()->setMaxLength(max_length);
+  });
 }
 
-void set_dft_config_max_chains(int max_chains)
+void set_dft_config_max_chains(const char* test_mode, int max_chains)
 {
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxChains(max_chains);
+  withTestMode(test_mode, [max_chains](dft::TestModeConfig* test_mode_config) {
+    test_mode_config->getMutableScanArchitectConfig()->setMaxChains(max_chains);
+  });
 }
 
-void set_dft_config_clock_mixing(dft::ScanArchitectConfig::ClockMixing clock_mixing)
+void set_dft_config_clock_mixing(const char* test_mode, dft::ScanArchitectConfig::ClockMixing clock_mixing)
 {
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setClockMixing(clock_mixing);
+  withTestMode(test_mode, [clock_mixing](dft::TestModeConfig* test_mode_config) {
+    test_mode_config->getMutableScanArchitectConfig()->setClockMixing(clock_mixing);
+  });
 }
 
-void set_dft_config_scan_signal_name_pattern(const char* signal_ptr, const char* pattern_ptr) {
-  dft::ScanStitchConfig* config = getDft()->getMutableDftConfig()->getMutableScanStitchConfig();
-  std::string_view signal(signal_ptr), pattern(pattern_ptr);
-  
-  if (signal == "scan_in") {
-    config->setInNamePattern(pattern);
-  } else if (signal == "scan_enable") {
-    config->setEnableNamePattern(pattern);
-  } else if (signal == "scan_out") {
-    config->setOutNamePattern(pattern);
-  } else {
-    getLogger()->error(utl::DFT, 6, "Internal error: unrecognized signal '{}' to set a pattern for", signal); 
-  }
+void set_dft_config_scan_signal_name_pattern(const char* test_mode, const char* signal_ptr, const char* pattern_ptr) {
+  withTestMode(test_mode, [signal_ptr, pattern_ptr](dft::TestModeConfig* test_mode_config) {
+    dft::ScanStitchConfig* config = test_mode_config->getMutableScanStitchConfig();
+
+    std::string_view signal(signal_ptr);
+    std::string_view pattern(pattern_ptr);
+    
+    if (signal == "scan_in") {
+      config->setInNamePattern(pattern);
+    } else if (signal == "scan_enable") {
+      config->setEnableNamePattern(pattern);
+    } else if (signal == "scan_out") {
+      config->setOutNamePattern(pattern);
+    } else {
+      getLogger()->error(utl::DFT, 6, "Internal error: unrecognized signal '{}' to set a pattern for", signal); 
+    }
+  });
 }
 
 void report_dft_config() {
   getDft()->reportDftConfig();
+}
+
+void create_dft_test_mode(const char* test_mode) {
+  getDft()->getMutableDftConfig()->createTestMode(test_mode, getLogger());
 }
 
 %}  // inline
