@@ -73,24 +73,24 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-root_buf buf] \
                                              [-clk_nets nets] \
                                              [-tree_buf buf] \
-                                             [-distance_between_buffers] \
-                                             [-branching_point_buffers_distance] \
-                                             [-clustering_exponent] \
-                                             [-clustering_unbalance_ratio] \
-                                             [-sink_clustering_size] \
-                                             [-sink_clustering_max_diameter] \
+                                             [-distance_between_buffers distance] \
+                                             [-branching_point_buffers_distance distance] \
+                                             [-clustering_exponent exponent] \
+                                             [-clustering_unbalance_ratio ratio] \
+                                             [-sink_clustering_size size] \
+                                             [-sink_clustering_max_diameter diameter] \
                                              [-sink_clustering_enable] \
                                              [-balance_levels] \
                                              [-sink_clustering_levels levels] \
-                                             [-num_static_layers] \
-                                             [-sink_clustering_buffer] \
+                                             [-num_static_layers num] \
+                                             [-sink_clustering_buffer buf] \
                                              [-obstruction_aware] \
                                              [-no_obstruction_aware] \
                                              [-apply_ndr] \
-                                             [-sink_buffer_max_cap_derate] \
+                                             [-sink_buffer_max_cap_derate derate] \
                                              [-dont_use_dummy_load] \
-                                             [-delay_buffer_derate] \
-                                             [-library] \
+                                             [-delay_buffer_derate derate] \
+                                             [-library library] \
 } ;# checker off
 
 proc clock_tree_synthesis { args } {
