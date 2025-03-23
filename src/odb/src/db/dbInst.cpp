@@ -1426,7 +1426,7 @@ void dbInst::destroy(dbInst* inst_)
     dbITerm* iterm = (dbITerm*) _iterm;
     iterm->disconnect();
     if (inst_->getPinAccessIdx() >= 0) {
-      for (auto [pin, aps] : iterm->getAccessPoints()) {
+      for (const auto& [pin, aps] : iterm->getAccessPoints()) {
         for (auto ap : aps) {
           _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
           _ap->iterms_.erase(

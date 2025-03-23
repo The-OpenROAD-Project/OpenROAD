@@ -2815,7 +2815,7 @@ bool DbTermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   for (auto* iterm : block->getITerms()) {
-    for (auto [mpin, aps] : iterm->getAccessPoints()) {
+    for (const auto& [mpin, aps] : iterm->getAccessPoints()) {
       for (auto* ap : aps) {
         objects.insert(makeSelected(DbTermAccessPoint{ap, iterm}));
       }
