@@ -1129,8 +1129,8 @@ int extPattern::ContextPattern(extWirePattern* main,
   int limit = main->last(dir1);
 
   int jj = 1;
-  uint ii = 1;
-  for (;; ii++) {
+  // uint ii = 1;
+  for (;; /* ii++ */) {
     // int next_xy= wp->ll[dir1][ii-1];
     // next_xy += w+s;
     ll[dir1] += w + s;

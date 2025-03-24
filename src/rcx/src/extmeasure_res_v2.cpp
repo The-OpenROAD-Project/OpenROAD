@@ -149,10 +149,10 @@ int extMeasure::SingleDiagTrackDist_opt(SEQ* s,
   SEQ* indexInfo = dgContext->get(0);
   // DELETE int init_index= indexInfo->type;
   int ii = indexInfo->type;
-  int back_cnt = 0;
+  // int back_cnt = 0;
   for (; ii > 0; ii--) {
     SEQ* tseq = dgContext->get(ii);
-    back_cnt++;
+    // back_cnt++;
     int xy1 = s->_ll[!_dir];
     int xy2 = tseq->_ur[!_dir];
     if (xy1 > xy2)
@@ -169,7 +169,7 @@ int extMeasure::SingleDiagTrackDist_opt(SEQ* s,
   int min_dist = 100000000;
   int max_dist = 0;
   uint cnt = 0;
-  uint tot_cnt = 0;
+  // uint tot_cnt = 0;
 
   int scnt = (int) dgContext->getCnt();
   int search_start = start;
@@ -177,7 +177,7 @@ int extMeasure::SingleDiagTrackDist_opt(SEQ* s,
   uint idx = search_start;
   for (; idx < scnt; idx++) {
     SEQ* tseq = dgContext->get(idx);
-    tot_cnt++;
+    // tot_cnt++;
 
     // ---------   ----------------------       ---------  ------      --------
     // s segment:                    ___________________
