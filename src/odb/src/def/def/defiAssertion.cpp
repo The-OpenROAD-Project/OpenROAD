@@ -62,7 +62,7 @@ void defiAssertion::Init()
   numItems_ = 0;
   clear();
   numItemsAllocated_ = 16;
-  items_ = (int**) malloc(sizeof(char*) * 16);
+  items_ = (int**) malloc(sizeof(int*) * 16);
   itemTypes_ = (char*) malloc(16);
 }
 

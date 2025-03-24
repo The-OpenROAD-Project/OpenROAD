@@ -602,7 +602,7 @@ void defiPath::print(FILE* fout) const
 void defiPath::bumpSize(int size)
 {
   int i;
-  int* newKeys = (int*) malloc(size * sizeof(int*));
+  int* newKeys = (int*) malloc(size * sizeof(int));
   void** newData = (void**) malloc(size * sizeof(void*));
 
   for (i = 0; i < numUsed_; i++) {
