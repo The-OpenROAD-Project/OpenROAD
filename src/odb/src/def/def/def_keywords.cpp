@@ -150,7 +150,7 @@ int defrData::GETC()
     if (next == nullptr)
       return EOF;
 
-    int ch = *next++;
+    int ch = static_cast<unsigned char>(*next++);
 
     if (ch != '\r')
       return ch;

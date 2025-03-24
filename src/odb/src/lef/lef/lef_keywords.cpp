@@ -228,7 +228,7 @@ int lefGetc()
     if (lefData->next == nullptr)
       return EOF;
 
-    int ch = *lefData->next++;
+    int ch = static_cast<unsigned char>(*lefData->next++);
 
     if (ch != '\r')
       return ch;
