@@ -112,14 +112,7 @@ double DetailedHPWL::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(const int n,
-                           const std::vector<Node*>& nodes,
-                           const std::vector<int>& curLeft,
-                           const std::vector<int>& curBottom,
-                           const std::vector<unsigned>& curOri,
-                           const std::vector<int>& newLeft,
-                           const std::vector<int>& newBottom,
-                           const std::vector<unsigned>& newOri)
+double DetailedHPWL::delta(const Journal& journal)
 {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in WL. Note that we need to know the orientation information and
@@ -130,18 +123,13 @@ double DetailedHPWL::delta(const int n,
   double new_wl = 0.;
   Rectangle old_box, new_box;
 
-  // Put cells into their "old positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
+  const auto& changes = journal.getActions();
+  for (int i = changes.size() - 1; i >= 0; i--) {
+    mgrPtr_->undo(changes[i], true);
   }
 
   ++traversal_;
-  for (int i = 0; i < n; i++) {
-    Node* ndi = nodes[i];
+  for (const auto ndi : journal.getAffectedNodes()) {
     for (Pin* pini : ndi->getPins()) {
       Edge* edi = pini->getEdge();
 
@@ -171,17 +159,12 @@ double DetailedHPWL::delta(const int n,
   }
 
   // Put cells into their "new positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(newLeft[i]);
-    nodes[i]->setBottom(newBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], newOri[i]);
-    }
+  for (const auto& change : changes) {
+    mgrPtr_->redo(change, true);
   }
 
   ++traversal_;
-  for (int i = 0; i < n; i++) {
-    Node* ndi = nodes[i];
+  for (const auto ndi : journal.getAffectedNodes()) {
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
@@ -211,17 +194,6 @@ double DetailedHPWL::delta(const int n,
       new_wl += (new_box.getWidth() + new_box.getHeight());
     }
   }
-
-  // Put cells into their "old positions and orientations" before returning
-  // (leave things as they were provided to us...).
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
-  }
-
   // +ve means improvement.
   return old_wl - new_wl;
 }

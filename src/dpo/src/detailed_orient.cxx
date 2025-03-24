@@ -191,25 +191,21 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   bool flip = false;
   if (arch_->powerCompatible(ndi, arch_->getRow(row), flip)) {
     if (flip) {
-      // Flip the pins.
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
       // I'm not sure the following is correct, but I am going
       // to change the orientation the same way I would for a
       // single height cell when flipping about X.
       switch (ndi->getCurrOrient()) {
         case Orientation_N:
-          ndi->setCurrOrient(Orientation_FS);
+          ndi->adjustCurrOrient(Orientation_FS);
           break;
         case Orientation_FN:
-          ndi->setCurrOrient(Orientation_S);
+          ndi->adjustCurrOrient(Orientation_S);
           break;
         case Orientation_FS:
-          ndi->setCurrOrient(Orientation_N);
+          ndi->adjustCurrOrient(Orientation_N);
           break;
         case Orientation_S:
-          ndi->setCurrOrient(Orientation_FN);
+          ndi->adjustCurrOrient(Orientation_FN);
           break;
         default:
           return false;
@@ -253,38 +249,26 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
     }
 
     if (cellOri == Orientation_FS) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_N);
+      ndi->adjustCurrOrient(Orientation_N);
       return true;
     }
     if (cellOri == Orientation_S) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_FN);
+      ndi->adjustCurrOrient(Orientation_FN);
       return true;
     }
     return false;
   }
-  if (rowOri == Orientation_FS || Orientation_S) {
+  if (rowOri == Orientation_FS || rowOri == Orientation_S) {
     if (cellOri == Orientation_FS || cellOri == Orientation_S) {
       return true;
     }
 
     if (cellOri == Orientation_N) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_FS);
+      ndi->adjustCurrOrient(Orientation_FS);
       return true;
     }
     if (cellOri == Orientation_FN) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_S);
+      ndi->adjustCurrOrient(Orientation_S);
       return true;
     }
     return false;
@@ -391,18 +375,33 @@ int DetailedOrient::flipCells()
           || ndi->getRight() + leftPadding > rx) {
         continue;
       }
-
+      uint orig_orient = ndi->getCurrOrient();
+      uint flipped_orient;
+      switch (orig_orient) {
+        case Orientation_N:
+          flipped_orient = Orientation_FN;
+          break;
+        case Orientation_S:
+          flipped_orient = Orientation_FS;
+          break;
+        case Orientation_FN:
+          flipped_orient = Orientation_N;
+          break;
+        case Orientation_FS:
+          flipped_orient = Orientation_S;
+          break;
+        default:
+          continue;
+          break;
+      }
+      ndi->adjustCurrOrient(flipped_orient);
+      if (mgrPtr_->hasEdgeSpacingViolation(ndi)) {
+        ndi->adjustCurrOrient(orig_orient);
+        continue;
+      }
       // Check potential violation due to edge spacing.
       lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
-      if (ndl) {
-        lx += arch_->getCellSpacingUsingTable(ndl->getRightEdgeType(),
-                                              ndi->getRightEdgeType());
-      }
       rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
-      if (ndr) {
-        rx -= arch_->getCellSpacingUsingTable(ndi->getLeftEdgeType(),
-                                              ndr->getLeftEdgeType());
-      }
       // Based on edge spacing, the cell must reside within
       // [lx,rx].
       if (ndi->getWidth() > (rx - lx)) {
@@ -415,34 +414,9 @@ int DetailedOrient::flipCells()
       // offsets, the edge types and the paddings.  Finally,
       // we need to change the orientiation.
 
-      // Update pin offsets.
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetX(pin->getOffsetX() * (-1));
-      }
-      // Update/swap edge types.
-      ndi->swapEdgeTypes();
       // Update/swap paddings.
       arch_->getCellPadding(ndi, leftPadding, rightPadding);
       arch_->addCellPadding(ndi, rightPadding, leftPadding);
-      // Update the orientation.
-      switch (ndi->getCurrOrient()) {
-        case Orientation_N:
-          ndi->setCurrOrient(Orientation_FN);
-          break;
-        case Orientation_S:
-          ndi->setCurrOrient(Orientation_FS);
-          break;
-        case Orientation_FN:
-          ndi->setCurrOrient(Orientation_N);
-          break;
-        case Orientation_FS:
-          ndi->setCurrOrient(Orientation_S);
-          break;
-        default:
-          // ?
-          break;
-      }
-
       ++nflips;
     }
   }

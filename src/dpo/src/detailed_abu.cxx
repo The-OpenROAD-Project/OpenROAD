@@ -104,10 +104,8 @@ void DetailedABU::init()
   abuTargUt_ = mgrPtr_->getTargetUt();  // XXX: Need to set this somehow!!!
 
   abuGridUnit_ = BIN_DIM * arch_->getRow(0)->getHeight();
-  abuGridNumX_
-      = (int) ceil((arch_->getMaxX() - arch_->getMinX()) / abuGridUnit_);
-  abuGridNumY_
-      = (int) ceil((arch_->getMaxY() - arch_->getMinY()) / abuGridUnit_);
+  abuGridNumX_ = (int) ceil((arch_->getWidth()) / abuGridUnit_);
+  abuGridNumY_ = (int) ceil((arch_->getHeight()) / abuGridUnit_);
   abuNumBins_ = abuGridNumX_ * abuGridNumY_;
   abuBins_.resize(abuNumBins_);
 
@@ -450,14 +448,7 @@ double DetailedABU::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::delta(const int n,
-                          const std::vector<Node*>& nodes,
-                          const std::vector<int>& curLeft,
-                          const std::vector<int>& curBottom,
-                          const std::vector<unsigned>& curOri,
-                          const std::vector<int>& newLeft,
-                          const std::vector<int>& newBottom,
-                          const std::vector<unsigned>& newOri)
+double DetailedABU::delta(const Journal& journal)
 {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
@@ -473,16 +464,19 @@ double DetailedABU::delta(const int n,
 
   // Compute changed bins and changed occupancy.
   ++abuChangedBinsCounter_;
-  for (int i = 0; i < n; i++) {
-    updateBins(nodes[i],
-               curLeft[i] + 0.5 * nodes[i]->getWidth(),
-               curBottom[i] + 0.5 * nodes[i]->getHeight(),
+  const auto& actions = journal.getActions();
+  for (const auto& action : actions) {
+    auto node = action.getNode();
+    updateBins(action.getNode(),
+               action.getOrigLeft() + 0.5 * node->getWidth(),
+               action.getOrigBottom() + 0.5 * node->getHeight(),
                -1);
   }
-  for (int i = 0; i < n; i++) {
-    updateBins(nodes[i],
-               newLeft[i] + 0.5 * nodes[i]->getWidth(),
-               newBottom[i] + 0.5 * nodes[i]->getHeight(),
+  for (const auto& action : actions) {
+    auto node = action.getNode();
+    updateBins(action.getNode(),
+               action.getNewLeft() + 0.5 * node->getWidth(),
+               action.getNewBottom() + 0.5 * node->getHeight(),
                +1);
   }
 
