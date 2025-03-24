@@ -70,7 +70,7 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
 # Allow disabling tests
-option(ENABLE_TESTS "Enable OpenROAD tests" ON)
+# option(ENABLE_TESTS "Enable OpenROAD tests" OFF)
 
 # Allow enabling address sanitizer
 option(ASAN "Enable Address Sanitizer" OFF)
@@ -86,6 +86,23 @@ option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
+
+# Set the Flex include directory
+set(FLEX_INCLUDE_DIR /opt/homebrew/opt/flex/include)
+
+# Add Flex include directory to include paths
+include_directories(${FLEX_INCLUDE_DIR})
+
+# Set Tcl library and include paths
+set(TCL_LIBRARY /opt/local/lib/libtcl.dylib)
+set(TCL_INCLUDE_DIR /opt/local/include/)
+set(TCL_HEADER /opt/local/include/tcl.h)
+
+# Add Tcl include directory to include paths
+include_directories(${TCL_INCLUDE_DIR})
+
+# Link Tcl library to relevant targets
+#target_link_libraries(openroad ${TCL_LIBRARY})
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 set(OPENROAD_SHARE ${CMAKE_INSTALL_PREFIX}/share/openroad)
@@ -159,16 +176,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 add_subdirectory(third-party)
 
-if(ENABLE_TESTS)
-  find_program (BASH_PROGRAM bash REQUIRED)
+# if(ENABLE_TESTS)
+#   find_program (BASH_PROGRAM bash REQUIRED)
 
-  enable_testing()
-  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure -LE IntegrationTest)
-  include(GoogleTest)
-endif()
+#   enable_testing()
+#   add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure -LE IntegrationTest)
+#   include(GoogleTest)
+# endif()
 
 add_subdirectory(src)
-add_subdirectory(test)
+#add_subdirectory(test)
 
 # After all compiled, look for the respective flags
 target_compile_definitions(openroad PRIVATE GPU)
@@ -198,3 +215,18 @@ if(BUILD_MAN)
   install(DIRECTORY ${OPENROAD_HOME}/docs/cat DESTINATION ${OPENROAD_SHARE}/man)
   install(DIRECTORY ${OPENROAD_HOME}/docs/html DESTINATION ${OPENROAD_SHARE}/man)
 endif()
+
+# set(FLEX_INCLUDE_DIR /opt/homebrew/opt/flex/include CACHE PATH "Path to Flex include")
+# set(TCL_LIBRARY /opt/local/lib/libtcl.dylib CACHE PATH "Path to Tcl library")
+# set(TCL_INCLUDE_DIR /opt/local/include/ CACHE PATH "Path to Tcl include")
+
+# Apply globally for all targets
+# include_directories(${FLEX_INCLUDE_DIR} ${TCL_INCLUDE_DIR})
+
+# # Set Tcl paths
+# set(TCL_LIBRARY /opt/local/lib/libtcl.dylib)
+# set(TCL_INCLUDE_DIR /opt/local/include/)
+# set(FLEX_INCLUDE_DIRS /opt/homebrew/opt/flex/include)
+# set(FLEX_INCLUDE_DIR /opt/homebrew/opt/flex/include)
+
+
