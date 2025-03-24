@@ -13,7 +13,6 @@ link_design "guides1"
 read_def "./testcases/guides1.def" -floorplan_initialize
 
 set_io_pin_constraint -direction INPUT -region left:*
-place_pins -annealing -random -hor_layers metal5 -ver_layer metal6
 
 set_macro_guidance_region -macro_name MACRO_1 -region {49 0 149 100}
 set_thread_count 0
