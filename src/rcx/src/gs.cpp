@@ -191,7 +191,7 @@ void gs::configurePlane(const int plane,
 
 static int clip(const int p, const int min, const int max)
 {
-  return (p < min) ? min : (p >= max) ? (max - 1) : p;
+  return std::max(min, std::min(p, max - 1));
 }
 
 int gs::box(int px0, int py0, int px1, int py1, const int plane)

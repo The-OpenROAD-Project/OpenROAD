@@ -1578,13 +1578,15 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
         < b->getFrNet()->getAbsPriorityLvl()) {
       return false;
     }
-    Rect boxA = a->getPinBox();
-    Rect boxB = b->getPinBox();
-    auto areaA = boxA.area();
-    auto areaB = boxB.area();
-    return (a->getNumPinsIn() == b->getNumPinsIn()
-                ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB)
-                : a->getNumPinsIn() < b->getNumPinsIn());
+    const Rect boxA = a->getPinBox();
+    const Rect boxB = b->getPinBox();
+    const auto areaA = boxA.area();
+    const auto areaB = boxB.area();
+    const int pinsA = a->getNumPinsIn();
+    const int pinsB = b->getNumPinsIn();
+    const auto idA = a->getId();
+    const auto idB = b->getId();
+    return std::tie(pinsA, areaA, idA) < std::tie(pinsB, areaB, idB);
   };
   // sort
   if (mazeIter == 0) {
