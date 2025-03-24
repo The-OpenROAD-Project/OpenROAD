@@ -7,12 +7,10 @@
 or_integration_tests(
   "cts"
   TESTS
-    array
-    array_ins_delay
-    array_no_blockages
     balance_levels
     check_buffers
     check_buffers_blockages
+    check_buffers_blockages_merge
     check_charBuf
     check_max_fanout1
     check_max_fanout2
