@@ -66,7 +66,7 @@ extern void lefwPrintUnusedCallbacks(FILE* f);
  * user data pointers.
  */
 extern void lefwSetUserData(lefiUserData);
-extern lefiUserData lefwGetUserData(void);
+extern lefiUserData lefwGetUserData();
 
 /*
  * An enum describing all of the types of writer callbacks.
