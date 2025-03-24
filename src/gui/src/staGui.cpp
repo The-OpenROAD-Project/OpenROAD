@@ -1349,6 +1349,7 @@ const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
     const
 {
   std::vector<std::set<const sta::Pin*>> pins;
+  pins.reserve(thru_.size());
   for (auto* row : thru_) {
     pins.push_back(row->getPins());
   }

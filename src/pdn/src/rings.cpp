@@ -353,6 +353,7 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
+  layers.reserve(layers_.size());
   for (const auto& layer_def : layers_) {
     layers.push_back(layer_def.layer);
   }
