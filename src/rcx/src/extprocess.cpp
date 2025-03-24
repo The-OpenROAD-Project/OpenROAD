@@ -1375,7 +1375,7 @@ void extMasterConductor::writeRaphaelPoly3D_w(FILE* fp,
   writeRaphaelPointXY(fp, X2, _hiRight[2]);
   writeRaphaelPointXY(fp, X, _hiLeft[2]);
 
-  if (0) {
+  if (false) {
     fprintf(fp, "\nPOLY3D NAME=");
     writeBoxName(fp, wireNum);
 
@@ -1389,7 +1389,7 @@ void extMasterConductor::writeRaphaelPoly3D_w(FILE* fp,
   fprintf(fp, "V1=0,0,0; HEIGHT=%g;", length);
 
   fprintf(fp, " VOLT=%g\n", volt);
-  if (0) {
+  if (false) {
     printf("X= %g\n", X);
     printf("%g  %g\n", _loLeft[0], _loLeft[2]);
     printf("%g  %g\n", _loRight[0], _loRight[2]);
@@ -1461,7 +1461,7 @@ void extMasterConductor::writeRaphaelPoly3D(FILE* fp,
   fprintf(fp, "V1=0,0,0; HEIGHT=%g;", length);
 
   fprintf(fp, " VOLT=%g\n", volt);
-  if (0) {
+  if (false) {
     printf("X= %g\n", X);
     printf("%g  %g\n", _loLeft[0], _loLeft[2]);
     printf("%g  %g\n", _loRight[0], _loRight[2]);

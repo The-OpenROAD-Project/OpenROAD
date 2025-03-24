@@ -1314,7 +1314,7 @@ void dbTechLayer::setAlias(const char* alias)
     free((void*) layer->_alias);
   }
 
-  layer->flags_.has_alias_ = 1;
+  layer->flags_.has_alias_ = true;
   layer->_alias = strdup(alias);
   ZALLOCATED(layer->_alias);
 }
@@ -1913,7 +1913,7 @@ bool dbTechLayer::getThickness(uint& inthk) const
 void dbTechLayer::setThickness(uint thickness)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_thickness_ = 1;
+  layer->flags_.has_thickness_ = true;
   layer->_thickness = thickness;
 }
 
@@ -1937,7 +1937,7 @@ dbTechLayer::getArea() const
 void dbTechLayer::setArea(double area)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_area_ = 1;
+  layer->flags_.has_area_ = true;
   layer->_area = area;
 }
 
@@ -1960,7 +1960,7 @@ uint dbTechLayer::getMaxWidth() const
 void dbTechLayer::setMaxWidth(uint max_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_max_width_ = 1;
+  layer->flags_.has_max_width_ = true;
   layer->_max_width = max_width;
 }
 
@@ -2039,7 +2039,7 @@ void dbTechLayer::setProtrusion(uint pt_width,
                                 uint pt_from_width)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_protrusion_ = 1;
+  layer->flags_.has_protrusion_ = true;
   layer->_pt._width = pt_width;
   layer->_pt._length = pt_length;
   layer->_pt._from_width = pt_from_width;
