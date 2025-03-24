@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/dbTypes.h"
 #include "rectangle.h"
 
 namespace dpo {
@@ -189,8 +190,8 @@ class Architecture::Row
   void setId(int id) { id_ = id; }
   int getId() const { return id_; }
 
-  void setOrient(unsigned orient) { siteOrient_ = orient; }
-  unsigned getOrient() const { return siteOrient_; }
+  void setOrient(const odb::dbOrientType& orient) { siteOrient_ = orient; }
+  odb::dbOrientType getOrient() const { return siteOrient_; }
 
   void setSymmetry(unsigned sym) { siteSymmetry_ = sym; }
   unsigned getSymmetry() const { return siteSymmetry_; }
@@ -229,7 +230,7 @@ class Architecture::Row
   int siteWidth_ = 0;     // Width of sites in the row.
   int numSites_ = 0;      // Number of sites...  Ending X location (xmax) is =
                           // subRowOrigin_ + numSites_ * siteSpacing_;
-  unsigned siteOrient_ = 0;    // Orientation of sites in the row.
+  odb::dbOrientType siteOrient_;  // Orientation of sites in the row.
   unsigned siteSymmetry_ = 0;  // Symmetry of sites in the row.  Symmetry allows
                                // for certain orientations...
   // Voltages at the top and bottom of the row.

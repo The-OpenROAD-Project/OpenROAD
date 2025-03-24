@@ -55,7 +55,6 @@
 #include "dpl/Padding.h"
 #include "legalize_shift.h"
 #include "network.h"
-#include "orientation.h"
 #include "router.h"
 #include "symmetry.h"
 
@@ -218,9 +217,8 @@ void Optdp::updateDbInstLocations()
       const int y = nd->getBottom() + grid_->getCore().yMin();
       const int x = nd->getLeft() + grid_->getCore().xMin();
 
-      dbOrientType orient = dpoToDbOrient(nd->getCurrOrient());
-      if (inst->getOrient() != orient) {
-        inst->setOrient(orient);
+      if (inst->getOrient() != nd->getCurrOrient()) {
+        inst->setOrient(nd->getCurrOrient());
       }
       int inst_x, inst_y;
       inst->getLocation(inst_x, inst_y);
@@ -683,23 +681,8 @@ void Optdp::createNetwork()
     }
     ndi->setId(n);
     ndi->setFixed(inst->isFixed() ? Node::FIXED_XY : Node::NOT_FIXED);
-
-    // Determine allowed orientations.  Current orientation
-    // is N, since we reset everything to this orientation.
-    unsigned orientations = Orientation_N;
-    if (inst->getMaster()->getSymmetryX()
-        && inst->getMaster()->getSymmetryY()) {
-      orientations |= Orientation_FN;
-      orientations |= Orientation_FS;
-      orientations |= Orientation_S;
-    } else if (inst->getMaster()->getSymmetryX()) {
-      orientations |= Orientation_FS;
-    } else if (inst->getMaster()->getSymmetryY()) {
-      orientations |= Orientation_FN;
-    }
     // else...  Account for R90?
-    ndi->setAvailOrient(orientations);
-    ndi->setCurrOrient(Orientation_N);
+    ndi->setCurrOrient(odb::dbOrientType::R0);
     ndi->setHeight(inst->getMaster()->getHeight());
     ndi->setWidth(inst->getMaster()->getWidth());
 
@@ -738,8 +721,7 @@ void Optdp::createNetwork()
     ndi->setId(n);
     ndi->setType(Node::TERMINAL);
     ndi->setFixed(Node::FIXED_XY);
-    ndi->setAvailOrient(Orientation_N);
-    ndi->setCurrOrient(Orientation_N);
+    ndi->setCurrOrient(odb::dbOrientType::R0);
 
     int ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
     int hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
@@ -939,8 +921,7 @@ void Optdp::createArchitecture()
     archRow->setSymmetry(symmetry);
 
     // Orientation.  From the row.
-    unsigned orient = dbToDpoOrient(row->getOrient());
-    archRow->setOrient(orient);
+    archRow->setOrient(row->getOrient());
   }
   for (const auto& skip : skip_list) {
     std::string skip_string = "[";
@@ -1137,48 +1118,5 @@ void Optdp::setUpPlacementRegions()
     }
   }
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
-}
-////////////////////////////////////////////////////////////////
-unsigned dbToDpoOrient(const dbOrientType& dbOrient)
-{
-  switch (dbOrient) {
-    case dbOrientType::MY:
-      return dpo::Orientation_FN;
-    case dbOrientType::MX:
-      return dpo::Orientation_FS;
-    case dbOrientType::R180:
-      return dpo::Orientation_S;
-    case dbOrientType::R90:
-      return dpo::Orientation_E;
-    case dbOrientType::MXR90:
-      return dpo::Orientation_FE;
-    case dbOrientType::R270:
-      return dpo::Orientation_W;
-    case dbOrientType::MYR90:
-      return dpo::Orientation_FW;
-    default:
-      return dpo::Orientation_N;
-  }
-}
-odb::dbOrientType dpoToDbOrient(const unsigned orient)
-{
-  switch (orient) {
-    case dpo::Orientation_FN:
-      return dbOrientType::MY;
-    case dpo::Orientation_FS:
-      return dbOrientType::MX;
-    case dpo::Orientation_S:
-      return dbOrientType::R180;
-    case dpo::Orientation_E:
-      return dbOrientType::R90;
-    case dpo::Orientation_FE:
-      return dbOrientType::MXR90;
-    case dpo::Orientation_W:
-      return dbOrientType::R270;
-    case dpo::Orientation_FW:
-      return dbOrientType::MYR90;
-    default:
-      return dbOrientType::R0;
-  }
 }
 }  // namespace dpo
