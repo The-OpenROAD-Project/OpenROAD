@@ -46,8 +46,6 @@
 #include <unistd.h>
 #endif  // WIN32
 
-#include "lefrData.hpp"
-
 BEGIN_LEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
