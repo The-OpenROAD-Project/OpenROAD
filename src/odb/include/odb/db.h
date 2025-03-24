@@ -43,6 +43,7 @@
 
 #include "dbBlockSet.h"
 #include "dbCCSegSet.h"
+#include "dbDatabaseObserver.h"
 #include "dbMatrix.h"
 #include "dbNetSet.h"
 #include "dbObject.h"
@@ -483,6 +484,21 @@ class dbDatabase : public dbObject
   ///   Not perfectly byte accurate.  Intended for developers.
   ///
   void report();
+
+  ///
+  /// Used to be notified when lef/def/odb are read.
+  ///
+  void addObserver(dbDatabaseObserver* observer);
+  void removeObserver(dbDatabaseObserver* observer);
+
+  ///
+  /// Notify observers when one of these operations is complete.
+  /// Fine-grained callbacks during construction are not as helpful
+  /// as knowing when the data is fully loaded into odb.
+  ///
+  void triggerPostReadLef(dbTech* tech, dbLib* library);
+  void triggerPostReadDef(dbBlock* block);
+  void triggerPostReadDb();
 
   ///
   /// Create an instance of a database

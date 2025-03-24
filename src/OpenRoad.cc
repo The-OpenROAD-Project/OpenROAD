@@ -271,14 +271,12 @@ void OpenRoad::readLef(const char* filename,
                        bool make_library)
 {
   odb::lefin lef_reader(db_, logger_, false);
-  dbLib* lib = nullptr;
-  dbTech* tech = nullptr;
   if (make_tech && make_library) {
-    lib = lef_reader.createTechAndLib(tech_name, lib_name, filename);
-    tech = db_->findTech(tech_name);
+    lef_reader.createTechAndLib(tech_name, lib_name, filename);
   } else if (make_tech) {
-    tech = lef_reader.createTech(tech_name, filename);
+    lef_reader.createTech(tech_name, filename);
   } else if (make_library) {
+    dbTech* tech;
     if (tech_name[0] != '\0') {
       tech = db_->findTech(tech_name);
     } else {
@@ -287,14 +285,7 @@ void OpenRoad::readLef(const char* filename,
     if (!tech) {
       logger_->error(ORD, 51, "Technology {} not found", tech_name);
     }
-    lib = lef_reader.createLib(tech, lib_name, filename);
-  }
-
-  // both are null on parser failure
-  if (lib != nullptr || tech != nullptr) {
-    for (OpenRoadObserver* observer : observers_) {
-      observer->postReadLef(tech, lib);
-    }
+    lef_reader.createLib(tech, lib_name, filename);
   }
 }
 
@@ -324,20 +315,11 @@ void OpenRoad::readDef(const char* filename,
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
-  dbBlock* block = nullptr;
   if (child) {
     auto parent = db_->getChip()->getBlock();
-    block = def_reader.createBlock(parent, search_libs, filename, tech);
+    def_reader.createBlock(parent, search_libs, filename, tech);
   } else {
-    dbChip* chip = def_reader.createChip(search_libs, filename, tech);
-    if (chip) {
-      block = chip->getBlock();
-    }
-  }
-  if (block) {
-    for (OpenRoadObserver* observer : observers_) {
-      observer->postReadDef(block);
-    }
+    def_reader.createChip(search_libs, filename, tech);
   }
 }
 
@@ -492,11 +474,6 @@ void OpenRoad::readDb(std::istream& stream)
                     | std::ios::eofbit);
 
   db_->read(stream);
-
-  // this fixes up the database post read
-  for (OpenRoadObserver* observer : observers_) {
-    observer->postReadDb(db_);
-  }
 }
 
 void OpenRoad::writeDb(std::ostream& stream)
@@ -538,16 +515,12 @@ void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();
   }
-  for (OpenRoadObserver* observer : observers_) {
-    observer->postReadDb(db_);
-  }
+  db_->triggerPostReadDb();
 }
 
 void OpenRoad::designCreated()
 {
-  for (OpenRoadObserver* observer : observers_) {
-    observer->postReadDb(db_);
-  }
+  db_->triggerPostReadDb();
 }
 
 bool OpenRoad::unitsInitialized()
@@ -559,19 +532,6 @@ bool OpenRoad::unitsInitialized()
 odb::Rect OpenRoad::getCore()
 {
   return db_->getChip()->getBlock()->getCoreArea();
-}
-
-void OpenRoad::addObserver(OpenRoadObserver* observer)
-{
-  observer->set_unregister_observer(
-      [this, observer] { removeObserver(observer); });
-  observers_.insert(observer);
-}
-
-void OpenRoad::removeObserver(OpenRoadObserver* observer)
-{
-  observer->set_unregister_observer(nullptr);
-  observers_.erase(observer);
 }
 
 void OpenRoad::setThreadCount(int threads, bool printInfo)
