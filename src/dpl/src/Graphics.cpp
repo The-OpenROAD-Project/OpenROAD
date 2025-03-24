@@ -76,7 +76,7 @@ void Graphics::binSearch(const Cell* cell,
                          GridX xh,
                          GridY yh)
 {
-  if (!debug_instance_ || cell->db_inst_ != debug_instance_) {
+  if (!debug_instance_ || cell->getDbInst() != debug_instance_) {
     return;
   }
   Rect core = dp_->grid_->getCore();
@@ -103,26 +103,25 @@ void Graphics::drawObjects(gui::Painter& painter)
   odb::Rect core = block_->getCoreArea();
 
   for (const auto& cell : dp_->cells_) {
-    if (!cell.is_placed_) {
+    if (!cell.isPlaced()) {
       continue;
     }
     // Compare the squared distances to save calling sqrt
     float min_length = min_displacement_ * dp_->grid_->gridHeight(&cell).v;
     min_length *= min_length;
-    DbuX lx{core.xMin() + cell.x_};
-    DbuY ly{core.yMin() + cell.y_};
+    DbuX lx{core.xMin() + cell.xMin()};
+    DbuY ly{core.yMin() + cell.yMin()};
 
-    auto color = cell.db_inst_ ? gui::Painter::gray : gui::Painter::red;
+    auto color = cell.getDbInst() ? gui::Painter::gray : gui::Painter::red;
     painter.setPen(color);
     painter.setBrush(color);
-    painter.drawRect(
-        Rect(lx.v, ly.v, lx.v + cell.width_.v, ly.v + cell.height_.v));
+    painter.drawRect(Rect(lx.v, ly.v, lx.v + cell.dx().v, ly.v + cell.dy().v));
 
-    if (!cell.db_inst_) {
+    if (!cell.getDbInst()) {
       continue;
     }
 
-    dbBox* bbox = cell.db_inst_->getBBox();
+    dbBox* bbox = cell.getDbInst()->getBBox();
     Point initial_location(bbox->xMin(), bbox->yMin());
     Point final_location(lx.v, ly.v);
     float len = Point::squaredDistance(initial_location, final_location);
