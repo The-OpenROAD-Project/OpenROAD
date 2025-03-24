@@ -1679,13 +1679,14 @@ void FlexDRWorker::writeGCPatchesToDRWorker(
     if (!valid_indices.empty()) {
       // Find closest path point
       Point closest;
-      frCoord closest_dist = INT_MAX;
+      frSquaredDistance closest_dist
+          = std::numeric_limits<frSquaredDistance>::max();
       auto origin = pwire->getOrigin();
       auto box = pwire->getOffsetBox();
       for (auto p : valid_indices) {
         Point pp;
         gridGraph_.getPoint(pp, p.x(), p.y());
-        frCoord path_length = Point::squaredDistance(origin, pp);
+        frSquaredDistance path_length = Point::squaredDistance(origin, pp);
         if (path_length < closest_dist) {
           closest_dist = path_length;
           closest = pp;
