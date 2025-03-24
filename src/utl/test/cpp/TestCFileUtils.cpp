@@ -259,11 +259,11 @@ TEST(Utl, metrics_server_responds_with_basic_metric)
   auto& test_gauge = test_gauge_family.Add({});
   test_gauge.Set(10101);
 
-  std::time_t t = std::time(0);
+  std::time_t t = std::time(nullptr);
   while (true) {
     // Timeout after 10 seconds
-    if ((std::time(0) - t) > 10) {
-      EXPECT_LT((std::time(0) - t), 10);
+    if ((std::time(nullptr) - t) > 10) {
+      EXPECT_LT((std::time(nullptr) - t), 10);
     }
 
     if (logger.isPrometheusServerReadyToServe()) {
