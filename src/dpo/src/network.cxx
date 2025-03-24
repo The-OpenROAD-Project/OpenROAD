@@ -53,8 +53,8 @@ bool Node::adjustCurrOrient(const unsigned newOri)
 
   if (curOri == Orientation_E || curOri == Orientation_FE
       || curOri == Orientation_FW || curOri == Orientation_W) {
-    if (newOri == Orientation_N || curOri == Orientation_FN
-        || curOri == Orientation_FS || curOri == Orientation_S) {
+    if (newOri == Orientation_N || newOri == Orientation_FN
+        || newOri == Orientation_FS || newOri == Orientation_S) {
       // Rotate the cell counter-clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const double dx = pin->getOffsetX();
@@ -74,8 +74,8 @@ bool Node::adjustCurrOrient(const unsigned newOri)
       }
     }
   } else {
-    if (newOri == Orientation_E || curOri == Orientation_FE
-        || curOri == Orientation_FW || curOri == Orientation_W) {
+    if (newOri == Orientation_E || newOri == Orientation_FE
+        || newOri == Orientation_FW || newOri == Orientation_W) {
       // Rotate the cell clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const double dx = pin->getOffsetX();
@@ -132,7 +132,7 @@ bool Node::adjustCurrOrient(const unsigned newOri)
     pin->setOffsetY(pin->getOffsetY() * mY);
   }
   if (changeEdgeTypes) {
-    std::swap(etl_, etr_);
+    std::swap(etls_, etrs_);
   }
   currentOrient_ = newOri;
   return true;
@@ -177,6 +177,13 @@ Edge* Network::createAndAddEdge()
   ptr->setId(id);
   edges_.push_back(ptr);
   return ptr;
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Master* Network::createAndAddMaster()
+{
+  masters_.emplace_back(std::make_unique<Master>());
+  return masters_.back().get();
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

@@ -61,6 +61,7 @@
 #include "color.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "journal.h"
 #include "network.h"
 #include "rectangle.h"
 #include "router.h"
@@ -317,7 +318,6 @@ void DetailedMis::colorCells()
   // The actual coloring.
   gr.greedyColoring();
 
-  std::vector<int> hist;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     const Node* ndi = network_->getNode(i);
 
@@ -327,11 +327,6 @@ void DetailedMis::colorCells()
     }
     if (movable_[ndi->getId()]) {
       colors_[ndi->getId()] = color;
-
-      if (color >= hist.size()) {
-        hist.resize(color + 1, 0);
-      }
-      ++hist[color];
     }
   }
 }
@@ -581,7 +576,7 @@ void DetailedMis::solveMatch()
       // Determine the cost of assigning cell "ndi" to the
       // current position.  Note that we might want to
       // skip this location if it violates the maximum
-      // displacement limit.  We _never_ prevent a cell
+      // displacement limit. We _never_ prevent a cell
       // from being assigned to its original position as
       // this guarantees a solution!
       if (i != j) {
@@ -645,7 +640,7 @@ void DetailedMis::solveMatch()
 
   lemon::ListDigraph::ArcMap<int> flow(g);
   mincost.flowMap(flow);
-
+  Journal journal;
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
        ++it) {
     if (g.target(it) != demandNode && g.source(it) != supplyNode
@@ -679,14 +674,19 @@ void DetailedMis::solveMatch()
           // This means an error someplace else...
           mgrPtr_->internalError("Unable to interpret flow during matching");
         }
+        std::vector<int> old_seg_ids;
+        old_seg_ids.reserve(old_segs.size());
         for (const DetailedSeg* segPtr : old_segs) {
           const int segId = segPtr->getSegId();
+          old_seg_ids.push_back(segId);
           mgrPtr_->removeCellFromSegment(ndi, segId);
         }
 
         // Update the postion of cell "i".
+        mgrPtr_->eraseFromGrid(ndi);
         ndi->setLeft(pos[j].first);
         ndi->setBottom(pos[j].second);
+        mgrPtr_->paintInGrid(ndi);
 
         // Determine new segments and add cell "i" to its new segments.
         const std::vector<DetailedSeg*>& new_segs = seg[j];
@@ -694,11 +694,39 @@ void DetailedMis::solveMatch()
           // Not setup for non-same size stuff right now.
           mgrPtr_->internalError("Unable to interpret flow during matching");
         }
+        std::vector<int> new_seg_ids;
+        new_seg_ids.reserve(new_segs.size());
+
         for (const DetailedSeg* segPtr : new_segs) {
           const int segId = segPtr->getSegId();
+          new_seg_ids.push_back(segId);
           mgrPtr_->addCellToSegment(ndi, segId);
         }
+        {
+          JournalAction action;
+          action.setType(JournalAction::MOVE_CELL);
+          action.setNode(ndi);
+          action.setOrigLocation(pos[i].first, pos[i].second);
+          action.setNewLocation(pos[j].first, pos[j].second);
+          action.setOrigSegs(old_seg_ids);
+          action.setNewSegs(new_seg_ids);
+          journal.addAction(action);
+        }
       }
+    }
+  }
+  bool viol = false;
+  for (const auto node : nodes) {
+    if (mgrPtr_->hasEdgeSpacingViolation(node)) {
+      viol = true;
+      break;
+    }
+  }
+  if (viol) {
+    while (!journal.isEmpty()) {
+      const auto& action = journal.getLastAction();
+      mgrPtr_->undo(action);
+      journal.removeLastAction();
     }
   }
 }
