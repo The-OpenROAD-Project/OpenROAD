@@ -88,6 +88,7 @@ target_sources(drt
     src/gr/FlexGRGridGraph.cpp
     src/gr/FlexGRGridGraph_maze.cpp
     src/gr/FlexGR_2DMazeRoute.cu
+    src/gr/FlexGR_3DMazeRoute.cu
     src/gr/FlexGR_init.cpp
     src/gr/FlexGR_maze.cpp
     src/gr/FlexGR_maze_restore.cpp

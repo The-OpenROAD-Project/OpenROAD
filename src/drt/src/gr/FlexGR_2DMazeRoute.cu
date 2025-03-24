@@ -855,6 +855,14 @@ void runBiBellmanFord2D_v3__device(
         // Reset dst flag at the final node.
         d_nodes[backwardCurId].flags.dst_flag = 0;
         if (backwardIteration >= total) {
+          printf("backwardCurId = %d\n", backwardCurId);
+          for (int localIdx = 0; localIdx < total; localIdx++) {
+            int local_x = localIdx % xDimTemp + LLX;
+            int local_y = localIdx / xDimTemp + LLY;
+            int idx = locToIdx_2D(local_x, local_y, xDim);
+            printf("node id = %d, x = %d, y = %d ", idx, local_x, local_y);
+            printNode2D(d_nodes[idx]);
+          }
           printf("Warning: Backward traceback exceeded maximum iterations.\n");
         }
       }
@@ -1628,24 +1636,6 @@ void runBiBellmanFord2D_v5__device(
   if (tracebackError == 0) {
     // ----- Forward Traceback (Thread 0) -----
     if (threadIdx.x == 0) {
-      
-      /*
-      if (netId == 537) {
-        printf("*****************************************************************\n");
-        printf("meetId = %d, netId = %d\n", s_meetId, netId);
-        for (int idx = 0; idx < total; idx++) {
-          int local_x = idx % xDimTemp + LLX;
-          int local_y = idx / xDimTemp + LLY;
-          int id = locToIdx_2D(local_x, local_y, xDim);
-          printf("node id = %d, x = %d, y = %d ", id, local_x, local_y);
-          printNode2D(d_nodes[id]);
-        }
-        printf("\n");
-      }*/
-      
-      
-      
-      // printf("Start the traceback\n");
       int tempIter = 0;      
       // Update the meetId accordingly to remove redundant path
       while (d_nodes[s_meetId].forward_direction == d_nodes[s_meetId].backward_direction && tempIter < total) {
@@ -1672,8 +1662,6 @@ void runBiBellmanFord2D_v5__device(
       if (tempIter >= total) {
         printf("Warning: reduce iteration exceeded maximum iterations. netId = %d\n", netId);
       }
-            
-      // printf("Start the forward traceback\n");
 
       int forwardCurId = s_meetId;
       int forwardIteration = 0;
@@ -1683,6 +1671,7 @@ void runBiBellmanFord2D_v5__device(
         int nx = xy.x + s_dX[fwdDir];
         int ny = xy.y + s_dY[fwdDir];
         if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
+          printf("Warning: Forward traceback out of bounds. netId = %d\n", netId);
           break;
         }
         d_nodes[forwardCurId].golden_parent_x = nx;
@@ -1694,12 +1683,8 @@ void runBiBellmanFord2D_v5__device(
       if (forwardIteration >= total) {
         printf("Warning: Forward traceback exceeded maximum iterations. netId = %d\n", netId);
       }
-    // }
-    
 
-     //  printf("Start the backward traceback\n");
-    // ----- Backward Traceback (Thread 1) -----
-    // if (threadIdx.x == 1) {
+      // ----- Backward Traceback (Thread 1) -----
       int backwardCurId = s_meetId;
       int backwardIteration = 0;
       if (d_nodes[backwardCurId].flags.dst_flag == 1) {
@@ -1712,29 +1697,10 @@ void runBiBellmanFord2D_v5__device(
           int nx = xy.x + s_dX[backwardDir];
           int ny = xy.y + s_dY[backwardDir];
           if (nx < LLX || nx > URX || ny < LLY || ny > URY) {
+            printf("Warning: Backward traceback out of bounds. netId = %d\n", netId);
             break;
-          }
-          int nextId = locToIdx_2D(nx, ny, xDim);
-          
-          /*
-          if (d_nodes[nextId].golden_parent_x != -1 || d_nodes[nextId].golden_parent_y != -1) {
-            printf("Error: Backward traceback meets forward traceback.\n");
-            printf("meetId = %d\n", s_meetId); 
-            for (int localIdx = 0; localIdx < total; localIdx++) {
-              int local_x = localIdx % xDimTemp + LLX;
-              int local_y = localIdx / xDimTemp + LLY;
-              int idx = locToIdx_2D(local_x, local_y, xDim);
-              printf("node id = %d, x = %d, y = %d ", idx, local_x, local_y);
-              printNode2D(d_nodes[idx]);
-            }
-            printf("nextId = %d, x = %d, y = %d,  golden_parent_x = %d, golden_parent_y = %d, dst_flag = %d, src_flag = %d\n", 
-              nextId, nx, ny, 
-              d_nodes[nextId].golden_parent_x, d_nodes[nextId].golden_parent_y, 
-              d_nodes[nextId].flags.dst_flag, d_nodes[nextId].flags.src_flag);
-            atomicExch(&tracebackError, 1);
-            break;      
-          } */
-           
+          }          
+          int nextId = locToIdx_2D(nx, ny, xDim); 
           d_nodes[nextId].flags.src_flag = 1;
           d_nodes[nextId].golden_parent_x = xy.x;
           d_nodes[nextId].golden_parent_y = xy.y;
@@ -1743,11 +1709,17 @@ void runBiBellmanFord2D_v5__device(
         }
         d_nodes[backwardCurId].flags.dst_flag = 0;
         if (backwardIteration >= total) {
+          printf("backwardCurId = %d, x = %d, y = %d, netId = %d\n", backwardCurId, idxToLoc_2D(backwardCurId, xDim).x, idxToLoc_2D(backwardCurId, xDim).y, netId);
+          for (int localIdx = 0; localIdx < total; localIdx++) {
+            int local_x = localIdx % xDimTemp + LLX;
+            int local_y = localIdx / xDimTemp + LLY;
+            int idx = locToIdx_2D(local_x, local_y, xDim);
+            printf("node id = %d, x = %d, y = %d ", idx, local_x, local_y);
+            printNode2D(d_nodes[idx]);
+          }
           printf("Warning: Backward traceback exceeded maximum iterations. netId = %d\n", netId);
         }
       }
-      // printf("End the traceback\n");
-
     }
   }
   __syncthreads();
