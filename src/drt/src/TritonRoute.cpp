@@ -51,6 +51,7 @@
 #include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/dbShape.h"
+#include "ord/OpenRoad.hh"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -307,17 +308,7 @@ void TritonRoute::resetDb(const char* file_name)
   std::ifstream stream;
   stream.open(file_name, std::ios::binary);
   try {
-    if (db_->getChip() && db_->getChip()->getBlock()) {
-      logger_->error(
-          DRT,
-          9947,
-          "You can't load a new db file as the db is already populated");
-    }
-
-    stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                      | std::ios::eofbit);
-
-    db_->read(stream);
+    ord::OpenRoad::openRoad()->readDb(stream);
   } catch (const std::ios_base::failure& f) {
     logger_->error(
         DRT, 9954, "odb file {} is invalid: {}", file_name, f.what());
