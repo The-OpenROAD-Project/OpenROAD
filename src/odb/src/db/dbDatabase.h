@@ -35,6 +35,7 @@
 #include <iostream>
 
 #include "dbCore.h"
+#include "odb/dbDatabaseObserver.h"
 #include "odb/odb.h"
 
 namespace utl {
@@ -250,6 +251,7 @@ class _dbDatabase : public _dbObject
   int _unique_id;
 
   utl::Logger* _logger;
+  std::set<dbDatabaseObserver*> observers_;
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);
