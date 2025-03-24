@@ -151,8 +151,8 @@ pip_parse(
 # END XX
 
 # master
-rules_hdl_git_hash = "28e8e17387da0b8fce2b33d621e2bae3bc9a1f56"
-rules_hdl_git_sha256 = "c85b1939b7fde206fbd8b83322b32f8be2a30e3d5bd5b70338638b8e8b95b346"
+rules_hdl_git_hash = "875c8cad79255db62d4428d2b5c181846a67bb4b"
+rules_hdl_git_sha256 = "4e866be4d968eb73958437d005fae86f5a90c8d2c83f25448f15a81ca215904f"
 
 #https://github.com/hdl/bazel_rules_hdl/pull/391 branch
 #rules_hdl_git_hash = "8ecf698f5052c4b4a739164693e7378ce2670694"
@@ -173,3 +173,9 @@ rules_hdl_dependency_support()
 
 load("@rules_hdl//:init.bzl", rules_hdl_init = "init")
 rules_hdl_init()
+
+load("@rules_hdl//dependency_support/com_github_ivmai_cudd:com_github_ivmai_cudd.bzl", "com_github_ivmai_cudd")
+com_github_ivmai_cudd()
+
+load("@rules_hdl//dependency_support/edu_berkeley_abc:edu_berkeley_abc.bzl", "edu_berkeley_abc")
+edu_berkeley_abc()
