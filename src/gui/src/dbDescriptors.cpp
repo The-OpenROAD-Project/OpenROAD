@@ -2635,7 +2635,8 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     }
 
     for (const auto& [cutclass, min_cut] : min_cut_rule->getCutClassCutsMap()) {
-      lef58_minimum_cuts.emplace_back(text + " - " + cutclass, min_cut);
+      lef58_minimum_cuts.emplace_back(fmt::format("{} - {}", text, cutclass),
+                                      min_cut);
     }
   }
   if (!lef58_minimum_cuts.empty()) {

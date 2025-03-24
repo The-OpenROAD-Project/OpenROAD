@@ -590,7 +590,7 @@ void lefrSettings::addLef58Type(const char* lef58Type, const char** layerType)
   for (; **layerType; layerType++) {
     std::string typesPair(lef58Type);
 
-    typesPair = typesPair + " " + *layerType;
+    typesPair.append(" ").append(*layerType);
 
     Lef58TypePairs.insert(typesPair);
   }
