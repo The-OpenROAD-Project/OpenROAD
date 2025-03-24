@@ -602,7 +602,7 @@ std::string lefrSettings::getLayerLef58Types(const char* type) const
   StringSet::const_iterator pairsIter = Lef58TypePairs.begin();
 
   for (; pairsIter != Lef58TypePairs.end(); ++pairsIter) {
-    const std::string pair(*pairsIter);
+    const std::string& pair(*pairsIter);
     int sepIdx = pair.find(' ');
 
     if (pair.substr(sepIdx + 1) != type) {
