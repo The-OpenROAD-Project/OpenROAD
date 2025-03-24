@@ -1107,10 +1107,6 @@ void HTreeBuilder::legalize()
 			"leng:{:0.3f}, sinks:{}", levelIdx, bufferIdx,
 			parentPoint, branchPoint, leng, sinks.size());
       }
-      if(levelIdx + 1 == 2 && bufferIdx == 1) {
-        logger_->report("bp: {}, parent: {}", branchPoint,
-          parentPoint);
-      }
       // clang-format on
       int scalingFactor = wireSegmentUnit_;
       double x1, y1, x2, y2;
@@ -1135,9 +1131,8 @@ void HTreeBuilder::legalize()
                                                  branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 1,
-		   "findBestLegalLocation branchPt {}_{}:{}=>{} parentPt:{} new "
-		   "branchPt is {} blockage", levelIdx + 1, bufferIdx,
-       branchPoint, legalBranchPoint,
+		   "findBestLegalLocation branchPt:{}=>{} parentPt:{} new "
+		   "branchPt is {} blockage", branchPoint, legalBranchPoint,
 		   parentPoint,
 		   isInsideBbox(legalBranchPoint.getX(), legalBranchPoint.getY(),
 				x1, y1, x2, y2)? "inside" : "outside");
@@ -1157,10 +1152,9 @@ void HTreeBuilder::legalize()
                                            scalingFactor,
                                            branch_point_dir);
         // clang-format off
-	debugPrint(logger_, CTS, "legalizer", 1,
-		   "adjustBeyondBlockage applied to legal branchPt {}_{} :"
-		   "{}=>{} parentPt:{} newDist={:0.3f}", levelIdx + 1, bufferIdx,
-       branchPoint, newLocation,
+	debugPrint(logger_, CTS, "legalizer", 3,
+		   "adjustBeyondBlockage applied to legal branchPt:"
+		   "{}=>{} parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
 		   parentPoint, computeDist(newLocation, parentPoint));
         // clang-format on
         commitMoveLoc(branchPoint, newLocation);
