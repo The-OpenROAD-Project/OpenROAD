@@ -751,8 +751,6 @@ inline void dbWireDecoder::flushRule()
 
 dbWireDecoder::OpCode dbWireDecoder::peek() const
 {
-  ZASSERT(_wire);
-
   int idx = _idx;
 
 nextOpCode:
@@ -811,8 +809,6 @@ nextOpCode:
 
 dbWireDecoder::OpCode dbWireDecoder::next()
 {
-  ZASSERT(_wire);
-
 nextOpCode:
 
   if (_idx == (int) _wire->_opcodes.size()) {

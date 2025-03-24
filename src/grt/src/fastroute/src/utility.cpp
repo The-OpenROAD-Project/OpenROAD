@@ -59,8 +59,8 @@ void FastRouteCore::printEdge(int const netID, int const edgeID)
                   nodes[edge.n2].y);
   std::string routes_rpt;
   for (int i = 0; i <= edge.route.routelen; i++) {
-    routes_rpt = routes_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
-                 + std::to_string(edge.route.gridsY[i]) + ") ";
+    routes_rpt
+        += fmt::format("({}, {}) ", edge.route.gridsX[i], edge.route.gridsY[i]);
   }
   logger_->report("{}", routes_rpt);
 }
@@ -1068,8 +1068,7 @@ void FastRouteCore::printEdge3D(int netID, int edgeID)
     for (int i = 0; i <= edge.route.routelen; i++) {
       int x = tile_size_ * (edge.route.gridsX[i] + 0.5) + x_corner_;
       int y = tile_size_ * (edge.route.gridsY[i] + 0.5) + y_corner_;
-      edge_rpt = edge_rpt + "(" + std::to_string(x) + " " + std::to_string(y)
-                 + " " + std::to_string(edge.route.gridsL[i]) + ") ";
+      edge_rpt += fmt::format("({} {} {}) ", x, y, edge.route.gridsL[i]);
     }
     logger_->report("\t\t{}", edge_rpt);
   }
@@ -1690,6 +1689,7 @@ void FastRouteCore::printEdge2D(int netID, int edgeID)
 {
   const TreeEdge edge = sttrees_[netID].edges[edgeID];
   const auto& nodes = sttrees_[netID].nodes;
+  const Route& route = edge.route;
 
   logger_->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {}), routeType {}",
                   edgeID,
@@ -1699,12 +1699,11 @@ void FastRouteCore::printEdge2D(int netID, int edgeID)
                   edge.n2,
                   nodes[edge.n2].x,
                   nodes[edge.n2].y,
-                  edge.route.type);
+                  route.type);
   if (edge.len > 0) {
     std::string edge_rpt;
-    for (int i = 0; i <= edge.route.routelen; i++) {
-      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
-                 + std::to_string(edge.route.gridsY[i]) + ") ";
+    for (int i = 0; i <= route.routelen; i++) {
+      edge_rpt += fmt::format("({}, {}) ", route.gridsX[i], route.gridsY[i]);
     }
     logger_->report("{}", edge_rpt);
   }

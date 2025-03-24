@@ -102,9 +102,6 @@ int defrData::defGetDefine(const std::string& name, std::string& result)
 
 /************Some simple file reading routines since ungetc() proves ****/
 /************to be quite slow, and we don't need multiple chars of pushback */
-#ifndef WIN32
-#include <unistd.h>
-#endif
 
 void defrData::reload_buffer()
 {
@@ -150,7 +147,7 @@ int defrData::GETC()
     if (next == nullptr)
       return EOF;
 
-    int ch = *next++;
+    int ch = static_cast<unsigned char>(*next++);
 
     if (ch != '\r')
       return ch;
