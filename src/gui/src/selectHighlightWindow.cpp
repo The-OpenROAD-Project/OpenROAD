@@ -166,7 +166,7 @@ QVariant HighlightModel::data(const QModelIndex& index, int role) const
   if (row_index > table_data_.size())
     return QVariant();
   std::string obj_name = table_data_[row_index].second->getName();
-  std::string obj_type("");
+  std::string obj_type;
   if (obj_name.rfind("Net: ", 0) == 0) {
     obj_name = obj_name.substr(5);
     obj_type = "Net";
