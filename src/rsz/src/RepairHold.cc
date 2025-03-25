@@ -410,10 +410,12 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
         const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
-        Net* path_net = network_->isTopLevelPort(path_pin)
-                            ? network_->net(network_->term(path_pin))
-                            : network_->net(path_pin);
-        dbNet* db_path_net = db_network_->staToDb(path_net);
+        // explicitly force getting the flat net.
+        odb::dbNet* db_path_net
+            = network_->isTopLevelPort(path_pin)
+                  ? db_network_->flatNet(network_->term(path_pin))
+                  : db_network_->flatNet(const_cast<Pin*>(path_pin));
+
         if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
             && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
@@ -561,10 +563,9 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // we will put the new buffer in that parent
     parent = db_network_->getOwningInstanceParent(drvr_pin);
     // exception case: drvr pin is a top level, fix the db_drvr_net to be
-    // the lower level net
+    // the lower level net. Explictly get the "flat" net.
     if (network_->isTopLevelPort(drvr_pin)) {
-      db_drvr_net
-          = db_network_->staToDb(db_network_->net(db_network_->term(drvr_pin)));
+      db_drvr_net = db_network_->flatNet(db_network_->term(drvr_pin));
     }
   } else {
     // original flat code (which handles exception case at top level &
@@ -575,7 +576,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
             : db_network_->net(drvr_pin));
     parent = db_network_->topInstance();
   }
-
   Net *in_net = nullptr, *out_net = nullptr;
 
   if (loads_have_out_port) {
@@ -621,8 +621,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   resizer_->parasiticsInvalid(in_net);
 
-  Net* buf_in_net = in_net;
-
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
 
@@ -638,16 +636,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
 
   // wire in the buffer
-  sta_->connectPin(buffer, input, buf_in_net);
+  sta_->connectPin(buffer, input, in_net);
   sta_->connectPin(buffer, output, out_net);
-
-  // Fix up the original driver pin (which we totally disconnected before)
-  // patch in the buf_in_net driver to be driven by the original drvr_pin_iterm
-
-  // First the dbnet.
-  if (drvr_pin_iterm) {
-    drvr_pin_iterm->connect(db_network_->staToDb(buf_in_net));
-  }
 
   // Now patch in the output of the new buffer to the original hierarchical
   // net,if any, from the original driver
@@ -679,10 +669,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     if (resizer_->dontTouch(load_pin)) {
       continue;
     }
-
-    Net* load_net = network_->isTopLevelPort(load_pin)
-                        ? network_->net(network_->term(load_pin))
-                        : network_->net(load_pin);
+    dbNet* db_load_net = network_->isTopLevelPort(load_pin)
+                             ? db_network_->flatNet(network_->term(load_pin))
+                             : db_network_->flatNet(load_pin);
+    Net* load_net = db_network_->dbToSta(db_load_net);
 
     if (load_net != out_net) {
       Instance* load = db_network_->instance(load_pin);
@@ -708,6 +698,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       }
     }
   }
+
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   resizer_->updateParasitics();

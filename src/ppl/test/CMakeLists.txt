@@ -51,6 +51,7 @@ or_integration_tests(
     exclude1
     exclude2
     exclude3
+    exclude4
     gcd
     group_pins1
     group_pins2
