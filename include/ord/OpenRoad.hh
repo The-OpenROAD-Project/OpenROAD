@@ -40,8 +40,6 @@
 #include <string>
 #include <vector>
 
-#include "OpenRoadObserver.hh"
-
 extern "C" {
 struct Tcl_Interp;
 }
@@ -243,9 +241,6 @@ class OpenRoad
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
 
-  void addObserver(OpenRoadObserver* observer);
-  void removeObserver(OpenRoadObserver* observer);
-
   std::string getExePath() const;
   std::string getDocsPath() const;
 
@@ -289,8 +284,6 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
-
-  std::set<OpenRoadObserver*> observers_;
 
   int threads_ = 1;
 

@@ -1422,7 +1422,7 @@ int startGui(int& argc,
   }
   main_window->setTitle(gui->getMainWindowTitle());
 
-  open_road->addObserver(main_window);
+  open_road->getDb()->addObserver(main_window);
   if (!interactive) {
     gui->setContinueAfterClose();
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
@@ -1518,7 +1518,7 @@ int startGui(int& argc,
   }
 
   // cleanup
-  open_road->removeObserver(main_window);
+  open_road->getDb()->removeObserver(main_window);
 
   if (!exception.hasException()) {
     // don't save anything if exception occured
