@@ -331,6 +331,7 @@ class dbNetwork : public ConcreteNetwork
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;
   void connectPinAfter(Pin* pin);
   void disconnectPin(Pin* pin) override;
+  void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;

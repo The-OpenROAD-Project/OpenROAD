@@ -38,8 +38,8 @@
 #include <string>
 #include <unordered_set>
 
-#include "Grid.h"
 #include "Objects.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 #include "odb/util.h"
 #include "utl/Logger.h"

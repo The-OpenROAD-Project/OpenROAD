@@ -49,7 +49,7 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
 {
   PatternOptions opt = opt1;
   _tech = _db->getTech();
-  if (_tech == NULL) {
+  if (_tech == nullptr) {
     fprintf(stderr, "NO tech! exit\n");
     return 0;
   }
@@ -59,7 +59,7 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
 
   dbChip* chip = dbChip::create(_db);
   assert(chip);
-  _block = dbBlock::create(chip, opt.name, NULL, '/');
+  _block = dbBlock::create(chip, opt.name, nullptr, '/');
   assert(_block);
   // _prevControl = _block->getExtControl();
   _block->setBusDelimiters('[', ']');
@@ -292,7 +292,7 @@ extPattern::extPattern(int cnt,
   _origin[0] = (int) org[0];
   _origin[1] = (int) org[1];
 
-  db_net_util = NULL;
+  db_net_util = nullptr;
   init(net_util);
 }
 float extPattern::init(dbCreateNetUtil* net_util)
@@ -426,7 +426,7 @@ uint extPattern::CreatePattern(int org[2],
                                             cwr,
                                             csr);  // this->origin does NOT
                                                    // change
-                                        if (mainp == NULL)
+                                        if (mainp == nullptr)
                                           continue;
 
                                         contextPatterns_under(mainp,
@@ -524,7 +524,7 @@ uint extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
                             continue;
                           extWirePattern* mainp = MainPattern(
                               mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                          if (mainp == NULL)
+                          if (mainp == nullptr)
                             continue;
                           contextPatterns_over(mainp, ow, os, 0, 0, 0);
                           PatternEnd(mainp, max_ur, 10);
@@ -544,7 +544,7 @@ uint extPattern::CreatePattern_over(int org[2], int MAX_UR[2])
                                   continue;
                                 extWirePattern* mainp = MainPattern(
                                     mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                                if (mainp == NULL)
+                                if (mainp == nullptr)
                                   continue;
                                 contextPatterns_over(
                                     mainp, ow, os, offsetOver, ow2, os2);
@@ -627,7 +627,7 @@ uint extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
                             continue;
                           extWirePattern* mainp = MainPattern(
                               mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                          if (mainp == NULL)
+                          if (mainp == nullptr)
                             continue;
                           contextPatterns_under(mainp, uw, us, 0, 0, 0);
                           PatternEnd(mainp, max_ur, 10);
@@ -647,7 +647,7 @@ uint extPattern::CreatePattern_under(int org[2], int MAX_UR[2])
                                   continue;
                                 extWirePattern* mainp = MainPattern(
                                     mw, msL, msR, mwL, mwR, cwl, csl, cwr, csr);
-                                if (mainp == NULL)
+                                if (mainp == nullptr)
                                   continue;
                                 contextPatterns_under(
                                     mainp, uw, us, offsetUnder, uw2, us2);
@@ -830,7 +830,7 @@ offsetOver, over_met2, ow2, os2);
 
                                         // this->origin does NOT change
                                         extWirePattern* mainp=
-MainPattern(mw,msL,msR,mwL,mwR,cwl,csl,cwr,csr); if (mainp==NULL) continue;
+MainPattern(mw,msL,msR,mwL,mwR,cwl,csl,cwr,csr); if (mainp==nullptr) continue;
 
                                         cnt++;
 
@@ -937,7 +937,7 @@ extWirePattern* extPattern::MainPattern(float mw,
   max_ur[1] = wp->last_trans(1);
 
   if (!printWiresDEF(wp, met))
-    return NULL;
+    return nullptr;
 
   return wp;
 }
@@ -1442,7 +1442,7 @@ uint extPattern::createNetSingleWire(char* netName,
 {
   dbNet* net = db_net_util->createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], level);
-  if (net == NULL)
+  if (net == nullptr)
     return 0;
 
   bool rename_all_bterms = true;
@@ -1450,7 +1450,7 @@ uint extPattern::createNetSingleWire(char* netName,
     RenameAllBterms(net);
   } else {
     dbBTerm* in1 = net->get1stBTerm();
-    if (in1 != NULL) {
+    if (in1 != nullptr) {
       in1->rename(net->getConstName());
     }
     RenameBterm1stInput(net);
@@ -1460,7 +1460,7 @@ uint extPattern::createNetSingleWire(char* netName,
 }
 bool extPattern::RenameBterm1stInput(dbNet* net)
 {
-  const char* bterm1 = NULL;
+  const char* bterm1 = nullptr;
   dbSet<dbBTerm> bterms = net->getBTerms();
   for (dbBTerm* bterm : bterms) {
     bterm1 = bterm->getConstName();
@@ -1486,7 +1486,7 @@ bool extPattern::RenameBterm1stInput(dbNet* net)
 }
 bool extPattern::RenameAllBterms(dbNet* net)
 {
-  const char* bterm1 = NULL;
+  const char* bterm1 = nullptr;
   dbSet<dbBTerm> bterms = net->getBTerms();
   for (dbBTerm* bterm : bterms) {
     bterm1 = bterm->getConstName();
@@ -1544,7 +1544,7 @@ FILE* extPattern::OpenLog(int met, const char* postfix)
   char patternLog[20];
   sprintf(patternLog, "m%d%s", met, postfix);
   FILE* fp = fopen(patternLog, "w");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     fprintf(stderr, "Cannot open file %s for w\n", patternLog);
     exit(0);
   }

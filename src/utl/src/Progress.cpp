@@ -86,12 +86,16 @@ Progress::Progress(Logger* logger) : logger_(logger)
   prev_signal_halt_ = signal_halt;
   signal_halt = &signal_halt_;
 
-  signal_halt_.org_signal_handler = signal(SIGINT, controlC_handler);
+  struct sigaction act;
+  act.sa_handler = controlC_handler;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = 0;
+  sigaction(SIGINT, &act, &signal_halt_.orig_sigaction);
 }
 
 Progress::~Progress()
 {
-  signal(SIGINT, signal_halt_.org_signal_handler);
+  sigaction(SIGINT, &signal_halt_.orig_sigaction, nullptr);
   signal_halt = prev_signal_halt_;
 }
 

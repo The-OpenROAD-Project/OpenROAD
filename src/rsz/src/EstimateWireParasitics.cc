@@ -345,6 +345,9 @@ void Resizer::updateParasitics(bool save_guides)
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
+        if (!(db_network_->isFlat(net))) {
+          continue;
+        }
         estimateWireParasitic(net);
       }
       parasitics_invalid_.clear();
@@ -418,13 +421,19 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
 
-    NetIterator* net_iter = network_->netIterator(network_->topInstance());
-    while (net_iter->hasNext()) {
-      Net* net = net_iter->next();
-      estimateWireParasitic(net, spef_writer);
+    // Hierarchy flow change
+    // go through all nets, not just the ones in the instance
+    // Get the net set from the block
+    // old code:
+    // NetIterator* net_iter = network_->netIterator(network_->topInstance());
+    // Note that in hierarchy mode, this will not present all the nets,
+    // which is intent here. So get all flat nets from block
+    //
+    odb::dbSet<odb::dbNet> nets = block_->getNets();
+    for (auto db_net : nets) {
+      Net* cur_net = db_network_->dbToSta(db_net);
+      estimateWireParasitic(cur_net, spef_writer);
     }
-    delete net_iter;
-
     parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
   }

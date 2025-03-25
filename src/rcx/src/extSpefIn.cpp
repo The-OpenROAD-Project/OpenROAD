@@ -526,7 +526,7 @@ uint extSpef::getCapNodeId(const char* nodeWord,
 
       if (!_testParsing && !_diff) {
         capId = getCapIdFromCapTable(nodeWord);
-        if (capId == 0 && cornerNet == NULL)
+        if (capId == 0 && cornerNet == nullptr)
           return 0;
 
         if (capId > 0) {
