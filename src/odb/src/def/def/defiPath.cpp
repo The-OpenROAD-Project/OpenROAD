@@ -191,6 +191,9 @@ int defiPath::next() const
 {
   (*(pointer_))++;
 
+  if (*pointer_ >= numUsed_) {
+    return DefParser::DEFIPATH_DONE;
+  }
   return currentType();
 }
 
