@@ -132,14 +132,7 @@ double DetailedDisplacement::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(const int n,
-                                   const std::vector<Node*>& nodes,
-                                   const std::vector<int>& curLeft,
-                                   const std::vector<int>& curBottom,
-                                   const std::vector<unsigned>& curOri,
-                                   const std::vector<int>& newLeft,
-                                   const std::vector<int>& newBottom,
-                                   const std::vector<unsigned>& newOri)
+double DetailedDisplacement::delta(const Journal& journal)
 {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
@@ -147,17 +140,12 @@ double DetailedDisplacement::delta(const int n,
   std::fill(del_.begin(), del_.end(), 0.0);
 
   // Put cells into their "old positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
+  const auto& changes = journal.getActions();
+  for (int i = changes.size() - 1; i >= 0; i--) {
+    mgrPtr_->undo(changes[i], true);
   }
 
-  for (int i = 0; i < n; i++) {
-    const Node* ndi = nodes[i];
-
+  for (const auto ndi : journal.getAffectedNodes()) {
     const int spanned = std::lround(ndi->getHeight() / singleRowHeight_);
 
     const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
@@ -167,31 +155,16 @@ double DetailedDisplacement::delta(const int n,
   }
 
   // Put cells into their "new positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(newLeft[i]);
-    nodes[i]->setBottom(newBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], newOri[i]);
-    }
+  for (const auto& change : changes) {
+    mgrPtr_->redo(change, true);
   }
 
-  for (int i = 0; i < n; i++) {
-    const Node* ndi = nodes[i];
-
+  for (const auto ndi : journal.getAffectedNodes()) {
     const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     const double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
 
     const int spanned = arch_->getCellHeightInRows(ndi);
     del_[spanned] -= (dx + dy);
-  }
-
-  // Put cells into their "old positions and orientations" before returning.
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
   }
 
   double delta = 0.;

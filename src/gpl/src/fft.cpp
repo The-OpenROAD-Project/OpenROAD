@@ -133,8 +133,8 @@ void FFT::doFFT()
          -1,
          binDensity_,
          nullptr,
-         (int*) &workArea_[0],
-         (float*) &csTable_[0]);
+         workArea_.data(),
+         csTable_.data());
 
   for (int i = 0; i < binCntX_; i++) {
     binDensity_[i][0] *= 0.5;
@@ -191,22 +191,22 @@ void FFT::doFFT()
          1,
          electroPhi_,
          nullptr,
-         (int*) &workArea_[0],
-         (float*) &csTable_[0]);
+         workArea_.data(),
+         csTable_.data());
   ddsct2d(binCntX_,
           binCntY_,
           1,
           electroForceX_,
           nullptr,
-          (int*) &workArea_[0],
-          (float*) &csTable_[0]);
+          workArea_.data(),
+          csTable_.data());
   ddcst2d(binCntX_,
           binCntY_,
           1,
           electroForceY_,
           nullptr,
-          (int*) &workArea_[0],
-          (float*) &csTable_[0]);
+          workArea_.data(),
+          csTable_.data());
 }
 
 }  // namespace gpl

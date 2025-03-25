@@ -36,6 +36,10 @@
 
 #pragma once
 
+namespace odb {
+class dbOrientType;
+}
+
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,5 +58,8 @@ const unsigned Orientation_FN = 0x00000010;
 const unsigned Orientation_FS = 0x00000020;
 const unsigned Orientation_FE = 0x00000040;
 const unsigned Orientation_FW = 0x00000080;
+
+unsigned dbToDpoOrient(const odb::dbOrientType& dbOrient);
+odb::dbOrientType dpoToDbOrient(unsigned orient);
 
 }  // namespace dpo

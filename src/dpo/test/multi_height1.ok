@@ -18,11 +18,10 @@ Importing netlist into detailed improver.
 [INFO DPO-0319] Collected 2 multi-height cells spanning 2 rows.
 [INFO DPO-0319] Collected 1 multi-height cells spanning 3 rows.
 [INFO DPO-0321] Collected 0 wide cells.
-[INFO DPO-0322] Image (0, 0) - (12540, 16800)
+[INFO DPO-0322] Image (0, 0) - (12920, 16800)
 [INFO DPO-0310] Assigned 2 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
 [INFO DPO-0310] Assigned 2 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
-[INFO DPO-0310] Assigned 1 cells into segments.  Movement in X-direction is 380.000000, movement in Y-direction is 0.000000.
-[WARNING DPO-0200] Unexpected displacement during legalization.
+[INFO DPO-0310] Assigned 1 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
@@ -108,7 +107,7 @@ Importing netlist into detailed improver.
 [INFO DPO-0327] Pass   5 of random improver; improvement in cost is -nan percent.
 [INFO DPO-0328] End of random improver; improvement is -nan percent.
 [INFO DPO-0380] Cell flipping.
-[INFO DPO-0382] Changed 2 cell orientations for row compatibility.
+[INFO DPO-0382] Changed 0 cell orientations for row compatibility.
 [INFO DPO-0383] Performed 0 cell flips.
 [INFO DPO-0384] End of flipping; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.

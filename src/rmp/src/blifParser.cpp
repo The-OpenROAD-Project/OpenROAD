@@ -167,10 +167,10 @@ void BlifParser::addNewInstanceType(const std::string& type)
     gates_.push_back(
         Gate(currentInstanceType_, currentGate_, currentConnections_));
   }
-  currentInstanceType_
-      = (type == "mlatch")
-            ? GateType::Mlatch
-            : ((type == "gate") ? GateType::Gate : GateType::None);
+  currentInstanceType_ = GateType::Mlatch;
+  if (type != "mlatch") {
+    currentInstanceType_ = (type == "gate") ? GateType::Gate : GateType::None;
+  }
   if (currentInstanceType_ == GateType::Mlatch)
     flopCount_++;
   else if (currentInstanceType_ == GateType::Gate)
