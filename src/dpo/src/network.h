@@ -46,8 +46,8 @@
 #include "architecture.h"
 #include "dpl/Coordinates.h"
 #include "dpl/Grid.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "orientation.h"
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,6 +61,7 @@ using dpl::DbuY;
 using dpl::GridNode;
 using dpl::GridX;
 using dpl::GridY;
+using odb::dbOrientType;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -119,11 +120,10 @@ class Node : public GridNode
   DbuX siteWidth() const override { return DbuX(0); }
 
   int getArea() const { return w_ * h_; }
-  unsigned getAvailOrient() const { return availOrient_; }
   int getBottom() const { return bottom_; }
   int getBottomPower() const { return powerBot_; }
   int getTopPower() const { return powerTop_; }
-  unsigned getCurrOrient() const { return currentOrient_; }
+  dbOrientType getCurrOrient() const { return currentOrient_; }
   Fixity getFixed() const { return fixed_; }
   int getHeight() const { return h_; }
   int getId() const { return id_; }
@@ -137,11 +137,10 @@ class Node : public GridNode
   int getWidth() const { return w_; }
   Master* getMaster() const { return master_; }
 
-  void setAvailOrient(unsigned avail) { availOrient_ = avail; }
   void setBottom(int bottom) { bottom_ = bottom; }
   void setBottomPower(int bot) { powerBot_ = bot; }
   void setTopPower(int top) { powerTop_ = top; }
-  void setCurrOrient(unsigned orient) { currentOrient_ = orient; }
+  void setCurrOrient(const dbOrientType& orient) { currentOrient_ = orient; }
   void setFixed(Fixity fixed) { fixed_ = fixed; }
   void setHeight(int h) { h_ = h; }
   void setId(int id) { id_ = id; }
@@ -154,7 +153,7 @@ class Node : public GridNode
   void setMaster(Master* in) { master_ = in; }
   void setDbInst(odb::dbInst* inst) { db_inst_ = inst; }
 
-  bool adjustCurrOrient(unsigned newOrient);
+  bool adjustCurrOrient(const dbOrientType& newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
   bool isFiller() const { return (type_ == FILLER); }
@@ -193,8 +192,7 @@ class Node : public GridNode
   // Regions.
   int regionId_ = 0;
   // Orientations.
-  unsigned currentOrient_ = Orientation_N;
-  unsigned availOrient_ = Orientation_N;
+  dbOrientType currentOrient_;
   // Pins.
   std::vector<Pin*> pins_;
   // Master and edges
