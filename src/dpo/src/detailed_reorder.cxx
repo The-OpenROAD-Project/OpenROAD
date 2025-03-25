@@ -200,7 +200,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
                                 const int rowId)
 {
   const int size = jstop - jstrt + 1;
-
+  if (size <= 0) {
+    return;
+  }
   // XXX: Node positions still doubles!
   std::unordered_map<const Node*, DbuX> origLeft;
   for (int i = 0; i < size; i++) {

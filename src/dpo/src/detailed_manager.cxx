@@ -3329,10 +3329,10 @@ bool DetailedMgr::trySwap1(Node* ndi,
     std::vector<DbuX> posLeft;
     cells.push_back(ndj);
     targetLeft.push_back(xi);
-    posLeft.push_back(DbuX{0});
+    posLeft.emplace_back(0);
     cells.push_back(ndi);
     targetLeft.push_back(xj);
-    posLeft.push_back(DbuX{0});
+    posLeft.emplace_back(0);
     int ri = segments_[si]->getRowId();
     if (!shift(cells, targetLeft, posLeft, lx, rx, si, ri)) {
       return false;
@@ -3368,10 +3368,10 @@ bool DetailedMgr::trySwap1(Node* ndi,
     std::vector<DbuX> posLeft;
     cells.push_back(ndi);
     targetLeft.push_back(xj);
-    posLeft.push_back(DbuX{0});
+    posLeft.emplace_back(0);
     cells.push_back(ndj);
     targetLeft.push_back(xi);
-    posLeft.push_back(DbuX{0});
+    posLeft.emplace_back(0);
     int ri = segments_[si]->getRowId();
     if (!shift(cells, targetLeft, posLeft, lx, rx, si, ri)) {
       return false;
