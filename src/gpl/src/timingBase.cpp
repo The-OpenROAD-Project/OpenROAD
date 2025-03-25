@@ -116,10 +116,15 @@ void TimingBase::setTimingNetWeightMax(float max)
 }
 
 bool TimingBase::executeTimingDriven(bool run_journal_restore)
-{
+{  
   rs_->findResizeSlacks(run_journal_restore);
 
-  if (!run_journal_restore) {
+  if (!run_journal_restore) {    
+    sta::InstanceSeq insts;
+    //for testing only, remove all buffers
+    // removeBuffers() if you pass in an empty insts argument it removes all buffers
+    rs_->removeBuffers(insts);
+
     nbc_->fixPointers();
   }
 

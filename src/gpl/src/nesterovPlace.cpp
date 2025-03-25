@@ -296,6 +296,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->resetMinSumOverflow();
   }
 
+  log_->report("NBC gcells print before gpl iterations:");
+  nbc_->printGCells();
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {
@@ -519,8 +521,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                      nesterov->targetDensity());
           nbc_->resetDeltaArea();
           nbc_->resetNewGcellsCount();
+          log_->report("updateAreas started!");
           nesterov->updateAreas();
+          log_->report("updateAreas done!");
           nesterov->updateDensitySize();
+          log_->report("updateDensitySize done!");
         }
 
         // update snapshot after non-virtual TD
@@ -787,6 +792,7 @@ void NesterovPlace::destroyGCell(odb::dbInst* db_inst)
   for (auto& nesterov : nbVec_) {
     nesterov->destroyGCell(db_inst);
   }
+  // nbc_->destroyGCell(db_inst);
 }
 
 void NesterovPlace::createGNet(odb::dbNet* db_net)
@@ -871,6 +877,7 @@ void nesterovDbCbk::inDbNetCreate(odb::dbNet* db_net)
 
 void nesterovDbCbk::inDbNetDestroy(odb::dbNet* db_net)
 {
+  nesterov_place_->destroyGNet(db_net);
 }
 
 }  // namespace gpl

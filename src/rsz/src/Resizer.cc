@@ -2346,6 +2346,7 @@ void Resizer::resizeSlackPreamble()
 // violations. Find the slacks, and then undo all changes to the netlist.
 void Resizer::findResizeSlacks(bool run_journal_restore)
 {
+  ensureLevelDrvrVertices();
   if (run_journal_restore)
     journalBegin();
   estimateWireParasitics();
