@@ -43,12 +43,12 @@ class JournalAction
     MOVE_CELL
   };
   JournalAction() = default;
-  void setOrigLocation(const DbuX x, const int y)
+  void setOrigLocation(const DbuX x, const DbuY y)
   {
     orig_x_ = x;
     orig_y_ = y;
   }
-  void setNewLocation(const DbuX x, const int y)
+  void setNewLocation(const DbuX x, const DbuY y)
   {
     new_x_ = x;
     new_y_ = y;
@@ -60,9 +60,9 @@ class JournalAction
   // getters
   Node* getNode() const { return node_; }
   DbuX getOrigLeft() const { return orig_x_; }
-  int getOrigBottom() const { return orig_y_; }
+  DbuY getOrigBottom() const { return orig_y_; }
   DbuX getNewLeft() const { return new_x_; }
-  int getNewBottom() const { return new_y_; }
+  DbuY getNewBottom() const { return new_y_; }
   const std::vector<int>& getOrigSegs() const { return orig_segs_; }
   const std::vector<int>& getNewSegs() const { return new_segs_; }
   TYPE getType() const { return type_; }
@@ -71,9 +71,9 @@ class JournalAction
   TYPE type_;
   Node* node_{nullptr};
   DbuX orig_x_{0};
-  int orig_y_{0};
+  DbuY orig_y_{0};
   DbuX new_x_{0};
-  int new_y_{0};
+  DbuY new_y_{0};
   std::vector<int> orig_segs_;
   std::vector<int> new_segs_;
 };

@@ -96,7 +96,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   mgr.findBlockages(false);  // Exclude routing blockages.
   mgr.findSegments();
 
-  std::vector<std::pair<DbuX, double>> origPos;
+  std::vector<std::pair<DbuX, DbuY>> origPos;
   origPos.resize(network_->getNumNodes());
   for (int i = 0; i < network_->getNumNodes(); i++) {
     const Node* ndi = network_->getNode(i);
@@ -134,8 +134,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   // Check for displacement after the snap.  Shouldn't be any.
   for (const Node* ndi : cells) {
     const DbuX dx = abs(ndi->getLeft() - origPos[ndi->getId()].first);
-    const double dy
-        = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
+    const DbuY dy = abs(ndi->getBottom() - origPos[ndi->getId()].second);
     if (dx > 0 || dy > 1.0e-3) {
       isDisp = true;
     }
@@ -189,8 +188,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   // Check for displacement after the shift.  Shouldn't be any.
   for (const Node* ndi : cells) {
     const DbuX dx = abs(ndi->getLeft() - origPos[ndi->getId()].first);
-    const double dy
-        = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
+    const DbuY dy = abs(ndi->getBottom() - origPos[ndi->getId()].second);
     if (dx > 0 || dy > 1.0e-3) {
       isDisp = true;
     }
@@ -246,9 +244,9 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 
     ndi->setId(nnodes + i);
     ndi->setLeft(DbuX{segPtr->getMinX()});
-    ndi->setBottom(arch_->getRow(rowId)->getBottom());
+    ndi->setBottom(DbuY{arch_->getRow(rowId)->getBottom()});
     ndi->setWidth(DbuX{0});
-    ndi->setHeight(arch_->getRow(rowId)->getHeight());
+    ndi->setHeight(DbuY{arch_->getRow(rowId)->getHeight()});
 
     dummiesLeft_[i] = ndi;
   }
@@ -263,9 +261,9 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 
     ndi->setId(nnodes + nsegs + i);
     ndi->setLeft(DbuX{segPtr->getMaxX()});
-    ndi->setBottom(arch_->getRow(rowId)->getBottom());
+    ndi->setBottom(DbuY{arch_->getRow(rowId)->getBottom()});
     ndi->setWidth(DbuX{0});
-    ndi->setHeight(arch_->getRow(rowId)->getHeight());
+    ndi->setHeight(DbuY{arch_->getRow(rowId)->getHeight()});
 
     dummiesRight_[i] = ndi;
   }
@@ -443,14 +441,14 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     ndi->setLeft(newX);
 
     // Bottom edge.
-    const int oldY = ndi->getBottom();
-    const int newY = arch_->getRow(rowId)->getBottom();
+    const DbuY oldY = ndi->getBottom();
+    const DbuY newY{arch_->getRow(rowId)->getBottom()};
 
     ndi->setBottom(newY);
 
     const DbuX dX = oldX - newX;
-    const int dY = oldY - newY;
-    retval += (dX.v * dX.v + dY * dY);  // Quadratic or something else?
+    const DbuY dY = oldY - newY;
+    retval += (dX.v * dX.v + dY.v * dY.v);  // Quadratic or something else?
   }
 
   return retval;

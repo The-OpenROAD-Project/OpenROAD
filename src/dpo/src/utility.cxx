@@ -51,10 +51,10 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
     const Node* ndi = nw->getNode(i);
 
     const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
-    const double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
+    const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
     // TODO: fix wrong total displacement calculation
     tot += dx.v + dx.v;
-    max = std::max(max, dx.v + dy);
+    max = std::max(max, (double) dx.v + dy.v);
   }
   avg = tot / (double) nw->getNumNodes();
 
@@ -93,7 +93,7 @@ double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
     for (const Pin* pin : ed->getPins()) {
       const Node* ndi = pin->getNode();
       const double py
-          = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
+          = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY();
       const double px
           = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX();
       box.addPt(px, py);
@@ -129,7 +129,7 @@ double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
   for (const Pin* pin : ed->getPins()) {
     const Node* ndi = pin->getNode();
     const double py
-        = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
+        = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY();
     const double px
         = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX();
     box.addPt(px, py);

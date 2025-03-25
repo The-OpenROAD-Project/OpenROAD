@@ -284,8 +284,8 @@ class DetailedMgr
   void setTargetUt(double ut) { targetUt_ = ut; }
 
   // Routines for generating moves and swaps.
-  bool tryMove(Node* ndi, DbuX xi, int yi, int si, DbuX xj, int yj, int sj);
-  bool trySwap(Node* ndi, DbuX xi, int yi, int si, DbuX xj, int yj, int sj);
+  bool tryMove(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
+  bool trySwap(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
   // For accepting or rejecting moves and swaps.
   void acceptMove();
@@ -354,11 +354,11 @@ class DetailedMgr
 
   // Different routines for trying moves and swaps.
   bool verifyMove();
-  bool tryMove1(Node* ndi, DbuX xi, int yi, int si, DbuX xj, int yj, int sj);
-  bool tryMove2(Node* ndi, DbuX xi, int yi, int si, DbuX xj, int yj, int sj);
-  bool tryMove3(Node* ndi, DbuX xi, int yi, int si, DbuX xj, int yj, int sj);
+  bool tryMove1(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
+  bool tryMove2(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
+  bool tryMove3(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
-  bool trySwap1(Node* ndi, DbuX xi, int yi, int si, DbuX xj, int yj, int sj);
+  bool trySwap1(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
   // Helper routines for making moves and swaps.
   bool shift(std::vector<Node*>& cells,
@@ -376,17 +376,17 @@ class DetailedMgr
   void clearMoveList();
   bool addToMoveList(Node* ndi,
                      DbuX curLeft,
-                     int curBottom,
+                     DbuY curBottom,
                      int curSeg,
                      DbuX newLeft,
-                     int newBottom,
+                     DbuY newBottom,
                      int newSeg);
   bool addToMoveList(Node* ndi,
                      DbuX curLeft,
-                     int curBottom,
+                     DbuY curBottom,
                      const std::vector<int>& curSegs,
                      DbuX newLeft,
-                     int newBottom,
+                     DbuY newBottom,
                      const std::vector<int>& newSegs);
 
   // Standard stuff.
@@ -435,7 +435,7 @@ class DetailedMgr
   std::vector<Node*> wideCells_;
 
   // Original cell positions.
-  std::vector<int> origBottom_;
+  std::vector<DbuY> origBottom_;
   std::vector<DbuX> origLeft_;
 
   std::vector<Rectangle> boxes_;

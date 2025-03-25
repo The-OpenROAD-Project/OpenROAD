@@ -287,7 +287,7 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
     const double curX
         = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX();
     const double curY
-        = other->getBottom() + 0.5 * other->getHeight() + pin->getOffsetY();
+        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY();
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -332,7 +332,8 @@ double DetailedVerticalSwap::delta(Node* ndi, double new_x, double new_y)
 
       double x
           = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-      double y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+      double y
+          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
       old_box.addPt(x, y);
 
@@ -385,8 +386,8 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
 
         double x
             = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        double y
-            = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        double y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+                   + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 
@@ -397,7 +398,7 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
         }
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         new_box.addPt(x, y);
       }
@@ -418,7 +419,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   // of the optimal box.
 
   // Center of cell.
-  const double yi = ndi->getBottom() + 0.5 * ndi->getHeight();
+  const double yi = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
   const double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
   // Determine optimal region.
@@ -442,10 +443,10 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   const int ri = mgr_->getReverseCellToSegs(ndi->getId())[0]->getRowId();
 
   // Center of optimal rectangle.
-  const DbuX xj{
-      std::floor(0.5 * (bbox.xmin() + bbox.xmax()) - 0.5 * ndi->getWidth().v)};
-  int yj = (int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
-                            - 0.5 * ndi->getHeight());
+  const DbuX xj{(int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
+                                 - 0.5 * ndi->getWidth().v)};
+  DbuY yj{(int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
+                           - 0.5 * ndi->getHeight().v)};
 
   // Up or down a few rows depending on whether or not the
   // center of the optimal rectangle is above or below the
@@ -463,7 +464,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (rj == -1) {
     return false;
   }
-  yj = arch_->getRow(rj)->getBottom();  // Row alignment.
+  yj = DbuY{arch_->getRow(rj)->getBottom()};  // Row alignment.
   int sj = -1;
   for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
     const DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];

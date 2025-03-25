@@ -348,7 +348,7 @@ void DetailedMis::buildGrid()
   double avgH = 0.;
   double avgW = 0.;
   for (const Node* ndi : candidates_) {
-    avgH += ndi->getHeight();
+    avgH += ndi->getHeight().v;
     avgW += ndi->getWidth().v;
   }
   avgH /= (double) candidates_.size();
@@ -396,7 +396,7 @@ void DetailedMis::populateGrid()
   // Insert cells into the constructed grid.
   cellToBinMap_.clear();
   for (Node* ndi : candidates_) {
-    const double y = ndi->getBottom() + 0.5 * ndi->getHeight();
+    const double y = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
     const double x = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
     const int j = std::max(std::min((int) ((y - ymin) / stepY_), dimH_ - 1), 0);
@@ -439,7 +439,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     return false;
   }
 
-  const int spanned_i = std::lround(ndi->getHeight() / singleRowHeight);
+  const int spanned_i = std::lround(ndi->getHeight().v / singleRowHeight);
 
   std::queue<Bucket*> Q;
   Q.push(it->second);
@@ -485,7 +485,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       // Must span the same number of rows and also be voltage compatible.
       if (ndi->getBottomPower() != ndj->getBottomPower()
           || ndi->getTopPower() != ndj->getTopPower()
-          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight)) {
+          || spanned_i != std::lround(ndj->getHeight().v / singleRowHeight)) {
         continue;
       }
 
@@ -527,7 +527,7 @@ void DetailedMis::solveMatch()
   const int nSpots = (int) nodes.size();
 
   // Original position of cells.
-  std::vector<std::pair<DbuX, int>> pos(nNodes);
+  std::vector<std::pair<DbuX, DbuY>> pos(nNodes);
   // Original segment assignment of cells.
   std::vector<std::vector<DetailedSeg*>> seg(nNodes);
   for (size_t i = 0; i < nodes.size(); i++) {
@@ -580,12 +580,12 @@ void DetailedMis::solveMatch()
       // from being assigned to its original position as
       // this guarantees a solution!
       if (i != j) {
-        DbuX dx = abs(pos[j].first - ndi->getOrigLeft());
+        const DbuX dx = abs(pos[j].first - ndi->getOrigLeft());
         if (dx > mgrPtr_->getMaxDisplacementX()) {
           continue;
         }
-        double dy = std::fabs(pos[j].second - ndi->getOrigBottom());
-        if ((int) std::ceil(dy) > mgrPtr_->getMaxDisplacementY()) {
+        const DbuY dy = abs(pos[j].second - ndi->getOrigBottom());
+        if (dy > mgrPtr_->getMaxDisplacementY()) {
           continue;
         }
       }
@@ -594,11 +594,11 @@ void DetailedMis::solveMatch()
       if (obj_ == DetailedMis::Hpwl) {
         icost = getHpwl(ndi,
                         pos[j].first.v + 0.5 * ndi->getWidth().v,
-                        pos[j].second + 0.5 * ndi->getHeight());
+                        pos[j].second.v + 0.5 * ndi->getHeight().v);
       } else {
         icost = getDisp(ndi,
                         pos[j].first.v + 0.5 * ndi->getWidth().v,
-                        pos[j].second + 0.5 * ndi->getHeight());
+                        pos[j].second.v + 0.5 * ndi->getHeight().v);
       }
 
       // Node to spot.
@@ -739,9 +739,9 @@ double DetailedMis::getDisp(const Node* ndi, double xi, double yi)
 
   // Specified target is cell center.  Need to offset.
   xi -= 0.5 * ndi->getWidth().v;
-  yi -= 0.5 * ndi->getHeight();
+  yi -= 0.5 * ndi->getHeight().v;
   const double dx = std::fabs(xi - ndi->getOrigLeft().v);
-  const double dy = std::fabs(yi - ndi->getOrigBottom());
+  const double dy = std::fabs(yi - ndi->getOrigBottom().v);
   return dx + dy;
 }
 
@@ -774,9 +774,10 @@ double DetailedMis::getHpwl(const Node* ndi, double xi, double yi)
                            ? (xi + pinj->getOffsetX())
                            : (ndj->getLeft().v + 0.5 * ndj->getWidth().v
                               + pinj->getOffsetX());
-      const double y = (ndj == ndi) ? (yi + pinj->getOffsetY())
-                                    : (ndj->getBottom() + 0.5 * ndj->getHeight()
-                                       + pinj->getOffsetY());
+      const double y = (ndj == ndi)
+                           ? (yi + pinj->getOffsetY())
+                           : (ndj->getBottom().v + 0.5 * ndj->getHeight().v
+                              + pinj->getOffsetY());
 
       box.addPt(x, y);
     }

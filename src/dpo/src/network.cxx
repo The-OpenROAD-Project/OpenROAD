@@ -64,8 +64,8 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
       }
       {
         int tmp = w_.v;
-        w_ = DbuX{h_};
-        h_ = tmp;
+        w_ = DbuX{h_.v};
+        h_ = DbuY{tmp};
       }
       if (curOri == dbOrientType::R90) {
         curOri = dbOrientType::R0;
@@ -89,8 +89,8 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
       }
       {
         int tmp = w_.v;
-        w_ = DbuX{h_};
-        h_ = tmp;
+        w_ = DbuX{h_.v};
+        h_ = DbuY{tmp};
       }
       if (curOri == dbOrientType::R0) {
         curOri = dbOrientType::R90;
@@ -221,10 +221,10 @@ void Network::createAndAddBlockage(const odb::Rect& bounds)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddFillerNode(const int left,
-                                      const int bottom,
-                                      const int width,
-                                      const int height)
+Node* Network::createAndAddFillerNode(const DbuX left,
+                                      const DbuY bottom,
+                                      const DbuX width,
+                                      const DbuY height)
 {
   Node* ndi = new Node();
   const int id = (int) nodes_.size();
@@ -232,9 +232,9 @@ Node* Network::createAndAddFillerNode(const int left,
   ndi->setType(Node::FILLER);
   ndi->setId(id);
   ndi->setHeight(height);
-  ndi->setWidth(DbuX{width});
+  ndi->setWidth(width);
   ndi->setBottom(bottom);
-  ndi->setLeft(DbuX{left});
+  ndi->setLeft(left);
   nodes_.push_back(ndi);
   return getNode(id);
 }

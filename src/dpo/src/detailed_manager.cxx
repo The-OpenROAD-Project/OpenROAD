@@ -179,8 +179,8 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
     }
     int xmin = std::max(arch_->getMinX(), nd->getLeft().v);
     int xmax = std::min(arch_->getMaxX(), nd->getRight().v);
-    const int ymin = std::max(arch_->getMinY(), nd->getBottom());
-    const int ymax = std::min(arch_->getMaxY(), nd->getTop());
+    const int ymin = std::max(arch_->getMinY(), nd->getBottom().v);
+    const int ymax = std::min(arch_->getMaxY(), nd->getTop().v);
 
     // HACK!  So a fixed cell might split a row into multiple
     // segments.  However, I don't take into account the
@@ -826,7 +826,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
 
         // Work with bottom edge.
         const double ymin = arch_->getRow(segPtr->getRowId())->getBottom();
-        const double dy = std::fabs(nd->getBottom() - ymin);
+        const double dy = std::fabs(nd->getBottom().v - ymin);
 
         int xmin = segPtr->getMinX();
         int xmax = segPtr->getMaxX();
@@ -910,10 +910,10 @@ void DetailedMgr::assignCellsToSegments(
       const DbuX x1 = DbuX{segPtr->getMinX()};
       const DbuX x2 = DbuX{segPtr->getMaxX()} - nd->getWidth();
       const DbuX xx = std::max(x1, std::min(x2, nd->getLeft()));
-      const int yy = arch_->getRow(rowId)->getBottom();
+      const DbuY yy{arch_->getRow(rowId)->getBottom()};
 
       movementX += std::abs(nd->getLeft().v - xx.v);
-      movementY += std::abs(nd->getBottom() - yy);
+      movementY += std::abs(nd->getBottom().v - yy.v);
 
       nd->setLeft(xx);
       nd->setBottom(yy);
@@ -944,10 +944,10 @@ void DetailedMgr::assignCellsToSegments(
         const DbuX x1 = DbuX{xmin};
         const DbuX x2 = DbuX{xmax} - nd->getWidth();
         const DbuX xx = std::max(x1, std::min(x2, nd->getLeft()));
-        const int yy = arch_->getRow(rowId)->getBottom();
+        const DbuY yy{arch_->getRow(rowId)->getBottom()};
 
         movementX += std::abs(nd->getLeft().v - xx.v);
-        movementY += std::abs(nd->getBottom() - yy);
+        movementY += std::abs(nd->getBottom().v - yy.v);
 
         nd->setLeft(DbuX{xx});
         nd->setBottom(yy);
@@ -971,8 +971,8 @@ bool DetailedMgr::isInsideABlockage(const Node* nd, const DbuX position)
   const int single_height = first_row->getHeight();
   const int rows_origin_y = first_row->getBottom();
   const int start_row
-      = std::max((nd->getBottom() - rows_origin_y) / single_height, 0);
-  const int end_row = std::min((nd->getTop() - rows_origin_y) / single_height,
+      = std::max((nd->getBottom().v - rows_origin_y) / single_height, 0);
+  const int end_row = std::min((nd->getTop().v - rows_origin_y) / single_height,
                                numSingleHeightRows_ - 1);
 
   for (int r = start_row; r < end_row; r++) {
@@ -1108,7 +1108,8 @@ double DetailedMgr::measureMaximumDisplacement(u_int64_t& maxX,
       continue;
     }
 
-    const uint64_t dy = std::abs(nd->getBottom() - origBottom_[nd->getId()]);
+    const uint64_t dy
+        = std::abs(nd->getBottom().v - origBottom_[nd->getId()].v);
     const uint64_t dx = std::abs(nd->getLeft().v - origLeft_[nd->getId()].v);
     maxL1 = std::max(maxL1, dx + dy);
     maxX = std::max(maxX, dx);
@@ -1363,13 +1364,13 @@ namespace cell_edges {
 odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
                             const Node* cell,
                             const DbuX left,
-                            const int bottom,
+                            const DbuY bottom,
                             const odb::dbOrientType& orient)
 {
   odb::Rect bbox = cell->getMaster()->boundary_box_;
   odb::dbTransform transform(orient);
   transform.apply(bbox);
-  odb::Point offset(left.v - bbox.xMin(), bottom - bbox.yMin());
+  odb::Point offset(left.v - bbox.xMin(), bottom.v - bbox.yMin());
   transform.setOffset(offset);
   odb::Rect result(edge_rect);
   transform.apply(result);
@@ -1402,7 +1403,7 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
   }
   // Get the real grid coordinates from the grid indices.
   DbuX x_real = node->getLeft();
-  int y_real = node->getBottom();
+  DbuY y_real = node->getBottom();
   for (const auto& edge1 : master->edges_) {
     int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
                   + 1;  // +1 to account for EXACT rules
@@ -1549,12 +1550,12 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
     // to do this efficiently we can simply loop and check for overlaps in the
     // ys
 
-    auto isInRange = [](int value, int min, int max) -> bool {
+    auto isInRange = [](DbuY value, DbuY min, DbuY max) -> bool {
       return min <= value && value <= max;
     };
 
-    auto isOverlap
-        = [&isInRange](int bottom1, int top1, int bottom2, int top2) -> bool {
+    auto isOverlap =
+        [&isInRange](DbuY bottom1, DbuY top1, DbuY bottom2, DbuY top2) -> bool {
       return isInRange(bottom1, bottom2, top2)
              || isInRange(bottom2, bottom1, top1);
     };
@@ -1716,13 +1717,13 @@ int DetailedMgr::checkSiteAlignment()
     }
 
     const double xl = nd->getLeft().v;
-    const double yb = nd->getBottom();
+    const double yb = nd->getBottom().v;
 
     // Determine the spanned rows. XXX: Is this strictly correct?  It
     // assumes rows are continuous and that the bottom row lines up
     // with the bottom of the architecture.
     int rb = (int) ((yb - arch_->getMinY()) / singleRowHeight);
-    const int spanned = std::lround(nd->getHeight() / singleRowHeight);
+    const int spanned = std::lround(nd->getHeight().v / singleRowHeight);
     int rt = rb + spanned - 1;
 
     if (reverseCellToSegs_[nd->getId()].empty()) {
@@ -1778,10 +1779,9 @@ int DetailedMgr::checkRowAlignment()
       ++err_n;
       continue;
     }
-    const int ymin = arch_->getRow(rb)->getBottom();
-    const int ymax = arch_->getRow(rt)->getTop();
-    if (std::abs(nd->getBottom() - ymin) != 0
-        || std::abs(nd->getTop() - ymax) != 0) {
+    const DbuY ymin{arch_->getRow(rb)->getBottom()};
+    const DbuY ymax{arch_->getRow(rt)->getTop()};
+    if (abs(nd->getBottom() - ymin) != 0 || abs(nd->getTop() - ymax) != 0) {
       ++err_n;
     }
   }
@@ -2694,10 +2694,10 @@ bool DetailedMgr::verifyMove()
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::tryMove(Node* ndi,
                           const DbuX xi,
-                          const int yi,
+                          const DbuY yi,
                           const int si,
                           const DbuX xj,
-                          const int yj,
+                          const DbuY yj,
                           const int sj)
 {
   // Based on the input, call an appropriate routine to try
@@ -2730,10 +2730,10 @@ bool DetailedMgr::tryMove(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::trySwap(Node* ndi,
                           const DbuX xi,
-                          const int yi,
+                          const DbuY yi,
                           const int si,
                           const DbuX xj,
-                          const int yj,
+                          const DbuY yj,
                           const int sj)
 {
   if (trySwap1(ndi, xi, yi, si, xj, yj, sj)) {
@@ -2747,10 +2747,10 @@ bool DetailedMgr::trySwap(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::tryMove1(Node* ndi,
                            const DbuX xi,
-                           const int yi,
+                           const DbuY yi,
                            const int si,
                            DbuX xj,
-                           int yj,
+                           DbuY yj,
                            const int sj)
 {
   // Try to move a single height cell to a new position in another segment.
@@ -2769,9 +2769,9 @@ bool DetailedMgr::tryMove1(Node* ndi,
   }
 
   const int rj = segments_[sj]->getRowId();
-  if (std::abs(yj - arch_->getRow(rj)->getBottom()) != 0) {
+  if (std::abs(yj.v - arch_->getRow(rj)->getBottom()) != 0) {
     // Weird.
-    yj = arch_->getRow(rj)->getBottom();
+    yj = DbuY{arch_->getRow(rj)->getBottom()};
   }
 
   // Find the cells to the left and to the right of the target location.
@@ -2914,10 +2914,10 @@ bool DetailedMgr::tryMove1(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::tryMove2(Node* ndi,
                            const DbuX xi,
-                           const int yi,
+                           const DbuY yi,
                            const int si,
                            DbuX xj,
-                           int yj,
+                           DbuY yj,
                            const int sj)
 {
   // Very simple move within the same segment.
@@ -2933,9 +2933,9 @@ bool DetailedMgr::tryMove2(Node* ndi,
   }
 
   const int rj = segments_[sj]->getRowId();
-  if (std::abs(yj - arch_->getRow(rj)->getBottom()) != 0) {
+  if (std::abs(yj.v - arch_->getRow(rj)->getBottom()) != 0) {
     // Weird.
-    yj = arch_->getRow(rj)->getBottom();
+    yj = DbuY{arch_->getRow(rj)->getBottom()};
   }
 
   const int n = (int) cellsInSeg_[si].size() - 1;
@@ -3015,10 +3015,10 @@ bool DetailedMgr::tryMove2(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::tryMove3(Node* ndi,
                            const DbuX xi,
-                           const int yi,
+                           const DbuY yi,
                            const int si,
                            DbuX xj,
-                           int yj,
+                           DbuY yj,
                            const int sj)
 {
   clearMoveList();
@@ -3168,7 +3168,7 @@ bool DetailedMgr::tryMove3(Node* ndi,
                        ndi->getBottom(),
                        old_segs,
                        xj,
-                       arch_->getRow(rb)->getBottom(),
+                       DbuY{arch_->getRow(rb)->getBottom()},
                        segs)) {
       return false;
     }
@@ -3181,10 +3181,10 @@ bool DetailedMgr::tryMove3(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::trySwap1(Node* ndi,
                            DbuX xi,
-                           const int yi,
+                           const DbuY yi,
                            const int si,
                            DbuX xj,
-                           const int yj,
+                           const DbuY yj,
                            const int sj)
 {
   // Tries to swap cell "ndi" with another cell, "ndj", which it finds
@@ -3286,9 +3286,9 @@ bool DetailedMgr::trySwap1(Node* ndi,
       return false;
     }
     const DbuX x1 = ndi->getLeft();
-    const int y1 = ndi->getBottom();
+    const DbuY y1 = ndi->getBottom();
     const DbuX x2 = ndj->getLeft();
-    const int y2 = ndj->getBottom();
+    const DbuY y2 = ndj->getBottom();
     // Build move list.
     if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
       return false;
@@ -3384,9 +3384,9 @@ bool DetailedMgr::trySwap1(Node* ndi,
   }
 
   const DbuX x1 = ndi->getLeft();
-  const int y1 = ndi->getBottom();
+  const DbuY y1 = ndi->getBottom();
   const DbuX x2 = ndj->getLeft();
-  const int y2 = ndj->getBottom();
+  const DbuY y2 = ndj->getBottom();
   // Build move list.
   if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
     return false;
@@ -3408,10 +3408,10 @@ void DetailedMgr::clearMoveList()
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::addToMoveList(Node* ndi,
                                 const DbuX curLeft,
-                                const int curBottom,
+                                const DbuY curBottom,
                                 const int curSeg,
                                 const DbuX newLeft,
-                                const int newBottom,
+                                const DbuY newBottom,
                                 const int newSeg)
 {
   // Limit maximum number of cells that can move at once.
@@ -3423,9 +3423,9 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   // manager to compose a move list.  We can check
   // only here whether or not a cell will violate its
   // displacement limit.
-  const double dy = std::fabs(newBottom - ndi->getOrigBottom());
-  const DbuX dx = newLeft - ndi->getOrigLeft();
-  if (dx.v > maxDispX_ || (int) std::ceil(dy) > maxDispY_) {
+  const DbuY dy = abs(newBottom - ndi->getOrigBottom());
+  const DbuX dx = abs(newLeft - ndi->getOrigLeft());
+  if (dx > maxDispX_ || dy > maxDispY_) {
     return false;
   }
   // commit move and add to journal
@@ -3455,10 +3455,10 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::addToMoveList(Node* ndi,
                                 const DbuX curLeft,
-                                const int curBottom,
+                                const DbuY curBottom,
                                 const std::vector<int>& curSegs,
                                 const DbuX newLeft,
-                                const int newBottom,
+                                const DbuY newBottom,
                                 const std::vector<int>& newSegs)
 {
   // Most number of cells that can move.

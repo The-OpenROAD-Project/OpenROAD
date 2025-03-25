@@ -283,7 +283,8 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
       continue;
     }
     curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX();
-    curY = other->getBottom() + 0.5 * other->getHeight() + pin->getOffsetY();
+    curY
+        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY();
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -329,7 +330,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
       Node* ndj = pinj->getNode();
 
       x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-      y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
       old_box.addPt(x, y);
 
@@ -382,7 +383,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
         Node* ndj = pinj->getNode();
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 
@@ -393,7 +394,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
         }
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         new_box.addPt(x, y);
       }
@@ -409,7 +410,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedGlobalSwap::generate(Node* ndi)
 {
-  double yi = ndi->getBottom() + 0.5 * ndi->getHeight();
+  double yi = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
   double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
   // Determine optimal region.
@@ -431,9 +432,9 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   int dispX, dispY;
   mgr_->getMaxDisplacement(dispX, dispY);
   Rectangle_d lbox(ndi->getLeft().v - dispX,
-                   ndi->getBottom() - dispY,
+                   ndi->getBottom().v - dispY,
                    ndi->getLeft().v + dispX,
-                   ndi->getBottom() + dispY);
+                   ndi->getBottom().v + dispY);
   if (lbox.xmax() <= bbox.xmin()) {
     bbox.set_xmin(ndi->getLeft().v);
     bbox.set_xmax(lbox.xmax());
@@ -445,11 +446,11 @@ bool DetailedGlobalSwap::generate(Node* ndi)
     bbox.set_xmax(std::min(bbox.xmax(), lbox.xmax()));
   }
   if (lbox.ymax() <= bbox.ymin()) {
-    bbox.set_ymin(ndi->getBottom());
+    bbox.set_ymin(ndi->getBottom().v);
     bbox.set_ymax(lbox.ymax());
   } else if (lbox.ymin() >= bbox.ymax()) {
     bbox.set_ymin(lbox.ymin());
-    bbox.set_ymax(ndi->getBottom());
+    bbox.set_ymax(ndi->getBottom().v);
   } else {
     bbox.set_ymin(std::max(bbox.ymin(), lbox.ymin()));
     bbox.set_ymax(std::min(bbox.ymax(), lbox.ymax()));
@@ -463,12 +464,12 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   // Position target so center of cell at center of box.
   DbuX xj{(int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
                            - 0.5 * ndi->getWidth().v)};
-  int yj = (int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
-                            - 0.5 * ndi->getHeight());
+  DbuY yj{(int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
+                           - 0.5 * ndi->getHeight().v)};
 
   // Row and segment for the destination.
   int rj = arch_->find_closest_row(yj);
-  yj = arch_->getRow(rj)->getBottom();  // Row alignment.
+  yj = DbuY{arch_->getRow(rj)->getBottom()};  // Row alignment.
   int sj = -1;
   for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
     DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];

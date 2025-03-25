@@ -49,6 +49,7 @@ namespace dpo {
 class Network;
 class Node;
 using dpl::DbuX;
+using dpl::DbuY;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 class Architecture
@@ -81,7 +82,7 @@ class Architecture
   int getCellHeightInRows(const Node* ndi) const;
 
   int postProcess(Network* network);
-  int find_closest_row(int y);
+  int find_closest_row(DbuY y);
 
   void clear_edge_type();
   void init_edge_type();
