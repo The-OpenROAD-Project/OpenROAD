@@ -1406,12 +1406,8 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
   for (const auto& edge1 : master->edges_) {
     int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
                   + 1;  // +1 to account for EXACT rules
-    odb::Rect edge1_box
-        = cell_edges::transformEdgeRect(edge1.getBBox(),
-                                        node,
-                                        x_real,
-                                        y_real,
-                                        dpoToDbOrient(node->getCurrOrient()));
+    odb::Rect edge1_box = cell_edges::transformEdgeRect(
+        edge1.getBBox(), node, x_real, y_real, node->getCurrOrient());
     bool is_vertical_edge = edge1_box.getDir() == 0;
     odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
     auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
@@ -1442,12 +1438,12 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
           auto spc_entry = arch_->getCellSpacingUsingTable(edge1.getEdgeType(),
                                                            edge2.getEdgeType());
           int spc = spc_entry.spc;
-          odb::Rect edge2_box = cell_edges::transformEdgeRect(
-              edge2.getBBox(),
-              cell2,
-              cell2->getLeft(),
-              cell2->getBottom(),
-              dpoToDbOrient(cell2->getCurrOrient()));
+          odb::Rect edge2_box
+              = cell_edges::transformEdgeRect(edge2.getBBox(),
+                                              cell2,
+                                              cell2->getLeft(),
+                                              cell2->getBottom(),
+                                              cell2->getCurrOrient());
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;
@@ -3524,8 +3520,8 @@ void DetailedMgr::paintInGrid(Node* node)
   const auto grid_y = grid_->gridRoundY(DbuY(node->getBottom()));
   auto pixel = grid_->gridPixel(grid_x, grid_y);
   grid_->paintPixel(node, grid_x, grid_y);
-  node->adjustCurrOrient(dbToDpoOrient(
-      pixel->sites.at(node->getDbInst()->getMaster()->getSite())));
+  node->adjustCurrOrient(
+      pixel->sites.at(node->getDbInst()->getMaster()->getSite()));
 }
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::undo(const JournalAction& action, const bool positions_only)
@@ -3552,11 +3548,6 @@ void DetailedMgr::undo(const JournalAction& action, const bool positions_only)
           }
           addCellToSegment(node, seg);
         }
-      }
-      break;
-    case JournalAction::ORIENT_CELL:
-      if (!positions_only) {
-        node->setCurrOrient(action.getOrigOrient());
       }
       break;
   }
@@ -3586,11 +3577,6 @@ void DetailedMgr::redo(const JournalAction& action, const bool positions_only)
           }
           addCellToSegment(node, seg);
         }
-      }
-      break;
-    case JournalAction::ORIENT_CELL:
-      if (!positions_only) {
-        node->setCurrOrient(action.getNewOrient());
       }
       break;
   }

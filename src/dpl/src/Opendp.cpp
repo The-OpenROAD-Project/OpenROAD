@@ -70,7 +70,7 @@ using utl::format_as;
 
 bool Opendp::isMultiRow(const Cell* cell) const
 {
-  return db_master_map_.at(cell->db_inst_->getMaster()).is_multi_row;
+  return db_master_map_.at(cell->getDbInst()->getMaster()).is_multi_row;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ bool Opendp::isMultiRow(const Cell* cell) const
 Opendp::Opendp()
 {
   dummy_cell_ = std::make_unique<Cell>();
-  dummy_cell_->is_placed_ = true;
+  dummy_cell_->setPlaced(true);
 }
 
 Opendp::~Opendp() = default;
@@ -158,13 +158,13 @@ void Opendp::updateDbInstLocations()
 {
   for (Cell& cell : cells_) {
     if (!cell.isFixed() && cell.isStdCell()) {
-      dbInst* db_inst_ = cell.db_inst_;
+      dbInst* db_inst_ = cell.getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
-      if (db_inst_->getOrient() != cell.orient_) {
-        db_inst_->setOrient(cell.orient_);
+      if (db_inst_->getOrient() != cell.getOrient()) {
+        db_inst_->setOrient(cell.getOrient());
       }
-      const DbuX x = grid_->getCore().xMin() + cell.x_;
-      const DbuY y = grid_->getCore().yMin() + cell.y_;
+      const DbuX x = grid_->getCore().xMin() + cell.xMin();
+      const DbuY y = grid_->getCore().yMin() + cell.yMin();
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -239,7 +239,7 @@ void Opendp::optimizeMirroring()
 int Opendp::disp(const Cell* cell) const
 {
   const DbuPt init = initialLocation(cell, false);
-  return sumXY(abs(init.x - cell->x_), abs(init.y - cell->y_));
+  return sumXY(abs(init.x - cell->xMin()), abs(init.y - cell->yMin()));
 }
 
 int Opendp::padGlobalLeft() const
@@ -326,11 +326,11 @@ void Opendp::groupAssignCellRegions()
 
       for (Rect& rect : group.region_boundaries) {
         if (isInside(cell, rect)) {
-          cell->region_ = &rect;
+          cell->setRegion(&rect);
         }
       }
-      if (cell->region_ == nullptr) {
-        cell->region_ = group.region_boundaries.data();
+      if (cell->getRegion() == nullptr) {
+        cell->setRegion(group.region_boundaries.data());
       }
     }
     group.util = total_site_area ? cell_area / total_site_area : 0.0;

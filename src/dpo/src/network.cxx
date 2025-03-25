@@ -41,20 +41,20 @@ namespace dpo {
 Node::Node() = default;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool Node::adjustCurrOrient(const unsigned newOri)
+bool Node::adjustCurrOrient(const dbOrientType& newOri)
 {
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
   // changing the edge types as well as the height and width.
-  unsigned curOri = currentOrient_;
+  auto curOri = currentOrient_;
   if (newOri == curOri) {
     return true;
   }
 
-  if (curOri == Orientation_E || curOri == Orientation_FE
-      || curOri == Orientation_FW || curOri == Orientation_W) {
-    if (newOri == Orientation_N || newOri == Orientation_FN
-        || newOri == Orientation_FS || newOri == Orientation_S) {
+  if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
+      || curOri == dbOrientType::R270 || curOri == dbOrientType::MYR90) {
+    if (newOri == dbOrientType::R0 || newOri == dbOrientType::MY
+        || newOri == dbOrientType::MX || newOri == dbOrientType::R180) {
       // Rotate the cell counter-clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const double dx = pin->getOffsetX();
@@ -63,19 +63,19 @@ bool Node::adjustCurrOrient(const unsigned newOri)
         pin->setOffsetY(dx);
       }
       std::swap(h_, w_);
-      if (curOri == Orientation_E) {
-        curOri = Orientation_N;
-      } else if (curOri == Orientation_FE) {
-        curOri = Orientation_FS;
-      } else if (curOri == Orientation_FW) {
-        curOri = Orientation_FN;
+      if (curOri == dbOrientType::R90) {
+        curOri = dbOrientType::R0;
+      } else if (curOri == dbOrientType::MXR90) {
+        curOri = dbOrientType::MX;
+      } else if (curOri == dbOrientType::MYR90) {
+        curOri = dbOrientType::MY;
       } else {
-        curOri = Orientation_S;
+        curOri = dbOrientType::R180;
       }
     }
   } else {
-    if (newOri == Orientation_E || newOri == Orientation_FE
-        || newOri == Orientation_FW || newOri == Orientation_W) {
+    if (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90
+        || newOri == dbOrientType::MYR90 || newOri == dbOrientType::R270) {
       // Rotate the cell clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const double dx = pin->getOffsetX();
@@ -84,14 +84,14 @@ bool Node::adjustCurrOrient(const unsigned newOri)
         pin->setOffsetY(-dx);
       }
       std::swap(h_, w_);
-      if (curOri == Orientation_N) {
-        curOri = Orientation_E;
-      } else if (curOri == Orientation_FS) {
-        curOri = Orientation_FE;
-      } else if (curOri == Orientation_FN) {
-        curOri = Orientation_FW;
+      if (curOri == dbOrientType::R0) {
+        curOri = dbOrientType::R90;
+      } else if (curOri == dbOrientType::MX) {
+        curOri = dbOrientType::MXR90;
+      } else if (curOri == dbOrientType::MY) {
+        curOri = dbOrientType::MYR90;
       } else {
-        curOri = Orientation_W;
+        curOri = dbOrientType::R270;
       }
     }
   }
@@ -100,28 +100,36 @@ bool Node::adjustCurrOrient(const unsigned newOri)
   int mX = 1;
   int mY = 1;
   bool changeEdgeTypes = false;
-  if (curOri == Orientation_E || curOri == Orientation_FE
-      || curOri == Orientation_FW || curOri == Orientation_W) {
-    const bool test1 = (curOri == Orientation_E || curOri == Orientation_FW);
-    const bool test2 = (newOri == Orientation_E || newOri == Orientation_FW);
+  if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
+      || curOri == dbOrientType::MYR90 || curOri == dbOrientType::R270) {
+    const bool test1
+        = (curOri == dbOrientType::R90 || curOri == dbOrientType::MYR90);
+    const bool test2
+        = (newOri == dbOrientType::R90 || newOri == dbOrientType::MYR90);
     if (test1 != test2) {
       mX = -1;
     }
-    const bool test3 = (curOri == Orientation_E || curOri == Orientation_FE);
-    const bool test4 = (newOri == Orientation_E || newOri == Orientation_FE);
+    const bool test3
+        = (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90);
+    const bool test4
+        = (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90);
     if (test3 != test4) {
       changeEdgeTypes = true;
       mY = -1;
     }
   } else {
-    const bool test1 = (curOri == Orientation_N || curOri == Orientation_FS);
-    const bool test2 = (newOri == Orientation_N || newOri == Orientation_FS);
+    const bool test1
+        = (curOri == dbOrientType::R0 || curOri == dbOrientType::MX);
+    const bool test2
+        = (newOri == dbOrientType::R0 || newOri == dbOrientType::MX);
     if (test1 != test2) {
       changeEdgeTypes = true;
       mX = -1;
     }
-    const bool test3 = (curOri == Orientation_N || curOri == Orientation_FN);
-    const bool test4 = (newOri == Orientation_N || newOri == Orientation_FN);
+    const bool test3
+        = (curOri == dbOrientType::R0 || curOri == dbOrientType::MY);
+    const bool test4
+        = (newOri == dbOrientType::R0 || newOri == dbOrientType::MY);
     if (test3 != test4) {
       mY = -1;
     }
