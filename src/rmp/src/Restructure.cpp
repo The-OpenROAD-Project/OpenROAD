@@ -37,9 +37,9 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <sstream>

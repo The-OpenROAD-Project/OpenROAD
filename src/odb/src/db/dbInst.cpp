@@ -1207,7 +1207,6 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   if (new_inst_hdr == nullptr) {
     new_inst_hdr = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block,
                                                    (dbMaster*) new_master_);
-    ZASSERT(new_inst_hdr);
   }
 
   new_inst_hdr->_inst_cnt++;
@@ -1276,7 +1275,6 @@ dbInst* dbInst::create(dbBlock* block_,
   if (inst_hdr == nullptr) {
     inst_hdr
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
-    ZASSERT(inst_hdr);
   }
 
   if (block->_inst_hash.hasMember(name_)) {
@@ -1426,7 +1424,7 @@ void dbInst::destroy(dbInst* inst_)
     dbITerm* iterm = (dbITerm*) _iterm;
     iterm->disconnect();
     if (inst_->getPinAccessIdx() >= 0) {
-      for (auto [pin, aps] : iterm->getAccessPoints()) {
+      for (const auto& [pin, aps] : iterm->getAccessPoints()) {
         for (auto ap : aps) {
           _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
           _ap->iterms_.erase(

@@ -106,8 +106,6 @@ void dbInstShapeItr::getShape(dbBox* box, dbShape& shape)
 
 bool dbInstShapeItr::next(dbShape& shape)
 {
-  ZASSERT(_inst);
-
 next_state:
 
   switch (_state) {

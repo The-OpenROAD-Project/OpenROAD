@@ -3701,7 +3701,6 @@ void GlobalRouter::makeBtermPins(Net* net,
     int posX, posY;
     bterm->getFirstPinLocation(posX, posY);
 
-    std::vector<odb::dbTechLayer*> pin_layers;
     std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
 
     const std::string pin_name = bterm->getConstName();
@@ -3741,6 +3740,8 @@ void GlobalRouter::makeBtermPins(Net* net,
       }
     }
 
+    std::vector<odb::dbTechLayer*> pin_layers;
+    pin_layers.reserve(pin_boxes.size());
     for (auto& layer_boxes : pin_boxes) {
       pin_layers.push_back(layer_boxes.first);
     }
