@@ -240,8 +240,8 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
     if (n_aps == 0 && !inst_term->getTerm()->getPins().empty()) {
       logger_->error(DRT,
                      86,
-                     "Inst {}/{} does not have any access point.",
-                     unique_inst->getName(),
+                     "Pin {} of master {} does not have any access point.",
+                     inst_term->getName(),
                      unique_inst->getMaster()->getName());
     }
   }
