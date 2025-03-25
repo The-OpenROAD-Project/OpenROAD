@@ -195,6 +195,7 @@ void HungarianMatching::createMatrixForGroups()
 {
   std::vector<int> group_sizes;
   std::vector<int> group_slot_capacity;
+  group_sizes.reserve(pin_groups_.size());
   for (const auto& [pins, order] : pin_groups_) {
     group_sizes.push_back(pins.size());
   }

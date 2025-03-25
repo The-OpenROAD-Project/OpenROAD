@@ -71,7 +71,7 @@ bool MetricsPolicy::matching(std::string key)
     return std::regex_match(key, pattern_regex_);
   }
 
-  return pattern_.compare(key) == 0;
+  return pattern_ == key;
 }
 
 void MetricsPolicy::applyPolicy(std::list<MetricsEntry>& entries)

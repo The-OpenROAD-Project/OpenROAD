@@ -449,25 +449,12 @@ double DetailedRandom::go()
     // better than zero implies improvement.
     for (size_t i = 0; i < objectives_.size(); i++) {
       // XXX: NEED TO WEIGHT EACH OBJECTIVE!
-      double change = objectives_[i]->delta(mgrPtr_->getNMoved(),
-                                            mgrPtr_->getMovedNodes(),
-                                            mgrPtr_->getCurLeft(),
-                                            mgrPtr_->getCurBottom(),
-                                            mgrPtr_->getCurOri(),
-                                            mgrPtr_->getNewLeft(),
-                                            mgrPtr_->getNewBottom(),
-                                            mgrPtr_->getNewOri());
+      double change = objectives_[i]->delta(mgrPtr_->getJournal());
 
       deltaCost_[i] = change;
       nextCost_[i] = currCost_[i] - deltaCost_[i];  // -delta is +ve is less.
     }
     const double nextTotalCost = eval(nextCost_, expr_);
-
-    //        std::cout << boost::format( "Move consisting of %d cells generated
-    //        benefit of %.2lf; Will %s.\n" )
-    //            % mgrPtr_->nMoved_ % delta % ((delta>0.)?"accept":"reject");
-
-    //        if( delta > 0.0 )
     if (nextTotalCost <= currTotalCost) {
       mgrPtr_->acceptMove();
       for (auto objective : objectives_) {

@@ -1145,7 +1145,7 @@ int extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
   bboxLL[1] -= extend_blockage;
 
   if (grid_context) {
-    if (grid_context && (measure->_underMet > 0 || measure->_overMet > 0)) {
+    if (measure->_underMet > 0 || measure->_overMet > 0) {
       measure->createContextGrid(
           _wireDirName, bboxLL, bboxUR, measure->_underMet);
       measure->createContextGrid(

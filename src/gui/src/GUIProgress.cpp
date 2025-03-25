@@ -160,7 +160,7 @@ void GUIProgress::updateCombined()
     std::string names;
 
     // interate and combine information
-    for (auto reporter : reporters) {
+    for (const auto& reporter : reporters) {
       has_interrupt |= reporter->checkInterrupt();
 
       if (!names.empty()) {

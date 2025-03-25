@@ -2275,7 +2275,7 @@ void FlexDRWorker::route_queue_addMarkerCost(
     const std::vector<std::unique_ptr<frMarker>>& markers)
 {
   for (auto& uMarker : markers) {
-    auto& marker = *(uMarker.get());
+    auto& marker = *uMarker;
     initMazeCost_marker_route_queue(marker);
   }
 }
