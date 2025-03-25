@@ -151,8 +151,8 @@ void DetailedABU::init()
       continue;
     }
 
-    const double xmin = nd->getLeft();
-    const double xmax = nd->getRight();
+    const double xmin = nd->getLeft().v;
+    const double xmax = nd->getRight().v;
     const double ymin = nd->getBottom();
     const double ymax = nd->getTop();
 
@@ -222,8 +222,8 @@ void DetailedABU::computeUtils()
       continue;
     }
 
-    const double nlx = nd->getLeft();
-    const double nrx = nd->getRight();
+    const double nlx = nd->getLeft().v;
+    const double nrx = nd->getRight().v;
     const double nly = nd->getBottom();
     const double nhy = nd->getTop();
 
@@ -468,14 +468,14 @@ double DetailedABU::delta(const Journal& journal)
   for (const auto& action : actions) {
     auto node = action.getNode();
     updateBins(action.getNode(),
-               action.getOrigLeft() + 0.5 * node->getWidth(),
+               action.getOrigLeft().v + 0.5 * node->getWidth().v,
                action.getOrigBottom() + 0.5 * node->getHeight(),
                -1);
   }
   for (const auto& action : actions) {
     auto node = action.getNode();
     updateBins(action.getNode(),
-               action.getNewLeft() + 0.5 * node->getWidth(),
+               action.getNewLeft().v + 0.5 * node->getWidth().v,
                action.getNewBottom() + 0.5 * node->getHeight(),
                +1);
   }
@@ -573,8 +573,8 @@ void DetailedABU::updateBins(const Node* nd,
     mgrPtr_->internalError("Problem updating bins for utilization objective");
   }
 
-  const double lx = x - 0.5 * nd->getWidth() - arch_->getMinX();
-  const double ux = x + 0.5 * nd->getWidth() - arch_->getMinX();
+  const double lx = x - 0.5 * nd->getWidth().v - arch_->getMinX();
+  const double ux = x + 0.5 * nd->getWidth().v - arch_->getMinX();
   const double ly = y - 0.5 * nd->getHeight() - arch_->getMinY();
   const double uy = y + 0.5 * nd->getHeight() - arch_->getMinY();
 
@@ -588,8 +588,10 @@ void DetailedABU::updateBins(const Node* nd,
       const int binId = j * abuGridNumX_ + k;
 
       // get intersection
-      const double lx = std::max(abuBins_[binId].lx, x - 0.5 * nd->getWidth());
-      const double hx = std::min(abuBins_[binId].hx, x + 0.5 * nd->getWidth());
+      const double lx
+          = std::max(abuBins_[binId].lx, x - 0.5 * nd->getWidth().v);
+      const double hx
+          = std::min(abuBins_[binId].hx, x + 0.5 * nd->getWidth().v);
       const double ly = std::max(abuBins_[binId].ly, y - 0.5 * nd->getHeight());
       const double hy = std::min(abuBins_[binId].hy, y + 0.5 * nd->getHeight());
 

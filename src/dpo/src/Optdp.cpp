@@ -215,7 +215,7 @@ void Optdp::updateDbInstLocations()
       const Node* nd = it_n->second;
 
       const int y = nd->getBottom() + grid_->getCore().yMin();
-      const int x = nd->getLeft() + grid_->getCore().xMin();
+      const int x = nd->getLeft().v + grid_->getCore().xMin();
 
       if (inst->getOrient() != nd->getCurrOrient()) {
         inst->setOrient(nd->getCurrOrient());
@@ -684,9 +684,9 @@ void Optdp::createNetwork()
     // else...  Account for R90?
     ndi->setCurrOrient(odb::dbOrientType::R0);
     ndi->setHeight(inst->getMaster()->getHeight());
-    ndi->setWidth(inst->getMaster()->getWidth());
+    ndi->setWidth(DbuX{(int) inst->getMaster()->getWidth()});
 
-    ndi->setOrigLeft(inst->getBBox()->xMin() - core.xMin());
+    ndi->setOrigLeft(DbuX{inst->getBBox()->xMin() - core.xMin()});
     ndi->setOrigBottom(inst->getBBox()->yMin() - core.yMin());
     ndi->setLeft(ndi->getOrigLeft());
     ndi->setBottom(ndi->getOrigBottom());
@@ -723,13 +723,13 @@ void Optdp::createNetwork()
     ndi->setFixed(Node::FIXED_XY);
     ndi->setCurrOrient(odb::dbOrientType::R0);
 
-    int ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
+    DbuX ww(bterm->getBBox().xMax() - bterm->getBBox().xMin());
     int hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
 
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
-    ndi->setOrigLeft(bterm->getBBox().xMin() - core.xMin());
+    ndi->setOrigLeft(DbuX{bterm->getBBox().xMin() - core.xMin()});
     ndi->setOrigBottom(bterm->getBBox().yMin() - core.yMin());
     ndi->setLeft(ndi->getOrigLeft());
     ndi->setBottom(ndi->getOrigBottom());

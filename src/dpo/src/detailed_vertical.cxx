@@ -285,7 +285,7 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
       continue;
     }
     const double curX
-        = other->getLeft() + 0.5 * other->getWidth() + pin->getOffsetX();
+        = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX();
     const double curY
         = other->getBottom() + 0.5 * other->getHeight() + pin->getOffsetY();
 
@@ -330,7 +330,8 @@ double DetailedVerticalSwap::delta(Node* ndi, double new_x, double new_y)
     for (const Pin* pinj : edi->getPins()) {
       const Node* ndj = pinj->getNode();
 
-      double x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+      double x
+          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
       double y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
       old_box.addPt(x, y);
@@ -382,7 +383,8 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
       for (const Pin* pinj : edi->getPins()) {
         const Node* ndj = pinj->getNode();
 
-        double x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+        double x
+            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
         double y
             = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
@@ -394,7 +396,7 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
         y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
 
         new_box.addPt(x, y);
@@ -417,7 +419,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
 
   // Center of cell.
   const double yi = ndi->getBottom() + 0.5 * ndi->getHeight();
-  const double xi = ndi->getLeft() + 0.5 * ndi->getWidth();
+  const double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
   // Determine optimal region.
   Rectangle bbox;
@@ -440,8 +442,8 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   const int ri = mgr_->getReverseCellToSegs(ndi->getId())[0]->getRowId();
 
   // Center of optimal rectangle.
-  const int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
-                                  - 0.5 * ndi->getWidth());
+  const DbuX xj{
+      std::floor(0.5 * (bbox.xmin() + bbox.xmax()) - 0.5 * ndi->getWidth().v)};
   int yj = (int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
                             - 0.5 * ndi->getHeight());
 

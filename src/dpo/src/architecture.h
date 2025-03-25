@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "dpl/Coordinates.h"
 #include "odb/dbTypes.h"
 #include "rectangle.h"
 
@@ -47,7 +48,7 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 class Network;
 class Node;
-
+using dpl::DbuX;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 class Architecture
@@ -136,6 +137,10 @@ class Architecture
   bool getCellPadding(const Node* ndi,
                       int& leftPadding,
                       int& rightPadding) const;
+  void addCellPadding(Node* ndi, DbuX leftPadding, DbuX rightPadding);
+  bool getCellPadding(const Node* ndi,
+                      DbuX& leftPadding,
+                      DbuX& rightPadding) const;
 
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 

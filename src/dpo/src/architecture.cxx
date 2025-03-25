@@ -408,6 +408,31 @@ bool Architecture::getCellPadding(const Node* ndi,
   std::tie(leftPadding, rightPadding) = it->second;
   return true;
 }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Architecture::addCellPadding(Node* ndi,
+                                  DbuX leftPadding,
+                                  DbuX rightPadding)
+{
+  cellPaddings_[ndi->getId()] = {leftPadding.v, rightPadding.v};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool Architecture::getCellPadding(const Node* ndi,
+                                  DbuX& leftPadding,
+                                  DbuX& rightPadding) const
+{
+  auto it = cellPaddings_.find(ndi->getId());
+  if (it == cellPaddings_.end()) {
+    rightPadding = DbuX{0};
+    leftPadding = DbuX{0};
+    return false;
+  }
+  leftPadding = DbuX{it->second.first};
+  rightPadding = DbuX{it->second.second};
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

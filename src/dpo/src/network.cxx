@@ -62,7 +62,11 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         pin->setOffsetX(-dy);
         pin->setOffsetY(dx);
       }
-      std::swap(h_, w_);
+      {
+        int tmp = w_.v;
+        w_ = DbuX{h_};
+        h_ = tmp;
+      }
       if (curOri == dbOrientType::R90) {
         curOri = dbOrientType::R0;
       } else if (curOri == dbOrientType::MXR90) {
@@ -83,7 +87,11 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         pin->setOffsetX(dy);
         pin->setOffsetY(-dx);
       }
-      std::swap(h_, w_);
+      {
+        int tmp = w_.v;
+        w_ = DbuX{h_};
+        h_ = tmp;
+      }
       if (curOri == dbOrientType::R0) {
         curOri = dbOrientType::R90;
       } else if (curOri == dbOrientType::MX) {
@@ -224,9 +232,9 @@ Node* Network::createAndAddFillerNode(const int left,
   ndi->setType(Node::FILLER);
   ndi->setId(id);
   ndi->setHeight(height);
-  ndi->setWidth(width);
+  ndi->setWidth(DbuX{width});
   ndi->setBottom(bottom);
-  ndi->setLeft(left);
+  ndi->setLeft(DbuX{left});
   nodes_.push_back(ndi);
   return getNode(id);
 }
