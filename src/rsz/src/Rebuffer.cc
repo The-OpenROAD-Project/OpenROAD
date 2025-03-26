@@ -91,84 +91,77 @@ decltype(auto) visitTree(F&& f, Args&&... args)
   return v(std::forward<Args>(args)...);
 }
 
-void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& Z)
+void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& options)
 {
   // Prune the options if there exists another option with
-  // larger required and smaller capacitance.
+  // larger slack and smaller capacitance.
   // This is fanout*log(fanout) if options are
   // presorted to hit better options sooner.
   std::unordered_map<BufferedNet*, Slack> slacks;
 
-  for (const BufferedNetPtr& p : Z) {
+  for (const BufferedNetPtr& p : options) {
     slacks[p.get()] = p->slack(sta);
   }
 
-  sort(Z.begin(),
-       Z.end(),
+  sort(options.begin(),
+       options.end(),
        [&slacks](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
          const Slack slack1 = slacks[option1.get()];
          const Slack slack2 = slacks[option2.get()];
-
-         if (slack1 != slack2) {
-           return slack1 > slack2;
-         }
-
-         return option1->cap() < option2->cap();
+         return std::make_tuple(-slack1, option1->cap())
+                < std::make_tuple(-slack2, option2->cap());
        });
 
-  if (Z.empty()) {
+  if (options.empty()) {
     return;
   }
 
-  float Lsmall = Z[0]->cap();
+  float lowest_cap_seen = options[0]->cap();
   size_t si = 1;
   // Remove options by shifting down with index si.
   // Because the options are sorted we don't have to look
   // beyond the first option. We also know that slack
   // is nonincreasing, so we can remove everything that has
   // higher capacitance than the lowest found so far.
-  for (size_t pi = si; pi < Z.size(); pi++) {
-    const BufferedNetPtr& p = Z[pi];
-    float Lp = p->cap();
-    // If Lp is the same or worse than Lsmall, remove solution p.
-    if (fuzzyLess(Lp, Lsmall)) {
+  for (size_t pi = si; pi < options.size(); pi++) {
+    const BufferedNetPtr& p = options[pi];
+    float cap = p->cap();
+    // If cap is the same or worse than lowest_cap_seen, remove solution p.
+    if (fuzzyLess(cap, lowest_cap_seen)) {
       // Otherwise copy the survivor down.
-      Z[si++] = p;
-      Lsmall = Lp;
+      options[si++] = p;
+      lowest_cap_seen = cap;
     }
   }
-  Z.resize(si);
+  options.resize(si);
 }
 
-void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& Z)
+void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
 {
-  sort(Z.begin(),
-       Z.end(),
+  sort(options.begin(),
+       options.end(),
        [](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
-         if (option1->area() != option2->area()) {
-           return option1->area() < option2->area();
-         }
-
-         return option1->cap() < option2->cap();
+         return std::make_tuple(option1->area(), option1->cap())
+                < std::make_tuple(option2->area(), option2->cap());
        });
 
-  if (Z.empty()) {
+  if (options.empty()) {
     return;
   }
 
-  float Lsmall = Z[0]->cap();
+  float lowest_cap_seen = options[0]->cap();
   size_t si = 1;
-  for (size_t pi = si; pi < Z.size(); pi++) {
-    const BufferedNetPtr& p = Z[pi];
-    float Lp = p->cap();
-    // If Lp is the same or worse than Lsmall, remove solution p.
-    if (fuzzyLess(Lp, Lsmall)) {
+  for (size_t pi = si; pi < options.size(); pi++) {
+    const BufferedNetPtr& p = options[pi];
+    float cap = p->cap();
+    // If cap is the same or worse than lowest_cap_seen, remove solution p.
+    if (fuzzyLess(cap, lowest_cap_seen)) {
       // Otherwise copy the survivor down.
-      Z[si++] = p;
-      Lsmall = Lp;
+      options[si++] = p;
+      lowest_cap_seen = cap;
     }
   }
-  Z.resize(si);
+  options.resize(si);
 }
 
 // Find initial timing-optimized rebuffering choice
