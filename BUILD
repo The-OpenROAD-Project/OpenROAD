@@ -177,6 +177,7 @@ cc_library(
     name = "logger",
     srcs = [
         "src/utl/src/CommandLineProgress.h",
+        "src/utl/src/CommandLineProgress.cpp",
         "src/utl/src/Logger.cpp",
         "src/utl/src/Metrics.cpp",
         "src/utl/src/ScopedTemporaryFile.cpp",

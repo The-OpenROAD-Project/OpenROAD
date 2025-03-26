@@ -326,6 +326,7 @@ OPENROAD_LIBRARY_SRCS_EXCLUDE = [
     "src/OpenRoad.cc",
     "src/rcx/src/extmeasure_res_v2.cpp",
     "src/utl/src/Logger.cpp",
+    "src/utl/src/CommandLineProgress.cpp",
     "src/utl/src/Metrics.cpp",
     "src/utl/src/CFileUtils.cpp",
     "src/utl/src/ScopedTemporaryFile.cpp",
