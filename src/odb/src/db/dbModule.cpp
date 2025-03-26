@@ -433,23 +433,27 @@ void dbModule::destroy(dbModule* module)
     return;
   }
 
-  dbSet<dbModInst> modinsts = module->getChildren();
-  dbSet<dbModInst>::iterator itr;
-  for (itr = modinsts.begin(); itr != modinsts.end();) {
-    itr = dbModInst::destroy(itr);
+  std::vector<dbModInst*> modinsts(module->getChildren().begin(),
+                                   module->getChildren().end());
+  for (dbModInst* modinst : modinsts) {
+    dbModInst::destroy(modinst);
   }
 
-  dbSet<dbInst> insts = module->getInsts();
-  dbSet<dbInst>::iterator inst_itr;
-  for (inst_itr = insts.begin(); inst_itr != insts.end();) {
-    inst_itr = dbInst::destroy(inst_itr);
+  std::vector<dbInst*> insts(module->getInsts().begin(),
+                             module->getInsts().end());
+  for (dbInst* inst : insts) {
+    dbInst::destroy(inst);
   }
 
-  for (auto modbterm : module->getModBTerms()) {
+  std::vector<dbModBTerm*> modbterms(module->getModBTerms().begin(),
+                                     module->getModBTerms().end());
+  for (dbModBTerm* modbterm : modbterms) {
     block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
   }
 
-  for (auto modnet : module->getModNets()) {
+  std::vector<dbModNet*> modnets(module->getModNets().begin(),
+                                 module->getModNets().end());
+  for (dbModNet* modnet : modnets) {
     block->_modnet_tbl->destroy((_dbModNet*) modnet);
   }
 

@@ -276,12 +276,11 @@ void dbModInst::destroy(dbModInst* modinst)
   // Note that we only destroy the module instance, not the module
   // itself
 
-  // remove the moditerm connections
-  for (auto moditerm : modinst->getModITerms()) {
+  std::vector<dbModITerm*> moditerms(modinst->getModITerms().begin(),
+                                     modinst->getModITerms().end());
+  for (auto moditerm : moditerms) {
+    // remove the moditerm connections
     moditerm->disconnect();
-  }
-  // remove the moditerms
-  for (auto moditerm : modinst->getModITerms()) {
     _block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
   }
 
@@ -684,12 +683,27 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     }    //  for each old_iterm
   }      // for each [old_mod_net, new_mod_net]
 
+  // Remove any dangling nets
+  std::vector<dbNet*> nets_to_delete;
+  for (dbNet* net : parent->getOwner()->getNets()) {
+    if (net->getITerms().empty()) {
+      nets_to_delete.emplace_back(net);
+    }
+  }
+  for (dbNet* net : nets_to_delete) {
+    msg = fmt::format("  deleted dangling net {}", net->getName());
+    debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+    dbNet::destroy(net);
+  }
+
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
     std::ofstream outfile("after_replace.txt");
     new_mod_inst->getMaster()->getOwner()->debugPrintContent(outfile);
   }
 
   dbModule::copyToChildBlock(old_module, parent->getOwner());
+  msg = fmt::format("Deleted old module {}", old_module->getName());
+  debugPrint(logger, utl::ODB, "replace_design", 1, msg);
   dbModule::destroy(old_module);
 
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {

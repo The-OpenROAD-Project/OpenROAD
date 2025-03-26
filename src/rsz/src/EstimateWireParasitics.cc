@@ -441,11 +441,20 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
 
 void Resizer::estimateWireParasitic(const Net* net, SpefWriter* spef_writer)
 {
+  // Filter out any mod pins or pins without flat nets
   PinSet* drivers = network_->drivers(net);
-  if (drivers && !drivers->empty()) {
-    PinSet::Iterator drvr_iter(drivers);
-    const Pin* drvr_pin = drvr_iter.next();
-    estimateWireParasitic(drvr_pin, net, spef_writer);
+  if (drivers) {
+    for (const Pin* drvr_pin : *drivers) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      odb::dbModBTerm* modbterm = nullptr;
+      db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
+      if (moditerm || modbterm || !db_network_->flatNet(drvr_pin)) {
+        continue;
+      }
+      estimateWireParasitic(drvr_pin, net, spef_writer);
+    }
   }
 }
 
