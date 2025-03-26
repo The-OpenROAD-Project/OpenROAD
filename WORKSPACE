@@ -150,10 +150,8 @@ pip_parse(
 )
 # END XX
 
-# maliberty:temp-abc-undo-revert
-# until the abc update can be upstreamed without breaking xls
-rules_hdl_git_hash = "ea34e431d6dbe0ba5ade73b4326d70d730ee35ef"
-rules_hdl_git_sha256 = "363405fe710f71d380e5a3c87f2b40bad64bf7afcf3c257aa164333c49062cbc"
+rules_hdl_git_hash = "d52c2d63da103d8c6bd78f193dfcfbeba704f152"
+rules_hdl_git_sha256 = "882b552bfa94bdfb22431d50c2fb9177986a39e20fe03b627dd4491d33d56f84"
 
 maybe(
     http_archive,
@@ -161,8 +159,7 @@ maybe(
     sha256 = rules_hdl_git_sha256,
     strip_prefix = "bazel_rules_hdl-%s" % rules_hdl_git_hash,
     urls = [
-#        "https://github.com/hdl/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
-        "https://github.com/maliberty/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
+        "https://github.com/hdl/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
     ],
 )
 

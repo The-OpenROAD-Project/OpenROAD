@@ -1491,7 +1491,7 @@ cc_library(
         "@tk_tcl//:tcl",
         "@net_zlib//:zlib",
         "@eigen//:eigen3",
-        "@com_github_ivmai_cudd//:cudd",
+        "@com_github_davidkebo_cudd//:cudd",
     ],
 )
 
