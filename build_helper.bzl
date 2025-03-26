@@ -323,11 +323,8 @@ OPENROAD_LIBRARY_DEPS = [
 
 OPENROAD_LIBRARY_SRCS_EXCLUDE = [
     "src/Main.cc",
-    "src/Main_bindings.cc",
     "src/OpenRoad.cc",
     "src/rcx/src/extmeasure_res_v2.cpp",
-    "src/rsz/src/Unused.cc",
-    "src/drt/src/main.cpp",
     "src/utl/src/Logger.cpp",
     "src/utl/src/Metrics.cpp",
     "src/utl/src/CFileUtils.cpp",
