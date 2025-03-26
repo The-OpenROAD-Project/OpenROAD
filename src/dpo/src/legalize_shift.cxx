@@ -135,7 +135,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   for (const Node* ndi : cells) {
     const DbuX dx = abs(ndi->getLeft() - origPos[ndi->getId()].first);
     const DbuY dy = abs(ndi->getBottom() - origPos[ndi->getId()].second);
-    if (dx > 0 || dy > 1.0e-3) {
+    if (dx > 0 || dy > 0) {
       isDisp = true;
     }
   }
@@ -189,7 +189,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   for (const Node* ndi : cells) {
     const DbuX dx = abs(ndi->getLeft() - origPos[ndi->getId()].first);
     const DbuY dy = abs(ndi->getBottom() - origPos[ndi->getId()].second);
-    if (dx > 0 || dy > 1.0e-3) {
+    if (dx > 0 || dy > 0) {
       isDisp = true;
     }
   }
