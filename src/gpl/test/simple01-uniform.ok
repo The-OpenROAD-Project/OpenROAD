@@ -6,56 +6,55 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0006] NumInstances:               294
-[INFO GPL-0007] NumPlaceInstances:          294
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                    364
-[INFO GPL-0011] NumPins:                   1122
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0016] CoreArea:               953.876 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:         569.772 um^2
-[INFO GPL-0019] Util:                    59.732 %
-[INFO GPL-0020] StdInstsArea:           569.772 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[INFO GPL-0031] FillerInit:NumGCells:       299
-[INFO GPL-0032] FillerInit:NumGNets:        364
-[INFO GPL-0033] FillerInit:NumGPins:       1122
-[INFO GPL-0023] TargetDensity:            0.607
-[INFO GPL-0024] AvrgPlaceInstArea:        1.938 um^2
-[INFO GPL-0025] IdealBinArea:             3.191 um^2
-[INFO GPL-0026] IdealBinCnt:                298
-[INFO GPL-0027] TotalBinArea:           953.876 um^2
-[INFO GPL-0028] BinCnt:        16     16
-[INFO GPL-0029] BinSize: (  1.936  1.925 )
-[INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.866 HPWL: 3819726
-[NesterovSolve] Iter:   10 overflow: 0.769 HPWL: 4226173
-[NesterovSolve] Iter:   20 overflow: 0.767 HPWL: 4211291
-[NesterovSolve] Iter:   30 overflow: 0.766 HPWL: 4219170
-[NesterovSolve] Iter:   40 overflow: 0.763 HPWL: 4230503
-[NesterovSolve] Iter:   50 overflow: 0.758 HPWL: 4247885
-[NesterovSolve] Iter:   60 overflow: 0.751 HPWL: 4274028
-[NesterovSolve] Iter:   70 overflow: 0.737 HPWL: 4309624
-[NesterovSolve] Iter:   80 overflow: 0.719 HPWL: 4360507
-[NesterovSolve] Iter:   90 overflow: 0.701 HPWL: 4431863
-[NesterovSolve] Iter:  100 overflow: 0.673 HPWL: 4519674
-[NesterovSolve] Iter:  110 overflow: 0.638 HPWL: 4597857
-[NesterovSolve] Iter:  120 overflow: 0.600 HPWL: 4702827
-[NesterovSolve] Iter:  130 overflow: 0.554 HPWL: 4793270
-[NesterovSolve] Iter:  140 overflow: 0.496 HPWL: 4825723
-[NesterovSolve] Iter:  150 overflow: 0.446 HPWL: 4863741
-[NesterovSolve] Iter:  160 overflow: 0.382 HPWL: 4862234
-[NesterovSolve] Iter:  170 overflow: 0.334 HPWL: 4863694
-[NesterovSolve] Iter:  180 overflow: 0.315 HPWL: 4941909
-[NesterovSolve] Iter:  190 overflow: 0.280 HPWL: 4980920
-[NesterovSolve] Iter:  200 overflow: 0.245 HPWL: 5022663
-[NesterovSolve] Iter:  210 overflow: 0.213 HPWL: 5061401
-[NesterovSolve] Iter:  220 overflow: 0.187 HPWL: 5105498
-[NesterovSolve] Iter:  230 overflow: 0.159 HPWL: 5146806
-[NesterovSolve] Iter:  240 overflow: 0.135 HPWL: 5177940
-[NesterovSolve] Iter:  250 overflow: 0.112 HPWL: 5208498
+[INFO GPL-0006] Total GPL instances:               294
+[INFO GPL-0007] Movable instances:                 294
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    364
+[INFO GPL-0011] Number of pins:                   1122
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        569.772 um^2
+[INFO GPL-0019] Utilization:                    59.732 %
+[INFO GPL-0020] Standard cells area:           569.772 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0031] Uniform density:                0.5973
+[INFO GPL-0032] Suggested maximum density:      0.6637
+[INFO GPL-0023] Placement target density:       0.6073
+[INFO GPL-0024] Movable insts average area:      1.938 um^2
+[INFO GPL-0025] Ideal bin area:                  3.191 um^2
+[INFO GPL-0026] Ideal bin count:                   298
+[INFO GPL-0027] Total bin area:                953.876 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 *     16
+[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
+[INFO GPL-0030] Number of bins:                    256
+[NesterovSolve] Iter:    1 overflow: 0.8660 HPWL: 3.820e+06(+0.0%) penalty: 1.0e-11 
+[NesterovSolve] Iter:   10 overflow: 0.7690 HPWL: 4.226e+06(+10.6%) penalty: 1.6e-11 
+[NesterovSolve] Iter:   20 overflow: 0.7671 HPWL: 4.211e+06(-0.4%) penalty: 2.6e-11 
+[NesterovSolve] Iter:   30 overflow: 0.7660 HPWL: 4.219e+06(+0.2%) penalty: 4.3e-11 
+[NesterovSolve] Iter:   40 overflow: 0.7628 HPWL: 4.231e+06(+0.3%) penalty: 7.0e-11 
+[NesterovSolve] Iter:   50 overflow: 0.7585 HPWL: 4.248e+06(+0.4%) penalty: 1.1e-10 
+[NesterovSolve] Iter:   60 overflow: 0.7509 HPWL: 4.274e+06(+0.6%) penalty: 1.8e-10 
+[NesterovSolve] Iter:   70 overflow: 0.7369 HPWL: 4.310e+06(+0.8%) penalty: 3.0e-10 
+[NesterovSolve] Iter:   80 overflow: 0.7190 HPWL: 4.361e+06(+1.2%) penalty: 4.9e-10 
+[NesterovSolve] Iter:   90 overflow: 0.7013 HPWL: 4.432e+06(+1.6%) penalty: 8.0e-10 
+[NesterovSolve] Iter:  100 overflow: 0.6732 HPWL: 4.520e+06(+2.0%) penalty: 1.3e-09 
+[NesterovSolve] Iter:  110 overflow: 0.6378 HPWL: 4.598e+06(+1.7%) penalty: 2.1e-09 
+[NesterovSolve] Iter:  120 overflow: 0.6001 HPWL: 4.703e+06(+2.3%) penalty: 3.5e-09 
+[NesterovSolve] Iter:  130 overflow: 0.5536 HPWL: 4.793e+06(+1.9%) penalty: 5.6e-09 
+[NesterovSolve] Iter:  140 overflow: 0.4964 HPWL: 4.826e+06(+0.7%) penalty: 9.2e-09 
+[NesterovSolve] Iter:  150 overflow: 0.4457 HPWL: 4.864e+06(+0.8%) penalty: 1.5e-08 
+[NesterovSolve] Iter:  160 overflow: 0.3823 HPWL: 4.862e+06(-0.0%) penalty: 2.4e-08 
+[NesterovSolve] Iter:  170 overflow: 0.3337 HPWL: 4.864e+06(+0.0%) penalty: 3.9e-08 
+[NesterovSolve] Iter:  180 overflow: 0.3147 HPWL: 4.942e+06(+1.6%) penalty: 5.7e-08 
+[NesterovSolve] Iter:  190 overflow: 0.2801 HPWL: 4.981e+06(+0.8%) penalty: 8.4e-08 
+[NesterovSolve] Iter:  200 overflow: 0.2455 HPWL: 5.023e+06(+0.8%) penalty: 1.2e-07 
+[NesterovSolve] Iter:  210 overflow: 0.2132 HPWL: 5.061e+06(+0.8%) penalty: 1.8e-07 
+[NesterovSolve] Iter:  220 overflow: 0.1866 HPWL: 5.105e+06(+0.9%) penalty: 2.7e-07 
+[NesterovSolve] Iter:  230 overflow: 0.1592 HPWL: 5.147e+06(+0.8%) penalty: 4.0e-07 
+[NesterovSolve] Iter:  240 overflow: 0.1348 HPWL: 5.178e+06(+0.6%) penalty: 5.8e-07 
+[NesterovSolve] Iter:  250 overflow: 0.1124 HPWL: 5.208e+06(+0.6%) penalty: 8.6e-07 
 [NesterovSolve] Finished with Overflow: 0.099534
 No differences found.
