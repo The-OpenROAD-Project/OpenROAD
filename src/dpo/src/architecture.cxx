@@ -42,6 +42,8 @@
 #include <vector>
 
 #include "network.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "router.h"
 
 namespace dpo {
@@ -83,10 +85,33 @@ Architecture::~Architecture()
 
 void Architecture::clearSpacingTable()
 {
-  for (auto& cellSpacing : cellSpacings_) {
-    delete cellSpacing;
-  }
   cellSpacings_.clear();
+}
+
+void Architecture::initSpacingTable()
+{
+  clearSpacingTable();
+  cellSpacings_.resize(edgeTypes_.size());
+  for (auto& row : cellSpacings_) {
+    row.resize(edgeTypes_.size(), Spacing(0, false, false));
+  }
+}
+
+void Architecture::addSpacingTableEntry(const int first_edge,
+                                        const int second_edge,
+                                        const int spc,
+                                        const bool is_exact,
+                                        const bool except_abutted)
+{
+  auto entry = Spacing(spc, is_exact, except_abutted);
+  cellSpacings_[first_edge][second_edge] = entry;
+  cellSpacings_[second_edge][first_edge] = entry;
+}
+
+Architecture::Spacing Architecture::getMaxSpacing(const int edge_type) const
+{
+  return *std::max_element(cellSpacings_[edge_type].begin(),
+                           cellSpacings_[edge_type].end());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -363,16 +388,6 @@ bool Architecture::powerCompatible(const Node* ndi,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void Architecture::addCellSpacingUsingTable(int firstEdge,
-                                            int secondEdge,
-                                            int sep)
-{
-  cellSpacings_.push_back(
-      new Architecture::Spacing(firstEdge, secondEdge, sep));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 void Architecture::addCellPadding(Node* ndi, int leftPadding, int rightPadding)
 {
   cellPaddings_[ndi->getId()] = {leftPadding, rightPadding};
@@ -410,9 +425,14 @@ int Architecture::getCellSpacing(const Node* leftNode,
   int retval = 0;
   if (useSpacingTable_) {
     // Don't need this if one of the cells is null.
-    const int i1 = leftNode ? leftNode->getRightEdgeType() : -1;
-    const int i2 = rightNode ? rightNode->getLeftEdgeType() : -1;
-    retval = std::max(retval, getCellSpacingUsingTable(i1, i2));
+    if (leftNode && rightNode) {
+      for (auto left_type : leftNode->getRightEdgeTypes()) {
+        for (auto right_type : rightNode->getLeftEdgeTypes()) {
+          retval = std::max(
+              retval, getCellSpacingUsingTable(left_type, right_type).spc);
+        }
+      }
+    }
   }
   if (usePadding_) {
     // Separation is padding to the right of the left cell plus
@@ -438,52 +458,14 @@ int Architecture::getCellSpacing(const Node* leftNode,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::getCellSpacingUsingTable(const int firstEdge,
-                                           const int secondEdge) const
+Architecture::Spacing Architecture::getCellSpacingUsingTable(
+    const int firstEdge,
+    const int secondEdge) const
 {
-  // In the event that one of the left or right indices is
-  // void (-1), return the worst possible spacing.  This
-  // is very pessimistic, but will ensure all issues are
-  // resolved.
-
-  int spacing = 0;
-
-  if (firstEdge == -1 && secondEdge == -1) {
-    for (const auto& cellSpacings : cellSpacings_) {
-      spacing = std::max(spacing, cellSpacings->getSeparation());
-    }
-    return spacing;
+  if (!getUseSpacingTable() || firstEdge == -1 || secondEdge == -1) {
+    return Spacing(0, false, false);
   }
-
-  if (firstEdge == -1) {
-    for (const auto& cellSpacings : cellSpacings_) {
-      if (cellSpacings->getFirstEdge() == secondEdge
-          || cellSpacings->getSecondEdge() == secondEdge) {
-        spacing = std::max(spacing, cellSpacings->getSeparation());
-      }
-    }
-    return spacing;
-  }
-
-  if (secondEdge == -1) {
-    for (const auto& cellSpacings : cellSpacings_) {
-      if (cellSpacings->getFirstEdge() == firstEdge
-          || cellSpacings->getSecondEdge() == firstEdge) {
-        spacing = std::max(spacing, cellSpacings->getSeparation());
-      }
-    }
-    return spacing;
-  }
-
-  for (const auto& cellSpacings : cellSpacings_) {
-    if ((cellSpacings->getFirstEdge() == firstEdge
-         && cellSpacings->getSecondEdge() == secondEdge)
-        || (cellSpacings->getFirstEdge() == secondEdge
-            && cellSpacings->getSecondEdge() == firstEdge)) {
-      spacing = std::max(spacing, cellSpacings->getSeparation());
-    }
-  }
-  return spacing;
+  return cellSpacings_[firstEdge][secondEdge];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -498,29 +480,21 @@ void Architecture::clear_edge_type()
 void Architecture::init_edge_type()
 {
   clear_edge_type();
-  edgeTypes_.emplace_back("DEFAULT", EDGETYPE_DEFAULT);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::add_edge_type(const char* name)
+int Architecture::add_edge_type(const std::string& name)
 {
-  for (const auto& edgeType : edgeTypes_) {
-    if (edgeType.first == name) {
-      // Edge type already exists.
-      return edgeType.second;
-    }
+  const auto it = edgeTypes_.find(name);
+  if (it != edgeTypes_.end()) {
+    return it->second;
   }
-  const int n = (int) edgeTypes_.size();
-  edgeTypes_.emplace_back(name, n);
-  return n;
+  const auto idx = edgeTypes_.size();
+  edgeTypes_[name] = idx;
+  return idx;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Architecture::Spacing::Spacing(int i1, int i2, int sep)
-    : i1_(i1), i2_(i2), sep_(sep)
-{
-}
 
 }  // namespace dpo

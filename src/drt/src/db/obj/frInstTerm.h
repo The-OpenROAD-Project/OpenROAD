@@ -63,6 +63,7 @@ class frInstTerm : public frBlockObject
   void addAccessPoint(frAccessPoint* in) { ap_.push_back(in); }
   void setAccessPoints(const std::vector<frAccessPoint*>& in) { ap_ = in; }
   // others
+  void clearAccessPoints() { ap_.clear(); }
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum);

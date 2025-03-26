@@ -43,6 +43,7 @@
 
 #include "dbBlockSet.h"
 #include "dbCCSegSet.h"
+#include "dbDatabaseObserver.h"
 #include "dbMatrix.h"
 #include "dbNetSet.h"
 #include "dbObject.h"
@@ -483,6 +484,21 @@ class dbDatabase : public dbObject
   ///   Not perfectly byte accurate.  Intended for developers.
   ///
   void report();
+
+  ///
+  /// Used to be notified when lef/def/odb are read.
+  ///
+  void addObserver(dbDatabaseObserver* observer);
+  void removeObserver(dbDatabaseObserver* observer);
+
+  ///
+  /// Notify observers when one of these operations is complete.
+  /// Fine-grained callbacks during construction are not as helpful
+  /// as knowing when the data is fully loaded into odb.
+  ///
+  void triggerPostReadLef(dbTech* tech, dbLib* library);
+  void triggerPostReadDef(dbBlock* block);
+  void triggerPostReadDb();
 
   ///
   /// Create an instance of a database
@@ -980,6 +996,24 @@ class dbBlock : public dbObject
   /// The flag order places the pins ordered in ascending x/y position.
   ///
   void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
+
+  ///
+  /// Find the rectangle corresponding to the constraint region in a specific
+  /// edge of the die area.
+  ///
+  Rect findConstraintRegion(const Direction2D& edge, int begin, int end);
+
+  ///
+  /// Add region constraint for dbBTerms according to their IO type.
+  ///
+  void addBTermConstraintByDirection(dbIoType direction,
+                                     const Rect& constraint_region);
+
+  ///
+  /// Add region constraint for dbBTerms according to their names.
+  ///
+  void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
+                             const Rect& constraint_region);
 
   ///
   /// Get all the instance-terminals of this block.
@@ -1868,6 +1902,11 @@ class dbBTerm : public dbObject
   std::optional<Rect> getConstraintRegion();
 
   ///
+  /// Reset constraint region.
+  ///
+  void resetConstraintRegion();
+
+  ///
   /// Set the bterm which position is mirrored to this bterm
   ///
   void setMirroredBTerm(dbBTerm* mirrored_bterm);
@@ -1876,6 +1915,16 @@ class dbBTerm : public dbObject
   /// Get the bterm that is mirrored to this bterm
   ///
   dbBTerm* getMirroredBTerm();
+
+  ///
+  /// Returns true if the current BTerm has a mirrored BTerm.
+  ///
+  bool hasMirroredBTerm();
+
+  ///
+  /// Return true if this BTerm is mirrored with another pin.
+  ///
+  bool isMirrored();
 };
 
 ///////////////////////////////////////////////////////////////////////////////

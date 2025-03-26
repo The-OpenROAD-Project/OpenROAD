@@ -783,7 +783,6 @@ bool FlexPA::genPatternsCommit(
   if (target_obj != nullptr
       && genPatternsGC({target_obj}, objs, Commit, &owners)) {
     pin_access_pattern->updateCost();
-#pragma omp critical
     unique_inst_patterns_[unique_inst].push_back(std::move(pin_access_pattern));
     // genPatternsPrint(nodes, pins);
     is_valid = true;

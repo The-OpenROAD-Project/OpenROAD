@@ -133,14 +133,8 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
-bool UniqueInsts::addInst(frInst* inst)
+UniqueInsts::InstSet& UniqueInsts::computeUniqueClass(frInst* inst)
 {
-  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
-    unique_to_idx_[inst] = unique_.size();
-    unique_.push_back(inst);
-    inst_to_unique_[inst] = inst;
-    inst_to_class_[inst] = nullptr;
-  }
   const Point origin = inst->getOrigin();
   const Rect boundary_bbox = inst->getBoundaryBBox();
   const dbOrientType orient = inst->getOrient();
@@ -168,8 +162,19 @@ bool UniqueInsts::addInst(frInst* inst)
   }
 
   // Fills data structure that relate a instance to its unique instance
-  UniqueInsts::InstSet& unique_class
-      = master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
+  return master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
+}
+
+bool UniqueInsts::addInst(frInst* inst)
+{
+  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    unique_to_idx_[inst] = unique_.size();
+    unique_.push_back(inst);
+    inst_to_unique_[inst] = inst;
+    inst_to_class_[inst] = nullptr;
+  }
+
+  UniqueInsts::InstSet& unique_class = computeUniqueClass(inst);
   inst_to_class_[inst] = &unique_class;
 
   frInst* unique_inst = nullptr;

@@ -1,8 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2024, Precision Innovations Inc.
-// All rights reserved.
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2025, Precision Innovations Inc.
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,42 +29,12 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include "Coordinates.h"
-#include "dpl/Opendp.h"
-
-namespace dpl {
-
-class Padding
+#include "journal.h"
+namespace dpo {
+void Journal::clearJournal()
 {
- public:
-  GridX padGlobalLeft() const { return pad_left_; }
-  GridX padGlobalRight() const { return pad_right_; }
-
-  void setPaddingGlobal(GridX left, GridX right);
-  void setPadding(dbInst* inst, GridX left, GridX right);
-  void setPadding(dbMaster* master, GridX left, GridX right);
-  bool havePadding() const;
-
-  // Find instance/master/global padding value for an instance.
-  GridX padLeft(dbInst* inst) const;
-  GridX padLeft(const Cell* cell) const;
-  GridX padRight(dbInst* inst) const;
-  GridX padRight(const Cell* cell) const;
-  bool isPaddedType(dbInst* inst) const;
-  DbuX paddedWidth(const Cell* cell) const;
-
- private:
-  using InstPaddingMap = map<dbInst*, pair<GridX, GridX>>;
-  using MasterPaddingMap = map<dbMaster*, pair<GridX, GridX>>;
-
-  GridX pad_left_{0};
-  GridX pad_right_{0};
-  InstPaddingMap inst_padding_map_;
-  MasterPaddingMap master_padding_map_;
-};
-
-}  // namespace dpl
+  actions_.clear();
+  affected_nodes_.clear();
+}
+}  // namespace dpo

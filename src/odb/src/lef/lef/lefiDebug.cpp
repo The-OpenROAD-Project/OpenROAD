@@ -137,7 +137,7 @@ const char* lefUpperCase(const char* str)
 
   to = lefData->shiftBuf;
   while (*place) {
-    int i = (int) *place;
+    int i = static_cast<unsigned char>(*place);
     place++;
     *to++ = lefiShift[i];
   }
