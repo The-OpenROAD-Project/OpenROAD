@@ -291,11 +291,11 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
   // spread down arrival delay
   visitTree(
       [](auto& recurse, int level, const BnetPtr& bnet, Delay arrival) -> int {
-        bnet->arrival_delay_ = arrival;
+        bnet->setArrivalDelay(arrival);
         switch (bnet->type()) {
           case BnetType::wire:
           case BnetType::buffer:
-            recurse(bnet->ref(), arrival + bnet->delay_);
+            recurse(bnet->ref(), arrival + bnet->delay());
             break;
           case BnetType::junction:
             recurse(bnet->ref(), arrival);
@@ -321,7 +321,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             addBuffers(Z,
                        level,
                        true,
-                       (slack_target + bnet->arrival_delay_) * alpha
+                       (slack_target + bnet->arrivalDelay()) * alpha
                            + bnet->slack(sta_) * (1.0 - alpha));
             return Z;
           }
@@ -333,7 +333,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             addBuffers(Z,
                        level,
                        true,
-                       (slack_target + bnet->arrival_delay_) * alpha
+                       (slack_target + bnet->arrivalDelay()) * alpha
                            + bnet->slack(sta_) * (1.0 - alpha));
             return Z;
           }
@@ -343,7 +343,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             BnetSeq Z;
             Z.reserve(Z1.size() * Z2.size());
 
-            Delay threshold = (slack_target + bnet->arrival_delay_) * alpha
+            Delay threshold = (slack_target + bnet->arrivalDelay()) * alpha
                               + bnet->slack(sta_) * (1.0 - alpha);
 
             Delay last_resort_slack = -INF;
@@ -424,7 +424,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             return {bnet};
           }
           default: {
-            logger_->critical(RSZ, 144, "unhandled BufferedNet type");
+            logger_->critical(RSZ, 150, "unhandled BufferedNet type");
           }
         }
       },
@@ -713,7 +713,7 @@ BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
   z->setArrivalPath(p->arrivalPath());
   z->setRequiredPath(req_path);
   // account for wire delay
-  z->delay_ = wire_delay;
+  z->setDelay(wire_delay);
   z->setRequiredDelay(p->requiredDelay() + wire_delay);
 
   debugPrint(logger_,
@@ -825,7 +825,7 @@ void RepairSetup::addBuffers(
               resizer_);
           z->setArrivalPath(best_option->arrivalPath());
           z->setRequiredPath(best_option->requiredPath());
-          z->delay_ = buffer_delay;
+          z->setDelay(buffer_delay);
           z->setRequiredDelay(best_option->requiredDelay() + buffer_delay);
           debugPrint(logger_,
                      RSZ,

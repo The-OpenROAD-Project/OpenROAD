@@ -163,6 +163,12 @@ class BufferedNet
   Delay requiredDelay() const { return required_delay_; }
   void setRequiredDelay(Delay delay);
 
+  Delay delay() const { return delay_; }
+  void setDelay(Delay delay);
+
+  Delay arrivalDelay() const { return arrival_delay_; }
+  void setArrivalDelay(Delay delay);
+
   // Downstream buffer count.
   int bufferCount() const;
 
@@ -198,9 +204,6 @@ class BufferedNet
   Delay required_delay_;
   // Area of buffers on the buffer tree looking dowsmtrem from here.
   float area_;
-
- protected:
-  friend class RepairSetup;
 
   // Computed delay of the buffer/wire
   Delay delay_ = 0;

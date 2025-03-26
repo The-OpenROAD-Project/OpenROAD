@@ -310,6 +310,16 @@ void BufferedNet::setRequiredDelay(Delay delay)
   required_delay_ = delay;
 }
 
+void BufferedNet::setDelay(Delay delay)
+{
+  delay_ = delay;
+}
+
+void BufferedNet::setArrivalDelay(Delay delay)
+{
+  arrival_delay_ = delay;
+}
+
 int BufferedNet::bufferCount() const
 {
   switch (type_) {
