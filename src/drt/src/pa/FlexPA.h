@@ -751,6 +751,14 @@ class FlexPA
 
   void getInsts(std::vector<frInst*>& insts);
 
+  /**
+   * @brief organizes all the insts in a vector of clusters, each cluster being
+   * a vector of insts a adjacent insts
+   *
+   * @returns the vector of vectors of insts
+   */
+  std::vector<std::vector<frInst*>> computeInstRows();
+
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 
   /**
