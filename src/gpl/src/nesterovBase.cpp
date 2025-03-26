@@ -742,22 +742,23 @@ void BinGrid::initBins()
   }
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL, 23, "{:20} {:10.3f}", "TargetDensity:", targetDensity_);
+  log_->info(
+      GPL, 23, "{:27} {:10.4f}", "Placement target density:", targetDensity_);
   log_->info(GPL,
              24,
-             "{:20} {:10.3f} um^2",
-             "AvrgPlaceInstArea:",
+             "{:27} {:10.3f} um^2",
+             "Movable insts average area:",
              block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             "{:20} {:10.3f} um^2",
-             "IdealBinArea:",
+             "{:27} {:10.3f} um^2",
+             "Ideal bin area:",
              block->dbuAreaToMicrons(idealBinArea));
-  log_->info(GPL, 26, "{:20} {:10}", "IdealBinCnt:", idealBinCnt);
+  log_->info(GPL, 26, "{:27} {:10}", "Ideal bin count:", idealBinCnt);
   log_->info(GPL,
              27,
-             "{:20} {:10.3f} um^2",
-             "TotalBinArea:",
+             "{:27} {:10.3f} um^2",
+             "Total bin area:",
              block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
@@ -788,15 +789,16 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 28, "{:8} {:8} {:6}", "BinCnt:", binCntX_, binCntY_);
+  log_->info(
+      GPL, 28, "{:21} {:7d} * {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
 
   binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
   binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
 
   log_->info(GPL,
              29,
-             "{:8} ( {:6.3f} {:6.3f} )",
-             "BinSize:",
+             "{:21} {:7.3f} * {:6.3f} um",
+             "Bin size (W * H):",
              block->dbuToMicrons(binSizeX_),
              block->dbuToMicrons(binSizeY_));
 
@@ -815,7 +817,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, "{:8} {}", "NumBins:", bins_.size());
+  log_->info(GPL, 30, "{:27} {:10}", "Number of bins:", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -1627,11 +1629,27 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCells_.emplace_back(GCellHandle(this, i));
   }
 
-  log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
-  log_->info(
-      GPL, 32, "{:20} {:10}", "FillerInit:NumGNets:", nbc_->gNets().size());
-  log_->info(
-      GPL, 33, "{:20} {:10}", "FillerInit:NumGPins:", nbc_->gPins().size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             "{:20} {:9}",
+             "FillerInit:NumGCells:",
+             gCells_.size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             "{:20} {:10}",
+             "FillerInit:NumGNets:",
+             nbc_->gNets().size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             "{:20} {:10}",
+             "FillerInit:NumGPins:",
+             nbc_->gPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1749,6 +1767,15 @@ void NesterovBase::initFillerGCells()
                 targetDensity_,
                 uniformTargetDensity_);
   }
+  log_->info(
+      GPL, 31, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
+  float max_density_suggestion
+      = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
+  log_->info(GPL,
+             32,
+             "{:27} {:10.4f}",
+             "Suggested maximum density:",
+             max_density_suggestion);
 
   // limit filler cells
   const double limit_filler_ratio = 10;

@@ -471,7 +471,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       log_->info(GPL,
                  101,
-                 "   Iter: {}, overflow: {:.3f}, keep rsz at: {}, HPWL: {}",
+                 "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
+                 "HPWL: {}",
                  iter + 1,
                  average_overflow_,
                  npVars_.keepResizeBelowOverflow,
@@ -706,7 +707,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
-        log_->info(GPL, 89, "Routability: revert back to snapshot");
+        log_->info(
+            GPL, 89, "Routability end iteration: revert back to snapshot");
       }
     }
 
