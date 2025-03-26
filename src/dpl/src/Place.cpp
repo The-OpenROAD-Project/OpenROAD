@@ -1010,16 +1010,11 @@ bool Opendp::checkEdgeSpacing(const Cell* cell,
           auto spc_entry
               = edge_spacing_table_[edge1.getEdgeType()][edge2.getEdgeType()];
           int spc = spc_entry.spc;
-<<<<<<< HEAD
           Rect edge2_box = cell_edges::transformEdgeRect(edge2.getBBox(),
                                                          cell2,
                                                          cell2->xMin(),
                                                          cell2->yMin(),
                                                          cell2->getOrient());
-=======
-          Rect edge2_box = cell_edges::transformEdgeRect(
-              edge2.getBBox(), cell2, cell2->x_, cell2->y_, cell2->orient_);
->>>>>>> 6be410b2c (Revert "Revert "Merge remote-tracking branch 'origin/master' into secure-module-swap11"")
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;

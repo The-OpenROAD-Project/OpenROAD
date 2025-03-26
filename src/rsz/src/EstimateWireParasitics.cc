@@ -454,6 +454,7 @@ void Resizer::estimateWireParasitic(const Net* net, SpefWriter* spef_writer)
         continue;
       }
       estimateWireParasitic(drvr_pin, net, spef_writer);
+      break; // one driver is sufficient
     }
   }
 }
