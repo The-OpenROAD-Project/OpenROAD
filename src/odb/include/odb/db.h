@@ -8116,7 +8116,7 @@ class dbModule : public dbObject
                                    dbModInst* new_mod_inst);
 
   // Copy module to child block for future use
-  static bool copyToChildBlock(dbModule* module, dbBlock* top_block);
+  static bool copyToChildBlock(dbModule* module);
 
   // User Code End dbModule
 };

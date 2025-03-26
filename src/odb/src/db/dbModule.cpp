@@ -433,16 +433,16 @@ void dbModule::destroy(dbModule* module)
     return;
   }
 
-  std::vector<dbModInst*> modinsts(module->getChildren().begin(),
-                                   module->getChildren().end());
-  for (dbModInst* modinst : modinsts) {
-    dbModInst::destroy(modinst);
+  dbSet<dbModInst> modinsts = module->getChildren();
+  dbSet<dbModInst>::iterator itr;
+  for (itr = modinsts.begin(); itr != modinsts.end();) {
+    itr = dbModInst::destroy(itr);
   }
 
-  std::vector<dbInst*> insts(module->getInsts().begin(),
-                             module->getInsts().end());
-  for (dbInst* inst : insts) {
-    dbInst::destroy(inst);
+  dbSet<dbInst> insts = module->getInsts();
+  dbSet<dbInst>::iterator inst_itr;
+  for (inst_itr = insts.begin(); inst_itr != insts.end();) {
+    inst_itr = dbInst::destroy(inst_itr);
   }
 
   std::vector<dbModBTerm*> modbterms(module->getModBTerms().begin(),
@@ -976,7 +976,7 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
 // 1. It is saved for future module swap
 // 2. Optimization avoids iterating any unused instances of the old module
 // Return true if copy is successful.
-bool dbModule::copyToChildBlock(dbModule* module, dbBlock* top_block)
+bool dbModule::copyToChildBlock(dbModule* module)
 {
   utl::Logger* logger = module->getImpl()->getLogger();
 
@@ -988,6 +988,7 @@ bool dbModule::copyToChildBlock(dbModule* module, dbBlock* top_block)
 
   // Create a new child block under top block.
   // This block contains only one module
+  dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
   std::string block_name = module->getName();
   // TODO: strip out instance name from block name
   dbTech* tech = top_block->getTech();
@@ -998,7 +999,7 @@ bool dbModule::copyToChildBlock(dbModule* module, dbBlock* top_block)
   if (!new_module) {
     logger->error(utl::ODB,
                   476,
-                  "top module {} could not be found under child block {}",
+                  "Top module {} could not be found under child block {}",
                   block_name,
                   block_name);
     return false;

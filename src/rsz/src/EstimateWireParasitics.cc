@@ -432,6 +432,9 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     odb::dbSet<odb::dbNet> nets = block_->getNets();
     for (auto db_net : nets) {
       Net* cur_net = db_network_->dbToSta(db_net);
+      if (!db_network_->isFlat(cur_net)) {
+        continue;
+      }
       estimateWireParasitic(cur_net, spef_writer);
     }
     parasitics_src_ = ParasiticsSrc::placement;
@@ -441,21 +444,11 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
 
 void Resizer::estimateWireParasitic(const Net* net, SpefWriter* spef_writer)
 {
-  // Filter out any mod pins or pins without flat nets
   PinSet* drivers = network_->drivers(net);
-  if (drivers) {
-    for (const Pin* drvr_pin : *drivers) {
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      db_network_->staToDb(drvr_pin, iterm, bterm, moditerm, modbterm);
-      if (moditerm || modbterm || !db_network_->flatNet(drvr_pin)) {
-        continue;
-      }
-      estimateWireParasitic(drvr_pin, net, spef_writer);
-      break;  // one driver pin is sufficient
-    }
+  if (drivers && !drivers->empty()) {
+    PinSet::Iterator drvr_iter(drivers);
+    const Pin* drvr_pin = drvr_iter.next();
+    estimateWireParasitic(drvr_pin, net, spef_writer);
   }
 }
 

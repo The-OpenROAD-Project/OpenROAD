@@ -582,7 +582,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
                     new_mod_inst->getModITerms().size());
   debugPrint(logger, utl::ODB, "replace_design", 1, msg);
 
-  dbModule::copy(new_module, new_module_copy, new_mod_inst);
+  dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
     for (dbInst* inst : new_module_copy->getInsts()) {
       logger->report("new_module_copy {} instance {} has the following iterms:",
@@ -698,16 +698,15 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     dbNet::destroy(net);
   }
 
-  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
-    std::ofstream outfile("after_replace.txt");
-    new_mod_inst->getMaster()->getOwner()->debugPrintContent(outfile);
-  }
-
-  dbModule::copyToChildBlock(old_module, parent->getOwner());
+  dbModule::copyToChildBlock(old_module);
   msg = fmt::format("Deleted old module {}", old_module->getName());
   debugPrint(logger, utl::ODB, "replace_design", 1, msg);
   dbModule::destroy(old_module);
 
+  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
+    std::ofstream outfile("after_replace.txt");
+    new_mod_inst->getMaster()->getOwner()->debugPrintContent(outfile);
+  }
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
     for (dbBlock* child_block : parent->getOwner()->getChildren()) {
       std::string filename = "after_replace_" + child_block->getName() + ".txt";
