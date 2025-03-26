@@ -62,7 +62,11 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         pin->setOffsetX(-dy);
         pin->setOffsetY(dx);
       }
-      std::swap(h_, w_);
+      {
+        int tmp = w_.v;
+        w_ = DbuX{h_.v};
+        h_ = DbuY{tmp};
+      }
       if (curOri == dbOrientType::R90) {
         curOri = dbOrientType::R0;
       } else if (curOri == dbOrientType::MXR90) {
@@ -83,7 +87,11 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         pin->setOffsetX(dy);
         pin->setOffsetY(-dx);
       }
-      std::swap(h_, w_);
+      {
+        int tmp = w_.v;
+        w_ = DbuX{h_.v};
+        h_ = DbuY{tmp};
+      }
       if (curOri == dbOrientType::R0) {
         curOri = dbOrientType::R90;
       } else if (curOri == dbOrientType::MX) {
@@ -213,10 +221,10 @@ void Network::createAndAddBlockage(const odb::Rect& bounds)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddFillerNode(const int left,
-                                      const int bottom,
-                                      const int width,
-                                      const int height)
+Node* Network::createAndAddFillerNode(const DbuX left,
+                                      const DbuY bottom,
+                                      const DbuX width,
+                                      const DbuY height)
 {
   Node* ndi = new Node();
   const int id = (int) nodes_.size();
