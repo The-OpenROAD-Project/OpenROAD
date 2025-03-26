@@ -2561,9 +2561,39 @@ void NesterovBase::updateNextIter(const int iter)
                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 
   sumOverflow_ = overflowArea() / overflowDenominator;
-
   sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
 
+  int64_t hpwl = nbc_->getHpwl();
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
+                             / npVars_->referenceHpwl);
+
+  float percentageChange = 0.0;
+  if (iter == 0 || (iter + 1) % 10 == 0) {
+    if (prevTenthHpwl_ != 0) {
+      percentageChange = (static_cast<double>(hpwl - prevTenthHpwl_)
+                          / static_cast<double>(prevTenthHpwl_))
+                         * 100.0;
+    }
+    prevTenthHpwl_ = hpwl;
+
+    std::string group;
+    if (pb_->group()) {
+      group = fmt::format(" ({})", pb_->group()->getName());
+    }
+    log_->report(
+        "[NesterovSolve] Iter: {:4d} overflow: {:.3f} HPWL: {:.1e}({:+.1f}%) "
+        "penalty: {:.1e} {}",
+        iter + 1,
+        sumOverflowUnscaled_,
+        static_cast<double>(hpwl),
+        percentageChange,
+        densityPenalty_,
+        group);
+  }
+
+  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
+  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
   debugPrint(log_,
              GPL,
              "updateNextIter",
@@ -2574,30 +2604,8 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sumOverflowUnscaled_);
 
-  int64_t hpwl = nbc_->getHpwl();
-
-  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
-  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
-
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
-                             / npVars_->referenceHpwl);
-
   prevHpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
-
-  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
-
-  if (iter == 0 || (iter + 1) % 10 == 0) {
-    std::string group;
-    if (pb_->group()) {
-      group = fmt::format(" ({})", pb_->group()->getName());
-    }
-    log_->report("[NesterovSolve] Iter: {:4d} overflow: {:.3f} HPWL: {}{}",
-                 iter + 1,
-                 sumOverflowUnscaled_,
-                 prevHpwl_,
-                 group);
-  }
 
   if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
     minSumOverflow_ = sumOverflowUnscaled_;
