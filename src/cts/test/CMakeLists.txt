@@ -7,6 +7,9 @@
 or_integration_tests(
   "cts"
   TESTS
+    array
+    array_ins_delay
+    array_no_blockages
     balance_levels
     check_buffers
     check_buffers_blockages
