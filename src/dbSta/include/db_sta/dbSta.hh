@@ -36,10 +36,12 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "ord/OpenRoadObserver.hh"
+#include "odb/dbDatabaseObserver.h"
 #include "sta/Sta.hh"
 
 namespace ord {
@@ -102,7 +104,7 @@ class BufferUseAnalyser
   std::unique_ptr<sta::PatternMatch> clkbuf_pattern_;
 };
 
-class dbSta : public Sta, public ord::OpenRoadObserver
+class dbSta : public Sta, public odb::dbDatabaseObserver
 {
  public:
   ~dbSta() override;
@@ -139,6 +141,14 @@ class dbSta : public Sta, public ord::OpenRoadObserver
     STD_COMBINATIONAL,
     STD_OTHER
   };
+
+  // Report Instances Type
+  struct TypeStats
+  {
+    int count{0};
+    int64_t area{0};
+  };
+  using InstTypeMap = std::map<InstType, TypeStats>;
 
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
@@ -180,16 +190,14 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   // Highlight path in the gui.
   void highlight(PathRef* path);
 
-  // Report Instances Type
-  struct TypeStats
-  {
-    int count{0};
-    int64_t area{0};
-  };
-  std::map<InstType, TypeStats> countInstancesByType(odb::dbModule* module);
-  std::string getInstanceTypeText(InstType type);
+  std::string getInstanceTypeText(InstType type) const;
   InstType getInstanceType(odb::dbInst* inst);
-  void report_cell_usage(odb::dbModule* module, bool verbose);
+  void reportCellUsage(odb::dbModule* module,
+                       bool verbose,
+                       const char* file_name,
+                       const char* stage_name);
+
+  void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
@@ -204,6 +212,14 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   void replaceCell(Instance* inst,
                    Cell* to_cell,
                    LibertyCell* to_lib_cell) override;
+
+  void countInstancesByType(odb::dbModule* module,
+                            InstTypeMap& inst_type_stats,
+                            std::vector<dbInst*>& insts);
+  void countPhysicalOnlyInstancesByType(InstTypeMap& inst_type_stats,
+                                        std::vector<dbInst*>& insts);
+  void addInstanceByTypeInstance(odb::dbInst* inst,
+                                 InstTypeMap& inst_type_stats);
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;

@@ -11,4 +11,10 @@ Pin                                    Limit     Cap   Slack
 drvr/Q                                 60.73   90.59  -29.86 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 693um.
-[INFO RSZ-0039] Resized 1 instances.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       123
+    final |     +0.2% |       2 |       0 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0039] Resized 2 instances.

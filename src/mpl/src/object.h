@@ -69,6 +69,7 @@ class SoftMacro;
 class Cluster;
 
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
+using Point = std::pair<float, float>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -199,13 +200,22 @@ class Cluster
   void clearHardMacros();
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
-  // Position must be specified when setting an IO cluster
-  void setAsIOCluster(const std::pair<float, float>& pos,
-                      float width,
-                      float height,
-                      Boundary constraint_boundary);
   bool isIOCluster() const;
+
+  bool isClusterOfUnplacedIOPins() const
+  {
+    return is_cluster_of_unplaced_io_pins_;
+  }
+  void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
+                                    float width,
+                                    float height,
+                                    Boundary constraint_boundary);
   Boundary getConstraintBoundary() const { return constraint_boundary_; }
+
+  bool isIOPadCluster() const { return is_io_pad_cluster_; }
+  void setAsIOPadCluster(const std::pair<float, float>& pos,
+                         float width,
+                         float height);
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
@@ -257,18 +267,6 @@ class Cluster
   int getCloseCluster(const std::vector<int>& candidate_clusters,
                       float net_threshold);
 
-  // Path synthesis support
-  // After path synthesis, the children cluster of current cluster will
-  // not have any connections outsize the parent cluster
-  // All the outside connections have been converted to the connections
-  // related to pin access
-  void setPinAccess(int cluster_id, Boundary pin_access, float weight);
-  void addBoundaryConnection(Boundary pin_a, Boundary pin_b, float num_net);
-  const std::pair<Boundary, float> getPinAccess(int cluster_id);
-  const std::map<int, std::pair<Boundary, float>> getPinAccessMap() const;
-  const std::map<Boundary, std::map<Boundary, float>> getBoundaryConnection()
-      const;
-
   // virtual connections
   const std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
@@ -300,9 +298,8 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
-  // We model pads as clusters with no area
-  // The position be the center of IOs
-  bool is_io_cluster_ = false;
+  bool is_cluster_of_unplaced_io_pins_{false};
+  bool is_io_pad_cluster_{false};
   Boundary constraint_boundary_ = NONE;
 
   bool is_array_of_interconnected_macros = false;
@@ -365,7 +362,7 @@ class HardMacro
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
-  bool isIOCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -539,7 +536,7 @@ class SoftMacro
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
-  bool isIOCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
@@ -586,14 +583,12 @@ struct BundledNet
   {
     this->terminals = std::pair<int, int>(src, target);
     this->weight = weight;
-    hpwl = 0;
   }
 
   BundledNet(const std::pair<int, int>& terminals, float weight)
   {
     this->terminals = terminals;
     this->weight = weight;
-    hpwl = 0;
   }
 
   bool operator==(const BundledNet& net)
@@ -602,19 +597,8 @@ struct BundledNet
            && (terminals.second == net.terminals.second);
   }
 
-  // id for terminals, the id can be the id of hard macro or soft
-  // macro
-  std::pair<int, int> terminals;
-  // Number of bundled connections (can be timing-related weight)
-  float weight;
-  // support for bus synthsis
-  float hpwl;  // HPWL of the Net (in terms of path length)
-  // shortest paths:  to minimize timing
-  // store all the shortest paths between two soft macros
-  std::vector<std::vector<int>> edge_paths;
-  // store all the shortest paths between two soft macros in terms of
-  // boundary edges.  All the internal edges are removed
-  std::vector<std::vector<int>> boundary_edge_paths;
+  std::pair<int, int> terminals;  // source_id <--> target_id (undirected)
+  float weight;  // Number of bundled connections (can be timing-related)
 
   // In our framework, we only bundled connections between clusters.
   // Thus each net must have both src_cluster_id and target_cluster_id
@@ -647,52 +631,14 @@ struct Rect
   void setXMax(float ux) { this->ux = ux; }
   void setYMax(float uy) { this->uy = uy; }
 
-  float getX() const { return (lx + ux) / 2.0; }
-  float getY() const { return (ly + uy) / 2.0; }
+  float xCenter() const { return (lx + ux) / 2.0; }
+  float yCenter() const { return (ly + uy) / 2.0; }
 
   float getWidth() const { return ux - lx; }
   float getHeight() const { return uy - ly; }
 
   float getPerimeter() const { return 2 * getWidth() + 2 * getHeight(); }
   float getArea() const { return getWidth() * getHeight(); }
-
-  void setLoc(float x,
-              float y,
-              float core_lx,
-              float core_ly,
-              float core_ux,
-              float core_uy)
-  {
-    if (fixed_flag == true) {
-      return;
-    }
-
-    const float width = ux - lx;
-    const float height = uy - ly;
-    lx = x - width / 2.0;
-    ly = y - height / 2.0;
-    ux = x + width / 2.0;
-    uy = y + height / 2.0;
-    if (lx < core_lx) {
-      lx = core_lx;
-      ux = lx + width;
-    }
-
-    if (ly < core_ly) {
-      ly = core_ly;
-      uy = ly + height;
-    }
-
-    if (ux > core_ux) {
-      lx = core_ux - width;
-      ux = core_ux;
-    }
-
-    if (uy > core_uy) {
-      ly = core_uy - height;
-      uy = core_uy;
-    }
-  }
 
   void moveHor(float dist)
   {
@@ -704,92 +650,6 @@ struct Rect
   {
     ly = ly + dist;
     uy = uy + dist;
-  }
-
-  void move(float x_dist,
-            float y_dist,
-            float core_lx,
-            float core_ly,
-            float core_ux,
-            float core_uy)
-  {
-    if (fixed_flag == true) {
-      return;
-    }
-    moveHor(x_dist);
-    moveVer(y_dist);
-    const float width = getWidth();
-    const float height = getHeight();
-    if (lx < core_lx) {
-      lx = core_lx;
-      ux = lx + width;
-    }
-
-    if (ly < core_ly) {
-      ly = core_ly;
-      uy = ly + height;
-    }
-
-    if (ux > core_ux) {
-      lx = core_ux - width;
-      ux = core_ux;
-    }
-
-    if (uy > core_uy) {
-      ly = core_uy - height;
-      uy = core_uy;
-    }
-
-    if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
-        || uy > core_uy + 1.0) {
-      std::cout << "Error !!!\n"
-                << "core_lx =  " << core_lx << "  " << "core_ly =  " << core_ly
-                << "  " << "core_ux =  " << core_ux << "  "
-                << "core_uy =  " << core_uy << std::endl;
-    }
-  }
-
-  void resetForce()
-  {
-    f_x_a = 0.0;
-    f_y_a = 0.0;
-    f_x_r = 0.0;
-    f_y_r = 0.0;
-    f_x = 0.0;
-    f_y = 0.0;
-  }
-
-  void makeSquare(float ar = 1.0)
-  {
-    if (fixed_flag == true) {
-      return;
-    }
-    const float x = getX();
-    const float y = getY();
-    const float height = std::sqrt(getWidth() * getHeight() * ar);
-    const float width = getWidth() * getHeight() / height;
-    lx = x - width / 2.0;
-    ly = y - height / 2.0;
-    ux = x + width / 2.0;
-    uy = y + height / 2.0;
-  }
-
-  void addAttractiveForce(float f_x, float f_y)
-  {
-    f_x_a += f_x;
-    f_y_a += f_y;
-  }
-
-  void addRepulsiveForce(float f_x, float f_y)
-  {
-    f_x_r += f_x;
-    f_y_r += f_y;
-  }
-
-  void setForce(float f_x_, float f_y_)
-  {
-    f_x = f_x_;
-    f_y = f_y_;
   }
 
   bool isValid() const { return (lx < ux) && (ly < uy); }
@@ -833,19 +693,6 @@ struct Rect
   float ly = 0.0;
   float ux = 0.0;
   float uy = 0.0;
-
-  // for force-directed placement
-  // attractive force
-  float f_x_a = 0.0;
-  float f_y_a = 0.0;
-
-  // repulsive force
-  float f_x_r = 0.0;
-  float f_y_r = 0.0;
-
-  // total force
-  float f_x = 0.0;
-  float f_y = 0.0;
 
   bool fixed_flag = false;
 };

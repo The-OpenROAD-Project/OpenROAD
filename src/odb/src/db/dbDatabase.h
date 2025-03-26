@@ -35,6 +35,7 @@
 #include <iostream>
 
 #include "dbCore.h"
+#include "odb/dbDatabaseObserver.h"
 #include "odb/odb.h"
 
 namespace utl {
@@ -70,7 +71,16 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 102;  // Current revision number
+const uint db_schema_minor = 105;  // Current revision number
+
+// Revision where check for mirrored constraint on bterm was added
+const uint db_schema_bterm_is_mirrored = 105;
+
+// Revision where support for pin groups was added
+const uint db_schema_block_pin_groups = 104;
+
+// Revision where support for mirrored pins was added
+const uint db_schema_bterm_mirrored_pin = 103;
 
 // Revision where support for LEF58_CELLEDGESPACINGTABLE was added
 const uint db_schema_cell_edge_spc_tbl = 102;
@@ -218,7 +228,6 @@ class _dbLib;
 class _dbGDSLib;
 class dbOStream;
 class dbIStream;
-class dbDiff;
 
 class _dbDatabase : public _dbObject
 {
@@ -242,24 +251,21 @@ class _dbDatabase : public _dbObject
   int _unique_id;
 
   utl::Logger* _logger;
+  std::set<dbDatabaseObserver*> observers_;
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);
-  _dbDatabase(_dbDatabase* db, const _dbDatabase& d);
   ~_dbDatabase();
 
   utl::Logger* getLogger() const;
 
   bool operator==(const _dbDatabase& rhs) const;
   bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbDatabase& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
 
   bool isSchema(uint rev) const { return _schema_minor >= rev; }
   bool isLessThanSchema(uint rev) { return _schema_minor < rev; }
   dbObjectTable* getObjectTable(dbObjectType type);
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db);

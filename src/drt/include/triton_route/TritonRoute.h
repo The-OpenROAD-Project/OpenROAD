@@ -28,8 +28,6 @@
 
 #pragma once
 
-#include <tcl.h>
-
 #include <boost/asio/thread_pool.hpp>
 #include <list>
 #include <memory>
@@ -52,10 +50,6 @@ namespace utl {
 class Logger;
 }
 
-namespace gui {
-class Gui;
-}
-
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -69,13 +63,15 @@ namespace drt {
 class frDesign;
 class DesignCallBack;
 class FlexDR;
+class FlexPA;
+class FlexTA;
 class FlexDRWorker;
 class drUpdate;
 struct frDebugSettings;
-class FlexDR;
 struct FlexDRViaData;
 class frMarker;
 struct RouterConfiguration;
+class AbstractGraphicsFactory;
 
 struct ParamStruct
 {
@@ -100,6 +96,7 @@ struct ParamStruct
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
+  int num_threads;
 };
 
 class TritonRoute
@@ -107,13 +104,14 @@ class TritonRoute
  public:
   TritonRoute();
   ~TritonRoute();
-  void init(Tcl_Interp* tcl_interp,
-            odb::dbDatabase* db,
+  void init(odb::dbDatabase* db,
             utl::Logger* logger,
             dst::Distributed* dist,
-            stt::SteinerTreeBuilder* stt_builder);
+            stt::SteinerTreeBuilder* stt_builder,
+            std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
   frDesign* getDesign() const { return design_.get(); }
+  utl::Logger* getLogger() const { return logger_; }
   RouterConfiguration* getRouterConfiguration() const
   {
     return router_cfg_.get();
@@ -174,15 +172,15 @@ class TritonRoute
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void clearDesign();
-  void updateDesign(const std::vector<std::string>& updates);
-  void updateDesign(const std::string& path);
+  void updateDesign(const std::vector<std::string>& updates, int num_threads);
+  void updateDesign(const std::string& path, int num_threads);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
   int getWorkerResultsSize();
   void sendDesignDist();
   bool writeGlobals(const std::string& name);
-  void sendDesignUpdates(const std::string& router_cfg_path);
+  void sendDesignUpdates(const std::string& router_cfg_path, int num_threads);
   void sendGlobalsUpdates(const std::string& router_cfg_path,
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
@@ -194,11 +192,12 @@ class TritonRoute
                 int y1,
                 int x2,
                 int y2,
-                const std::string& marker_name);
+                const std::string& marker_name,
+                int num_threads);
   bool initGuide();
   void prep();
   odb::dbDatabase* getDb() const { return db_; }
-  void fixMaxSpacing();
+  void fixMaxSpacing(int num_threads);
 
  private:
   std::unique_ptr<frDesign> design_;
@@ -210,7 +209,6 @@ class TritonRoute
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_{nullptr};
   int num_drvs_{-1};
-  gui::Gui* gui_{nullptr};
   dst::Distributed* dist_{nullptr};
   bool distributed_{false};
   std::string dist_ip_;
@@ -221,8 +219,11 @@ class TritonRoute
   int results_sz_{0};
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
+  std::unique_ptr<FlexPA> pa_{nullptr};
+  std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
 
   void initDesign();
+  void initGraphics();
   void gr();
   void ta();
   void dr();

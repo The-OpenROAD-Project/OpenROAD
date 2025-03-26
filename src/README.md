@@ -222,7 +222,7 @@ report_global_connect
 The `report_cell_usage` command is used to print out the usage of cells for each type of cell.
 
 ```
-report_cell_usage [-verbose] [module instance]
+report_cell_usage [-verbose] [module instance] [-file file] [-stage stage]
 ```
 
 ##### Options
@@ -231,6 +231,25 @@ report_cell_usage [-verbose] [module instance]
 | ----- | ----- |
 | `-verbose` | Add information about all leaf instances. |
 | `module instance` | Report cell usage for a specified module instance. |
+| `-file file` | Create cell usage snapshot with the given path to file. |
+| `-stage stage` | Attach the stage to the snapshot. |
+
+#### Report Timing Histogram
+
+The `report_timing_histogram` command reports a visualization of the
+slack distribution in the design.
+
+```tcl
+report_timing_histogram [-num_bins num_bins] [-setup|-hold]
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-num_bins` | Number of histogram bins to display (default is 10). |
+| `-setup` | Use setup paths (this is the default). |
+| `-hold` | Use hold paths. |
 
 ## TCL functions
 

@@ -45,15 +45,16 @@
 #include "db/infra/frTime.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
+#include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"
-#include "dr/FlexDR_graphics.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "io/io.h"
-#include "ord/OpenRoad.hh"
 #include "serialization.h"
+#include "utl/Progress.h"
+#include "utl/ScopedTemporaryFile.h"
 #include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
@@ -123,13 +124,9 @@ FlexDR::FlexDR(TritonRoute* router,
 
 FlexDR::~FlexDR() = default;
 
-void FlexDR::setDebug(frDebugSettings* settings)
+void FlexDR::setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics)
 {
-  bool on = settings->debugDR;
-  graphics_
-      = on && FlexDRGraphics::guiActive()
-            ? std::make_unique<FlexDRGraphics>(settings, design_, db_, logger_)
-            : nullptr;
+  graphics_ = std::move(dr_graphics);
 }
 
 std::string FlexDRWorker::reloadedMain()
@@ -192,7 +189,7 @@ void FlexDRWorker::writeUpdates(const std::string& file_name)
   }
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
     drUpdate update;
-    update.setMarker(*(marker.get()));
+    update.setMarker(*marker);
     update.setUpdateType(drUpdate::ADD_SHAPE);
     updates.back().push_back(update);
   }
@@ -744,7 +741,7 @@ void FlexDR::processWorkersBatchDistributed(
     serializeViaData(via_data_, serializedViaData);
     router_->sendGlobalsUpdates(router_cfg_path_, serializedViaData);
   } else {
-    router_->sendDesignUpdates(router_cfg_path_);
+    router_->sendDesignUpdates(router_cfg_path_, router_cfg_->MAX_THREADS);
   }
 
   ProfileTask task("DIST: PROCESS_BATCH");
@@ -1786,7 +1783,7 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
   std::vector<std::atomic_bool> visited(via_positions.size());
   std::fill(visited.begin(), visited.end(), false);
   std::set<int> isolated_via_nodes;
-  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < via_positions.size(); i++) {
     if (visited[i].load()) {
@@ -1831,6 +1828,9 @@ std::vector<frVia*> FlexDR::getLonelyVias(frLayer* layer,
 int FlexDR::main()
 {
   ProfileTask profile("DR:main");
+  auto reporter = logger_->progress()->startIterationReporting(
+      "detailed routing", std::min(64, router_cfg_->END_ITERATION), {});
+
   init();
   frTime t;
   bool incremental = false;
@@ -1879,13 +1879,20 @@ int FlexDR::main()
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, router_cfg_, false, true);
-      ord::OpenRoad::openRoad()->writeDb(
-          fmt::format("drt_iter{}.odb", iter_).c_str());
+
+      db_->write(
+          utl::StreamHandler(fmt::format("drt_iter{}.odb", iter_).c_str(), true)
+              .getStream());
+    }
+    if (reporter->incrementProgress()) {
+      break;
     }
     ++iter_;
   }
 
   end(/* done */ true);
+  reporter->end(true);
+
   if (!router_cfg_->GUIDE_REPORT_FILE.empty()) {
     reportGuideCoverage();
   }

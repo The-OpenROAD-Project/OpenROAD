@@ -106,6 +106,7 @@ void TclCmdHighlighter::initOpenRoad(
   std::vector<std::string> cmds_list_no_args;
   for (const auto& [cmd, or_cmd, args] : or_cmds) {
     std::vector<std::string> args_regex;
+    args_regex.reserve(args.size());
     for (const std::string& arg : args) {
       args_regex.push_back(escape(arg) + end_of_command);
     }

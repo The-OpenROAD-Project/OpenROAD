@@ -59,6 +59,11 @@
 
 namespace utl {
 
+class PrometheusMetricsServer;
+class PrometheusRegistry;
+
+class Progress;
+
 // Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
@@ -234,6 +239,11 @@ class Logger
     return (it != groups.end() && level <= it->second);
   }
 
+  void startPrometheusEndpoint(uint16_t port);
+  std::shared_ptr<PrometheusRegistry> getRegistry();
+  bool isPrometheusServerReadyToServe();
+  uint16_t getPrometheusPort();
+
   void suppressMessage(ToolId tool, int id);
   void unsuppressMessage(ToolId tool, int id);
 
@@ -265,10 +275,16 @@ class Logger
   void teeStringBegin();
   std::string teeStringEnd();
 
+  // Progress interface
+  Progress* progress() const { return progress_.get(); }
+  std::unique_ptr<Progress> swapProgress(Progress* progress);
+
  private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
   std::vector<MetricsPolicy> metrics_policies_;
+
+  std::unique_ptr<Progress> progress_;
 
   template <typename... Args>
   void log(ToolId tool,
@@ -350,6 +366,10 @@ class Logger
   std::unique_ptr<std::ostringstream> string_redirect_;
   std::unique_ptr<std::ofstream> file_redirect_;
 
+  // Prometheus server metrics collection
+  std::shared_ptr<PrometheusRegistry> prometheus_registry_;
+  std::unique_ptr<PrometheusMetricsServer> prometheus_metrics_;
+
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
   using MessageCounter = std::array<std::atomic_int16_t, max_message_id + 1>;
@@ -386,9 +406,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int)
-      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
-                  std::true_type());
+  static auto test(int) -> decltype(std::declval<std::ostream>()
+                                        << std::declval<T>(),
+                                    std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;

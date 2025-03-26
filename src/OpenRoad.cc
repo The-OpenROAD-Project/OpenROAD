@@ -79,6 +79,7 @@
 #include "rmp/MakeRestructure.h"
 #include "rsz/MakeResizer.hh"
 #include "sta/StaMain.hh"
+#include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
@@ -136,6 +137,7 @@ OpenRoad::~OpenRoad()
   deleteOpenRCX(extractor_);
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
+  deletePDNSim(pdnsim_);
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
@@ -146,6 +148,7 @@ OpenRoad::~OpenRoad()
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
   delete logger_;
+  delete verilog_reader_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
@@ -268,14 +271,12 @@ void OpenRoad::readLef(const char* filename,
                        bool make_library)
 {
   odb::lefin lef_reader(db_, logger_, false);
-  dbLib* lib = nullptr;
-  dbTech* tech = nullptr;
   if (make_tech && make_library) {
-    lib = lef_reader.createTechAndLib(tech_name, lib_name, filename);
-    tech = db_->findTech(tech_name);
+    lef_reader.createTechAndLib(tech_name, lib_name, filename);
   } else if (make_tech) {
-    tech = lef_reader.createTech(tech_name, filename);
+    lef_reader.createTech(tech_name, filename);
   } else if (make_library) {
+    dbTech* tech;
     if (tech_name[0] != '\0') {
       tech = db_->findTech(tech_name);
     } else {
@@ -284,14 +285,7 @@ void OpenRoad::readLef(const char* filename,
     if (!tech) {
       logger_->error(ORD, 51, "Technology {} not found", tech_name);
     }
-    lib = lef_reader.createLib(tech, lib_name, filename);
-  }
-
-  // both are null on parser failure
-  if (lib != nullptr || tech != nullptr) {
-    for (OpenRoadObserver* observer : observers_) {
-      observer->postReadLef(tech, lib);
-    }
+    lef_reader.createLib(tech, lib_name, filename);
   }
 }
 
@@ -321,20 +315,11 @@ void OpenRoad::readDef(const char* filename,
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
-  dbBlock* block = nullptr;
   if (child) {
     auto parent = db_->getChip()->getBlock();
-    block = def_reader.createBlock(parent, search_libs, filename, tech);
+    def_reader.createBlock(parent, search_libs, filename, tech);
   } else {
-    dbChip* chip = def_reader.createChip(search_libs, filename, tech);
-    if (chip) {
-      block = chip->getBlock();
-    }
-  }
-  if (block) {
-    for (OpenRoadObserver* observer : observers_) {
-      observer->postReadDef(block);
-    }
+    def_reader.createChip(search_libs, filename, tech);
   }
 }
 
@@ -489,11 +474,6 @@ void OpenRoad::readDb(std::istream& stream)
                     | std::ios::eofbit);
 
   db_->read(stream);
-
-  // this fixes up the database post read
-  for (OpenRoadObserver* observer : observers_) {
-    observer->postReadDb(db_);
-  }
 }
 
 void OpenRoad::writeDb(std::ostream& stream)
@@ -509,61 +489,38 @@ void OpenRoad::writeDb(const char* filename)
   db_->write(stream_handler.getStream());
 }
 
-void OpenRoad::diffDbs(const char* filename1,
-                       const char* filename2,
-                       const char* diffs)
-{
-  std::ifstream stream1;
-  stream1.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                     | std::ios::eofbit);
-  stream1.open(filename1, std::ios::binary);
-
-  std::ifstream stream2;
-  stream2.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                     | std::ios::eofbit);
-  stream2.open(filename2, std::ios::binary);
-
-  FILE* out = fopen(diffs, "w");
-  if (out == nullptr) {
-    logger_->error(ORD, 105, "Can't open {}", diffs);
-  }
-
-  auto db1 = odb::dbDatabase::create();
-  auto db2 = odb::dbDatabase::create();
-
-  db1->read(stream1);
-  db2->read(stream2);
-
-  odb::dbDatabase::diff(db1, db2, out, 2);
-
-  fclose(out);
-}
-
 void OpenRoad::readVerilog(const char* filename)
 {
   verilog_network_->deleteTopInstance();
-  dbReadVerilog(filename, verilog_network_, verilog_reader_);
+
+  if (verilog_reader_ == nullptr) {
+    verilog_reader_ = new sta::VerilogReader(verilog_network_);
+  }
+  setDbNetworkLinkFunc(this, verilog_reader_);
+  verilog_reader_->read(filename);
 }
 
 void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
 
 {
-  dbLinkDesign(
-      design_name, verilog_network_, verilog_reader_, db_, logger_, hierarchy);
+  bool success
+      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+
+  if (success) {
+    delete verilog_reader_;
+    verilog_reader_ = nullptr;
+  }
+
   if (hierarchy) {
     sta::dbSta* sta = getSta();
     sta->getDbNetwork()->setHierarchy();
   }
-  for (OpenRoadObserver* observer : observers_) {
-    observer->postReadDb(db_);
-  }
+  db_->triggerPostReadDb();
 }
 
 void OpenRoad::designCreated()
 {
-  for (OpenRoadObserver* observer : observers_) {
-    observer->postReadDb(db_);
-  }
+  db_->triggerPostReadDb();
 }
 
 bool OpenRoad::unitsInitialized()
@@ -575,19 +532,6 @@ bool OpenRoad::unitsInitialized()
 odb::Rect OpenRoad::getCore()
 {
   return db_->getChip()->getBlock()->getCoreArea();
-}
-
-void OpenRoad::addObserver(OpenRoadObserver* observer)
-{
-  observer->set_unregister_observer(
-      [this, observer] { removeObserver(observer); });
-  observers_.insert(observer);
-}
-
-void OpenRoad::removeObserver(OpenRoadObserver* observer)
-{
-  observer->set_unregister_observer(nullptr);
-  observers_.erase(observer);
 }
 
 void OpenRoad::setThreadCount(int threads, bool printInfo)

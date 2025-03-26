@@ -44,7 +44,9 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
-
+#include "Graphics.hh"
+#include "ord/OpenRoad.hh"
+  
 namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
@@ -123,8 +125,13 @@ using rsz::ParasiticsSrc;
   else if (stringEq(arg, "detailed_routing"))
     $1 = ParasiticsSrc::detailed_routing;
   else {
-    Tcl_SetResult(interp,const_cast<char*>("Error: parasitics source."), TCL_STATIC);
-    return TCL_ERROR;
+    Logger* logger = ord::getLogger();
+    try {
+      logger->error(utl::RSZ, 19, "Unknown parasitics source '{}'.", arg);
+    } catch (const std::exception &e) {
+      Tcl_SetResult(interp, const_cast<char*>(e.what()), TCL_STATIC);
+      return TCL_ERROR;
+    }
   }
 }
 
@@ -458,6 +465,14 @@ find_floating_pins()
   return resizer->findFloatingPins();
 }
 
+TmpNetSeq *
+find_overdriven_nets(bool include_parallel_driven)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findOverdrivenNets(include_parallel_driven);
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
@@ -524,15 +539,20 @@ bool
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
-             bool match_cell_footprint, bool verbose,
-             bool skip_pin_swap, bool skip_gate_cloning,
-             bool skip_buffering, bool skip_buffer_removal,
+             int max_repairs_per_pass,
+             bool match_cell_footprint,
+             bool verbose,
+             bool skip_pin_swap,
+             bool skip_gate_cloning,
+             bool skip_buffering,
+             bool skip_buffer_removal,
              bool skip_last_gasp)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
-                       max_passes, match_cell_footprint, verbose,
+                       max_passes, max_repairs_per_pass,
+                       match_cell_footprint, verbose,
                        skip_pin_swap, skip_gate_cloning,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp);
@@ -595,11 +615,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 bool
-recover_power(float recover_power_percent, bool match_cell_footprint)
+recover_power(float recover_power_percent, bool match_cell_footprint, bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  return resizer->recoverPower(recover_power_percent, match_cell_footprint);
+  return resizer->recoverPower(recover_power_percent, match_cell_footprint, verbose);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -759,6 +779,37 @@ eliminate_dead_logic_cmd(bool clean_nets)
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->eliminateDeadLogic(clean_nets);
+}
+
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportEquivalentCells(cell, match_cell_footprint);
+}
+
+void
+report_fast_buffer_sizes()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportFastBufferSizes();
+}
+
+void set_debug_cmd(const char* net_name,
+                   const bool subdivide_step)
+{
+  Resizer* resizer = getResizer();
+
+  odb::dbNet* net = nullptr;
+  if (net_name) {
+    auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+    net = block->findNet(net_name);
+  }
+
+  auto graphics = std::make_shared<Graphics>();
+  graphics->setNet(net);
+  graphics->stopOnSubdivideStep(subdivide_step);
+  resizer->setDebugGraphics(std::move(graphics));
 }
 
 } // namespace

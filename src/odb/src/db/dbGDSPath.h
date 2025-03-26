@@ -40,24 +40,17 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 class _dbGDSPath : public _dbObject
 {
  public:
-  _dbGDSPath(_dbDatabase*, const _dbGDSPath& r);
   _dbGDSPath(_dbDatabase*);
-
-  ~_dbGDSPath() = default;
 
   bool operator==(const _dbGDSPath& rhs) const;
   bool operator!=(const _dbGDSPath& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGDSPath& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbGDSPath& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   int16_t _layer;
   int16_t _datatype;

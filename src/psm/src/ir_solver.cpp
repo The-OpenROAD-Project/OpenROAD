@@ -355,6 +355,28 @@ bool IRSolver::checkShort() const
   return true;
 }
 
+void IRSolver::assertResistanceMap(sta::Corner* corner) const
+{
+  const auto required_layers = network_->getLayers();
+  bool error = false;
+  for (const auto& [layer, res] : getResistanceMap(corner)) {
+    if (required_layers.find(layer) == required_layers.end()) {
+      continue;
+    }
+
+    if (res == 0.0
+        && (layer->getType() == odb::dbTechLayerType::CUT
+            || layer->getType() == odb::dbTechLayerType::ROUTING)) {
+      logger_->warn(utl::PSM, 20, "{} has zero resistance.", layer->getName());
+      error = true;
+    }
+  }
+
+  if (error) {
+    logger_->error(utl::PSM, 21, "Resistance map constains invalid values.");
+  }
+}
+
 Connection::ResistanceMap IRSolver::getResistanceMap(sta::Corner* corner) const
 {
   Connection::ResistanceMap resistance;
@@ -954,6 +976,8 @@ void IRSolver::solve(sta::Corner* corner,
     network_->setFloorplanning(false);
     network_->construct();
   }
+
+  assertResistanceMap(corner);
 
   // Reset
   auto& voltages = voltages_[corner];

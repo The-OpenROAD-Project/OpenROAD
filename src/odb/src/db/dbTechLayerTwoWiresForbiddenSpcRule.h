@@ -39,7 +39,6 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 struct dbTechLayerTwoWiresForbiddenSpcRuleFlags
@@ -52,12 +51,7 @@ struct dbTechLayerTwoWiresForbiddenSpcRuleFlags
 class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
 {
  public:
-  _dbTechLayerTwoWiresForbiddenSpcRule(
-      _dbDatabase*,
-      const _dbTechLayerTwoWiresForbiddenSpcRule& r);
   _dbTechLayerTwoWiresForbiddenSpcRule(_dbDatabase*);
-
-  ~_dbTechLayerTwoWiresForbiddenSpcRule() = default;
 
   bool operator==(const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;
   bool operator!=(const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
@@ -65,10 +59,7 @@ class _dbTechLayerTwoWiresForbiddenSpcRule : public _dbObject
     return !operator==(rhs);
   }
   bool operator<(const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   dbTechLayerTwoWiresForbiddenSpcRuleFlags flags_;
   int min_spacing_;

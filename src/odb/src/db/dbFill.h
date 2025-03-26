@@ -45,7 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbSite;
 class dbLib;
-class dbDiff;
 class _dbTechLayer;
 
 struct dbFillFlags
@@ -71,8 +70,7 @@ class _dbFill : public _dbObject
   bool operator==(const _dbFill& rhs) const;
   bool operator!=(const _dbFill& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbFill& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbFill& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbFill::_dbFill(_dbDatabase*, const _dbFill& r)

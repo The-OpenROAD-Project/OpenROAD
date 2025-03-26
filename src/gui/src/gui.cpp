@@ -781,6 +781,28 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
       clock_name, filename, corner, width, height);
 }
 
+void Gui::saveHistogramImage(const std::string& filename,
+                             const std::string& mode,
+                             int width_px,
+                             int height_px)
+{
+  if (!enabled()) {
+    return;
+  }
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
+  const ChartsWidget::Mode chart_mode
+      = main_window->getChartsWidget()->modeFromString(mode);
+  main_window->getChartsWidget()->saveImage(
+      filename, chart_mode, width, height);
+}
+
 void Gui::selectClockviewerClock(const std::string& clock_name)
 {
   if (!enabled()) {
@@ -1320,20 +1342,34 @@ void Gui::selectChart(const std::string& name)
     return;
   }
 
-  ChartsWidget::Mode mode;
-  if (name == "Endpoint Slack") {
-    mode = ChartsWidget::Mode::SLACK_HISTOGRAM;
-  } else if (name == "Select Mode") {
-    mode = ChartsWidget::Mode::SELECT;
-  } else {
-    logger_->error(utl::GUI, 105, "Chart {} is unknown.", name);
-  }
+  const ChartsWidget::Mode mode
+      = main_window->getChartsWidget()->modeFromString(name);
   main_window->getChartsWidget()->setMode(mode);
 }
 
 void Gui::updateTimingReport()
 {
   main_window->getTimingWidget()->populatePaths();
+}
+
+// See class header for documentation.
+std::size_t Gui::TypeInfoHasher::operator()(const std::type_index& x) const
+{
+#ifdef __GLIBCXX__
+  return std::hash<std::type_index>{}(x);
+#else
+  return std::hash<std::string_view>{}(std::string_view(x.name()));
+#endif
+}
+// See class header for documentation.
+bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
+                                         const std::type_index& b) const
+{
+#ifdef __GLIBCXX__
+  return a == b;
+#else
+  return strcmp(a.name(), b.name()) == 0;
+#endif
 }
 
 class SafeApplication : public QApplication
@@ -1386,7 +1422,7 @@ int startGui(int& argc,
   }
   main_window->setTitle(gui->getMainWindowTitle());
 
-  open_road->addObserver(main_window);
+  open_road->getDb()->addObserver(main_window);
   if (!interactive) {
     gui->setContinueAfterClose();
     main_window->setAttribute(Qt::WA_DontShowOnScreen);
@@ -1482,7 +1518,7 @@ int startGui(int& argc,
   }
 
   // cleanup
-  open_road->removeObserver(main_window);
+  open_road->getDb()->removeObserver(main_window);
 
   if (!exception.hasException()) {
     // don't save anything if exception occured

@@ -751,8 +751,6 @@ inline void dbWireDecoder::flushRule()
 
 dbWireDecoder::OpCode dbWireDecoder::peek() const
 {
-  ZASSERT(_wire);
-
   int idx = _idx;
 
 nextOpCode:
@@ -811,8 +809,6 @@ nextOpCode:
 
 dbWireDecoder::OpCode dbWireDecoder::next()
 {
-  ZASSERT(_wire);
-
 nextOpCode:
 
   if (_idx == (int) _wire->_opcodes.size()) {
@@ -1480,7 +1476,7 @@ void dumpDecoder4Net(dbNet* innet)
         break;
       }
     }  // switch opcode
-  }    // while
+  }  // while
 }
 
 void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)

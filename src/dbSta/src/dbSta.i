@@ -165,12 +165,24 @@ db_network_defined()
 }
 
 void
-report_cell_usage_cmd(odb::dbModule* mod, const bool verbose)
+report_cell_usage_cmd(odb::dbModule* mod,
+                      const bool verbose,
+                      const char *file_name,
+                      const char *stage_name)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
-  sta->report_cell_usage(mod, verbose);
+  sta->reportCellUsage(mod, verbose, file_name, stage_name);
+}
+
+void
+report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta->reportTimingHistogram(num_bins, min_max);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
@@ -191,11 +203,11 @@ write_verilog_cmd(const char *filename,
 }
 
 void
-replace_design_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
+replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  db_network->replaceDesign(mod_inst, module);
+  db_network->replaceHierModule(mod_inst, module);
 }
 
 %} // inline

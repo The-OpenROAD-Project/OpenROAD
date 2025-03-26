@@ -69,7 +69,37 @@ class UniqueInsts
 
   const std::vector<frInst*>& getUnique() const;
   frInst* getUnique(int idx) const;
+  frInst* getUnique(frInst* inst) const;
   bool hasUnique(frInst* inst) const;
+
+  /**
+   * @brief Computes the unique class of an inst.
+   *
+   * @param inst inst to have its unique class computed
+   *
+   * @returns the unique class.
+   */
+  UniqueInsts::InstSet& computeUniqueClass(frInst* inst);
+
+  /**
+   * @brief Adds the instance to the unique instances structures,
+   * inserting new data if it is actually a new unique instance.
+   *
+   * @param inst instance to be added.
+   *
+   * @returns True if the instance is the first of its unique class.
+   */
+  bool addInst(frInst* inst);
+
+  /**
+   * @brief deletes an inst from the unique insts structures
+   *
+   * @param inst instance to be deleted
+   *
+   * @returns the unique inst that represents the unique class. If the class was
+   * deleted returns nullptr
+   */
+  frInst* deleteInst(frInst* inst);
 
   void report() const;
   void setDesign(frDesign* design) { design_ = design; }
@@ -102,17 +132,8 @@ class UniqueInsts
    *
    * @return A vector of track patterns objects.
    */
-  std::vector<frTrackPattern*> getPrefTrackPatterns();
+  void computePrefTrackPatterns();
   void applyPatternsFile(const char* file_path);
-
-  /**
-   * @brief Computes all unique instances data structures
-   *
-   * Proxies computeUnique, only initializing the input data strcutures before.
-   *
-   * @todo This function can probably be eliminated
-   */
-  void initUniqueInstance();
 
   /**
    * @brief Initializes pin access structures
@@ -124,21 +145,16 @@ class UniqueInsts
    * @brief Creates a map from Master instance to LayerRanges.
    *
    * LayerRange represents the lower and upper layer of a Master instance.
-   *
-   * @return A map from Master instance to LayerRange.
    */
-  MasterLayerRange initMasterToPinLayerRange();
+  void initMasterToPinLayerRange();
 
   /**
    * @brief Computes all unique instances data structures.
    *
-   * @param master_to_pin_layer_range Map from a master instance to layerRange.
-   * @param pref_track_patterns Vector of preffered track patterns.
    * Fills: master_OT_to_insts_, inst_to_unique_, inst_to_class_ and
    * unique_to_idx_.
    */
-  void computeUnique(const MasterLayerRange& master_to_pin_layer_range,
-                     const std::vector<frTrackPattern*>& pref_track_patterns);
+  void computeUnique();
 
   /**
    * @brief Raises an error if pin shape is illegal.
@@ -157,7 +173,7 @@ class UniqueInsts
 
   // All the unique instances
   std::vector<frInst*> unique_;
-  // Mapp all instances to their representative unique instance
+  // Maps all instances to their representative unique instance
   std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
   std::unordered_map<frInst*, InstSet*> inst_to_class_;
@@ -170,6 +186,8 @@ class UniqueInsts
            std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
            frBlockObjectComp>
       master_orient_trackoffset_to_insts_;
+  std::vector<frTrackPattern*> pref_track_patterns_;
+  MasterLayerRange master_to_pin_layer_range_;
 };
 
 }  // namespace drt

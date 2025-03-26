@@ -43,6 +43,12 @@ Path Type: max
 
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
+--------------------------------------------------------------------------------------------------------------
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
+    final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      0 | r2/D
+--------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
 [INFO RSZ-0041] Resized 1 instances.
 Repair timing output passed/skipped equivalence test

@@ -35,11 +35,10 @@
 
 #pragma once
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
-
-#include "OpenRoadObserver.hh"
 
 extern "C" {
 struct Tcl_Interp;
@@ -238,14 +237,9 @@ class OpenRoad
   void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 
-  void diffDbs(const char* filename1, const char* filename2, const char* diffs);
-
   void setThreadCount(int threads, bool printInfo = true);
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
-
-  void addObserver(OpenRoadObserver* observer);
-  void removeObserver(OpenRoadObserver* observer);
 
   std::string getExePath() const;
   std::string getDocsPath() const;
@@ -290,8 +284,6 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
-
-  std::set<OpenRoadObserver*> observers_;
 
   int threads_ = 1;
 

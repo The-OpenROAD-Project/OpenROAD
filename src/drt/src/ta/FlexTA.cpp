@@ -35,7 +35,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "FlexTA_graphics.h"
+#include "AbstractTAGraphics.h"
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "global.h"
@@ -322,12 +322,9 @@ void FlexTA::searchRepair(int iter, int size, int offset)
   }
 }
 
-void FlexTA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
+void FlexTA::setDebug(std::unique_ptr<AbstractTAGraphics> ta_graphics)
 {
-  bool on = settings->debugTA;
-  graphics_ = on && FlexTAGraphics::guiActive()
-                  ? std::make_unique<FlexTAGraphics>(settings, design_, db)
-                  : nullptr;
+  graphics_ = std::move(ta_graphics);
 }
 
 int FlexTA::main()

@@ -282,7 +282,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
       Node* ndi = nodes[jstrt + ix];
       x += left[ix];
       currPosn[ix] = x;
+      mgrPtr_->eraseFromGrid(ndi);
       ndi->setLeft(currPosn[ix]);
+      mgrPtr_->paintInGrid(ndi);
       x += width[ix];
       x += right[ix];
 
@@ -306,7 +308,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
     // No improvement.  Restore positions and return.
     for (size_t i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
+      mgrPtr_->eraseFromGrid(ndi);
       ndi->setLeft(origLeft[ndi]);
+      mgrPtr_->paintInGrid(ndi);
     }
     return;
   }
@@ -314,7 +318,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // Put cells at their best positions.
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
+    mgrPtr_->eraseFromGrid(ndi);
     ndi->setLeft(bestPosn[i]);
+    mgrPtr_->paintInGrid(ndi);
   }
 
   // Need to resort.
@@ -336,7 +342,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
       if (std::abs(x - ndi->getLeft()) != 0) {
         shifted = true;
       }
+      mgrPtr_->eraseFromGrid(ndi);
       ndi->setLeft(x);
+      mgrPtr_->paintInGrid(ndi);
       left = ndi->getRight();
 
       const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
@@ -356,12 +364,22 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
         }
       }
     }
+    if (!failed) {
+      for (int i = 0; i < size; i++) {
+        if (mgrPtr_->hasEdgeSpacingViolation(nodes[jstrt + i])) {
+          failed = true;
+          break;
+        }
+      }
+    }
 
     if (failed) {
       // Restore original placement.
       for (int i = 0; i < size; i++) {
         Node* ndi = nodes[jstrt + i];
+        mgrPtr_->eraseFromGrid(ndi);
         ndi->setLeft(origLeft[ndi]);
+        mgrPtr_->paintInGrid(ndi);
       }
       mgrPtr_->sortCellsInSeg(segId, jstrt, jstop + 1);
     }
@@ -381,6 +399,9 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
   double cost = 0.;
   for (int i = istrt; i <= istop; i++) {
     const Node* ndi = nodes[i];
+    if (mgrPtr_->hasEdgeSpacingViolation(ndi)) {
+      return std::numeric_limits<double>::max();
+    }
 
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       const Pin* pini = ndi->getPins()[pi];

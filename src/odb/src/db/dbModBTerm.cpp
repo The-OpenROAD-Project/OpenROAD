@@ -36,7 +36,6 @@
 #include "dbBlock.h"
 #include "dbBusPort.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
 #include "dbModITerm.h"
@@ -89,59 +88,10 @@ bool _dbModBTerm::operator<(const _dbModBTerm& rhs) const
   return true;
 }
 
-void _dbModBTerm::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbModBTerm& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags);
-  DIFF_FIELD(_parent_moditerm);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_modnet);
-  DIFF_FIELD(_next_net_modbterm);
-  DIFF_FIELD(_prev_net_modbterm);
-  DIFF_FIELD(_busPort);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_prev_entry);
-  DIFF_END
-}
-
-void _dbModBTerm::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags);
-  DIFF_OUT_FIELD(_parent_moditerm);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_modnet);
-  DIFF_OUT_FIELD(_next_net_modbterm);
-  DIFF_OUT_FIELD(_prev_net_modbterm);
-  DIFF_OUT_FIELD(_busPort);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_prev_entry);
-
-  DIFF_END
-}
-
 _dbModBTerm::_dbModBTerm(_dbDatabase* db)
 {
   _name = nullptr;
   _flags = 0;
-}
-
-_dbModBTerm::_dbModBTerm(_dbDatabase* db, const _dbModBTerm& r)
-{
-  _name = r._name;
-  _flags = r._flags;
-  _parent_moditerm = r._parent_moditerm;
-  _parent = r._parent;
-  _modnet = r._modnet;
-  _next_net_modbterm = r._next_net_modbterm;
-  _prev_net_modbterm = r._prev_net_modbterm;
-  _busPort = r._busPort;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModBTerm& obj)
@@ -222,6 +172,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModBTerm& obj)
     stream << obj._prev_entry;
   }
   return stream;
+}
+
+void _dbModBTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbModBTerm::~_dbModBTerm()
@@ -369,7 +329,9 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(modbterm->getId());
+    block->_journal->pushParam(module->getId());
     block->_journal->endAction();
   }
 
@@ -419,6 +381,14 @@ void dbModBTerm::disconnect()
   }
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(_modbterm->_modnet);
 
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(_modbterm->getId());
+    block->_journal->pushParam(_modbterm->_modnet);
+    block->_journal->endAction();
+  }
+
   if (_modbterm->_prev_net_modbterm == 0) {
     // degenerate case, head element, need to update net starting point
     // and if next is null then make generate empty list
@@ -440,6 +410,7 @@ void dbModBTerm::disconnect()
   //
   _modbterm->_next_net_modbterm = 0;
   _modbterm->_prev_net_modbterm = 0;
+  _modbterm->_modnet = 0;
 }
 
 bool dbModBTerm::isBusPort() const
@@ -474,7 +445,20 @@ void dbModBTerm::destroy(dbModBTerm* val)
 {
   _dbModBTerm* _modbterm = (_dbModBTerm*) val;
   _dbBlock* block = (_dbBlock*) (_modbterm->getOwner());
+
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);
+
+  if (block->_journal) {
+    //    printf("LOG delete dbModBTerm %s %d\n",
+    //	   val -> getName(), val -> getId());
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModBTermObj);
+    block->_journal->pushParam(val->getName());
+    block->_journal->pushParam(val->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->endAction();
+  }
+
   uint prev = _modbterm->_prev_entry;
   uint next = _modbterm->_next_entry;
   if (prev == 0) {
@@ -491,6 +475,7 @@ void dbModBTerm::destroy(dbModBTerm* val)
   }
   _modbterm->_prev_entry = 0;
   _modbterm->_next_entry = 0;
+
   module->_modbterm_hash.erase(val->getName());
   block->_modbterm_tbl->destroy(_modbterm);
 }

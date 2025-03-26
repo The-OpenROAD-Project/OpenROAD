@@ -172,72 +172,6 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   return true;
 }
 
-void _dbMaster::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbMaster& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._frozen);
-  DIFF_FIELD(_flags._x_symmetry);
-  DIFF_FIELD(_flags._y_symmetry);
-  DIFF_FIELD(_flags._R90_symmetry);
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_x);
-  DIFF_FIELD(_y);
-  DIFF_FIELD(_height);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_mterm_cnt);
-  DIFF_FIELD(_id);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_leq);
-  DIFF_FIELD(_eeq);
-  DIFF_FIELD(_obstructions);
-  DIFF_FIELD(_poly_obstructions);
-  DIFF_FIELD(_lib_for_site);
-  DIFF_FIELD(_site);
-  DIFF_HASH_TABLE(_mterm_hash);
-  DIFF_TABLE_NO_DEEP(_mterm_tbl);
-  DIFF_TABLE_NO_DEEP(_mpin_tbl);
-  DIFF_TABLE_NO_DEEP(_box_tbl);
-  DIFF_TABLE_NO_DEEP(_poly_box_tbl);
-  DIFF_TABLE_NO_DEEP(_antenna_pin_model_tbl);
-  DIFF_TABLE_NO_DEEP(edge_types_tbl_);
-  DIFF_END
-}
-
-void _dbMaster::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._frozen);
-  DIFF_OUT_FIELD(_flags._x_symmetry);
-  DIFF_OUT_FIELD(_flags._y_symmetry);
-  DIFF_OUT_FIELD(_flags._R90_symmetry);
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_x);
-  DIFF_OUT_FIELD(_y);
-  DIFF_OUT_FIELD(_height);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_mterm_cnt);
-  DIFF_OUT_FIELD(_id);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_leq);
-  DIFF_OUT_FIELD(_eeq);
-  DIFF_OUT_FIELD(_obstructions);
-  DIFF_OUT_FIELD(_poly_obstructions);
-  DIFF_OUT_FIELD(_lib_for_site);
-  DIFF_OUT_FIELD(_site);
-  DIFF_OUT_HASH_TABLE(_mterm_hash);
-  DIFF_OUT_TABLE_NO_DEEP(_mterm_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_mpin_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_box_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_poly_box_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_antenna_pin_model_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(edge_types_tbl_);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbMaster - Methods
@@ -301,55 +235,6 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   _mterm_hash.setTable(_mterm_tbl);
 
   _sta_cell = nullptr;
-}
-
-_dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
-    : _flags(m._flags),
-      _x(m._x),
-      _y(m._y),
-      _height(m._height),
-      _width(m._width),
-      _mterm_cnt(m._mterm_cnt),
-      _id(m._id),
-      _name(nullptr),
-      _next_entry(m._next_entry),
-      _leq(m._leq),
-      _eeq(m._eeq),
-      _obstructions(m._obstructions),
-      _poly_obstructions(m._poly_obstructions),
-      _lib_for_site(m._lib_for_site),
-      _site(m._site),
-      _mterm_hash(m._mterm_hash),
-      _sta_cell(m._sta_cell)
-{
-  if (m._name) {
-    _name = strdup(m._name);
-    ZALLOCATED(_name);
-  }
-
-  _mterm_tbl = new dbTable<_dbMTerm>(db, this, *m._mterm_tbl);
-
-  _mpin_tbl = new dbTable<_dbMPin>(db, this, *m._mpin_tbl);
-
-  _box_tbl = new dbTable<_dbBox>(db, this, *m._box_tbl);
-
-  _poly_box_tbl = new dbTable<_dbPolygon>(db, this, *m._poly_box_tbl);
-
-  _antenna_pin_model_tbl = new dbTable<_dbTechAntennaPinModel>(
-      db, this, *m._antenna_pin_model_tbl);
-
-  edge_types_tbl_
-      = new dbTable<_dbMasterEdgeType>(db, this, *m.edge_types_tbl_);
-
-  _box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, true);
-
-  _pbox_itr = new dbPolygonItr(_poly_box_tbl);
-
-  _pbox_box_itr = new dbBoxItr(_box_tbl, _poly_box_tbl, false);
-
-  _mpin_itr = new dbMPinItr(_mpin_tbl);
-
-  _mterm_hash.setTable(_mterm_tbl);
 }
 
 _dbMaster::~_dbMaster()
@@ -973,6 +858,21 @@ bool dbMaster::isCoreAutoPlaceable()
   }
   // gcc warning
   return false;
+}
+
+void _dbMaster::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["mterm_hash"].add(_mterm_hash);
+  _mterm_tbl->collectMemInfo(info.children_["mterm"]);
+  _mpin_tbl->collectMemInfo(info.children_["mpin"]);
+  _box_tbl->collectMemInfo(info.children_["box"]);
+  _poly_box_tbl->collectMemInfo(info.children_["poly_box"]);
+  _antenna_pin_model_tbl->collectMemInfo(info.children_["antenna_pin_model"]);
+  edge_types_tbl_->collectMemInfo(info.children_["edge_types"]);
 }
 
 }  // namespace odb

@@ -44,10 +44,11 @@
 #include <memory>
 #include <vector>
 
+#include "dpl/Grid.h"
+#include "journal.h"
 #include "network.h"
 #include "rectangle.h"
 #include "utility.h"
-
 namespace utl {
 class Logger;
 }
@@ -65,6 +66,39 @@ class Architecture;
 class DetailedSeg;
 class Network;
 class RoutingParams;
+using dpl::Grid;
+
+////////////////////////////////////////////////////////////////////////////////
+// Structures.
+////////////////////////////////////////////////////////////////////////////////
+
+enum class BlockageType
+{
+  Placement,
+  Routing,
+  FixedInstance,
+  None
+};
+
+struct Blockage
+{
+  double x_min;
+  double x_max;
+  int pad_left;
+  int pad_right;
+  BlockageType type;
+
+  Blockage(double xmin, double xmax, int pad_l, int pad_r, BlockageType t)
+      : x_min(xmin), x_max(xmax), pad_left(pad_l), pad_right(pad_r), type(t)
+  {
+  }
+  double getXMin() const { return x_min; }
+  double getXMax() const { return x_max; }
+  double getPaddedXMin() const { return x_min - pad_left; }
+  double getPaddedXMax() const { return x_max + pad_right; }
+  bool isFixedInstance() const { return type == BlockageType::FixedInstance; }
+  bool isPlacement() const { return type == BlockageType::Placement; }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -75,7 +109,10 @@ class RoutingParams;
 class DetailedMgr
 {
  public:
-  DetailedMgr(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedMgr(Architecture* arch,
+              Network* network,
+              RoutingParams* rt,
+              Grid* grid);
   virtual ~DetailedMgr();
 
   void cleanup();
@@ -129,6 +166,7 @@ class DetailedMgr
   void assignCellsToSegments(const std::vector<Node*>& nodesToConsider);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
+  bool hasEdgeSpacingViolation(const Node* node) const;
   int checkSiteAlignment();
   int checkRowAlignment();
   int checkRegionAssignment();
@@ -224,15 +262,6 @@ class DetailedMgr
   void shuffle(std::vector<Node*>& nodes);
   int getRandom(int limit) const { return (*rng_)() % limit; }
 
-  const std::vector<int>& getCurLeft() const { return curLeft_; }
-  const std::vector<int>& getCurBottom() const { return curBottom_; }
-  const std::vector<unsigned>& getCurOri() const { return curOri_; }
-  const std::vector<int>& getNewLeft() const { return newLeft_; }
-  const std::vector<int>& getNewBottom() const { return newBottom_; }
-  const std::vector<unsigned>& getNewOri() const { return newOri_; }
-  const std::vector<Node*>& getMovedNodes() const { return movedNodes_; }
-  int getNMoved() const { return nMoved_; }
-
   void getSpaceAroundCell(int seg,
                           int ix,
                           double& space,
@@ -268,6 +297,12 @@ class DetailedMgr
   int getMoveLimit() { return moveLimit_; }
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
+  // Journal operations
+  const Journal& getJournal() const { return journal; }
+  void eraseFromGrid(Node* node);
+  void paintInGrid(Node* node);
+  void undo(const JournalAction& action, bool positions_only = false);
+  void redo(const JournalAction& action, bool positions_only = false);
   struct compareNodesX
   {
     // Needs cell centers.
@@ -289,6 +324,17 @@ class DetailedMgr
  private:
   struct compareBlockages
   {
+    bool operator()(const Blockage& i1, const Blockage& i2) const
+    {
+      if (i1.getPaddedXMin() == i2.getPaddedXMin()) {
+        return i1.getPaddedXMax() < i2.getPaddedXMax();
+      }
+      return i1.getPaddedXMin() < i2.getPaddedXMin();
+    }
+  };
+
+  struct compareIntervals
+  {
     bool operator()(std::pair<double, double> i1,
                     std::pair<double, double> i2) const
     {
@@ -308,6 +354,7 @@ class DetailedMgr
   };
 
   // Different routines for trying moves and swaps.
+  bool verifyMove();
   bool tryMove1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
   bool tryMove2(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
   bool tryMove3(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
@@ -347,6 +394,8 @@ class DetailedMgr
   Architecture* arch_;
   Network* network_;
   RoutingParams* rt_;
+  Grid* grid_;
+  Journal journal;
 
   // For output.
   utl::Logger* logger_ = nullptr;
@@ -365,7 +414,7 @@ class DetailedMgr
   std::vector<Node*> fixedCells_;  // Fixed; filler, macros, temporary, etc.
 
   // Blockages and segments.
-  std::vector<std::vector<std::pair<double, double>>> blockages_;
+  std::vector<std::vector<Blockage>> blockages_;
   std::vector<std::vector<Node*>> cellsInSeg_;
   std::vector<std::vector<DetailedSeg*>> segsInRow_;
   std::vector<DetailedSeg*> segments_;
@@ -393,16 +442,6 @@ class DetailedMgr
   std::vector<Rectangle> boxes_;
 
   // For generating a move list... (size = moveLimit_)
-  std::vector<int> curLeft_;
-  std::vector<int> curBottom_;
-  std::vector<int> newLeft_;
-  std::vector<int> newBottom_;
-  std::vector<unsigned> curOri_;
-  std::vector<unsigned> newOri_;
-  std::vector<std::vector<int>> curSeg_;
-  std::vector<std::vector<int>> newSeg_;
-  std::vector<Node*> movedNodes_;
-  int nMoved_;
   int moveLimit_;
 };
 

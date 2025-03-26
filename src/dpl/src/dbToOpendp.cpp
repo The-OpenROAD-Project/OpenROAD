@@ -38,9 +38,10 @@
 #include <string>
 #include <unordered_set>
 
-#include "Grid.h"
 #include "Objects.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -59,11 +60,11 @@ void Opendp::importDb()
   block_ = db_->getChip()->getBlock();
   grid_->initBlock(block_);
   have_fillers_ = false;
-  have_one_site_cells_ = false;
+
+  disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
 
   importClear();
   grid_->examineRows(block_);
-  checkOneSiteDbMaster();
   makeCellEdgeSpacingTable();
   makeMacros();
   makeCells();
@@ -78,24 +79,6 @@ void Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid();
   have_multi_row_cells_ = false;
-}
-
-void Opendp::checkOneSiteDbMaster()
-{
-  vector<dbMaster*> masters;
-  auto db_libs = db_->getLibs();
-  for (auto db_lib : db_libs) {
-    if (have_one_site_cells_) {
-      break;
-    }
-    auto masters = db_lib->getMasters();
-    for (auto db_master : masters) {
-      if (isOneSiteCell(db_master)) {
-        have_one_site_cells_ = true;
-        break;
-      }
-    }
-  }
 }
 
 void Opendp::makeMacros()
@@ -320,19 +303,20 @@ void Opendp::makeCells()
     if (db_master->isCoreAutoPlaceable()) {
       cells_.emplace_back();
       Cell& cell = cells_.back();
-      cell.db_inst_ = db_inst;
+      cell.setDbInst(db_inst);
       db_inst_map_[db_inst] = &cell;
 
       Rect bbox = getBbox(db_inst);
-      cell.width_ = DbuX{bbox.dx()};
-      cell.height_ = DbuY{bbox.dy()};
-      cell.x_ = DbuX{bbox.xMin()};
-      cell.y_ = DbuY{bbox.yMin()};
-      cell.orient_ = db_inst->getOrient();
+      cell.setWidth(DbuX{bbox.dx()});
+      cell.setHeight(DbuY{bbox.dy()});
+      cell.setLeft(DbuX{bbox.xMin()});
+      cell.setBottom(DbuY{bbox.yMin()});
+      cell.setOrient(db_inst->getOrient());
       // Cell is already placed if it is FIXED.
-      cell.is_placed_ = cell.isFixed();
+      cell.setPlaced(cell.isFixed());
 
       Master& master = db_master_map_[db_master];
+      cell.setMaster(&master);
       // We only want to set this if we have multi-row cells to
       // place and not whenever we see a placed block.
       if (master.is_multi_row && db_master->isCore()) {
@@ -393,7 +377,7 @@ void Opendp::makeGroups()
     if (db_group->getRegion()) {
       std::unordered_set<DbuY> unique_heights;
       for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->height_);
+        unique_heights.insert(db_inst_map_[db_inst]->dy());
       }
       reserve_size += unique_heights.size();
     }
@@ -409,7 +393,7 @@ void Opendp::makeGroups()
     std::set<DbuY> unique_heights;
     map<DbuY, Group*> cell_height_to_group_map;
     for (auto db_inst : db_group->getInsts()) {
-      unique_heights.insert(db_inst_map_[db_inst]->height_);
+      unique_heights.insert(db_inst_map_[db_inst]->dy());
     }
     int index = 0;
     for (auto height : unique_heights) {
@@ -443,9 +427,9 @@ void Opendp::makeGroups()
 
     for (auto db_inst : db_group->getInsts()) {
       Cell* cell = db_inst_map_[db_inst];
-      Group* group = cell_height_to_group_map[cell->height_];
+      Group* group = cell_height_to_group_map[cell->dy()];
       group->cells_.push_back(cell);
-      cell->group_ = group;
+      cell->setGroup(group);
     }
   }
 }

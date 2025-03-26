@@ -47,7 +47,6 @@ class _dbTechAntennaAreaElement;
 class _dbTechAntennaPinModel;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbMTermFlags
 {
@@ -83,13 +82,11 @@ class _dbMTerm : public _dbObject
   friend dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm);
 
   _dbMTerm(_dbDatabase* db);
-  _dbMTerm(_dbDatabase* db, const _dbMTerm& m);
   ~_dbMTerm();
 
   bool operator==(const _dbMTerm& rhs) const;
   bool operator!=(const _dbMTerm& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbMTerm& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbMTerm::_dbMTerm(_dbDatabase*)

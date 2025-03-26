@@ -43,9 +43,10 @@ class _dbInst;
 class _dbBlock;
 class _dbBTerm;
 class _dbDatabase;
+class dbBlock;
+class dbInst;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 //
 // Hidden proxy object hierarchy connectivity.
@@ -62,8 +63,7 @@ class _dbHier : public _dbObject
   ~_dbHier();
   bool operator==(const _dbHier& rhs) const;
   bool operator!=(const _dbHier& rhs) const { return !operator==(rhs); }
-  void differences(dbDiff& diff, const char* field, const _dbHier& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   static _dbHier* create(dbInst* inst, dbBlock* child);
   static void destroy(_dbHier* hdr);

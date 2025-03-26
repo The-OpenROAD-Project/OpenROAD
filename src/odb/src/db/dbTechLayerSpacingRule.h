@@ -43,7 +43,6 @@ class _dbDatabase;
 class _dbTechLayer;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 class _dbTechLayerSpacingRule : public _dbObject
 {
@@ -99,10 +98,7 @@ class _dbTechLayerSpacingRule : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerSpacingRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbTechLayerSpacingRule::_dbTechLayerSpacingRule(
@@ -165,10 +161,7 @@ class _dbTechV55InfluenceEntry : public _dbObject
   {
     return !operator==(rhs);
   }
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechV55InfluenceEntry& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 inline _dbTechV55InfluenceEntry::_dbTechV55InfluenceEntry(

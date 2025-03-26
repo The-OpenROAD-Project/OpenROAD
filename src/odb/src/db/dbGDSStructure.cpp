@@ -34,7 +34,6 @@
 #include "dbGDSStructure.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
 #include "dbGDSBox.h"
@@ -86,37 +85,6 @@ bool _dbGDSStructure::operator<(const _dbGDSStructure& rhs) const
   return true;
 }
 
-void _dbGDSStructure::differences(dbDiff& diff,
-                                  const char* field,
-                                  const _dbGDSStructure& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_TABLE(boundaries_);
-  DIFF_TABLE(boxes_);
-  DIFF_TABLE(paths_);
-  DIFF_TABLE(srefs_);
-  DIFF_TABLE(arefs_);
-  DIFF_TABLE(texts_);
-  DIFF_END
-}
-
-void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_TABLE(boundaries_);
-  DIFF_OUT_TABLE(boxes_);
-  DIFF_OUT_TABLE(paths_);
-  DIFF_OUT_TABLE(srefs_);
-  DIFF_OUT_TABLE(arefs_);
-  DIFF_OUT_TABLE(texts_);
-
-  DIFF_END
-}
-
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 {
   _name = nullptr;
@@ -135,18 +103,6 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSARefObj);
   texts_ = new dbTable<_dbGDSText>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
-}
-
-_dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  boundaries_ = new dbTable<_dbGDSBoundary>(db, this, *r.boundaries_);
-  boxes_ = new dbTable<_dbGDSBox>(db, this, *r.boxes_);
-  paths_ = new dbTable<_dbGDSPath>(db, this, *r.paths_);
-  srefs_ = new dbTable<_dbGDSSRef>(db, this, *r.srefs_);
-  arefs_ = new dbTable<_dbGDSARef>(db, this, *r.arefs_);
-  texts_ = new dbTable<_dbGDSText>(db, this, *r.texts_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
@@ -194,6 +150,27 @@ dbObjectTable* _dbGDSStructure::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbGDSStructure::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  boundaries_->collectMemInfo(info.children_["boundaries_"]);
+
+  boxes_->collectMemInfo(info.children_["boxes_"]);
+
+  paths_->collectMemInfo(info.children_["paths_"]);
+
+  srefs_->collectMemInfo(info.children_["srefs_"]);
+
+  arefs_->collectMemInfo(info.children_["arefs_"]);
+
+  texts_->collectMemInfo(info.children_["texts_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbGDSStructure::~_dbGDSStructure()

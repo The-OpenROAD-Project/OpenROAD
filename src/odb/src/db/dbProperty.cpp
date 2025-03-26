@@ -105,36 +105,6 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   return true;
 }
 
-void _dbProperty::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbProperty& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_flags._owner_type);
-  DIFF_FIELD(_name);
-
-  if (_flags._owner_type
-      != dbDatabaseObj)  // database owners are never the same...
-  {
-    DIFF_FIELD(_owner);
-  }
-
-  DIFF_FIELD(_next);
-  DIFF_END
-}
-
-void _dbProperty::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_flags._owner_type);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_owner);
-  DIFF_OUT_FIELD(_next);
-  DIFF_END
-}
-
 dbOStream& operator<<(dbOStream& stream, const _dbProperty& prop)
 {
   uint* bit_field = (uint*) &prop._flags;
@@ -690,6 +660,16 @@ std::string dbProperty::writeProperties(dbObject* object)
   }
 
   return out.str();
+}
+
+void _dbProperty::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  if (_flags._type == DB_STRING_PROP) {
+    info.children_["string"].add(std::get<std::string>(_value));
+  }
 }
 
 /* Sample Code to access dbTechLayer properties

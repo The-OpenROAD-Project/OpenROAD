@@ -39,6 +39,7 @@
 #include <cmath>
 #include <iostream>
 #include <random>
+#include <unordered_set>
 #include <utility>
 
 #include "fft.h"
@@ -81,14 +82,14 @@ static float fastExp(float exp);
 ////////////////////////////////////////////////
 // GCell
 
-GCell::GCell(Instance* inst)
+GCell::GCell(Instance* inst) : GCell(std::vector<Instance*>{inst})
 {
-  setInstance(inst);
 }
 
 GCell::GCell(const std::vector<Instance*>& insts)
 {
-  setClusteredInstance(insts);
+  insts_ = insts;
+  updateLocations();
 }
 
 GCell::GCell(const int cx, const int cy, const int dx, const int dy)
@@ -97,22 +98,32 @@ GCell::GCell(const int cx, const int cy, const int dx, const int dy)
   dLy_ = ly_ = cy - dy / 2;
   dUx_ = ux_ = cx + dx / 2;
   dUy_ = uy_ = cy + dy / 2;
-  setFiller();
 }
 
-void GCell::clearInstances()
+bool GCell::isLocked() const
 {
-  insts_.clear();
+  return std::any_of(insts_.begin(), insts_.end(), [](Instance* inst) {
+    return inst->isLocked();
+  });
 }
 
-void GCell::setInstance(Instance* inst)
+void GCell::lock()
 {
-  insts_.push_back(inst);
-  // density coordi has the same center points.
-  dLx_ = lx_ = inst->lx();
-  dLy_ = ly_ = inst->ly();
-  dUx_ = ux_ = inst->ux();
-  dUy_ = uy_ = inst->uy();
+  for (Instance* inst : insts_) {
+    inst->lock();
+  }
+}
+
+std::string GCell::name() const
+{
+  if (insts_.empty()) {
+    return "fill";
+  }
+  std::string name = insts_[0]->dbInst()->getConstName();
+  if (insts_.size() > 1) {
+    name += "-(Cluster)";
+  }
+  return name;
 }
 
 void GCell::setAllLocations(int lx, int ly, int ux, int uy)
@@ -123,24 +134,40 @@ void GCell::setAllLocations(int lx, int ly, int ux, int uy)
   dUy_ = uy_ = uy;
 }
 
-Instance* GCell::instance() const
-{
-  return insts_.empty() ? nullptr : *insts_.begin();
-}
-
 void GCell::addGPin(GPin* gPin)
 {
   gPins_.push_back(gPin);
 }
 
-// do nothing
-void GCell::setFiller()
+void GCell::updateLocations()
 {
-}
-
-void GCell::setClusteredInstance(const std::vector<Instance*>& insts)
-{
-  insts_ = insts;
+  odb::Rect bbox;
+  if (insts_.size() == 1) {
+    Instance* inst = insts_[0];
+    bbox.init(inst->lx(), inst->ly(), inst->ux(), inst->uy());
+  } else {
+    bbox.mergeInit();
+    int64_t inst_area = 0;
+    for (Instance* inst : insts_) {
+      inst_area += inst->area();
+      bbox.merge({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
+    }
+    odb::Rect core_area = insts_[0]->dbInst()->getBlock()->getCoreArea();
+    const int center_x = bbox.xCenter();
+    const int center_y = bbox.yCenter();
+    const double aspect_ratio = core_area.dx() / (double) core_area.dy();
+    const double height = std::sqrt(inst_area / aspect_ratio);
+    const double width = height * aspect_ratio;
+    bbox.init(center_x - width / 2,
+              center_y - height / 2,
+              center_x + width / 2,
+              center_y + height / 2);
+  }
+  // density coordi has the same center points.
+  dLx_ = lx_ = bbox.xMin();
+  dLy_ = ly_ = bbox.yMin();
+  dUx_ = ux_ = bbox.xMax();
+  dUy_ = uy_ = bbox.yMax();
 }
 
 void GCell::setCenterLocation(int cx, int cy)
@@ -228,12 +255,14 @@ void GCell::setGradientY(float gradientY)
   gradientY_ = gradientY;
 }
 
-bool GCell::isInstance() const
+bool GCell::contains(odb::dbInst* db_inst) const
 {
-  return (insts_.size() == 1);
+  return std::any_of(insts_.begin(), insts_.end(), [=](Instance* inst) {
+    return inst->dbInst() == db_inst;
+  });
 }
 
-bool GCell::isClusteredInstance() const
+bool GCell::isInstance() const
 {
   return !insts_.empty();
 }
@@ -248,7 +277,7 @@ bool GCell::isMacroInstance() const
   if (!isInstance()) {
     return false;
   }
-  return instance()->isMacro();
+  return insts_[0]->isMacro();
 }
 
 bool GCell::isStdInstance() const
@@ -256,7 +285,7 @@ bool GCell::isStdInstance() const
   if (!isInstance()) {
     return false;
   }
-  return !instance()->isMacro();
+  return !insts_[0]->isMacro();
 }
 
 void GCell::print(utl::Logger* logger) const
@@ -482,7 +511,7 @@ void GPin::print(utl::Logger* log) const
   }
   if (gCell_) {
     if (gCell_->isInstance()) {
-      log->report("GCell*: {}", gCell_->instance()->dbInst()->getName());
+      log->report("GCell*: {}", gCell_->name());
     } else {
       log->report("GCell of gpin is filler!");
     }
@@ -1000,20 +1029,35 @@ void NesterovPlaceVars::reset()
 NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
                                        std::shared_ptr<PlacerBaseCommon> pbc,
                                        utl::Logger* log,
-                                       int num_threads)
+                                       int num_threads,
+                                       const Clusters& clusters)
     : num_threads_{num_threads}
 {
   assert(omp_get_thread_num() == 0);
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
-  deltaArea_ = 0;
+  delta_area_ = 0;
+  new_gcells_count_ = 0;
 
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
 
-  for (auto& inst : pbc_->placeInsts()) {
-    gCellStor_.emplace_back(inst);
+  std::unordered_set<Instance*> in_cluster;
+  for (const Cluster& cluster : clusters) {
+    std::vector<Instance*> insts;
+    for (odb::dbInst* db_inst : cluster) {
+      Instance* inst = pbc_->dbToPb(db_inst);
+      in_cluster.insert(inst);
+      insts.emplace_back(inst);
+    }
+    gCellStor_.emplace_back(insts);
+  }
+
+  for (Instance* inst : pbc_->placeInsts()) {
+    if (in_cluster.find(inst) == in_cluster.end()) {
+      gCellStor_.emplace_back(inst);
+    }
   }
 
   // TODO:
@@ -1042,8 +1086,10 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
       continue;
     }
     gCells_.push_back(&gCell);
-    gCellMap_[gCell.instance()] = &gCell;
-    db_inst_map_[gCell.instance()->dbInst()] = i;
+    for (Instance* inst : gCell.insts()) {
+      gCellMap_[inst] = &gCell;
+      db_inst_map_[inst->dbInst()] = i;
+    }
   }
 
   // gPin ptr init
@@ -1075,8 +1121,10 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
       continue;
     }
 
-    for (auto& pin : gCell.instance()->pins()) {
-      gCell.addGPin(pbToNb(pin));
+    for (Instance* inst : gCell.insts()) {
+      for (auto& pin : inst->pins()) {
+        gCell.addGPin(pbToNb(pin));
+      }
     }
   }
 
@@ -1188,7 +1236,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MinX updated: {} {:g}",
-                     gPin->gCell()->instance()->dbInst()->getConstName(),
+                     gPin->gCell()->name(),
                      gPin->minExpSumX());
         }
       }
@@ -1204,7 +1252,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MaxX updated: {} {:g}",
-                     gPin->gCell()->instance()->dbInst()->getConstName(),
+                     gPin->gCell()->name(),
                      gPin->maxExpSumX());
         }
       }
@@ -1220,7 +1268,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MinY updated: {} {:g}",
-                     gPin->gCell()->instance()->dbInst()->getConstName(),
+                     gPin->gCell()->name(),
                      gPin->minExpSumY());
         }
       }
@@ -1236,7 +1284,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MaxY updated: {} {:g}",
-                     gPin->gCell()->instance()->dbInst()->getConstName(),
+                     gPin->gCell()->name(),
                      gPin->maxExpSumY());
         }
       }
@@ -1276,7 +1324,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
                "getGradientWA",
                1,
                "{}, gradient: {:g} {:g}",
-               gCell->instance()->dbInst()->getName(),
+               gCell->name(),
                gradientPair.x,
                gradientPair.y);
   }
@@ -1372,14 +1420,15 @@ void NesterovBaseCommon::updateDbGCells()
   for (auto it = gCells().begin(); it < gCells().end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isInstance()) {
-      odb::dbInst* inst = gCell->instance()->dbInst();
-      inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      for (Instance* inst : gCell->insts()) {
+        odb::dbInst* db_inst = inst->dbInst();
+        db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
-      Instance* replInst = gCell->instance();
-      // pad awareness on X coordinates
-      inst->setLocation(gCell->dCx() - replInst->dx() / 2
-                            + pbc_->siteSizeX() * pbc_->padLeft(),
-                        gCell->dCy() - replInst->dy() / 2);
+        // pad awareness on X coordinates
+        db_inst->setLocation(
+            gCell->dCx() - inst->dx() / 2 + pbc_->siteSizeX() * pbc_->padLeft(),
+            gCell->dCy() - inst->dy() / 2);
+      }
     }
   }
   if (db_cbk_) {
@@ -1425,8 +1474,10 @@ void NesterovBaseCommon::fixPointers()
       continue;
     }
     gCells_.push_back(&gCell);
-    gCellMap_[gCell.instance()] = &gCell;
-    db_inst_map_[gCell.instance()->dbInst()] = i;
+    for (Instance* inst : gCell.insts()) {
+      gCellMap_[inst] = &gCell;
+      db_inst_map_[inst->dbInst()] = i;
+    }
   }
 
   gPins_.clear();
@@ -1458,20 +1509,22 @@ void NesterovBaseCommon::fixPointers()
       continue;
     }
     gCell.clearGPins();
-    for (odb::dbITerm* iterm : gCell.instance()->dbInst()->getITerms()) {
-      if (isValidSigType(iterm->getSigType())) {
-        auto it = db_iterm_map_.find(iterm);
-        if (it != db_iterm_map_.end()) {
-          size_t gpin_index = it->second;
-          gCell.addGPin(&gPinStor_[gpin_index]);
-        } else {
-          debugPrint(log_,
-                     GPL,
-                     "callbacks",
-                     1,
-                     "warning: gpin nullptr (from iterm:{}) in gcell:{}",
-                     iterm->getName(),
-                     gCell.instance()->dbInst()->getName());
+    for (Instance* inst : gCell.insts()) {
+      for (odb::dbITerm* iterm : inst->dbInst()->getITerms()) {
+        if (isValidSigType(iterm->getSigType())) {
+          auto it = db_iterm_map_.find(iterm);
+          if (it != db_iterm_map_.end()) {
+            size_t gpin_index = it->second;
+            gCell.addGPin(&gPinStor_[gpin_index]);
+          } else {
+            debugPrint(log_,
+                       GPL,
+                       "callbacks",
+                       1,
+                       "warning: gpin nullptr (from iterm:{}) in gcell:{}",
+                       iterm->getName(),
+                       inst->dbInst()->getName());
+          }
         }
       }
     }
@@ -1557,11 +1610,15 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
 
     GCell* gCell = nbc_->pbToNb(pb_inst);
+    if (pb_inst != gCell->insts()[0]) {
+      // Only process the first cluster once
+      continue;
+    }
 
-    pb_inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
-
-    gCell->clearInstances();
-    gCell->setInstance(pb_inst);
+    for (Instance* inst : gCell->insts()) {
+      inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
+    }
+    gCell->updateLocations();
     gCells_.emplace_back(GCellHandle(nbc_.get(), nbc_->getGCellIndex(gCell)));
   }
 
@@ -1650,7 +1707,7 @@ void NesterovBase::initFillerGCells()
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
-  // if(pb_->group() == NULL) {
+  // if(pb_->group() == nullptr) {
   //   // nonPlaceInstsArea should not have density downscaling!!!
   //   whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
   // } else {
@@ -2449,7 +2506,7 @@ void NesterovBase::updateNextIter(const int iter)
   // Prevent locked instances from moving
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t k = 0; k < gCells_.size(); ++k) {
-    if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
+    if (gCells_[k]->isInstance() && gCells_[k]->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
       nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
       nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
@@ -2657,7 +2714,7 @@ bool NesterovBase::checkConvergence()
       if (!gCell->isInstance()) {
         continue;
       }
-      gCell->instance()->lock();
+      gCell->lock();
     }
 
     isConverged_ = true;
@@ -2681,7 +2738,7 @@ bool NesterovBase::checkDivergence()
   return isDiverged_;
 }
 
-bool NesterovBase::revertDivergence()
+bool NesterovBase::revertToSnapshot()
 {
   if (isConverged_) {
     return true;
@@ -2714,13 +2771,13 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 {
   GCell* gcell = getGCellByIndex(db_inst_map_.find(db_inst)->second);
-  if (gcell->instance()->dbInst()->getName() != db_inst->getName()) {
+  if (!gcell->contains(db_inst)) {
     debugPrint(log_,
                GPL,
                "callbacks",
                1,
                "warning: gcell {} found in db_inst_map_ as {}",
-               gcell->instance()->dbInst()->getName(),
+               gcell->name(),
                db_inst->getName());
   }
 
@@ -2731,7 +2788,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
   int64_t areaChange = newCellArea - prevCellArea;
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -2867,12 +2924,14 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();
-  gCellMap_[gcell_ptr->instance()] = gcell_ptr;
+  // We know there is exactly one inst in the gcell we just created
+  gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_map_[db_inst] = gCellStor_.size() - 1;
 
   int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
                        * static_cast<int64_t>(gcell_ptr->dy());
-  deltaArea_ += areaChange;
+  delta_area_ += areaChange;
+  new_gcells_count_++;
   return gCellStor_.size() - 1;
 }
 
@@ -2920,21 +2979,13 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
     swapAndPopParallelVectors(gcell_index, last_index);
     gCells_.pop_back();
     db_inst_index_map_.erase(db_it);
-  } else {
-    log_->report(
-        "warning: db_inst not found in db_inst_index_map_ for instance: {}",
-        db_inst->getName());
   }
 }
 
 void NesterovBaseCommon::destroyGCell(size_t index_remove)
 {
-  log_->report("before destroy gCellStor_.size():{}", gCellStor_.size());
   size_t last_index = gCellStor_.size() - 1;
   if (index_remove > last_index) {
-    log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
-                 index_remove,
-                 last_index);
     return;
   }
   if (index_remove != last_index) {
@@ -2942,7 +2993,6 @@ void NesterovBaseCommon::destroyGCell(size_t index_remove)
   }
   gCellStor_.pop_back();
 
-  log_->report("after destroy gCellStor_.size():{}", gCellStor_.size());
   // TODO: update deltaArea_ after cell destruction.
 }
 
@@ -2950,9 +3000,6 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
 {
   size_t last_index = fillerStor_.size() - 1;
   if (index_remove > last_index) {
-    log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
-                 index_remove,
-                 last_index);
     return;
   }
   if (index_remove != last_index) {
@@ -2969,24 +3016,15 @@ void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
 {
   auto db_it = db_iterm_map_.find(db_iterm);
   if (db_it != db_iterm_map_.end()) {
-    log_->report("before destroy gPinStor_.size():{}", gPinStor_.size());
     size_t last_index = gPinStor_.size() - 1;
     size_t index_remove = db_it->second;
     if (index_remove > last_index) {
-      log_->report("error: index {} out of bounds for gPinStor_ (max:{})",
-                   index_remove,
-                   last_index);
       return;
     }
     if (index_remove != last_index) {
       std::swap(gPinStor_[index_remove], gPinStor_[last_index]);
     }
     gPinStor_.pop_back();
-
-    log_->report("after destroy gPinStor_.size():{}", gPinStor_.size());
-  } else {
-    log_->report("error: db_iterm not found in db_iterm_map_ for iterm: {}",
-                 db_iterm->getMTerm()->getName());
   }
 }
 
@@ -2995,16 +3033,10 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
                               size_t last_index)
 {
   if (last_index != vec.size() - 1) {
-    log_->report(
-        "Error: last_index {} does not match the actual last index {}.",
-        last_index,
-        vec.size() - 1);
     return;
   }
 
   if (remove_index != last_index) {
-    log_->report(
-        "Swapping index {} with last_index {}", remove_index, last_index);
     std::swap(vec[remove_index], vec[last_index]);
   }
   vec.pop_back();
@@ -3013,11 +3045,6 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
 void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
                                              size_t last_index)
 {
-  log_->report(
-      "Swapping and popping parallel vectors with remove_index {} and "
-      "last_index {}",
-      remove_index,
-      last_index);
   swapAndPop(curSLPCoordi_, remove_index, last_index);
   swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
   swapAndPop(curSLPDensityGrads_, remove_index, last_index);

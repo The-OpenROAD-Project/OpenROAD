@@ -3,9 +3,8 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "bool",
-      "name": "per_cut_class_",
-      "bits": 1
+      "type": "bit",
+      "name": "per_cut_class_"
     },
     {
       "type": "int",
@@ -23,9 +22,8 @@
       "default" : 0
     },
     {
-      "type": "bool",
-      "name": "within_cut_dist_valid",
-      "bits": 1
+      "type": "bit",
+      "name": "within_cut_dist_valid"
     },
     {
       "type": "int",
@@ -33,19 +31,16 @@
       "default" : 0
     },
     {
-      "type": "bool",
-      "name": "from_above_",
-      "bits": 1
+      "type": "bit",
+      "name": "from_above_"
     },
     {
-      "type": "bool",
-      "name": "from_below_",
-      "bits": 1
+      "type": "bit",
+      "name": "from_below_"
     },
     {
-      "type": "bool",
-      "name": "length_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "length_valid_"
     },
     {
       "type": "int",
@@ -58,9 +53,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "area_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "area_valid_"
     },
     {
       "type": "int",
@@ -68,9 +62,8 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "area_within_dist_valid_",
-      "bits": 1
+      "type": "bit",
+      "name": "area_within_dist_valid_"
     },
     {
       "type": "int",
@@ -78,14 +71,12 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "same_metal_overlap",
-      "bits": 1
+      "type": "bit",
+      "name": "same_metal_overlap"
     },
     {
-      "type": "bool",
-      "name": "fully_enclosed_",
-      "bits": 1
+      "type": "bit",
+      "name": "fully_enclosed_"
     }
   ],
   "cpp_includes": [

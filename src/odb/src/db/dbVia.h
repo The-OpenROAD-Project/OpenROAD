@@ -46,7 +46,6 @@ class _dbDatabase;
 class _dbTech;
 class _dbTechLayer;
 class _dbTechViaGenerateRule;
-class dbDiff;
 class dbIStream;
 class dbOStream;
 
@@ -87,9 +86,8 @@ class _dbVia : public _dbObject
     return strcmp(_name, rhs._name) < 0;
   }
 
-  void differences(dbDiff& diff, const char* field, const _dbVia& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
   _dbTech* getTech();
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbVia& v);

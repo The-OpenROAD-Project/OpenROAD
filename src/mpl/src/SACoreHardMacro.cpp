@@ -44,37 +44,27 @@ using utl::MPL;
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
 // constructors
-SACoreHardMacro::SACoreHardMacro(
-    PhysicalHierarchy* tree,
-    const Rect& outline,
-    const std::vector<HardMacro>& macros,
-    // weight for different penalty
-    float area_weight,
-    float outline_weight,
-    float wirelength_weight,
-    float guidance_weight,
-    float fence_weight,  // each blockage will be modeled by a macro with fences
-    // probability of each action
-    float pos_swap_prob,
-    float neg_swap_prob,
-    float double_swap_prob,
-    float exchange_prob,
-    float flip_prob,
-    // Fast SA hyperparameter
-    float init_prob,
-    int max_num_step,
-    int num_perturb_per_step,
-    unsigned seed,
-    MplObserver* graphics,
-    utl::Logger* logger)
+SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
+                                 const Rect& outline,
+                                 const std::vector<HardMacro>& macros,
+                                 const SACoreWeights& core_weights,
+                                 // probability of each action
+                                 float pos_swap_prob,
+                                 float neg_swap_prob,
+                                 float double_swap_prob,
+                                 float exchange_prob,
+                                 float flip_prob,
+                                 // Fast SA hyperparameter
+                                 float init_prob,
+                                 int max_num_step,
+                                 int num_perturb_per_step,
+                                 unsigned seed,
+                                 MplObserver* graphics,
+                                 utl::Logger* logger)
     : SimulatedAnnealingCore<HardMacro>(tree,
                                         outline,
                                         macros,
-                                        area_weight,
-                                        outline_weight,
-                                        wirelength_weight,
-                                        guidance_weight,
-                                        fence_weight,
+                                        core_weights,
                                         pos_swap_prob,
                                         neg_swap_prob,
                                         double_swap_prob,
@@ -102,29 +92,23 @@ void SACoreHardMacro::run()
   }
 }
 
-float SACoreHardMacro::getAreaPenalty() const
-{
-  const float outline_area = outline_.getWidth() * outline_.getHeight();
-  return (width_ * height_) / outline_area;
-}
-
 float SACoreHardMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
   if (norm_area_penalty_ > 0.0) {
-    cost += area_weight_ * getAreaPenalty();
+    cost += core_weights_.area * getAreaPenalty();
   }
   if (norm_outline_penalty_ > 0.0) {
-    cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
+    cost += core_weights_.outline * outline_penalty_ / norm_outline_penalty_;
   }
   if (norm_wirelength_ > 0.0) {
-    cost += wirelength_weight_ * wirelength_ / norm_wirelength_;
+    cost += core_weights_.wirelength * wirelength_ / norm_wirelength_;
   }
   if (norm_guidance_penalty_ > 0.0) {
-    cost += guidance_weight_ * guidance_penalty_ / norm_guidance_penalty_;
+    cost += core_weights_.guidance * guidance_penalty_ / norm_guidance_penalty_;
   }
   if (norm_fence_penalty_ > 0.0) {
-    cost += fence_weight_ * fence_penalty_ / norm_fence_penalty_;
+    cost += core_weights_.fence * fence_penalty_ / norm_fence_penalty_;
   }
   return cost;
 }
@@ -136,7 +120,8 @@ void SACoreHardMacro::calPenalty()
   calGuidancePenalty();
   calFencePenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty({area_weight_, getAreaPenalty()});
+    graphics_->setAreaPenalty(
+        {"Area", core_weights_.area, getAreaPenalty(), norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -304,82 +289,16 @@ void SACoreHardMacro::initialize()
 
 void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 {
-  area_weight_ = weights.area;
-  outline_weight_ = weights.outline;
-  wirelength_weight_ = weights.wirelength;
-  guidance_weight_ = weights.guidance;
-  fence_weight_ = weights.fence;
+  core_weights_ = weights;
 }
 
-void SACoreHardMacro::printResults()
+void SACoreHardMacro::printResults() const
 {
-  debugPrint(
-      logger_, MPL, "hierarchical_macro_placement", 2, "SACoreHardMacro");
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "number of macros : {}",
-             macros_.size());
-  for (const auto& macro : macros_) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               2,
-               "lx = {}, ly = {}, width = {}, height = {}",
-               macro.getX(),
-               macro.getY(),
-               macro.getWidth(),
-               macro.getHeight());
+  reportCoreWeights();
+  reportTotalCost();
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "width = {}, outline_width = {}",
-             width_,
-             outline_.getWidth());
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "height = {}, outline_height = {}",
-             height_,
-             outline_.getHeight());
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "outline_penalty  = {}, norm_outline_penalty = {}",
-             outline_penalty_,
-             norm_outline_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "wirelength  = {}, norm_wirelength = {}",
-             wirelength_,
-             norm_wirelength_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "guidance_penalty  = {}, norm_guidance_penalty = {}",
-             guidance_penalty_,
-             norm_guidance_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "fence_penalty  = {}, norm_fence_penalty = {}",
-             fence_penalty_,
-             norm_fence_penalty_);
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             2,
-             "final cost = {}",
-             getNormCost());
 }
 
 }  // namespace mpl

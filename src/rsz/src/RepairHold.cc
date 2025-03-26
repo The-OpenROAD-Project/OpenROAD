@@ -83,6 +83,7 @@ void RepairHold::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 bool RepairHold::repairHold(
@@ -262,14 +263,12 @@ bool RepairHold::repairHold(VertexSeq& ends,
                   "Found {} endpoints with hold violations.",
                   hold_failures.size());
     bool progress = true;
-    if (verbose) {
-      printProgress(0, true, false);
-    }
+    printProgress(0, true, false);
     int pass = 1;
     while (worst_slack < hold_margin && progress && !resizer_->overMaxArea()
            && inserted_buffer_count_ <= max_buffer_count
            && pass <= max_passes) {
-      if (verbose) {
+      if (verbose || pass == 1) {
         printProgress(pass, false, false);
       }
       debugPrint(logger_,
@@ -286,7 +285,9 @@ bool RepairHold::repairHold(VertexSeq& ends,
                      setup_margin,
                      hold_margin,
                      allow_setup_violations,
-                     max_buffer_count);
+                     max_buffer_count,
+                     verbose,
+                     pass);
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
@@ -295,12 +296,9 @@ bool RepairHold::repairHold(VertexSeq& ends,
                  inserted_buffer_count_ - hold_buffer_count_before);
       sta_->findRequireds();
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
-      pass++;
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }
-    if (verbose) {
-      printProgress(pass, true, true);
-    }
+    printProgress(pass, true, true);
     if (hold_margin == 0.0 && fuzzyLess(worst_slack, 0.0)) {
       logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
     } else if (fuzzyLess(worst_slack, hold_margin)) {
@@ -362,19 +360,26 @@ void RepairHold::repairHoldPass(VertexSeq& hold_failures,
                                 const double setup_margin,
                                 const double hold_margin,
                                 const bool allow_setup_violations,
-                                const int max_buffer_count)
+                                const int max_buffer_count,
+                                bool verbose,
+                                int& pass)
 {
   resizer_->updateParasitics();
   sort(hold_failures, [=](Vertex* end1, Vertex* end2) {
     return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
   });
   for (Vertex* end_vertex : hold_failures) {
+    if (verbose) {
+      printProgress(pass, false, false);
+    }
+
     resizer_->updateParasitics();
     repairEndHold(end_vertex,
                   buffer_cell,
                   setup_margin,
                   hold_margin,
                   allow_setup_violations);
+    pass++;
     if (inserted_buffer_count_ > max_buffer_count) {
       break;
     }
@@ -405,11 +410,13 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
         const PathRef* path = expanded.path(i);
         Vertex* path_vertex = path->vertex(sta_);
         Pin* path_pin = path_vertex->pin();
-        Net* path_net = network_->isTopLevelPort(path_pin)
-                            ? network_->net(network_->term(path_pin))
-                            : network_->net(path_pin);
-        dbNet* db_path_net = db_network_->staToDb(path_net);
-        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_net)
+        // explicitly force getting the flat net.
+        odb::dbNet* db_path_net
+            = network_->isTopLevelPort(path_pin)
+                  ? db_network_->flatNet(network_->term(path_pin))
+                  : db_network_->flatNet(const_cast<Pin*>(path_pin));
+
+        if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
             && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
@@ -556,10 +563,9 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // we will put the new buffer in that parent
     parent = db_network_->getOwningInstanceParent(drvr_pin);
     // exception case: drvr pin is a top level, fix the db_drvr_net to be
-    // the lower level net
+    // the lower level net. Explictly get the "flat" net.
     if (network_->isTopLevelPort(drvr_pin)) {
-      db_drvr_net
-          = db_network_->staToDb(db_network_->net(db_network_->term(drvr_pin)));
+      db_drvr_net = db_network_->flatNet(db_network_->term(drvr_pin));
     }
   } else {
     // original flat code (which handles exception case at top level &
@@ -570,7 +576,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
             : db_network_->net(drvr_pin));
     parent = db_network_->topInstance();
   }
-
   Net *in_net = nullptr, *out_net = nullptr;
 
   if (loads_have_out_port) {
@@ -591,6 +596,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     out_net = db_network_->makeNet(net_name.c_str(), parent);
   }
 
+  dbNet* in_net_db = db_network_->staToDb(in_net);
+
   // Disconnect the original drvr pin from everything (hierarchical nets
   // and flat nets).
   odb::dbITerm* drvr_pin_iterm;
@@ -606,6 +613,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // disconnect the iterm from both the modnet and the dbnet
     // note we will rewire the drvr_pin to connect to the new buffer later.
     drvr_pin_iterm->disconnect();
+    drvr_pin_iterm->connect(in_net_db);
   }
   if (drvr_pin_moditerm) {
     drvr_pin_moditerm->disconnect();
@@ -615,8 +623,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   }
 
   resizer_->parasiticsInvalid(in_net);
-
-  Net* buf_in_net = in_net;
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -633,16 +639,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
 
   // wire in the buffer
-  sta_->connectPin(buffer, input, buf_in_net);
+  sta_->connectPin(buffer, input, in_net);
   sta_->connectPin(buffer, output, out_net);
-
-  // Fix up the original driver pin (which we totally disconnected before)
-  // patch in the buf_in_net driver to be driven by the original drvr_pin_iterm
-
-  // First the dbnet.
-  if (drvr_pin_iterm) {
-    drvr_pin_iterm->connect(db_network_->staToDb(buf_in_net));
-  }
 
   // Now patch in the output of the new buffer to the original hierarchical
   // net,if any, from the original driver
@@ -671,9 +669,13 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
 
   // hook up loads to buffer
   for (const Pin* load_pin : load_pins) {
-    Net* load_net = network_->isTopLevelPort(load_pin)
-                        ? network_->net(network_->term(load_pin))
-                        : network_->net(load_pin);
+    if (resizer_->dontTouch(load_pin)) {
+      continue;
+    }
+    dbNet* db_load_net = network_->isTopLevelPort(load_pin)
+                             ? db_network_->flatNet(network_->term(load_pin))
+                             : db_network_->flatNet(load_pin);
+    Net* load_net = db_network_->dbToSta(db_load_net);
 
     if (load_net != out_net) {
       Instance* load = db_network_->instance(load_pin);
@@ -699,6 +701,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       }
     }
   }
+
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   resizer_->updateParasitics();
@@ -746,11 +749,11 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
 
   if (start) {
     logger_->report(
-        "Iteration | Resized | Buffers | Cloned Gates |   WNS   |   TNS   | "
-        "Endpoint");
+        "Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   "
+        "|   TNS   | Endpoint");
     logger_->report(
         "----------------------------------------------------------------------"
-        "-----");
+        "----------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -764,12 +767,17 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
       itr_field = "final";
     }
 
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
     logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >12d} | {: >7s} | {: >7s} | {}",
+        "{: >9s} | {: >7d} | {: >7d} | {: >12d} | {: >+7.1f}% | {: >7s} | {: "
+        ">7s} | {}",
         itr_field,
         resize_count_,
         inserted_buffer_count_,
         cloned_gate_count_,
+        area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 3),
         worst_vertex->name(network_));
@@ -778,7 +786,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
   if (end) {
     logger_->report(
         "----------------------------------------------------------------------"
-        "-----");
+        "----------------");
   }
 }
 

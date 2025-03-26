@@ -2485,35 +2485,30 @@ void defiNet::setWidth(const char* layer, double d)
 
 void defiNet::setSpacing(const char* layer, double d)
 {
-  int len = strlen(layer) + 1;
+  const int len = strlen(layer) + 1;
   char* l = (char*) malloc(len);
   strcpy(l, defData->DEFCASE(layer));
 
   if (numSpacing_ >= spacingAllocated_) {
-    int i;
-    char** nl;
-    double* nd;
-    double* n1;
-    double* n2;
     spacingAllocated_ = spacingAllocated_ ? spacingAllocated_ * 2 : 4;
-    nl = (char**) malloc(sizeof(char*) * spacingAllocated_);
-    nd = (double*) malloc(sizeof(double) * spacingAllocated_);
-    n1 = (double*) malloc(sizeof(double) * spacingAllocated_);
-    n2 = (double*) malloc(sizeof(double) * spacingAllocated_);
-    for (i = 0; i < numSpacing_; i++) {
-      nl[i] = slayers_[i];
-      nd[i] = sdist_[i];
-      n1[i] = sleft_[i];
-      n2[i] = sright_[i];
+    char** layers = (char**) malloc(sizeof(char*) * spacingAllocated_);
+    double* dist = (double*) malloc(sizeof(double) * spacingAllocated_);
+    double* left = (double*) malloc(sizeof(double) * spacingAllocated_);
+    double* right = (double*) malloc(sizeof(double) * spacingAllocated_);
+    for (int i = 0; i < numSpacing_; i++) {
+      layers[i] = slayers_[i];
+      dist[i] = sdist_[i];
+      left[i] = sleft_[i];
+      right[i] = sright_[i];
     }
     free((char*) (slayers_));
     free((char*) (sdist_));
     free((char*) (sleft_));
     free((char*) (sright_));
-    slayers_ = nl;
-    sdist_ = nd;
-    sleft_ = n1;
-    sright_ = n2;
+    slayers_ = layers;
+    sdist_ = dist;
+    sleft_ = left;
+    sright_ = right;
   }
 
   slayers_[numSpacing_] = l;

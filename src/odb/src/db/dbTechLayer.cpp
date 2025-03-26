@@ -37,7 +37,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayerAreaRule.h"
@@ -380,179 +379,6 @@ bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
   return true;
 }
 
-void _dbTechLayer::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbTechLayer& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.num_masks_);
-  DIFF_FIELD(flags_.has_max_width_);
-  DIFF_FIELD(flags_.has_thickness_);
-  DIFF_FIELD(flags_.has_area_);
-  DIFF_FIELD(flags_.has_protrusion_);
-  DIFF_FIELD(flags_.has_alias_);
-  DIFF_FIELD(flags_.has_xy_pitch_);
-  DIFF_FIELD(flags_.has_xy_offset_);
-  DIFF_FIELD(flags_.rect_only_);
-  DIFF_FIELD(flags_.right_way_on_grid_only_);
-  DIFF_FIELD(flags_.right_way_on_grid_only_check_mask_);
-  DIFF_FIELD(flags_.rect_only_except_non_core_pins_);
-  DIFF_FIELD(flags_.lef58_type_);
-  DIFF_FIELD(wrong_way_width_);
-  DIFF_FIELD(layer_adjustment_);
-  DIFF_TABLE(cut_class_rules_tbl_);
-  DIFF_HASH_TABLE(cut_class_rules_hash_);
-  DIFF_TABLE(spacing_eol_rules_tbl_);
-  DIFF_TABLE(cut_spacing_rules_tbl_);
-  DIFF_TABLE(minstep_rules_tbl_);
-  DIFF_TABLE(corner_spacing_rules_tbl_);
-  DIFF_TABLE(spacing_table_prl_rules_tbl_);
-  DIFF_TABLE(cut_spacing_table_orth_tbl_);
-  DIFF_TABLE(cut_spacing_table_def_tbl_);
-  DIFF_TABLE(cut_enc_rules_tbl_);
-  DIFF_TABLE(eol_ext_rules_tbl_);
-  DIFF_TABLE(array_spacing_rules_tbl_);
-  DIFF_TABLE(eol_keep_out_rules_tbl_);
-  DIFF_TABLE(max_spacing_rules_tbl_);
-  DIFF_TABLE(width_table_rules_tbl_);
-  DIFF_TABLE(min_cuts_rules_tbl_);
-  DIFF_TABLE(area_rules_tbl_);
-  DIFF_TABLE(forbidden_spacing_rules_tbl_);
-  DIFF_TABLE(keepout_zone_rules_tbl_);
-  DIFF_TABLE(wrongdir_spacing_rules_tbl_);
-  DIFF_TABLE(two_wires_forbidden_spc_rules_tbl_);
-  // User Code Begin Differences
-  DIFF_FIELD(flags_.type_);
-  DIFF_FIELD(flags_.direction_);
-  DIFF_FIELD(flags_.minstep_type_);
-  DIFF_FIELD(_pitch_x);
-  DIFF_FIELD(_pitch_y);
-  DIFF_FIELD(_offset_x);
-  DIFF_FIELD(_offset_y);
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_capacitance);
-  DIFF_FIELD(_edge_capacitance);
-  DIFF_FIELD(_wire_extension);
-  DIFF_FIELD(_number);
-  DIFF_FIELD(_rlevel);
-  DIFF_FIELD(_area);
-  DIFF_FIELD(_thickness);
-  DIFF_FIELD(_min_step);
-  DIFF_FIELD(_max_width);
-  DIFF_FIELD(_min_width);
-  DIFF_FIELD(_min_step_max_length);
-  DIFF_FIELD(_min_step_max_edges);
-  DIFF_FIELD(_first_last_pitch);
-  DIFF_FIELD(_pt._length);
-  DIFF_FIELD(_pt._from_width);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_alias);
-  DIFF_FIELD(_upper);
-  DIFF_FIELD(_lower);
-  DIFF_TABLE_NO_DEEP(_spacing_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_min_cut_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_min_enc_rules_tbl);
-  DIFF_TABLE_NO_DEEP(_v55inf_tbl);
-  DIFF_VECTOR(_v55sp_length_idx);
-  DIFF_VECTOR(_v55sp_width_idx);
-  DIFF_MATRIX(_v55sp_spacing);
-  DIFF_VECTOR(_two_widths_sp_idx);
-  DIFF_VECTOR(_two_widths_sp_prl);
-  DIFF_MATRIX(_two_widths_sp_spacing);
-  DIFF_FIELD(_oxide1);
-  DIFF_FIELD(_oxide2);
-  // User Code End Differences
-  DIFF_END
-}
-
-void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.num_masks_);
-  DIFF_OUT_FIELD(flags_.has_max_width_);
-  DIFF_OUT_FIELD(flags_.has_thickness_);
-  DIFF_OUT_FIELD(flags_.has_area_);
-  DIFF_OUT_FIELD(flags_.has_protrusion_);
-  DIFF_OUT_FIELD(flags_.has_alias_);
-  DIFF_OUT_FIELD(flags_.has_xy_pitch_);
-  DIFF_OUT_FIELD(flags_.has_xy_offset_);
-  DIFF_OUT_FIELD(flags_.rect_only_);
-  DIFF_OUT_FIELD(flags_.right_way_on_grid_only_);
-  DIFF_OUT_FIELD(flags_.right_way_on_grid_only_check_mask_);
-  DIFF_OUT_FIELD(flags_.rect_only_except_non_core_pins_);
-  DIFF_OUT_FIELD(flags_.lef58_type_);
-  DIFF_OUT_FIELD(wrong_way_width_);
-  DIFF_OUT_FIELD(layer_adjustment_);
-  DIFF_OUT_TABLE(cut_class_rules_tbl_);
-  DIFF_OUT_HASH_TABLE(cut_class_rules_hash_);
-  DIFF_OUT_TABLE(spacing_eol_rules_tbl_);
-  DIFF_OUT_TABLE(cut_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(minstep_rules_tbl_);
-  DIFF_OUT_TABLE(corner_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(spacing_table_prl_rules_tbl_);
-  DIFF_OUT_TABLE(cut_spacing_table_orth_tbl_);
-  DIFF_OUT_TABLE(cut_spacing_table_def_tbl_);
-  DIFF_OUT_TABLE(cut_enc_rules_tbl_);
-  DIFF_OUT_TABLE(eol_ext_rules_tbl_);
-  DIFF_OUT_TABLE(array_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(eol_keep_out_rules_tbl_);
-  DIFF_OUT_TABLE(max_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(width_table_rules_tbl_);
-  DIFF_OUT_TABLE(min_cuts_rules_tbl_);
-  DIFF_OUT_TABLE(area_rules_tbl_);
-  DIFF_OUT_TABLE(forbidden_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
-  DIFF_OUT_TABLE(wrongdir_spacing_rules_tbl_);
-  DIFF_OUT_TABLE(two_wires_forbidden_spc_rules_tbl_);
-
-  // User Code Begin Out
-  DIFF_OUT_FIELD(flags_.type_);
-  DIFF_OUT_FIELD(flags_.direction_);
-  DIFF_OUT_FIELD(flags_.minstep_type_);
-  DIFF_OUT_FIELD(_pitch_x);
-  DIFF_OUT_FIELD(_pitch_y);
-  DIFF_OUT_FIELD(_offset_x);
-  DIFF_OUT_FIELD(_offset_y);
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_capacitance);
-  DIFF_OUT_FIELD(_edge_capacitance);
-  DIFF_OUT_FIELD(_wire_extension);
-  DIFF_OUT_FIELD(_number);
-  DIFF_OUT_FIELD(_rlevel);
-  DIFF_OUT_FIELD(_area);
-  DIFF_OUT_FIELD(_thickness);
-  DIFF_OUT_FIELD(_min_step);
-  DIFF_OUT_FIELD(_max_width);
-  DIFF_OUT_FIELD(_min_width);
-  DIFF_OUT_FIELD(_min_step_max_length);
-  DIFF_OUT_FIELD(_min_step_max_edges);
-  DIFF_OUT_FIELD(_first_last_pitch);
-  DIFF_OUT_FIELD(_pt._length);
-  DIFF_OUT_FIELD(_pt._from_width);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_alias);
-  DIFF_OUT_FIELD(_upper);
-  DIFF_OUT_FIELD(_lower);
-  DIFF_OUT_TABLE_NO_DEEP(_spacing_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_min_cut_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_min_enc_rules_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_v55inf_tbl);
-  DIFF_OUT_VECTOR(_v55sp_length_idx);
-  DIFF_OUT_VECTOR(_v55sp_width_idx);
-  DIFF_OUT_MATRIX(_v55sp_spacing);
-  DIFF_OUT_VECTOR(_two_widths_sp_idx);
-  DIFF_OUT_VECTOR(_two_widths_sp_prl);
-  DIFF_OUT_MATRIX(_two_widths_sp_spacing);
-  DIFF_OUT_FIELD(_oxide1);
-  DIFF_OUT_FIELD(_oxide2);
-  // User Code End Out
-  DIFF_END
-}
-
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
   flags_ = {};
@@ -725,128 +551,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       8,
       3);
   // User Code End Constructor
-}
-
-_dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
-{
-  flags_.num_masks_ = r.flags_.num_masks_;
-  flags_.has_max_width_ = r.flags_.has_max_width_;
-  flags_.has_thickness_ = r.flags_.has_thickness_;
-  flags_.has_area_ = r.flags_.has_area_;
-  flags_.has_protrusion_ = r.flags_.has_protrusion_;
-  flags_.has_alias_ = r.flags_.has_alias_;
-  flags_.has_xy_pitch_ = r.flags_.has_xy_pitch_;
-  flags_.has_xy_offset_ = r.flags_.has_xy_offset_;
-  flags_.rect_only_ = r.flags_.rect_only_;
-  flags_.right_way_on_grid_only_ = r.flags_.right_way_on_grid_only_;
-  flags_.right_way_on_grid_only_check_mask_
-      = r.flags_.right_way_on_grid_only_check_mask_;
-  flags_.rect_only_except_non_core_pins_
-      = r.flags_.rect_only_except_non_core_pins_;
-  flags_.lef58_type_ = r.flags_.lef58_type_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  wrong_way_width_ = r.wrong_way_width_;
-  layer_adjustment_ = r.layer_adjustment_;
-  cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
-      db, this, *r.cut_class_rules_tbl_);
-  cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
-  spacing_eol_rules_tbl_ = new dbTable<_dbTechLayerSpacingEolRule>(
-      db, this, *r.spacing_eol_rules_tbl_);
-  cut_spacing_rules_tbl_ = new dbTable<_dbTechLayerCutSpacingRule>(
-      db, this, *r.cut_spacing_rules_tbl_);
-  minstep_rules_tbl_
-      = new dbTable<_dbTechLayerMinStepRule>(db, this, *r.minstep_rules_tbl_);
-  corner_spacing_rules_tbl_ = new dbTable<_dbTechLayerCornerSpacingRule>(
-      db, this, *r.corner_spacing_rules_tbl_);
-  spacing_table_prl_rules_tbl_ = new dbTable<_dbTechLayerSpacingTablePrlRule>(
-      db, this, *r.spacing_table_prl_rules_tbl_);
-  cut_spacing_table_orth_tbl_
-      = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
-          db, this, *r.cut_spacing_table_orth_tbl_);
-  cut_spacing_table_def_tbl_ = new dbTable<_dbTechLayerCutSpacingTableDefRule>(
-      db, this, *r.cut_spacing_table_def_tbl_);
-  cut_enc_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureRule>(
-      db, this, *r.cut_enc_rules_tbl_);
-  eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
-      db, this, *r.eol_ext_rules_tbl_);
-  array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
-      db, this, *r.array_spacing_rules_tbl_);
-  eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
-      db, this, *r.eol_keep_out_rules_tbl_);
-  max_spacing_rules_tbl_ = new dbTable<_dbTechLayerMaxSpacingRule>(
-      db, this, *r.max_spacing_rules_tbl_);
-  width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
-      db, this, *r.width_table_rules_tbl_);
-  min_cuts_rules_tbl_
-      = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
-  area_rules_tbl_
-      = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
-  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
-      db, this, *r.forbidden_spacing_rules_tbl_);
-  keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
-      db, this, *r.keepout_zone_rules_tbl_);
-  wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
-      db, this, *r.wrongdir_spacing_rules_tbl_);
-  two_wires_forbidden_spc_rules_tbl_
-      = new dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>(
-          db, this, *r.two_wires_forbidden_spc_rules_tbl_);
-  // User Code Begin CopyConstructor
-  flags_ = r.flags_;
-  _pitch_x = r._pitch_x;
-  _pitch_y = r._pitch_y;
-  _offset_x = r._offset_x;
-  _offset_y = r._offset_y;
-  _width = r._width;
-  _spacing = r._spacing;
-  _resistance = r._resistance;
-  _capacitance = r._capacitance;
-  _edge_capacitance = r._edge_capacitance;
-  _wire_extension = r._wire_extension;
-  _number = r._number;
-  _rlevel = r._rlevel;
-  _area = r._area;
-  _thickness = r._thickness;
-  _max_width = r._max_width;
-  _min_width = r._min_width;
-  _min_step = r._min_step;
-  _min_step_max_length = r._min_step_max_length;
-  _min_step_max_edges = r._min_step_max_edges;
-  _first_last_pitch = r._first_last_pitch;
-  _pt = r._pt;
-  _name = nullptr;
-  _alias = nullptr;
-  _upper = r._upper;
-  _lower = r._lower;
-  _v55sp_length_idx = r._v55sp_length_idx;
-  _v55sp_width_idx = r._v55sp_width_idx;
-  _v55sp_spacing = r._v55sp_spacing;
-  _two_widths_sp_idx = r._two_widths_sp_idx;
-  _two_widths_sp_prl = r._two_widths_sp_prl;
-  _two_widths_sp_spacing = r._two_widths_sp_spacing;
-  _oxide1 = r._oxide1;
-  _oxide2 = r._oxide2;
-
-  if (r._name) {
-    _name = strdup(r._name);
-    ZALLOCATED(_name);
-  }
-
-  if (r._alias) {
-    _alias = strdup(r._alias);
-    ZALLOCATED(_alias);
-  }
-
-  _spacing_rules_tbl
-      = new dbTable<_dbTechLayerSpacingRule>(db, this, *r._spacing_rules_tbl);
-
-  _min_cut_rules_tbl
-      = new dbTable<_dbTechMinCutRule>(db, this, *r._min_cut_rules_tbl);
-
-  _min_enc_rules_tbl
-      = new dbTable<_dbTechMinEncRule>(db, this, *r._min_enc_rules_tbl);
-
-  _v55inf_tbl = new dbTable<_dbTechV55InfluenceEntry>(db, this, *r._v55inf_tbl);
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
@@ -1103,6 +807,82 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbTechLayer::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  cut_class_rules_tbl_->collectMemInfo(info.children_["cut_class_rules_tbl_"]);
+
+  spacing_eol_rules_tbl_->collectMemInfo(
+      info.children_["spacing_eol_rules_tbl_"]);
+
+  cut_spacing_rules_tbl_->collectMemInfo(
+      info.children_["cut_spacing_rules_tbl_"]);
+
+  minstep_rules_tbl_->collectMemInfo(info.children_["minstep_rules_tbl_"]);
+
+  corner_spacing_rules_tbl_->collectMemInfo(
+      info.children_["corner_spacing_rules_tbl_"]);
+
+  spacing_table_prl_rules_tbl_->collectMemInfo(
+      info.children_["spacing_table_prl_rules_tbl_"]);
+
+  cut_spacing_table_orth_tbl_->collectMemInfo(
+      info.children_["cut_spacing_table_orth_tbl_"]);
+
+  cut_spacing_table_def_tbl_->collectMemInfo(
+      info.children_["cut_spacing_table_def_tbl_"]);
+
+  cut_enc_rules_tbl_->collectMemInfo(info.children_["cut_enc_rules_tbl_"]);
+
+  eol_ext_rules_tbl_->collectMemInfo(info.children_["eol_ext_rules_tbl_"]);
+
+  array_spacing_rules_tbl_->collectMemInfo(
+      info.children_["array_spacing_rules_tbl_"]);
+
+  eol_keep_out_rules_tbl_->collectMemInfo(
+      info.children_["eol_keep_out_rules_tbl_"]);
+
+  max_spacing_rules_tbl_->collectMemInfo(
+      info.children_["max_spacing_rules_tbl_"]);
+
+  width_table_rules_tbl_->collectMemInfo(
+      info.children_["width_table_rules_tbl_"]);
+
+  min_cuts_rules_tbl_->collectMemInfo(info.children_["min_cuts_rules_tbl_"]);
+
+  area_rules_tbl_->collectMemInfo(info.children_["area_rules_tbl_"]);
+
+  forbidden_spacing_rules_tbl_->collectMemInfo(
+      info.children_["forbidden_spacing_rules_tbl_"]);
+
+  keepout_zone_rules_tbl_->collectMemInfo(
+      info.children_["keepout_zone_rules_tbl_"]);
+
+  wrongdir_spacing_rules_tbl_->collectMemInfo(
+      info.children_["wrongdir_spacing_rules_tbl_"]);
+
+  two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
+      info.children_["two_wires_forbidden_spc_rules_tbl_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["orth_spacing"].add(orth_spacing_tbl_);
+  info.children_["cut_class_rules_hash"].add(cut_class_rules_hash_);
+  info.children_["name"].add(_name);
+  info.children_["alias"].add(_alias);
+  _spacing_rules_tbl->collectMemInfo(info.children_["spacing_rules_tbl"]);
+  _min_cut_rules_tbl->collectMemInfo(info.children_["min_cut_rules_tbl"]);
+  _min_enc_rules_tbl->collectMemInfo(info.children_["min_enc_rules_tbl"]);
+  _v55inf_tbl->collectMemInfo(info.children_["v55inf_tbl"]);
+  info.children_["v55sp_length_idx"].add(_v55sp_length_idx);
+  info.children_["v55sp_width_idx"].add(_v55sp_width_idx);
+  info.children_["v55sp_spacing"].add(_v55sp_spacing);
+  info.children_["two_widths_sp_idx"].add(_two_widths_sp_idx);
+  info.children_["two_widths_sp_prl"].add(_two_widths_sp_prl);
+  info.children_["two_widths_sp_spacing"].add(_two_widths_sp_spacing);
+  // User Code End collectMemInfo
 }
 
 _dbTechLayer::~_dbTechLayer()

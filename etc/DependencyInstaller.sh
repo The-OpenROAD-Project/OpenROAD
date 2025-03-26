@@ -11,7 +11,7 @@ _versionCompare() {
 }
 
 _equivalenceDeps() {
-    yosysVersion=v0.49
+    yosysVersion=v0.51
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -65,9 +65,9 @@ _installCommonDev() {
     pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
-    boostVersionBig=1.80
+    boostVersionBig=1.86
     boostVersionSmall=${boostVersionBig}.0
-    boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
+    boostChecksum="ac857d73bb754b718a039830b07b9624"
     eigenVersion=3.4
     cuddVersion=3.0.0
     lemonVersion=1.3.1
@@ -103,11 +103,12 @@ _installCommonDev() {
         bisonInstalledVersion=$(${bisonPrefix}/bin/bison --version | awk 'NR==1 {print $NF}')
     fi
     if [ ${bisonInstalledVersion} != ${bisonVersion} ]; then
+        cd "${baseDir}"
         eval wget https://ftp.gnu.org/gnu/bison/bison-${bisonVersion}.tar.gz
         md5sum -c <(echo "${bisonChecksum} bison-${bisonVersion}.tar.gz") || exit 1
         tar xf bison-${bisonVersion}.tar.gz
         cd bison-${bisonVersion}
-        ./configure
+        ./configure --prefix=${bisonPrefix}
         make -j install
         echo "bison ${bisonVersion} installed (from ${bisonInstalledVersion})."
     else
@@ -144,11 +145,10 @@ _installCommonDev() {
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
+    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp 2> /dev/null) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
-        eval wget https://sourceforge.net/projects/boost/files/boost/${boostVersionSmall}/boost_${boostVersionUnderscore}.tar.gz
-        # eval wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
+        eval wget https://archives.boost.io/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
         md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
@@ -198,7 +198,7 @@ _installCommonDev() {
 
     # lemon
     lemonPrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
+    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h 2> /dev/null) ]]; then
         cd "${baseDir}"
         git clone --depth=1 -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
         cd lemon-graph
@@ -681,15 +681,15 @@ _checkIsLocal() {
 _help() {
     cat <<EOF
 
-Usage: $0
+Usage: $0 -all
                                 # Installs all of OpenROAD's dependencies no
                                 #     need to run -base or -common. Requires
                                 #     privileged access.
-                                #
        $0 -base
                                 # Installs OpenROAD's dependencies using
                                 #     package managers (-common must be
-                                #     executed in another command).
+                                #     executed in another command). Requires
+                                #     privileged access.
        $0 -common
                                 # Installs OpenROAD's common dependencies
                                 #     (-base must be executed in another
@@ -725,7 +725,7 @@ EOF
 
 # Default values
 PREFIX=""
-option="all"
+option="none"
 isLocal="false"
 equivalenceDeps="no"
 CI="no"
@@ -745,14 +745,20 @@ while [ "$#" -gt 0 ]; do
         -dev|-development)
             echo "The use of this flag is deprecated and will be removed soon."
             ;;
+        -all)
+            if [[ "${option}" != "none" ]]; then
+                echo "WARNING: previous argument -${option} will be overwritten with -all." >&2
+            fi
+            option="all"
+            ;;
         -base)
-            if [[ "${option}" != "all" ]]; then
+            if [[ "${option}" != "none" ]]; then
                 echo "WARNING: previous argument -${option} will be overwritten with -base." >&2
             fi
             option="base"
             ;;
         -common)
-            if [[ "${option}" != "all" ]]; then
+            if [[ "${option}" != "none" ]]; then
                 echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
             fi
             option="common"
@@ -807,6 +813,11 @@ while [ "$#" -gt 0 ]; do
     esac
     shift 1
 done
+
+if [[ "${option}" == "none" ]]; then
+    echo "You must use one of: -all|-base|-common" >&2
+    _help
+fi
 
 if [[ -z "${saveDepsPrefixes}" ]]; then
     DIR="$(dirname $(readlink -f $0))"

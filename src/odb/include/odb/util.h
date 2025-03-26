@@ -46,6 +46,7 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbBox;
+class dbDatabase;
 class dbNet;
 
 // A class that implements an array that can grow efficiently
@@ -222,6 +223,8 @@ class AthPool
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
 
+bool hasOneSiteMaster(dbDatabase* db);
+
 void cutRows(dbBlock* block,
              int min_row_width,
              const std::vector<dbBox*>& blockages,
@@ -229,7 +232,7 @@ void cutRows(dbBlock* block,
              int halo_y,
              utl::Logger* logger);
 
-// Generates a string with the macro placement in mpl2 input format for
+// Generates a string with the macro placement in mpl input format for
 // individual macro placement
 std::string generateMacroPlacementString(dbBlock* block);
 

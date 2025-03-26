@@ -36,6 +36,8 @@
 #include <memory>
 #include <vector>
 
+#include "rsz/Resizer.hh"
+
 namespace rsz {
 class Resizer;
 }
@@ -67,10 +69,12 @@ class TimingBase
 
   void setTimingNetWeightMax(float max);
 
+  int repairDesignBufferCount() { return rs_->repairDesignBufferCount(); }
+
   // updateNetWeight.
   // True: successfully reweighted gnets
   // False: no slacks found
-  bool updateGNetWeights(bool run_journal_restore);
+  bool executeTimingDriven(bool run_journal_restore);
 
  private:
   rsz::Resizer* rs_ = nullptr;
@@ -79,7 +83,7 @@ class TimingBase
 
   std::vector<int> timingNetWeightOverflow_;
   std::vector<int> timingOverflowChk_;
-  float net_weight_max_ = 1.9;
+  float net_weight_max_ = 5;
   void initTimingOverflowChk();
 };
 

@@ -7,6 +7,13 @@ or_integration_tests(
     guides2
     io_constraints1
     io_constraints2
+    io_pads1
+    orientation_improve1
+    orientation_improve2
+    boundary_push1
+    boundary_push2
+    boundary_push3
+    centralization1
 )
 
 # Skipped

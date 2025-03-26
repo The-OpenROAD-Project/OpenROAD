@@ -43,7 +43,6 @@
 #include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
-#include "orientation.h"
 #include "symmetry.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -191,25 +190,21 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   bool flip = false;
   if (arch_->powerCompatible(ndi, arch_->getRow(row), flip)) {
     if (flip) {
-      // Flip the pins.
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
       // I'm not sure the following is correct, but I am going
       // to change the orientation the same way I would for a
       // single height cell when flipping about X.
       switch (ndi->getCurrOrient()) {
-        case Orientation_N:
-          ndi->setCurrOrient(Orientation_FS);
+        case dbOrientType::R0:
+          ndi->adjustCurrOrient(dbOrientType::MX);
           break;
-        case Orientation_FN:
-          ndi->setCurrOrient(Orientation_S);
+        case dbOrientType::MY:
+          ndi->adjustCurrOrient(dbOrientType::R180);
           break;
-        case Orientation_FS:
-          ndi->setCurrOrient(Orientation_N);
+        case dbOrientType::MX:
+          ndi->adjustCurrOrient(dbOrientType::R0);
           break;
-        case Orientation_S:
-          ndi->setCurrOrient(Orientation_FN);
+        case dbOrientType::R180:
+          ndi->adjustCurrOrient(dbOrientType::MY);
           break;
         default:
           return false;
@@ -247,44 +242,32 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   unsigned rowOri = arch_->getRow(row)->getOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
-  if (rowOri == Orientation_N || rowOri == Orientation_FN) {
-    if (cellOri == Orientation_N || cellOri == Orientation_FN) {
+  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
+    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
       return true;
     }
 
-    if (cellOri == Orientation_FS) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_N);
+    if (cellOri == dbOrientType::MX) {
+      ndi->adjustCurrOrient(dbOrientType::R0);
       return true;
     }
-    if (cellOri == Orientation_S) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_FN);
+    if (cellOri == dbOrientType::R180) {
+      ndi->adjustCurrOrient(dbOrientType::MY);
       return true;
     }
     return false;
   }
-  if (rowOri == Orientation_FS || Orientation_S) {
-    if (cellOri == Orientation_FS || cellOri == Orientation_S) {
+  if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
+    if (cellOri == dbOrientType::MX || cellOri == dbOrientType::R180) {
       return true;
     }
 
-    if (cellOri == Orientation_N) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_FS);
+    if (cellOri == dbOrientType::R0) {
+      ndi->adjustCurrOrient(dbOrientType::MX);
       return true;
     }
-    if (cellOri == Orientation_FN) {
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetY(pin->getOffsetY() * (-1));
-      }
-      ndi->setCurrOrient(Orientation_S);
+    if (cellOri == dbOrientType::MY) {
+      ndi->adjustCurrOrient(dbOrientType::R180);
       return true;
     }
     return false;
@@ -391,18 +374,33 @@ int DetailedOrient::flipCells()
           || ndi->getRight() + leftPadding > rx) {
         continue;
       }
-
+      dbOrientType orig_orient = ndi->getCurrOrient();
+      dbOrientType flipped_orient;
+      switch (orig_orient) {
+        case dbOrientType::R0:
+          flipped_orient = dbOrientType::MY;
+          break;
+        case dbOrientType::R180:
+          flipped_orient = dbOrientType::MX;
+          break;
+        case dbOrientType::MY:
+          flipped_orient = dbOrientType::R0;
+          break;
+        case dbOrientType::MX:
+          flipped_orient = dbOrientType::R180;
+          break;
+        default:
+          continue;
+          break;
+      }
+      ndi->adjustCurrOrient(flipped_orient);
+      if (mgrPtr_->hasEdgeSpacingViolation(ndi)) {
+        ndi->adjustCurrOrient(orig_orient);
+        continue;
+      }
       // Check potential violation due to edge spacing.
       lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
-      if (ndl) {
-        lx += arch_->getCellSpacingUsingTable(ndl->getRightEdgeType(),
-                                              ndi->getRightEdgeType());
-      }
       rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
-      if (ndr) {
-        rx -= arch_->getCellSpacingUsingTable(ndi->getLeftEdgeType(),
-                                              ndr->getLeftEdgeType());
-      }
       // Based on edge spacing, the cell must reside within
       // [lx,rx].
       if (ndi->getWidth() > (rx - lx)) {
@@ -415,104 +413,13 @@ int DetailedOrient::flipCells()
       // offsets, the edge types and the paddings.  Finally,
       // we need to change the orientiation.
 
-      // Update pin offsets.
-      for (Pin* pin : ndi->getPins()) {
-        pin->setOffsetX(pin->getOffsetX() * (-1));
-      }
-      // Update/swap edge types.
-      ndi->swapEdgeTypes();
       // Update/swap paddings.
       arch_->getCellPadding(ndi, leftPadding, rightPadding);
       arch_->addCellPadding(ndi, rightPadding, leftPadding);
-      // Update the orientation.
-      switch (ndi->getCurrOrient()) {
-        case Orientation_N:
-          ndi->setCurrOrient(Orientation_FN);
-          break;
-        case Orientation_S:
-          ndi->setCurrOrient(Orientation_FS);
-          break;
-        case Orientation_FN:
-          ndi->setCurrOrient(Orientation_N);
-          break;
-        case Orientation_FS:
-          ndi->setCurrOrient(Orientation_S);
-          break;
-        default:
-          // ?
-          break;
-      }
-
       ++nflips;
     }
   }
   return nflips;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-bool DetailedOrient::orientAdjust(Node* ndi, unsigned newOri)
-{
-  unsigned curOri = ndi->getCurrOrient();
-  if (curOri == newOri) {
-    return false;
-  }
-
-  // Determine how pins need to be flipped.  I guess the easiest thing to do it
-  // to first return the node to the N orientation and then figure out how to
-  // get it into the new orientation!
-  int mY = 1;  // Multiplier to adjust pin offsets for a flip around the X-axis.
-  int mX = 1;  // Multiplier to adjust pin offsets for a flip around the Y-axis.
-
-  switch (curOri) {
-    case Orientation_N:
-      break;
-    case Orientation_S:
-      mX *= -1;
-      mY *= -1;
-      break;
-    case Orientation_FS:
-      mY *= -1;
-      break;
-    case Orientation_FN:
-      mX *= -1;
-      break;
-    default:
-      break;
-  }
-
-  // Here, assume the cell is in the North Orientation...
-  switch (newOri) {
-    case Orientation_N:
-      break;
-    case Orientation_S:
-      mX *= -1;
-      mY *= -1;
-      break;
-    case Orientation_FS:
-      mY *= -1;
-      break;
-    case Orientation_FN:
-      mX *= -1;
-      break;
-    default:
-      break;
-  }
-
-  for (Pin* pin : ndi->getPins()) {
-    if (mX == -1) {
-      pin->setOffsetX(pin->getOffsetX() * (double) mX);
-    }
-    if (mY == -1) {
-      pin->setOffsetY(pin->getOffsetY() * (double) mY);
-    }
-  }
-  ndi->setCurrOrient(newOri);
-
-  if (mX == -1) {
-    ndi->swapEdgeTypes();
-  }
-  return false;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -527,25 +434,25 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row)
   unsigned rowOri = arch_->getRow(row)->getOrient();
   unsigned cellOri = ndi->getCurrOrient();
 
-  if (rowOri == Orientation_N || rowOri == Orientation_FN) {
-    if (cellOri == Orientation_N || cellOri == Orientation_FN) {
+  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
+    if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
       return cellOri;
     }
-    if (cellOri == Orientation_FS) {
-      return Orientation_N;
+    if (cellOri == dbOrientType::MX) {
+      return dbOrientType::R0;
     }
-    if (cellOri == Orientation_S) {
-      return Orientation_FN;
+    if (cellOri == dbOrientType::R180) {
+      return dbOrientType::MY;
     }
-  } else if (rowOri == Orientation_FS || rowOri == Orientation_S) {
-    if (cellOri == Orientation_FS || cellOri == Orientation_S) {
+  } else if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
+    if (cellOri == dbOrientType::MX || cellOri == dbOrientType::R180) {
       return cellOri;
     }
-    if (cellOri == Orientation_N) {
-      return Orientation_FS;
+    if (cellOri == dbOrientType::R0) {
+      return dbOrientType::MX;
     }
-    if (cellOri == Orientation_FN) {
-      return Orientation_S;
+    if (cellOri == dbOrientType::MY) {
+      return dbOrientType::R180;
     }
   }
   return rowOri;
@@ -559,14 +466,14 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
 {
   // Messy...
   if (siteSym == Symmetry_Y) {
-    if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FN) {
+    if (rowOri == dbOrientType::R0) {
+      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
         return true;
       }
       return false;
     }
-    if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_S || cellOri == Orientation_FS) {
+    if (rowOri == dbOrientType::MX) {
+      if (cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
         return true;
       }
       return false;
@@ -575,14 +482,14 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
     return false;
   }
   if (siteSym == Symmetry_X) {
-    if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FS) {
+    if (rowOri == dbOrientType::R0) {
+      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX) {
         return true;
       }
       return false;
     }
-    if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FS) {
+    if (rowOri == dbOrientType::MX) {
+      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MX) {
         return true;
       }
       return false;
@@ -591,16 +498,16 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
     return false;
   }
   if (siteSym == (Symmetry_X | Symmetry_Y)) {
-    if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FN
-          || cellOri == Orientation_S || cellOri == Orientation_FS) {
+    if (rowOri == dbOrientType::R0) {
+      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
+          || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
         return true;
       }
       return false;
     }
-    if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FN
-          || cellOri == Orientation_S || cellOri == Orientation_FS) {
+    if (rowOri == dbOrientType::MX) {
+      if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY
+          || cellOri == dbOrientType::R180 || cellOri == dbOrientType::MX) {
         return true;
       }
       return false;
@@ -609,14 +516,14 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
     return false;
   }
   if (siteSym == Symmetry_UNKNOWN) {
-    if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N) {
+    if (rowOri == dbOrientType::R0) {
+      if (cellOri == dbOrientType::R0) {
         return true;
       }
       return false;
     }
-    if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_FS) {
+    if (rowOri == dbOrientType::MX) {
+      if (cellOri == dbOrientType::MX) {
         return true;
       }
       return false;

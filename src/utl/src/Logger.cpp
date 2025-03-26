@@ -39,16 +39,22 @@
 #include <fstream>
 #include <mutex>
 
+#include "CommandLineProgress.h"
 #include "spdlog/pattern_formatter.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/spdlog.h"
+#include "utl/Progress.h"
+#include "utl/prometheus/metrics_server.h"
+#include "utl/prometheus/registry.h"
 
 namespace utl {
 
 Logger::Logger(const char* log_filename, const char* metrics_filename)
 {
+  progress_ = std::make_unique<CommandLineProgress>(this);
+
   sinks_.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
   if (log_filename)
     sinks_.push_back(
@@ -69,6 +75,8 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
       counter = 0;
     }
   }
+
+  prometheus_registry_ = std::make_shared<PrometheusRegistry>();
 }
 
 Logger::~Logger()
@@ -176,7 +184,7 @@ void Logger::flushMetrics()
 {
   const std::string json = MetricsEntry::assembleJSON(metrics_entries_);
 
-  for (std::string sink_path : metrics_sinks_) {
+  for (const std::string& sink_path : metrics_sinks_) {
     std::ofstream sink_file(sink_path);
     if (sink_file) {
       sink_file << json;
@@ -320,6 +328,39 @@ void Logger::restoreFromRedirect()
       logger_->sinks().begin(), sinks_.begin(), sinks_.end());
 }
 
+void Logger::startPrometheusEndpoint(uint16_t port)
+{
+  if (prometheus_metrics_) {
+    return;
+  }
+
+  prometheus_metrics_ = std::make_unique<PrometheusMetricsServer>(
+      prometheus_registry_, this, port);
+}
+
+std::shared_ptr<PrometheusRegistry> Logger::getRegistry()
+{
+  return prometheus_registry_;
+}
+
+bool Logger::isPrometheusServerReadyToServe()
+{
+  if (!prometheus_metrics_) {
+    return false;
+  }
+
+  return prometheus_metrics_->is_ready() && prometheus_metrics_->port() != 0;
+}
+
+uint16_t Logger::getPrometheusPort()
+{
+  if (!prometheus_metrics_) {
+    return 0;
+  }
+
+  return prometheus_metrics_->port();
+}
+
 void Logger::setFormatter()
 {
   // create formatter without a newline
@@ -327,6 +368,14 @@ void Logger::setFormatter()
       = std::make_unique<spdlog::pattern_formatter>(
           pattern_, spdlog::pattern_time_type::local, "");
   logger_->set_formatter(std::move(formatter));
+}
+
+std::unique_ptr<Progress> Logger::swapProgress(Progress* progress)
+{
+  std::unique_ptr<Progress> current_progress = std::move(progress_);
+  progress_.reset(progress);
+
+  return current_progress;
 }
 
 }  // namespace utl

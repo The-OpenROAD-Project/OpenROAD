@@ -737,7 +737,7 @@ void RepairSetup::addBuffers(
 {
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
-    for (LibertyCell* buffer_cell : resizer_->buffer_cells_) {
+    for (LibertyCell* buffer_cell : resizer_->buffer_fast_sizes_) {
       LibertyPort *in, *out;
       buffer_cell->bufferPorts(in, out);
       Delay best_slack = -INF;

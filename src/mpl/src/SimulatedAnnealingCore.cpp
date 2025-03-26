@@ -45,40 +45,27 @@ namespace mpl {
 
 using std::string;
 
-//////////////////////////////////////////////////////////////////
-// Class SimulatedAnnealingCore
 template <class T>
-SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
-    PhysicalHierarchy* tree,
-    const Rect& outline,           // boundary constraints
-    const std::vector<T>& macros,  // macros (T = HardMacro or T = SoftMacro)
-    // weight for different penalty
-    float area_weight,
-    float outline_weight,
-    float wirelength_weight,
-    float guidance_weight,
-    float fence_weight,  // each blockage will be modeled by a macro with fences
-    // probability of each action
-    float pos_swap_prob,
-    float neg_swap_prob,
-    float double_swap_prob,
-    float exchange_prob,
-    // Fast SA hyperparameter
-    float init_prob,
-    int max_num_step,
-    int num_perturb_per_step,
-    unsigned seed,
-    MplObserver* graphics,
-    utl::Logger* logger)
+SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
+                                                  const Rect& outline,
+                                                  const std::vector<T>& macros,
+                                                  const SACoreWeights& weights,
+                                                  float pos_swap_prob,
+                                                  float neg_swap_prob,
+                                                  float double_swap_prob,
+                                                  float exchange_prob,
+                                                  // Fast SA hyperparameter
+                                                  float init_prob,
+                                                  int max_num_step,
+                                                  int num_perturb_per_step,
+                                                  unsigned seed,
+                                                  MplObserver* graphics,
+                                                  utl::Logger* logger)
     : outline_(outline),
       blocked_boundaries_(tree->blocked_boundaries),
       graphics_(graphics)
 {
-  area_weight_ = area_weight;
-  outline_weight_ = outline_weight;
-  wirelength_weight_ = wirelength_weight;
-  guidance_weight_ = guidance_weight;
-  fence_weight_ = fence_weight;
+  core_weights_ = weights;
 
   pos_swap_prob_ = pos_swap_prob;
   neg_swap_prob_ = neg_swap_prob;
@@ -210,6 +197,13 @@ float SimulatedAnnealingCore<T>::getHeight() const
 }
 
 template <class T>
+float SimulatedAnnealingCore<T>::getAreaPenalty() const
+{
+  const float outline_area = outline_.getWidth() * outline_.getHeight();
+  return (width_ * height_) / outline_area;
+}
+
+template <class T>
 float SimulatedAnnealingCore<T>::getOutlinePenalty() const
 {
   return outline_penalty_;
@@ -274,8 +268,10 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
   if (graphics_) {
-    graphics_->setOutlinePenalty(
-        {outline_weight_, outline_penalty_ / norm_outline_penalty_});
+    graphics_->setOutlinePenalty({"Outline",
+                                  core_weights_.outline,
+                                  outline_penalty_,
+                                  norm_outline_penalty_});
   }
 }
 
@@ -284,7 +280,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
 {
   // Initialization
   wirelength_ = 0.0;
-  if (wirelength_weight_ <= 0.0) {
+  if (core_weights_.wirelength <= 0.0) {
     return;
   }
 
@@ -302,7 +298,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& source = macros_[net.terminals.first];
     T& target = macros_[net.terminals.second];
 
-    if (target.isIOCluster()) {
+    if (target.isClusterOfUnplacedIOPins()) {
       addBoundaryDistToWirelength(source, target, net.weight);
       continue;
     }
@@ -319,8 +315,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
                 / (outline_.getHeight() + outline_.getWidth());
 
   if (graphics_) {
-    graphics_->setWirelengthPenalty(
-        {wirelength_weight_, wirelength_ / norm_wirelength_});
+    graphics_->setWirelengthPenalty({"Wire Length",
+                                     core_weights_.wirelength,
+                                     wirelength_,
+                                     norm_wirelength_});
   }
 }
 
@@ -394,7 +392,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
   fence_penalty_ = 0.0;
-  if (fence_weight_ <= 0.0 || fences_.empty()) {
+  if (core_weights_.fence <= 0.0 || fences_.empty()) {
     return;
   }
 
@@ -430,7 +428,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   fence_penalty_ = fence_penalty_ / fences_.size();
   if (graphics_) {
     graphics_->setFencePenalty(
-        {fence_weight_, fence_penalty_ / norm_fence_penalty_});
+        {"Fence", core_weights_.fence, fence_penalty_, norm_fence_penalty_});
   }
 }
 
@@ -439,7 +437,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
   guidance_penalty_ = 0.0;
-  if (guidance_weight_ <= 0.0 || guides_.empty()) {
+  if (core_weights_.guidance <= 0.0 || guides_.empty()) {
     return;
   }
 
@@ -469,8 +467,10 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   guidance_penalty_ = guidance_penalty_ / guides_.size();
 
   if (graphics_) {
-    graphics_->setGuidancePenalty(
-        {guidance_weight_, guidance_penalty_ / norm_guidance_penalty_});
+    graphics_->setGuidancePenalty({"Guidance",
+                                   core_weights_.guidance,
+                                   guidance_penalty_,
+                                   norm_guidance_penalty_});
   }
 }
 
@@ -496,14 +496,6 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   std::vector<float> accumulated_length(pos_seq_.size(), 0.0);
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = pos_seq_[i];
-
-    // There may exist pin access macros with zero area in our sequence pair
-    // when bus planning is on. This check is a temporary approach.
-    if (macros_[macro_id].getWidth() <= 0
-        || macros_[macro_id].getHeight() <= 0) {
-      continue;
-    }
-
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
     macros_[macro_id].setX(accumulated_length[neg_seq_pos]);
@@ -539,14 +531,6 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 
   for (int i = 0; i < pos_seq_.size(); i++) {
     const int macro_id = reversed_pos_seq[i];
-
-    // There may exist pin access macros with zero area in our sequence pair
-    // when bus planning is on. This check is a temporary approach.
-    if (macros_[macro_id].getWidth() <= 0
-        || macros_[macro_id].getHeight() <= 0) {
-      continue;
-    }
-
     const int neg_seq_pos = sequence_pair_pos[macro_id].second;
 
     macros_[macro_id].setY(accumulated_length[neg_seq_pos]);
@@ -642,11 +626,27 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
 template <class T>
 void SimulatedAnnealingCore<T>::generateRandomIndices(int& index1, int& index2)
 {
-  index1 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
-  index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+  // TODO: See for explanation.
+  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
+  // This code is ugly on purpose to incentivize merging the proper
+  // fix.
+  float random_variable_0_1_index1;
+  float random_variable_0_1_index2;
+  do {
+    random_variable_0_1_index1 = distribution_(generator_);
+    random_variable_0_1_index2 = distribution_(generator_);
+  } while (random_variable_0_1_index1 >= 1.0
+           || random_variable_0_1_index2 >= 1.0);
+
+  index1 = (int) (std::floor(random_variable_0_1_index1 * pos_seq_.size()));
+  index2 = (int) (std::floor(random_variable_0_1_index2 * pos_seq_.size()));
 
   while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+    do {
+      random_variable_0_1_index2 = distribution_(generator_);
+    } while (random_variable_0_1_index2 >= 1.0);
+
+    index2 = (int) (std::floor(random_variable_0_1_index2 * pos_seq_.size()));
   }
 }
 
@@ -660,6 +660,97 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
   }
 
   return std::accumulate(value_list.begin(), value_list.end(), 0.0f) / size;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::report(const PenaltyData& penalty) const
+{
+  logger_->report(
+      "{:>15s} | {:>8.4f} | {:>7.4f} | {:>14.4f} | {:>7.4f} ",
+      penalty.name,
+      penalty.weight,
+      penalty.value,
+      penalty.normalization_factor,
+      penalty.weight * penalty.value / penalty.normalization_factor);
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::reportCoreWeights() const
+{
+  logger_->report(
+      "\n  Penalty Type  |  Weight  |  Value  |  Norm. Factor  |  Cost");
+  logger_->report(
+      "---------------------------------------------------------------");
+  report({"Area", core_weights_.area, getAreaPenalty(), 1.0f});
+  report({"Outline",
+          core_weights_.outline,
+          outline_penalty_,
+          norm_outline_penalty_});
+
+  report(
+      {"Wire Length", core_weights_.wirelength, wirelength_, norm_wirelength_});
+  report({"Guidance",
+          core_weights_.guidance,
+          guidance_penalty_,
+          norm_guidance_penalty_});
+  report({"Fence", core_weights_.fence, fence_penalty_, norm_fence_penalty_});
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::reportTotalCost() const
+{
+  logger_->report(
+      "---------------------------------------------------------------");
+  logger_->report("  Total Cost  {:>49.4f} \n", getNormCost());
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::reportLocations() const
+{
+  if constexpr (std::is_same_v<T, HardMacro>) {
+    logger_->report("     Id     |                                Location");
+  } else {
+    logger_->report(" Cluster Id |                                Location");
+  }
+
+  logger_->report("-----------------------------------------------------");
+
+  // First the moveable macros. I.e., those from the sequence pair.
+  for (const int macro_id : pos_seq_) {
+    int display_id;
+    if constexpr (std::is_same_v<T, SoftMacro>) {
+      const SoftMacro& soft_macro = macros_[macro_id];
+      Cluster* cluster = soft_macro.getCluster();
+      display_id = cluster->getId();
+    } else {
+      display_id = macro_id;
+    }
+
+    const T& macro = macros_[macro_id];
+    logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                    display_id,
+                    macro.getX(),
+                    macro.getY(),
+                    macro.getWidth(),
+                    macro.getHeight());
+  }
+
+  // Then, the fixed terminals.
+  const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
+  for (int i = 0; i < macros_.size(); ++i) {
+    if (i <= number_of_moveable_macros) {
+      continue;
+    }
+
+    const T& macro = macros_[i];
+    logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+                    "fixed",
+                    macro.getX(),
+                    macro.getY(),
+                    macro.getWidth(),
+                    macro.getHeight());
+  }
+  logger_->report("");
 }
 
 template <class T>

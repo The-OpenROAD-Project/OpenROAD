@@ -35,7 +35,6 @@
 
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanList.h"
 #include "dbScanPartition.h"
@@ -72,44 +71,10 @@ bool _dbScanInst::operator<(const _dbScanInst& rhs) const
   return true;
 }
 
-void _dbScanInst::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbScanInst& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(bits_);
-  DIFF_FIELD(scan_enable_);
-  DIFF_FIELD(inst_);
-  DIFF_FIELD(scan_clock_);
-  DIFF_FIELD(clock_edge_);
-  DIFF_END
-}
-
-void _dbScanInst::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(bits_);
-  DIFF_OUT_FIELD(scan_enable_);
-  DIFF_OUT_FIELD(inst_);
-  DIFF_OUT_FIELD(scan_clock_);
-  DIFF_OUT_FIELD(clock_edge_);
-
-  DIFF_END
-}
-
 _dbScanInst::_dbScanInst(_dbDatabase* db)
 {
   bits_ = 0;
   clock_edge_ = 0;
-}
-
-_dbScanInst::_dbScanInst(_dbDatabase* db, const _dbScanInst& r)
-{
-  bits_ = r.bits_;
-  scan_enable_ = r.scan_enable_;
-  inst_ = r.inst_;
-  scan_clock_ = r.scan_clock_;
-  clock_edge_ = r.clock_edge_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanInst& obj)
@@ -132,6 +97,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
   stream << obj.scan_clock_;
   stream << obj.clock_edge_;
   return stream;
+}
+
+void _dbScanInst::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 ////////////////////////////////////////////////////////////////////

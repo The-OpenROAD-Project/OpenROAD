@@ -40,7 +40,6 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/odb.h"
-#include "odb/parse.h"
 
 namespace utl {
 class Logger;
@@ -53,6 +52,7 @@ using odb::uint;
 using utl::Logger;
 
 class NameTable;
+class Ath__parser;
 
 class extSpef
 {

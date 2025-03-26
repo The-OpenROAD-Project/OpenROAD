@@ -328,6 +328,33 @@ bool FlexDRConnectivityChecker::astar(
       const auto idx1 = *it1;
       for (; it2 != idxS.end(); it2++) {
         const auto idx2 = *it2;
+        if ((idx1 >= nNetRouteObjs) ^ (idx2 >= nNetRouteObjs)) {
+          // one of them is a pin
+          // check that the route object connects to the pin
+          const auto route_obj_idx = (idx1 >= nNetRouteObjs) ? idx2 : idx1;
+          if (netRouteObjs[route_obj_idx]->typeId() == frcPathSeg) {
+            auto ps = static_cast<frPathSeg*>(netRouteObjs[route_obj_idx]);
+            bool valid_connection = false;
+            if (ps->getBeginPoint() == pr.first
+                && ps->getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
+              valid_connection = true;
+            }
+            if (ps->getEndPoint() == pr.first
+                && ps->getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
+              valid_connection = true;
+            }
+            if (!valid_connection) {
+              continue;
+            }
+          } else if (netRouteObjs[route_obj_idx]->typeId() == frcVia) {
+            auto via = static_cast<frVia*>(netRouteObjs[route_obj_idx]);
+            if (!via->isBottomConnected() && !via->isTopConnected()) {
+              continue;
+            }
+          } else {
+            continue;
+          }
+        }
         adjVec[idx1].push_back(idx2);
         adjVec[idx2].push_back(idx1);
       }
@@ -819,12 +846,12 @@ void FlexDRConnectivityChecker::handleOverlaps_perform(
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        std::cout << "Error1: bp.x() >= ep.x()" << bp << "  " << ep << "\n";
+        std::cout << "Error1: bp.x() >= ep.x()" << bp << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        std::cout << "Error2: bp.y() >= ep.y()" << bp << "  " << ep << "\n";
+        std::cout << "Error2: bp.y() >= ep.y()" << bp << " " << ep << "\n";
       }
     }
   }
@@ -1347,7 +1374,7 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
     Logger* logger,
     RouterConfiguration* router_cfg,
-    FlexDRGraphics* graphics,
+    AbstractDRGraphics* graphics,
     bool save_updates)
     : router_(router),
       logger_(logger),

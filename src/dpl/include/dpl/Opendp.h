@@ -135,8 +135,7 @@ class Opendp
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
-                         const std::string& report_file_name = std::string(""),
-                         bool disallow_one_site_gaps = false);
+                         const std::string& report_file_name = std::string(""));
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -151,9 +150,7 @@ class Opendp
   int padLeft(dbInst* inst) const;
   int padRight(dbInst* inst) const;
 
-  void checkPlacement(bool verbose,
-                      bool disallow_one_site_gaps = false,
-                      const string& report_file_name = "");
+  void checkPlacement(bool verbose, const string& report_file_name = "");
   void fillerPlacement(dbMasterSeq* filler_masters,
                        const char* prefix,
                        bool verbose);
@@ -320,7 +317,6 @@ class Opendp
                 int* x,
                 int* y) const;
   int rectDist(const Cell* cell, const Rect& rect) const;
-  void checkOneSiteDbMaster();
   void deleteGrid();
   // Cell initial location wrt core origin.
 
@@ -357,6 +353,9 @@ class Opendp
   void mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
                           std::vector<IRDrop>& ir_drops);
   void prepareDecapAndGaps();
+  void placeCell(Cell* cell, GridX x, GridY y);
+  void unplaceCell(Cell* cell);
+  void setGridPaddedLoc(Cell* cell, GridX x, GridY y);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
@@ -384,7 +383,6 @@ class Opendp
   map<dbTechLayer*, GapFillers> gap_fillers_;
   map<dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
-  bool have_one_site_cells_ = false;
 
   // Decap placement.
   vector<DecapCell*> decap_masters_;

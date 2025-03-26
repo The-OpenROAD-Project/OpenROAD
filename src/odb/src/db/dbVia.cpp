@@ -39,7 +39,6 @@
 #include "dbBoxItr.h"
 #include "dbChip.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -127,51 +126,6 @@ bool _dbVia::operator==(const _dbVia& rhs) const
   }
 
   return true;
-}
-
-void _dbVia::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbVia& rhs) const
-{
-  _dbBlock* lhs_block = (_dbBlock*) getOwner();
-  _dbBlock* rhs_block = (_dbBlock*) rhs.getOwner();
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_flags._is_rotated);
-  DIFF_FIELD(_flags._is_tech_via);
-  DIFF_FIELD(_flags._has_params);
-  DIFF_FIELD(_flags._orient);
-  DIFF_FIELD(_flags.default_);
-  DIFF_FIELD(_pattern);
-  DIFF_OBJECT(_bbox, lhs_block->_box_tbl, rhs_block->_box_tbl);
-  DIFF_SET(_boxes, lhs_block->_box_itr, rhs_block->_box_itr);
-  DIFF_FIELD(_top);
-  DIFF_FIELD(_bottom);
-  DIFF_FIELD(_generate_rule);
-  DIFF_FIELD(_rotated_via_id);
-  DIFF_STRUCT(_via_params);
-  DIFF_END
-}
-
-void _dbVia::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* block = (_dbBlock*) getOwner();
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_flags._is_rotated);
-  DIFF_OUT_FIELD(_flags._is_tech_via);
-  DIFF_OUT_FIELD(_flags._has_params);
-  DIFF_OUT_FIELD(_flags._orient);
-  DIFF_OUT_FIELD(_flags.default_);
-  DIFF_OUT_FIELD(_pattern);
-  DIFF_OUT_OBJECT(_bbox, block->_box_tbl);
-  DIFF_OUT_SET(_boxes, block->_box_itr);
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_FIELD(_bottom);
-  DIFF_OUT_FIELD(_generate_rule);
-  DIFF_OUT_FIELD(_rotated_via_id);
-  DIFF_OUT_STRUCT(_via_params);
-  DIFF_END
 }
 
 _dbVia::_dbVia(_dbDatabase*, const _dbVia& v)
@@ -697,6 +651,15 @@ void create_via_boxes(_dbVia* via, const dbViaParams& P)
       = maxY + P.getYBottomEnclosure() + P.getYOrigin() + P.getYBottomOffset();
   dbBox::create(
       (dbVia*) via, P.getBottomLayer(), bot_minX, bot_minY, bot_maxX, bot_maxY);
+}
+
+void _dbVia::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["pattern"].add(_pattern);
 }
 
 }  // namespace odb

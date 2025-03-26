@@ -31,17 +31,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "rcx/extRCap.h"
-#include "rcx/extprocess.h"
-#include "wire.h"
-
-#ifdef _WIN32
-#include "direct.h"
-#endif
-
 #include <map>
 #include <vector>
 
+#include "grids.h"
+#include "parse.h"
+#include "rcx/extRCap.h"
+#include "rcx/extprocess.h"
 #include "utl/Logger.h"
 
 // #define SKIP_SOLVER
@@ -203,7 +199,7 @@ uint extRCModel::readRCvalues(const char* corner,
   extMetRCTable* met_rc = getMetRCTable(corner_index);
   AthPool<extDistRC>* rcPool = met_rc->getRCPool();
 
-  extMeasure m(NULL);
+  extMeasure m(nullptr);
   m._diagModel = 1;
   // DELETE uint openWireNumber = 1;
   // DELETE int n = 0;
@@ -307,7 +303,7 @@ uint extRCModel::readRCvalues(const char* corner,
               wLen,
               fullPatternName);
     }
-    // if (strstr(netName, "cntxM") != NULL)
+    // if (strstr(netName, "cntxM") != nullptr)
     //  continue;
 
     extDistRC* rc = rcPool->alloc();
@@ -484,7 +480,7 @@ uint extRCModel::allocateTables(uint m, uint met, uint diagModel)
 {
   double dbFactor = 1.0;
   uint cnt = 0;
-  Ath__array1D<double>* wTable = NULL;
+  Ath__array1D<double>* wTable = nullptr;
 
   _modelTable[m]->allocOverTable(met, wTable, dbFactor);
   _modelTable[m]->allocOverUnderTable(met, false, wTable, dbFactor);
@@ -503,35 +499,35 @@ uint extRCModel::allocateTables(uint m, uint met, uint diagModel)
 extDistWidthRCTable*** extMetRCTable::allocTable()
 {
   extDistWidthRCTable*** table = new extDistWidthRCTable**[_layerCnt];
-  if (table == NULL) {
+  if (table == nullptr) {
     fprintf(stderr,
             "Cannot allocate memory for oblject: extDistWidthRCTable\n");
     exit(0);
   }
   for (uint ii = 0; ii < _layerCnt; ii++) {
     table[ii] = new extDistWidthRCTable*[_wireCnt];
-    if (table[ii] == NULL) {
+    if (table[ii] == nullptr) {
       fprintf(stderr,
               "Cannot allocate memory for oblject: extDistWidthRCTable\n");
       exit(0);
     }
     for (uint jj = 0; jj < _wireCnt; jj++) {
-      table[ii][jj] = NULL;
+      table[ii][jj] = nullptr;
     }
   }
   return table;
 }
 void extMetRCTable::deleteTable(extDistWidthRCTable*** table)
 {
-  if (table == NULL)
+  if (table == nullptr)
     return;
 
   for (uint ii = 0; ii < _layerCnt; ii++) {
-    if (table[ii] == NULL)
+    if (table[ii] == nullptr)
       continue;
 
     for (uint jj = 0; jj < _wireCnt; jj++) {
-      if (table[ii][jj] != NULL)
+      if (table[ii][jj] != nullptr)
         delete table[ii][jj];
     }
     delete table[ii];

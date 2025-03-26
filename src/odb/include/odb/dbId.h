@@ -36,18 +36,6 @@
 
 namespace odb {
 
-//
-// April 2006 twg -
-//
-//     I removed the inheritance of empty class dbIdValidation from the
-//     inheritance list of dbId. The "C++" standard does not enforce an empty
-//     class to have zero bytes. It is up to the compiler to optimize the empty
-//     class.
-//
-//     If the compiler does NOT optimize the empty class, then database index
-//     will increase from 32-bits to 64-bits! (the compiler will align the "_id"
-//     field to a 32-bit boundary.)
-//
 template <class T>
 class dbId
 {

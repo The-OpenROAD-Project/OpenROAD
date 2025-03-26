@@ -1,0 +1,95 @@
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[WARNING STA-0202] gcd_adder4.v line 3295, instance gcd_1 port resp_msg size 16 does not match net size 1.
+[WARNING STA-0202] gcd_adder4.v line 3297, instance gcd_2 port resp_msg size 16 does not match net size 1.
+Startpoint: gcd_1/dpath.b_reg.out[3]$_DFFE_PP_
+            (rising edge-triggered flip-flop clocked by CLK)
+Endpoint: carry_out (output port)
+Path Group: path delay
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 ^ gcd_1/dpath.b_reg.out[3]$_DFFE_PP_/CLK (sky130_fd_sc_hd__dfxtp_1)
+   0.32    0.32 v gcd_1/dpath.b_reg.out[3]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
+   0.00    0.32 v gcd_1/_329_/A (sky130_fd_sc_hd__xnor2_1)
+   0.58    0.89 ^ gcd_1/_329_/Y (sky130_fd_sc_hd__xnor2_1)
+   0.00    0.89 ^ gcd_1/_552_/_076_/A (sky130_fd_sc_hd__nand2_1)
+   0.08    0.98 v gcd_1/_552_/_076_/Y (sky130_fd_sc_hd__nand2_1)
+   0.00    0.98 v gcd_1/_552_/_077_/A1 (sky130_fd_sc_hd__o21ai_0)
+   0.27    1.24 ^ gcd_1/_552_/_077_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.24 ^ gcd_1/_552_/_087_/A1 (sky130_fd_sc_hd__a21oi_1)
+   0.11    1.36 v gcd_1/_552_/_087_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.36 v gcd_1/_552_/_119_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.15    1.50 ^ gcd_1/_552_/_119_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.50 ^ gcd_1/_552_/_174_/A (sky130_fd_sc_hd__buf_4)
+   0.12    1.62 ^ gcd_1/_552_/_174_/X (sky130_fd_sc_hd__buf_4)
+   0.00    1.62 ^ gcd_1/_carry_out_and_/B (sky130_fd_sc_hd__and4_1)
+   0.15    1.77 ^ gcd_1/_carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    1.77 ^ _carry_out_/A (sky130_fd_sc_hd__and2_1)
+   0.09    1.86 ^ _carry_out_/X (sky130_fd_sc_hd__and2_1)
+   0.00    1.86 ^ carry_out (out)
+           1.86   data arrival time
+
+   1.00    1.00   max_delay
+   0.00    1.00   output external delay
+           1.00   data required time
+---------------------------------------------------------
+           1.00   data required time
+          -1.86   data arrival time
+---------------------------------------------------------
+          -0.86   slack (VIOLATED)
+
+
+Cell type report for gcd_1/_552_ (LCU_16_KOGGE_STONE__552_)
+Cell type report:                       Count       Area
+  Buffer                                   16     120.12
+  Inverter                                  5      18.77
+  Multi-Input combinational cell           82     384.12
+  Total                                   103     523.00
+Startpoint: gcd_1/dpath.b_reg.out[3]$_DFFE_PP_
+            (rising edge-triggered flip-flop clocked by CLK)
+Endpoint: carry_out (output port)
+Path Group: path delay
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 ^ gcd_1/dpath.b_reg.out[3]$_DFFE_PP_/CLK (sky130_fd_sc_hd__dfxtp_1)
+   0.32    0.32 v gcd_1/dpath.b_reg.out[3]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
+   0.00    0.32 v gcd_1/_329_/A (sky130_fd_sc_hd__xnor2_1)
+   0.40    0.71 ^ gcd_1/_329_/Y (sky130_fd_sc_hd__xnor2_1)
+   0.00    0.71 ^ gcd_1/_552_/_35_/A (sky130_fd_sc_hd__nand2_1)
+   0.08    0.79 v gcd_1/_552_/_35_/Y (sky130_fd_sc_hd__nand2_1)
+   0.00    0.79 v gcd_1/_552_/_36_/A1 (sky130_fd_sc_hd__o21ai_0)
+   0.31    1.10 ^ gcd_1/_552_/_36_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.10 ^ gcd_1/_552_/_43_/A1 (sky130_fd_sc_hd__a21oi_1)
+   0.16    1.26 v gcd_1/_552_/_43_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.26 v gcd_1/_552_/_65_/A4 (sky130_fd_sc_hd__o41ai_1)
+   0.25    1.50 ^ gcd_1/_552_/_65_/Y (sky130_fd_sc_hd__o41ai_1)
+   0.00    1.50 ^ gcd_1/_552_/_92_/A (sky130_fd_sc_hd__buf_4)
+   0.15    1.65 ^ gcd_1/_552_/_92_/X (sky130_fd_sc_hd__buf_4)
+   0.00    1.65 ^ gcd_1/_carry_out_and_/B (sky130_fd_sc_hd__and4_1)
+   0.15    1.80 ^ gcd_1/_carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    1.80 ^ _carry_out_/A (sky130_fd_sc_hd__and2_1)
+   0.09    1.89 ^ _carry_out_/X (sky130_fd_sc_hd__and2_1)
+   0.00    1.89 ^ carry_out (out)
+           1.89   data arrival time
+
+   1.00    1.00   max_delay
+   0.00    1.00   output external delay
+           1.00   data required time
+---------------------------------------------------------
+           1.00   data required time
+          -1.89   data arrival time
+---------------------------------------------------------
+          -0.89   slack (VIOLATED)
+
+
+Cell type report for gcd_1/_552_ (LCU_16_BRENT_KUNG)
+Cell type report:                       Count       Area
+  Buffer                                   16     120.12
+  Inverter                                  9      33.78
+  Multi-Input combinational cell           37     192.68
+  Total                                    62     346.58
+Repair timing output passed/skipped equivalence test

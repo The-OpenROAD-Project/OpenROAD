@@ -91,7 +91,6 @@ void dbWireShapeItr::begin(dbWire* wire)
 
 bool dbWireShapeItr::next(dbShape& shape)
 {
-  ZASSERT(_wire);
   int operand;
 
 nextOpCode:

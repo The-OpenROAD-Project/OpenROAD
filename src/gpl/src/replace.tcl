@@ -130,7 +130,7 @@ proc global_placement { args } {
     if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
       set overflow_list $keys(-timing_driven_net_reweight_overflow)
     } else {
-      set overflow_list [list 79 64 49 29 21 15]
+      set overflow_list [list 79 64 29 21 15]
     }
 
     foreach overflow $overflow_list {
@@ -383,7 +383,7 @@ proc cluster_flops { args } {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
     keys {-pause -update -inst -start_iter} \
-    flags {-draw_bins -initial} ;# checker off
+    flags {-draw_bins -initial -update_db} ;# checker off
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 117 "No design block found."
@@ -414,8 +414,33 @@ proc global_placement_debug { args } {
 
   set draw_bins [info exists flags(-draw_bins)]
   set initial [info exists flags(-initial)]
+  set update_db [info exists flags(-update_db)]
 
-  gpl::set_debug_cmd $pause $update $draw_bins $initial $inst $start_iter
+  gpl::set_debug_cmd $pause $update $draw_bins $initial $inst $start_iter $update_db
+}
+
+sta::define_cmd_args "placement_cluster" {}
+
+proc placement_cluster { args } {
+  sta::parse_key_args "placement_cluster" args \
+    keys {} \
+    flags {}
+
+  if { $args == {} } {
+    utl::error GPL 94 "placement_cluster requires a list of instances."
+  }
+
+  if { [llength $args] == 1 } {
+    set args [lindex $args 0]
+  }
+
+  set insts []
+  foreach inst_name $args {
+    lappend insts {*}[gpl::parse_inst_names placement_cluster $inst_name]
+  }
+  utl::info GPL 96 "Created placement cluster of [llength $insts] instances."
+
+  gpl::placement_cluster_cmd $insts
 }
 
 namespace eval gpl {
@@ -456,5 +481,19 @@ proc get_global_placement_uniform_density { args } {
     utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."
   }
   return $uniform_density
+}
+
+proc parse_inst_names { cmd names } {
+  set dbBlock [ord::get_db_block]
+  set inst_list {}
+  foreach inst [get_cells $names] {
+    lappend inst_list [sta::sta_to_db_inst $inst]
+  }
+
+  if { [llength $inst_list] == 0 } {
+    utl::error GPL 95 "Instances {$names} for $cmd command were not found."
+  }
+
+  return $inst_list
 }
 }

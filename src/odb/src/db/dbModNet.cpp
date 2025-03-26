@@ -35,9 +35,9 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbITerm.h"
+#include "dbJournal.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -90,52 +90,9 @@ bool _dbModNet::operator<(const _dbModNet& rhs) const
   return true;
 }
 
-void _dbModNet::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbModNet& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_prev_entry);
-  DIFF_FIELD(_moditerms);
-  DIFF_FIELD(_modbterms);
-  DIFF_FIELD(_iterms);
-  DIFF_FIELD(_bterms);
-  DIFF_END
-}
-
-void _dbModNet::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_prev_entry);
-  DIFF_OUT_FIELD(_moditerms);
-  DIFF_OUT_FIELD(_modbterms);
-  DIFF_OUT_FIELD(_iterms);
-  DIFF_OUT_FIELD(_bterms);
-
-  DIFF_END
-}
-
 _dbModNet::_dbModNet(_dbDatabase* db)
 {
   _name = nullptr;
-}
-
-_dbModNet::_dbModNet(_dbDatabase* db, const _dbModNet& r)
-{
-  _name = r._name;
-  _parent = r._parent;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
-  _moditerms = r._moditerms;
-  _modbterms = r._modbterms;
-  _iterms = r._iterms;
-  _bterms = r._bterms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
@@ -164,6 +121,16 @@ dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
   if (obj.getDatabase()->isSchema(db_schema_update_hierarchy)) {
     stream >> obj._bterms;
   }
+  // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_db_remove_hash)) {
+    dbDatabase* db = (dbDatabase*) (obj.getDatabase());
+    _dbBlock* block = (_dbBlock*) (db->getChip()->getBlock());
+    _dbModule* module = block->_module_tbl->getPtr(obj._parent);
+    if (obj._name) {
+      module->_modnet_hash[obj._name] = dbId<_dbModNet>(obj.getId());
+    }
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -194,6 +161,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj)
     stream << obj._bterms;
   }
   return stream;
+}
+
+void _dbModNet::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbModNet::~_dbModNet()
@@ -266,6 +243,16 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   }
   parent->_modnets = modnet->getOID();
   parent->_modnet_hash[name] = modnet->getOID();
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::CREATE_OBJECT);
+    block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(name);
+    block->_journal->pushParam(modnet->getId());
+    block->_journal->pushParam(parent->getId());
+    block->_journal->endAction();
+  }
+
   return (dbModNet*) modnet;
 }
 
@@ -274,6 +261,16 @@ void dbModNet::destroy(dbModNet* mod_net)
   _dbModNet* _modnet = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) _modnet->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(_modnet->_parent);
+
+  // journalling
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModNetObj);
+    block->_journal->pushParam(mod_net->getName());
+    block->_journal->pushParam(mod_net->getId());
+    block->_journal->pushParam(module->getId());
+    block->_journal->endAction();
+  }
 
   uint prev = _modnet->_prev_entry;
   uint next = _modnet->_next_entry;

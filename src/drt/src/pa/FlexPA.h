@@ -29,6 +29,7 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
 #include <vector>
 
@@ -56,7 +57,7 @@ using ViaRawPriorityTuple
 
 class FlexPinAccessPattern;
 class FlexDPNode;
-class FlexPAGraphics;
+class AbstractPAGraphics;
 
 class FlexPA
 {
@@ -73,7 +74,7 @@ class FlexPA
          RouterConfiguration* router_cfg);
   ~FlexPA();
 
-  void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
+  void setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics);
   void setTargetInstances(const frCollection<odb::dbInst*>& insts);
   void setDistributed(const std::string& rhost,
                       uint16_t rport,
@@ -88,7 +89,7 @@ class FlexPA
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
 
-  std::unique_ptr<FlexPAGraphics> graphics_;
+  std::unique_ptr<AbstractPAGraphics> graphics_;
   std::string debugPinName_;
 
   int std_cell_pin_gen_ap_cnt_ = 0;
@@ -100,7 +101,8 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
+  std::unordered_map<frInst*,
+                     std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
@@ -137,19 +139,20 @@ class FlexPA
   void init();
   void initTrackCoords();
   void initViaRawPriority();
-  void initSkipInstTerm();
+  void initAllSkipInstTerm();
+  void initSkipInstTerm(frInst* unique_inst);
   // prep
   void prep();
 
-  bool isStdCell(frInst* inst);
-  bool isMacroCell(frInst* inst);
+  bool isStdCell(frInst* unique_inst);
+  bool isMacroCell(frInst* unique_inst);
 
   /**
    * @brief generates all access points of a single unique instance
    *
-   * @param inst the unique instance
+   * @param unique_inst the unique instance
    */
-  void genInstAccessPoints(frInst* inst);
+  void genInstAccessPoints(frInst* unique_inst);
 
   /**
    * @brief generates all access points of all unique instances
@@ -168,6 +171,24 @@ class FlexPA
   int genPinAccess(T* pin, frInstTerm* inst_term = nullptr);
 
   /**
+   * @brief determines if the current access points are enough to say PA is done
+   * with this pin.
+   *
+   * for the access points to be considered enough there must exist a minimum of
+   * aps:
+   * 1. far enough from each other greater than the minimum specified in
+   * router_cfg.
+   * 2. far enough from the cell edge.
+   *
+   * @param aps the list of candidate access points
+   * @param inst_term terminal related to the pin
+   *
+   * @returns True if the current aps are enough for the pin
+   */
+  bool EnoughAccessPoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                          frInstTerm* inst_term);
+
+  /**
    * @brief initializes the pin accesses of a given pin only considering a given
    * cost for both the lower and upper layer.
    *
@@ -179,7 +200,7 @@ class FlexPA
    * @param lower_type lower layer access type
    * @param upper_type upper layer access type
    *
-   * @return if the initialization was sucessful
+   * @return if enough access points were found for the pin.
    */
   template <typename T>
   bool genPinAccessCostBounded(
@@ -593,17 +614,34 @@ class FlexPA
 
   void prepPattern();
 
-  int prepPatternInst(frInst* inst, int curr_unique_inst_idx, double x_weight);
+  /**
+   * @brief generates valid access patterns for the unique inst, considers both
+   * x and y of prepPatternInstHelper.
+   *
+   * @param unique_inst unique inst
+   */
+  void prepPatternInst(frInst* unique_inst);
 
-  int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
-                  int curr_unique_inst_idx);
+  /**
+   * @brief generates valid access patterns for the unique inst
+   *
+   * @param unique_inst unique inst
+   * @param use_x whether the x or y average coordinate of the access points of
+   * a pin will be used for sorting it.
+   *
+   * @returns the number of access patterns found.
+   */
+  int prepPatternInstHelper(frInst* unique_inst, bool use_x);
+
+  int genPatterns(frInst* unique_inst,
+                  const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
   int genPatternsHelper(
+      frInst* unique_inst,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
       std::set<std::pair<int, int>>& viol_access_points,
-      int curr_unique_inst_idx,
       int max_access_point_size);
 
   /**
@@ -629,24 +667,24 @@ class FlexPA
    * @brief Determines the value of all the paths of the DP problem
    */
   void genPatternsPerform(
+      frInst* unique_inst,
       std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
       const std::set<std::pair<int, int>>& used_access_points,
       const std::set<std::pair<int, int>>& viol_access_points,
-      int curr_unique_inst_idx,
       int max_access_point_size);
 
   /**
    * @brief Determines the edge cost between two DP nodes
    */
-  int getEdgeCost(FlexDPNode* prev_node,
+  int getEdgeCost(frInst* unique_inst,
+                  FlexDPNode* prev_node,
                   FlexDPNode* curr_node,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   std::vector<int>& vio_edges,
                   const std::set<std::pair<int, int>>& used_access_points,
                   const std::set<std::pair<int, int>>& viol_access_points,
-                  int curr_unique_inst_idx,
                   int max_access_point_size);
 
   /**
@@ -669,13 +707,13 @@ class FlexPA
    * @brief Commits to the best path (solution) on the DP graph
    */
   bool genPatternsCommit(
+      frInst* unique_inst,
       const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
       std::set<std::pair<int, int>>& viol_access_points,
-      int curr_unique_inst_idx,
       int max_access_point_size);
 
   /**

@@ -43,14 +43,14 @@
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 51.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 48.
+[INFO DRT-0036] met1 guide region query size = 51.
 [INFO DRT-0036] via guide region query size = 0.
-[INFO DRT-0036] met2 guide region query size = 47.
+[INFO DRT-0036] met2 guide region query size = 49.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] met3 guide region query size = 46.
+[INFO DRT-0036] met3 guide region query size = 48.
 [INFO DRT-0036] via3 guide region query size = 0.
-[INFO DRT-0036] met4 guide region query size = 39.
+[INFO DRT-0036] met4 guide region query size = 52.
 [INFO DRT-0036] via4 guide region query size = 0.
-[INFO DRT-0036] met5 guide region query size = 17.
+[INFO DRT-0036] met5 guide region query size = 30.
 [INFO DRT-0179] Init gr pin query.
 No differences found.

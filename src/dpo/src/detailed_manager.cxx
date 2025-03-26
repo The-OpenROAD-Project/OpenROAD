@@ -51,6 +51,8 @@
 #include "architecture.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
+#include "journal.h"
+#include "odb/dbTransform.h"
 #include "router.h"
 #include "utility.h"
 #include "utl/Logger.h"
@@ -67,8 +69,9 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
-                         RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt)
+                         RoutingParams* rt,
+                         Grid* grid)
+    : arch_(arch), network_(network), rt_(rt), grid_(grid)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -87,21 +90,6 @@ DetailedMgr::DetailedMgr(Architecture* arch,
 
   // For generating a move list...
   moveLimit_ = 100;
-  nMoved_ = 0;
-  curLeft_.resize(moveLimit_);
-  curBottom_.resize(moveLimit_);
-  newLeft_.resize(moveLimit_);
-  newBottom_.resize(moveLimit_);
-  curOri_.resize(moveLimit_);
-  newOri_.resize(moveLimit_);
-  curSeg_.resize(moveLimit_);
-  newSeg_.resize(moveLimit_);
-  movedNodes_.resize(moveLimit_);
-  for (size_t i = 0; i < moveLimit_; i++) {
-    curSeg_[i] = std::vector<int>();
-    newSeg_[i] = std::vector<int>();
-  }
-
   // The purpose of this reverse map is to be able to remove the cell from
   // all segments that it has been placed into.  It only works (i.e., is
   // only up-to-date) if you use the proper routines to add and remove cells
@@ -204,15 +192,16 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
     // cell and "no other cell" on either the left or the
     // right.  This might solve the problem since it will
     // make the blockage wider.
-    xmin -= arch_->getCellSpacing(nullptr, nd);
-    xmax += arch_->getCellSpacing(nd, nullptr);
+    int pad_left = arch_->getCellSpacing(nullptr, nd);
+    int pad_right = arch_->getCellSpacing(nd, nullptr);
 
     for (int r = 0; r < numSingleHeightRows_; r++) {
       const int yb = arch_->getRow(r)->getBottom();
       const int yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(xmin, xmax);
+        blockages_[r].emplace_back(
+            xmin, xmax, pad_left, pad_right, BlockageType::FixedInstance);
       }
     }
   }
@@ -229,7 +218,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       const int yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(xmin, xmax);
+        blockages_[r].emplace_back(xmin, xmax, 0, 0, BlockageType::Placement);
       }
     }
   }
@@ -267,7 +256,10 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
             if (i1 > i0) {
               blockages_[r].emplace_back(originX + i0 * siteSpacing,
-                                         originX + i1 * siteSpacing);
+                                         originX + i1 * siteSpacing,
+                                         0,
+                                         0,
+                                         BlockageType::Routing);
             }
           }
         }
@@ -284,15 +276,15 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
     std::sort(blockages.begin(), blockages.end(), compareBlockages());
 
-    std::stack<std::pair<double, double>> s;
+    std::stack<Blockage> s;
     s.push(blockages[0]);
     for (int i = 1; i < blockages.size(); i++) {
-      std::pair<double, double> top = s.top();  // copy.
-      if (top.second < blockages[i].first) {
+      Blockage top = s.top();  // copy.
+      if (top.getPaddedXMax() < blockages[i].getPaddedXMin()) {
         s.push(blockages[i]);  // new interval.
       } else {
-        if (top.second < blockages[i].second) {
-          top.second = blockages[i].second;  // extend interval.
+        if (top.getPaddedXMax() < blockages[i].getPaddedXMax()) {
+          top.x_max = blockages[i].getXMax();  // extend interval.
         }
         s.pop();      // remove old.
         s.push(top);  // expanded interval.
@@ -320,14 +312,14 @@ void DetailedMgr::findSegments()
   // Create the segments into which movable cells are placed.  I do make
   // segment ends line up with sites and that segments don't extend off
   // the chip.
-
+  auto core = grid_->getCore();
   logger_->info(DPO,
                 322,
                 "Image ({:d}, {:d}) - ({:d}, {:d})",
-                arch_->getMinX(),
-                arch_->getMinY(),
-                arch_->getMaxX(),
-                arch_->getMaxY());
+                arch_->getMinX() + core.xMin(),
+                arch_->getMinY() + core.yMin(),
+                arch_->getMaxX() + core.xMin(),
+                arch_->getMaxY() + core.yMin());
 
   for (auto segment : segments_) {
     delete segment;
@@ -363,10 +355,10 @@ void DetailedMgr::findSegments()
       }
     } else {
       // Divide row.
-      if (blockages_[r][0].first > std::max(arch_->getMinX(), lx)) {
+      if (blockages_[r][0].getPaddedXMin() > std::max(arch_->getMinX(), lx)) {
         int x1 = std::max(arch_->getMinX(), lx);
         int x2 = std::min(std::min(arch_->getMaxX(), rx),
-                          (int) std::floor(blockages_[r][0].first));
+                          (int) std::floor(blockages_[r][0].getPaddedXMin()));
 
         if (x2 > x1) {
           auto segment = new DetailedSeg();
@@ -382,11 +374,13 @@ void DetailedMgr::findSegments()
         }
       }
       for (int i = 1; i < n; i++) {
-        if (blockages_[r][i].first > blockages_[r][i - 1].second) {
-          int x1 = std::max(std::max(arch_->getMinX(), lx),
-                            (int) std::ceil(blockages_[r][i - 1].second));
+        if (blockages_[r][i].getPaddedXMin()
+            > blockages_[r][i - 1].getPaddedXMax()) {
+          int x1
+              = std::max(std::max(arch_->getMinX(), lx),
+                         (int) std::ceil(blockages_[r][i - 1].getPaddedXMax()));
           int x2 = std::min(std::min(arch_->getMaxX(), rx),
-                            (int) std::floor(blockages_[r][i].first));
+                            (int) std::floor(blockages_[r][i].getPaddedXMin()));
 
           if (x2 > x1) {
             auto segment = new DetailedSeg();
@@ -402,11 +396,12 @@ void DetailedMgr::findSegments()
           }
         }
       }
-      if (blockages_[r][n - 1].second < std::min(arch_->getMaxX(), rx)) {
-        int x1
-            = std::min(std::min(arch_->getMaxX(), rx),
-                       std::max(std::max(arch_->getMinX(), lx),
-                                (int) std::ceil(blockages_[r][n - 1].second)));
+      if (blockages_[r][n - 1].getPaddedXMax()
+          < std::min(arch_->getMaxX(), rx)) {
+        int x1 = std::min(
+            std::min(arch_->getMaxX(), rx),
+            std::max(std::max(arch_->getMinX(), lx),
+                     (int) std::ceil(blockages_[r][n - 1].getPaddedXMax())));
         int x2 = std::min(arch_->getMaxX(), rx);
 
         if (x2 > x1) {
@@ -958,6 +953,7 @@ void DetailedMgr::assignCellsToSegments(
         nd->setBottom(yy);
       }
     }
+    paintInGrid(nd);
   }
   logger_->info(DPO,
                 310,
@@ -970,21 +966,26 @@ void DetailedMgr::assignCellsToSegments(
 
 bool DetailedMgr::isInsideABlockage(const Node* nd, const double position)
 {
-  const int single_height = arch_->getRow(0)->getHeight();
-  const int start_row = std::max(nd->getBottom() / single_height, 0);
-  const int end_row
-      = std::min(nd->getTop() / single_height, numSingleHeightRows_ - 1);
-  for (int r = start_row; r <= end_row; r++) {
-    auto it = std::lower_bound(blockages_[r].begin(),
-                               blockages_[r].end(),
-                               std::make_pair(position, position),
-                               [](const std::pair<double, double>& block,
-                                  const std::pair<double, double>& target) {
-                                 return block.second < target.first;
-                               });
+  const Architecture::Row* first_row = arch_->getRow(0);
+  const int single_height = first_row->getHeight();
+  const int rows_origin_y = first_row->getBottom();
+  const int start_row
+      = std::max((nd->getBottom() - rows_origin_y) / single_height, 0);
+  const int end_row = std::min((nd->getTop() - rows_origin_y) / single_height,
+                               numSingleHeightRows_ - 1);
 
-    if (it != blockages_[r].end() && position >= it->first
-        && position <= it->second) {
+  for (int r = start_row; r < end_row; r++) {
+    auto it = std::lower_bound(
+        blockages_[r].begin(),
+        blockages_[r].end(),
+        Blockage(position, position, 0, 0, BlockageType::None),
+        [](const Blockage& block, const Blockage& target) {
+          return block.getXMax() < target.getXMin();
+        });
+
+    if (it != blockages_[r].end()
+        && (it->isFixedInstance() || it->isPlacement())
+        && position >= it->getXMin() && position <= it->getXMax()) {
       return true;
     }
   }
@@ -1079,8 +1080,10 @@ void DetailedMgr::restoreOriginalPositions()
 {
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
+    eraseFromGrid(nd);
     nd->setBottom(origBottom_[nd->getId()]);
     nd->setLeft(origLeft_[nd->getId()]);
+    paintInGrid(nd);
   }
 }
 
@@ -1356,6 +1359,120 @@ int DetailedMgr::checkOverlapInSegments()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+namespace cell_edges {
+odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
+                            const Node* cell,
+                            const int left,
+                            const int bottom,
+                            const odb::dbOrientType& orient)
+{
+  odb::Rect bbox = cell->getMaster()->boundary_box_;
+  odb::dbTransform transform(orient);
+  transform.apply(bbox);
+  odb::Point offset(left - bbox.xMin(), bottom - bbox.yMin());
+  transform.setOffset(offset);
+  odb::Rect result(edge_rect);
+  transform.apply(result);
+  return result;
+}
+odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
+{
+  odb::Rect query_rect(edge_box);
+  bool is_vertical_edge = edge_box.getDir() == 0;
+  if (is_vertical_edge) {
+    // vertical edge
+    query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
+  } else {
+    // horizontal edge
+    query_rect = query_rect.bloat(spc, odb::Orientation2D::Vertical);
+  }
+  return query_rect;
+}
+};  // namespace cell_edges
+
+bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
+{
+  if (!arch_->getUseSpacingTable()) {
+    return false;
+  }
+  const auto& master = node->getMaster();
+  if (master == nullptr) {
+    // Not a cell. (or a filler cell)
+    return false;
+  }
+  // Get the real grid coordinates from the grid indices.
+  int x_real = node->getLeft();
+  int y_real = node->getBottom();
+  for (const auto& edge1 : master->edges_) {
+    int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
+                  + 1;  // +1 to account for EXACT rules
+    odb::Rect edge1_box = cell_edges::transformEdgeRect(
+        edge1.getBBox(), node, x_real, y_real, node->getCurrOrient());
+    bool is_vertical_edge = edge1_box.getDir() == 0;
+    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
+    auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
+    auto xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
+    auto yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
+    auto yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
+    std::set<Node*> checked_cells;
+    // Loop over the area covered by queryRect to find neighboring edges and
+    // check violations.
+    for (auto y1 = yMin; y1 <= yMax; y1++) {
+      for (auto x1 = xMin; x1 <= xMax; x1++) {
+        const auto pixel = grid_->gridPixel(x1, y1);
+        if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == node) {
+          // Skip if pixel is empty or occupied only by the current cell.
+          continue;
+        }
+        auto cell2 = static_cast<Node*>(pixel->cell);
+        if (checked_cells.find(cell2) != checked_cells.end()) {
+          // Skip if cell was already checked
+          continue;
+        }
+        checked_cells.insert(cell2);
+        auto master2 = cell2->getMaster();
+        if (master2 == nullptr) {
+          continue;
+        }
+        for (const auto& edge2 : master2->edges_) {
+          auto spc_entry = arch_->getCellSpacingUsingTable(edge1.getEdgeType(),
+                                                           edge2.getEdgeType());
+          int spc = spc_entry.spc;
+          odb::Rect edge2_box
+              = cell_edges::transformEdgeRect(edge2.getBBox(),
+                                              cell2,
+                                              cell2->getLeft(),
+                                              cell2->getBottom(),
+                                              cell2->getCurrOrient());
+          if (edge1_box.getDir() != edge2_box.getDir()) {
+            // Skip if edges are not parallel.
+            continue;
+          }
+          if (!query_rect.overlaps(edge2_box)) {
+            // Skip if there is no PRL between the edges.
+            continue;
+          }
+          odb::Rect test_rect(edge1_box);
+          // Generalized intersection between the two edges.
+          test_rect.merge(edge2_box);
+          int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
+          if (spc_entry.is_exact) {
+            if (dist == spc) {
+              // Violation only if the distance between the edges is exactly the
+              // specified spacing.
+              return true;
+            }
+          } else if (dist < spc) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkEdgeSpacingInSegments()
 {
   // Check for spacing violations according to the spacing table.  Note
@@ -1386,14 +1503,12 @@ int DetailedMgr::checkEdgeSpacingInSegments()
 
       const double gap = llx_r - rlx_l;
 
-      const double spacing = arch_->getCellSpacingUsingTable(
-          ndl->getRightEdgeType(), ndr->getLeftEdgeType());
-
       arch_->getCellPadding(ndl, dummyPadding, rightPadding);
       arch_->getCellPadding(ndr, leftPadding, dummyPadding);
       const int padding = leftPadding + rightPadding;
 
-      if (!(gap >= spacing - 1.0e-3)) {
+      if (hasEdgeSpacingViolation(ndl)) {
+        logger_->report("Violation in {}", network_->getNodeName(ndl->getId()));
         ++err_n;
       }
       if (!(gap >= padding - 1.0e-3)) {
@@ -1530,7 +1645,8 @@ bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
               - one_site_gap,  // Imagine we insert a cell that is one-site away
                                // from the right-end of the violating node
           segment,
-          violatingNode)) {
+          violatingNode)
+      && verifyMove()) {
     acceptMove();
     clearMoveList();
     return true;
@@ -1541,7 +1657,8 @@ bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
               + (one_site_gap * 2),  // assume we will insert the cell
                                      // before us at this location
           segment,
-          violatingNode)) {
+          violatingNode)
+      && verifyMove()) {
     acceptMove();  // without this, the cells are not moved
     clearMoveList();
     return true;
@@ -1932,7 +2049,7 @@ void DetailedMgr::findRegionIntervals(
     }
 
     // Sort to get intervals left to right.
-    std::sort(intervals[r].begin(), intervals[r].end(), compareBlockages());
+    std::sort(intervals[r].begin(), intervals[r].end(), compareIntervals());
 
     std::stack<std::pair<double, double>> s;
     s.push(intervals[r][0]);
@@ -1956,7 +2073,7 @@ void DetailedMgr::findRegionIntervals(
     }
 
     // Sort to get them left to right.
-    std::sort(intervals[r].begin(), intervals[r].end(), compareBlockages());
+    std::sort(intervals[r].begin(), intervals[r].end(), compareIntervals());
   }
 }
 
@@ -2163,10 +2280,9 @@ void DetailedMgr::resortSegment(DetailedSeg* segPtr)
   const int segId = segPtr->getSegId();
   std::stable_sort(
       cellsInSeg_[segId].begin(), cellsInSeg_[segId].end(), compareNodesX());
-  segPtr->setUtil(0.0);
+  segPtr->setUtil(0);
   for (const Node* ndi : cellsInSeg_[segId]) {
-    const int width = (int) std::ceil(ndi->getWidth());
-    segPtr->addUtil(width);
+    segPtr->addUtil(ndi->getWidth());
   }
 }
 
@@ -2564,7 +2680,18 @@ bool DetailedMgr::shiftLeftHelper(Node* ndi, int xj, const int sj, Node* ndl)
   }
   return true;
 }
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+bool DetailedMgr::verifyMove()
+{
+  for (const auto& node : journal.getAffectedNodes()) {
+    if (hasEdgeSpacingViolation(node)) {
+      rejectMove();
+      return false;
+    }
+  }
+  return true;
+}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedMgr::tryMove(Node* ndi,
@@ -2582,21 +2709,22 @@ bool DetailedMgr::tryMove(Node* ndi,
     if (si != sj) {
       // Different segment.
       if (tryMove1(ndi, xi, yi, si, xj, yj, sj)) {
-        return true;
+        return verifyMove();
       }
     } else {
       // Same segment.
       if (tryMove2(ndi, xi, yi, si, xj, yj, sj)) {
-        return true;
+        return verifyMove();
       }
     }
   } else {
     // Currently only a single, simple routine for trying to move
     // a multi-height cell.
     if (tryMove3(ndi, xi, yi, si, xj, yj, sj)) {
-      return true;
+      return verifyMove();
     }
   }
+  rejectMove();
   return false;
 }
 
@@ -2611,8 +2739,9 @@ bool DetailedMgr::trySwap(Node* ndi,
                           const int sj)
 {
   if (trySwap1(ndi, xi, yi, si, xj, yj, sj)) {
-    return true;
+    return verifyMove();
   }
+  rejectMove();
   return false;
 }
 
@@ -3158,24 +3287,15 @@ bool DetailedMgr::trySwap1(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
-
+    const int x1 = ndi->getLeft();
+    const int y1 = ndi->getBottom();
+    const int x2 = ndj->getLeft();
+    const int y2 = ndj->getBottom();
     // Build move list.
-    if (!addToMoveList(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       si,
-                       xj,
-                       ndj->getBottom(),
-                       sj)) {
+    if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
       return false;
     }
-    if (!addToMoveList(ndj,
-                       ndj->getLeft(),
-                       ndj->getBottom(),
-                       sj,
-                       xi,
-                       ndi->getBottom(),
-                       si)) {
+    if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
       return false;
     }
     return true;
@@ -3265,23 +3385,15 @@ bool DetailedMgr::trySwap1(Node* ndi,
     return false;
   }
 
+  const int x1 = ndi->getLeft();
+  const int y1 = ndi->getBottom();
+  const int x2 = ndj->getLeft();
+  const int y2 = ndj->getBottom();
   // Build move list.
-  if (!addToMoveList(ndi,
-                     ndi->getLeft(),
-                     ndi->getBottom(),
-                     si,
-                     xj,
-                     ndj->getBottom(),
-                     sj)) {
+  if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
     return false;
   }
-  if (!addToMoveList(ndj,
-                     ndj->getLeft(),
-                     ndj->getBottom(),
-                     sj,
-                     xi,
-                     ndi->getBottom(),
-                     si)) {
+  if (!addToMoveList(ndj, x2, y2, sj, xi, y1, si)) {
     return false;
   }
   return true;
@@ -3291,7 +3403,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::clearMoveList()
 {
-  nMoved_ = 0;
+  journal.clearJournal();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3305,7 +3417,7 @@ bool DetailedMgr::addToMoveList(Node* ndi,
                                 const int newSeg)
 {
   // Limit maximum number of cells that can move at once.
-  if (nMoved_ >= moveLimit_) {
+  if (journal.size() >= moveLimit_) {
     return false;
   }
 
@@ -3318,17 +3430,26 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   if ((int) std::ceil(dx) > maxDispX_ || (int) std::ceil(dy) > maxDispY_) {
     return false;
   }
+  // commit move and add to journal
+  eraseFromGrid(ndi);
+  if (curSeg >= 0) {
+    removeCellFromSegment(ndi, curSeg);
+  }
+  ndi->setLeft(newLeft);
+  ndi->setBottom(newBottom);
+  paintInGrid(ndi);
+  if (newSeg >= 0) {
+    addCellToSegment(ndi, newSeg);
+  }
 
-  movedNodes_[nMoved_] = ndi;
-  curLeft_[nMoved_] = curLeft;
-  curBottom_[nMoved_] = curBottom;
-  curSeg_[nMoved_].clear();
-  curSeg_[nMoved_].push_back(curSeg);
-  newLeft_[nMoved_] = newLeft;
-  newBottom_[nMoved_] = newBottom;
-  newSeg_[nMoved_].clear();
-  newSeg_[nMoved_].push_back(newSeg);
-  ++nMoved_;
+  JournalAction action;
+  action.setType(JournalAction::MOVE_CELL);
+  action.setNode(ndi);
+  action.setOrigLocation(curLeft, curBottom);
+  action.setOrigSegs({curSeg});
+  action.setNewLocation(newLeft, newBottom);
+  action.setNewSegs({newSeg});
+  journal.addAction(action);
   return true;
 }
 
@@ -3343,18 +3464,28 @@ bool DetailedMgr::addToMoveList(Node* ndi,
                                 const std::vector<int>& newSegs)
 {
   // Most number of cells that can move.
-  if (nMoved_ >= moveLimit_) {
+  if (journal.size() >= moveLimit_) {
     return false;
   }
-
-  movedNodes_[nMoved_] = ndi;
-  curLeft_[nMoved_] = curLeft;
-  curBottom_[nMoved_] = curBottom;
-  curSeg_[nMoved_] = curSegs;
-  newLeft_[nMoved_] = newLeft;
-  newBottom_[nMoved_] = newBottom;
-  newSeg_[nMoved_] = newSegs;
-  ++nMoved_;
+  // commit move and add to journal
+  eraseFromGrid(ndi);
+  for (const auto& curSeg : curSegs) {
+    removeCellFromSegment(ndi, curSeg);
+  }
+  ndi->setLeft(newLeft);
+  ndi->setBottom(newBottom);
+  paintInGrid(ndi);
+  for (const auto& newSeg : newSegs) {
+    addCellToSegment(ndi, newSeg);
+  }
+  JournalAction action;
+  action.setType(JournalAction::MOVE_CELL);
+  action.setNode(ndi);
+  action.setOrigLocation(curLeft, curBottom);
+  action.setOrigSegs(curSegs);
+  action.setNewLocation(newLeft, newBottom);
+  action.setNewSegs(newSegs);
+  journal.addAction(action);
   return true;
 }
 
@@ -3362,34 +3493,92 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::acceptMove()
 {
-  // Moves stored list of cells.  XXX: Only single height cells.
-
-  for (int i = 0; i < nMoved_; i++) {
-    Node* ndi = movedNodes_[i];
-
-    // Remove node from current segment.
-    for (auto& seg : curSeg_[i]) {
-      this->removeCellFromSegment(ndi, seg);
-    }
-
-    // Update position and orientation.
-    ndi->setLeft(newLeft_[i]);
-    ndi->setBottom(newBottom_[i]);
-    // XXX: Need to do the orientiation.
-    ;
-
-    // Insert into new segment.
-    for (auto& seg : newSeg_[i]) {
-      this->addCellToSegment(ndi, seg);
-    }
-  }
+  clearMoveList();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::rejectMove()
 {
+  while (!journal.isEmpty()) {
+    const auto& action = journal.getLastAction();
+    undo(action);
+    journal.removeLastAction();
+  }
   clearMoveList();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::eraseFromGrid(Node* node)
+{
+  grid_->erasePixel(node);
+}
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::paintInGrid(Node* node)
+{
+  const auto grid_x = grid_->gridX(DbuX(node->getLeft()));
+  const auto grid_y = grid_->gridRoundY(DbuY(node->getBottom()));
+  auto pixel = grid_->gridPixel(grid_x, grid_y);
+  grid_->paintPixel(node, grid_x, grid_y);
+  node->adjustCurrOrient(
+      pixel->sites.at(node->getDbInst()->getMaster()->getSite()));
+}
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::undo(const JournalAction& action, const bool positions_only)
+{
+  auto node = action.getNode();
+  switch (action.getType()) {
+    case JournalAction::MOVE_CELL:
+      if (!positions_only) {
+        eraseFromGrid(node);
+        for (auto seg : action.getNewSegs()) {
+          if (seg < 0) {
+            continue;
+          }
+          removeCellFromSegment(node, seg);
+        }
+      }
+      node->setLeft(action.getOrigLeft());
+      node->setBottom(action.getOrigBottom());
+      if (!positions_only) {
+        paintInGrid(node);
+        for (auto seg : action.getOrigSegs()) {
+          if (seg < 0) {
+            continue;
+          }
+          addCellToSegment(node, seg);
+        }
+      }
+      break;
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+void DetailedMgr::redo(const JournalAction& action, const bool positions_only)
+{
+  auto node = action.getNode();
+  switch (action.getType()) {
+    case JournalAction::MOVE_CELL:
+      if (!positions_only) {
+        eraseFromGrid(node);
+        for (auto seg : action.getOrigSegs()) {
+          if (seg < 0) {
+            continue;
+          }
+          removeCellFromSegment(node, seg);
+        }
+      }
+      node->setLeft(action.getNewLeft());
+      node->setBottom(action.getNewBottom());
+      if (!positions_only) {
+        paintInGrid(node);
+        for (auto seg : action.getNewSegs()) {
+          if (seg < 0) {
+            continue;
+          }
+          addCellToSegment(node, seg);
+        }
+      }
+      break;
+  }
+}
 }  // namespace dpo

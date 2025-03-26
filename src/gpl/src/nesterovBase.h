@@ -39,6 +39,7 @@
 #include <variant>
 #include <vector>
 
+#include "gpl/Replace.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
@@ -81,17 +82,18 @@ class GCell
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
 
-  Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
+
+  std::string name() const;
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
 
-  void setClusteredInstance(const std::vector<Instance*>& insts);
-  void setInstance(Instance* inst);
-  void clearInstances();
-  void setFiller();
+  void updateLocations();
+
+  bool isLocked() const;
+  void lock();
 
   // normal coordinates
   int lx() const;
@@ -131,10 +133,10 @@ class GCell
   float densityScale() const { return densityScale_; }
 
   bool isInstance() const;
-  bool isClusteredInstance() const;
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
+  bool contains(odb::dbInst* db_inst) const;
 
   void print(utl::Logger* logger) const;
 
@@ -773,7 +775,7 @@ class NesterovPlaceVars
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routabilityCheckOverflow = 0.30;
+  float routability_end_overflow = 0.30;
   float keepResizeBelowOverflow = 0.3;
 
   static const int maxRecursionWlCoef = 10;
@@ -781,7 +783,7 @@ class NesterovPlaceVars
 
   bool timingDrivenMode = true;
   int timingDrivenIterCounter = 0;
-  bool routabilityDrivenMode = true;
+  bool routability_driven_mode = true;
   bool disableRevertIfDiverge = false;
 
   bool debug = false;
@@ -790,6 +792,7 @@ class NesterovPlaceVars
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
   int debug_start_iter = 0;
+  bool debug_update_db_every_iteration = false;
 
   void reset();
 };
@@ -802,7 +805,8 @@ class NesterovBaseCommon
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
-                     int num_threads);
+                     int num_threads,
+                     const Clusters& clusters);
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
@@ -876,8 +880,10 @@ class NesterovBaseCommon
 
   // TODO do this for each region? Also, manage this properly if other callbacks
   // are implemented.
-  int64_t getDeltaArea() { return deltaArea_; }
-  void resetDeltaArea() { deltaArea_ = 0; }
+  int64_t getDeltaArea() { return delta_area_; }
+  void resetDeltaArea() { delta_area_ = 0; }
+  int64_t getNewGcellsCount() { return new_gcells_count_; }
+  void resetNewGcellsCount() { new_gcells_count_ = 0; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -907,8 +913,9 @@ class NesterovBaseCommon
   std::deque<Pin> pb_pins_stor_;
 
   int num_threads_;
-  int64_t deltaArea_;
-  nesterovDbCbk* db_cbk_;
+  int64_t delta_area_;
+  uint new_gcells_count_;
+  nesterovDbCbk* db_cbk_{nullptr};
 };
 
 // Stores instances belonging to a specific power domain
@@ -1067,7 +1074,7 @@ class NesterovBase
 
   bool checkConvergence();
   bool checkDivergence();
-  bool revertDivergence();
+  bool revertToSnapshot();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();

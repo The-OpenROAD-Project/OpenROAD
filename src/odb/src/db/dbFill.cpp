@@ -34,7 +34,6 @@
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
@@ -102,28 +101,6 @@ bool _dbFill::operator<(const _dbFill& rhs) const
   }
 
   return false;
-}
-
-void _dbFill::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbFill& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._opc);
-  DIFF_FIELD(_flags._mask_id);
-  DIFF_FIELD(_flags._layer_id);
-  DIFF_FIELD(_rect);
-  DIFF_END
-}
-
-void _dbFill::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._opc);
-  DIFF_OUT_FIELD(_flags._mask_id);
-  DIFF_OUT_FIELD(_flags._layer_id);
-  DIFF_OUT_FIELD(_rect);
-  DIFF_END
 }
 
 _dbTechLayer* _dbFill::getTechLayer() const
@@ -209,6 +186,12 @@ dbFill* dbFill::getFill(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbFill*) block->_fill_tbl->getPtr(dbid_);
+}
+
+void _dbFill::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 }  // namespace odb

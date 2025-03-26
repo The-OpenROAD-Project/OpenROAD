@@ -29,8 +29,8 @@
 
 #include <omp.h>
 
+#include "AbstractPAGraphics.h"
 #include "FlexPA.h"
-#include "FlexPA_graphics.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "utl/exception.h"
@@ -1110,7 +1110,7 @@ void FlexPA::filterMultipleAPAccesses(
 
 template <typename T>
 void FlexPA::updatePinStats(
-    const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
+    const std::vector<std::unique_ptr<frAccessPoint>>& new_aps,
     T* pin,
     frInstTerm* inst_term)
 {
@@ -1120,7 +1120,7 @@ void FlexPA::updatePinStats(
     is_std_cell_pin = isStdCell(inst_term->getInst());
     is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
-  for (auto& ap : tmp_aps) {
+  for (auto& ap : new_aps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
         || ap->hasAccess(frDirEnum::S) || ap->hasAccess(frDirEnum::N)) {
       if (is_std_cell_pin) {
@@ -1145,6 +1145,51 @@ void FlexPA::updatePinStats(
   }
 }
 
+bool FlexPA::EnoughAccessPoints(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    frInstTerm* inst_term)
+{
+  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
+  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
+  const bool is_io_pin = (inst_term == nullptr);
+  bool enough_sparse_acc_points = false;
+
+  if (is_io_pin) {
+    return (aps.size() > 0);
+  }
+
+  /* This is a Max Clique problem, each ap is a node, draw an edge between two
+   aps if they are far away as to not intersect. n_sparse_access_points,
+   ideally, is the Max Clique of this graph. the current implementation gives a
+   very rough approximation, it works, but I think it can be improved.
+   */
+  int n_sparse_access_points = (int) aps.size();
+  for (int i = 0; i < (int) aps.size(); i++) {
+    const int colision_dist
+        = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
+    Rect ap_colision_box;
+    Rect(aps[i]->getPoint(), aps[i]->getPoint())
+        .bloat(colision_dist, ap_colision_box);
+    for (int j = i + 1; j < (int) aps.size(); j++) {
+      if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
+          && ap_colision_box.intersects(aps[j]->getPoint())) {
+        n_sparse_access_points--;
+        break;
+      }
+    }
+  }
+
+  if (is_std_cell_pin
+      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
+    enough_sparse_acc_points = true;
+  } else if (is_macro_cell_pin
+             && n_sparse_access_points
+                    >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
+    enough_sparse_acc_points = true;
+  }
+  return enough_sparse_acc_points;
+}
+
 template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -1155,61 +1200,48 @@ bool FlexPA::genPinAccessCostBounded(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  }
+  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
+  ;
+  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
-  std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
+  std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   genAPsFromPinShapes(
-      tmp_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
+      new_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
   filterMultipleAPAccesses(
-      tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+      new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
-    std_cell_pin_gen_ap_cnt_ += tmp_aps.size();
+    std_cell_pin_gen_ap_cnt_ += new_aps.size();
   }
   if (is_macro_cell_pin) {
 #pragma omp atomic
-    macro_cell_pin_gen_ap_cnt_ += tmp_aps.size();
+    macro_cell_pin_gen_ap_cnt_ += new_aps.size();
   }
   if (graphics_) {
-    graphics_->setAPs(tmp_aps, lower_type, upper_type);
+    graphics_->setAPs(new_aps, lower_type, upper_type);
   }
-  for (auto& ap : tmp_aps) {
+  for (auto& ap : new_aps) {
+    if (!ap->hasAccess()) {
+      continue;
+    }
     // for stdcell, add (i) planar access if layer_num != VIA_ACCESS_LAYERNUM,
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
-      const auto layer_num = ap->getLayerNum();
-      if ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-           && ap->hasAccess(frDirEnum::U))
-          || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
-              && ap->hasAccess())) {
+      const bool ap_in_via_acc_layer
+          = (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM);
+      if (!ap_in_via_acc_layer || ap->hasAccess(frDirEnum::U)) {
         aps.push_back(std::move(ap));
       }
-    } else if ((is_macro_cell_pin || is_io_pin) && ap->hasAccess()) {
+    } else if (is_macro_cell_pin || is_io_pin) {
       aps.push_back(std::move(ap));
     }
   }
-  int n_sparse_access_points = (int) aps.size();
-  Rect tbx;
-  for (int i = 0; i < (int) aps.size();
-       i++) {  // not perfect but will do the job
-    int r = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
-    tbx.init(
-        aps[i]->x() - r, aps[i]->y() - r, aps[i]->x() + r, aps[i]->y() + r);
-    for (int j = i + 1; j < (int) aps.size(); j++) {
-      if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
-          && tbx.intersects(aps[j]->getPoint())) {
-        n_sparse_access_points--;
-        break;
-      }
-    }
+
+  if (!EnoughAccessPoints(aps, inst_term)) {
+    return false;
   }
-  if (is_std_cell_pin
-      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
+
+  if (is_std_cell_pin || is_macro_cell_pin) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
     const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
@@ -1218,24 +1250,17 @@ bool FlexPA::genPinAccessCostBounded(
     }
     return true;
   }
-  if (is_macro_cell_pin
-      && n_sparse_access_points
-             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    updatePinStats(aps, pin, inst_term);
-    // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
-    for (auto& ap : aps) {
-      pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-    }
-    return true;
-  }
-  if (is_io_pin && (int) aps.size() > 0) {
+
+  if (is_io_pin) {
     // IO term pin always only have one access
     for (auto& ap : aps) {
       pin->getPinAccess(0)->addAccessPoint(std::move(ap));
     }
     return true;
   }
+
+  // weird edge case where pin is not from std_cell, macro or io, not sure it
+  // can even happen
   return false;
 }
 
@@ -1380,10 +1405,10 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   return n_aps;
 }
 
-void FlexPA::genInstAccessPoints(frInst* inst)
+void FlexPA::genInstAccessPoints(frInst* unique_inst)
 {
   ProfileTask profile("PA:uniqueInstance");
-  for (auto& inst_term : inst->getInstTerms()) {
+  for (auto& inst_term : unique_inst->getInstTerms()) {
     // only do for normal and clock terms
     if (isSkipInstTerm(inst_term.get())) {
       continue;
@@ -1412,21 +1437,19 @@ void FlexPA::genAllAccessPoints()
 
   const std::vector<frInst*>& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int) unique.size(); i++) {  // NOLINT
+  for (frInst* unique_inst : unique) {  // NOLINT
     try {
-      frInst* inst = unique[i];
-
       // only do for core and block cells
-      if (!isStdCell(inst) && !isMacroCell(inst)) {
+      if (!isStdCell(unique_inst) && !isMacroCell(unique_inst)) {
         continue;
       }
 
-      genInstAccessPoints(inst);
+      genInstAccessPoints(unique_inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
 
-      int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
+      int inst_terms_cnt = static_cast<int>(unique_inst->getInstTerms().size());
 #pragma omp critical
       for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;

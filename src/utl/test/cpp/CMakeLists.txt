@@ -3,6 +3,7 @@ include("openroad")
 set(TEST_LIBS
   GTest::gtest
   GTest::gtest_main
+  GTest::gmock
   utl_lib
 )
 

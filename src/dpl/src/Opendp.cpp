@@ -48,10 +48,10 @@
 #include <map>
 
 #include "DplObserver.h"
-#include "Grid.h"
 #include "Objects.h"
-#include "Padding.h"
+#include "dpl/Grid.h"
 #include "dpl/OptMirror.h"
+#include "dpl/Padding.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -70,7 +70,7 @@ using utl::format_as;
 
 bool Opendp::isMultiRow(const Cell* cell) const
 {
-  return db_master_map_.at(cell->db_inst_->getMaster()).is_multi_row;
+  return db_master_map_.at(cell->getDbInst()->getMaster()).is_multi_row;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ bool Opendp::isMultiRow(const Cell* cell) const
 Opendp::Opendp()
 {
   dummy_cell_ = std::make_unique<Cell>();
-  dummy_cell_->is_placed_ = true;
+  dummy_cell_->setPlaced(true);
 }
 
 Opendp::~Opendp() = default;
@@ -114,8 +114,7 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
-                               const std::string& report_file_name,
-                               const bool disallow_one_site_gaps)
+                               const std::string& report_file_name)
 {
   importDb();
 
@@ -131,17 +130,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
-  disallow_one_site_gaps_ = disallow_one_site_gaps;
-  if (!have_one_site_cells_) {
-    // If 1-site fill cell is not detected && no disallow_one_site_gaps flag:
-    // warn the user then continue as normal
-    if (!disallow_one_site_gaps_) {
-      logger_->warn(DPL,
-                    38,
-                    "No 1-site fill cells detected.  To remove 1-site gaps use "
-                    "the -disallow_one_site_gaps flag.");
-    }
-  }
+
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
   detailedPlacement();
@@ -169,13 +158,13 @@ void Opendp::updateDbInstLocations()
 {
   for (Cell& cell : cells_) {
     if (!cell.isFixed() && cell.isStdCell()) {
-      dbInst* db_inst_ = cell.db_inst_;
+      dbInst* db_inst_ = cell.getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
-      if (db_inst_->getOrient() != cell.orient_) {
-        db_inst_->setOrient(cell.orient_);
+      if (db_inst_->getOrient() != cell.getOrient()) {
+        db_inst_->setOrient(cell.getOrient());
       }
-      const DbuX x = grid_->getCore().xMin() + cell.x_;
-      const DbuY y = grid_->getCore().yMin() + cell.y_;
+      const DbuX x = grid_->getCore().xMin() + cell.xMin();
+      const DbuY y = grid_->getCore().yMin() + cell.yMin();
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -250,7 +239,7 @@ void Opendp::optimizeMirroring()
 int Opendp::disp(const Cell* cell) const
 {
   const DbuPt init = initialLocation(cell, false);
-  return sumXY(abs(init.x - cell->x_), abs(init.y - cell->y_));
+  return sumXY(abs(init.x - cell->xMin()), abs(init.y - cell->yMin()));
 }
 
 int Opendp::padGlobalLeft() const
@@ -337,11 +326,11 @@ void Opendp::groupAssignCellRegions()
 
       for (Rect& rect : group.region_boundaries) {
         if (isInside(cell, rect)) {
-          cell->region_ = &rect;
+          cell->setRegion(&rect);
         }
       }
-      if (cell->region_ == nullptr) {
-        cell->region_ = group.region_boundaries.data();
+      if (cell->getRegion() == nullptr) {
+        cell->setRegion(group.region_boundaries.data());
       }
     }
     group.util = total_site_area ? cell_area / total_site_area : 0.0;
@@ -392,8 +381,8 @@ dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
   dbInst* adjacent_inst = nullptr;
 
   // do not return macros, endcaps and tapcells
-  if (pixel != nullptr && pixel->cell && pixel->cell->db_inst_->isCore()) {
-    adjacent_inst = pixel->cell->db_inst_;
+  if (pixel != nullptr && pixel->cell && pixel->cell->getDbInst()->isCore()) {
+    adjacent_inst = pixel->cell->getDbInst();
   }
 
   return adjacent_inst;

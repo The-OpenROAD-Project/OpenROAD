@@ -34,8 +34,8 @@
 
 #include <algorithm>
 
-#include "Grid.h"
 #include "Objects.h"
+#include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -141,7 +141,7 @@ std::pair<dbSite*, dbOrientType> Opendp::fillSite(Pixel* pixel)
   dbSite* selected_site = nullptr;
   dbOrientType selected_orient;
   DbuY min_height{std::numeric_limits<int>::max()};
-  for (auto [site, orient] : pixel->sites) {
+  for (const auto& [site, orient] : pixel->sites) {
     DbuY site_height{site->getHeight()};
     if (site_height < min_height) {
       min_height = site_height;
@@ -177,13 +177,13 @@ void Opendp::placeRowFillers(GridY row,
     dbTechLayer* implant = nullptr;
     if (j > 0) {
       auto pixel = grid_->gridPixel(j - 1, row);
-      if (pixel->cell && pixel->cell->db_inst_) {
-        implant = getImplant(pixel->cell->db_inst_->getMaster());
+      if (pixel->cell && pixel->cell->getDbInst()) {
+        implant = getImplant(pixel->cell->getDbInst()->getMaster());
       }
     } else if (k < row_site_count) {
       auto pixel = grid_->gridPixel(k, row);
-      if (pixel->cell && pixel->cell->db_inst_) {
-        implant = getImplant(pixel->cell->db_inst_->getMaster());
+      if (pixel->cell && pixel->cell->getDbInst()) {
+        implant = getImplant(pixel->cell->getDbInst()->getMaster());
       }
     } else {  // totally empty row - use anything
       implant = filler_masters_by_implant.begin()->first;
@@ -237,9 +237,9 @@ const char* Opendp::gridInstName(GridY row, GridX col)
     return "core_right";
   }
 
-  const Cell* cell = grid_->gridPixel(col, row)->cell;
+  const auto cell = grid_->gridPixel(col, row)->cell;
   if (cell) {
-    return cell->db_inst_->getConstName();
+    return cell->getDbInst()->getConstName();
   }
   return "?";
 }

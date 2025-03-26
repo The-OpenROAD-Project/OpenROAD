@@ -702,6 +702,17 @@ void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
   }
 }
 
+std::vector<int> getVisitedIndices(const std::set<int>& indices,
+                                   const std::vector<bool>& visited)
+{
+  std::vector<int> visited_indices;
+  std::copy_if(indices.begin(),
+               indices.end(),
+               std::back_inserter(visited_indices),
+               [&visited](int idx) { return visited[idx]; });
+  return visited_indices;
+}
+
 }  // namespace
 
 bool GuideProcessor::readGuides()
@@ -1240,8 +1251,20 @@ void GuideProcessor::genGuides_split(
                                 rects);
           } else {
             auto curr_idx_it = split_indices.begin();
+            split::addSplitRect(track_idx,
+                                *curr_idx_it,
+                                *curr_idx_it,
+                                layer_num,
+                                is_horizontal,
+                                rects);
             auto prev_idx_it = curr_idx_it++;
             while (curr_idx_it != split_indices.end()) {
+              split::addSplitRect(track_idx,
+                                  *curr_idx_it,
+                                  *curr_idx_it,
+                                  layer_num,
+                                  is_horizontal,
+                                  rects);
               split::addSplitRect(track_idx,
                                   *prev_idx_it,
                                   *curr_idx_it,
@@ -1456,7 +1479,9 @@ GuidePathFinder::GuidePathFinder(
       logger_(logger),
       router_cfg_(router_cfg),
       net_(net),
-      force_feed_through_(force_feed_through)
+      force_feed_through_(force_feed_through),
+      pin_gcell_map_(pin_gcell_map),
+      rects_(rects)
 {
   buildNodeMap(rects, pin_gcell_map);
   constructAdjList();
@@ -1600,17 +1625,25 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 
 void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
 {
+  auto hasVisitedIndices = [this](const Point3D& pt) {
+    if (node_map_.find(pt) == node_map_.end()) {
+      return false;
+    }
+    const auto& indices = getVisitedIndices(node_map_.at(pt), visited_);
+    return !indices.empty();
+  };
   for (auto& [pt, indices] : node_map_) {
-    std::vector<int> visited_indices;
-    std::copy_if(indices.begin(),
-                 indices.end(),
-                 std::back_inserter(visited_indices),
-                 [this](int idx) { return visited_[idx]; });
+    std::vector<int> visited_indices = getVisitedIndices(indices, visited_);
     const uint num_indices = visited_indices.size();
     if (num_indices == 2) {
       const auto first_idx = *(visited_indices.begin());
       const auto second_idx = *std::prev(visited_indices.end());
       if (!isGuideIdx(first_idx) || !isGuideIdx(second_idx)) {
+        continue;
+      }
+      // Check if there is a connection to upper or lower layer
+      if (hasVisitedIndices(Point3D(pt, pt.z() + 2))
+          || hasVisitedIndices(Point3D(pt, pt.z() - 2))) {
         continue;
       }
       auto& rect1 = rects[first_idx];
@@ -1751,7 +1784,7 @@ GuidePathFinder::getInitSearchQueue()
     for (int i = 0; i < getNodeCount(); i++) {
       if (is_on_path_[i]) {
         if (router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH && isPinIdx(i)) {
-          // penalize feedthrough in normal mode
+          // TODO: set cost to 0
           queue.push({i, prev_idx_[i], 2});
         } else if (isForceFeedThrough() && isPinIdx(i)) {
           // penalize feedthrough in fallback mode
@@ -1790,8 +1823,14 @@ bool GuidePathFinder::traverseGraph()
       // visit other nodes
       for (auto neighbor_idx : adj_list_[curr_wavefront.node_idx]) {
         if (!visited_[neighbor_idx]) {
-          queue.push(
-              {neighbor_idx, curr_wavefront.node_idx, curr_wavefront.cost + 1});
+          int cost = 1;
+          if (!isPinIdx(neighbor_idx)) {
+            cost += rects_[neighbor_idx].getBBox().dx()
+                    + rects_[neighbor_idx].getBBox().dy();
+          }
+          queue.push({neighbor_idx,
+                      curr_wavefront.node_idx,
+                      curr_wavefront.cost + cost});
         }
       }
     }

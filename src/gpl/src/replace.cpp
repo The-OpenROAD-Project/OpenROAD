@@ -124,13 +124,18 @@ void Replace::reset()
 
   timingNetWeightOverflows_.clear();
   timingNetWeightOverflows_.shrink_to_fit();
-  timingNetWeightMax_ = 1.9;
+  timingNetWeightMax_ = 5;
 
   gui_debug_ = false;
   gui_debug_pause_iterations_ = 10;
   gui_debug_update_iterations_ = 10;
   gui_debug_draw_bins_ = false;
   gui_debug_initial_ = false;
+}
+
+void Replace::addPlacementCluster(const Cluster& cluster)
+{
+  clusters_.emplace_back(cluster);
 }
 
 void Replace::doIncrementalPlace(int threads)
@@ -306,7 +311,8 @@ bool Replace::initNesterovPlace(int threads)
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_, threads);
+    nbc_ = std::make_shared<NesterovBaseCommon>(
+        nbVars, pbc_, log_, threads, clusters_);
 
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
@@ -341,20 +347,22 @@ bool Replace::initNesterovPlace(int threads)
     npVars.minPhiCoef = minPhiCoef_;
     npVars.maxPhiCoef = maxPhiCoef_;
     npVars.referenceHpwl = referenceHpwl_;
-    npVars.routabilityCheckOverflow = routabilityCheckOverflow_;
+    npVars.routability_end_overflow = routabilityCheckOverflow_;
     npVars.keepResizeBelowOverflow = keepResizeBelowOverflow_;
     npVars.initDensityPenalty = initDensityPenalityFactor_;
     npVars.initWireLengthCoef = initWireLengthCoef_;
     npVars.targetOverflow = overflow_;
     npVars.maxNesterovIter = nesterovPlaceMaxIter_;
     npVars.timingDrivenMode = timingDrivenMode_;
-    npVars.routabilityDrivenMode = routabilityDrivenMode_;
+    npVars.routability_driven_mode = routabilityDrivenMode_;
     npVars.debug = gui_debug_;
     npVars.debug_pause_iterations = gui_debug_pause_iterations_;
     npVars.debug_update_iterations = gui_debug_update_iterations_;
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
     npVars.debug_start_iter = gui_debug_start_iter_;
+    npVars.debug_update_db_every_iteration
+        = gui_debug_update_db_every_iteration;
     npVars.disableRevertIfDiverge = disableRevertIfDiverge_;
 
     for (const auto& nb : nbVec_) {
@@ -489,7 +497,8 @@ void Replace::setDebug(int pause_iterations,
                        bool draw_bins,
                        bool initial,
                        odb::dbInst* inst,
-                       int start_iter)
+                       int start_iter,
+                       bool update_db)
 {
   gui_debug_ = true;
   gui_debug_pause_iterations_ = pause_iterations;
@@ -498,6 +507,7 @@ void Replace::setDebug(int pause_iterations,
   gui_debug_initial_ = initial;
   gui_debug_inst_ = inst;
   gui_debug_start_iter_ = start_iter;
+  gui_debug_update_db_every_iteration = update_db;
 }
 
 void Replace::setDisableRevertIfDiverge(bool mode)

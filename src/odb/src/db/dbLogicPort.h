@@ -40,13 +40,11 @@
 namespace odb {
 class dbIStream;
 class dbOStream;
-class dbDiff;
 class _dbDatabase;
 
 class _dbLogicPort : public _dbObject
 {
  public:
-  _dbLogicPort(_dbDatabase*, const _dbLogicPort& r);
   _dbLogicPort(_dbDatabase*);
 
   ~_dbLogicPort();
@@ -54,10 +52,7 @@ class _dbLogicPort : public _dbObject
   bool operator==(const _dbLogicPort& rhs) const;
   bool operator!=(const _dbLogicPort& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbLogicPort& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbLogicPort& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 
   char* _name;
   dbId<_dbLogicPort> _next_entry;

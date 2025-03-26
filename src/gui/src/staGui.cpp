@@ -78,7 +78,7 @@ const Painter::Color TimingPathRenderer::capture_clock_color_
 static QString convertDelay(float time, sta::Unit* convert)
 {
   if (sta::delayInf(time)) {
-    const QString infinity = "∞";
+    QString infinity = "∞";
 
     if (time < 0) {
       return "-" + infinity;
@@ -1349,6 +1349,7 @@ const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
     const
 {
   std::vector<std::set<const sta::Pin*>> pins;
+  pins.reserve(thru_.size());
   for (auto* row : thru_) {
     pins.push_back(row->getPins());
   }

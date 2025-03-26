@@ -51,7 +51,6 @@ class _dbITerm;
 class _dbDatabase;
 class dbIStream;
 class dbOStream;
-class dbDiff;
 
 struct _dbBTermFlags
 {
@@ -93,6 +92,8 @@ class _dbBTerm : public _dbObject
   dbId<_dbBTerm> _supply_pin;
   std::uint32_t _sta_vertex_id;  // not saved
   Rect _constraint_region;
+  dbId<_dbBTerm> _mirrored_bterm;
+  bool _is_mirrored;
 
   _dbBTerm(_dbDatabase*);
   _dbBTerm(_dbDatabase*, const _dbBTerm& b);
@@ -102,12 +103,12 @@ class _dbBTerm : public _dbObject
   void connectModNet(_dbModNet* net, _dbBlock* block);
   void disconnectNet(_dbBTerm* bterm, _dbBlock* block);
   void disconnectModNet(_dbBTerm* bterm, _dbBlock* block);
+  void setMirroredConstraintRegion(const Rect& region, _dbBlock* block);
 
   bool operator==(const _dbBTerm& rhs) const;
   bool operator!=(const _dbBTerm& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBTerm& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbBTerm& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
+  void collectMemInfo(MemInfo& info);
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm);
