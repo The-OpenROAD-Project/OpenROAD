@@ -184,7 +184,7 @@ void Logger::flushMetrics()
 {
   const std::string json = MetricsEntry::assembleJSON(metrics_entries_);
 
-  for (std::string sink_path : metrics_sinks_) {
+  for (const std::string& sink_path : metrics_sinks_) {
     std::ofstream sink_file(sink_path);
     if (sink_file) {
       sink_file << json;

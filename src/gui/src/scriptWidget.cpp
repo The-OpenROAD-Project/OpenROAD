@@ -32,7 +32,6 @@
 
 #include "scriptWidget.h"
 
-#include <errno.h>
 #include <unistd.h>
 
 #include <QCoreApplication>
@@ -41,6 +40,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <cerrno>
 #include <mutex>
 
 #include "gui/gui.h"

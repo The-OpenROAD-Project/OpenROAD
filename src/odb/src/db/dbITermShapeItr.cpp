@@ -78,8 +78,6 @@ void dbITermShapeItr::getShape(dbBox* box, dbShape& shape)
 
 bool dbITermShapeItr::next(dbShape& shape)
 {
-  ZASSERT(_iterm);
-
 next_state:
 
   switch (_state) {
