@@ -678,10 +678,12 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
                             new_iterm->getName(),
                             other_mod_net->getName());
           debugPrint(logger, utl::ODB, "replace_design", 1, msg);
-        }
+
+        }  // clang-format off
       }  // for each new_iterm
-    }    //  for each old_iterm
-  }      // for each [old_mod_net, new_mod_net]
+    }  //  for each old_iterm
+  }  // for each [old_mod_net, new_mod_net] pair
+  // clang-format on
 
   // Remove any dangling nets
   std::vector<dbNet*> nets_to_delete;
