@@ -150,13 +150,10 @@ pip_parse(
 )
 # END XX
 
-# master
-rules_hdl_git_hash = "875c8cad79255db62d4428d2b5c181846a67bb4b"
-rules_hdl_git_sha256 = "4e866be4d968eb73958437d005fae86f5a90c8d2c83f25448f15a81ca215904f"
-
-#https://github.com/hdl/bazel_rules_hdl/pull/391 branch
-#rules_hdl_git_hash = "8ecf698f5052c4b4a739164693e7378ce2670694"
-#rules_hdl_git_sha256 = "46336efdbd226250fb4729faa8907a1453dd05aa855969f1665137f397bee055"
+# maliberty:temp-abc-undo-revert
+# until the abc update can be upstreamed without breaking xls
+rules_hdl_git_hash = "ea34e431d6dbe0ba5ade73b4326d70d730ee35ef"
+rules_hdl_git_sha256 = "363405fe710f71d380e5a3c87f2b40bad64bf7afcf3c257aa164333c49062cbc"
 
 maybe(
     http_archive,
@@ -164,7 +161,8 @@ maybe(
     sha256 = rules_hdl_git_sha256,
     strip_prefix = "bazel_rules_hdl-%s" % rules_hdl_git_hash,
     urls = [
-        "https://github.com/hdl/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
+#        "https://github.com/hdl/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
+        "https://github.com/maliberty/bazel_rules_hdl/archive/%s.tar.gz" % rules_hdl_git_hash,
     ],
 )
 
@@ -173,9 +171,3 @@ rules_hdl_dependency_support()
 
 load("@rules_hdl//:init.bzl", rules_hdl_init = "init")
 rules_hdl_init()
-
-load("@rules_hdl//dependency_support/com_github_ivmai_cudd:com_github_ivmai_cudd.bzl", "com_github_ivmai_cudd")
-com_github_ivmai_cudd()
-
-load("@rules_hdl//dependency_support/edu_berkeley_abc:edu_berkeley_abc.bzl", "edu_berkeley_abc")
-edu_berkeley_abc()
