@@ -1924,10 +1924,11 @@ void definReader::contextLogFunctionCallback(DefParser::defiUserData data,
   reader->_logger->warn(utl::ODB, 3, msg);
 }
 
-void definReader::contextWarningLogFunctionCallback(DefParser::defiUserData data,
-                                                    const char* msg)
+void definReader::contextWarningLogFunctionCallback(
+    DefParser::defiUserData data,
+    const char* msg)
 {
-  definReader* reader = (definReader*)data;
+  definReader* reader = (definReader*) data;
   reader->_logger->warn(utl::ODB, 4, msg);
 }
 
@@ -2130,7 +2131,8 @@ bool definReader::createBlock(const char* file)
   defrSetPinEndCbk(pinsEndCallback);
   defrSetPinPropCbk(pinPropCallback);
   DefParser::defrSetContextLogFunction(contextLogFunctionCallback);
-  DefParser::defrSetContextWarningLogFunction(contextWarningLogFunctionCallback);
+  DefParser::defrSetContextWarningLogFunction(
+      contextWarningLogFunctionCallback);
 
   if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
     defrSetDieAreaCbk(dieAreaCallback);
