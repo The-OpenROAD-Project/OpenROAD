@@ -1381,12 +1381,12 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   }
 
   if (inst_term) {
-    logger_->warn(DRT,
-                  88,
-                  "Exhaustive access point generation for pin {} of term {} is "
-                  "unsatisfactory.",
-                  pin->getId(),
-                  inst_term->getName());
+    logger_->warn(
+        DRT,
+        88,
+        "Exhaustive access point generation for {} ({}) is unsatisfactory.",
+        inst_term->getName(),
+        inst_term->getInst()->getMaster()->getName());
   }
 
   // inst_term aps are written back here if not early stopped

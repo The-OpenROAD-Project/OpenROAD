@@ -38,8 +38,8 @@
 [INFO DRT-0033] met4 shape region query size = 435.
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] met5 shape region query size = 0.
-[WARNING DRT-0088] Exhaustive access point generation for pin 0 of term _331_/D is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for pin 0 of term _497_/A is unsatisfactory.
+[WARNING DRT-0088] Exhaustive access point generation for _331_/D (sky130_fd_sc_hs__nor4_2) is unsatisfactory.
+[WARNING DRT-0088] Exhaustive access point generation for _497_/A (sky130_fd_sc_hs__and3_1) is unsatisfactory.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%

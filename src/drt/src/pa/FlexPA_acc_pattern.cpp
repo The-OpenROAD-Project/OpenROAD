@@ -245,7 +245,7 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
     if (n_aps == 0 && !inst_term->getTerm()->getPins().empty()) {
       logger_->error(DRT,
                      86,
-                     "Pin {} of master {} does not have any access point.",
+                     "Term {} ({}) does not have any access point.",
                      inst_term->getName(),
                      unique_inst->getMaster()->getName());
     }
@@ -683,7 +683,7 @@ std::vector<int> FlexPA::extractAccessPatternFromNodes(
     if (!curr_node) {
       logger_->error(DRT,
                      90,
-                     "Valid access pattern not found for inst {}/{}.",
+                     "Valid access pattern not found for inst {}({}).",
                      inst->getName(),
                      inst->getMaster()->getName());
     }
@@ -707,8 +707,8 @@ bool FlexPA::genPatternsCommit(
     std::set<std::pair<int, int>>& viol_access_points,
     const int max_access_point_size)
 {
-  std::vector<int> access_pattern
-      = extractAccessPatternFromNodes(inst, nodes, pins, used_access_points);
+  std::vector<int> access_pattern = extractAccessPatternFromNodes(
+      unique_inst, nodes, pins, used_access_points);
   // not a new access pattern
   if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
     return false;
