@@ -4334,7 +4334,6 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
       it = removed_buffer_map_.erase(it);
     }
   }
-
   // Second, reconnect buffer input and output pins
   for (const auto& pair : removed_buffer_map_) {
     std::string name = pair.first;
