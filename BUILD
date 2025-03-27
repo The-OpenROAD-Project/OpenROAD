@@ -52,9 +52,9 @@ load(
     "OPENROAD_LIBRARY_SRCS_EXCLUDE",
     "OPENROAD_LIBRARY_SRCS_INCLUDE",
 )
-load("@rules_hdl//dependency_support/org_theopenroadproject:tcl_encode.bzl", "tcl_encode")
 
-load("@//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//:bazel/tcl_encode.bzl", "tcl_encode")
+load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     features = [
@@ -194,49 +194,6 @@ genrule(
 )
 
 cc_library(
-    name = "logger",
-    srcs = [
-        "src/utl/src/CommandLineProgress.h",
-        "src/utl/src/CommandLineProgress.cpp",
-        "src/utl/src/Logger.cpp",
-        "src/utl/src/Metrics.cpp",
-        "src/utl/src/ScopedTemporaryFile.cpp",
-        "src/utl/src/prometheus/metrics_server.cpp",
-    ],
-    hdrs = [
-        "src/utl/include/utl/Progress.h",
-        "src/utl/include/utl/Logger.h",
-        "src/utl/include/utl/Metrics.h",
-        "src/utl/include/utl/ScopedTemporaryFile.h",
-    ] + glob([
-        "src/utl/include/utl/prometheus/*.h",
-    ]),
-    copts = [
-        "-fexceptions",
-        "-Wno-error",
-        "-Wall",
-        "-Wextra",
-        "-pedantic",
-        "-Wno-cast-qual",  # typically from TCL swigging
-        "-Wno-missing-braces",  # typically from TCL swigging
-        "-Wredundant-decls",
-        "-Wformat-security",
-        "-Wno-unused-parameter",
-        "-Wno-sign-compare",
-    ],
-    features = ["-use_header_modules"],
-    includes = [
-        "src/utl/include",
-        "src/utl/include/utl",
-        "src/utl/src",
-    ],
-    visibility = ["@org_theopenroadproject//:__subpackages__"],
-    deps = [
-        "@com_github_gabime_spdlog//:spdlog",
-    ],
-)
-
-cc_library(
     name = "munkres",
     srcs = glob([
         "src/ppl/src/munkres/src/*.cpp",
@@ -247,7 +204,7 @@ cc_library(
     includes = [
         "src/ppl/src/munkres/src",
     ],
-    visibility = ["@org_theopenroadproject//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 cc_library(
@@ -468,14 +425,6 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "utl_tcl",
-    srcs = [
-        "src/utl/src/Utl.tcl",
-    ],
-    char_array_name = "utl_tcl_inits",
-)
-
-tcl_encode(
     name = "upf_tcl",
     srcs = [
         "src/upf/src/upf.tcl",
@@ -586,21 +535,6 @@ tcl_wrap_cc(
     root_swig_src = "src/dpl/src/Opendp.i",
     swig_includes = [
         "src/dpl/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "logger_swig",
-    srcs = [
-        "src/utl/src/Logger.i",
-        "src/utl/src/LoggerCommon.h",
-        ":error_swig",
-    ],
-    module = "utl",
-    namespace_prefix = "utl",
-    root_swig_src = "src/utl/src/Logger.i",
-    swig_includes = [
-        "src/utl/src",
     ],
 )
 
@@ -901,6 +835,7 @@ filegroup(
     srcs = [
         "src/Exception.i",
     ],
+    visibility = ["@//:__subpackages__"],
 )
 
 filegroup(
@@ -918,7 +853,7 @@ filegroup(
         "src/odb/src/swig/common/swig_common.cpp",
         "src/odb/src/swig/common/swig_common.h",
     ],
-    visibility = ["@org_theopenroadproject//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 tcl_wrap_cc(
@@ -1015,9 +950,9 @@ cc_library(
         "src/odb/src/lef/lefin",
         "src/odb/src/lef/lefzlib",
     ],
-    visibility = ["@org_theopenroadproject//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
-        ":logger",
+        "//src/utl",
         ":opendb_def",
         ":opendb_lef",
         "@boost//:algorithm",
@@ -1075,7 +1010,7 @@ cc_library(
         "src/odb/src/lef/lefzlib",
     ],
     visibility = [
-    	"//visibility:private",
+        "//visibility:private",
     ],
     deps = [
         "@net_zlib//:zlib",
@@ -1122,7 +1057,7 @@ cc_library(
         "src/odb/src/def/defzlib",
     ],
     visibility = [
-    	"//visibility:private",
+        "//visibility:private",
     ],
     deps = [
         "@net_zlib//:zlib",
@@ -1295,7 +1230,7 @@ filegroup(
     name = "tcl_scripts",
     srcs = exported_tcl,
     visibility = [
-    	"@org_theopenroadproject//:__subpackages__",
+        "//:__subpackages__",
     ],
 )
 
@@ -1338,7 +1273,7 @@ filegroup(
         "src/sta/util/Util.i",
         "src/sta/verilog/Verilog.i",
     ],
-    visibility = ["@org_theopenroadproject//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 tcl_wrap_cc(
@@ -1506,7 +1441,7 @@ cc_library(
         "src/sta/verilog",
     ],
     textual_hdrs = ["src/sta/util/MachineLinux.cc",],
-    visibility = ["@org_theopenroadproject//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "@tk_tcl//:tcl",
         "@net_zlib//:zlib",

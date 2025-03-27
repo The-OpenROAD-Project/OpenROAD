@@ -41,8 +41,8 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":openroad_swig",
     ":openroad_tcl",
     #Utility
-    ":logger_swig",
-    ":utl_tcl",
+    "//src/utl:utl_swig",
+    "//src/utl:utl_tcl",
     #InitFp
     ":init_floorplan_swig",
     ":init_floorplan_tcl",
@@ -150,7 +150,6 @@ OPENROAD_DEFINES = [
 ]
 
 OPENROAD_BINARY_DEPS = [
-    ":logger",
     ":opendb_lib",
     ":openroad_version",
     ":opensta_lib",
@@ -326,7 +325,6 @@ OPENROAD_LIBRARY_INCLUDES = [
 ]
 
 OPENROAD_LIBRARY_DEPS = [
-    ":logger",
     ":munkres",
     ":opendb_lib",
     ":openroad_version",
@@ -360,12 +358,6 @@ OPENROAD_LIBRARY_DEPS = [
 OPENROAD_LIBRARY_SRCS_EXCLUDE = [
     "src/Main.cc",
     "src/OpenRoad.cc",
-    "src/rcx/src/extmeasure_res_v2.cpp",
-    "src/utl/src/Logger.cpp",
-    "src/utl/src/CommandLineProgress.cpp",
-    "src/utl/src/Metrics.cpp",
-    "src/utl/src/CFileUtils.cpp",
-    "src/utl/src/ScopedTemporaryFile.cpp",
 ]
 
 OPENROAD_LIBRARY_SRCS_INCLUDE = [
