@@ -49,6 +49,7 @@ class Logger;
 namespace dpl {
 class Opendp;
 class Grid;
+class Master;
 }  // namespace dpl
 
 namespace dpo {
@@ -59,7 +60,6 @@ class Network;
 class Node;
 class Edge;
 class Pin;
-class Master;
 
 using dpl::Grid;
 using dpl::Opendp;
@@ -98,7 +98,7 @@ class Optdp
   void createGrid();
   void setUpNdrRules();
   void setUpPlacementRegions();
-  Master* getMaster(odb::dbMaster* db_master);
+  dpl::Master* getMaster(odb::dbMaster* db_master);
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -115,7 +115,7 @@ class Optdp
   std::unordered_map<odb::dbInst*, Node*> instMap_;
   std::unordered_map<odb::dbNet*, Edge*> netMap_;
   std::unordered_map<odb::dbBTerm*, Node*> termMap_;
-  std::unordered_map<odb::dbMaster*, Master*> masterMap_;
+  std::unordered_map<odb::dbMaster*, dpl::Master*> masterMap_;
 
   // For monitoring power alignment.
   std::unordered_set<odb::dbTechLayer*> pwrLayers_;

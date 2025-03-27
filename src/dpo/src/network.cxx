@@ -46,7 +46,7 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
   // changing the edge types as well as the height and width.
-  auto curOri = currentOrient_;
+  auto curOri = orient_;
   if (newOri == curOri) {
     return true;
   }
@@ -63,9 +63,9 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         pin->setOffsetY(dx);
       }
       {
-        int tmp = w_.v;
-        w_ = DbuX{h_.v};
-        h_ = DbuY{tmp};
+        int tmp = width_.v;
+        width_ = DbuX{height_.v};
+        height_ = DbuY{tmp};
       }
       if (curOri == dbOrientType::R90) {
         curOri = dbOrientType::R0;
@@ -88,9 +88,9 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         pin->setOffsetY(-dx);
       }
       {
-        int tmp = w_.v;
-        w_ = DbuX{h_.v};
-        h_ = DbuY{tmp};
+        int tmp = width_.v;
+        width_ = DbuX{height_.v};
+        height_ = DbuY{tmp};
       }
       if (curOri == dbOrientType::R0) {
         curOri = dbOrientType::R90;
@@ -107,7 +107,6 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
   // FW, W}.
   int mX = 1;
   int mY = 1;
-  bool changeEdgeTypes = false;
   if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
       || curOri == dbOrientType::MYR90 || curOri == dbOrientType::R270) {
     const bool test1
@@ -122,7 +121,6 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
     const bool test4
         = (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90);
     if (test3 != test4) {
-      changeEdgeTypes = true;
       mY = -1;
     }
   } else {
@@ -131,7 +129,6 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
     const bool test2
         = (newOri == dbOrientType::R0 || newOri == dbOrientType::MX);
     if (test1 != test2) {
-      changeEdgeTypes = true;
       mX = -1;
     }
     const bool test3
@@ -147,10 +144,7 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
     pin->setOffsetX(pin->getOffsetX() * mX);
     pin->setOffsetY(pin->getOffsetY() * mY);
   }
-  if (changeEdgeTypes) {
-    std::swap(etls_, etrs_);
-  }
-  currentOrient_ = newOri;
+  orient_ = newOri;
   return true;
 }
 
@@ -196,9 +190,9 @@ Edge* Network::createAndAddEdge()
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Master* Network::createAndAddMaster()
+dpl::Master* Network::createAndAddMaster()
 {
-  masters_.emplace_back(std::make_unique<Master>());
+  masters_.emplace_back(std::make_unique<dpl::Master>());
   return masters_.back().get();
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -228,7 +222,7 @@ Node* Network::createAndAddFillerNode(const DbuX left,
 {
   Node* ndi = new Node();
   const int id = (int) nodes_.size();
-  ndi->setFixed(Node::FIXED_XY);
+  ndi->setFixed(true);
   ndi->setType(Node::FILLER);
   ndi->setId(id);
   ndi->setHeight(height);

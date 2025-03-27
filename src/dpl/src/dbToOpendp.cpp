@@ -38,7 +38,7 @@
 #include <string>
 #include <unordered_set>
 
-#include "Objects.h"
+#include "dpl/Objects.h"
 #include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 #include "odb/util.h"
@@ -188,8 +188,8 @@ Rect getBoundarySegment(const Rect& bbox,
 
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
-  master->is_multi_row = grid_->isMultiHeight(db_master);
-  master->edges_.clear();
+  master->setMultiRow(grid_->isMultiHeight(db_master));
+  master->clearEdges();
   if (edge_spacing_table_.empty()) {
     return;
   }
@@ -230,8 +230,8 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     if (edge_types_indices_.find(edge->getEdgeType())
         != edge_types_indices_.end()) {
       // consider only edge types defined in the spacing table
-      master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
-                                  edge_rect);
+      master->addEdge(Edge(edge_types_indices_[edge->getEdgeType()],
+                                  edge_rect));
     }
   }
   if (edge_types_indices_.find("DEFAULT") == edge_types_indices_.end()) {
@@ -244,7 +244,7 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->edges_.emplace_back(0, seg);
+      master->addEdge(Edge(0, seg));
     }
   }
 }
@@ -302,7 +302,7 @@ void Opendp::makeCells()
     dbMaster* db_master = db_inst->getMaster();
     if (db_master->isCoreAutoPlaceable()) {
       cells_.emplace_back();
-      Cell& cell = cells_.back();
+      GridNode& cell = cells_.back();
       cell.setDbInst(db_inst);
       db_inst_map_[db_inst] = &cell;
 
@@ -312,14 +312,15 @@ void Opendp::makeCells()
       cell.setLeft(DbuX{bbox.xMin()});
       cell.setBottom(DbuY{bbox.yMin()});
       cell.setOrient(db_inst->getOrient());
-      // Cell is already placed if it is FIXED.
+      // GridNode is already placed if it is FIXED.
+      cell.setFixed(db_inst->isFixed());
       cell.setPlaced(cell.isFixed());
 
       Master& master = db_master_map_[db_master];
       cell.setMaster(&master);
       // We only want to set this if we have multi-row cells to
       // place and not whenever we see a placed block.
-      if (master.is_multi_row && db_master->isCore()) {
+      if (master.isMultiRow() && db_master->isCore()) {
         have_multi_row_cells_ = true;
       }
     }
@@ -377,7 +378,7 @@ void Opendp::makeGroups()
     if (db_group->getRegion()) {
       std::unordered_set<DbuY> unique_heights;
       for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->dy());
+        unique_heights.insert(db_inst_map_[db_inst]->getHeight());
       }
       reserve_size += unique_heights.size();
     }
@@ -393,7 +394,7 @@ void Opendp::makeGroups()
     std::set<DbuY> unique_heights;
     map<DbuY, Group*> cell_height_to_group_map;
     for (auto db_inst : db_group->getInsts()) {
-      unique_heights.insert(db_inst_map_[db_inst]->dy());
+      unique_heights.insert(db_inst_map_[db_inst]->getHeight());
     }
     int index = 0;
     for (auto height : unique_heights) {
@@ -401,8 +402,9 @@ void Opendp::makeGroups()
       struct Group& group = groups_.back();
       string group_name
           = string(db_group->getName()) + "_" + std::to_string(index++);
-      group.name = std::move(group_name);
-      group.boundary.mergeInit();
+      group.setName(group_name);
+      Rect bbox;
+      bbox.mergeInit();
       cell_height_to_group_map[height] = &group;
 
       for (dbBox* boundary : region->getBoundaries()) {
@@ -420,15 +422,16 @@ void Opendp::makeGroups()
                                      /// where a region ends and another starts
           regions_rtree_.insert(bbox);
         }
-        group.region_boundaries.push_back(box);
-        group.boundary.merge(box);
+        group.addRect(box);
+        bbox.merge(box);
       }
+      group.setBoundary(bbox);
     }
 
     for (auto db_inst : db_group->getInsts()) {
-      Cell* cell = db_inst_map_[db_inst];
-      Group* group = cell_height_to_group_map[cell->dy()];
-      group->cells_.push_back(cell);
+      GridNode* cell = db_inst_map_[db_inst];
+      Group* group = cell_height_to_group_map[cell->getHeight()];
+      group->addCell(cell);
       cell->setGroup(group);
     }
   }

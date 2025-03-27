@@ -31,22 +31,31 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Objects.h"
+#include "dpl/Objects.h"
 
 namespace dpl {
-
-const char* Cell::name() const
+int GridNode::getId() const { return id_; }
+DbuY GridNode::getOrigBottom() const { return orig_bottom_; }
+DbuX GridNode::getOrigLeft() const { return orig_left_; }
+DbuX GridNode::getLeft() const { return left_; }
+DbuY GridNode::getBottom() const { return bottom_; }
+DbuX GridNode::getRight() const { return left_ + width_; }
+DbuY GridNode::getTop() const { return bottom_ + height_; }
+DbuX GridNode::getWidth() const { return width_; }
+DbuY GridNode::getHeight() const { return height_; }
+dbInst* GridNode::getDbInst() const { return db_inst_; }
+dbOrientType GridNode::getOrient() const { return orient_; }
+bool GridNode::isFixed() const { return fixed_; };
+bool GridNode::isPlaced() const { return placed_; }
+bool GridNode::isHold() const { return hold_; }
+dbSite* GridNode::getSite() const
 {
-  return db_inst_->getConstName();
+  if (!db_inst_ || !db_inst_->getMaster()) {
+    return nullptr;
+  }
+  return db_inst_->getMaster()->getSite();
 }
-
-int64_t Cell::area() const
-{
-  dbMaster* master = db_inst_->getMaster();
-  return int64_t(master->getWidth()) * master->getHeight();
-}
-
-DbuX Cell::siteWidth() const
+DbuX GridNode::siteWidth() const
 {
   if (db_inst_) {
     auto site = db_inst_->getMaster()->getSite();
@@ -56,90 +65,61 @@ DbuX Cell::siteWidth() const
   }
   return DbuX{0};
 }
-
-bool Cell::isFixed() const
-{
-  return !db_inst_ || db_inst_->isFixed();
-}
-
-bool Cell::isHybrid() const
+bool GridNode::isHybrid() const
 {
   dbSite* site = getSite();
   return site ? site->isHybrid() : false;
 }
-
-bool Cell::isHybridParent() const
+bool GridNode::isHybridParent() const
 {
   dbSite* site = getSite();
   return site ? site->hasRowPattern() : false;
 }
-
-dbSite* Cell::getSite() const
+int64_t GridNode::area() const
 {
-  if (!db_inst_ || !db_inst_->getMaster()) {
-    return nullptr;
-  }
-  return db_inst_->getMaster()->getSite();
+  dbMaster* master = db_inst_->getMaster();
+  return int64_t(master->getWidth()) * master->getHeight();
 }
-
-bool Cell::isStdCell() const
+const char* GridNode::name() const { return db_inst_->getConstName(); }
+int GridNode::getBottomPower() const { return powerBot_; }
+int GridNode::getTopPower() const { return powerTop_; }
+GridNode::Type GridNode::getType() const { return type_; }
+bool GridNode::isTerminal() const { return (type_ == TERMINAL); }
+bool GridNode::isFiller() const { return (type_ == FILLER); }
+bool GridNode::isStdCell() const
 {
   if (db_inst_ == nullptr) {
     return false;
   }
-  dbMasterType type = db_inst_->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type.getValue()) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-      return true;
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-      // These classes are completely ignored by the placer.
-    case dbMasterType::COVER:
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::RING:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-      return false;
-  }
-  // gcc warniing
-  return false;
+  return db_inst_->isCore() || db_inst_->isEndCap();
 }
-
-bool Cell::isBlock() const
+bool GridNode::isBlock() const
 {
   return db_inst_ && db_inst_->getMaster()->getType() == dbMasterType::BLOCK;
 }
+Group* GridNode::getGroup() const { return group_; }
+const Rect* GridNode::getRegion() const { return region_; }
+Master* GridNode::getMaster() const { return master_; }
+bool GridNode::inGroup() const { return group_ != nullptr; }
+
+// setters
+void GridNode::setId(int id) { id_ = id; }
+void GridNode::setFixed(bool in) { fixed_ = in; }
+void GridNode::setDbInst(dbInst* inst) { db_inst_ = inst; }
+void GridNode::setLeft(DbuX x) { left_ = x; }
+void GridNode::setBottom(DbuY y) { bottom_ = y; }
+void GridNode::setOrient(const dbOrientType& in) { orient_ = in; }
+void GridNode::setWidth(DbuX width) { width_ = width; }
+void GridNode::setHeight(DbuY height) { height_ = height; }
+void GridNode::setPlaced(bool in) { placed_ = in; }
+void GridNode::setHold(bool in) { hold_ = in; }
+void GridNode::setBottomPower(int bot) { powerBot_ = bot; }
+void GridNode::setTopPower(int top) { powerTop_ = top; }
+void GridNode::setOrigBottom(DbuY bottom) { orig_bottom_ = bottom; }
+void GridNode::setOrigLeft(DbuX left) { orig_left_ = left; }
+void GridNode::setType(Type type) { type_ = type; }
+void GridNode::setGroup(Group* in) { group_ = in; }
+void GridNode::setRegion(const Rect* in) { region_ = in; }
+void GridNode::setMaster(Master* in) { master_ = in; }
 
 }  // namespace dpl

@@ -33,7 +33,7 @@
 
 #include "dpl/Padding.h"
 
-#include "Objects.h"
+#include "dpl/Objects.h"
 
 namespace dpl {
 
@@ -155,7 +155,7 @@ GridX Padding::padRight(dbInst* inst) const
 
 DbuX Padding::paddedWidth(const GridNode* cell) const
 {
-  return cell->dx()
+  return cell->getWidth()
          + gridToDbu(padLeft(cell) + padRight(cell), cell->siteWidth());
 }
 

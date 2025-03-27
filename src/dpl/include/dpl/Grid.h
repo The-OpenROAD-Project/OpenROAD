@@ -41,7 +41,7 @@
 
 #include <unordered_set>
 #include <vector>
-
+#include "Objects.h"
 #include "Coordinates.h"
 #include "Opendp.h"
 
@@ -49,21 +49,6 @@ namespace dpl {
 
 using odb::dbOrientType;
 using odb::dbSite;
-
-class GridNode
-{
- public:
-  virtual ~GridNode() = default;
-  virtual bool isFixed() const = 0;
-  virtual bool isPlaced() const = 0;
-  virtual bool isHybrid() const = 0;
-  virtual DbuX xMin() const = 0;
-  virtual DbuY yMin() const = 0;
-  virtual DbuX dx() const = 0;
-  virtual DbuY dy() const = 0;
-  virtual dbInst* getDbInst() const = 0;
-  virtual DbuX siteWidth() const = 0;
-};
 
 struct GridIntervalX
 {

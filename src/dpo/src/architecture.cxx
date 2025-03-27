@@ -440,26 +440,14 @@ bool Architecture::getCellPadding(const Node* ndi,
 int Architecture::getCellSpacing(const Node* leftNode,
                                  const Node* rightNode) const
 {
-  // Return the required separation between the two cells.  We use
-  // either spacing tables or padding information, or both.  If
-  // we use both, then we return the largest spacing.
+  // Return the required separation between the two cells.
   //
   // I've updated this as well to account for the situation where
   // one of the provided cells is null.  Even in the case of null,
   // I suppose that we should account for padding; e.g., we might
   // be at the end of a segment.
   int retval = 0;
-  if (useSpacingTable_) {
-    // Don't need this if one of the cells is null.
-    if (leftNode && rightNode) {
-      for (auto left_type : leftNode->getRightEdgeTypes()) {
-        for (auto right_type : rightNode->getLeftEdgeTypes()) {
-          retval = std::max(
-              retval, getCellSpacingUsingTable(left_type, right_type).spc);
-        }
-      }
-    }
-  }
+
   if (usePadding_) {
     // Separation is padding to the right of the left cell plus
     // the padding to the left of the right cell.

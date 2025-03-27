@@ -1308,7 +1308,7 @@ void DetailedMgr::cleanup()
 {
   // Various cleanups.
   for (Node* ndi : wideCells_) {
-    ndi->setFixed(Node::NOT_FIXED);
+    ndi->setFixed(false);
   }
 }
 
@@ -1367,7 +1367,7 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
                             const DbuY bottom,
                             const odb::dbOrientType& orient)
 {
-  odb::Rect bbox = cell->getMaster()->boundary_box_;
+  odb::Rect bbox = cell->getMaster()->getBBox();
   odb::dbTransform transform(orient);
   transform.apply(bbox);
   odb::Point offset(left.v - bbox.xMin(), bottom.v - bbox.yMin());
@@ -1404,11 +1404,11 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
   // Get the real grid coordinates from the grid indices.
   DbuX x_real = node->getLeft();
   DbuY y_real = node->getBottom();
-  for (const auto& edge1 : master->edges_) {
+  for (const auto& edge1 : master->getEdges()) {
     int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
                   + 1;  // +1 to account for EXACT rules
     odb::Rect edge1_box = cell_edges::transformEdgeRect(
-        edge1.getBBox(), node, x_real, y_real, node->getCurrOrient());
+        edge1.getBBox(), node, x_real, y_real, node->getOrient());
     bool is_vertical_edge = edge1_box.getDir() == 0;
     odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
     auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
@@ -1435,7 +1435,7 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
         if (master2 == nullptr) {
           continue;
         }
-        for (const auto& edge2 : master2->edges_) {
+        for (const auto& edge2 : master2->getEdges()) {
           auto spc_entry = arch_->getCellSpacingUsingTable(edge1.getEdgeType(),
                                                            edge2.getEdgeType());
           int spc = spc_entry.spc;
@@ -1444,7 +1444,7 @@ bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
                                               cell2,
                                               cell2->getLeft(),
                                               cell2->getBottom(),
-                                              cell2->getCurrOrient());
+                                              cell2->getOrient());
           if (edge1_box.getDir() != edge2_box.getDir()) {
             // Skip if edges are not parallel.
             continue;
@@ -2007,11 +2007,11 @@ void DetailedMgr::findRegionIntervals(
   intervals.resize(numSingleHeightRows_);
 
   // Look at the rectangles within the region.
-  for (const Rectangle_i& rect : regPtr->getRects()) {
-    const double xmin = rect.xmin();
-    const double xmax = rect.xmax();
-    const double ymin = rect.ymin();
-    const double ymax = rect.ymax();
+  for (const auto& rect : regPtr->getRects()) {
+    const double xmin = rect.xMin();
+    const double xmax = rect.xMax();
+    const double ymin = rect.yMin();
+    const double ymax = rect.yMax();
 
     for (int r = 0; r < numSingleHeightRows_; r++) {
       const double lb = arch_->getMinY() + r * singleRowHeight_;

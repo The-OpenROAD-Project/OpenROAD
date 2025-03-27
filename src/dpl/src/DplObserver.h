@@ -33,7 +33,7 @@
 namespace dpl {
 
 class Opendp;
-struct Cell;
+struct GridNode;
 
 class DplObserver
 {
@@ -42,7 +42,7 @@ class DplObserver
 
   virtual void startPlacement(odb::dbBlock* block) = 0;
   virtual void placeInstance(odb::dbInst* instance) = 0;
-  virtual void binSearch(const Cell* cell,
+  virtual void binSearch(const GridNode* cell,
                          GridX xl,
                          GridY yl,
                          GridX xh,

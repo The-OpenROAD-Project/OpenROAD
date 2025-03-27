@@ -41,7 +41,7 @@
 #include "dpl/Coordinates.h"
 #include "odb/dbTypes.h"
 #include "rectangle.h"
-
+#include "odb/geom.h"
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -260,8 +260,8 @@ class Architecture::Region
   void setMinY(int ymin) { ymin_ = ymin; }
   void setMaxY(int ymax) { ymax_ = ymax; }
 
-  void addRect(Rectangle_i& rect) { rects_.push_back(rect); }
-  const std::vector<Rectangle_i>& getRects() const { return rects_; }
+  void addRect(const odb::Rect& rect) { rects_.emplace_back(rect); }
+  const std::vector<odb::Rect>& getRects() const { return rects_; }
 
  private:
   // Id for the region.
@@ -274,7 +274,7 @@ class Architecture::Region
   int ymax_ = std::numeric_limits<int>::lowest();
 
   // Sub-rectangles forming the rectilinear region.
-  std::vector<Rectangle_i> rects_;
+  std::vector<odb::Rect> rects_;
 };
 
 }  // namespace dpo

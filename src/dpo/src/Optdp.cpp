@@ -57,6 +57,7 @@
 #include "network.h"
 #include "router.h"
 #include "symmetry.h"
+#include "dpl/Objects.h"
 
 namespace dpo {
 
@@ -83,6 +84,7 @@ using odb::dbSWire;
 using odb::dbTechLayer;
 using odb::dbWireType;
 using odb::Rect;
+using dpl::Master;
 
 ////////////////////////////////////////////////////////////////
 void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
@@ -217,8 +219,8 @@ void Optdp::updateDbInstLocations()
       const int y = nd->getBottom().v + grid_->getCore().yMin();
       const int x = nd->getLeft().v + grid_->getCore().xMin();
 
-      if (inst->getOrient() != nd->getCurrOrient()) {
-        inst->setOrient(nd->getCurrOrient());
+      if (inst->getOrient() != nd->getOrient()) {
+        inst->setOrient(nd->getOrient());
       }
       int inst_x, inst_y;
       inst->getLocation(inst_x, inst_y);
@@ -491,8 +493,10 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
   }
   auto master = network_->createAndAddMaster();
   masterMap_[db_master] = master;
-  db_master->getPlacementBoundary(master->boundary_box_);
-  master->edges_.clear();
+  Rect bbox;
+  db_master->getPlacementBoundary(bbox);
+  master->setBBox(bbox);
+  master->clearEdges();
   if (!arch_->getUseSpacingTable()) {
     return master;
   }
@@ -500,8 +504,6 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
       == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
     return nullptr;
   }
-  Rect bbox;
-  db_master->getPlacementBoundary(bbox);
   std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<Rect>> typed_segs;
   int num_rows = std::lround(db_master->getHeight() / (double) min_row_height);
   for (auto edge : db_master->getEdgeTypes()) {
@@ -532,8 +534,8 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     typed_segs[dir].push_back(edge_rect);
     if (arch_->hasEdgeType(edge->getEdgeType())) {
       // consider only edge types defined in the spacing table
-      master->edges_.emplace_back(arch_->getEdgeTypeIdx(edge->getEdgeType()),
-                                  edge_rect);
+      master->addEdge(dpl::Edge(arch_->getEdgeTypeIdx(edge->getEdgeType()),
+                                  edge_rect));
     }
   }
   if (!arch_->hasEdgeType("DEFAULT")) {
@@ -546,7 +548,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->edges_.emplace_back(0, seg);
+      master->addEdge(dpl::Edge(0, seg));
     }
   }
   return master;
@@ -662,27 +664,13 @@ void Optdp::createNetwork()
     network_->setNodeName(n, inst->getName().c_str());
 
     // Fill in data.
-    ndi->setType(Node::CELL);
+    ndi->setType(GridNode::CELL);
     ndi->setDbInst(inst);
     ndi->setMaster(getMaster(inst->getMaster()));
-    // Set left and right edge types:
-    {
-      for (auto edge_type : inst->getMaster()->getEdgeTypes()) {
-        if (arch_->hasEdgeType(edge_type->getEdgeType())) {
-          if (edge_type->getEdgeDir() == odb::dbMasterEdgeType::RIGHT) {
-            ndi->addRigthEdgeType(
-                arch_->getEdgeTypeIdx(edge_type->getEdgeType()));
-          } else if (edge_type->getEdgeDir() == odb::dbMasterEdgeType::LEFT) {
-            ndi->addLeftEdgeType(
-                arch_->getEdgeTypeIdx(edge_type->getEdgeType()));
-          }
-        }
-      }
-    }
     ndi->setId(n);
-    ndi->setFixed(inst->isFixed() ? Node::FIXED_XY : Node::NOT_FIXED);
+    ndi->setFixed(inst->isFixed());
     // else...  Account for R90?
-    ndi->setCurrOrient(odb::dbOrientType::R0);
+    ndi->setOrient(odb::dbOrientType::R0);
     ndi->setHeight(DbuY{(int) inst->getMaster()->getHeight()});
     ndi->setWidth(DbuX{(int) inst->getMaster()->getWidth()});
 
@@ -719,9 +707,9 @@ void Optdp::createNetwork()
 
     // Fill in data.
     ndi->setId(n);
-    ndi->setType(Node::TERMINAL);
-    ndi->setFixed(Node::FIXED_XY);
-    ndi->setCurrOrient(odb::dbOrientType::R0);
+    ndi->setType(GridNode::TERMINAL);
+    ndi->setFixed(true);
+    ndi->setOrient(odb::dbOrientType::R0);
 
     DbuX ww(bterm->getBBox().xMax() - bterm->getBBox().xMin());
     DbuY hh(bterm->getBBox().yMax() - bterm->getBBox().yMax());
@@ -1058,18 +1046,13 @@ void Optdp::setUpPlacementRegions()
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
   Architecture::Region* rptr = nullptr;
   int count = 0;
-  Rectangle_i tempRect;
 
   // Default region.
   rptr = arch_->createAndAddRegion();
   rptr->setId(count);
   ++count;
 
-  tempRect.set_xmin(xmin);
-  tempRect.set_xmax(xmax);
-  tempRect.set_ymin(ymin);
-  tempRect.set_ymax(ymax);
-  rptr->addRect(tempRect);
+  rptr->addRect({xmin, ymin, xmax, ymax});
 
   rptr->setMinX(xmin);
   rptr->setMaxX(xmax);
@@ -1093,11 +1076,7 @@ void Optdp::setUpPlacementRegions()
         ymin = std::max(arch_->getMinY(), box.yMin());
         ymax = std::min(arch_->getMaxY(), box.yMax());
 
-        tempRect.set_xmin(xmin);
-        tempRect.set_xmax(xmax);
-        tempRect.set_ymin(ymin);
-        tempRect.set_ymax(ymax);
-        rptr->addRect(tempRect);
+        rptr->addRect({xmin, ymin, xmax, ymax});
 
         rptr->setMinX(std::min(xmin, rptr->getMinX()));
         rptr->setMaxX(std::max(xmax, rptr->getMaxX()));

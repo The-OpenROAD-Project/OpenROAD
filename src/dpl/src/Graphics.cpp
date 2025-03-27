@@ -33,7 +33,7 @@
 
 #include "Graphics.h"
 
-#include "Objects.h"
+#include "dpl/Objects.h"
 #include "dpl/Grid.h"
 #include "dpl/Opendp.h"
 
@@ -70,7 +70,7 @@ void Graphics::placeInstance(dbInst* instance)
   gui->pause();
 }
 
-void Graphics::binSearch(const Cell* cell,
+void Graphics::binSearch(const GridNode* cell,
                          GridX xl,
                          GridY yl,
                          GridX xh,
@@ -109,13 +109,14 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Compare the squared distances to save calling sqrt
     float min_length = min_displacement_ * dp_->grid_->gridHeight(&cell).v;
     min_length *= min_length;
-    DbuX lx{core.xMin() + cell.xMin()};
-    DbuY ly{core.yMin() + cell.yMin()};
+    DbuX lx{core.xMin() + cell.getLeft()};
+    DbuY ly{core.yMin() + cell.getBottom()};
 
     auto color = cell.getDbInst() ? gui::Painter::gray : gui::Painter::red;
     painter.setPen(color);
     painter.setBrush(color);
-    painter.drawRect(Rect(lx.v, ly.v, lx.v + cell.dx().v, ly.v + cell.dy().v));
+    painter.drawRect(
+        Rect(lx.v, ly.v, lx.v + cell.getWidth().v, ly.v + cell.getHeight().v));
 
     if (!cell.getDbInst()) {
       continue;

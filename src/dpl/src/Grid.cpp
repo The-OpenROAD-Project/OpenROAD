@@ -44,7 +44,7 @@
 #include <limits>
 #include <vector>
 
-#include "Objects.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
 #include "odb/dbTransform.h"
@@ -393,7 +393,7 @@ GridY Grid::gridHeight(const GridNode* cell) const
 {
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
-    return GridY{max(1, divCeil(cell->dy().v, row_height.v))};
+    return GridY{max(1, divCeil(cell->getHeight().v, row_height.v))};
   }
   if (!cell->getDbInst()) {
     return GridY{1};
@@ -418,12 +418,12 @@ GridX Grid::gridX(DbuX x) const
 
 GridX Grid::gridX(const GridNode* cell) const
 {
-  return gridX(cell->xMin());
+  return gridX(cell->getLeft());
 }
 
 GridX Grid::gridPaddedX(const GridNode* cell) const
 {
-  return gridX(cell->xMin()
+  return gridX(cell->getLeft()
                - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
 }
 
@@ -500,12 +500,12 @@ GridY Grid::gridEndY(DbuY y) const
 
 GridY Grid::gridSnapDownY(const GridNode* cell) const
 {
-  return gridSnapDownY(cell->yMin());
+  return gridSnapDownY(cell->getBottom());
 }
 
 GridY Grid::gridRoundY(const GridNode* cell) const
 {
-  return gridRoundY(cell->yMin());
+  return gridRoundY(cell->getBottom());
 }
 
 DbuY Grid::gridYToDbu(GridY y) const
@@ -519,25 +519,25 @@ DbuY Grid::gridYToDbu(GridY y) const
 GridX Grid::gridPaddedEndX(const GridNode* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x = cell->xMin() + cell->dx()
+  const DbuX end_x = cell->getLeft() + cell->getWidth()
                      + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
 GridX Grid::gridEndX(const GridNode* cell) const
 {
-  return GridX{divCeil((cell->xMin() + cell->dx()).v, getSiteWidth().v)};
+  return GridX{divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
 }
 
 GridY Grid::gridEndY(const GridNode* cell) const
 {
-  return gridEndY(cell->yMin() + cell->dy());
+  return gridEndY(cell->getBottom() + cell->getHeight());
 }
 
 bool Grid::cellFitsInCore(GridNode* cell) const
 {
   return gridPaddedWidth(cell) <= getRowSiteCount()
-         && cell->dy().v <= core_.dy();
+         && cell->getHeight().v <= core_.dy();
 }
 
 void Grid::examineRows(dbBlock* block)
