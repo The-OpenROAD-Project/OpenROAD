@@ -35,6 +35,9 @@
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
+// This file has many duplicate symbols with extmeasure_res.cpp.  Disabled
+// until this is resolved.
+#if 0
 namespace rcx {
 
 using utl::RCX;
@@ -989,3 +992,4 @@ extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w)
 }
 
 }  // namespace rcx
+#endif
