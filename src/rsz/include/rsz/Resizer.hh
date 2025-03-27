@@ -447,7 +447,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
-  void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
+  void reportEquivalentCells(LibertyCell* base_cell,
+                             bool match_cell_footprint,
+                             bool report_all_cells);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
