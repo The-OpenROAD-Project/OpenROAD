@@ -512,6 +512,7 @@ The `report_equiv_cells` command finds all functionally equivalent library cells
 ```tcl
 report_equiv_cells 
     [-match_cell_footprint]
+    [-all]
     lib_cell
 ```
 
@@ -520,6 +521,7 @@ report_equiv_cells
 | Switch Name | Description |
 | ----- | ----- |
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
+| `-all` | List all equivalent cells regardless of sizing restrictions or cell_footprint.  Excluded cells are marked with an asterisk after cell name. |
 
 ## Example scripts
 
