@@ -2581,7 +2581,7 @@ void NesterovBase::updateNextIter(const int iter)
       group = fmt::format(" ({})", pb_->group()->getName());
     }
     log_->report(
-        "[NesterovSolve] Iter: {:4d} overflow: {:.4f} HPWL: {:.3e}({:+.1f}%) "
+        "[NesterovSolve] Iter: {:4d} overflow: {:.4f} HPWL: {:.3e}({:+5.1f}%) "
         "penalty: {:.1e} {}",
         iter + 1,
         sumOverflowUnscaled_,
