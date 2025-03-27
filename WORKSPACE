@@ -39,13 +39,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 http_archive(
-    name = "rules_cc",
-    sha256 = "2037875b9a4456dce4a79d112a8ae885bbc4aad968e6587dca6e64f3a0900cdf",
-    strip_prefix = "rules_cc-0.0.9",
-    urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.9/rules_cc-0.0.9.tar.gz"],
-)
-
-http_archive(
     name = "com_grail_bazel_toolchain",
     sha256 = "ddad1bde0eb9d470ea58500681a7deacdf55c714adf4b89271392c4687acb425",
     strip_prefix = "toolchains_llvm-7e7c7cf1f965f348861085183d79b6a241764390",
@@ -155,7 +148,6 @@ maybe(
     url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
 )
 
-#XX
 maybe(
     http_archive,
     name = "rules_pkg",
@@ -183,7 +175,6 @@ pip_parse(
     python_interpreter_target = "@python39_host//:python",
     requirements_lock = "//dependency_support:pip_requirements.txt",
 )
-# END XX
 
 rules_hdl_git_hash = "d52c2d63da103d8c6bd78f193dfcfbeba704f152"
 rules_hdl_git_sha256 = "882b552bfa94bdfb22431d50c2fb9177986a39e20fe03b627dd4491d33d56f84"
