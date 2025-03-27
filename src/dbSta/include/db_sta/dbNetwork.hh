@@ -234,9 +234,9 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
-  bool isLeaf(const Instance* instance) const override;
   using ConcreteNetwork::isLeaf;
-  bool isLeaf(const Pin* pin) const override ;
+  bool isLeaf(const Instance* instance) const override;
+  bool isLeaf(const Pin* pin) const override;
   Port* findPort(const Cell* cell, const char* name) const override;
   Instance* findInstance(const char* path_name) const override;
   Instance* findChild(const Instance* parent, const char* name) const override;
