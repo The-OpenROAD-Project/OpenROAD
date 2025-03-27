@@ -2746,7 +2746,7 @@ void dbBlock::destroy(dbBlock* block_)
   _dbBlock* block = (_dbBlock*) block_;
   _dbChip* chip = (_dbChip*) block->getOwner();
   // delete the children of this block
-  for (dbId<_dbBlock> child_id : block->_children) {
+  for (const dbId<_dbBlock>& child_id : block->_children) {
     _dbBlock* child = chip->_block_tbl->getPtr(child_id);
     destroy((dbBlock*) child);
   }

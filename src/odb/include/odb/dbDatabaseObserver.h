@@ -15,17 +15,10 @@ class dbDatabase;
 class dbLib;
 class dbTech;
 
-}  // namespace odb
-
-namespace ord {
-
-class OpenRoad;
-
-// Observer interface
-class OpenRoadObserver
+class dbDatabaseObserver
 {
  public:
-  virtual ~OpenRoadObserver()
+  virtual ~dbDatabaseObserver()
   {
     if (unregister_observer_) {
       unregister_observer_();
@@ -37,7 +30,7 @@ class OpenRoadObserver
   virtual void postReadDef(odb::dbBlock* block) = 0;
   virtual void postReadDb(odb::dbDatabase* db) = 0;
 
-  void set_unregister_observer(std::function<void()> unregister_observer)
+  void setUnregisterObserver(std::function<void()> unregister_observer)
   {
     unregister_observer_ = std::move(unregister_observer);
   }
@@ -46,4 +39,4 @@ class OpenRoadObserver
   std::function<void()> unregister_observer_;
 };
 
-}  // namespace ord
+}  // namespace odb

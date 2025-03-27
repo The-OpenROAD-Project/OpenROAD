@@ -141,7 +141,7 @@ std::pair<dbSite*, dbOrientType> Opendp::fillSite(Pixel* pixel)
   dbSite* selected_site = nullptr;
   dbOrientType selected_orient;
   DbuY min_height{std::numeric_limits<int>::max()};
-  for (auto [site, orient] : pixel->sites) {
+  for (const auto& [site, orient] : pixel->sites) {
     DbuY site_height{site->getHeight()};
     if (site_height < min_height) {
       min_height = site_height;

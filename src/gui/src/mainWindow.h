@@ -79,7 +79,7 @@ class HelpWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
-class MainWindow : public QMainWindow, public ord::OpenRoadObserver
+class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
 {
   Q_OBJECT
 

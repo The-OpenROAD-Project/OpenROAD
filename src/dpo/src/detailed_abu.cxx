@@ -104,10 +104,8 @@ void DetailedABU::init()
   abuTargUt_ = mgrPtr_->getTargetUt();  // XXX: Need to set this somehow!!!
 
   abuGridUnit_ = BIN_DIM * arch_->getRow(0)->getHeight();
-  abuGridNumX_
-      = (int) ceil((arch_->getMaxX() - arch_->getMinX()) / abuGridUnit_);
-  abuGridNumY_
-      = (int) ceil((arch_->getMaxY() - arch_->getMinY()) / abuGridUnit_);
+  abuGridNumX_ = (int) ceil((arch_->getWidth()) / abuGridUnit_);
+  abuGridNumY_ = (int) ceil((arch_->getHeight()) / abuGridUnit_);
   abuNumBins_ = abuGridNumX_ * abuGridNumY_;
   abuBins_.resize(abuNumBins_);
 
@@ -153,10 +151,10 @@ void DetailedABU::init()
       continue;
     }
 
-    const double xmin = nd->getLeft();
-    const double xmax = nd->getRight();
-    const double ymin = nd->getBottom();
-    const double ymax = nd->getTop();
+    const double xmin = nd->getLeft().v;
+    const double xmax = nd->getRight().v;
+    const double ymin = nd->getBottom().v;
+    const double ymax = nd->getTop().v;
 
     const int lcol
         = std::max((int) floor((xmin - arch_->getMinX()) / abuGridUnit_), 0);
@@ -224,10 +222,10 @@ void DetailedABU::computeUtils()
       continue;
     }
 
-    const double nlx = nd->getLeft();
-    const double nrx = nd->getRight();
-    const double nly = nd->getBottom();
-    const double nhy = nd->getTop();
+    const double nlx = nd->getLeft().v;
+    const double nrx = nd->getRight().v;
+    const double nly = nd->getBottom().v;
+    const double nhy = nd->getTop().v;
 
     const int lcol
         = std::max((int) floor((nlx - arch_->getMinX()) / abuGridUnit_), 0);
@@ -450,14 +448,7 @@ double DetailedABU::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::delta(const int n,
-                          const std::vector<Node*>& nodes,
-                          const std::vector<int>& curLeft,
-                          const std::vector<int>& curBottom,
-                          const std::vector<unsigned>& curOri,
-                          const std::vector<int>& newLeft,
-                          const std::vector<int>& newBottom,
-                          const std::vector<unsigned>& newOri)
+double DetailedABU::delta(const Journal& journal)
 {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
@@ -473,16 +464,19 @@ double DetailedABU::delta(const int n,
 
   // Compute changed bins and changed occupancy.
   ++abuChangedBinsCounter_;
-  for (int i = 0; i < n; i++) {
-    updateBins(nodes[i],
-               curLeft[i] + 0.5 * nodes[i]->getWidth(),
-               curBottom[i] + 0.5 * nodes[i]->getHeight(),
+  const auto& actions = journal.getActions();
+  for (const auto& action : actions) {
+    auto node = action.getNode();
+    updateBins(action.getNode(),
+               action.getOrigLeft().v + 0.5 * node->getWidth().v,
+               action.getOrigBottom().v + 0.5 * node->getHeight().v,
                -1);
   }
-  for (int i = 0; i < n; i++) {
-    updateBins(nodes[i],
-               newLeft[i] + 0.5 * nodes[i]->getWidth(),
-               newBottom[i] + 0.5 * nodes[i]->getHeight(),
+  for (const auto& action : actions) {
+    auto node = action.getNode();
+    updateBins(action.getNode(),
+               action.getNewLeft().v + 0.5 * node->getWidth().v,
+               action.getNewBottom().v + 0.5 * node->getHeight().v,
                +1);
   }
 
@@ -579,10 +573,10 @@ void DetailedABU::updateBins(const Node* nd,
     mgrPtr_->internalError("Problem updating bins for utilization objective");
   }
 
-  const double lx = x - 0.5 * nd->getWidth() - arch_->getMinX();
-  const double ux = x + 0.5 * nd->getWidth() - arch_->getMinX();
-  const double ly = y - 0.5 * nd->getHeight() - arch_->getMinY();
-  const double uy = y + 0.5 * nd->getHeight() - arch_->getMinY();
+  const double lx = x - 0.5 * nd->getWidth().v - arch_->getMinX();
+  const double ux = x + 0.5 * nd->getWidth().v - arch_->getMinX();
+  const double ly = y - 0.5 * nd->getHeight().v - arch_->getMinY();
+  const double uy = y + 0.5 * nd->getHeight().v - arch_->getMinY();
 
   const int lcol = std::max((int) floor(lx / abuGridUnit_), 0);
   const int rcol = std::min((int) floor(ux / abuGridUnit_), abuGridNumX_ - 1);
@@ -594,10 +588,14 @@ void DetailedABU::updateBins(const Node* nd,
       const int binId = j * abuGridNumX_ + k;
 
       // get intersection
-      const double lx = std::max(abuBins_[binId].lx, x - 0.5 * nd->getWidth());
-      const double hx = std::min(abuBins_[binId].hx, x + 0.5 * nd->getWidth());
-      const double ly = std::max(abuBins_[binId].ly, y - 0.5 * nd->getHeight());
-      const double hy = std::min(abuBins_[binId].hy, y + 0.5 * nd->getHeight());
+      const double lx
+          = std::max(abuBins_[binId].lx, x - 0.5 * nd->getWidth().v);
+      const double hx
+          = std::min(abuBins_[binId].hx, x + 0.5 * nd->getWidth().v);
+      const double ly
+          = std::max(abuBins_[binId].ly, y - 0.5 * nd->getHeight().v);
+      const double hy
+          = std::min(abuBins_[binId].hy, y + 0.5 * nd->getHeight().v);
 
       if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
         // XXX: Keep track of the bins that change.

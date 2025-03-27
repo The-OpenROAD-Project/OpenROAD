@@ -44,9 +44,10 @@
 #include <vector>
 
 #include "architecture.h"
+#include "dpl/Coordinates.h"
+#include "dpl/Grid.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "orientation.h"
-
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,11 +56,40 @@ namespace dpo {
 class Pin;
 
 const int EDGETYPE_DEFAULT = 0;
+using dpl::DbuX;
+using dpl::DbuY;
+using dpl::GridNode;
+using dpl::GridX;
+using dpl::GridY;
+using odb::dbOrientType;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class Node
+class MasterEdge
+{
+ public:
+  MasterEdge(unsigned int type, const odb::Rect& box)
+      : edge_type_idx_(type), bbox_(box)
+  {
+  }
+  unsigned int getEdgeType() const { return edge_type_idx_; }
+  const odb::Rect& getBBox() const { return bbox_; }
+
+ private:
+  unsigned int edge_type_idx_;
+  odb::Rect bbox_;
+};
+
+class Master
+{
+ public:
+  Master() = default;
+  odb::Rect boundary_box_;
+  std::vector<MasterEdge> edges_;
+};
+
+class Node : public GridNode
 {
  public:
   enum Type
@@ -80,52 +110,60 @@ class Node
   };
 
   Node();
+  bool isPlaced() const override { return false; }
+  bool isHybrid() const override { return false; }
+  DbuX xMin() const override { return left_; }
+  DbuY yMin() const override { return DbuY(bottom_); }
+  DbuX dx() const override { return DbuX(w_); }
+  DbuY dy() const override { return DbuY(h_); }
+  odb::dbInst* getDbInst() const override { return db_inst_; }
+  DbuX siteWidth() const override { return DbuX(0); }
 
-  int getArea() const { return w_ * h_; }
-  unsigned getAvailOrient() const { return availOrient_; }
-  int getBottom() const { return bottom_; }
+  int getArea() const { return w_.v * h_.v; }
+  DbuY getBottom() const { return bottom_; }
   int getBottomPower() const { return powerBot_; }
   int getTopPower() const { return powerTop_; }
-  unsigned getCurrOrient() const { return currentOrient_; }
+  dbOrientType getCurrOrient() const { return currentOrient_; }
   Fixity getFixed() const { return fixed_; }
-  int getHeight() const { return h_; }
+  DbuY getHeight() const { return h_; }
   int getId() const { return id_; }
-  int getLeft() const { return left_; }
-  double getOrigBottom() const { return origBottom_; }
-  double getOrigLeft() const { return origLeft_; }
+  DbuX getLeft() const { return left_; }
+  DbuY getOrigBottom() const { return origBottom_; }
+  DbuX getOrigLeft() const { return origLeft_; }
   int getRegionId() const { return regionId_; }
-  int getRight() const { return left_ + w_; }
-  int getTop() const { return bottom_ + h_; }
+  DbuX getRight() const { return left_.v + DbuX(w_); }
+  DbuY getTop() const { return bottom_ + h_; }
   Type getType() const { return type_; }
-  int getWidth() const { return w_; }
+  DbuX getWidth() const { return w_; }
+  Master* getMaster() const { return master_; }
 
-  void setAvailOrient(unsigned avail) { availOrient_ = avail; }
-  void setBottom(int bottom) { bottom_ = bottom; }
+  void setBottom(DbuY bottom) { bottom_ = bottom; }
   void setBottomPower(int bot) { powerBot_ = bot; }
   void setTopPower(int top) { powerTop_ = top; }
-  void setCurrOrient(unsigned orient) { currentOrient_ = orient; }
+  void setCurrOrient(const dbOrientType& orient) { currentOrient_ = orient; }
   void setFixed(Fixity fixed) { fixed_ = fixed; }
-  void setHeight(int h) { h_ = h; }
+  void setHeight(DbuY h) { h_ = h; }
   void setId(int id) { id_ = id; }
-  void setLeft(int left) { left_ = left; }
-  void setOrigBottom(double bottom) { origBottom_ = bottom; }
-  void setOrigLeft(double left) { origLeft_ = left; }
+  void setLeft(DbuX left) { left_ = left; }
+  void setOrigBottom(DbuY bottom) { origBottom_ = bottom; }
+  void setOrigLeft(DbuX left) { origLeft_ = left; }
   void setRegionId(int id) { regionId_ = id; }
   void setType(Type type) { type_ = type; }
-  void setWidth(int w) { w_ = w; }
+  void setWidth(DbuX w) { w_ = w; }
+  void setMaster(Master* in) { master_ = in; }
+  void setDbInst(odb::dbInst* inst) { db_inst_ = inst; }
 
-  bool adjustCurrOrient(unsigned newOrient);
+  bool adjustCurrOrient(const dbOrientType& newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
   bool isFiller() const { return (type_ == FILLER); }
-  bool isFixed() const { return (fixed_ != NOT_FIXED); }
+  bool isFixed() const override { return (fixed_ != NOT_FIXED); }
 
-  int getLeftEdgeType() const { return etl_; }
-  int getRightEdgeType() const { return etr_; }
-
-  void setLeftEdgeType(int etl) { etl_ = etl; }
-  void setRightEdgeType(int etr) { etr_ = etr; }
-  void swapEdgeTypes() { std::swap<int>(etl_, etr_); }
+  void addLeftEdgeType(int etl) { etls_.emplace_back(etl); }
+  void addRigthEdgeType(int etr) { etrs_.emplace_back(etr); }
+  const std::vector<int>& getLeftEdgeTypes() const { return etls_; }
+  const std::vector<int>& getRightEdgeTypes() const { return etrs_; }
+  void swapEdgeTypes() { std::swap(etls_, etrs_); }
 
   int getNumPins() const { return (int) pins_.size(); }
   const std::vector<Pin*>& getPins() const { return pins_; }
@@ -134,31 +172,34 @@ class Node
   // Id.
   int id_ = 0;
   // Current position; bottom corner.
-  int left_ = 0;
-  int bottom_ = 0;
-  // Original position.  Stored as double still.
-  double origLeft_ = 0;
-  double origBottom_ = 0;
+  DbuX left_{0};
+  DbuY bottom_{0};
+  // Original position.
+  DbuX origLeft_{0};
+  DbuY origBottom_{0};
   // Width and height.
-  int w_ = 0;
-  int h_ = 0;
+  DbuX w_{0};
+  DbuY h_{0};
   // Type.
   Type type_ = UNKNOWN;
   // Fixed or not fixed.
   Fixity fixed_ = NOT_FIXED;
   // For edge types and spacing tables.
-  int etl_ = EDGETYPE_DEFAULT;
-  int etr_ = EDGETYPE_DEFAULT;
+  std::vector<int> etls_, etrs_;
   // For power.
   int powerTop_ = Architecture::Row::Power_UNK;
   int powerBot_ = Architecture::Row::Power_UNK;
   // Regions.
   int regionId_ = 0;
   // Orientations.
-  unsigned currentOrient_ = Orientation_N;
-  unsigned availOrient_ = Orientation_N;
+  dbOrientType currentOrient_;
   // Pins.
   std::vector<Pin*> pins_;
+  // Master and edges
+  Master* master_{nullptr};
+
+  // dbInst
+  odb::dbInst* db_inst_{nullptr};
 
   friend class Network;
 };
@@ -299,13 +340,16 @@ class Network
 
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
-  Node* createAndAddFillerNode(int left,
-                               int bottom,
-                               int width,
-                               int height);  // Extras to block space.
+  Node* createAndAddFillerNode(DbuX left,
+                               DbuY bottom,
+                               DbuX width,
+                               DbuY height);  // Extras to block space.
 
   // For creating and adding edges.
   Edge* createAndAddEdge();
+
+  // For creating masters.
+  Master* createAndAddMaster();
 
   void createAndAddBlockage(const odb::Rect& bounds);
 
@@ -317,7 +361,8 @@ class Network
   std::vector<Node*> nodes_;  // The nodes in the netlist...
   std::unordered_map<int, std::string> nodeNames_;  // Names of nodes...
   std::vector<Pin*> pins_;            // The pins in the network...
-  std::vector<odb::Rect> blockages_;  // The placement blockages ...
+  std::vector<odb::Rect> blockages_;  // The placement blockages ..
+  std::vector<std::unique_ptr<Master>> masters_;
 };
 
 }  // namespace dpo
