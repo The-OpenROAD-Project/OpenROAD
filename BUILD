@@ -20,7 +20,7 @@ load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
 load("@rules_hdl//dependency_support/com_github_westes_flex:flex.bzl", "genlex")
 
 load(
-    "//:build_helper.bzl",
+    "//:bazel/build_helper.bzl",
     "OPENROAD_DEFINES",
     "OPENROAD_BINARY_DEPS",
     "OPENROAD_BINARY_SRCS",
@@ -34,7 +34,7 @@ load(
 )
 load("@rules_hdl//dependency_support/org_theopenroadproject:tcl_encode.bzl", "tcl_encode")
 
-load("@//:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("@//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     features = [
