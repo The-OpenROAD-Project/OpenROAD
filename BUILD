@@ -143,7 +143,6 @@ cc_library(
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
         allow_empty = True,
     ) + [
-        "src/Main_bindings.cc",
         "src/OpenRoad.cc",
         "src/stt/src/flt/etc/POST9.cpp",
         "src/stt/src/flt/etc/POWV9.cpp",
