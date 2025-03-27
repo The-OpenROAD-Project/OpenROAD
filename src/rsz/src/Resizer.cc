@@ -1506,12 +1506,42 @@ std::optional<float> Resizer::cellLeakage(LibertyCell* cell)
 
 // For debugging
 void Resizer::reportEquivalentCells(LibertyCell* base_cell,
-                                    bool match_cell_footprint)
+                                    bool match_cell_footprint,
+                                    bool report_all_cells)
 {
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  LibertyCellSeq equiv_cells = getSwappableCells(base_cell);
+  LibertyCellSeq equiv_cells;
+
+  if (report_all_cells) {
+    bool restrict = false;
+    std::optional<double> no_limit = std::nullopt;
+    utl::SetAndRestore relax_footprint(match_cell_footprint_, restrict);
+    utl::SetAndRestore relax_sizing_area_limit(sizing_area_limit_, no_limit);
+    utl::SetAndRestore relax_sizing_leakage_limit(sizing_leakage_limit_,
+                                                  no_limit);
+    utl::SetAndRestore relax_keep_site(sizing_keep_site_, restrict);
+    utl::SetAndRestore relax_keep_vt(sizing_keep_vt_, restrict);
+    equiv_cells = getSwappableCells(base_cell);
+  } else {
+    equiv_cells = getSwappableCells(base_cell);
+  }
+
+  // Identify cells that are excluded due to restrictions or cell_footprints
+  std::unordered_set<LibertyCell*> excluded_cells;
+  if (report_all_cells) {
+    // All SetAndRestore variables are out of scope, so original restrictions
+    // are in play
+    LibertyCellSeq real_equiv_cells = getSwappableCells(base_cell);
+    std::unordered_set<LibertyCell*> real_equiv_cells_set(
+        real_equiv_cells.begin(), real_equiv_cells.end());
+    for (LibertyCell* cell : equiv_cells) {
+      if (real_equiv_cells_set.find(cell) == real_equiv_cells_set.end()) {
+        excluded_cells.insert(cell);
+      }
+    }
+  }
 
   // Sort equiv cells by ascending area and leakage
   // STA sorts them by drive resistance
@@ -1558,12 +1588,16 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
         "======================================================================"
         "=======");
     for (LibertyCell* equiv_cell : equiv_cells) {
+      std::string cell_name = equiv_cell->name();
+      if (excluded_cells.find(equiv_cell) != excluded_cells.end()) {
+        cell_name.insert(cell_name.begin(), '*');
+      }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
         logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}   {}",
-                        equiv_cell->name(),
+                        cell_name,
                         equiv_area,
                         equiv_area / base_area,
                         *equiv_cell_leakage,
@@ -1571,7 +1605,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
                         cellVTType(equiv_master).second);
       } else {
         logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
-                        equiv_cell->name(),
+                        cell_name,
                         equiv_area,
                         equiv_area / base_area,
                         cellVTType(equiv_master).second);
@@ -1590,10 +1624,14 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     logger_->report(
         "==============================================================");
     for (LibertyCell* equiv_cell : equiv_cells) {
+      std::string cell_name = equiv_cell->name();
+      if (excluded_cells.find(equiv_cell) != excluded_cells.end()) {
+        cell_name.insert(cell_name.begin(), '*');
+      }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
       logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
-                      equiv_cell->name(),
+                      cell_name,
                       equiv_area,
                       equiv_area / base_area,
                       cellVTType(equiv_master).second);
