@@ -1444,6 +1444,7 @@ cc_library(
         "@net_zlib//:zlib",
         "@eigen//:eigen3",
         "@com_github_davidkebo_cudd//:cudd",
+        "@rules_flex//flex:current_flex_toolchain",
     ],
 )
 
