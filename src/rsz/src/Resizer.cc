@@ -977,6 +977,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
       db_network_->staToDb(inst, db_inst, mod_inst);
       if (dontTouch(inst)) {
         has_dont_touch = true;
+        // clang-format off
         logger_->warn(RSZ,
                       85,
                       "Input {} can't be buffered due to dont-touch fanout {}",
@@ -984,6 +985,7 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
                            db_network_->dbToSta(top_pin_flat_net))
                                         : "no-input-net"),
                       network_->name(pin));
+        // clang-format on
         break;
       }
       auto cell = network_->cell(inst);
