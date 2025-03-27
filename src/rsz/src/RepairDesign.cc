@@ -254,10 +254,12 @@ void RepairDesign::repairDesign(
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
     // hier fix
+    // clang-format off
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? db_network_->dbToSta(
                        db_network_->flatNet(network_->term(drvr_pin)))
                    : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+    // clang-format on
     if (!net) {
       continue;
     }
@@ -334,11 +336,12 @@ void RepairDesign::repairClkNets(double max_wire_length)
     const PinSet* clk_pins = sta_->pins(clk);
     if (clk_pins) {
       for (const Pin* clk_pin : *clk_pins) {
+        // clang-format off
         Net* net = network_->isTopLevelPort(clk_pin)
                        ? db_network_->dbToSta(
                            db_network_->flatNet(network_->term(clk_pin)))
                        : db_network_->dbToSta(db_network_->flatNet(clk_pin));
-
+        // clang-format on
         if (net && network_->isDriver(clk_pin)) {
           Vertex* drvr = graph_->pinDrvrVertex(clk_pin);
           // Do not resize clock tree gates.
