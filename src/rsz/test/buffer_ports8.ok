@@ -7,37 +7,36 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
-[INFO GPL-0006] NumInstances:                 1
-[INFO GPL-0007] NumPlaceInstances:            1
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                      3
-[INFO GPL-0011] NumPins:                      7
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
-[INFO GPL-0013] CoreBBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
-[INFO GPL-0016] CoreArea:              6256.320 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:           4.522 um^2
-[INFO GPL-0019] Util:                     0.072 %
-[INFO GPL-0020] StdInstsArea:             4.522 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 587290
-[InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 621160
-[InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 595065
-[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 577570
-[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 567244
-[INFO GPL-0031] FillerInit:NumGCells:       968
-[INFO GPL-0032] FillerInit:NumGNets:          3
-[INFO GPL-0033] FillerInit:NumGPins:          7
-[INFO GPL-0023] TargetDensity:            0.700
-[INFO GPL-0024] AvrgPlaceInstArea:        4.522 um^2
-[INFO GPL-0025] IdealBinArea:             6.460 um^2
-[INFO GPL-0026] IdealBinCnt:                968
-[INFO GPL-0027] TotalBinArea:          6256.320 um^2
-[INFO GPL-0028] BinCnt:        16     16
-[INFO GPL-0029] BinSize: (  4.987  4.900 )
-[INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 563313
+[INFO GPL-0006] Total GPL instances:                 1
+[INFO GPL-0007] Movable instances:                   1
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                      3
+[INFO GPL-0011] Number of pins:                      7
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
+[INFO GPL-0013] Core BBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
+[INFO GPL-0016] Core area:                    6256.320 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:          4.522 um^2
+[INFO GPL-0019] Utilization:                     0.072 %
+[INFO GPL-0020] Standard cells area:             4.522 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 587290
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 621160
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 595065
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 577570
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 567244
+[INFO GPL-0031] Uniform density:                0.0007
+[INFO GPL-0032] Suggested maximum density:      0.0008
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      4.522 um^2
+[INFO GPL-0025] Ideal bin area:                  6.460 um^2
+[INFO GPL-0026] Ideal bin count:                   968
+[INFO GPL-0027] Total bin area:               6256.320 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 *     16
+[INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
+[INFO GPL-0030] Number of bins:                    256
+[NesterovSolve] Iter:    1 overflow: 0.0000 HPWL: 5.633e+05(+0.0%) penalty: 9.9e-15 
 [NesterovSolve] Finished with Overflow: 0.000000
 [INFO RSZ-0027] Inserted 2 input buffers.
 [INFO RSZ-0028] Inserted 2 output buffers.
