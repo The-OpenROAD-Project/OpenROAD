@@ -345,6 +345,7 @@ void Resizer::updateParasitics(bool save_guides)
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
+        // TODO: remove this check (we expect all to be flat net)
         if (!(db_network_->isFlat(net))) {
           continue;
         }
@@ -692,6 +693,7 @@ void Resizer::net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const
 {
   pin1 = nullptr;
   pin2 = nullptr;
+
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   if (pin_iter->hasNext()) {
     pin1 = pin_iter->next();
@@ -762,7 +764,7 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
-  odb::dbNet* db_net = db_network_->flatNet(net);
+  dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,

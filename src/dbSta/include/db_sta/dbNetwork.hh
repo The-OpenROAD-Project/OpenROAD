@@ -196,6 +196,7 @@ class dbNetwork : public ConcreteNetwork
                                 dbModBTerm*& dest_modbterm,
                                 dbModITerm*& dest_moditerm);
 
+  bool connected(Pin* source_pin, Pin* dest_pin);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
