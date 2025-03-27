@@ -77,6 +77,8 @@ class frInst : public frRef
     instBlockages_.push_back(std::move(in));
   }
   void setPinAccessIdx(int in) { pinAccessIdx_ = in; }
+  void deletePinAccessIdx() { pinAccessIdx_ = -1; }
+  bool hasPinAccessIdx() { return pinAccessIdx_ != -1; }
   void setToBeDeleted(bool in) { toBeDeleted_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcInst; }
