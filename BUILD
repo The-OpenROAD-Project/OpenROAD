@@ -65,9 +65,6 @@ package(
     ],
 )
 
-# OpenRoad Physical Synthesis
-licenses(["restricted"])
-
 exports_files([
     "LICENSE",
     "src/sta/etc/TclEncode.tcl",
