@@ -583,7 +583,7 @@ int extMeasureRC::CouplingFlow(uint dir,
           for (uint ii = 0; ii < segments.wireSegmentTable.getCnt(); ii++) {
             extSegment* s = segments.wireSegmentTable.get(ii);
 
-            if (config.length_flag && s->_len < config.LENGTH_BOUND)
+            if (config.length_flag && s->_len < CouplingConfig::LENGTH_BOUND)
               continue;
 
             Release(_whiteSegTable[_met]);
@@ -623,7 +623,7 @@ int extMeasureRC::CouplingFlow(uint dir,
              ii++) {
           extSegment* s = segments.wireSegmentTable.get(ii);
 
-          if (config.length_flag && s->_len >= config.LENGTH_BOUND)
+          if (config.length_flag && s->_len >= CouplingConfig::LENGTH_BOUND)
             continue;
 
           PrintOverlapSeg(

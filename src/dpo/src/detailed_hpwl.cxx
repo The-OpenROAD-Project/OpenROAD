@@ -98,9 +98,9 @@ double DetailedHPWL::curr()
       const Node* ndj = pinj->getNode();
 
       const double x
-          = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
       const double y
-          = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
       box.addPt(x, y);
     }
@@ -112,14 +112,7 @@ double DetailedHPWL::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(const int n,
-                           const std::vector<Node*>& nodes,
-                           const std::vector<int>& curLeft,
-                           const std::vector<int>& curBottom,
-                           const std::vector<unsigned>& curOri,
-                           const std::vector<int>& newLeft,
-                           const std::vector<int>& newBottom,
-                           const std::vector<unsigned>& newOri)
+double DetailedHPWL::delta(const Journal& journal)
 {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in WL. Note that we need to know the orientation information and
@@ -130,18 +123,13 @@ double DetailedHPWL::delta(const int n,
   double new_wl = 0.;
   Rectangle old_box, new_box;
 
-  // Put cells into their "old positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
+  const auto& changes = journal.getActions();
+  for (int i = changes.size() - 1; i >= 0; i--) {
+    mgrPtr_->undo(changes[i], true);
   }
 
   ++traversal_;
-  for (int i = 0; i < n; i++) {
-    Node* ndi = nodes[i];
+  for (const auto ndi : journal.getAffectedNodes()) {
     for (Pin* pini : ndi->getPins()) {
       Edge* edi = pini->getEdge();
 
@@ -160,8 +148,9 @@ double DetailedHPWL::delta(const int n,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        y = curr->getBottom().v + 0.5 * curr->getHeight().v
+            + pinj->getOffsetY();
 
         old_box.addPt(x, y);
       }
@@ -171,17 +160,12 @@ double DetailedHPWL::delta(const int n,
   }
 
   // Put cells into their "new positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(newLeft[i]);
-    nodes[i]->setBottom(newBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], newOri[i]);
-    }
+  for (const auto& change : changes) {
+    mgrPtr_->redo(change, true);
   }
 
   ++traversal_;
-  for (int i = 0; i < n; i++) {
-    Node* ndi = nodes[i];
+  for (const auto ndi : journal.getAffectedNodes()) {
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
@@ -202,8 +186,9 @@ double DetailedHPWL::delta(const int n,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        y = curr->getBottom().v + 0.5 * curr->getHeight().v
+            + pinj->getOffsetY();
 
         new_box.addPt(x, y);
       }
@@ -211,17 +196,6 @@ double DetailedHPWL::delta(const int n,
       new_wl += (new_box.getWidth() + new_box.getHeight());
     }
   }
-
-  // Put cells into their "old positions and orientations" before returning
-  // (leave things as they were provided to us...).
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
-  }
-
   // +ve means improvement.
   return old_wl - new_wl;
 }
@@ -259,8 +233,8 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-      y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
       old_box.addPt(x, y);
 
@@ -323,8 +297,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
 
         Node* ndj = pinj->getNode();
 
-        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 
@@ -334,8 +308,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         new_box.addPt(x, y);
       }
@@ -388,8 +362,9 @@ double DetailedHPWL::delta(Node* ndi,
       for (Pin* pinj : edi->getPins()) {
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        y = curr->getBottom().v + 0.5 * curr->getHeight().v
+            + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 

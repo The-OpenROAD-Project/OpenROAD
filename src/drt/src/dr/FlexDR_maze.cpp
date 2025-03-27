@@ -1578,13 +1578,15 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
         < b->getFrNet()->getAbsPriorityLvl()) {
       return false;
     }
-    Rect boxA = a->getPinBox();
-    Rect boxB = b->getPinBox();
-    auto areaA = boxA.area();
-    auto areaB = boxB.area();
-    return (a->getNumPinsIn() == b->getNumPinsIn()
-                ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB)
-                : a->getNumPinsIn() < b->getNumPinsIn());
+    const Rect boxA = a->getPinBox();
+    const Rect boxB = b->getPinBox();
+    const auto areaA = boxA.area();
+    const auto areaB = boxB.area();
+    const int pinsA = a->getNumPinsIn();
+    const int pinsB = b->getNumPinsIn();
+    const auto idA = a->getId();
+    const auto idB = b->getId();
+    return std::tie(pinsA, areaA, idA) < std::tie(pinsB, areaB, idB);
   };
   // sort
   if (mazeIter == 0) {
@@ -1677,13 +1679,14 @@ void FlexDRWorker::writeGCPatchesToDRWorker(
     if (!valid_indices.empty()) {
       // Find closest path point
       Point closest;
-      frCoord closest_dist = INT_MAX;
+      frSquaredDistance closest_dist
+          = std::numeric_limits<frSquaredDistance>::max();
       auto origin = pwire->getOrigin();
       auto box = pwire->getOffsetBox();
       for (auto p : valid_indices) {
         Point pp;
         gridGraph_.getPoint(pp, p.x(), p.y());
-        frCoord path_length = Point::squaredDistance(origin, pp);
+        frSquaredDistance path_length = Point::squaredDistance(origin, pp);
         if (path_length < closest_dist) {
           closest_dist = path_length;
           closest = pp;

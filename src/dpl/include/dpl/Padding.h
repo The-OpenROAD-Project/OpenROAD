@@ -1,8 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
+/////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,30 +29,42 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-////////////////////////////////////////////////////////////////////////////////
-// File: orientation.h
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-namespace dpo {
+#include "Coordinates.h"
+#include "Opendp.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
+namespace dpl {
+class GridNode;
+class Padding
+{
+ public:
+  GridX padGlobalLeft() const { return pad_left_; }
+  GridX padGlobalRight() const { return pad_right_; }
 
-////////////////////////////////////////////////////////////////////////////////
-// Forward declarations.
-////////////////////////////////////////////////////////////////////////////////
-const unsigned Orientation_UNKNOWN = 0x00000000;
-const unsigned Orientation_N = 0x00000001;
-const unsigned Orientation_S = 0x00000002;
-const unsigned Orientation_E = 0x00000004;
-const unsigned Orientation_W = 0x00000008;
-const unsigned Orientation_FN = 0x00000010;
-const unsigned Orientation_FS = 0x00000020;
-const unsigned Orientation_FE = 0x00000040;
-const unsigned Orientation_FW = 0x00000080;
+  void setPaddingGlobal(GridX left, GridX right);
+  void setPadding(dbInst* inst, GridX left, GridX right);
+  void setPadding(dbMaster* master, GridX left, GridX right);
+  bool havePadding() const;
 
-}  // namespace dpo
+  // Find instance/master/global padding value for an instance.
+  GridX padLeft(dbInst* inst) const;
+  GridX padLeft(const GridNode* cell) const;
+  GridX padRight(dbInst* inst) const;
+  GridX padRight(const GridNode* cell) const;
+  bool isPaddedType(dbInst* inst) const;
+  DbuX paddedWidth(const GridNode* cell) const;
+
+ private:
+  using InstPaddingMap = map<dbInst*, pair<GridX, GridX>>;
+  using MasterPaddingMap = map<dbMaster*, pair<GridX, GridX>>;
+
+  GridX pad_left_{0};
+  GridX pad_right_{0};
+  InstPaddingMap inst_padding_map_;
+  MasterPaddingMap master_padding_map_;
+};
+
+}  // namespace dpl

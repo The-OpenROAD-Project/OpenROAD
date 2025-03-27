@@ -76,14 +76,6 @@ void OpenRoad::readDb(const char*, bool)
 {
 }
 
-void OpenRoad::addObserver(OpenRoadObserver* observer)
-{
-}
-
-void OpenRoad::removeObserver(OpenRoadObserver* observer)
-{
-}
-
 int OpenRoad::getThreadCount()
 {
   return 0;

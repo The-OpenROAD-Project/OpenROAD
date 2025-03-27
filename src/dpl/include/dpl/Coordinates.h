@@ -44,7 +44,7 @@
 #include <functional>
 #include <ostream>
 
-#include "dpl/Opendp.h"
+#include "Opendp.h"
 
 namespace dpl {
 
@@ -64,7 +64,9 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
                          public boost::modable<TypedCoordinate<T>>,
                          public boost::modable<TypedCoordinate<T>, int>,
                          public boost::incrementable<TypedCoordinate<T>>,
-                         public boost::decrementable<TypedCoordinate<T>>
+                         public boost::decrementable<TypedCoordinate<T>>,
+                         public boost::dividable<TypedCoordinate<T>>,
+                         public boost::multipliable<TypedCoordinate<T>>
 {
   explicit TypedCoordinate(const int v = 0) : v(v) {}
   TypedCoordinate(const TypedCoordinate<T>& v) = default;
@@ -114,6 +116,18 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
   TypedCoordinate& operator--()
   {
     --v;
+    return *this;
+  }
+  // dividable
+  TypedCoordinate& operator/=(const TypedCoordinate& rhs)
+  {
+    v /= rhs.v;
+    return *this;
+  }
+  // multipliable
+  TypedCoordinate& operator*=(const TypedCoordinate& rhs)
+  {
+    v *= rhs.v;
     return *this;
   }
 
