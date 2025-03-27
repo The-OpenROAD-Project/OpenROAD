@@ -432,9 +432,6 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     odb::dbSet<odb::dbNet> nets = block_->getNets();
     for (auto db_net : nets) {
       Net* cur_net = db_network_->dbToSta(db_net);
-      if (!db_network_->isFlat(cur_net)) {
-        continue;
-      }
       estimateWireParasitic(cur_net, spef_writer);
     }
     parasitics_src_ = ParasiticsSrc::placement;
