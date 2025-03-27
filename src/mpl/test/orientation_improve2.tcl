@@ -7,9 +7,7 @@ read_lef "./testcases/orientation_improve1.lef"
 
 read_def "./testcases/orientation_improve1.def"
 
-# Run random PPL to incorporate the -exclude constraints into ODB
-place_pins -annealing -random -hor_layers metal5 -ver_layer metal6 \
-           -exclude bottom:* -exclude right:* -exclude top:*
+exclude_io_pin_region -region bottom:* -region right:* -region top:*
 
 set_thread_count 0
 rtl_macro_placer -report_directory results/orientation_improve2 -halo_width 0.3
