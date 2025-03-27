@@ -955,6 +955,20 @@ Port* dbNetwork::findPort(const Cell* cell, const char* name) const
   return reinterpret_cast<Port*>(ccell->findPort(name));
 }
 
+bool dbNetwork::isLeaf(const Pin* pin) const
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModITerm* moditerm;
+  dbModBTerm* modbterm;
+
+  staToDb(pin, iterm, bterm, moditerm, modbterm);
+  if (moditerm || modbterm) {
+    return false;
+  }
+  return true;
+}
+
 bool dbNetwork::isLeaf(const Instance* instance) const
 {
   if (instance == top_instance_) {
@@ -1913,7 +1927,6 @@ Net* dbNetwork::net(const Term* term) const
     if (mod_net) {
       return dbToSta(mod_net);
     }
-
     if (dnet) {
       return dbToSta(dnet);
     }

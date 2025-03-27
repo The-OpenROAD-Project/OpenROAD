@@ -57,6 +57,7 @@ using sta::PinSet;
 
 using odb::dbInst;
 using odb::dbMasterType;
+using odb::dbModInst;
 
 ////////////////////////////////////////////////////////////////
 
@@ -712,7 +713,12 @@ bool Resizer::isPadPin(const Pin* pin) const
 
 bool Resizer::isPad(const Instance* inst) const
 {
-  dbInst* db_inst = db_network_->staToDb(inst);
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  if (mod_inst) {
+    return false;
+  }
   const auto type = db_inst->getMaster()->getType().getValue();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
