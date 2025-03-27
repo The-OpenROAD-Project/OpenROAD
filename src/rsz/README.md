@@ -521,7 +521,7 @@ report_equiv_cells
 | Switch Name | Description |
 | ----- | ----- |
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
-| `-all` | List all equivalent cells regardless of sizing restrictions or cell_footprint.  Excluded cells are marked with an asterisk after cell name. |
+| `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
 
 ## Example scripts
 
