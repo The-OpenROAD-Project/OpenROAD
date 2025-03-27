@@ -3494,7 +3494,7 @@ class PinConnections : public PinVisitor
  public:
   PinConnections(const dbNetwork* nwk, const Pin* drvr_pin);
   void operator()(const Pin* pin) override;
-  bool connected(const Pin* candidate);
+  bool connected(const Pin* pin);
 
  protected:
   const dbNetwork* db_network_;
