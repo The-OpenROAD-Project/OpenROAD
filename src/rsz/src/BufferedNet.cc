@@ -460,6 +460,123 @@ BufferedNetPtr Resizer::makeBufferedNetSteiner(const Pin* drvr_pin,
   return bnet;
 }
 
+// helper for makeBufferedNetSteinerOverBnets
+static BufferedNetPtr makeBufferedNetFromTree2(
+    const SteinerTree* tree,
+    const SteinerPt from,
+    const SteinerPt to,
+    const SteinerPtAdjacents& adjacents,
+    const int level,
+    SteinerPtPinVisited& pins_visited,
+    const Corner* corner,
+    const Resizer* resizer,
+    Logger* logger,
+    const Network* network,
+    std::map<Point, std::vector<BufferedNetPtr>>& sink_map)
+{
+  BufferedNetPtr bnet = nullptr;
+  const Point to_loc = tree->location(to);
+  // If there is more than one node at a location we don't want to
+  // add the pins repeatedly.  The first node wins and the rest are skipped.
+  if (sink_map.count(to_loc)
+      && pins_visited.find(to_loc) == pins_visited.end()) {
+    pins_visited.insert(to_loc);
+    for (BufferedNetPtr sink : sink_map[to_loc]) {
+      if (bnet) {
+        bnet = make_shared<BufferedNet>(
+            BufferedNetType::junction, to_loc, bnet, sink, resizer);
+      } else {
+        bnet = std::move(sink);
+      }
+    }
+  }
+  // Steiner pt.
+  for (int adj : adjacents[to]) {
+    if (adj != from) {
+      BufferedNetPtr bnet1 = makeBufferedNetFromTree2(tree,
+                                                      to,
+                                                      adj,
+                                                      adjacents,
+                                                      level + 1,
+                                                      pins_visited,
+                                                      corner,
+                                                      resizer,
+                                                      logger,
+                                                      network,
+                                                      sink_map);
+      if (bnet1) {
+        if (bnet) {
+          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                          tree->location(to),
+                                          bnet,
+                                          bnet1,
+                                          resizer);
+        } else {
+          bnet = std::move(bnet1);
+        }
+      }
+    }
+  }
+  if (bnet && from != SteinerTree::null_pt
+      && tree->location(to) != tree->location(from)) {
+    bnet = make_shared<BufferedNet>(BufferedNetType::wire,
+                                    tree->location(from),
+                                    BufferedNet::null_layer,
+                                    bnet,
+                                    corner,
+                                    resizer);
+  }
+  return bnet;
+}
+
+////////////////////////////////////////////////////////////////
+
+// Make BufferedNet from Steiner tree. This is similar to
+// makeBufferedNetSteiner but supports sinks of type BufferedNetPtr
+BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
+    Point root,
+    const std::vector<BufferedNetPtr>& sinks,
+    const Corner* corner)
+{
+  BufferedNetPtr bnet = nullptr;
+  std::vector<Point> sink_points;
+  std::map<Point, std::vector<BufferedNetPtr>> sink_map;
+  for (const auto& sink : sinks) {
+    sink_points.push_back(sink->location());
+    sink_map[sink->location()].push_back(sink);
+  }
+  SteinerTree* tree = makeSteinerTree(root, sink_points);
+  if (tree) {
+    SteinerPt drvr_pt = tree->drvrPt();
+    if (drvr_pt != SteinerTree::null_pt) {
+      int branch_count = tree->branchCount();
+      SteinerPtAdjacents adjacents(branch_count);
+      for (int i = 0; i < branch_count; i++) {
+        stt::Branch& branch_pt = tree->branch(i);
+        SteinerPt j = branch_pt.n;
+        if (j != i) {
+          adjacents[i].push_back(j);
+          adjacents[j].push_back(i);
+        }
+      }
+      SteinerPtPinVisited pins_visited;
+      bnet = rsz::makeBufferedNetFromTree2(tree,
+                                           SteinerTree::null_pt,
+                                           drvr_pt,
+                                           adjacents,
+                                           0,
+                                           pins_visited,
+                                           corner,
+                                           this,
+                                           logger_,
+                                           network_,
+                                           sink_map);
+    }
+    delete tree;
+  }
+  return bnet;
+}
+
 ////////////////////////////////////////////////////////////////
 
 using grt::RoutePt;
