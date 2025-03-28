@@ -276,12 +276,12 @@ void dbModInst::destroy(dbModInst* modinst)
   // Note that we only destroy the module instance, not the module
   // itself
 
-  std::vector<dbModITerm*> moditerms(modinst->getModITerms().begin(),
-                                     modinst->getModITerms().end());
-  for (auto moditerm : moditerms) {
-    // remove the moditerm connections
+  dbSet<dbModITerm> moditerms = modinst->getModITerms();
+  dbSet<dbModITerm>::iterator moditerm_itr;
+  for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
+    dbModITerm* moditerm = *moditerm_itr;
     moditerm->disconnect();
-    _block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
+    moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
   // unlink from parent start

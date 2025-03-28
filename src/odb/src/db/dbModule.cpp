@@ -445,16 +445,16 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
-  std::vector<dbModBTerm*> modbterms(module->getModBTerms().begin(),
-                                     module->getModBTerms().end());
-  for (dbModBTerm* modbterm : modbterms) {
-    block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
+  dbSet<dbModBTerm> bterms = module->getModBTerms();
+  dbSet<dbModBTerm>::iterator bterm_itr;
+  for (bterm_itr = bterms.begin(); bterm_itr != bterms.end();) {
+    bterm_itr = dbModBTerm::destroy(bterm_itr);
   }
 
-  std::vector<dbModNet*> modnets(module->getModNets().begin(),
-                                 module->getModNets().end());
-  for (dbModNet* modnet : modnets) {
-    block->_modnet_tbl->destroy((_dbModNet*) modnet);
+  dbSet<dbModNet> modnets = module->getModNets();
+  dbSet<dbModNet>::iterator modnet_itr;
+  for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
+    modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
   if (block->_journal) {
