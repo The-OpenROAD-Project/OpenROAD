@@ -268,8 +268,7 @@ class FlexTAWorker
                              frCoord& pinCoord);
   void initCosts();
   void sortIroutes();
-  bool outOfDieVia(frLayerNum lNum, const Point& pt,
-                                const Rect& dieBox) const;
+  bool outOfDieVia(frLayerNum lNum, const Point& pt, const Rect& dieBox) const;
 
   // quick drc
   frSquaredDistance box2boxDistSquare(const Rect& box1,

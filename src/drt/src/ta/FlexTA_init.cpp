@@ -32,15 +32,18 @@
 
 namespace drt {
 
-bool FlexTAWorker::outOfDieVia(frLayerNum layer_num, const Point& pt,
-                                const Rect& die_box) const
+bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
+                               const Point& pt,
+                               const Rect& die_box) const
 {
-  if (router_cfg_->USENONPREFTRACKS && !getTech()->getLayer(layer_num)->isUnidirectional()) {
+  if (router_cfg_->USENONPREFTRACKS
+      && !getTech()->getLayer(layer_num)->isUnidirectional()) {
     return false;
   }
   Rect test_box_up;
   if (layer_num + 1 <= getTech()->getTopLayerNum()) {
-    const frViaDef* via = getTech()->getLayer(layer_num + 1)->getDefaultViaDef();
+    const frViaDef* via
+        = getTech()->getLayer(layer_num + 1)->getDefaultViaDef();
     if (via) {
       test_box_up = via->getLayer1ShapeBox();
       test_box_up.merge(via->getLayer2ShapeBox());
@@ -52,7 +55,8 @@ bool FlexTAWorker::outOfDieVia(frLayerNum layer_num, const Point& pt,
   }
   Rect test_box_down;
   if (layer_num - 1 >= getTech()->getBottomLayerNum()) {
-    const frViaDef* via = getTech()->getLayer(layer_num - 1)->getDefaultViaDef();
+    const frViaDef* via
+        = getTech()->getLayer(layer_num - 1)->getDefaultViaDef();
     if (via) {
       test_box_down = via->getLayer1ShapeBox();
       test_box_down.merge(via->getLayer2ShapeBox());
