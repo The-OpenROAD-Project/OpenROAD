@@ -53,5 +53,5 @@ debian/files
 debian/openroad
 obj-x86_64-linux-gnu/
 
-user-bazelrc
+user.bazelrc
 bazel-*

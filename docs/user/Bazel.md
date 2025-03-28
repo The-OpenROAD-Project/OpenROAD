@@ -18,16 +18,16 @@ instead, and pass a script that fetches credentials for the account you want to 
 account needs to have logged in using `gcloud auth login` and have access to the bucket
 specified.
 
-`.bazelrc` is under git version control and it will try to read in [user-bazelrc](https://bazel.build/configure/best-practices#bazelrc-file), which is
+`.bazelrc` is under git version control and it will try to read in [user.bazelrc](https://bazel.build/configure/best-practices#bazelrc-file), which is
 not under git version control, which means that for git checkout or rebase operations will
-ignore the user configuration in `user-bazelrc`.
+ignore the user configuration in `user.bazelrc`.
 
-Copy the snippet below into `user-bazelrc` and specify your username by modifying `# user: myname@openroad.tools`:
+Copy the snippet below into `user.bazelrc` and specify your username by modifying `# user: myname@openroad.tools`:
 
     # user: myname@openroad.tools'
     build --credential_helper=%workspace%/etc/cred_helper.py
 
-`cred_helper.py` will parse `user-bazelrc` and look for the username in the comment.
+`cred_helper.py` will parse `user.bazelrc` and look for the username in the comment.
 
 To test, run:
 
