@@ -27,7 +27,7 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 577570
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 567244
 [INFO GPL-0031] Uniform density:                0.0007
-[INFO GPL-0032] Suggested maximum density:      0.0008
+[INFO GPL-0032] Suggested density:              0.0008
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      4.522 um^2
 [INFO GPL-0025] Ideal bin area:                  6.460 um^2
@@ -36,7 +36,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter:    1 overflow: 0.0000 HPWL: 5.633e+05(+0.0%) penalty: 9.9e-15 
+[NesterovSolve] Iter:    1 overflow: 0.0000 HPWL: 5.633e+05( +0.0%) penalty: 9.9e-15 
 [NesterovSolve] Finished with Overflow: 0.000000
 [INFO RSZ-0027] Inserted 2 input buffers.
 [INFO RSZ-0028] Inserted 2 output buffers.
