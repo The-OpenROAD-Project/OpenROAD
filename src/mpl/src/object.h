@@ -141,8 +141,8 @@ class Metrics
           float macro_area);
 
   void addMetrics(const Metrics& metrics);
-  const std::pair<unsigned int, unsigned int> getCountStats() const;
-  const std::pair<float, float> getAreaStats() const;
+  std::pair<unsigned int, unsigned int> getCountStats() const;
+  std::pair<float, float> getAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
   float getStdCellArea() const;
@@ -177,11 +177,11 @@ class Cluster
   // cluster id can not be changed
   int getId() const;
   // cluster name can be updated
-  const std::string getName() const;
+  const std::string& getName() const;
   void setName(const std::string& name);
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
-  const ClusterType getClusterType() const;
+  ClusterType getClusterType() const;
   std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
@@ -190,9 +190,12 @@ class Cluster
   void addLeafMacro(odb::dbInst* leaf_macro);
   void addLeafInst(odb::dbInst* inst);
   void specifyHardMacros(std::vector<HardMacro*>& hard_macros);
-  const std::vector<odb::dbModule*> getDbModules() const;
-  const std::vector<odb::dbInst*> getLeafStdCells() const;
-  const std::vector<odb::dbInst*> getLeafMacros() const;
+  // TODO: the following return internal arrays by value. This should be
+  // good as const reference iff the callsites don't then call Add*() methods
+  // while iterating over it. Verify and then possibly optimize.
+  std::vector<odb::dbModule*> getDbModules() const;
+  std::vector<odb::dbInst*> getLeafStdCells() const;
+  std::vector<odb::dbInst*> getLeafMacros() const;
   std::vector<HardMacro*> getHardMacros() const;
   void clearDbModules();
   void clearLeafStdCells();
@@ -224,7 +227,7 @@ class Cluster
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
-  const Metrics getMetrics() const;
+  const Metrics& getMetrics() const;
   int getNumStdCell() const;
   int getNumMacro() const;
   float getArea() const;
@@ -238,7 +241,7 @@ class Cluster
   float getY() const;
   void setX(float x);
   void setY(float y);
-  const std::pair<float, float> getLocation() const;
+  std::pair<float, float> getLocation() const;
   Rect getBBox() const;
 
   // Hierarchy Support
@@ -257,7 +260,9 @@ class Cluster
   // Connection signature support
   void initConnection();
   void addConnection(int cluster_id, float weight);
-  const std::map<int, float> getConnection() const;
+  // TODO: this should return a const reference iff callers don't implicitly
+  // modify it. See comment in Cluster.
+  std::map<int, float> getConnection() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
   bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
   // Get closely-connected cluster if such cluster exists
@@ -268,7 +273,8 @@ class Cluster
                       float net_threshold);
 
   // virtual connections
-  const std::vector<std::pair<int, int>> getVirtualConnections() const;
+  // TODO: return const reference iff precondition ok (see comment in Cluster)
+  std::vector<std::pair<int, int>> getVirtualConnections() const;
   void addVirtualConnection(int src, int target);
 
   // Print Basic Information
@@ -279,12 +285,13 @@ class Cluster
   SoftMacro* getSoftMacro() const;
 
   void setMacroTilings(const std::vector<std::pair<float, float>>& tilings);
-  const std::vector<std::pair<float, float>> getMacroTilings() const;
+  // TODO: return const reference iff precondition ok (see comment in Cluster)
+  std::vector<std::pair<float, float>> getMacroTilings() const;
 
  private:
   // Private Variables
-  int id_ = -1;  // cluster id (a valid cluster id should be nonnegative)
-  std::string name_ = "";            // cluster name
+  int id_ = -1;       // cluster id (a valid cluster id should be nonnegative)
+  std::string name_;  // cluster name
   ClusterType type_ = MixedCluster;  // cluster type
 
   // Instances in the cluster
@@ -369,7 +376,7 @@ class HardMacro
   void setLocation(const std::pair<float, float>& location);
   void setX(float x);
   void setY(float y);
-  const std::pair<float, float> getLocation() const;
+  std::pair<float, float> getLocation() const;
   float getX() const { return x_; }
   float getY() const { return y_; }
   // The position of pins relative to the lower left of the instance
@@ -386,7 +393,7 @@ class HardMacro
   void setRealLocation(const std::pair<float, float>& location);
   void setRealX(float x);
   void setRealY(float y);
-  const std::pair<float, float> getRealLocation() const;
+  std::pair<float, float> getRealLocation() const;
   float getRealX() const;
   float getRealY() const;
   float getRealWidth() const;
@@ -401,8 +408,8 @@ class HardMacro
 
   // Interfaces with OpenDB
   odb::dbInst* getInst() const;
-  const std::string getName() const;
-  const std::string getMasterName() const;
+  const std::string& getName() const;
+  std::string getMasterName() const;
 
   int getXDBU() const { return block_->micronsToDbu(getX()); }
 
@@ -497,7 +504,7 @@ class SoftMacro
   SoftMacro(Cluster* cluster);
 
   // name
-  const std::string getName() const;
+  const std::string& getName() const;
 
   void setX(float x);
   void setY(float y);
