@@ -1,0 +1,26 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 210000 210000 ) ;
+COMPONENTS 5 ;
+    - r1 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 20000 20000 ) N ;
+    - r2 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 50000 200000 ) N ;
+    - r3 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 20000 180000 ) N ;
+    - r4 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 180000 180000 ) N ;
+    - r5 sky130_fd_sc_hd__dfxbp_1 + PLACED ( 180000 20000 ) N ;
+END COMPONENTS
+PINS 2 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 400 ) N + LAYER met1 ( 0 0 ) ( 0 0 ) ;
+    - data + NET data + DIRECTION INPUT + USE SIGNAL + FIXED ( 1000 800 ) N + LAYER met1 ( 0 0 ) ( 0 0 ) ;
+END PINS
+SPECIALNETS 2 ;
+    - VSS ( * VSS ) + USE GROUND ;
+    - VDD ( * VDD ) + USE POWER ;
+END SPECIALNETS
+NETS 3 ;
+    - clk ( PIN clk ) ( r1 CLK ) ( r2 CLK ) ( r3 CLK ) ( r4 CLK ) ( r5 CLK ) + USE SIGNAL ;
+    - data ( PIN data ) ( r1 D ) ( r2 D ) ( r3 D ) ( r4 D ) ( r5 D ) + USE SIGNAL ;
+END NETS
+END DESIGN

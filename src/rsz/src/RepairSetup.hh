@@ -208,20 +208,31 @@ class RepairSetup : public sta::dbStaState
   bool hasTopLevelOutputPort(Net* net);
 
   int rebuffer(const Pin* drvr_pin);
-  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet, int level);
+
+  BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
+  BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
+                             sta::Delay slack_target,
+                             float alpha);
+
   int rebufferTopDown(const BufferedNetPtr& choice,
                       Net* net,
                       int level,
                       Instance* parent,
                       odb::dbITerm* mod_net_drvr,
                       odb::dbModNet* mod_net);
-  BufferedNetSeq addWireAndBuffer(const BufferedNetSeq& Z,
-                                  const BufferedNetPtr& bnet_wire,
-                                  int level);
+  BufferedNetPtr addWire(const BufferedNetPtr& p,
+                         Point wire_end,
+                         int wire_layer,
+                         int level);
+  void addBuffers(BufferedNetSeq& Z1,
+                  int level,
+                  bool area_oriented = false,
+                  sta::Delay threshold = 0);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
-  Slack slackPenalized(const BufferedNetPtr& bnet);
-  Slack slackPenalized(const BufferedNetPtr& bnet, int index);
+  std::tuple<PathRef, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
+  Slack slackAtDriverPin(const BufferedNetPtr& bnet);
+  Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
 
   void printProgress(int iteration,
                      bool force,
@@ -267,7 +278,6 @@ class RepairSetup : public sta::dbStaState
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
-  static constexpr double rebuffer_buffer_penalty_ = .01;
   static constexpr int print_interval_ = 10;
   static constexpr int opto_small_interval_ = 100;
   static constexpr int opto_large_interval_ = 1000;
@@ -275,6 +285,7 @@ class RepairSetup : public sta::dbStaState
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
   static constexpr int max_last_gasp_passes_ = 10;
+  static constexpr float rebuffer_relaxation_factor_ = 0.03;
 };
 
 }  // namespace rsz
