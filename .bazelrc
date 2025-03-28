@@ -1,4 +1,8 @@
-common --noenable_bzlmod
+common --enable_bzlmod
+
+# suppress distracting warning about newer module
+# versions found in dependency graph.
+common --check_direct_dependencies=off
 
 build --cxxopt "-std=c++17"
 build --cxxopt "-ffp-contract=off"

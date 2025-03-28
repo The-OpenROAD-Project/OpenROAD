@@ -33,6 +33,12 @@
 ##
 ###############################################################################
 
+# TODO: this file should eventually be empty. Right now it still pulls in a lot
+# dependencies via bazel_rules_hdl which are not needed anymore as they are
+# handled in MODULE.bazel
+# Next step: be specific _which_ rules are imported from bazel_rules_hdl,
+# remove the rest. Then the TODO is clear what is next.
+
 workspace(name = "openroad")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -44,19 +50,6 @@ http_archive(
     strip_prefix = "toolchains_llvm-7e7c7cf1f965f348861085183d79b6a241764390",
     urls = ["https://github.com/grailbio/bazel-toolchain/archive/7e7c7cf1f965f348861085183d79b6a241764390.tar.gz"],
 )
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-    ],
-)
-
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-
-bazel_skylib_workspace()
 
 maybe(
     http_archive,
@@ -176,8 +169,8 @@ pip_parse(
     requirements_lock = "//dependency_support:pip_requirements.txt",
 )
 
-rules_hdl_git_hash = "d52c2d63da103d8c6bd78f193dfcfbeba704f152"
-rules_hdl_git_sha256 = "882b552bfa94bdfb22431d50c2fb9177986a39e20fe03b627dd4491d33d56f84"
+rules_hdl_git_hash = "22e4a4afaef17df38fffc124907144983f1e6492"
+rules_hdl_git_sha256 = "e016d11b69c4eaaf2ac0757358859270db7a90f4aa725a1aee39e40f5b84efd3"
 
 maybe(
     http_archive,
