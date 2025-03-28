@@ -250,6 +250,9 @@ class definReader : public definBase
   static void contextLogFunctionCallback(DefParser::defiUserData data,
                                          const char* msg);
 
+  static void contextWarningLogFunctionCallback(DefParser::defiUserData data,
+                                                const char* msg);
+
  public:
   definReader(dbDatabase* db,
               utl::Logger* logger,

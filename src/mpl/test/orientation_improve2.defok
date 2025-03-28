@@ -100,10 +100,7 @@ COMPONENTS 1 ;
     - MACRO_1 HM_100x100_1x1 + FIXED ( 18600 20490 ) FS ;
 END COMPONENTS
 PINS 1 ;
-    - io_1 + NET io_1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal5 ( -140 -140 ) ( 140 140 )
-        + PLACED ( 140 154700 ) N ;
+    - io_1 + NET io_1 + DIRECTION INPUT + USE SIGNAL ;
 END PINS
 NETS 1 ;
     - io_1 ( PIN io_1 ) ( MACRO_1 I1 ) + USE SIGNAL ;
