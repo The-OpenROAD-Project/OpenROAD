@@ -285,7 +285,9 @@ sta::InstanceSet LogicExtractorFactory::GetCutInstances(
   // want to put those cells in ABC. Remove them.
   for (sta::Vertex* vertex : endpoints_) {
     sta::Instance* endpoint_instance = network->instance(vertex->pin());
-    cut_instances.erase(endpoint_instance);
+    if (network->libertyCell(endpoint_instance)->hasSequentials()) {
+      cut_instances.erase(endpoint_instance);
+    }
   }
 
   return cut_instances;

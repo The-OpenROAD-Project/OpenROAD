@@ -202,7 +202,13 @@ void ConnectPinToDriver(
   sta::Instance* driver_instance = network->instance(driver);
   abc::Abc_Obj_t* abc_net = abc::Abc_NtkCreateNet(&abc_network);
 
-  if (abc_instances.find(driver_instance) == abc_instances.end()) {
+  if (network->isTopInstance(driver_instance)
+      || network->libertyCell(driver_instance)->hasSequentials()) {
+    abc::Abc_Obj_t* abc_input = abc::Abc_NtkCreatePi(&abc_network);
+    abc::Abc_ObjAddFanin(abc_net, abc_input);
+    abc::Abc_ObjAssignName(
+        abc_net, const_cast<char*>(network->name(driver)), nullptr);
+  } else if (abc_instances.find(driver_instance) == abc_instances.end()) {
     logger->error(
         utl::CUT,
         27,
@@ -210,8 +216,9 @@ void ConnectPinToDriver(
         "internal error.",
         network->name(driver_instance),
         network->libertyCell(driver_instance)->name());
+  } else {
+    abc::Abc_ObjAddFanin(abc_net, abc_instances.at(driver_instance));
   }
-  abc::Abc_ObjAddFanin(abc_net, abc_instances.at(driver_instance));
   abc::Abc_ObjAddFanin(abc_fanin_reciever, abc_net);
   abc_net_map[net] = abc_net;
 }

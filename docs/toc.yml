@@ -62,6 +62,8 @@ entries:
     title: Static Timing Analyzer (external)
   - file: main/src/rsz/README
     title: Gate Resizing
+  - file: main/src/cgt/README
+    title: Clock gating
   - file: main/src/dpl/README
     title: Detailed Placement
   - file: main/src/cts/README

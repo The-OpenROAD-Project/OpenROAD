@@ -50,6 +50,7 @@ OPENROAD_LIBRARY_DEPS = [
     ":ord",
     "//src/ant",
     "//src/ant:ui",
+    "//src/cgt",
     "//src/cts",
     "//src/cts:ui",
     "//src/cut",

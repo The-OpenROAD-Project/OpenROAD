@@ -1,0 +1,80 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+Derived GENLIB library "sky130_fd_sc_hd__ss_n40C_1v40" with 317 gates.
+Warning: Detected 9 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
+SC library cannot be found.
+[INFO CGT-0003] Clock gating instance 0/946
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.gen_mult_fast.mult_state_q\[2\] | _06794_ | _07328_' for instance _20288_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.gen_mult_fast.mult_state_q\[1\] | _04352_ | _06924_ | _07352_ | _07353_' for instance _20289_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[5\] | _03383_ | _03612_ | _03004_' for instance _20290_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[2\] | _06449_' for instance _20291_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[0\] | _04299_ | _06449_' for instance _20292_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcountinhibit_q\[0\] | _04445_ | _04878_' for instance cs_registers_i.mcountinhibit_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcountinhibit_q\[2\] | _05286_ | _05287_' for instance cs_registers_i.mcountinhibit_q\[2\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[0\] | _04523_ | _04525_ | _05215_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[10\] | _04501_ | _04659_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[10\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[11\] | _04542_ | _04680_ | _04842_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[11\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[20\] | _04784_ | _04843_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[20\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[26\] | _04938_ | _05117_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[26\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[58\] | _04860_ | _05210_ | _05224_ | _00291_ | _06407_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[58\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mcycle_counter_i.counter_val_o\[59\] | _04865_ | _04866_' for instance cs_registers_i.mcycle_counter_i.counter_val_o\[59\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 100/946
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.priv_mode_id_o\[0\] | _04368_ | _04205_ | _05580_' for instance cs_registers_i.priv_mode_id_o\[0\]$_DFFE_PN1P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.priv_mode_id_o\[1\] | _04212_ | _04368_ | _04375_ | _05580_' for instance cs_registers_i.priv_mode_id_o\[1\]$_DFFE_PN1P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.dcsr_q\[12\] | _04374_ | _04375_ | _05580_' for instance cs_registers_i.u_dcsr_csr.rd_data_o\[12\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.dcsr_q\[2\] | _06661_' for instance cs_registers_i.u_dcsr_csr.rd_data_o\[2\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.csr_depc_o\[27\] | _04868_ | _04869_' for instance cs_registers_i.u_depc_csr.rd_data_o\[27\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.dscratch0_q\[27\] | _04871_ | _04873_' for instance cs_registers_i.u_dscratch0_csr.rd_data_o\[27\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 200/946
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.dscratch1_q\[27\] | _04872_ | _04873_' for instance cs_registers_i.u_dscratch1_csr.rd_data_o\[27\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[0\] | _02978_ | _02980_' for instance cs_registers_i.u_mie_csr.rd_data_o\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[10\] | _05829_ | _02968_' for instance cs_registers_i.u_mie_csr.rd_data_o\[10\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[11\] | _02967_ | _02968_' for instance cs_registers_i.u_mie_csr.rd_data_o\[11\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[12\] | _02970_ | _02971_' for instance cs_registers_i.u_mie_csr.rd_data_o\[12\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[13\] | _02969_ | _02971_' for instance cs_registers_i.u_mie_csr.rd_data_o\[13\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[14\] | _05859_ | _05860_' for instance cs_registers_i.u_mie_csr.rd_data_o\[14\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[15\] | _05885_ | irq_pending_o' for instance cs_registers_i.u_mie_csr.rd_data_o\[15\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[16\] | _02983_ | irq_pending_o' for instance cs_registers_i.u_mie_csr.rd_data_o\[16\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[17\] | _02982_ | irq_pending_o' for instance cs_registers_i.u_mie_csr.rd_data_o\[17\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[2\] | _05827_ | _02980_' for instance cs_registers_i.u_mie_csr.rd_data_o\[2\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[3\] | _02979_ | _02980_' for instance cs_registers_i.u_mie_csr.rd_data_o\[3\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[4\] | _05828_ | _02977_' for instance cs_registers_i.u_mie_csr.rd_data_o\[4\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[5\] | _02974_ | _02977_' for instance cs_registers_i.u_mie_csr.rd_data_o\[5\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[6\] | _02976_ | _02977_' for instance cs_registers_i.u_mie_csr.rd_data_o\[6\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[7\] | _02975_ | _02977_' for instance cs_registers_i.u_mie_csr.rd_data_o\[7\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.mie_q\[8\] | _02966_ | _02968_' for instance cs_registers_i.u_mie_csr.rd_data_o\[8\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 300/946
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.csr_mstatus_mie_o | _04370_ | _04371_ | _05578_' for instance cs_registers_i.u_mstatus_csr.rd_data_o\[5\]$_DFFE_PN0N_
+[INFO CGT-0003] Clock gating instance 400/946
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.div_counter_q\[0\] | _04282_ | _06817_ | _06822_ | _06439_ | _06443_' for instance ex_block_i.gen_multdiv_fast.multdiv_i.div_counter_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[1\] | _03000_ | _03003_' for instance ex_block_i.gen_multdiv_fast.multdiv_i.md_state_q\[1\]$_DFF_PN0_
+[INFO CGT-0003] Clock gating instance 500/946
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.debug_cause_i\[0\] | _05614_ | _00153_' for instance id_stage_i.controller_i.debug_cause_o\[0\]$_DFF_PN0_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.debug_cause_i\[1\] | _05616_ | _00154_' for instance id_stage_i.controller_i.debug_cause_o\[1\]$_DFF_PN0_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.debug_cause_i\[2\] | _05618_ | _00155_' for instance id_stage_i.controller_i.debug_cause_o\[2\]$_DFF_PN0_
+[INFO CGT-0004] Accepted clock enable 'id_stage_i.controller_i.exc_req_q | _05584_ | _09718_' for instance id_stage_i.controller_i.exc_req_q$_DFF_PN0_
+[INFO CGT-0004] Accepted clock enable 'id_stage_i.controller_i.illegal_insn_q | _05866_ | _06170_' for instance id_stage_i.controller_i.illegal_insn_q$_DFF_PN0_
+[INFO CGT-0004] Accepted clock enable 'id_stage_i.id_fsm_q | _03030_ | _03082_' for instance id_stage_i.id_fsm_q$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.alu_i.imd_val_q_i\[32\] | _03259_ | _03260_' for instance id_stage_i.imd_val_q_ex_o\[34\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.alu_i.imd_val_q_i\[39\] | _03008_ | _03010_ | _03177_ | _03011_' for instance id_stage_i.imd_val_q_ex_o\[41\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.alu_i.imd_val_q_i\[46\] | _03611_ | _03612_ | _07829_ | _03613_' for instance id_stage_i.imd_val_q_ex_o\[48\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.alu_i.imd_val_q_i\[47\] | _03591_ | _03592_ | _03589_ | _03593_' for instance id_stage_i.imd_val_q_ex_o\[49\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'ex_block_i.gen_multdiv_fast.multdiv_i.imd_val_q_i\[67\] | _09673_ | _08295_' for instance id_stage_i.imd_val_q_ex_o\[67\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 600/946
+[INFO CGT-0004] Accepted clock enable 'crash_dump_o[97] | _05668_ | _05669_' for instance if_stage_i.gen_prefetch_buffer.prefetch_buffer_i.fifo_i.instr_addr_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0003] Clock gating instance 700/946
+[INFO CGT-0004] Accepted clock enable 'id_stage_i.controller_i.instr_is_compressed_i | _06181_ | _06172_ | _06210_' for instance if_stage_i.instr_is_compressed_id_o$_DFFE_PN0N_
+[INFO CGT-0003] Clock gating instance 800/946
+[INFO CGT-0004] Accepted clock enable 'id_stage_i.controller_i.instr_i\[12\] | _03020_ | _03021_' for instance if_stage_i.instr_rdata_id_o\[12\]$_DFFE_PN0N_
+[INFO CGT-0004] Accepted clock enable 'cs_registers_i.csr_addr_i\[1\] | rf_raddr_b_o[1] | _04137_ | _04138_' for instance if_stage_i.instr_rdata_id_o\[21\]$_DFFE_PN0N_
+[INFO CGT-0003] Clock gating instance 900/946
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.data_type_q\[1\] | _02211_ | _02212_ | _02209_' for instance load_store_unit_i.data_type_q\[1\]$_DFF_PN0_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_offset_q\[0\] | _01361_ | _02232_ | _02577_ | _02233_' for instance load_store_unit_i.rdata_offset_q\[0\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_offset_q\[1\] | _01367_ | _02795_' for instance load_store_unit_i.rdata_offset_q\[1\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[1\] | _02582_ | _02587_' for instance load_store_unit_i.rdata_q\[1\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[2\] | _02798_ | _02803_' for instance load_store_unit_i.rdata_q\[2\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[3\] | _02847_ | _02852_' for instance load_store_unit_i.rdata_q\[3\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[4\] | _02867_ | _02872_' for instance load_store_unit_i.rdata_q\[4\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[5\] | _02888_ | _02893_' for instance load_store_unit_i.rdata_q\[5\]$_DFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable 'load_store_unit_i.rdata_q\[6\] | _02909_ | _02914_' for instance load_store_unit_i.rdata_q\[6\]$_DFFE_PN0P_
+No differences found.

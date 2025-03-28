@@ -1,0 +1,43 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
+Warning: Detected 2 multi-output gates (for example, "FA_X1").
+SC library cannot be found.
+[INFO CGT-0003] Clock gating instance 0/562
+[INFO CGT-0004] Accepted clock enable '_13148_ | _04684_ | _04714_ | _04685_' for instance dcnt\[0\]$_SDFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable '_13149_ | _04645_ | _04715_ | _00499_ | _04712_' for instance dcnt\[3\]$_SDFFE_PN0P_
+[INFO CGT-0004] Accepted clock enable '_13151_ | ld_r | _07141_ | _07142_' for instance ld_r$_DFF_P_
+[INFO CGT-0003] Clock gating instance 100/562
+[INFO CGT-0003] Clock gating instance 200/562
+[INFO CGT-0003] Clock gating instance 300/562
+[INFO CGT-0004] Accepted clock enable '_00444_ | _05000_ | _05001_' for instance u0.r0.out\[24\]$_SDFF_PP1_
+[INFO CGT-0004] Accepted clock enable '_00445_ | _05015_ | _05016_' for instance u0.r0.out\[25\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00446_ | _05029_ | _05176_ | _05031_ | _05177_ | _05178_' for instance u0.r0.out\[26\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00447_ | _05048_ | _05049_' for instance u0.r0.out\[27\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00448_ | _05063_ | _05064_' for instance u0.r0.out\[28\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00449_ | _05189_ | _05076_ | _05077_' for instance u0.r0.out\[29\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00450_ | _05194_ | _05089_ | _05090_' for instance u0.r0.out\[30\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00451_ | _05099_ | _05100_' for instance u0.r0.out\[31\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable 'u0.r0.rcnt_next\[0\] | _04692_ | _04693_' for instance u0.r0.rcnt\[0\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_13063_ | _04690_ | _04691_' for instance u0.r0.rcnt\[1\]$_SDFF_PP0_
+[INFO CGT-0003] Clock gating instance 400/562
+[INFO CGT-0004] Accepted clock enable '_13062_ | _04689_ | _04697_' for instance u0.r0.rcnt\[2\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_13406_ | _04700_ | _04701_' for instance u0.r0.rcnt\[3\]$_SDFF_PP0_
+[INFO CGT-0004] Accepted clock enable '_00437_ | _04272_ | _04348_ | _04370_' for instance u0.u1.d\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00438_ | _04444_ | _04531_ | _04552_' for instance u0.u1.d\[1\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00420_ | _05252_ | _04710_ | _05223_' for instance u0.u1.d\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00430_ | _05124_ | _05125_ | _04857_ | _04858_' for instance u0.u2.d\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00431_ | _04872_ | _06125_' for instance u0.u2.d\[1\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00422_ | _05245_ | _04882_ | _05214_' for instance u0.u2.d\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00423_ | _04739_ | _04740_ | _04741_' for instance u0.u3.d\[0\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00424_ | _04749_ | _04756_ | _04758_' for instance u0.u3.d\[1\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00421_ | _05237_ | _04765_ | _04772_ | _05110_ | _04773_' for instance u0.u3.d\[2\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00425_ | _05112_ | _04787_ | _04788_' for instance u0.u3.d\[3\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00426_ | _04796_ | _04804_ | _04805_ | _04806_' for instance u0.u3.d\[4\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00427_ | _05118_ | _04820_ | _04822_' for instance u0.u3.d\[5\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00428_ | _05120_ | _04834_ | _04835_ | _04836_' for instance u0.u3.d\[6\]$_DFF_P_
+[INFO CGT-0004] Accepted clock enable '_00429_ | _05123_ | _04844_ | _04846_ | _06475_' for instance u0.u3.d\[7\]$_DFF_P_
+[INFO CGT-0003] Clock gating instance 500/562
+No differences found.

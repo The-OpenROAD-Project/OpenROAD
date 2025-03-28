@@ -268,6 +268,11 @@ tap::Tapcell* Design::getTapcell()
   return getOpenRoad()->getTapcell();
 }
 
+cgt::ClockGating* Design::getClockGating()
+{
+  return getOpenRoad()->getClockGating();
+}
+
 cts::TritonCTS* Design::getTritonCts()
 {
   return getOpenRoad()->getTritonCts();
