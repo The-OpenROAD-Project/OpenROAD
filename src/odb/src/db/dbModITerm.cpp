@@ -374,7 +374,8 @@ void dbModITerm::destroy(dbModITerm* val)
   block->_moditerm_tbl->destroy(_moditerm);
 }
 
-dbSet<dbModITerm>::iterator dbModITerm::destroy(dbSet<dbModITerm>::iterator& itr)
+dbSet<dbModITerm>::iterator dbModITerm::destroy(
+    dbSet<dbModITerm>::iterator& itr)
 {
   dbModITerm* moditerm = *itr;
   dbSet<dbModITerm>::iterator next = ++itr;

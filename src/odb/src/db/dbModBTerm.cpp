@@ -480,7 +480,8 @@ void dbModBTerm::destroy(dbModBTerm* val)
   block->_modbterm_tbl->destroy(_modbterm);
 }
 
-dbSet<dbModBTerm>::iterator dbModBTerm::destroy(dbSet<dbModBTerm>::iterator& itr)
+dbSet<dbModBTerm>::iterator dbModBTerm::destroy(
+    dbSet<dbModBTerm>::iterator& itr)
 {
   dbModBTerm* modbterm = *itr;
   dbSet<dbModBTerm>::iterator next = ++itr;
