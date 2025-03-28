@@ -951,20 +951,20 @@ cc_library(
         "//src/utl",
         ":opendb_def",
         ":opendb_lef",
-        "@boost//:algorithm",
-        "@boost//:bind",
-        "@boost//:config",
-        "@boost//:fusion",
-        "@boost//:geometry",
-        "@boost//:lambda",
-        "@boost//:optional",
-        "@boost//:phoenix",
-        "@boost//:polygon",
-        "@boost//:property_tree",
-        "@boost//:spirit",
-        "@com_github_gabime_spdlog//:spdlog_with_exceptions",
+        "@boost.algorithm",
+        "@boost.bind",
+        "@boost.config",
+        "@boost.fusion",
+        "@boost.geometry",
+        "@boost.lambda",
+        "@boost.optional",
+        "@boost.phoenix",
+        "@boost.polygon",
+        "@boost.property_tree",
+        "@boost.spirit",
+        "@spdlog",
         "@tk_tcl//:tcl",
-        "@net_zlib//:zlib",
+        "@zlib",
     ],
 )
 
@@ -1009,7 +1009,7 @@ cc_library(
         "//visibility:private",
     ],
     deps = [
-        "@net_zlib//:zlib",
+        "@zlib",
     ],
 )
 
@@ -1056,7 +1056,7 @@ cc_library(
         "//visibility:private",
     ],
     deps = [
-        "@net_zlib//:zlib",
+        "@zlib",
     ],
 )
 
@@ -1440,9 +1440,9 @@ cc_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "@tk_tcl//:tcl",
-        "@net_zlib//:zlib",
-        "@eigen//:eigen3",
-        "@com_github_davidkebo_cudd//:cudd",
+        "@zlib",
+        "@eigen",
+        "@cudd",
         "@rules_flex//flex:current_flex_toolchain",
     ],
 )

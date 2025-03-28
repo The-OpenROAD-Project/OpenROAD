@@ -62,10 +62,11 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
-        "@boost//:asio",
-        "@boost//:beast",
-        "@boost//:core",
-        "@com_github_gabime_spdlog//:spdlog",
+        "@boost.asio",
+        #"@boost.beast",   # this results in a linking issue (bzlmod)
+        "@boost//:beast",  #.. so for now use this one (from bazel_rules_hdl)
+        "@boost.core",
+        "@spdlog",
         "@tk_tcl//:tcl",
         "//:opensta_lib",
     ],
