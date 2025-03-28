@@ -25,8 +25,8 @@
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 4974780
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 4982232
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 4985753
-[INFO GPL-0031] Uniform density:                0.5800
-[INFO GPL-0032] Suggested density:              0.6445
+[INFO GPL-0032] Uniform density:                0.5800
+[INFO GPL-0033] Suggested density (90% whitespace util):     0.6445
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.935 um^2
 [INFO GPL-0025] Ideal bin area:                  2.764 um^2
@@ -35,7 +35,8 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter:    1 overflow: 0.8324 HPWL: 3.651e+06( +0.0%) penalty: 8.1e-14 
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.8324               3.651238e+06     +0.00%     8.06e-14  
 [INFO GPL-0100] Timing-driven iteration 1/7, virtual: true.
 [INFO GPL-0101]    Iter: 3, overflow: 0.761, keep resizer changes at: 0.3, HPWL: 3932272
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -45,25 +46,28 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 75 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
-[NesterovSolve] Iter:   10 overflow: 0.7720 HPWL: 3.888e+06( +6.5%) penalty: 1.3e-13 
-[NesterovSolve] Iter:   20 overflow: 0.7630 HPWL: 3.917e+06( +0.7%) penalty: 2.0e-13 
-[NesterovSolve] Iter:   30 overflow: 0.7612 HPWL: 3.911e+06( -0.1%) penalty: 3.3e-13 
-[NesterovSolve] Iter:   40 overflow: 0.7624 HPWL: 3.906e+06( -0.1%) penalty: 5.4e-13 
-[NesterovSolve] Iter:   50 overflow: 0.7618 HPWL: 3.905e+06( -0.0%) penalty: 8.8e-13 
-[NesterovSolve] Iter:   60 overflow: 0.7613 HPWL: 3.906e+06( +0.0%) penalty: 1.4e-12 
-[NesterovSolve] Iter:   70 overflow: 0.7613 HPWL: 3.906e+06( +0.0%) penalty: 2.3e-12 
-[NesterovSolve] Iter:   80 overflow: 0.7613 HPWL: 3.907e+06( +0.0%) penalty: 3.8e-12 
-[NesterovSolve] Iter:   90 overflow: 0.7610 HPWL: 3.908e+06( +0.0%) penalty: 6.2e-12 
-[NesterovSolve] Iter:  100 overflow: 0.7607 HPWL: 3.909e+06( +0.0%) penalty: 1.0e-11 
-[NesterovSolve] Iter:  110 overflow: 0.7601 HPWL: 3.911e+06( +0.1%) penalty: 1.6e-11 
-[NesterovSolve] Iter:  120 overflow: 0.7590 HPWL: 3.915e+06( +0.1%) penalty: 2.7e-11 
-[NesterovSolve] Iter:  130 overflow: 0.7578 HPWL: 3.920e+06( +0.1%) penalty: 4.4e-11 
-[NesterovSolve] Iter:  140 overflow: 0.7558 HPWL: 3.929e+06( +0.2%) penalty: 7.1e-11 
-[NesterovSolve] Iter:  150 overflow: 0.7521 HPWL: 3.944e+06( +0.4%) penalty: 1.2e-10 
-[NesterovSolve] Iter:  160 overflow: 0.7460 HPWL: 3.965e+06( +0.5%) penalty: 1.9e-10 
-[NesterovSolve] Iter:  170 overflow: 0.7348 HPWL: 3.996e+06( +0.8%) penalty: 3.1e-10 
-[NesterovSolve] Iter:  180 overflow: 0.7215 HPWL: 4.039e+06( +1.1%) penalty: 5.0e-10 
-[NesterovSolve] Iter:  190 overflow: 0.7034 HPWL: 4.097e+06( +1.5%) penalty: 8.2e-10 
+[NesterovSolve]   10    0.7720               3.888374e+06     +6.49%     1.25e-13  
+[NesterovSolve]   20    0.7630               3.916812e+06     +0.73%     2.04e-13  
+[NesterovSolve]   30    0.7612               3.910980e+06     -0.15%     3.32e-13  
+[NesterovSolve]   40    0.7624               3.905892e+06     -0.13%     5.41e-13  
+[NesterovSolve]   50    0.7618               3.904910e+06     -0.03%     8.81e-13  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]   60    0.7613               3.906073e+06     +0.03%     1.43e-12  
+[NesterovSolve]   70    0.7613               3.906285e+06     +0.01%     2.34e-12  
+[NesterovSolve]   80    0.7613               3.906657e+06     +0.01%     3.81e-12  
+[NesterovSolve]   90    0.7610               3.907884e+06     +0.03%     6.20e-12  
+[NesterovSolve]  100    0.7607               3.909257e+06     +0.04%     1.01e-11  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  110    0.7601               3.911317e+06     +0.05%     1.65e-11  
+[NesterovSolve]  120    0.7590               3.914680e+06     +0.09%     2.68e-11  
+[NesterovSolve]  130    0.7578               3.920183e+06     +0.14%     4.36e-11  
+[NesterovSolve]  140    0.7558               3.929337e+06     +0.23%     7.11e-11  
+[NesterovSolve]  150    0.7521               3.943670e+06     +0.36%     1.16e-10  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  160    0.7460               3.964904e+06     +0.54%     1.89e-10  
+[NesterovSolve]  170    0.7348               3.995840e+06     +0.78%     3.07e-10  
+[NesterovSolve]  180    0.7215               4.038609e+06     +1.07%     5.01e-10  
+[NesterovSolve]  190    0.7034               4.097263e+06     +1.45%     8.15e-10  
 [INFO GPL-0100] Timing-driven iteration 2/7, virtual: true.
 [INFO GPL-0101]    Iter: 194, overflow: 0.694, keep resizer changes at: 0.3, HPWL: 4123042
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -73,9 +77,10 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 76 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.41e-09
-[NesterovSolve] Iter:  200 overflow: 0.6754 HPWL: 4.169e+06( +1.7%) penalty: 1.3e-09 
-[NesterovSolve] Iter:  210 overflow: 0.6439 HPWL: 4.240e+06( +1.7%) penalty: 2.2e-09 
-[NesterovSolve] Iter:  220 overflow: 0.6131 HPWL: 4.331e+06( +2.1%) penalty: 3.5e-09 
+[NesterovSolve]  200    0.6754               4.168674e+06     +1.74%     1.33e-09  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  210    0.6439               4.239797e+06     +1.71%     2.16e-09  
+[NesterovSolve]  220    0.6131               4.330517e+06     +2.14%     3.52e-09  
 [INFO GPL-0100] Timing-driven iteration 3/7, virtual: true.
 [INFO GPL-0101]    Iter: 224, overflow: 0.595, keep resizer changes at: 0.3, HPWL: 4370091
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -85,8 +90,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 76 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[NesterovSolve] Iter:  230 overflow: 0.5680 HPWL: 4.421e+06( +2.1%) penalty: 5.7e-09 
-[NesterovSolve] Iter:  240 overflow: 0.5248 HPWL: 4.501e+06( +1.8%) penalty: 9.3e-09 
+[NesterovSolve]  230    0.5680               4.421087e+06     +2.09%     5.74e-09  
+[NesterovSolve]  240    0.5248               4.500705e+06     +1.80%     9.35e-09  
 [INFO GPL-0100] Timing-driven iteration 4/7, virtual: true.
 [INFO GPL-0101]    Iter: 247, overflow: 0.491, keep resizer changes at: 0.3, HPWL: 4573895
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -96,8 +101,9 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 76 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[NesterovSolve] Iter:  250 overflow: 0.4759 HPWL: 4.594e+06( +2.1%) penalty: 1.5e-08 
-[NesterovSolve] Iter:  260 overflow: 0.4218 HPWL: 4.639e+06( +1.0%) penalty: 2.5e-08 
+[NesterovSolve]  250    0.4759               4.593620e+06     +2.06%     1.52e-08  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  260    0.4218               4.639152e+06     +0.99%     2.48e-08  
 [INFO GPL-0100] Timing-driven iteration 5/7, virtual: true.
 [INFO GPL-0101]    Iter: 265, overflow: 0.393, keep resizer changes at: 0.3, HPWL: 4653629
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -107,8 +113,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 76 instances.
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
-[NesterovSolve] Iter:  270 overflow: 0.3652 HPWL: 4.679e+06( +0.8%) penalty: 4.0e-08 
-[NesterovSolve] Iter:  280 overflow: 0.3127 HPWL: 4.689e+06( +0.2%) penalty: 6.1e-08 
+[NesterovSolve]  270    0.3652               4.678508e+06     +0.85%     4.04e-08  
+[NesterovSolve]  280    0.3127               4.689400e+06     +0.23%     6.13e-08  
 [INFO GPL-0100] Timing-driven iteration 6/7, virtual: false.
 [INFO GPL-0101]    Iter: 284, overflow: 0.288, keep resizer changes at: 0.3, HPWL: 4702543
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -122,9 +128,10 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 0 (+0.00%)
 [INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 0
 [INFO GPL-0110] Timing-driven: new target density: 0.62693805
-[NesterovSolve] Iter:  290 overflow: 0.2991 HPWL: 2.900e+06(-38.2%) penalty: 9.0e-08 
-[NesterovSolve] Iter:  300 overflow: 0.2897 HPWL: 3.012e+06( +3.9%) penalty: 1.3e-07 
-[NesterovSolve] Iter:  310 overflow: 0.2266 HPWL: 2.948e+06( -2.1%) penalty: 2.0e-07 
+[NesterovSolve]  290    0.2991               2.899794e+06    -38.16%     9.04e-08  
+[NesterovSolve]  300    0.2897               3.011545e+06     +3.85%     1.33e-07  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  310    0.2266               2.948151e+06     -2.11%     1.96e-07  
 [INFO GPL-0100] Timing-driven iteration 7/7, virtual: false.
 [INFO GPL-0101]    Iter: 318, overflow: 0.193, keep resizer changes at: 0.3, HPWL: 2973941
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -140,11 +147,12 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)
 [INFO GPL-0109] Timing-driven: inserted buffers as reported by repair_design: 1
 [INFO GPL-0110] Timing-driven: new target density: 0.63195753
-[NesterovSolve] Iter:  320 overflow: 0.1879 HPWL: 3.022e+06( +2.5%) penalty: 2.9e-07 
-[NesterovSolve] Iter:  330 overflow: 0.1725 HPWL: 3.032e+06( +0.3%) penalty: 4.3e-07 
-[NesterovSolve] Iter:  340 overflow: 0.1475 HPWL: 3.083e+06( +1.7%) penalty: 6.3e-07 
-[NesterovSolve] Iter:  350 overflow: 0.1274 HPWL: 3.096e+06( +0.4%) penalty: 9.2e-07 
-[NesterovSolve] Iter:  360 overflow: 0.1059 HPWL: 3.098e+06( +0.1%) penalty: 1.4e-06 
+[NesterovSolve]  320    0.1879               3.022250e+06     +2.51%     2.89e-07  
+[NesterovSolve]  330    0.1725               3.031660e+06     +0.31%     4.26e-07  
+[NesterovSolve]  340    0.1475               3.082839e+06     +1.69%     6.27e-07  
+[NesterovSolve]  350    0.1274               3.095701e+06     +0.42%     9.24e-07  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  360    0.1059               3.097717e+06     +0.07%     1.36e-06  
 [NesterovSolve] Finished with Overflow: 0.099247
 worst slack 1.40
 No differences found.

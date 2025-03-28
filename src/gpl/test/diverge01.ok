@@ -20,8 +20,8 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0031] Uniform density:                0.5973
-[INFO GPL-0032] Suggested density:              0.6637
+[INFO GPL-0032] Uniform density:                0.5973
+[INFO GPL-0033] Suggested density (90% whitespace util):     0.6637
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
@@ -30,11 +30,13 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter:    1 overflow: 0.9427 HPWL: 3.779e+06( +0.0%) penalty: 1.2e-07 
-[NesterovSolve] Iter:   10 overflow: 0.2487 HPWL: 9.106e+06(+140.9%) penalty: 1.8e-07 
-[NesterovSolve] Iter:   20 overflow: 0.1750 HPWL: 6.547e+06(-28.1%) penalty: 2.6e-07 
-[NesterovSolve] Iter:   30 overflow: 0.1434 HPWL: 6.020e+06( -8.1%) penalty: 3.8e-07 
-[NesterovSolve] Iter:   40 overflow: 0.1361 HPWL: 5.823e+06( -3.3%) penalty: 5.6e-07 
-[NesterovSolve] Iter:   50 overflow: 0.1057 HPWL: 5.780e+06( -0.7%) penalty: 8.2e-07 
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.9427               3.779352e+06     +0.00%     1.15e-07  
+[NesterovSolve]   10    0.2487               9.105949e+06   +140.94%     1.75e-07  
+[NesterovSolve]   20    0.1750               6.547448e+06    -28.10%     2.58e-07  
+[NesterovSolve]   30    0.1434               6.019893e+06     -8.06%     3.80e-07  
+[NesterovSolve]   40    0.1361               5.823323e+06     -3.27%     5.60e-07  
+[NesterovSolve]   50    0.1057               5.780172e+06     -0.74%     8.24e-07  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
 [NesterovSolve] Finished with Overflow: 0.099589
 

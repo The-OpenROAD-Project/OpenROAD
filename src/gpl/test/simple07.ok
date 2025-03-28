@@ -30,8 +30,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 92385
-[INFO GPL-0031] Uniform density:                0.0058
-[INFO GPL-0032] Suggested density:              0.0064
+[INFO GPL-0032] Uniform density:                0.0058
+[INFO GPL-0033] Suggested density (90% whitespace util):     0.0064
 [INFO GPL-0023] Placement target density:       0.7500
 [INFO GPL-0024] Movable insts average area:      3.754 um^2
 [INFO GPL-0025] Ideal bin area:                  5.005 um^2
@@ -40,6 +40,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0028] Bin count (X, Y):           8 *      8
 [INFO GPL-0029] Bin size (W * H):       2.875 *  4.080 um
 [INFO GPL-0030] Number of bins:                     64
-[NesterovSolve] Iter:    1 overflow: 0.0000 HPWL: 8.458e+04( +0.0%) penalty: 1.0e-16 
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.0000               8.458500e+04     +0.00%     1.04e-16  
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.

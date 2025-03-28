@@ -20,8 +20,8 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0031] Uniform density:                0.5973
-[INFO GPL-0032] Suggested density:              0.6637
+[INFO GPL-0032] Uniform density:                0.5973
+[INFO GPL-0033] Suggested density (90% whitespace util):     0.6637
 [INFO GPL-0023] Placement target density:       0.6073
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  3.191 um^2
@@ -30,31 +30,37 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter:    1 overflow: 0.8660 HPWL: 3.820e+06( +0.0%) penalty: 1.0e-11 
-[NesterovSolve] Iter:   10 overflow: 0.7690 HPWL: 4.226e+06(+10.6%) penalty: 1.6e-11 
-[NesterovSolve] Iter:   20 overflow: 0.7671 HPWL: 4.211e+06( -0.4%) penalty: 2.6e-11 
-[NesterovSolve] Iter:   30 overflow: 0.7660 HPWL: 4.219e+06( +0.2%) penalty: 4.3e-11 
-[NesterovSolve] Iter:   40 overflow: 0.7628 HPWL: 4.231e+06( +0.3%) penalty: 7.0e-11 
-[NesterovSolve] Iter:   50 overflow: 0.7585 HPWL: 4.248e+06( +0.4%) penalty: 1.1e-10 
-[NesterovSolve] Iter:   60 overflow: 0.7509 HPWL: 4.274e+06( +0.6%) penalty: 1.8e-10 
-[NesterovSolve] Iter:   70 overflow: 0.7369 HPWL: 4.310e+06( +0.8%) penalty: 3.0e-10 
-[NesterovSolve] Iter:   80 overflow: 0.7190 HPWL: 4.361e+06( +1.2%) penalty: 4.9e-10 
-[NesterovSolve] Iter:   90 overflow: 0.7013 HPWL: 4.432e+06( +1.6%) penalty: 8.0e-10 
-[NesterovSolve] Iter:  100 overflow: 0.6732 HPWL: 4.520e+06( +2.0%) penalty: 1.3e-09 
-[NesterovSolve] Iter:  110 overflow: 0.6378 HPWL: 4.598e+06( +1.7%) penalty: 2.1e-09 
-[NesterovSolve] Iter:  120 overflow: 0.6001 HPWL: 4.703e+06( +2.3%) penalty: 3.5e-09 
-[NesterovSolve] Iter:  130 overflow: 0.5536 HPWL: 4.793e+06( +1.9%) penalty: 5.6e-09 
-[NesterovSolve] Iter:  140 overflow: 0.4964 HPWL: 4.826e+06( +0.7%) penalty: 9.2e-09 
-[NesterovSolve] Iter:  150 overflow: 0.4457 HPWL: 4.864e+06( +0.8%) penalty: 1.5e-08 
-[NesterovSolve] Iter:  160 overflow: 0.3823 HPWL: 4.862e+06( -0.0%) penalty: 2.4e-08 
-[NesterovSolve] Iter:  170 overflow: 0.3337 HPWL: 4.864e+06( +0.0%) penalty: 3.9e-08 
-[NesterovSolve] Iter:  180 overflow: 0.3147 HPWL: 4.942e+06( +1.6%) penalty: 5.7e-08 
-[NesterovSolve] Iter:  190 overflow: 0.2801 HPWL: 4.981e+06( +0.8%) penalty: 8.4e-08 
-[NesterovSolve] Iter:  200 overflow: 0.2455 HPWL: 5.023e+06( +0.8%) penalty: 1.2e-07 
-[NesterovSolve] Iter:  210 overflow: 0.2132 HPWL: 5.061e+06( +0.8%) penalty: 1.8e-07 
-[NesterovSolve] Iter:  220 overflow: 0.1866 HPWL: 5.105e+06( +0.9%) penalty: 2.7e-07 
-[NesterovSolve] Iter:  230 overflow: 0.1592 HPWL: 5.147e+06( +0.8%) penalty: 4.0e-07 
-[NesterovSolve] Iter:  240 overflow: 0.1348 HPWL: 5.178e+06( +0.6%) penalty: 5.8e-07 
-[NesterovSolve] Iter:  250 overflow: 0.1124 HPWL: 5.208e+06( +0.6%) penalty: 8.6e-07 
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.8660               3.819726e+06     +0.00%     1.04e-11  
+[NesterovSolve]   10    0.7690               4.226173e+06    +10.64%     1.61e-11  
+[NesterovSolve]   20    0.7671               4.211291e+06     -0.35%     2.62e-11  
+[NesterovSolve]   30    0.7660               4.219170e+06     +0.19%     4.27e-11  
+[NesterovSolve]   40    0.7628               4.230503e+06     +0.27%     6.96e-11  
+[NesterovSolve]   50    0.7585               4.247885e+06     +0.41%     1.13e-10  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]   60    0.7509               4.274028e+06     +0.62%     1.85e-10  
+[NesterovSolve]   70    0.7369               4.309624e+06     +0.83%     3.01e-10  
+[NesterovSolve]   80    0.7190               4.360507e+06     +1.18%     4.90e-10  
+[NesterovSolve]   90    0.7013               4.431863e+06     +1.64%     7.98e-10  
+[NesterovSolve]  100    0.6732               4.519674e+06     +1.98%     1.30e-09  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  110    0.6378               4.597857e+06     +1.73%     2.12e-09  
+[NesterovSolve]  120    0.6001               4.702827e+06     +2.28%     3.45e-09  
+[NesterovSolve]  130    0.5536               4.793270e+06     +1.92%     5.62e-09  
+[NesterovSolve]  140    0.4964               4.825723e+06     +0.68%     9.16e-09  
+[NesterovSolve]  150    0.4457               4.863741e+06     +0.79%     1.49e-08  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  160    0.3823               4.862234e+06     -0.03%     2.43e-08  
+[NesterovSolve]  170    0.3337               4.863694e+06     +0.03%     3.88e-08  
+[NesterovSolve]  180    0.3147               4.941909e+06     +1.61%     5.71e-08  
+[NesterovSolve]  190    0.2801               4.980920e+06     +0.79%     8.42e-08  
+[NesterovSolve]  200    0.2455               5.022663e+06     +0.84%     1.24e-07  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
+[NesterovSolve]  210    0.2132               5.061401e+06     +0.77%     1.83e-07  
+[NesterovSolve]  220    0.1866               5.105498e+06     +0.87%     2.69e-07  
+[NesterovSolve]  230    0.1592               5.146806e+06     +0.81%     3.96e-07  
+[NesterovSolve]  240    0.1348               5.177940e+06     +0.60%     5.84e-07  
+[NesterovSolve]  250    0.1124               5.208498e+06     +0.59%     8.60e-07  
+[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
 [NesterovSolve] Finished with Overflow: 0.099534
 No differences found.
