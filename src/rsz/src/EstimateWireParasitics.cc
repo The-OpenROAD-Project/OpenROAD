@@ -346,7 +346,9 @@ void Resizer::updateParasitics(bool save_guides)
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
+        //
         // TODO: remove this check (we expect all to be flat net)
+        //
         if (!(db_network_->isFlat(net))) {
           continue;
         }
