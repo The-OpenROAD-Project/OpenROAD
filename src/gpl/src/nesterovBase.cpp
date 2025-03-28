@@ -1774,7 +1774,7 @@ void NesterovBase::initFillerGCells()
   log_->info(GPL,
              32,
              "{:27} {:10.4f}",
-             "Suggested maximum density:",
+             "Suggested density:",
              max_density_suggestion);
 
   // limit filler cells
