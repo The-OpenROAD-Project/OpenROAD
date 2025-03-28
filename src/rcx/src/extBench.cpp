@@ -511,7 +511,7 @@ uint extMain::benchWires(extMainOptions* opt)
     _block = dbBlock::create(chip, opt->_name, _tech, '/');
     assert(_block);
     _prevControl = _block->getExtControl();
-    _block->setBusDelimeters('[', ']');
+    _block->setBusDelimiters('[', ']');
     _block->setDefUnits(1000);
     m->setExtMain(this);
     setupMapping();

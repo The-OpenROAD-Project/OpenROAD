@@ -290,6 +290,14 @@ void dbModNet::destroy(dbModNet* mod_net)
   block->_modnet_tbl->destroy(_modnet);
 }
 
+dbSet<dbModNet>::iterator dbModNet::destroy(dbSet<dbModNet>::iterator& itr)
+{
+  dbModNet* modnet = *itr;
+  dbSet<dbModNet>::iterator next = ++itr;
+  destroy(modnet);
+  return next;
+}
+
 dbSet<dbModITerm> dbModNet::getModITerms()
 {
   _dbModNet* _mod_net = (_dbModNet*) this;

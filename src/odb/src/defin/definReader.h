@@ -86,9 +86,9 @@ class definReader : public definBase
   bool _continue_on_errors;
   std::string _block_name;
   std::string version_;
-  char hier_delimeter_;
-  char left_bus_delimeter_;
-  char right_bus_delimeter_;
+  char hier_delimiter_;
+  char left_bus_delimiter_;
+  char right_bus_delimiter_;
 
   void init() override;
   void setLibs(std::vector<dbLib*>& lib_names);

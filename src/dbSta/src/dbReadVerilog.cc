@@ -301,7 +301,7 @@ void Verilog2db::makeBlock()
   }
   dbTech* tech = db_->getTech();
   block_->setDefUnits(tech->getLefUnits());
-  block_->setBusDelimeters('[', ']');
+  block_->setBusDelimiters('[', ']');
 }
 
 void Verilog2db::makeDbNetlist()
@@ -1097,7 +1097,7 @@ void Verilog2db::makeUnusedBlock(const char* name)
   dbTech* tech = db_->getTech();
   block_ = dbBlock::create(top_block_, name, tech, network_->pathDivider());
   block_->setDefUnits(tech->getLefUnits());
-  block_->setBusDelimeters('[', ']');
+  block_->setBusDelimiters('[', ']');
   debugPrint(logger_,
              utl::ODB,
              "dbReadVerilog",

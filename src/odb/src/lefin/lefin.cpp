@@ -73,9 +73,9 @@ lefinReader::lefinReader(dbDatabase* db,
       _create_tech(false),
       _create_lib(false),
       _skip_obstructions(false),
-      _left_bus_delimeter('['),
-      _right_bus_delimeter(']'),
-      _hier_delimeter(0),
+      _left_bus_delimiter('['),
+      _right_bus_delimiter(']'),
+      _hier_delimiter(0),
       _layer_cnt(0),
       _master_cnt(0),
       _via_cnt(0),
@@ -98,9 +98,9 @@ void lefinReader::init()
   _master = nullptr;
   _create_tech = false;
   _create_lib = false;
-  _left_bus_delimeter = '[';
-  _right_bus_delimeter = ']';
-  _hier_delimeter = 0;
+  _left_bus_delimiter = '[';
+  _right_bus_delimiter = ']';
+  _hier_delimiter = 0;
   _layer_cnt = 0;
   _master_cnt = 0;
   _via_cnt = 0;
@@ -133,10 +133,11 @@ dbSite* lefinReader::findSite(const char* name)
 
 void lefinReader::createLibrary()
 {
-  _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimeter);
+  _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimiter);
   _lib->setLefUnits(_lef_units);
-  if (_left_bus_delimeter)
-    _lib->setBusDelimeters(_left_bus_delimeter, _right_bus_delimeter);
+  if (_left_bus_delimiter) {
+    _lib->setBusDelimiters(_left_bus_delimiter, _right_bus_delimiter);
+  }
 }
 
 static void create_path_box(dbObject* obj,
@@ -529,11 +530,11 @@ int lefinReader::busBitChars(const char* busBit)
   if (busBit[0] == '\0' || busBit[1] == '\0')
     _logger->error(utl::ODB, 179, "invalid BUSBITCHARS ({})\n", busBit);
 
-  _left_bus_delimeter = busBit[0];
-  _right_bus_delimeter = busBit[1];
+  _left_bus_delimiter = busBit[0];
+  _right_bus_delimiter = busBit[1];
 
   if (_lib) {
-    _lib->setBusDelimeters(_left_bus_delimeter, _right_bus_delimeter);
+    _lib->setBusDelimiters(_left_bus_delimiter, _right_bus_delimiter);
   }
 
   return PARSE_OK;
@@ -551,7 +552,7 @@ void lefinReader::clearance(const char* name)
 
 void lefinReader::divider(const char* div)
 {
-  _hier_delimeter = div[0];
+  _hier_delimiter = div[0];
 }
 
 void lefinReader::noWireExt(const char* name)

@@ -59,7 +59,7 @@ using utl::RCX;
 dbInst* extSpef::getDbInst(const uint id)
 {
   uint ii = 0;
-  const char hierD = _block->getHierarchyDelimeter();
+  const char hierD = _block->getHierarchyDelimiter();
   const char* instName = _spefName;
   const char* iName;
   if (!_mMap && _divider[0] != hierD) {
@@ -737,7 +737,7 @@ dbNet* extSpef::getDbNet(uint* id, const uint spefId)
     return nullptr;
   }
 
-  const char hierD = _block->getHierarchyDelimeter();
+  const char hierD = _block->getHierarchyDelimiter();
   const char* netName = _spefName;
   const char* nName;
   if (!_mMap && _divider[0] != hierD) {

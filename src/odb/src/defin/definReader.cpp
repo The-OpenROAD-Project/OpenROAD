@@ -193,9 +193,9 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
   _db = db;
   parent_ = nullptr;
   _continue_on_errors = false;
-  hier_delimeter_ = 0;
-  left_bus_delimeter_ = 0;
-  right_bus_delimeter_ = 0;
+  hier_delimiter_ = 0;
+  left_bus_delimiter_ = 0;
+  right_bus_delimiter_ = 0;
 
   definBase::setLogger(logger);
   definBase::setMode(mode);
@@ -407,8 +407,8 @@ int definReader::divideCharCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->hier_delimeter_ = value[0];
-  if (reader->hier_delimeter_ == 0) {
+  reader->hier_delimiter_ = value[0];
+  if (reader->hier_delimiter_ == 0) {
     reader->error("Syntax error in DIVIDERCHAR statment");
     return PARSE_ERROR;
   }
@@ -420,10 +420,10 @@ int definReader::busBitCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->left_bus_delimeter_ = value[0];
-  reader->right_bus_delimeter_ = value[1];
-  if ((reader->left_bus_delimeter_ == 0)
-      || (reader->right_bus_delimeter_ == 0)) {
+  reader->left_bus_delimiter_ = value[0];
+  reader->right_bus_delimiter_ = value[1];
+  if ((reader->left_bus_delimiter_ == 0)
+      || (reader->right_bus_delimiter_ == 0)) {
     reader->error("Syntax error in BUSBITCHARS statment");
     return PARSE_ERROR;
   }
@@ -456,13 +456,13 @@ int definReader::designCallback(
         reader->_block = dbBlock::create(reader->parent_,
                                          new_name.c_str(),
                                          reader->_tech,
-                                         reader->hier_delimeter_);
+                                         reader->hier_delimiter_);
       }
     } else {
       reader->_block = dbBlock::create(reader->parent_,
                                        block_name.c_str(),
                                        reader->_tech,
-                                       reader->hier_delimeter_);
+                                       reader->hier_delimiter_);
     }
   } else {
     dbChip* chip = reader->_db->getChip();
@@ -470,12 +470,12 @@ int definReader::designCallback(
       reader->_block = chip->getBlock();
     } else {
       reader->_block = dbBlock::create(
-          chip, block_name.c_str(), reader->_tech, reader->hier_delimeter_);
+          chip, block_name.c_str(), reader->_tech, reader->hier_delimiter_);
     }
   }
   if (reader->_mode == defin::DEFAULT) {
-    reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
-                                     reader->right_bus_delimeter_);
+    reader->_block->setBusDelimiters(reader->left_bus_delimiter_,
+                                     reader->right_bus_delimiter_);
   }
   reader->_logger->info(utl::ODB, 128, "Design: {}", design);
   assert(reader->_block);

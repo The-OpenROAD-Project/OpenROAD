@@ -207,7 +207,7 @@ replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  db_network->replaceHierModule(mod_inst, module);
+  (void) db_network->replaceHierModule(mod_inst, module);
 }
 
 %} // inline

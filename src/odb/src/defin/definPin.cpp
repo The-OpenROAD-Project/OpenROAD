@@ -75,7 +75,7 @@ void definPin::init()
 
 void definPin::pinsBegin(int /* unused: n */)
 {
-  _block->getBusDelimeters(_left_bus, _right_bus);
+  _block->getBusDelimiters(_left_bus, _right_bus);
   _bterm_cnt = 0;
   _update_cnt = 0;
   _ground_pins.clear();

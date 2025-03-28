@@ -779,7 +779,7 @@ uint extMain::DefWires(extMainOptions* opt)
   _block = dbBlock::create(chip, opt->_name, nullptr, '/');
   assert(_block);
 
-  _block->setBusDelimeters('[', ']');
+  _block->setBusDelimiters('[', ']');
   _block->setDefUnits(1000);
   m->setExtMain(this);
 

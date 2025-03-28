@@ -56,9 +56,9 @@ class _dbLib : public _dbObject
   // PERSISTANT-MEMBERS
   int _lef_units;
   int _dbu_per_micron;  // cached value from dbTech
-  char _hier_delimeter;
-  char _left_bus_delimeter;
-  char _right_bus_delimeter;
+  char _hier_delimiter;
+  char _left_bus_delimiter;
+  char _right_bus_delimiter;
   char _spare;
   char* _name;
   dbHashTable<_dbMaster> _master_hash;

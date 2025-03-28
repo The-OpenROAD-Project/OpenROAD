@@ -158,7 +158,7 @@ uint extMeasure::createNetSingleWire(char* dirName,
   ll[!_dir] = ll[!_dir] + w_layout / 2;
 
   char left, right;
-  _block->getBusDelimeters(left, right);
+  _block->getBusDelimiters(left, right);
 
   char netName[1024];
   sprintf(netName, "%s%c%d%c", dirName, left, idCnt, right);
@@ -244,7 +244,7 @@ uint extMeasure::createDiagNetSingleWire(char* dirName,
   }
 
   char left, right;
-  _block->getBusDelimeters(left, right);
+  _block->getBusDelimiters(left, right);
 
   char netName[1024];
   sprintf(netName, "%s%c%d%c", dirName, left, idCnt, right);
