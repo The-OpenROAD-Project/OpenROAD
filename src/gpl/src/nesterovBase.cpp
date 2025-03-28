@@ -1760,19 +1760,22 @@ void NesterovBase::initFillerGCells()
     uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
     log_->error(GPL,
                 302,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
-                "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Consider increasing the target density or re-floorplanning "
+                "with a larger core area.\n"
+                "Given target density: {:.2%}\n"
+                "Suggested target density: {:.2%} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }
   log_->info(
-      GPL, 31, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
+      GPL, 32, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
   float max_density_suggestion
       = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
-  log_->info(
-      GPL, 32, "{:27} {:10.4f}", "Suggested density:", max_density_suggestion);
+  log_->info(GPL,
+             33,
+             "{:27} {:10.4f}",
+             "Suggested density (90% whitespace util):",
+             max_density_suggestion);
 
   // limit filler cells
   const double limit_filler_ratio = 10;
@@ -2577,15 +2580,32 @@ void NesterovBase::updateNextIter(const int iter)
     if (pb_->group()) {
       group = fmt::format(" ({})", pb_->group()->getName());
     }
+
+    const std::string nesterov_header
+        = fmt::format("[NesterovSolve] {:>4}  {:>8}  {:>25}  {:>9}  {:>11}  {}",
+                      "Iter",
+                      "Overflow",
+                      "Half-Perimeter Wirelength",
+                      "HPWL(%)",
+                      "Penalty",
+                      "Group");
+
+    if (iter == 0) {
+      log_->report(nesterov_header);
+    }
+
     log_->report(
-        "[NesterovSolve] Iter: {:4d} overflow: {:.4f} HPWL: {:.3e}({:+5.1f}%) "
-        "penalty: {:.1e} {}",
+        "[NesterovSolve] {:4d}  {:8.4f}  {:25.6e}  {:+8.2f}%  {:11.2e}  {}",
         iter + 1,
         sumOverflowUnscaled_,
         static_cast<double>(hpwl),
         percentageChange,
         densityPenalty_,
         group);
+
+    if ((iter + 1) % 50 == 0) {
+      log_->report(nesterov_header);
+    }
   }
 
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
