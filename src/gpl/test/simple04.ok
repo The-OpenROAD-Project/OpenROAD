@@ -36,7 +36,7 @@
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 4844093
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000003 HPWL: 4852555
 [INFO GPL-0031] Uniform density:                0.5973
-[INFO GPL-0032] Suggested maximum density:      0.6637
+[INFO GPL-0032] Suggested density:              0.6637
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
@@ -45,41 +45,41 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter:    1 overflow: 0.8474 HPWL: 3.866e+06(+0.0%) penalty: 7.1e-14 
+[NesterovSolve] Iter:    1 overflow: 0.8474 HPWL: 3.866e+06( +0.0%) penalty: 7.1e-14 
 [NesterovSolve] Iter:   10 overflow: 0.7418 HPWL: 4.281e+06(+10.7%) penalty: 1.1e-13 
-[NesterovSolve] Iter:   20 overflow: 0.7414 HPWL: 4.272e+06(-0.2%) penalty: 1.8e-13 
-[NesterovSolve] Iter:   30 overflow: 0.7426 HPWL: 4.272e+06(+0.0%) penalty: 2.9e-13 
-[NesterovSolve] Iter:   40 overflow: 0.7421 HPWL: 4.273e+06(+0.0%) penalty: 4.8e-13 
-[NesterovSolve] Iter:   50 overflow: 0.7421 HPWL: 4.273e+06(-0.0%) penalty: 7.8e-13 
-[NesterovSolve] Iter:   60 overflow: 0.7421 HPWL: 4.273e+06(+0.0%) penalty: 1.3e-12 
-[NesterovSolve] Iter:   70 overflow: 0.7420 HPWL: 4.273e+06(+0.0%) penalty: 2.1e-12 
-[NesterovSolve] Iter:   80 overflow: 0.7419 HPWL: 4.274e+06(+0.0%) penalty: 3.4e-12 
-[NesterovSolve] Iter:   90 overflow: 0.7417 HPWL: 4.274e+06(+0.0%) penalty: 5.5e-12 
-[NesterovSolve] Iter:  100 overflow: 0.7413 HPWL: 4.275e+06(+0.0%) penalty: 8.9e-12 
-[NesterovSolve] Iter:  110 overflow: 0.7408 HPWL: 4.277e+06(+0.0%) penalty: 1.5e-11 
-[NesterovSolve] Iter:  120 overflow: 0.7400 HPWL: 4.280e+06(+0.1%) penalty: 2.4e-11 
-[NesterovSolve] Iter:  130 overflow: 0.7388 HPWL: 4.285e+06(+0.1%) penalty: 3.9e-11 
-[NesterovSolve] Iter:  140 overflow: 0.7364 HPWL: 4.292e+06(+0.2%) penalty: 6.3e-11 
-[NesterovSolve] Iter:  150 overflow: 0.7321 HPWL: 4.303e+06(+0.3%) penalty: 1.0e-10 
-[NesterovSolve] Iter:  160 overflow: 0.7257 HPWL: 4.319e+06(+0.4%) penalty: 1.7e-10 
-[NesterovSolve] Iter:  170 overflow: 0.7145 HPWL: 4.342e+06(+0.5%) penalty: 2.7e-10 
-[NesterovSolve] Iter:  180 overflow: 0.7027 HPWL: 4.378e+06(+0.8%) penalty: 4.4e-10 
-[NesterovSolve] Iter:  190 overflow: 0.6860 HPWL: 4.428e+06(+1.1%) penalty: 7.2e-10 
-[NesterovSolve] Iter:  200 overflow: 0.6643 HPWL: 4.488e+06(+1.4%) penalty: 1.2e-09 
-[NesterovSolve] Iter:  210 overflow: 0.6329 HPWL: 4.557e+06(+1.5%) penalty: 1.9e-09 
-[NesterovSolve] Iter:  220 overflow: 0.5924 HPWL: 4.623e+06(+1.4%) penalty: 3.1e-09 
-[NesterovSolve] Iter:  230 overflow: 0.5486 HPWL: 4.683e+06(+1.3%) penalty: 5.1e-09 
-[NesterovSolve] Iter:  240 overflow: 0.5002 HPWL: 4.721e+06(+0.8%) penalty: 8.3e-09 
-[NesterovSolve] Iter:  250 overflow: 0.4453 HPWL: 4.731e+06(+0.2%) penalty: 1.3e-08 
-[NesterovSolve] Iter:  260 overflow: 0.3941 HPWL: 4.732e+06(+0.0%) penalty: 2.2e-08 
-[NesterovSolve] Iter:  270 overflow: 0.3442 HPWL: 4.761e+06(+0.6%) penalty: 3.6e-08 
-[NesterovSolve] Iter:  280 overflow: 0.3101 HPWL: 4.776e+06(+0.3%) penalty: 5.3e-08 
-[NesterovSolve] Iter:  290 overflow: 0.2692 HPWL: 4.782e+06(+0.1%) penalty: 7.7e-08 
-[NesterovSolve] Iter:  300 overflow: 0.2451 HPWL: 4.841e+06(+1.2%) penalty: 1.1e-07 
-[NesterovSolve] Iter:  310 overflow: 0.2100 HPWL: 4.882e+06(+0.9%) penalty: 1.7e-07 
-[NesterovSolve] Iter:  320 overflow: 0.1763 HPWL: 4.913e+06(+0.6%) penalty: 2.5e-07 
-[NesterovSolve] Iter:  330 overflow: 0.1504 HPWL: 4.935e+06(+0.4%) penalty: 3.6e-07 
-[NesterovSolve] Iter:  340 overflow: 0.1283 HPWL: 4.971e+06(+0.7%) penalty: 5.4e-07 
-[NesterovSolve] Iter:  350 overflow: 0.1087 HPWL: 4.993e+06(+0.5%) penalty: 7.9e-07 
+[NesterovSolve] Iter:   20 overflow: 0.7414 HPWL: 4.272e+06( -0.2%) penalty: 1.8e-13 
+[NesterovSolve] Iter:   30 overflow: 0.7426 HPWL: 4.272e+06( +0.0%) penalty: 2.9e-13 
+[NesterovSolve] Iter:   40 overflow: 0.7421 HPWL: 4.273e+06( +0.0%) penalty: 4.8e-13 
+[NesterovSolve] Iter:   50 overflow: 0.7421 HPWL: 4.273e+06( -0.0%) penalty: 7.8e-13 
+[NesterovSolve] Iter:   60 overflow: 0.7421 HPWL: 4.273e+06( +0.0%) penalty: 1.3e-12 
+[NesterovSolve] Iter:   70 overflow: 0.7420 HPWL: 4.273e+06( +0.0%) penalty: 2.1e-12 
+[NesterovSolve] Iter:   80 overflow: 0.7419 HPWL: 4.274e+06( +0.0%) penalty: 3.4e-12 
+[NesterovSolve] Iter:   90 overflow: 0.7417 HPWL: 4.274e+06( +0.0%) penalty: 5.5e-12 
+[NesterovSolve] Iter:  100 overflow: 0.7413 HPWL: 4.275e+06( +0.0%) penalty: 8.9e-12 
+[NesterovSolve] Iter:  110 overflow: 0.7408 HPWL: 4.277e+06( +0.0%) penalty: 1.5e-11 
+[NesterovSolve] Iter:  120 overflow: 0.7400 HPWL: 4.280e+06( +0.1%) penalty: 2.4e-11 
+[NesterovSolve] Iter:  130 overflow: 0.7388 HPWL: 4.285e+06( +0.1%) penalty: 3.9e-11 
+[NesterovSolve] Iter:  140 overflow: 0.7364 HPWL: 4.292e+06( +0.2%) penalty: 6.3e-11 
+[NesterovSolve] Iter:  150 overflow: 0.7321 HPWL: 4.303e+06( +0.3%) penalty: 1.0e-10 
+[NesterovSolve] Iter:  160 overflow: 0.7257 HPWL: 4.319e+06( +0.4%) penalty: 1.7e-10 
+[NesterovSolve] Iter:  170 overflow: 0.7145 HPWL: 4.342e+06( +0.5%) penalty: 2.7e-10 
+[NesterovSolve] Iter:  180 overflow: 0.7027 HPWL: 4.378e+06( +0.8%) penalty: 4.4e-10 
+[NesterovSolve] Iter:  190 overflow: 0.6860 HPWL: 4.428e+06( +1.1%) penalty: 7.2e-10 
+[NesterovSolve] Iter:  200 overflow: 0.6643 HPWL: 4.488e+06( +1.4%) penalty: 1.2e-09 
+[NesterovSolve] Iter:  210 overflow: 0.6329 HPWL: 4.557e+06( +1.5%) penalty: 1.9e-09 
+[NesterovSolve] Iter:  220 overflow: 0.5924 HPWL: 4.623e+06( +1.4%) penalty: 3.1e-09 
+[NesterovSolve] Iter:  230 overflow: 0.5486 HPWL: 4.683e+06( +1.3%) penalty: 5.1e-09 
+[NesterovSolve] Iter:  240 overflow: 0.5002 HPWL: 4.721e+06( +0.8%) penalty: 8.3e-09 
+[NesterovSolve] Iter:  250 overflow: 0.4453 HPWL: 4.731e+06( +0.2%) penalty: 1.3e-08 
+[NesterovSolve] Iter:  260 overflow: 0.3941 HPWL: 4.732e+06( +0.0%) penalty: 2.2e-08 
+[NesterovSolve] Iter:  270 overflow: 0.3442 HPWL: 4.761e+06( +0.6%) penalty: 3.6e-08 
+[NesterovSolve] Iter:  280 overflow: 0.3101 HPWL: 4.776e+06( +0.3%) penalty: 5.3e-08 
+[NesterovSolve] Iter:  290 overflow: 0.2692 HPWL: 4.782e+06( +0.1%) penalty: 7.7e-08 
+[NesterovSolve] Iter:  300 overflow: 0.2451 HPWL: 4.841e+06( +1.2%) penalty: 1.1e-07 
+[NesterovSolve] Iter:  310 overflow: 0.2100 HPWL: 4.882e+06( +0.9%) penalty: 1.7e-07 
+[NesterovSolve] Iter:  320 overflow: 0.1763 HPWL: 4.913e+06( +0.6%) penalty: 2.5e-07 
+[NesterovSolve] Iter:  330 overflow: 0.1504 HPWL: 4.935e+06( +0.4%) penalty: 3.6e-07 
+[NesterovSolve] Iter:  340 overflow: 0.1283 HPWL: 4.971e+06( +0.7%) penalty: 5.4e-07 
+[NesterovSolve] Iter:  350 overflow: 0.1087 HPWL: 4.993e+06( +0.5%) penalty: 7.9e-07 
 [NesterovSolve] Finished with Overflow: 0.098583
 No differences found.

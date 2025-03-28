@@ -38,7 +38,7 @@
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 462803
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 463066
 [INFO GPL-0031] Uniform density:                0.1331
-[INFO GPL-0032] Suggested maximum density:      0.1479
+[INFO GPL-0032] Suggested density:              0.1479
 [INFO GPL-0023] Placement target density:       0.5000
 [INFO GPL-0024] Movable insts average area:      0.239 um^2
 [INFO GPL-0025] Ideal bin area:                  0.478 um^2
@@ -47,7 +47,7 @@
 [INFO GPL-0028] Bin count (X, Y):           8 *      8
 [INFO GPL-0029] Bin size (W * H):       1.377 *  1.350 um
 [INFO GPL-0030] Number of bins:                     64
-[NesterovSolve] Iter:    1 overflow: 0.1267 HPWL: 3.979e+05(+0.0%) penalty: 8.3e-11 
+[NesterovSolve] Iter:    1 overflow: 0.1267 HPWL: 3.979e+05( +0.0%) penalty: 8.3e-11 
 [INFO GPL-0100] Timing-driven iteration 1/5, virtual: false.
 [INFO GPL-0101]    Iter: 1, overflow: 0.127, keep resizer changes at: 0.3, HPWL: 397899
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining

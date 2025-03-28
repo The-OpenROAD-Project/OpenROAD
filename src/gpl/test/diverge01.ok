@@ -21,7 +21,7 @@
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0031] Uniform density:                0.5973
-[INFO GPL-0032] Suggested maximum density:      0.6637
+[INFO GPL-0032] Suggested density:              0.6637
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
@@ -30,11 +30,11 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter:    1 overflow: 0.9427 HPWL: 3.779e+06(+0.0%) penalty: 1.2e-07 
+[NesterovSolve] Iter:    1 overflow: 0.9427 HPWL: 3.779e+06( +0.0%) penalty: 1.2e-07 
 [NesterovSolve] Iter:   10 overflow: 0.2487 HPWL: 9.106e+06(+140.9%) penalty: 1.8e-07 
 [NesterovSolve] Iter:   20 overflow: 0.1750 HPWL: 6.547e+06(-28.1%) penalty: 2.6e-07 
-[NesterovSolve] Iter:   30 overflow: 0.1434 HPWL: 6.020e+06(-8.1%) penalty: 3.8e-07 
-[NesterovSolve] Iter:   40 overflow: 0.1361 HPWL: 5.823e+06(-3.3%) penalty: 5.6e-07 
-[NesterovSolve] Iter:   50 overflow: 0.1057 HPWL: 5.780e+06(-0.7%) penalty: 8.2e-07 
+[NesterovSolve] Iter:   30 overflow: 0.1434 HPWL: 6.020e+06( -8.1%) penalty: 3.8e-07 
+[NesterovSolve] Iter:   40 overflow: 0.1361 HPWL: 5.823e+06( -3.3%) penalty: 5.6e-07 
+[NesterovSolve] Iter:   50 overflow: 0.1057 HPWL: 5.780e+06( -0.7%) penalty: 8.2e-07 
 [NesterovSolve] Finished with Overflow: 0.099589
 
