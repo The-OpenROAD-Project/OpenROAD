@@ -2869,13 +2869,21 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
     if (!dontTouch(inst)) {
       Pin* drvr_pin = network_->findPin(inst, tie_port);
       if (drvr_pin) {
-        Net* net = network_->net(drvr_pin);
+        dbNet* db_net = db_network_->flatNet(drvr_pin);
+        if (!db_net) {
+          continue;
+        }
+        Net* net = db_network_->dbToSta(db_net);
         if (net && !dontTouch(net)) {
           NetConnectedPinIterator* pin_iter
               = network_->connectedPinIterator(net);
           bool keep_tie = false;
           while (pin_iter->hasNext()) {
             const Pin* load = pin_iter->next();
+            if (!(db_network_->isFlat(load))) {
+              continue;
+            }
+
             Instance* load_inst = network_->instance(load);
             if (dontTouch(load_inst)) {
               keep_tie = true;
@@ -2918,7 +2926,10 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
           // Delete inst output net.
           Pin* tie_pin = network_->findPin(inst, tie_port);
-          Net* tie_net = network_->net(tie_pin);
+          dbNet* tie_flat_net = db_network_->flatNet(tie_pin);
+          Net* tie_net = db_network_->dbToSta(tie_flat_net);
+
+          // network_->net(tie_pin);
           sta_->deleteNet(tie_net);
           parasitics_invalid_.erase(tie_net);
           // Delete the tie instance if no other ports are in use.
@@ -2929,7 +2940,8 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
           while (inst_pin_iter->hasNext()) {
             Pin* pin = inst_pin_iter->next();
             if (pin != drvr_pin) {
-              Net* net = network_->net(pin);
+              // hier fix
+              Net* net = db_network_->dbToSta(db_network_->flatNet(pin));
               if (net && !network_->isPower(net) && !network_->isGround(net)) {
                 has_other_fanout = true;
                 break;
@@ -2973,7 +2985,7 @@ Point Resizer::tieLocation(const Pin* load, int separation)
   int load_y = load_loc.getY();
   int tie_x = load_x;
   int tie_y = load_y;
-  if (!network_->isTopLevelPort(load)) {
+  if (!(network_->isTopLevelPort(load) || !db_network_->isFlat(load))) {
     dbInst* db_inst = db_network_->staToDb(network_->instance(load));
     dbBox* bbox = db_inst->getBBox();
     int left_dist = abs(load_x - bbox->xMin());
