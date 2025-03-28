@@ -1771,11 +1771,8 @@ void NesterovBase::initFillerGCells()
       GPL, 31, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
   float max_density_suggestion
       = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
-  log_->info(GPL,
-             32,
-             "{:27} {:10.4f}",
-             "Suggested density:",
-             max_density_suggestion);
+  log_->info(
+      GPL, 32, "{:27} {:10.4f}", "Suggested density:", max_density_suggestion);
 
   // limit filler cells
   const double limit_filler_ratio = 10;

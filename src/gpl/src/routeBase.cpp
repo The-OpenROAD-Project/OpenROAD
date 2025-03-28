@@ -711,8 +711,11 @@ std::pair<bool, bool> RouteBase::routability()
   if (nbVec_[0]->targetDensity() > rbVars_.maxDensity
       || minRcViolatedCnt_ >= 3) {
     log_->report(
-        "Revert Routability Procedure. Target density ({}) higher than max ({}), or "
-        "minRC max violations.", nbVec_[0]->targetDensity(), rbVars_.maxDensity);
+        "Revert Routability Procedure. Target density ({}) higher than max "
+        "({}), or "
+        "minRC max violations.",
+        nbVec_[0]->targetDensity(),
+        rbVars_.maxDensity);
     log_->info(
         GPL, 80, "Min routing congestion violations: {}", minRcViolatedCnt_);
     log_->info(GPL, 47, "Saved min routing congestion: {:.4f}", minRc_);
