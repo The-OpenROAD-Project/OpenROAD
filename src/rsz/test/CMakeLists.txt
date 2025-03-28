@@ -14,7 +14,7 @@ or_integration_tests(
     buffer_ports8
     buffer_varying_lengths
     clone_flat
-#   clone_hier
+    clone_hier
     eliminate_dead_logic1
     eliminate_dead_logic2
     eqy_repair_setup2
