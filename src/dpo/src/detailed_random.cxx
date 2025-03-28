@@ -449,25 +449,12 @@ double DetailedRandom::go()
     // better than zero implies improvement.
     for (size_t i = 0; i < objectives_.size(); i++) {
       // XXX: NEED TO WEIGHT EACH OBJECTIVE!
-      double change = objectives_[i]->delta(mgrPtr_->getNMoved(),
-                                            mgrPtr_->getMovedNodes(),
-                                            mgrPtr_->getCurLeft(),
-                                            mgrPtr_->getCurBottom(),
-                                            mgrPtr_->getCurOri(),
-                                            mgrPtr_->getNewLeft(),
-                                            mgrPtr_->getNewBottom(),
-                                            mgrPtr_->getNewOri());
+      double change = objectives_[i]->delta(mgrPtr_->getJournal());
 
       deltaCost_[i] = change;
       nextCost_[i] = currCost_[i] - deltaCost_[i];  // -delta is +ve is less.
     }
     const double nextTotalCost = eval(nextCost_, expr_);
-
-    //        std::cout << boost::format( "Move consisting of %d cells generated
-    //        benefit of %.2lf; Will %s.\n" )
-    //            % mgrPtr_->nMoved_ % delta % ((delta>0.)?"accept":"reject");
-
-    //        if( delta > 0.0 )
     if (nextTotalCost <= currTotalCost) {
       mgrPtr_->acceptMove();
       for (auto objective : objectives_) {
@@ -590,8 +577,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
   const int tries = 5;
   for (int t = 1; t <= tries; t++) {
     // Position of the source.
-    const double yi = ndi->getBottom() + 0.5 * ndi->getHeight();
-    const double xi = ndi->getLeft() + 0.5 * ndi->getWidth();
+    const double yi = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
+    const double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
     // Segment for the source.
     const int si = segs_i[0]->getSegId();
@@ -637,8 +624,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
                       ndi->getLeft(),
                       ndi->getBottom(),
                       si,
-                      (int) std::round(xj),
-                      (int) std::round(yj),
+                      DbuX{(int) std::round(xj)},
+                      DbuY{(int) std::round(yj)},
                       sj)) {
       ++moves_;
       return true;
@@ -647,8 +634,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
                       ndi->getLeft(),
                       ndi->getBottom(),
                       si,
-                      (int) std::round(xj),
-                      (int) std::round(yj),
+                      DbuX{(int) std::round(xj)},
+                      DbuY{(int) std::round(yj)},
                       sj)) {
       ++swaps_;
       return true;
@@ -724,8 +711,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     double xj, yj;
     if (true) {
       // Centered at the original position within a box.
-      const double orig_yc = ndi->getOrigBottom() + 0.5 * ndi->getHeight();
-      const double orig_xc = ndi->getOrigLeft() + 0.5 * ndi->getWidth();
+      const double orig_yc = ndi->getOrigBottom().v + 0.5 * ndi->getHeight().v;
+      const double orig_xc = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;
 
       const int grid_xi = std::min(
           xdim - 1, std::max(0, (int) ((orig_xc - arch_->getMinX()) / xwid)));
@@ -745,16 +732,16 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
     if (false) {
       // The original position.
-      xj = ndi->getOrigLeft() + 0.5 * ndi->getWidth();
-      yj = ndi->getOrigBottom() + 0.5 * ndi->getHeight();
+      xj = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;
+      yj = ndi->getOrigBottom().v + 0.5 * ndi->getHeight().v;
     }
     if (false) {
       // Somewhere between current position and original position.
-      double orig_yc = ndi->getOrigBottom() + 0.5 * ndi->getHeight();
-      double orig_xc = ndi->getOrigLeft() + 0.5 * ndi->getWidth();
+      double orig_yc = ndi->getOrigBottom().v + 0.5 * ndi->getHeight().v;
+      double orig_xc = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;
 
-      double curr_yc = ndi->getBottom() + 0.5 * ndi->getHeight();
-      double curr_xc = ndi->getLeft() + 0.5 * ndi->getWidth();
+      double curr_yc = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
+      double curr_xc = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
       int grid_xi = std::min(
           xdim - 1, std::max(0, (int) ((curr_xc - arch_->getMinX()) / xwid)));
@@ -809,8 +796,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
                       ndi->getLeft(),
                       ndi->getBottom(),
                       si,
-                      (int) std::round(xj),
-                      (int) std::round(yj),
+                      DbuX{(int) std::round(xj)},
+                      DbuY{(int) std::round(yj)},
                       sj)) {
       ++moves_;
       return true;
@@ -819,8 +806,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
                       ndi->getLeft(),
                       ndi->getBottom(),
                       si,
-                      (int) std::round(xj),
-                      (int) std::round(yj),
+                      DbuX{(int) std::round(xj)},
+                      DbuY{(int) std::round(yj)},
                       sj)) {
       ++swaps_;
       return true;

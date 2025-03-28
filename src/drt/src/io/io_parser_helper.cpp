@@ -292,8 +292,8 @@ void io::Parser::initSecondaryVias()
         getViaRawPriority(viadef, priority);
         cuts_to_viadefs[cut_num][priority] = viadef;
       }
-      for (auto [cuts, viadefs] : cuts_to_viadefs) {
-        for (auto [priority, viadef] : viadefs) {
+      for (const auto& [cuts, viadefs] : cuts_to_viadefs) {
+        for (const auto& [priority, viadef] : viadefs) {
           if (viadef->getCutClassIdx() == default_viadef->getCutClassIdx()) {
             continue;
           }

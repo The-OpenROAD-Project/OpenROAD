@@ -76,13 +76,33 @@ void Rings::checkDieArea() const
   ring_outline.set_ylo(ring_outline.yMin() - ver_width);
   ring_outline.set_yhi(ring_outline.yMax() + ver_width);
 
-  if (!getBlock()->getDieArea().contains(ring_outline)) {
+  const odb::Rect die_area = getBlock()->getDieArea();
+
+  if (!die_area.contains(ring_outline)) {
     if (allow_outside_die_) {
       getLogger()->warn(
           utl::PDN, 239, "Ring shape falls outside the die bounds.");
     } else {
+      const double dbus = getBlock()->getDbUnitsPerMicron();
+
+      int xbounds = std::max(die_area.xMin() - ring_outline.xMin(),
+                             ring_outline.xMax() - die_area.xMax());
+      if (xbounds < 0) {
+        xbounds = 0;
+      }
+      int ybounds = std::max(die_area.yMin() - ring_outline.yMin(),
+                             ring_outline.yMax() - die_area.yMax());
+      if (ybounds < 0) {
+        ybounds = 0;
+      }
       getLogger()->error(
-          utl::PDN, 351, "Ring shape falls outside the die bounds.");
+          utl::PDN,
+          351,
+          "PDN rings do not fit inside the die area by {} um in X and {} um in "
+          "Y. Either reduce the ring area or increase the core to die spacing "
+          "to accommodate. Use -allow_out_of_die if this is intentional.",
+          xbounds / dbus,
+          ybounds / dbus);
     }
   }
 }
@@ -333,6 +353,7 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
+  layers.reserve(layers_.size());
   for (const auto& layer_def : layers_) {
     layers.push_back(layer_def.layer);
   }

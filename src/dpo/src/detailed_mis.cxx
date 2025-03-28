@@ -61,6 +61,7 @@
 #include "color.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "journal.h"
 #include "network.h"
 #include "rectangle.h"
 #include "router.h"
@@ -317,7 +318,6 @@ void DetailedMis::colorCells()
   // The actual coloring.
   gr.greedyColoring();
 
-  std::vector<int> hist;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     const Node* ndi = network_->getNode(i);
 
@@ -327,11 +327,6 @@ void DetailedMis::colorCells()
     }
     if (movable_[ndi->getId()]) {
       colors_[ndi->getId()] = color;
-
-      if (color >= hist.size()) {
-        hist.resize(color + 1, 0);
-      }
-      ++hist[color];
     }
   }
 }
@@ -353,8 +348,8 @@ void DetailedMis::buildGrid()
   double avgH = 0.;
   double avgW = 0.;
   for (const Node* ndi : candidates_) {
-    avgH += ndi->getHeight();
-    avgW += ndi->getWidth();
+    avgH += ndi->getHeight().v;
+    avgW += ndi->getWidth().v;
   }
   avgH /= (double) candidates_.size();
   avgW /= (double) candidates_.size();
@@ -401,8 +396,8 @@ void DetailedMis::populateGrid()
   // Insert cells into the constructed grid.
   cellToBinMap_.clear();
   for (Node* ndi : candidates_) {
-    const double y = ndi->getBottom() + 0.5 * ndi->getHeight();
-    const double x = ndi->getLeft() + 0.5 * ndi->getWidth();
+    const double y = ndi->getBottom().v + 0.5 * ndi->getHeight().v;
+    const double x = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
     const int j = std::max(std::min((int) ((y - ymin) / stepY_), dimH_ - 1), 0);
     const int i = std::max(std::min((int) ((x - xmin) / stepX_), dimW_ - 1), 0);
@@ -444,7 +439,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     return false;
   }
 
-  const int spanned_i = std::lround(ndi->getHeight() / singleRowHeight);
+  const int spanned_i = std::lround(ndi->getHeight().v / singleRowHeight);
 
   std::queue<Bucket*> Q;
   Q.push(it->second);
@@ -490,7 +485,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       // Must span the same number of rows and also be voltage compatible.
       if (ndi->getBottomPower() != ndj->getBottomPower()
           || ndi->getTopPower() != ndj->getTopPower()
-          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight)) {
+          || spanned_i != std::lround(ndj->getHeight().v / singleRowHeight)) {
         continue;
       }
 
@@ -532,7 +527,7 @@ void DetailedMis::solveMatch()
   const int nSpots = (int) nodes.size();
 
   // Original position of cells.
-  std::vector<std::pair<int, int>> pos(nNodes);
+  std::vector<std::pair<DbuX, DbuY>> pos(nNodes);
   // Original segment assignment of cells.
   std::vector<std::vector<DetailedSeg*>> seg(nNodes);
   for (size_t i = 0; i < nodes.size(); i++) {
@@ -581,16 +576,16 @@ void DetailedMis::solveMatch()
       // Determine the cost of assigning cell "ndi" to the
       // current position.  Note that we might want to
       // skip this location if it violates the maximum
-      // displacement limit.  We _never_ prevent a cell
+      // displacement limit. We _never_ prevent a cell
       // from being assigned to its original position as
       // this guarantees a solution!
       if (i != j) {
-        double dx = std::fabs(pos[j].first - ndi->getOrigLeft());
-        if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
+        const DbuX dx = abs(pos[j].first - ndi->getOrigLeft());
+        if (dx > mgrPtr_->getMaxDisplacementX()) {
           continue;
         }
-        double dy = std::fabs(pos[j].second - ndi->getOrigBottom());
-        if ((int) std::ceil(dy) > mgrPtr_->getMaxDisplacementY()) {
+        const DbuY dy = abs(pos[j].second - ndi->getOrigBottom());
+        if (dy > mgrPtr_->getMaxDisplacementY()) {
           continue;
         }
       }
@@ -598,12 +593,12 @@ void DetailedMis::solveMatch()
       // Okay to assign the cell to this location.
       if (obj_ == DetailedMis::Hpwl) {
         icost = getHpwl(ndi,
-                        pos[j].first + 0.5 * ndi->getWidth(),
-                        pos[j].second + 0.5 * ndi->getHeight());
+                        pos[j].first.v + 0.5 * ndi->getWidth().v,
+                        pos[j].second.v + 0.5 * ndi->getHeight().v);
       } else {
         icost = getDisp(ndi,
-                        pos[j].first + 0.5 * ndi->getWidth(),
-                        pos[j].second + 0.5 * ndi->getHeight());
+                        pos[j].first.v + 0.5 * ndi->getWidth().v,
+                        pos[j].second.v + 0.5 * ndi->getHeight().v);
       }
 
       // Node to spot.
@@ -645,7 +640,7 @@ void DetailedMis::solveMatch()
 
   lemon::ListDigraph::ArcMap<int> flow(g);
   mincost.flowMap(flow);
-
+  Journal journal;
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
        ++it) {
     if (g.target(it) != demandNode && g.source(it) != supplyNode
@@ -679,14 +674,19 @@ void DetailedMis::solveMatch()
           // This means an error someplace else...
           mgrPtr_->internalError("Unable to interpret flow during matching");
         }
+        std::vector<int> old_seg_ids;
+        old_seg_ids.reserve(old_segs.size());
         for (const DetailedSeg* segPtr : old_segs) {
           const int segId = segPtr->getSegId();
+          old_seg_ids.push_back(segId);
           mgrPtr_->removeCellFromSegment(ndi, segId);
         }
 
         // Update the postion of cell "i".
-        ndi->setLeft(pos[j].first);
+        mgrPtr_->eraseFromGrid(ndi);
+        ndi->setLeft(DbuX{pos[j].first});
         ndi->setBottom(pos[j].second);
+        mgrPtr_->paintInGrid(ndi);
 
         // Determine new segments and add cell "i" to its new segments.
         const std::vector<DetailedSeg*>& new_segs = seg[j];
@@ -694,11 +694,39 @@ void DetailedMis::solveMatch()
           // Not setup for non-same size stuff right now.
           mgrPtr_->internalError("Unable to interpret flow during matching");
         }
+        std::vector<int> new_seg_ids;
+        new_seg_ids.reserve(new_segs.size());
+
         for (const DetailedSeg* segPtr : new_segs) {
           const int segId = segPtr->getSegId();
+          new_seg_ids.push_back(segId);
           mgrPtr_->addCellToSegment(ndi, segId);
         }
+        {
+          JournalAction action;
+          action.setType(JournalAction::MOVE_CELL);
+          action.setNode(ndi);
+          action.setOrigLocation(pos[i].first, pos[i].second);
+          action.setNewLocation(pos[j].first, pos[j].second);
+          action.setOrigSegs(old_seg_ids);
+          action.setNewSegs(new_seg_ids);
+          journal.addAction(action);
+        }
       }
+    }
+  }
+  bool viol = false;
+  for (const auto node : nodes) {
+    if (mgrPtr_->hasEdgeSpacingViolation(node)) {
+      viol = true;
+      break;
+    }
+  }
+  if (viol) {
+    while (!journal.isEmpty()) {
+      const auto& action = journal.getLastAction();
+      mgrPtr_->undo(action);
+      journal.removeLastAction();
     }
   }
 }
@@ -710,10 +738,10 @@ double DetailedMis::getDisp(const Node* ndi, double xi, double yi)
   // Compute displacement of cell ndi if placed at (xi,y1) from its orig pos.
 
   // Specified target is cell center.  Need to offset.
-  xi -= 0.5 * ndi->getWidth();
-  yi -= 0.5 * ndi->getHeight();
-  const double dx = std::fabs(xi - ndi->getOrigLeft());
-  const double dy = std::fabs(yi - ndi->getOrigBottom());
+  xi -= 0.5 * ndi->getWidth().v;
+  yi -= 0.5 * ndi->getHeight().v;
+  const double dx = std::fabs(xi - ndi->getOrigLeft().v);
+  const double dy = std::fabs(yi - ndi->getOrigBottom().v);
   return dx + dy;
 }
 
@@ -742,13 +770,14 @@ double DetailedMis::getHpwl(const Node* ndi, double xi, double yi)
 
       const Node* ndj = pinj->getNode();
 
-      const double x
-          = (ndj == ndi)
-                ? (xi + pinj->getOffsetX())
-                : (ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX());
-      const double y = (ndj == ndi) ? (yi + pinj->getOffsetY())
-                                    : (ndj->getBottom() + 0.5 * ndj->getHeight()
-                                       + pinj->getOffsetY());
+      const double x = (ndj == ndi)
+                           ? (xi + pinj->getOffsetX())
+                           : (ndj->getLeft().v + 0.5 * ndj->getWidth().v
+                              + pinj->getOffsetX());
+      const double y = (ndj == ndi)
+                           ? (yi + pinj->getOffsetY())
+                           : (ndj->getBottom().v + 0.5 * ndj->getHeight().v
+                              + pinj->getOffsetY());
 
       box.addPt(x, y);
     }

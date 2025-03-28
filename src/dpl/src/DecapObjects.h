@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "Coordinates.h"
+#include "dpl/Coordinates.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {

@@ -56,8 +56,6 @@ void initDbSta(OpenRoad* openroad)
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
-
-  openroad->addObserver(sta);
 }
 
 }  // namespace ord

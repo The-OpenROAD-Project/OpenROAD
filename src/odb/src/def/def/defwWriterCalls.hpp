@@ -54,7 +54,7 @@ extern int defwWrite(FILE* file, const char* fileName, defiUserData userData);
  * that will add up how many times a given def data type was ignored
  * (ie no callback was done).  The statistics can later be printed out.
  */
-extern void defwSetRegisterUnusedCallbacks(void);
+extern void defwSetRegisterUnusedCallbacks();
 extern void defwPrintUnusedCallbacks(FILE* log);
 
 /*
@@ -66,7 +66,7 @@ extern void defwPrintUnusedCallbacks(FILE* log);
  * user data pointers.
  */
 extern void defwSetUserData(defiUserData);
-extern defiUserData defwGetUserData(void);
+extern defiUserData defwGetUserData();
 
 /*
  * An enum describing all of the types of writer callbacks.

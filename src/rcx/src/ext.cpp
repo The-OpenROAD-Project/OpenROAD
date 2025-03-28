@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-// #include "rcx/extRCap.h"
 #include "rcx/ext.h"
 
 #include "odb/wOrder.h"
@@ -511,7 +510,7 @@ bool Ext::define_rcx_corners(const std::string& corner_list)
 bool Ext::rc_estimate(const std::string& ext_model_file,
                       const std::string& out_file_prefix)
 {
-  extRCModel* m = new extRCModel("MINTYPMAX", NULL);
+  extRCModel* m = new extRCModel("MINTYPMAX", nullptr);
 
   double version = 0.0;
   std::list<std::string> corner_list

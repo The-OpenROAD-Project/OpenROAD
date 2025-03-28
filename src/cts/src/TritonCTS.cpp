@@ -95,6 +95,10 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip->getBlock();
+  options_->addOwner(block);
+
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
@@ -122,6 +126,7 @@ void TritonCTS::runTritonCts()
   sinkBuffers_.clear();
   regTreeRootBufIndex_ = 0;
   delayBufIndex_ = 0;
+  options_->removeOwner();
 }
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
@@ -567,23 +572,38 @@ void TritonCTS::reportCtsMetrics()
     file << "Total number of Clock Subnets: " << options_->getNumClockSubnets()
          << ".\n";
     file << "Total number of Sinks: " << options_->getNumSinks() << ".\n";
+
+    file << "Buffers used:\n";
+    for (const auto& [master, count] : options_->getBufferCount()) {
+      file << "  " << master->getName() << ": " << count << "\n";
+    }
+    if (!options_->getDummyCount().empty()) {
+      file << "Dummys used:\n";
+      for (const auto& [master, count] : options_->getDummyCount()) {
+        file << "  " << master->getName() << ": " << count << "\n";
+      }
+    }
     file.close();
 
   } else {
-    logger_->info(CTS,
-                  3,
-                  "Total number of Clock Roots: {}.",
-                  options_->getNumClockRoots());
-    logger_->info(CTS,
-                  4,
-                  "Total number of Buffers Inserted: {}.",
-                  options_->getNumBuffersInserted());
-    logger_->info(CTS,
-                  5,
-                  "Total number of Clock Subnets: {}.",
-                  options_->getNumClockSubnets());
-    logger_->info(
-        CTS, 6, "Total number of Sinks: {}.", options_->getNumSinks());
+    logger_->report("Total number of Clock Roots: {}.",
+                    options_->getNumClockRoots());
+    logger_->report("Total number of Buffers Inserted: {}.",
+                    options_->getNumBuffersInserted());
+    logger_->report("Total number of Clock Subnets: {}.",
+                    options_->getNumClockSubnets());
+    logger_->report("Total number of Sinks: {}.", options_->getNumSinks());
+
+    logger_->report("Cells used:");
+    for (const auto& [master, count] : options_->getBufferCount()) {
+      logger_->report("  {}: {}", master->getName(), count);
+    }
+    if (!options_->getDummyCount().empty()) {
+      logger_->report("Dummys used:");
+      for (const auto& [master, count] : options_->getDummyCount()) {
+        logger_->report("  {}: {}", master->getName(), count);
+      }
+    }
   }
 }
 
@@ -1182,7 +1202,7 @@ bool TritonCTS::separateMacroRegSinks(
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
       // Treat clock gaters like macro sink
-      if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
+      if (hasInsertionDelay(inst, mterm) || !isSink(iterm) || inst->isBlock()) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
@@ -1264,16 +1284,18 @@ Clock TritonCTS::forkRegisterClockNetwork(
                   + clockNet.getSdcName();
   odb::dbInst* clockBuf = odb::dbInst::create(
       block_, master, topBufferName.c_str(), false, target_module);
-  odb::dbITerm* inputTerm = getFirstInput(clockBuf);
-  odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
-  inputTerm->connect(firstNet);
-  outputTerm->connect(secondNet);
 
   // place new clock buffer near center of mass for registers
   odb::Rect bbox = secondNet->getTermBBox();
   clockBuf->setSourceType(odb::dbSourceType::TIMING);
   clockBuf->setLocation(bbox.xCenter(), bbox.yCenter());
   clockBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  // connect root buffer to clock net
+  odb::dbITerm* inputTerm = getFirstInput(clockBuf);
+  odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
+  inputTerm->connect(firstNet);
+  outputTerm->connect(secondNet);
 
   // initialize new clock net
   std::string driver = std::string(clockBuf->getConstName()) + "/"
@@ -2043,7 +2065,7 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
                    dummyCell->name());
   }
   std::string cellName
-      = std::string("clkload") + std::to_string(dummyLoadIndex_++);
+      = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
   dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());

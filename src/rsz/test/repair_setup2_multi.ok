@@ -9,7 +9,7 @@ worst slack -0.28
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         7
-    final |   +384.6% |       2 |       3 |             3 |         0
+    final |   +215.4% |       2 |       3 |             3 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0037] Found 3 long wires.
 [INFO RSZ-0039] Resized 2 instances.
@@ -19,11 +19,13 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.117 |       -0.2 |      2 | y2
-        3 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.117 |       -0.2 |      2 | y2
-        6 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.117 |       -0.2 |      2 | y2
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.117 |       -0.2 |      2 | y2
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.118 |       -0.2 |      2 | y2
+        3 |       0 |       2 |        0 |      0 |     1 |   +24.4% |   -0.117 |       -0.2 |      2 | y2
+        8 |       0 |       3 |        0 |      0 |     1 |   +24.4% |   -0.117 |       -0.2 |      2 | y2
+    final |       0 |       3 |        0 |      0 |     1 |   +24.4% |   -0.117 |       -0.2 |      2 | y2
 --------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0041] Resized 3 instances.
+[INFO RSZ-0043] Swapped pins on 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack -0.12

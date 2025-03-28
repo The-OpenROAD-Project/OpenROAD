@@ -35,6 +35,7 @@
 #include <iostream>
 
 #include "dbCore.h"
+#include "odb/dbDatabaseObserver.h"
 #include "odb/odb.h"
 
 namespace utl {
@@ -70,7 +71,10 @@ namespace odb {
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
 
-const uint db_schema_minor = 104;  // Current revision number
+const uint db_schema_minor = 105;  // Current revision number
+
+// Revision where check for mirrored constraint on bterm was added
+const uint db_schema_bterm_is_mirrored = 105;
 
 // Revision where support for pin groups was added
 const uint db_schema_block_pin_groups = 104;
@@ -247,6 +251,7 @@ class _dbDatabase : public _dbObject
   int _unique_id;
 
   utl::Logger* _logger;
+  std::set<dbDatabaseObserver*> observers_;
 
   _dbDatabase(_dbDatabase* db);
   _dbDatabase(_dbDatabase* db, int id);

@@ -65,8 +65,8 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
 
   defineBox(options);
 
-  dbRSeg* rseg1 = NULL;
-  dbNet* srcNet = NULL;
+  dbRSeg* rseg1 = nullptr;
+  dbNet* srcNet = nullptr;
   uint netId1 = 0;
   if (rsegId1 > 0) {
     rseg1 = dbRSeg::getRSeg(_block, rsegId1);
@@ -75,8 +75,8 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
   }
   _netSrcId = netId1;
 
-  dbRSeg* rseg2 = NULL;
-  dbNet* tgtNet = NULL;
+  dbRSeg* rseg2 = nullptr;
+  dbNet* tgtNet = nullptr;
   uint netId2 = 0;
   if (rsegId2 > 0) {
     rseg2 = dbRSeg::getRSeg(_block, rsegId2);
@@ -90,18 +90,10 @@ void extMeasureRC::measureRC_ids_flags(CoupleOptions& options)
   // DELETE int prevCovered = options[20];
   // DELETE prevCovered = 0;
 
-  // -------------------------------- db units -------------
-  bool USE_DB_UNITS = false;
-  if (USE_DB_UNITS) {
-    if (_dist > 0)
-      _dist = _extMain->GetDBcoords2(_dist);
-    _width = _extMain->GetDBcoords2(_width);
-  }
-
   _netId = _extMain->_debug_net_id;
   if (IsDebugNet()) {
     OpenDebugFile();
-    if (_debugFP != NULL)
+    if (_debugFP != nullptr)
       fprintf(_debugFP,
               "init_measureRC %d met= %d  len= %d  dist= %d r1= %d r2= %d\n",
               _totSignalSegCnt,
@@ -118,7 +110,7 @@ bool extMeasureRC::updateCoupCap(dbRSeg* rseg1,
                                  double v,
                                  const char* dbg_msg)
 {
-  if (rseg1 != NULL && rseg2 != NULL) {
+  if (rseg1 != nullptr && rseg2 != nullptr) {
     dbCCSeg* ccap
         = dbCCSeg::create(dbCapNode::getCapNode(_block, rseg1->getTargetNode()),
                           dbCapNode::getCapNode(_block, rseg2->getTargetNode()),
@@ -140,14 +132,14 @@ bool extMeasureRC::updateCoupCap(dbRSeg* rseg1,
     }
     return true;
   }
-  if (rseg1 != NULL) {
+  if (rseg1 != nullptr) {
     double tot = _extMain->updateTotalCap(rseg1, v, jj);
     if (IsDebugNet()) {
       DebugUpdateValue(stdout, dbg_msg, "CC-FR", rseg1->getId(), v, tot);
       DebugUpdateValue(_debugFP, dbg_msg, "CC-FR", rseg1->getId(), v, tot);
     }
   }
-  if (rseg2 != NULL) {
+  if (rseg2 != nullptr) {
     double tot = _extMain->updateTotalCap(rseg2, v, jj);
     if (IsDebugNet()) {
       DebugUpdateValue(stdout, dbg_msg, "CC-FR", rseg2->getId(), v, tot);
@@ -165,9 +157,9 @@ extDistRC* extMeasureRC::getOverOpenRC_Dist(extMetRCTable* rcModel,
                                             int dist)
 {
   if (met >= (int) _layerCnt)
-    return NULL;
+    return nullptr;
 
-  extDistRC* rc = NULL;
+  extDistRC* rc = nullptr;
   if (dist < 0)  // TODO: single wire
     rc = rcModel->_capOver[met]->getFringeRC(metUnder, width);
   else
@@ -183,9 +175,9 @@ extDistRC* extMeasureRC::getOverRC_Dist(extMetRCTable* rcModel,
                                         int open)
 {
   if (met >= (int) _layerCnt)
-    return NULL;
+    return nullptr;
 
-  extDistRC* rc = NULL;
+  extDistRC* rc = nullptr;
   if (dist < 0)
     rc = rcModel->_capOver[met]->getFringeRC(metUnder, width);
   else if (open < 0)
@@ -234,9 +226,9 @@ float extMeasureRC::getOU_over1(extMetRCTable* rcModel,
   _tmpRC->Reset();
   // lenOverSub not required.
   // for now dist1==diagResDist==200
-  extDistRC* rc0 = NULL;
-  extDistRC* rc = NULL;
-  extDistRC* rc1 = NULL;
+  extDistRC* rc0 = nullptr;
+  extDistRC* rc = nullptr;
+  extDistRC* rc1 = nullptr;
   if (_overMet <= 0) {  // Over
     rc0 = getOverRC_Dist(rcModel, _width, _met, _underMet, dist1);
     rc = rcModel->_capOver_open[_met][1]->getRC(_underMet, _width, dist2);
@@ -325,7 +317,7 @@ float extMeasureRC::getOverRC_Open(extMetRCTable* rcModel,
   }
   _tmpRC->Reset();
   extDistRC* rc1 = getOverOpenRC_Dist(rcModel, width, met, metUnder, dist2);
-  if (rc1 == NULL)
+  if (rc1 == nullptr)
     return 0;
   // TODO extDistRC* rc2= getOverRC_Dist(rcModel, width, met, metUnder, dist2);
   _tmpRC->_fringe = 2 * rc1->getFringe();
@@ -353,8 +345,8 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel,
     dist1 = -1;
   }
   _tmpRC->Reset();
-  extDistRC* rc1 = NULL;
-  // TODO extDistRC* rc2= NULL;
+  extDistRC* rc1 = nullptr;
+  // TODO extDistRC* rc2= nullptr;
   if (metUnder <= 0) {  // Under pattern
     rc1 = getUnderRC_Dist(rcModel, width, met, metOver, dist2, 0);
     // TODO ?? rc2= getUnderRC_Dist(rcModel, width, met, metOver, dist2);
@@ -363,7 +355,7 @@ float extMeasureRC::getOURC_Open(extMetRCTable* rcModel,
     // TODO ?? rc2= getOverUnderRC_Dist(rcModel, width, met, metUnder, metOver,
     // dist2);
   }
-  if (rc1 == NULL)
+  if (rc1 == nullptr)
     return 0;
 
   _tmpRC->_fringe = 2 * rc1->getFringe();
@@ -381,18 +373,18 @@ extDistRC* extMeasureRC::getUnderRC_Dist(extMetRCTable* rcModel,
                                          int dist,
                                          int open)
 {
-  if (rcModel->_capUnder[met] == NULL)
-    return NULL;
+  if (rcModel->_capUnder[met] == nullptr)
+    return nullptr;
 
   uint n = overMet - met - 1;
 
-  extDistRC* rc = NULL;
+  extDistRC* rc = nullptr;
   if (dist < 0)
     rc = rcModel->_capUnder[met]->getFringeRC(n, width);
   else if (open < 0)
     rc = rcModel->_capUnder[met]->getRC(n, width, dist);
-  else if (open < 2 && rcModel->_capUnder_open != NULL
-           && rcModel->_capUnder_open[met][open] != NULL)
+  else if (open < 2 && rcModel->_capUnder_open != nullptr
+           && rcModel->_capUnder_open[met][open] != nullptr)
     rc = rcModel->_capUnder_open[met][open]->getRC(n, width, dist);
   return rc;
 }
@@ -448,13 +440,13 @@ extDistRC* extMeasureRC::getOverUnderRC_Dist(extMetRCTable* rcModel,
   int n = extMeasureRC::getMetIndexOverUnder(
       met, underMet, overMet, _layerCnt, maxCnt);
 
-  extDistRC* rc = NULL;
+  extDistRC* rc = nullptr;
   if (dist < 0)
     rc = rcModel->_capOverUnder[met]->getFringeRC(n, width);
   else if (open < 0)
     rc = rcModel->_capOverUnder[met]->getRC(n, width, dist);
-  else if ((open < 2) && (rcModel->_capOverUnder_open != NULL)
-           && rcModel->_capOverUnder_open[met][open] != NULL)
+  else if ((open < 2) && (rcModel->_capOverUnder_open != nullptr)
+           && rcModel->_capOverUnder_open[met][open] != nullptr)
     rc = rcModel->_capOverUnder_open[met][open]->getRC(n, width, dist);
 
   return rc;
@@ -526,7 +518,7 @@ float extMeasureRC::weightedFringe(extDistRC* rc1,
   // if (!_useWeighted)
   //  return 0;
 
-  if (rc1 == NULL || rc2 == NULL)
+  if (rc1 == nullptr || rc2 == nullptr)
     return 0;
 
   float fr1 = rc1->getFringe();

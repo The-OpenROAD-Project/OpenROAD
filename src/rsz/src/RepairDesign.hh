@@ -113,13 +113,26 @@ class RepairDesign : dbStaState
                                int fanout_violations,
                                int length_violations,
                                int repaired_net_count);
+  void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
   void init();
 
   bool getCin(const Pin* drvr_pin, float& cin);
+  bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
+  void performEarlySizingRound(float gate_gain,
+                               float buffer_gain,
+                               int& repaired_net_count);
+
+  void checkDriverArcSlew(const Corner* corner,
+                          const Instance* inst,
+                          const TimingArc* arc,
+                          float load_cap,
+                          float limit,
+                          float& violation);
+  bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
 
   void repairNet(Net* net,
                  const Pin* drvr_pin,
@@ -134,29 +147,11 @@ class RepairDesign : dbStaState
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
-  bool needRepairSlew(const Pin* drvr_pin,
-                      int& slew_violations,
-                      float& max_cap,
-                      const Corner*& corner);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
                      const Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
-  bool needRepair(const Pin* drvr_pin,
-                  const Corner*& corner,
-                  int max_length,
-                  int wire_length,
-                  bool check_cap,
-                  bool check_slew,
-                  float& max_cap,
-                  int& slew_violations,
-                  int& cap_violations,
-                  int& length_violations);
-  bool checkLimits(const Pin* drvr_pin,
-                   bool check_slew,
-                   bool check_cap,
-                   bool check_fanout);
   void checkSlew(const Pin* drvr_pin,
                  // Return values.
                  Slew& slew,
@@ -198,7 +193,9 @@ class RepairDesign : dbStaState
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt* dcalc_ap);
-  LoadRegion findLoadRegions(const Pin* drvr_pin, int max_fanout);
+  LoadRegion findLoadRegions(const Net* net,
+                             const Pin* drvr_pin,
+                             int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
   void makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,
@@ -280,6 +277,7 @@ class RepairDesign : dbStaState
   const MinMax* max_ = MinMax::max();
 
   int print_interval_ = 0;
+  std::shared_ptr<ResizerObserver> graphics_;
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;

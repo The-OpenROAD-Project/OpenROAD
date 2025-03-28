@@ -446,8 +446,9 @@ If you are a developer, you might find these useful. More details can be found i
 
 ### Setting Optimization Configuration
 
-The `set_opt_config` command configures optimization settings that apply to all 
-optimization commands like repair_design and repair_timing.
+The `set_opt_config` command configures optimization settings that apply to
+data cell selection, affecting all optimization commands like repair_design and repair_timing.
+However, this does not apply to clock cell selection in clock_tree_synthesis or repair_clock_nets.
 
 ```tcl
 set_opt_config 
@@ -511,6 +512,7 @@ The `report_equiv_cells` command finds all functionally equivalent library cells
 ```tcl
 report_equiv_cells 
     [-match_cell_footprint]
+    [-all]
     lib_cell
 ```
 
@@ -519,6 +521,7 @@ report_equiv_cells
 | Switch Name | Description |
 | ----- | ----- |
 | `-match_cell_footprint` | Limit equivalent cell list to include only cells that match library cell_footprint attribute. |
+| `-all` | List all equivalent cells, ignoring sizing restrictions and cell_footprint.  Cells excluded due to these restrictions are marked with an asterisk. |
 
 ## Example scripts
 

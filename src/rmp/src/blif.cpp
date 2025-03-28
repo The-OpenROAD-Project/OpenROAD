@@ -159,7 +159,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
                                 ? ("dummy_" + std::to_string(dummy_nets++))
                                 : net->getName();
 
-      currentConnections += " " + mtermName + "=" + netName;
+      currentConnections += fmt::format(" {}={}", mtermName, netName);
 
       if (net == nullptr) {
         continue;

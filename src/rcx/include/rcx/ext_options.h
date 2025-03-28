@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef EXT_OPTIONS_H
-#define EXT_OPTIONS_H
+#pragma once
 
 struct BenchWiresOptions
 {
@@ -221,4 +220,3 @@ struct PatternOptions
   bool over_under = false;
   bool under = false;
 };
-#endif
