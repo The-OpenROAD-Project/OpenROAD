@@ -143,7 +143,6 @@ cc_library(
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
         allow_empty = True,
     ) + [
-        "src/Main_bindings.cc",
         "src/OpenRoad.cc",
         "src/stt/src/flt/etc/POST9.cpp",
         "src/stt/src/flt/etc/POWV9.cpp",
@@ -1245,7 +1244,7 @@ genrule(
     #define STA_VERSION "2.2.1"
     #define STA_GIT_SHA1 "53d4d57cb8550d2ceed18adad75b73bba7858f4f"
     #define CUDD 0
-    #define SSTA 0 
+    #define SSTA 0
     #define ZLIB_FOUND' > \"$@\"
     """,
 )
@@ -1444,6 +1443,7 @@ cc_library(
         "@net_zlib//:zlib",
         "@eigen//:eigen3",
         "@com_github_davidkebo_cudd//:cudd",
+        "@rules_flex//flex:current_flex_toolchain",
     ],
 )
 
@@ -1456,4 +1456,3 @@ filegroup(
 )
 
 ## OpenSTA
-
