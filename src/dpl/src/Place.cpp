@@ -579,12 +579,12 @@ bool Opendp::mapMove(Cell* cell, const GridPt& grid_pt)
              cell->yMin(),
              grid_pt.x,
              grid_pt.y);
-  const PixelPt pixel_pt = diamondSearch(cell, grid_pt.x, grid_pt.y);
+  const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
   debugPrint(logger_,
              DPL,
              "place",
              1,
-             "Diamond search {} ({}, {}) to ({}, {})",
+             "Search Nearest Site {} ({}, {}) to ({}, {})",
              cell->name(),
              cell->xMin(),
              cell->yMin(),
@@ -667,7 +667,7 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
 bool Opendp::refineMove(Cell* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, true);
-  const PixelPt pixel_pt = diamondSearch(cell, grid_pt.x, grid_pt.y);
+  const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
 
   if (pixel_pt.pixel) {
     if (abs(grid_pt.x - pixel_pt.x) > max_displacement_x_
@@ -700,9 +700,9 @@ int Opendp::distChange(const Cell* cell, const DbuX x, const DbuY y) const
 
 ////////////////////////////////////////////////////////////////
 
-PixelPt Opendp::diamondSearch(const Cell* cell,
-                              const GridX x,
-                              const GridY y) const
+PixelPt Opendp::searchNearestSite(const Cell* cell,
+                                  const GridX x,
+                                  const GridY y) const
 {
   // Diamond search limits.
   GridX x_min = x - max_displacement_x_;
@@ -723,7 +723,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     y_max = max.y;
   }
 
-  // Clip diamond limits to grid bounds.
+  // Clip limits to grid bounds.
   x_min = max(GridX{0}, x_min);
   y_min = max(GridY{0}, y_min);
   x_max = min(grid_->getRowSiteCount(), x_max);
@@ -732,7 +732,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
              DPL,
              "place",
              1,
-             "Diamond Search {} ({}, {}) bounds ({}-{}, {}-{})",
+             "Search Nearest Site {} ({}, {}) bounds ({}-{}, {}-{})",
              cell->name(),
              x,
              y,
@@ -741,158 +741,88 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
              y_min,
              y_max - 1);
 
-  // Check the bin at the initial position first.
-  const PixelPt avail_pt = binSearch(x, cell, x, y);
-  if (avail_pt.pixel) {
-    return avail_pt;
-  }
+  struct PQ_entry
+  {
+    int manhattan_distance;
+    GridPt p;
+    bool operator>(const PQ_entry& other) const
+    {
+      return manhattan_distance > other.manhattan_distance;
+    }
+    bool operator==(const PQ_entry& other) const
+    {
+      return manhattan_distance == other.manhattan_distance;
+    }
+  };
+  std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
+      positionsHeap;
+  std::unordered_set<GridPt> visited;
+  GridPt center{x, y};
+  positionsHeap.push(PQ_entry{0, center});
+  visited.insert(center);
 
-  const int max_i = std::max(max_displacement_y_, max_displacement_x_);
-  for (int i = 1; i < max_i; i++) {
-    PixelPt best_pt;
-    int best_dist = 0;
-    // left side
-    for (int j = 1; j < i * 2; j++) {
-      const int x_offset = -((j + 1) / 2);
-      int y_offset = (i * 2 - j) / 2;
-      if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < max_displacement_y_) {
-        if (j % 2 == 1) {
-          y_offset = -y_offset;
-        }
-        diamondSearchSide(cell,
-                          x,
-                          y,
-                          x_min,
-                          y_min,
-                          x_max,
-                          y_max,
-                          x_offset,
-                          y_offset,
-                          best_pt,
-                          best_dist);
-      }
+  const vector<GridPt> neighbors = {{GridX(-1), GridY(0)},
+                                    {GridX(1), GridY(0)},
+                                    {GridX(0), GridY(-1)},
+                                    {GridX(0), GridY(1)}};
+  while (!positionsHeap.empty()) {
+    const GridPt nearest = positionsHeap.top().p;
+    positionsHeap.pop();
+
+    if (canBePlaced(cell, nearest.x, nearest.y)) {
+      return PixelPt(
+          grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
     }
 
-    // right side
-    for (int j = 1; j < (i + 1) * 2; j++) {
-      const int x_offset = (j - 1) / 2;
-      int y_offset = ((i + 1) * 2 - j) / 2;
-      if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < max_displacement_y_) {
-        if (j % 2 == 1) {
-          y_offset = -y_offset;
-        }
-        diamondSearchSide(cell,
-                          x,
-                          y,
-                          x_min,
-                          y_min,
-                          x_max,
-                          y_max,
-                          x_offset,
-                          y_offset,
-                          best_pt,
-                          best_dist);
+    // Put neighbors in the queue
+    for (GridPt offset : neighbors) {
+      GridPt neighbor = {nearest.x + offset.x, nearest.y + offset.y};
+      // Check if it was already put in the queue
+      if (visited.count(neighbor) > 0) {
+        continue;
       }
-    }
-    if (best_pt.pixel) {
-      return best_pt;
+      // Check limits
+      if (neighbor.x < x_min || neighbor.x > x_max || neighbor.y < y_min
+          || neighbor.y > y_max) {
+        continue;
+      }
+
+      visited.insert(neighbor);
+      positionsHeap.push(PQ_entry{calcDist(center, neighbor), neighbor});
     }
   }
   return PixelPt();
 }
 
-void Opendp::diamondSearchSide(const Cell* cell,
-                               const GridX x,
-                               const GridY y,
-                               const GridX x_min,
-                               const GridY y_min,
-                               const GridX x_max,
-                               const GridY y_max,
-                               const int x_offset,
-                               const int y_offset,
-                               // Return values
-                               PixelPt& best_pt,
-                               int& best_dist) const
+int Opendp::calcDist(GridPt p0, GridPt p1) const
 {
-  const GridX bin_x = min(x_max, max(x_min, x + x_offset * bin_search_width_));
-  const GridY bin_y = min(y_max, max(y_min, y + y_offset));
-  PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
-  if (avail_pt.pixel) {
-    DbuY y_dist = DbuY{
-        std::abs(grid_->gridYToDbu(y).v - grid_->gridYToDbu(avail_pt.y).v)};
-    const int avail_dist
-        = sumXY(gridToDbu(abs(x - avail_pt.x), grid_->getSiteWidth()), y_dist);
-    if (best_pt.pixel == nullptr || avail_dist < best_dist) {
-      best_pt = avail_pt;
-      best_dist = avail_dist;
-    }
-  }
+  DbuY y_dist = abs(grid_->gridYToDbu(p0.y) - grid_->gridYToDbu(p1.y));
+  DbuX x_dist = gridToDbu(abs(p0.x - p1.x), grid_->getSiteWidth());
+  return sumXY(x_dist, y_dist);
 }
 
-PixelPt Opendp::binSearch(GridX x,
-                          const Cell* cell,
-                          const GridX bin_x,
-                          const GridY bin_y) const
+bool Opendp::canBePlaced(const Cell* cell, GridX bin_x, GridY bin_y) const
 {
   debugPrint(logger_,
              DPL,
              "place",
              3,
-             " Bin Search {} ({:4} {}> {:4},{:4})",
+             " canBePlaced {} ({:4},{:4})",
              cell->name(),
-             x > bin_x ? bin_x + bin_search_width_ - 1 : bin_x,
-             x > bin_x ? "-" : "+",
-             x > bin_x ? bin_x : bin_x + bin_search_width_ - 1,
+             bin_x,
              bin_y);
-  const GridX x_end = bin_x + grid_->gridPaddedWidth(cell);
+
   if (bin_y >= grid_->getRowCount()) {
-    return PixelPt();
+    return false;
   }
 
-  const GridY height = grid_->gridHeight(cell);
-  const GridY y_end = bin_y + height;
+  const GridX x_end = bin_x + grid_->gridPaddedWidth(cell);
+  const GridY y_end = bin_y + grid_->gridHeight(cell);
 
   if (debug_observer_) {
     debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
   }
-
-  if (y_end > grid_->getRowCount()) {
-    return PixelPt();
-  }
-
-  if (x > bin_x) {
-    for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      const Point p(gridToDbu(bin_x + i, grid_->getSiteWidth()).v,
-                    grid_->gridYToDbu(bin_y).v);
-      if (cell->getRegion() && !cell->getRegion()->intersects(p)) {
-        continue;
-      }
-      // the else case where a cell has no region will be checked using the
-      // rtree in checkPixels
-      if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
-        Pixel* valid_grid_pixel = grid_->gridPixel(bin_x + i, bin_y);
-        return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
-      }
-    }
-  } else {
-    for (int i = 0; i < bin_search_width_; i++) {
-      const Point p(gridToDbu(bin_x + i, grid_->getSiteWidth()).v,
-                    grid_->gridYToDbu(bin_y).v);
-      if (cell->getRegion()) {
-        if (!cell->getRegion()->intersects(p)) {
-          continue;
-        }
-      }
-      if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
-        Pixel* valid_grid_pixel = grid_->gridPixel(bin_x + i, bin_y);
-        return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
-      }
-    }
-  }
-
-  return PixelPt();
+  return checkPixels(cell, bin_x, bin_y, x_end, y_end);
 }
 
 bool Opendp::checkRegionOverlap(const Cell* cell,
