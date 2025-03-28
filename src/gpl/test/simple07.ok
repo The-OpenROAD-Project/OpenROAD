@@ -40,7 +40,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0028] Bin count (X, Y):           8 *      8
 [INFO GPL-0029] Bin size (W * H):       2.875 *  4.080 um
 [INFO GPL-0030] Number of bins:                     64
-[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.0000               8.458500e+04     +0.00%     1.04e-16  
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.0000  8.458500e+04     +0.00%     1.04e-16  
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.

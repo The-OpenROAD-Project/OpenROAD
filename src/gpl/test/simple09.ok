@@ -31,7 +31,8 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.0000               1.007300e+04     +0.00%     2.62e-09  
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.0000  1.007300e+04     +0.00%     2.62e-09  
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.

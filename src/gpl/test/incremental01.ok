@@ -30,17 +30,18 @@
 [INFO GPL-0028] Bin count (X, Y):          16 *     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.1869               4.999278e+06     +0.00%     2.98e-08  
-[NesterovSolve]   10    0.3206               4.758762e+06     -4.81%     4.22e-08  
-[NesterovSolve]   20    0.2903               4.745103e+06     -0.29%     6.22e-08  
-[NesterovSolve]   30    0.2612               4.780681e+06     +0.75%     9.16e-08  
-[NesterovSolve]   40    0.2254               4.817944e+06     +0.78%     1.35e-07  
-[NesterovSolve]   50    0.1951               4.857050e+06     +0.81%     1.99e-07  
-[NesterovSolve] Iter  Overflow  Half-Perimeter Wirelength    HPWL(%)      Penalty  Group
-[NesterovSolve]   60    0.1667               4.887372e+06     +0.62%     2.93e-07  
-[NesterovSolve]   70    0.1409               4.919492e+06     +0.66%     4.31e-07  
-[NesterovSolve]   80    0.1198               4.948958e+06     +0.60%     6.35e-07  
-[NesterovSolve]   90    0.1041               4.973494e+06     +0.50%     9.36e-07  
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
+[NesterovSolve]    1    0.1869  4.999278e+06     +0.00%     2.98e-08  
+[NesterovSolve]   10    0.3206  4.758762e+06     -4.81%     4.22e-08  
+[NesterovSolve]   20    0.2903  4.745103e+06     -0.29%     6.22e-08  
+[NesterovSolve]   30    0.2612  4.780681e+06     +0.75%     9.16e-08  
+[NesterovSolve]   40    0.2254  4.817944e+06     +0.78%     1.35e-07  
+[NesterovSolve]   50    0.1951  4.857050e+06     +0.81%     1.99e-07  
+[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
+[NesterovSolve]   60    0.1667  4.887372e+06     +0.62%     2.93e-07  
+[NesterovSolve]   70    0.1409  4.919492e+06     +0.66%     4.31e-07  
+[NesterovSolve]   80    0.1198  4.948958e+06     +0.60%     6.35e-07  
+[NesterovSolve]   90    0.1041  4.973494e+06     +0.50%     9.36e-07  
 [NesterovSolve] Finished with Overflow: 0.099112
 No differences found.
