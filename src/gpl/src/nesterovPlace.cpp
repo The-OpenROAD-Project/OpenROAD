@@ -346,6 +346,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->resetMinSumOverflow();
   }
 
+  log_->report("[NesterovSolve] HPWL: Half-Perimeter Wirelength");
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {

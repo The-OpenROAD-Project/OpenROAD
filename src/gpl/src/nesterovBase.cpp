@@ -2582,10 +2582,10 @@ void NesterovBase::updateNextIter(const int iter)
     }
 
     const std::string nesterov_header
-        = fmt::format("[NesterovSolve] {:>4}  {:>8}  {:>25}  {:>9}  {:>11}  {}",
+        = fmt::format("[NesterovSolve] {:>4}  {:>8}  {:>12}  {:>9}  {:>11}  {}",
                       "Iter",
                       "Overflow",
-                      "Half-Perimeter Wirelength",
+                      "HPWL",
                       "HPWL(%)",
                       "Penalty",
                       "Group");
@@ -2595,7 +2595,7 @@ void NesterovBase::updateNextIter(const int iter)
     }
 
     log_->report(
-        "[NesterovSolve] {:4d}  {:8.4f}  {:25.6e}  {:+8.2f}%  {:11.2e}  {}",
+        "[NesterovSolve] {:4d}  {:8.4f}  {:8.6e}  {:+8.2f}%  {:11.2e}  {}",
         iter + 1,
         sumOverflowUnscaled_,
         static_cast<double>(hpwl),
