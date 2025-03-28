@@ -87,6 +87,13 @@ getResizer()
   return openroad->getResizer();
 }
 
+cgt::ClockGating *
+getClockGating()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getClockGating();
+}
+
 rmp::Restructure *
 getRestructure()
 {

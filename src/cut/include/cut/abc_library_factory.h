@@ -25,6 +25,7 @@ class AbcLibrary
 {
  public:
   AbcLibrary(utl::UniquePtrWithDeleter<abc::SC_Lib> abc_library);
+  AbcLibrary(AbcLibrary&&) = default;
   ~AbcLibrary() = default;
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
   abc::Mio_Library_t* mio_library() { return mio_library_; }
