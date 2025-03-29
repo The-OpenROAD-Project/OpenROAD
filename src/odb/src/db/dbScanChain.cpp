@@ -33,9 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbScanChain.h"
 
-#include <string>
-#include <string_view>
-
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
@@ -171,13 +168,13 @@ std::variant<dbBTerm*, dbITerm*> _dbScanChain::getPin(
       ->getPin();
 }
 
-void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::* field, dbBTerm* pin)
+void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
   this->*field = dbScanPin::create(dft, pin);
 }
 
-void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::* field, dbITerm* pin)
+void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
   this->*field = dbScanPin::create(dft, pin);

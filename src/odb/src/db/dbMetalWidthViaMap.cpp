@@ -33,8 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbMetalWidthViaMap.h"
 
-#include <string>
-
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
