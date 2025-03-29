@@ -35,6 +35,7 @@
 
 #include "rsz/SpefWriter.hh"
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <string>

@@ -41,6 +41,7 @@
 #include <boost/unordered/unordered_map.hpp>
 #include <cassert>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <functional>

@@ -36,6 +36,7 @@
 #include <libkern/OSByteOrder.h>
 #include <machine/endian.h>
 
+#include <cstddef>
 #include <string>
 #include <utility>
 

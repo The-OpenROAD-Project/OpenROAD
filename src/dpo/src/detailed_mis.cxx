@@ -54,6 +54,7 @@
 #include <lemon/smart_graph.h>
 
 #include <boost/tokenizer.hpp>
+#include <cstddef>
 #include <queue>
 #include <string>
 #include <vector>

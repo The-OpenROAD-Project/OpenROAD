@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <map>
 #include <memory>

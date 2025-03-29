@@ -37,6 +37,7 @@
 
 #include <odb/dbSet.h>
 
+#include <cstddef>
 #include <fstream>
 #include <map>
 #include <string>

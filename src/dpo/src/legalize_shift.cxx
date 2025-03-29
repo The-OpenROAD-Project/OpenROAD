@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "legalize_shift.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "architecture.h"

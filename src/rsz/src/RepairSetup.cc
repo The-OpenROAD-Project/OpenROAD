@@ -35,6 +35,7 @@
 
 #include "RepairSetup.hh"
 
+#include <cstddef>
 #include <sstream>
 #include <string>
 

@@ -36,6 +36,7 @@
 #include "TechChar.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iomanip>
 #include <ostream>

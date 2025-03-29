@@ -38,6 +38,7 @@
 // to improve a placement.
 
 #include <boost/tokenizer.hpp>
+#include <cstddef>
 #include <stack>
 #include <string>
 #include <vector>

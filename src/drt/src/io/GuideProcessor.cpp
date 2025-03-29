@@ -34,6 +34,7 @@
 
 #include <omp.h>
 
+#include <cstddef>
 #include <string>
 
 #include "db/infra/frTime.h"

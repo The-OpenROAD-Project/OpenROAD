@@ -31,6 +31,7 @@
 #include <omp.h>
 
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <string>

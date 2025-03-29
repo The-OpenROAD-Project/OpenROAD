@@ -32,6 +32,7 @@
 #include "ScanStitch.hh"
 
 #include <boost/algorithm/string.hpp>
+#include <cstddef>
 #include <deque>
 #include <iostream>
 #include <string>

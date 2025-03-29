@@ -33,6 +33,7 @@
 #include "via.h"
 
 #include <boost/polygon/polygon.hpp>
+#include <cstddef>
 #include <map>
 #include <string>
 #include <vector>
