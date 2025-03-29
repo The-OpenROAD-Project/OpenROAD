@@ -123,9 +123,6 @@ cc_library(
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
         "BUILD_GUI=false",
-        "ENABLE_CHARTS=false",
-        "ENABLE_mpl",
-        "ENABLE_PAR",
     ],
     features = ["-use_header_modules"],
     includes = OPENROAD_LIBRARY_INCLUDES,
@@ -156,10 +153,7 @@ cc_library(
     ),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
-        "ENABLE_mpl",
-        "ENABLE_PAR",
         "BUILD_GUI=false",
-        "ENABLE_CHARTS=false",
     ],
     features = ["-use_header_modules"],
     includes = OPENROAD_LIBRARY_INCLUDES,
