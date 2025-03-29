@@ -13,6 +13,7 @@ or_integration_tests(
     balance_levels
     check_buffers
     check_buffers_blockages
+    check_buffers_blockages_merge
     check_charBuf
     check_max_fanout1
     check_max_fanout2
