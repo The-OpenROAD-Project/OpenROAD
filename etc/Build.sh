@@ -22,6 +22,7 @@ cmakeOptions=""
 cleanBefore=no
 depsPrefixesFile=""
 keepLog=no
+use_gpl2=no
 compiler=gcc
 
 _help() {
@@ -52,6 +53,7 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -use_gpl2                                     Enable parallelized global placement algorithm
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                   its content extends -cmake argument.
                                                   By default, "openroad_deps_prefixes.txt"
@@ -111,7 +113,7 @@ while [ "$#" -gt 0 ]; do
             ;;
         -deps-prefixes-file=*)
             file="${1#-deps-prefixes-file=}"
-            if [[ ! -f "$file" ]]; then 
+            if [[ ! -f "$file" ]]; then
                 echo "${file} does not exist" >&2
                 _help
             fi
@@ -120,6 +122,9 @@ while [ "$#" -gt 0 ]; do
         -compiler | -cmake | -dir | -threads | -install | -deps-prefixes-file )
             echo "${1} requires an argument" >&2
             _help
+            ;;
+        -use_gpl2)
+            cmakeOptions+=" -DUSE_GPL2=ON"
             ;;
         -gpu)
             cmakeOptions+=" -DGPU=ON"
