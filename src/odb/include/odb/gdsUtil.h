@@ -36,6 +36,8 @@
 #include <libkern/OSByteOrder.h>
 #include <machine/endian.h>
 
+#include <string>
+
 #define htobe16(x) OSSwapHostToBigInt16(x)
 #define htole16(x) OSSwapHostToLittleInt16(x)
 #define be16toh(x) OSSwapBigToHostInt16(x)

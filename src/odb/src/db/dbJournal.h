@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "dbJournalLog.h"
 #include "odb/odb.h"
 

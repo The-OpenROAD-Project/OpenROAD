@@ -34,6 +34,7 @@
 #include <boost/algorithm/string.hpp>
 #include <deque>
 #include <iostream>
+#include <string>
 #include <vector>
 
 namespace {

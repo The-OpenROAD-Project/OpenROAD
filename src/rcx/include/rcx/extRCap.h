@@ -33,6 +33,7 @@
 #pragma once
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "ext2dBox.h"

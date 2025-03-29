@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <fstream>
+#include <string>
 
 #include "env.h"
 #include "gmock/gmock.h"

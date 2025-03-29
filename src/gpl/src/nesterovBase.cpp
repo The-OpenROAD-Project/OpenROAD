@@ -39,6 +39,7 @@
 #include <cmath>
 #include <iostream>
 #include <random>
+#include <string>
 #include <unordered_set>
 #include <utility>
 

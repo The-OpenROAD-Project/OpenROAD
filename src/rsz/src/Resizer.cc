@@ -39,6 +39,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "AbstractSteinerRenderer.h"

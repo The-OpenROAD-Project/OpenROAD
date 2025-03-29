@@ -55,6 +55,7 @@
 
 #include <boost/tokenizer.hpp>
 #include <queue>
+#include <string>
 #include <vector>
 
 #include "architecture.h"

@@ -39,6 +39,7 @@
 #include <boost/random.hpp>
 #include <iomanip>
 #include <sstream>
+#include <string>
 #include <tuple>
 
 namespace utl {

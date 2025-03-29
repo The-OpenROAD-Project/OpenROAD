@@ -35,6 +35,7 @@
 
 #include "object.h"
 
+#include <string>
 #include <vector>
 
 #include "utl/Logger.h"

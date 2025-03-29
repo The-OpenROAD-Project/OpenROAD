@@ -32,6 +32,7 @@
 
 #include "dbTechVia.h"
 
+#include <string>
 #include <vector>
 
 #include "dbBox.h"

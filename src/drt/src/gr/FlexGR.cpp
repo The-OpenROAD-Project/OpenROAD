@@ -33,6 +33,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"

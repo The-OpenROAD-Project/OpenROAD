@@ -37,6 +37,7 @@
 #include <boost/serialization/export.hpp>
 #include <boost/thread/thread.hpp>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 

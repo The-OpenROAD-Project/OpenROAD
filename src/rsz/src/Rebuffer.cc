@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <string>
+
 #include "BufferedNet.hh"
 #include "RepairSetup.hh"
 #include "db_sta/dbNetwork.hh"

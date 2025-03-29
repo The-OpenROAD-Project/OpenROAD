@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbGDSSRef.h"
 
+#include <string>
+
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

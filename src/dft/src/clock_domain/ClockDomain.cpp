@@ -33,6 +33,7 @@
 #include "ClockDomain.hh"
 
 #include <cstdint>
+#include <string>
 
 namespace dft {
 

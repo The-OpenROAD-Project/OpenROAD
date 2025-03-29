@@ -32,6 +32,8 @@
 
 #include "ScanArchitectConfig.hh"
 
+#include <string>
+
 #include "Formatting.hh"
 
 namespace dft {

@@ -34,6 +34,7 @@
 
 #include <cctype>
 #include <cstring>
+#include <string>
 
 #include "odb/dbId.h"
 

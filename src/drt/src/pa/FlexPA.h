@@ -31,6 +31,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "FlexPA_unique.h"

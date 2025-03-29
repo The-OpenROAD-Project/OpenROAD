@@ -39,6 +39,7 @@
 // User Code Begin Includes
 #include <fstream>
 #include <set>
+#include <string>
 #include <variant>
 #include <vector>
 

@@ -38,6 +38,7 @@
 #include "detailed_vertical.h"
 
 #include <boost/tokenizer.hpp>
+#include <string>
 #include <vector>
 
 #include "detailed_hpwl.h"

@@ -41,6 +41,7 @@
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"

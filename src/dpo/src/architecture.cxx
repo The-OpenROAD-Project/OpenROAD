@@ -39,6 +39,7 @@
 #include <iostream>
 #include <map>
 #include <stack>
+#include <string>
 #include <vector>
 
 #include "network.h"

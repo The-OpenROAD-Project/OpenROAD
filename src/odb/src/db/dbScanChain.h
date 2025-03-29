@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <string>
+
 #include "dbCore.h"
 #include "dbScanPin.h"
 #include "dbVector.h"
@@ -61,8 +63,8 @@ class _dbScanChain : public _dbObject
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   std::variant<dbBTerm*, dbITerm*> getPin(const dbId<dbScanPin>& scan_pin_id);
-  void setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin);
-  void setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin);
+  void setPin(dbId<dbScanPin> _dbScanChain::* field, dbBTerm* pin);
+  void setPin(dbId<dbScanPin> _dbScanChain::* field, dbITerm* pin);
   // User Code End Methods
 
   std::string name_;

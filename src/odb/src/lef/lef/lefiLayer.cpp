@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <set>
+#include <string>
 
 #include "lefiDebug.hpp"
 #include "lefrCallBacks.hpp"

@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "dbCore.h"
 #include "dbHashTable.hpp"
 #include "dbVector.h"
