@@ -34,6 +34,7 @@
 #include "dbLevelShifter.h"
 
 #include <string>
+#include <utility>
 
 #include "dbBlock.h"
 #include "dbDatabase.h"

@@ -34,6 +34,7 @@
 #include "dbGDSSRef.h"
 
 #include <string>
+#include <utility>
 
 #include "dbDatabase.h"
 #include "dbTable.h"

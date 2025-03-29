@@ -34,6 +34,7 @@
 
 #include <cstdint>
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"

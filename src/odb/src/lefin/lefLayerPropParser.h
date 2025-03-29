@@ -32,6 +32,7 @@
 #include <boost/spirit/include/support_unused.hpp>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"

@@ -35,6 +35,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <utility>
 
 #include "dbDatabase.h"
 #include "dbHashTable.h"

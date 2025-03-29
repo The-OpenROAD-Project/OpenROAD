@@ -39,6 +39,7 @@
 // User Code Begin Includes
 #include <map>
 #include <tuple>
+#include <utility>
 // User Code End Includes
 
 namespace odb {

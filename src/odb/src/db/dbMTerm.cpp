@@ -35,6 +35,7 @@
 #include <spdlog/fmt/ostr.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbDatabase.h"

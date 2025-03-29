@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
+#include <utility>
 #include <vector>
 
 #include "graphics.h"

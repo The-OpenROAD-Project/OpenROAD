@@ -37,6 +37,7 @@
 #include <machine/endian.h>
 
 #include <string>
+#include <utility>
 
 #define htobe16(x) OSSwapHostToBigInt16(x)
 #define htole16(x) OSSwapHostToLittleInt16(x)
