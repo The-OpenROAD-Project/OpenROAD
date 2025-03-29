@@ -38,6 +38,7 @@
 #include <QScrollBar>
 #include <QTextStream>
 #include <regex>
+#include <string>
 
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"

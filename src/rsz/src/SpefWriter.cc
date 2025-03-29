@@ -35,8 +35,10 @@
 
 #include "rsz/SpefWriter.hh"
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "sta/Corner.hh"

@@ -46,6 +46,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <string>
 
 #include "DplObserver.h"
 #include "Objects.h"

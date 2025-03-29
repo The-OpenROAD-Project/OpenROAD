@@ -32,6 +32,8 @@
 
 #include "painter.h"
 
+#include <string>
+
 namespace gui {
 
 odb::Point GuiPainter::determineStringOrigin(int x,

@@ -32,8 +32,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <string>
 #include <vector>
 
 #include "odb/db.h"

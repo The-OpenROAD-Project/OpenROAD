@@ -32,6 +32,7 @@
 
 #include "grid_component.h"
 
+#include <string>
 #include <vector>
 
 #include "connect.h"

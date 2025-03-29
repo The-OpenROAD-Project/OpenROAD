@@ -35,6 +35,7 @@
 
 #include "MakeWireParasitics.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

@@ -42,6 +42,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "odb/geom_boost.h"

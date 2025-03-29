@@ -688,7 +688,7 @@ double defiNonDefault::propNumber(int index) const
   return dvalues_[index];
 }
 
-const char defiNonDefault::propType(int index) const
+char defiNonDefault::propType(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6091(index, numProps_, defData);

@@ -36,6 +36,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"

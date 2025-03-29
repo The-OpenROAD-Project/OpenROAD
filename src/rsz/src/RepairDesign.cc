@@ -35,6 +35,9 @@
 
 #include "RepairDesign.hh"
 
+#include <cstddef>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "BufferedNet.hh"
