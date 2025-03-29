@@ -62,7 +62,7 @@ double defiRegion_propNumber(const ::defiRegion* obj, int index)
   return ((DefParser::defiRegion*) obj)->propNumber(index);
 }
 
-const char defiRegion_propType(const ::defiRegion* obj, int index)
+char defiRegion_propType(const ::defiRegion* obj, int index)
 {
   return ((const DefParser::defiRegion*) obj)->propType(index);
 }

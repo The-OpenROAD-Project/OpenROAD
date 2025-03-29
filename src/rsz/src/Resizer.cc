@@ -332,6 +332,7 @@ void Resizer::init()
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
+  swappable_cells_cache_.clear();
 }
 
 // remove all buffers if no buffers are specified
@@ -1515,6 +1516,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   LibertyCellSeq equiv_cells;
 
   if (report_all_cells) {
+    swappable_cells_cache_.clear();
     bool restrict = false;
     std::optional<double> no_limit = std::nullopt;
     utl::SetAndRestore relax_footprint(match_cell_footprint_, restrict);
@@ -1524,6 +1526,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     utl::SetAndRestore relax_keep_site(sizing_keep_site_, restrict);
     utl::SetAndRestore relax_keep_vt(sizing_keep_vt_, restrict);
     equiv_cells = getSwappableCells(base_cell);
+    swappable_cells_cache_.clear();  // SetAndRestore invalidates cache.
   } else {
     equiv_cells = getSwappableCells(base_cell);
   }
@@ -1732,6 +1735,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
     swappable_cells.push_back(source_cell);
   }
 
+  swappable_cells_cache_[source_cell] = swappable_cells;
   return swappable_cells;
 }
 
