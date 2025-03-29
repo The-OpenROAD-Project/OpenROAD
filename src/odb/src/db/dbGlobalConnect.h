@@ -33,6 +33,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <regex>
+#include <string>
+
 #include "dbBlock.h"
 #include "dbCore.h"
 #include "dbMTerm.h"

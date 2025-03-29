@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbMarkerCategory.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbMarker.h"

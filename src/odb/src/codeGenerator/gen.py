@@ -3,6 +3,7 @@
 from subprocess import call
 import argparse
 import os
+import re
 import shutil
 import json
 import logging
@@ -24,6 +25,12 @@ from helper import (
     is_ref,
     std,
 )
+
+# map types to their header if it isn't equal to their name
+std_type_hdr = {
+    "int16_t": "cstdint",
+    "pair": "utility",
+}
 
 
 def get_json_files(directory):
@@ -94,6 +101,12 @@ def add_field_attributes(field, klass, flags_struct, schema):
         flags_struct["fields"].append(field)
         flag_num_bits += int(field["bits"])
     field["bitFields"] = is_bit_fields(field, klass["structs"])
+
+    if field["type"].startswith("std::"):
+        for type in re.findall(r"std::(\w+)", field["type"]):
+            hdr = std_type_hdr.get(type, type)
+            klass["h_sys_includes"].extend([hdr])
+            klass["cpp_sys_includes"].extend([hdr])
 
     field["isRef"] = is_ref(field["type"]) if field.get("parent") is not None else False
     field["refType"] = get_ref_type(field["type"])
@@ -271,7 +284,9 @@ def generate(schema, env, includeDir, srcDir, keep_empty):
                 "enums",
                 "structs",
                 "h_includes",
+                "h_sys_includes",
                 "cpp_includes",
+                "cpp_sys_includes",
             ],
             klass,
         )
