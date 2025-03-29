@@ -158,5 +158,96 @@ TEST_F(TestSnapper, DoubleLayer)
   EXPECT_EQ(macro->getOrigin().y(), 1559);
 }
 
+TEST_F(TestSnapper, MultiPattern)
+{
+  db_->getTech()->setManufacturingGrid(1);
+
+  const int track_pitch1 = 36;
+  const int track_pitch2 = 48;
+
+  odb::dbTechLayer* horizontal_layer = odb::dbTechLayer::create(
+      db_->getTech(), "H1", odb::dbTechLayerType::DEFAULT);
+  horizontal_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(db_->getChip()->getBlock(), horizontal_layer);
+  track->addGridPatternY(0, die_height_ / track_pitch1, track_pitch1);
+  track->addGridPatternY(0, die_height_ / track_pitch2, track_pitch2);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+
+  const int pin_height = 20;
+  const int pin_width = 50;
+
+  const int pin1_x = 0;
+  const int pin1_y = 0;
+  // Pins 1 and 2 follow the first pattern
+  odb::dbMTerm* mterm1 = odb::dbMTerm::create(
+      macro_master, "pin1", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin1 = odb::dbMPin::create(mterm1);
+  odb::dbBox::create(mpin1,
+                     horizontal_layer,
+                     pin1_x,
+                     pin1_y,
+                     pin1_x + pin_height,
+                     pin1_y + pin_width);
+
+  const int pin2_x = 0;
+  const int pin2_y = 72;
+  odb::dbMTerm* mterm2 = odb::dbMTerm::create(
+      macro_master, "pin2", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin2 = odb::dbMPin::create(mterm2);
+  odb::dbBox::create(mpin2,
+                     horizontal_layer,
+                     pin2_x,
+                     pin2_y,
+                     pin2_x + pin_height,
+                     pin2_y + pin_width);
+
+  // Pins 3 and 4 follow the second pattern
+  const int pin3_x = 0;
+  const int pin3_y = 216;
+  odb::dbMTerm* mterm3 = odb::dbMTerm::create(
+      macro_master, "pin3", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin3 = odb::dbMPin::create(mterm3);
+  odb::dbBox::create(mpin3,
+                     horizontal_layer,
+                     pin3_x,
+                     pin3_y,
+                     pin3_x + pin_height,
+                     pin3_y + pin_width);
+
+  const int pin4_x = 0;
+  const int pin4_y = 312;
+  odb::dbMTerm* mterm4 = odb::dbMTerm::create(
+      macro_master, "pin4", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMPin* mpin4 = odb::dbMPin::create(mterm4);
+  odb::dbBox::create(mpin4,
+                     horizontal_layer,
+                     pin4_x,
+                     pin4_y,
+                     pin4_x + pin_height,
+                     pin4_y + pin_width);
+
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1500, 1500);
+
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  EXPECT_EQ(macro->getOrigin().x(), 1500);
+  // 1487 (origin) + 25 (pin1 center) equals 1512 which is
+  // a multiple of 36 (pin is aligned to pattern1)
+  // 1487 (origin) + 241 (pin3 center) equals 1728 which is
+  // a multiple of 48 (pin is aligned to pattern2)
+  EXPECT_EQ(macro->getOrigin().y(), 1487);
+}
+
 }  // namespace
 }  // namespace mpl
