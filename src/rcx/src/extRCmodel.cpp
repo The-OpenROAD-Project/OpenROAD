@@ -3814,9 +3814,7 @@ bool extRCModel::measurePatternVar(extMeasure* m,
     if (wfp == nullptr)
       return false;  // should be an exception!! and return!
 
-    double maxHeight
-        = _process->adjustMasterDielectricsForHeight(m->_met, thicknessChange);
-    maxHeight *= 1.2;
+    _process->adjustMasterDielectricsForHeight(m->_met, thicknessChange);
 
     if (_commentFlag)
       fprintf(wfp, "%s\n", _commentLine);
