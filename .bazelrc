@@ -23,12 +23,11 @@ build --copt "-Wno-unused-parameter"  --host_copt "-Wno-unused-parameter"
 build --per_file_copt=external/.*@-w
 build --host_per_file_copt=external/.*@-w
 
-# TODO: document.
-build --crosstool_top=@llvm_toolchain//:toolchain
 build --incompatible_strict_action_env
 
+# TODO: setup a new cache for OpenROAD
 # Read only remote cache, updated by OpenROAD team members and CI.
-build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts
-build --remote_cache_compression=true
+#build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts
+#build --remote_cache_compression=true
 
 try-import %workspace$/.user.bazelrc
