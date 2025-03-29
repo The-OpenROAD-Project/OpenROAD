@@ -20,5 +20,7 @@
 [INFO GPL-0019] Utilization:                    59.732 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[*** LOG ERROR #0001 ***] [2025-03-28 15:59:13] [logger] {invalid type specifier}
+[ERROR GPL-0302] Consider increasing the target density or re-floorplanning with a larger core area.
+Given target density: 0.00
+Suggested target density: 0.60 (uniform density)
 GPL-0302

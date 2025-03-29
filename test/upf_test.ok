@@ -57,7 +57,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0020] Standard cells area:            51.299 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Uniform density:                0.0138
-[INFO GPL-0033] Suggested density (90% whitespace util):     0.0153
+[INFO GPL-0033] Density w/ 90% whitespace util: 0.0153
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.218 um^2
 [INFO GPL-0025] Ideal bin area:                 10.312 um^2
@@ -67,7 +67,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
 [INFO GPL-0030] Number of bins:                   1024
 [INFO GPL-0032] Uniform density:                0.0236
-[INFO GPL-0033] Suggested density (90% whitespace util):     0.0262
+[INFO GPL-0033] Density w/ 90% whitespace util: 0.0262
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.090 um^2
 [INFO GPL-0025] Ideal bin area:                 10.129 um^2
@@ -77,7 +77,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
 [INFO GPL-0030] Number of bins:                   1024
 [INFO GPL-0032] Uniform density:                0.0569
-[INFO GPL-0033] Suggested density (90% whitespace util):     0.0633
+[INFO GPL-0033] Density w/ 90% whitespace util: 0.0633
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      5.700 um^2
 [INFO GPL-0025] Ideal bin area:                  8.143 um^2

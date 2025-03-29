@@ -31,7 +31,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 92385
 [INFO GPL-0032] Uniform density:                0.0058
-[INFO GPL-0033] Suggested density (90% whitespace util):     0.0064
+[INFO GPL-0033] Density w/ 90% whitespace util: 0.0064
 [INFO GPL-0023] Placement target density:       0.7500
 [INFO GPL-0024] Movable insts average area:      3.754 um^2
 [INFO GPL-0025] Ideal bin area:                  5.005 um^2

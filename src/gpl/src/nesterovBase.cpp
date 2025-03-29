@@ -1762,20 +1762,20 @@ void NesterovBase::initFillerGCells()
                 302,
                 "Consider increasing the target density or re-floorplanning "
                 "with a larger core area.\n"
-                "Given target density: {:.2%}\n"
-                "Suggested target density: {:.2%} (uniform density)",
+                "Given target density: {:.2f}\n"
+                "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }
   log_->info(
       GPL, 32, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
-  float max_density_suggestion
+  float density_suggestion
       = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
   log_->info(GPL,
              33,
-             "{:27} {:10.4f}",
-             "Suggested density (90% whitespace util):",
-             max_density_suggestion);
+             "{:27} {:.4f}",
+             "Density w/ 90% whitespace util:",
+             density_suggestion);
 
   // limit filler cells
   const double limit_filler_ratio = 10;
@@ -2043,10 +2043,10 @@ void NesterovBase::updateAreas()
   if (totalFillerArea_ < 0) {
     log_->error(GPL,
                 303,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
+                "Consider increasing the target density or re-floorplanning "
+                "with a larger core area.\n"
                 "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }

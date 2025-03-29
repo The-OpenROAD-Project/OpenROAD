@@ -22,7 +22,7 @@
 [INFO GPL-0020] Standard cells area:             1.862 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Uniform density:                0.0020
-[INFO GPL-0033] Suggested density (90% whitespace util):     0.0022
+[INFO GPL-0033] Density w/ 90% whitespace util: 0.0022
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.862 um^2
 [INFO GPL-0025] Ideal bin area:                  2.660 um^2

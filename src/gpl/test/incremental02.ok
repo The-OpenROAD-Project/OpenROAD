@@ -43,7 +43,7 @@
 [InitialPlace]  Iter: 19 conjugate gradient residual: 0.00076246 HPWL: 1310229641
 [InitialPlace]  Iter: 20 conjugate gradient residual: 0.00085274 HPWL: 1313977511
 [INFO GPL-0032] Uniform density:                0.0498
-[INFO GPL-0033] Suggested density (90% whitespace util):     0.0553
+[INFO GPL-0033] Density w/ 90% whitespace util: 0.0553
 [INFO GPL-0023] Placement target density:       0.3000
 [INFO GPL-0024] Movable insts average area:      2.114 um^2
 [INFO GPL-0025] Ideal bin area:                  7.045 um^2
