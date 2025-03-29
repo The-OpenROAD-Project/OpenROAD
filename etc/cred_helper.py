@@ -19,14 +19,14 @@ import sys
 
 def get_gcloud_auth_token(test):
     """
-    Returns the gcloud auth token based on the .user-bazelrc
+    Returns the gcloud auth token based on the user.bazelrc
     """
 
-    with open(".user-bazelrc") as f:
+    with open("user.bazelrc") as f:
         all = f.read()
     match = re.search(r"# user: (.*)", all)
     if match is None:
-        sys.exit('Did not find username in .user-bazelrc file as "# user: <username>"')
+        sys.exit('Did not find username in user.bazelrc file as "# user: <username>"')
     USER = match.group(1)
 
     cmd = ["gcloud", "auth", "print-access-token", USER]
