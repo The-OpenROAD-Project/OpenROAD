@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbScanInst.h"
 
+#include <string_view>
+
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"

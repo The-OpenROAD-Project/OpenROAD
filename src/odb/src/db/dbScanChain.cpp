@@ -34,6 +34,7 @@
 #include "dbScanChain.h"
 
 #include <string>
+#include <string_view>
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
