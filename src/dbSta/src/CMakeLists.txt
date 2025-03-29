@@ -40,6 +40,7 @@ add_library(dbSta_lib
   dbNetwork.cc
   dbSdcNetwork.cc
   dbReadVerilog.cc
+  SpefWriter.cc
 )
 
 target_include_directories(dbSta_lib

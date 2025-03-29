@@ -65,10 +65,13 @@ namespace utl {
 class Logger;
 }
 
+namespace sta {
+class SpefWriter;
+}
+
 namespace rsz {
 class Resizer;
-class SpefWriter;
-}  // namespace rsz
+}
 
 namespace grt {
 
@@ -84,7 +87,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
                          GRoute& route,
-                         rsz::SpefWriter* spef_writer = nullptr);
+                         sta::SpefWriter* spef_writer = nullptr);
   void estimateParasitcs(odb::dbNet* net, GRoute& route) override;
 
   void clearParasitics() override;
