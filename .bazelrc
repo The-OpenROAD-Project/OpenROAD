@@ -4,10 +4,26 @@ common --enable_bzlmod
 # versions found in dependency graph.
 common --check_direct_dependencies=off
 
-build --cxxopt "-std=c++17"
-build --cxxopt "-ffp-contract=off"
-build --host_cxxopt "-std=c++17"
-build --host_cxxopt "-ffp-contract=off"
+build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
+build --cxxopt "-ffp-contract=off" --host_cxxopt "-ffp-contract=off"
+
+# allow exceptions.
+build  --cxxopt=-fexceptions    --host_cxxopt=-fexceptions
+
+# Turn warnings on...
+build --copt "-Wall"               --host_copt "-Wall"
+build --copt "-Wextra"             --host_copt "-Wextra"
+
+# ... and disable the warnings we're not interested in.
+build --copt "-Wno-sign-compare"      --host_copt "-Wno-sign-compare"
+build --copt "-Wno-unused-parameter"  --host_copt "-Wno-unused-parameter"
+
+# For 3rd party code: Disable warnings entirely.
+# They are not actionable and just create noise.
+build --per_file_copt=external/.*@-w
+build --host_per_file_copt=external/.*@-w
+
+# TODO: document.
 build --crosstool_top=@llvm_toolchain//:toolchain
 build --incompatible_strict_action_env
 
