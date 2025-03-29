@@ -174,7 +174,7 @@ void SpefWriter::writePorts()
         stream << '\n';
       } else {
         logger_->error(ORD,
-                       8,
+                       10,
                        "Got a modTerm instead of iTerm or bTerm while writing "
                        "SPEF ports.");
       }
@@ -188,7 +188,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   auto it = spef_streams_.find(corner);
   if (it == spef_streams_.end()) {
     logger_->error(
-        ORD, 14, "Tried to write net SPEF info for corner that was not set");
+        ORD, 20, "Tried to write net SPEF info for corner that was not set");
   }
   std::ostream& stream = *it->second;
 
