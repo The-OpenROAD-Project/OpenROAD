@@ -548,7 +548,7 @@ Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
   targetDensity_ = targetDensity;
 }
 
-const int64_t Bin::binArea() const
+int64_t Bin::binArea() const
 {
   return static_cast<int64_t>(dx()) * static_cast<int64_t>(dy());
 }

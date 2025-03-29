@@ -568,16 +568,13 @@ class Bin
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
 
-  const int64_t binArea() const;
-  const int64_t nonPlaceArea() const { return nonPlaceArea_; }
-  const int64_t instPlacedArea() const { return instPlacedArea_; }
-  const int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  const int64_t instPlacedAreaUnscaled() const
-  {
-    return instPlacedAreaUnscaled_;
-  }
+  int64_t binArea() const;
+  int64_t nonPlaceArea() const { return nonPlaceArea_; }
+  int64_t instPlacedArea() const { return instPlacedArea_; }
+  int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
-  const int64_t fillerArea() const { return fillerArea_; }
+  int64_t fillerArea() const { return fillerArea_; }
 
  private:
   // index

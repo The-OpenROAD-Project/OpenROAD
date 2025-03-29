@@ -344,7 +344,7 @@ double defiGroup::propNumber(int index) const
   return propDValues_[index];
 }
 
-const char defiGroup::propType(int index) const
+char defiGroup::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProps_) {

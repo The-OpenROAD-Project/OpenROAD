@@ -117,7 +117,7 @@ double defiRow_propNumber(const ::defiRow* obj, int index)
   return ((DefParser::defiRow*) obj)->propNumber(index);
 }
 
-const char defiRow_propType(const ::defiRow* obj, int index)
+char defiRow_propType(const ::defiRow* obj, int index)
 {
   return ((const DefParser::defiRow*) obj)->propType(index);
 }
