@@ -13,6 +13,7 @@ target_link_libraries(dft_cells_lib
     dft_clock_domain_lib
     dft_config_lib
     dft_utils_lib
+    dft_utils_macros_lib
 )
 
 target_include_directories(dft_cells_lib
@@ -30,6 +31,7 @@ target_link_libraries(dft_base_scan_cell_lib
     dft_clock_domain_lib
     dft_config_lib
     dft_utils_scan_pin_lib
+    dft_utils_macros_lib
 )
 
 target_include_directories(dft_base_scan_cell_lib

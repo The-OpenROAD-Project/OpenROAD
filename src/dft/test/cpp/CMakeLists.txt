@@ -10,6 +10,7 @@ set(TEST_LIBS
   dft_architect_lib
   dft_clock_domain_lib
   dft_utils_scan_pin_lib
+  dft_utils_macros_lib
 )
 
 add_executable(TestScanArchitect TestScanArchitect.cpp)

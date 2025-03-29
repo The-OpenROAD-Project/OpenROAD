@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Google LLC
+// Copyright (c) 2025, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,46 +29,46 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#pragma once
 
-#include "Macros.hh"
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
+#include "TestModeConfig.hh"
 
 namespace dft {
 
-// A simple single cell with just one bit. Usually one scan FF
-class OneBitScanCell : public ScanCell
+ScanArchitectConfig* TestModeConfig::getMutableScanArchitectConfig()
 {
-  DISABLE_COPY_AND_MOVE(OneBitScanCell);
+  return &scan_architect_config_;
+}
 
- public:
-  OneBitScanCell(const std::string& name,
-                 std::unique_ptr<ClockDomain> clock_domain,
-                 odb::dbInst* inst,
-                 sta::TestCell* test_cell,
-                 sta::dbNetwork* db_network,
-                 utl::Logger* logger);
+const ScanArchitectConfig& TestModeConfig::getScanArchitectConfig() const
+{
+  return scan_architect_config_;
+}
 
-  uint64_t getBits() const override;
-  void connectScanEnable(const ScanDriver& driver) const override;
-  void connectScanIn(const ScanDriver& driver) const override;
-  void connectScanOut(const ScanLoad& load) const override;
-  ScanLoad getScanIn() const override;
-  ScanDriver getScanOut() const override;
+ScanStitchConfig* TestModeConfig::getMutableScanStitchConfig()
+{
+  return &scan_stitch_config_;
+}
 
-  odb::Point getOrigin() const override;
-  bool isPlaced() const override;
+const ScanStitchConfig& TestModeConfig::getScanStitchConfig() const
+{
+  return scan_stitch_config_;
+}
 
- private:
-  odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
+void TestModeConfig::report(utl::Logger* logger) const
+{
+  scan_architect_config_.report(logger);
+  scan_stitch_config_.report(logger);
+}
 
-  odb::dbInst* inst_;
-  sta::TestCell* test_cell_;
-  sta::dbNetwork* db_network_;
-};
+const std::string& TestModeConfig::getName() const
+{
+  return name_;
+}
+
+void TestModeConfig::validate(utl::Logger* logger) const
+{
+  scan_architect_config_.validate(logger);
+  scan_stitch_config_.validate(logger);
+}
 
 }  // namespace dft

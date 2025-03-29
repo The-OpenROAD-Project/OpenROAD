@@ -29,6 +29,7 @@ Instance ff1
   Q_N output (unconnected)
 ***************************
 Preview DFT Report
+Test mode: internal_scan
 Number of chains: 1
 Clock domain: No Mix
 ***************************

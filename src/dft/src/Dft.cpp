@@ -84,18 +84,31 @@ void Dft::pre_dft()
 
 void Dft::previewDft(bool verbose)
 {
+  dft_config_->validate(logger_);
+
+  for (const auto& [test_mode, test_mode_config] :
+       dft_config_->getTestModesConfig()) {
+    previewDft(test_mode_config, verbose);
+  }
+}
+
+void Dft::previewDft(const TestModeConfig& test_mode_config, bool verbose)
+{
   if (need_to_run_pre_dft_) {
     pre_dft();
   }
 
-  std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
+  std::vector<std::unique_ptr<ScanChain>> scan_chains
+      = scanArchitect(test_mode_config);
 
   logger_->report("***************************");
   logger_->report("Preview DFT Report");
+  logger_->report("Test mode: {:s}", test_mode_config.getName());
   logger_->report("Number of chains: {:d}", scan_chains.size());
-  logger_->report("Clock domain: {:s}",
-                  ScanArchitectConfig::ClockMixingName(
-                      dft_config_->getScanArchitectConfig().getClockMixing()));
+  logger_->report(
+      "Clock domain: {:s}",
+      ScanArchitectConfig::ClockMixingName(
+          test_mode_config.getScanArchitectConfig().getClockMixing()));
   logger_->report("***************************\n");
   for (const auto& scan_chain : scan_chains) {
     scan_chain->report(logger_, verbose);
@@ -113,12 +126,23 @@ void Dft::scanReplace()
 
 void Dft::insertDft()
 {
+  dft_config_->validate(logger_);
+
+  // iterate and call per test mode
+  for (const auto& [_, test_mode_config] : dft_config_->getTestModesConfig()) {
+    insertDft(test_mode_config);
+  }
+}
+
+void Dft::insertDft(const TestModeConfig& test_mode_config)
+{
   if (need_to_run_pre_dft_) {
     pre_dft();
   }
-  std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
+  std::vector<std::unique_ptr<ScanChain>> scan_chains
+      = scanArchitect(test_mode_config);
 
-  ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
+  ScanStitch stitch(db_, logger_, test_mode_config.getScanStitchConfig());
   stitch.Stitch(scan_chains);
 
   // Write scan chains to odb
@@ -179,7 +203,8 @@ void Dft::reportDftConfig() const
   dft_config_->report(logger_);
 }
 
-std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
+std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect(
+    const TestModeConfig& test_mode_config)
 {
   std::vector<std::unique_ptr<ScanCell>> scan_cells
       = CollectScanCells(db_, sta_, logger_);
@@ -187,11 +212,12 @@ std::vector<std::unique_ptr<ScanChain>> Dft::scanArchitect()
   // Scan Architect
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
       = std::make_unique<ScanCellsBucket>(logger_);
-  scan_cells_bucket->init(dft_config_->getScanArchitectConfig(), scan_cells);
+  scan_cells_bucket->init(test_mode_config.getScanArchitectConfig(),
+                          scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
       = ScanArchitect::ConstructScanScanArchitect(
-          dft_config_->getScanArchitectConfig(),
+          test_mode_config.getScanArchitectConfig(),
           std::move(scan_cells_bucket),
           logger_);
   scan_architect->init();

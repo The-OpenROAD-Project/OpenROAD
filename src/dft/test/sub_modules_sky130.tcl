@@ -9,6 +9,8 @@ link_design sub_modules
 
 create_clock -name main_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clock}]
 
+set_dft_config -max_chains 1
+
 scan_replace
 preview_dft -verbose
 insert_dft
