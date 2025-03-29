@@ -211,7 +211,12 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
     }
   }
 
-  log_->info(GPL, 103, "Timing-driven: weighted {} nets.", weighted_net_count);
+  debugPrint(log_,
+             GPL,
+             "timing",
+             1,
+             "Timing-driven: weighted {} nets.",
+             weighted_net_count);
   return true;
 }
 
