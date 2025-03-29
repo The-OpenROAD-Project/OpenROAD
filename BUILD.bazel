@@ -35,24 +35,21 @@
 ###############################################################################
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-
-load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
 load("@rules_hdl//dependency_support/com_github_westes_flex:flex.bzl", "genlex")
-
+load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
 load(
     "//:bazel/build_helper.bzl",
-    "OPENROAD_DEFINES",
     "OPENROAD_BINARY_DEPS",
     "OPENROAD_BINARY_SRCS",
     "OPENROAD_BINARY_SRCS_WITHOUT_MAIN",
     "OPENROAD_COPTS",
+    "OPENROAD_DEFINES",
     "OPENROAD_LIBRARY_DEPS",
     "OPENROAD_LIBRARY_HDRS_INCLUDE",
     "OPENROAD_LIBRARY_INCLUDES",
     "OPENROAD_LIBRARY_SRCS_EXCLUDE",
     "OPENROAD_LIBRARY_SRCS_INCLUDE",
 )
-
 load("//:bazel/tcl_encode.bzl", "tcl_encode")
 load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -107,8 +104,8 @@ cc_library(
             "src/gui/src/stub.cpp",
             "src/gui/src/stub_heatMap.cpp",
         ],
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
         allow_empty = True,
+        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
         "src/stt/src/flt/etc/POST9.cpp",
         "src/stt/src/flt/etc/POWV9.cpp",
@@ -137,8 +134,8 @@ cc_library(
             "src/gui/src/stub.cpp",
             "src/gui/src/stub_heatMap.cpp",
         ],
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
         allow_empty = True,
+        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
         "src/OpenRoad.cc",
         "src/stt/src/flt/etc/POST9.cpp",
@@ -915,9 +912,6 @@ cc_library(
         "src/utl/include/utl/*.h",
         "src/odb/src/db/*.h",
     ]) + [
-        "src/odb/src/def/def/defiAlias.hpp",
-        "src/odb/src/def/def/defrReader.hpp",
-        "src/odb/src/def/def/defwWriter.hpp",
         "src/odb/src/lef/lef/lefiDebug.hpp",
         "src/odb/src/lef/lef/lefiUtil.hpp",
         "src/odb/src/lef/lef/lefrReader.hpp",
@@ -942,9 +936,10 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//src/utl",
-        ":opendb_def",
         ":opendb_lef",
+        "//src/odb/src/def",
+        "//src/odb/src/def:defzlib",
+        "//src/utl",
         "@boost.algorithm",
         "@boost.bind",
         "@boost.config",
@@ -1005,61 +1000,6 @@ cc_library(
     deps = [
         "@zlib",
     ],
-)
-
-cc_library(
-    name = "opendb_def",
-    srcs = glob(
-        include = [
-            "src/odb/src/def/def/*.cpp",
-            "src/odb/src/def/def/*.h",
-            "src/odb/src/def/def/*.hpp",
-            "src/odb/src/def/defzlib/*.hpp",
-            "src/odb/src/def/defzlib/*.cpp",
-        ],
-        exclude = [
-            "src/odb/src/def/def/defiComponent.hpp",
-            "src/odb/src/def/def/defiUtil.hpp",
-        ],
-    ) + [
-        "src/odb/src/def/def/def_parser.cpp",
-        "src/odb/src/def/def/def_parser.hpp",
-    ],
-    hdrs = glob([
-        "src/odb/include/odb/*.h",
-        "src/odb/include/odb/*.hpp",
-    ]) + [
-        "src/odb/src/def/def/defiAlias.hpp",
-        "src/odb/src/def/def/defiComponent.hpp",
-        "src/odb/src/def/def/defiUtil.hpp",
-        "src/odb/src/def/def/defrReader.hpp",
-        "src/odb/src/def/def/defwWriter.hpp",
-        "src/odb/src/def/defzlib/defzlib.hpp",
-    ],
-    copts = [
-        "-fexceptions",
-        "-Wno-error",
-    ],
-    features = ["-use_header_modules"],
-    includes = [
-        "src/odb/include/odb",
-        "src/odb/src/def/def",
-        "src/odb/src/def/defzlib",
-    ],
-    visibility = [
-        "//visibility:private",
-    ],
-    deps = [
-        "@zlib",
-    ],
-)
-
-genyacc(
-    name = "def_bison",
-    src = "src/odb/src/def/def/def.y",
-    header_out = "src/odb/src/def/def/def_parser.hpp",
-    prefix = "defyy",
-    source_out = "src/odb/src/def/def/def_parser.cpp",
 )
 
 genyacc(
@@ -1391,14 +1331,13 @@ cc_library(
     ) + [
         "src/sta/util/Machine.cc",
         ":StaConfig",
-    ]
+    ],
     #+ select({
-#        "@bazel_tools//src/conditions:windows": ["src/sta/util/MachineWin32.cc"],
-#        "@bazel_tools//src/conditions:darwin": ["src/sta/util/MachineApple.cc"],
-#        "@bazel_tools//src/conditions:linux": ["src/sta/util/MachineLinux.cc"],
-#        "//conditions:default": ["src/sta/util/MachineUnknown.cc"],
-#    })
-,
+    #        "@bazel_tools//src/conditions:windows": ["src/sta/util/MachineWin32.cc"],
+    #        "@bazel_tools//src/conditions:darwin": ["src/sta/util/MachineApple.cc"],
+    #        "@bazel_tools//src/conditions:linux": ["src/sta/util/MachineLinux.cc"],
+    #        "//conditions:default": ["src/sta/util/MachineUnknown.cc"],
+    #    })
     hdrs = glob(
         include = ["src/sta/include/sta/*.hh"],
     ),
@@ -1430,14 +1369,14 @@ cc_library(
         "src/sta/util",
         "src/sta/verilog",
     ],
-    textual_hdrs = ["src/sta/util/MachineLinux.cc",],
+    textual_hdrs = ["src/sta/util/MachineLinux.cc"],
     visibility = ["//:__subpackages__"],
     deps = [
+        "@cudd",
+        "@eigen",
+        "@rules_flex//flex:current_flex_toolchain",
         "@tk_tcl//:tcl",
         "@zlib",
-        "@eigen",
-        "@cudd",
-        "@rules_flex//flex:current_flex_toolchain",
     ],
 )
 

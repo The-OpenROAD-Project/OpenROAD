@@ -1,7 +1,9 @@
 # -*- Python -*-
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, Precision Innovations Inc.
 
-load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//:bazel/tcl_encode.bzl", "tcl_encode")
+load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -62,12 +64,12 @@ cc_library(
     ],
     includes = ["include"],
     deps = [
+        "//:opensta_lib",
         "@boost.asio",
         "@boost.beast",
         "@boost.core",
         "@spdlog",
         "@tk_tcl//:tcl",
-        "//:opensta_lib",
     ],
 )
 
