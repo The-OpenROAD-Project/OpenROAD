@@ -38,6 +38,8 @@
 #include "detailed_global.h"
 
 #include <boost/tokenizer.hpp>
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "detailed_hpwl.h"

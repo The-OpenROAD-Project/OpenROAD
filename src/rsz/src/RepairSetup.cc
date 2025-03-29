@@ -35,7 +35,9 @@
 
 #include "RepairSetup.hh"
 
+#include <cstddef>
 #include <sstream>
+#include <string>
 
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"

@@ -35,6 +35,7 @@
 #include <climits>
 #include <cstdio>
 #include <fstream>
+#include <string>
 
 #include "utl/Logger.h"
 

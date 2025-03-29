@@ -42,6 +42,7 @@
 #include <csignal>
 #include <map>
 #include <memory>
+#include <string>
 
 #include "utl/Progress.h"
 

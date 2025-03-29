@@ -35,6 +35,7 @@
 
 #include "RepairHold.hh"
 
+#include <string>
 #include <vector>
 
 #include "RepairDesign.hh"

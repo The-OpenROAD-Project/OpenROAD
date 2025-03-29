@@ -45,6 +45,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string>
 
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"

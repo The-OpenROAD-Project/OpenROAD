@@ -45,6 +45,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstddef>
 #include <string>
 #include <vector>
 

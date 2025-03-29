@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cassert>
+#include <utility>
 // #define _CRTDBG_MAP_ALLOC
 
 #pragma once

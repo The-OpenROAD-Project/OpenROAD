@@ -30,6 +30,8 @@
 
 #include <boost/asio/post.hpp>
 #include <boost/bind/bind.hpp>
+#include <cstddef>
+#include <string>
 
 #include "Worker.h"
 #include "dst/Distributed.h"

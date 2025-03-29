@@ -32,6 +32,8 @@
 
 #include "dbRow.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbLib.h"

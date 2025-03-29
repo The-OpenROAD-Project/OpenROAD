@@ -35,6 +35,7 @@
 
 #include "utl/Metrics.h"
 
+#include <string>
 #include <vector>
 
 #include "spdlog/fmt/fmt.h"
