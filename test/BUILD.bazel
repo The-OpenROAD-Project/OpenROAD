@@ -14,6 +14,9 @@
         "OPENROAD_EXE": "$(location //:openroad)",
         "TEST_EXT": "tcl",
     },
+    # No point in running these tests with unless they fail,
+    # they would be too slow.
+    tags = ["optonly"],
 ) for test in [file.split(".")[0] for file in glob(
     ["*.tcl"],
     exclude = ["regression.tcl"],
