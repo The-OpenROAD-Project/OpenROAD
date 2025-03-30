@@ -34,10 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SteinerTree.hh"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
