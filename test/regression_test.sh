@@ -20,7 +20,7 @@ echo "Exitcode:  $?"
 
 if [ "$TEST_CHECK_LOG" == "True" ]; then
     echo "Diff:      ${PWD}/results/$TEST_NAME-$TEST_EXT.diff"
-    diff $LOG_FILE $TEST_NAME.ok > results/$TEST_NAME-$TEST_EXT.diff
+    diff $LOG_FILE $TEST_NAME.ok > results/$TEST_NAME-$TEST_EXT.diff || (head -n 10 $LOG_FILE && exit 1)
 fi
 
 if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then
