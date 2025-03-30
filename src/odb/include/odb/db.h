@@ -158,7 +158,6 @@ class dbMetalWidthViaMap;
 class dbModBTerm;
 class dbModInst;
 class dbModITerm;
-class dbModBTerm;
 class dbModNet;
 class dbModule;
 class dbNetTrack;
