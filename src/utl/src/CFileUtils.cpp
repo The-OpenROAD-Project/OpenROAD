@@ -1,5 +1,8 @@
 #include "utl/CFileUtils.h"
 
+#include <cstddef>
+#include <string>
+
 namespace utl {
 
 std::string GetContents(FILE* file, Logger* logger)

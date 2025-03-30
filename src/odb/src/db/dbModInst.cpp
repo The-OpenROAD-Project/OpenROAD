@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <fstream>
+#include <string>
 
 // Generator Code Begin Cpp
 #include "dbBlock.h"

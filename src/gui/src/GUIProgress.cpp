@@ -40,6 +40,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QVBoxLayout>
+#include <string>
 
 #include "mainWindow.h"
 #include "utl/Logger.h"

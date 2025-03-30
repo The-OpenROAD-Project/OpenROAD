@@ -32,6 +32,7 @@
 
 #include "heatMap.h"
 
+#include <string>
 #include <vector>
 
 #include "psm/pdnsim.h"

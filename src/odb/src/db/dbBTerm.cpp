@@ -32,6 +32,8 @@
 
 #include "dbBTerm.h"
 
+#include <string>
+
 #include "dbArrayTable.h"
 #include "dbBPinItr.h"
 #include "dbBlock.h"

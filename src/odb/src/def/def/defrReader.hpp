@@ -31,6 +31,7 @@
 #define DEFRREADER_H
 
 #include <cstdarg>
+#include <cstddef>
 #include <string_view>
 
 #include "defiDefs.hpp"

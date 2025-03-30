@@ -37,6 +37,7 @@
 
 #include <cmath>
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "CtsObserver.h"

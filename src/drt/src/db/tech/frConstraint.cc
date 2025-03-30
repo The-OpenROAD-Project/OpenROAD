@@ -1,5 +1,7 @@
 #include "frConstraint.h"
 
+#include <string>
+
 #include "frLayer.h"
 namespace drt {
 

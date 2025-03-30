@@ -42,9 +42,11 @@
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 #include <set>
 #include <stack>
+#include <string>
 #include <utility>
 #include <vector>
 

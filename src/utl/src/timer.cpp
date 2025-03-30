@@ -35,6 +35,8 @@
 
 #include "utl/timer.h"
 
+#include <string>
+
 namespace utl {
 
 void Timer::reset()
