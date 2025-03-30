@@ -527,6 +527,10 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.virtual_obstructions_and_blockages,
+               "Virtual Obstructions & Blockages (Debug)",
+               misc,
+               Qt::Unchecked);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -1750,6 +1754,11 @@ bool DisplayControls::isModuleView() const
 bool DisplayControls::isGCellGridVisible() const
 {
   return isModelRowVisible(&misc_.gcell_grid);
+}
+
+bool DisplayControls::areVirtualObstructionsAndBlockagesVisible() const
+{
+  return isModelRowVisible(&misc_.virtual_obstructions_and_blockages);
 }
 
 bool DisplayControls::areIOPinsVisible() const

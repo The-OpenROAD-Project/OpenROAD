@@ -33,6 +33,7 @@
 #include "renderThread.h"
 
 #include <QPainterPath>
+#include <QPolygon>
 #include <string>
 #include <vector>
 
@@ -813,6 +814,10 @@ void RenderThread::drawBlockages(QPainter* painter,
     if (restart_) {
       break;
     }
+    if (blockage->isVirtual()
+        && !viewer_->options_->areVirtualObstructionsAndBlockagesVisible()) {
+      continue;
+    }
     Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
@@ -845,6 +850,10 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
   for (auto* obs : obstructions_range) {
     if (restart_) {
       break;
+    }
+    if (obs->isVirtual()
+        && !viewer_->options_->areVirtualObstructionsAndBlockagesVisible()) {
+      continue;
     }
     Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
@@ -1085,9 +1094,14 @@ void RenderThread::drawBlock(QPainter* painter,
   // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox = block->getDieArea();
-  if (bbox.area() > 0) {
-    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  odb::Polygon die_area = block->getDieAreaPolygon();
+
+  if (die_area.getEnclosingRect().area() > 0) {
+    QPolygon die_area_qpoly(die_area.getPoints().size());
+    for (const odb::Point& point : die_area.getPoints()) {
+      die_area_qpoly << QPoint(point.getX(), point.getY());
+    }
+    painter->drawPolygon(die_area_qpoly);
   }
 
   drawManufacturingGrid(painter, bounds);

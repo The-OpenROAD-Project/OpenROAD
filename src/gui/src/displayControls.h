@@ -254,6 +254,7 @@ class DisplayControls : public QDockWidget,
   bool isModuleView() const override;
 
   bool isGCellGridVisible() const override;
+  bool areVirtualObstructionsAndBlockagesVisible() const override;
 
   // API from dbNetworkObserver
   void postReadLiberty() override;
@@ -397,6 +398,7 @@ class DisplayControls : public QDockWidget,
     ModelRow module;
     ModelRow manufacturing_grid;
     ModelRow gcell_grid;
+    ModelRow virtual_obstructions_and_blockages;
   };
 
   struct InstanceShapeModels

@@ -337,7 +337,19 @@ class Polygon
   Polygon(const Oct& oct);
 
   std::vector<Point> getPoints() const;
+
+  const std::vector<Point>& getPointsConstReference() const;
+  std::vector<Point>& getPointsMutable();
   void setPoints(const std::vector<Point>& points);
+
+  std::vector<std::vector<Point>>& getInteriorPointsMutable()
+  {
+    return interior_points_;
+  };
+  const std::vector<std::vector<Point>>& getInteriorPoints() const
+  {
+    return interior_points_;
+  };
 
   bool operator==(const Polygon& p) const;
   bool operator!=(const Polygon& p) const { return !(*this == p); };
@@ -346,6 +358,7 @@ class Polygon
   bool operator<=(const Polygon& p) const { return !(*this > p); }
   bool operator>=(const Polygon& p) const { return !(*this < p); }
 
+  bool isRect() const;
   Rect getEnclosingRect() const;
   int dx() const { return getEnclosingRect().dx(); }
   int dy() const { return getEnclosingRect().dy(); }
@@ -358,6 +371,7 @@ class Polygon
 
  private:
   std::vector<Point> points_;
+  std::vector<std::vector<Point>> interior_points_;  // always empty
 };
 
 class Line
@@ -965,6 +979,16 @@ inline std::vector<Point> Polygon::getPoints() const
   return points_;
 }
 
+inline const std::vector<Point>& Polygon::getPointsConstReference() const
+{
+  return points_;
+}
+
+inline std::vector<Point>& Polygon::getPointsMutable()
+{
+  return points_;
+}
+
 inline Rect Polygon::getEnclosingRect() const
 {
   Rect rect;
@@ -973,6 +997,13 @@ inline Rect Polygon::getEnclosingRect() const
     rect.merge(Rect(pt, pt));
   }
   return rect;
+}
+
+inline bool Polygon::isRect() const
+{
+  // A polygon is a rect if and only if the polygon
+  // of its bounding box is equal to itself.
+  return *this == Polygon(getEnclosingRect());
 }
 
 inline bool Polygon::operator==(const Polygon& p) const

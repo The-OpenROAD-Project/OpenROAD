@@ -280,48 +280,42 @@ struct tag<odb::Polygon>
 template <>
 struct ring_mutable_type<odb::Polygon>
 {
-  using type = std::vector<odb::Point>;
+  using type = std::vector<odb::Point>&;
 };
 
 template <>
 struct ring_const_type<odb::Polygon>
 {
-  using type = const std::vector<odb::Point>;
+  using type = const std::vector<odb::Point>&;
 };
 
 template <>
 struct interior_const_type<odb::Polygon>
 {
-  using type = const std::vector<std::vector<odb::Point>>;
+  using type = const std::vector<std::vector<odb::Point>>&;
 };
 
 template <>
 struct interior_mutable_type<odb::Polygon>
 {
-  using type = std::vector<std::vector<odb::Point>>;
+  using type = std::vector<std::vector<odb::Point>>&;
 };
 
 template <>
 struct exterior_ring<odb::Polygon>
 {
-  static std::vector<odb::Point> get(odb::Polygon& p) { return p.getPoints(); }
-  static const std::vector<odb::Point> get(const odb::Polygon& p)
+  static auto& get(odb::Polygon& p) { return p.getPointsMutable(); }
+  static auto& get(const odb::Polygon& p)
   {
-    return p.getPoints();
+    return p.getPointsConstReference();
   }
 };
 
 template <>
 struct interior_rings<odb::Polygon>
 {
-  static std::vector<std::vector<odb::Point>> get(odb::Polygon& p)
-  {
-    return {};
-  }
-  static const std::vector<std::vector<odb::Point>> get(const odb::Polygon& p)
-  {
-    return {};
-  }
+  static auto& get(odb::Polygon& p) { return p.getInteriorPointsMutable(); }
+  static auto& get(const odb::Polygon& p) { return p.getInteriorPoints(); }
 };
 
 }  // namespace boost::geometry::traits

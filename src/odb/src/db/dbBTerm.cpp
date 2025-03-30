@@ -931,7 +931,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
 void _dbBTerm::setMirroredConstraintRegion(const Rect& region, _dbBlock* block)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  const Rect& die_bounds = block->_die_area;
+  const Rect& die_bounds = ((dbBlock*) block)->getDieArea();
   int begin = region.dx() == 0 ? region.yMin() : region.xMin();
   int end = region.dx() == 0 ? region.yMax() : region.xMax();
   Direction2D edge;

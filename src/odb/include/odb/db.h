@@ -1433,9 +1433,19 @@ class dbBlock : public dbObject
   void setDieArea(const Rect& new_rect);
 
   ///
+  /// Set the die area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setDieArea(const Polygon& new_rect);
+
+  ///
   /// Get the die area. The default die-area is (0,0,0,0).
   ///
   Rect getDieArea();
+
+  ///
+  /// Get the die area as a polygon. The default die-area is (0,0,0,0).
+  ///
+  Polygon getDieAreaPolygon();
 
   ///
   /// Get the core area. This computes the bbox of the rows
@@ -4104,6 +4114,21 @@ class dbObstruction : public dbObject
   static void destroy(dbObstruction* obstruction);
 
   ///
+  /// Returns true if this obstruction is virtual. Virtual obstructions
+  /// represent obstructions created by non-rectangular floorplans.
+  /// The general flow is the polygonal floorplan is subtracted
+  /// from its general bounding box and the shapes that are created
+  /// by that difference are then decomposed into rectangles which
+  /// create obstructions with the virtual annotation.
+  ///
+  bool isVirtual();
+
+  ///
+  /// Sets this obstruction as virtual.
+  ///
+  void setIsVirtual(bool is_virtual);
+
+  ///
   /// Create a routing obstruction.
   ///
   static dbObstruction* create(dbBlock* block,
@@ -4158,6 +4183,21 @@ class dbBlockage : public dbObject
   /// Returns true if this blockage is soft.
   ///
   bool isSoft();
+
+  ///
+  /// Returns true if this blockage is virtual. Virtual blockages
+  /// represent blockages created by non-rectangular floorplans.
+  /// The general flow is the polygonal floorplan is subtracted
+  /// from its general bounding box and the shapes that are created
+  /// by that difference are then decomposed into rectangles which
+  /// create blockages with the virtual annotation.
+  ///
+  bool isVirtual();
+
+  ///
+  /// Sets this blockage as virtual.
+  ///
+  void setIsVirtual(bool is_virtual);
 
   ///
   /// Set the max placement density percentage in [0,100]

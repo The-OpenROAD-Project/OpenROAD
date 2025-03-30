@@ -130,7 +130,9 @@
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/defout.h"
+#include "odb/geom_boost.h"
 #include "odb/lefout.h"
+#include "odb/poly_decomp.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -178,6 +180,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _corners_per_block = 0;
   _corner_name_list = nullptr;
   _name = nullptr;
+  _die_area = Rect(0, 0, 0, 0);
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
@@ -899,7 +902,13 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._corners_per_block;
   stream >> block._corner_name_list;
   stream >> block._name;
-  stream >> block._die_area;
+  if (db->isSchema(db_schema_die_area_is_polygon)) {
+    stream >> block._die_area;
+  } else {
+    Rect rect;
+    stream >> rect;
+    block._die_area = rect;
+  }
   if (db->isSchema(db_schema_dbblock_blocked_regions_for_pins)) {
     stream >> block._blocked_regions_for_pins;
   }
@@ -2089,7 +2098,65 @@ void dbBlock::setDieArea(const Rect& new_area)
   }
 }
 
+void dbBlock::setDieArea(const Polygon& new_area)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->_die_area = new_area;
+  for (auto callback : block->_callbacks) {
+    callback->inDbBlockSetDieArea(this);
+  }
+
+  dbTech* tech = getTech();
+  dbSet<dbTechLayer> tech_layers = tech->getLayers();
+  // General flow here:
+  // We have a polygon floorplan. We can represent this floorplan
+  // as a bounding rectangle with obstructions where there is empty
+  // space in the polygon.
+  //
+  // The following code runs a subtraction on the bounding box and
+  // the polygon. This generates a list of polygons where there is
+  // supposed to be empty space. These polygons are then decomposed
+  // into rectangles. Which are then used to create obstructions and
+  // placement blockages.
+  std::list<Polygon> results;
+  Polygon bounding_rect = block->_die_area.getEnclosingRect();
+  boost::geometry::difference(bounding_rect, block->_die_area, results);
+  for (odb::Polygon& blockage_area : results) {
+    std::vector<Rect> blockages;
+    decompose_polygon(blockage_area.getPoints(), blockages);
+    for (odb::Rect& blockage_rect : blockages) {
+      dbBlockage* db_blockage = dbBlockage::create(this,
+                                                   blockage_rect.xMin(),
+                                                   blockage_rect.yMin(),
+                                                   blockage_rect.xMax(),
+                                                   blockage_rect.yMax());
+      db_blockage->setIsVirtual(true);
+
+      // Create routing blockages
+      for (dbTechLayer* tech_layer : tech_layers) {
+        if (tech_layer->getType() == odb::dbTechLayerType::OVERLAP) {
+          continue;
+        }
+
+        dbObstruction* obs = dbObstruction::create(this,
+                                                   tech_layer,
+                                                   blockage_rect.xMin(),
+                                                   blockage_rect.yMin(),
+                                                   blockage_rect.xMax(),
+                                                   blockage_rect.yMax());
+        obs->setIsVirtual(true);
+      }
+    }
+  }
+}
+
 Rect dbBlock::getDieArea()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return block->_die_area.getEnclosingRect();
+}
+
+Polygon dbBlock::getDieAreaPolygon()
 {
   _dbBlock* block = (_dbBlock*) this;
   return block->_die_area;

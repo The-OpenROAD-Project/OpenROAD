@@ -65,6 +65,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
   _flags._spare_bits = 0;
+  _flags._is_virtual = 0;
   _min_spacing = 0;
   _effective_width = 0;
 }
@@ -97,6 +98,11 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
     // assume false for older databases
     obs._flags._except_pg_nets = false;
+  }
+
+  if (!db->isSchema(db_schema_die_area_is_polygon)) {
+    // assume false for older databases
+    obs._flags._is_virtual = false;
   }
 
   return stream;
@@ -353,6 +359,18 @@ int dbObstruction::getMinSpacing()
 dbBlock* dbObstruction::getBlock()
 {
   return (dbBlock*) getImpl()->getOwner();
+}
+
+bool dbObstruction::isVirtual()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  return obs->_flags._is_virtual;
+}
+
+void dbObstruction::setIsVirtual(bool is_virtual)
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  obs->_flags._is_virtual = is_virtual;
 }
 
 dbObstruction* dbObstruction::create(dbBlock* block_,

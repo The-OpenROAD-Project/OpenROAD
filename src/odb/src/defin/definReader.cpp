@@ -677,41 +677,8 @@ int definReader::dieAreaCallback(
       Rect r(p0.getX(), p0.getY(), p1.getX(), p1.getY());
       reader->_block->setDieArea(r);
     } else {
-      reader->_logger->warn(
-          utl::ODB,
-          124,
-          "warning: Polygon DIEAREA statement not supported.  The bounding "
-          "box will be used instead");
-      int xmin = INT_MAX;
-      int ymin = INT_MAX;
-      int xmax = INT_MIN;
-      int ymax = INT_MIN;
-      std::vector<Point>::iterator itr;
-
-      for (itr = P.begin(); itr != P.end(); ++itr) {
-        Point& p = *itr;
-        int x = p.getX();
-        int y = p.getY();
-
-        if (x < xmin) {
-          xmin = x;
-        }
-
-        if (y < ymin) {
-          ymin = y;
-        }
-
-        if (x > xmax) {
-          xmax = x;
-        }
-
-        if (y > ymax) {
-          ymax = y;
-        }
-      }
-
-      Rect r(xmin, ymin, xmax, ymax);
-      reader->_block->setDieArea(r);
+      Polygon die_area_poly(P);
+      reader->_block->setDieArea(die_area_poly);
     }
   }
   return PARSE_OK;

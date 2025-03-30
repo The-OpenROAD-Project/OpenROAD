@@ -204,6 +204,18 @@ dbBlock* dbBlockage::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+bool dbBlockage::isVirtual()
+{
+  _dbBlockage* bkg = (_dbBlockage*) this;
+  return bkg->_flags._is_virtual_blockage;
+}
+
+void dbBlockage::setIsVirtual(bool is_virtual)
+{
+  _dbBlockage* bkg = (_dbBlockage*) this;
+  bkg->_flags._is_virtual_blockage = is_virtual;
+}
+
 dbBlockage* dbBlockage::create(dbBlock* block_,
                                int x1,
                                int y1,

@@ -229,15 +229,30 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   writePropertyDefinitions(block);
 
-  Rect r = block->getDieArea();
+  Polygon die_area = block->getDieAreaPolygon();
 
-  int x1 = defdist(r.xMin());
-  int y1 = defdist(r.yMin());
-  int x2 = defdist(r.xMax());
-  int y2 = defdist(r.yMax());
+  if (die_area.isRect()) {
+    Rect r = die_area.getEnclosingRect();
+    int x1 = defdist(r.xMin());
+    int y1 = defdist(r.yMin());
+    int x2 = defdist(r.xMax());
+    int y2 = defdist(r.yMax());
 
-  if ((x1 != 0) || (y1 != 0) || (x2 != 0) || (y2 != 0)) {
-    fprintf(_out, "DIEAREA ( %d %d ) ( %d %d ) ;\n", x1, y1, x2, y2);
+    if ((x1 != 0) || (y1 != 0) || (x2 != 0) || (y2 != 0)) {
+      fprintf(_out, "DIEAREA ( %d %d ) ( %d %d ) ;\n", x1, y1, x2, y2);
+    }
+  } else {
+    fprintf(_out, "DIEAREA ");
+    std::vector<odb::Point> points = die_area.getPoints();
+    // ODB ends polygons with a copy of 0 index vertex, in DEF there
+    // is an implicit rule that the last vertex is connected to the
+    // 0th index. So we skip the last point.
+    for (int i = 0; i < points.size() - 1; i++) {
+      int x = defdist(points[i].x());
+      int y = defdist(points[i].y());
+      fprintf(_out, "( %d %d ) ", x, y);
+    }
+    fprintf(_out, ";\n");
   }
 
   writeRows(block);
@@ -1236,8 +1251,25 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
 void defout_impl::writeBlockages(dbBlock* block)
 {
-  dbSet<dbObstruction> obstructions = block->getObstructions();
-  dbSet<dbBlockage> blockages = block->getBlockages();
+  dbSet<dbObstruction> obstructions_raw = block->getObstructions();
+  dbSet<dbBlockage> blockages_raw = block->getBlockages();
+
+  std::vector<dbObstruction*> obstructions;
+  std::vector<dbBlockage*> blockages;
+
+  for (const auto& obstruction : obstructions_raw) {
+    if (obstruction->isVirtual()) {
+      continue;
+    }
+    obstructions.push_back(obstruction);
+  }
+
+  for (const auto& blockage : blockages_raw) {
+    if (blockage->isVirtual()) {
+      continue;
+    }
+    blockages.push_back(blockage);
+  }
 
   int bcnt = obstructions.size() + blockages.size();
 

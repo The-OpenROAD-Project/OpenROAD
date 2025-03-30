@@ -173,7 +173,7 @@ class _dbBlock : public _dbObject
   uint _corners_per_block;
   char* _corner_name_list;
   char* _name;
-  Rect _die_area;
+  Polygon _die_area;
   std::vector<Rect> _blocked_regions_for_pins;
   dbId<_dbTech> _tech;
   dbId<_dbChip> _chip;
