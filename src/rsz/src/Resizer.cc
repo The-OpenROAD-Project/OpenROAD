@@ -418,6 +418,48 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (bufferBetweenPorts(buffer)) {
     return false;
   }
+  // Don't remove buffers connected to modnets on both input and output
+  // These buffers occupy as special place in hierarchy and cannot
+  // be removed without destroying the hierarchy.
+  // This is the hierarchical equivalent of "bufferBetweenPorts" above
+
+  Pin* buffer_ip_pin;
+  Pin* buffer_op_pin;
+  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+  if (db_network_->hierNet(buffer_ip_pin)
+      && db_network_->hierNet(buffer_op_pin)) {
+    return false;
+  }
+
+  //
+  // Don't remove buffers with an input pin connected to a hierarchical
+  // net but not and not an output pin connected to a hierarchical net.
+  // These are required to remain visible.
+  //
+  if (db_network_->hierNet(buffer_ip_pin)
+      && !db_network_->hierNet(buffer_op_pin)) {
+    return false;
+  }
+
+  // We only allow case when we can  get buffer driver
+  // and wire in the hierarchical net. This is when there is
+  // a dbModNet on the buffer output AND the buffer and the thing
+  // driving the instance are in the same module.
+
+  odb::dbModNet* op_hierarchical_net = db_network_->hierNet(buffer_op_pin);
+  if (op_hierarchical_net) {
+    Pin* ignore_driver_pin = nullptr;
+    dbNet* buffer_ip_flat_net = db_network_->flatNet(buffer_ip_pin);
+    odb::dbModule* driving_module = db_network_->getNetDriverParentModule(
+        db_network_->dbToSta(buffer_ip_flat_net), ignore_driver_pin, true);
+    // buffer is a dbInst.
+    dbInst* buffer_inst = db_network_->staToDb(buffer);
+    odb::dbModule* buffer_owning_module = buffer_inst->getModule();
+    if (driving_module != buffer_owning_module) {
+      return false;
+    }
+  }
+
   dbInst* db_inst = db_network_->staToDb(buffer);
   if (db_inst->isDoNotTouch()) {
     if (honorDontTouchFixed) {
@@ -485,10 +527,22 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
+
   Pin* in_pin = db_network_->findPin(buffer, in_port);
   Pin* out_pin = db_network_->findPin(buffer, out_port);
-  Net* in_net = db_network_->net(in_pin);
-  Net* out_net = db_network_->net(out_pin);
+
+  // Hierarchical net handling
+  odb::dbModNet* op_modnet = db_network_->hierNet(out_pin);
+
+  odb::dbNet* in_db_net = db_network_->flatNet(in_pin);
+  odb::dbNet* out_db_net = db_network_->flatNet(out_pin);
+  if (in_db_net == nullptr || out_db_net == nullptr) {
+    return;
+  }
+  // in_net and out_net are flat nets.
+  Net* in_net = db_network_->dbToSta(in_db_net);
+  Net* out_net = db_network_->dbToSta(out_db_net);
+
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
@@ -501,11 +555,9 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
     survivor = in_net;
     removed = out_net;
   }
-
   if (recordJournal) {
     journalRemoveBuffer(buffer);
   }
-
   debugPrint(
       logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
 
@@ -516,6 +568,25 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
   sta_->disconnectPin(out_pin);
   sta_->deleteInstance(buffer);
   sta_->deleteNet(removed);
+
+  // Hierarchical case supported:
+  // moving an output hierarchical net to the input pin driver.
+  // During canBufferRemove check (see above) we require that the
+  // input pin driver is in the same module scope as the output hierarchical
+  // driver
+  //
+  if (op_modnet) {
+    debugPrint(logger_,
+               RSZ,
+               "remove_buffer",
+               1,
+               "Handling hierarchical net {}",
+               op_modnet->getName());
+    Pin* driver_pin = nullptr;
+    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+    db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
+  }
+
   parasitics_invalid_.erase(removed);
   parasiticsInvalid(survivor);
   updateParasitics();
