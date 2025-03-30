@@ -141,7 +141,7 @@ OPENROAD_COPTS = [
 ]
 
 OPENROAD_DEFINES = [
-    "OPENROAD_GIT_DESCRIBE=\\\"bazel_rules_hdl\\\"",
+    "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
     "BUILD_TYPE=\\\"release\\\"",
     "GPU=false",
     "BUILD_PYTHON=false",
