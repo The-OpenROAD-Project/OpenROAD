@@ -63,7 +63,6 @@
 #include "defrReader.hpp"
 #include "defiUser.hpp"
 #include "defrCallBacks.hpp"
-#include "lex.h"
 
 #define DEF_MAX_INT 2147483647
 #define YYDEBUG 1     // this is temp fix for pcr 755132 
