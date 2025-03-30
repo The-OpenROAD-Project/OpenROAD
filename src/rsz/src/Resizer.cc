@@ -452,6 +452,7 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     dbNet* buffer_ip_flat_net = db_network_->flatNet(buffer_ip_pin);
     odb::dbModule* driving_module = db_network_->getNetDriverParentModule(
         db_network_->dbToSta(buffer_ip_flat_net), ignore_driver_pin, true);
+    (void) ignore_driver_pin;
     // buffer is a dbInst.
     dbInst* buffer_inst = db_network_->staToDb(buffer);
     odb::dbModule* buffer_owning_module = buffer_inst->getModule();
