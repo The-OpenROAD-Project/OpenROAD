@@ -1,16 +1,16 @@
 [sh_test(
-    name = "{test}".format(test=test),
+    name = "{test}".format(test = test),
     srcs = ["bazel_test.sh"],
     args = [],
     data = [
         "//:openroad",
-    ] + glob(["*.sh", "*.ok"]),
+    ] + glob(["**/*"]),
     env = {
         "TEST_NAME_BAZEL": test,
-        "OPENROAD_EXE": "../$(location //:openroad)",
+        "OPENROAD_EXE": "$(location //:openroad)",
         "TEST_EXT": "tcl",
-        "TEST_CHECK_LOG": "True",
-        "TEST_CHECK_PASSFAIL": "True",
-
     },
-) for test in ["gcd_sky130hs", "place_inst"]]
+) for test in [file.split(".")[0] for file in glob(
+    ["*.tcl"],
+    exclude = ["regression.tcl"],
+)]]
