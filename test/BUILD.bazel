@@ -8,13 +8,15 @@
     args = [],
     data = [
         "//:openroad",
-    ]
-    # TODO Refine blob later.
+    ] +
+    # TODO Refine glob later.
     #
-    # This is a very broad blob, but most of the data in size
+    # This is a very broad glob, but most of the data in size
     # comes from .lib files and we can't know which pdk files
     # to include for a test given the name only.
-     + glob(["**/*"]),
+    glob([
+        "**/*",
+    ]),
     env = {
         "TEST_NAME_BAZEL": test,
         "OPENROAD_EXE": "$(location //:openroad)",
