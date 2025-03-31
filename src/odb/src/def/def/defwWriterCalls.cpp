@@ -51,8 +51,8 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
+#include "defrData.hpp"
 #include "defwWriter.hpp"
-#include "lex.h"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
