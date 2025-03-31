@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbAccessPoint.h"
 
+#include <array>
+
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

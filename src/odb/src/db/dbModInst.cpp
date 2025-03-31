@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <fstream>
+#include <string>
 
 // Generator Code Begin Cpp
 #include "dbBlock.h"
@@ -405,12 +406,14 @@ void dbModInst::RemoveUnusedPortsAndPins()
   for (dbModITerm* mod_iterm : moditerms) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* mod_net = mod_bterm->getModNet();
-    dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
-    dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
-    dbSet<dbITerm> dest_iterms = mod_net->getITerms();
-    if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
-        && dest_iterms.size() == 0) {
-      kill_set.insert(mod_iterm);
+    if (mod_net) {
+      dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
+      dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
+      dbSet<dbITerm> dest_iterms = mod_net->getITerms();
+      if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
+          && dest_iterms.size() == 0) {
+        kill_set.insert(mod_iterm);
+      }
     }
   }
 

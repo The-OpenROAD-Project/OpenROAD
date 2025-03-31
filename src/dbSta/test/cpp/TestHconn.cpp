@@ -8,12 +8,14 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"

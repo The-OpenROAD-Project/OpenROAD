@@ -35,12 +35,13 @@
 
 #include "MakeWireParasitics.h"
 
+#include <cstddef>
 #include <vector>
 
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/Parasitics.hh"
@@ -80,7 +81,7 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
                                            std::vector<Pin>& pins,
                                            GRoute& route,
-                                           rsz::SpefWriter* spef_writer)
+                                           sta::SpefWriter* spef_writer)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {

@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbMasterEdgeType.h"
 
+#include <string>
+
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"

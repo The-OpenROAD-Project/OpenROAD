@@ -33,6 +33,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <utility>
+#include <vector>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "dbVector.h"

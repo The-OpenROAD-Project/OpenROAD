@@ -27,6 +27,8 @@
 
 #include "FlexTA_graphics.h"
 
+#include <string>
+
 #include "FlexTA.h"
 
 namespace drt {

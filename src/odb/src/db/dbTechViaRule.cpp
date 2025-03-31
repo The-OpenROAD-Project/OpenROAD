@@ -32,6 +32,8 @@
 
 #include "dbTechViaRule.h"
 
+#include <string>
+
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

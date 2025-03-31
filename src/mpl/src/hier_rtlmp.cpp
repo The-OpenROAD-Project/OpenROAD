@@ -37,7 +37,9 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -1446,26 +1448,6 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   if (best_sa == nullptr) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "SA Summary for cluster {}",
-               parent->getName());
-
-    for (auto i = 0; i < sa_containers.size(); i++) {
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "sa_id: {}, target_util: {}, target_dead_space: {}",
-                 i,
-                 target_util_list[i],
-                 target_dead_space_list[i]);
-
-      sa_containers[i]->printResults();
-    }
-
     placeChildrenUsingMinimumTargetUtil(parent);
   } else {
     if (best_sa->centralizationWasReverted()) {

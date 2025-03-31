@@ -33,6 +33,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 
 #include "dbStream.h"
 #include "geom.h"

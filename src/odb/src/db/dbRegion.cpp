@@ -32,6 +32,8 @@
 
 #include "dbRegion.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"

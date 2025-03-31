@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <vector>
 
 #include "BalancerConnection.h"

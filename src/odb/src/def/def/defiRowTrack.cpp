@@ -286,7 +286,7 @@ double defiRow::propNumber(int index) const
   return propDValues_[index];
 }
 
-const char defiRow::propType(int index) const
+char defiRow::propType(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6140(index, numProps_, defData);
