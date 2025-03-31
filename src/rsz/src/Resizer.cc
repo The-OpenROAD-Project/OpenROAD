@@ -432,8 +432,8 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   }
 
   //
-  // Don't remove buffers with an input pin connected to a hierarchical
-  // net but not and not an output pin connected to a hierarchical net.
+  // Don't remove buffers with (1) an input pin connected to a hierarchical
+  // net (1) an output pin not connected to a hierarchical net.
   // These are required to remain visible.
   //
   if (db_network_->hierNet(buffer_ip_pin)
