@@ -52,20 +52,6 @@ const odb::Rect& MasterEdge::getBBox() const
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-EdgeSpacingEntry::EdgeSpacingEntry(const int spc_in,
-                                   const bool is_exact_in,
-                                   const bool except_abutted_in)
-    : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
-{
-}
-
-bool EdgeSpacingEntry::operator<(const EdgeSpacingEntry& rhs) const
-{
-  return spc < rhs.spc;
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 bool Master::isMultiRow() const
 {
   return is_multi_row_;

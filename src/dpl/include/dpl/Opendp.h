@@ -87,6 +87,7 @@ class Grid;
 class GridInfo;
 class Padding;
 class PixelPt;
+class PlacementDRC;
 
 template <typename T>
 struct TypedCoordinate;
@@ -207,9 +208,7 @@ class Opendp
 
   void initGrid();
 
-  void makeCellEdgeSpacingTable();
-  bool hasCellEdgeSpacingTable() const;
-  int getMaxSpacing(int edge_idx) const;
+  void initPlacementDRC();
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
@@ -243,10 +242,6 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
-  bool checkEdgeSpacing(const Node* cell,
-                        GridX x,
-                        GridY y,
-                        const odb::dbOrientType& orient) const;
   void shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
@@ -361,6 +356,7 @@ class Opendp
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
+  std::unique_ptr<PlacementDRC> drc_engine_;
 
   vector<Node> cells_;
   vector<Group> groups_;
@@ -397,10 +393,6 @@ class Opendp
 
   std::unique_ptr<DplObserver> debug_observer_;
   std::unique_ptr<Node> dummy_cell_;
-
-  // LEF58_EDGETYPE
-  std::map<std::string, int> edge_types_indices_;
-  std::vector<std::vector<EdgeSpacingEntry>> edge_spacing_table_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

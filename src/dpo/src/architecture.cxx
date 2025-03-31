@@ -69,8 +69,6 @@ struct compareRowBottom
 ////////////////////////////////////////////////////////////////////////////////
 Architecture::~Architecture()
 {
-  clear_edge_type();
-
   for (auto& row : rows_) {
     delete row;
   }
@@ -80,39 +78,6 @@ Architecture::~Architecture()
     delete region;
   }
   regions_.clear();
-
-  clearSpacingTable();
-}
-
-void Architecture::clearSpacingTable()
-{
-  cellSpacings_.clear();
-}
-
-void Architecture::initSpacingTable()
-{
-  clearSpacingTable();
-  cellSpacings_.resize(edgeTypes_.size());
-  for (auto& row : cellSpacings_) {
-    row.resize(edgeTypes_.size(), Spacing(0, false, false));
-  }
-}
-
-void Architecture::addSpacingTableEntry(const int first_edge,
-                                        const int second_edge,
-                                        const int spc,
-                                        const bool is_exact,
-                                        const bool except_abutted)
-{
-  auto entry = Spacing(spc, is_exact, except_abutted);
-  cellSpacings_[first_edge][second_edge] = entry;
-  cellSpacings_[second_edge][first_edge] = entry;
-}
-
-Architecture::Spacing Architecture::getMaxSpacing(const int edge_type) const
-{
-  return *std::max_element(cellSpacings_[edge_type].begin(),
-                           cellSpacings_[edge_type].end());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -469,45 +434,6 @@ int Architecture::getCellSpacing(const Node* leftNode,
     retval = std::max(retval, separation);
   }
   return retval;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Architecture::Spacing Architecture::getCellSpacingUsingTable(
-    const int firstEdge,
-    const int secondEdge) const
-{
-  if (!getUseSpacingTable() || firstEdge == -1 || secondEdge == -1) {
-    return Spacing(0, false, false);
-  }
-  return cellSpacings_[firstEdge][secondEdge];
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-void Architecture::clear_edge_type()
-{
-  edgeTypes_.clear();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-void Architecture::init_edge_type()
-{
-  clear_edge_type();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-int Architecture::add_edge_type(const std::string& name)
-{
-  const auto it = edgeTypes_.find(name);
-  if (it != edgeTypes_.end()) {
-    return it->second;
-  }
-  const auto idx = edgeTypes_.size();
-  edgeTypes_[name] = idx;
-  return idx;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -52,6 +52,7 @@
 #include "dpl/Objects.h"
 #include "dpl/OptMirror.h"
 #include "dpl/Padding.h"
+#include "dpl/PlacementDRC.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 

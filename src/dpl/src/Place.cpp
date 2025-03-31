@@ -49,6 +49,7 @@
 #include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
+#include "dpl/PlacementDRC.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -938,113 +939,6 @@ bool Opendp::checkRegionOverlap(const Node* cell,
   // be fully contained by the cell's bounding box.
   return result.empty();
 }
-namespace cell_edges {
-Rect transformEdgeRect(const Rect& edge_rect,
-                       const Node* cell,
-                       const DbuX x,
-                       const DbuY y,
-                       const odb::dbOrientType& orient)
-{
-  Rect bbox;
-  cell->getDbInst()->getMaster()->getPlacementBoundary(bbox);
-  odb::dbTransform transform(orient);
-  transform.apply(bbox);
-  Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
-  transform.setOffset(offset);
-  Rect result(edge_rect);
-  transform.apply(result);
-  return result;
-}
-Rect getQueryRect(const Rect& edge_box, const int spc)
-{
-  Rect query_rect(edge_box);
-  bool is_vertical_edge = edge_box.getDir() == 0;
-  if (is_vertical_edge) {
-    // vertical edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
-  } else {
-    // horizontal edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Vertical);
-  }
-  return query_rect;
-}
-};  // namespace cell_edges
-bool Opendp::checkEdgeSpacing(const Node* cell,
-                              const GridX x,
-                              const GridY y,
-                              const odb::dbOrientType& orient) const
-{
-  if (!hasCellEdgeSpacingTable()) {
-    return true;
-  }
-  auto master = cell->getMaster();
-  // Get the real grid coordinates from the grid indices.
-  DbuX x_real = gridToDbu(x, grid_->getSiteWidth());
-  DbuY y_real = grid_->gridYToDbu(y);
-  for (const auto& edge1 : master->getEdges()) {
-    int max_spc = getMaxSpacing(edge1.getEdgeType())
-                  + 1;  // +1 to account for EXACT rules
-    Rect edge1_box = cell_edges::transformEdgeRect(
-        edge1.getBBox(), cell, x_real, y_real, orient);
-    bool is_vertical_edge = edge1_box.getDir() == 0;
-    Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
-    GridX xMin = grid_->gridX(DbuX(query_rect.xMin()));
-    GridX xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
-    GridY yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
-    GridY yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
-    std::set<Node*> checked_cells;
-    // Loop over the area covered by queryRect to find neighboring edges and
-    // check violations.
-    for (GridY y1 = yMin; y1 <= yMax; y1++) {
-      for (GridX x1 = xMin; x1 <= xMax; x1++) {
-        const Pixel* pixel = grid_->gridPixel(x1, y1);
-        if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == cell) {
-          // Skip if pixel is empty or occupied only by the current cell.
-          continue;
-        }
-        auto cell2 = pixel->cell;
-        if (checked_cells.find(cell2) != checked_cells.end()) {
-          // Skip if cell was already checked
-          continue;
-        }
-        checked_cells.insert(cell2);
-        auto master2 = cell2->getMaster();
-        for (const auto& edge2 : master2->getEdges()) {
-          auto spc_entry
-              = edge_spacing_table_[edge1.getEdgeType()][edge2.getEdgeType()];
-          int spc = spc_entry.spc;
-          Rect edge2_box = cell_edges::transformEdgeRect(edge2.getBBox(),
-                                                         cell2,
-                                                         cell2->getLeft(),
-                                                         cell2->getBottom(),
-                                                         cell2->getOrient());
-          if (edge1_box.getDir() != edge2_box.getDir()) {
-            // Skip if edges are not parallel.
-            continue;
-          }
-          if (!query_rect.overlaps(edge2_box)) {
-            // Skip if there is no PRL between the edges.
-            continue;
-          }
-          Rect test_rect(edge1_box);
-          // Generalized intersection between the two edges.
-          test_rect.merge(edge2_box);
-          int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
-          if (spc_entry.is_exact) {
-            if (dist == spc) {
-              // Violation only if the distance between the edges is exactly the
-              // specified spacing.
-              return false;
-            }
-          } else if (dist < spc) {
-            return false;
-          }
-        }
-      }
-    }
-  }
-  return true;
-}
 
 // Check all pixels are empty.
 bool Opendp::checkPixels(const Node* cell,
@@ -1106,7 +1000,7 @@ bool Opendp::checkPixels(const Node* cell,
   }
   const auto& orient = grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite());
-  return checkEdgeSpacing(cell, x, y, orient);
+  return drc_engine_->checkEdgeSpacing(cell, x, y, orient);
 }
 
 ////////////////////////////////////////////////////////////////

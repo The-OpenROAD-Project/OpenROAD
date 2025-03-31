@@ -41,6 +41,7 @@
 #include "dpl/Grid.h"
 #include "dpl/Objects.h"
 #include "dpl/Opendp.h"
+#include "dpl/PlacementDRC.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -65,7 +66,7 @@ void Opendp::importDb()
 
   importClear();
   grid_->examineRows(block_);
-  makeCellEdgeSpacingTable();
+  initPlacementDRC();
   makeMacros();
   makeCells();
   makeGroups();
@@ -190,7 +191,7 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   master->setMultiRow(grid_->isMultiHeight(db_master));
   master->clearEdges();
-  if (edge_spacing_table_.empty()) {
+  if (!drc_engine_->hasCellEdgeSpacingTable()) {
     return;
   }
   if (db_master->getType()
@@ -227,14 +228,14 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
       }
     }
     typed_segs[dir].push_back(edge_rect);
-    if (edge_types_indices_.find(edge->getEdgeType())
-        != edge_types_indices_.end()) {
+    const auto edge_idx = drc_engine_->getEdgeTypeIdx(edge->getEdgeType());
+    if (edge_idx != -1) {
       // consider only edge types defined in the spacing table
-      master->addEdge(
-          MasterEdge(edge_types_indices_[edge->getEdgeType()], edge_rect));
+      master->addEdge(MasterEdge(edge_idx, edge_rect));
     }
   }
-  if (edge_types_indices_.find("DEFAULT") == edge_types_indices_.end()) {
+  const auto default_edge_idx = drc_engine_->getEdgeTypeIdx("DEFAULT");
+  if (default_edge_idx == -1) {
     return;
   }
   // Add the remaining DEFAULT un-typed segments
@@ -244,54 +245,14 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->addEdge(MasterEdge(0, seg));
+      master->addEdge(MasterEdge(default_edge_idx, seg));
     }
   }
 }
 
-void Opendp::makeCellEdgeSpacingTable()
+void Opendp::initPlacementDRC()
 {
-  auto spacing_rules = db_->getTech()->getCellEdgeSpacingTable();
-  if (spacing_rules.empty()) {
-    return;
-  }
-  for (auto rule : spacing_rules) {
-    edge_types_indices_.try_emplace(rule->getFirstEdgeType(),
-                                    edge_types_indices_.size());
-    edge_types_indices_.try_emplace(rule->getSecondEdgeType(),
-                                    edge_types_indices_.size());
-  }
-  // Resize
-  const size_t size = edge_types_indices_.size();
-  edge_spacing_table_.resize(size);
-  for (size_t i = 0; i < size; i++) {
-    edge_spacing_table_[i].resize(size, EdgeSpacingEntry(0, false, false));
-  }
-  // Fill Table
-  for (auto rule : spacing_rules) {
-    std::string first_edge = rule->getFirstEdgeType();
-    std::string second_edge = rule->getSecondEdgeType();
-    const int spc = rule->getSpacing();
-    const bool exact = rule->isExact();
-    const bool except_abutted = rule->isExceptAbutted();
-    const EdgeSpacingEntry entry(spc, exact, except_abutted);
-    const int idx1 = edge_types_indices_[first_edge];
-    const int idx2 = edge_types_indices_[second_edge];
-    edge_spacing_table_[idx1][idx2] = entry;
-    edge_spacing_table_[idx2][idx1] = entry;
-  }
-}
-
-bool Opendp::hasCellEdgeSpacingTable() const
-{
-  return !edge_spacing_table_.empty();
-}
-
-int Opendp::getMaxSpacing(int edge_idx) const
-{
-  return std::max_element(edge_spacing_table_[edge_idx].begin(),
-                          edge_spacing_table_[edge_idx].end())
-      ->spc;
+  drc_engine_ = std::make_unique<PlacementDRC>(grid_.get(), db_->getTech());
 }
 
 void Opendp::makeCells()

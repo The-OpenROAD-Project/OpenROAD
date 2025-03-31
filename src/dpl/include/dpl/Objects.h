@@ -53,17 +53,6 @@ class MasterEdge
   odb::Rect bbox_;
 };
 
-struct EdgeSpacingEntry
-{
-  EdgeSpacingEntry(const int spc_in,
-                   const bool is_exact_in,
-                   const bool except_abutted_in);
-  bool operator<(const EdgeSpacingEntry& rhs) const;
-  int spc;
-  bool is_exact;
-  bool except_abutted;
-};
-
 class Master
 {
  public:

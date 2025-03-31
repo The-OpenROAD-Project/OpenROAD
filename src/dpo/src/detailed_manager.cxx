@@ -51,6 +51,7 @@
 #include "architecture.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
+#include "dpl/PlacementDRC.h"
 #include "journal.h"
 #include "odb/dbTransform.h"
 #include "router.h"
@@ -70,8 +71,13 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          RoutingParams* rt,
-                         Grid* grid)
-    : arch_(arch), network_(network), rt_(rt), grid_(grid)
+                         Grid* grid,
+                         PlacementDRC* drc_engine)
+    : arch_(arch),
+      network_(network),
+      rt_(rt),
+      grid_(grid),
+      drc_engine_(drc_engine)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -1360,117 +1366,9 @@ int DetailedMgr::checkOverlapInSegments()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-namespace cell_edges {
-odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
-                            const Node* cell,
-                            const DbuX left,
-                            const DbuY bottom,
-                            const odb::dbOrientType& orient)
-{
-  odb::Rect bbox = cell->getMaster()->getBBox();
-  odb::dbTransform transform(orient);
-  transform.apply(bbox);
-  odb::Point offset(left.v - bbox.xMin(), bottom.v - bbox.yMin());
-  transform.setOffset(offset);
-  odb::Rect result(edge_rect);
-  transform.apply(result);
-  return result;
-}
-odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
-{
-  odb::Rect query_rect(edge_box);
-  bool is_vertical_edge = edge_box.getDir() == 0;
-  if (is_vertical_edge) {
-    // vertical edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
-  } else {
-    // horizontal edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Vertical);
-  }
-  return query_rect;
-}
-};  // namespace cell_edges
-
 bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
 {
-  if (!arch_->getUseSpacingTable()) {
-    return false;
-  }
-  const auto& master = node->getMaster();
-  if (master == nullptr) {
-    // Not a cell. (or a filler cell)
-    return false;
-  }
-  // Get the real grid coordinates from the grid indices.
-  DbuX x_real = node->getLeft();
-  DbuY y_real = node->getBottom();
-  for (const auto& edge1 : master->getEdges()) {
-    int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
-                  + 1;  // +1 to account for EXACT rules
-    odb::Rect edge1_box = cell_edges::transformEdgeRect(
-        edge1.getBBox(), node, x_real, y_real, node->getOrient());
-    bool is_vertical_edge = edge1_box.getDir() == 0;
-    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
-    auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
-    auto xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
-    auto yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
-    auto yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
-    std::set<Node*> checked_cells;
-    // Loop over the area covered by queryRect to find neighboring edges and
-    // check violations.
-    for (auto y1 = yMin; y1 <= yMax; y1++) {
-      for (auto x1 = xMin; x1 <= xMax; x1++) {
-        const auto pixel = grid_->gridPixel(x1, y1);
-        if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == node) {
-          // Skip if pixel is empty or occupied only by the current cell.
-          continue;
-        }
-        auto cell2 = static_cast<Node*>(pixel->cell);
-        if (checked_cells.find(cell2) != checked_cells.end()) {
-          // Skip if cell was already checked
-          continue;
-        }
-        checked_cells.insert(cell2);
-        auto master2 = cell2->getMaster();
-        if (master2 == nullptr) {
-          continue;
-        }
-        for (const auto& edge2 : master2->getEdges()) {
-          auto spc_entry = arch_->getCellSpacingUsingTable(edge1.getEdgeType(),
-                                                           edge2.getEdgeType());
-          int spc = spc_entry.spc;
-          odb::Rect edge2_box
-              = cell_edges::transformEdgeRect(edge2.getBBox(),
-                                              cell2,
-                                              cell2->getLeft(),
-                                              cell2->getBottom(),
-                                              cell2->getOrient());
-          if (edge1_box.getDir() != edge2_box.getDir()) {
-            // Skip if edges are not parallel.
-            continue;
-          }
-          if (!query_rect.overlaps(edge2_box)) {
-            // Skip if there is no PRL between the edges.
-            continue;
-          }
-          odb::Rect test_rect(edge1_box);
-          // Generalized intersection between the two edges.
-          test_rect.merge(edge2_box);
-          int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
-          if (spc_entry.is_exact) {
-            if (dist == spc) {
-              // Violation only if the distance between the edges is exactly the
-              // specified spacing.
-              return true;
-            }
-          } else if (dist < spc) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
+  return !drc_engine_->checkEdgeSpacing(node);
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

@@ -56,6 +56,7 @@ using dpl::DbuX;
 using dpl::DbuY;
 using dpl::Group;
 using dpl::Node;
+using dpl::PlacementDRC;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 class Architecture
@@ -64,7 +65,6 @@ class Architecture
 
  public:
   class Row;
-  class Spacing;
 
   ~Architecture();
 
@@ -86,10 +86,6 @@ class Architecture
   int postProcess(Network* network);
   int find_closest_row(DbuY y);
 
-  void clear_edge_type();
-  void init_edge_type();
-  int add_edge_type(const std::string& name);
-
   int getMinX() const { return xmin_; }
   int getMaxX() const { return xmax_; }
   int getMinY() const { return ymin_; }
@@ -104,34 +100,6 @@ class Architecture
   void setMaxY(int ymax) { ymax_ = ymax; }
 
   bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
-
-  // Using tables...
-  void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
-  bool getUseSpacingTable() const { return useSpacingTable_; }
-  void clearSpacingTable();
-  void initSpacingTable();
-  void addSpacingTableEntry(int first_edge,
-                            int second_edge,
-                            int spc,
-                            bool is_exact,
-                            bool except_abutted);
-  Spacing getMaxSpacing(int edge_type) const;
-  Spacing getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
-
-  const std::vector<std::vector<Spacing>>& getCellSpacings() const
-  {
-    return cellSpacings_;
-  }
-
-  const std::map<std::string, int>& getEdgeTypes() const { return edgeTypes_; }
-  bool hasEdgeType(const std::string& edge_type) const
-  {
-    return edgeTypes_.find(edge_type) != edgeTypes_.end();
-  }
-  int getEdgeTypeIdx(const std::string& edge_type) const
-  {
-    return edgeTypes_.at(edge_type);
-  }
 
   // Using padding...
   void setUsePadding(bool val = true) { usePadding_ = val; }
@@ -160,29 +128,9 @@ class Architecture
   // Regions...
   std::vector<Group*> regions_;
 
-  // Spacing tables...
-  bool useSpacingTable_ = false;
-  std::map<std::string, int> edgeTypes_;
-  std::vector<std::vector<Spacing>> cellSpacings_;
-
   // Padding...
   bool usePadding_ = false;
   std::map<int, std::pair<int, int>> cellPaddings_;  // Padding to left,right.
-};
-
-class Architecture::Spacing
-{
- public:
-  Spacing(const int spc_in,
-          const bool is_exact_in,
-          const bool except_abutted_in)
-      : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
-  {
-  }
-  bool operator<(const Spacing& rhs) const { return spc < rhs.spc; }
-  int spc;
-  bool is_exact;
-  bool except_abutted;
 };
 
 class Architecture::Row

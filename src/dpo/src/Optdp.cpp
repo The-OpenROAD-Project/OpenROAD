@@ -54,6 +54,7 @@
 #include "dpl/Grid.h"
 #include "dpl/Objects.h"
 #include "dpl/Padding.h"
+#include "dpl/PlacementDRC.h"
 #include "legalize_shift.h"
 #include "network.h"
 #include "router.h"
@@ -115,7 +116,7 @@ void Optdp::improvePlacement(const int seed,
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
   // A manager to track cells.
-  dpo::DetailedMgr mgr(arch_, network_, routeinfo_, grid_);
+  dpo::DetailedMgr mgr(arch_, network_, routeinfo_, grid_, drc_engine_);
   mgr.setLogger(logger_);
   // Various settings.
   mgr.setSeed(seed);
@@ -168,6 +169,7 @@ void Optdp::improvePlacement(const int seed,
   delete network_;
   delete arch_;
   delete routeinfo_;
+  delete drc_engine_;
 
   const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
 
@@ -194,7 +196,7 @@ void Optdp::import()
   // createLayerMap(); // Does nothing right now.
   // createNdrMap(); // Does nothing right now.
   setupMasterPowers();  // Call prior to network and architecture creation.
-  initSpacingTable();
+  initPlacementDRC();
   createNetwork();       // Create network; _MUST_ do before architecture.
   createArchitecture();  // Create architecture.
   // createRouteInformation(); // Does nothing right now.
@@ -232,32 +234,9 @@ void Optdp::updateDbInstLocations()
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::initSpacingTable()
+void Optdp::initPlacementDRC()
 {
-  auto db_spacing_tbl = db_->getTech()->getCellEdgeSpacingTable();
-  arch_->setUseSpacingTable(!db_spacing_tbl.empty());
-  if (db_spacing_tbl.empty()) {
-    return;
-  }
-  // initialize edge types
-  arch_->init_edge_type();
-  for (const auto& entry : db_spacing_tbl) {
-    arch_->add_edge_type(entry->getFirstEdgeType());
-    arch_->add_edge_type(entry->getSecondEdgeType());
-  }
-  // fill the spacing table
-  arch_->initSpacingTable();
-  // Fill Table
-  for (const auto& entry : db_spacing_tbl) {
-    std::string first_edge = entry->getFirstEdgeType();
-    std::string second_edge = entry->getSecondEdgeType();
-    const int spc = entry->getSpacing();
-    const bool exact = entry->isExact();
-    const bool except_abutted = entry->isExceptAbutted();
-    const int idx1 = arch_->getEdgeTypes().at(first_edge);
-    const int idx2 = arch_->getEdgeTypes().at(second_edge);
-    arch_->addSpacingTableEntry(idx1, idx2, spc, exact, except_abutted);
-  }
+  drc_engine_ = new PlacementDRC(grid_, db_->getTech());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -267,7 +246,6 @@ void Optdp::initPadding()
 
   // Need to turn on padding.
   arch_->setUsePadding(true);
-  arch_->init_edge_type();
 
   // Create and edge type for each amount of padding.  This
   // can be done by querying OpenDP.
@@ -497,7 +475,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
   db_master->getPlacementBoundary(bbox);
   master->setBBox(bbox);
   master->clearEdges();
-  if (!arch_->getUseSpacingTable()) {
+  if (!drc_engine_->hasCellEdgeSpacingTable()) {
     return master;
   }
   if (db_master->getType()
@@ -532,13 +510,14 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
       }
     }
     typed_segs[dir].push_back(edge_rect);
-    if (arch_->hasEdgeType(edge->getEdgeType())) {
+    const auto edge_type_idx = drc_engine_->getEdgeTypeIdx(edge->getEdgeType());
+    if (edge_type_idx != -1) {
       // consider only edge types defined in the spacing table
-      master->addEdge(dpl::MasterEdge(
-          arch_->getEdgeTypeIdx(edge->getEdgeType()), edge_rect));
+      master->addEdge(dpl::MasterEdge(edge_type_idx, edge_rect));
     }
   }
-  if (!arch_->hasEdgeType("DEFAULT")) {
+  const auto default_edge_type_idx = drc_engine_->getEdgeTypeIdx("DEFAULT");
+  if (default_edge_type_idx == -1) {
     return master;
   }
   // Add the remaining DEFAULT un-typed segments
@@ -548,7 +527,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->addEdge(dpl::MasterEdge(0, seg));
+      master->addEdge(dpl::MasterEdge(default_edge_type_idx, seg));
     }
   }
   return master;

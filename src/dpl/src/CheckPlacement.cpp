@@ -41,6 +41,7 @@
 #include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
+#include "dpl/PlacementDRC.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -91,10 +92,7 @@ void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
       overlap_failures.push_back(&cell);
     }
     // EdgeSpacing check
-    if (!checkEdgeSpacing(&cell,
-                          grid_->gridX(&cell),
-                          grid_->gridSnapDownY(&cell),
-                          cell.getOrient())) {
+    if (!drc_engine_->checkEdgeSpacing(&cell)) {
       edge_spacing_failures.emplace_back(&cell);
     }
   }

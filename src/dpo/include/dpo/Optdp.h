@@ -53,6 +53,7 @@ class Master;
 class Edge;
 class Pin;
 class Node;
+class PlacementDRC;
 
 }  // namespace dpl
 
@@ -67,6 +68,7 @@ using dpl::Grid;
 using dpl::Node;
 using dpl::Opendp;
 using dpl::Pin;
+using dpl::PlacementDRC;
 using odb::dbDatabase;
 using odb::dbOrientType;
 using utl::Logger;
@@ -91,7 +93,7 @@ class Optdp
   void import();
   void updateDbInstLocations();
 
-  void initSpacingTable();
+  void initPlacementDRC();
   void initPadding();
   void createLayerMap();
   void createNdrMap();
@@ -114,6 +116,9 @@ class Optdp
   RoutingParams* routeinfo_
       = nullptr;  // Route info we might consider (future).
   Grid* grid_ = nullptr;
+
+  // placement DRC enging.
+  PlacementDRC* drc_engine_ = nullptr;
 
   // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;
