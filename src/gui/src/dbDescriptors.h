@@ -347,6 +347,7 @@ class DbBlockageDescriptor : public BaseDbDescriptor<odb::dbBlockage>
 
   void highlight(std::any object, Painter& painter) const override;
 
+  Actions getActions(std::any object) const override;
   Editors getEditors(std::any object) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;

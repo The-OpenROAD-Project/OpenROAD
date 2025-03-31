@@ -2268,6 +2268,16 @@ Descriptor::Properties DbBlockageDescriptor::getDBProperties(
   return props;
 }
 
+Descriptor::Actions DbBlockageDescriptor::getActions(std::any object) const
+{
+  auto blk = std::any_cast<odb::dbBlockage*>(object);
+  return Actions(
+      {{"Delete", [blk]() {
+          odb::dbBlockage::destroy(blk);
+          return Selected();  // unselect since this object is now gone
+        }}});
+}
+
 Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const
 {
   auto blockage = std::any_cast<odb::dbBlockage*>(object);
