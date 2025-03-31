@@ -111,7 +111,7 @@ bool Padding::isPaddedType(dbInst* inst) const
   return false;
 }
 
-GridX Padding::padLeft(const GridNode* cell) const
+GridX Padding::padLeft(const Node* cell) const
 {
   return padLeft(cell->getDbInst());
 }
@@ -132,7 +132,7 @@ GridX Padding::padLeft(dbInst* inst) const
   return GridX{0};
 }
 
-GridX Padding::padRight(const GridNode* cell) const
+GridX Padding::padRight(const Node* cell) const
 {
   return padRight(cell->getDbInst());
 }
@@ -153,7 +153,7 @@ GridX Padding::padRight(dbInst* inst) const
   return GridX{0};
 }
 
-DbuX Padding::paddedWidth(const GridNode* cell) const
+DbuX Padding::paddedWidth(const Node* cell) const
 {
   return cell->getWidth()
          + gridToDbu(padLeft(cell) + padRight(cell), cell->siteWidth());

@@ -76,7 +76,7 @@ using odb::dbTechLayer;
 using odb::Point;
 using odb::Rect;
 
-struct GridNode;
+struct Node;
 struct Group;
 struct Master;
 struct Pixel;
@@ -187,10 +187,10 @@ class Opendp
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   void findDisplacementStats();
-  DbuPt pointOffMacro(const GridNode& cell);
-  void convertDbToCell(dbInst* db_inst, GridNode& cell);
+  DbuPt pointOffMacro(const Node& cell);
+  void convertDbToCell(dbInst* db_inst, Node& cell);
   // Return error count.
-  void saveViolations(const std::vector<GridNode*>& failures,
+  void saveViolations(const std::vector<Node*>& failures,
                       odb::dbMarkerCategory* category,
                       const std::string& violation_type = "") const;
   void importDb();
@@ -200,7 +200,7 @@ class Opendp
   void makeCells();
   static bool isPlacedType(dbMasterType type);
   void makeGroups();
-  bool isMultiRow(const GridNode* cell) const;
+  bool isMultiRow(const Node* cell) const;
   void updateDbInstLocations();
 
   void makeMaster(Master* master, dbMaster* db_master);
@@ -213,14 +213,14 @@ class Opendp
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
-  DbuPt nearestPt(const GridNode* cell, const DbuRect& rect) const;
-  int distToRect(const GridNode* cell, const Rect& rect) const;
+  DbuPt nearestPt(const Node* cell, const DbuRect& rect) const;
+  int distToRect(const Node* cell, const Rect& rect) const;
   static bool checkOverlap(const Rect& cell, const Rect& box);
-  bool checkOverlap(const GridNode* cell, const DbuRect& rect) const;
+  bool checkOverlap(const Node* cell, const DbuRect& rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
-  bool isInside(const GridNode* cell, const Rect& rect) const;
-  PixelPt diamondSearch(const GridNode* cell, GridX x, GridY y) const;
-  void diamondSearchSide(const GridNode* cell,
+  bool isInside(const Node* cell, const Rect& rect) const;
+  PixelPt diamondSearch(const Node* cell, GridX x, GridY y) const;
+  void diamondSearchSide(const Node* cell,
                          GridX x,
                          GridY y,
                          GridX x_min,
@@ -232,38 +232,38 @@ class Opendp
                          // Return values
                          PixelPt& best_pt,
                          int& best_dist) const;
-  PixelPt binSearch(GridX x, const GridNode* cell, GridX bin_x, GridY bin_y) const;
-  bool checkRegionOverlap(const GridNode* cell,
+  PixelPt binSearch(GridX x, const Node* cell, GridX bin_x, GridY bin_y) const;
+  bool checkRegionOverlap(const Node* cell,
                           GridX x,
                           GridY y,
                           GridX x_end,
                           GridY y_end) const;
-  bool checkPixels(const GridNode* cell,
+  bool checkPixels(const Node* cell,
                    GridX x,
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
-  bool checkEdgeSpacing(const GridNode* cell,
+  bool checkEdgeSpacing(const Node* cell,
                         GridX x,
                         GridY y,
                         const odb::dbOrientType& orient) const;
-  void shiftMove(GridNode* cell);
-  bool mapMove(GridNode* cell);
-  bool mapMove(GridNode* cell, const GridPt& grid_pt);
-  int distChange(const GridNode* cell, DbuX x, DbuY y) const;
-  bool swapCells(GridNode* cell1, GridNode* cell2);
-  bool refineMove(GridNode* cell);
+  void shiftMove(Node* cell);
+  bool mapMove(Node* cell);
+  bool mapMove(Node* cell, const GridPt& grid_pt);
+  int distChange(const Node* cell, DbuX x, DbuY y) const;
+  bool swapCells(Node* cell1, Node* cell2);
+  bool refineMove(Node* cell);
 
-  DbuPt legalPt(const GridNode* cell, const DbuPt& pt) const;
-  GridPt legalGridPt(const GridNode* cell, const DbuPt& pt) const;
-  DbuPt legalPt(const GridNode* cell, bool padded) const;
-  GridPt legalGridPt(const GridNode* cell, bool padded) const;
-  DbuPt nearestBlockEdge(const GridNode* cell,
+  DbuPt legalPt(const Node* cell, const DbuPt& pt) const;
+  GridPt legalGridPt(const Node* cell, const DbuPt& pt) const;
+  DbuPt legalPt(const Node* cell, bool padded) const;
+  GridPt legalGridPt(const Node* cell, bool padded) const;
+  DbuPt nearestBlockEdge(const Node* cell,
                          const DbuPt& legal_pt,
                          const Rect& block_bbox) const;
 
   void findOverlapInRtree(const bgBox& queryBox, vector<bgBox>& overlaps) const;
-  bool moveHopeless(const GridNode* cell, GridX& grid_x, GridY& grid_y) const;
+  bool moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const;
   void placeGroups();
   void prePlace();
   void prePlaceGroups();
@@ -275,54 +275,54 @@ class Opendp
   int anneal(Group* group);
   int refine();
   void setFixedGridCells();
-  void setGridCell(GridNode& cell, Pixel* pixel);
+  void setGridCell(Node& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
   void groupInitPixels2();
 
   // checkPlacement
-  static bool isPlaced(const GridNode* cell);
-  bool checkInRows(const GridNode& cell) const;
-  const GridNode* checkOverlap(GridNode& cell) const;
-  GridNode* checkOneSiteGaps(GridNode& cell) const;
-  bool overlap(const GridNode* cell1, const GridNode* cell2) const;
-  bool checkRegionPlacement(const GridNode* cell) const;
-  static bool isOverlapPadded(const GridNode* cell1, const GridNode* cell2);
-  static bool isCrWtBlClass(const GridNode* cell);
-  static bool isWellTap(const GridNode* cell);
-  void reportFailures(const vector<GridNode*>& failures,
+  static bool isPlaced(const Node* cell);
+  bool checkInRows(const Node& cell) const;
+  const Node* checkOverlap(Node& cell) const;
+  Node* checkOneSiteGaps(Node& cell) const;
+  bool overlap(const Node* cell1, const Node* cell2) const;
+  bool checkRegionPlacement(const Node* cell) const;
+  static bool isOverlapPadded(const Node* cell1, const Node* cell2);
+  static bool isCrWtBlClass(const Node* cell);
+  static bool isWellTap(const Node* cell);
+  void reportFailures(const vector<Node*>& failures,
                       int msg_id,
                       const char* msg,
                       bool verbose) const;
   void reportFailures(
-      const vector<GridNode*>& failures,
+      const vector<Node*>& failures,
       int msg_id,
       const char* msg,
       bool verbose,
-      const std::function<void(GridNode* cell)>& report_failure) const;
-  void reportOverlapFailure(GridNode* cell) const;
-  void saveFailures(const vector<GridNode*>& placed_failures,
-                    const vector<GridNode*>& in_rows_failures,
-                    const vector<GridNode*>& overlap_failures,
-                    const vector<GridNode*>& one_site_gap_failures,
-                    const vector<GridNode*>& site_align_failures,
-                    const vector<GridNode*>& region_placement_failures,
-                    const vector<GridNode*>& placement_failures,
-                    const vector<GridNode*>& edge_spacing_failures);
+      const std::function<void(Node* cell)>& report_failure) const;
+  void reportOverlapFailure(Node* cell) const;
+  void saveFailures(const vector<Node*>& placed_failures,
+                    const vector<Node*>& in_rows_failures,
+                    const vector<Node*>& overlap_failures,
+                    const vector<Node*>& one_site_gap_failures,
+                    const vector<Node*>& site_align_failures,
+                    const vector<Node*>& region_placement_failures,
+                    const vector<Node*>& placement_failures,
+                    const vector<Node*>& edge_spacing_failures);
   void writeJsonReport(const string& filename);
 
-  void rectDist(const GridNode* cell,
+  void rectDist(const Node* cell,
                 const Rect& rect,
                 // Return values.
                 int* x,
                 int* y) const;
-  int rectDist(const GridNode* cell, const Rect& rect) const;
+  int rectDist(const Node* cell, const Rect& rect) const;
   void deleteGrid();
   // Cell initial location wrt core origin.
 
   // Lower left corner in core coordinates.
-  DbuPt initialLocation(const GridNode* cell, bool padded) const;
-  int disp(const GridNode* cell) const;
+  DbuPt initialLocation(const Node* cell, bool padded) const;
+  int disp(const Node* cell) const;
   // Place fillers
   MasterByImplant splitByImplant(dbMasterSeq* filler_masters);
   void setGridCells();
@@ -353,26 +353,26 @@ class Opendp
   void mapToVectorIRDrops(IRDropByPoint& psm_ir_drops,
                           std::vector<IRDrop>& ir_drops);
   void prepareDecapAndGaps();
-  void placeCell(GridNode* cell, GridX x, GridY y);
-  void unplaceCell(GridNode* cell);
-  void setGridPaddedLoc(GridNode* cell, GridX x, GridY y);
+  void placeCell(Node* cell, GridX x, GridY y);
+  void unplaceCell(Node* cell);
+  void setGridPaddedLoc(Node* cell, GridX x, GridY y);
 
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
   std::shared_ptr<Padding> padding_;
 
-  vector<GridNode> cells_;
+  vector<Node> cells_;
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<dbInst*, GridNode*> db_inst_map_;
+  map<dbInst*, Node*> db_inst_map_;
 
   bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
   bool disallow_one_site_gaps_ = false;
-  vector<GridNode*> placement_failures_;
+  vector<Node*> placement_failures_;
 
   // 2D pixel grid
   std::unique_ptr<Grid> grid_;
@@ -396,7 +396,7 @@ class Opendp
   int64_t displacement_max_ = 0;
 
   std::unique_ptr<DplObserver> debug_observer_;
-  std::unique_ptr<GridNode> dummy_cell_;
+  std::unique_ptr<Node> dummy_cell_;
 
   // LEF58_EDGETYPE
   std::map<std::string, int> edge_types_indices_;

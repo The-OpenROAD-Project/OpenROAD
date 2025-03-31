@@ -41,7 +41,7 @@ using odb::Point;
 using odb::Rect;
 
 class Opendp;
-struct GridNode;
+struct Node;
 
 class Graphics : public gui::Renderer, public DplObserver
 {
@@ -50,7 +50,7 @@ class Graphics : public gui::Renderer, public DplObserver
   ~Graphics() override = default;
   void startPlacement(dbBlock* block) override;
   void placeInstance(dbInst* instance) override;
-  void binSearch(const GridNode* cell,
+  void binSearch(const Node* cell,
                  GridX xl,
                  GridY yl,
                  GridX xh,

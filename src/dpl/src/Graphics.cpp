@@ -70,7 +70,7 @@ void Graphics::placeInstance(dbInst* instance)
   gui->pause();
 }
 
-void Graphics::binSearch(const GridNode* cell,
+void Graphics::binSearch(const Node* cell,
                          GridX xl,
                          GridY yl,
                          GridX xh,

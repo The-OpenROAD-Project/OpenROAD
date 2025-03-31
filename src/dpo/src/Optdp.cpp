@@ -201,7 +201,7 @@ void Optdp::import()
   createGrid();
   initPadding();  // Need to do after network creation.
   // setUpNdrRules(); // Does nothing right now.
-  setUpPlacementRegions();  // Regions.
+  setUpPlacementGroups();  // Regions.
 }
 
 ////////////////////////////////////////////////////////////////
@@ -664,7 +664,7 @@ void Optdp::createNetwork()
     network_->setNodeName(n, inst->getName().c_str());
 
     // Fill in data.
-    ndi->setType(GridNode::CELL);
+    ndi->setType(Node::CELL);
     ndi->setDbInst(inst);
     ndi->setMaster(getMaster(inst->getMaster()));
     ndi->setId(n);
@@ -704,7 +704,7 @@ void Optdp::createNetwork()
 
     // Fill in data.
     ndi->setId(n);
-    ndi->setType(GridNode::TERMINAL);
+    ndi->setType(Node::TERMINAL);
     ndi->setFixed(true);
     ndi->setOrient(odb::dbOrientType::R0);
 
@@ -1028,7 +1028,7 @@ void Optdp::createGrid()
       db_, db_->getChip()->getBlock(), std::make_shared<dpl::Padding>(), 0, 0);
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::setUpPlacementRegions()
+void Optdp::setUpPlacementGroups()
 {
   int xmin = arch_->getMinX();
   int xmax = arch_->getMaxX();

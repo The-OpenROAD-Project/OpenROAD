@@ -52,6 +52,8 @@ class Grid;
 class Master;
 class Edge;
 class Pin;
+class Node;
+
 
 }  // namespace dpl
 
@@ -60,7 +62,6 @@ namespace dpo {
 class RoutingParams;
 class Architecture;
 class Network;
-class Node;
 
 
 using dpl::Grid;
@@ -70,6 +71,7 @@ using odb::dbOrientType;
 using utl::Logger;
 using dpl::Edge;
 using dpl::Pin;
+using dpl::Node;
 
 class Optdp
 {
@@ -101,7 +103,7 @@ class Optdp
   void createRouteInformation();
   void createGrid();
   void setUpNdrRules();
-  void setUpPlacementRegions();
+  void setUpPlacementGroups();
   dpl::Master* getMaster(odb::dbMaster* db_master);
 
   odb::dbDatabase* db_ = nullptr;

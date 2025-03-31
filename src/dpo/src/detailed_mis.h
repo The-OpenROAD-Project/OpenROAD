@@ -41,7 +41,9 @@
 #include <map>
 #include <string>
 #include <vector>
-
+namespace dpl {
+  class Node;
+}
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,8 +52,8 @@ namespace dpo {
 class Architecture;
 class DetailedMgr;
 class Network;
-class Node;
 class RoutingParams;
+using dpl::Node;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.

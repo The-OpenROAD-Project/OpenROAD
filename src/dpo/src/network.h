@@ -52,7 +52,6 @@ namespace dpl {
 class Master;
 class Pin;
 class Grid;
-class GridNode;
 class Edge;
 }
 
@@ -66,7 +65,6 @@ using dpl::DbuX;
 using dpl::DbuY;
 using dpl::GridX;
 using dpl::GridY;
-using dpl::GridNode;
 using dpl::Pin;
 using dpl::Edge;
 using dpl::Master;
@@ -76,12 +74,6 @@ const int EDGETYPE_DEFAULT = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-
-class Node : public GridNode
-{
- public:
-  Node();
-};
 
 class Network
 {

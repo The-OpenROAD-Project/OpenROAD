@@ -83,7 +83,7 @@ class Master
 class Pin;
 class Group;
 
-class GridNode
+class Node
 {
  public:
   enum Type
@@ -94,7 +94,7 @@ class GridNode
     MACROCELL,
     FILLER
   };
-  ~GridNode();
+  ~Node();
   int getId() const;
   DbuY getOrigBottom() const;
   DbuX getOrigLeft() const;
@@ -193,7 +193,7 @@ class Group
   // getters
   string getName();
   const vector<Rect>& getRects() const;
-  const vector<GridNode*> getCells() const;
+  const vector<Node*> getCells() const;
   const Rect& getBBox() const;
   double getUtil() const;
   int getId() const;
@@ -201,14 +201,14 @@ class Group
   void setId(int id);
   void setName(const string& in);
   void addRect(const Rect& in);
-  void addCell(GridNode* cell);
+  void addCell(Node* cell);
   void setBoundary(const Rect& in);
   void setUtil(const double in);
   private:
   int id_;
   string name_;
   vector<Rect> region_boundaries_;
-  vector<GridNode*> cells_;
+  vector<Node*> cells_;
   Rect boundary_;
   double util_{0.0};
 };
@@ -241,9 +241,9 @@ class Pin
   Pin();
   void setDirection(int dir);
   int getDirection() const;
-  void setNode(GridNode* node);
+  void setNode(Node* node);
   void setEdge(Edge* ed);
-  GridNode* getNode() const;
+  Node* getNode() const;
   Edge* getEdge() const;
   void setOffsetX(DbuX offsetX);
   DbuX getOffsetX() const;
@@ -265,7 +265,7 @@ class Pin
   // Layer.
   int pinLayer_ = 0;
   // Node and edge for pin.
-  GridNode* node_ = nullptr;
+  Node* node_ = nullptr;
   Edge* edge_ = nullptr;
   // Offsets from cell center.
   DbuX offsetX_{0};

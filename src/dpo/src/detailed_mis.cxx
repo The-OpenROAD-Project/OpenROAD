@@ -295,14 +295,14 @@ void DetailedMis::colorCells()
 
     for (int pi = 0; pi < edi->getNumPins(); pi++) {
       const Pin* pini = edi->getPins()[pi];
-      const GridNode* ndi = pini->getNode();
+      const Node* ndi = pini->getNode();
       if (!movable_[ndi->getId()]) {
         continue;
       }
 
       for (int pj = pi + 1; pj < edi->getNumPins(); pj++) {
         const Pin* pinj = edi->getPins()[pj];
-        const GridNode* ndj = pinj->getNode();
+        const Node* ndj = pinj->getNode();
         if (!movable_[ndj->getId()]) {
           continue;
         }
@@ -768,7 +768,7 @@ double DetailedMis::getHpwl(const Node* ndi, double xi, double yi)
     for (int pj = 0; pj < edi->getNumPins(); pj++) {
       const Pin* pinj = edi->getPins()[pj];
 
-      const GridNode* ndj = pinj->getNode();
+      const Node* ndj = pinj->getNode();
 
       const double x = (ndj == ndi)
                            ? (xi + pinj->getOffsetX().v)

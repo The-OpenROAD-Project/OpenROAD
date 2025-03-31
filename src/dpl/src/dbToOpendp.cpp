@@ -302,7 +302,7 @@ void Opendp::makeCells()
     dbMaster* db_master = db_inst->getMaster();
     if (db_master->isCoreAutoPlaceable()) {
       cells_.emplace_back();
-      GridNode& cell = cells_.back();
+      Node& cell = cells_.back();
       cell.setDbInst(db_inst);
       db_inst_map_[db_inst] = &cell;
 
@@ -312,7 +312,7 @@ void Opendp::makeCells()
       cell.setLeft(DbuX{bbox.xMin()});
       cell.setBottom(DbuY{bbox.yMin()});
       cell.setOrient(db_inst->getOrient());
-      // GridNode is already placed if it is FIXED.
+      // Node is already placed if it is FIXED.
       cell.setFixed(db_inst->isFixed());
       cell.setPlaced(cell.isFixed());
 
@@ -429,7 +429,7 @@ void Opendp::makeGroups()
     }
 
     for (auto db_inst : db_group->getInsts()) {
-      GridNode* cell = db_inst_map_[db_inst];
+      Node* cell = db_inst_map_[db_inst];
       Group* group = cell_height_to_group_map[cell->getHeight()];
       group->addCell(cell);
       cell->setGroup(group);

@@ -68,7 +68,7 @@ using utl::format_as;
 
 ////////////////////////////////////////////////////////////////
 
-bool Opendp::isMultiRow(const GridNode* cell) const
+bool Opendp::isMultiRow(const Node* cell) const
 {
   return db_master_map_.at(cell->getDbInst()->getMaster()).isMultiRow();
 }
@@ -77,7 +77,7 @@ bool Opendp::isMultiRow(const GridNode* cell) const
 
 Opendp::Opendp()
 {
-  dummy_cell_ = std::make_unique<GridNode>();
+  dummy_cell_ = std::make_unique<Node>();
   dummy_cell_->setPlaced(true);
 }
 
@@ -156,7 +156,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
 void Opendp::updateDbInstLocations()
 {
-  for (GridNode& cell : cells_) {
+  for (Node& cell : cells_) {
     if (!cell.isFixed() && cell.isStdCell()) {
       dbInst* db_inst_ = cell.getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
@@ -214,7 +214,7 @@ void Opendp::findDisplacementStats()
   displacement_sum_ = 0;
   displacement_max_ = 0;
 
-  for (const GridNode& cell : cells_) {
+  for (const Node& cell : cells_) {
     const int displacement = disp(&cell);
     displacement_sum_ += displacement;
     if (displacement > displacement_max_) {
@@ -236,7 +236,7 @@ void Opendp::optimizeMirroring()
   opt.run();
 }
 
-int Opendp::disp(const GridNode* cell) const
+int Opendp::disp(const Node* cell) const
 {
   const DbuPt init = initialLocation(cell, false);
   return sumXY(abs(init.x - cell->getLeft()), abs(init.y - cell->getBottom()));
@@ -283,7 +283,7 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
 
 void Opendp::setFixedGridCells()
 {
-  for (GridNode& cell : cells_) {
+  for (Node& cell : cells_) {
     if (cell.isFixed()) {
       grid_->visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
@@ -291,7 +291,7 @@ void Opendp::setFixedGridCells()
   }
 }
 
-void Opendp::setGridCell(GridNode& cell, Pixel* pixel)
+void Opendp::setGridCell(Node& cell, Pixel* pixel)
 {
   pixel->cell = &cell;
   pixel->util = 1.0;
@@ -321,7 +321,7 @@ void Opendp::groupAssignCellRegions()
     }
 
     double cell_area = 0;
-    for (GridNode* cell : group.getCells()) {
+    for (Node* cell : group.getCells()) {
       cell_area += cell->area();
 
       for (const auto& rect : group.getRects()) {

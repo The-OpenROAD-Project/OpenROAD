@@ -94,7 +94,7 @@ double DetailedHPWL::curr()
 
     box.reset();
     for (const Pin* pinj : edi->getPins()) {
-      const GridNode* ndj = pinj->getNode();
+      const Node* ndj = pinj->getNode();
 
       const double x
           = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
@@ -145,7 +145,7 @@ double DetailedHPWL::delta(const Journal& journal)
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
-        GridNode* curr = pinj->getNode();
+        Node* curr = pinj->getNode();
 
         x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX().v;
         y = curr->getBottom().v + 0.5 * curr->getHeight().v
@@ -183,7 +183,7 @@ double DetailedHPWL::delta(const Journal& journal)
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
-        GridNode* curr = pinj->getNode();
+        Node* curr = pinj->getNode();
 
         x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX().v;
         y = curr->getBottom().v + 0.5 * curr->getHeight().v
@@ -230,7 +230,7 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
     for (int pj = 0; pj < edi->getNumPins(); pj++) {
       Pin* pinj = edi->getPins()[pj];
 
-      GridNode* ndj = pinj->getNode();
+      Node* ndj = pinj->getNode();
 
       x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
       y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
@@ -294,7 +294,7 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
         Pin* pinj = edi->getPins()[pj];
 
-        GridNode* ndj = pinj->getNode();
+        Node* ndj = pinj->getNode();
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
         y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
@@ -359,7 +359,7 @@ double DetailedHPWL::delta(Node* ndi,
       old_box.reset();
       new_box.reset();
       for (Pin* pinj : edi->getPins()) {
-        GridNode* curr = pinj->getNode();
+        Node* curr = pinj->getNode();
 
         x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX().v;
         y = curr->getBottom().v + 0.5 * curr->getHeight().v
