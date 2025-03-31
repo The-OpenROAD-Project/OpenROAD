@@ -423,7 +423,7 @@ void DetailedMgr::findSegments()
   // Here, we need to slice up the segments to account for regions.
   std::vector<std::vector<std::pair<double, double>>> intervals;
   for (int reg = 1; reg < arch_->getNumRegions(); reg++) {
-    Architecture::Region* regPtr = arch_->getRegion(reg);
+    auto regPtr = arch_->getRegion(reg);
 
     findRegionIntervals(regPtr->getId(), intervals);
 
@@ -586,7 +586,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
   // Segments in the current row...
   for (DetailedSeg* curr : segsInRow_[row]) {
     // Updated for regions.
-    if (nd->getRegionId() != curr->getRegId()) {
+    if (nd->getGroupId() != curr->getRegId()) {
       continue;
     }
 
@@ -626,7 +626,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
       if ((vert <= dist1 || vert <= dist2)) {
         for (DetailedSeg* curr : segsInRow_[below]) {
           // Updated for regions.
-          if (nd->getRegionId() != curr->getRegId()) {
+          if (nd->getGroupId() != curr->getRegId()) {
             continue;
           }
 
@@ -666,7 +666,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
       if ((vert <= dist1 || vert <= dist2)) {
         for (DetailedSeg* curr : segsInRow_[above]) {
           // Updated for regions.
-          if (nd->getRegionId() != curr->getRegId()) {
+          if (nd->getGroupId() != curr->getRegId()) {
             continue;
           }
 
@@ -811,7 +811,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
         // are going to violate a fence region constraint.
         bool regionsOkay = true;
         for (DetailedSeg* segPtr : candidates_i) {
-          if (segPtr->getRegId() != nd->getRegionId()) {
+          if (segPtr->getRegId() != nd->getGroupId()) {
             regionsOkay = false;
           }
         }
@@ -1690,7 +1690,7 @@ int DetailedMgr::checkRegionAssignment()
     std::sort(temp.begin(), temp.end(), compareNodesL());
 
     for (const Node* ndi : temp) {
-      if (ndi->getRegionId() != segments_[s]->getRegId()) {
+      if (ndi->getGroupId() != segments_[s]->getRegId()) {
         ++err_n;
       }
     }
@@ -2000,7 +2000,7 @@ void DetailedMgr::findRegionIntervals(
       || arch_->getRegion(regId)->getId() != regId) {
     internalError("Improper region id");
   }
-  Architecture::Region* regPtr = arch_->getRegion(regId);
+  auto regPtr = arch_->getRegion(regId);
 
   // Initialize.
   intervals.clear();
@@ -2763,7 +2763,7 @@ bool DetailedMgr::tryMove1(Node* ndi,
   // Reasons to fail.  Same or bogus segment, wrong region, or
   // not single height cell.
   const int spanned = arch_->getCellHeightInRows(ndi);
-  if (sj == si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
+  if (sj == si || sj == -1 || ndi->getGroupId() != segments_[sj]->getRegId()
       || spanned != 1) {
     return false;
   }
@@ -2927,7 +2927,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   // Reasons to fail.  Different or bogus segment, wrong region, or
   // not single height cell.
   const int spanned = arch_->getCellHeightInRows(ndi);
-  if (sj != si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
+  if (sj != si || sj == -1 || ndi->getGroupId() != segments_[sj]->getRegId()
       || spanned != 1) {
     return false;
   }
@@ -3057,7 +3057,7 @@ bool DetailedMgr::tryMove3(Node* ndi,
     bool gotSeg = false;
     for (int s = 0; s < segsInRow_[r].size() && !gotSeg; s++) {
       const DetailedSeg* segPtr = segsInRow_[r][s];
-      if (segPtr->getRegId() == ndi->getRegionId()) {
+      if (segPtr->getRegId() == ndi->getGroupId()) {
         if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
           gotSeg = true;
           segs.push_back(segPtr->getSegId());

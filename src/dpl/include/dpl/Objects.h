@@ -41,10 +41,10 @@ namespace dpl {
 using odb::dbOrientType;
 using odb::dbSite;
 
-class Edge
+class MasterEdge
 {
   public:
-  Edge(unsigned int type, const odb::Rect& box)
+  MasterEdge(unsigned int type, const odb::Rect& box)
       : edge_type_idx_(type), bbox_(box)
   {
   }
@@ -74,17 +74,20 @@ class Master
 {
   public:
   bool isMultiRow() const { return is_multi_row_; }
-  const std::vector<Edge>& getEdges() { return edges_; }
+  const std::vector<MasterEdge>& getEdges() { return edges_; }
   const odb::Rect getBBox() { return boundary_box_; }
   void setMultiRow(const bool in) { is_multi_row_ = in; }
-  void addEdge(const Edge& edge) { edges_.emplace_back(edge); }
+  void addEdge(const MasterEdge& edge) { edges_.emplace_back(edge); }
   void clearEdges() { edges_.clear(); }
   void setBBox(const odb::Rect box) { boundary_box_ = box; }
   private:
   odb::Rect boundary_box_;
   bool is_multi_row_ = false;
-  std::vector<Edge> edges_;
+  std::vector<MasterEdge> edges_;
 };
+
+class Pin;
+class Group;
 
 class GridNode
 {
@@ -130,6 +133,9 @@ class GridNode
   const Rect* getRegion() const;
   Master* getMaster() const;
   bool inGroup() const;
+  int getNumPins() const { return (int) pins_.size(); }
+  const std::vector<Pin*>& getPins() const { return pins_; }
+  int getGroupId() const { return group_id_; }
   
 
   // setters
@@ -151,6 +157,10 @@ class GridNode
   void setGroup(Group* in);
   void setRegion(const Rect* in);
   void setMaster(Master* in);
+  void addPin(Pin* pin) { pins_.emplace_back(pin); }
+  bool adjustCurrOrient(const dbOrientType& newOrient);
+  void setGroupId(int id) { group_id_ = id; }
+
 
 
  protected:
@@ -181,9 +191,9 @@ class GridNode
   Group* group_{nullptr};
   const Rect* region_{nullptr};  // group rect
   // // Regions.
-  // int regionId_ = 0;
-  // // Pins.
-  // std::vector<Pin*> pins_;
+  int group_id_{0};
+  // Pins.
+  std::vector<Pin*> pins_;
 };
 
 class Group
@@ -195,18 +205,91 @@ class Group
   const vector<GridNode*> getCells() const { return cells_; }
   const Rect& getBBox() const { return boundary_; }
   double getUtil() const { return util_; }
+  int getId() const { return id_; }
   // setters
+  void setId(int id) { id_ = id; }
   void setName(const string& in) { name_ = in;}
   void addRect(const Rect& in) {region_boundaries_.emplace_back(in);}
   void addCell(GridNode* cell) { cells_.emplace_back(cell); }
   void setBoundary(const Rect& in) { boundary_ = in; }
   void setUtil(const double in) { util_ = in; }
   private:
+  int id_;
   string name_;
   vector<Rect> region_boundaries_;
   vector<GridNode*> cells_;
   Rect boundary_;
   double util_{0.0};
 };
+
+
+class Edge
+{
+ public:
+  int getId() const { return id_; }
+  void setId(int id) { id_ = id; }
+  int getNumPins() const { return (int) pins_.size(); }
+  const std::vector<Pin*>& getPins() const { return pins_; }
+  void addPin(Pin* pin) { pins_.emplace_back(pin); }
+
+ private:
+  // Id.
+  int id_ = 0;
+  // Pins.
+  std::vector<Pin*> pins_;
+};
+
+class Pin
+{
+ public:
+  enum Direction
+  {
+    Dir_IN,
+    Dir_OUT,
+    Dir_INOUT,
+    Dir_UNKNOWN
+  };
+
+  Pin() = default;
+
+  void setDirection(int dir) { dir_ = dir; }
+  int getDirection() const { return dir_; }
+
+  void setNode(GridNode* node) { node_ = node; }
+  void setEdge(Edge* ed) { edge_ = ed; }
+  GridNode* getNode() const { return node_; }
+  Edge* getEdge() const { return edge_; }
+
+  void setOffsetX(DbuX offsetX) { offsetX_ = offsetX; }
+  DbuX getOffsetX() const { return offsetX_; }
+
+  void setOffsetY(DbuY offsetY) { offsetY_ = offsetY; }
+  DbuY getOffsetY() const { return offsetY_; }
+
+  void setPinLayer(int layer) { pinLayer_ = layer; }
+  int getPinLayer() const { return pinLayer_; }
+
+  void setPinWidth(DbuX width) { pinWidth_ = width; }
+  DbuX getPinWidth() const { return pinWidth_; }
+
+  void setPinHeight(DbuY height) { pinHeight_ = height; }
+  DbuY getPinHeight() const { return pinHeight_; }
+
+ private:
+  // Pin width and height.
+  DbuX pinWidth_{0};
+  DbuY pinHeight_{0};
+  // Direction.
+  int dir_ = Dir_INOUT;
+  // Layer.
+  int pinLayer_ = 0;
+  // Node and edge for pin.
+  GridNode* node_ = nullptr;
+  Edge* edge_ = nullptr;
+  // Offsets from cell center.
+  DbuX offsetX_{0};
+  DbuY offsetY_{0};
+};
+
 
 }  // namespace dpl

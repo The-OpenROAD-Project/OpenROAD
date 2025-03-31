@@ -280,7 +280,7 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
 
   int count = 0;
   for (const Pin* pin : ed->getPins()) {
-    const Node* other = pin->getNode();
+    const GridNode* other = pin->getNode();
     if (other == nd) {
       continue;
     }
@@ -328,7 +328,7 @@ double DetailedVerticalSwap::delta(Node* ndi, double new_x, double new_y)
     old_box.reset();
     new_box.reset();
     for (const Pin* pinj : edi->getPins()) {
-      const Node* ndj = pinj->getNode();
+      const GridNode* ndj = pinj->getNode();
 
       double x
           = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
@@ -382,7 +382,7 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
       new_box.reset();
 
       for (const Pin* pinj : edi->getPins()) {
-        const Node* ndj = pinj->getNode();
+        const GridNode* ndj = pinj->getNode();
 
         double x
             = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
@@ -476,7 +476,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+  if (ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 

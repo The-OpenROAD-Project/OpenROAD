@@ -422,7 +422,7 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
         const Pin* pinj = edi->getPins()[pj];
 
-        const Node* ndj = pinj->getNode();
+        const GridNode* ndj = pinj->getNode();
 
         const double x
             = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;

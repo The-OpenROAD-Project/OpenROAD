@@ -45,6 +45,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "router.h"
+#include "dpl/Objects.h"
 
 namespace dpo {
 
@@ -146,9 +147,9 @@ Architecture::Row* Architecture::createAndAddRow()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Region* Architecture::createAndAddRegion()
+Group* Architecture::createAndAddRegion()
 {
-  auto region = new Region();
+  auto region = new Group();
   regions_.push_back(region);
   return region;
 }

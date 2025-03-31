@@ -331,7 +331,7 @@ int DetailedOrient::flipCells()
         double newMaxX = std::numeric_limits<double>::lowest();
 
         for (Pin* pinj : edi->getPins()) {
-          Node* ndj = pinj->getNode();
+          GridNode* ndj = pinj->getNode();
 
           double x
               = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;

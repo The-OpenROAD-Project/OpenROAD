@@ -50,6 +50,9 @@ namespace dpl {
 class Opendp;
 class Grid;
 class Master;
+class Edge;
+class Pin;
+
 }  // namespace dpl
 
 namespace dpo {
@@ -58,14 +61,15 @@ class RoutingParams;
 class Architecture;
 class Network;
 class Node;
-class Edge;
-class Pin;
+
 
 using dpl::Grid;
 using dpl::Opendp;
 using odb::dbDatabase;
 using odb::dbOrientType;
 using utl::Logger;
+using dpl::Edge;
+using dpl::Pin;
 
 class Optdp
 {

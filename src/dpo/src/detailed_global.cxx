@@ -44,6 +44,7 @@
 #include "detailed_manager.h"
 #include "rectangle.h"
 #include "utl/Logger.h"
+#include "dpl/Objects.h"
 
 namespace dpo {
 
@@ -278,7 +279,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
 
   int count = 0;
   for (Pin* pin : ed->getPins()) {
-    Node* other = pin->getNode();
+    auto other = pin->getNode();
     if (other == nd) {
       continue;
     }
@@ -327,7 +328,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
     new_box.reset();
 
     for (Pin* pinj : edi->getPins()) {
-      Node* ndj = pinj->getNode();
+      auto ndj = pinj->getNode();
 
       x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
       y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
@@ -380,7 +381,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
       new_box.reset();
 
       for (Pin* pinj : edi->getPins()) {
-        Node* ndj = pinj->getNode();
+        auto ndj = pinj->getNode();
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
         y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
@@ -481,7 +482,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+  if (ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 

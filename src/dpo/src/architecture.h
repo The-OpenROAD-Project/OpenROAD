@@ -42,6 +42,9 @@
 #include "odb/dbTypes.h"
 #include "rectangle.h"
 #include "odb/geom.h"
+namespace dpl {
+class Group;
+}
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,6 +53,7 @@ class Network;
 class Node;
 using dpl::DbuX;
 using dpl::DbuY;
+using dpl::Group;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 class Architecture
@@ -59,7 +63,6 @@ class Architecture
  public:
   class Row;
   class Spacing;
-  class Region;
 
   ~Architecture();
 
@@ -68,13 +71,13 @@ class Architecture
   Architecture::Row* getRow(int r) const { return rows_[r]; }
   Architecture::Row* createAndAddRow();
 
-  const std::vector<Architecture::Region*>& getRegions() const
+  const std::vector<Group*>& getRegions() const
   {
     return regions_;
   }
   int getNumRegions() const { return (int) regions_.size(); }
-  Architecture::Region* getRegion(int r) const { return regions_[r]; }
-  Architecture::Region* createAndAddRegion();
+  Group* getRegion(int r) const { return regions_[r]; }
+  Group* createAndAddRegion();
 
   bool isSingleHeightCell(const Node* ndi) const;
   bool isMultiHeightCell(const Node* ndi) const;
@@ -156,7 +159,7 @@ class Architecture
   std::vector<Row*> rows_;
 
   // Regions...
-  std::vector<Region*> regions_;
+  std::vector<Group*> regions_;
 
   // Spacing tables...
   bool useSpacingTable_ = false;
@@ -242,39 +245,6 @@ class Architecture::Row
   // Voltages at the top and bottom of the row.
   int powerTop_ = Power_UNK;
   int powerBot_ = Power_UNK;
-};
-
-class Architecture::Region
-{
- public:
-  int getId() const { return id_; }
-  void setId(int id) { id_ = id; }
-
-  int getMinX() const { return xmin_; }
-  int getMaxX() const { return xmax_; }
-  int getMinY() const { return ymin_; }
-  int getMaxY() const { return ymax_; }
-
-  void setMinX(int xmin) { xmin_ = xmin; }
-  void setMaxX(int xmax) { xmax_ = xmax; }
-  void setMinY(int ymin) { ymin_ = ymin; }
-  void setMaxY(int ymax) { ymax_ = ymax; }
-
-  void addRect(const odb::Rect& rect) { rects_.emplace_back(rect); }
-  const std::vector<odb::Rect>& getRects() const { return rects_; }
-
- private:
-  // Id for the region.
-  int id_ = -1;
-
-  // Box around all sub-rectangles.
-  int xmin_ = std::numeric_limits<int>::max();
-  int ymin_ = std::numeric_limits<int>::max();
-  int xmax_ = std::numeric_limits<int>::lowest();
-  int ymax_ = std::numeric_limits<int>::lowest();
-
-  // Sub-rectangles forming the rectilinear region.
-  std::vector<odb::Rect> rects_;
 };
 
 }  // namespace dpo

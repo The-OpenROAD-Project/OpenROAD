@@ -45,135 +45,42 @@
 
 #include "architecture.h"
 #include "dpl/Coordinates.h"
-#include "dpl/Grid.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "dpl/Objects.h"
 namespace dpl {
 class Master;
+class Pin;
+class Grid;
+class GridNode;
+class Edge;
 }
+
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
-class Pin;
-
-const int EDGETYPE_DEFAULT = 0;
+using odb::dbOrientType;
 using dpl::DbuX;
 using dpl::DbuY;
-using dpl::GridNode;
 using dpl::GridX;
 using dpl::GridY;
-using odb::dbOrientType;
+using dpl::GridNode;
+using dpl::Pin;
+using dpl::Edge;
+using dpl::Master;
+
+const int EDGETYPE_DEFAULT = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
 ////////////////////////////////////////////////////////////////////////////////
-class MasterEdge
-{
- public:
-  MasterEdge(unsigned int type, const odb::Rect& box)
-      : edge_type_idx_(type), bbox_(box)
-  {
-  }
-  unsigned int getEdgeType() const { return edge_type_idx_; }
-  const odb::Rect& getBBox() const { return bbox_; }
-
- private:
-  unsigned int edge_type_idx_;
-  odb::Rect bbox_;
-};
 
 class Node : public GridNode
 {
  public:
   Node();
-
-  int getRegionId() const { return regionId_; }
-
-  void setRegionId(int id) { regionId_ = id; }
-
-  bool adjustCurrOrient(const dbOrientType& newOrient);
-
-  int getNumPins() const { return (int) pins_.size(); }
-  const std::vector<Pin*>& getPins() const { return pins_; }
-
- private:
-  // Regions.
-  int regionId_ = 0;
-  // Pins.
-  std::vector<Pin*> pins_;
-
-  friend class Network;
-};
-
-class Edge
-{
- public:
-  int getId() const { return id_; }
-  void setId(int id) { id_ = id; }
-  int getNumPins() const { return (int) pins_.size(); }
-  const std::vector<Pin*>& getPins() const { return pins_; }
-
- private:
-  // Id.
-  int id_ = 0;
-  // Pins.
-  std::vector<Pin*> pins_;
-
-  friend class Network;
-};
-
-class Pin
-{
- public:
-  enum Direction
-  {
-    Dir_IN,
-    Dir_OUT,
-    Dir_INOUT,
-    Dir_UNKNOWN
-  };
-
-  Pin();
-
-  void setDirection(int dir) { dir_ = dir; }
-  int getDirection() const { return dir_; }
-
-  Node* getNode() const { return node_; }
-  Edge* getEdge() const { return edge_; }
-
-  void setOffsetX(DbuX offsetX) { offsetX_ = offsetX; }
-  DbuX getOffsetX() const { return offsetX_; }
-
-  void setOffsetY(DbuY offsetY) { offsetY_ = offsetY; }
-  DbuY getOffsetY() const { return offsetY_; }
-
-  void setPinLayer(int layer) { pinLayer_ = layer; }
-  int getPinLayer() const { return pinLayer_; }
-
-  void setPinWidth(DbuX width) { pinWidth_ = width; }
-  DbuX getPinWidth() const { return pinWidth_; }
-
-  void setPinHeight(DbuY height) { pinHeight_ = height; }
-  DbuY getPinHeight() const { return pinHeight_; }
-
- private:
-  // Pin width and height.
-  DbuX pinWidth_{0};
-  DbuY pinHeight_{0};
-  // Direction.
-  int dir_ = Dir_INOUT;
-  // Layer.
-  int pinLayer_ = 0;
-  // Node and edge for pin.
-  Node* node_ = nullptr;
-  Edge* edge_ = nullptr;
-  // Offsets from cell center.
-  DbuX offsetX_{0};
-  DbuY offsetY_{0};
-
-  friend class Network;
 };
 
 class Network
@@ -246,7 +153,7 @@ class Network
   Edge* createAndAddEdge();
 
   // For creating masters.
-  dpl::Master* createAndAddMaster();
+  Master* createAndAddMaster();
 
   void createAndAddBlockage(const odb::Rect& bounds);
 
@@ -259,7 +166,7 @@ class Network
   std::unordered_map<int, std::string> nodeNames_;  // Names of nodes...
   std::vector<Pin*> pins_;            // The pins in the network...
   std::vector<odb::Rect> blockages_;  // The placement blockages ..
-  std::vector<std::unique_ptr<dpl::Master>> masters_;
+  std::vector<std::unique_ptr<Master>> masters_;
 };
 
 }  // namespace dpo

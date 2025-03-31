@@ -36,13 +36,15 @@
 
 #include "detailed_generator.h"
 #include "rectangle.h"
-
+namespace dpl {
+  class Edge;
+}
 namespace dpo {
 class Architecture;
 class DetailedMgr;
-class Edge;
 class Network;
 class RoutingParams;
+using dpl::Edge;
 
 // CLASSES ===================================================================
 class DetailedGlobalSwap : public DetailedGenerator

@@ -230,7 +230,7 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     if (edge_types_indices_.find(edge->getEdgeType())
         != edge_types_indices_.end()) {
       // consider only edge types defined in the spacing table
-      master->addEdge(Edge(edge_types_indices_[edge->getEdgeType()],
+      master->addEdge(MasterEdge(edge_types_indices_[edge->getEdgeType()],
                                   edge_rect));
     }
   }
@@ -244,7 +244,7 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->addEdge(Edge(0, seg));
+      master->addEdge(MasterEdge(0, seg));
     }
   }
 }

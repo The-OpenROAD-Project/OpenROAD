@@ -534,7 +534,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     typed_segs[dir].push_back(edge_rect);
     if (arch_->hasEdgeType(edge->getEdgeType())) {
       // consider only edge types defined in the spacing table
-      master->addEdge(dpl::Edge(arch_->getEdgeTypeIdx(edge->getEdgeType()),
+      master->addEdge(dpl::MasterEdge(arch_->getEdgeTypeIdx(edge->getEdgeType()),
                                   edge_rect));
     }
   }
@@ -548,7 +548,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->addEdge(dpl::Edge(0, seg));
+      master->addEdge(dpl::MasterEdge(0, seg));
     }
   }
   return master;
@@ -689,9 +689,6 @@ void Optdp::createNetwork()
       ndi->setTopPower(it_m->second.first);
     }
 
-    // Regions setup later!
-    ndi->setRegionId(0);
-
     ++n;  // Next node.
   }
   for (dbBTerm* bterm : bterms) {
@@ -725,9 +722,6 @@ void Optdp::createNetwork()
     // Not relevant for terminal.
     ndi->setBottomPower(Architecture::Row::Power_UNK);
     ndi->setTopPower(Architecture::Row::Power_UNK);
-
-    // Not relevant for terminal.
-    ndi->setRegionId(0);  // Set in another routine.
 
     ++n;  // Next node.
   }
@@ -1044,20 +1038,19 @@ void Optdp::setUpPlacementRegions()
   dbBlock* block = db_->getChip()->getBlock();
   auto core = block->getCoreArea();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
-  Architecture::Region* rptr = nullptr;
+  Group* rptr = nullptr;
   int count = 0;
 
   // Default region.
   rptr = arch_->createAndAddRegion();
-  rptr->setId(count);
-  ++count;
+  rptr->setId(count++);
 
   rptr->addRect({xmin, ymin, xmax, ymax});
-
-  rptr->setMinX(xmin);
-  rptr->setMaxX(xmax);
-  rptr->setMinY(ymin);
-  rptr->setMaxY(ymax);
+  rptr->setBoundary(Rect(xmin, ymin, xmax, ymax));
+  // rptr->setMinX(xmin);
+  // rptr->setMaxX(xmax);
+  // rptr->setMinY(ymin);
+  // rptr->setMaxY(ymax);
 
   auto db_groups = block->getGroups();
   for (auto db_group : db_groups) {
@@ -1067,30 +1060,29 @@ void Optdp::setUpPlacementRegions()
       rptr->setId(count);
       ++count;
       auto boundaries = parent->getBoundaries();
+      Rect bbox;
+      bbox.mergeInit();
       for (dbBox* boundary : boundaries) {
         Rect box = boundary->getBox();
         box.moveDelta(-core.xMin(), -core.yMin());
-
         xmin = std::max(arch_->getMinX(), box.xMin());
         xmax = std::min(arch_->getMaxX(), box.xMax());
         ymin = std::max(arch_->getMinY(), box.yMin());
         ymax = std::min(arch_->getMaxY(), box.yMax());
 
         rptr->addRect({xmin, ymin, xmax, ymax});
-
-        rptr->setMinX(std::min(xmin, rptr->getMinX()));
-        rptr->setMaxX(std::max(xmax, rptr->getMaxX()));
-        rptr->setMinY(std::min(ymin, rptr->getMinY()));
-        rptr->setMaxY(std::max(ymax, rptr->getMaxY()));
+        bbox.merge({xmin, ymin, xmax, ymax});
       }
+      rptr->setBoundary(bbox);
 
       // The instances within this region.
       for (auto db_inst : db_group->getInsts()) {
         it_n = instMap_.find(db_inst);
         if (instMap_.end() != it_n) {
           Node* nd = it_n->second;
-          if (nd->getRegionId() == 0) {
-            nd->setRegionId(rptr->getId());
+          if (nd->getGroupId() == 0) {
+            nd->setGroupId(rptr->getId());
+            nd->setGroup(rptr);
           }
         }
       }
