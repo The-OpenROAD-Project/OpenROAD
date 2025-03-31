@@ -101,9 +101,9 @@ void FlexPA::init()
 void FlexPA::deleteInst(frInst* inst)
 {
   const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   // if inst is the class head the new head will be returned by deleteInst()
   frInst* class_head = unique_insts_.deleteInst(inst);
-  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   // whole class has to be deleted
   if (!class_head) {
     unique_inst_patterns_.erase(inst);
@@ -118,14 +118,10 @@ void FlexPA::deleteInst(frInst* inst)
   }
 }
 
-void FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
+void FlexPA::updateInst(frInst* inst)
 {
   bool inst_already_solved = false;
-  frInst* inst = design_->getTopBlock()->findInst(db_inst);
-  if (!inst) {
-    io::Parser parser(db, getDesign(), logger_, router_cfg_);
-    inst = parser.setInst(db_inst);
-  } else {
+  if (inst->hasPinAccessIdx()) {
     if (unique_insts_.computeUniqueClass(inst)
         == *unique_insts_.getClass(inst)) {
       inst_already_solved = true;
@@ -143,6 +139,18 @@ void FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
     }
     inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
   }
+}
+
+frInst* FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
+{
+  bool inst_already_solved = false;
+  frInst* inst = design_->getTopBlock()->findInst(db_inst);
+  if (!inst) {
+    io::Parser parser(db, getDesign(), logger_, router_cfg_);
+    inst = parser.setInst(db_inst);
+  }
+  updateInst(inst);
+  return inst;
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
