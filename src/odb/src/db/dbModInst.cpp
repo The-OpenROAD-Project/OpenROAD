@@ -281,9 +281,12 @@ void dbModInst::destroy(dbModInst* modinst)
   for (auto moditerm : modinst->getModITerms()) {
     moditerm->disconnect();
   }
+
   // remove the moditerms
-  for (auto moditerm : modinst->getModITerms()) {
-    _block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
+  dbSet<dbModITerm>::iterator moditerm_itr;
+  dbSet<dbModITerm> moditerms = modinst->getModITerms();
+  for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
+    moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
   // unlink from parent start
