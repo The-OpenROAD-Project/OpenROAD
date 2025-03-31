@@ -109,10 +109,6 @@ cc_library(
     hdrs = [
         "defzlib/defzlib.hpp",
     ],
-    features = [
-        # TODO: figure out why it complains about zlib while we depend on it
-        "-layering_check",
-    ],
     includes = ["defzlib"],
     deps = [
         ":def",
