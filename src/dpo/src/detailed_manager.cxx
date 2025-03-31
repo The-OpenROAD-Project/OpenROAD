@@ -1833,15 +1833,15 @@ double DetailedMgr::getCellSpacing(const Node* ndl,
       // determine the widest pin and the parallel run length without knowing
       // the actual location of the cells...  At least I think so...
 
-      const double xmin1 = pinl->getOffsetX() - 0.5 * pinl->getPinWidth();
-      const double xmax1 = pinl->getOffsetX() + 0.5 * pinl->getPinWidth();
-      const double ymin1 = pinl->getOffsetY() - 0.5 * pinl->getPinHeight();
-      const double ymax1 = pinl->getOffsetY() + 0.5 * pinl->getPinHeight();
+      const double xmin1 = pinl->getOffsetX().v - 0.5 * pinl->getPinWidth().v;
+      const double xmax1 = pinl->getOffsetX().v + 0.5 * pinl->getPinWidth().v;
+      const double ymin1 = pinl->getOffsetY().v - 0.5 * pinl->getPinHeight().v;
+      const double ymax1 = pinl->getOffsetY().v + 0.5 * pinl->getPinHeight().v;
 
-      const double xmin2 = pinr->getOffsetX() - 0.5 * pinr->getPinWidth();
-      const double xmax2 = pinr->getOffsetX() + 0.5 * pinr->getPinWidth();
-      const double ymin2 = pinr->getOffsetY() - 0.5 * pinr->getPinHeight();
-      const double ymax2 = pinr->getOffsetY() + 0.5 * pinr->getPinHeight();
+      const double xmin2 = pinr->getOffsetX().v - 0.5 * pinr->getPinWidth().v;
+      const double xmax2 = pinr->getOffsetX().v + 0.5 * pinr->getPinWidth().v;
+      const double ymin2 = pinr->getOffsetY().v - 0.5 * pinr->getPinHeight().v;
+      const double ymax2 = pinr->getOffsetY().v + 0.5 * pinr->getPinHeight().v;
 
       const double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
                                  std::min(ymax2 - ymin2, xmax2 - xmin2));

@@ -98,9 +98,9 @@ double DetailedHPWL::curr()
       const Node* ndj = pinj->getNode();
 
       const double x
-          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
       const double y
-          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
 
       box.addPt(x, y);
     }
@@ -148,9 +148,9 @@ double DetailedHPWL::delta(const Journal& journal)
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX().v;
         y = curr->getBottom().v + 0.5 * curr->getHeight().v
-            + pinj->getOffsetY();
+            + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
       }
@@ -186,9 +186,9 @@ double DetailedHPWL::delta(const Journal& journal)
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX().v;
         y = curr->getBottom().v + 0.5 * curr->getHeight().v
-            + pinj->getOffsetY();
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }
@@ -233,14 +233,14 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
 
       old_box.addPt(x, y);
 
       if (ndj == ndi) {
-        x = new_x + pinj->getOffsetX();
-        y = new_y + pinj->getOffsetY();
+        x = new_x + pinj->getOffsetX().v;
+        y = new_y + pinj->getOffsetY().v;
       }
 
       new_box.addPt(x, y);
@@ -297,8 +297,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
 
         Node* ndj = pinj->getNode();
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
@@ -308,8 +308,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }
@@ -362,18 +362,18 @@ double DetailedHPWL::delta(Node* ndi,
       for (Pin* pinj : edi->getPins()) {
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX().v;
         y = curr->getBottom().v + 0.5 * curr->getHeight().v
-            + pinj->getOffsetY();
+            + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
         if (curr == nodes[0]) {
-          x = target_xi + pinj->getOffsetX();
-          y = target_yi + pinj->getOffsetY();
+          x = target_xi + pinj->getOffsetX().v;
+          y = target_yi + pinj->getOffsetY().v;
         } else if (curr == nodes[1]) {
-          x = target_xj + pinj->getOffsetX();
-          y = target_yj + pinj->getOffsetY();
+          x = target_xj + pinj->getOffsetX().v;
+          y = target_yj + pinj->getOffsetY().v;
         }
 
         new_box.addPt(x, y);

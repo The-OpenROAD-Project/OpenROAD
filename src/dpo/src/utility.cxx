@@ -93,9 +93,9 @@ double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
     for (const Pin* pin : ed->getPins()) {
       const Node* ndi = pin->getNode();
       const double py
-          = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY();
+          = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY().v;
       const double px
-          = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX();
+          = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX().v;
       box.addPt(px, py);
     }
     hpwlx += box.getWidth();
@@ -129,9 +129,9 @@ double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
   for (const Pin* pin : ed->getPins()) {
     const Node* ndi = pin->getNode();
     const double py
-        = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY();
+        = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY().v;
     const double px
-        = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX();
+        = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX().v;
     box.addPt(px, py);
   }
   hpwlx = box.getWidth();

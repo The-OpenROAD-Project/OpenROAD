@@ -57,10 +57,10 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         || newOri == dbOrientType::MX || newOri == dbOrientType::R180) {
       // Rotate the cell counter-clockwise by 90 degrees.
       for (Pin* pin : pins_) {
-        const double dx = pin->getOffsetX();
-        const double dy = pin->getOffsetY();
-        pin->setOffsetX(-dy);
-        pin->setOffsetY(dx);
+        const auto dx = pin->getOffsetX().v;
+        const auto dy = pin->getOffsetY().v;
+        pin->setOffsetX(DbuX{-dy});
+        pin->setOffsetY(DbuY{dx});
       }
       {
         int tmp = width_.v;
@@ -82,10 +82,10 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
         || newOri == dbOrientType::MYR90 || newOri == dbOrientType::R270) {
       // Rotate the cell clockwise by 90 degrees.
       for (Pin* pin : pins_) {
-        const double dx = pin->getOffsetX();
-        const double dy = pin->getOffsetY();
-        pin->setOffsetX(dy);
-        pin->setOffsetY(-dx);
+        const auto dx = pin->getOffsetX().v;
+        const auto dy = pin->getOffsetY().v;
+        pin->setOffsetX(DbuX{dy});
+        pin->setOffsetY(DbuY{-dx});
       }
       {
         int tmp = width_.v;
@@ -141,8 +141,8 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
   }
 
   for (Pin* pin : pins_) {
-    pin->setOffsetX(pin->getOffsetX() * mX);
-    pin->setOffsetY(pin->getOffsetY() * mY);
+    pin->setOffsetX(pin->getOffsetX() * DbuX{mX});
+    pin->setOffsetY(pin->getOffsetY() * DbuY{mY});
   }
   orient_ = newOri;
   return true;

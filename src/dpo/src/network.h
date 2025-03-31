@@ -112,18 +112,12 @@ class Edge
  public:
   int getId() const { return id_; }
   void setId(int id) { id_ = id; }
-
-  void setNdr(int ndr) { ndr_ = ndr; }
-  int getNdr() const { return ndr_; }
-
   int getNumPins() const { return (int) pins_.size(); }
   const std::vector<Pin*>& getPins() const { return pins_; }
 
  private:
   // Id.
   int id_ = 0;
-  // Refer to routing rule stored elsewhere.
-  int ndr_ = 0;
   // Pins.
   std::vector<Pin*> pins_;
 
@@ -149,25 +143,25 @@ class Pin
   Node* getNode() const { return node_; }
   Edge* getEdge() const { return edge_; }
 
-  void setOffsetX(double offsetX) { offsetX_ = offsetX; }
-  double getOffsetX() const { return offsetX_; }
+  void setOffsetX(DbuX offsetX) { offsetX_ = offsetX; }
+  DbuX getOffsetX() const { return offsetX_; }
 
-  void setOffsetY(double offsetY) { offsetY_ = offsetY; }
-  double getOffsetY() const { return offsetY_; }
+  void setOffsetY(DbuY offsetY) { offsetY_ = offsetY; }
+  DbuY getOffsetY() const { return offsetY_; }
 
   void setPinLayer(int layer) { pinLayer_ = layer; }
   int getPinLayer() const { return pinLayer_; }
 
-  void setPinWidth(double width) { pinWidth_ = width; }
-  double getPinWidth() const { return pinWidth_; }
+  void setPinWidth(DbuX width) { pinWidth_ = width; }
+  DbuX getPinWidth() const { return pinWidth_; }
 
-  void setPinHeight(double height) { pinHeight_ = height; }
-  double getPinHeight() const { return pinHeight_; }
+  void setPinHeight(DbuY height) { pinHeight_ = height; }
+  DbuY getPinHeight() const { return pinHeight_; }
 
  private:
   // Pin width and height.
-  double pinWidth_ = 0;
-  double pinHeight_ = 0;
+  DbuX pinWidth_{0};
+  DbuY pinHeight_{0};
   // Direction.
   int dir_ = Dir_INOUT;
   // Layer.
@@ -176,8 +170,8 @@ class Pin
   Node* node_ = nullptr;
   Edge* edge_ = nullptr;
   // Offsets from cell center.
-  double offsetX_ = 0;
-  double offsetY_ = 0;
+  DbuX offsetX_{0};
+  DbuY offsetY_{0};
 
   friend class Network;
 };

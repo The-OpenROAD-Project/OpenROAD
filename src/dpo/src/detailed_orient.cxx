@@ -334,13 +334,13 @@ int DetailedOrient::flipCells()
           Node* ndj = pinj->getNode();
 
           double x
-              = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+              = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
           oldMinX = std::min(oldMinX, x);
           oldMaxX = std::max(oldMaxX, x);
 
           if (ndj == ndi) {
             x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
-                - pinj->getOffsetX();  // flipped.
+                - pinj->getOffsetX().v;  // flipped.
           }
           newMinX = std::min(newMinX, x);
           newMaxX = std::max(newMaxX, x);

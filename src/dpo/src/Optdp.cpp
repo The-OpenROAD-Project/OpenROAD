@@ -779,17 +779,17 @@ void Optdp::createNetwork()
         // Due to old bookshelf, my offsets are from the
         // center of the cell whereas in DEF, it's from
         // the bottom corner.
-        double ww = mTerm->getBBox().dx();
-        double hh = mTerm->getBBox().dy();
-        double xx = (mTerm->getBBox().xMax() + mTerm->getBBox().xMin()) * 0.5;
-        double yy = (mTerm->getBBox().yMax() + mTerm->getBBox().yMin()) * 0.5;
-        double dx = xx - (master->getWidth() / 2.0);
-        double dy = yy - (master->getHeight() / 2.0);
+        auto ww = mTerm->getBBox().dx();
+        auto hh = mTerm->getBBox().dy();
+        auto xx = mTerm->getBBox().xCenter();
+        auto yy = mTerm->getBBox().yCenter();
+        auto dx = xx - ((int)master->getWidth() / 2);
+        auto dy = yy - ((int)master->getHeight() / 2);
 
-        ptr->setOffsetX(dx);
-        ptr->setOffsetY(dy);
-        ptr->setPinHeight(hh);
-        ptr->setPinWidth(ww);
+        ptr->setOffsetX(DbuX{dx});
+        ptr->setOffsetY(DbuY{dy});
+        ptr->setPinHeight(DbuY{hh});
+        ptr->setPinWidth(DbuX{ww});
         ptr->setPinLayer(0);  // Set to zero since not currently used.
 
         ++p;  // next pin.
@@ -815,10 +815,10 @@ void Optdp::createNetwork()
                                              network_->getEdge(e));
 
         // These don't need an offset.
-        ptr->setOffsetX(0.0);
-        ptr->setOffsetY(0.0);
-        ptr->setPinHeight(0.0);
-        ptr->setPinWidth(0.0);
+        ptr->setOffsetX(DbuX{0});
+        ptr->setOffsetY(DbuY{0});
+        ptr->setPinHeight(DbuY{0});
+        ptr->setPinWidth(DbuX{0});
         ptr->setPinLayer(0);  // Set to zero since not currently used.
 
         ++p;  // next pin.
