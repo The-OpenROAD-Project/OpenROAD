@@ -34,6 +34,40 @@
 #include "dpl/Objects.h"
 
 namespace dpl {
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+MasterEdge::MasterEdge(unsigned int type, const odb::Rect& box)
+    : edge_type_idx_(type), bbox_(box)
+{
+}
+
+unsigned int MasterEdge::getEdgeType() const { return edge_type_idx_; }
+const odb::Rect& MasterEdge::getBBox() const { return bbox_; }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+EdgeSpacingEntry::EdgeSpacingEntry(const int spc_in,
+                                 const bool is_exact_in,
+                                 const bool except_abutted_in)
+    : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
+{
+}
+
+bool EdgeSpacingEntry::operator<(const EdgeSpacingEntry& rhs) const { return spc < rhs.spc; }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+bool Master::isMultiRow() const { return is_multi_row_; }
+const std::vector<MasterEdge>& Master::getEdges() { return edges_; }
+const odb::Rect Master::getBBox() { return boundary_box_; }
+void Master::setMultiRow(const bool in) { is_multi_row_ = in; }
+void Master::addEdge(const MasterEdge& edge) { edges_.emplace_back(edge); }
+void Master::clearEdges() { edges_.clear(); }
+void Master::setBBox(const odb::Rect box) { boundary_box_ = box; }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+GridNode::~GridNode() = default;
 int GridNode::getId() const { return id_; }
 DbuY GridNode::getOrigBottom() const { return orig_bottom_; }
 DbuX GridNode::getOrigLeft() const { return orig_left_; }
@@ -101,8 +135,9 @@ Group* GridNode::getGroup() const { return group_; }
 const Rect* GridNode::getRegion() const { return region_; }
 Master* GridNode::getMaster() const { return master_; }
 bool GridNode::inGroup() const { return group_ != nullptr; }
-
-// setters
+int GridNode::getNumPins() const { return (int) pins_.size(); }
+const std::vector<Pin*>& GridNode::getPins() const { return pins_; }
+int GridNode::getGroupId() const { return group_id_; }
 void GridNode::setId(int id) { id_ = id; }
 void GridNode::setFixed(bool in) { fixed_ = in; }
 void GridNode::setDbInst(dbInst* inst) { db_inst_ = inst; }
@@ -121,6 +156,8 @@ void GridNode::setType(Type type) { type_ = type; }
 void GridNode::setGroup(Group* in) { group_ = in; }
 void GridNode::setRegion(const Rect* in) { region_ = in; }
 void GridNode::setMaster(Master* in) { master_ = in; }
+void GridNode::addPin(Pin* pin) { pins_.emplace_back(pin); }
+void GridNode::setGroupId(int id) { group_id_ = id; }
 bool GridNode::adjustCurrOrient(const dbOrientType& newOri)
 {
   // Change the orientation of the cell, but leave the lower-left corner
@@ -227,6 +264,49 @@ bool GridNode::adjustCurrOrient(const dbOrientType& newOri)
   orient_ = newOri;
   return true;
 }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+string Group::getName() { return name_; }
+const vector<Rect>& Group::getRects() const { return region_boundaries_; }
+const vector<GridNode*> Group::getCells() const { return cells_; }
+const Rect& Group::getBBox() const { return boundary_; }
+double Group::getUtil() const { return util_; }
+int Group::getId() const { return id_; }
+void Group::setId(int id) { id_ = id; }
+void Group::setName(const string& in) { name_ = in;}
+void Group::addRect(const Rect& in) {region_boundaries_.emplace_back(in);}
+void Group::addCell(GridNode* cell) { cells_.emplace_back(cell); }
+void Group::setBoundary(const Rect& in) { boundary_ = in; }
+void Group::setUtil(const double in) { util_ = in; }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+int Edge::getId() const { return id_; }
+void Edge::setId(int id) { id_ = id; }
+int Edge::getNumPins() const { return (int) pins_.size(); }
+const std::vector<Pin*>& Edge::getPins() const { return pins_; }
+void Edge::addPin(Pin* pin) { pins_.emplace_back(pin); }
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+Pin::Pin() = default;
+void Pin::setDirection(int dir) { dir_ = dir; }
+int Pin::getDirection() const { return dir_; }
+void Pin::setNode(GridNode* node) { node_ = node; }
+void Pin::setEdge(Edge* ed) { edge_ = ed; }
+GridNode* Pin::getNode() const { return node_; }
+Edge* Pin::getEdge() const { return edge_; }
+void Pin::setOffsetX(DbuX offsetX) { offsetX_ = offsetX; }
+DbuX Pin::getOffsetX() const { return offsetX_; }
+void Pin::setOffsetY(DbuY offsetY) { offsetY_ = offsetY; }
+DbuY Pin::getOffsetY() const { return offsetY_; }
+void Pin::setPinLayer(int layer) { pinLayer_ = layer; }
+int Pin::getPinLayer() const { return pinLayer_; }
+void Pin::setPinWidth(DbuX width) { pinWidth_ = width; }
+DbuX Pin::getPinWidth() const { return pinWidth_; }
+void Pin::setPinHeight(DbuY height) { pinHeight_ = height; }
+DbuY Pin::getPinHeight() const { return pinHeight_; }
 
 
 }  // namespace dpl
