@@ -20,7 +20,7 @@ $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit <(cat <<EOF
 cd "$PREFIX"
 source "$TEST_NAME.$TEST_EXT"
 EOF
-) 2>&1 | tee $LOG_FILE
+) 2>&1 | tee $(realpath $LOG_FILE)
 
 echo "Exitcode:  $?"
 
