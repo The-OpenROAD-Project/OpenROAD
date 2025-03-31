@@ -911,12 +911,7 @@ cc_library(
         "src/odb/include/odb/*.hpp",
         "src/utl/include/utl/*.h",
         "src/odb/src/db/*.h",
-    ]) + [
-        "src/odb/src/lef/lef/lefiDebug.hpp",
-        "src/odb/src/lef/lef/lefiUtil.hpp",
-        "src/odb/src/lef/lef/lefrReader.hpp",
-        "src/odb/src/lef/lef/lefwWriter.hpp",
-    ],
+    ]),
     copts = [
         "-fexceptions",
         "-Wno-error",
@@ -936,7 +931,8 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
-        ":opendb_lef",
+        "//src/odb/src/lef",
+        "//src/odb/src/lef:lefzlib",
         "//src/odb/src/def",
         "//src/odb/src/def:defzlib",
         "//src/utl",
@@ -955,59 +951,6 @@ cc_library(
         "@tk_tcl//:tcl",
         "@zlib",
     ],
-)
-
-cc_library(
-    name = "opendb_lef",
-    srcs = glob(
-        include = [
-            "src/odb/src/lef/lef/*.cpp",
-            "src/odb/src/lef/lef/*.h",
-            "src/odb/src/lef/lef/*.hpp",
-            "src/odb/src/lef/lefzlib/*.cpp",
-        ],
-        exclude = [
-            "src/odb/src/lef/lef/lefiDebug.hpp",
-            "src/odb/src/lef/lef/lefiUtil.hpp",
-            "src/odb/src/lef/lef/lefrReader.hpp",
-        ],
-    ) + [
-        "src/odb/src/lef/lef/lef_parser.cpp",
-        "src/odb/src/lef/lef/lef_parser.hpp",
-    ],
-    hdrs = glob([
-        "src/odb/include/odb/*.h",
-        "src/odb/include/odb/*.hpp",
-    ]) + [
-        "src/odb/src/lef/lef/lefiDebug.hpp",
-        "src/odb/src/lef/lef/lefiUtil.hpp",
-        "src/odb/src/lef/lef/lefrReader.hpp",
-        "src/odb/src/lef/lefzlib/lefzlib.hpp",
-    ],
-    copts = [
-        "-fexceptions",
-        "-Wno-error",
-    ],
-    features = ["-use_header_modules"],
-    includes = [
-        "src/odb/include/odb",
-        "src/odb/src/lef/lef",
-        "src/odb/src/lef/lefzlib",
-    ],
-    visibility = [
-        "//visibility:private",
-    ],
-    deps = [
-        "@zlib",
-    ],
-)
-
-genyacc(
-    name = "lef_bison",
-    src = "src/odb/src/lef/lef/lef.y",
-    header_out = "src/odb/src/lef/lef/lef_parser.hpp",
-    prefix = "lefyy",
-    source_out = "src/odb/src/lef/lef/lef_parser.cpp",
 )
 
 ## OPENDB
