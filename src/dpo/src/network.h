@@ -45,29 +45,29 @@
 
 #include "architecture.h"
 #include "dpl/Coordinates.h"
+#include "dpl/Objects.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "dpl/Objects.h"
 namespace dpl {
 class Master;
 class Pin;
 class Grid;
 class Edge;
-}
+}  // namespace dpl
 
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
-using odb::dbOrientType;
 using dpl::DbuX;
 using dpl::DbuY;
+using dpl::Edge;
 using dpl::GridX;
 using dpl::GridY;
-using dpl::Pin;
-using dpl::Edge;
 using dpl::Master;
+using dpl::Pin;
+using odb::dbOrientType;
 
 const int EDGETYPE_DEFAULT = 0;
 

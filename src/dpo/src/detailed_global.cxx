@@ -42,9 +42,9 @@
 
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
+#include "dpl/Objects.h"
 #include "rectangle.h"
 #include "utl/Logger.h"
-#include "dpl/Objects.h"
 
 namespace dpo {
 
@@ -284,8 +284,8 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
       continue;
     }
     curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX().v;
-    curY
-        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY().v;
+    curY = other->getBottom().v + 0.5 * other->getHeight().v
+           + pin->getOffsetY().v;
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -384,7 +384,8 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
         auto ndj = pinj->getNode();
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
@@ -395,7 +396,8 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
         }
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }

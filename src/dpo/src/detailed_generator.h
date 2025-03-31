@@ -42,7 +42,7 @@
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
 namespace dpl {
-  class Node;
+class Node;
 }
 namespace dpo {
 class DetailedMgr;

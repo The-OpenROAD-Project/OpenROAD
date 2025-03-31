@@ -52,17 +52,18 @@
 #include "detailed.h"
 #include "detailed_manager.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Padding.h"
 #include "legalize_shift.h"
 #include "network.h"
 #include "router.h"
 #include "symmetry.h"
-#include "dpl/Objects.h"
 
 namespace dpo {
 
 using utl::DPO;
 
+using dpl::Master;
 using odb::dbBlock;
 using odb::dbBlockage;
 using odb::dbBox;
@@ -84,7 +85,6 @@ using odb::dbSWire;
 using odb::dbTechLayer;
 using odb::dbWireType;
 using odb::Rect;
-using dpl::Master;
 
 ////////////////////////////////////////////////////////////////
 void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
@@ -534,8 +534,8 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     typed_segs[dir].push_back(edge_rect);
     if (arch_->hasEdgeType(edge->getEdgeType())) {
       // consider only edge types defined in the spacing table
-      master->addEdge(dpl::MasterEdge(arch_->getEdgeTypeIdx(edge->getEdgeType()),
-                                  edge_rect));
+      master->addEdge(dpl::MasterEdge(
+          arch_->getEdgeTypeIdx(edge->getEdgeType()), edge_rect));
     }
   }
   if (!arch_->hasEdgeType("DEFAULT")) {
@@ -777,8 +777,8 @@ void Optdp::createNetwork()
         auto hh = mTerm->getBBox().dy();
         auto xx = mTerm->getBBox().xCenter();
         auto yy = mTerm->getBBox().yCenter();
-        auto dx = xx - ((int)master->getWidth() / 2);
-        auto dy = yy - ((int)master->getHeight() / 2);
+        auto dx = xx - ((int) master->getWidth() / 2);
+        auto dy = yy - ((int) master->getHeight() / 2);
 
         ptr->setOffsetX(DbuX{dx});
         ptr->setOffsetY(DbuY{dy});

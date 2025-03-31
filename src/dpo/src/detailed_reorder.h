@@ -37,7 +37,7 @@
 
 #include "dpl/Coordinates.h"
 namespace dpl {
-  class Node;
+class Node;
 }
 namespace dpo {
 

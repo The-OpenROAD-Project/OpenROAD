@@ -41,11 +41,11 @@
 #include <stack>
 #include <vector>
 
+#include "dpl/Objects.h"
 #include "network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "router.h"
-#include "dpl/Objects.h"
 
 namespace dpo {
 

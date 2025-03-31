@@ -38,7 +38,7 @@
 #include "rectangle.h"
 
 namespace dpl {
-  class Edge;
+class Edge;
 }
 namespace dpo {
 

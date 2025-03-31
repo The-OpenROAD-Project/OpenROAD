@@ -333,8 +333,8 @@ int DetailedOrient::flipCells()
         for (Pin* pinj : edi->getPins()) {
           Node* ndj = pinj->getNode();
 
-          double x
-              = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+          double x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
+                     + pinj->getOffsetX().v;
           oldMinX = std::min(oldMinX, x);
           oldMaxX = std::max(oldMaxX, x);
 

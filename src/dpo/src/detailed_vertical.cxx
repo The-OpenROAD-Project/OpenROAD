@@ -286,8 +286,8 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
     }
     const double curX
         = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX().v;
-    const double curY
-        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY().v;
+    const double curY = other->getBottom().v + 0.5 * other->getHeight().v
+                        + pin->getOffsetY().v;
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -332,8 +332,8 @@ double DetailedVerticalSwap::delta(Node* ndi, double new_x, double new_y)
 
       double x
           = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-      double y
-          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+      double y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+                 + pinj->getOffsetY().v;
 
       old_box.addPt(x, y);
 
@@ -398,7 +398,8 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
         }
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }

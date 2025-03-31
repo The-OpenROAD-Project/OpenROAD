@@ -40,13 +40,13 @@
 
 #include "dpl/Coordinates.h"
 #include "odb/dbTypes.h"
-#include "rectangle.h"
 #include "odb/geom.h"
+#include "rectangle.h"
 namespace dpl {
 class Group;
 class Node;
 
-}
+}  // namespace dpl
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,10 +73,7 @@ class Architecture
   Architecture::Row* getRow(int r) const { return rows_[r]; }
   Architecture::Row* createAndAddRow();
 
-  const std::vector<Group*>& getRegions() const
-  {
-    return regions_;
-  }
+  const std::vector<Group*>& getRegions() const { return regions_; }
   int getNumRegions() const { return (int) regions_.size(); }
   Group* getRegion(int r) const { return regions_[r]; }
   Group* createAndAddRegion();

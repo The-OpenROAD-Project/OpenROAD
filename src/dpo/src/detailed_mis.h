@@ -42,7 +42,7 @@
 #include <string>
 #include <vector>
 namespace dpl {
-  class Node;
+class Node;
 }
 namespace dpo {
 

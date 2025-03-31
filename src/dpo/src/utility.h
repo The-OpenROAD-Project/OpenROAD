@@ -55,7 +55,7 @@
 using Placer_RNG = boost::mt19937;
 
 namespace dpl {
-  class Edge;
+class Edge;
 }
 namespace dpo {
 class Network;

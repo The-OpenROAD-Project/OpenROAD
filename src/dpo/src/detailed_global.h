@@ -37,7 +37,7 @@
 #include "detailed_generator.h"
 #include "rectangle.h"
 namespace dpl {
-  class Edge;
+class Edge;
 }
 namespace dpo {
 class Architecture;

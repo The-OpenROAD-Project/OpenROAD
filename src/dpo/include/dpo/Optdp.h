@@ -54,7 +54,6 @@ class Edge;
 class Pin;
 class Node;
 
-
 }  // namespace dpl
 
 namespace dpo {
@@ -63,15 +62,14 @@ class RoutingParams;
 class Architecture;
 class Network;
 
-
+using dpl::Edge;
 using dpl::Grid;
+using dpl::Node;
 using dpl::Opendp;
+using dpl::Pin;
 using odb::dbDatabase;
 using odb::dbOrientType;
 using utl::Logger;
-using dpl::Edge;
-using dpl::Pin;
-using dpl::Node;
 
 class Optdp
 {

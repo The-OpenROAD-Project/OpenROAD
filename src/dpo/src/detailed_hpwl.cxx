@@ -39,6 +39,7 @@
 #include "detailed_hpwl.h"
 
 #include <vector>
+
 #include "detailed_orient.h"
 
 namespace dpo {
@@ -98,8 +99,8 @@ double DetailedHPWL::curr()
 
       const double x
           = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-      const double y
-          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+      const double y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+                       + pinj->getOffsetY().v;
 
       box.addPt(x, y);
     }
@@ -297,7 +298,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
         Node* ndj = pinj->getNode();
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
@@ -308,7 +310,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
         }
 
         x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }
