@@ -32,6 +32,12 @@ build:asan --copt -g
 build:asan --copt -fno-omit-frame-pointer
 build:asan --linkopt -fsanitize=address
 
+# Mostly users and build systems want the release build
+build:release -c opt
+build --config=release
+run --config=release
+test --config=release
+
 # TODO: document
 build --incompatible_strict_action_env
 
