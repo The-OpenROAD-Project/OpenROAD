@@ -234,12 +234,12 @@ Using 2 tracks default min distance between IO pins.
 [NesterovSolve] Finished with Overflow: 0.099973
 Placement Analysis
 ---------------------------------
-total displacement     135888.3 u
-average displacement        2.6 u
+total displacement     130889.8 u
+average displacement        2.5 u
 max displacement          235.9 u
 original HPWL         1859287.7 u
-legalized HPWL        1963862.2 u
-delta HPWL                    6 %
+legalized HPWL        1957974.4 u
+delta HPWL                    5 %
 
 Detailed placement improvement.
 Importing netlist into detailed improver.

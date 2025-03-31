@@ -262,11 +262,11 @@ Using 2 tracks default min distance between IO pins.
 [NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.081185
 Placement Analysis
 ---------------------------------
-total displacement         89.0 u
-average displacement        3.6 u
+total displacement         81.5 u
+average displacement        3.3 u
 max displacement           45.4 u
 original HPWL             907.2 u
-legalized HPWL            979.6 u
+legalized HPWL            981.7 u
 delta HPWL                    8 %
 
 Detailed placement improvement.
@@ -331,8 +331,8 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL              979.6 u
-Final HPWL                 908.1 u
-Delta HPWL                  -7.3 %
+Original HPWL              981.7 u
+Final HPWL                 908.8 u
+Delta HPWL                  -7.4 %
 
 No differences found.

@@ -56,6 +56,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "detailed_abu.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "detailed_orient.h"

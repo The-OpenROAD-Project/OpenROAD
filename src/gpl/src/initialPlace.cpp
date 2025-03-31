@@ -33,6 +33,7 @@
 
 #include "initialPlace.h"
 
+#include <cstddef>
 #include <utility>
 
 #include "placerBase.h"

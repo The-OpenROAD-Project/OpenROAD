@@ -41,6 +41,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 
 #include "odb/db.h"
 

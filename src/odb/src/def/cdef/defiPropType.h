@@ -40,6 +40,6 @@
 /* Struct holds the data type for one property, if the property is            */
 /* either REAL or INTEGER.                                                    */
 
-EXTERN const char defiPropType_propType(const defiPropType* obj, char* name);
+EXTERN char defiPropType_propType(const defiPropType* obj, char* name);
 
 #endif

@@ -34,6 +34,7 @@
 #include "stt/pd.h"
 
 #include <boost/heap/d_ary_heap.hpp>
+#include <cstddef>
 #include <numeric>
 #include <utility>
 #include <vector>

@@ -33,6 +33,7 @@
 #pragma once
 
 #include <ctime>
+#include <string>
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"

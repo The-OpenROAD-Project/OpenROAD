@@ -34,7 +34,7 @@
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

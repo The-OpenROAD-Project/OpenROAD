@@ -35,6 +35,7 @@
 
 #include "Net.h"
 
+#include <string>
 #include <vector>
 
 #include "grt/GlobalRouter.h"

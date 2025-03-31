@@ -41,7 +41,7 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "ord/OpenRoadObserver.hh"
+#include "odb/dbDatabaseObserver.h"
 #include "sta/Sta.hh"
 
 namespace ord {
@@ -104,7 +104,7 @@ class BufferUseAnalyser
   std::unique_ptr<sta::PatternMatch> clkbuf_pattern_;
 };
 
-class dbSta : public Sta, public ord::OpenRoadObserver
+class dbSta : public Sta, public odb::dbDatabaseObserver
 {
  public:
   ~dbSta() override;

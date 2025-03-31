@@ -48,6 +48,7 @@
 #include <QTabWidget>
 #include <QToolTip>
 #include <optional>
+#include <string>
 #include <variant>
 #include <vector>
 

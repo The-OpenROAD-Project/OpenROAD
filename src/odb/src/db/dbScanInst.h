@@ -33,6 +33,9 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <string>
+#include <utility>
+
 #include "dbCore.h"
 #include "dbInst.h"
 #include "dbScanPin.h"

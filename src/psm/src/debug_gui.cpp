@@ -27,6 +27,8 @@
 
 #include "debug_gui.h"
 
+#include <string>
+
 #include "connection.h"
 #include "ir_network.h"
 #include "ir_solver.h"

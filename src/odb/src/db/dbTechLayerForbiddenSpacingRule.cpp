@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerForbiddenSpacingRule.h"
 
+#include <utility>
+
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

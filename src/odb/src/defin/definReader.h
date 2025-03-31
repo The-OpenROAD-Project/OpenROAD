@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "definBase.h"
@@ -249,6 +251,9 @@ class definReader : public definBase
 
   static void contextLogFunctionCallback(DefParser::defiUserData data,
                                          const char* msg);
+
+  static void contextWarningLogFunctionCallback(DefParser::defiUserData data,
+                                                const char* msg);
 
  public:
   definReader(dbDatabase* db,

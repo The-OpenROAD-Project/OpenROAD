@@ -37,6 +37,10 @@
 #include "odb/odb.h"
 #include "dbCore.h"
 
+{% for include in klass.h_sys_includes %}
+  #include <{{include}}>
+{% endfor %}
+
 {% for include in klass.h_includes %}
   #include "{{include}}"
 {% endfor %}

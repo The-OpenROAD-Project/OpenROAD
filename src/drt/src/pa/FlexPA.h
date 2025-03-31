@@ -29,7 +29,10 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "FlexPA_unique.h"
@@ -100,7 +103,8 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
+  std::unordered_map<frInst*,
+                     std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
@@ -631,11 +635,11 @@ class FlexPA
    */
   int prepPatternInstHelper(frInst* unique_inst, bool use_x);
 
-  int genPatterns(frInst* inst,
+  int genPatterns(frInst* unique_inst,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
   int genPatternsHelper(
-      frInst* inst,
+      frInst* unique_inst,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
@@ -665,7 +669,7 @@ class FlexPA
    * @brief Determines the value of all the paths of the DP problem
    */
   void genPatternsPerform(
-      frInst* inst,
+      frInst* unique_inst,
       std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
@@ -676,7 +680,7 @@ class FlexPA
   /**
    * @brief Determines the edge cost between two DP nodes
    */
-  int getEdgeCost(frInst* inst,
+  int getEdgeCost(frInst* unique_inst,
                   FlexDPNode* prev_node,
                   FlexDPNode* curr_node,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
@@ -705,7 +709,7 @@ class FlexPA
    * @brief Commits to the best path (solution) on the DP graph
    */
   bool genPatternsCommit(
-      frInst* inst,
+      frInst* unique_inst,
       const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
