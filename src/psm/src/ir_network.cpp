@@ -34,6 +34,7 @@
 
 #include <fstream>
 #include <list>
+#include <string>
 #include <vector>
 
 #include "connection.h"

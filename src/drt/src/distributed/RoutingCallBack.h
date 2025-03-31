@@ -36,6 +36,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <mutex>
+#include <string>
+#include <utility>
 
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"

@@ -328,7 +328,7 @@ double defiRegion::propNumber(int index) const
   return propDValues_[index];
 }
 
-const char defiRegion::propType(int index) const
+char defiRegion::propType(int index) const
 {
   if (index < 0 || index >= numProps_) {
     defiError6130(index, numProps_, defData);

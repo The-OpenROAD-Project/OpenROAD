@@ -42,6 +42,7 @@
 #include <QSettings>
 #include <QVBoxLayout>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "dbDescriptors.h"

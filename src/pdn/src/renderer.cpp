@@ -32,6 +32,7 @@
 
 #include "renderer.h"
 
+#include <string>
 #include <vector>
 
 #include "domain.h"

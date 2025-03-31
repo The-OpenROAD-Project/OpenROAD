@@ -38,6 +38,8 @@
 #include "detailed_orient.h"
 
 #include <boost/tokenizer.hpp>
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "architecture.h"
@@ -284,7 +286,7 @@ int DetailedOrient::flipCells()
   // assume the cells are already properly oriented for the row.
 
   int leftPadding, rightPadding;
-  double lx, rx;
+  DbuX lx, rx;
 
   int nflips = 0;
   for (int s = 0; s < mgrPtr_->getNumSegments(); s++) {
@@ -334,12 +336,12 @@ int DetailedOrient::flipCells()
           Node* ndj = pinj->getNode();
 
           double x
-              = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+              = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
           oldMinX = std::min(oldMinX, x);
           oldMaxX = std::max(oldMaxX, x);
 
           if (ndj == ndi) {
-            x = ndj->getLeft() + 0.5 * ndj->getWidth()
+            x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
                 - pinj->getOffsetX();  // flipped.
           }
           newMinX = std::min(newMinX, x);
@@ -356,12 +358,12 @@ int DetailedOrient::flipCells()
       // Check potential violation due to padding.
       Node* ndl = (i == 0) ? nullptr : nodes[i - 1];
       Node* ndr = (i == nodes.size() - 1) ? nullptr : nodes[i + 1];
-      lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
+      lx = (ndl == nullptr) ? DbuX{segment->getMinX()} : ndl->getRight();
       if (ndl) {
         arch_->getCellPadding(ndl, leftPadding, rightPadding);
         lx += rightPadding;
       }
-      rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
+      rx = (ndr == nullptr) ? DbuX{segment->getMaxX()} : ndr->getLeft();
       if (ndr) {
         arch_->getCellPadding(ndr, leftPadding, rightPadding);
         rx -= leftPadding;
@@ -399,8 +401,8 @@ int DetailedOrient::flipCells()
         continue;
       }
       // Check potential violation due to edge spacing.
-      lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
-      rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
+      lx = (ndl == nullptr) ? DbuX{segment->getMinX()} : ndl->getRight();
+      rx = (ndr == nullptr) ? DbuX{segment->getMaxX()} : ndr->getLeft();
       // Based on edge spacing, the cell must reside within
       // [lx,rx].
       if (ndi->getWidth() > (rx - lx)) {

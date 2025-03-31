@@ -32,6 +32,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/thread/thread.hpp>
+#include <string>
 
 #include "LoadBalancer.h"
 #include "Worker.h"

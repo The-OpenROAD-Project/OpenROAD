@@ -29,6 +29,8 @@
 
 #include "defiAlias.hpp"
 
+#include <string>
+
 #include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE

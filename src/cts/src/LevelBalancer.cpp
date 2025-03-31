@@ -35,6 +35,7 @@
 
 #include "LevelBalancer.h"
 
+#include <string>
 #include <vector>
 
 #include "Clock.h"

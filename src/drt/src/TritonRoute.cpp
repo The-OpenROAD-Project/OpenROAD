@@ -32,6 +32,7 @@
 #include <boost/bind/bind.hpp>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"

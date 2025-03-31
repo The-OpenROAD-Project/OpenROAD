@@ -33,6 +33,7 @@
 
 #include "mpl/rtl_mp.h"
 
+#include <string>
 #include <vector>
 
 #include "MplObserver.h"

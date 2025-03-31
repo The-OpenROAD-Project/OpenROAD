@@ -32,6 +32,8 @@
 
 #include "connection.h"
 
+#include <string>
+
 #include "node.h"
 #include "odb/db.h"
 

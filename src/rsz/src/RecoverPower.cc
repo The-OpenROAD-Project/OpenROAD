@@ -35,6 +35,8 @@
 
 #include "RecoverPower.hh"
 
+#include <string>
+
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"

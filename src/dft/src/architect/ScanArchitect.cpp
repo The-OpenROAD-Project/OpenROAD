@@ -32,6 +32,7 @@
 
 #include "ScanArchitect.hh"
 
+#include <cstddef>
 #include <vector>
 
 #include "ClockDomain.hh"

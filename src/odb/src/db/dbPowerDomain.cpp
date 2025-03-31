@@ -45,6 +45,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cmath>
+#include <string>
 #include <vector>
 
 #include "dbGroup.h"

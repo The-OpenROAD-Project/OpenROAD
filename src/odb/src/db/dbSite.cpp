@@ -32,6 +32,7 @@
 
 #include "dbSite.h"
 
+#include <string>
 #include <vector>
 
 #include "dbDatabase.h"

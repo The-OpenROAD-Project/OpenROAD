@@ -33,6 +33,7 @@
 #include "renderThread.h"
 
 #include <QPainterPath>
+#include <string>
 #include <vector>
 
 #include "layoutViewer.h"

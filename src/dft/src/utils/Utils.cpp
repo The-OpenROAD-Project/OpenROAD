@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

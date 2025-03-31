@@ -41,6 +41,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include "legalize_shift.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "architecture.h"
@@ -96,7 +97,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   mgr.findBlockages(false);  // Exclude routing blockages.
   mgr.findSegments();
 
-  std::vector<std::pair<double, double>> origPos;
+  std::vector<std::pair<DbuX, DbuY>> origPos;
   origPos.resize(network_->getNumNodes());
   for (int i = 0; i < network_->getNumNodes(); i++) {
     const Node* ndi = network_->getNode(i);
@@ -133,10 +134,9 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   // Check for displacement after the snap.  Shouldn't be any.
   for (const Node* ndi : cells) {
-    const double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
-    const double dy
-        = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
-    if (dx > 1.0e-3 || dy > 1.0e-3) {
+    const DbuX dx = abs(ndi->getLeft() - origPos[ndi->getId()].first);
+    const DbuY dy = abs(ndi->getBottom() - origPos[ndi->getId()].second);
+    if (dx > 0 || dy > 0) {
       isDisp = true;
     }
   }
@@ -188,10 +188,9 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   // Check for displacement after the shift.  Shouldn't be any.
   for (const Node* ndi : cells) {
-    const double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
-    const double dy
-        = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
-    if (dx > 1.0e-3 || dy > 1.0e-3) {
+    const DbuX dx = abs(ndi->getLeft() - origPos[ndi->getId()].first);
+    const DbuY dy = abs(ndi->getBottom() - origPos[ndi->getId()].second);
+    if (dx > 0 || dy > 0) {
       isDisp = true;
     }
   }
@@ -245,10 +244,10 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
     Node* ndi = new Node();
 
     ndi->setId(nnodes + i);
-    ndi->setLeft(segPtr->getMinX());
-    ndi->setBottom(arch_->getRow(rowId)->getBottom());
-    ndi->setWidth(0.0);
-    ndi->setHeight(arch_->getRow(rowId)->getHeight());
+    ndi->setLeft(DbuX{segPtr->getMinX()});
+    ndi->setBottom(DbuY{arch_->getRow(rowId)->getBottom()});
+    ndi->setWidth(DbuX{0});
+    ndi->setHeight(DbuY{arch_->getRow(rowId)->getHeight()});
 
     dummiesLeft_[i] = ndi;
   }
@@ -262,10 +261,10 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
     Node* ndi = new Node();
 
     ndi->setId(nnodes + nsegs + i);
-    ndi->setLeft(segPtr->getMaxX());
-    ndi->setBottom(arch_->getRow(rowId)->getBottom());
-    ndi->setWidth(0.0);
-    ndi->setHeight(arch_->getRow(rowId)->getHeight());
+    ndi->setLeft(DbuX{segPtr->getMaxX()});
+    ndi->setBottom(DbuY{arch_->getRow(rowId)->getBottom()});
+    ndi->setWidth(DbuX{0});
+    ndi->setHeight(DbuY{arch_->getRow(rowId)->getHeight()});
 
     dummiesRight_[i] = ndi;
   }
@@ -364,9 +363,9 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     r->id_ = clumpId;
     r->nodes_.clear();
     r->nodes_.push_back(ndi);
-    r->wposn_ = wt * ndi->getLeft();
+    r->wposn_ = wt * ndi->getLeft().v;
     r->weight_ = wt;  // Massive weight for segment start.
-    r->posn_ = ndi->getLeft();
+    r->posn_ = ndi->getLeft().v;
 
     ++clumpId;
   }
@@ -384,9 +383,9 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     r->id_ = (int) i;
     r->nodes_.clear();
     r->nodes_.push_back(ndi);
-    r->wposn_ = wt * ndi->getLeft();
+    r->wposn_ = wt * ndi->getLeft().v;
     r->weight_ = wt;
-    r->posn_ = ndi->getLeft();
+    r->posn_ = ndi->getLeft().v;
 
     // Always ensure the left edge is within the segments
     // in which the cell is assigned.
@@ -395,7 +394,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
       int xmin = segPtr->getMinX();
       int xmax = segPtr->getMaxX();
       // Left edge always within segment.
-      r->posn_ = std::min(std::max(r->posn_, xmin), xmax - ndi->getWidth());
+      r->posn_ = std::min(std::max(r->posn_, xmin), xmax - ndi->getWidth().v);
     }
 
     ++clumpId;
@@ -413,9 +412,9 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     r->id_ = clumpId;
     r->nodes_.clear();
     r->nodes_.push_back(ndi);
-    r->wposn_ = wt * ndi->getLeft();
+    r->wposn_ = wt * ndi->getLeft().v;
     r->weight_ = wt;  // Massive weight for segment end.
-    r->posn_ = ndi->getLeft();
+    r->posn_ = ndi->getLeft().v;
 
     ++clumpId;
   }
@@ -437,20 +436,20 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     const Clump* r = ptr_[ndi->getId()];
 
     // Left edge.
-    const int oldX = ndi->getLeft();
-    const int newX = r->posn_ + offset_[ndi->getId()];
+    const DbuX oldX = ndi->getLeft();
+    const DbuX newX{r->posn_ + offset_[ndi->getId()]};
 
     ndi->setLeft(newX);
 
     // Bottom edge.
-    const int oldY = ndi->getBottom();
-    const int newY = arch_->getRow(rowId)->getBottom();
+    const DbuY oldY = ndi->getBottom();
+    const DbuY newY{arch_->getRow(rowId)->getBottom()};
 
     ndi->setBottom(newY);
 
-    const int dX = oldX - newX;
-    const int dY = oldY - newY;
-    retval += (dX * dX + dY * dY);  // Quadratic or something else?
+    const DbuX dX = oldX - newX;
+    const DbuY dY = oldY - newY;
+    retval += (dX.v * dX.v + dY.v * dY.v);  // Quadratic or something else?
   }
 
   return retval;
@@ -526,7 +525,7 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
       // Get left edge of both cells.
       const int pdst = r->posn_ + offset_[ndr->getId()];
       const int psrc = t->posn_ + offset_[ndl->getId()];
-      const int gap = ndl->getWidth();
+      const int gap = ndl->getWidth().v;
       const int diff = pdst - (psrc + gap);
       if (diff < 0 && diff < worst_diff) {
         // Leaving clump r at its current position would result

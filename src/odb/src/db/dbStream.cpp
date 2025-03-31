@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "dbDatabase.h"
 #include "odb/db.h"
