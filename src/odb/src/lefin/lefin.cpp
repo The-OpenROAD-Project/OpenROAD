@@ -2307,6 +2307,8 @@ dbTech* lefinReader::createTech(const char* name, const char* lef_file)
         utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
   }
 
+  _db->triggerPostReadLef(_tech, nullptr);
+
   return _tech;
 }
 
@@ -2341,6 +2343,7 @@ dbLib* lefinReader::createLib(dbTech* tech,
         utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
 
+  _db->triggerPostReadLef(_tech, _lib);
   return _lib;
 }
 
@@ -2382,6 +2385,8 @@ dbLib* lefinReader::createTechAndLib(const char* tech_name,
 
   if (rules.orderReversed())
     rules.reverse();
+
+  _db->triggerPostReadLef(_tech, _lib);
 
   return _lib;
 }

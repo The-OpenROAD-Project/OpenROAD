@@ -38,6 +38,7 @@
 #include <QScrollBar>
 #include <QTextStream>
 #include <regex>
+#include <string>
 
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
@@ -605,12 +606,11 @@ const QString TclCmdInputWidget::wordUnderCursor()
   const QString line = cursor.selectedText();
 
   int start_of_word
-      = line.lastIndexOf(*completer_start_of_command_.get(), cursor_position);
+      = line.lastIndexOf(*completer_start_of_command_, cursor_position);
   if (start_of_word == -1) {
     start_of_word = 0;
   }
-  int end_of_word
-      = line.indexOf(*completer_end_of_command_.get(), cursor_position);
+  int end_of_word = line.indexOf(*completer_end_of_command_, cursor_position);
   if (end_of_word == -1) {
     end_of_word = line.length();
   }
@@ -627,12 +627,12 @@ const swig_class* TclCmdInputWidget::swigBeforeCursor()
   const QString line = cursor.selectedText();
 
   int end_of_word
-      = line.lastIndexOf(*completer_end_of_command_.get(), cursor_position - 1);
+      = line.lastIndexOf(*completer_end_of_command_, cursor_position - 1);
   if (end_of_word == -1) {
     end_of_word = 0;
   }
   int start_of_word
-      = line.lastIndexOf(*completer_start_of_command_.get(), end_of_word);
+      = line.lastIndexOf(*completer_start_of_command_, end_of_word);
   if (start_of_word == -1) {
     start_of_word = 0;
   }

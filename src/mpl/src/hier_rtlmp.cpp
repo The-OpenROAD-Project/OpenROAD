@@ -37,7 +37,9 @@
 #include <fstream>
 #include <iostream>
 #include <queue>
+#include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -284,10 +286,8 @@ void HierRTLMP::runMultilevelAutoclustering()
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, network_, logger_, tritonpart_);
 
-  // Set target structures
-  clustering_engine_->setDesignMetrics(metrics_);
+  // Set target structure
   clustering_engine_->setTree(tree_.get());
-
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -890,6 +890,14 @@ void HierRTLMP::setPinAccessBlockages()
     return;
   }
 
+  const Metrics* top_module_metrics
+      = tree_->maps.module_to_metrics.at(block_->getTopModule()).get();
+
+  // Avoid creating blockages with zero depth.
+  if (top_module_metrics->getStdCellArea() == 0.0) {
+    return;
+  }
+
   std::vector<Cluster*> clusters_of_unplaced_io_pins
       = getClustersOfUnplacedIOPins();
   const Rect die = dbuToMicrons(block_->getDieArea());
@@ -1440,26 +1448,6 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   if (best_sa == nullptr) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "SA Summary for cluster {}",
-               parent->getName());
-
-    for (auto i = 0; i < sa_containers.size(); i++) {
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "sa_id: {}, target_util: {}, target_dead_space: {}",
-                 i,
-                 target_util_list[i],
-                 target_dead_space_list[i]);
-
-      sa_containers[i]->printResults();
-    }
-
     placeChildrenUsingMinimumTargetUtil(parent);
   } else {
     if (best_sa->centralizationWasReverted()) {
@@ -2530,189 +2518,6 @@ void HierRTLMP::updateChildrenRealLocation(Cluster* parent,
   }
 }
 
-// force-directed placement to generate guides for macros
-// Attractive force and Repulsive force should be normalied separately
-// Because their values can vary a lot.
-void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
-                            const std::vector<BundledNet>& nets,
-                            float outline_width,
-                            float outline_height,
-                            const std::string& file_name)
-{
-  // following the ideas of Circuit Training
-  logger_->report(
-      "*****************************************************************");
-  logger_->report("Start force-directed placement");
-  const float ar = outline_height / outline_width;
-  const std::vector<int> num_steps{1000, 1000, 1000, 1000};
-  const std::vector<float> attract_factors{1.0, 100.0, 1.0, 1.0};
-  const std::vector<float> repel_factors{1.0, 1.0, 100.0, 10.0};
-  const float io_factor = 1000.0;
-  const float max_size = std::max(outline_width, outline_height);
-  std::mt19937 rand_gen(random_seed_);
-  std::uniform_real_distribution<float> distribution(0.0, 1.0);
-
-  auto calcAttractiveForce = [&](float attract_factor) {
-    for (auto& net : nets) {
-      const int& src = net.terminals.first;
-      const int& sink = net.terminals.second;
-      // float k = net.weight * attract_factor;
-      float k = net.weight;
-      if (blocks[src].fixed_flag == true || blocks[sink].fixed_flag == true
-          || blocks[src].getWidth() < 1.0 || blocks[src].getHeight() < 1.0
-          || blocks[sink].getWidth() < 1.0 || blocks[sink].getHeight() < 1.0) {
-        k = k * io_factor;
-      }
-      const float x_dist
-          = (blocks[src].getX() - blocks[sink].getX()) / max_size;
-      const float y_dist
-          = (blocks[src].getY() - blocks[sink].getY()) / max_size;
-      const float dist = std::sqrt(x_dist * x_dist + y_dist * y_dist);
-      const float f_x = k * x_dist * dist;
-      const float f_y = k * y_dist * dist;
-      blocks[src].addAttractiveForce(-1.0 * f_x, -1.0 * f_y);
-      blocks[sink].addAttractiveForce(f_x, f_y);
-    }
-  };
-
-  auto calcRepulsiveForce = [&](float repulsive_factor) {
-    std::vector<int> macros(blocks.size());
-    std::iota(macros.begin(), macros.end(), 0);
-    std::sort(macros.begin(), macros.end(), [&](int src, int target) {
-      return blocks[src].lx < blocks[target].lx;
-    });
-    // traverse all the macros
-    auto iter = macros.begin();
-    while (iter != macros.end()) {
-      int src = *iter;
-      for (auto iter_loop = ++iter; iter_loop != macros.end(); iter_loop++) {
-        int target = *iter_loop;
-        if (blocks[src].ux <= blocks[target].lx) {
-          break;
-        }
-        if (blocks[src].ly >= blocks[target].uy
-            || blocks[src].uy <= blocks[target].ly) {
-          continue;
-        }
-        // ignore the overlap between clusters and IO ports
-        if (blocks[src].getWidth() < 1.0 || blocks[src].getHeight() < 1.0
-            || blocks[target].getWidth() < 1.0
-            || blocks[target].getHeight() < 1.0) {
-          continue;
-        }
-        if (blocks[src].fixed_flag == true
-            || blocks[target].fixed_flag == true) {
-          continue;
-        }
-        // apply the force from src to target
-        if (src > target) {
-          std::swap(src, target);
-        }
-        // check the overlap
-        const float x_min_dist
-            = (blocks[src].getWidth() + blocks[target].getWidth()) / 2.0;
-        const float y_min_dist
-            = (blocks[src].getHeight() + blocks[target].getHeight()) / 2.0;
-        const float x_overlap
-            = std::abs(blocks[src].getX() - blocks[target].getX()) - x_min_dist;
-        const float y_overlap
-            = std::abs(blocks[src].getY() - blocks[target].getY()) - y_min_dist;
-        if (x_overlap <= 0.0 && y_overlap <= 0.0) {
-          float x_dist
-              = (blocks[src].getX() - blocks[target].getX()) / x_min_dist;
-          float y_dist
-              = (blocks[src].getY() - blocks[target].getY()) / y_min_dist;
-          float dist = std::sqrt(x_dist * x_dist + y_dist * y_dist);
-          const float min_dist = 0.01;
-          if (dist <= min_dist) {
-            x_dist = std::sqrt(min_dist);
-            y_dist = std::sqrt(min_dist);
-            dist = min_dist;
-          }
-          // const float f_x = repulsive_factor * x_dist / (dist * dist);
-          // const float f_y = repulsive_factor * y_dist / (dist * dist);
-          const float f_x = x_dist / (dist * dist);
-          const float f_y = y_dist / (dist * dist);
-          blocks[src].addRepulsiveForce(f_x, f_y);
-          blocks[target].addRepulsiveForce(-1.0 * f_x, -1.0 * f_y);
-        }
-      }
-    }
-  };
-
-  auto MoveBlock =
-      [&](float attract_factor, float repulsive_factor, float max_move_dist) {
-        for (auto& block : blocks) {
-          block.resetForce();
-        }
-        if (attract_factor > 0) {
-          calcAttractiveForce(attract_factor);
-        }
-        if (repulsive_factor > 0) {
-          calcRepulsiveForce(repulsive_factor);
-        }
-        // normalization
-        float max_f_a = 0.0;
-        float max_f_r = 0.0;
-        float max_f = 0.0;
-        for (auto& block : blocks) {
-          max_f_a = std::max(
-              max_f_a,
-              std::sqrt(block.f_x_a * block.f_x_a + block.f_y_a * block.f_y_a));
-          max_f_r = std::max(
-              max_f_r,
-              std::sqrt(block.f_x_r * block.f_x_r + block.f_y_r * block.f_y_r));
-        }
-        max_f_a = std::max(max_f_a, 1.0f);
-        max_f_r = std::max(max_f_r, 1.0f);
-        // Move node
-        // The move will be cancelled if the block will be pushed out of the
-        // boundary
-        for (auto& block : blocks) {
-          const float f_x = attract_factor * block.f_x_a / max_f_a
-                            + repulsive_factor * block.f_x_r / max_f_r;
-          const float f_y = attract_factor * block.f_y_a / max_f_a
-                            + repulsive_factor * block.f_y_r / max_f_r;
-          block.setForce(f_x, f_y);
-          max_f = std::max(
-              max_f, std::sqrt(block.f_x * block.f_x + block.f_y * block.f_y));
-        }
-        max_f = std::max(max_f, 1.0f);
-        for (auto& block : blocks) {
-          const float x_dist
-              = block.f_x / max_f * max_move_dist
-                + (distribution(rand_gen) - 0.5) * 0.1 * max_move_dist;
-          const float y_dist
-              = block.f_y / max_f * max_move_dist
-                + (distribution(rand_gen) - 0.5) * 0.1 * max_move_dist;
-          block.move(x_dist, y_dist, 0.0f, 0.0f, outline_width, outline_height);
-        }
-      };
-
-  // initialize all the macros
-  for (auto& block : blocks) {
-    block.makeSquare(ar);
-    block.setLoc(outline_width * distribution(rand_gen),
-                 outline_height * distribution(rand_gen),
-                 0.0f,
-                 0.0f,
-                 outline_width,
-                 outline_height);
-  }
-
-  // Iteratively place the blocks
-  for (auto i = 0; i < num_steps.size(); i++) {
-    // const float max_move_dist = max_size / num_steps[i];
-    const float attract_factor = attract_factors[i];
-    const float repulsive_factor = repel_factors[i];
-    for (auto j = 0; j < num_steps[i]; j++) {
-      MoveBlock(attract_factor,
-                repulsive_factor,
-                max_size / (1 + std::floor(j / 100)));
-    }
-  }
-}
-
 void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
                                             odb::dbInst* std_cell)
 {
@@ -2774,12 +2579,12 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
   float wirelength = 0.0f;
 
-  for (odb::dbITerm* iterm : macro->getITerms()) {
-    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+  for (odb::dbITerm* macro_pin : macro->getITerms()) {
+    if (macro_pin->getSigType() != odb::dbSigType::SIGNAL) {
       continue;
     }
 
-    odb::dbNet* net = iterm->getNet();
+    odb::dbNet* net = macro_pin->getNet();
     if (net != nullptr) {
       // Mimic dbNet::getTermBBox() behavior, but considering
       // the pin constraint region instead of its position.
@@ -2802,10 +2607,10 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           odb::Rect region_rect(x, y, x, y);
           net_box.merge(region_rect);
         } else {
-          odb::Point bterm_location(bterm->getBBox().xCenter(),
-                                    bterm->getBBox().yCenter());
-          Boundary closest_boundary
-              = getClosestBoundary(bterm_location, tree_->unblocked_boundaries);
+          odb::Point macro_pin_location(macro_pin->getBBox().xCenter(),
+                                        macro_pin->getBBox().yCenter());
+          Boundary closest_boundary = getClosestBoundary(
+              macro_pin_location, tree_->unblocked_boundaries);
 
           // As we classify the blocked/unblocked state of the boundary based on
           // the extension of the -exclude constraint, it's possible to have
@@ -2817,7 +2622,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           }
 
           odb::Point closest_point
-              = getClosestBoundaryPoint(bterm_location, closest_boundary);
+              = getClosestBoundaryPoint(macro_pin_location, closest_boundary);
           odb::Rect closest_point_rect(closest_point, closest_point);
           net_box.merge(closest_point_rect);
         }
@@ -3091,10 +2896,10 @@ void Pusher::setIOBlockages(
 {
   for (const auto& [boundary, box] : boundary_to_io_blockage) {
     boundary_to_io_blockage_[boundary]
-        = odb::Rect(block_->micronsToDbu(box.getX()),
-                    block_->micronsToDbu(box.getY()),
-                    block_->micronsToDbu(box.getX() + box.getWidth()),
-                    block_->micronsToDbu(box.getY() + box.getHeight()));
+        = odb::Rect(block_->micronsToDbu(box.xMin()),
+                    block_->micronsToDbu(box.yMin()),
+                    block_->micronsToDbu(box.xMax()),
+                    block_->micronsToDbu(box.yMax()));
   }
 }
 
@@ -3256,6 +3061,14 @@ void Pusher::pushMacroClusterToCoreBoundaries(
       moveHardMacro(hard_macro, boundary, distance);
     }
 
+    debugPrint(logger_,
+               MPL,
+               "boundary_push",
+               1,
+               "Moved {} in the direction of {}.",
+               macro_cluster->getName(),
+               toString(boundary));
+
     odb::Rect cluster_box(
         block_->micronsToDbu(macro_cluster->getX()),
         block_->micronsToDbu(macro_cluster->getY()),
@@ -3269,14 +3082,6 @@ void Pusher::pushMacroClusterToCoreBoundaries(
     // of its HardMacros.
     if (overlapsWithHardMacro(cluster_box, hard_macros)
         || overlapsWithIOBlockage(cluster_box, boundary)) {
-      debugPrint(logger_,
-                 MPL,
-                 "boundary_push",
-                 1,
-                 "Overlap found when moving {} to {}. Push reverted.",
-                 macro_cluster->getName(),
-                 toString(boundary));
-
       // Move back to original position.
       for (HardMacro* hard_macro : hard_macros) {
         moveHardMacro(hard_macro, boundary, (-distance));
@@ -3359,6 +3164,12 @@ bool Pusher::overlapsWithHardMacro(
         && cluster_box.yMin() < hard_macro->getUYDBU()
         && cluster_box.xMax() > hard_macro->getXDBU()
         && cluster_box.yMax() > hard_macro->getYDBU()) {
+      debugPrint(logger_,
+                 MPL,
+                 "boundary_push",
+                 1,
+                 "\tFound overlap with HardMacro {}. Push will be reverted.",
+                 hard_macro->getName());
       return true;
     }
   }
@@ -3378,6 +3189,12 @@ bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box,
 
   if (cluster_box.xMin() < box.xMax() && cluster_box.yMin() < box.yMax()
       && cluster_box.xMax() > box.xMin() && cluster_box.yMax() > box.yMin()) {
+    debugPrint(logger_,
+               MPL,
+               "boundary_push",
+               1,
+               "\tFound overlap with IO blockage {}. Push will be reverted.",
+               box);
     return true;
   }
 

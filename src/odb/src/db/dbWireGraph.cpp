@@ -32,6 +32,7 @@
 
 #include "odb/dbWireGraph.h"
 
+#include <string>
 #include <vector>
 
 #include "dbWire.h"

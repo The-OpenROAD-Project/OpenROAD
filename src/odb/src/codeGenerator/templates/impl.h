@@ -1,4 +1,4 @@
-{% import 'macros' as macros %}
+{% import 'macros.jinja' as macros %}
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
@@ -36,6 +36,10 @@
 
 #include "odb/odb.h"
 #include "dbCore.h"
+
+{% for include in klass.h_sys_includes %}
+  #include <{{include}}>
+{% endfor %}
 
 {% for include in klass.h_includes %}
   #include "{{include}}"

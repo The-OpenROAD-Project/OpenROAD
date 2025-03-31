@@ -35,6 +35,8 @@
 
 #include "bufferTreeDescriptor.h"
 
+#include <string>
+
 #include "colorGenerator.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

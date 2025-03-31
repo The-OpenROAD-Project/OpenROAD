@@ -42,6 +42,7 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"
@@ -230,6 +231,9 @@ class Inspector : public QDockWidget
 
   void updateSelectedFields(const QModelIndex& index);
 
+  void setReadOnly();
+  void unsetReadOnly();
+
   void reload();
 
  private slots:
@@ -281,6 +285,7 @@ class Inspector : public QDockWidget
   QMenu* commands_menu_;
 
   std::string report_text_;
+  bool readonly_;
 
   const HighlightSet& highlighted_;
 

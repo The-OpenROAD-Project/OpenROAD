@@ -34,10 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SteinerTree.hh"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -57,6 +57,7 @@ using sta::PinSet;
 
 using odb::dbInst;
 using odb::dbMasterType;
+using odb::dbModInst;
 
 ////////////////////////////////////////////////////////////////
 
@@ -345,6 +346,12 @@ void Resizer::updateParasitics(bool save_guides)
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
+        //
+        // TODO: remove this check (we expect all to be flat net)
+        //
+        if (!(db_network_->isFlat(net))) {
+          continue;
+        }
         estimateWireParasitic(net);
       }
       parasitics_invalid_.clear();
@@ -418,13 +425,19 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
 
-    NetIterator* net_iter = network_->netIterator(network_->topInstance());
-    while (net_iter->hasNext()) {
-      Net* net = net_iter->next();
-      estimateWireParasitic(net, spef_writer);
+    // Hierarchy flow change
+    // go through all nets, not just the ones in the instance
+    // Get the net set from the block
+    // old code:
+    // NetIterator* net_iter = network_->netIterator(network_->topInstance());
+    // Note that in hierarchy mode, this will not present all the nets,
+    // which is intent here. So get all flat nets from block
+    //
+    odb::dbSet<odb::dbNet> nets = block_->getNets();
+    for (auto db_net : nets) {
+      Net* cur_net = db_network_->dbToSta(db_net);
+      estimateWireParasitic(cur_net, spef_writer);
     }
-    delete net_iter;
-
     parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
   }
@@ -683,6 +696,7 @@ void Resizer::net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const
 {
   pin1 = nullptr;
   pin2 = nullptr;
+
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   if (pin_iter->hasNext()) {
     pin1 = pin_iter->next();
@@ -701,7 +715,12 @@ bool Resizer::isPadPin(const Pin* pin) const
 
 bool Resizer::isPad(const Instance* inst) const
 {
-  dbInst* db_inst = db_network_->staToDb(inst);
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  if (mod_inst) {
+    return false;
+  }
   const auto type = db_inst->getMaster()->getType().getValue();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -753,7 +772,7 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
-  odb::dbNet* db_net = db_network_->flatNet(net);
+  dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,

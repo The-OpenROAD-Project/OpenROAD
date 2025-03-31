@@ -41,6 +41,7 @@
 #include <deque>
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"
@@ -101,6 +102,7 @@ class TreeBuilder
   virtual ~TreeBuilder() = default;
 
   virtual void run() = 0;
+  void mergeBlockages();
   void initBlockages();
   void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
   const Clock& getClock() const { return clock_; }
@@ -271,7 +273,7 @@ class TreeBuilder
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;
-  std::vector<odb::dbBox*> bboxList_;
+  std::vector<odb::Rect> blockages_;
   double bufferWidth_ = 0.0;
   double bufferHeight_ = 0.0;
   // keep track of occupied cells to avoid overlap violations

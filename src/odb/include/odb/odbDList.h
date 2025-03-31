@@ -68,6 +68,10 @@ class DListIterator
   DListIterator(const DListIterator& i) { _cur = i._cur; }
   DListIterator& operator=(const DListIterator& i)
   {
+    if (this == &i) {
+      return *this;
+    }
+
     _cur = i._cur;
     return *this;
   }

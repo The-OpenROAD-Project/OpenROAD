@@ -67,7 +67,6 @@ namespace mpl {
 struct BundledNet;
 class Cluster;
 class HardMacro;
-class Metrics;
 struct Rect;
 class SoftMacro;
 class Snapper;
@@ -165,11 +164,6 @@ class HierRTLMP
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
   void clear();
-  void FDPlacement(std::vector<Rect>& blocks,
-                   const std::vector<BundledNet>& nets,
-                   float outline_width,
-                   float outline_height,
-                   const std::string& file_name);
 
   // Coarse Shaping
   void runCoarseShaping();
@@ -334,9 +328,6 @@ class HierRTLMP
   float exchange_swap_prob_ = 0.2;
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
-
-  // statistics of the design
-  Metrics* metrics_ = nullptr;
 
   // since we convert from the database unit to the micrometer
   // during calculation, we may loss some accuracy.

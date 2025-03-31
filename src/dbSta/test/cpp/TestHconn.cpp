@@ -8,12 +8,14 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -303,6 +305,7 @@ class TestHconn : public ::testing::Test
     sta_->postReadDef(block);
 
     root_mod = dbModule::create(block, "root_mod");
+
     // The bterms are created below during wiring
     // Note a bterm without a parent is a root bterm.
 
@@ -860,8 +863,14 @@ TEST_F(TestHconn, ConnectionMade)
   //  std::stringstream str_str_initial;
   //  DbStrDebugHierarchy(block, str_str_initial);
   //  printf("The initial design: %s\n", str_str_initial.str().c_str());
+
+  // ECO test: get initial state before we start modifying
+  // the design. Then at end we undo everything and
+  // validate initial state preserved
+
   size_t initial_db_net_count = block->getNets().size();
   size_t initial_mod_net_count = block->getModNets().size();
+  odb::dbDatabase::beginEco(block);
 
   //
   //
@@ -944,8 +953,11 @@ TEST_F(TestHconn, ConnectionMade)
   //
   std::string flat_net_name = inv1_2->getName() + inv4_4_ip->getName('/');
   std::string hier_net_name = "test_hier_" + flat_net_name;
+
   dbNet* flat_net = dbNet::create(block, flat_net_name.c_str(), false);
+
   inv1_2_inst_op0->connect(flat_net);
+
   inv4_4_ip->connect(flat_net);
 
   //
@@ -995,6 +1007,8 @@ TEST_F(TestHconn, ConnectionMade)
     }
   }
 
+  // Get the final design state statistics
+
   size_t final_db_net_count = block->getNets().size();
   size_t final_mod_net_count = block->getModNets().size();
 
@@ -1002,6 +1016,19 @@ TEST_F(TestHconn, ConnectionMade)
   EXPECT_EQ(initial_mod_net_count, 23);
   EXPECT_EQ(final_mod_net_count, 26);
   EXPECT_EQ(final_db_net_count, 7);
+
+  //
+  // Journalling test.
+  // Undo everything and check initial state preserved
+  //
+  odb::dbDatabase::endEco(block);
+  odb::dbDatabase::undoEco(block);
+
+  size_t restored_db_net_count = block->getNets().size();
+  size_t restored_mod_net_count = block->getModNets().size();
+
+  EXPECT_EQ(restored_mod_net_count, initial_mod_net_count);
+  EXPECT_EQ(restored_db_net_count, initial_db_net_count);
 }
 
 }  // namespace odb

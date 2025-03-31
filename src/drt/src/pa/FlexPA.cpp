@@ -36,6 +36,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "AbstractPAGraphics.h"
@@ -93,7 +94,7 @@ void FlexPA::init()
   initTrackCoords();
 
   unique_insts_.init();
-  initSkipInstTerm();
+  initAllSkipInstTerm();
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)

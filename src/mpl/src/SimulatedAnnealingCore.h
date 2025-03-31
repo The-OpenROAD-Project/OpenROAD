@@ -35,6 +35,7 @@
 
 #include <map>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "MplObserver.h"

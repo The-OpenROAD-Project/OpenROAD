@@ -41,7 +41,7 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "ord/OpenRoadObserver.hh"
+#include "odb/dbDatabaseObserver.h"
 #include "sta/Sta.hh"
 
 namespace ord {
@@ -104,7 +104,7 @@ class BufferUseAnalyser
   std::unique_ptr<sta::PatternMatch> clkbuf_pattern_;
 };
 
-class dbSta : public Sta, public ord::OpenRoadObserver
+class dbSta : public Sta, public odb::dbDatabaseObserver
 {
  public:
   ~dbSta() override;
@@ -196,6 +196,8 @@ class dbSta : public Sta, public ord::OpenRoadObserver
                        bool verbose,
                        const char* file_name,
                        const char* stage_name);
+
+  void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 

@@ -32,6 +32,8 @@
 
 #include "ClockDomainHash.hh"
 
+#include <cstddef>
+
 namespace dft {
 
 std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(

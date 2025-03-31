@@ -34,6 +34,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <string>
 #include <vector>
 
 #include "gdsin.h"

@@ -196,6 +196,7 @@ class dbNetwork : public ConcreteNetwork
                                 dbModBTerm*& dest_modbterm,
                                 dbModITerm*& dest_moditerm);
 
+  bool connected(Pin* source_pin, Pin* dest_pin);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
@@ -205,7 +206,7 @@ class dbNetwork : public ConcreteNetwork
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
-  void replaceDesign(dbModInst* mod_inst, dbModule* module);
+  void replaceHierModule(dbModInst* mod_inst, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //
@@ -233,7 +234,9 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
+  using ConcreteNetwork::isLeaf;
   bool isLeaf(const Instance* instance) const override;
+  bool isLeaf(const Pin* pin) const override;
   Port* findPort(const Cell* cell, const char* name) const override;
   Instance* findInstance(const char* path_name) const override;
   Instance* findChild(const Instance* parent, const char* name) const override;
@@ -260,6 +263,9 @@ class dbNetwork : public ConcreteNetwork
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
 
+  bool isFlat(const Pin* pin) const;
+  bool isFlat(const Net* net) const;
+
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
@@ -268,6 +274,7 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Terminal functions
   Net* net(const Term* term) const override;
+  dbNet* flatNet(const Term* term) const;
   Pin* pin(const Term* term) const override;
   ObjectId id(const Term* term) const override;
 
@@ -327,6 +334,7 @@ class dbNetwork : public ConcreteNetwork
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;
   void connectPinAfter(Pin* pin);
   void disconnectPin(Pin* pin) override;
+  void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;

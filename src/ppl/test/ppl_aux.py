@@ -227,7 +227,7 @@ def place_pins(
                         utl.PPL, 343, f"Pin {pin_name} not found in group {group_idx}."
                     )
 
-            design.getIOPlacer().addPinGroup(pin_list, False)
+            dbBlock.addBTermGroup(pin_list, False)
             group_idx += 1
 
     design.getIOPlacer().runHungarianMatching(random)
@@ -359,7 +359,6 @@ def set_io_pin_constraint(
         region = ""
 
     if edge in ["top", "bottom", "left", "right"]:
-        edge_ = parse_edge(design, edge)
         if len(interval.split("-")) > 1:
             begin, end = interval.split("-")
             if begin == "*":
@@ -384,16 +383,17 @@ def set_io_pin_constraint(
                 "Both 'direction' and 'pin_names' constraints not allowed.",
             )
 
+        constraint_region = dbBlock.findConstraintRegion(edge, begin, end)
+
         if direction != None:
-            dir = parse_direction(design, direction)
             # utl.info(utl.PPL, 349, f"Restrict {direction} pins to region " +
             #          f"{design.micronToDBU(begin)}-{design.micronToDBU(end)}, " +
             #          f"in the {edge} edge.")
-            design.getIOPlacer().addDirectionConstraint(dir, edge_, begin, end)
+            dbBlock.addBTermConstraintByDirection(direction, constraint_region)
 
         if pin_names != None:
             pin_list = parse_pin_names(design, pin_names)
-            design.getIOPlacer().addNamesConstraint(pin_list, edge_, begin, end)
+            dbBlock.addBTermsToConstraint(pin_list, constraint_region)
 
     elif bool(re.fullmatch("(up):(.*)", region)):
         # no walrus in < 3.8
@@ -435,22 +435,10 @@ def set_io_pin_constraint(
                         utl.PPL, 500, f"Group pin {pin_name} not found in the design."
                     )
 
-            design.getIOPlacer().addPinGroup(pin_list, order)
+            dbBlock.addBTermGroup(pin_list, order)
 
     else:
         utl.warn(utl.PPL, 373, f"Constraint with region {region} has an invalid edge.")
-
-
-def parse_direction(design, direction):
-    if (
-        re.fullmatch("INPUT", direction, re.I) != None
-        or re.fullmatch("OUTPUT", direction, re.I) != None
-        or re.fullmatch("INOUT", direction, re.I) != None
-        or re.fullmatch("FEEDTHRU", direction, re.I) != None
-    ):
-        return design.getIOPlacer().getDirection(direction.lower())
-    else:
-        utl.error(utl.PPL, 328, f"Invalid pin direction {direction}.")
 
 
 def is_pos_float(x):

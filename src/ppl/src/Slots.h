@@ -39,6 +39,7 @@
 #define MAX_SECTIONS_RECOMMENDED 600
 
 #include <algorithm>
+#include <cstddef>
 #include <numeric>
 #include <vector>
 
@@ -65,6 +66,11 @@ class Interval
   int begin_;
   int end_;
   int layer_;
+};
+
+struct IntervalHash
+{
+  std::size_t operator()(const Interval& interval) const;
 };
 
 struct TopLayerGrid

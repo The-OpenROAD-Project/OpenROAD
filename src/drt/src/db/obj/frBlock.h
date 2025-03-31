@@ -29,6 +29,7 @@
 #pragma once
 
 #include <algorithm>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -41,6 +42,7 @@
 #include "db/obj/frNet.h"
 #include "db/obj/frTrackPattern.h"
 #include "frBaseTypes.h"
+#include "odb/db.h"
 
 namespace drt {
 namespace io {
@@ -122,6 +124,7 @@ class frBlock : public frBlockObject
     }
     return nullptr;
   }
+  frInst* findInst(odb::dbInst* inst) { return findInst(inst->getName()); }
   frNet* getNet(int id) const
   {
     if (id >= nets_.size()) {

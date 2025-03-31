@@ -1,4 +1,4 @@
-{% import 'macros' as macros %}
+{% import 'macros.jinja' as macros %}
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
@@ -42,6 +42,10 @@
   #include <cstring>
   #include <cstdint>
 {% endif %}
+
+{% for include in klass.cpp_sys_includes %}
+  #include <{{include}}>
+{% endfor %}
 
 {% for include in klass.cpp_includes %}
   #include "{{include}}"

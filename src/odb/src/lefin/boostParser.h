@@ -45,6 +45,7 @@
 #include <boost/phoenix/operator.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/qi_alternative.hpp>
+#include <string>
 
 namespace odb {
 

@@ -33,6 +33,7 @@
 
 #include "clusterEngine.h"
 
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -92,11 +93,6 @@ void ClusteringEngine::run()
   for (auto& [cluster_id, cluster] : tree_->maps.id_to_cluster) {
     mapMacroInCluster2HardMacro(cluster);
   }
-}
-
-void ClusteringEngine::setDesignMetrics(Metrics* design_metrics)
-{
-  design_metrics_ = design_metrics;
 }
 
 void ClusteringEngine::setTree(PhysicalHierarchy* tree)
@@ -1924,26 +1920,31 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 
   std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
   std::vector<Cluster*> macro_clusters;
-
   createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
-
-  std::vector<int> size_class(hard_macros.size(), -1);
-  classifyMacrosBySize(hard_macros, size_class);
 
   updateConnections();
 
-  std::vector<int> signature_class(hard_macros.size(), -1);
-  classifyMacrosByConnSignature(macro_clusters, signature_class);
+  const int number_of_macros = static_cast<int>(hard_macros.size());
+  std::vector<int> size_class(number_of_macros, -1);
+  std::vector<int> signature_class(number_of_macros, -1);
+  std::vector<int> interconn_class(number_of_macros, -1);
+  std::vector<int> macro_class(number_of_macros, -1);
 
-  std::vector<int> interconn_class(hard_macros.size(), -1);
-  classifyMacrosByInterconn(macro_clusters, interconn_class);
-
-  std::vector<int> macro_class(hard_macros.size(), -1);
-  groupSingleMacroClusters(macro_clusters,
-                           size_class,
-                           signature_class,
-                           interconn_class,
-                           macro_class);
+  if (number_of_macros == 1) {
+    // We don't want the single-macro macro cluster to be treated
+    // as an array of interconnected macros with one macro.
+    interconn_class.front() = -1;
+    macro_class.front() = 0;
+  } else {
+    classifyMacrosBySize(hard_macros, size_class);
+    classifyMacrosByConnSignature(macro_clusters, signature_class);
+    classifyMacrosByInterconn(macro_clusters, interconn_class);
+    groupSingleMacroClusters(macro_clusters,
+                             size_class,
+                             signature_class,
+                             interconn_class,
+                             macro_class);
+  }
 
   mixed_leaf->clearHardMacros();
 

@@ -34,6 +34,7 @@
 #pragma once
 
 #include <queue>
+#include <utility>
 #include <vector>
 
 #include "object.h"
@@ -156,7 +157,6 @@ class ClusteringEngine
 
   void run();
 
-  void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
 
   // Methods to update the tree as the hierarchical

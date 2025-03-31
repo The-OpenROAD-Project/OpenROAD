@@ -34,6 +34,7 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <utility>
 #include <vector>
 
 #include "dbDatabase.h"
@@ -873,21 +874,23 @@ void dbTechAntennaPinModel::getGateArea(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(getImpl()->getDatabase(), xmod->_gate_area, data);
+  _dbTechAntennaPinModel::getAntennaValues(
+      getImpl()->getDatabase(), xmod->_gate_area, data);
 }
 
 void dbTechAntennaPinModel::getMaxAreaCAR(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(getImpl()->getDatabase(), xmod->_max_area_car, data);
+  _dbTechAntennaPinModel::getAntennaValues(
+      getImpl()->getDatabase(), xmod->_max_area_car, data);
 }
 
 void dbTechAntennaPinModel::getMaxSideAreaCAR(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(
+  _dbTechAntennaPinModel::getAntennaValues(
       getImpl()->getDatabase(), xmod->_max_sidearea_car, data);
 }
 
@@ -895,7 +898,8 @@ void dbTechAntennaPinModel::getMaxCutCAR(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(getImpl()->getDatabase(), xmod->_max_cut_car, data);
+  _dbTechAntennaPinModel::getAntennaValues(
+      getImpl()->getDatabase(), xmod->_max_cut_car, data);
 }
 
 void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const

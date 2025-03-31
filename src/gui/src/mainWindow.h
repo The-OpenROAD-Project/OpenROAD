@@ -39,6 +39,7 @@
 #include <QShortcut>
 #include <QToolBar>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "findDialog.h"
@@ -46,6 +47,7 @@
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
+#include "utl/Progress.h"
 
 namespace odb {
 class dbDatabase;
@@ -53,7 +55,8 @@ class dbDatabase;
 
 namespace utl {
 class Logger;
-}
+class Progress;
+}  // namespace utl
 
 namespace sta {
 class Pin;
@@ -77,7 +80,7 @@ class HelpWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
-class MainWindow : public QMainWindow, public ord::OpenRoadObserver
+class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
 {
   Q_OBJECT
 
@@ -373,6 +376,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // heat map actions
   std::map<HeatMapDataSource*, QAction*> heatmap_actions_;
+
+  std::unique_ptr<utl::Progress> cli_progress_ = nullptr;
 };
 
 }  // namespace gui

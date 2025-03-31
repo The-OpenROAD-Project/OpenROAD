@@ -71,6 +71,18 @@ class Tech
   odb::dbTech* getTech();
   sta::dbSta* getSta();
 
+  float nominalProcess();
+  float nominalVoltage();
+  float nominalTemperature();
+
+  float timeScale();
+  float resistanceScale();
+  float capacitanceScale();
+  float voltageScale();
+  float currentScale();
+  float powerScale();
+  float distanceScale();
+
  private:
   OpenRoad* app_;
 

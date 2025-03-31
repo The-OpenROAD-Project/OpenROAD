@@ -31,6 +31,7 @@
 #include <boost/icl/interval_set.hpp>
 #include <list>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "frDesign.h"
@@ -100,7 +101,7 @@ class Parser
   void setDieArea(odb::dbBlock*);
   void setTracks(odb::dbBlock*);
   void setInsts(odb::dbBlock*);
-  void setInst(odb::dbInst*);
+  frInst* setInst(odb::dbInst*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
   odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,

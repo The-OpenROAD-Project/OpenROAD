@@ -34,6 +34,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
+#include <string>
+#include <string_view>
 
 #include "defiDebug.hpp"
 #include "defiMisc.hpp"
