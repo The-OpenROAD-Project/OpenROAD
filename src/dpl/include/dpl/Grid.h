@@ -41,8 +41,9 @@
 
 #include <unordered_set>
 #include <vector>
-#include "Objects.h"
+
 #include "Coordinates.h"
+#include "Objects.h"
 #include "Opendp.h"
 
 namespace dpl {

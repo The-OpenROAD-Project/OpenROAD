@@ -45,8 +45,8 @@
 #include <vector>
 
 #include "DplObserver.h"
-#include "dpl/Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
 #include "odb/dbTransform.h"
@@ -153,8 +153,8 @@ bool Opendp::checkOverlap(const Node* cell, const DbuRect& rect) const
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
   const DbuY y = init.y;
-  return x + cell->getWidth() > rect.xl && x < rect.xl && y + cell->getHeight() > rect.yl
-         && y < rect.yh;
+  return x + cell->getWidth() > rect.xl && x < rect.xl
+         && y + cell->getHeight() > rect.yl && y < rect.yh;
 }
 
 DbuPt Opendp::nearestPt(const Node* cell, const DbuRect& rect) const
@@ -243,8 +243,8 @@ bool Opendp::isInside(const Node* cell, const Rect& rect) const
   const DbuPt init = initialLocation(cell, false);
   const DbuX x = init.x;
   const DbuY y = init.y;
-  return x >= rect.xMin() && x + cell->getWidth() <= rect.xMax() && y >= rect.yMin()
-         && y + cell->getHeight() <= rect.yMax();
+  return x >= rect.xMin() && x + cell->getWidth() <= rect.xMax()
+         && y >= rect.yMin() && y + cell->getHeight() <= rect.yMax();
 }
 
 int Opendp::distToRect(const Node* cell, const Rect& rect) const
@@ -291,7 +291,8 @@ CellPlaceOrderLess::CellPlaceOrderLess(const Rect& core)
 
 int CellPlaceOrderLess::centerDist(const Node* cell) const
 {
-  return sumXY(abs(cell->getLeft() - center_x_), abs(cell->getBottom() - center_y_));
+  return sumXY(abs(cell->getLeft() - center_x_),
+               abs(cell->getBottom() - center_y_));
 }
 
 bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
@@ -643,10 +644,12 @@ void Opendp::shiftMove(Node* cell)
 bool Opendp::swapCells(Node* cell1, Node* cell2)
 {
   if (cell1 != cell2 && !cell1->isHold() && !cell2->isHold()
-      && cell1->getWidth() == cell2->getWidth() && cell1->getHeight() == cell2->getHeight()
-      && !cell1->isFixed() && !cell2->isFixed()) {
-    const int dist_change = distChange(cell1, cell2->getLeft(), cell2->getBottom())
-                            + distChange(cell2, cell1->getLeft(), cell1->getBottom());
+      && cell1->getWidth() == cell2->getWidth()
+      && cell1->getHeight() == cell2->getHeight() && !cell1->isFixed()
+      && !cell2->isFixed()) {
+    const int dist_change
+        = distChange(cell1, cell2->getLeft(), cell2->getBottom())
+          + distChange(cell2, cell1->getLeft(), cell1->getBottom());
 
     if (dist_change < 0) {
       const GridX grid_x1 = grid_->gridPaddedX(cell2);
@@ -1123,8 +1126,8 @@ DbuPt Opendp::legalPt(const Node* cell, const DbuPt& pt) const
   const GridX grid_x{divRound(core_x.v, site_width.v)};
   const DbuX legal_x{gridToDbu(grid_x, site_width)};
   // Align to row
-  const DbuY core_y
-      = std::clamp(pt.y, DbuY{0}, DbuY{grid_->getCore().yMax()} - cell->getHeight());
+  const DbuY core_y = std::clamp(
+      pt.y, DbuY{0}, DbuY{grid_->getCore().yMax()} - cell->getHeight());
   const GridY grid_y = grid_->gridRoundY(core_y);
   DbuY legal_y = grid_->gridYToDbu(grid_y);
 
@@ -1145,21 +1148,25 @@ DbuPt Opendp::nearestBlockEdge(const Node* cell,
   const DbuY legal_y = legal_pt.y;
 
   const DbuX x_min_dist = abs(legal_x - block_bbox.xMin());
-  const DbuX x_max_dist = abs(DbuX{block_bbox.xMax()} - (legal_x + cell->getWidth()));
+  const DbuX x_max_dist
+      = abs(DbuX{block_bbox.xMax()} - (legal_x + cell->getWidth()));
   const DbuY y_min_dist = abs(legal_y - block_bbox.yMin());
-  const DbuY y_max_dist = abs(DbuY{block_bbox.yMax()} - (legal_y + cell->getHeight()));
+  const DbuY y_max_dist
+      = abs(DbuY{block_bbox.yMax()} - (legal_y + cell->getHeight()));
 
   const int min_dist
       = std::min({x_min_dist.v, x_max_dist.v, y_min_dist.v, y_max_dist.v});
 
   if (min_dist == x_min_dist) {  // left of block
-    return legalPt(cell, {DbuX{block_bbox.xMin()} - cell->getWidth(), legal_pt.y});
+    return legalPt(cell,
+                   {DbuX{block_bbox.xMin()} - cell->getWidth(), legal_pt.y});
   }
   if (min_dist == x_max_dist) {  // right of block
     return legalPt(cell, {DbuX{block_bbox.xMax()}, legal_pt.y});
   }
   if (min_dist == y_min_dist) {  // below block
-    return legalPt(cell, {legal_pt.x, DbuY{block_bbox.yMin() - cell->getHeight().v}});
+    return legalPt(cell,
+                   {legal_pt.x, DbuY{block_bbox.yMin() - cell->getHeight().v}});
   }
   // above block
   return legalPt(cell, {legal_pt.x, DbuY{block_bbox.yMax()}});
@@ -1249,8 +1256,10 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
 {
   // Get cell position
   const DbuPt init = initialLocation(&cell, false);
-  const Rect bbox(
-      init.x.v, init.y.v, init.x.v + cell.getWidth().v, init.y.v + cell.getHeight().v);
+  const Rect bbox(init.x.v,
+                  init.y.v,
+                  init.x.v + cell.getWidth().v,
+                  init.y.v + cell.getHeight().v);
 
   const GridRect grid_box = grid_->gridCovering(bbox);
 
@@ -1262,14 +1271,11 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
   Node* block = nullptr;
   if (pixel1 && pixel1->cell && pixel1->cell->isBlock()) {
     block = pixel1->cell;
-  } else if (pixel2 && pixel2->cell
-             && pixel2->cell->isBlock()) {
+  } else if (pixel2 && pixel2->cell && pixel2->cell->isBlock()) {
     block = pixel2->cell;
-  } else if (pixel3 && pixel3->cell
-             && pixel3->cell->isBlock()) {
+  } else if (pixel3 && pixel3->cell && pixel3->cell->isBlock()) {
     block = pixel3->cell;
-  } else if (pixel4 && pixel4->cell
-             && pixel4->cell->isBlock()) {
+  } else if (pixel4 && pixel4->cell && pixel4->cell->isBlock()) {
     block = pixel4->cell;
   }
 

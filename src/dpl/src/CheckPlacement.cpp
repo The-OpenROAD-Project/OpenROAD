@@ -37,8 +37,8 @@
 #include <limits>
 #include <vector>
 
-#include "dpl/Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
 #include "utl/Logger.h"
@@ -395,8 +395,10 @@ bool Opendp::overlap(const Node* cell1, const Node* cell2) const
   const DbuPt ll2 = initialLocation(cell2, padded);
   DbuPt ur1, ur2;
   if (padded) {
-    ur1 = DbuPt(ll1.x + padding_->paddedWidth(cell1), ll1.y + cell1->getHeight());
-    ur2 = DbuPt(ll2.x + padding_->paddedWidth(cell2), ll2.y + cell2->getHeight());
+    ur1 = DbuPt(ll1.x + padding_->paddedWidth(cell1),
+                ll1.y + cell1->getHeight());
+    ur2 = DbuPt(ll2.x + padding_->paddedWidth(cell2),
+                ll2.y + cell2->getHeight());
   } else {
     ur1 = DbuPt(ll1.x + cell1->getWidth().v, ll1.y + cell1->getHeight().v);
     ur2 = DbuPt(ll2.x + cell2->getWidth().v, ll2.y + cell2->getHeight().v);

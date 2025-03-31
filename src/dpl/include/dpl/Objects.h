@@ -33,8 +33,8 @@
 
 #pragma once
 
-#include "Opendp.h"
 #include "Coordinates.h"
+#include "Opendp.h"
 
 namespace dpl {
 
@@ -43,7 +43,7 @@ using odb::dbSite;
 
 class MasterEdge
 {
-  public:
+ public:
   MasterEdge(unsigned int type, const odb::Rect& box);
   unsigned int getEdgeType() const;
   const odb::Rect& getBBox() const;
@@ -66,7 +66,7 @@ struct EdgeSpacingEntry
 
 class Master
 {
-  public:
+ public:
   bool isMultiRow() const;
   const std::vector<MasterEdge>& getEdges();
   const odb::Rect getBBox();
@@ -74,7 +74,8 @@ class Master
   void addEdge(const MasterEdge& edge);
   void clearEdges();
   void setBBox(const odb::Rect box);
-  private:
+
+ private:
   odb::Rect boundary_box_;
   bool is_multi_row_ = false;
   std::vector<MasterEdge> edges_;
@@ -129,7 +130,6 @@ class Node
   int getNumPins() const;
   const std::vector<Pin*>& getPins() const;
   int getGroupId() const;
-  
 
   // setters
   void setId(int id);
@@ -189,7 +189,7 @@ class Node
 
 class Group
 {
-  public:
+ public:
   // getters
   string getName();
   const vector<Rect>& getRects() const;
@@ -204,7 +204,8 @@ class Group
   void addCell(Node* cell);
   void setBoundary(const Rect& in);
   void setUtil(const double in);
-  private:
+
+ private:
   int id_;
   string name_;
   vector<Rect> region_boundaries_;

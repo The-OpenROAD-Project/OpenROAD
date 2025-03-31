@@ -526,7 +526,8 @@ GridX Grid::gridPaddedEndX(const Node* cell) const
 
 GridX Grid::gridEndX(const Node* cell) const
 {
-  return GridX{divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
+  return GridX{
+      divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
 }
 
 GridY Grid::gridEndY(const Node* cell) const

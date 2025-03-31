@@ -38,8 +38,8 @@
 #include <string>
 #include <unordered_set>
 
-#include "dpl/Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
@@ -230,8 +230,8 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     if (edge_types_indices_.find(edge->getEdgeType())
         != edge_types_indices_.end()) {
       // consider only edge types defined in the spacing table
-      master->addEdge(MasterEdge(edge_types_indices_[edge->getEdgeType()],
-                                  edge_rect));
+      master->addEdge(
+          MasterEdge(edge_types_indices_[edge->getEdgeType()], edge_rect));
     }
   }
   if (edge_types_indices_.find("DEFAULT") == edge_types_indices_.end()) {

@@ -33,8 +33,8 @@
 
 #include "Graphics.h"
 
-#include "dpl/Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {

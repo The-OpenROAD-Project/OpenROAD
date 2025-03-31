@@ -48,8 +48,8 @@
 #include <map>
 
 #include "DplObserver.h"
-#include "dpl/Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/OptMirror.h"
 #include "dpl/Padding.h"
 #include "odb/util.h"
