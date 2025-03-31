@@ -40,6 +40,7 @@
 #include <queue>
 #include <regex>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "bufferTreeDescriptor.h"

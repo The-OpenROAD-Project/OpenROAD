@@ -32,6 +32,7 @@
 
 #include "power_cells.h"
 
+#include <string>
 #include <vector>
 
 #include "domain.h"

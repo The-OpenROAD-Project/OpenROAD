@@ -41,6 +41,7 @@
 #include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 #include <stack>
 #include <utility>

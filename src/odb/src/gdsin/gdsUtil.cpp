@@ -36,6 +36,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <ctime>
 #include <map>
+#include <string>
 #include <utility>
 
 #include "odb/db.h"

@@ -32,6 +32,8 @@
 
 #include "dbLib.h"
 
+#include <string>
+
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbMaster.h"

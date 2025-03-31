@@ -32,6 +32,7 @@
 #include <iostream>
 #include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "db/obj/frShape.h"

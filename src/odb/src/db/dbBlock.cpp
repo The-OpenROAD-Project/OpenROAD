@@ -1701,6 +1701,12 @@ dbSet<dbModBTerm> dbBlock::getModBTerms()
   return dbSet<dbModBTerm>(block, block->_modbterm_tbl);
 }
 
+dbSet<dbModITerm> dbBlock::getModITerms()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModITerm>(block, block->_moditerm_tbl);
+}
+
 dbSet<dbModNet> dbBlock::getModNets()
 {
   _dbBlock* block = (_dbBlock*) this;

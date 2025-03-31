@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "../gc/FlexGC.h"

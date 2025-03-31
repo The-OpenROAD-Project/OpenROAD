@@ -26,24 +26,24 @@
 [InitialPlace]  Iter: 5 CG residual: 0.00000009 HPWL: 194513
 Placement Analysis
 ---------------------------------
-total displacement        590.5 u
-average displacement       12.6 u
-max displacement           18.0 u
+total displacement        589.4 u
+average displacement       12.5 u
+max displacement           17.0 u
 original HPWL               5.0 u
-legalized HPWL            257.2 u
-delta HPWL                 5035 %
+legalized HPWL            307.4 u
+delta HPWL                 6037 %
 
-worst slack -0.66
-tns -8.686
+worst slack -0.70
+tns -8.694
 [INFO RSZ-0094] Found 21 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 21 out of 21 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.657 |       -8.7 |     21 | u1/r21/D
-    final |       0 |      42 |       20 |      0 |     0 |   +10.4% |   -0.504 |       -9.1 |     21 | u1/r21/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.701 |       -8.7 |     21 | u1/r21/D
+    final |       0 |      40 |       17 |      0 |     0 |   +10.6% |   -0.506 |       -9.3 |     21 | u1/r21/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 5 buffers, 1 to split loads.
-[INFO RSZ-0041] Resized 42 instances.
+[INFO RSZ-0041] Resized 40 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

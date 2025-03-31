@@ -33,6 +33,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "dbCore.h"
 #include "dbGDSStructure.h"
 #include "odb/odb.h"

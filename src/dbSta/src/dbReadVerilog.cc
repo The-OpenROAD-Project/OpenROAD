@@ -37,9 +37,11 @@
 
 #include <odb/dbSet.h>
 
+#include <cstddef>
 #include <fstream>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

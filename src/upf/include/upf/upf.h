@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "odb/db.h"
 #include "utl/Logger.h"
 

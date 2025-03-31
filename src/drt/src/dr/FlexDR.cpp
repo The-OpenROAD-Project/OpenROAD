@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <numeric>
 #include <sstream>
+#include <string>
 
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"

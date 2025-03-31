@@ -1,5 +1,7 @@
 #include "ScanPin.hh"
 
+#include <string_view>
+
 namespace dft {
 
 ScanPin::ScanPin(std::variant<odb::dbBTerm*, odb::dbITerm*> term) : value_(term)

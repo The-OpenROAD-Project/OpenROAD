@@ -40,6 +40,7 @@
 #include <ctime>
 #include <fstream>
 #include <iterator>
+#include <string>
 #include <unordered_set>
 #include <vector>
 

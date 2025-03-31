@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbMarkerCategory.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbMarker.h"
@@ -45,6 +47,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string>
 
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"

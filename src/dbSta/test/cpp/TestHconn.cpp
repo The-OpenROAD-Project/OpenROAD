@@ -8,12 +8,14 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -1027,6 +1029,30 @@ TEST_F(TestHconn, ConnectionMade)
 
   EXPECT_EQ(restored_mod_net_count, initial_mod_net_count);
   EXPECT_EQ(restored_db_net_count, initial_db_net_count);
+
+  // Test deletion of a dbModInst
+  size_t num_mod_insts_before_delete = block->getModInsts().size();
+  size_t num_mod_iterms_before_delete = block->getModITerms().size();
+  dbModInst::destroy(inv1_mod_inst);
+  size_t num_mod_insts_after_delete = block->getModInsts().size();
+  size_t num_mod_iterms_after_delete = block->getModITerms().size();
+
+  // Test deletion of a dbModule
+  size_t num_mods_before_delete = block->getModules().size();
+  size_t num_mod_bterms_before_delete = block->getModBTerms().size();
+  dbModule::destroy(inv1_mod_master);
+  size_t num_mods_after_delete = block->getModules().size();
+  size_t num_mod_bterms_after_delete = block->getModBTerms().size();
+
+  // we have killed one module instance
+  EXPECT_EQ((num_mods_before_delete - num_mods_after_delete), 1);
+  // we have killed one module
+  EXPECT_EQ((num_mod_insts_before_delete - num_mod_insts_after_delete), 1);
+  // we are deleting an inverter, so expect to delete 2 ports
+  EXPECT_EQ((num_mod_bterms_before_delete - num_mod_bterms_after_delete), 2);
+  // and the number of moditerms reduced should be the same (2)
+  EXPECT_EQ((num_mod_iterms_before_delete - num_mod_iterms_after_delete),
+            (num_mod_bterms_before_delete - num_mod_bterms_after_delete));
 }
 
 }  // namespace odb

@@ -33,6 +33,7 @@
 #pragma once
 
 #include <list>
+#include <string>
 #include <vector>
 
 #include "dbCore.h"

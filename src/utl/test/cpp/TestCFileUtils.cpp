@@ -35,6 +35,7 @@
 #include <ctime>
 #include <filesystem>
 #include <numeric>
+#include <string>
 #include <vector>
 
 #include "gmock/gmock.h"

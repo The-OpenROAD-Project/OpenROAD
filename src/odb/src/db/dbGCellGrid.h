@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <map>
+
 #include "dbCore.h"
 #include "odb/db.h"
 #include "odb/odb.h"
