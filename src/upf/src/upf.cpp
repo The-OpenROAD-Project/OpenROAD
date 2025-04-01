@@ -646,7 +646,7 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
   // Search for the most appropriate isolation cell
   float smallest_area = std::numeric_limits<float>::max();
   float inverter_area = 0;
-  if (inverter_m) { 
+  if (inverter_m) {
     inverter_area = inverter_m->getArea();
   }
 
