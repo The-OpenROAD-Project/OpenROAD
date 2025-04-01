@@ -678,7 +678,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
-    //printf("Net %s ", db_net->getConstName());
     net->destroyPins();
     // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
@@ -694,7 +693,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
       db_net->clearGuides();
       fastroute_->clearNetRoute(db_net);
     } else if (net->isMergedNet()) {
-      //printf("is merged\n");
       if (!isConnected(db_net)) {
         logger_->error(
             GRT, 267, "Net {} has disconnected segments.", net->getName());
@@ -2438,7 +2436,6 @@ void GlobalRouter::saveGuidesFromFile(
 
 void GlobalRouter::saveGuides()
 {
-  //printf("Start saveGuides\n");
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
@@ -2459,9 +2456,6 @@ void GlobalRouter::saveGuides()
     if (!route.empty()) {
       db_net->clearGuides();
       for (GSegment& segment : route) {
-        //if (segment.init_layer < 0 || segment.final_layer < 0) {
-          //printf("Error saveGuides1: Net %s with segment with invalid layer\n", db_net->getConstName());
-	//}
         odb::Rect box = globalRoutingToBox(segment);
         box.moveDelta(offset_x, offset_y);
         if (segment.isVia()) {
@@ -2487,17 +2481,6 @@ void GlobalRouter::saveGuides()
                 = std::max(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbTechLayer* via_layer = routing_layers_[via_layer_idx];
-	    /*if (!layer || !via_layer) {
-	    	logger_->error(GRT,
-                            78,
-                            "Layer not found. Net {} init_layer_idx {} final_layer_idx {} init_layer {} final_layer {} box {}",
-                            db_net->getConstName(),
-                            segment.init_layer,
-                            segment.final_layer,
-                            !routing_layers_[segment.init_layer] ? "nullptr" : routing_layers_[segment.init_layer]->getName(),
-                            !routing_layers_[segment.final_layer] ? "nullptr" : routing_layers_[segment.final_layer]->getName(),
-                            box);
-	    }*/
             odb::dbGuide::create(
                 db_net, layer, via_layer, box, guide_is_congested);
           }
@@ -2538,7 +2521,6 @@ void GlobalRouter::saveGuides()
              "Remaining jumpers {} in {} repaired nets after GRT",
              total_jumpers,
              net_with_jumpers);
-  //printf("End saveGuides\n");
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -4238,7 +4220,6 @@ void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
-    //if (layer1 < 0 || layer2 < 0) printf("Merge %s %s has layers with negative level\n", db_net1->getConstName(), db_net2->getConstName());
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
@@ -4276,12 +4257,17 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
     odb::Point pt1(seg.init_x, seg.init_y);
     odb::Point pt2(seg.final_x, seg.final_y);
     int layer = std::max(seg.init_layer, seg.final_layer);
-    // This modification remove the issue
-    if ((pt1 == pin_pos || pt2 ==pin_pos) && layer > top_layer) {
-      top_layer = layer;
+    if (pt1 == pin_pos || pt2 == pin_pos) {
+      top_layer = std::max(top_layer, layer);
     }
   }
 
+  if (top_layer == -1) {
+    logger_->error(GRT,
+                   703,
+                   "No segment was found in the routing that connects to the "
+                   "pin position.");
+  }
   return top_layer;
 }
 
@@ -4305,20 +4291,20 @@ std::vector<GSegment> GlobalRouter::createConnectionForPositions(
     auto [y1, y2] = std::minmax({pin_pos1.getY(), pin_pos2.getY()});
     if ((vertical && dir != odb::dbTechLayerDir::VERTICAL)
         || (horizontal && dir != odb::dbTechLayerDir::HORIZONTAL)) {
-      conn_layer--; // it can be negative then to reduce?
+      conn_layer--;
     }
     connection.emplace_back(x1, y1, conn_layer, x2, y2, conn_layer);
   } else {
     int layer_hor
-        = dir == odb::dbTechLayerDir::HORIZONTAL ? conn_layer : conn_layer - 1; // it can be negative then to reduce?
+        = dir == odb::dbTechLayerDir::HORIZONTAL ? conn_layer : conn_layer - 1;
     int layer_ver
-        = dir == odb::dbTechLayerDir::VERTICAL ? conn_layer : conn_layer - 1; // it can be negative then to reduce?
+        = dir == odb::dbTechLayerDir::VERTICAL ? conn_layer : conn_layer - 1;
     int x1 = pin_pos1.getX();
     int y1 = pin_pos1.getY();
     int x2 = pin_pos2.getX();
     int y2 = pin_pos2.getY();
     connection.emplace_back(x1, y1, layer_hor, x2, y1, layer_hor);
-    connection.emplace_back(x2, y1, conn_layer - 1, x2, y1, conn_layer); // it can be negative then to reduce? Why not use layer_hor and layer_ver?
+    connection.emplace_back(x2, y1, conn_layer - 1, x2, y1, conn_layer);
     connection.emplace_back(x2, y1, layer_ver, x2, y2, layer_ver);
   }
 
