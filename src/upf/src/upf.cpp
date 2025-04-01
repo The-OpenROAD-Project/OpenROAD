@@ -653,8 +653,8 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     // Find enable & data pins for the isolation cell
     sta::LibertyPort* tmp_enable_lib_port = nullptr;
     sta::LibertyPort* tmp_out_lib_port = nullptr;
-    odb::dbMTerm* tmp_enable_term = nullptr; 
-    odb::dbMTerm* tmp_data_term = nullptr; 
+    odb::dbMTerm* tmp_enable_term = nullptr;
+    odb::dbMTerm* tmp_data_term = nullptr;
     odb::dbMTerm* tmp_output_term = nullptr;
 
     for (auto&& term : iso_cell->getMTerms()) {
@@ -681,21 +681,21 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     }
 
     if (!tmp_output_term || !tmp_data_term || !tmp_enable_term) {
-      // Isolation cell defined, but can't find one of output, data or enable terms.
+      // Isolation cell defined, but can't find one of output, data or enable
+      // terms.
       continue;
     }
-    
+
     // Determine if an inverter is needed for the control pin & output
     bool tmp_invert_output = false;
     bool tmp_invert_control = false;
-    bool matched = check_isolation_match(
-      tmp_out_lib_port->function(),
-      tmp_enable_lib_port,
-      isolation_sense,
-      isolation_clamp_val,
-      logger,
-      tmp_invert_control,
-      tmp_invert_output);
+    bool matched = check_isolation_match(tmp_out_lib_port->function(),
+                                         tmp_enable_lib_port,
+                                         isolation_sense,
+                                         isolation_clamp_val,
+                                         logger,
+                                         tmp_invert_control,
+                                         tmp_invert_output);
     if (!matched) {
       continue;
     }
@@ -705,12 +705,12 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     if (tmp_invert_control || tmp_invert_output) {
       if (!inverter_m)
         continue;
-      
+
       if (tmp_invert_control)
         tmp_area += inverter_m->getArea();
       if (tmp_invert_output)
         tmp_area += inverter_m->getArea();
-    } 
+    }
 
     if (tmp_area < smallest_area) {
       smallest_area = tmp_area;
@@ -1000,11 +1000,11 @@ static bool isolate_connection(odb::dbITerm* src_term,
   odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
   bool inverter_found
       = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
-  
+
   if (!inverter_found) {
     logger->warn(utl::UPF, 31, "can't find any inverters");
   }
-  
+
   odb::dbMTerm* enable_term = nullptr;
   odb::dbMTerm* data_term = nullptr;
   odb::dbMTerm* output_term = nullptr;
