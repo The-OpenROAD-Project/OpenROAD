@@ -76,11 +76,10 @@ using odb::dbTechLayer;
 using odb::Point;
 using odb::Rect;
 
-struct Node;
-struct Group;
-struct Master;
+class Node;
+class Group;
+class Master;
 struct Pixel;
-struct EdgeSpacingEntry;
 
 class DplObserver;
 class Grid;

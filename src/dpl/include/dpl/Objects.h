@@ -40,17 +40,18 @@ namespace dpl {
 
 using odb::dbOrientType;
 using odb::dbSite;
+using odb::Rect;
 
 class MasterEdge
 {
  public:
-  MasterEdge(unsigned int type, const odb::Rect& box);
+  MasterEdge(unsigned int type, const Rect& box);
   unsigned int getEdgeType() const;
-  const odb::Rect& getBBox() const;
+  const Rect& getBBox() const;
 
  private:
   unsigned int edge_type_idx_{0};
-  odb::Rect bbox_;
+  Rect bbox_;
 };
 
 class Master
@@ -58,14 +59,14 @@ class Master
  public:
   bool isMultiRow() const;
   const std::vector<MasterEdge>& getEdges();
-  const odb::Rect getBBox();
-  void setMultiRow(const bool in);
+  Rect getBBox();
+  void setMultiRow(bool in);
   void addEdge(const MasterEdge& edge);
   void clearEdges();
-  void setBBox(const odb::Rect box);
+  void setBBox(Rect box);
 
  private:
-  odb::Rect boundary_box_;
+  Rect boundary_box_;
   bool is_multi_row_ = false;
   std::vector<MasterEdge> edges_;
 };
@@ -182,7 +183,7 @@ class Group
   // getters
   string getName();
   const vector<Rect>& getRects() const;
-  const vector<Node*> getCells() const;
+  vector<Node*> getCells() const;
   const Rect& getBBox() const;
   double getUtil() const;
   int getId() const;
@@ -192,7 +193,7 @@ class Group
   void addRect(const Rect& in);
   void addCell(Node* cell);
   void setBoundary(const Rect& in);
-  void setUtil(const double in);
+  void setUtil(double in);
 
  private:
   int id_;

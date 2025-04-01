@@ -87,7 +87,7 @@ void Opendp::makeMacros()
   vector<dbMaster*> masters;
   block_->getMasters(masters);
   for (auto db_master : masters) {
-    struct Master& master = db_master_map_[db_master];
+    Master& master = db_master_map_[db_master];
     makeMaster(&master, db_master);
   }
 }
@@ -360,7 +360,7 @@ void Opendp::makeGroups()
     int index = 0;
     for (auto height : unique_heights) {
       groups_.emplace_back();
-      struct Group& group = groups_.back();
+      Group& group = groups_.back();
       string group_name
           = string(db_group->getName()) + "_" + std::to_string(index++);
       group.setName(group_name);

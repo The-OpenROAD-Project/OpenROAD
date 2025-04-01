@@ -7,7 +7,6 @@
 
 namespace dpl {
 
-using namespace odb;
 namespace cell_edges {
 Rect transformEdgeRect(const Rect& edge_rect,
                        const Node* cell,
@@ -41,7 +40,7 @@ Rect getQueryRect(const Rect& edge_box, const int spc)
 };  // namespace cell_edges
 
 // Constructor
-PlacementDRC::PlacementDRC(Grid* grid, dbTech* tech) : grid_(grid)
+PlacementDRC::PlacementDRC(Grid* grid, odb::dbTech* tech) : grid_(grid)
 {
   makeCellEdgeSpacingTable(tech);
 }
@@ -139,7 +138,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
 }
 
 // Initialize the edge spacing table from the technology
-void PlacementDRC::makeCellEdgeSpacingTable(dbTech* tech)
+void PlacementDRC::makeCellEdgeSpacingTable(odb::dbTech* tech)
 {
   auto spacing_rules = tech->getCellEdgeSpacingTable();
   if (spacing_rules.empty()) {
@@ -179,10 +178,10 @@ bool PlacementDRC::hasCellEdgeSpacingTable() const
 }
 
 // Get the maximum spacing for a given edge type index
-int PlacementDRC::getMaxSpacing(int edge_idx) const
+int PlacementDRC::getMaxSpacing(const int edge_type_idx) const
 {
-  return std::max_element(edge_spacing_table_[edge_idx].begin(),
-                          edge_spacing_table_[edge_idx].end())
+  return std::max_element(edge_spacing_table_[edge_type_idx].begin(),
+                          edge_spacing_table_[edge_type_idx].end())
       ->spc;
 }
 
@@ -197,7 +196,7 @@ int PlacementDRC::getEdgeTypeIdx(const std::string& edge_type) const
 }
 
 // Convert grid coordinates to DBU coordinates
-DbuX PlacementDRC::gridToDbu(GridX grid_x, DbuX site_width) const
+DbuX PlacementDRC::gridToDbu(const GridX grid_x, const DbuX site_width) const
 {
   return DbuX(grid_x.v * site_width.v);
 }

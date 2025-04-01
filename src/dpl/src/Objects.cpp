@@ -36,7 +36,7 @@
 namespace dpl {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-MasterEdge::MasterEdge(unsigned int type, const odb::Rect& box)
+MasterEdge::MasterEdge(unsigned int type, const Rect& box)
     : edge_type_idx_(type), bbox_(box)
 {
 }
@@ -45,7 +45,7 @@ unsigned int MasterEdge::getEdgeType() const
 {
   return edge_type_idx_;
 }
-const odb::Rect& MasterEdge::getBBox() const
+const Rect& MasterEdge::getBBox() const
 {
   return bbox_;
 }
@@ -60,7 +60,7 @@ const std::vector<MasterEdge>& Master::getEdges()
 {
   return edges_;
 }
-const odb::Rect Master::getBBox()
+Rect Master::getBBox()
 {
   return boundary_box_;
 }
@@ -76,7 +76,7 @@ void Master::clearEdges()
 {
   edges_.clear();
 }
-void Master::setBBox(const odb::Rect box)
+void Master::setBBox(const Rect box)
 {
   boundary_box_ = box;
 }
@@ -432,7 +432,7 @@ const vector<Rect>& Group::getRects() const
 {
   return region_boundaries_;
 }
-const vector<Node*> Group::getCells() const
+vector<Node*> Group::getCells() const
 {
   return cells_;
 }

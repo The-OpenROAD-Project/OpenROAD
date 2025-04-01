@@ -41,7 +41,7 @@ using odb::Point;
 using odb::Rect;
 
 class Opendp;
-struct Node;
+class Node;
 
 class Graphics : public gui::Renderer, public DplObserver
 {

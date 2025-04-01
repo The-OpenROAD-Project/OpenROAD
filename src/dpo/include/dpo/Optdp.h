@@ -51,7 +51,6 @@ class Opendp;
 class Grid;
 class Master;
 class Edge;
-class Pin;
 class Node;
 class PlacementDRC;
 
@@ -67,7 +66,6 @@ using dpl::Edge;
 using dpl::Grid;
 using dpl::Node;
 using dpl::Opendp;
-using dpl::Pin;
 using dpl::PlacementDRC;
 using odb::dbDatabase;
 using odb::dbOrientType;

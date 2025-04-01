@@ -33,7 +33,7 @@
 namespace dpl {
 
 class Opendp;
-struct Node;
+class Node;
 
 class DplObserver
 {

@@ -36,8 +36,8 @@ class PlacementDRC
   bool checkEdgeSpacing(const Node* cell) const;
   // Check edge spacing for a cell at a given location and orientation
   bool checkEdgeSpacing(const Node* cell,
-                        const GridX x,
-                        const GridY y,
+                        GridX x,
+                        GridY y,
                         const odb::dbOrientType& orient) const;
 
   int getEdgeTypeIdx(const std::string& edge_type) const;

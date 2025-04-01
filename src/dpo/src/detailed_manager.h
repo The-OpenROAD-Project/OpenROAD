@@ -53,9 +53,10 @@
 #include "utility.h"
 namespace utl {
 class Logger;
-class PlacementDRC;
 }  // namespace utl
-
+namespace dpl {
+class PlacementDRC;
+}
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
