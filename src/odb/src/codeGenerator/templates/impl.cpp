@@ -43,6 +43,10 @@
   #include <cstdint>
 {% endif %}
 
+{% for include in klass.cpp_sys_includes %}
+  #include <{{include}}>
+{% endfor %}
+
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
 {% endfor %}

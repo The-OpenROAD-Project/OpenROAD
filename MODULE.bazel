@@ -20,6 +20,7 @@ BOOST_VERSION = "1.83.0"
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
 bazel_dep(name = "boost.asio", version = BOOST_VERSION)
+bazel_dep(name = "boost.beast", version = BOOST_VERSION + ".bcr.1")
 bazel_dep(name = "boost.bind", version = BOOST_VERSION)
 bazel_dep(name = "boost.config", version = BOOST_VERSION)
 bazel_dep(name = "boost.core", version = BOOST_VERSION)
@@ -38,18 +39,6 @@ bazel_dep(name = "boost.property_tree", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
 bazel_dep(name = "boost.thread", version = BOOST_VERSION)
-
-# Until https://github.com/bazelbuild/bazel-central-registry/pull/4174
-# is merged, need to locally patch.
-bazel_dep(name = "boost.beast", version = BOOST_VERSION)
-single_version_override(
-    module_name = "boost.beast",
-    patch_strip = 1,
-    patches = [
-        "//:bazel/fix-boost-beast.patch",
-    ],
-    version = BOOST_VERSION,
-)
 
 bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.2")
