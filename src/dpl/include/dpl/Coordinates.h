@@ -44,7 +44,7 @@
 #include <functional>
 #include <ostream>
 
-#include "dpl/Opendp.h"
+#include "Opendp.h"
 
 namespace dpl {
 
@@ -64,7 +64,9 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
                          public boost::modable<TypedCoordinate<T>>,
                          public boost::modable<TypedCoordinate<T>, int>,
                          public boost::incrementable<TypedCoordinate<T>>,
-                         public boost::decrementable<TypedCoordinate<T>>
+                         public boost::decrementable<TypedCoordinate<T>>,
+                         public boost::dividable<TypedCoordinate<T>>,
+                         public boost::multipliable<TypedCoordinate<T>>
 {
   explicit TypedCoordinate(const int v = 0) : v(v) {}
   TypedCoordinate(const TypedCoordinate<T>& v) = default;
@@ -116,6 +118,18 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
     --v;
     return *this;
   }
+  // dividable
+  TypedCoordinate& operator/=(const TypedCoordinate& rhs)
+  {
+    v /= rhs.v;
+    return *this;
+  }
+  // multipliable
+  TypedCoordinate& operator*=(const TypedCoordinate& rhs)
+  {
+    v *= rhs.v;
+    return *this;
+  }
 
   int v;
 };
@@ -136,6 +150,7 @@ struct GridPt
 {
   GridPt() = default;
   GridPt(GridX x, GridY y) : x(x), y(y) {}
+  bool operator==(const GridPt& p) const { return (x == p.x) && (y == p.y); }
   GridX x{0};
   GridY y{0};
 };
@@ -245,6 +260,17 @@ struct hash<dpl::TypedCoordinate<T>>
   std::size_t operator()(const dpl::TypedCoordinate<T>& tc) const noexcept
   {
     return std::hash<int>()(tc.v);
+  }
+};
+
+template <>
+struct hash<dpl::GridPt>
+{
+  std::size_t operator()(const dpl::GridPt& p) const
+  {
+    size_t hashX = std::hash<dpl::GridX>{}(p.x);
+    size_t hashY = std::hash<dpl::GridY>{}(p.y);
+    return hashX ^ (hashY + 0x9e3779b9 + (hashX << 6) + (hashX >> 2));
   }
 };
 

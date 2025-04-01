@@ -33,6 +33,7 @@
 #include "dbNet.h"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "dbBTerm.h"
@@ -2349,7 +2350,7 @@ void dbNet::destroy(dbNet* net_)
     dbWire::destroy(wire);
   }
 
-  for (dbId<_dbGroup> _group_id : net->_groups) {
+  for (const dbId<_dbGroup>& _group_id : net->_groups) {
     dbGroup* group = (dbGroup*) block->_group_tbl->getPtr(_group_id);
     group->removeNet(net_);
   }

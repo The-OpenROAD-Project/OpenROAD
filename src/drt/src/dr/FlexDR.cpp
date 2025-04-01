@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <numeric>
 #include <sstream>
+#include <string>
 
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
@@ -189,7 +190,7 @@ void FlexDRWorker::writeUpdates(const std::string& file_name)
   }
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
     drUpdate update;
-    update.setMarker(*(marker.get()));
+    update.setMarker(*marker);
     update.setUpdateType(drUpdate::ADD_SHAPE);
     updates.back().push_back(update);
   }

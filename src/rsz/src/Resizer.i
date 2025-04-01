@@ -772,11 +772,18 @@ eliminate_dead_logic_cmd(bool clean_nets)
   resizer->eliminateDeadLogic(clean_nets);
 }
 
-void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint)
+void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint, bool report_all_cells)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
-  resizer->reportEquivalentCells(cell, match_cell_footprint);
+  resizer->reportEquivalentCells(cell, match_cell_footprint, report_all_cells);
+}
+
+void
+report_fast_buffer_sizes()
+{
+  Resizer *resizer = getResizer();
+  resizer->reportFastBufferSizes();
 }
 
 void set_debug_cmd(const char* net_name,

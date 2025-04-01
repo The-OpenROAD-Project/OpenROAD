@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "extRCap.h"
 
 namespace rcx {
@@ -418,7 +420,7 @@ class extMeasureRC : public extMeasure
                      int metOver,
                      int metUnder,
                      const char* prefix = "");
-  void GetOUname(char buf[20], int met, int metOver, int metUnder);
+  void GetOUname(char buf[200], int met, int metOver, int metUnder);
   void PrintCrossOvelaps(Wire* w,
                          uint tgt_met,
                          int x1,

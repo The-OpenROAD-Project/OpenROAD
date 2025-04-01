@@ -41,6 +41,7 @@
 #include <QTextStream>
 #include <QVBoxLayout>
 #include <filesystem>
+#include <string>
 
 namespace gui {
 

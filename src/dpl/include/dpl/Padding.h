@@ -1,5 +1,4 @@
 /////////////////////////////////////////////////////////////////////////////
-//
 // Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
 //
@@ -30,51 +29,42 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <map>
+#include "Coordinates.h"
+#include "Opendp.h"
 
-#include "db_sta/dbSta.hh"
-#include "utl/Logger.h"
-
-namespace grt {
-class GlobalRouter;
-class MakeWireParasitics;
-}  // namespace grt
-
-namespace rsz {
-
-class Resizer;
-using utl::Logger;
-
-using sta::Corner;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::Net;
-using sta::NetSeq;
-using sta::Parasitic;
-using sta::Parasitics;
-
-class SpefWriter
+namespace dpl {
+class GridNode;
+class Padding
 {
  public:
-  SpefWriter(Logger* logger,
-             dbSta* sta,
-             std::map<Corner*, std::ostream*>& spef_streams);
-  void writeHeader();
-  void writePorts();
-  void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
+  GridX padGlobalLeft() const { return pad_left_; }
+  GridX padGlobalRight() const { return pad_right_; }
+
+  void setPaddingGlobal(GridX left, GridX right);
+  void setPadding(dbInst* inst, GridX left, GridX right);
+  void setPadding(dbMaster* master, GridX left, GridX right);
+  bool havePadding() const;
+
+  // Find instance/master/global padding value for an instance.
+  GridX padLeft(dbInst* inst) const;
+  GridX padLeft(const GridNode* cell) const;
+  GridX padRight(dbInst* inst) const;
+  GridX padRight(const GridNode* cell) const;
+  bool isPaddedType(dbInst* inst) const;
+  DbuX paddedWidth(const GridNode* cell) const;
 
  private:
-  Logger* logger_;
-  dbSta* sta_;
-  dbNetwork* network_;
-  Parasitics* parasitics_;
+  using InstPaddingMap = map<dbInst*, pair<GridX, GridX>>;
+  using MasterPaddingMap = map<dbMaster*, pair<GridX, GridX>>;
 
-  std::map<Corner*, std::ostream*> spef_streams_;
+  GridX pad_left_{0};
+  GridX pad_right_{0};
+  InstPaddingMap inst_padding_map_;
+  MasterPaddingMap master_padding_map_;
 };
 
-}  // namespace rsz
+}  // namespace dpl

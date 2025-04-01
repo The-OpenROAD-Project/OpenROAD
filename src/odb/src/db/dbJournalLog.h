@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "dbPagedVector.h"
 #include "odb/odb.h"
 

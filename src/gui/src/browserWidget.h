@@ -43,6 +43,7 @@
 #include <QTreeView>
 #include <array>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

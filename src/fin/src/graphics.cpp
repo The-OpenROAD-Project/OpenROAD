@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <string>
 
 namespace fin {
 

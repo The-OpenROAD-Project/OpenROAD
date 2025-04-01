@@ -105,7 +105,7 @@ of `exclude_io_pin_region`.
 
 ```tcl
 exclude_io_pin_region 
-    [-region edge:interval]
+    -region edge:interval
 ```
 
 #### Options

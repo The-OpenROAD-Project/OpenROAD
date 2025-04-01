@@ -32,6 +32,8 @@
 
 #include "ScanStitchConfig.hh"
 
+#include <string_view>
+
 #include "Formatting.hh"
 
 namespace dft {

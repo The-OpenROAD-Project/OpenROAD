@@ -35,6 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Includes.
 ////////////////////////////////////////////////////////////////////////////////
+#include <string>
 #include <vector>
 
 #include "architecture.h"
@@ -48,6 +49,7 @@ namespace dpo {
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
 ////////////////////////////////////////////////////////////////////////////////
+class Journal;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes.
@@ -62,18 +64,7 @@ class DetailedObjective
 
   virtual double curr() = 0;
 
-  // Different methods for generating moves.  We _must_ overload these.  The
-  // generated move should be stored in the manager.
-  virtual double delta(int n,
-                       const std::vector<Node*>& nodes,
-                       const std::vector<int>& curLeft,
-                       const std::vector<int>& curBottom,
-                       const std::vector<unsigned>& curOri,
-                       const std::vector<int>& newLeft,
-                       const std::vector<int>& newBottom,
-                       const std::vector<unsigned>& newOri)
-      = 0;
-
+  virtual double delta(const Journal& journal) = 0;
   virtual void accept() {}
   virtual void reject() {}
 

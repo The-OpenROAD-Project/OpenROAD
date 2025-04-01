@@ -101,9 +101,11 @@ void FlexGRGridGraph::initGrids()
 void FlexGRGridGraph::initEdges()
 {
   for (frMIdx zIdx = 0; zIdx < (int) zCoords_.size(); zIdx++) {
-    auto dir = is2DRouting_ ? dbTechLayerDir::NONE
-                            : (zDirs_[zIdx] ? dbTechLayerDir::HORIZONTAL
-                                            : dbTechLayerDir::VERTICAL);
+    dbTechLayerDir dir = dbTechLayerDir::NONE;
+    if (!is2DRouting_) {
+      dir = zDirs_[zIdx] ? dbTechLayerDir::HORIZONTAL
+                         : dbTechLayerDir::VERTICAL;
+    }
     for (frMIdx xIdx = 0; xIdx < (int) xCoords_.size(); xIdx++) {
       for (frMIdx yIdx = 0; yIdx < (int) yCoords_.size(); yIdx++) {
         // horz

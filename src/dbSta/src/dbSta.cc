@@ -232,6 +232,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
                      utl::Logger* logger)
 {
   db_ = db;
+  db->addObserver(this);
   logger_ = logger;
   makeComponents();
   if (tcl_interp) {

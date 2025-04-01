@@ -35,6 +35,7 @@
 
 #include "upf/upf.h"
 
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -1487,8 +1488,7 @@ bool add_level_shifter_element(utl::Logger* logger,
     return false;
   }
 
-  std::string _element(element);
-  ls->addElement(_element);
+  ls->addElement(element);
 
   return true;
 }

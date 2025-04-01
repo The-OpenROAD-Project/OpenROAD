@@ -41,6 +41,8 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "sta/ParseBus.hh"

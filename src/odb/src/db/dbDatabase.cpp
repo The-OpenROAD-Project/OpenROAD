@@ -486,6 +486,7 @@ void dbDatabase::read(std::istream& file)
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db;
+  ((dbDatabase*) db)->triggerPostReadDb();
 }
 
 void dbDatabase::write(std::ostream& file)
@@ -706,6 +707,45 @@ void dbDatabase::report()
       };
   auto total_size = print(root, "dbDatabase", 1);
   logger->report("Total size = {}", total_size);
+}
+
+void dbDatabase::addObserver(dbDatabaseObserver* observer)
+{
+  observer->setUnregisterObserver(
+      [this, observer] { removeObserver(observer); });
+  _dbDatabase* db = (_dbDatabase*) this;
+  db->observers_.insert(observer);
+}
+
+void dbDatabase::removeObserver(dbDatabaseObserver* observer)
+{
+  observer->setUnregisterObserver(nullptr);
+  _dbDatabase* db = (_dbDatabase*) this;
+  db->observers_.erase(observer);
+}
+
+void dbDatabase::triggerPostReadLef(dbTech* tech, dbLib* library)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postReadLef(tech, library);
+  }
+}
+
+void dbDatabase::triggerPostReadDef(dbBlock* block)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postReadDef(block);
+  }
+}
+
+void dbDatabase::triggerPostReadDb()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postReadDb(this);
+  }
 }
 
 }  // namespace odb

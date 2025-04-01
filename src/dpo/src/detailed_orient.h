@@ -79,7 +79,6 @@ class DetailedOrient
   int flipCells();
 
   // Other.
-  bool orientAdjust(Node* ndi, unsigned newOri);
   unsigned orientFind(Node* ndi, int row);
   bool isLegalSym(unsigned rowOri, unsigned siteSym, unsigned cellOri);
 

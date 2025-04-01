@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2021, Andrew Kennings
+// Copyright (c) 2024, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,30 +30,37 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
-////////////////////////////////////////////////////////////////////////////////
-// File: orientation.h
-////////////////////////////////////////////////////////////////////////////////
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-namespace dpo {
+#include <map>
 
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
+#include "db_sta/dbSta.hh"
+#include "utl/Logger.h"
 
-////////////////////////////////////////////////////////////////////////////////
-// Forward declarations.
-////////////////////////////////////////////////////////////////////////////////
-const unsigned Orientation_UNKNOWN = 0x00000000;
-const unsigned Orientation_N = 0x00000001;
-const unsigned Orientation_S = 0x00000002;
-const unsigned Orientation_E = 0x00000004;
-const unsigned Orientation_W = 0x00000008;
-const unsigned Orientation_FN = 0x00000010;
-const unsigned Orientation_FS = 0x00000020;
-const unsigned Orientation_FE = 0x00000040;
-const unsigned Orientation_FW = 0x00000080;
+namespace sta {
 
-}  // namespace dpo
+using utl::Logger;
+
+class SpefWriter
+{
+ public:
+  SpefWriter(Logger* logger,
+             dbSta* sta,
+             std::map<Corner*, std::ostream*>& spef_streams);
+  void writeHeader();
+  void writePorts();
+  void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
+
+ private:
+  Logger* logger_;
+  dbSta* sta_;
+  dbNetwork* network_;
+  Parasitics* parasitics_;
+
+  std::map<Corner*, std::ostream*> spef_streams_;
+};
+
+}  // namespace sta

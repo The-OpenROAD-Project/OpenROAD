@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -506,7 +507,8 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
           int domain_row_sites = (domain_xMax - domain_xMin) / site_dx;
           // create domain rows if current iterations are not in margin area
           if (row_yMin >= domain_yMin && row_yMax <= domain_yMax) {
-            string domain_row_name = row_name + "_" + domain_name;
+            const string domain_row_name
+                = fmt::format("{}_{}", row_name, domain_name);
             dbRow::create(block_,
                           domain_row_name.c_str(),
                           site,

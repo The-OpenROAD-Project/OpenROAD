@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "graphics.h"
@@ -571,6 +572,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nbc_->resetNewGcellsCount();
           nesterov->updateAreas();
           nesterov->updateDensitySize();
+        }
+
+        // update snapshot after non-virtual TD
+        int64_t hpwl = nbc_->getHpwl();
+        if (average_overflow_unscaled_ <= 0.25) {
+          min_hpwl_ = hpwl;
+          diverge_snapshot_average_overflow_unscaled_
+              = average_overflow_unscaled_;
+          diverge_snapshot_iter_ = iter + 1;
+          is_min_hpwl_ = true;
         }
       }
 

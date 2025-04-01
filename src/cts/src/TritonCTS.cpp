@@ -40,6 +40,7 @@
 #include <ctime>
 #include <fstream>
 #include <iterator>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -1202,7 +1203,7 @@ bool TritonCTS::separateMacroRegSinks(
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
       // Treat clock gaters like macro sink
-      if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
+      if (hasInsertionDelay(inst, mterm) || !isSink(iterm) || inst->isBlock()) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);

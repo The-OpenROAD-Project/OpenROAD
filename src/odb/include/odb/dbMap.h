@@ -59,8 +59,8 @@ class dbMap
   std::vector<D>* _vector;  // vector used if set is sequential
 
   // Map cannot be assigned or copied!
-  dbMap(const dbMap&);
-  dbMap& operator=(const dbMap&);
+  dbMap(const dbMap&) = delete;
+  dbMap& operator=(const dbMap&) = delete;
 
  public:
   ///

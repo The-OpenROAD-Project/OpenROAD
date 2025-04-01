@@ -34,6 +34,7 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "AbstractTAGraphics.h"
 #include "db/infra/frTime.h"

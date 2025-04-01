@@ -39,6 +39,7 @@
 #define MAX_SECTIONS_RECOMMENDED 600
 
 #include <algorithm>
+#include <cstddef>
 #include <numeric>
 #include <vector>
 

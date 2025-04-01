@@ -40,6 +40,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QVBoxLayout>
+#include <string>
 
 #include "mainWindow.h"
 #include "utl/Logger.h"
@@ -160,7 +161,7 @@ void GUIProgress::updateCombined()
     std::string names;
 
     // interate and combine information
-    for (auto reporter : reporters) {
+    for (const auto& reporter : reporters) {
       has_interrupt |= reporter->checkInterrupt();
 
       if (!names.empty()) {

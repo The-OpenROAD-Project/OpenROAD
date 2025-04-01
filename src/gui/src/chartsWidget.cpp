@@ -40,6 +40,7 @@
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
+#include <string>
 #include <vector>
 
 #include "gui_utils.h"
@@ -235,21 +236,38 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
   int unconstrained_count = 0;
   sta::Unit* time_unit = sta_->units()->timeUnit();
 
+  auto network = sta_->getDbNetwork();
   for (StaPins::iterator pin_iter = end_points.begin();
        pin_iter != end_points.end();) {
-    float slack = stagui_->getPinSlack(*pin_iter);
+    const sta::Pin* pin = *pin_iter;
 
-    if (slack != sta::INF) {
+    float slack = stagui_->getPinSlack(pin);
+
+    if (slack != sta::INF && slack != -sta::INF) {
       slack = time_unit->staToUser(slack);
       data.min = std::min(slack, data.min);
       data.max = std::max(slack, data.max);
 
       ++pin_iter;
     } else {
-      auto network = sta_->getDbNetwork();
-      // Don't count dangling outputs (eg clk loads)
-      if (!network->direction(*pin_iter)->isOutput()
-          || network->net(*pin_iter)) {
+      const bool is_input = network->direction(pin)->isAnyInput();
+      auto net = network->isTopLevelPort(pin) ? network->net(network->term(pin))
+                                              : network->net(pin);
+      bool has_connections = false;
+      if (net != nullptr) {
+        std::unique_ptr<sta::NetPinIterator> pin_itr(network->pinIterator(net));
+        while (pin_itr->hasNext()) {
+          auto next_pin = pin_itr->next();
+
+          if (next_pin != pin) {
+            has_connections = true;
+            break;
+          }
+        }
+      }
+
+      // Only consider input endpoints and nets with more than 1 connection
+      if (is_input || has_connections) {
         unconstrained_count++;
       }
       pin_iter = end_points.erase(pin_iter);
