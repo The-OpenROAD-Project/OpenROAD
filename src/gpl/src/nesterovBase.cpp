@@ -744,22 +744,23 @@ void BinGrid::initBins()
   }
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL, 23, "{:20} {:10.3f}", "TargetDensity:", targetDensity_);
+  log_->info(
+      GPL, 23, "{:27} {:10.4f}", "Placement target density:", targetDensity_);
   log_->info(GPL,
              24,
-             "{:20} {:10.3f} um^2",
-             "AvrgPlaceInstArea:",
+             "{:27} {:10.3f} um^2",
+             "Movable insts average area:",
              block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             "{:20} {:10.3f} um^2",
-             "IdealBinArea:",
+             "{:27} {:10.3f} um^2",
+             "Ideal bin area:",
              block->dbuAreaToMicrons(idealBinArea));
-  log_->info(GPL, 26, "{:20} {:10}", "IdealBinCnt:", idealBinCnt);
+  log_->info(GPL, 26, "{:27} {:10}", "Ideal bin count:", idealBinCnt);
   log_->info(GPL,
              27,
-             "{:20} {:10.3f} um^2",
-             "TotalBinArea:",
+             "{:27} {:10.3f} um^2",
+             "Total bin area:",
              block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
@@ -790,15 +791,16 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 28, "{:8} {:8} {:6}", "BinCnt:", binCntX_, binCntY_);
+  log_->info(
+      GPL, 28, "{:21} {:7d} * {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
 
   binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
   binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
 
   log_->info(GPL,
              29,
-             "{:8} ( {:6.3f} {:6.3f} )",
-             "BinSize:",
+             "{:21} {:7.3f} * {:6.3f} um",
+             "Bin size (W * H):",
              block->dbuToMicrons(binSizeX_),
              block->dbuToMicrons(binSizeY_));
 
@@ -817,7 +819,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, "{:8} {}", "NumBins:", bins_.size());
+  log_->info(GPL, 30, "{:27} {:10}", "Number of bins:", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -1629,11 +1631,27 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCells_.emplace_back(GCellHandle(this, i));
   }
 
-  log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
-  log_->info(
-      GPL, 32, "{:20} {:10}", "FillerInit:NumGNets:", nbc_->gNets().size());
-  log_->info(
-      GPL, 33, "{:20} {:10}", "FillerInit:NumGPins:", nbc_->gPins().size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             "{:20} {:9}",
+             "FillerInit:NumGCells:",
+             gCells_.size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             "{:20} {:10}",
+             "FillerInit:NumGNets:",
+             nbc_->gNets().size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             "{:20} {:10}",
+             "FillerInit:NumGPins:",
+             nbc_->gPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1744,13 +1762,22 @@ void NesterovBase::initFillerGCells()
     uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
     log_->error(GPL,
                 302,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
+                "Consider increasing the target density or re-floorplanning "
+                "with a larger core area.\n"
                 "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }
+  log_->info(
+      GPL, 32, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
+  float density_suggestion
+      = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
+  log_->info(GPL,
+             33,
+             "{:27} {:.4f}",
+             "Density w/ 90% whitespace util:",
+             density_suggestion);
 
   // limit filler cells
   const double limit_filler_ratio = 10;
@@ -2018,10 +2045,10 @@ void NesterovBase::updateAreas()
   if (totalFillerArea_ < 0) {
     log_->error(GPL,
                 303,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
+                "Consider increasing the target density or re-floorplanning "
+                "with a larger core area.\n"
                 "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }
@@ -2536,9 +2563,56 @@ void NesterovBase::updateNextIter(const int iter)
                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 
   sumOverflow_ = overflowArea() / overflowDenominator;
-
   sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
 
+  int64_t hpwl = nbc_->getHpwl();
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
+                             / npVars_->referenceHpwl);
+
+  float percentageChange = 0.0;
+  if (iter == 0 || (iter + 1) % 10 == 0) {
+    if (prevTenthHpwl_ != 0) {
+      percentageChange = (static_cast<double>(hpwl - prevTenthHpwl_)
+                          / static_cast<double>(prevTenthHpwl_))
+                         * 100.0;
+    }
+    prevTenthHpwl_ = hpwl;
+
+    std::string group;
+    if (pb_->group()) {
+      group = fmt::format(" ({})", pb_->group()->getName());
+    }
+
+    const std::string nesterov_header
+        = fmt::format("[NesterovSolve] {:>4}  {:>8}  {:>12}  {:>9}  {:>11}  {}",
+                      "Iter",
+                      "Overflow",
+                      "HPWL",
+                      "HPWL(%)",
+                      "Penalty",
+                      "Group");
+
+    if (iter == 0) {
+      log_->report(nesterov_header);
+    }
+
+    log_->report(
+        "[NesterovSolve] {:4d}  {:8.4f}  {:8.6e}  {:+8.2f}%  {:11.2e}  {}",
+        iter + 1,
+        sumOverflowUnscaled_,
+        static_cast<double>(hpwl),
+        percentageChange,
+        densityPenalty_,
+        group);
+
+    if ((iter + 1) % 50 == 0) {
+      log_->report(nesterov_header);
+    }
+  }
+
+  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
+  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
   debugPrint(log_,
              GPL,
              "updateNextIter",
@@ -2549,30 +2623,8 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sumOverflowUnscaled_);
 
-  int64_t hpwl = nbc_->getHpwl();
-
-  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
-  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
-
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
-                             / npVars_->referenceHpwl);
-
   prevHpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
-
-  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
-
-  if (iter == 0 || (iter + 1) % 10 == 0) {
-    std::string group;
-    if (pb_->group()) {
-      group = fmt::format(" ({})", pb_->group()->getName());
-    }
-    log_->report("[NesterovSolve] Iter: {:4d} overflow: {:.3f} HPWL: {}{}",
-                 iter + 1,
-                 sumOverflowUnscaled_,
-                 prevHpwl_,
-                 group);
-  }
 
   if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
     minSumOverflow_ = sumOverflowUnscaled_;
