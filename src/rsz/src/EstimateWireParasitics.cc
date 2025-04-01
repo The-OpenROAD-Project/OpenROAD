@@ -424,6 +424,11 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
+    LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
+    // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
+    // This is because netlist changes may invalidate cached net driver pin data
+    network_->Network::clear();
+    network_->setDefaultLibertyLibrary(default_lib);
 
     // Hierarchy flow change
     // go through all nets, not just the ones in the instance

@@ -8046,7 +8046,6 @@ class dbModNet : public dbObject
   static dbModNet* create(dbModule* parentModule, const char* name);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
-  static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
 
   // User Code End dbModNet
 };

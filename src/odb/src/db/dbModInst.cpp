@@ -282,12 +282,6 @@ void dbModInst::destroy(dbModInst* modinst)
   for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
     dbModITerm* moditerm = *moditerm_itr;
     moditerm->disconnect();
-  }
-
-  // remove the moditerms
-  dbSet<dbModITerm>::iterator moditerm_itr;
-  dbSet<dbModITerm> moditerms = modinst->getModITerms();
-  for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 

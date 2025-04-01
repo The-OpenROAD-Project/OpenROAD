@@ -446,8 +446,8 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
-  dbSet<dbModBTerm>::iterator modbterm_itr;
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  dbSet<dbModBTerm>::iterator modbterm_itr;
   for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
     modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
