@@ -346,18 +346,23 @@ class Snapper
   void snapMacro();
 
  private:
+  struct LayerData
+  {
+    odb::dbTrackGrid* track_grid;
+    std::vector<int> available_positions;
+    // ordered by pin centers
+    std::vector<odb::dbITerm*> pins;
+  };
+  // ordered by TrackGrid layer number
+  using SnapData = std::vector<LayerData>;
+
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  bool pinsAreAlignedWithTrackGrid(const PatternParameters& params,
-                                   const odb::dbTechLayerDir& target_direction);
+  int totalPinsAligned(const SnapData& snap_data,
+                       const odb::dbTechLayerDir& direction);
 
-  std::vector<PatternParameters> computeSameDirectionPatternsData(
-      const odb::dbTechLayerDir& target_direction);
-  PatternParameters computePatternParameters(
-      odb::dbTrackGrid* track_grid,
-      const int pattern_idx,
-      odb::dbITerm* pin,
+  SnapData computeSameDirectionPatternsData(
       const odb::dbTechLayerDir& target_direction);
   odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
   void getTrackGridPattern(odb::dbTrackGrid* track_grid,
@@ -369,14 +374,12 @@ class Snapper
                   const odb::dbTechLayerDir& target_direction);
   int getPinToLowerLeftDistance(odb::dbITerm* pin,
                                 const odb::dbTechLayerDir& target_direction);
-  odb::dbITerm* findPinForMultiPattern(
-      odb::dbTrackGrid* track_grid,
-      const int pattern_idx,
-      const odb::dbTechLayerDir& target_direction);
-  void attemptSnapToExtraPatterns(
-      int origin,
-      const std::vector<PatternParameters>& layers_data,
-      const odb::dbTechLayerDir& target_direction);
+  void snapPinToPosition(odb::dbITerm* pin,
+                         int position,
+                         const odb::dbTechLayerDir& direction);
+  void attemptSnapToExtraPatterns(const int starting_position_index,
+                                  const SnapData& snap_data,
+                                  const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
