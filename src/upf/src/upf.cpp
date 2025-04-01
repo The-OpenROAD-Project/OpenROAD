@@ -645,6 +645,10 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
 
   // Search for the most appropriate isolation cell
   float smallest_area = std::numeric_limits<float>::max();
+  float inverter_area = 0;
+  if (inverter_m) { 
+    inverter_area = inverter_m->getArea();
+  }
 
   for (auto&& iso_cell : iso_cells) {
     sta::Cell* masterCell = network->dbToSta(iso_cell);
@@ -703,13 +707,16 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     // Update the smallest_area
     float tmp_area = libertyCell->area();
     if (tmp_invert_control || tmp_invert_output) {
-      if (!inverter_m)
+      if (!inverter_m) {
         continue;
+      }
 
-      if (tmp_invert_control)
-        tmp_area += inverter_m->getArea();
-      if (tmp_invert_output)
-        tmp_area += inverter_m->getArea();
+      if (tmp_invert_control) {
+        tmp_area += inverter_area;
+      }
+      if (tmp_invert_output) {
+        tmp_area += inverter_area;
+      }
     }
 
     if (tmp_area < smallest_area) {
