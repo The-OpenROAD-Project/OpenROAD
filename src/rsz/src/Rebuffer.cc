@@ -71,6 +71,7 @@ struct visitor
 {
   F f;
   int level = 0;
+  explicit visitor(F&& f) : f(std::forward<F>(f)) {}
   template <class... Args>
   decltype(auto) operator()(Args&&... args)
   {
@@ -306,7 +307,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
       [&](auto& recurse, int level, const BnetPtr& bnet) -> BufferedNetSeq {
         switch (bnet->type()) {
           case BnetType::buffer: {
-            assert(bnet->ref()->type == BnetType::wire);
+            assert(bnet->ref()->type() == BnetType::wire);
             BnetSeq Z = recurse(bnet->ref()->ref());
             for (BnetPtr& z : Z) {
               z = addWire(z, bnet->location(), bnet->ref()->layer(), level);
