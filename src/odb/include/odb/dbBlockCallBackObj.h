@@ -118,6 +118,7 @@ class dbBlockCallBackObj
 
   // dbBlockage Start
   virtual void inDbBlockageCreate(dbBlockage*) {}
+  virtual void inDbBlockageDestroy(dbBlockage*) {}
   // dbBlockage End
 
   // dbObstruction Start

@@ -4185,6 +4185,8 @@ class dbBlockage : public dbObject
                             int y2,
                             dbInst* inst = nullptr);
 
+  static void destroy(dbBlockage* blockage);
+
   ///
   /// Translate a database-id back to a pointer.
   ///
