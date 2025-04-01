@@ -558,11 +558,10 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   dbModule* parent = this->getParent();
   // save mod nets and mod iterms because creating a new mod inst doesn't
   // create them automatically
-  std::map<std::string, std::string> name_mod_net_map;
+  std::map<std::string, dbModNet*> name_mod_net_map;
   for (dbModITerm* old_mod_iterm : this->getModITerms()) {
     dbModNet* old_mod_net = old_mod_iterm->getModNet();
-    name_mod_net_map[old_mod_iterm->getName()]
-        = (old_mod_net ? old_mod_net->getName() : "");
+    name_mod_net_map[old_mod_iterm->getName()] = old_mod_net;
   }
   dbModInst::destroy(this);
   dbModInst* new_mod_inst
@@ -572,13 +571,10 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     return nullptr;
   }
   // Add mod iterms and connect to old mod nets
-  for (const auto& [name, old_mod_net_name] : name_mod_net_map) {
+  for (const auto& [name, old_mod_net] : name_mod_net_map) {
     dbModITerm* new_mod_iterm = dbModITerm::create(new_mod_inst, name.c_str());
-    dbModNet* new_mod_net = old_mod_net_name.empty()
-                                ? nullptr
-                                : parent->getModNet(old_mod_net_name.c_str());
-    if (new_mod_iterm && new_mod_net) {
-      new_mod_iterm->connect(new_mod_net);
+    if (new_mod_iterm && old_mod_net) {
+      new_mod_iterm->connect(old_mod_net);
     }
   }
   msg = fmt::format("New mod inst has {} mod iterms",

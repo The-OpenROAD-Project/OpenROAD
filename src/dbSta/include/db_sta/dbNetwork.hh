@@ -206,7 +206,7 @@ class dbNetwork : public ConcreteNetwork
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
-  dbModInst* replaceHierModule(dbModInst* mod_inst, dbModule* module);
+  void replaceHierModule(dbModInst* mod_inst, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //
