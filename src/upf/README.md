@@ -137,7 +137,7 @@ use_interface_cell
     -domain domain
     -strategy strategy
     -lib_cells lib_cells
-    [interface_implementation_name]
+    interface_implementation_name
 ```
 
 #### Options
