@@ -134,9 +134,10 @@ This command sets the interface cell.
 
 ```tcl 
 use_interface_cell
-    [-domain domain]
-    [-strategy strategy]
-    [-lib_cells lib_cells]
+    -domain domain
+    -strategy strategy
+    -lib_cells lib_cells
+    [interface_implementation_name]
 ```
 
 #### Options
@@ -146,6 +147,7 @@ use_interface_cell
 | `-domain` | Power domain name. |
 | `-strategy` | Isolation strategy name. |
 | `-lib_cells` | List of lib cells that could be used. |
+| `interface_implementation_name` | For compatibility only. OpenRoad doesn't use it. |
 
 ### Set Domain Area
 
