@@ -257,7 +257,7 @@ sta::define_cmd_args "use_interface_cell" { \
     -domain domain \
     -strategy strategy \
     -lib_cells lib_cells \
-    interface_implementation_name
+    [interface_implementation_name]
 }
 proc use_interface_cell { args } {
   upf::check_block_exists
