@@ -646,8 +646,8 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
   // Search for the most appropriate isolation cell
   float smallest_area = std::numeric_limits<float>::max();
 
-  for (auto&& iso : iso_cells) {
-    sta::Cell* masterCell = network->dbToSta(iso);
+  for (auto&& iso_cell : iso_cells) {
+    sta::Cell* masterCell = network->dbToSta(iso_cell);
     sta::LibertyCell* libertyCell = network->libertyCell(masterCell);
 
     // Find enable & data pins for the isolation cell
@@ -657,7 +657,7 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     odb::dbMTerm* tmp_data_term = nullptr; 
     odb::dbMTerm* tmp_output_term = nullptr;
 
-    for (auto&& term : iso->getMTerms()) {
+    for (auto&& term : iso_cell->getMTerms()) {
       sta::LibertyPort* lib_port
           = libertyCell->findLibertyPort(term->getName().c_str());
 
@@ -714,7 +714,7 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
 
     if (tmp_area < smallest_area) {
       smallest_area = tmp_area;
-      smallest_iso_m = iso;
+      smallest_iso_m = iso_cell;
       enable_term = tmp_enable_term;
       data_term = tmp_data_term;
       output_term = tmp_output_term;
@@ -1000,7 +1000,11 @@ static bool isolate_connection(odb::dbITerm* src_term,
   odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
   bool inverter_found
       = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
-
+  
+  if (!inverter_found) {
+    logger->warn(utl::UPF, 31, "can't find any inverters");
+  }
+  
   odb::dbMTerm* enable_term = nullptr;
   odb::dbMTerm* data_term = nullptr;
   odb::dbMTerm* output_term = nullptr;
@@ -1017,11 +1021,6 @@ static bool isolate_connection(odb::dbITerm* src_term,
                                output_term,
                                invert_output,
                                invert_control)) {
-    return false;
-  }
-
-  if ((invert_output || invert_control) && !inverter_found) {
-    logger->warn(utl::UPF, 31, "can't find any inverters");
     return false;
   }
 
