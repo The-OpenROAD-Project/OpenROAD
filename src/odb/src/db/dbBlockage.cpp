@@ -235,6 +235,20 @@ dbBlockage* dbBlockage::create(dbBlock* block_,
   return (dbBlockage*) bkg;
 }
 
+void dbBlockage::destroy(dbBlockage* blockage)
+{
+  _dbBlockage* bkg = (_dbBlockage*) blockage;
+  _dbBlock* block = (_dbBlock*) blockage->getBlock();
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBlockageDestroy(blockage);
+  }
+
+  block->_box_tbl->destroy(block->_box_tbl->getPtr(bkg->_bbox));
+
+  block->_blockage_tbl->destroy(bkg);
+}
+
 dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
