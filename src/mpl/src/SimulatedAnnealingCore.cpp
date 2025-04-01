@@ -775,7 +775,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   const int max_num_restart = 2;
 
   if (isValid()) {
-    updateBestValidResult();
+    updateBestValidResult(cost);
   }
 
   while (step <= max_num_step_) {
@@ -787,7 +787,7 @@ void SimulatedAnnealingCore<T>::fastSA()
           = cost < pre_cost
             || best_valid_result_.sequence_pair.pos_sequence.empty();
       if (isValid() && keep_result) {
-        updateBestValidResult();
+        updateBestValidResult(cost);
       }
 
       delta_cost = cost - pre_cost;
@@ -834,13 +834,14 @@ void SimulatedAnnealingCore<T>::fastSA()
   }
   calPenalty();
 
-  if (!isValid() && !best_valid_result_.sequence_pair.pos_sequence.empty()) {
+  if (!best_valid_result_.sequence_pair.pos_sequence.empty()
+      && (!isValid() || best_valid_result_.cost < calNormCost())) {
     useBestValidResult();
   }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::updateBestValidResult()
+void SimulatedAnnealingCore<T>::updateBestValidResult(const float cost)
 {
   best_valid_result_.sequence_pair.pos_sequence = pos_seq_;
   best_valid_result_.sequence_pair.neg_sequence = neg_seq_;
@@ -851,6 +852,8 @@ void SimulatedAnnealingCore<T>::updateBestValidResult()
       best_valid_result_.macro_id_to_width[macro_id] = macro.getWidth();
     }
   }
+
+  best_valid_result_.cost = cost;
 }
 
 template <class T>

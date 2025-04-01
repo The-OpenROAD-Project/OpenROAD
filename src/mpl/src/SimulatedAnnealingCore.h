@@ -118,6 +118,7 @@ class SimulatedAnnealingCore
  protected:
   struct Result
   {
+    float cost{std::numeric_limits<float>::max()};
     SequencePair sequence_pair;
     // [Only for SoftMacro] The same sequence pair can represent different
     // floorplan arrangements depending on the macros' shapes.
@@ -128,7 +129,7 @@ class SimulatedAnnealingCore
 
   void initSequencePair();
   void setBlockedBoundariesForIOs();
-  void updateBestValidResult();
+  void updateBestValidResult(float cost);
   void useBestValidResult();
 
   virtual float calNormCost() const = 0;
