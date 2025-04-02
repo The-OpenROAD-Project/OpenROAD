@@ -36,7 +36,9 @@
 #include <boost/bind/bind.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/thread/thread.hpp>
+#include <cstddef>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 

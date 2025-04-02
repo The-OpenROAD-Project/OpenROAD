@@ -31,6 +31,7 @@
 
 #include <array>
 #include <fstream>
+#include <string>
 #include <vector>
 
 #include "odb/defin.h"

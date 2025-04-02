@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

@@ -35,6 +35,7 @@
 
 #include "HungarianMatching.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "utl/Logger.h"

@@ -115,7 +115,7 @@ void lefiPropType::bumpProps()
   propTypes_ = newt;
 }
 
-const char lefiPropType::propType(char* name) const
+char lefiPropType::propType(char* name) const
 {
   int i;
 

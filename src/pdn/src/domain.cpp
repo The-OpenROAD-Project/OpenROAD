@@ -33,6 +33,7 @@
 #include "domain.h"
 
 #include <set>
+#include <string>
 #include <vector>
 
 #include "grid.h"

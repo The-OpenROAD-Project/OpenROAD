@@ -36,6 +36,7 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -254,6 +255,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void inDbSWireRemoveSBox(odb::dbSBox* box) override;
   void inDbBlockSetDieArea(odb::dbBlock* block) override;
   void inDbBlockageCreate(odb::dbBlockage* blockage) override;
+  void inDbBlockageDestroy(odb::dbBlockage* blockage) override;
   void inDbObstructionCreate(odb::dbObstruction* obs) override;
   void inDbObstructionDestroy(odb::dbObstruction* obs) override;
   void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;

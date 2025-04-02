@@ -35,6 +35,8 @@
 
 #include "object.h"
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "utl/Logger.h"
@@ -105,12 +107,12 @@ void Metrics::addMetrics(const Metrics& metrics)
   macro_area_ += metrics.macro_area_;
 }
 
-const std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
+std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
 {
   return std::pair<unsigned int, unsigned int>(num_std_cell_, num_macro_);
 }
 
-const std::pair<float, float> Metrics::getAreaStats() const
+std::pair<float, float> Metrics::getAreaStats() const
 {
   return std::pair<float, float>(std_cell_area_, macro_area_);
 }
@@ -169,7 +171,7 @@ int Cluster::getId() const
   return id_;
 }
 
-const std::string Cluster::getName() const
+const std::string& Cluster::getName() const
 {
   return name_;
 }
@@ -185,7 +187,7 @@ void Cluster::setClusterType(const ClusterType& cluster_type)
   type_ = cluster_type;
 }
 
-const ClusterType Cluster::getClusterType() const
+ClusterType Cluster::getClusterType() const
 {
   return type_;
 }
@@ -220,17 +222,17 @@ void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
   hard_macros_ = hard_macros;
 }
 
-const std::vector<odb::dbModule*> Cluster::getDbModules() const
+std::vector<odb::dbModule*> Cluster::getDbModules() const
 {
   return db_modules_;
 }
 
-const std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
+std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
 {
   return leaf_std_cells_;
 }
 
-const std::vector<odb::dbInst*> Cluster::getLeafMacros() const
+std::vector<odb::dbInst*> Cluster::getLeafMacros() const
 {
   return leaf_macros_;
 }
@@ -382,7 +384,7 @@ void Cluster::setMetrics(const Metrics& metrics)
   metrics_ = metrics;
 }
 
-const Metrics Cluster::getMetrics() const
+const Metrics& Cluster::getMetrics() const
 {
   return metrics_;
 }
@@ -477,7 +479,7 @@ void Cluster::setY(float y)
   }
 }
 
-const std::pair<float, float> Cluster::getLocation() const
+std::pair<float, float> Cluster::getLocation() const
 {
   if (!soft_macro_) {
     return {0, 0};
@@ -595,7 +597,7 @@ void Cluster::addConnection(int cluster_id, float weight)
   }
 }
 
-const std::map<int, float> Cluster::getConnection() const
+std::map<int, float> Cluster::getConnection() const
 {
   return connection_map_;
 }
@@ -735,13 +737,13 @@ void Cluster::setMacroTilings(
   macro_tilings_ = tilings;
 }
 
-const std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
+std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
 {
   return macro_tilings_;
 }
 
 // Virtual Connections
-const std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
+std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
 {
   return virtual_connections_;
 }
@@ -865,7 +867,7 @@ void HardMacro::setY(float y)
   y_ = y;
 }
 
-const std::pair<float, float> HardMacro::getLocation() const
+std::pair<float, float> HardMacro::getLocation() const
 {
   return std::pair<float, float>(x_, y_);
 }
@@ -899,7 +901,7 @@ void HardMacro::setRealY(float y)
   y_ = y - halo_height_;
 }
 
-const std::pair<float, float> HardMacro::getRealLocation() const
+std::pair<float, float> HardMacro::getRealLocation() const
 {
   return std::pair<float, float>(x_ + halo_width_, y_ + halo_height_);
 }
@@ -949,12 +951,12 @@ odb::dbInst* HardMacro::getInst() const
   return inst_;
 }
 
-const std::string HardMacro::getName() const
+const std::string& HardMacro::getName() const
 {
   return name_;
 }
 
-const std::string HardMacro::getMasterName() const
+std::string HardMacro::getMasterName() const
 {
   if (inst_ == nullptr) {
     return name_;
@@ -1001,7 +1003,7 @@ SoftMacro::SoftMacro(Cluster* cluster)
 }
 
 // name
-const std::string SoftMacro::getName() const
+const std::string& SoftMacro::getName() const
 {
   return name_;
 }

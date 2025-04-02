@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <fstream>
+#include <string>
 
 // Generator Code Begin Cpp
 #include "dbBlock.h"
@@ -280,9 +281,12 @@ void dbModInst::destroy(dbModInst* modinst)
   for (auto moditerm : modinst->getModITerms()) {
     moditerm->disconnect();
   }
+
   // remove the moditerms
-  for (auto moditerm : modinst->getModITerms()) {
-    _block->_moditerm_tbl->destroy((_dbModITerm*) moditerm);
+  dbSet<dbModITerm>::iterator moditerm_itr;
+  dbSet<dbModITerm> moditerms = modinst->getModITerms();
+  for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
+    moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
   // unlink from parent start
@@ -405,12 +409,14 @@ void dbModInst::RemoveUnusedPortsAndPins()
   for (dbModITerm* mod_iterm : moditerms) {
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* mod_net = mod_bterm->getModNet();
-    dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
-    dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
-    dbSet<dbITerm> dest_iterms = mod_net->getITerms();
-    if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
-        && dest_iterms.size() == 0) {
-      kill_set.insert(mod_iterm);
+    if (mod_net) {
+      dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
+      dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
+      dbSet<dbITerm> dest_iterms = mod_net->getITerms();
+      if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
+          && dest_iterms.size() == 0) {
+        kill_set.insert(mod_iterm);
+      }
     }
   }
 

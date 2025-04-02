@@ -45,6 +45,7 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -445,12 +446,16 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
-  for (auto modbterm : module->getModBTerms()) {
-    block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
+  dbSet<dbModBTerm>::iterator modbterm_itr;
+  dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
 
-  for (auto modnet : module->getModNets()) {
-    block->_modnet_tbl->destroy((_dbModNet*) modnet);
+  dbSet<dbModNet> modnets = module->getModNets();
+  dbSet<dbModNet>::iterator modnet_itr;
+  for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
+    modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
   if (block->_journal) {

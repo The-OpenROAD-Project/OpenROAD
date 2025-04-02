@@ -72,7 +72,7 @@ double defiPinProp_propNumber(const ::defiPinProp* obj, int index)
   return ((DefParser::defiPinProp*) obj)->propNumber(index);
 }
 
-const char defiPinProp_propType(const ::defiPinProp* obj, int index)
+char defiPinProp_propType(const ::defiPinProp* obj, int index)
 {
   return ((const DefParser::defiPinProp*) obj)->propType(index);
 }

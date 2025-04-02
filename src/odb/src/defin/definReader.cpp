@@ -1921,7 +1921,15 @@ void definReader::contextLogFunctionCallback(DefParser::defiUserData data,
                                              const char* msg)
 {
   definReader* reader = (definReader*) data;
-  reader->_logger->warn(utl::ODB, 1003, msg);
+  reader->_logger->warn(utl::ODB, 3, msg);
+}
+
+void definReader::contextWarningLogFunctionCallback(
+    DefParser::defiUserData data,
+    const char* msg)
+{
+  definReader* reader = (definReader*) data;
+  reader->_logger->warn(utl::ODB, 4, msg);
 }
 
 void definReader::line(int line_num)
@@ -2014,6 +2022,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   }
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
+
+  _db->triggerPostReadDef(_block);
+
   return chip;
 }
 
@@ -2063,6 +2074,8 @@ dbBlock* definReader::createBlock(dbBlock* parent,
   }
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
+
+  _db->triggerPostReadDef(_block);
 
   return _block;
 }
@@ -2118,6 +2131,8 @@ bool definReader::createBlock(const char* file)
   defrSetPinEndCbk(pinsEndCallback);
   defrSetPinPropCbk(pinPropCallback);
   DefParser::defrSetContextLogFunction(contextLogFunctionCallback);
+  DefParser::defrSetContextWarningLogFunction(
+      contextWarningLogFunctionCallback);
 
   if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
     defrSetDieAreaCbk(dieAreaCallback);

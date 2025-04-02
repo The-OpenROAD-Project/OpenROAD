@@ -374,6 +374,15 @@ void dbModITerm::destroy(dbModITerm* val)
   block->_moditerm_tbl->destroy(_moditerm);
 }
 
+dbSet<dbModITerm>::iterator dbModITerm::destroy(
+    dbSet<dbModITerm>::iterator& itr)
+{
+  dbModITerm* moditerm = *itr;
+  dbSet<dbModITerm>::iterator next = ++itr;
+  destroy(moditerm);
+  return next;
+}
+
 // User Code End dbModITermPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

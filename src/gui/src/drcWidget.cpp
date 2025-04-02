@@ -42,6 +42,7 @@
 #include <array>
 #include <iomanip>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "dbDescriptors.h"

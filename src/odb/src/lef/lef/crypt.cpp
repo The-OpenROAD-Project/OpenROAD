@@ -32,19 +32,14 @@
  *
  */
 
+#include <unistd.h>
+
 #include <cstdarg>
 #include <cstdio>
 
 #include "lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
-
-#ifdef WIN32
-#include <io.h>
-#else  // not WIN32
-#include <unistd.h>
-
-#endif  // WIN32
 
 FILE* encOpenFileForRead(char* filename)
 {

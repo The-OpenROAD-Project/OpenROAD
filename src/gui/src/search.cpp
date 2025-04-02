@@ -131,6 +131,11 @@ void Search::inDbBlockageCreate(odb::dbBlockage* blockage)
   clearBlockages();
 }
 
+void Search::inDbBlockageDestroy(odb::dbBlockage* blockage)
+{
+  clearBlockages();
+}
+
 void Search::inDbObstructionCreate(odb::dbObstruction* obs)
 {
   clearObstructions();

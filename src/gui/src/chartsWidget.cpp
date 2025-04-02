@@ -40,6 +40,7 @@
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
+#include <string>
 #include <vector>
 
 #include "gui_utils.h"

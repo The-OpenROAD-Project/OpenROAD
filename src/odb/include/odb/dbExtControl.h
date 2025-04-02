@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "db.h"
 
 namespace odb {

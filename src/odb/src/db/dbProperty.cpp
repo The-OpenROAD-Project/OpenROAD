@@ -35,6 +35,7 @@
 #include <spdlog/fmt/ostr.h>
 
 #include <sstream>
+#include <string>
 
 #include "dbBlock.h"
 #include "dbChip.h"

@@ -32,6 +32,8 @@
 
 #include "OneBitScanCell.hh"
 
+#include <string>
+
 #include "ClockDomain.hh"
 #include "db_sta/dbSta.hh"
 

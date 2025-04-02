@@ -8,11 +8,13 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"

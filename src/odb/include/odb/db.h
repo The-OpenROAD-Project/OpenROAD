@@ -38,11 +38,14 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include "dbBlockSet.h"
 #include "dbCCSegSet.h"
+#include "dbDatabaseObserver.h"
 #include "dbMatrix.h"
 #include "dbNetSet.h"
 #include "dbObject.h"
@@ -483,6 +486,21 @@ class dbDatabase : public dbObject
   ///   Not perfectly byte accurate.  Intended for developers.
   ///
   void report();
+
+  ///
+  /// Used to be notified when lef/def/odb are read.
+  ///
+  void addObserver(dbDatabaseObserver* observer);
+  void removeObserver(dbDatabaseObserver* observer);
+
+  ///
+  /// Notify observers when one of these operations is complete.
+  /// Fine-grained callbacks during construction are not as helpful
+  /// as knowing when the data is fully loaded into odb.
+  ///
+  void triggerPostReadLef(dbTech* tech, dbLib* library);
+  void triggerPostReadDef(dbBlock* block);
+  void triggerPostReadDb();
 
   ///
   /// Create an instance of a database
@@ -1020,6 +1038,7 @@ class dbBlock : public dbObject
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
   dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbModITerm> getModITerms();
 
   ///
   /// Get the Power Domains of this block.
@@ -4165,6 +4184,8 @@ class dbBlockage : public dbObject
                             int x2,
                             int y2,
                             dbInst* inst = nullptr);
+
+  static void destroy(dbBlockage* blockage);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7944,6 +7965,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
   static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
@@ -8003,6 +8025,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbSet<dbModITerm>::iterator destroy(dbSet<dbModITerm>::iterator& itr);
   static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
@@ -8022,6 +8045,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
 
   // User Code End dbModNet
