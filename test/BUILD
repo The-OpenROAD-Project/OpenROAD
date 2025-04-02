@@ -6,6 +6,7 @@
     #
     # https://bazel.build/reference/be/common-definitions#test.size
     size = "small",
+    timeout = "moderate",
     srcs = ["bazel_test.sh"],
     args = [],
     data = [
