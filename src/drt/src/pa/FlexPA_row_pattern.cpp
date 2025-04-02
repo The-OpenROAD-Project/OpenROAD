@@ -33,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "FlexPA.h"
 #include "db/infra/frTime.h"
@@ -134,15 +135,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
   } else {
     omp_set_num_threads(router_cfg_->MAX_THREADS);
     // choose access pattern of a row of insts
-    int rowIdx = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int) inst_rows.size(); i++) {  // NOLINT
+    for (auto& inst_row : inst_rows) {  // NOLINT
       try {
-        auto& instRow = inst_rows[i];
-        genInstRowPattern(instRow);
+        genInstRowPattern(inst_row);
 #pragma omp critical
         {
-          rowIdx++;
           cnt++;
           if (router_cfg_->VERBOSE > 0) {
             if (cnt % (cnt > 100000 ? 100000 : 10000) == 0) {
@@ -200,8 +198,8 @@ void FlexPA::genInstRowPatternInit(
   // init inst nodes
   for (int inst_idx = 0; inst_idx < (int) insts.size(); inst_idx++) {
     auto& inst = insts[inst_idx];
-    const int unique_inst_idx = unique_insts_.getIndex(inst);
-    auto& inst_patterns = unique_inst_patterns_[unique_inst_idx];
+    auto unique_inst = unique_insts_.getUnique(inst);
+    auto& inst_patterns = unique_inst_patterns_[unique_inst];
     nodes[inst_idx]
         = std::vector<std::unique_ptr<FlexDPNode>>(inst_patterns.size());
     for (int acc_pattern_idx = 0; acc_pattern_idx < (int) inst_patterns.size();
@@ -256,52 +254,50 @@ void FlexPA::genInstRowPatternCommit(
     const std::vector<frInst*>& insts)
 {
   const bool is_debug_mode = false;
-  FlexDPNode* curr_node = nodes[insts.size()][0].get();
-  int inst_cnt = insts.size();
+
+  const FlexDPNode* source_node = nodes[insts.size() + 1][0].get();
+  const FlexDPNode* sink_node = nodes[insts.size()][0].get();
+
+  FlexDPNode* curr_node = sink_node->getPrevNode();
   std::vector<int> inst_access_pattern_idx(insts.size(), -1);
-  while (curr_node->hasPrevNode()) {
+  while (curr_node != source_node) {
+    if (!curr_node) {
+      std::string inst_names;
+      for (frInst* inst : insts) {
+        inst_names += '\n' + inst->getName();
+      }
+      logger_->error(DRT,
+                     85,
+                     "Valid access pattern combination not found for {}",
+                     inst_names);
+    }
+
     // non-virtual node
-    if (inst_cnt != (int) insts.size()) {
-      auto [curr_inst_idx, curr_acc_patterns_idx] = curr_node->getIdx();
-      inst_access_pattern_idx[curr_inst_idx] = curr_acc_patterns_idx;
+    auto [curr_inst_idx, curr_acc_patterns_idx] = curr_node->getIdx();
+    inst_access_pattern_idx[curr_inst_idx] = curr_acc_patterns_idx;
 
-      auto& inst = insts[curr_inst_idx];
-      int access_point_idx = 0;
-      const int unique_inst_idx = unique_insts_.getIndex(inst);
-      auto access_pattern
-          = unique_inst_patterns_[unique_inst_idx][curr_acc_patterns_idx].get();
-      auto& access_points = access_pattern->getPattern();
+    frInst* inst = insts[curr_inst_idx];
+    int access_point_idx = 0;
+    frInst* unique_inst = unique_insts_.getUnique(inst);
+    auto access_pattern
+        = unique_inst_patterns_[unique_inst][curr_acc_patterns_idx].get();
+    auto& access_points = access_pattern->getPattern();
 
-      // update inst_term ap
-      for (auto& inst_term : inst->getInstTerms()) {
-        if (isSkipInstTerm(inst_term.get())) {
-          continue;
-        }
+    // update inst_term ap
+    for (auto& inst_term : inst->getInstTerms()) {
+      if (isSkipInstTerm(inst_term.get())) {
+        continue;
+      }
 
-        int pin_idx = 0;
-        // to avoid unused variable warning in GCC
-        for (int i = 0; i < (int) (inst_term->getTerm()->getPins().size());
-             i++) {
-          auto& access_point = access_points[access_point_idx];
-          inst_term->setAccessPoint(pin_idx, access_point);
-          pin_idx++;
-          access_point_idx++;
-        }
+      // to avoid unused variable warning in GCC
+      for (int pin_idx = 0; pin_idx < inst_term->getTerm()->getPins().size();
+           pin_idx++) {
+        frAccessPoint* access_point = access_points[access_point_idx];
+        inst_term->setAccessPoint(pin_idx, access_point);
+        access_point_idx++;
       }
     }
     curr_node = curr_node->getPrevNode();
-    inst_cnt--;
-  }
-
-  if (inst_cnt != -1) {
-    std::string inst_names;
-    for (frInst* inst : insts) {
-      inst_names += '\n' + inst->getName();
-    }
-    logger_->error(DRT,
-                   85,
-                   "Valid access pattern combination not found for {}",
-                   inst_names);
   }
 
   if (is_debug_mode) {
@@ -326,9 +322,9 @@ void FlexPA::genInstRowPatternPrint(
       // print debug information
       auto& inst = insts[curr_inst_idx];
       int access_point_idx = 0;
-      const int unique_inst_idx = unique_insts_.getIndex(inst);
+      auto unique_inst = unique_insts_.getUnique(inst);
       auto access_pattern
-          = unique_inst_patterns_[unique_inst_idx][curr_acc_pattern_idx].get();
+          = unique_inst_patterns_[unique_inst][curr_acc_pattern_idx].get();
       auto& access_points = access_pattern->getPattern();
 
       for (auto& inst_term : inst->getInstTerms()) {
@@ -383,13 +379,13 @@ int FlexPA::getEdgeCost(FlexDPNode* prev_node,
   std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
   // push the vias from prev inst access pattern and curr inst access pattern
   const auto prev_inst = insts[prev_inst_idx];
-  const auto prev_unique_inst_idx = unique_insts_.getIndex(prev_inst);
+  const auto prev_unique_inst = unique_insts_.getUnique(prev_inst);
   const auto curr_inst = insts[curr_inst_idx];
-  const auto curr_unique_inst_idx = unique_insts_.getIndex(curr_inst);
+  const auto curr_unique_inst = unique_insts_.getUnique(curr_inst);
   const auto prev_pin_access_pattern
-      = unique_inst_patterns_[prev_unique_inst_idx][prev_acc_pattern_idx].get();
+      = unique_inst_patterns_[prev_unique_inst][prev_acc_pattern_idx].get();
   const auto curr_pin_access_pattern
-      = unique_inst_patterns_[curr_unique_inst_idx][curr_acc_pattern_idx].get();
+      = unique_inst_patterns_[curr_unique_inst][curr_acc_pattern_idx].get();
   addAccessPatternObj(
       prev_inst, prev_pin_access_pattern, objs, temp_vias, true);
   addAccessPatternObj(

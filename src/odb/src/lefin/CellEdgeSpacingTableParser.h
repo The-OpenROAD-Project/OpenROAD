@@ -36,6 +36,7 @@
 #include <boost/fusion/container.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/spirit/include/support_unused.hpp>
+#include <string>
 
 #include "odb/db.h"
 #include "odb/lefin.h"

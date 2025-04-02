@@ -323,7 +323,7 @@ class defiNet
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  const char propType(int index) const;
+  char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
   int numConnections() const;
@@ -432,11 +432,11 @@ class defiNet
   int numViaSpecs() const;
   struct defiPoints getViaPts(int index) const;
   const char* viaName(int index) const;
-  const int viaOrient(int index) const;
+  int viaOrient(int index) const;
   const char* viaOrientStr(int index) const;
-  const int topMaskNum(int index) const;
-  const int cutMaskNum(int index) const;
-  const int bottomMaskNum(int index) const;
+  int topMaskNum(int index) const;
+  int cutMaskNum(int index) const;
+  int bottomMaskNum(int index) const;
   const char* viaRouteStatus(int index) const;
   const char* viaRouteStatusShieldName(int index) const;
   const char* viaShapeType(int index) const;

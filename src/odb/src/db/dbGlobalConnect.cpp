@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbGlobalConnect.h"
 
+#include <regex>
+#include <string>
+
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbTable.hpp"

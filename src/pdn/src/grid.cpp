@@ -33,6 +33,7 @@
 #include "grid.h"
 
 #include <boost/geometry.hpp>
+#include <string>
 #include <vector>
 
 #include "connect.h"

@@ -40,6 +40,7 @@
 #include <boost/graph/astar_search.hpp>
 #include <boost/graph/lookup_edge.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <cstddef>
 #include <limits>
 #include <list>
 #include <queue>

@@ -32,6 +32,8 @@
 
 #include "ScanChain.hh"
 
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "ClockDomain.hh"

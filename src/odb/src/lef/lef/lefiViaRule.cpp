@@ -704,7 +704,7 @@ double lefiViaRule::propNumber(int i) const
   return dvalues_[i];
 }
 
-const char lefiViaRule::propType(int i) const
+char lefiViaRule::propType(int i) const
 {
   char msg[160];
   if (i < 0 || i >= numProps_) {

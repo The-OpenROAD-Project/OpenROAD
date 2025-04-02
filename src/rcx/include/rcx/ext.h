@@ -34,6 +34,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "extPattern.h"
 #include "extRCap.h"

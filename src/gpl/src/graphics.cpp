@@ -37,6 +37,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <string>
 #include <utility>
 #include <vector>
 

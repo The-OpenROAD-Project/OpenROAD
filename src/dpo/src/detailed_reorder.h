@@ -35,13 +35,14 @@
 #include <string>
 #include <vector>
 
+#include "dpl/Coordinates.h"
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
 class Network;
 class Node;
-
+using dpl::DbuX;
 // CLASSES ===================================================================
 class DetailedReorderer
 {
@@ -56,8 +57,8 @@ class DetailedReorderer
   void reorder(const std::vector<Node*>& nodes,
                int jstrt,
                int jstop,
-               int leftLimit,
-               int rightLimit,
+               DbuX leftLimit,
+               DbuX rightLimit,
                int segId,
                int rowId);
   double cost(const std::vector<Node*>& nodes, int istrt, int istop);

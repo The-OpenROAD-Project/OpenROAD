@@ -50,7 +50,6 @@ add_library(rsz_lib
     RepairHold.cc
     RepairSetup.cc
     Rebuffer.cc
-    SpefWriter.cc
     SteinerTree.cc
     EstimateWireParasitics.cc
     Resizer.cc

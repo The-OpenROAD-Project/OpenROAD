@@ -38,6 +38,7 @@
 #include <atomic>
 #include <fstream>
 #include <mutex>
+#include <string_view>
 
 #include "CommandLineProgress.h"
 #include "spdlog/pattern_formatter.h"

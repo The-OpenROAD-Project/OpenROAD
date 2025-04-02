@@ -33,7 +33,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
@@ -115,7 +115,7 @@ void defiPropType::bumpProps()
   propTypes_ = newt;
 }
 
-const char defiPropType::propType(char* name) const
+char defiPropType::propType(char* name) const
 {
   int i;
 
