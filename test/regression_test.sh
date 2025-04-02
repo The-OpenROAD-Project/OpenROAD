@@ -4,7 +4,7 @@ set -e
 
 mkdir -p results
 
-LOG_FILE=$(realpath results/$TEST_NAME-$TEST_EXT.log)
+LOG_FILE=${LOG_FILE:-results/$TEST_NAME-$TEST_EXT.log}
 
 ORD_ARGS=""
 if [ "$TEST_TYPE" == "python" ]; then
@@ -34,20 +34,18 @@ EOF
     )
 fi
 
-# Ideally, bazel would show continious output in the console when it is running
-# a single command, but it doesn't.
-#
-# It is useful in bazel to ps -Af | grep tee to find the absolute path of
-# the log file and tail -f it.
+echo "Directory: ${PWD}"
+echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT > $LOG_FILE"
+
 cd ${BAZEL_SAVED_PWD:-$SAVED_PWD}
-$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit <(echo "$script_content") 2>&1 | tee $LOG_FILE > /dev/null
+$OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit <(echo "$script_content") &> $LOG_FILE
 cd $SAVED_PWD
 
 echo "Exitcode:  $?"
 
 if [ "$TEST_CHECK_LOG" == "True" ]; then
-    echo "Diff:      results/$TEST_NAME-$TEST_EXT.diff"
-    diff $LOG_FILE $TEST_NAME.ok > results/$TEST_NAME-$TEST_EXT.diff || (head -n 10 $LOG_FILE && exit 1)
+    echo "Diff:      ${PWD}/results/$TEST_NAME-$TEST_EXT.diff"
+    diff $LOG_FILE $TEST_NAME.ok > results/$TEST_NAME-$TEST_EXT.diff
 fi
 
 if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then
