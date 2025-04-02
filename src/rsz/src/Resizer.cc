@@ -515,10 +515,11 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   }
 
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
+      && (!removed || !sdc_->isConstrained(removed))
+      && !sdc_->isConstrained(buffer)) {
     odb::dbNet* db_survivor = db_network_->staToDb(survivor);
     odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return db_survivor->canMergeNet(db_removed);
+    return !db_removed || db_survivor->canMergeNet(db_removed);
   }
   return false;
 }
@@ -564,11 +565,15 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  db_survivor->mergeNet(db_removed);
+  if (db_removed) {
+    db_survivor->mergeNet(db_removed);
+  }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
   sta_->deleteInstance(buffer);
-  sta_->deleteNet(removed);
+  if (removed) {
+    sta_->deleteNet(removed);
+  }
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
