@@ -20,12 +20,11 @@ create_logic_port d4_iso_control
 
 set_isolation iso_d_1 \
   -domain PD_D1 \
-  -applies_to outputs \
   -clamp_value 0
 
 set_isolation iso_d_2 \
   -domain PD_D2 \
-  -applies_to outputs \
+  -applies_to inputs \
   -clamp_value 0
 
 set_isolation iso_d_3 \
@@ -35,7 +34,7 @@ set_isolation iso_d_3 \
 
 set_isolation iso_d_4 \
   -domain PD_D4 \
-  -applies_to outputs \
+  -applies_to both \
   -clamp_value 1
 
 set_isolation iso_d_1 \
@@ -84,25 +83,42 @@ set_isolation iso_d_4 \
   -update \
   -location parent
 
-use_interface_cell PD_D1 \
+use_interface_cell isolation_cells \
   -domain PD_D1 \
   -strategy iso_d_1 \
-  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+  -lib_cells {
+    sky130_fd_sc_hd__lpflow_inputiso0n_1
+    sky130_fd_sc_hd__lpflow_inputiso1n_1
+    sky130_fd_sc_hd__lpflow_inputiso0p_1
+    sky130_fd_sc_hd__lpflow_inputiso1p_1
+    }
 
-
-use_interface_cell PD_D2 \
+use_interface_cell isolation_cells \
   -domain PD_D2 \
   -strategy iso_d_2 \
-  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+  -lib_cells {
+    sky130_fd_sc_hd__lpflow_inputiso0n_1
+    sky130_fd_sc_hd__lpflow_inputiso1n_1
+    sky130_fd_sc_hd__lpflow_inputiso0p_1
+    sky130_fd_sc_hd__lpflow_inputiso1p_1
+    }
 
-
-use_interface_cell PD_D3 \
+use_interface_cell isolation_cells \
   -domain PD_D3 \
   -strategy iso_d_3 \
-  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+  -lib_cells {
+    sky130_fd_sc_hd__lpflow_inputiso0n_1
+    sky130_fd_sc_hd__lpflow_inputiso1n_1
+    sky130_fd_sc_hd__lpflow_inputiso0p_1
+    sky130_fd_sc_hd__lpflow_inputiso1p_1
+    }
 
-
-use_interface_cell PD_D4 \
+use_interface_cell isolation_cells \
   -domain PD_D4 \
   -strategy iso_d_4 \
-  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+  -lib_cells {
+    sky130_fd_sc_hd__lpflow_inputiso0n_1
+    sky130_fd_sc_hd__lpflow_inputiso1n_1
+    sky130_fd_sc_hd__lpflow_inputiso0p_1
+    sky130_fd_sc_hd__lpflow_inputiso1p_1
+    }

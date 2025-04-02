@@ -1038,6 +1038,7 @@ class dbBlock : public dbObject
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
   dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbModITerm> getModITerms();
 
   ///
   /// Get the Power Domains of this block.
@@ -4183,6 +4184,8 @@ class dbBlockage : public dbObject
                             int x2,
                             int y2,
                             dbInst* inst = nullptr);
+
+  static void destroy(dbBlockage* blockage);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7962,6 +7965,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
   static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
@@ -8021,6 +8025,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbSet<dbModITerm>::iterator destroy(dbSet<dbModITerm>::iterator& itr);
   static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
@@ -8040,6 +8045,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
 
   // User Code End dbModNet

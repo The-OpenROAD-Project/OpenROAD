@@ -88,7 +88,6 @@ cc_library(
         "def/defrSettings.hpp",
         "def/defwWriter.hpp",
         "def/defwWriterCalls.hpp",
-        "def/lex.h",
     ],
     includes = ["def"],
 )
