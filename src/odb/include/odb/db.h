@@ -8146,6 +8146,8 @@ class dbNetTrack : public dbObject
 
   static void destroy(dbNetTrack* guide);
 
+  static dbSet<dbNetTrack>::iterator destroy(dbSet<dbNetTrack>::iterator& itr);
+
   // User Code End dbNetTrack
 };
 
