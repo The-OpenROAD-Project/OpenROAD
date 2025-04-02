@@ -216,11 +216,11 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
   char* mtname = (char*) getConstName();
   char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
   uint ii = 0;
-  block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
+  block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
   if (blk_left_bus_del == '\0' || blk_right_bus_del == '\0') {
     return mtname;
   }
-  master->getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+  master->getLib()->getBusDelimiters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {

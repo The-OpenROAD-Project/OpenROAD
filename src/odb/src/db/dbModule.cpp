@@ -446,8 +446,8 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
-  dbSet<dbModBTerm>::iterator modbterm_itr;
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  dbSet<dbModBTerm>::iterator modbterm_itr;
   for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
     modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
@@ -740,18 +740,18 @@ void dbModule::copyModuleInsts(dbModule* old_module,
        ++inst_iter) {
     dbInst* old_inst = *inst_iter;
     // Change unique instance name from old_inst/leaf to new_inst/leaf
+    std::string new_inst_name;
+    if (new_mod_inst) {
+      new_inst_name = new_mod_inst->getName();
+      new_inst_name += '/';
+    }
     std::string old_inst_name = old_inst->getName();
     // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
-    std::string new_inst_name;
-    if (first_idx != std::string::npos) {
-      new_inst_name = std::string(new_mod_inst->getName()) + '/'
-                      + old_inst_name.substr(first_idx + 1);
-    } else {
-      // old module was not instantiated so there is no hier divider
-      new_inst_name
-          = std::string(new_mod_inst->getName()) + '/' + old_inst_name;
-    }
+    new_inst_name += (first_idx != std::string::npos)
+                         ? old_inst_name.substr(first_idx + 1)
+                         : old_inst_name;
+
     dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
                                       new_inst_name.c_str(),
@@ -792,17 +792,18 @@ void dbModule::copyModuleInsts(dbModule* old_module,
       dbNet* old_net = old_iterm->getNet();
       if (old_net) {
         // Create a local net only if it connects to iterms inside this module
-        std::string net_name = old_net->getName();
-        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
-        size_t first_idx = net_name.find_first_of('/');
         std::string new_net_name;
-        if (first_idx != std::string::npos) {
-          new_net_name = std::string(new_mod_inst->getName()) + '/'
-                         + net_name.substr(first_idx + 1);
-        } else {
-          // old module was not instantiated so there is no hier divider
-          new_net_name = std::string(new_mod_inst->getName()) + '/' + net_name;
+        if (new_mod_inst) {
+          new_net_name = new_mod_inst->getName();
+          new_net_name += '/';
         }
+        std::string old_net_name = old_net->getName();
+        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
+        size_t first_idx = old_net_name.find_first_of('/');
+        new_net_name += (first_idx != std::string::npos)
+                            ? old_net_name.substr(first_idx + 1)
+                            : old_net_name;
+
         dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
         if (new_net) {
           new_iterm->connect(new_net);
@@ -898,10 +899,14 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     }
 
     // Connect iterms to new mod net
-    dbSet<dbITerm> iterms = old_net->getITerms();
-    dbSet<dbITerm>::iterator it_iter;
-    for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
-      dbITerm* old_iterm = *it_iter;
+    debugPrint(logger,
+               utl::ODB,
+               "replace_design",
+               1,
+               "  old net {} has {} iterms",
+               old_net->getName(),
+               old_net->getITerms().size());
+    for (dbITerm* old_iterm : old_net->getITerms()) {
       dbITerm* new_iterm = nullptr;
       if (it_map.count(old_iterm) > 0) {
         new_iterm = it_map[old_iterm];
@@ -936,37 +941,77 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
   // dbModBTerm is the port seen from inside the dbModule ("child")
   // dbModITerm is the port seen from outside from the dbModInst ("parent")
   dbSet<dbModITerm> mod_iterms = new_mod_inst->getModITerms();
-  dbSet<dbModITerm>::iterator iterm_iter;
-  for (iterm_iter = mod_iterms.begin(); iterm_iter != mod_iterms.end();
-       ++iterm_iter) {
-    dbModITerm* old_mod_iterm = *iterm_iter;
+  std::string msg = fmt::format(
+      "copyModuleBoundaryIO for new mod inst {} with {} mod iterms",
+      new_mod_inst->getName(),
+      mod_iterms.size());
+  debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+  for (dbModITerm* new_mod_iterm : mod_iterms) {
     // Connect outside dbModITerm to inside dbModBTerm
     dbModBTerm* new_mod_bterm
-        = new_module->findModBTerm(old_mod_iterm->getName());
+        = new_module->findModBTerm(new_mod_iterm->getName());
     if (new_mod_bterm) {
-      old_mod_iterm->setChildModBTerm(new_mod_bterm);
-      new_mod_bterm->setParentModITerm(old_mod_iterm);
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "Created parent/chlld port connection");
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "  parent mod iterm is {}, child mod bterm is {}",
-                 old_mod_iterm->getName(),
-                 new_mod_bterm->getName());
+      new_mod_iterm->setChildModBTerm(new_mod_bterm);
+      new_mod_bterm->setParentModITerm(new_mod_iterm);
+      msg = "Created parent/child port connection";
+      debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+      msg = fmt::format("  parent mod iterm: {}, child mod bterm: {}",
+                        new_mod_iterm->getName(),
+                        new_mod_bterm->getName());
+      debugPrint(logger, utl::ODB, "replace_design", 1, msg);
     } else {
-      logger->error(utl::ODB,
-                    463,
-                    "Parent/child port connection cannot be created for parent "
-                    "mod iterm {} because child mod bterm {} does not exist",
-                    old_mod_iterm->getName(),
-                    old_mod_iterm->getName());
+      msg = fmt::format(
+          "Parent/child port connection cannot be created for parent "
+          "mod iterm {} because child mod bterm does not exist",
+          new_mod_iterm->getName());
+      logger->error(utl::ODB, 463, msg);
     }
   }
+}
+
+// Copy contents of module from current top block to a child block
+// such that the module can be deleted from the caller.
+// This is used after a module is swapped for a new module.
+// The old module shouldn't be deleted because this may be needed later.
+// Saving it to a child block serves two purposes:
+// 1. It is saved for future module swap
+// 2. Optimization avoids iterating any unused instances of the old module
+// Return true if copy is successful.
+bool dbModule::copyToChildBlock(dbModule* module)
+{
+  utl::Logger* logger = module->getImpl()->getLogger();
+
+  debugPrint(logger,
+             utl::ODB,
+             "replace_design",
+             1,
+             ">>> Copying old module to a child block <<<");
+
+  // Create a new child block under top block.
+  // This block contains only one module
+  dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
+  std::string block_name = module->getName();
+  // TODO: strip out instance name from block name
+  dbTech* tech = top_block->getTech();
+  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
+  child_block->setDefUnits(tech->getLefUnits());
+  child_block->setBusDelimiters('[', ']');
+  dbModule* new_module = child_block->getTopModule();
+  if (!new_module) {
+    logger->error(utl::ODB,
+                  476,
+                  "Top module {} could not be found under child block {}",
+                  block_name,
+                  block_name);
+    return false;
+  }
+
+  modBTMap mod_bt_map;
+  copyModulePorts(module, new_module, mod_bt_map);
+  ITMap it_map;
+  copyModuleInsts(module, new_module, nullptr, it_map);
+  copyModuleModNets(module, new_module, mod_bt_map, it_map);
+  return true;
 }
 
 // User Code End dbModulePublicMethods

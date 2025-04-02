@@ -97,9 +97,9 @@ class lefout
   void writePropertyDefinitions(dbLib* lib);
   void writeVersion(const std::string& version);
   void writeNameCaseSensitive(dbOnOffType on_off_type);
-  void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
+  void writeBusBitChars(char left_bus_delimiter, char right_bus_delimiter);
   void writeUnits(int database_units);
-  void writeDividerChar(char hier_delimeter);
+  void writeDividerChar(char hier_delimiter);
   void writeObstructions(dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);

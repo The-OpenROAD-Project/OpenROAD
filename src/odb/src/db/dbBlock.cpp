@@ -171,9 +171,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
-  _hier_delimeter = 0;
-  _left_bus_delimeter = 0;
-  _right_bus_delimeter = 0;
+  _hier_delimiter = 0;
+  _left_bus_delimiter = 0;
+  _right_bus_delimiter = 0;
   _num_ext_corners = 0;
   _corners_per_block = 0;
   _corner_name_list = nullptr;
@@ -538,8 +538,8 @@ void dbBlock::clear()
   char* name = strdup(block->_name);
   ZALLOCATED(name);
 
-  // save a copy of the delimeter
-  char delimeter = block->_hier_delimeter;
+  // save a copy of the delimiter
+  char delimiter = block->_hier_delimiter;
 
   std::list<dbBlockCallBackObj*> callbacks;
 
@@ -558,7 +558,7 @@ void dbBlock::clear()
   new (block) _dbBlock(db);
 
   // initialize the
-  block->initialize(chip, tech, parent, name, delimeter);
+  block->initialize(chip, tech, parent, name, delimiter);
 
   // restore callbacks
   block->_callbacks.swap(callbacks);
@@ -580,7 +580,7 @@ void _dbBlock::initialize(_dbChip* chip,
                           _dbTech* tech,
                           _dbBlock* parent,
                           const char* name,
-                          char delimeter)
+                          char delimiter)
 {
   _name = strdup(name);
   ZALLOCATED(name);
@@ -592,7 +592,7 @@ void _dbBlock::initialize(_dbChip* chip,
   _bbox = box->getOID();
   _chip = chip->getOID();
   _tech = tech->getOID();
-  _hier_delimeter = delimeter;
+  _hier_delimiter = delimiter;
   // create top module
   _dbModule* _top = (_dbModule*) dbModule::create((dbBlock*) this, name);
   _top_module = _top->getOID();
@@ -759,9 +759,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
-  stream << block._hier_delimeter;
-  stream << block._left_bus_delimeter;
-  stream << block._right_bus_delimeter;
+  stream << block._hier_delimiter;
+  stream << block._left_bus_delimiter;
+  stream << block._right_bus_delimiter;
   stream << block._num_ext_corners;
   stream << block._corners_per_block;
   stream << block._corner_name_list;
@@ -892,9 +892,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
 
   stream >> block._def_units;
   stream >> block._dbu_per_micron;
-  stream >> block._hier_delimeter;
-  stream >> block._left_bus_delimeter;
-  stream >> block._right_bus_delimeter;
+  stream >> block._hier_delimiter;
+  stream >> block._left_bus_delimiter;
+  stream >> block._right_bus_delimiter;
   stream >> block._num_ext_corners;
   stream >> block._corners_per_block;
   stream >> block._corner_name_list;
@@ -1094,15 +1094,15 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
   }
 
-  if (_hier_delimeter != rhs._hier_delimeter) {
+  if (_hier_delimiter != rhs._hier_delimiter) {
     return false;
   }
 
-  if (_left_bus_delimeter != rhs._left_bus_delimeter) {
+  if (_left_bus_delimiter != rhs._left_bus_delimiter) {
     return false;
   }
 
-  if (_right_bus_delimeter != rhs._right_bus_delimeter) {
+  if (_right_bus_delimiter != rhs._right_bus_delimiter) {
     return false;
   }
 
@@ -1852,9 +1852,9 @@ dbITerm* dbBlock::findITerm(const char* name)
 
   std::string s(name);
 
-  std::string::size_type idx = s.rfind(block->_hier_delimeter);
+  std::string::size_type idx = s.rfind(block->_hier_delimiter);
 
-  if (idx == std::string::npos) {  // no delimeter
+  if (idx == std::string::npos) {  // no delimiter
     return nullptr;
   }
 
@@ -2031,24 +2031,24 @@ int64_t dbBlock::micronsAreaToDbu(const double micronsArea)
   return static_cast<int64_t>(std::round(dbuArea));
 }
 
-char dbBlock::getHierarchyDelimeter()
+char dbBlock::getHierarchyDelimiter()
 {
   _dbBlock* block = (_dbBlock*) this;
-  return block->_hier_delimeter;
+  return block->_hier_delimiter;
 }
 
-void dbBlock::setBusDelimeters(char left, char right)
+void dbBlock::setBusDelimiters(char left, char right)
 {
   _dbBlock* block = (_dbBlock*) this;
-  block->_left_bus_delimeter = left;
-  block->_right_bus_delimeter = right;
+  block->_left_bus_delimiter = left;
+  block->_right_bus_delimiter = right;
 }
 
-void dbBlock::getBusDelimeters(char& left, char& right)
+void dbBlock::getBusDelimiters(char& left, char& right)
 {
   _dbBlock* block = (_dbBlock*) this;
-  left = block->_left_bus_delimeter;
-  right = block->_right_bus_delimeter;
+  left = block->_left_bus_delimiter;
+  right = block->_right_bus_delimiter;
 }
 
 dbSet<dbTrackGrid> dbBlock::getTrackGrids()
@@ -2693,7 +2693,7 @@ void dbBlock::setCornerCount(int cnt)
 dbBlock* dbBlock::create(dbChip* chip_,
                          const char* name_,
                          dbTech* tech_,
-                         char hier_delimeter_)
+                         char hier_delimiter_)
 {
   _dbChip* chip = (_dbChip*) chip_;
 
@@ -2707,7 +2707,7 @@ dbBlock* dbBlock::create(dbChip* chip_,
 
   _dbBlock* top = chip->_block_tbl->create();
   _dbTech* tech = (_dbTech*) tech_;
-  top->initialize(chip, tech, nullptr, name_, hier_delimeter_);
+  top->initialize(chip, tech, nullptr, name_, hier_delimiter_);
   chip->_top = top->getOID();
   top->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) top;
@@ -2716,7 +2716,7 @@ dbBlock* dbBlock::create(dbChip* chip_,
 dbBlock* dbBlock::create(dbBlock* parent_,
                          const char* name_,
                          dbTech* tech_,
-                         char hier_delimeter)
+                         char hier_delimiter)
 {
   if (parent_->findChild(name_)) {
     return nullptr;
@@ -2730,7 +2730,7 @@ dbBlock* dbBlock::create(dbBlock* parent_,
   _dbChip* chip = (_dbChip*) parent->getOwner();
   _dbBlock* child = chip->_block_tbl->create();
   _dbTech* tech = (_dbTech*) tech_;
-  child->initialize(chip, tech, parent, name_, hier_delimeter);
+  child->initialize(chip, tech, parent, name_, hier_delimiter);
   child->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) child;
 }
