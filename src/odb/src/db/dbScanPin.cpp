@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbScanPin.h"
 
+#include <variant>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"

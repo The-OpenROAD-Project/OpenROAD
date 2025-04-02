@@ -56,6 +56,10 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace sta {
+class SpefWriter;
+}
+
 namespace rsz {
 
 using std::array;
@@ -113,6 +117,7 @@ using sta::Required;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
+using sta::SpefWriter;
 using sta::TimingArc;
 using sta::UnorderedSet;
 using sta::Vector;
@@ -139,8 +144,6 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 class ResizerObserver;
-
-class SpefWriter;
 
 class NetHash
 {
@@ -448,7 +451,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(LibertyCell* cell);
   // For debugging - calls getSwappableCells
-  void reportEquivalentCells(LibertyCell* base_cell, bool match_cell_footprint);
+  void reportEquivalentCells(LibertyCell* base_cell,
+                             bool match_cell_footprint,
+                             bool report_all_cells);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:

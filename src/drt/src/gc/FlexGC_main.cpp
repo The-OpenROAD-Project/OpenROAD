@@ -28,6 +28,7 @@
 
 #include <boost/geometry.hpp>
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "frProfileTask.h"

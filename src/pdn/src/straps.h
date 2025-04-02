@@ -34,6 +34,7 @@
 
 #include <array>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "grid_component.h"

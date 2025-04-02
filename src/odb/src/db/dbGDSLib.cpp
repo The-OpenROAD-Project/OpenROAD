@@ -32,6 +32,8 @@
 
 #include "dbGDSLib.h"
 
+#include <utility>
+
 #include "dbDatabase.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"

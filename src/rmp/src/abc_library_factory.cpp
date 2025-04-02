@@ -7,6 +7,7 @@
 #include "abc_library_factory.h"
 
 #include <cmath>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <unordered_set>

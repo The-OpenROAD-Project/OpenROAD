@@ -218,7 +218,7 @@ double lefiViaRule_propNumber(const ::lefiViaRule* obj, int index)
   return ((LefParser::lefiViaRule*) obj)->propNumber(index);
 }
 
-const char lefiViaRule_propType(const ::lefiViaRule* obj, int index)
+char lefiViaRule_propType(const ::lefiViaRule* obj, int index)
 {
   return ((const LefParser::lefiViaRule*) obj)->propType(index);
 }

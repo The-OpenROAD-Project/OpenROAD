@@ -35,6 +35,8 @@
 #include "detailed_reorder.h"
 
 #include <boost/tokenizer.hpp>
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "architecture.h"
@@ -169,20 +171,18 @@ void DetailedReorderer::reorder()
         }
 
         const Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : nullptr;
-        int rightLimit = segPtr->getMaxX();
+        DbuX rightLimit{segPtr->getMaxX()};
         if (nextPtr != nullptr) {
           int leftPadding, rightPadding;
           arch_->getCellPadding(nextPtr, leftPadding, rightPadding);
-          rightLimit = std::min(
-              (int) std::floor(nextPtr->getLeft() - leftPadding), rightLimit);
+          rightLimit = std::min((nextPtr->getLeft() - leftPadding), rightLimit);
         }
         const Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : nullptr;
-        int leftLimit = segPtr->getMinX();
+        DbuX leftLimit{segPtr->getMinX()};
         if (prevPtr != nullptr) {
           int leftPadding, rightPadding;
           arch_->getCellPadding(prevPtr, leftPadding, rightPadding);
-          leftLimit = std::max(
-              (int) std::ceil(prevPtr->getRight() + rightPadding), leftLimit);
+          leftLimit = std::max(prevPtr->getRight() + rightPadding, leftLimit);
         }
 
         reorder(nodes, istrt, istop, leftLimit, rightLimit, segId, rowId);
@@ -196,15 +196,17 @@ void DetailedReorderer::reorder()
 void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
                                 const int jstrt,
                                 const int jstop,
-                                const int leftLimit,
-                                const int rightLimit,
+                                const DbuX leftLimit,
+                                const DbuX rightLimit,
                                 const int segId,
                                 const int rowId)
 {
   const int size = jstop - jstrt + 1;
-
+  if (size <= 0) {
+    return;
+  }
   // XXX: Node positions still doubles!
-  std::unordered_map<const Node*, int> origLeft;
+  std::unordered_map<const Node*, DbuX> origLeft;
   for (int i = 0; i < size; i++) {
     const Node* ndi = nodes[jstrt + i];
     origLeft[ndi] = ndi->getLeft();
@@ -213,15 +215,15 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // Changed...  I want to work entirely with the left edge of
   // the cells.  If there is not enough space to satisfy
   // the cell widths _and_ the padding, then don't do anything.
-  int totalPadding = 0;
-  int totalWidth = 0;
-  std::vector<int> right(size, 0);
-  std::vector<int> left(size, 0);
-  std::vector<int> width(size, 0);
+  DbuX totalPadding{0};
+  DbuX totalWidth{0};
+  std::vector<DbuX> right(size, DbuX{0});
+  std::vector<DbuX> left(size, DbuX{0});
+  std::vector<DbuX> width(size, DbuX{0});
   for (int i = 0; i < size; i++) {
     const Node* ndi = nodes[jstrt + i];
     arch_->getCellPadding(ndi, left[i], right[i]);
-    width[i] = (int) std::ceil(ndi->getWidth());
+    width[i] = ndi->getWidth();
     totalPadding += (left[i] + right[i]);
     totalWidth += width[i];
   }
@@ -233,7 +235,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // We might have more space than required.  Space cells out
   // somewhat evenly by adding extra space to the padding.
   const int spacePerCell
-      = ((rightLimit - leftLimit) - (totalWidth + totalPadding)) / size;
+      = ((rightLimit - leftLimit) - (totalWidth + totalPadding)).v / size;
   const int siteWidth = arch_->getRow(0)->getSiteWidth();
   const int sitePerCellTotal = spacePerCell / siteWidth;
   const int sitePerCellRight = (sitePerCellTotal >> 1);
@@ -266,9 +268,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   double bestCost = cost(nodes, jstrt, jstop);
   const double origCost = bestCost;
 
-  std::vector<int> bestPosn(size, 0);  // Current positions.
-  std::vector<int> currPosn(size, 0);  // Current positions.
-  std::vector<int> order(size, 0);     // For generating permutations.
+  std::vector<DbuX> bestPosn(size, DbuX{0});  // Current positions.
+  std::vector<DbuX> currPosn(size, DbuX{0});  // Current positions.
+  std::vector<int> order(size, 0);            // For generating permutations.
   for (int i = 0; i < size; i++) {
     order[i] = i;
   }
@@ -276,20 +278,20 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   do {
     // Position the cells.
     bool dispOkay = true;
-    int x = leftLimit;
+    DbuX x = leftLimit;
     for (int i = 0; i < size; i++) {
       const int ix = order[i];
       Node* ndi = nodes[jstrt + ix];
       x += left[ix];
       currPosn[ix] = x;
       mgrPtr_->eraseFromGrid(ndi);
-      ndi->setLeft(currPosn[ix]);
+      ndi->setLeft(DbuX{currPosn[ix]});
       mgrPtr_->paintInGrid(ndi);
       x += width[ix];
       x += right[ix];
 
-      const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-      if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
+      const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+      if (dx > mgrPtr_->getMaxDisplacementX()) {
         dispOkay = false;
       }
     }
@@ -309,7 +311,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
     for (size_t i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
       mgrPtr_->eraseFromGrid(ndi);
-      ndi->setLeft(origLeft[ndi]);
+      ndi->setLeft(DbuX{origLeft[ndi]});
       mgrPtr_->paintInGrid(ndi);
     }
     return;
@@ -319,7 +321,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
     mgrPtr_->eraseFromGrid(ndi);
-    ndi->setLeft(bestPosn[i]);
+    ndi->setLeft(DbuX{bestPosn[i]});
     mgrPtr_->paintInGrid(ndi);
   }
 
@@ -330,25 +332,25 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   {
     bool shifted = false;
     bool failed = false;
-    int left = leftLimit;
+    DbuX left = leftLimit;
     for (int i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
 
-      int x = ndi->getLeft();
+      DbuX x = ndi->getLeft();
       if (!mgrPtr_->alignPos(ndi, x, left, rightLimit)) {
         failed = true;
         break;
       }
-      if (std::abs(x - ndi->getLeft()) != 0) {
+      if (abs(x - ndi->getLeft()) != 0) {
         shifted = true;
       }
       mgrPtr_->eraseFromGrid(ndi);
-      ndi->setLeft(x);
+      ndi->setLeft(DbuX{x});
       mgrPtr_->paintInGrid(ndi);
       left = ndi->getRight();
 
-      const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-      if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
+      const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+      if (dx > mgrPtr_->getMaxDisplacementX()) {
         failed = true;
         break;
       }
@@ -378,7 +380,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
       for (int i = 0; i < size; i++) {
         Node* ndi = nodes[jstrt + i];
         mgrPtr_->eraseFromGrid(ndi);
-        ndi->setLeft(origLeft[ndi]);
+        ndi->setLeft(DbuX{origLeft[ndi]});
         mgrPtr_->paintInGrid(ndi);
       }
       mgrPtr_->sortCellsInSeg(segId, jstrt, jstop + 1);
@@ -425,7 +427,7 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
         const Node* ndj = pinj->getNode();
 
         const double x
-            = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);

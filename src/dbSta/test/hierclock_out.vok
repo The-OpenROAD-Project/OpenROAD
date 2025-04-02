@@ -107,6 +107,8 @@ module clockgen (clk_i,
     .CK(clk_i),
     .Q(counter_q[3]),
     .QN(_19_));
+ assign clk2_o = counter_q[3];
+ assign clk1_o = counter_q[1];
 endmodule
 module counter (clk_i,
     rst_n_i,
@@ -199,6 +201,7 @@ module counter (clk_i,
     .CK(clk_i),
     .Q(counter_q[3]),
     .QN(_38_));
+ assign count_valid_o = count_valid_q;
 endmodule
 module counter_U3 (clk_i,
     rst_n_i,
@@ -291,4 +294,5 @@ module counter_U3 (clk_i,
     .CK(clk_i),
     .Q(counter_q[3]),
     .QN(_38_));
+ assign count_valid_o = count_valid_q;
 endmodule

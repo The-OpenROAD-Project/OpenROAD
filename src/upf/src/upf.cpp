@@ -35,6 +35,7 @@
 
 #include "upf/upf.h"
 
+#include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -622,6 +623,7 @@ static bool find_smallest_inverter(sta::dbNetwork* network,
 static bool find_smallest_isolation(sta::dbNetwork* network,
                                     utl::Logger* logger,
                                     odb::dbIsolation* iso,
+                                    odb::dbMaster* inverter_m,
                                     odb::dbMaster*& smallest_iso_m,
                                     odb::dbMTerm*& enable_term,
                                     odb::dbMTerm*& data_term,
@@ -641,77 +643,101 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     return false;
   }
 
-  // For now using the first defined isolaton cell
-
-  sta::LibertyCell* smallest_iso_l = nullptr;
+  // Search for the most appropriate isolation cell
   float smallest_area = std::numeric_limits<float>::max();
+  float inverter_area = 0;
+  if (inverter_m) {
+    inverter_area = inverter_m->getArea();
+  }
 
-  for (auto&& iso : iso_cells) {
-    sta::Cell* masterCell = network->dbToSta(iso);
+  for (auto&& iso_cell : iso_cells) {
+    sta::Cell* masterCell = network->dbToSta(iso_cell);
     sta::LibertyCell* libertyCell = network->libertyCell(masterCell);
 
-    if (libertyCell->area() < smallest_area) {
-      smallest_iso_l = libertyCell;
-      smallest_iso_m = iso;
-      smallest_area = libertyCell->area();
+    // Find enable & data pins for the isolation cell
+    sta::LibertyPort* tmp_enable_lib_port = nullptr;
+    sta::LibertyPort* tmp_out_lib_port = nullptr;
+    odb::dbMTerm* tmp_enable_term = nullptr;
+    odb::dbMTerm* tmp_data_term = nullptr;
+    odb::dbMTerm* tmp_output_term = nullptr;
+
+    for (auto&& term : iso_cell->getMTerms()) {
+      sta::LibertyPort* lib_port
+          = libertyCell->findLibertyPort(term->getName().c_str());
+
+      if (!lib_port) {
+        continue;
+      }
+
+      if (lib_port->isolationCellData()) {
+        tmp_data_term = term;
+      }
+
+      if (lib_port->isolationCellEnable()) {
+        tmp_enable_term = term;
+        tmp_enable_lib_port = lib_port;
+      }
+
+      if (term->getIoType() == odb::dbIoType::OUTPUT) {
+        tmp_output_term = term;
+        tmp_out_lib_port = lib_port;
+      }
+    }
+
+    if (!tmp_output_term || !tmp_data_term || !tmp_enable_term) {
+      // Isolation cell defined, but can't find one of output, data or enable
+      // terms.
+      continue;
+    }
+
+    // Determine if an inverter is needed for the control pin & output
+    bool tmp_invert_output = false;
+    bool tmp_invert_control = false;
+    bool matched = check_isolation_match(tmp_out_lib_port->function(),
+                                         tmp_enable_lib_port,
+                                         isolation_sense,
+                                         isolation_clamp_val,
+                                         logger,
+                                         tmp_invert_control,
+                                         tmp_invert_output);
+    if (!matched) {
+      continue;
+    }
+
+    // Update the smallest_area
+    float tmp_area = libertyCell->area();
+    if (tmp_invert_control || tmp_invert_output) {
+      if (!inverter_m) {
+        continue;
+      }
+
+      if (tmp_invert_control) {
+        tmp_area += inverter_area;
+      }
+      if (tmp_invert_output) {
+        tmp_area += inverter_area;
+      }
+    }
+
+    if (tmp_area < smallest_area) {
+      smallest_area = tmp_area;
+      smallest_iso_m = iso_cell;
+      enable_term = tmp_enable_term;
+      data_term = tmp_data_term;
+      output_term = tmp_output_term;
+      invert_control = tmp_invert_control;
+      invert_output = tmp_invert_output;
     }
   }
 
-  if (smallest_iso_m == nullptr) {
+  if (smallest_area == std::numeric_limits<float>::max()) {
     logger->warn(utl::UPF,
                  25,
                  "Isolation {} cells defined, but can't find any in the lib.",
                  iso->getName());
     return false;
   }
-
-  auto cell_terms = smallest_iso_m->getMTerms();
-
-  // Find enable & data pins for the isolation cell
-  sta::LibertyPort* out_lib_port = nullptr;
-  sta::LibertyPort* enable_lib_port = nullptr;
-  for (auto&& term : cell_terms) {
-    sta::LibertyPort* lib_port
-        = smallest_iso_l->findLibertyPort(term->getName().c_str());
-
-    if (!lib_port) {
-      continue;
-    }
-
-    if (lib_port->isolationCellData()) {
-      data_term = term;
-    }
-
-    if (lib_port->isolationCellEnable()) {
-      enable_term = term;
-      enable_lib_port = lib_port;
-    }
-
-    if (term->getIoType() == odb::dbIoType::OUTPUT) {
-      output_term = term;
-      out_lib_port = lib_port;
-    }
-  }
-
-  if (!output_term || !data_term || !enable_term || !out_lib_port) {
-    logger->warn(utl::UPF,
-                 26,
-                 "Isolation {} cells defined, but can't find one of output, "
-                 "data or enable terms.",
-                 iso->getName());
-    return false;
-  }
-
-  // Determine if an inverter is needed for the control pin & output
-  auto func = out_lib_port->function();
-
-  return check_isolation_match(func,
-                               enable_lib_port,
-                               isolation_sense,
-                               isolation_clamp_val,
-                               logger,
-                               invert_control,
-                               invert_output);
+  return true;
 }
 
 static bool insert_isolation_cell(odb::dbBlock* block,
@@ -982,6 +1008,10 @@ static bool isolate_connection(odb::dbITerm* src_term,
   bool inverter_found
       = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
 
+  if (!inverter_found) {
+    logger->warn(utl::UPF, 31, "can't find any inverters");
+  }
+
   odb::dbMTerm* enable_term = nullptr;
   odb::dbMTerm* data_term = nullptr;
   odb::dbMTerm* output_term = nullptr;
@@ -991,17 +1021,13 @@ static bool isolate_connection(odb::dbITerm* src_term,
   if (!find_smallest_isolation(network,
                                logger,
                                iso,
+                               inverter_m,
                                smallest_iso_m,
                                enable_term,
                                data_term,
                                output_term,
                                invert_output,
                                invert_control)) {
-    return false;
-  }
-
-  if ((invert_output || invert_control) && !inverter_found) {
-    logger->warn(utl::UPF, 31, "can't find any inverters");
     return false;
   }
 

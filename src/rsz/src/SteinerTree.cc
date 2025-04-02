@@ -35,6 +35,7 @@
 
 #include "SteinerTree.hh"
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>

@@ -35,6 +35,9 @@
 
 #include "RepairDesign.hh"
 
+#include <cstddef>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -158,6 +161,9 @@ void RepairDesign::performEarlySizingRound(float gate_gain,
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
                    : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+    if (!net) {
+      continue;
+    }
     dbNet* net_db = db_network_->staToDb(net);
     search_->findRequireds(drvr->level() + 1);
 
@@ -250,10 +256,16 @@ void RepairDesign::repairDesign(
     }
     Vertex* drvr = resizer_->level_drvr_vertices_[i];
     Pin* drvr_pin = drvr->pin();
+    // hier fix
+    // clang-format off
     Net* net = network_->isTopLevelPort(drvr_pin)
-                   ? network_->net(network_->term(drvr_pin))
-                   // hier fix
+                   ? db_network_->dbToSta(
+                       db_network_->flatNet(network_->term(drvr_pin)))
                    : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+    // clang-format on
+    if (!net) {
+      continue;
+    }
     dbNet* net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug) {
@@ -327,9 +339,12 @@ void RepairDesign::repairClkNets(double max_wire_length)
     const PinSet* clk_pins = sta_->pins(clk);
     if (clk_pins) {
       for (const Pin* clk_pin : *clk_pins) {
+        // clang-format off
         Net* net = network_->isTopLevelPort(clk_pin)
-                       ? network_->net(network_->term(clk_pin))
-                       : network_->net(clk_pin);
+                       ? db_network_->dbToSta(
+                           db_network_->flatNet(network_->term(clk_pin)))
+                       : db_network_->dbToSta(db_network_->flatNet(clk_pin));
+        // clang-format on
         if (net && network_->isDriver(clk_pin)) {
           Vertex* drvr = graph_->pinDrvrVertex(clk_pin);
           // Do not resize clock tree gates.

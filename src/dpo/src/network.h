@@ -112,44 +112,44 @@ class Node : public GridNode
   Node();
   bool isPlaced() const override { return false; }
   bool isHybrid() const override { return false; }
-  DbuX xMin() const override { return DbuX(left_); }
+  DbuX xMin() const override { return left_; }
   DbuY yMin() const override { return DbuY(bottom_); }
   DbuX dx() const override { return DbuX(w_); }
   DbuY dy() const override { return DbuY(h_); }
   odb::dbInst* getDbInst() const override { return db_inst_; }
   DbuX siteWidth() const override { return DbuX(0); }
 
-  int getArea() const { return w_ * h_; }
-  int getBottom() const { return bottom_; }
+  int getArea() const { return w_.v * h_.v; }
+  DbuY getBottom() const { return bottom_; }
   int getBottomPower() const { return powerBot_; }
   int getTopPower() const { return powerTop_; }
   dbOrientType getCurrOrient() const { return currentOrient_; }
   Fixity getFixed() const { return fixed_; }
-  int getHeight() const { return h_; }
+  DbuY getHeight() const { return h_; }
   int getId() const { return id_; }
-  int getLeft() const { return left_; }
-  double getOrigBottom() const { return origBottom_; }
-  double getOrigLeft() const { return origLeft_; }
+  DbuX getLeft() const { return left_; }
+  DbuY getOrigBottom() const { return origBottom_; }
+  DbuX getOrigLeft() const { return origLeft_; }
   int getRegionId() const { return regionId_; }
-  int getRight() const { return left_ + w_; }
-  int getTop() const { return bottom_ + h_; }
+  DbuX getRight() const { return left_.v + DbuX(w_); }
+  DbuY getTop() const { return bottom_ + h_; }
   Type getType() const { return type_; }
-  int getWidth() const { return w_; }
+  DbuX getWidth() const { return w_; }
   Master* getMaster() const { return master_; }
 
-  void setBottom(int bottom) { bottom_ = bottom; }
+  void setBottom(DbuY bottom) { bottom_ = bottom; }
   void setBottomPower(int bot) { powerBot_ = bot; }
   void setTopPower(int top) { powerTop_ = top; }
   void setCurrOrient(const dbOrientType& orient) { currentOrient_ = orient; }
   void setFixed(Fixity fixed) { fixed_ = fixed; }
-  void setHeight(int h) { h_ = h; }
+  void setHeight(DbuY h) { h_ = h; }
   void setId(int id) { id_ = id; }
-  void setLeft(int left) { left_ = left; }
-  void setOrigBottom(double bottom) { origBottom_ = bottom; }
-  void setOrigLeft(double left) { origLeft_ = left; }
+  void setLeft(DbuX left) { left_ = left; }
+  void setOrigBottom(DbuY bottom) { origBottom_ = bottom; }
+  void setOrigLeft(DbuX left) { origLeft_ = left; }
   void setRegionId(int id) { regionId_ = id; }
   void setType(Type type) { type_ = type; }
-  void setWidth(int w) { w_ = w; }
+  void setWidth(DbuX w) { w_ = w; }
   void setMaster(Master* in) { master_ = in; }
   void setDbInst(odb::dbInst* inst) { db_inst_ = inst; }
 
@@ -172,14 +172,14 @@ class Node : public GridNode
   // Id.
   int id_ = 0;
   // Current position; bottom corner.
-  int left_ = 0;
-  int bottom_ = 0;
-  // Original position.  Stored as double still.
-  double origLeft_ = 0;
-  double origBottom_ = 0;
+  DbuX left_{0};
+  DbuY bottom_{0};
+  // Original position.
+  DbuX origLeft_{0};
+  DbuY origBottom_{0};
   // Width and height.
-  int w_ = 0;
-  int h_ = 0;
+  DbuX w_{0};
+  DbuY h_{0};
   // Type.
   Type type_ = UNKNOWN;
   // Fixed or not fixed.
@@ -340,10 +340,10 @@ class Network
 
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
-  Node* createAndAddFillerNode(int left,
-                               int bottom,
-                               int width,
-                               int height);  // Extras to block space.
+  Node* createAndAddFillerNode(DbuX left,
+                               DbuY bottom,
+                               DbuX width,
+                               DbuY height);  // Extras to block space.
 
   // For creating and adding edges.
   Edge* createAndAddEdge();

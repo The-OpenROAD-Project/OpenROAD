@@ -36,10 +36,13 @@
 #include "TechChar.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"

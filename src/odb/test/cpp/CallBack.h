@@ -230,6 +230,12 @@ class CallBack : public dbBlockCallBackObj
             box->yMax());
     events.emplace_back(buffer);
   }
+  void inDbBlockageDestroy(dbBlockage* blockage) override
+  {
+    if (!_pause) {
+      events.emplace_back("Destroy blockage");
+    }
+  }
   // dbBlockage End
 
   // dbObstruction Start

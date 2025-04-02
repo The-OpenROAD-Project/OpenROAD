@@ -35,6 +35,8 @@
 
 #include "dbSdcNetwork.hh"
 
+#include <string>
+
 #include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
 

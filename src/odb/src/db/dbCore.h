@@ -45,6 +45,7 @@
 ///
 
 #include <set>
+#include <string>
 
 #include "dbAttrTable.h"
 #include "odb/dbId.h"
