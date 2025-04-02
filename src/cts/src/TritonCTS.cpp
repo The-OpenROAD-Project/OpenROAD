@@ -329,6 +329,9 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
               && !openSta_->sdc()->isLeafPinClock(
                   network_->dbToSta(outputPin))) {
+            if(iterm->getName() == "I_digital_top/alwayson_top_i/i2c_top_i/u_i2c_bus_monitor/stop_o_reg/D") {
+              logger_->report("--------------------INITING A WRONG CLOCK TREE-----------------");
+            }
             initOneClockTree(
                 outputNet, clkInputNet, sdcClockName, clockBuilder);
           }
@@ -2257,10 +2260,13 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         }
       } else {
         // not a sink, but a clock gater
+        odb::dbITerm* teste_out_term = getSingleOutput(inst, iterm);
         odb::dbITerm* outTerm = inst->getFirstOutput();
         if (outTerm) {
           odb::dbNet* outNet = outTerm->getNet();
           if (outNet) {
+            bool propagate = propagateClock(iterm);
+            logger_->report("propagate? {}, achou single output? {}", propagate, teste_out_term == nullptr);
             odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
             odb::dbSet<odb::dbITerm>::iterator iter;
             for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
@@ -2275,6 +2281,20 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
       }
     }
   }
+}
+
+bool TritonCTS::propagateClock(odb::dbITerm* input)
+{
+  odb::dbInst* inst = input->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+  if (inputPort) {
+    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+
+  }
+  return false;
 }
 
 // Balance latencies between macro tree and register tree
