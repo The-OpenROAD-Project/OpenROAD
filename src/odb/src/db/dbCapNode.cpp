@@ -113,14 +113,10 @@ bool _dbCapNode::operator==(const _dbCapNode& rhs) const
 
 bool dbCapNode::needAdjustCC(double ccThreshHold)
 {
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  uint cornerCnt = ((dbBlock*) getImpl()->getOwner())->getCornerCount();
-  uint corner;
-  uint cid;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
-    for (corner = 0; corner < cornerCnt; corner++) {
+  const uint cornerCnt = ((dbBlock*) getImpl()->getOwner())->getCornerCount();
+  for (dbCCSeg* cc : getCCSegs()) {
+    for (uint corner = 0; corner < cornerCnt; corner++) {
+      uint cid;
       if (cc->getTheOtherCapn(this, cid)->getNet()->getCcAdjustFactor() > 0) {
         continue;
       }
@@ -135,19 +131,13 @@ bool dbCapNode::needAdjustCC(double ccThreshHold)
 bool dbCapNode::groundCC(float gndFactor)
 {
   bool grounded = false;
-  uint vicNetId = getNet()->getId();
-  uint agrNetId;
-  dbCapNode* agrNode;
-  double deltaC;
-  uint cid;
+  const uint vicNetId = getNet()->getId();
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
-    agrNode = cc->getTheOtherCapn(this, cid);
-    agrNetId = agrNode->getNet()->getId();
+  const uint cornerCnt = block->_corners_per_block;
+  for (dbCCSeg* cc : getCCSegs()) {
+    uint cid;
+    dbCapNode* agrNode = cc->getTheOtherCapn(this, cid);
+    uint agrNetId = agrNode->getNet()->getId();
     if (agrNetId < vicNetId) {
       continue;  //  avoid duplicate grounding
     }
@@ -165,7 +155,7 @@ bool dbCapNode::groundCC(float gndFactor)
     }
     grounded = true;
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      deltaC = cc->getCapacitance(ii) * gndFactor;
+      const double deltaC = cc->getCapacitance(ii) * gndFactor;
       addCapacitance(deltaC, ii);
       agrNode->addCapacitance(deltaC, ii);
     }
@@ -178,16 +168,12 @@ void dbCapNode::adjustCC(uint adjOrder,
                          std::vector<dbCCSeg*>& adjustedCC,
                          std::vector<dbNet*>& halonets)
 {
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  dbNet* agrNet;
-  uint cid;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
+  for (dbCCSeg* cc : getCCSegs()) {
     if (cc->isMarked()) {
       continue;
     }
-    agrNet = cc->getTheOtherCapn(this, cid)->getNet();
+    uint cid;
+    dbNet* agrNet = cc->getTheOtherCapn(this, cid)->getNet();
     if (agrNet->getCcAdjustFactor() > 0
         && agrNet->getCcAdjustOrder() < adjOrder) {
       continue;
@@ -303,12 +289,8 @@ void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
   if (totalcap == nullptr || MillerMult == 0) {
     return;
   }
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    double ccmult = MillerMult;
-    dbCCSeg* cc = *ccitr;
-    cc->accAllCcCap(totalcap, ccmult);
+  for (dbCCSeg* cc : getCCSegs()) {
+    cc->accAllCcCap(totalcap, MillerMult);
   }
 }
 

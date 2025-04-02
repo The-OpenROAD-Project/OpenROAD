@@ -489,19 +489,17 @@ dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint dbid_)
 
 void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
 {
-  int rows = P.getNumCutRows();
-  int cols = P.getNumCutCols();
-  int row;
+  const int rows = P.getNumCutRows();
+  const int cols = P.getNumCutCols();
   int y = 0;
   int maxX = 0;
   int maxY = 0;
   std::vector<Rect> cutRects;
 
-  for (row = 0; row < rows; ++row) {
-    int col;
+  for (int row = 0; row < rows; ++row) {
     int x = 0;
 
-    for (col = 0; col < cols; ++col) {
+    for (int col = 0; col < cols; ++col) {
       maxX = x + P.getXCutSize();
       maxY = y + P.getYCutSize();
       Rect r(x, y, maxX, maxY);
@@ -516,12 +514,10 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
 
   dbTechLayer* cut_layer = P.getCutLayer();
 
-  int dx = maxX / 2;
-  int dy = maxY / 2;
-  std::vector<Rect>::iterator itr;
+  const int dx = maxX / 2;
+  const int dy = maxY / 2;
 
-  for (itr = cutRects.begin(); itr != cutRects.end(); ++itr) {
-    Rect& r = *itr;
+  for (Rect& r : cutRects) {
     r.moveDelta(-dx, -dy);
     r.moveDelta(P.getXOrigin(), P.getYOrigin());
     dbBox::create(
@@ -533,13 +529,13 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
   maxX -= dx;
   maxY -= dy;
 
-  int top_minX
+  const int top_minX
       = minX - P.getXTopEnclosure() + P.getXOrigin() + P.getXTopOffset();
-  int top_minY
+  const int top_minY
       = minY - P.getYTopEnclosure() + P.getYOrigin() + P.getYTopOffset();
-  int top_maxX
+  const int top_maxX
       = maxX + P.getXTopEnclosure() + P.getXOrigin() + P.getXTopOffset();
-  int top_maxY
+  const int top_maxY
       = maxY + P.getYTopEnclosure() + P.getYOrigin() + P.getYTopOffset();
   dbBox::create((dbTechVia*) via,
                 P.getTopLayer(),
@@ -548,13 +544,13 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
                 top_maxX,
                 top_maxY);
 
-  int bot_minX
+  const int bot_minX
       = minX - P.getXBottomEnclosure() + P.getXOrigin() + P.getXBottomOffset();
-  int bot_minY
+  const int bot_minY
       = minY - P.getYBottomEnclosure() + P.getYOrigin() + P.getYBottomOffset();
-  int bot_maxX
+  const int bot_maxX
       = maxX + P.getXBottomEnclosure() + P.getXOrigin() + P.getXBottomOffset();
-  int bot_maxY
+  const int bot_maxY
       = maxY + P.getYBottomEnclosure() + P.getYOrigin() + P.getYBottomOffset();
   dbBox::create((dbTechVia*) via,
                 P.getBottomLayer(),

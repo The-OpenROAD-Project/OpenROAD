@@ -613,11 +613,7 @@ void dbModule::copyModulePorts(dbModule* old_module,
                                modBTMap& mod_bt_map)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
-  dbSet<dbModBTerm> old_ports = old_module->getModBTerms();
-  dbSet<dbModBTerm>::iterator port_iter;
-  for (port_iter = old_ports.begin(); port_iter != old_ports.end();
-       ++port_iter) {
-    dbModBTerm* old_port = *port_iter;
+  for (dbModBTerm* old_port : old_module->getModBTerms()) {
     dbModBTerm* new_port = nullptr;
     if (mod_bt_map.count(old_port) > 0) {
       new_port = mod_bt_map[old_port];
@@ -734,11 +730,7 @@ void dbModule::copyModuleInsts(dbModule* old_module,
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   // Add insts to new module
-  dbSet<dbInst> old_insts = old_module->getInsts();
-  dbSet<dbInst>::iterator inst_iter;
-  for (inst_iter = old_insts.begin(); inst_iter != old_insts.end();
-       ++inst_iter) {
-    dbInst* old_inst = *inst_iter;
+  for (dbInst* old_inst : old_module->getInsts()) {
     // Change unique instance name from old_inst/leaf to new_inst/leaf
     std::string new_inst_name;
     if (new_mod_inst) {
@@ -849,10 +841,7 @@ void dbModule::copyModuleModNets(dbModule* old_module,
              mod_bt_map.size(),
              it_map.size());
   // Make boundary port connections.
-  dbSet<dbModNet> old_nets = old_module->getModNets();
-  dbSet<dbModNet>::iterator net_iter;
-  for (net_iter = old_nets.begin(); net_iter != old_nets.end(); ++net_iter) {
-    dbModNet* old_net = *net_iter;
+  for (dbModNet* old_net : old_module->getModNets()) {
     dbModNet* new_net = dbModNet::create(new_module, old_net->getName());
     if (new_net) {
       debugPrint(logger,
@@ -869,10 +858,7 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     }
 
     // Connect dbModBTerms to new mod net
-    dbSet<dbModBTerm> mbterms = old_net->getModBTerms();
-    dbSet<dbModBTerm>::iterator mb_iter;
-    for (mb_iter = mbterms.begin(); mb_iter != mbterms.end(); ++mb_iter) {
-      dbModBTerm* old_mbterm = *mb_iter;
+    for (dbModBTerm* old_mbterm : old_net->getModBTerms()) {
       dbModBTerm* new_mbterm = nullptr;
       if (mod_bt_map.count(old_mbterm) > 0) {
         new_mbterm = mod_bt_map[old_mbterm];

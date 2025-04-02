@@ -156,11 +156,8 @@ dbFill* dbFill::create(dbBlock* block,
   fill->_flags._layer_id = layer->getImpl()->getOID();
   fill->_rect.init(x1, y1, x2, y2);
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block_internal->_callbacks.begin();
-       cbitr != block_internal->_callbacks.end();
-       ++cbitr) {
-    (*cbitr)->inDbFillCreate((dbFill*) fill);
+  for (auto cb : block_internal->_callbacks) {
+    cb->inDbFillCreate((dbFill*) fill);
   }
 
   return (dbFill*) fill;

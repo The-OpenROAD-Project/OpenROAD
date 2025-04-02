@@ -620,12 +620,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   msg = fmt::format("Connecting nets that span module boundary");
   debugPrint(logger, utl::ODB, "replace_design", 1, msg);
   for (const auto& [old_mod_net, new_mod_net] : mod_map) {
-    dbSet<dbITerm> old_iterms = old_mod_net->getITerms();
     dbSet<dbITerm> new_iterm_set = new_mod_net->getITerms();
     // Copy new iterms because new_mod_net iterm list can change
     std::vector<dbITerm*> new_iterms(new_iterm_set.begin(),
                                      new_iterm_set.end());
-    for (dbITerm* old_iterm : old_iterms) {
+    for (dbITerm* old_iterm : old_mod_net->getITerms()) {
       dbNet* flat_net = old_iterm->getNet();
       if (flat_net) {
         old_iterm->disconnectDbNet();

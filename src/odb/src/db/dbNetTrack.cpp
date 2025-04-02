@@ -170,6 +170,15 @@ void dbNetTrack::destroy(dbNetTrack* track)
   block->_net_tracks_tbl->destroy((_dbNetTrack*) track);
 }
 
+dbSet<dbNetTrack>::iterator dbNetTrack::destroy(
+    dbSet<dbNetTrack>::iterator& itr)
+{
+  dbNetTrack* track = *itr;
+  dbSet<dbNetTrack>::iterator next = ++itr;
+  destroy(track);
+  return next;
+}
+
 // User Code End dbNetTrackPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
