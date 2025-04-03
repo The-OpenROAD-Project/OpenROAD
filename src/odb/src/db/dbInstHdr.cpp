@@ -197,12 +197,8 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   inst_hdr->_mterms.resize(master->_mterm_cnt);
 
   // mterms, this set is ordered: {output, inout, input}
-  dbSet<dbMTerm> mterms = master_->getMTerms();
-  dbSet<dbMTerm>::iterator itr;
   int i = 0;
-
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    dbMTerm* mterm = *itr;
+  for (dbMTerm* mterm : master_->getMTerms()) {
     inst_hdr->_mterms[i++] = mterm->getImpl()->getOID();
   }
 

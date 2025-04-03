@@ -1038,6 +1038,7 @@ class dbBlock : public dbObject
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
   dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbModITerm> getModITerms();
 
   ///
   /// Get the Power Domains of this block.
@@ -1164,7 +1165,7 @@ class dbBlock : public dbObject
   ///
   /// The iterm name must be of the form:
   ///
-  ///     <instanceName><hierDelimeter><termName>
+  ///     <instanceName><hierDelimiter><termName>
   ///
   /// For example:   inst0/A
   ///
@@ -1268,24 +1269,24 @@ class dbBlock : public dbObject
   int64_t micronsAreaToDbu(double micronsArea);
 
   ///
-  /// Get the hierarchy delimeter.
-  /// Returns (0) if the delimeter was not set.
-  /// A hierarchy delimeter can only be set at the time
+  /// Get the hierarchy delimiter.
+  /// Returns (0) if the delimiter was not set.
+  /// A hierarchy delimiter can only be set at the time
   /// a block is created.
   ///
-  char getHierarchyDelimeter();
+  char getHierarchyDelimiter();
 
   ///
-  /// Set the bus name delimeters
+  /// Set the bus name delimiters
   ///
-  void setBusDelimeters(char left, char right);
+  void setBusDelimiters(char left, char right);
 
   ///
-  /// Get the bus name delimeters
-  /// Left and Right are set to "zero" if the bus delimeters
+  /// Get the bus name delimiters
+  /// Left and Right are set to "zero" if the bus delimiters
   /// were not set.
   ///
-  void getBusDelimeters(char& left, char& right);
+  void getBusDelimiters(char& left, char& right);
 
   ///
   /// Get extraction counters
@@ -1641,7 +1642,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbChip* chip,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimeter = 0);
+                         char hier_delimiter = 0);
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
@@ -1651,7 +1652,7 @@ class dbBlock : public dbObject
   static dbBlock* create(dbBlock* block,
                          const char* name,
                          dbTech* tech = nullptr,
-                         char hier_delimeter = 0);
+                         char hier_delimiter = 0);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -3282,7 +3283,7 @@ class dbInst : public dbObject
   static void destroy(dbInst* inst);
 
   ///
-  /// Delete the net from the block.
+  /// Safely delete the inst from the block within an iterator
   ///
   static dbSet<dbInst>::iterator destroy(dbSet<dbInst>::iterator& itr);
 
@@ -4223,6 +4224,8 @@ class dbBlockage : public dbObject
                             int x2,
                             int y2,
                             dbInst* inst = nullptr);
+
+  static void destroy(dbBlockage* blockage);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -5248,24 +5251,24 @@ class dbLib : public dbObject
   void setLefUnits(int units);
 
   ///
-  /// Get the HierarchyDelimeter.
-  /// Returns (0) if the delimeter was not set.
-  /// A hierarchy delimeter can only be set at the time
+  /// Get the HierarchyDelimiter.
+  /// Returns (0) if the delimiter was not set.
+  /// A hierarchy delimiter can only be set at the time
   /// a library is created.
   ///
-  char getHierarchyDelimeter();
+  char getHierarchyDelimiter();
 
   ///
-  /// Set the Bus name delimeters
+  /// Set the Bus name delimiters
   ///
-  void setBusDelimeters(char left, char right);
+  void setBusDelimiters(char left, char right);
 
   ///
-  /// Get the Bus name delimeters
-  /// Left and Right are set to "zero" if the bus delimeters
+  /// Get the Bus name delimiters
+  /// Left and Right are set to "zero" if the bus delimiters
   /// were not set.
   ///
-  void getBusDelimeters(char& left, char& right);
+  void getBusDelimiters(char& left, char& right);
 
   ///
   /// Create a new library.
@@ -5273,7 +5276,7 @@ class dbLib : public dbObject
   static dbLib* create(dbDatabase* db,
                        const char* name,
                        dbTech* tech,
-                       char hierarchy_delimeter = 0);
+                       char hierarchy_delimiter = 0);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -8002,6 +8005,7 @@ class dbModBTerm : public dbObject
   dbBusPort* getBusPort() const;
   static dbModBTerm* create(dbModule* parentModule, const char* name);
   static void destroy(dbModBTerm*);
+  static dbSet<dbModBTerm>::iterator destroy(dbSet<dbModBTerm>::iterator& itr);
   static dbModBTerm* getModBTerm(dbBlock* block, uint dbid);
 
  private:
@@ -8040,8 +8044,9 @@ class dbModInst : public dbObject
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
 
   /// Swap the module of this instance.
-  /// Returns true if the operations succeeds.
-  bool swapMaster(dbModule* module);
+  /// Returns new mod inst if the operations succeeds.
+  /// Old mod inst is deleted along with its child insts.
+  dbModInst* swapMaster(dbModule* module);
   // User Code End dbModInst
 };
 
@@ -8061,6 +8066,7 @@ class dbModITerm : public dbObject
   void disconnect();
   static dbModITerm* create(dbModInst* parentInstance, const char* name);
   static void destroy(dbModITerm*);
+  static dbSet<dbModITerm>::iterator destroy(dbSet<dbModITerm>::iterator& itr);
   static dbModITerm* getModITerm(dbBlock* block, uint dbid);
   // User Code End dbModITerm
 };
@@ -8080,6 +8086,7 @@ class dbModNet : public dbObject
   void rename(const char* new_name);
   static dbModNet* getModNet(dbBlock* block, uint id);
   static dbModNet* create(dbModule* parentModule, const char* name);
+  static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
 
   // User Code End dbModNet
@@ -8156,6 +8163,9 @@ class dbModule : public dbObject
                                    dbModule* new_module,
                                    dbModInst* new_mod_inst);
 
+  // Copy module to child block for future use
+  static bool copyToChildBlock(dbModule* module);
+
   // User Code End dbModule
 };
 
@@ -8175,6 +8185,8 @@ class dbNetTrack : public dbObject
   static dbNetTrack* getNetTrack(dbBlock* block, uint dbid);
 
   static void destroy(dbNetTrack* guide);
+
+  static dbSet<dbNetTrack>::iterator destroy(dbSet<dbNetTrack>::iterator& itr);
 
   // User Code End dbNetTrack
 };

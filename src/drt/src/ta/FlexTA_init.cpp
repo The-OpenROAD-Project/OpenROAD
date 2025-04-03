@@ -32,6 +32,42 @@
 
 namespace drt {
 
+bool FlexTAWorker::outOfDieVia(frLayerNum layer_num,
+                               const Point& pt,
+                               const Rect& die_box) const
+{
+  if (router_cfg_->USENONPREFTRACKS
+      && !getTech()->getLayer(layer_num)->isUnidirectional()) {
+    return false;
+  }
+  Rect test_box_up;
+  if (layer_num + 1 <= getTech()->getTopLayerNum()) {
+    const frViaDef* via
+        = getTech()->getLayer(layer_num + 1)->getDefaultViaDef();
+    if (via) {
+      test_box_up = via->getLayer1ShapeBox();
+      test_box_up.merge(via->getLayer2ShapeBox());
+      test_box_up.moveDelta(pt.x(), pt.y());
+    } else {
+      // artificial value to indicate no via in test below
+      die_box.bloat(1, test_box_up);
+    }
+  }
+  Rect test_box_down;
+  if (layer_num - 1 >= getTech()->getBottomLayerNum()) {
+    const frViaDef* via
+        = getTech()->getLayer(layer_num - 1)->getDefaultViaDef();
+    if (via) {
+      test_box_down = via->getLayer1ShapeBox();
+      test_box_down.merge(via->getLayer2ShapeBox());
+      test_box_down.moveDelta(pt.x(), pt.y());
+    } else {
+      // artificial value to indicate no via in test below
+      die_box.bloat(1, test_box_down);
+    }
+  }
+  return !die_box.contains(test_box_up) && !die_box.contains(test_box_down);
+}
 void FlexTAWorker::initTracks()
 {
   trackLocs_.clear();
@@ -39,6 +75,8 @@ void FlexTAWorker::initTracks()
   trackLocs_.resize(numLayers);
   std::vector<std::set<frCoord>> trackCoordSets(numLayers);
   // uPtr for tp
+  auto die_box = getDesign()->getTopBlock()->getDieBox();
+  auto die_center = die_box.center();
   for (int lNum = 0; lNum < (int) numLayers; lNum++) {
     auto layer = getDesign()->getTech()->getLayer(lNum);
     if (layer->getType() != dbTechLayerType::ROUTING) {
@@ -70,6 +108,15 @@ void FlexTAWorker::initTracks()
              trackNum++) {
           frCoord trackCoord
               = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
+          Point via_pt(die_center);
+          if (isH) {
+            via_pt.setY(trackCoord);
+          } else {
+            via_pt.setX(trackCoord);
+          }
+          if (outOfDieVia(lNum, via_pt, die_box)) {
+            continue;
+          }
           trackCoordSets[lNum].insert(trackCoord);
         }
       }

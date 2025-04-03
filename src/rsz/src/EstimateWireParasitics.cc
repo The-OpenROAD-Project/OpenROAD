@@ -34,10 +34,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "SteinerTree.hh"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -57,6 +57,7 @@ using sta::PinSet;
 
 using odb::dbInst;
 using odb::dbMasterType;
+using odb::dbModInst;
 
 ////////////////////////////////////////////////////////////////
 
@@ -345,6 +346,9 @@ void Resizer::updateParasitics(bool save_guides)
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
+        //
+        // TODO: remove this check (we expect all to be flat net)
+        //
         if (!(db_network_->isFlat(net))) {
           continue;
         }
@@ -420,6 +424,11 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
+    LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
+    // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
+    // This is because netlist changes may invalidate cached net driver pin data
+    network_->Network::clear();
+    network_->setDefaultLibertyLibrary(default_lib);
 
     // Hierarchy flow change
     // go through all nets, not just the ones in the instance
@@ -692,6 +701,7 @@ void Resizer::net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const
 {
   pin1 = nullptr;
   pin2 = nullptr;
+
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   if (pin_iter->hasNext()) {
     pin1 = pin_iter->next();
@@ -710,7 +720,12 @@ bool Resizer::isPadPin(const Pin* pin) const
 
 bool Resizer::isPad(const Instance* inst) const
 {
-  dbInst* db_inst = db_network_->staToDb(inst);
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  if (mod_inst) {
+    return false;
+  }
   const auto type = db_inst->getMaster()->getType().getValue();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -762,7 +777,7 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
-  odb::dbNet* db_net = db_network_->flatNet(net);
+  dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,

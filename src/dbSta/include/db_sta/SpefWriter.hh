@@ -40,23 +40,9 @@
 #include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
 
-namespace grt {
-class GlobalRouter;
-class MakeWireParasitics;
-}  // namespace grt
+namespace sta {
 
-namespace rsz {
-
-class Resizer;
 using utl::Logger;
-
-using sta::Corner;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::Net;
-using sta::NetSeq;
-using sta::Parasitic;
-using sta::Parasitics;
 
 class SpefWriter
 {
@@ -77,4 +63,4 @@ class SpefWriter
   std::map<Corner*, std::ostream*> spef_streams_;
 };
 
-}  // namespace rsz
+}  // namespace sta
