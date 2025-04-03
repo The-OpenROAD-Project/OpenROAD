@@ -185,7 +185,7 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
            return false;
          }
          // check for illegal characters
-         for (const char ch : {obj->getBlock()->getHierarchyDelimeter()}) {
+         for (const char ch : {obj->getBlock()->getHierarchyDelimiter()}) {
            if (new_name.find(ch) != std::string::npos) {
              return false;
            }
@@ -2266,6 +2266,16 @@ Descriptor::Properties DbBlockageDescriptor::getDBProperties(
       {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}};
 
   return props;
+}
+
+Descriptor::Actions DbBlockageDescriptor::getActions(std::any object) const
+{
+  auto blk = std::any_cast<odb::dbBlockage*>(object);
+  return Actions(
+      {{"Delete", [blk]() {
+          odb::dbBlockage::destroy(blk);
+          return Selected();  // unselect since this object is now gone
+        }}});
 }
 
 Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const

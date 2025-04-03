@@ -330,12 +330,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   }
 
   // Fix up the owner id of properties of this db, this value changes.
-  dbSet<_dbProperty> props(&db, db._prop_tbl);
-  dbSet<_dbProperty>::iterator itr;
-  uint oid = db.getId();
+  const uint oid = db.getId();
 
-  for (itr = props.begin(); itr != props.end(); ++itr) {
-    _dbProperty* p = *itr;
+  for (_dbProperty* p : dbSet<_dbProperty>(&db, db._prop_tbl)) {
     p->_owner = oid;
   }
 
@@ -359,14 +356,9 @@ dbSet<dbLib> dbDatabase::getLibs()
 
 dbLib* dbDatabase::findLib(const char* name)
 {
-  dbSet<dbLib> libs = getLibs();
-  dbSet<dbLib>::iterator itr;
-
-  for (itr = libs.begin(); itr != libs.end(); ++itr) {
-    _dbLib* lib = (_dbLib*) *itr;
-
-    if (strcmp(lib->_name, name) == 0) {
-      return (dbLib*) lib;
+  for (dbLib* lib : getLibs()) {
+    if (strcmp(lib->getConstName(), name) == 0) {
+      return lib;
     }
   }
 
@@ -393,10 +385,7 @@ dbTech* dbDatabase::findTech(const char* name)
 
 dbMaster* dbDatabase::findMaster(const char* name)
 {
-  dbSet<dbLib> libs = getLibs();
-  dbSet<dbLib>::iterator it;
-  for (it = libs.begin(); it != libs.end(); it++) {
-    dbLib* lib = *it;
+  for (dbLib* lib : getLibs()) {
     dbMaster* master = lib->findMaster(name);
     if (master) {
       return master;

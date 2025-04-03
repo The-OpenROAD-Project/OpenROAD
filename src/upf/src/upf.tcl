@@ -251,11 +251,13 @@ proc set_isolation { args } {
 # - domain: power domain
 # - strategy: isolation strategy name
 # - lib_cells: list of lib cells that could be used
+# - interface_implementation_name: for compatibility only. OpenRoad doesn't use it.
 
 sta::define_cmd_args "use_interface_cell" { \
-    [-domain domain] \
-    [-strategy strategy] \
-    [-lib_cells lib_cells]
+    -domain domain \
+    -strategy strategy \
+    -lib_cells lib_cells \
+    interface_implementation_name
 }
 proc use_interface_cell { args } {
   upf::check_block_exists
@@ -263,7 +265,7 @@ proc use_interface_cell { args } {
   sta::parse_key_args "use_interface_cell" args \
     keys {-domain -strategy -lib_cells} flags {}
 
-  sta::check_argc_eq0 "use_interface_cell" $args
+  sta::check_argc_eq1 "use_interface_cell" $args
 
   set domain ""
   set strategy ""
@@ -271,18 +273,26 @@ proc use_interface_cell { args } {
 
   if { [info exists keys(-domain)] } {
     set domain $keys(-domain)
+  } else {
+    utl::error UPF 75 "-domain is required for use_interface_cell"
   }
 
   if { [info exists keys(-strategy)] } {
     set strategy $keys(-strategy)
+  } else {
+    utl::error UPF 76 "-strategy is required for use_interface_cell"
   }
 
   if { [info exists keys(-lib_cells)] } {
     set lib_cells $keys(-lib_cells)
+  } else {
+    utl::error UPF 77 "-lib_cells is required for use_interface_cell"
   }
 
-  foreach {cell} $lib_cells {
-    upf::use_interface_cell_cmd $domain $strategy $cell
+  foreach {strat} $strategy {
+    foreach {cell} $lib_cells {
+      upf::use_interface_cell_cmd $domain $strat $cell
+    }
   }
 }
 
