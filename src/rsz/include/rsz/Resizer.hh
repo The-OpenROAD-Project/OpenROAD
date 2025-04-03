@@ -56,6 +56,10 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
+namespace sta {
+class SpefWriter;
+}
+
 namespace rsz {
 
 using std::array;
@@ -113,6 +117,7 @@ using sta::Required;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
+using sta::SpefWriter;
 using sta::TimingArc;
 using sta::UnorderedSet;
 using sta::Vector;
@@ -139,8 +144,6 @@ class RepairDesign;
 class RepairSetup;
 class RepairHold;
 class ResizerObserver;
-
-class SpefWriter;
 
 class NetHash
 {
@@ -279,6 +282,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
+  void unbufferNet(Net* net);
   void bufferInputs();
   void bufferOutputs();
 

@@ -33,6 +33,7 @@
 #pragma once
 
 #include <list>
+#include <string>
 #include <vector>
 
 #include "dbCore.h"
@@ -165,9 +166,9 @@ class _dbBlock : public _dbObject
   _dbBlockFlags _flags;
   int _def_units;
   int _dbu_per_micron;  // cached value from dbTech
-  char _hier_delimeter;
-  char _left_bus_delimeter;
-  char _right_bus_delimeter;
+  char _hier_delimiter;
+  char _left_bus_delimiter;
+  char _right_bus_delimiter;
   unsigned char _num_ext_corners;
   uint _corners_per_block;
   char* _corner_name_list;
@@ -317,7 +318,7 @@ class _dbBlock : public _dbObject
                   _dbTech* tech,
                   _dbBlock* parent,
                   const char* name,
-                  char delimeter);
+                  char delimiter);
 
   bool operator==(const _dbBlock& rhs) const;
   bool operator!=(const _dbBlock& rhs) const { return !operator==(rhs); }

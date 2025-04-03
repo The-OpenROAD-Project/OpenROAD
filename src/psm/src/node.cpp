@@ -32,6 +32,8 @@
 
 #include "node.h"
 
+#include <string>
+
 #include "odb/db.h"
 #include "shape.h"
 

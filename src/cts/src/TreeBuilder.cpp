@@ -42,6 +42,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "odb/geom_boost.h"
@@ -84,8 +85,12 @@ void TreeBuilder::mergeBlockages()
   gtl::shrink(blockage_polygons, bloat_w, bloat_w, bloat_h, bloat_h);
 
   std::vector<odb::Rect> blockage_rects;
-  blockage_polygons.get_rectangles(blockage_rects);
-  for (const odb::Rect& rect : blockage_rects) {
+  std::vector<gtl::polygon_90_with_holes_data<int>> blockage_rects_polygon;
+  blockage_polygons.get_polygons(blockage_rects_polygon);
+
+  for (const auto& poly : blockage_rects_polygon) {
+    odb::Rect rect;
+    gtl::extents(rect, poly);
     blockages_.emplace_back(rect);
   }
 }

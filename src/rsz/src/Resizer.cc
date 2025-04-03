@@ -37,8 +37,10 @@
 
 #include <boost/functional/hash.hpp>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "AbstractSteinerRenderer.h"
@@ -332,6 +334,7 @@ void Resizer::init()
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
+  swappable_cells_cache_.clear();
 }
 
 // remove all buffers if no buffers are specified
@@ -372,6 +375,41 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
   }
   level_drvr_vertices_valid_ = false;
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
+}
+
+void Resizer::unbufferNet(Net* net)
+{
+  sta::InstanceSeq insts;
+  std::vector<Net*> queue = {net};
+
+  while (!queue.empty()) {
+    Net* net_ = queue.back();
+    sta::NetConnectedPinIterator* pin_iter
+        = network_->connectedPinIterator(net_);
+    queue.pop_back();
+
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      const LibertyPort* port = network_->libertyPort(pin);
+      if (port && port->libertyCell()->isBuffer()) {
+        LibertyPort *in, *out;
+        port->libertyCell()->bufferPorts(in, out);
+
+        if (port == in) {
+          const Instance* inst = network_->instance(pin);
+          insts.push_back(inst);
+          const Pin* out_pin = network_->findPin(inst, out);
+          if (out_pin) {
+            queue.push_back(network_->net(out_pin));
+          }
+        }
+      }
+    }
+
+    delete pin_iter;
+  }
+
+  removeBuffers(insts);
 }
 
 bool Resizer::bufferBetweenPorts(Instance* buffer)
@@ -415,6 +453,49 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   if (bufferBetweenPorts(buffer)) {
     return false;
   }
+  // Don't remove buffers connected to modnets on both input and output
+  // These buffers occupy as special place in hierarchy and cannot
+  // be removed without destroying the hierarchy.
+  // This is the hierarchical equivalent of "bufferBetweenPorts" above
+
+  Pin* buffer_ip_pin;
+  Pin* buffer_op_pin;
+  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+  if (db_network_->hierNet(buffer_ip_pin)
+      && db_network_->hierNet(buffer_op_pin)) {
+    return false;
+  }
+
+  //
+  // Don't remove buffers with (1) an input pin connected to a hierarchical
+  // net (1) an output pin not connected to a hierarchical net.
+  // These are required to remain visible.
+  //
+  if (db_network_->hierNet(buffer_ip_pin)
+      && !db_network_->hierNet(buffer_op_pin)) {
+    return false;
+  }
+
+  // We only allow case when we can  get buffer driver
+  // and wire in the hierarchical net. This is when there is
+  // a dbModNet on the buffer output AND the buffer and the thing
+  // driving the instance are in the same module.
+
+  odb::dbModNet* op_hierarchical_net = db_network_->hierNet(buffer_op_pin);
+  if (op_hierarchical_net) {
+    Pin* ignore_driver_pin = nullptr;
+    dbNet* buffer_ip_flat_net = db_network_->flatNet(buffer_ip_pin);
+    odb::dbModule* driving_module = db_network_->getNetDriverParentModule(
+        db_network_->dbToSta(buffer_ip_flat_net), ignore_driver_pin, true);
+    (void) ignore_driver_pin;
+    // buffer is a dbInst.
+    dbInst* buffer_inst = db_network_->staToDb(buffer);
+    odb::dbModule* buffer_owning_module = buffer_inst->getModule();
+    if (driving_module != buffer_owning_module) {
+      return false;
+    }
+  }
+
   dbInst* db_inst = db_network_->staToDb(buffer);
   if (db_inst->isDoNotTouch()) {
     if (honorDontTouchFixed) {
@@ -469,10 +550,11 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   }
 
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
+      && (!removed || !sdc_->isConstrained(removed))
+      && !sdc_->isConstrained(buffer)) {
     odb::dbNet* db_survivor = db_network_->staToDb(survivor);
     odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return db_survivor->canMergeNet(db_removed);
+    return !db_removed || db_survivor->canMergeNet(db_removed);
   }
   return false;
 }
@@ -482,10 +564,22 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
   LibertyCell* lib_cell = network_->libertyCell(buffer);
   LibertyPort *in_port, *out_port;
   lib_cell->bufferPorts(in_port, out_port);
+
   Pin* in_pin = db_network_->findPin(buffer, in_port);
   Pin* out_pin = db_network_->findPin(buffer, out_port);
-  Net* in_net = db_network_->net(in_pin);
-  Net* out_net = db_network_->net(out_pin);
+
+  // Hierarchical net handling
+  odb::dbModNet* op_modnet = db_network_->hierNet(out_pin);
+
+  odb::dbNet* in_db_net = db_network_->flatNet(in_pin);
+  odb::dbNet* out_db_net = db_network_->flatNet(out_pin);
+  if (in_db_net == nullptr || out_db_net == nullptr) {
+    return;
+  }
+  // in_net and out_net are flat nets.
+  Net* in_net = db_network_->dbToSta(in_db_net);
+  Net* out_net = db_network_->dbToSta(out_db_net);
+
   bool out_net_ports = hasPort(out_net);
   Net *survivor, *removed;
   if (out_net_ports) {
@@ -498,21 +592,42 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
     survivor = in_net;
     removed = out_net;
   }
-
   if (recordJournal) {
     journalRemoveBuffer(buffer);
   }
-
   debugPrint(
       logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  db_survivor->mergeNet(db_removed);
+  if (db_removed) {
+    db_survivor->mergeNet(db_removed);
+  }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
   sta_->deleteInstance(buffer);
-  sta_->deleteNet(removed);
+  if (removed) {
+    sta_->deleteNet(removed);
+  }
+
+  // Hierarchical case supported:
+  // moving an output hierarchical net to the input pin driver.
+  // During canBufferRemove check (see above) we require that the
+  // input pin driver is in the same module scope as the output hierarchical
+  // driver
+  //
+  if (op_modnet) {
+    debugPrint(logger_,
+               RSZ,
+               "remove_buffer",
+               1,
+               "Handling hierarchical net {}",
+               op_modnet->getName());
+    Pin* driver_pin = nullptr;
+    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
+    db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
+  }
+
   parasitics_invalid_.erase(removed);
   parasiticsInvalid(survivor);
   updateParasitics();
@@ -953,39 +1068,23 @@ void Resizer::SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from)
   }
 }
 
+/*
+Make sure all the top pins are buffered
+*/
+
 Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
 {
-  odb::dbITerm* top_pin_ip_iterm;
-  odb::dbBTerm* top_pin_ip_bterm;
-  odb::dbModITerm* top_pin_ip_moditerm;
-  odb::dbModBTerm* top_pin_ip_modbterm;
+  dbNet* top_pin_flat_net = db_network_->flatNet(top_pin);
+  odb::dbModNet* top_pin_hier_net = db_network_->hierNet(top_pin);
 
-  db_network_->staToDb(top_pin,
-                       top_pin_ip_iterm,
-                       top_pin_ip_bterm,
-                       top_pin_ip_moditerm,
-                       top_pin_ip_modbterm);
-
-  Net* input_net = nullptr;
-  dbNet* top_pin_flat_net = top_pin_ip_bterm->getNet();
-  odb::dbModNet* top_pin_hier_net = top_pin_ip_bterm->getModNet();
-
-  if (top_pin_hier_net) {
-    input_net = db_network_->dbToSta(top_pin_hier_net);
-  } else if (top_pin_flat_net) {
-    input_net = db_network_->dbToSta(top_pin_flat_net);
-  }
-
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-
+  // Filter to see if we need to do anything..
   bool has_non_buffer = false;
   bool has_dont_touch = false;
-
-  NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(input_net);
+  NetConnectedPinIterator* pin_iter
+      = network_->connectedPinIterator(db_network_->dbToSta(top_pin_flat_net));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
-    // Leave input port pin connected to input_net.
+    // Leave input port pin connected to top net
     if (pin != top_pin) {
       auto inst = network_->instance(pin);
       odb::dbInst* db_inst;
@@ -993,11 +1092,15 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
       db_network_->staToDb(inst, db_inst, mod_inst);
       if (dontTouch(inst)) {
         has_dont_touch = true;
+        // clang-format off
         logger_->warn(RSZ,
                       85,
                       "Input {} can't be buffered due to dont-touch fanout {}",
-                      (input_net ? network_->name(input_net) : "no-input-net"),
+                      (top_pin_flat_net ? network_->name(
+                           db_network_->dbToSta(top_pin_flat_net))
+                                        : "no-input-net"),
                       network_->name(pin));
+        // clang-format on
         break;
       }
       auto cell = network_->cell(inst);
@@ -1012,56 +1115,38 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
     }
   }
   delete pin_iter;
-
+  // dont buffer, buffers
   if (has_dont_touch || !has_non_buffer) {
     return nullptr;
   }
 
+  // make the buffer and its output net.
   string buffer_name = makeUniqueInstName("input");
   Instance* parent = db_network_->topInstance();
   Net* buffer_out = makeUniqueNet();
-  dbNet* buffer_out_net = db_network_->flatNet(buffer_out);
-
+  dbNet* buffer_out_flat_net = db_network_->flatNet(buffer_out);
   Point pin_loc = db_network_->location(top_pin);
   Instance* buffer
       = makeBuffer(buffer_cell, buffer_name.c_str(), parent, pin_loc);
   inserted_buffer_count_++;
 
-  pin_iter = network_->connectedPinIterator(input_net);
+  Pin* buffer_ip_pin = nullptr;
+  Pin* buffer_op_pin = nullptr;
+  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
+
+  pin_iter
+      = network_->connectedPinIterator(db_network_->dbToSta(top_pin_flat_net));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
-
-    //
-    // Get destination type.
-    // could be moditerm
-    // could be modbterm
-    // could be iterm
-    // could be bterm
-    //
-
-    odb::dbBTerm* dest_bterm;
-    odb::dbModITerm* dest_moditerm;
-    odb::dbModBTerm* dest_modbterm;
-    odb::dbITerm* dest_iterm;
-    db_network_->staToDb(
-        pin, dest_iterm, dest_bterm, dest_moditerm, dest_modbterm);
-    odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
-
-    // we are going to push the mod net into the core
-    // so we rename it to avoid conflict with top level
-    // name. We name it the same as the flat net.
-    if (dest_modnet) {
-      dest_modnet->rename(buffer_out_net->getName().c_str());
-    }
-
-    // Leave input port pin connected to input_net.
-    // but move any hierarchical nets to output of buffer
     if (pin != top_pin) {
-      // disconnect the destination pin from everything
+      odb::dbBTerm* dest_bterm;
+      odb::dbModITerm* dest_moditerm;
+      odb::dbModBTerm* dest_modbterm;
+      odb::dbITerm* dest_iterm;
+      db_network_->staToDb(
+          pin, dest_iterm, dest_bterm, dest_moditerm, dest_modbterm);
+      odb::dbModNet* dest_modnet = db_network_->hierNet(pin);
       sta_->disconnectPin(const_cast<Pin*>(pin));
-
-      // handle the modnets.
-      // connect the buffer_out_net to the flat pin
       if (dest_modnet) {
         if (dest_iterm) {
           dest_iterm->connect(dest_modnet);
@@ -1070,31 +1155,47 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
           dest_moditerm->connect(dest_modnet);
         }
       }
-      // now the flat net
-      /*
-      Port* pin_port = db_network_->port(pin);
-      sta_->connectPin(db_network_->instance(pin), pin_port, buffer_out);
-      */
       if (dest_iterm) {
-        dest_iterm->connect(buffer_out_net);
+        dest_iterm->connect(buffer_out_flat_net);
       } else if (dest_bterm) {
-        dest_bterm->connect(buffer_out_net);
+        dest_bterm->connect(buffer_out_flat_net);
       }
     }
   }
   delete pin_iter;
 
-  sta_->connectPin(buffer, input, input_net);
-  sta_->connectPin(buffer, output, buffer_out);
+  db_network_->connectPin(buffer_ip_pin,
+                          db_network_->dbToSta(top_pin_flat_net));
+  db_network_->connectPin(buffer_op_pin,
+                          db_network_->dbToSta(buffer_out_flat_net));
+  //
+  // we are going to push the top mod net into the core
+  // so we rename it to avoid conflict with top level
+  // name. We name it the same as the flat net used on
+  // the buffer output.
+  //
 
-  // Remove the top net connection to the mod net, if any
   if (top_pin_hier_net) {
-    top_pin_ip_bterm->disconnect();
-    top_pin_ip_bterm->connect(top_pin_flat_net);
+    top_pin_hier_net->rename(buffer_out_flat_net->getName().c_str());
+    db_network_->connectPin(buffer_op_pin,
+                            db_network_->dbToSta(top_pin_hier_net));
   }
 
-  parasiticsInvalid(input_net);
-  parasiticsInvalid(buffer_out);
+  //
+  // Remove the top net connection to the mod net, if any
+  // and make sure top pin connected to just the flat net.
+  //
+  if (top_pin_hier_net) {
+    db_network_->disconnectPin(const_cast<Pin*>(top_pin));
+    db_network_->connectPin(const_cast<Pin*>(top_pin),
+                            db_network_->dbToSta(top_pin_flat_net));
+  }
+  // invalidate the parasitics on the buffer input and output
+  // nets (the top_pin_flat_net, buffer input, and buffer_out
+  // flat_net, buffer output).
+  parasiticsInvalid(db_network_->dbToSta(top_pin_flat_net));
+  parasiticsInvalid(db_network_->dbToSta(buffer_out_flat_net));
+
   return buffer;
 }
 
@@ -1515,6 +1616,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
   LibertyCellSeq equiv_cells;
 
   if (report_all_cells) {
+    swappable_cells_cache_.clear();
     bool restrict = false;
     std::optional<double> no_limit = std::nullopt;
     utl::SetAndRestore relax_footprint(match_cell_footprint_, restrict);
@@ -1524,6 +1626,7 @@ void Resizer::reportEquivalentCells(LibertyCell* base_cell,
     utl::SetAndRestore relax_keep_site(sizing_keep_site_, restrict);
     utl::SetAndRestore relax_keep_vt(sizing_keep_vt_, restrict);
     equiv_cells = getSwappableCells(base_cell);
+    swappable_cells_cache_.clear();  // SetAndRestore invalidates cache.
   } else {
     equiv_cells = getSwappableCells(base_cell);
   }
@@ -1732,6 +1835,7 @@ LibertyCellSeq Resizer::getSwappableCells(LibertyCell* source_cell)
     swappable_cells.push_back(source_cell);
   }
 
+  swappable_cells_cache_[source_cell] = swappable_cells;
   return swappable_cells;
 }
 
@@ -2883,13 +2987,21 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
     if (!dontTouch(inst)) {
       Pin* drvr_pin = network_->findPin(inst, tie_port);
       if (drvr_pin) {
-        Net* net = network_->net(drvr_pin);
+        dbNet* db_net = db_network_->flatNet(drvr_pin);
+        if (!db_net) {
+          continue;
+        }
+        Net* net = db_network_->dbToSta(db_net);
         if (net && !dontTouch(net)) {
           NetConnectedPinIterator* pin_iter
               = network_->connectedPinIterator(net);
           bool keep_tie = false;
           while (pin_iter->hasNext()) {
             const Pin* load = pin_iter->next();
+            if (!(db_network_->isFlat(load))) {
+              continue;
+            }
+
             Instance* load_inst = network_->instance(load);
             if (dontTouch(load_inst)) {
               keep_tie = true;
@@ -2932,7 +3044,10 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
 
           // Delete inst output net.
           Pin* tie_pin = network_->findPin(inst, tie_port);
-          Net* tie_net = network_->net(tie_pin);
+          dbNet* tie_flat_net = db_network_->flatNet(tie_pin);
+          Net* tie_net = db_network_->dbToSta(tie_flat_net);
+
+          // network_->net(tie_pin);
           sta_->deleteNet(tie_net);
           parasitics_invalid_.erase(tie_net);
           // Delete the tie instance if no other ports are in use.
@@ -2943,7 +3058,8 @@ void Resizer::repairTieFanout(LibertyPort* tie_port,
           while (inst_pin_iter->hasNext()) {
             Pin* pin = inst_pin_iter->next();
             if (pin != drvr_pin) {
-              Net* net = network_->net(pin);
+              // hier fix
+              Net* net = db_network_->dbToSta(db_network_->flatNet(pin));
               if (net && !network_->isPower(net) && !network_->isGround(net)) {
                 has_other_fanout = true;
                 break;
@@ -2987,7 +3103,7 @@ Point Resizer::tieLocation(const Pin* load, int separation)
   int load_y = load_loc.getY();
   int tie_x = load_x;
   int tie_y = load_y;
-  if (!network_->isTopLevelPort(load)) {
+  if (!(network_->isTopLevelPort(load) || !db_network_->isFlat(load))) {
     dbInst* db_inst = db_network_->staToDb(network_->instance(load));
     dbBox* bbox = db_inst->getBBox();
     int left_dist = abs(load_x - bbox->xMin());
@@ -4191,6 +4307,12 @@ Instance* Resizer::journalCloneInstance(LibertyCell* cell,
 
 void Resizer::journalUndoGateCloning(int& cloned_gate_count)
 {
+  //
+  // TODO:
+  // Issue a fatal here, this code is not supported.
+  // We now use journalling on odb
+  //
+
   // Undo gate cloning
   while (!cloned_gates_.empty()) {
     auto element = cloned_gates_.top();
@@ -4342,7 +4464,6 @@ void Resizer::journalRestoreBuffers(int& removed_buffer_count)
       it = removed_buffer_map_.erase(it);
     }
   }
-
   // Second, reconnect buffer input and output pins
   for (const auto& pair : removed_buffer_map_) {
     std::string name = pair.first;

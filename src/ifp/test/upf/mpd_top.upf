@@ -84,25 +84,25 @@ set_isolation iso_d_4 \
   -update \
   -location parent
 
-use_interface_cell \
+use_interface_cell PD_D1 \
   -domain PD_D1 \
   -strategy iso_d_1 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
 
 
-use_interface_cell \
+use_interface_cell PD_D2 \
   -domain PD_D2 \
   -strategy iso_d_2 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
 
 
-use_interface_cell \
+use_interface_cell PD_D3 \
   -domain PD_D3 \
   -strategy iso_d_3 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
 
 
-use_interface_cell \
+use_interface_cell PD_D4 \
   -domain PD_D4 \
   -strategy iso_d_4 \
   -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}

@@ -35,6 +35,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <map>
 
 #include "dbDatabase.h"
 #include "dbHashTable.h"
@@ -294,8 +295,7 @@ void dbGCellGrid::getGridX(std::vector<int>& x_grid)
   std::sort(grid->x_grid_.begin(), grid->x_grid_.end());
 
   // remove any duplicates
-  std::vector<int>::iterator new_end;
-  new_end = std::unique(grid->x_grid_.begin(), grid->x_grid_.end());
+  auto new_end = std::unique(grid->x_grid_.begin(), grid->x_grid_.end());
   grid->x_grid_.erase(new_end, grid->x_grid_.end());
   x_grid = grid->x_grid_;
 }
@@ -334,8 +334,7 @@ void dbGCellGrid::getGridY(std::vector<int>& y_grid)
   std::sort(grid->y_grid_.begin(), grid->y_grid_.end());
 
   // remove any duplicates
-  std::vector<int>::iterator new_end;
-  new_end = std::unique(grid->y_grid_.begin(), grid->y_grid_.end());
+  auto new_end = std::unique(grid->y_grid_.begin(), grid->y_grid_.end());
   grid->y_grid_.erase(new_end, grid->y_grid_.end());
   y_grid = grid->y_grid_;
 }

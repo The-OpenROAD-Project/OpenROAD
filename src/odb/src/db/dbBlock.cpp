@@ -171,9 +171,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
-  _hier_delimeter = 0;
-  _left_bus_delimeter = 0;
-  _right_bus_delimeter = 0;
+  _hier_delimiter = 0;
+  _left_bus_delimiter = 0;
+  _right_bus_delimiter = 0;
   _num_ext_corners = 0;
   _corners_per_block = 0;
   _corner_name_list = nullptr;
@@ -512,18 +512,12 @@ _dbBlock::~_dbBlock()
   delete _dft_tbl;
   delete _marker_categories_tbl;
 
-  std::list<dbBlockCallBackObj*>::iterator _cbitr;
-  while (_callbacks.begin() != _callbacks.end()) {
-    _cbitr = _callbacks.begin();
+  while (!_callbacks.empty()) {
+    auto _cbitr = _callbacks.begin();
     (*_cbitr)->removeOwner();
   }
-  {
-    delete _journal;
-  }
-
-  {
-    delete _journal_pending;
-  }
+  delete _journal;
+  delete _journal_pending;
 }
 
 void dbBlock::clear()
@@ -538,8 +532,8 @@ void dbBlock::clear()
   char* name = strdup(block->_name);
   ZALLOCATED(name);
 
-  // save a copy of the delimeter
-  char delimeter = block->_hier_delimeter;
+  // save a copy of the delimiter
+  char delimiter = block->_hier_delimiter;
 
   std::list<dbBlockCallBackObj*> callbacks;
 
@@ -558,7 +552,7 @@ void dbBlock::clear()
   new (block) _dbBlock(db);
 
   // initialize the
-  block->initialize(chip, tech, parent, name, delimeter);
+  block->initialize(chip, tech, parent, name, delimiter);
 
   // restore callbacks
   block->_callbacks.swap(callbacks);
@@ -580,7 +574,7 @@ void _dbBlock::initialize(_dbChip* chip,
                           _dbTech* tech,
                           _dbBlock* parent,
                           const char* name,
-                          char delimeter)
+                          char delimiter)
 {
   _name = strdup(name);
   ZALLOCATED(name);
@@ -592,7 +586,7 @@ void _dbBlock::initialize(_dbChip* chip,
   _bbox = box->getOID();
   _chip = chip->getOID();
   _tech = tech->getOID();
-  _hier_delimeter = delimeter;
+  _hier_delimiter = delimiter;
   // create top module
   _dbModule* _top = (_dbModule*) dbModule::create((dbBlock*) this, name);
   _top_module = _top->getOID();
@@ -759,9 +753,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
-  stream << block._hier_delimeter;
-  stream << block._left_bus_delimeter;
-  stream << block._right_bus_delimeter;
+  stream << block._hier_delimiter;
+  stream << block._left_bus_delimiter;
+  stream << block._right_bus_delimiter;
   stream << block._num_ext_corners;
   stream << block._corners_per_block;
   stream << block._corner_name_list;
@@ -892,9 +886,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
 
   stream >> block._def_units;
   stream >> block._dbu_per_micron;
-  stream >> block._hier_delimeter;
-  stream >> block._left_bus_delimeter;
-  stream >> block._right_bus_delimeter;
+  stream >> block._hier_delimiter;
+  stream >> block._left_bus_delimiter;
+  stream >> block._right_bus_delimiter;
   stream >> block._num_ext_corners;
   stream >> block._corners_per_block;
   stream >> block._corner_name_list;
@@ -1094,15 +1088,15 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
   }
 
-  if (_hier_delimeter != rhs._hier_delimeter) {
+  if (_hier_delimiter != rhs._hier_delimiter) {
     return false;
   }
 
-  if (_left_bus_delimeter != rhs._left_bus_delimeter) {
+  if (_left_bus_delimiter != rhs._left_bus_delimiter) {
     return false;
   }
 
-  if (_right_bus_delimeter != rhs._right_bus_delimeter) {
+  if (_right_bus_delimiter != rhs._right_bus_delimiter) {
     return false;
   }
 
@@ -1454,27 +1448,15 @@ void dbBlock::ComputeBBox()
   _dbBox* bbox = block->_box_tbl->getPtr(block->_bbox);
   bbox->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
 
-  dbSet<dbInst> insts = getInsts();
-  dbSet<dbInst>::iterator iitr;
-
-  for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
-    dbInst* inst = *iitr;
+  for (dbInst* inst : getInsts()) {
     if (inst->isPlaced()) {
       _dbBox* box = (_dbBox*) inst->getBBox();
       bbox->_shape._rect.merge(box->_shape._rect);
     }
   }
 
-  dbSet<dbBTerm> bterms = getBTerms();
-  dbSet<dbBTerm>::iterator bitr;
-
-  for (bitr = bterms.begin(); bitr != bterms.end(); ++bitr) {
-    dbBTerm* bterm = *bitr;
-    dbSet<dbBPin> bpins = bterm->getBPins();
-    dbSet<dbBPin>::iterator pitr;
-
-    for (pitr = bpins.begin(); pitr != bpins.end(); ++pitr) {
-      dbBPin* bp = *pitr;
+  for (dbBTerm* bterm : getBTerms()) {
+    for (dbBPin* bp : bterm->getBPins()) {
       if (bp->getPlacementStatus().isPlaced()) {
         for (dbBox* box : bp->getBoxes()) {
           Rect r = box->getBox();
@@ -1484,27 +1466,17 @@ void dbBlock::ComputeBBox()
     }
   }
 
-  dbSet<dbObstruction> obstructions = getObstructions();
-  dbSet<dbObstruction>::iterator oitr;
-
-  for (oitr = obstructions.begin(); oitr != obstructions.end(); ++oitr) {
-    dbObstruction* obs = *oitr;
+  for (dbObstruction* obs : getObstructions()) {
     _dbBox* box = (_dbBox*) obs->getBBox();
     bbox->_shape._rect.merge(box->_shape._rect);
   }
 
-  dbSet<dbSBox> sboxes(block, block->_sbox_tbl);
-  dbSet<dbSBox>::iterator sitr;
-
-  for (sitr = sboxes.begin(); sitr != sboxes.end(); ++sitr) {
-    dbSBox* box = (dbSBox*) *sitr;
+  for (dbSBox* box : dbSet<dbSBox>(block, block->_sbox_tbl)) {
     Rect rect = box->getBox();
     bbox->_shape._rect.merge(rect);
   }
 
-  dbSet<dbWire> wires(block, block->_wire_tbl);
-
-  for (dbWire* wire : wires) {
+  for (dbWire* wire : dbSet<dbWire>(block, block->_wire_tbl)) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
       bbox->_shape._rect.merge(opt_bbox.value());
@@ -1572,15 +1544,11 @@ dbSet<dbBlock> dbBlock::getChildren()
   return dbSet<dbBlock>(block, chip->_block_itr);
 }
 
-dbBlock* dbBlock::findChild(const char* name_)
+dbBlock* dbBlock::findChild(const char* name)
 {
-  dbSet<dbBlock> children = getChildren();
-  dbSet<dbBlock>::iterator itr;
-
-  for (itr = children.begin(); itr != children.end(); ++itr) {
-    _dbBlock* child = (_dbBlock*) *itr;
-    if (strcmp(child->_name, name_) == 0) {
-      return (dbBlock*) child;
+  for (dbBlock* child : getChildren()) {
+    if (strcmp(child->getConstName(), name) == 0) {
+      return child;
     }
   }
 
@@ -1699,6 +1667,12 @@ dbSet<dbModBTerm> dbBlock::getModBTerms()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbModBTerm>(block, block->_modbterm_tbl);
+}
+
+dbSet<dbModITerm> dbBlock::getModITerms()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModITerm>(block, block->_moditerm_tbl);
 }
 
 dbSet<dbModNet> dbBlock::getModNets()
@@ -1846,9 +1820,9 @@ dbITerm* dbBlock::findITerm(const char* name)
 
   std::string s(name);
 
-  std::string::size_type idx = s.rfind(block->_hier_delimeter);
+  std::string::size_type idx = s.rfind(block->_hier_delimiter);
 
-  if (idx == std::string::npos) {  // no delimeter
+  if (idx == std::string::npos) {  // no delimiter
     return nullptr;
   }
 
@@ -1896,14 +1870,9 @@ dbNet* dbBlock::findNet(const char* name)
 
 dbVia* dbBlock::findVia(const char* name)
 {
-  dbSet<dbVia> vias = getVias();
-  dbSet<dbVia>::iterator itr;
-
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    _dbVia* via = (_dbVia*) *itr;
-
-    if (strcmp(via->_name, name) == 0) {
-      return (dbVia*) via;
+  for (dbVia* via : getVias()) {
+    if (strcmp(via->getConstName(), name) == 0) {
+      return via;
     }
   }
 
@@ -1947,14 +1916,9 @@ dbSet<dbRegion> dbBlock::getRegions()
 
 dbRegion* dbBlock::findRegion(const char* name)
 {
-  dbSet<dbRegion> regions = getRegions();
-  dbSet<dbRegion>::iterator itr;
-
-  for (itr = regions.begin(); itr != regions.end(); ++itr) {
-    _dbRegion* r = (_dbRegion*) *itr;
-
-    if (strcmp(r->_name, name) == 0) {
-      return (dbRegion*) r;
+  for (dbRegion* r : getRegions()) {
+    if (r->getName() == name) {
+      return r;
     }
   }
 
@@ -2025,24 +1989,24 @@ int64_t dbBlock::micronsAreaToDbu(const double micronsArea)
   return static_cast<int64_t>(std::round(dbuArea));
 }
 
-char dbBlock::getHierarchyDelimeter()
+char dbBlock::getHierarchyDelimiter()
 {
   _dbBlock* block = (_dbBlock*) this;
-  return block->_hier_delimeter;
+  return block->_hier_delimiter;
 }
 
-void dbBlock::setBusDelimeters(char left, char right)
+void dbBlock::setBusDelimiters(char left, char right)
 {
   _dbBlock* block = (_dbBlock*) this;
-  block->_left_bus_delimeter = left;
-  block->_right_bus_delimeter = right;
+  block->_left_bus_delimiter = left;
+  block->_right_bus_delimiter = right;
 }
 
-void dbBlock::getBusDelimeters(char& left, char& right)
+void dbBlock::getBusDelimiters(char& left, char& right)
 {
   _dbBlock* block = (_dbBlock*) this;
-  left = block->_left_bus_delimeter;
-  right = block->_right_bus_delimeter;
+  left = block->_left_bus_delimiter;
+  right = block->_right_bus_delimiter;
 }
 
 dbSet<dbTrackGrid> dbBlock::getTrackGrids()
@@ -2054,12 +2018,7 @@ dbSet<dbTrackGrid> dbBlock::getTrackGrids()
 
 dbTrackGrid* dbBlock::findTrackGrid(dbTechLayer* layer)
 {
-  dbSet<dbTrackGrid> tracks = getTrackGrids();
-  dbSet<dbTrackGrid>::iterator itr;
-
-  for (itr = tracks.begin(); itr != tracks.end(); ++itr) {
-    dbTrackGrid* g = *itr;
-
+  for (dbTrackGrid* g : getTrackGrids()) {
     if (g->getTechLayer() == layer) {
       return g;
     }
@@ -2071,11 +2030,7 @@ dbTrackGrid* dbBlock::findTrackGrid(dbTechLayer* layer)
 void dbBlock::getMasters(std::vector<dbMaster*>& masters)
 {
   _dbBlock* block = (_dbBlock*) this;
-  dbSet<dbInstHdr> inst_hdrs(block, block->_inst_hdr_tbl);
-  dbSet<dbInstHdr>::iterator itr;
-
-  for (itr = inst_hdrs.begin(); itr != inst_hdrs.end(); ++itr) {
-    dbInstHdr* hdr = *itr;
+  for (dbInstHdr* hdr : dbSet<dbInstHdr>(block, block->_inst_hdr_tbl)) {
     masters.push_back(hdr->getMaster());
   }
 }
@@ -2222,16 +2177,8 @@ dbSet<dbRSeg> dbBlock::getRSegs()
 
 dbTechNonDefaultRule* dbBlock::findNonDefaultRule(const char* name)
 {
-  //_dbBlock * block = (_dbBlock *) this;
-  //_dbTech * tech = (_dbTech *) getDb()->getTech();
-
-  dbSet<dbTechNonDefaultRule> rules = getNonDefaultRules();
-  dbSet<dbTechNonDefaultRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    _dbTechNonDefaultRule* r = (_dbTechNonDefaultRule*) *itr;
-
-    if (strcmp(r->_name, name) == 0) {
+  for (dbTechNonDefaultRule* r : getNonDefaultRules()) {
+    if (strcmp(r->getConstName(), name) == 0) {
       return (dbTechNonDefaultRule*) r;
     }
   }
@@ -2289,23 +2236,18 @@ bool dbBlock::adjustCC(float adjFactor,
                        std::vector<dbNet*>& halonets)
 {
   bool adjusted = false;
-  dbNet* net;
+  _dbBlock* block = (_dbBlock*) this;
   std::vector<dbCCSeg*> adjustedCC;
-  std::vector<dbNet*>::iterator itr;
-  uint adjustOrder = ((_dbBlock*) this)->_currentCcAdjOrder + 1;
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    net = *itr;
+  const uint adjustOrder = block->_currentCcAdjOrder + 1;
+  for (dbNet* net : nets) {
     adjusted |= net->adjustCC(
         adjustOrder, adjFactor, ccThreshHold, adjustedCC, halonets);
   }
-  std::vector<dbCCSeg*>::iterator ccitr;
-  dbCCSeg* ccs;
-  for (ccitr = adjustedCC.begin(); ccitr != adjustedCC.end(); ++ccitr) {
-    ccs = *ccitr;
+  for (dbCCSeg* ccs : adjustedCC) {
     ccs->setMark(false);
   }
   if (adjusted) {
-    ((_dbBlock*) this)->_currentCcAdjOrder = adjustOrder;
+    block->_currentCcAdjOrder = adjustOrder;
   }
   return adjusted;
 }
@@ -2316,16 +2258,10 @@ bool dbBlock::groundCC(float gndFactor)
     return false;
   }
   bool grounded = false;
-  dbNet* net;
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    net = *nitr;
+  for (dbNet* net : getNets()) {
     grounded |= net->groundCC(gndFactor);
   }
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    net = *nitr;
-    dbNet* net = *nitr;
+  for (dbNet* net : getNets()) {
     net->destroyCCSegs();
   }
   return grounded;
@@ -2334,17 +2270,11 @@ bool dbBlock::groundCC(float gndFactor)
 void dbBlock::undoAdjustedCC(std::vector<dbNet*>& nets,
                              std::vector<dbNet*>& halonets)
 {
-  dbNet* net;
   std::vector<dbCCSeg*> adjustedCC;
-  std::vector<dbNet*>::iterator itr;
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    net = *itr;
+  for (dbNet* net : getNets()) {
     net->undoAdjustedCC(adjustedCC, halonets);
   }
-  std::vector<dbCCSeg*>::iterator ccitr;
-  dbCCSeg* ccs;
-  for (ccitr = adjustedCC.begin(); ccitr != adjustedCC.end(); ++ccitr) {
-    ccs = *ccitr;
+  for (dbCCSeg* ccs : adjustedCC) {
     ccs->setMark(false);
   }
 }
@@ -2432,13 +2362,10 @@ void dbBlock::initParasiticsValueTables()
   _dbBlock* block = (_dbBlock*) this;
   if ((block->_r_seg_tbl->size() > 0) || (block->_cap_node_tbl->size() > 0)
       || (block->_cc_seg_tbl->size() > 0)) {
-    dbSet<dbNet> nets = getNets();
-    dbSet<dbNet>::iterator nitr;
-
-    for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-      _dbNet* n = (_dbNet*) *nitr;
-      n->_cap_nodes = 0;  // DKF
-      n->_r_segs = 0;     // DKF
+    for (dbNet* net : getNets()) {
+      _dbNet* n = (_dbNet*) net;
+      n->_cap_nodes = 0;
+      n->_r_segs = 0;
     }
   }
 
@@ -2581,12 +2508,8 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
   sprintf(cornerName, "extCornerBlock__%d", corner);
   dbBlock* extBlk = dbBlock::create(this, cornerName, nullptr, '/');
   assert(extBlk);
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-  dbNet* net;
   char name[64];
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    net = *nitr;
+  for (dbNet* net : getNets()) {
     sprintf(name, "%d", net->getId());
     dbNet* xnet = dbNet::create(extBlk, name, true);
     if (xnet == nullptr) {
@@ -2687,7 +2610,7 @@ void dbBlock::setCornerCount(int cnt)
 dbBlock* dbBlock::create(dbChip* chip_,
                          const char* name_,
                          dbTech* tech_,
-                         char hier_delimeter_)
+                         char hier_delimiter_)
 {
   _dbChip* chip = (_dbChip*) chip_;
 
@@ -2701,7 +2624,7 @@ dbBlock* dbBlock::create(dbChip* chip_,
 
   _dbBlock* top = chip->_block_tbl->create();
   _dbTech* tech = (_dbTech*) tech_;
-  top->initialize(chip, tech, nullptr, name_, hier_delimeter_);
+  top->initialize(chip, tech, nullptr, name_, hier_delimiter_);
   chip->_top = top->getOID();
   top->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) top;
@@ -2710,7 +2633,7 @@ dbBlock* dbBlock::create(dbChip* chip_,
 dbBlock* dbBlock::create(dbBlock* parent_,
                          const char* name_,
                          dbTech* tech_,
-                         char hier_delimeter)
+                         char hier_delimiter)
 {
   if (parent_->findChild(name_)) {
     return nullptr;
@@ -2724,7 +2647,7 @@ dbBlock* dbBlock::create(dbBlock* parent_,
   _dbChip* chip = (_dbChip*) parent->getOwner();
   _dbBlock* child = chip->_block_tbl->create();
   _dbTech* tech = (_dbTech*) tech_;
-  child->initialize(chip, tech, parent, name_, hier_delimeter);
+  child->initialize(chip, tech, parent, name_, hier_delimiter);
   child->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) child;
 }
@@ -2767,12 +2690,10 @@ void unlink_child_from_parent(_dbBlock* child, _dbBlock* parent)
 {
   uint id = child->getOID();
 
-  dbVector<dbId<_dbBlock>>::iterator citr;
-
-  for (citr = parent->_children.begin(); citr != parent->_children.end();
-       ++citr) {
+  auto& children = parent->_children;
+  for (auto citr = children.begin(); citr != children.end(); ++citr) {
     if (*citr == id) {
-      parent->_children.erase(citr);
+      children.erase(citr);
       break;
     }
   }
@@ -2794,17 +2715,12 @@ dbBlockSearch* dbBlock::getSearchDb()
 
 void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
 {
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-
   int tot = 0;
   int upd = 0;
   int enc = 0;
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
+  for (dbNet* net : getNets()) {
     tot++;
-    dbNet* net = *nitr;
-
-    _dbNet* n = (_dbNet*) *nitr;
+    _dbNet* n = (_dbNet*) net;
 
     if (n->_flags._wire_altered != 1) {
       continue;
@@ -2820,30 +2736,21 @@ void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
 
 void dbBlock::destroyCCs(std::vector<dbNet*>& nets)
 {
-  std::vector<dbNet*>::iterator itr;
-
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
+  for (dbNet* net : nets) {
     net->destroyCCSegs();
   }
 }
 
 void dbBlock::destroyRSegs(std::vector<dbNet*>& nets)
 {
-  std::vector<dbNet*>::iterator itr;
-
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
+  for (dbNet* net : nets) {
     net->destroyRSegs();
   }
 }
 
 void dbBlock::destroyCNs(std::vector<dbNet*>& nets, bool cleanExtid)
 {
-  std::vector<dbNet*>::iterator itr;
-
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
+  for (dbNet* net : nets) {
     net->destroyCapNodes(cleanExtid);
   }
 }
@@ -2884,13 +2791,9 @@ void dbBlock::getCcHaloNets(std::vector<dbNet*>& changedNets,
     changedNets[jj]->setMark(true);
   }
   for (jj = 0; jj < changedNets.size(); jj++) {
-    dbSet<dbCapNode> capNodes = changedNets[jj]->getCapNodes();
-    dbSet<dbCapNode>::iterator citr;
-    for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-      dbCapNode* capn = *citr;
+    for (dbCapNode* capn : changedNets[jj]->getCapNodes()) {
       dbSet<dbCCSeg> ccSegs = capn->getCCSegs();
-      dbSet<dbCCSeg>::iterator ccitr;
-      for (ccitr = ccSegs.begin(); ccitr != ccSegs.end();) {
+      for (auto ccitr = ccSegs.begin(); ccitr != ccSegs.end();) {
         dbCCSeg* cc = *ccitr;
         ++ccitr;
         dbCapNode* tcap = cc->getSourceCapNode();
@@ -2991,11 +2894,7 @@ void dbBlock::writeGuides(const char* filename) const
 
 void dbBlock::clearUserInstFlags()
 {
-  dbSet<dbInst> insts = getInsts();
-  dbSet<dbInst>::iterator itr;
-  for (itr = insts.begin(); itr != insts.end(); ++itr) {
-    dbInst* inst = *itr;
-
+  for (dbInst* inst : getInsts()) {
     inst->clearUserFlag2();
     inst->clearUserFlag1();
     inst->clearUserFlag3();
@@ -3004,23 +2903,15 @@ void dbBlock::clearUserInstFlags()
 
 void dbBlock::setDrivingItermsforNets()
 {
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    dbNet* net = *nitr;
+  for (dbNet* net : getNets()) {
     if ((net->getSigType() == dbSigType::GROUND)
         || (net->getSigType() == dbSigType::POWER)) {
       continue;
     }
 
     net->setDrivingITerm(0);
-    dbSet<dbITerm> iterms = net->getITerms();
-    dbSet<dbITerm>::iterator iitr;
 
-    for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-      dbITerm* tr = *iitr;
-
+    for (dbITerm* tr : net->getITerms()) {
       if (tr->getIoType() == dbIoType::OUTPUT) {
         net->setDrivingITerm(tr->getId());
         break;
@@ -3041,11 +2932,7 @@ void dbBlock::preExttreeMergeRC(double max_cap, uint corner)
     return;
   }
   getExtControl()->_exttreeMaxcap = max_cap;
-  dbSet<dbNet> bnets = getNets();
-  dbSet<dbNet>::iterator net_itr;
-  dbNet* net;
-  for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
-    net = *net_itr;
+  for (dbNet* net : getNets()) {
     net->preExttreeMergeRC(max_cap, corner);
   }
 }

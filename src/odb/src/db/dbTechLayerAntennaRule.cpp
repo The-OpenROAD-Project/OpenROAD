@@ -34,6 +34,7 @@
 
 #include <spdlog/fmt/ostr.h>
 
+#include <utility>
 #include <vector>
 
 #include "dbDatabase.h"
@@ -904,29 +905,21 @@ void dbTechAntennaPinModel::getMaxCutCAR(
 void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  dbVector<_dbTechAntennaAreaElement*>::iterator ant_iter;
 
-  for (ant_iter = xmod->_gate_area.begin(); ant_iter != xmod->_gate_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAGATEAREA", tech, writer);
+  for (auto ant : xmod->_gate_area) {
+    ant->writeLef("ANTENNAGATEAREA", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_area_car.begin();
-       ant_iter != xmod->_max_area_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXAREACAR", tech, writer);
+  for (auto ant : xmod->_max_area_car) {
+    ant->writeLef("ANTENNAMAXAREACAR", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_sidearea_car.begin();
-       ant_iter != xmod->_max_sidearea_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXSIDEAREACAR", tech, writer);
+  for (auto ant : xmod->_max_sidearea_car) {
+    ant->writeLef("ANTENNAMAXSIDEAREACAR", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_cut_car.begin();
-       ant_iter != xmod->_max_cut_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXCUTCAR", tech, writer);
+  for (auto ant : xmod->_max_cut_car) {
+    ant->writeLef("ANTENNAMAXCUTCAR", tech, writer);
   }
 }
 

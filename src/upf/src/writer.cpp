@@ -32,6 +32,8 @@
 
 #include "writer.h"
 
+#include <string>
+
 namespace upf {
 
 UPFWriter::UPFWriter(odb::dbBlock* block, utl::Logger* logger)

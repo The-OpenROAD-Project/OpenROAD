@@ -32,6 +32,7 @@
 
 #include "dbITerm.h"
 
+#include <utility>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -761,14 +762,8 @@ bool dbITerm::getAvgXY(int* x, int* y)
   dbInst* inst = getInst();
   const dbTransform transform = inst->getTransform();
 
-  dbSet<dbMPin> mpins = mterm->getMPins();
-  dbSet<dbMPin>::iterator mpin_itr;
-  for (mpin_itr = mpins.begin(); mpin_itr != mpins.end(); mpin_itr++) {
-    dbMPin* mpin = *mpin_itr;
-    dbSet<dbBox> boxes = mpin->getGeometry();
-    dbSet<dbBox>::iterator box_itr;
-    for (box_itr = boxes.begin(); box_itr != boxes.end(); box_itr++) {
-      dbBox* box = *box_itr;
+  for (dbMPin* mpin : mterm->getMPins()) {
+    for (dbBox* box : mpin->getGeometry()) {
       Rect rect = box->getBox();
       transform.apply(rect);
       xx += rect.xMin() + rect.xMax();

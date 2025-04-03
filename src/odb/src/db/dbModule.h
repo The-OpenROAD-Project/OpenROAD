@@ -38,6 +38,7 @@
 #include "odb/dbSet.h"
 #include "odb/odb.h"
 // User Code Begin Includes
+#include <string>
 #include <unordered_map>
 
 #include "dbHashTable.h"

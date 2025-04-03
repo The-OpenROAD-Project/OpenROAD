@@ -32,6 +32,9 @@
 
 #include "ScanCell.hh"
 
+#include <string>
+#include <string_view>
+
 #include "ClockDomain.hh"
 
 namespace dft {

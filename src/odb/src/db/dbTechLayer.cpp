@@ -35,6 +35,8 @@
 
 #include <cstdint>
 #include <cstring>
+#include <utility>
+#include <vector>
 
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -1727,19 +1729,12 @@ int dbTechLayer::findTwSpacing(const int width1,
 bool dbTechLayer::getMinimumCutRules(std::vector<dbTechMinCutRule*>& cut_rules)
 {
   cut_rules.clear();
-  dbSet<dbTechMinCutRule> rules = getMinCutRules();
 
-  if (rules.size() == 0) {
-    return false;
+  for (dbTechMinCutRule* rule : getMinCutRules()) {
+    cut_rules.push_back(rule);
   }
 
-  dbSet<dbTechMinCutRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    cut_rules.push_back((dbTechMinCutRule*) *itr);
-  }
-
-  return true;
+  return !cut_rules.empty();
 }
 
 dbSet<dbTechMinCutRule> dbTechLayer::getMinCutRules()
@@ -1769,19 +1764,11 @@ bool dbTechLayer::getMinEnclosureRules(
 {
   enc_rules.clear();
 
-  dbSet<dbTechMinEncRule> rules = getMinEncRules();
-
-  if (rules.size() == 0) {
-    return false;
+  for (dbTechMinEncRule* rule : getMinEncRules()) {
+    enc_rules.push_back(rule);
   }
 
-  dbSet<dbTechMinEncRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    enc_rules.push_back(*itr);
-  }
-
-  return true;
+  return !enc_rules.empty();
 }
 
 dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()

@@ -34,6 +34,9 @@
 
 #include <omp.h>
 
+#include <cstddef>
+#include <string>
+
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
 #include "utl/exception.h"

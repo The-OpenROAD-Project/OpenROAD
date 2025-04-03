@@ -59,6 +59,7 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -68,7 +69,6 @@
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -524,7 +524,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
+void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -2050,6 +2050,8 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  nets_to_route_.clear();
+  db_net_map_.clear();
   if (getMaxRoutingLayer() == -1) {
     setMaxRoutingLayer(computeMaxRoutingLayer());
   }
@@ -4257,11 +4259,17 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
     odb::Point pt1(seg.init_x, seg.init_y);
     odb::Point pt2(seg.final_x, seg.final_y);
     int layer = std::max(seg.init_layer, seg.final_layer);
-    if (pt1 == pin_pos && layer > top_layer) {
-      top_layer = layer;
+    if (pt1 == pin_pos || pt2 == pin_pos) {
+      top_layer = std::max(top_layer, layer);
     }
   }
 
+  if (top_layer == -1) {
+    logger_->error(GRT,
+                   703,
+                   "No segment was found in the routing that connects to the "
+                   "pin position.");
+  }
   return top_layer;
 }
 

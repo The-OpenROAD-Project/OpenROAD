@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <utility>
 #include <vector>
 
 #include "frBaseTypes.h"

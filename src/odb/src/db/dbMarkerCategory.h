@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <string>
+
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "odb/odb.h"
@@ -40,6 +42,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <fstream>
 #include <set>
+#include <string>
 // User Code End Includes
 
 namespace odb {

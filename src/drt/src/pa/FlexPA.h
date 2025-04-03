@@ -31,6 +31,8 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "FlexPA_unique.h"
@@ -146,6 +148,8 @@ class FlexPA
 
   bool isStdCell(frInst* unique_inst);
   bool isMacroCell(frInst* unique_inst);
+
+  void deleteInst(frInst* inst);
 
   /**
    * @brief generates all access points of a single unique instance

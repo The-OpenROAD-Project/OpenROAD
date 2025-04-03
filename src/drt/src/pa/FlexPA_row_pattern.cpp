@@ -33,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "FlexPA.h"
 #include "db/infra/frTime.h"

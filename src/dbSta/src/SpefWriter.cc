@@ -33,10 +33,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "rsz/SpefWriter.hh"
+#include "db_sta/SpefWriter.hh"
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "sta/Corner.hh"
@@ -44,10 +46,10 @@
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
-namespace rsz {
+namespace sta {
 
 using std::map;
-using utl::RSZ;
+using utl::ORD;
 
 SpefWriter::SpefWriter(Logger* logger,
                        dbSta* sta,
@@ -152,12 +154,12 @@ void SpefWriter::writePorts()
   for (auto [_, it] : spef_streams_) {
     std::ostream& stream = *it;
 
-    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+    std::unique_ptr<InstancePinIterator> pin_iter(
         network_->pinIterator(network_->topInstance()));
 
     stream << "*PORTS" << '\n';
     while (pin_iter->hasNext()) {
-      sta::Pin* pin = pin_iter->next();
+      Pin* pin = pin_iter->next();
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
       odb::dbModITerm* moditerm = nullptr;
@@ -173,8 +175,8 @@ void SpefWriter::writePorts()
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
-        logger_->error(RSZ,
-                       8,
+        logger_->error(ORD,
+                       10,
                        "Got a modTerm instead of iTerm or bTerm while writing "
                        "SPEF ports.");
       }
@@ -188,7 +190,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   auto it = spef_streams_.find(corner);
   if (it == spef_streams_.end()) {
     logger_->error(
-        RSZ, 14, "Tried to write net SPEF info for corner that was not set");
+        ORD, 20, "Tried to write net SPEF info for corner that was not set");
   }
   std::ostream& stream = *it->second;
 
@@ -222,7 +224,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
-        logger_->error(RSZ,
+        logger_->error(ORD,
                        9,
                        "Got a modTerm instead of iTerm or bTerm while writing "
                        "SPEF net connections.");
@@ -304,4 +306,4 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   stream << "*END" << '\n' << '\n';
 }
 
-}  // namespace rsz
+}  // namespace sta

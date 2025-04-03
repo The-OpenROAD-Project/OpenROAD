@@ -32,6 +32,8 @@
 
 #include "dbMaster.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
@@ -495,11 +497,11 @@ dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
     return mterm;
   }
   char blk_left_bus_del, blk_right_bus_del;
-  block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
+  block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
 
   char lib_left_bus_del, lib_right_bus_del;
   ;
-  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+  getLib()->getBusDelimiters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {
     return mterm;
@@ -623,13 +625,9 @@ void dbMaster::setFrozen()
 
   // set the order id on the mterm.
   // this id is used to index mterms on a inst-hdr
-  dbSet<dbMTerm> mterms = getMTerms();
-  dbSet<dbMTerm>::iterator itr;
   int i = 0;
-
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    _dbMTerm* mterm = (_dbMTerm*) *itr;
-    mterm->_order_id = i++;
+  for (dbMTerm* mterm : getMTerms()) {
+    ((_dbMTerm*) mterm)->_order_id = i++;
   }
 }
 
@@ -678,32 +676,14 @@ void dbMaster::getPlacementBoundary(Rect& r)
 
 void dbMaster::transform(dbTransform& t)
 {
-  //_dbMaster * master = (_dbMaster *) this;
-  dbSet<dbBox> obs = getObstructions();
-  dbSet<dbBox>::iterator itr;
-
-  for (itr = obs.begin(); itr != obs.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    t.apply(box->_shape._rect);
+  for (dbBox* box : getObstructions()) {
+    t.apply(((_dbBox*) box)->_shape._rect);
   }
 
-  dbSet<dbMTerm> mterms = getMTerms();
-  dbSet<dbMTerm>::iterator mitr;
-
-  for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-    dbMTerm* mterm = *mitr;
-    dbSet<dbMPin> mpins = mterm->getMPins();
-    dbSet<dbMPin>::iterator pitr;
-
-    for (pitr = mpins.begin(); pitr != mpins.end(); ++pitr) {
-      dbMPin* mpin = *pitr;
-
-      dbSet<dbBox> geoms = mpin->getGeometry();
-      dbSet<dbBox>::iterator gitr;
-
-      for (gitr = geoms.begin(); gitr != geoms.end(); ++gitr) {
-        _dbBox* box = (_dbBox*) *gitr;
-        t.apply(box->_shape._rect);
+  for (dbMTerm* mterm : getMTerms()) {
+    for (dbMPin* mpin : mterm->getMPins()) {
+      for (dbBox* box : mpin->getGeometry()) {
+        t.apply(((_dbBox*) box)->_shape._rect);
       }
     }
   }

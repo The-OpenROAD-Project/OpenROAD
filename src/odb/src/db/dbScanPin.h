@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <variant>
+
 #include "dbBTerm.h"
 #include "dbCore.h"
 #include "dbITerm.h"

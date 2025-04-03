@@ -16,11 +16,11 @@ Repair timing output passed/skipped equivalence test
 worst slack 0.21
 Placement Analysis
 ---------------------------------
-total displacement          9.6 u
-average displacement        0.5 u
-max displacement            4.1 u
+total displacement          8.7 u
+average displacement        0.4 u
+max displacement            3.2 u
 original HPWL            6886.7 u
-legalized HPWL           6886.8 u
+legalized HPWL           6887.7 u
 delta HPWL                    0 %
 
 worst slack 0.22

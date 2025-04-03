@@ -33,6 +33,7 @@
 #include "dbInst.h"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -881,11 +882,7 @@ dbBox* dbInst::getHalo()
 void dbInst::getConnectivity(std::vector<dbInst*>& result,
                              dbSigType::Value type)
 {
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iterm_itr;
-
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    dbITerm* iterm = *iterm_itr;
+  for (dbITerm* iterm : getITerms()) {
     dbNet* net = iterm->getNet();
 
     if (net == nullptr) {
@@ -896,12 +893,7 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
       continue;
     }
 
-    dbSet<dbITerm> net_iterms = net->getITerms();
-    dbSet<dbITerm>::iterator net_iterm_itr;
-
-    for (net_iterm_itr = net_iterms.begin(); net_iterm_itr != net_iterms.end();
-         ++net_iterm_itr) {
-      dbITerm* net_iterm = *net_iterm_itr;
+    for (dbITerm* net_iterm : net->getITerms()) {
       dbInst* inst = net_iterm->getInst();
 
       if (inst != this) {
@@ -912,15 +904,13 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
 
   // remove duplicates
   std::sort(result.begin(), result.end());
-  std::vector<dbInst*>::iterator end_itr;
-  end_itr = std::unique(result.begin(), result.end());
+  auto end_itr = std::unique(result.begin(), result.end());
   result.erase(end_itr, result.end());
 }
 
 bool dbInst::resetHierarchy(bool verbose)
 {
   _dbInst* inst = (_dbInst*) this;
-  //_dbBlock * block = (_dbBlock *) block_;
 
   if (inst->_hierarchy) {
     if (verbose) {
@@ -1125,30 +1115,23 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     block->_journal->endAction();
   }
 
-  // Notification - payam 01/18/2006
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbInstSwapMasterBefore(
-        this, new_master_);  // client ECO initialization - payam
+  for (auto cb : block->_callbacks) {
+    cb->inDbInstSwapMasterBefore(this, new_master_);
   }
 
   //
   // Ensure the mterms are equivalent
   //
-  dbSet<dbMTerm>::iterator itr;
-  dbSet<dbMTerm> mterms = new_master_->getMTerms();
   std::vector<_dbMTerm*> new_terms;
 
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    new_terms.push_back((_dbMTerm*) *itr);
+  for (dbMTerm* mterm : new_master_->getMTerms()) {
+    new_terms.push_back((_dbMTerm*) mterm);
   }
 
-  mterms = old_master_->getMTerms();
   std::vector<_dbMTerm*> old_terms;
 
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    old_terms.push_back((_dbMTerm*) *itr);
+  for (dbMTerm* mterm : old_master_->getMTerms()) {
+    old_terms.push_back((_dbMTerm*) mterm);
   }
 
   if (old_terms.size() != new_terms.size()) {
@@ -1232,9 +1215,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   std::sort(inst->_iterms.begin(), inst->_iterms.end(), itermCmp);
 
   // Notification
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (*cbitr)->inDbInstSwapMasterAfter(this);
+  for (auto cb : block->_callbacks) {
+    cb->inDbInstSwapMasterAfter(this);
   }
 
   return true;
@@ -1438,10 +1420,8 @@ void dbInst::destroy(dbInst* inst_)
 
     // Notify when pins are deleted (assumption: pins are destroyed only when
     // the related instance is destroyed)
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbITermDestroy((dbITerm*) _iterm);
+    for (auto cb : block->_callbacks) {
+      cb->inDbITermDestroy((dbITerm*) _iterm);
     }
 
     dbModule* module = inst_->getModule();
@@ -1501,10 +1481,8 @@ void dbInst::destroy(dbInst* inst_)
     inst_->getGroup()->removeInst(inst_);
   }
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbInstDestroy(inst_);  // client ECO optimization - payam
+  for (auto cb : block->_callbacks) {
+    cb->inDbInstDestroy(inst_);
   }
 
   _dbMaster* master = (_dbMaster*) inst_->getMaster();
@@ -1554,14 +1532,8 @@ dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
 }
 dbITerm* dbInst::getFirstOutput()
 {
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iitr;
-
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* tr = *iitr;
-
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER)) {
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
       continue;
     }
 
