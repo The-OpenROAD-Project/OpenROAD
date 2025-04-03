@@ -814,9 +814,6 @@ void RenderThread::drawBlockages(QPainter* painter,
     if (restart_) {
       break;
     }
-    if (blockage->isSystemReserved()) {
-      continue;
-    }
     Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
@@ -849,9 +846,6 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
   for (auto* obs : obstructions_range) {
     if (restart_) {
       break;
-    }
-    if (obs->isSystemReserved()) {
-      continue;
     }
     Rect bbox = obs->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());

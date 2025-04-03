@@ -112,9 +112,7 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
   EXPECT_EQ(virtual_obstructions.size(), 21);
 }
 
-// Special thing in GTest. DeathTests need to be marked as death tests.
-using Nangate45TestFixtureDeathTest = Nangate45TestFixture;
-TEST_F(Nangate45TestFixtureDeathTest, DeletingSystemBlockagesKillsProcess)
+TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
@@ -139,10 +137,11 @@ TEST_F(Nangate45TestFixtureDeathTest, DeletingSystemBlockagesKillsProcess)
     virtual_blockages.push_back(blockage);
   }
   EXPECT_EQ(virtual_blockages.size(), 1);
-  ASSERT_DEATH({ dbBlockage::destroy(virtual_blockages[0]); }, "");
+  EXPECT_THROW(
+      { dbBlockage::destroy(virtual_blockages[0]); }, std::runtime_error);
 }
 
-TEST_F(Nangate45TestFixtureDeathTest, DeletingSystemObstructionsKillsProcess)
+TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
@@ -166,7 +165,8 @@ TEST_F(Nangate45TestFixtureDeathTest, DeletingSystemObstructionsKillsProcess)
     virtual_obstructions.push_back(obstruction);
   }
   EXPECT_EQ(virtual_obstructions.size(), 21);
-  ASSERT_DEATH({ dbObstruction::destroy(virtual_obstructions[0]); }, "");
+  EXPECT_THROW(
+      { dbObstruction::destroy(virtual_obstructions[0]); }, std::runtime_error);
 }
 
 }  // namespace odb

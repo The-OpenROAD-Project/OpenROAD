@@ -1062,20 +1062,23 @@ void _dbBlock::clearSystemBlockagesAndObstructions()
   dbSet<dbBlockage> blockages(this, _blockage_tbl);
   dbSet<dbObstruction> obstructions(this, _obstruction_tbl);
 
-  for (dbBlockage* blockage : blockages) {
+  for (auto blockage = blockages.begin(); blockage != blockages.end();) {
     if (!blockage->isSystemReserved()) {
+      blockage++;
       continue;
     }
     blockage->setIsSystemReserved(false);
-    dbBlockage::destroy(blockage);
+    blockage = dbBlockage::destroy(blockage);
   }
 
-  for (dbObstruction* obstruction : obstructions) {
+  for (auto obstruction = obstructions.begin();
+       obstruction != obstructions.end();) {
     if (!obstruction->isSystemReserved()) {
+      obstruction++;
       continue;
     }
     obstruction->setIsSystemReserved(false);
-    dbObstruction::destroy(obstruction);
+    obstruction = dbObstruction::destroy(obstruction);
   }
 }
 

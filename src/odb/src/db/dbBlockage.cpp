@@ -254,7 +254,7 @@ void dbBlockage::destroy(dbBlockage* blockage)
 
   if (blockage->isSystemReserved()) {
     utl::Logger* logger = block->getLogger();
-    logger->critical(
+    logger->error(
         utl::ODB,
         1112,
         "You cannot delete a system created blockage (isSystemReserved).");
@@ -279,6 +279,15 @@ void _dbBlockage::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+}
+
+dbSet<dbBlockage>::iterator dbBlockage::destroy(
+    dbSet<dbBlockage>::iterator& itr)
+{
+  dbBlockage* bt = *itr;
+  dbSet<dbBlockage>::iterator next = ++itr;
+  destroy(bt);
+  return next;
 }
 
 }  // namespace odb

@@ -4115,6 +4115,12 @@ class dbObstruction : public dbObject
   static void destroy(dbObstruction* obstruction);
 
   ///
+  /// Delete the blockage from the block.
+  ///
+  static dbSet<dbObstruction>::iterator destroy(
+      dbSet<dbObstruction>::iterator& itr);
+
+  ///
   /// Returns true if this obstruction is system created. System created
   /// obstructions represent obstructions created by non-rectangular floorplans.
   /// The general flow is the polygonal floorplan is subtracted
@@ -4226,6 +4232,11 @@ class dbBlockage : public dbObject
                             dbInst* inst = nullptr);
 
   static void destroy(dbBlockage* blockage);
+
+  ///
+  /// Delete the blockage from the block.
+  ///
+  static dbSet<dbBlockage>::iterator destroy(dbSet<dbBlockage>::iterator& itr);
 
   ///
   /// Translate a database-id back to a pointer.
