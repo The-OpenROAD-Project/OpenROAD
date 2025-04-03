@@ -1057,6 +1057,28 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   return stream;
 }
 
+void _dbBlock::clearSystemBlockagesAndObstructions()
+{
+  dbSet<dbBlockage> blockages(this, _blockage_tbl);
+  dbSet<dbObstruction> obstructions(this, _obstruction_tbl);
+
+  for (dbBlockage* blockage : blockages) {
+    if (!blockage->isSystemReserved()) {
+      continue;
+    }
+    blockage->setIsSystemReserved(false);
+    dbBlockage::destroy(blockage);
+  }
+
+  for (dbObstruction* obstruction : obstructions) {
+    if (!obstruction->isSystemReserved()) {
+      continue;
+    }
+    obstruction->setIsSystemReserved(false);
+    dbObstruction::destroy(obstruction);
+  }
+}
+
 void _dbBlock::add_rect(const Rect& rect)
 {
   _dbBox* box = _box_tbl->getPtr(_bbox);
@@ -2047,6 +2069,10 @@ void dbBlock::getMasters(std::vector<dbMaster*>& masters)
 void dbBlock::setDieArea(const Rect& new_area)
 {
   _dbBlock* block = (_dbBlock*) this;
+
+  // Clear any existing system blockages
+  block->clearSystemBlockagesAndObstructions();
+
   block->_die_area = new_area;
   for (auto callback : block->_callbacks) {
     callback->inDbBlockSetDieArea(this);
@@ -2060,6 +2086,9 @@ void dbBlock::setDieArea(const Polygon& new_area)
   for (auto callback : block->_callbacks) {
     callback->inDbBlockSetDieArea(this);
   }
+
+  // Clear any existing system blockages
+  block->clearSystemBlockagesAndObstructions();
 
   dbTech* tech = getTech();
   dbSet<dbTechLayer> tech_layers = tech->getLayers();

@@ -22,6 +22,7 @@ class Nangate45TestFixture : public ::testing::Test
   {
     db_ = OdbUniquePtr<odb::dbDatabase>(odb::dbDatabase::create(),
                                         &odb::dbDatabase::destroy);
+    db_->setLogger(&logger_);
     odb::lefin lef_reader(
         db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
     lib_ = OdbUniquePtr<odb::dbLib>(

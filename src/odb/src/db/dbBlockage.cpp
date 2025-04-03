@@ -251,6 +251,14 @@ void dbBlockage::destroy(dbBlockage* blockage)
 {
   _dbBlockage* bkg = (_dbBlockage*) blockage;
   _dbBlock* block = (_dbBlock*) blockage->getBlock();
+  utl::Logger* logger = block->getLogger();
+
+  if (blockage->isSystemReserved()) {
+    logger->critical(
+        utl::ODB,
+        1112,
+        "You cannot delete a system created blockage (isSystemReserved).");
+  }
 
   for (auto callback : block->_callbacks) {
     callback->inDbBlockageDestroy(blockage);

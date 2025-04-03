@@ -410,6 +410,15 @@ void dbObstruction::destroy(dbObstruction* obstruction)
 {
   _dbObstruction* obs = (_dbObstruction*) obstruction;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
+  utl::Logger* logger = block->getLogger();
+
+  if (obstruction->isSystemReserved()) {
+    logger->critical(
+        utl::ODB,
+        1111,
+        "You cannot delete a system created obstruction (isSystemReserved).");
+  }
+  
   for (auto callback : block->_callbacks) {
     callback->inDbObstructionDestroy(obstruction);
   }

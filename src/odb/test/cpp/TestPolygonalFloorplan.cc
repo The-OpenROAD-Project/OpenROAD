@@ -62,4 +62,111 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
   EXPECT_EQ(virtual_obstructions.size(), 21);
 }
 
+TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
+{
+  // Arrange
+  defin def_parser(db_.get(), &logger_);
+  std::vector<dbLib*> libs = {lib_.get()};
+
+  // Act
+  dbChip* chip = def_parser.createChip(
+      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  EXPECT_NE(chip, nullptr);
+
+  odb::Polygon new_die_area({{0, 0},
+                             {0, 300000},
+                             {400000, 300000},
+                             {400000, 160000},
+                             {300000, 160000},
+                             {300000, 0}});
+
+  dbBlock* block = chip->getBlock();
+  block->setDieArea(new_die_area);
+
+  // Assert that there is one virtual blockage for this floorplan.
+  // There's essentially 1 rectangle cut out of it.
+  dbSet<dbBlockage> blockages = block->getBlockages();
+  std::vector<dbBlockage*> virtual_blockages;
+  for (dbBlockage* blockage : blockages) {
+    if (!blockage->isSystemReserved()) {
+      continue;
+    }
+    virtual_blockages.push_back(blockage);
+  }
+  EXPECT_EQ(virtual_blockages.size(), 1);
+  EXPECT_EQ(virtual_blockages[0]->getBBox()->getDX(), 100000);
+  EXPECT_EQ(virtual_blockages[0]->getBBox()->getDY(), 160000);
+
+  // 1 obstruction for each via and metal layer in Nangate 45
+  // should be 21 including poly layers.
+  dbSet<dbObstruction> obstructions = block->getObstructions();
+  std::vector<dbObstruction*> virtual_obstructions;
+  for (dbObstruction* obstruction : obstructions) {
+    if (!obstruction->isSystemReserved()) {
+      continue;
+    }
+    virtual_obstructions.push_back(obstruction);
+    EXPECT_EQ(obstruction->getBBox()->getDX(), 100000);
+    EXPECT_EQ(obstruction->getBBox()->getDY(), 160000);
+  }
+  EXPECT_EQ(virtual_obstructions.size(), 21);
+}
+
+// Special thing in GTest. DeathTests need to be marked as death tests.
+using Nangate45TestFixtureDeathTest = Nangate45TestFixture;
+TEST_F(Nangate45TestFixtureDeathTest, DeletingSystemBlockagesKillsProcess)
+{
+  // Arrange
+  defin def_parser(db_.get(), &logger_);
+  std::vector<dbLib*> libs = {lib_.get()};
+
+  // Act
+  dbChip* chip = def_parser.createChip(
+      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  EXPECT_NE(chip, nullptr);
+  dbBlock* block = chip->getBlock();
+
+  // Assert
+
+  // Assert that there is one virtual blockage for this floorplan.
+  // There's essentially 1 rectangle cut out of it.
+  dbSet<dbBlockage> blockages = block->getBlockages();
+  std::vector<dbBlockage*> virtual_blockages;
+  for (dbBlockage* blockage : blockages) {
+    if (!blockage->isSystemReserved()) {
+      continue;
+    }
+    virtual_blockages.push_back(blockage);
+  }
+  EXPECT_EQ(virtual_blockages.size(), 1);
+  ASSERT_DEATH({ dbBlockage::destroy(virtual_blockages[0]); }, "");
+}
+
+TEST_F(Nangate45TestFixtureDeathTest, DeletingSystemObstructionsKillsProcess)
+{
+  // Arrange
+  defin def_parser(db_.get(), &logger_);
+  std::vector<dbLib*> libs = {lib_.get()};
+
+  // Act
+  dbChip* chip = def_parser.createChip(
+      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  EXPECT_NE(chip, nullptr);
+  dbBlock* block = chip->getBlock();
+  // Assert
+
+  // Assert that there is one virtual blockage for this floorplan.
+  // There's essentially 1 rectangle cut out of it.
+  dbSet<dbObstruction> obstructions = block->getObstructions();
+  std::vector<dbObstruction*> virtual_obstructions;
+  for (dbObstruction* obstruction : obstructions) {
+    if (!obstruction->isSystemReserved()) {
+      continue;
+    }
+    virtual_obstructions.push_back(obstruction);
+  }
+  EXPECT_EQ(virtual_obstructions.size(), 21);
+  ASSERT_DEATH({ dbObstruction::destroy(virtual_obstructions[0]); }, "");
+}
+
 }  // namespace odb

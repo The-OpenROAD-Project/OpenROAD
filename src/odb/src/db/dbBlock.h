@@ -328,6 +328,7 @@ class _dbBlock : public _dbObject
 
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
+  void clearSystemBlockagesAndObstructions();
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);
