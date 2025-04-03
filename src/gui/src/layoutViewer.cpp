@@ -734,8 +734,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                             search_line.yMax(),
                                             shape_limit);
       for (auto* ob : obs) {
-        if (ob->isVirtual()
-            && !options_->areVirtualObstructionsAndBlockagesVisible()) {
+        if (ob->isSystemReserved()) {
           continue;
         }
         check_rect(ob->getBBox()->getBox());
@@ -751,8 +750,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                                          search_line.yMax(),
                                          shape_limit);
     for (auto* blck : blcks) {
-      if (blck->isVirtual()
-          && !options_->areVirtualObstructionsAndBlockagesVisible()) {
+      if (blck->isSystemReserved()) {
         continue;
       }
       check_rect(blck->getBBox()->getBox());
@@ -849,8 +847,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                              region.yMax(),
                                              shape_limit);
     for (auto* blockage : blockages) {
-      if (blockage->isVirtual()
-          && !options_->areVirtualObstructionsAndBlockagesVisible()) {
+      if (blockage->isSystemReserved()) {
         continue;
       }
       selections.push_back(gui_->makeSelected(blockage));
@@ -885,8 +882,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                             region.yMax(),
                                             shape_limit);
       for (auto* ob : obs) {
-        if (ob->isVirtual()
-            && !options_->areVirtualObstructionsAndBlockagesVisible()) {
+        if (ob->isSystemReserved()) {
           continue;
         }
         selections.push_back(gui_->makeSelected(ob));

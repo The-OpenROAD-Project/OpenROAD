@@ -814,8 +814,7 @@ void RenderThread::drawBlockages(QPainter* painter,
     if (restart_) {
       break;
     }
-    if (blockage->isVirtual()
-        && !viewer_->options_->areVirtualObstructionsAndBlockagesVisible()) {
+    if (blockage->isSystemReserved()) {
       continue;
     }
     Rect bbox = blockage->getBBox()->getBox();
@@ -851,8 +850,7 @@ void RenderThread::drawObstructions(odb::dbBlock* block,
     if (restart_) {
       break;
     }
-    if (obs->isVirtual()
-        && !viewer_->options_->areVirtualObstructionsAndBlockagesVisible()) {
+    if (obs->isSystemReserved()) {
       continue;
     }
     Rect bbox = obs->getBBox()->getBox();

@@ -65,7 +65,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
   _flags._spare_bits = 0;
-  _flags._is_virtual = 0;
+  _flags._is_system_reserved = 0;
   _min_spacing = 0;
   _effective_width = 0;
 }
@@ -102,7 +102,7 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
 
   if (!db->isSchema(db_schema_die_area_is_polygon)) {
     // assume false for older databases
-    obs._flags._is_virtual = false;
+    obs._flags._is_system_reserved = false;
   }
 
   return stream;
@@ -361,16 +361,16 @@ dbBlock* dbObstruction::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
-bool dbObstruction::isVirtual()
+bool dbObstruction::isSystemReserved()
 {
   _dbObstruction* obs = (_dbObstruction*) this;
-  return obs->_flags._is_virtual;
+  return obs->_flags._is_system_reserved;
 }
 
-void dbObstruction::setIsVirtual(bool is_virtual)
+void dbObstruction::setIsSystemReserved(bool is_system_reserved)
 {
   _dbObstruction* obs = (_dbObstruction*) this;
-  obs->_flags._is_virtual = is_virtual;
+  obs->_flags._is_system_reserved = is_system_reserved;
 }
 
 dbObstruction* dbObstruction::create(dbBlock* block_,

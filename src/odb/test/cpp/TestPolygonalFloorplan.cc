@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2025 Google LLC
 //
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file or at
@@ -19,9 +19,7 @@
 
 namespace odb {
 
-using ::testing::HasSubstr;
-
-TEST_F(Nangate45TestFixture, AbstractLefWriterMapsTieOffToSignal)
+TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
 {
   // Arrange
   defin def_parser(db_.get(), &logger_);
@@ -40,22 +38,26 @@ TEST_F(Nangate45TestFixture, AbstractLefWriterMapsTieOffToSignal)
   dbSet<dbBlockage> blockages = block->getBlockages();
   std::vector<dbBlockage*> virtual_blockages;
   for (dbBlockage* blockage : blockages) {
-    if (!blockage->isVirtual()) {
+    if (!blockage->isSystemReserved()) {
       continue;
     }
     virtual_blockages.push_back(blockage);
   }
   EXPECT_EQ(virtual_blockages.size(), 1);
+  EXPECT_EQ(virtual_blockages[0]->getBBox()->getDX(), 100000);
+  EXPECT_EQ(virtual_blockages[0]->getBBox()->getDY(), 150000);
 
   // 1 obstruction for each via and metal layer in Nangate 45
   // should be 21 including poly layers.
   dbSet<dbObstruction> obstructions = block->getObstructions();
   std::vector<dbObstruction*> virtual_obstructions;
   for (dbObstruction* obstruction : obstructions) {
-    if (!obstruction->isVirtual()) {
+    if (!obstruction->isSystemReserved()) {
       continue;
     }
     virtual_obstructions.push_back(obstruction);
+    EXPECT_EQ(obstruction->getBBox()->getDX(), 100000);
+    EXPECT_EQ(obstruction->getBBox()->getDY(), 150000);
   }
   EXPECT_EQ(virtual_obstructions.size(), 21);
 }

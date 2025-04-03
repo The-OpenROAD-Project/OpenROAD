@@ -204,16 +204,16 @@ dbBlock* dbBlockage::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
-bool dbBlockage::isVirtual()
+bool dbBlockage::isSystemReserved()
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  return bkg->_flags._is_virtual_blockage;
+  return bkg->_flags._is_system_reserved;
 }
 
-void dbBlockage::setIsVirtual(bool is_virtual)
+void dbBlockage::setIsSystemReserved(bool is_system_reserved)
 {
   _dbBlockage* bkg = (_dbBlockage*) this;
-  bkg->_flags._is_virtual_blockage = is_virtual;
+  bkg->_flags._is_system_reserved = is_system_reserved;
 }
 
 dbBlockage* dbBlockage::create(dbBlock* block_,

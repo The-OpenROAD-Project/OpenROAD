@@ -51,7 +51,7 @@ struct _dbBlockageFlags
   // For denoting that the blockage is not to be written or
   // rendered. It only exists to support non-rectangular
   // floorplans.
-  uint _is_virtual_blockage : 1;
+  uint _is_system_reserved : 1;
   uint _spare_bits : 29;
 };
 
@@ -81,7 +81,7 @@ inline _dbBlockage::_dbBlockage(_dbDatabase*)
   _flags._pushed_down = 0;
   _flags._spare_bits = 0;
   _flags._soft = 0;
-  _flags._is_virtual_blockage = 0;
+  _flags._is_system_reserved = 0;
   _max_density = 0.0;
 }
 

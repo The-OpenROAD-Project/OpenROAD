@@ -1258,14 +1258,14 @@ void defout_impl::writeBlockages(dbBlock* block)
   std::vector<dbBlockage*> blockages;
 
   for (const auto& obstruction : obstructions_raw) {
-    if (obstruction->isVirtual()) {
+    if (obstruction->isSystemReserved()) {
       continue;
     }
     obstructions.push_back(obstruction);
   }
 
   for (const auto& blockage : blockages_raw) {
-    if (blockage->isVirtual()) {
+    if (blockage->isSystemReserved()) {
       continue;
     }
     blockages.push_back(blockage);

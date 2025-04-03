@@ -52,7 +52,7 @@ struct _dbObstructionFlags
   uint _has_min_spacing : 1;
   uint _has_effective_width : 1;
   uint _except_pg_nets : 1;
-  uint _is_virtual : 1;
+  uint _is_system_reserved : 1;
   uint _spare_bits : 25;
 };
 

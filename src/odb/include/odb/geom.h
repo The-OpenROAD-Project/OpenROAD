@@ -337,19 +337,7 @@ class Polygon
   Polygon(const Oct& oct);
 
   std::vector<Point> getPoints() const;
-
-  const std::vector<Point>& getPointsConstReference() const;
-  std::vector<Point>& getPointsMutable();
   void setPoints(const std::vector<Point>& points);
-
-  std::vector<std::vector<Point>>& getInteriorPointsMutable()
-  {
-    return interior_points_;
-  };
-  const std::vector<std::vector<Point>>& getInteriorPoints() const
-  {
-    return interior_points_;
-  };
 
   bool operator==(const Polygon& p) const;
   bool operator!=(const Polygon& p) const { return !(*this == p); };
@@ -366,12 +354,15 @@ class Polygon
   // returns a corrected Polygon with a closed form and counter-clockwise points
   Polygon bloat(int margin) const;
 
+  // Returns the geometric difference between this polygon "a" and polygon "b"
+  // results in a vector of polygons.
+  std::vector<Polygon> difference(Polygon b) const;
+
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
 
  private:
   std::vector<Point> points_;
-  std::vector<std::vector<Point>> interior_points_;  // always empty
 };
 
 class Line
@@ -975,16 +966,6 @@ inline Polygon::Polygon(const Oct& oct)
 }
 
 inline std::vector<Point> Polygon::getPoints() const
-{
-  return points_;
-}
-
-inline const std::vector<Point>& Polygon::getPointsConstReference() const
-{
-  return points_;
-}
-
-inline std::vector<Point>& Polygon::getPointsMutable()
 {
   return points_;
 }

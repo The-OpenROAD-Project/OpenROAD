@@ -25,8 +25,7 @@ class Nangate45TestFixture : public ::testing::Test
     odb::lefin lef_reader(
         db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
     lib_ = OdbUniquePtr<odb::dbLib>(
-        lef_reader.createTechAndLib(
-            "sky130", "sky130", "Nangate45/Nangate45.lef"),
+        lef_reader.createTechAndLib("ng45", "ng45", "Nangate45/Nangate45.lef"),
         &odb::dbLib::destroy);
   }
 

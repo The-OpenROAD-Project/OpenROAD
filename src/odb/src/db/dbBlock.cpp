@@ -2118,9 +2118,9 @@ void dbBlock::setDieArea(const Polygon& new_area)
   // supposed to be empty space. These polygons are then decomposed
   // into rectangles. Which are then used to create obstructions and
   // placement blockages.
-  std::list<Polygon> results;
+
   Polygon bounding_rect = block->_die_area.getEnclosingRect();
-  boost::geometry::difference(bounding_rect, block->_die_area, results);
+  std::vector<Polygon> results = bounding_rect.difference(block->_die_area);
   for (odb::Polygon& blockage_area : results) {
     std::vector<Rect> blockages;
     decompose_polygon(blockage_area.getPoints(), blockages);
@@ -2130,7 +2130,7 @@ void dbBlock::setDieArea(const Polygon& new_area)
                                                    blockage_rect.yMin(),
                                                    blockage_rect.xMax(),
                                                    blockage_rect.yMax());
-      db_blockage->setIsVirtual(true);
+      db_blockage->setIsSystemReserved(true);
 
       // Create routing blockages
       for (dbTechLayer* tech_layer : tech_layers) {
@@ -2144,7 +2144,7 @@ void dbBlock::setDieArea(const Polygon& new_area)
                                                    blockage_rect.yMin(),
                                                    blockage_rect.xMax(),
                                                    blockage_rect.yMax());
-        obs->setIsVirtual(true);
+        obs->setIsSystemReserved(true);
       }
     }
   }

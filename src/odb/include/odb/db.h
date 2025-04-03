@@ -1435,7 +1435,7 @@ class dbBlock : public dbObject
   ///
   /// Set the die area with polygon. Allows for non-rectangular floorplans
   ///
-  void setDieArea(const Polygon& new_rect);
+  void setDieArea(const Polygon& new_area);
 
   ///
   /// Get the die area. The default die-area is (0,0,0,0).
@@ -4121,12 +4121,12 @@ class dbObstruction : public dbObject
   /// by that difference are then decomposed into rectangles which
   /// create obstructions with the virtual annotation.
   ///
-  bool isVirtual();
+  bool isSystemReserved();
 
   ///
   /// Sets this obstruction as virtual.
   ///
-  void setIsVirtual(bool is_virtual);
+  void setIsSystemReserved(bool is_system_reserved);
 
   ///
   /// Create a routing obstruction.
@@ -4192,12 +4192,12 @@ class dbBlockage : public dbObject
   /// by that difference are then decomposed into rectangles which
   /// create blockages with the virtual annotation.
   ///
-  bool isVirtual();
+  bool isSystemReserved();
 
   ///
   /// Sets this blockage as virtual.
   ///
-  void setIsVirtual(bool is_virtual);
+  void setIsSystemReserved(bool is_system_reserved);
 
   ///
   /// Set the max placement density percentage in [0,100]
