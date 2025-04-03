@@ -232,16 +232,12 @@ void _dbPolygon::decompose()
   std::vector<Rect> rects;
   decompose_polygon(polygon_.getPoints(), rects);
 
-  std::vector<Rect>::iterator itr;
-
-  for (itr = rects.begin(); itr != rects.end(); ++itr) {
-    Rect& r = *itr;
-
-    dbBox::create((dbPolygon*) this, r.xMin(), r.yMin(), r.xMax(), r.yMax());
+  dbPolygon* polygon = (dbPolygon*) this;
+  for (Rect& r : rects) {
+    dbBox::create(polygon, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
 
-  dbPolygon* pbox = (dbPolygon*) this;
-  dbSet<dbBox> geoms = pbox->getGeometry();
+  dbSet<dbBox> geoms = polygon->getGeometry();
 
   // Reverse the stored order to match the created order.
   if (geoms.reversible() && geoms.orderReversed()) {

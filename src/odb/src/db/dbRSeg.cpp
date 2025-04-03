@@ -479,10 +479,9 @@ dbCapNode* dbRSeg::getSourceCapNode()
   return (dbCapNode*) n;
 }
 
-double dbRSeg::getCapacitance(int corner, double MillerMult)
+double dbRSeg::getCapacitance(const int corner, const double MillerMult)
 {
-  double cap = getCapacitance(corner);
-  double ccCap = 0.0;
+  const double cap = getCapacitance(corner);
 
   dbCapNode* targetCapNode = getTargetCapNode();
 
@@ -490,15 +489,12 @@ double dbRSeg::getCapacitance(int corner, double MillerMult)
     return cap;
   }
 
-  dbSet<dbCCSeg> ccSegs = targetCapNode->getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
+  double ccCap = 0.0;
+  for (dbCCSeg* cc : targetCapNode->getCCSegs()) {
     ccCap += cc->getCapacitance(corner);
   }
 
-  cap += MillerMult * ccCap;
-  return cap;
+  return cap + MillerMult * ccCap;
 }
 
 void dbRSeg::getGndTotalCap(double* gndcap, double* totalcap, double MillerMult)
@@ -517,19 +513,11 @@ void dbRSeg::getCcSegs(std::vector<dbCCSeg*>& ccsegs)
 {
   ccsegs.clear();
 
-  dbSet<dbCapNode> capNodes = getNet()->getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
+  const uint target = getTargetNode();
 
-  uint target = getTargetNode();
-
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    dbCapNode* n = *citr;
-    dbSet<dbCCSeg> ccSegs = n->getCCSegs();
-    dbSet<dbCCSeg>::iterator ccitr;
-
+  for (dbCapNode* n : getNet()->getCapNodes()) {
     if (n->getNode() == target) {
-      for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-        dbCCSeg* cc = *ccitr;
+      for (dbCCSeg* cc : n->getCCSegs()) {
         ccsegs.push_back(cc);
       }
 
@@ -554,8 +542,7 @@ void dbRSeg::printCC()
 
 bool dbRSeg::checkCC()
 {
-  bool rc = getTargetCapNode()->checkCC();
-  return rc;
+  return getTargetCapNode()->checkCC();
 }
 
 void dbRSeg::getCapTable(double* cap)

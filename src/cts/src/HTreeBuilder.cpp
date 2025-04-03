@@ -1176,8 +1176,8 @@ void HTreeBuilder::legalize()
                                            branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 3,
-		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} "
-		   "parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
+		   "adjustBeyondBlockage applied to legal branchPt:"
+		   "{}=>{} parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
 		   parentPoint, computeDist(newLocation, parentPoint));
         // clang-format on
         commitMoveLoc(branchPoint, newLocation);

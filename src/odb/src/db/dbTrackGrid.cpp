@@ -137,8 +137,7 @@ void dbTrackGrid::getGridX(std::vector<int>& x_grid)
   std::sort(x_grid.begin(), x_grid.end());
 
   // remove any duplicates
-  std::vector<int>::iterator new_end;
-  new_end = std::unique(x_grid.begin(), x_grid.end());
+  auto new_end = std::unique(x_grid.begin(), x_grid.end());
   x_grid.erase(new_end, x_grid.end());
 }
 
@@ -172,8 +171,7 @@ void dbTrackGrid::getGridY(std::vector<int>& y_grid)
   std::sort(y_grid.begin(), y_grid.end());
 
   // remove any duplicates
-  std::vector<int>::iterator new_end;
-  new_end = std::unique(y_grid.begin(), y_grid.end());
+  auto new_end = std::unique(y_grid.begin(), y_grid.end());
   y_grid.erase(new_end, y_grid.end());
 }
 

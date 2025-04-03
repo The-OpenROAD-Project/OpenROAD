@@ -216,11 +216,11 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
   char* mtname = (char*) getConstName();
   char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
   uint ii = 0;
-  block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
+  block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
   if (blk_left_bus_del == '\0' || blk_right_bus_del == '\0') {
     return mtname;
   }
-  master->getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+  master->getLib()->getBusDelimiters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
@@ -438,27 +438,20 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
   dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
   dbTech* tech = tplib->getTech();
 
-  for (ant_iter = mterm->_par_met_area.begin();
-       ant_iter != mterm->_par_met_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
+  for (auto ant : mterm->_par_met_area) {
+    ant->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_par_met_sidearea.begin();
-       ant_iter != mterm->_par_met_sidearea.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
+  for (auto ant : mterm->_par_met_sidearea) {
+    ant->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_par_cut_area.begin();
-       ant_iter != mterm->_par_cut_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
+  for (auto ant : mterm->_par_cut_area) {
+    ant->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_diffarea.begin(); ant_iter != mterm->_diffarea.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNADIFFAREA", tech, writer);
+  for (auto ant : mterm->_diffarea) {
+    ant->writeLef("ANTENNADIFFAREA", tech, writer);
   }
 
   if (hasDefaultAntennaModel()) {

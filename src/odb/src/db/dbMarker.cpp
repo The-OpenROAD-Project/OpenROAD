@@ -813,10 +813,8 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
   _dbMarker* marker = _category->marker_tbl_->create();
 
   _dbBlock* block = marker->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCreate((dbMarker*) marker);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerCreate((dbMarker*) marker);
   }
 
   return (dbMarker*) marker;
@@ -827,10 +825,8 @@ void dbMarker::destroy(dbMarker* marker)
   _dbMarker* _marker = (_dbMarker*) marker;
 
   _dbBlock* block = _marker->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerDestroy(marker);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerDestroy(marker);
   }
 
   _dbMarkerCategory* category = (_dbMarkerCategory*) _marker->getOwner();
