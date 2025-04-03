@@ -823,14 +823,14 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-keep_sizing_vt] \
                                           [-sizing_area_limit] \
                                           [-sizing_leakage_limit] \
-                                          [-sizing_cap_ratio] \
-                                          [-buffer_sizing_cap_ratio]}
+                                          [-set_early_sizing_cap_ratio] \
+                                          [-set_early_buffer_sizing_cap_ratio]}
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt 
-      -sizing_cap_ratio -buffer_sizing_cap_ratio} flags {}
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt \
+      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
 
   set area_limit "NULL"
   if { [info exists keys(-limit_sizing_area)] } {
@@ -870,18 +870,19 @@ proc set_opt_config { args } {
       "Cell's VT type will be preserved for sizing"
   }
 
-  if { [info exists keys(-sizing_cap_ratio)] } {
-    set value $keys(-sizing_cap_ratio)
-    rsz::set_positive_double_prop $value "-sizing_cap_ratio" "sizing_cap_ratio"
+  if { [info exists keys(-set_early_sizing_cap_ratio)] } {
+    set value $keys(-set_early_sizing_cap_ratio)
+    rsz::set_positive_double_prop $value "-set_early_sizing_cap_ratio" "early_sizing_cap_ratio"
     utl::info RSZ 145 \
-      "Initial sizing will use capacitance ratio of value $value"
+      "Early cell sizing will use capacitance ratio of value $value"
   }
 
-  if { [info exists keys(-buffer_sizing_cap_ratio)] } {
-    set value $keys(-buffer_sizing_cap_ratio)
-    rsz::set_positive_double_prop $value "-buffer_sizing_cap_ratio" "buffer_sizing_cap_ratio"
+  if { [info exists keys(-set_early_buffer_sizing_cap_ratio)] } {
+    set value $keys(-set_early_buffer_sizing_cap_ratio)
+    rsz::set_positive_double_prop $value "-set_early_buffer_sizing_cap_ratio" \
+      "early_buffer_sizing_cap_ratio"
     utl::info RSZ 147 \
-      "Initial buffer sizing will use capacitance ratio of value $value"
+      "Early buffer sizing will use capacitance ratio of value $value"
   }
 }
 
@@ -891,14 +892,14 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-keep_sizing_vt] \
                                             [-sizing_area_limit] \
                                             [-sizing_leakage_limit] \
-                                            [-sizing_cap_ratio] \
-                                            [-buffer_sizing_cap_ratio]}
+                                            [-set_early_sizing_cap_ratio] \
+                                            [-set_early_buffer_sizing_cap_ratio]}
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
                      -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
-                     -sizing_cap_ratio -buffer_sizing_cap_ratio}
+                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -923,13 +924,13 @@ proc reset_opt_config { args } {
     rsz::clear_bool_prop "keep_sizing_vt"
     utl::info RSZ 107 "Cell sizing restriction based on VT type has been removed."
   }
-  if { $reset_all || [info exists flags(-sizing_cap_ratio)] } {
-    rsz::clear_double_prop "sizing_cap_ratio"
-    utl::info RSZ 146 "Cell sizing capacitance ratio has been unset"
+  if { $reset_all || [info exists flags(-set_early_sizing_cap_ratio)] } {
+    rsz::clear_double_prop "early_sizing_cap_ratio"
+    utl::info RSZ 146 "Capacitance ratio for early cell sizing has been unset."
   }
-  if { $reset_all || [info exists flags(-buffer_sizing_cap_ratio)] } {
-    rsz::clear_double_prop "buffer_sizing_cap_ratio"
-    utl::info RSZ 148 "Buffer sizing capacitance ratio has been unset"
+  if { $reset_all || [info exists flags(-set_early_buffer_sizing_cap_ratio)] } {
+    rsz::clear_double_prop "early_buffer_sizing_cap_ratio"
+    utl::info RSZ 148 "Capacitance ratio for early buffer sizing has been unset."
   }
 }
 
@@ -966,26 +967,26 @@ proc report_opt_config { args } {
   }
 
   set sizing_cap_ratio "unset"
-  set cap_ratio_prop [odb::dbDoubleProperty_find $block "sizing_cap_ratio"]
+  set cap_ratio_prop [odb::dbDoubleProperty_find $block "early_sizing_cap_ratio"]
   if { $cap_ratio_prop ne "NULL" && $cap_ratio_prop ne "" } {
     set sizing_cap_ratio [$cap_ratio_prop getValue]
   }
 
   set buffer_cap_ratio "unset"
-  set buffer_cap_ratio_prop [odb::dbDoubleProperty_find $block "buffer_sizing_cap_ratio"]
+  set buffer_cap_ratio_prop [odb::dbDoubleProperty_find $block "early_buffer_sizing_cap_ratio"]
   if { $buffer_cap_ratio_prop ne "NULL" && $buffer_cap_ratio_prop ne "" } {
     set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
   }
 
-  puts "***********************************"
+  puts "*******************************************"
   puts "Optimization config:"
-  puts "-limit_sizing_area:       $area_limit_value"
-  puts "-limit_sizing_leakage:    $leakage_limit_value"
-  puts "-keep_sizing_site:        $keep_site_value"
-  puts "-keep_sizing_vt:          $keep_sizing_vt"
-  puts "-sizing_cap_ratio:        $sizing_cap_ratio"
-  puts "-buffer_sizing_cap_ratio: $buffer_cap_ratio"
-  puts "***********************************"
+  puts "-limit_sizing_area:                 $area_limit_value"
+  puts "-limit_sizing_leakage:              $leakage_limit_value"
+  puts "-keep_sizing_site:                  $keep_site_value"
+  puts "-keep_sizing_vt:                    $keep_sizing_vt"
+  puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
+  puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
+  puts "*******************************************"
 }
 
 sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint }

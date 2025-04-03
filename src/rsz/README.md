@@ -458,8 +458,8 @@ set_opt_config
     [-limit_sizing_leakage float_value]
     [-keep_sizing_site boolean_value]
     [-keep_sizing_vt boolean_value]
-    [-sizing_cap_ratio float_value]
-    [-buffer_sizing_cap_ratio float_value]
+    [-set_early_sizing_cap_ratio float_value]
+    [-set_early_buffer_sizing_cap_ratio float_value]
     [-sizing_area_limit float_value] (deprecated)
     [-sizing_leakage_limit float_value] (deprecated)
 ```
@@ -472,8 +472,8 @@ set_opt_config
 | `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. |
 | `-keep_sizing_site` | Ensure cells retain their original site type during sizing. This prevents short cells from being replaced by tall cells (or vice versa) in mixed-row designs. |
 | `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
-| `-sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
-| `-buffer_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of buffers. |
+| `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
+| `-set_early_buffer_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of buffers. |
 | `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
@@ -496,8 +496,8 @@ reset_opt_config
     [-limit_sizing_leakage]
     [-keep_sizing_site]
     [-keep_sizing_vt]
-    [-sizing_cap_ratio]
-    [-buffer_sizing_cap_ratio]
+    [-set_early_sizing_cap_ratio]
+    [-set_early_buffer_sizing_cap_ratio]
     [-sizing_area_limit] (deprecated)
     [-sizing_leakage_limit] (deprecated)
 ```
@@ -510,6 +510,8 @@ reset_opt_config
 | `-limit_sizing_leakage` | Remove leakage power restriction during sizing. |
 | `-keep_sizing_site` | Remove site restriction during sizing. |
 | `-keep_sizing_vt` | Remove VT type restriction during sizing. |
+| `-set_early_sizing_cap_ratio` | Remove capacitance ratio setting for early sizing. |
+| `-set_early_buffer_sizing_cap_ratio` | Remove capacitance ratio setting for early buffer sizing. |
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 

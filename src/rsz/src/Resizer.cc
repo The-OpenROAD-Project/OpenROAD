@@ -327,7 +327,7 @@ void Resizer::initBlock()
   }
 
   dbDoubleProperty* cap_ratio_prop
-      = dbDoubleProperty::find(block_, "sizing_cap_ratio");
+      = dbDoubleProperty::find(block_, "early_sizing_cap_ratio");
   if (cap_ratio_prop) {
     sizing_cap_ratio_ = cap_ratio_prop->getValue();
   } else {
@@ -335,7 +335,7 @@ void Resizer::initBlock()
   }
 
   dbDoubleProperty* buffer_cap_ratio_prop
-      = dbDoubleProperty::find(block_, "buffer_sizing_cap_ratio");
+      = dbDoubleProperty::find(block_, "early_buffer_sizing_cap_ratio");
   if (buffer_cap_ratio_prop) {
     buffer_sizing_cap_ratio_ = buffer_cap_ratio_prop->getValue();
   } else {
