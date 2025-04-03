@@ -282,6 +282,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
   void removeBuffers(InstanceSeq insts, bool recordJournal = false);
+  void unbufferNet(Net* net);
   void bufferInputs();
   void bufferOutputs();
 

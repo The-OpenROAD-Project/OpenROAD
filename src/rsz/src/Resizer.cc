@@ -377,6 +377,41 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
   logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
 }
 
+void Resizer::unbufferNet(Net* net)
+{
+  sta::InstanceSeq insts;
+  std::vector<Net*> queue = {net};
+
+  while (!queue.empty()) {
+    Net* net_ = queue.back();
+    sta::NetConnectedPinIterator* pin_iter
+        = network_->connectedPinIterator(net_);
+    queue.pop_back();
+
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      const LibertyPort* port = network_->libertyPort(pin);
+      if (port && port->libertyCell()->isBuffer()) {
+        LibertyPort *in, *out;
+        port->libertyCell()->bufferPorts(in, out);
+
+        if (port == in) {
+          const Instance* inst = network_->instance(pin);
+          insts.push_back(inst);
+          const Pin* out_pin = network_->findPin(inst, out);
+          if (out_pin) {
+            queue.push_back(network_->net(out_pin));
+          }
+        }
+      }
+    }
+
+    delete pin_iter;
+  }
+
+  removeBuffers(insts);
+}
+
 bool Resizer::bufferBetweenPorts(Instance* buffer)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
@@ -515,10 +550,11 @@ bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
   }
 
   if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && !sdc_->isConstrained(removed) && !sdc_->isConstrained(buffer)) {
+      && (!removed || !sdc_->isConstrained(removed))
+      && !sdc_->isConstrained(buffer)) {
     odb::dbNet* db_survivor = db_network_->staToDb(survivor);
     odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return db_survivor->canMergeNet(db_removed);
+    return !db_removed || db_survivor->canMergeNet(db_removed);
   }
   return false;
 }
@@ -564,11 +600,15 @@ void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed);
-  db_survivor->mergeNet(db_removed);
+  if (db_removed) {
+    db_survivor->mergeNet(db_removed);
+  }
   sta_->disconnectPin(in_pin);
   sta_->disconnectPin(out_pin);
   sta_->deleteInstance(buffer);
-  sta_->deleteNet(removed);
+  if (removed) {
+    sta_->deleteNet(removed);
+  }
 
   // Hierarchical case supported:
   // moving an output hierarchical net to the input pin driver.
