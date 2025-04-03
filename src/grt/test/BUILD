@@ -98,5 +98,5 @@ filegroup(
 
 [regression_test(
     name = name,
-    data = ["test_resources"],
+    data = [":test_resources"],
 ) for name in TESTS]
