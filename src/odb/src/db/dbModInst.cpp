@@ -554,7 +554,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     std::ofstream outfile("before_replace_top.txt");
     getMaster()->getOwner()->debugPrintContent(outfile);
     for (dbBlock* child_block : getMaster()->getOwner()->getChildren()) {
-      std::string filename = "before_replace_" + child_block->getName() + ".txt";
+      std::string filename
+          = "before_replace_" + child_block->getName() + ".txt";
       std::ofstream outfile(filename);
       child_block->debugPrintContent(outfile);
     }

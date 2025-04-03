@@ -363,9 +363,17 @@ void dbModBTerm::connect(dbModNet* net)
   _modnet->_modbterms = getId();      // set new head
 
   if (_block->_journal) {
+    debugPrint(_modbterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect modBterm {} to modnet {}",
+               getId(),
+               net->getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
+    _block->_journal->pushParam(0);  // empty slot for dbNet, just dbModNet
     _block->_journal->pushParam(net->getId());
     _block->_journal->endAction();
   }
