@@ -33,6 +33,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <list>
 #include <map>
 #include <optional>
@@ -1668,6 +1669,7 @@ class dbBlock : public dbObject
   // For debugging only.  Print block content to an ostream.
   //
   void debugPrintContent(std::ostream& str_db);
+  void debugPrintContent() { debugPrintContent(std::cout); }
 
  private:
   void ComputeBBox();
