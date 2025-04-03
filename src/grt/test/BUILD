@@ -78,24 +78,25 @@ TESTS = [
     "write_segments2",
 ]
 
-[
-    regression_test(
-        name = name,
-        data =
-            # overly broad glob, could be refined later, but
-            # symlinks are cheap and OpenROAD binary changes, the common
-            # use case is that all tests have to be re-run.
-            glob(
-                ["**/*"],
-                exclude = [
-                    test + "." + ext
-                    for test in TESTS
-                    for ext in [
-                        "tcl",
-                        "py",
-                    ]
-                ],
-            ),
-    )
-    for name, kwargs in {test: {} for test in TESTS}.items()
-]
+filegroup(
+    name = "test_resources",
+    # overly broad glob, could be refined later, but
+    # symlinks are cheap and OpenROAD binary changes, the common
+    # use case is that all tests have to be re-run.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[regression_test(
+    name = name,
+    data = ["test_resources"],
+) for name in TESTS]
