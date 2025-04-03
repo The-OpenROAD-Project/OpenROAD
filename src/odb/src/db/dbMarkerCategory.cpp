@@ -804,10 +804,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 
   parent->_marker_category_hash.insert(_category);
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = parent->_callbacks.begin(); cbitr != parent->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  for (auto cb : parent->_callbacks) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -854,10 +852,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
   parent->categories_hash_.insert(_category);
 
   _dbBlock* block = parent->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -894,10 +890,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
   if (_category->isTopCategory()) {
     _dbBlock* block = (_dbBlock*) _category->getOwner();
 
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbMarkerCategoryDestroy(category);
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     block->_marker_category_hash.remove(_category);
@@ -906,10 +900,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
     _dbBlock* block = parent->getBlock();
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbMarkerCategoryDestroy(category);
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     parent->categories_hash_.remove(_category);
