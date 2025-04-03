@@ -41,35 +41,96 @@ namespace ram {
 
 ////////////////////////////////////////////////////////////////
 
-class Layout;
+class Cell {
+public:
+  Cell();
 
-class Element
-{
- public:
-  Element(odb::dbInst* inst);
-  Element(std::unique_ptr<Layout> layout);
+  Cell(odb::Point position, odb::dbOrientType orient);
 
-  // Return the bbox of the positioned element
-  odb::Rect position(odb::Point origin);
+  void addInst(odb::dbInst* inst);
 
- private:
-  odb::dbInst* inst_ = nullptr;
-  std::unique_ptr<Layout> layout_;
+  void cellInit();
+
+  void placeCell();
+
+  void setOrient(odb::dbOrientType orient);
+
+  void setOrigin(odb::Point position);
+
+  const int getHeight();
+
+  const int getWidth();
+
+private:
+  odb::Point origin_;
+  odb::dbOrientType orient_;
+  int height;
+  int width;
+  std::vector<odb::dbInst*> insts_;
 };
 
-class Layout
-{
- public:
+class Layout {
+public:
   Layout(odb::Orientation2D orientation);
 
-  void addElement(std::unique_ptr<Element> element);
+  Layout(odb::Orientation2D orientation, odb::Point origin);
 
-  // Return the bbox of the positioned layout
-  odb::Rect position(odb::Point origin);
+  void addCell(std::unique_ptr<Cell> cell);
 
- private:
+  void layoutInit();
+
+  void placeLayout();
+
+  void setOrigin(odb::Point position);
+
+  const int getHeight();
+
+  const int getWidth();
+private:
   odb::Orientation2D orientation_;
-  std::vector<std::unique_ptr<Element>> elements_;
+  odb::Point origin_;
+  int cell_height;
+  int cell_width;
+  std::vector<std::unique_ptr<Cell>> cells_;
 };
+
+class Grid {
+public:
+
+  Grid(odb::Orientation2D orientation);
+
+  Grid(odb::Orientation2D orientation, int tracks);
+
+  Grid(odb::Orientation2D orientation, odb::Point origin);
+
+  void addLayout(std::unique_ptr<Layout> layout);
+
+  void addCell(std::unique_ptr<Cell> cell, int track);
+
+  void gridInit();
+
+  void placeGrid();
+
+  void setOrigin(odb::Point position);
+
+  const int getHeight();
+
+  const int getWidth();
+
+  const int numLayouts();
+
+  const int getRowWidth();
+private:
+  odb::Orientation2D orientation_;
+  odb::Point origin_;
+  int cell_height;
+  int cell_width;
+  std::vector<std::unique_ptr<Layout>> layouts_;
+
+
+
+};
+
+
 
 }  // namespace ram
