@@ -410,9 +410,9 @@ void dbObstruction::destroy(dbObstruction* obstruction)
 {
   _dbObstruction* obs = (_dbObstruction*) obstruction;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
-  utl::Logger* logger = block->getLogger();
 
   if (obstruction->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
     logger->critical(
         utl::ODB,
         1111,

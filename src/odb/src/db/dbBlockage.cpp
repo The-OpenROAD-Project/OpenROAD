@@ -251,9 +251,9 @@ void dbBlockage::destroy(dbBlockage* blockage)
 {
   _dbBlockage* bkg = (_dbBlockage*) blockage;
   _dbBlock* block = (_dbBlock*) blockage->getBlock();
-  utl::Logger* logger = block->getLogger();
 
   if (blockage->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
     logger->critical(
         utl::ODB,
         1112,
