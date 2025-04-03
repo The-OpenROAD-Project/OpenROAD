@@ -762,12 +762,16 @@ void AntennaChecker::writeReport(std::ofstream& report_file, bool verbose)
   }
 }
 
-void AntennaChecker::printReport()
+void AntennaChecker::printReport(odb::dbNet* db_net)
 {
-  std::lock_guard<std::mutex> lock(map_mutex_);
-  for (const auto& [net, violation_report] : net_to_report_) {
-    if (violation_report.violated) {
-      logger_->report("{}", violation_report.report);
+  if (db_net) {
+    logger_->report("{}", net_to_report_[db_net].report);
+  } else {
+    std::lock_guard<std::mutex> lock(map_mutex_);
+    for (const auto& [net, violation_report] : net_to_report_) {
+      if (violation_report.violated) {
+        logger_->report("{}", violation_report.report);
+      }
     }
   }
 }
@@ -1130,7 +1134,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   }
 
   if (verbose) {
-    printReport();
+    printReport(net);
   }
 
   logger_->info(ANT, 2, "Found {} net violations.", net_violation_count);
