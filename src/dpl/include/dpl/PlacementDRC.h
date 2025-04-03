@@ -23,9 +23,9 @@ struct EdgeSpacingEntry
   {
   }
   bool operator<(const EdgeSpacingEntry& rhs) const { return spc < rhs.spc; }
-  const int spc;
-  const bool is_exact;
-  const bool except_abutted;
+  int spc;
+  bool is_exact;
+  bool except_abutted;
 };
 
 class PlacementDRC
