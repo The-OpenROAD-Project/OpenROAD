@@ -833,6 +833,10 @@ void SACoreSoftMacro::shrink()
 void SACoreSoftMacro::printResults() const
 {
   reportCoreWeights();
+  report({"Boundary",
+          boundary_weight_,
+          boundary_penalty_,
+          norm_boundary_penalty_});
   report({"Macro Blockage",
           macro_blockage_weight_,
           macro_blockage_penalty_,
