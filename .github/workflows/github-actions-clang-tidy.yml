@@ -21,6 +21,7 @@ jobs:
           config_file: '.clang-tidy'
           exclude: "*/codeGenerator/templates/*"
           split_workflow: true
+          apt_packages: libomp-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
         id: upload-review
       - if: steps.review.outputs.total_comments > 0
