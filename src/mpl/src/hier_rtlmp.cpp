@@ -3245,8 +3245,12 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
   auto closest_pos = lower_bound(lowest_grid_positions.begin(),
                                  lowest_grid_positions.end(),
                                  lowest_pin_center_pos);
+
+  // Subtracting one prevents errors if no position is found by lower_bound
   int starting_position_index
-      = std::distance(lowest_grid_positions.begin(), closest_pos);
+      = std::distance(lowest_grid_positions.begin(), closest_pos) - 1;
+  // Clamp to 0 if lower_bound returns 0 and the previous subtraction made it -1
+  starting_position_index = std::max(0, starting_position_index);
 
   snapPinToPosition(lowest_grid_pin,
                     lowest_grid_positions[starting_position_index],
@@ -3400,6 +3404,7 @@ void Snapper::attemptSnapToExtraPatterns(
     int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
     int current_index = start_index + steps;
+
     if (current_index < 0
         || current_index >= snap_data[0].available_positions.size())
       continue;

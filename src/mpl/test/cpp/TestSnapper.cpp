@@ -85,7 +85,7 @@ TEST_F(TestSnapper, SingleLayer)
   EXPECT_EQ(macro->getOrigin().x(), 1500);
   // 1487 (origin) + 25 (pin center) equals 1512 which is
   // a multiple of 36 (pin is aligned to track)
-  EXPECT_EQ(macro->getOrigin().y(), 1523);
+  EXPECT_EQ(macro->getOrigin().y(), 1487);
 }
 
 // Snaps a macro with two pins, with pins in different layers but same direction
