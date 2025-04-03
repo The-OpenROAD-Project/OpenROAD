@@ -418,7 +418,7 @@ void dbObstruction::destroy(dbObstruction* obstruction)
         1111,
         "You cannot delete a system created obstruction (isSystemReserved).");
   }
-  
+
   for (auto callback : block->_callbacks) {
     callback->inDbObstructionDestroy(obstruction);
   }

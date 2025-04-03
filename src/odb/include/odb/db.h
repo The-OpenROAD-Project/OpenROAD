@@ -4115,17 +4115,17 @@ class dbObstruction : public dbObject
   static void destroy(dbObstruction* obstruction);
 
   ///
-  /// Returns true if this obstruction is virtual. Virtual obstructions
-  /// represent obstructions created by non-rectangular floorplans.
+  /// Returns true if this obstruction is system created. System created
+  /// obstructions represent obstructions created by non-rectangular floorplans.
   /// The general flow is the polygonal floorplan is subtracted
   /// from its general bounding box and the shapes that are created
   /// by that difference are then decomposed into rectangles which
-  /// create obstructions with the virtual annotation.
+  /// create obstructions with the system created annotation.
   ///
   bool isSystemReserved();
 
   ///
-  /// Sets this obstruction as virtual.
+  /// Sets this obstruction as system created.
   ///
   void setIsSystemReserved(bool is_system_reserved);
 
@@ -4186,17 +4186,17 @@ class dbBlockage : public dbObject
   bool isSoft();
 
   ///
-  /// Returns true if this blockage is virtual. Virtual blockages
+  /// Returns true if this blockage is system created. System created blockages
   /// represent blockages created by non-rectangular floorplans.
   /// The general flow is the polygonal floorplan is subtracted
   /// from its general bounding box and the shapes that are created
   /// by that difference are then decomposed into rectangles which
-  /// create blockages with the virtual annotation.
+  /// create blockages with the system created annotation.
   ///
   bool isSystemReserved();
 
   ///
-  /// Sets this blockage as virtual.
+  /// Sets this blockage as system created.
   ///
   void setIsSystemReserved(bool is_system_reserved);
 
