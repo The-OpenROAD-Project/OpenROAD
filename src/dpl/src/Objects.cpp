@@ -56,11 +56,11 @@ bool Master::isMultiRow() const
 {
   return is_multi_row_;
 }
-const std::vector<MasterEdge>& Master::getEdges()
+const std::vector<MasterEdge>& Master::getEdges() const
 {
   return edges_;
 }
-Rect Master::getBBox()
+Rect Master::getBBox() const
 {
   return boundary_box_;
 }
@@ -424,7 +424,7 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-string Group::getName()
+string Group::getName() const
 {
   return name_;
 }

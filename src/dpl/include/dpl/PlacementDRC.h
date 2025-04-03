@@ -23,9 +23,9 @@ struct EdgeSpacingEntry
   {
   }
   bool operator<(const EdgeSpacingEntry& rhs) const { return spc < rhs.spc; }
-  int spc;
-  bool is_exact;
-  bool except_abutted;
+  const int spc;
+  const bool is_exact;
+  const bool except_abutted;
 };
 
 class PlacementDRC
@@ -49,7 +49,8 @@ class PlacementDRC
   Grid* grid_{nullptr};  // Pointer to the grid for placement
   std::unordered_map<std::string, int> edge_types_indices_;
   std::vector<std::vector<EdgeSpacingEntry>>
-      edge_spacing_table_;  // Edge spacing rules
+      edge_spacing_table_;  // LEF58_CELLEDGESPACINGTABLE between edge type
+                            // pairs [from_idx][to_idx]
 
   // Helper functions
   DbuX gridToDbu(GridX grid_x, DbuX site_width) const;
