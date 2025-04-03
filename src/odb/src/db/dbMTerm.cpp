@@ -438,27 +438,20 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
   dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
   dbTech* tech = tplib->getTech();
 
-  for (ant_iter = mterm->_par_met_area.begin();
-       ant_iter != mterm->_par_met_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
+  for (auto ant : mterm->_par_met_area) {
+    ant->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_par_met_sidearea.begin();
-       ant_iter != mterm->_par_met_sidearea.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
+  for (auto ant : mterm->_par_met_sidearea) {
+    ant->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_par_cut_area.begin();
-       ant_iter != mterm->_par_cut_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
+  for (auto ant : mterm->_par_cut_area) {
+    ant->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_diffarea.begin(); ant_iter != mterm->_diffarea.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNADIFFAREA", tech, writer);
+  for (auto ant : mterm->_diffarea) {
+    ant->writeLef("ANTENNADIFFAREA", tech, writer);
   }
 
   if (hasDefaultAntennaModel()) {
