@@ -364,15 +364,11 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
     return nullptr;
   }
 
-  dbSet<dbProperty> props = getProperties(object);
+  for (dbProperty* p : getProperties(object)) {
+    _dbProperty* p_impl = (_dbProperty*) p;
 
-  dbSet<dbProperty>::iterator itr;
-
-  for (itr = props.begin(); itr != props.end(); ++itr) {
-    _dbProperty* p = (_dbProperty*) *itr;
-
-    if (p->_name == name_id) {
-      return (dbProperty*) p;
+    if (p_impl->_name == name_id) {
+      return p;
     }
   }
 
@@ -389,15 +385,12 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
     return nullptr;
   }
 
-  dbSet<dbProperty> props = getProperties(object);
+  for (dbProperty* p : getProperties(object)) {
+    _dbProperty* p_impl = (_dbProperty*) p;
 
-  dbSet<dbProperty>::iterator itr;
-
-  for (itr = props.begin(); itr != props.end(); ++itr) {
-    _dbProperty* p = (_dbProperty*) *itr;
-
-    if ((p->_name == name_id) && (p->_flags._type == (_PropTypeEnum) type)) {
-      return (dbProperty*) p;
+    if ((p_impl->_name == name_id)
+        && (p_impl->_flags._type == (_PropTypeEnum) type)) {
+      return p;
     }
   }
 
@@ -650,12 +643,9 @@ std::string dbProperty::writePropValue(dbProperty* prop)
 
 std::string dbProperty::writeProperties(dbObject* object)
 {
-  dbSet<dbProperty> props = dbProperty::getProperties(object);
-  dbSet<dbProperty>::iterator itr;
   std::ostringstream out;
 
-  for (itr = props.begin(); itr != props.end(); ++itr) {
-    dbProperty* prop = *itr;
+  for (dbProperty* prop : dbProperty::getProperties(object)) {
     std::string name = prop->getName();
     fmt::print(out, "    PROPERTY {} {};\n", name, writePropValue(prop));
   }
@@ -672,25 +662,5 @@ void _dbProperty::collectMemInfo(MemInfo& info)
     info.children_["string"].add(std::get<std::string>(_value));
   }
 }
-
-/* Sample Code to access dbTechLayer properties
-void dbProperty::writeProperties( dbTechLayer * object, FILE *out )
-{
-    dbSet<dbProperty> props = dbProperty::getProperties(object);
-    dbSet<dbProperty>::iterator itr;
-
-    for( itr = props.begin(); itr != props.end(); ++itr )
-    {
-        dbProperty * prop = *itr;
-        std::string name = prop->getName();
-
-        to get value of a  string type:
-             dbStringProperty * p = (dbStringProperty *) prop;
-            std::string v = p->getValue();
-        look function dbProperty::writePropValue on how to retrieve int and
-double values
-    }
-}
-*/
 
 }  // namespace odb

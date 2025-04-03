@@ -309,7 +309,7 @@ class extSpef
   void addCouplingCaps(odb::dbNet* net, double* totCap);
   void addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, double* totCap);
   void writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet, bool bterms);
-  void writeSingleRC(double val, bool delimeter);
+  void writeSingleRC(double val, bool delimiter);
   void writeInternalCaps(odb::dbNet* net, odb::dbSet<odb::dbCapNode>& capSet);
   void printCapNode(uint capNodeId);
   void printAppearance(int app, int appc);
@@ -323,7 +323,7 @@ class extSpef
   void copyCap(double* totCap, const double* cap, uint n = 0);
   void adjustCap(double* totCap, const double* cap, uint n = 0);
 
-  char* getDelimeter();
+  char* getDelimiter();
   void writeNameNode(odb::dbCapNode* node);
   void writeCapName(odb::dbCapNode* capNode, uint capIndex);
 

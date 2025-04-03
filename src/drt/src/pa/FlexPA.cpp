@@ -143,7 +143,6 @@ void FlexPA::updateInst(frInst* inst)
 
 frInst* FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
 {
-  bool inst_already_solved = false;
   frInst* inst = design_->getTopBlock()->findInst(db_inst);
   if (!inst) {
     io::Parser parser(db, getDesign(), logger_, router_cfg_);
