@@ -205,41 +205,23 @@ void dbShape::getViaBoxes(const dbShape& via, std::vector<dbShape>& shapes)
     via.getViaXY(x, y);
     shapes.clear();
     dbTechVia* v = via.getTechVia();
-    dbSet<dbBox> boxes;
-    boxes = v->getBoxes();
-    dbSet<dbBox>::iterator itr;
 
-    for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-      dbBox* box = *itr;
+    for (dbBox* box : v->getBoxes()) {
       Rect b = box->getBox();
-      int xmin = b.xMin() + x;
-      int ymin = b.yMin() + y;
-      int xmax = b.xMax() + x;
-      int ymax = b.yMax() + y;
-      Rect r(xmin, ymin, xmax, ymax);
-      dbShape shape(v, box->getTechLayer(), r);
+      b.moveDelta(x, y);
+      dbShape shape(v, box->getTechLayer(), b);
       shapes.push_back(shape);
     }
-  }
-
-  else if (via.getVia()) {
+  } else if (via.getVia()) {
     int x, y;
     via.getViaXY(x, y);
     shapes.clear();
     dbVia* v = via.getVia();
-    dbSet<dbBox> boxes;
-    boxes = v->getBoxes();
-    dbSet<dbBox>::iterator itr;
 
-    for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-      dbBox* box = *itr;
+    for (dbBox* box : v->getBoxes()) {
       Rect b = box->getBox();
-      int xmin = b.xMin() + x;
-      int ymin = b.yMin() + y;
-      int xmax = b.xMax() + x;
-      int ymax = b.yMax() + y;
-      Rect r(xmin, ymin, xmax, ymax);
-      dbShape shape(v, box->getTechLayer(), r);
+      b.moveDelta(x, y);
+      dbShape shape(v, box->getTechLayer(), b);
       shapes.push_back(shape);
     }
   }

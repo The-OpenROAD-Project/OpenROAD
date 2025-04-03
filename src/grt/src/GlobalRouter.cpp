@@ -2050,6 +2050,8 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  nets_to_route_.clear();
+  db_net_map_.clear();
   if (getMaxRoutingLayer() == -1) {
     setMaxRoutingLayer(computeMaxRoutingLayer());
   }

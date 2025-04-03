@@ -48,13 +48,23 @@ set_isolation iso_d_2 \
 
 
 
-use_interface_cell \
+use_interface_cell iso_d_1\
   -domain PD_D1 \
   -strategy iso_d_1 \
-  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+  -lib_cells {
+    sky130_fd_sc_hd__lpflow_inputiso0n_1
+    sky130_fd_sc_hd__lpflow_inputiso1n_1
+    sky130_fd_sc_hd__lpflow_inputiso0p_1
+    sky130_fd_sc_hd__lpflow_inputiso1p_1
+  }
 
 
-use_interface_cell \
+use_interface_cell iso_d_2\
   -domain PD_D2 \
   -strategy iso_d_2 \
-  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+  -lib_cells {
+    sky130_fd_sc_hd__lpflow_inputiso0n_1
+    sky130_fd_sc_hd__lpflow_inputiso1n_1
+    sky130_fd_sc_hd__lpflow_inputiso0p_1
+    sky130_fd_sc_hd__lpflow_inputiso1p_1
+  }

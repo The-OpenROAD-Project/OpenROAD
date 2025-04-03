@@ -62,7 +62,7 @@ uint extMain::benchPatternsGen(const PatternOptions& opt1)
   _block = dbBlock::create(chip, opt.name, nullptr, '/');
   assert(_block);
   // _prevControl = _block->getExtControl();
-  _block->setBusDelimeters('[', ']');
+  _block->setBusDelimiters('[', ']');
   _block->setDefUnits(1000);
   // m->setExtMain(this);
   setupMapping(0);
