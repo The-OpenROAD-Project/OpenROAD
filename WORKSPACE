@@ -41,6 +41,7 @@ workspace(name = "openroad")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 rules_hdl_git_hash = "22e4a4afaef17df38fffc124907144983f1e6492"
+
 rules_hdl_git_sha256 = "e016d11b69c4eaaf2ac0757358859270db7a90f4aa725a1aee39e40f5b84efd3"
 
 http_archive(
@@ -68,8 +69,11 @@ load("@rules_hdl//dependency_support/tk_tcl:tk_tcl.bzl", "tk_tcl")
 
 # Direct dependencies needed in Openroad
 com_github_quantamhd_lemon()
+
 edu_berkeley_abc()
+
 org_llvm_openmp()
+
 tk_tcl()
 
 # Swig exists in BCR, but in a newer version where we need to test how to make
@@ -79,11 +83,15 @@ org_swig()
 # rules_flex and rules_bison already exist in BCR, but we use rules_hdl wrappers
 # around them. We should use the rules flex/bison-provided ones.
 com_github_westes_flex()
+
 org_gnu_bison()
 
 # secondary dependencies of the above libraries. Some of these are already
 # in BCR with different name or sligtly newer API version.
 net_invisible_island_ncurses()
-net_zlib() # BCR has @zlib we use, but some above dep uses it w/ differet name
+
+net_zlib()  # BCR has @zlib we use, but some above dep uses it w/ differet name
+
 org_gnu_readline()
-org_pcre_ftp() # there is a newer pcre2 in BCR
+
+org_pcre_ftp()  # there is a newer pcre2 in BCR

@@ -9,6 +9,7 @@ bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
+bazel_dep(name = "rules_cc", version = "0.1.1")
 
 # Not all boost libs are available at the latest version yet, so use a
 # slightly older one that has all we need.
