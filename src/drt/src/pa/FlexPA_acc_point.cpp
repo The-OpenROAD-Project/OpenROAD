@@ -1259,7 +1259,7 @@ bool FlexPA::genPinAccessCostBounded(
   if (is_std_cell_pin || is_macro_cell_pin) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1356,12 +1356,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
   std::set<std::pair<Point, frLayerNum>> apset;
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  }
 
   if (graphics_) {
     std::set<frInst*, frBlockObjectComp>* inst_class = nullptr;
@@ -1401,10 +1395,10 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   updatePinStats(aps, pin, inst_term);
   const int n_aps = aps.size();
   if (n_aps == 0) {
-    if (is_std_cell_pin) {
+    if (inst_term && isStdCell(inst_term->getInst())) {
       std_cell_pin_no_ap_cnt_++;
     }
-    if (is_macro_cell_pin) {
+    if (inst_term && isMacroCell(inst_term->getInst())) {
       macro_cell_pin_no_ap_cnt_++;
     }
   } else {
@@ -1412,7 +1406,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
       logger_->error(DRT, 254, "inst_term can not be nullptr");
     }
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1517,12 +1511,13 @@ void FlexPA::genAllAccessPoints()
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
-  for (auto& inst : unique) {
+  for (frInst* inst : unique) {
     const dbTransform xform = inst->getTransform();
     const Point offset(xform.getOffset());
     dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
-    const auto pin_access_idx = unique_insts_.getPAIndex(inst);
+    const auto pin_access_idx = inst->getPinAccessIdx();
+    ;
     for (auto& inst_term : inst->getInstTerms()) {
       // if (isSkipInstTerm(inst_term.get())) {
       //   continue;

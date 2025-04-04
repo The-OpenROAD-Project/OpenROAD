@@ -33,6 +33,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <list>
 #include <map>
 #include <optional>
@@ -1434,9 +1435,19 @@ class dbBlock : public dbObject
   void setDieArea(const Rect& new_rect);
 
   ///
+  /// Set the die area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setDieArea(const Polygon& new_area);
+
+  ///
   /// Get the die area. The default die-area is (0,0,0,0).
   ///
   Rect getDieArea();
+
+  ///
+  /// Get the die area as a polygon. The default die-area is (0,0,0,0).
+  ///
+  Polygon getDieAreaPolygon();
 
   ///
   /// Get the core area. This computes the bbox of the rows
@@ -1668,6 +1679,7 @@ class dbBlock : public dbObject
   // For debugging only.  Print block content to an ostream.
   //
   void debugPrintContent(std::ostream& str_db);
+  void debugPrintContent() { debugPrintContent(std::cout); }
 
  private:
   void ComputeBBox();
@@ -4105,6 +4117,27 @@ class dbObstruction : public dbObject
   static void destroy(dbObstruction* obstruction);
 
   ///
+  /// Delete the blockage from the block.
+  ///
+  static dbSet<dbObstruction>::iterator destroy(
+      dbSet<dbObstruction>::iterator& itr);
+
+  ///
+  /// Returns true if this obstruction is system created. System created
+  /// obstructions represent obstructions created by non-rectangular floorplans.
+  /// The general flow is the polygonal floorplan is subtracted
+  /// from its general bounding box and the shapes that are created
+  /// by that difference are then decomposed into rectangles which
+  /// create obstructions with the system created annotation.
+  ///
+  bool isSystemReserved();
+
+  ///
+  /// Sets this obstruction as system created.
+  ///
+  void setIsSystemReserved(bool is_system_reserved);
+
+  ///
   /// Create a routing obstruction.
   ///
   static dbObstruction* create(dbBlock* block,
@@ -4161,6 +4194,21 @@ class dbBlockage : public dbObject
   bool isSoft();
 
   ///
+  /// Returns true if this blockage is system created. System created blockages
+  /// represent blockages created by non-rectangular floorplans.
+  /// The general flow is the polygonal floorplan is subtracted
+  /// from its general bounding box and the shapes that are created
+  /// by that difference are then decomposed into rectangles which
+  /// create blockages with the system created annotation.
+  ///
+  bool isSystemReserved();
+
+  ///
+  /// Sets this blockage as system created.
+  ///
+  void setIsSystemReserved(bool is_system_reserved);
+
+  ///
   /// Set the max placement density percentage in [0,100]
   ///
   void setMaxDensity(float max_density);
@@ -4186,6 +4234,11 @@ class dbBlockage : public dbObject
                             dbInst* inst = nullptr);
 
   static void destroy(dbBlockage* blockage);
+
+  ///
+  /// Delete the blockage from the block.
+  ///
+  static dbSet<dbBlockage>::iterator destroy(dbSet<dbBlockage>::iterator& itr);
 
   ///
   /// Translate a database-id back to a pointer.

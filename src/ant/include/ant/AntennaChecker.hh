@@ -199,7 +199,7 @@ class AntennaChecker
                             bool report,
                             ViolationReport& net_report);
   void writeReport(std::ofstream& report_file, bool verbose);
-  void printReport();
+  void printReport(odb::dbNet* db_net);
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool save_report,
