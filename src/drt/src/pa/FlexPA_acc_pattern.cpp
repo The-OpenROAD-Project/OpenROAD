@@ -51,8 +51,9 @@ namespace drt {
 
 using utl::ThreadException;
 
-void FlexPA::getInsts(std::vector<frInst*>& insts)
+void FlexPA::buildInstsSet()
 {
+  insts_set_.clear();
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
     target_frinsts.insert(design_->getTopBlock()->findInst(inst));
@@ -76,7 +77,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
       }
     }
     if (!is_skip) {
-      insts.push_back(inst.get());
+      insts_set_.insert(inst.get());
     }
   }
 }
