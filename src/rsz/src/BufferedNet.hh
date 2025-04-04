@@ -69,6 +69,7 @@ using sta::Unit;
 using sta::Units;
 
 class Resizer;
+class RepairSetup;
 
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
@@ -153,13 +154,25 @@ class BufferedNet
   int maxLoadWireLength() const;
 
   // Rebuffer
-  Required required(const StaState* sta) const;
+  const PathRef& arrivalPath() const { return arrival_path_; }
   const PathRef& requiredPath() const { return required_path_; }
+  Delay slack(const StaState* sta) const;
   void setRequiredPath(const PathRef& path_ref);
+  void setArrivalPath(const PathRef& path_ref);
+
   Delay requiredDelay() const { return required_delay_; }
   void setRequiredDelay(Delay delay);
+
+  Delay delay() const { return delay_; }
+  void setDelay(Delay delay);
+
+  Delay arrivalDelay() const { return arrival_delay_; }
+  void setArrivalDelay(Delay delay);
+
   // Downstream buffer count.
   int bufferCount() const;
+
+  float area() const { return area_; }
 
   static constexpr int null_layer = -1;
 
@@ -185,8 +198,18 @@ class BufferedNet
   // Rebuffer annotations
   // PathRef for worst required path at load.
   PathRef required_path_;
+  // PathRef for the corresponding arrival at driver pin.
+  PathRef arrival_path_;
   // Max delay from here to the loads.
   Delay required_delay_;
+  // Area of buffers on the buffer tree looking dowsmtrem from here.
+  float area_;
+
+  // Computed delay of the buffer/wire
+  Delay delay_ = 0;
+
+  // Delay from driver pin to here;
+  Delay arrival_delay_ = 0;
 };
 
 }  // namespace rsz

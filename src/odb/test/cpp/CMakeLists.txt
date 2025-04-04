@@ -19,7 +19,7 @@ set(TEST_LIBS
         GTest::gmock
 )
 
-add_executable(OdbGTests TestDbWire.cc TestAbstractLef.cc)
+add_executable(OdbGTests TestDbWire.cc TestAbstractLef.cc TestPolygonalFloorplan.cc)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)

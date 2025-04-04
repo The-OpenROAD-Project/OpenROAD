@@ -115,6 +115,26 @@ void FlexPA::init()
   initAllSkipInstTerm();
 }
 
+void FlexPA::deleteInst(frInst* inst)
+{
+  const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  // if inst is the class head the new head will be returned by deleteInst()
+  frInst* class_head = unique_insts_.deleteInst(inst);
+  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
+  // whole class has to be deleted
+  if (!class_head) {
+    unique_inst_patterns_.erase(inst);
+    for (auto& inst_term : inst->getInstTerms()) {
+      skip_unique_inst_term_.erase({unique_class, inst_term->getTerm()});
+    }
+  }
+  // new class representative has to be chosen
+  else if (is_class_head) {
+    unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
+    unique_inst_patterns_.erase(inst);
+  }
+}
+
 void FlexPA::applyPatternsFile(const char* file_path)
 {
   unique_inst_patterns_.clear();

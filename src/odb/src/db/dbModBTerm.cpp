@@ -363,6 +363,13 @@ void dbModBTerm::connect(dbModNet* net)
   _modnet->_modbterms = getId();      // set new head
 
   if (_block->_journal) {
+    debugPrint(_modbterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect modBterm {} to modnet {}",
+               getId(),
+               net->getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
@@ -478,6 +485,15 @@ void dbModBTerm::destroy(dbModBTerm* val)
 
   module->_modbterm_hash.erase(val->getName());
   block->_modbterm_tbl->destroy(_modbterm);
+}
+
+dbSet<dbModBTerm>::iterator dbModBTerm::destroy(
+    dbSet<dbModBTerm>::iterator& itr)
+{
+  dbModBTerm* modbterm = *itr;
+  dbSet<dbModBTerm>::iterator next = ++itr;
+  destroy(modbterm);
+  return next;
 }
 
 // User Code End dbModBTermPublicMethods

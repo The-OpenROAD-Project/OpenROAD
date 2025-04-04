@@ -494,10 +494,8 @@ void dbBTerm::disconnectDbNet()
 
 dbSet<dbBPin> dbBTerm::getBPins()
 {
-  //_dbBTerm * bterm = (_dbBTerm *) this;
   _dbBlock* block = (_dbBlock*) getBlock();
-  dbSet<dbBPin> bpins(this, block->_bpin_itr);
-  return bpins;
+  return dbSet<dbBPin>(this, block->_bpin_itr);
 }
 
 dbITerm* dbBTerm::getITerm()
@@ -531,11 +529,7 @@ Rect dbBTerm::getBBox()
 
 bool dbBTerm::getFirstPin(dbShape& shape)
 {
-  dbSet<dbBPin> bpins = getBPins();
-  dbSet<dbBPin>::iterator bpin_itr;
-  for (bpin_itr = bpins.begin(); bpin_itr != bpins.end(); ++bpin_itr) {
-    dbBPin* bpin = *bpin_itr;
-
+  for (dbBPin* bpin : getBPins()) {
     for (dbBox* box : bpin->getBoxes()) {
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
           || bpin->getPlacementStatus() == dbPlacementStatus::NONE
@@ -559,27 +553,16 @@ bool dbBTerm::getFirstPin(dbShape& shape)
 dbPlacementStatus dbBTerm::getFirstPinPlacementStatus()
 {
   dbSet<dbBPin> bpins = getBPins();
-  auto bpin_itr = bpins.begin();
-  if (bpin_itr != bpins.end()) {
-    dbBPin* bpin = *bpin_itr;
-    return bpin->getPlacementStatus();
+  if (bpins.empty()) {
+    return dbPlacementStatus::NONE;
   }
-
-  return dbPlacementStatus::NONE;
+  return bpins.begin()->getPlacementStatus();
 }
 
 bool dbBTerm::getFirstPinLocation(int& x, int& y)
 {
-  dbSet<dbBPin> bpins = getBPins();
-  dbSet<dbBPin>::iterator bpin_itr;
-  for (bpin_itr = bpins.begin(); bpin_itr != bpins.end(); ++bpin_itr) {
-    dbBPin* bpin = *bpin_itr;
-
-    dbSet<dbBox> boxes = bpin->getBoxes();
-    dbSet<dbBox>::iterator boxItr;
-
-    for (boxItr = boxes.begin(); boxItr != boxes.end(); ++boxItr) {
-      dbBox* box = *boxItr;
+  for (dbBPin* bpin : getBPins()) {
+    for (dbBox* box : bpin->getBoxes()) {
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
           || bpin->getPlacementStatus() == dbPlacementStatus::NONE
           || box == nullptr) {
@@ -931,7 +914,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
 void _dbBTerm::setMirroredConstraintRegion(const Rect& region, _dbBlock* block)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  const Rect& die_bounds = block->_die_area;
+  const Rect& die_bounds = ((dbBlock*) block)->getDieArea();
   int begin = region.dx() == 0 ? region.yMin() : region.xMin();
   int end = region.dx() == 0 ? region.yMax() : region.xMax();
   Direction2D edge;

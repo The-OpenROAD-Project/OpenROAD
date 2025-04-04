@@ -263,13 +263,8 @@ void dbTechNonDefaultRule::getLayerRules(
 
   layer_rules.clear();
 
-  dbVector<dbId<_dbTechLayerRule>>::iterator itr;
-
-  for (itr = rule->_layer_rules.begin(); itr != rule->_layer_rules.end();
-       ++itr) {
-    dbId<_dbTechLayerRule> id = *itr;
-
-    if (id != 0) {
+  for (const auto& id : rule->_layer_rules) {
+    if (id.isValid()) {
       layer_rules.push_back((dbTechLayerRule*) layer_rule_tbl->getPtr(id));
     }
   }
@@ -279,17 +274,15 @@ void dbTechNonDefaultRule::getVias(std::vector<dbTechVia*>& vias)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
+  vias.clear();
+
   if (rule->_flags._block_rule == 1) {  // not supported on block rules
     return;
   }
 
   _dbTech* tech = rule->getTech();
-  vias.clear();
 
-  dbVector<dbId<_dbTechVia>>::iterator itr;
-
-  for (itr = rule->_vias.begin(); itr != rule->_vias.end(); ++itr) {
-    dbId<_dbTechVia> id = *itr;
+  for (const auto& id : rule->_vias) {
     vias.push_back((dbTechVia*) tech->_via_tbl->getPtr(id));
   }
 }
@@ -321,19 +314,16 @@ void dbTechNonDefaultRule::getSameNetRules(
 {
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) this;
 
+  rules.clear();
+
   if (ndrule->_flags._block_rule == 1) {  // not supported on block rules
     return;
   }
 
   _dbTech* tech = ndrule->getTech();
-  rules.clear();
-  dbVector<dbId<_dbTechSameNetRule>>::iterator itr;
 
-  for (itr = ndrule->_samenet_rules.begin();
-       itr != ndrule->_samenet_rules.end();
-       ++itr) {
-    dbId<_dbTechSameNetRule> r = *itr;
-    rules.push_back((dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(r));
+  for (const auto& id : ndrule->_samenet_rules) {
+    rules.push_back((dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(id));
   }
 }
 
@@ -360,10 +350,7 @@ void dbTechNonDefaultRule::getUseVias(std::vector<dbTechVia*>& vias)
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
   _dbTech* tech = rule->getTech();
 
-  dbVector<dbId<_dbTechVia>>::iterator itr;
-
-  for (itr = rule->_use_vias.begin(); itr != rule->_use_vias.end(); ++itr) {
-    dbId<_dbTechVia> vid = *itr;
+  for (const auto& vid : rule->_use_vias) {
     dbTechVia* via = dbTechVia::getTechVia((dbTech*) tech, vid);
     vias.push_back(via);
   }
@@ -381,32 +368,26 @@ void dbTechNonDefaultRule::getUseViaRules(
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
   _dbTech* tech = rule->getTech();
 
-  dbVector<dbId<_dbTechViaGenerateRule>>::iterator itr;
-
-  for (itr = rule->_use_rules.begin(); itr != rule->_use_rules.end(); ++itr) {
-    dbId<_dbTechViaGenerateRule> rid = *itr;
+  for (const auto& rid : rule->_use_rules) {
     dbTechViaGenerateRule* rule
         = dbTechViaGenerateRule::getTechViaGenerateRule((dbTech*) tech, rid);
     rules.push_back(rule);
   }
 }
 
-void dbTechNonDefaultRule::setMinCuts(dbTechLayer* cut_layer, int count)
+void dbTechNonDefaultRule::setMinCuts(dbTechLayer* cut_layer, const int count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  uint id = cut_layer->getId();
-  dbVector<dbId<_dbTechLayer>>::iterator itr;
+  const uint id = cut_layer->getId();
   uint idx = 0;
 
-  for (itr = rule->_cut_layers.begin(); itr != rule->_cut_layers.end();
-       ++itr, ++idx) {
-    dbId<_dbTechLayer> lid = *itr;
-
+  for (const auto& lid : rule->_cut_layers) {
     if (lid == id) {
       rule->_min_cuts[idx] = count;
       return;
     }
+    ++idx;
   }
 
   rule->_cut_layers.push_back(id);
@@ -417,18 +398,15 @@ bool dbTechNonDefaultRule::getMinCuts(dbTechLayer* cut_layer, int& count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  uint id = cut_layer->getId();
-  dbVector<dbId<_dbTechLayer>>::iterator itr;
+  const uint id = cut_layer->getId();
   uint idx = 0;
 
-  for (itr = rule->_cut_layers.begin(); itr != rule->_cut_layers.end();
-       ++itr, ++idx) {
-    dbId<_dbTechLayer> lid = *itr;
-
+  for (const auto& lid : rule->_cut_layers) {
     if (lid == id) {
       count = rule->_min_cuts[idx];
       return true;
     }
+    ++idx;
   }
 
   return false;

@@ -149,6 +149,8 @@ class FlexPA
   bool isStdCell(frInst* unique_inst);
   bool isMacroCell(frInst* unique_inst);
 
+  void deleteInst(frInst* inst);
+
   /**
    * @brief generates all access points of a single unique instance
    *

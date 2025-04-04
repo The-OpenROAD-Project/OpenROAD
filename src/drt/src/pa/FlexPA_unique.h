@@ -61,8 +61,6 @@ class UniqueInsts
 
   // Get's the index corresponding to the inst's unique instance
   int getIndex(frInst* inst);
-  // Get's the pin access index corresponding to the inst
-  int getPAIndex(frInst* inst) const;
 
   // Gets the instances in the equivalence set of the given inst
   InstSet* getClass(frInst* inst) const;
@@ -136,10 +134,11 @@ class UniqueInsts
   void applyPatternsFile(const char* file_path);
 
   /**
-   * @brief Initializes pin access structures
-   * Fills unique_to_pa_idx_adds pin access unique points to pins
+   * @brief Initializes pin access idx of all instances
    */
-  void genPinAccess();
+  void initPinAccess();
+
+  void initUniqueInstPinAccess(frInst* unique_inst);
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.
@@ -177,8 +176,6 @@ class UniqueInsts
   std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
   std::unordered_map<frInst*, InstSet*> inst_to_class_;
-  // Maps a unique instance to its pin access index
-  std::map<frInst*, int, frBlockObjectComp> unique_to_pa_idx_;
   // Maps a unique instance to its index in unique_
   std::map<frInst*, int, frBlockObjectComp> unique_to_idx_;
   // master orient track-offset to instances

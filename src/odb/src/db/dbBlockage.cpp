@@ -204,6 +204,18 @@ dbBlock* dbBlockage::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+bool dbBlockage::isSystemReserved()
+{
+  _dbBlockage* bkg = (_dbBlockage*) this;
+  return bkg->_flags._is_system_reserved;
+}
+
+void dbBlockage::setIsSystemReserved(bool is_system_reserved)
+{
+  _dbBlockage* bkg = (_dbBlockage*) this;
+  bkg->_flags._is_system_reserved = is_system_reserved;
+}
+
 dbBlockage* dbBlockage::create(dbBlock* block_,
                                int x1,
                                int y1,
@@ -235,6 +247,28 @@ dbBlockage* dbBlockage::create(dbBlock* block_,
   return (dbBlockage*) bkg;
 }
 
+void dbBlockage::destroy(dbBlockage* blockage)
+{
+  _dbBlockage* bkg = (_dbBlockage*) blockage;
+  _dbBlock* block = (_dbBlock*) blockage->getBlock();
+
+  if (blockage->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
+    logger->error(
+        utl::ODB,
+        1112,
+        "You cannot delete a system created blockage (isSystemReserved).");
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBlockageDestroy(blockage);
+  }
+
+  block->_box_tbl->destroy(block->_box_tbl->getPtr(bkg->_bbox));
+
+  block->_blockage_tbl->destroy(bkg);
+}
+
 dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
@@ -245,6 +279,15 @@ void _dbBlockage::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+}
+
+dbSet<dbBlockage>::iterator dbBlockage::destroy(
+    dbSet<dbBlockage>::iterator& itr)
+{
+  dbBlockage* bt = *itr;
+  dbSet<dbBlockage>::iterator next = ++itr;
+  destroy(bt);
+  return next;
 }
 
 }  // namespace odb

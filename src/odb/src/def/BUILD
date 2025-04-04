@@ -88,7 +88,6 @@ cc_library(
         "def/defrSettings.hpp",
         "def/defwWriter.hpp",
         "def/defwWriterCalls.hpp",
-        "def/lex.h",
     ],
     includes = ["def"],
 )
@@ -108,10 +107,6 @@ cc_library(
     ],
     hdrs = [
         "defzlib/defzlib.hpp",
-    ],
-    features = [
-        # TODO: figure out why it complains about zlib while we depend on it
-        "-layering_check",
     ],
     includes = ["defzlib"],
     deps = [
