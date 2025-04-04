@@ -83,7 +83,7 @@ void MetalWidthViaMapParser::parse(const std::string& s)
     rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
-                      "parse mismatch in propery LEF58_METALWIDTHVIAMAP"
+                      "parse mismatch in property LEF58_METALWIDTHVIAMAP"
                       ":\"{}\"",
                       rule);
     }

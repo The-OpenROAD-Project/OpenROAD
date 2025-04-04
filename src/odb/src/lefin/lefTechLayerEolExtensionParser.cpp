@@ -55,7 +55,7 @@ void lefTechLayerEolExtensionRuleParser::parse(const std::string& s,
     rule += " ; ";
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(260,
-                      "parse mismatch in layer propery "
+                      "parse mismatch in layer property "
                       "LEF58_EOLEXTENSIONSPACING for layer {} :\"{}\"",
                       layer->getName(),
                       rule);
