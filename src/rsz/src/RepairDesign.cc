@@ -1965,7 +1965,6 @@ bool RepairDesign::makeRepeater(
 
   for (const Pin* pin : load_pins) {
     if (network_->isTopLevelPort(pin)) {
-      //      load_db_net = network_->net(network_->term(pin));
       load_db_net = db_network_->flatNet(network_->term(pin));
 
       // filter: is the top pin a primary output
