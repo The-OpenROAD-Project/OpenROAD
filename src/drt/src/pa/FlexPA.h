@@ -781,6 +781,23 @@ class FlexPA
    */
   std::vector<std::vector<frInst*>> computeInstRows();
 
+  /**
+   * @brief Get the instance adjacent to the left or right of a given instance
+   *
+   * @param inst the reference inst
+   * @param left true if looking at the left inst, false if looking at the right
+   *
+   * @returns the adjacent inst or nullptr if no adjacent inst
+   */
+  frInst* getAdjacentInstance(frInst* inst, bool left) const;
+
+  /**
+   * @brief Find a cluster of instances that are touching each other
+   *
+   * @returns a vector of the clusters of touching insts
+   */
+  std::vector<frInst*> getAdjacentInstancesCluster(frInst* inst) const;
+
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 
   /**
