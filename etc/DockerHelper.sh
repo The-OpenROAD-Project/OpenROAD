@@ -142,7 +142,8 @@ _test() {
         echo "Could not find ${imagePath}, will attempt to create it" >&2
         _create
     fi
-    docker run --rm "${imagePath}" "./docker/test_wrapper.sh" "${compiler}" "ctest --test-dir build -j ${numThreads}"
+    mkdir -p persistent
+    docker run --rm -v $(pwd)/persistent:/mnt "${imagePath}" "./docker/test_wrapper.sh" "${compiler}" "ctest --test-dir build -j ${numThreads}" "/mnt/${os}-${target}"
 }
 
 _checkFromImage() {
