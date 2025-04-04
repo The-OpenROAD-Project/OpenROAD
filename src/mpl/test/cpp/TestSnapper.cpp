@@ -253,7 +253,7 @@ TEST_F(TestSnapper, MultiPitchPattern)
 
 TEST_F(TestSnapper, MultiOriginPattern)
 {
-  db_->getTech()->setManufacturingGrid(1); 
+  db_->getTech()->setManufacturingGrid(1);
 
   const int track_pitch = 36;
   const int track_origin1 = 5;
@@ -338,8 +338,8 @@ TEST_F(TestSnapper, MultiOriginPattern)
   EXPECT_EQ(macro->getOrigin().x(), 1500);
   // 1528 (origin) + 25 (pin1 center) - 5 (pattern1 origin) equals 1548 which is
   // a multiple of 36 (pin is aligned to pattern1)
-  // 1528 (origin) + 171 (pin3 center) - 7 (pattern2 origin) equals 1692 which is
-  // a multiple of 36 (pin is aligned to pattern2)
+  // 1528 (origin) + 171 (pin3 center) - 7 (pattern2 origin) equals 1692 which
+  // is a multiple of 36 (pin is aligned to pattern2)
   EXPECT_EQ(macro->getOrigin().y(), 1528);
 }
 
