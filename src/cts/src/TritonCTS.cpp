@@ -2283,18 +2283,22 @@ bool TritonCTS::propagateClock(odb::dbITerm* input)
   odb::dbInst* inst = input->getInst();
   sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+  // Clock tree buffers
   if(libertyCell->isInverter() || libertyCell->isBuffer()) {
     return true;
   }
+  // Combinational components
   if(!libertyCell->hasSequentials()) {
     return true;
   }
   sta::LibertyPort* inputPort
       = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+  
+  // Clock Gater / Latch improvised as clock gater
   if (inputPort) {
     return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
-
   }
+
   return false;
 }
 
