@@ -20,9 +20,11 @@ SAVED_PWD=$(pwd)
 echo "Directory: ${PWD}"
 echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT > $LOG_FILE"
 
-cd ${BAZEL_SAVED_PWD:-$SAVED_PWD}
-$OPENROAD_EXE $ORD_ARGS -cd $SAVED_PWD -no_splash -no_init -exit $TEST_NAME.$TEST_EXT &> $LOG_FILE
-cd $SAVED_PWD
+(
+    # subshell to clean up after launching from a different directory
+    cd ${BAZEL_SAVED_PWD:-$SAVED_PWD} &&
+    $OPENROAD_EXE $ORD_ARGS -cd $SAVED_PWD -no_splash -no_init -exit $TEST_NAME.$TEST_EXT &> $LOG_FILE
+)
 
 echo "Exitcode:  $?"
 

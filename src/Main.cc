@@ -229,15 +229,14 @@ static void handler(int sig)
   raise(sig);
 }
 
-namespace {
 // Done launching, show splash and switch to working folder
-bool launched(int& argc, char* argv[])
+static bool completeLaunch(int& argc, char* argv[])
 {
   bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
   if (!no_splash) {
     showSplash();
   }
-  const auto workingFolder = findCmdLineKey(argc, argv, "-cd");
+  const char* workingFolder = findCmdLineKey(argc, argv, "-cd");
   if (workingFolder) {
     // switch pwd to the working folder. This is useful when
     // OpenROAD must be launched from one folder and the files
@@ -252,7 +251,6 @@ bool launched(int& argc, char* argv[])
   }
   return no_splash;
 }
-}  // namespace
 
 int main(int argc, char* argv[])
 {
@@ -311,7 +309,7 @@ int main(int argc, char* argv[])
     ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
     ord::initOpenRoad(interp, log_filename, metrics_filename);
 
-    launched(cmd_argc, cmd_argv);
+    completeLaunch(cmd_argc, cmd_argv);
 
     utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
     if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
@@ -479,7 +477,7 @@ static int tclAppInit(int& argc,
 
     ord::initOpenRoad(interp, log_filename, metrics_filename);
 
-    bool no_splash = launched(argc, argv);
+    bool no_splash = completeLaunch(argc, argv);
 
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
