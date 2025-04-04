@@ -43,6 +43,8 @@ specified file.
 
 `-python`: Execute the cmd_file as a Python script.
 
+`-cd folder`: Switch to this folder after launching is complete.
+
 # ARGUMENTS
 
 `cmd_file`: The command file containing OpenROAD commands to be executed.

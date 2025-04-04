@@ -339,6 +339,7 @@ openroad [-help] [-version] [-no_init] [-exit] [-gui]
   -gui               start in gui mode
   -python            start with python interpreter [limited to db operations]
   -log <file_name>   write a log in <file_name>
+  -cd <folder>       change to this folder after launching
   cmd_file           source cmd_file
 ```
 

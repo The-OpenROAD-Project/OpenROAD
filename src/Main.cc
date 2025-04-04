@@ -229,6 +229,31 @@ static void handler(int sig)
   raise(sig);
 }
 
+namespace {
+// Done launching, show splash and switch to working folder
+bool launched(int& argc, char* argv[])
+{
+  bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
+  if (!no_splash) {
+    showSplash();
+  }
+  const auto workingFolder = findCmdLineKey(argc, argv, "-cd");
+  if (workingFolder) {
+    // switch pwd to the working folder. This is useful when
+    // OpenROAD must be launched from one folder and the files
+    // that it needs to run scripts is in a different folder.
+    //
+    // Bazel is a use-case.
+    if (chdir(workingFolder) != 0) {
+      std::cerr << "Error: Failed to change directory to '" << workingFolder
+                << "'. Reason: " << strerror(errno) << std::endl;
+      exit(1);
+    }
+  }
+  return no_splash;
+}
+}  // namespace
+
 int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
@@ -285,9 +310,8 @@ int main(int argc, char* argv[])
         = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
     ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
     ord::initOpenRoad(interp, log_filename, metrics_filename);
-    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
-      showSplash();
-    }
+
+    launched(cmd_argc, cmd_argv);
 
     utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
     if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
@@ -455,10 +479,7 @@ static int tclAppInit(int& argc,
 
     ord::initOpenRoad(interp, log_filename, metrics_filename);
 
-    bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
-    if (!no_splash) {
-      showSplash();
-    }
+    bool no_splash = launched(argc, argv);
 
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
@@ -547,7 +568,7 @@ static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
   printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
-  printf("[-no_settings] [-minimize] cmd_file\n");
+  printf("[-no_settings] [-minimize] [-cd folder] cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
@@ -557,6 +578,7 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -gui                  start in gui mode\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
+  printf("  -cd folder            switch to this folder after launching\n");
 #ifdef ENABLE_PYTHON3
   printf(
       "  -python               start with python interpreter [limited to db "
