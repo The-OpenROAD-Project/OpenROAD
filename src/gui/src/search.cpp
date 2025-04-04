@@ -367,6 +367,9 @@ void Search::updateBlockages(odb::dbBlock* block)
 
   std::vector<odb::dbBlockage*> blockages;
   for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (blockage->isSystemReserved()) {
+      continue;
+    }
     blockages.push_back(blockage);
   }
   data.blockages_
@@ -387,6 +390,9 @@ void Search::updateObstructions(odb::dbBlock* block)
 
   LayerMap<std::vector<odb::dbObstruction*>> obstructions;
   for (odb::dbObstruction* obs : block->getObstructions()) {
+    if (obs->isSystemReserved()) {
+      continue;
+    }
     odb::dbBox* bbox = obs->getBBox();
     obstructions[bbox->getTechLayer()].push_back(obs);
   }

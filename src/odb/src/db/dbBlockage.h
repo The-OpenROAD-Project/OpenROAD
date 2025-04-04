@@ -48,7 +48,11 @@ struct _dbBlockageFlags
 {
   uint _pushed_down : 1;
   uint _soft : 1;
-  uint _spare_bits : 30;
+  // For denoting that the blockage is not to be written or
+  // rendered. It only exists to support non-rectangular
+  // floorplans.
+  uint _is_system_reserved : 1;
+  uint _spare_bits : 29;
 };
 
 class _dbBlockage : public _dbObject
@@ -77,6 +81,7 @@ inline _dbBlockage::_dbBlockage(_dbDatabase*)
   _flags._pushed_down = 0;
   _flags._spare_bits = 0;
   _flags._soft = 0;
+  _flags._is_system_reserved = 0;
   _max_density = 0.0;
 }
 

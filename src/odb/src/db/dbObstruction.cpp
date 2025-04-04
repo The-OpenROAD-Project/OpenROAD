@@ -65,6 +65,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
   _flags._spare_bits = 0;
+  _flags._is_system_reserved = 0;
   _min_spacing = 0;
   _effective_width = 0;
 }
@@ -97,6 +98,11 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
     // assume false for older databases
     obs._flags._except_pg_nets = false;
+  }
+
+  if (!db->isSchema(db_schema_die_area_is_polygon)) {
+    // assume false for older databases
+    obs._flags._is_system_reserved = false;
   }
 
   return stream;
@@ -355,6 +361,18 @@ dbBlock* dbObstruction::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+bool dbObstruction::isSystemReserved()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  return obs->_flags._is_system_reserved;
+}
+
+void dbObstruction::setIsSystemReserved(bool is_system_reserved)
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  obs->_flags._is_system_reserved = is_system_reserved;
+}
+
 dbObstruction* dbObstruction::create(dbBlock* block_,
                                      dbTechLayer* layer_,
                                      int x1,
@@ -392,11 +410,29 @@ void dbObstruction::destroy(dbObstruction* obstruction)
 {
   _dbObstruction* obs = (_dbObstruction*) obstruction;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
+
+  if (obstruction->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
+    logger->error(
+        utl::ODB,
+        1111,
+        "You cannot delete a system created obstruction (isSystemReserved).");
+  }
+
   for (auto callback : block->_callbacks) {
     callback->inDbObstructionDestroy(obstruction);
   }
   dbProperty::destroyProperties(obs);
   block->_obstruction_tbl->destroy(obs);
+}
+
+dbSet<dbObstruction>::iterator dbObstruction::destroy(
+    dbSet<dbObstruction>::iterator& itr)
+{
+  dbObstruction* bt = *itr;
+  dbSet<dbObstruction>::iterator next = ++itr;
+  destroy(bt);
+  return next;
 }
 
 dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)

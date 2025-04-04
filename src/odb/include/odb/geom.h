@@ -346,12 +346,17 @@ class Polygon
   bool operator<=(const Polygon& p) const { return !(*this > p); }
   bool operator>=(const Polygon& p) const { return !(*this < p); }
 
+  bool isRect() const;
   Rect getEnclosingRect() const;
   int dx() const { return getEnclosingRect().dx(); }
   int dy() const { return getEnclosingRect().dy(); }
 
   // returns a corrected Polygon with a closed form and counter-clockwise points
   Polygon bloat(int margin) const;
+
+  // Returns the geometric difference between this polygon "a" and polygon "b"
+  // results in a vector of polygons.
+  std::vector<Polygon> difference(Polygon b) const;
 
   friend dbIStream& operator>>(dbIStream& stream, Polygon& p);
   friend dbOStream& operator<<(dbOStream& stream, const Polygon& p);
@@ -973,6 +978,13 @@ inline Rect Polygon::getEnclosingRect() const
     rect.merge(Rect(pt, pt));
   }
   return rect;
+}
+
+inline bool Polygon::isRect() const
+{
+  // A polygon is a rect if and only if the polygon
+  // of its bounding box is equal to itself.
+  return *this == Polygon(getEnclosingRect());
 }
 
 inline bool Polygon::operator==(const Polygon& p) const

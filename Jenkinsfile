@@ -12,7 +12,7 @@ def baseTests(String image) {
                 try {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                         timeout(time: 10, unit: 'MINUTES') {
-                            sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc)';
+                            sh label: 'Run ctest', script: 'ctest --test-dir build -j $(nproc) --output-on-failure';
                         }
                     }
                 } catch (e) {
