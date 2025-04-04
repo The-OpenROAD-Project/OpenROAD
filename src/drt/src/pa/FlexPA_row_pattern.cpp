@@ -62,26 +62,15 @@ static inline void serializeInstRows(
 std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
 {
   // prep pattern for each row
-  std::vector<frInst*> insts;
   std::vector<std::vector<frInst*>> inst_rows;
   std::vector<frInst*> row_insts;
 
-  auto instLocComp = [](frInst* const& a, frInst* const& b) {
-    const Point originA = a->getOrigin();
-    const Point originB = b->getOrigin();
-    if (originA.y() == originB.y()) {
-      return (originA.x() < originB.x());
-    }
-    return (originA.y() < originB.y());
-  };
-
-  getInsts(insts);
-  std::sort(insts.begin(), insts.end(), instLocComp);
+  buildInstsSet();
 
   // gen rows of insts
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
-  for (auto inst : insts) {
+  for (auto inst : insts_set_) {
     Point origin = inst->getOrigin();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
