@@ -373,7 +373,6 @@ void dbModBTerm::connect(dbModNet* net)
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
-    _block->_journal->pushParam(0);  // empty slot for dbNet, just dbModNet
     _block->_journal->pushParam(net->getId());
     _block->_journal->endAction();
   }
