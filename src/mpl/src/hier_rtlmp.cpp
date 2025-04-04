@@ -3406,9 +3406,9 @@ void Snapper::attemptSnapToExtraPatterns(
     int current_index = start_index + steps;
 
     if (current_index < 0
-        || current_index >= snap_data[0].available_positions.size())
+        || current_index >= snap_data[0].available_positions.size()) {
       continue;
-
+    }
     snapPinToPosition(snap_pin, positions[current_index], target_direction);
 
     int snapped_pins = totalPinsAligned(snap_data, target_direction);
@@ -3428,7 +3428,7 @@ int Snapper::totalPinsAligned(const SnapData& snap_data,
   int pins_aligned = 0;
 
   for (auto& data : snap_data) {
-    std::vector<int> pin_centers;
+    std::vector<int> pin_centers(data.pins.size());
     for (auto& pin : data.pins) {
       pin_centers.push_back(direction == odb::dbTechLayerDir::VERTICAL
                                 ? pin->getBBox().xCenter()

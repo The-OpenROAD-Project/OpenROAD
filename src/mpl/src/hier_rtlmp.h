@@ -366,7 +366,7 @@ class Snapper
       const odb::dbTechLayerDir& target_direction);
   odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
   void getTrackGridPattern(odb::dbTrackGrid* track_grid,
-                           const int pattern_idx,
+                           int pattern_idx,
                            int& origin,
                            int& step,
                            const odb::dbTechLayerDir& target_direction);
@@ -377,7 +377,7 @@ class Snapper
   void snapPinToPosition(odb::dbITerm* pin,
                          int position,
                          const odb::dbTechLayerDir& direction);
-  void attemptSnapToExtraPatterns(const int starting_position_index,
+  void attemptSnapToExtraPatterns(int start_index,
                                   const SnapData& snap_data,
                                   const odb::dbTechLayerDir& target_direction);
 
