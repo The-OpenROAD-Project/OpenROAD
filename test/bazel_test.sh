@@ -4,7 +4,6 @@ set -ex
 # not a test name.
 export TEST_EXT=${TEST_FILE##*.}
 export TEST_NAME=$(basename "$TEST_FILE" .$TEST_EXT)
-export BAZEL_SAVED_PWD=$(pwd)
 export OPENROAD_EXE=$(realpath $OPENROAD_EXE)
 export LOG_FILE=/dev/stdout
 export REGRESSION_TEST=$(realpath $REGRESSION_TEST)
