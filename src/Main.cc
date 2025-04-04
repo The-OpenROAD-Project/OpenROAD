@@ -69,6 +69,10 @@
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
+#ifdef ENABLE_KOKKOS
+#include <Kokkos_Core.hpp>
+#endif
+
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::sourceTclFile;
@@ -307,9 +311,13 @@ int main(int argc, char* argv[])
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
+#ifdef ENABLE_KOKKOS
+    Kokkos::initialize();
+#endif
+
 #if PY_VERSION_HEX >= 0x03080000
     initPython(cmd_argc, cmd_argv);
-    return Py_RunMain();
+    int py_rc =  Py_RunMain();
 #else
     initPython();
     bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
@@ -321,14 +329,21 @@ int main(int argc, char* argv[])
     for (int i = 1; i < cmd_argc; i++) {
       args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
     }
-    return Py_Main(args.size(), args.data());
+    int py_rc = Py_Main(args.size(), args.data());
 #endif  // PY_VERSION_HEX >= 0x03080000
+#ifdef ENABLE_KOKKOS
+      Kokkos::finalize();
+#endif // ENABLE_KOKKOS
+    return py_rc;
   }
 #endif  // ENABLE_PYTHON3
 
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
+#ifdef ENABLE_KOKKOS
+  Kokkos::finalize();
+#endif
   return 0;
 }
 
@@ -453,6 +468,9 @@ static int tclAppInit(int& argc,
     }
 #endif
 
+#ifdef ENABLE_KOKKOS
+    Kokkos::initialize();
+#endif
     ord::initOpenRoad(interp, log_filename, metrics_filename);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
@@ -499,6 +517,9 @@ static int tclAppInit(int& argc,
             int result = sourceTclFile(cmd_file, false, false, interp);
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
+#ifdef ENABLE_KOKKOS
+              Kokkos::finalize();
+#endif
               exit(exit_code);
             }
           } else {
