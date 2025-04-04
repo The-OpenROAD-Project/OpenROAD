@@ -426,7 +426,30 @@ void dbJournal::redo_createObject()
       _log.pop(obj_id);
       _log.pop(parent_obj_id);
       dbModInst* parent_mod_inst = dbModInst::getModInst(_block, parent_obj_id);
-      dbModITerm::create(parent_mod_inst, name.c_str());
+      dbModITerm* mod_iterm = dbModITerm::create(parent_mod_inst, name.c_str());
+      // set up correlation of moditerm/modbterm
+      // Note we does this in the moditerm because
+      // we hope that by the time we get to recreating moditerms
+      // that the modules have been restored.
+      dbModule* parent_module = parent_mod_inst->getMaster();
+      if (parent_module) {
+        std::string port_name_str = std::move(name);
+        const size_t last_idx = port_name_str.find_last_of('/');
+        if (last_idx != std::string::npos) {
+          port_name_str = port_name_str.substr(last_idx + 1);
+        }
+        dbModBTerm* mod_bterm
+            = parent_module->findModBTerm(port_name_str.c_str());
+        mod_bterm->setParentModITerm(mod_iterm);
+        mod_iterm->setChildModBTerm(mod_bterm);
+      } else {
+        _logger->error(utl::ODB,
+                       1111,
+                       "Unable to restore moditerm/modbterm correlation for "
+                       "moditerm {}, dbModule for instance {} found",
+                       name,
+                       parent_mod_inst->getName());
+      }
       break;
     }
 
@@ -1992,15 +2015,38 @@ void dbJournal::undo_deleteObject()
       _log.pop(modinst_id);
       // get the parent module
       dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
-      auto moditerm = dbModITerm::create(mod_inst, name.c_str());
+      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str());
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  3,
                  "UNDO ECO: delete dbModiterm {} {}",
                  name.c_str(),
-                 moditerm->getId());
-      (void) moditerm;
+                 mod_iterm->getId());
+      // set up correlation of moditerm/modbterm
+      // Note we does this in the moditerm because
+      // we hope that by the time we get to recreating moditerms
+      // that the modules have been restored.
+      dbModule* parent_module = mod_inst->getMaster();
+      if (parent_module) {
+        std::string port_name_str = std::move(name);
+        const size_t last_idx = port_name_str.find_last_of('/');
+        if (last_idx != std::string::npos) {
+          port_name_str = port_name_str.substr(last_idx + 1);
+        }
+        dbModBTerm* mod_bterm
+            = parent_module->findModBTerm(port_name_str.c_str());
+        mod_bterm->setParentModITerm(mod_iterm);
+        mod_iterm->setChildModBTerm(mod_bterm);
+      } else {
+        _logger->error(
+            utl::ODB,
+            1112,
+            "Unable to restore moditerm/modbterm correlation for moditerm {} "
+            "during undo_delete, dbModule for instance {} found",
+            name,
+            mod_inst->getName());
+      }
       break;
     }
 
