@@ -3391,7 +3391,7 @@ void Snapper::attemptSnapToExtraPatterns(
     const SnapData& snap_data,
     const odb::dbTechLayerDir& target_direction)
 {
-  const int total_attempts = 50;
+  const int total_attempts = 100;
 
   odb::dbITerm* snap_pin = snap_data[0].pins[0];
   const std::vector<int>& positions = snap_data[0].available_positions;
