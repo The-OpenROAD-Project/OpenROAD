@@ -27,7 +27,7 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = _pop(kwargs, "size", "small"),
-            timeout = _pop(kwargs, "size", "moderate"),
+            timeout = _pop(kwargs, "timeout", "moderate"),
             srcs = ["//test:bazel_test.sh"],
             args = [],
             data = [

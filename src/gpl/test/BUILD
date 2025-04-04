@@ -56,6 +56,6 @@ filegroup(
 )
 
 [regression_test(
-    name = name,
+    name = test_name,
     data = [":test_resources"],
-) for name in TESTS]
+) for test_name in TESTS]

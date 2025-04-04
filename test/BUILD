@@ -62,6 +62,7 @@ BIG_TESTS = [
 [
     regression_test(
         name = test_name,
+        size = "enormous" if test_name in BIG_TESTS else "medium",
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
