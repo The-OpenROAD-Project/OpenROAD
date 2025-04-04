@@ -741,8 +741,8 @@ void dbModule::copyModuleInsts(dbModule* old_module,
     // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
     new_inst_name += (first_idx != std::string::npos)
-                         ? old_inst_name.substr(first_idx + 1)
-                         : old_inst_name;
+                         ? std::move(old_inst_name).substr(first_idx + 1)
+                         : std::move(old_inst_name);
 
     dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
@@ -793,8 +793,8 @@ void dbModule::copyModuleInsts(dbModule* old_module,
         // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
         size_t first_idx = old_net_name.find_first_of('/');
         new_net_name += (first_idx != std::string::npos)
-                            ? old_net_name.substr(first_idx + 1)
-                            : old_net_name;
+                            ? std::move(old_net_name).substr(first_idx + 1)
+                            : std::move(old_net_name);
 
         dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
         if (new_net) {
