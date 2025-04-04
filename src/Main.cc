@@ -60,6 +60,10 @@
 #include <tclExtend.h>
 #endif
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+#include "rules_cc/cc/runfiles/runfiles.h"
+#endif
+
 #include "gui/gui.h"
 #include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
@@ -240,6 +244,15 @@ int main(int argc, char* argv[])
       break;
     }
   }
+
+#ifdef BAZEL_CURRENT_REPOSITORY
+  using rules_cc::cc::runfiles::Runfiles;
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(
+      Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+  std::string path = runfiles->Rlocation("tk_tcl/library/");
+  setenv("TCL_LIBRARY", path.c_str(), 0);
+#endif
 
   // Generate a stacktrace on crash
   signal(SIGABRT, handler);

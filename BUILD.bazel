@@ -93,7 +93,10 @@ cc_binary(
         ":platform_cli": [],
     }),
     visibility = ["//visibility:public"],
-    deps = OPENROAD_BINARY_DEPS + [":openroad_lib_private"],
+    deps = OPENROAD_BINARY_DEPS + [
+        ":openroad_lib_private",
+        "@rules_cc//cc/runfiles",
+    ],
 )
 
 cc_library(
