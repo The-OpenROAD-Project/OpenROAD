@@ -214,6 +214,13 @@ void initGui(OpenRoad* openroad)
       "  }"
       "}");
   Tcl_Eval(interp, cmd_supported.c_str());
+  std::string enabled_supported(
+      "namespace eval gui {"
+      "  proc enabled {} {"
+      "    return 0"
+      "  }"
+      "}");
+  Tcl_Eval(interp, enabled_supported.c_str());
 }
 
 }  // namespace ord
