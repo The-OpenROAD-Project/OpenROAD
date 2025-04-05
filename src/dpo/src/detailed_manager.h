@@ -53,8 +53,10 @@
 #include "utility.h"
 namespace utl {
 class Logger;
+}  // namespace utl
+namespace dpl {
+class PlacementDRC;
 }
-
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +71,7 @@ class DetailedSeg;
 class Network;
 class RoutingParams;
 using dpl::Grid;
+using dpl::PlacementDRC;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Structures.
@@ -114,7 +117,8 @@ class DetailedMgr
   DetailedMgr(Architecture* arch,
               Network* network,
               RoutingParams* rt,
-              Grid* grid);
+              Grid* grid,
+              PlacementDRC* drc_engine);
   virtual ~DetailedMgr();
 
   void cleanup();
@@ -396,6 +400,7 @@ class DetailedMgr
   Network* network_;
   RoutingParams* rt_;
   Grid* grid_;
+  PlacementDRC* drc_engine_;
   Journal journal;
 
   // For output.
