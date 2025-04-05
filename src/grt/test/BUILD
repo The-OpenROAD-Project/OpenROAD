@@ -1,0 +1,102 @@
+load("//test:regression.bzl", "regression_test")
+
+TESTS = [
+    "bus_route",
+    "clock_route",
+    "clock_route_alpha",
+    "clock_route_error1",
+    "clock_route_error2",
+    "congestion1",
+    "congestion2",
+    "congestion3",
+    "congestion4",
+    "congestion5",
+    "congestion6",
+    "congestion7",
+    "critical_nets_percentage",
+    "est_rc1",
+    "est_rc2",
+    "est_rc3",
+    "est_rc4",
+    "gcd",
+    "gcd_flute",
+    "inst_pin_out_of_die",
+    "invalid_pin_placement",
+    "invalid_routing_layer",
+    "macro_obs_not_aligned",
+    "modeling_instance_obs",
+    "multiple_calls",
+    "ndr_1w_3s",
+    "ndr_2w_3s",
+    "no_tracks",
+    "obs_out_of_die",
+    "obstruction",
+    "overlapping_edges",
+    "pd1",
+    "pd2",
+    "pd3",
+    "pd4",
+    "pin_access1",
+    "pin_access2",
+    "pin_edge",
+    "pin_track_not_aligned",
+    "pre_routed1",
+    "read_segments1",
+    "read_segments2",
+    "read_segments3",
+    "read_segments4",
+    "read_segments_error1",
+    "read_segments_error2",
+    "read_segments_error3",
+    "region_adjustment",
+    "remove_buffers1",
+    "remove_buffers2",
+    "repair_antennas1",
+    "repair_antennas2",
+    "repair_antennas3",
+    "repair_antennas4",
+    "repair_antennas_error1",
+    "repair_antennas_error2",
+    "report_wire_length1",
+    "report_wire_length2",
+    "report_wire_length3",
+    "report_wire_length4",
+    "report_wire_length5",
+    "report_wire_length6",
+    "set_nets_to_route1",
+    "silence",
+    "single_row",
+    "top_level_term1",
+    "top_level_term2",
+    "top_level_term3",
+    "tracks1",
+    "tracks2",
+    "tracks3",
+    "unplaced_inst",
+    "upper_layer_net",
+    "write_segments1",
+    "write_segments2",
+]
+
+filegroup(
+    name = "test_resources",
+    # overly broad glob, could be refined later, but
+    # symlinks are cheap and OpenROAD binary changes, the common
+    # use case is that all tests have to be re-run.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[regression_test(
+    name = test_name,
+    data = [":test_resources"],
+) for test_name in TESTS]
