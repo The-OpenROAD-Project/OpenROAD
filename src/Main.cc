@@ -218,6 +218,10 @@ int main(int argc, char* argv[])
   std::string error;
   std::unique_ptr<Runfiles> runfiles(
       Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+  if (!runfiles) {
+    std::cerr << error << std::endl;
+    return 1;
+  }
   std::string path = runfiles->Rlocation("tk_tcl/library/");
   setenv("TCL_LIBRARY", path.c_str(), 0);
 #endif
