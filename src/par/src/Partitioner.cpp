@@ -131,7 +131,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
           path_vertices.push_back(v);
         }
       }  // finish current path
-    }    // finish all the paths
+    }  // finish all the paths
     std::shuffle(path_vertices.begin(),
                  path_vertices.end(),
                  std::default_random_engine(seed_));
