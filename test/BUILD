@@ -38,11 +38,18 @@ PYTHON_TESTS = [
     "two_designs",
 ]
 
-# TODO There are tests in this folder that were not enabled in
-# CMakeLists.txt, presumably because they are long running.
-# These should be added with tags = ["manual"], i.e not
-# run with 'bazel test ...', only when invoked explicitly
-# and the "size" set to "enormous".
+# The local Bazel OpenROAD workflow for a quick smoketest
+# is to run, in the relevant folder:
+#
+# "bazel test -c opt ..."
+#
+# Now, or_integration_tests() in CMakeLists.txt do not list
+# BIG_TESTS below.
+#
+# By marking the tests tags=["manual"],
+# the tests are available, but have to be invoked
+# explicitly giving CI control over when they are executed,
+# which can be useful because the tests are long running.
 BIG_TESTS = [
     "aes_nangate45",
     "aes_sky130hd.tcl",
