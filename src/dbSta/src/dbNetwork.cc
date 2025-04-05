@@ -1291,40 +1291,6 @@ dbModNet* dbNetwork::hierNet(const Pin* pin) const
   return db_modnet;
 }
 
-dbModNet* dbNetwork::hierNet(const Term* term) const
-{
-  dbITerm* iterm = nullptr;
-  dbBTerm* bterm = nullptr;
-  dbModITerm* moditerm = nullptr;
-  dbModBTerm* modbterm = nullptr;
-
-  staToDb(term, iterm, bterm, moditerm, modbterm);
-
-  if (bterm) {
-    dbModNet* modnet = bterm->getModNet();
-    return modnet;
-  }
-
-  if (iterm) {
-    dbModNet* modnet = iterm->getModNet();
-    return modnet;
-  }
-
-  if (moditerm) {
-    dbModNet* modnet = moditerm->getModNet();
-    return modnet;
-  }
-
-  if (modbterm) {
-    dbModNet* modnet = modbterm->getModNet();
-    return modnet;
-  }
-
-  logger_->error(ORD, 2031, "Illegal term for getting a hiearchical net");
-
-  return nullptr;
-}
-
 /*
 Get the dbnet or the moddbnet for a pin
 Sometimes a pin can be hooked to both and we want to expose them

@@ -260,7 +260,6 @@ class dbNetwork : public ConcreteNetwork
   void net(const Pin* pin, dbNet*& db_net, dbModNet*& db_modnet) const;
   dbNet* flatNet(const Pin* pin) const;
   dbModNet* hierNet(const Pin* pin) const;
-  dbModNet* hierNet(const Term* term) const;
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
 
