@@ -127,6 +127,7 @@ class SimulatedAnnealingCore
   void fastSA();
 
   void initSequencePair();
+  void setDieArea(const Rect& die_area);
   void setBlockedBoundariesForIOs();
   void updateBestValidResult();
   void useBestValidResult();
@@ -136,7 +137,7 @@ class SimulatedAnnealingCore
   void calOutlinePenalty();
   void calWirelength();
   void addBoundaryDistToWirelength(const T& macro,
-                                   const T& io,
+                                   const T& unplaced_ios,
                                    float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
@@ -163,11 +164,8 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  /////////////////////////////////////////////
-  // private member variables
-  /////////////////////////////////////////////
-  // boundary constraints
   Rect outline_;
+  Rect die_area_;  // Offset to the current outline.
 
   // Boundaries blocked for IO pins
   std::set<Boundary> blocked_boundaries_;
