@@ -260,9 +260,6 @@ class HierRTLMP
 
   std::unique_ptr<ClusteringEngine> clustering_engine_;
 
-  // flag variables
-  const bool dynamic_congestion_weight_flag_ = false;
-
   // Parameters related to macro placement
   std::string report_directory_;
   std::string macro_placement_file_;
@@ -283,9 +280,6 @@ class HierRTLMP
 
   float pin_access_th_ = 0.1;  // each pin access is modeled as a SoftMacro
   float pin_access_th_orig_ = 0.1;
-  float pin_access_net_width_ratio_
-      = 0.1;  // define the ratio of number of connections
-              // related to IOs to the range of these IO spans
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
