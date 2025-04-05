@@ -51,19 +51,18 @@ PYTHON_TESTS = [
 # explicitly giving CI control over when they are executed,
 # which can be useful because the tests are long running.
 BIG_TESTS = [
+    "aes_sky130hd",
+    "aes_sky130hs",
+    "gcd_sky130hd_fast_slow",
+    "gcd_sky130hd",
+    "gcd_sky130hs",
+    "ibex_sky130hd",
+    "ibex_sky130hs",
+    "jpeg_sky130hd",
+    "jpeg_sky130hs",
     "aes_nangate45",
-    "aes_sky130hd.tcl",
-    "aes_sky130hs.tcl",
-    "gcd_sky130hd_fast_slow.tcl",
-    "gcd_sky130hd.tcl",
-    "gcd_sky130hs.tcl",
-    "ibex_sky130hd.tcl",
-    "ibex_sky130hs.tcl",
-    "jpeg_sky130hd.tcl",
-    "jpeg_sky130hs.tcl",
-    "aes_nangate45.tcl",
-    "gcd_nangate45.tcl",
-    "tinyRocket_nangate45.tcl",
+    "gcd_nangate45",
+    "tinyRocket_nangate45",
 ]
 
 [
@@ -74,3 +73,10 @@ BIG_TESTS = [
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]
+
+# These tests take a long time, make them easy to explicitly invoke
+test_suite(
+    name = "flow_tests",
+    tags = ["manual"],
+    tests = [test_name + "-tcl" for test_name in BIG_TESTS],
+)
