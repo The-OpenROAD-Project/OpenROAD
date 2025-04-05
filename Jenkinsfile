@@ -223,6 +223,7 @@ node {
                     sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
                     sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image}";
                     dockerPush("${os.image}", 'openroad');
+                    archiveArtifacts artifacts: 'persistent';
                 }
             }
         }
@@ -230,7 +231,6 @@ node {
         DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
         echo "Docker image is ${DOCKER_IMAGE}";
     }
-    parallel(getParallelTests(DOCKER_IMAGE));
     stage('Send Email Report') {
         sendEmail();
     }
