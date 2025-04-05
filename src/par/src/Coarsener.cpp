@@ -411,7 +411,7 @@ void Coarsener::VertexMatching(
             }
           }
         }  // finish traversing current paths
-      }    // finish current nbr_v
+      }  // finish current nbr_v
     }
     // update the score based on physical location information
     if (hgraph->HasPlacement()) {
@@ -510,7 +510,7 @@ void Coarsener::VertexMatching(
         }
       }
       return;  // exit the coarsening process
-    }          // early exit
+    }  // early exit
   }
 }
 
