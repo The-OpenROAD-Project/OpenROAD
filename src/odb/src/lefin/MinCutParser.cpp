@@ -90,7 +90,7 @@ void MinCutParser::parse(const std::string& s)
     rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
-                      "parse mismatch in layer propery LEF58_MINIMUMCUT for "
+                      "parse mismatch in layer property LEF58_MINIMUMCUT for "
                       "layer {} :\"{}\"",
                       layer_->getName(),
                       rule);

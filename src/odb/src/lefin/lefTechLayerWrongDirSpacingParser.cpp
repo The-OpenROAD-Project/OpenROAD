@@ -105,7 +105,7 @@ void lefTechLayerWrongDirSpacingParser::parse(std::string s,
 {
   if (!lefTechLayerWrongDirSpacing::parse(s.begin(), s.end(), layer, l)) {
     l->warning(355,
-               "parse mismatch in layer propery LEF58_SPACING WRONGDIRECTION "
+               "parse mismatch in layer property LEF58_SPACING WRONGDIRECTION "
                "for layer {}",
                layer->getName());
   }

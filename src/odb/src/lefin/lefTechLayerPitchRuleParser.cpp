@@ -68,7 +68,7 @@ void lefTechLayerPitchRuleParser::parse(std::string s, odb::dbTechLayer* layer)
       = qi::phrase_parse(first, last, FIRST_LAST_PTICH, space) && first == last;
   if (!valid) {
     lefin_->warning(281,
-                    "parse mismatch in layer propery LEF58_Pitch for layer");
+                    "parse mismatch in layer property LEF58_Pitch for layer");
     layer->setPitch(0);
     layer->setFirstLastPitch(-1);
   }

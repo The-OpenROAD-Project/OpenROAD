@@ -57,7 +57,7 @@ void lefTechLayerAreaRuleParser::parse(
     rule += " ; ";
     if (!parseSubRule(rule, layer, incomplete_props)) {
       lefin_->warning(278,
-                      "parse mismatch in layer propery LEF58_AREA for "
+                      "parse mismatch in layer property LEF58_AREA for "
                       "layer {} :\"{}\"",
                       layer->getName(),
                       rule);

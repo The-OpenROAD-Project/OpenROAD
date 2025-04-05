@@ -55,7 +55,7 @@ void lefTechLayerEolKeepOutRuleParser::parse(const std::string& s,
     rule += " ; ";
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(280,
-                      "parse mismatch in layer propery LEF58_EOLKEEPOUT for "
+                      "parse mismatch in layer property LEF58_EOLKEEPOUT for "
                       "layer {} :\"{}\"",
                       layer->getName(),
                       rule);

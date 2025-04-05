@@ -44,7 +44,7 @@ class dbOStream;
 
 //
 // dbName - This class is used to cache strings that are repeated frequently.
-// For example, propery names are repeated frequently.
+// For example, property names are repeated frequently.
 //
 // Net and Instances names are unique and should not use the dbName cache.
 //

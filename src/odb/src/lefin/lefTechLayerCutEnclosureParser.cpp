@@ -55,7 +55,7 @@ void lefTechLayerCutEnclosureRuleParser::parse(const std::string& s,
     rule += " ; ";
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(260,
-                      "parse mismatch in layer propery LEF58_ENCLOSURE for "
+                      "parse mismatch in layer property LEF58_ENCLOSURE for "
                       "layer {} :\"{}\"",
                       layer->getName(),
                       rule);

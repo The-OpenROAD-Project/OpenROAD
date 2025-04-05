@@ -62,7 +62,7 @@ void lefTechLayerForbiddenSpacingRuleParser::parse(std::string s,
     if (!parseSubRule(rule, layer)) {
       lefin_->warning(
           438,
-          "parse mismatch in layer propery LEF58_FORBIDDENSPACING for "
+          "parse mismatch in layer property LEF58_FORBIDDENSPACING for "
           "layer {} :\"{}\"",
           layer->getName(),
           rule);
