@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2023-2025, The OpenROAD Authors
+
 add_library(dft_cells_lib
   # Keep sorted
   OneBitScanCell.cpp
