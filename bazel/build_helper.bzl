@@ -127,8 +127,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     #Root OpenRoad
     "include/ord/*.h",
     "include/ord/*.hh",
-    #Utility
-    "src/utl/include/utl/*.h",
     #InitFp
     "src/ifp/include/ifp/*.hh",
     #GUI

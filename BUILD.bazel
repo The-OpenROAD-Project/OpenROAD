@@ -866,7 +866,6 @@ cc_library(
         "src/odb/src/db/*.h",
         "src/odb/src/db/*.hpp",
         "src/odb/src/zutil/*.cpp",
-        "src/odb/src/zlib/*.cpp",
         "src/odb/src/defout/*.cpp",
         "src/odb/src/defout/*.h",
         "src/odb/src/defin/*.cpp",
@@ -874,13 +873,10 @@ cc_library(
         "src/odb/src/lefin/*.cpp",
         "src/odb/src/lefin/*.h",
         "src/odb/src/lefout/*.cpp",
-        "src/odb/src/lefout/*.h",
-        "src/odb/src/tm/*.cpp",
     ]),
     hdrs = glob([
         "src/odb/include/odb/*.h",
         "src/odb/include/odb/*.hpp",
-        "src/utl/include/utl/*.h",
         "src/odb/src/db/*.h",
     ]),
     copts = [
