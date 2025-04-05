@@ -24,6 +24,7 @@
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/lefin.h"
+#include "rcx/ext.h"
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -215,7 +216,8 @@ TEST_F(BufRemTest, SlackImproves)
   stt::SteinerTreeBuilder* stt = new stt::SteinerTreeBuilder;
   grt::GlobalRouter* grt = new grt::GlobalRouter;
   dpl::Opendp* dp = new dpl::Opendp;
-  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, nullptr);
+  rcx::Ext* rcx = new rcx::Ext;
+  resizer_->init(&logger_, db_.get(), sta_.get(), stt, grt, dp, rcx, nullptr);
 
   float origArrival
       = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
