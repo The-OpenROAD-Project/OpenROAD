@@ -354,6 +354,7 @@ tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
         "src/OpenRoad.tcl",
+        "src/Metrics.tcl",
     ],
     char_array_name = "openroad_swig_tcl_inits",
 )

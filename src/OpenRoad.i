@@ -296,19 +296,19 @@ openroad_git_describe()
   return ord::OpenRoad::getGitDescribe();
 }
 
-const bool 
+bool
 openroad_gpu_compiled()
 {
   return ord::OpenRoad::getGUICompileOption();
 }
 
-const bool
+bool
 openroad_python_compiled()
 {
   return ord::OpenRoad::getPythonCompileOption();
 }
 
-const bool
+bool
 openroad_gui_compiled()
 {
   return ord::OpenRoad::getGUICompileOption();

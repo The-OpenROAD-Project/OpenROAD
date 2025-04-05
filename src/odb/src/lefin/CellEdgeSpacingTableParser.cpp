@@ -53,7 +53,7 @@ void CellEdgeSpacingTableParser::parse(const std::string& s)
     entry += " ; ";
     if (!parseEntry(entry)) {
       lefin_->warning(299,
-                      "parse mismatch in propery LEF58_CELLEDGESPACINGTABLE");
+                      "parse mismatch in property LEF58_CELLEDGESPACINGTABLE");
     }
   }
 }

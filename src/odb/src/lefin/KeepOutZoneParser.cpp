@@ -56,7 +56,7 @@ void KeepOutZoneParser::parse(const std::string& s)
     rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(388,
-                      "parse mismatch in layer propery LEF58_KEEPOUTZONE for "
+                      "parse mismatch in layer property LEF58_KEEPOUTZONE for "
                       "layer {} :\"{}\"",
                       layer_->getName(),
                       rule);

@@ -52,7 +52,7 @@ void lefMacroEdgeTypeParser::parse(const std::string& s)
     rule += " ; ";
     if (!parseSubRule(rule)) {
       lefin_->warning(299,
-                      "parse mismatch in layer propery LEF58_EDGETYPE for "
+                      "parse mismatch in layer property LEF58_EDGETYPE for "
                       "macro {} :\"{}\"",
                       master_->getName(),
                       rule);

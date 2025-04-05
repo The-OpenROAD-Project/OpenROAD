@@ -432,8 +432,6 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
 
-  dbVector<_dbTechAntennaAreaElement*>::iterator ant_iter;
-
   dbMaster* tpmtr = (dbMaster*) mterm->getOwner();
   dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
   dbTech* tech = tplib->getTech();
