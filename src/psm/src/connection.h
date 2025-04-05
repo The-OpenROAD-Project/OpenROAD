@@ -49,8 +49,8 @@ class Connection
 
   void ensureNodeOrder();
 
-  Node* getNode0() const { return node0_; };
-  Node* getNode1() const { return node1_; };
+  Node* getNode0() const { return node0_; }
+  Node* getNode1() const { return node1_; }
 
   Node* getOtherNode(const Node* node) const;
 
@@ -59,7 +59,7 @@ class Connection
   virtual Resistance getResistance(const ResistanceMap& res_map) const = 0;
   Conductance getConductance(const ResistanceMap& res_map) const;
 
-  virtual bool isVia() const { return false; };
+  virtual bool isVia() const { return false; }
   virtual bool isValid() const = 0;
   bool isLoop() const { return node0_ == node1_; }
   bool isStub() const { return node0_ == nullptr || node1_ == nullptr; }
@@ -118,7 +118,7 @@ class ViaConnection : public Connection
 
   void mergeWith(const Connection* other) override;
 
-  bool isVia() const override { return true; };
+  bool isVia() const override { return true; }
 
   std::string describe() const override;
 
@@ -132,9 +132,9 @@ class TermConnection : public Connection
   TermConnection(Node* node0, Node* node1);
 
   Resistance getResistance(const ResistanceMap& res_map) const override;
-  bool isValid() const override { return true; };
+  bool isValid() const override { return true; }
 
-  void mergeWith(const Connection* other) override{};
+  void mergeWith(const Connection* other) override {}
 
   std::string describe() const override;
 
