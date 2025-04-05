@@ -101,6 +101,7 @@ class UniqueInsts
 
   void report() const;
   void setDesign(frDesign* design) { design_ = design; }
+  void initUniqueInstPinAccess(frInst* unique_inst);
 
  private:
   using LayerRange = std::pair<frLayerNum, frLayerNum>;
@@ -137,8 +138,6 @@ class UniqueInsts
    * @brief Initializes pin access idx of all instances
    */
   void initPinAccess();
-
-  void initUniqueInstPinAccess(frInst* unique_inst);
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.

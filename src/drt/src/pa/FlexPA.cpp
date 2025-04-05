@@ -48,6 +48,7 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "io/io.h"
 #include "serialization.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
@@ -100,9 +101,9 @@ void FlexPA::init()
 void FlexPA::deleteInst(frInst* inst)
 {
   const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   // if inst is the class head the new head will be returned by deleteInst()
   frInst* class_head = unique_insts_.deleteInst(inst);
-  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
   // whole class has to be deleted
   if (!class_head) {
     unique_inst_patterns_.erase(inst);
@@ -115,6 +116,40 @@ void FlexPA::deleteInst(frInst* inst)
     unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
     unique_inst_patterns_.erase(inst);
   }
+}
+
+void FlexPA::updateInst(frInst* inst)
+{
+  bool inst_already_solved = false;
+  if (inst->hasPinAccessIdx()) {
+    if (unique_insts_.computeUniqueClass(inst)
+        == *unique_insts_.getClass(inst)) {
+      inst_already_solved = true;
+    } else {
+      deleteInst(inst);
+    }
+  }
+  if (!inst_already_solved) {
+    const bool new_unique = unique_insts_.addInst(inst);
+    if (new_unique) {
+      unique_insts_.initUniqueInstPinAccess(inst);
+      initSkipInstTerm(inst);
+      genInstAccessPoints(inst);
+      prepPatternInst(inst);
+    }
+    inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
+  }
+}
+
+frInst* FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
+{
+  frInst* inst = design_->getTopBlock()->findInst(db_inst);
+  if (!inst) {
+    io::Parser parser(db, getDesign(), logger_, router_cfg_);
+    inst = parser.setInst(db_inst);
+  }
+  updateInst(inst);
+  return inst;
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
