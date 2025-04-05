@@ -212,7 +212,7 @@ sta::define_cmd_args "detailed_route_debug" {
     [-maze]
     [-net name]
     [-pin name]
-    [-box x1 y1 x2 y2]
+    [-box {x1 y1 x2 y2}]
     [-dump_last_worker]
     [-iter iter]
     [-pa_markers]
