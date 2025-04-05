@@ -189,6 +189,7 @@ class TritonCTS
                                float& sumArrivals,
                                unsigned& numSinks,
                                sta::Graph* graph);
+  bool propagateClock(odb::dbITerm* input);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
