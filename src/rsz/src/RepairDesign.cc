@@ -1955,8 +1955,7 @@ bool RepairDesign::makeRepeater(
   // way from the loads to the driver.
 
   Net* load_net = nullptr;
-  dbNet* load_db_net = nullptr;           // load net, flat
-  odb::dbModNet* load_mod_net = nullptr;  // load net, hierarchical
+  dbNet* load_db_net = nullptr;  // load net, flat
 
   bool preserve_outputs = false;
   bool top_primary_output = false;
@@ -1965,13 +1964,9 @@ bool RepairDesign::makeRepeater(
   // primary output/ dont touch
 
   for (const Pin* pin : load_pins) {
-    load_db_net = db_network_->flatNet(pin);
-    load_mod_net = db_network_->hierNet(pin);
-
     if (network_->isTopLevelPort(pin)) {
-      load_net = network_->net(network_->term(pin));
-      db_network_->staToDb(load_net, load_db_net, load_mod_net);
-      load_db_net = db_network_->flatNet(pin);
+      load_db_net = db_network_->flatNet(network_->term(pin));
+
       // filter: is the top pin a primary output
       if (network_->direction(pin)->isAnyOutput()) {
         preserve_outputs = true;
@@ -1979,7 +1974,8 @@ bool RepairDesign::makeRepeater(
         break;
       }
     } else {
-      load_net = network_->net(pin);
+      load_db_net = db_network_->flatNet(pin);
+
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         preserve_outputs = true;
@@ -1987,6 +1983,9 @@ bool RepairDesign::makeRepeater(
       }
     }
   }
+
+  // force the load net to be a flat net
+  load_net = db_network_->dbToSta(load_db_net);
 
   const bool keep_input = hasInputPort(load_net) || !preserve_outputs;
 
@@ -2089,6 +2088,7 @@ bool RepairDesign::makeRepeater(
 
   Instance* parent = nullptr;
   Pin* driver_pin = nullptr;
+  Instance* driver_instance_parent = nullptr;
 
   if (hasInputPort(load_net) || top_primary_output
       || !db_network_->hasHierarchy()) {
@@ -2112,6 +2112,8 @@ bool RepairDesign::makeRepeater(
   Point buf_loc(x, y);
   Instance* buffer
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, buf_loc);
+  driver_instance_parent = parent;
+
   inserted_buffer_count_++;
 
   Pin* buffer_ip_pin = nullptr;
@@ -2167,14 +2169,32 @@ bool RepairDesign::makeRepeater(
       }
       // preserve any hierarchical connection on the load
       // & also connect the buffer output net to this pin
-      load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
       // New api call: simultaneously disconnects old flat/hier net
       // and connects in new one.
-      db_network_->connectPin(const_cast<Pin*>(pin),
-                              buffer_op_net,
-                              db_network_->dbToSta(load_mod_net));
+
+      Instance* load_instance_parent
+          = db_network_->getOwningInstanceParent(const_cast<Pin*>(pin));
+
+      db_network_->disconnectPin(const_cast<Pin*>(pin));
+      if (db_network_->hasHierarchy()
+          && (driver_instance_parent != load_instance_parent)) {
+        // In hierarchical mode, construct as necessary hierarchical connection
+        // Use the original connection name if possible.
+        std::string connection_name;
+        if (!driver_pin_mod_net) {
+          connection_name = resizer_->makeUniqueNetName(parent);
+        } else {
+          connection_name = driver_pin_mod_net->getName();
+        }
+        db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
+                                         db_network_->flatPin(pin),
+                                         connection_name.c_str());
+      } else {
+        // flat mode, no hierarchy, just hook up flat nets.
+        db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
+      }
     }
     db_network_->connectPin(buffer_ip_pin, db_network_->dbToSta(load_db_net));
     db_network_->connectPin(buffer_op_pin, buffer_op_net);
