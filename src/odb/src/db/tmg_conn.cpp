@@ -16,23 +16,6 @@ namespace odb {
 
 using utl::ODB;
 
-tmg_rcpt::tmg_rcpt()
-    : _x(0),
-      _y(0),
-      _layer(nullptr),
-      _tindex(-1),
-      _next_for_term(nullptr),
-      _t_alt(nullptr),
-      _next_for_clear(nullptr),
-      _sring(nullptr),
-      _dbwire_id(-1),
-      _fre(false),
-      _jct(false),
-      _pinpt(false),
-      _c2pinpt(false)
-{
-}
-
 static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 {
   *iterm = nullptr;
@@ -240,14 +223,14 @@ void tmg_conn::addShort(int i0, int i1)
   x->_i1 = i1;
   x->_skip = false;
   if (_ptV[i0]._fre) {
-    _ptV[i0]._fre = 0;
+    _ptV[i0]._fre = false;
   } else {
-    _ptV[i0]._jct = 1;
+    _ptV[i0]._jct = true;
   }
   if (_ptV[i1]._fre) {
-    _ptV[i1]._fre = 0;
+    _ptV[i1]._fre = false;
   } else {
-    _ptV[i1]._jct = 1;
+    _ptV[i1]._jct = true;
   }
 }
 
@@ -438,8 +421,8 @@ void tmg_conn::splitBySj(const int j,
     pt->_tindex = -1;
     pt->_t_alt = nullptr;
     pt->_next_for_term = nullptr;
-    pt->_pinpt = 0;
-    pt->_c2pinpt = 0;
+    pt->_pinpt = false;
+    pt->_c2pinpt = false;
     pt->_next_for_clear = nullptr;
     pt->_sring = nullptr;
     const int endTo = _rcV[k]._ito;
@@ -636,17 +619,17 @@ void tmg_conn::findConnections()
   _search->clear();
 
   for (auto& pt : _ptV) {
-    pt._fre = 1;
-    pt._jct = 0;
-    pt._pinpt = 0;
-    pt._c2pinpt = 0;
+    pt._fre = true;
+    pt._jct = false;
+    pt._pinpt = false;
+    pt._c2pinpt = false;
     pt._next_for_clear = nullptr;
     pt._sring = nullptr;
   }
   _first_for_clear = nullptr;
   for (size_t j = 0; j < _rcV.size() - 1; j++) {
     if (_rcV[j]._ito == _rcV[j + 1]._ifr) {
-      _ptV[_rcV[j]._ito]._fre = 0;
+      _ptV[_rcV[j]._ito]._fre = false;
     }
   }
 
@@ -922,8 +905,8 @@ void tmg_conn::findConnections()
   }
 
   for (auto& pc : _ptV) {
-    pc._pinpt = 0;
-    pc._c2pinpt = 0;
+    pc._pinpt = false;
+    pc._c2pinpt = false;
     pc._next_for_clear = nullptr;
     pc._sring = nullptr;
   }
@@ -1022,8 +1005,8 @@ void tmg_conn::connectShapes(const int j, const int k)
     std::swap(i0, i1);
   }
   addShort(i0, i1);
-  _ptV[i0]._fre = 0;
-  _ptV[i1]._fre = 0;
+  _ptV[i0]._fre = false;
+  _ptV[i1]._fre = false;
 }
 
 static void addPointToTerm(tmg_rcpt* pt, tmg_rcterm* x)
@@ -1072,8 +1055,8 @@ void tmg_conn::connectTerm(const int j, const bool soft)
     return;
   }
   for (tmg_rcpt* pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
-    pc->_pinpt = 0;
-    pc->_c2pinpt = 0;
+    pc->_pinpt = false;
+    pc->_c2pinpt = false;
   }
   _first_for_clear = nullptr;
 
@@ -1092,9 +1075,9 @@ void tmg_conn::connectTerm(const int j, const bool soft)
         pto->_next_for_clear = _first_for_clear;
         _first_for_clear = pto;
       }
-      pfr->_pinpt = 1;
-      pfr->_c2pinpt = 1;
-      pto->_c2pinpt = 1;
+      pfr->_pinpt = true;
+      pfr->_c2pinpt = true;
+      pto->_c2pinpt = true;
     }
     const Point ato(pto->_x, pto->_y);
     if ((*_csV)[ii].rtlev == pto->_layer->getRoutingLevel()
@@ -1107,9 +1090,9 @@ void tmg_conn::connectTerm(const int j, const bool soft)
         pto->_next_for_clear = _first_for_clear;
         _first_for_clear = pto;
       }
-      pto->_pinpt = 1;
-      pto->_c2pinpt = 1;
-      pfr->_c2pinpt = 1;
+      pto->_pinpt = true;
+      pto->_c2pinpt = true;
+      pfr->_c2pinpt = true;
     }
   }
 
@@ -1127,7 +1110,7 @@ void tmg_conn::connectTerm(const int j, const bool soft)
             x->_next_for_clear = _first_for_clear;
             _first_for_clear = x;
           }
-          x->_c2pinpt = 1;
+          x->_c2pinpt = true;
         }
       }
     }
@@ -1142,14 +1125,14 @@ void tmg_conn::connectTerm(const int j, const bool soft)
         pto->_next_for_clear = _first_for_clear;
         _first_for_clear = pto;
       }
-      pto->_c2pinpt = 1;
+      pto->_c2pinpt = true;
     }
     if (pto->_c2pinpt) {
       if (!(pfr->_pinpt || pfr->_c2pinpt)) {
         pfr->_next_for_clear = _first_for_clear;
         _first_for_clear = pfr;
       }
-      pfr->_c2pinpt = 1;
+      pfr->_c2pinpt = true;
     }
   }
 
@@ -1265,8 +1248,8 @@ void tmg_conn::connectTerm(const int j, const bool soft)
     }
   }
   for (tmg_rcpt* pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
-    pc->_pinpt = 0;
-    pc->_c2pinpt = 0;
+    pc->_pinpt = false;
+    pc->_c2pinpt = false;
   }
   _first_for_clear = nullptr;
 }
@@ -1343,7 +1326,7 @@ void tmg_conn::connectTermSoft(const int j,
   pt->_tindex = j;
   tmg_rcterm* x = _termV + j;
   addPointToTerm(pt, x);
-  pt->_fre = 0;
+  pt->_fre = false;
   if (has_alt) {
     pt->_t_alt = pother;
   }

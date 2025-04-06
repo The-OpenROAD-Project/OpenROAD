@@ -54,20 +54,19 @@ struct tmg_rc
 
 struct tmg_rcpt
 {
-  tmg_rcpt();
-  int _x;  // nominal point
-  int _y;
-  dbTechLayer* _layer;
-  int _tindex;  // index to _termV
-  tmg_rcpt* _next_for_term;
-  tmg_rcpt* _t_alt;
-  tmg_rcpt* _next_for_clear;
-  tmg_rcpt* _sring;
-  int _dbwire_id;
-  uint _fre : 1;
-  uint _jct : 1;
-  uint _pinpt : 1;
-  uint _c2pinpt : 1;
+  int _x{0};  // nominal point
+  int _y{0};
+  dbTechLayer* _layer{nullptr};
+  int _tindex{-1};  // index to _termV
+  tmg_rcpt* _next_for_term{nullptr};
+  tmg_rcpt* _t_alt{nullptr};
+  tmg_rcpt* _next_for_clear{nullptr};
+  tmg_rcpt* _sring{nullptr};
+  int _dbwire_id{-1};
+  bool _fre{false};
+  bool _jct{false};
+  bool _pinpt{false};
+  bool _c2pinpt{false};
 };
 
 struct tmg_rcterm
