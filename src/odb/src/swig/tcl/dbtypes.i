@@ -1,5 +1,7 @@
-%template(vector_str) std::vector<std::string>;
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+%template(vector_str) std::vector<std::string>;
 
 // DB specital types
 %typemap(out) odb::dbStringProperty {
