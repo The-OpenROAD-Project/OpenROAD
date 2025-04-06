@@ -661,14 +661,19 @@ bool RepairDesign::performGainBuffering(Net* net,
     Pin* buffer_op_pin = nullptr;
     resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
     db_network_->connectPin(buffer_ip_pin, net);
+    // connect the buffer output to the new flat net.
+    // Keep the original input net driving the buffer.
+    // Note that this means we have to change the
+    // hierarchical net/flat net correspondence because
+    // the hierarhical net is moved to the output of the buffer.
     db_network_->connectPin(buffer_op_pin, new_net);
     // put the mod net on the output of the buffer.
     if (driver_mod_net) {
       db_network_->connectPin(buffer_op_pin,
                               db_network_->dbToSta(driver_mod_net));
       // Because we have rewired the hierarchical net (and changed the
-      // underlying flat net) we have to reassociate the hierarchich net with the
-      // flat net.
+      // underlying flat net) we have to reassociate the hierarchical net with
+      // the flat net.
       db_network_->reassociateHierFlatNet(driver_mod_net, new_net_db, nullptr);
     }
 
