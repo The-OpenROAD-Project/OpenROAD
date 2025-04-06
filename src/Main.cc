@@ -202,46 +202,89 @@ static void handler(int sig)
 }
 
 #ifdef BAZEL_CURRENT_REPOSITORY
-static std::string resolveBinaryPath(const char* argv0)
+#include <limits.h>  // For PATH_MAX
+#include <unistd.h>  // For readlink, access
+
+#include <cstdlib>  // For getenv
+#include <cstring>  // For strchr
+#include <string>
+#include <vector>
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>  // For _NSGetExecutablePath
+#endif
+
+static int resolveBinaryPath(const char* argv0, std::string& resolved_path)
 {
-  // If argv[0] is an absolute path or contains a '/', return its realpath
-  if (strchr(argv0, '/')) {
-    char* resolved_path = realpath(argv0, nullptr);
-    if (resolved_path) {
-      std::string result(resolved_path);
-      free(resolved_path);
-      return result;
+  resolved_path.clear();
+
+#ifdef __linux__
+  // On Linux, use /proc/self/exe to resolve the binary path
+  std::vector<char> buffer(128);  // Start with a small buffer
+  ssize_t len;
+  while (true) {
+    len = readlink("/proc/self/exe", buffer.data(), buffer.size());
+    if (len == -1) {
+      return 1;  // Failed to resolve
     }
-    return "";  // Failed to resolve
+    if (len < static_cast<ssize_t>(buffer.size())) {
+      resolved_path.assign(buffer.data(), len);
+      return 0;  // Success
+    }
+    buffer.resize(buffer.size() * 2);  // Double the buffer size and retry
+  }
+#elif __APPLE__
+  // On macOS, use _NSGetExecutablePath
+  std::vector<char> buffer(128);  // Start with a small buffer
+  uint32_t size = buffer.size();
+  while (true) {
+    if (_NSGetExecutablePath(buffer.data(), &size) == 0) {
+      resolved_path = realpath(buffer.data(), nullptr);
+      if (!resolved_path.empty()) {
+        return 0;  // Success
+      }
+      return 1;  // Failed to resolve
+    }
+    buffer.resize(size);  // Resize buffer to the required size and retry
+  }
+#else
+  return 2;  // Unsupported platform
+#endif
+
+  // If argv[0] contains a '/', resolve it directly
+  if (strchr(argv0, '/')) {
+    char* real_path = realpath(argv0, nullptr);
+    if (real_path) {
+      resolved_path = real_path;
+      free(real_path);
+      return 0;  // Success
+    }
+    return 1;  // Failed to resolve
   }
 
   // Otherwise, search for the binary in the PATH environment variable
   const char* path_env = getenv("PATH");
   if (!path_env) {
-    return "";  // PATH is not set
+    return 2;  // PATH is not set
   }
 
   std::string path_env_str(path_env);
-  std::vector<std::string> paths;
   size_t start = 0, end = 0;
 
   // Split PATH into individual directories
-  while ((end = path_env_str.find(':', start)) != std::string::npos) {
-    paths.push_back(path_env_str.substr(start, end - start));
-    start = end + 1;
-  }
-  paths.push_back(path_env_str.substr(start));
-
-  // Search for the binary in each directory
-  for (const auto& dir : paths) {
+  do {
+    end = path_env_str.find(':', start);
+    std::string dir = path_env_str.substr(start, end - start);
     std::string full_path = dir + "/" + argv0;
     if (access(full_path.c_str(), X_OK)
         == 0) {  // Check if the file is executable
-      return full_path;
+      resolved_path = full_path;
+      return 0;  // Success
     }
-  }
+    start = end + 1;
+  } while (end != std::string::npos);
 
-  return "";  // Binary not found in PATH
+  return 3;  // Binary not found in PATH
 }
 #endif
 
@@ -258,10 +301,11 @@ int main(int argc, char* argv[])
   }
 
 #ifdef BAZEL_CURRENT_REPOSITORY
-  std::string resolved_path = resolveBinaryPath(argv[0]);
-  if (resolved_path.empty()) {
+  std::string resolved_path;
+  int exit_code = resolveBinaryPath(argv[0], resolved_path);
+  if (exit_code != 0) {
     std::cerr << "Error: could not resolve path to executable" << std::endl;
-    return 1;
+    return exit_code;
   }
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
