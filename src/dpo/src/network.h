@@ -30,7 +30,6 @@ using dpl::Master;
 using dpl::Pin;
 using odb::dbOrientType;
 
-
 class Network
 {
  public:
