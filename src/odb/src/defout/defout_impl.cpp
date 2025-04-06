@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "defout_impl.h"
 
@@ -229,15 +200,30 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   writePropertyDefinitions(block);
 
-  Rect r = block->getDieArea();
+  Polygon die_area = block->getDieAreaPolygon();
 
-  int x1 = defdist(r.xMin());
-  int y1 = defdist(r.yMin());
-  int x2 = defdist(r.xMax());
-  int y2 = defdist(r.yMax());
+  if (die_area.isRect()) {
+    Rect r = die_area.getEnclosingRect();
+    int x1 = defdist(r.xMin());
+    int y1 = defdist(r.yMin());
+    int x2 = defdist(r.xMax());
+    int y2 = defdist(r.yMax());
 
-  if ((x1 != 0) || (y1 != 0) || (x2 != 0) || (y2 != 0)) {
-    fprintf(_out, "DIEAREA ( %d %d ) ( %d %d ) ;\n", x1, y1, x2, y2);
+    if ((x1 != 0) || (y1 != 0) || (x2 != 0) || (y2 != 0)) {
+      fprintf(_out, "DIEAREA ( %d %d ) ( %d %d ) ;\n", x1, y1, x2, y2);
+    }
+  } else {
+    fprintf(_out, "DIEAREA ");
+    std::vector<odb::Point> points = die_area.getPoints();
+    // ODB ends polygons with a copy of 0 index vertex, in DEF there
+    // is an implicit rule that the last vertex is connected to the
+    // 0th index. So we skip the last point.
+    for (int i = 0; i < points.size() - 1; i++) {
+      int x = defdist(points[i].x());
+      int y = defdist(points[i].y());
+      fprintf(_out, "( %d %d ) ", x, y);
+    }
+    fprintf(_out, ";\n");
   }
 
   writeRows(block);
@@ -1236,8 +1222,25 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
 
 void defout_impl::writeBlockages(dbBlock* block)
 {
-  dbSet<dbObstruction> obstructions = block->getObstructions();
-  dbSet<dbBlockage> blockages = block->getBlockages();
+  dbSet<dbObstruction> obstructions_raw = block->getObstructions();
+  dbSet<dbBlockage> blockages_raw = block->getBlockages();
+
+  std::vector<dbObstruction*> obstructions;
+  std::vector<dbBlockage*> blockages;
+
+  for (const auto& obstruction : obstructions_raw) {
+    if (obstruction->isSystemReserved()) {
+      continue;
+    }
+    obstructions.push_back(obstruction);
+  }
+
+  for (const auto& blockage : blockages_raw) {
+    if (blockage->isSystemReserved()) {
+      continue;
+    }
+    blockages.push_back(blockage);
+  }
 
   int bcnt = obstructions.size() + blockages.size();
 

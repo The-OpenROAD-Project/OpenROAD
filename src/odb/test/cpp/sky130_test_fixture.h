@@ -11,6 +11,11 @@
 #include "odb/lefin.h"
 #include "utl/Logger.h"
 
+// TODO: not needed after fully switching to bazel
+#ifndef DATA_PREFIX
+#define DATA_PREFIX ""
+#endif
+
 namespace odb {
 class Sky130TestFixutre : public ::testing::Test
 {
@@ -24,10 +29,9 @@ class Sky130TestFixutre : public ::testing::Test
                                         &odb::dbDatabase::destroy);
     odb::lefin lef_reader(
         db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
-    lib_ = OdbUniquePtr<odb::dbLib>(
-        lef_reader.createTechAndLib(
-            "sky130", "sky130", "data/sky130hd/sky130_fd_sc_hd.tlef"),
-        &odb::dbLib::destroy);
+    dbLib* lib = lef_reader.createTechAndLib(
+        "sky130", "sky130", DATA_PREFIX "data/sky130hd/sky130_fd_sc_hd.tlef");
+    lib_ = OdbUniquePtr<odb::dbLib>(lib, &odb::dbLib::destroy);
 
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),
                                       &odb::dbChip::destroy);

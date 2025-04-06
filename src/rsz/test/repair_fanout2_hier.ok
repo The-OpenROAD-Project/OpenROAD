@@ -43,15 +43,15 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       143
-    final |     +3.0% |      10 |       9 |             1 |         0
+    final |     +2.8% |       8 |       9 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 10 instances.
+[INFO RSZ-0039] Resized 8 instances.
 [INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-fanout4/Z                                10     70    -60 (VIOLATED)
+fanout8/Z                                10     10      0 (MET)
 
 No differences found.
