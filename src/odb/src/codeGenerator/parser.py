@@ -1,5 +1,7 @@
-import re
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2025, The OpenROAD Authors
 
+import re
 
 def _find_index(_list, _object, start_index=0):
     """Find the index of _object in _list[start_index:] ignoring white space"""
