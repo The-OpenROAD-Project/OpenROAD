@@ -201,6 +201,50 @@ static void handler(int sig)
   raise(sig);
 }
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+static std::string resolveBinaryPath(const char* argv0)
+{
+  // If argv[0] is an absolute path or contains a '/', return its realpath
+  if (strchr(argv0, '/')) {
+    char* resolved_path = realpath(argv0, nullptr);
+    if (resolved_path) {
+      std::string result(resolved_path);
+      free(resolved_path);
+      return result;
+    }
+    return "";  // Failed to resolve
+  }
+
+  // Otherwise, search for the binary in the PATH environment variable
+  const char* path_env = getenv("PATH");
+  if (!path_env) {
+    return "";  // PATH is not set
+  }
+
+  std::string path_env_str(path_env);
+  std::vector<std::string> paths;
+  size_t start = 0, end = 0;
+
+  // Split PATH into individual directories
+  while ((end = path_env_str.find(':', start)) != std::string::npos) {
+    paths.push_back(path_env_str.substr(start, end - start));
+    start = end + 1;
+  }
+  paths.push_back(path_env_str.substr(start));
+
+  // Search for the binary in each directory
+  for (const auto& dir : paths) {
+    std::string full_path = dir + "/" + argv0;
+    if (access(full_path.c_str(), X_OK)
+        == 0) {  // Check if the file is executable
+      return full_path;
+    }
+  }
+
+  return "";  // Binary not found in PATH
+}
+#endif
+
 int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
@@ -214,10 +258,15 @@ int main(int argc, char* argv[])
   }
 
 #ifdef BAZEL_CURRENT_REPOSITORY
+  std::string resolved_path = resolveBinaryPath(argv[0]);
+  if (resolved_path.empty()) {
+    std::cerr << "Error: could not resolve path to executable" << std::endl;
+    return 1;
+  }
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
-  std::unique_ptr<Runfiles> runfiles(
-      Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
+      resolved_path.c_str(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << error << std::endl;
     return 1;
