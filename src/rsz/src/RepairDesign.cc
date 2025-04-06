@@ -666,6 +666,10 @@ bool RepairDesign::performGainBuffering(Net* net,
     if (driver_mod_net) {
       db_network_->connectPin(buffer_op_pin,
                               db_network_->dbToSta(driver_mod_net));
+      // Because we have rewired the hierarchical net (and changed the
+      // underlying flat net) we have to reassociate the hierarchich net with the
+      // flat net.
+      db_network_->reassociateHierFlatNet(driver_mod_net, new_net_db, nullptr);
     }
 
     repaired_net = true;
@@ -673,6 +677,7 @@ bool RepairDesign::performGainBuffering(Net* net,
 
     int max_level = 0;
     for (auto it = sinks.begin(); it != group_end; it++) {
+      Pin* sink_pin = it->pin;
       LibertyPort* sink_port = network_->libertyPort(it->pin);
       Instance* sink_inst = network_->instance(it->pin);
       load -= sink_port->capacitance();
@@ -680,11 +685,18 @@ bool RepairDesign::performGainBuffering(Net* net,
         max_level = it->level;
       }
 
-      odb::dbModNet* sink_mod_net = db_network_->hierNet(it->pin);
-      sta_->disconnectPin(it->pin);
-      sta_->connectPin(sink_inst, sink_port, new_net);
+      odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
+      // rewire the sink pin, taking care of both the flat net
+      // and the hierarchical net.
+      db_network_->disconnectPin(sink_pin);
+      db_network_->connectPin(sink_pin, db_network_->dbToSta(new_net_db));
+
       if (sink_mod_net) {
-        db_network_->connectPin(it->pin, db_network_->dbToSta(sink_mod_net));
+        db_network_->connectPin(sink_pin, db_network_->dbToSta(sink_mod_net));
+        // because we have changed the flat net on the sink pin, we
+        // have to update the association of the hierarchical net
+        // on the sink pin with the flat net.
+        db_network_->reassociateHierFlatNet(sink_mod_net, new_net_db, nullptr);
       }
 
       if (it->level == 0) {
