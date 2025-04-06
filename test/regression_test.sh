@@ -4,7 +4,7 @@ set -e
 
 mkdir -p results
 
-LOG_FILE=results/$TEST_NAME-$TEST_EXT.log
+LOG_FILE=${LOG_FILE:-results/$TEST_NAME-$TEST_EXT.log}
 
 ORD_ARGS=""
 if [ "$TEST_TYPE" == "python" ]; then
@@ -12,7 +12,7 @@ if [ "$TEST_TYPE" == "python" ]; then
 fi
 
 echo "Directory: ${PWD}"
-echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT > $LOG_FILE"
+echo "Command:   $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit  $TEST_NAME.$TEST_EXT &> $LOG_FILE"
 
 $OPENROAD_EXE $ORD_ARGS -no_splash -no_init -exit $TEST_NAME.$TEST_EXT &> $LOG_FILE
 

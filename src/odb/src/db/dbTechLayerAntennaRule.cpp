@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechLayerAntennaRule.h"
 
@@ -905,29 +876,21 @@ void dbTechAntennaPinModel::getMaxCutCAR(
 void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  dbVector<_dbTechAntennaAreaElement*>::iterator ant_iter;
 
-  for (ant_iter = xmod->_gate_area.begin(); ant_iter != xmod->_gate_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAGATEAREA", tech, writer);
+  for (auto ant : xmod->_gate_area) {
+    ant->writeLef("ANTENNAGATEAREA", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_area_car.begin();
-       ant_iter != xmod->_max_area_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXAREACAR", tech, writer);
+  for (auto ant : xmod->_max_area_car) {
+    ant->writeLef("ANTENNAMAXAREACAR", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_sidearea_car.begin();
-       ant_iter != xmod->_max_sidearea_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXSIDEAREACAR", tech, writer);
+  for (auto ant : xmod->_max_sidearea_car) {
+    ant->writeLef("ANTENNAMAXSIDEAREACAR", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_cut_car.begin();
-       ant_iter != xmod->_max_cut_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXCUTCAR", tech, writer);
+  for (auto ant : xmod->_max_cut_car) {
+    ant->writeLef("ANTENNAMAXCUTCAR", tech, writer);
   }
 }
 

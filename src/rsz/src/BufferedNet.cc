@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "BufferedNet.hh"
 
@@ -103,6 +71,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = 0;
 }
 
 // junc
@@ -130,6 +100,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = ref->area() + ref2->area();
 }
 
 // wire
@@ -160,6 +132,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = ref->area();
 }
 
 // buffer
@@ -190,6 +164,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
 
   required_path_.init();
   required_delay_ = 0.0;
+
+  area_ = ref->area() + 1;
 }
 
 void BufferedNet::reportTree(const Resizer* resizer) const
@@ -226,33 +202,33 @@ string BufferedNet::to_string(const Resizer* resizer) const
   switch (type_) {
     case BufferedNetType::load:
       // {:{}s} format indents level spaces.
-      return fmt::format("load {} ({}, {}) cap {} req {}",
+      return fmt::format("load {} ({}, {}) cap {} slack {}",
                          sdc_network->pathName(load_pin_),
                          x,
                          y,
                          cap,
-                         delayAsString(required(resizer), resizer));
+                         delayAsString(slack(resizer), resizer));
     case BufferedNetType::wire:
-      return fmt::format("wire ({}, {}) cap {} req {} buffers {}",
+      return fmt::format("wire ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(required(resizer), resizer),
+                         delayAsString(slack(resizer), resizer),
                          bufferCount());
     case BufferedNetType::buffer:
-      return fmt::format("buffer ({}, {}) {} cap {} req {} buffers {}",
+      return fmt::format("buffer ({}, {}) {} cap {} slack {} buffers {}",
                          x,
                          y,
                          buffer_cell_->name(),
                          cap,
-                         delayAsString(required(resizer), resizer),
+                         delayAsString(slack(resizer), resizer),
                          bufferCount());
     case BufferedNetType::junction:
-      return fmt::format("junction ({}, {}) cap {} req {} buffers {}",
+      return fmt::format("junction ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(required(resizer), resizer),
+                         delayAsString(slack(resizer), resizer),
                          bufferCount());
   }
   // suppress gcc warning
@@ -284,17 +260,33 @@ void BufferedNet::setRequiredPath(const PathRef& path_ref)
   required_path_ = path_ref;
 }
 
-Required BufferedNet::required(const StaState* sta) const
+void BufferedNet::setArrivalPath(const PathRef& path_ref)
+{
+  arrival_path_ = path_ref;
+}
+
+Required BufferedNet::slack(const StaState* sta) const
 {
   if (required_path_.isNull()) {
     return INF;
   }
-  return required_path_.required(sta) - required_delay_;
+  return required_path_.required(sta) - required_delay_
+         - arrival_path_.arrival(sta);
 }
 
 void BufferedNet::setRequiredDelay(Delay delay)
 {
   required_delay_ = delay;
+}
+
+void BufferedNet::setDelay(Delay delay)
+{
+  delay_ = delay;
+}
+
+void BufferedNet::setArrivalDelay(Delay delay)
+{
+  arrival_delay_ = delay;
 }
 
 int BufferedNet::bufferCount() const

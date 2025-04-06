@@ -1,31 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * Copyright (c) 2024, Precision Innovations Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <omp.h>
 
@@ -1153,6 +1127,7 @@ bool FlexPA::EnoughAccessPoints(
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
   bool enough_sparse_acc_points = false;
+  bool enough_far_from_edge_points = false;
 
   if (is_io_pin) {
     return (aps.size() > 0);
@@ -1182,12 +1157,26 @@ bool FlexPA::EnoughAccessPoints(
   if (is_std_cell_pin
       && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
     enough_sparse_acc_points = true;
-  } else if (is_macro_cell_pin
-             && n_sparse_access_points
-                    >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
+  }
+  if (is_macro_cell_pin
+      && n_sparse_access_points
+             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
     enough_sparse_acc_points = true;
   }
-  return enough_sparse_acc_points;
+
+  Rect cell_box = inst_term->getInst()->getBBox();
+  for (auto& ap : aps) {
+    const int colision_dist
+        = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
+    Rect ap_colision_box;
+    Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
+    if (cell_box.contains(ap_colision_box)) {
+      enough_far_from_edge_points = true;
+      break;
+    }
+  }
+
+  return (enough_sparse_acc_points && enough_far_from_edge_points);
 }
 
 template <typename T>
@@ -1244,7 +1233,7 @@ bool FlexPA::genPinAccessCostBounded(
   if (is_std_cell_pin || is_macro_cell_pin) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1341,12 +1330,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
   std::set<std::pair<Point, frLayerNum>> apset;
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  }
 
   if (graphics_) {
     std::set<frInst*, frBlockObjectComp>* inst_class = nullptr;
@@ -1386,10 +1369,10 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   updatePinStats(aps, pin, inst_term);
   const int n_aps = aps.size();
   if (n_aps == 0) {
-    if (is_std_cell_pin) {
+    if (inst_term && isStdCell(inst_term->getInst())) {
       std_cell_pin_no_ap_cnt_++;
     }
-    if (is_macro_cell_pin) {
+    if (inst_term && isMacroCell(inst_term->getInst())) {
       macro_cell_pin_no_ap_cnt_++;
     }
   } else {
@@ -1397,7 +1380,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
       logger_->error(DRT, 254, "inst_term can not be nullptr");
     }
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1502,12 +1485,13 @@ void FlexPA::genAllAccessPoints()
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
-  for (auto& inst : unique) {
+  for (frInst* inst : unique) {
     const dbTransform xform = inst->getTransform();
     const Point offset(xform.getOffset());
     dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
-    const auto pin_access_idx = unique_insts_.getPAIndex(inst);
+    const auto pin_access_idx = inst->getPinAccessIdx();
+    ;
     for (auto& inst_term : inst->getInstTerms()) {
       // if (isSkipInstTerm(inst_term.get())) {
       //   continue;

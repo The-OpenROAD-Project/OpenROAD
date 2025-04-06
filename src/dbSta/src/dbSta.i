@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
 %{
 
 #include "odb/db.h"
@@ -207,7 +210,7 @@ replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  db_network->replaceHierModule(mod_inst, module);
+  (void) db_network->replaceHierModule(mod_inst, module);
 }
 
 %} // inline

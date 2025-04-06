@@ -45,7 +45,6 @@
 #include "defrCallBacks.hpp"
 #include "defrData.hpp"
 #include "defrSettings.hpp"
-#include "lex.h"
 
 #define NODEFMSG 4013  // (9012 + 1) - 5000, def msg starts at 5000
 
