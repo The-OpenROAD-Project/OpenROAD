@@ -125,7 +125,7 @@ double DetailedHPWL::delta(const Journal& journal)
 
   const auto& changes = journal.getActions();
   for (int i = changes.size() - 1; i >= 0; i--) {
-    mgrPtr_->undo(changes[i], true);
+    journal.undo(changes[i], true);
   }
 
   ++traversal_;
@@ -161,7 +161,7 @@ double DetailedHPWL::delta(const Journal& journal)
 
   // Put cells into their "new positions and orientations".
   for (const auto& change : changes) {
-    mgrPtr_->redo(change, true);
+    journal.redo(change, true);
   }
 
   ++traversal_;

@@ -642,7 +642,7 @@ void DetailedMis::solveMatch()
 
   lemon::ListDigraph::ArcMap<int> flow(g);
   mincost.flowMap(flow);
-  Journal journal;
+  Journal journal(mgrPtr_->getGrid(), mgrPtr_);
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
        ++it) {
     if (g.target(it) != demandNode && g.source(it) != supplyNode
@@ -727,7 +727,7 @@ void DetailedMis::solveMatch()
   if (viol) {
     while (!journal.isEmpty()) {
       const auto& action = journal.getLastAction();
-      mgrPtr_->undo(action);
+      journal.undo(action);
       journal.removeLastAction();
     }
   }

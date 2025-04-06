@@ -79,7 +79,8 @@ DetailedMgr::DetailedMgr(Architecture* arch,
       network_(network),
       rt_(rt),
       grid_(grid),
-      drc_engine_(drc_engine)
+      drc_engine_(drc_engine),
+      journal(grid, this)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -3400,7 +3401,7 @@ void DetailedMgr::rejectMove()
 {
   while (!journal.isEmpty()) {
     const auto& action = journal.getLastAction();
-    undo(action);
+    journal.undo(action);
     journal.removeLastAction();
   }
   clearMoveList();
@@ -3420,63 +3421,5 @@ void DetailedMgr::paintInGrid(Node* node)
   grid_->paintPixel(node, grid_x, grid_y);
   node->adjustCurrOrient(
       pixel->sites.at(node->getDbInst()->getMaster()->getSite()));
-}
-////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::undo(const JournalAction& action, const bool positions_only)
-{
-  auto node = action.getNode();
-  switch (action.getType()) {
-    case JournalAction::MOVE_CELL:
-      if (!positions_only) {
-        eraseFromGrid(node);
-        for (auto seg : action.getNewSegs()) {
-          if (seg < 0) {
-            continue;
-          }
-          removeCellFromSegment(node, seg);
-        }
-      }
-      node->setLeft(DbuX{action.getOrigLeft()});
-      node->setBottom(action.getOrigBottom());
-      if (!positions_only) {
-        paintInGrid(node);
-        for (auto seg : action.getOrigSegs()) {
-          if (seg < 0) {
-            continue;
-          }
-          addCellToSegment(node, seg);
-        }
-      }
-      break;
-  }
-}
-////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::redo(const JournalAction& action, const bool positions_only)
-{
-  auto node = action.getNode();
-  switch (action.getType()) {
-    case JournalAction::MOVE_CELL:
-      if (!positions_only) {
-        eraseFromGrid(node);
-        for (auto seg : action.getOrigSegs()) {
-          if (seg < 0) {
-            continue;
-          }
-          removeCellFromSegment(node, seg);
-        }
-      }
-      node->setLeft(DbuX{action.getNewLeft()});
-      node->setBottom(action.getNewBottom());
-      if (!positions_only) {
-        paintInGrid(node);
-        for (auto seg : action.getNewSegs()) {
-          if (seg < 0) {
-            continue;
-          }
-          addCellToSegment(node, seg);
-        }
-      }
-      break;
-  }
 }
 }  // namespace dpo

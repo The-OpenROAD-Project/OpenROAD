@@ -143,7 +143,7 @@ double DetailedDisplacement::delta(const Journal& journal)
   // Put cells into their "old positions and orientations".
   const auto& changes = journal.getActions();
   for (int i = changes.size() - 1; i >= 0; i--) {
-    mgrPtr_->undo(changes[i], true);
+    journal.undo(changes[i], true);
   }
 
   for (const auto ndi : journal.getAffectedNodes()) {
@@ -157,7 +157,7 @@ double DetailedDisplacement::delta(const Journal& journal)
 
   // Put cells into their "new positions and orientations".
   for (const auto& change : changes) {
-    mgrPtr_->redo(change, true);
+    journal.redo(change, true);
   }
 
   for (const auto ndi : journal.getAffectedNodes()) {

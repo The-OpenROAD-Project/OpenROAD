@@ -130,6 +130,8 @@ class DetailedMgr
   void setLogger(utl::Logger* logger) { logger_ = logger; }
   utl::Logger* getLogger() const { return logger_; }
 
+  Grid* getGrid() const { return grid_; }
+
   void setSeed(int s);
 
   void setMaxDisplacement(int x, int y);
@@ -306,8 +308,6 @@ class DetailedMgr
   const Journal& getJournal() const { return journal; }
   void eraseFromGrid(Node* node);
   void paintInGrid(Node* node);
-  void undo(const JournalAction& action, bool positions_only = false);
-  void redo(const JournalAction& action, bool positions_only = false);
   struct compareNodesX
   {
     // Needs cell centers.

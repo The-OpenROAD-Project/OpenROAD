@@ -35,7 +35,14 @@
 
 #include "network.h"
 #pragma once
+namespace dpl {
+class Grid;
+}
 namespace dpo {
+
+using dpl::Grid;
+class DetailedMgr;
+
 class JournalAction
 {
  public:
@@ -81,21 +88,28 @@ class JournalAction
 class Journal
 {
  public:
-  Journal() = default;
+  Journal(Grid* grid, DetailedMgr* mgr) : grid_(grid), mgr_(mgr) {}
+  // setters
   void addAction(const JournalAction& action)
   {
     actions_.push_back(action);
     affected_nodes_.insert(action.getNode());
   }
+  // getters
   const JournalAction& getLastAction() const { return actions_.back(); }
-  void removeLastAction() { actions_.pop_back(); }
   bool isEmpty() const { return actions_.empty(); }
-  void clearJournal();
+  size_t size() const { return actions_.size(); }
   const std::set<Node*>& getAffectedNodes() const { return affected_nodes_; }
   const std::vector<JournalAction>& getActions() const { return actions_; }
-  size_t size() const { return actions_.size(); }
+  // other
+  void removeLastAction() { actions_.pop_back(); }
+  void clearJournal();
+  void undo(const JournalAction& action, bool positions_only = false) const;
+  void redo(const JournalAction& action, bool positions_only = false) const;
 
  private:
+  Grid* grid_{nullptr};
+  DetailedMgr* mgr_{nullptr};
   std::vector<JournalAction> actions_;
   std::set<Node*> affected_nodes_;
 };
