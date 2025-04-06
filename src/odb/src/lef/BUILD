@@ -16,9 +16,9 @@ package(
 cc_library(
     name = "lef",
     srcs = [
+        "lef/crypt.cpp",
         "lef/lef_keywords.cpp",
         "lef/lef_parser.cpp",
-        "lef/crypt.cpp",
         "lef/lefiArray.cpp",
         "lef/lefiCrossTalk.cpp",
         "lef/lefiDebug.cpp",
@@ -37,12 +37,12 @@ cc_library(
         "lef/lefrData.cpp",
         "lef/lefrReader.cpp",
         "lef/lefrSettings.cpp",
-        "lef/lefwWriterCalls.cpp",
         "lef/lefwWriter.cpp",
+        "lef/lefwWriterCalls.cpp",
     ],
     hdrs = [
-        "lef/lef_parser.hpp",
         "lef/crypt.hpp",
+        "lef/lef_parser.hpp",
         "lef/lefiArray.hpp",
         "lef/lefiCrossTalk.hpp",
         "lef/lefiDebug.hpp",

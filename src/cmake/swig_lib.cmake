@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2025, The OpenROAD Authors
+
 # Sets up swig for a .i file and encode .tcl files
 # Arguments
 #   NAME <library>: the generated library name

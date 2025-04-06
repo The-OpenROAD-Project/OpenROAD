@@ -1,30 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "FlexPA.h"
 
@@ -95,6 +70,26 @@ void FlexPA::init()
 
   unique_insts_.init();
   initAllSkipInstTerm();
+}
+
+void FlexPA::deleteInst(frInst* inst)
+{
+  const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  // if inst is the class head the new head will be returned by deleteInst()
+  frInst* class_head = unique_insts_.deleteInst(inst);
+  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
+  // whole class has to be deleted
+  if (!class_head) {
+    unique_inst_patterns_.erase(inst);
+    for (auto& inst_term : inst->getInstTerms()) {
+      skip_unique_inst_term_.erase({unique_class, inst_term->getTerm()});
+    }
+  }
+  // new class representative has to be chosen
+  else if (is_class_head) {
+    unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
+    unique_inst_patterns_.erase(inst);
+  }
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
