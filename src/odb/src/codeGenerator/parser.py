@@ -3,6 +3,7 @@
 
 import re
 
+
 def _find_index(_list, _object, start_index=0):
     """Find the index of _object in _list[start_index:] ignoring white space"""
     index = start_index
