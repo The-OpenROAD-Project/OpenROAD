@@ -849,6 +849,11 @@ void SimulatedAnnealingCore<T>::useBestValidResult()
     graphics_->doNotSkip();
   }
   calPenalty();
+
+  if (!isValid()) {
+    logger_->critical(
+        utl::MPL, 51, "The best valid result is being evaluated as invalid!");
+  }
 }
 
 template <class T>

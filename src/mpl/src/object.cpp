@@ -1094,6 +1094,16 @@ void SoftMacro::shrinkArea(float percent)
     return;
   }
 
+  for (std::pair<float, float>& width_curve : width_list_) {
+    width_curve.first *= percent;
+    width_curve.second *= percent;
+  }
+
+  for (std::pair<float, float>& height_curve : height_list_) {
+    height_curve.first *= percent;
+    height_curve.second *= percent;
+  }
+
   width_ = width_ * percent;
   height_ = height_ * percent;
   area_ = width_ * height_;

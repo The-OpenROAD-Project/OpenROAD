@@ -2086,7 +2086,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
         width = std::sqrt(area / min_ar_);
       }
       std::vector<std::pair<float, float>> width_list;
-      width_list.emplace_back(width, area / width);
+      width_list.emplace_back(area / width /* min */, width /* max */);
       macros[soft_macro_id_map[cluster->getName()]].setShapes(width_list, area);
     } else if (cluster->getClusterType() == HardMacroCluster) {
       macros[soft_macro_id_map[cluster->getName()]].setShapes(
