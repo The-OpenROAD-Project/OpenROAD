@@ -6,7 +6,7 @@ read_liberty sky130hs/sky130hs_tt.lib
 
 if {[info exists ::env(TEST_TMPDIR)] && [llength $::env(TEST_TMPDIR)] > 0} {
   # Bazel tmp dir per test
-  set tmpdir [lindex $::env(TEST_TMPDIR) 0]
+  set tmpdir $::env(TEST_TMPDIR)
 } else {
   # Same as before Bazel
   set tmpdir .
