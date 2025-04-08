@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -45,13 +46,6 @@ Boundary opposite(const Boundary& pin_access)
     default:
       return NONE;
   }
-}
-
-// Compare two intervals according to starting points
-static bool comparePairFirst(const std::pair<float, float>& p1,
-                             const std::pair<float, float>& p2)
-{
-  return p1.first < p2.first;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1180,7 +1174,7 @@ void SoftMacro::setShapes(
   height_list_.clear();
   // sort width list based
   height_list_ = width_list;
-  std::sort(height_list_.begin(), height_list_.end(), comparePairFirst);
+  std::sort(height_list_.begin(), height_list_.end(), isFirstSmaller);
   for (auto& shape : height_list_) {
     if (width_list_.empty()
         || shape.first > width_list_[width_list_.size() - 1].second) {

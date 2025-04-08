@@ -32,4 +32,10 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
+inline bool isFirstSmaller(const std::pair<float, float>& p1,
+  const std::pair<float, float>& p2)
+{
+  return p1.first < p2.first;
+}
+
 }  // namespace mpl

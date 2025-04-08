@@ -406,7 +406,21 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getNumMacro() > 0) {
       SoftMacro macro = SoftMacro(cluster.get());
-      macro.setShapes(cluster->getMacroTilings(), true);  // force_flag = true
+      if (macro.isMacroCluster()) {
+        macro.setShapes(cluster->getMacroTilings(), true /* force */);
+      } else { /* Mixed */
+        const std::vector<std::pair<float, float>> tilings
+            = cluster->getMacroTilings();
+
+        // We can use any shape to compute the area.
+        const std::pair<float, float> shape = tilings.front();
+        const float area = shape.first * shape.second;
+        std::vector<std::pair<float, float>> width_curves
+            = computeWidthCurves(tilings);
+
+        macro.setShapes(width_curves, area);
+      }
+
       macros.push_back(macro);
     }
   }
@@ -607,6 +621,19 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     line += "\n";
     debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
+}
+
+std::vector<std::pair<float, float>> HierRTLMP::computeWidthCurves(
+    const std::vector<std::pair<float, float>>& tilings)
+{
+  std::vector<std::pair<float, float>> width_curves;
+  for (const std::pair<float, float>& tiling : tilings) {
+    width_curves.push_back({tiling.first, tiling.first});
+  }
+
+  std::sort(width_curves.begin(), width_curves.end(), isFirstSmaller);
+
+  return width_curves;
 }
 
 void HierRTLMP::calculateMacroTilings(Cluster* cluster)
