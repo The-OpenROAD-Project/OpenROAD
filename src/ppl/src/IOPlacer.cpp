@@ -341,13 +341,14 @@ void IOPlacer::randomPlacement(const std::vector<int>& pin_indices,
         if (slot_idx < 0) {
           odb::dbTechLayer* layer
               = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-          logger_->error(utl::PPL,
-                         85,
-                         "Mirrored position ({}, {}) at layer {} is not a "
-                         "valid position for pin placement.",
-                         mirrored_pos.getX(),
-                         mirrored_pos.getY(),
-                         layer->getName());
+          logger_->error(
+              utl::PPL,
+              85,
+              "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not a "
+              "valid position for pin placement.",
+              getBlock()->dbuToMicrons(mirrored_pos.getX()),
+              getBlock()->dbuToMicrons(mirrored_pos.getY()),
+              layer->getName());
         }
         slots[slot_idx].used = true;
         slots[slot_idx].blocked = true;
@@ -490,14 +491,15 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment)
   if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-    logger_->error(utl::PPL,
-                   91,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin {} placement.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA",
-                   mirrored_pin.getName());
+    logger_->error(
+        utl::PPL,
+        91,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not a "
+        "valid position for pin {} placement.",
+        getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        layer ? layer->getName() : "NA",
+        mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }
@@ -515,12 +517,13 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
   }
 
   if (slot_idx == -1) {
-    logger_->error(utl::PPL,
-                   101,
-                   "Slot for position ({}, {}) in layer {} not found",
-                   position.getX(),
-                   position.getY(),
-                   layer);
+    logger_->error(
+        utl::PPL,
+        101,
+        "Slot for position ({:.2f}um, {:.2f}um) in layer {} not found",
+        getBlock()->dbuToMicrons(position.getX()),
+        getBlock()->dbuToMicrons(position.getY()),
+        layer);
   }
 
   return slot_idx;
@@ -2393,14 +2396,14 @@ void IOPlacer::checkPinPlacement()
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == pin.getPosition()) {
           odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-          logger_->warn(
-              PPL,
-              106,
-              "At least 2 pins in position ({}, {}), layer {}, port {}.",
-              pos.x(),
-              pos.y(),
-              tech_layer->getName(),
-              pin.getName().c_str());
+          logger_->warn(PPL,
+                        106,
+                        "At least 2 pins in position ({:.2f}um, {:.2f}um), "
+                        "layer {}, port {}.",
+                        getBlock()->dbuToMicrons(pos.x()),
+                        getBlock()->dbuToMicrons(pos.y()),
+                        tech_layer->getName(),
+                        pin.getName().c_str());
           invalid = true;
         }
       }
@@ -2451,10 +2454,15 @@ bool IOPlacer::checkPinConstraints()
           logger_->warn(
               PPL,
               105,
-              "Pin {} is not placed in the upper layer grid region {}. {}",
+              "Pin {} is not placed in the upper layer grid region ({:.2f}um, "
+              "{:.2f}um) ({:.2f}um, {:.2f}um). ({:.2f}um, {:.2f}um, )",
               pin.getName(),
-              constraint.box,
-              pin.getPosition());
+              getBlock()->dbuToMicrons(constraint.box.xMin()),
+              getBlock()->dbuToMicrons(constraint.box.yMin()),
+              getBlock()->dbuToMicrons(constraint.box.xMax()),
+              getBlock()->dbuToMicrons(constraint.box.yMax()),
+              getBlock()->dbuToMicrons(pin.getPosition().x()),
+              getBlock()->dbuToMicrons(pin.getPosition().y()));
           invalid = true;
         }
       }
