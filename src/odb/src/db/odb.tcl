@@ -762,7 +762,7 @@ proc set_io_pin_constraint { args } {
 
       if { [info exists keys(-pin_names)] } {
         set names $keys(-pin_names)
-        ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
+        odb::add_pins_to_top_layer $names $llx $lly $urx $ury
       }
     } else {
       utl::warn PPL 73 "Constraint with region $region has an invalid edge."
@@ -868,10 +868,24 @@ proc add_direction_constraint { dir edge begin end } {
 proc add_names_constraint { names edge begin end } {
   set block [get_block]
 
-  set pin_list [ppl::parse_pin_names "set_io_pin_constraints" $names]
+  set pin_list [ppl::parse_pin_names "set_io_pin_constraint" $names]
   set constraint_region [$block findConstraintRegion $edge $begin $end]
 
   $block addBTermsToConstraint $pin_list $constraint_region
+}
+
+proc add_pins_to_top_layer { names llx lly urx ury } {
+  set block [get_block]
+  set top_layer [ppl::get_top_layer]
+
+  if { $top_layer == "NULL" } {
+    utl::error PPL 99 "Constraint up:{$llx $lly $urx $ury} cannot be created.\
+      Pin placement grid on top layer not created."
+  }
+
+  set pin_list [ppl::parse_pin_names "set_io_pin_constraint" $names]
+  
+  $block addBTermsToConstraint $pin_list $llx $lly $urx $ury
 }
 
 proc add_pin_group {pin_list order} {

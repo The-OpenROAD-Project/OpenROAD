@@ -1756,31 +1756,6 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
-void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
-{
-  Constraint constraint(*pins, Direction::invalid, region);
-  std::string pin_names = getPinSetOrListString(*pins);
-
-  logger_->info(utl::PPL,
-                60,
-                "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
-                "{:.2f}u) at routing layer {}.",
-                pin_names,
-                getBlock()->dbuToMicrons(region.xMin()),
-                getBlock()->dbuToMicrons(region.yMin()),
-                getBlock()->dbuToMicrons(region.xMax()),
-                getBlock()->dbuToMicrons(region.yMax()),
-                getTopLayer()->getConstName());
-
-  constraints_.push_back(constraint);
-  for (odb::dbBTerm* bterm : *pins) {
-    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
-      top_layer_pins_count_++;
-      bterm->setConstraintRegion(region);
-    }
-  }
-}
-
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
 {
   hor_layers_.insert(layer->getRoutingLevel());
@@ -1927,6 +1902,17 @@ void IOPlacer::getConstraintsFromDB()
   }
 
   for (const auto& [region, pins] : pins_per_rect) {
+    std::string pin_names = getPinSetOrListString(pins);
+    logger_->info(utl::PPL,
+      60,
+      "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+      "{:.2f}u) at routing layer {}.",
+      pin_names,
+      getBlock()->dbuToMicrons(region.xMin()),
+      getBlock()->dbuToMicrons(region.yMin()),
+      getBlock()->dbuToMicrons(region.xMax()),
+      getBlock()->dbuToMicrons(region.yMax()),
+      getTopLayer()->getConstName());
     constraints_.emplace_back(pins, Direction::invalid, region);
   }
 }

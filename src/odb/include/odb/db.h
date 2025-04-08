@@ -984,6 +984,16 @@ class dbBlock : public dbObject
                                      const Rect& constraint_region);
 
   ///
+  /// Add region constraint for dbBTerms according to their names given a the
+  /// dimensions of the constraint region.
+  ///
+  void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
+                             int llx,
+                             int lly,
+                             int urx,
+                             int ury);
+
+  ///
   /// Add region constraint for dbBTerms according to their names.
   ///
   void addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
