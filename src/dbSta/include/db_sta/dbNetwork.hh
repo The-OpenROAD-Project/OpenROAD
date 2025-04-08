@@ -319,6 +319,9 @@ class dbNetwork : public ConcreteNetwork
   void setHierarchy() { hierarchy_ = true; }
   void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
+  void reassociateHierFlatNet(dbModNet* mod_net,
+                              dbNet* new_flat_net,
+                              dbNet* orig_flat_net);
 
   int fromIndex(const Port* port) const override;
   int toIndex(const Port* port) const override;
