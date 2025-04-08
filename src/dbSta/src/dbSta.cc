@@ -693,6 +693,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
 void dbStaHistogram::loadSlackData(const MinMax* min_max)
 {
+  data_.clear();
   sta::Unit* time_unit = sta_->units()->timeUnit();
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     float slack = sta_->vertexSlack(vertex, min_max);
@@ -705,9 +706,10 @@ void dbStaHistogram::loadSlackData(const MinMax* min_max)
 void dbStaHistogram::loadCriticalPathLengthData(bool exclude_buffers,
                                                 bool exclude_inverters)
 {
+  data_.clear();
+  sta_->worstSlack(MinMax::max());  // Update timing.
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     int path_length = 0;
-    sta_->worstSlack(MinMax::max());  // Update timing.
     PathRef path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
     dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
     while (!path.isNull()) {

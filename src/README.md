@@ -242,6 +242,7 @@ slack distribution in the design.
 ```tcl
 report_timing_histogram [-num_bins num_bins] [-setup|-hold]
 ```
+
 ##### Options
 
 | Switch Name | Description |
