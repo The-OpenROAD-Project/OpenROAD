@@ -93,20 +93,7 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ) + {
-            "check_max_fanout2": [
-                "check_buffers.def",
-            ],
-            "check_wire_rc_cts": [
-                "check_buffers.def",
-            ],
-            "dummy_load": [
-                "check_buffers.def",
-            ],
-            "max_cap": [
-                "//src/rsz/test:hi_fanout.tcl",
-            ],
-        }.get(test_name, []),
+        ),
     )
     for test_name in ALL_TESTS
 ]
