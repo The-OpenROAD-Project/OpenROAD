@@ -154,7 +154,7 @@ class dbStaReport : public sta::ReportTcl
 class dbStaHistogram
 {
  public:
-  dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger) : sta_(sta), network_(network), logger_(logger) {};
+  dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger);
 
   // Loads data_ with the slack value for each constrained endpoint.
   void loadSlackData(const MinMax* min_max);
@@ -689,6 +689,9 @@ void dbSta::reportCellUsage(odb::dbModule* module,
     }
   }
 }
+
+dbStaHistogram::dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger)
+    : sta_(sta), network_(network), logger_(logger) {};
 
 void dbStaHistogram::loadSlackData(const MinMax* min_max)
 {
