@@ -170,8 +170,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   // Create a logic depth histogram report.
   void reportLogicDepthHistogram(int num_bins,
-                          bool exclude_buffers,
-                          bool exclude_inverters) const;
+                                 bool exclude_buffers,
+                                 bool exclude_inverters) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 

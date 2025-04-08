@@ -251,15 +251,15 @@ report_timing_histogram [-num_bins num_bins] [-setup|-hold]
 | `-setup` | Use setup paths (this is the default). |
 | `-hold` | Use hold paths. |
 
-#### Report Critical Path Length Histogram
+#### Report Logic Depth Histogram
 
-The `report_cpl_histogram` command reports a visualization of the
-critical path lengths for all constrained endpoints. That is to say, bin the
+The `report_logic_depth_histogram` command reports a visualization of the
+logic depth for all constrained endpoints. That is to say, bin the
 one logic depth length for the most timing constrained path for each endpoint.
 This is not necessarily the deepest path for the endpoint.
 
 ```tcl
-report_cpl_histogram [-num_bins num_bins] [-exclude_buffers] [-exclude_inverters]
+report_logic_depth_histogram [-num_bins num_bins] [-exclude_buffers] [-exclude_inverters]
 ```
 
 ##### Options

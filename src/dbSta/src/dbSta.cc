@@ -709,7 +709,7 @@ void dbStaHistogram::loadSlackData(const MinMax* min_max)
 }
 
 void dbStaHistogram::loadLogicDepthData(bool exclude_buffers,
-                                                bool exclude_inverters)
+                                        bool exclude_inverters)
 {
   data_.clear();
   sta_->worstSlack(MinMax::max());  // Update timing.
@@ -810,8 +810,8 @@ void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
 }
 
 void dbSta::reportLogicDepthHistogram(int num_bins,
-                               bool exclude_buffers,
-                               bool exclude_inverters) const
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
 {
   dbStaHistogram histogram(sta_, db_network_, logger_);
   histogram.loadLogicDepthData(exclude_buffers, exclude_inverters);
