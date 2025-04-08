@@ -341,7 +341,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
   bool macroSinkClusteringUseMaxCap_ = false;
-  double macroMaxDiameter_ = 200;
+  double macroMaxDiameter_ = 50;
   bool macroMaxDiameterSet_ = true;
   unsigned macroSinkClustersSize_ = 4;
   bool macroSinkClustersSizeSet_ = true;

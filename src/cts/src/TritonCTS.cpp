@@ -1218,8 +1218,9 @@ bool TritonCTS::separateMacroRegSinks(
   }
 
   // Set macros clustering diameter as 2 * macros highest dimention.
-  options_->setMacroMaxDiameter(
-    block_->dbuToMicrons(2 * std::max(macros_max_dx, macros_max_dy)));
+  double max_diameter = block_->dbuToMicrons(2 * std::max(macros_max_dx, macros_max_dy));
+  
+  options_->setMacroMaxDiameter(std::max(max_diameter, options_->getMacroMaxDiameter()));
   return true;
 }
 
