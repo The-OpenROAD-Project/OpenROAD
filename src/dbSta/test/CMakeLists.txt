@@ -31,6 +31,7 @@ or_integration_tests(
     report_cell_usage_physical_only
     report_json1
     report_timing_histogram
+    report_cpl_histogram
     sdc_get1
     sdc_names1
     sdc_names2

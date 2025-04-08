@@ -242,7 +242,6 @@ slack distribution in the design.
 ```tcl
 report_timing_histogram [-num_bins num_bins] [-setup|-hold]
 ```
-
 ##### Options
 
 | Switch Name | Description |
@@ -250,6 +249,25 @@ report_timing_histogram [-num_bins num_bins] [-setup|-hold]
 | `-num_bins` | Number of histogram bins to display (default is 10). |
 | `-setup` | Use setup paths (this is the default). |
 | `-hold` | Use hold paths. |
+
+#### Report Critical Path Length Histogram
+
+The `report_cpl_histogram` command reports a visualization of the
+critical path lengths for all constrained endpoints. That is to say, bin the
+one logic depth length for the most timing constrained path for each endpoint.
+This is not necessarily the deepest path for the endpoint.
+
+```tcl
+report_cpl_histogram [-num_bins num_bins] [-exclude_buffers] [-exclude_inverters]
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-num_bins` | Number of histogram bins to display (default is 10). |
+| `-exclude_buffers` | Exclude buffers when counting critical path length. |
+| `-exclude_inverters` | Exclude inverters when counting critical path length. |
 
 ## TCL functions
 

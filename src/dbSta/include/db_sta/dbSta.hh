@@ -25,6 +25,7 @@ namespace sta {
 class dbSta;
 class dbNetwork;
 class dbStaReport;
+class dbStaHistogram;
 class dbStaCbk;
 class AbstractPathRenderer;
 class AbstractPowerDensityDataSource;
@@ -166,6 +167,10 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                        const char* stage_name);
 
   void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
+
+  // Create a critical path length histogram report.
+  void reportCplHistogram(int num_bins, bool exclude_buffers,
+                          bool exclude_inverters) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 

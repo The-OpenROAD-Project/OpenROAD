@@ -188,6 +188,16 @@ report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
   sta->reportTimingHistogram(num_bins, min_max);
 }
 
+void
+report_cpl_histogram_cmd(int num_bins, bool exclude_buffers,
+                         bool exclude_inverters)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta->reportCplHistogram(num_bins, exclude_buffers, exclude_inverters);
+}
+
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
 // that is in the same file.
 void
