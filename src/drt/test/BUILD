@@ -43,8 +43,6 @@ filegroup(
         "gcd_sky130hd.def",
         "gcd_sky130hd.guide",
         "helpers.tcl",
-        "save_defok",
-        "save_ok",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
