@@ -2504,7 +2504,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         int width,
                         int height,
                         bool force_to_die_bound,
-                        bool placed_status)
+                        bool placed_status,
+                        bool verbose)
 {
   if (width == 0 && height == 0) {
     const int database_unit = getTech()->getLefUnits();
@@ -2647,12 +2648,19 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   excludeInterval(interval);
 
-  logger_->info(PPL,
-                70,
-                "Pin {} placed at ({:.2f}um, {:.2f}um).",
-                bterm->getName(),
-                getBlock()->dbuToMicrons(pos.x()),
-                getBlock()->dbuToMicrons(pos.y()));
+  odb::Point original_pos(x, y);
+  if (verbose && pos != original_pos) {
+    logger_->info(PPL,
+                  70,
+                  "Pin {} placed at ({:.2f}um, {:.2f})um instead of ({:.2f}um, "
+                  "{:.2f})um. Pin was snapped to a routing track, to the "
+                  "manufacturing grid or moved away from blocked region.",
+                  bterm->getName(),
+                  getBlock()->dbuToMicrons(pos.x()),
+                  getBlock()->dbuToMicrons(pos.y()),
+                  getBlock()->dbuToMicrons(original_pos.x()),
+                  getBlock()->dbuToMicrons(original_pos.y()));
+  }
 }
 
 void IOPlacer::movePinToTrack(odb::Point& pos,

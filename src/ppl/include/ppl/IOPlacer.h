@@ -111,7 +111,8 @@ class IOPlacer
                 int width,
                 int height,
                 bool force_to_die_bound,
-                bool placed_status);
+                bool placed_status,
+                bool verbose);
 
   void setAnnealingConfig(float temperature,
                           int max_iterations,

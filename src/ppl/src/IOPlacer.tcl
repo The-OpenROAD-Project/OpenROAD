@@ -202,13 +202,14 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-location location]\
                                   [-pin_size pin_size]\
                                   [-force_to_die_boundary]\
-                                  [-placed_status]
+                                  [-placed_status]\
+                                  [-verbose]
 }
 
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
     keys {-pin_name -layer -location -pin_size} \
-    flags {-force_to_die_boundary -placed_status}
+    flags {-force_to_die_boundary -placed_status -verbose}
 
   sta::check_argc_eq0 "place_pin" $args
 
@@ -276,7 +277,8 @@ proc place_pin { args } {
 
   ppl::place_pin $pin $layer $x $y $width $height \
     [info exists flags(-force_to_die_boundary)] \
-    [info exists flags(-placed_status)]
+    [info exists flags(-placed_status)]\
+    [info exists flags(-verbose)]
 }
 
 sta::define_cmd_args "write_pin_placement" { file_name \
