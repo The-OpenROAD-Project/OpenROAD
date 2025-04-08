@@ -7,7 +7,7 @@
        Replace will regard clk1 is placed in (0, 0)
 [WARNING GPL-0001] net0 toplevel port is not placed!
        Replace will regard net0 is placed in (0, 0)
-[INFO GPL-0006] Total GPL instances:                71
+[INFO GPL-0006] Number of instances:                71
 [INFO GPL-0007] Movable instances:                  71
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0

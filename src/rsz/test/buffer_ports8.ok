@@ -7,7 +7,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
-[INFO GPL-0006] Total GPL instances:                 1
+[INFO GPL-0006] Number of instances:                 1
 [INFO GPL-0007] Movable instances:                   1
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
@@ -27,18 +27,19 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 577570
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 567244
 [INFO GPL-0032] Uniform density:                0.0007
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.0008
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.0008
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      4.522 um^2
 [INFO GPL-0025] Ideal bin area:                  6.460 um^2
 [INFO GPL-0026] Ideal bin count:                   968
 [INFO GPL-0027] Total bin area:               6256.320 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 *     16
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
 [INFO GPL-0030] Number of bins:                    256
 [NesterovSolve] HPWL: Half-Perimeter Wirelength
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.0000  5.633130e+05     +0.00%     9.92e-15  
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.0000 |  5.633130e+05 |   +0.00% |  9.92e-15 |      
 [NesterovSolve] Finished with Overflow: 0.000000
 [INFO RSZ-0027] Inserted 2 input buffers.
 [INFO RSZ-0028] Inserted 2 output buffers.

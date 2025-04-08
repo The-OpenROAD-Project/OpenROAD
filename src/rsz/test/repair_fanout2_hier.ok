@@ -5,7 +5,7 @@
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [WARNING GPL-0001] clk1 toplevel port is not placed!
        Replace will regard clk1 is placed in (0, 0)
-[INFO GPL-0006] Total GPL instances:                71
+[INFO GPL-0006] Number of instances:                71
 [INFO GPL-0007] Movable instances:                  71
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
