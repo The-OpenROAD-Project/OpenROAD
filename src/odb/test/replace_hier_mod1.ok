@@ -5,7 +5,7 @@
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [WARNING GPL-0001] clk toplevel port is not placed!
        Replace will regard clk is placed in (0, 0)
-[INFO GPL-0006] Total GPL instances:                21
+[INFO GPL-0006] Number of instances:                21
 [INFO GPL-0007] Movable instances:                  21
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
@@ -106,40 +106,43 @@ Corner: slow
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [WARNING GPL-0001] clk toplevel port is not placed!
        Replace will regard clk is placed in (0, 0)
-[INFO GPL-0006] NumInstances:                21
-[INFO GPL-0007] NumPlaceInstances:           21
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                     12
-[INFO GPL-0011] NumPins:                     38
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] CoreArea:             47872.020 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:          59.850 um^2
-[INFO GPL-0019] Util:                     0.125 %
-[INFO GPL-0020] StdInstsArea:            59.850 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0006] Number of instances:                21
+[INFO GPL-0007] Movable instances:                  21
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     12
+[INFO GPL-0011] Number of pins:                     38
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:         59.850 um^2
+[INFO GPL-0019] Utilization:                     0.125 %
+[INFO GPL-0020] Standard cells area:            59.850 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
-[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 251960
-[InitialPlace]  Iter: 2 CG residual: 0.00000011 HPWL: 259304
-[InitialPlace]  Iter: 3 CG residual: 0.00000006 HPWL: 258856
-[InitialPlace]  Iter: 4 CG residual: 0.00000007 HPWL: 258842
-[InitialPlace]  Iter: 5 CG residual: 0.00000007 HPWL: 258842
-[INFO GPL-0031] FillerInit:NumGCells:     11997
-[INFO GPL-0032] FillerInit:NumGNets:         12
-[INFO GPL-0033] FillerInit:NumGPins:         38
-[INFO GPL-0023] TargetDensity:            0.700
-[INFO GPL-0024] AvrgPlaceInstArea:        2.850 um^2
-[INFO GPL-0025] IdealBinArea:             4.071 um^2
-[INFO GPL-0026] IdealBinCnt:              11758
-[INFO GPL-0027] TotalBinArea:         47872.020 um^2
-[INFO GPL-0028] BinCnt:        16    256
-[INFO GPL-0029] BinSize: (  2.494  4.687 )
-[INFO GPL-0030] NumBins: 4096
-[NesterovSolve] Iter:    1 overflow: 0.193 HPWL: 102770
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 251960
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 259304
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000006 HPWL: 258856
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 258842
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000007 HPWL: 258842
+[INFO GPL-0032] Uniform density:                0.0013
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.0014
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      2.850 um^2
+[INFO GPL-0025] Ideal bin area:                  4.071 um^2
+[INFO GPL-0026] Ideal bin count:                 11758
+[INFO GPL-0027] Total bin area:              47872.020 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,    256
+[INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
+[INFO GPL-0030] Number of bins:                   4096
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.1930 |  1.027700e+05 |   +0.00% |  4.39e-14 |      
 [NesterovSolve] Finished with Overflow: 0.192992
 [INFO GPL-0133] Unlocked instances
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
 Placement Analysis
 ---------------------------------
 total displacement         52.6 u
@@ -221,40 +224,43 @@ Corner: slow
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [WARNING GPL-0001] clk toplevel port is not placed!
        Replace will regard clk is placed in (0, 0)
-[INFO GPL-0006] NumInstances:                21
-[INFO GPL-0007] NumPlaceInstances:           21
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                     12
-[INFO GPL-0011] NumPins:                     38
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] CoreArea:             47872.020 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:          60.382 um^2
-[INFO GPL-0019] Util:                     0.126 %
-[INFO GPL-0020] StdInstsArea:            60.382 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0006] Number of instances:                21
+[INFO GPL-0007] Movable instances:                  21
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     12
+[INFO GPL-0011] Number of pins:                     38
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:         60.382 um^2
+[INFO GPL-0019] Utilization:                     0.126 %
+[INFO GPL-0020] Standard cells area:            60.382 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0132] Locked 19 instances
-[InitialPlace]  Iter: 1 CG residual: 0.00000012 HPWL: 203020
-[InitialPlace]  Iter: 2 CG residual: 0.00000010 HPWL: 210674
-[InitialPlace]  Iter: 3 CG residual: 0.00000011 HPWL: 210704
-[InitialPlace]  Iter: 4 CG residual: 0.00000002 HPWL: 210702
-[InitialPlace]  Iter: 5 CG residual: 0.00000002 HPWL: 210702
-[INFO GPL-0031] FillerInit:NumGCells:     11872
-[INFO GPL-0032] FillerInit:NumGNets:         12
-[INFO GPL-0033] FillerInit:NumGPins:         38
-[INFO GPL-0023] TargetDensity:            0.700
-[INFO GPL-0024] AvrgPlaceInstArea:        2.875 um^2
-[INFO GPL-0025] IdealBinArea:             4.108 um^2
-[INFO GPL-0026] IdealBinCnt:              11654
-[INFO GPL-0027] TotalBinArea:         47872.020 um^2
-[INFO GPL-0028] BinCnt:        16    256
-[INFO GPL-0029] BinSize: (  2.494  4.687 )
-[INFO GPL-0030] NumBins: 4096
-[NesterovSolve] Iter:    1 overflow: 0.188 HPWL: 88094
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 203020
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000010 HPWL: 210674
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000011 HPWL: 210704
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000002 HPWL: 210702
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000002 HPWL: 210702
+[INFO GPL-0032] Uniform density:                0.0013
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.0014
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      2.875 um^2
+[INFO GPL-0025] Ideal bin area:                  4.108 um^2
+[INFO GPL-0026] Ideal bin count:                 11654
+[INFO GPL-0027] Total bin area:              47872.020 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,    256
+[INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
+[INFO GPL-0030] Number of bins:                   4096
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.1876 |  8.809400e+04 |   +0.00% |  3.98e-14 |      
 [NesterovSolve] Finished with Overflow: 0.187637
 [INFO GPL-0133] Unlocked instances
+[NesterovSolve] HPWL: Half-Perimeter Wirelength
 Placement Analysis
 ---------------------------------
 total displacement         39.4 u
