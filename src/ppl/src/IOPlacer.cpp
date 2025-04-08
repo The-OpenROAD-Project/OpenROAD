@@ -2647,20 +2647,17 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   excludeInterval(interval);
 
-  odb::Point original_pos(x, y);
-  if (pos != original_pos) {
-    debugPrint(logger_,
-               utl::PPL,
-               "place_pin",
-               1,
-               "Pin {} placed at ({:.2f}um, {:.2f}um) instead of ({:.2f}um, "
-               "{:.2f}um). Pin was snapped to a routing track, to the "
-               "manufacturing grid or moved away from blocked region.",
-               bterm->getName(),
-               getBlock()->dbuToMicrons(pos.x()),
-               getBlock()->dbuToMicrons(pos.y()),
-               getBlock()->dbuToMicrons(original_pos.x()),
-               getBlock()->dbuToMicrons(original_pos.y()));
+  if (pos != Point(x, y)) {
+    logger_->info(PPL,
+                  70,
+                  "Pin {} placed at ({:.2f}um, {:.2f}um) instead of ({:.2f}um, "
+                  "{:.2f}um). Pin was snapped to a routing track, to the "
+                  "manufacturing grid or moved away from blocked region.",
+                  bterm->getName(),
+                  getBlock()->dbuToMicrons(pos.x()),
+                  getBlock()->dbuToMicrons(pos.y()),
+                  getBlock()->dbuToMicrons(x),
+                  getBlock()->dbuToMicrons(y));
   }
 }
 
