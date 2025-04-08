@@ -1090,16 +1090,6 @@ void IOPlacer::defineSlots()
         getBlock()->dbuToMicrons(die_margin),
         getBlock()->dbuToMicrons(new_margin));
   }
-
-  if (top_layer_pins_count_ > top_layer_slots_.size()) {
-    logger_->error(PPL,
-                   11,
-                   "Number of IO pins assigned to the top layer ({}) exceeds "
-                   "maximum number of available "
-                   "top layer positions ({}).",
-                   top_layer_pins_count_,
-                   top_layer_slots_.size());
-  }
 }
 
 void IOPlacer::findSections(int begin,
@@ -1901,6 +1891,7 @@ void IOPlacer::getConstraintsFromDB()
     constraints_.emplace_back(pins, Direction::invalid, interval);
   }
 
+  top_layer_pins_count_ = 0;
   for (const auto& [region, pins] : pins_per_rect) {
     std::string pin_names = getPinSetOrListString(pins);
     logger_->info(utl::PPL,
@@ -1913,6 +1904,7 @@ void IOPlacer::getConstraintsFromDB()
                   getBlock()->dbuToMicrons(region.xMax()),
                   getBlock()->dbuToMicrons(region.yMax()),
                   getTopLayer()->getConstName());
+    top_layer_pins_count_ += pins.size();
     constraints_.emplace_back(pins, Direction::invalid, region);
   }
 }
@@ -1923,6 +1915,15 @@ void IOPlacer::initConstraints(bool annealing)
   getConstraintsFromDB();
   int constraint_idx = 0;
   int constraints_no_slots = 0;
+  if (top_layer_pins_count_ > top_layer_slots_.size()) {
+    logger_->error(PPL,
+                   11,
+                   "Number of IO pins assigned to the top layer ({}) exceeds "
+                   "maximum number of available "
+                   "top layer positions ({}).",
+                   top_layer_pins_count_,
+                   top_layer_slots_.size());
+  }
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
