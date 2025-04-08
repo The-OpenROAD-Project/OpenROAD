@@ -54,6 +54,11 @@ namespace gpl {
 
 using utl::GPL;
 
+const char* format_label_int = "{:27} {:10}";
+const char* format_label_float = "{:27} {:10.4f}";
+const char* format_label_um2 = "{:27} {:10.3f} um^2";
+const char* format_label_um2_with_delta = "{:27} {:10.3f} um^2 ({:+.2f}%)";
+
 Replace::Replace() = default;
 
 Replace::~Replace() = default;

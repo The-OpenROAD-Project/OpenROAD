@@ -61,6 +61,11 @@ using odb::dbSigType;
 using odb::Rect;
 using utl::GPL;
 
+extern const char* format_label_int;
+extern const char* format_label_float;
+extern const char* format_label_um2;
+extern const char* format_label_percent;
+
 static int fastModulo(int input, int ceil);
 
 static std::pair<int, int> getMinMaxIdx(int ll,
@@ -1270,16 +1275,17 @@ void PlacerBase::printInfo() const
   dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
              6,
-             "{:27} {:10}",
-             "Total GPL instances:",
+             format_label_int,
+             "Number of instances:",
              placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
-  log_->info(GPL, 7, "{:27} {:10}", "Movable instances:", placeInsts_.size());
-  log_->info(GPL, 8, "{:27} {:10}", "Fixed instances:", fixedInsts_.size());
-  log_->info(GPL, 9, "{:27} {:10}", "Dummy instances:", dummyInsts_.size());
   log_->info(
-      GPL, 10, "{:27} {:10}", "Number of nets:", pbCommon_->nets().size());
+      GPL, 7, format_label_int, "Movable instances:", placeInsts_.size());
+  log_->info(GPL, 8, format_label_int, "Fixed instances:", fixedInsts_.size());
+  log_->info(GPL, 9, format_label_int, "Dummy instances:", dummyInsts_.size());
   log_->info(
-      GPL, 11, "{:27} {:10}", "Number of pins:", pbCommon_->pins().size());
+      GPL, 10, format_label_int, "Number of nets:", pbCommon_->nets().size());
+  log_->info(
+      GPL, 11, format_label_int, "Number of pins:", pbCommon_->pins().size());
 
   log_->info(GPL,
              12,
@@ -1304,31 +1310,31 @@ void PlacerBase::printInfo() const
 
   log_->info(GPL,
              16,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Core area:",
              block->dbuAreaToMicrons(coreArea));
   log_->info(GPL,
              17,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Fixed instances area:",
              block->dbuAreaToMicrons(nonPlaceInstsArea_));
 
   log_->info(GPL,
              18,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Movable instances area:",
              block->dbuAreaToMicrons(placeInstsArea_));
   log_->info(GPL, 19, "{:27} {:10.3f} %", "Utilization:", util);
 
   log_->info(GPL,
              20,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Standard cells area:",
              block->dbuAreaToMicrons(stdInstsArea_));
 
   log_->info(GPL,
              21,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Large instances area:",
              block->dbuAreaToMicrons(macroInstsArea_));
 

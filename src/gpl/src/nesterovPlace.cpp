@@ -496,6 +496,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+      nbVec_[0]->setTrueReprintIterHeader();
 
       for (auto& nb : nbVec_) {
         nb_gcells_after_td += nb->gCells().size();
@@ -687,6 +688,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // check routability using RUDY or GR
     if (npVars_.routability_driven_mode && is_routability_need_
         && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
+      nbVec_[0]->setTrueReprintIterHeader();
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();

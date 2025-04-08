@@ -55,6 +55,12 @@ namespace gpl {
 using odb::dbBlock;
 using utl::GPL;
 
+extern const char* format_label_int;
+extern const char* format_label_float;
+extern const char* format_label_um2;
+extern const char* format_label_percent;
+extern const char* format_label_um2_with_delta;
+
 static int fastModulo(int input, int ceil);
 
 static float calculateBiVariateNormalCDF(biNormalParameters i);
@@ -743,21 +749,21 @@ void BinGrid::initBins()
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
   log_->info(
-      GPL, 23, "{:27} {:10.4f}", "Placement target density:", targetDensity_);
+      GPL, 23, format_label_float, "Placement target density:", targetDensity_);
   log_->info(GPL,
              24,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Movable insts average area:",
              block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Ideal bin area:",
              block->dbuAreaToMicrons(idealBinArea));
-  log_->info(GPL, 26, "{:27} {:10}", "Ideal bin count:", idealBinCnt);
+  log_->info(GPL, 26, format_label_int, "Ideal bin count:", idealBinCnt);
   log_->info(GPL,
              27,
-             "{:27} {:10.3f} um^2",
+             format_label_um2,
              "Total bin area:",
              block->dbuAreaToMicrons(totalBinArea));
 
@@ -790,7 +796,7 @@ void BinGrid::initBins()
   }
 
   log_->info(
-      GPL, 28, "{:21} {:7d} * {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
+      GPL, 28, "{:21} {:7d} , {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
 
   binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
   binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
@@ -817,7 +823,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, "{:27} {:10}", "Number of bins:", bins_.size());
+  log_->info(GPL, 30, format_label_int, "Number of bins:", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -1633,21 +1639,21 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
              GPL,
              "FillerInit",
              1,
-             "{:20} {:9}",
+             format_label_int,
              "FillerInit:NumGCells:",
              gCells_.size());
   debugPrint(log_,
              GPL,
              "FillerInit",
              1,
-             "{:20} {:10}",
+             format_label_int,
              "FillerInit:NumGNets:",
              nbc_->gNets().size());
   debugPrint(log_,
              GPL,
              "FillerInit",
              1,
-             "{:20} {:10}",
+             format_label_int,
              "FillerInit:NumGPins:",
              nbc_->gPins().size());
 
@@ -1768,12 +1774,12 @@ void NesterovBase::initFillerGCells()
                 uniformTargetDensity_);
   }
   log_->info(
-      GPL, 32, "{:27} {:10.4f}", "Uniform density:", uniformTargetDensity_);
+      GPL, 32, format_label_float, "Uniform density:", uniformTargetDensity_);
   float density_suggestion
       = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
   log_->info(GPL,
              33,
-             "{:27} {:.4f}",
+             format_label_float,
              "Density w/ 90% whitespace util:",
              density_suggestion);
 
@@ -2569,43 +2575,44 @@ void NesterovBase::updateNextIter(const int iter)
 
   float percentageChange = 0.0;
   if (iter == 0 || (iter + 1) % 10 == 0) {
-    if (prevTenthHpwl_ != 0) {
-      percentageChange = (static_cast<double>(hpwl - prevTenthHpwl_)
-                          / static_cast<double>(prevTenthHpwl_))
+    if (prevReportedHpwl_ != 0) {
+      percentageChange = (static_cast<double>(hpwl - prevReportedHpwl_)
+                          / static_cast<double>(prevReportedHpwl_))
                          * 100.0;
     }
-    prevTenthHpwl_ = hpwl;
+    prevReportedHpwl_ = hpwl;
 
     std::string group;
     if (pb_->group()) {
       group = fmt::format(" ({})", pb_->group()->getName());
     }
 
-    const std::string nesterov_header
-        = fmt::format("[NesterovSolve] {:>4}  {:>8}  {:>12}  {:>9}  {:>11}  {}",
-                      "Iter",
-                      "Overflow",
-                      "HPWL",
-                      "HPWL(%)",
-                      "Penalty",
-                      "Group");
+    if (iter == 0 || this->reprint_iter_header) {
+      const std::string nesterov_header
+          = fmt::format("{:>9} | {:>8} | {:>13} | {:>8} | {:>9} | {:>5}",
+                        "Iteration",
+                        "Overflow",
+                        "HPWL (um)",
+                        "HPWL(%)",
+                        "Penalty",
+                        "Group");
 
-    if (iter == 0) {
+      const std::string nesterov_divider
+          = "---------------------------------------------------------------";
+
       log_->report(nesterov_header);
+      log_->report(nesterov_divider);
+
+      reprint_iter_header = false;
     }
 
-    log_->report(
-        "[NesterovSolve] {:4d}  {:8.4f}  {:8.6e}  {:+8.2f}%  {:11.2e}  {}",
-        iter + 1,
-        sumOverflowUnscaled_,
-        static_cast<double>(hpwl),
-        percentageChange,
-        densityPenalty_,
-        group);
-
-    if ((iter + 1) % 50 == 0) {
-      log_->report(nesterov_header);
-    }
+    log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
+                 iter + 1,
+                 sumOverflowUnscaled_,
+                 static_cast<double>(hpwl),
+                 percentageChange,
+                 densityPenalty_,
+                 group);
   }
 
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
