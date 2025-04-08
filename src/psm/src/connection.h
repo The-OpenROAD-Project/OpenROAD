@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -78,8 +49,8 @@ class Connection
 
   void ensureNodeOrder();
 
-  Node* getNode0() const { return node0_; };
-  Node* getNode1() const { return node1_; };
+  Node* getNode0() const { return node0_; }
+  Node* getNode1() const { return node1_; }
 
   Node* getOtherNode(const Node* node) const;
 
@@ -88,7 +59,7 @@ class Connection
   virtual Resistance getResistance(const ResistanceMap& res_map) const = 0;
   Conductance getConductance(const ResistanceMap& res_map) const;
 
-  virtual bool isVia() const { return false; };
+  virtual bool isVia() const { return false; }
   virtual bool isValid() const = 0;
   bool isLoop() const { return node0_ == node1_; }
   bool isStub() const { return node0_ == nullptr || node1_ == nullptr; }
@@ -147,7 +118,7 @@ class ViaConnection : public Connection
 
   void mergeWith(const Connection* other) override;
 
-  bool isVia() const override { return true; };
+  bool isVia() const override { return true; }
 
   std::string describe() const override;
 
@@ -161,9 +132,9 @@ class TermConnection : public Connection
   TermConnection(Node* node0, Node* node1);
 
   Resistance getResistance(const ResistanceMap& res_map) const override;
-  bool isValid() const override { return true; };
+  bool isValid() const override { return true; }
 
-  void mergeWith(const Connection* other) override{};
+  void mergeWith(const Connection* other) override {}
 
   std::string describe() const override;
 

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbObstruction.h"
 
@@ -65,6 +36,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
   _flags._spare_bits = 0;
+  _flags._is_system_reserved = 0;
   _min_spacing = 0;
   _effective_width = 0;
 }
@@ -97,6 +69,11 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
     // assume false for older databases
     obs._flags._except_pg_nets = false;
+  }
+
+  if (!db->isSchema(db_schema_die_area_is_polygon)) {
+    // assume false for older databases
+    obs._flags._is_system_reserved = false;
   }
 
   return stream;
@@ -355,6 +332,18 @@ dbBlock* dbObstruction::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+bool dbObstruction::isSystemReserved()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  return obs->_flags._is_system_reserved;
+}
+
+void dbObstruction::setIsSystemReserved(bool is_system_reserved)
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  obs->_flags._is_system_reserved = is_system_reserved;
+}
+
 dbObstruction* dbObstruction::create(dbBlock* block_,
                                      dbTechLayer* layer_,
                                      int x1,
@@ -392,11 +381,29 @@ void dbObstruction::destroy(dbObstruction* obstruction)
 {
   _dbObstruction* obs = (_dbObstruction*) obstruction;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
+
+  if (obstruction->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
+    logger->error(
+        utl::ODB,
+        1111,
+        "You cannot delete a system created obstruction (isSystemReserved).");
+  }
+
   for (auto callback : block->_callbacks) {
     callback->inDbObstructionDestroy(obstruction);
   }
   dbProperty::destroyProperties(obs);
   block->_obstruction_tbl->destroy(obs);
+}
+
+dbSet<dbObstruction>::iterator dbObstruction::destroy(
+    dbSet<dbObstruction>::iterator& itr)
+{
+  dbObstruction* bt = *itr;
+  dbSet<dbObstruction>::iterator next = ++itr;
+  destroy(bt);
+  return next;
 }
 
 dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)

@@ -1,31 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * Copyright (c) 2024, Precision Innovations Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <omp.h>
 
@@ -33,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
@@ -218,7 +193,7 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
-  int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+  int pin_access_idx = unique_inst->getPinAccessIdx();
   for (auto& inst_term : unique_inst->getInstTerms()) {
     if (isSkipInstTerm(inst_term.get())) {
       continue;
@@ -271,7 +246,7 @@ int FlexPA::genPatterns(
   }
 
   int max_access_point_size = 0;
-  int pin_access_idx = unique_insts_.getPAIndex(pins[0].second->getInst());
+  int pin_access_idx = pins[0].second->getInst()->getPinAccessIdx();
   for (auto& [pin, inst_term] : pins) {
     max_access_point_size
         = std::max(max_access_point_size,
@@ -392,7 +367,7 @@ void FlexPA::genPatternsInit(
   // init pin nodes
   int pin_idx = 0;
   int ap_idx = 0;
-  int pin_access_idx = unique_insts_.getPAIndex(pins[0].second->getInst());
+  int pin_access_idx = pins[0].second->getInst()->getPinAccessIdx();
 
   for (auto& [pin, inst_term] : pins) {
     ap_idx = 0;
@@ -566,7 +541,7 @@ int FlexPA::getEdgeCost(
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     const auto& [pin_1, inst_term_1] = pins[prev_pin_idx];
     const auto target_obj = inst_term_1->getInst();
-    const int pin_access_idx = unique_insts_.getPAIndex(target_obj);
+    const int pin_access_idx = target_obj->getPinAccessIdx();
     const auto pa_1 = pin_1->getPinAccess(pin_access_idx);
     std::unique_ptr<frVia> via1;
     if (pa_1->getAccessPoint(prev_acc_point_idx)->hasAccess(frDirEnum::U)) {
@@ -717,7 +692,7 @@ bool FlexPA::genPatternsCommit(
     auto acc_point_idx = access_pattern[pin_idx];
     auto& [pin, inst_term] = pins[pin_idx];
     target_obj = unique_inst;
-    const int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+    const int pin_access_idx = unique_inst->getPinAccessIdx();
     const auto pa = pin->getPinAccess(pin_access_idx);
     const auto access_point = pa->getAccessPoint(acc_point_idx);
     pin_to_access_point[pin] = access_point;
@@ -828,7 +803,7 @@ void FlexPA::genPatternsPrintDebug(
       auto& [pin, inst_term] = pins[pin_cnt];
       auto unique_inst = inst_term->getInst();
       std::cout << " " << inst_term->getTerm()->getName();
-      const int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+      const int pin_access_idx = unique_inst->getPinAccessIdx();
       auto pa = pin->getPinAccess(pin_access_idx);
       auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
       Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
@@ -860,7 +835,7 @@ void FlexPA::genPatternsPrint(
     if (pin_cnt != (int) pins.size()) {
       auto& [pin, inst_term] = pins[pin_cnt];
       auto unique_inst = inst_term->getInst();
-      const int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+      const int pin_access_idx = unique_inst->getPinAccessIdx();
       auto pa = pin->getPinAccess(pin_access_idx);
       auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
       std::unique_ptr<frVia> via = std::make_unique<frVia>(

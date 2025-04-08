@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
+
 sta::define_cmd_args "create_physical_cluster" {cluster_name}
 
 proc create_physical_cluster { args } {

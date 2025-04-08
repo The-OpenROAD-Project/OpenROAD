@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "odb/geom.h"
 
@@ -75,6 +46,45 @@ Polygon Polygon::bloat(int margin) const
   }
 
   return Polygon(new_coord);
+}
+
+std::vector<Polygon> Polygon::difference(Polygon b) const
+{
+  // convert to native boost types to avoid needed a mutable access
+  // to odb::Polygon
+  using BoostPolygon = boost::polygon::polygon_data<int>;
+  using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-;
+
+  // convert to boost polygon
+  const BoostPolygon polygon_a(points_.begin(), points_.end());
+  const BoostPolygon polygon_b(b.points_.begin(), b.points_.end());
+
+  // add to polygon set
+  BoostPolygonSet poly_a_set;
+  BoostPolygonSet poly_b_set;
+  poly_a_set += polygon_a;
+  poly_b_set += polygon_b;
+
+  const BoostPolygonSet difference_set = poly_a_set - poly_b_set;
+
+  // extract new polygon
+  std::vector<BoostPolygon> output_polygons;
+  difference_set.get(output_polygons);
+
+  std::vector<Polygon> result;
+  result.reserve(output_polygons.size());
+  for (const BoostPolygon& boost_polygon : output_polygons) {
+    std::vector<odb::Point> new_coord;
+    new_coord.reserve(boost_polygon.coords_.size());
+    for (const auto& pt : boost_polygon.coords_) {
+      new_coord.emplace_back(pt.x(), pt.y());
+    }
+    result.emplace_back(new_coord);
+  }
+
+  return result;
 }
 
 }  // namespace odb

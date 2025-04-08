@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 %typemap(out) odb::dbOrientType, dbOrientType {
 	PyObject *obj;

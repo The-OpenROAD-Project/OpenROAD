@@ -1,42 +1,12 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2024, Precision Innovations Inc.
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "rsz/SpefWriter.hh"
+#include "db_sta/SpefWriter.hh"
 
+#include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "sta/Corner.hh"
@@ -44,10 +14,10 @@
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
-namespace rsz {
+namespace sta {
 
 using std::map;
-using utl::RSZ;
+using utl::ORD;
 
 SpefWriter::SpefWriter(Logger* logger,
                        dbSta* sta,
@@ -152,12 +122,12 @@ void SpefWriter::writePorts()
   for (auto [_, it] : spef_streams_) {
     std::ostream& stream = *it;
 
-    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+    std::unique_ptr<InstancePinIterator> pin_iter(
         network_->pinIterator(network_->topInstance()));
 
     stream << "*PORTS" << '\n';
     while (pin_iter->hasNext()) {
-      sta::Pin* pin = pin_iter->next();
+      Pin* pin = pin_iter->next();
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
       odb::dbModITerm* moditerm = nullptr;
@@ -173,8 +143,8 @@ void SpefWriter::writePorts()
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
-        logger_->error(RSZ,
-                       8,
+        logger_->error(ORD,
+                       10,
                        "Got a modTerm instead of iTerm or bTerm while writing "
                        "SPEF ports.");
       }
@@ -188,7 +158,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   auto it = spef_streams_.find(corner);
   if (it == spef_streams_.end()) {
     logger_->error(
-        RSZ, 14, "Tried to write net SPEF info for corner that was not set");
+        ORD, 20, "Tried to write net SPEF info for corner that was not set");
   }
   std::ostream& stream = *it->second;
 
@@ -222,7 +192,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
-        logger_->error(RSZ,
+        logger_->error(ORD,
                        9,
                        "Got a modTerm instead of iTerm or bTerm while writing "
                        "SPEF net connections.");
@@ -304,4 +274,4 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
   stream << "*END" << '\n' << '\n';
 }
 
-}  // namespace rsz
+}  // namespace sta

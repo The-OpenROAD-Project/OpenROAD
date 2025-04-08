@@ -1,12 +1,10 @@
-// Copyright 2024 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "abc_library_factory.h"
 
 #include <cmath>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <unordered_set>

@@ -17,7 +17,7 @@ class CredHelperTests(unittest.TestCase):
     def test_test_mode(self):
         """
         Tests that the format of the test mode output is correct and that
-        the user in the .user-bazelrc has the correct entitlements
+        the user in the user.bazelrc has the correct entitlements
         """
         result = subprocess.run(
             [self._exe, "test"],
@@ -28,7 +28,7 @@ class CredHelperTests(unittest.TestCase):
         self.assertEqual(
             result.returncode,
             0,
-            "Test op returned non-zero status. Check user account defined in .user-bazelrc",
+            "Test op returned non-zero status. Check user account defined in user.bazelrc",
         )
         self.assertEqual("", result.stderr)
         try:
@@ -52,7 +52,7 @@ class CredHelperTests(unittest.TestCase):
     def test_get_mode(self):
         """
         Tests that the format of the get mode output is correct and that
-        the user in the .user-bazelrc has the correct entitlements
+        the user in the user.bazelrc has the correct entitlements
         """
         result = subprocess.run(
             [self._exe, "get"],
@@ -63,7 +63,7 @@ class CredHelperTests(unittest.TestCase):
         self.assertEqual(
             result.returncode,
             0,
-            "Get op returned non-zero status. Check user account defined in .user-bazelrc",
+            "Get op returned non-zero status. Check user account defined in user.bazelrc",
         )
         self.assertEqual("", result.stderr)
         try:

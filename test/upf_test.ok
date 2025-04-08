@@ -14,306 +14,282 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0006] Total GPL instances:                37
-[INFO GPL-0007] Movable instances:                  13
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                    24
-[INFO GPL-0010] Number of nets:                     29
-[INFO GPL-0011] Number of pins:                     71
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
-[INFO GPL-0017] Fixed instances area:         4654.464 um^2
-[INFO GPL-0018] Movable instances area:         93.840 um^2
-[INFO GPL-0019] Utilization:                     1.377 %
-[INFO GPL-0020] Standard cells area:            93.840 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0006] Total GPL instances:                42
-[INFO GPL-0007] Movable instances:                   3
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                    39
-[INFO GPL-0010] Number of nets:                     29
-[INFO GPL-0011] Number of pins:                     71
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
-[INFO GPL-0017] Fixed instances area:        10566.384 um^2
-[INFO GPL-0018] Movable instances area:         21.270 um^2
-[INFO GPL-0019] Utilization:                     2.361 %
-[INFO GPL-0020] Standard cells area:            21.270 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0006] Total GPL instances:                48
-[INFO GPL-0007] Movable instances:                   9
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                    39
-[INFO GPL-0010] Number of nets:                     29
-[INFO GPL-0011] Number of pins:                     71
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
-[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
-[INFO GPL-0016] Core area:                   11467.248 um^2
-[INFO GPL-0017] Fixed instances area:        10566.384 um^2
-[INFO GPL-0018] Movable instances area:         51.299 um^2
-[INFO GPL-0019] Utilization:                     5.694 %
-[INFO GPL-0020] Standard cells area:            51.299 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Uniform density:                0.0138
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.0153
-[INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      7.218 um^2
-[INFO GPL-0025] Ideal bin area:                 10.312 um^2
-[INFO GPL-0026] Ideal bin count:                  1112
-[INFO GPL-0027] Total bin area:              11467.248 um^2
-[INFO GPL-0028] Bin count (X, Y):          32 *     32
-[INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
-[INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0032] Uniform density:                0.0236
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.0262
-[INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      7.090 um^2
-[INFO GPL-0025] Ideal bin area:                 10.129 um^2
-[INFO GPL-0026] Ideal bin count:                  1132
-[INFO GPL-0027] Total bin area:              11467.248 um^2
-[INFO GPL-0028] Bin count (X, Y):          32 *     32
-[INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
-[INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0032] Uniform density:                0.0569
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.0633
-[INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      5.700 um^2
-[INFO GPL-0025] Ideal bin area:                  8.143 um^2
-[INFO GPL-0026] Ideal bin count:                  1408
-[INFO GPL-0027] Total bin area:              11467.248 um^2
-[INFO GPL-0028] Bin count (X, Y):          32 *     32
-[INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
-[INFO GPL-0030] Number of bins:                   1024
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.3840  1.159011e+06     +0.00%     8.12e-14  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.9998  1.159011e+06     +0.00%     6.64e-13   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.2941  1.159011e+06     +0.00%     8.73e-13   (PD_D2)
-[NesterovSolve] Finished with Overflow: 0.059938
-[NesterovSolve]   10    0.9998  5.935070e+05    -48.79%     8.17e-13   (PD_D1)
-[NesterovSolve]   10    0.9998  5.935070e+05    -48.79%     1.07e-12   (PD_D2)
-[NesterovSolve]   20    0.9998  5.681460e+05     -4.27%     9.85e-13   (PD_D1)
-[NesterovSolve]   20    0.9998  5.681460e+05     -4.27%     1.29e-12   (PD_D2)
-[NesterovSolve]   30    0.9998  5.646640e+05     -0.61%     1.19e-12   (PD_D1)
-[NesterovSolve]   30    0.9998  5.646640e+05     -0.61%     1.56e-12   (PD_D2)
-[NesterovSolve]   40    0.9998  5.656430e+05     +0.17%     1.43e-12   (PD_D1)
-[NesterovSolve]   40    0.9998  5.656430e+05     +0.17%     1.88e-12   (PD_D2)
-[NesterovSolve]   50    0.9998  5.659600e+05     +0.06%     1.72e-12   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]   50    0.9998  5.659600e+05     +0.06%     2.26e-12   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]   60    0.9998  5.658310e+05     -0.02%     2.08e-12   (PD_D1)
-[NesterovSolve]   60    0.9998  5.658310e+05     -0.02%     2.73e-12   (PD_D2)
-[NesterovSolve]   70    0.9998  5.658220e+05     -0.00%     2.50e-12   (PD_D1)
-[NesterovSolve]   70    0.9998  5.658220e+05     -0.00%     3.29e-12   (PD_D2)
-[NesterovSolve]   80    0.9998  5.658030e+05     -0.00%     3.01e-12   (PD_D1)
-[NesterovSolve]   80    0.9998  5.658030e+05     -0.00%     3.96e-12   (PD_D2)
-[NesterovSolve]   90    0.9998  5.657780e+05     -0.00%     3.63e-12   (PD_D1)
-[NesterovSolve]   90    0.9998  5.657780e+05     -0.00%     4.77e-12   (PD_D2)
-[NesterovSolve]  100    0.9998  5.657600e+05     -0.00%     4.38e-12   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  100    0.9998  5.657600e+05     -0.00%     5.75e-12   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  110    0.9998  5.657260e+05     -0.01%     5.27e-12   (PD_D1)
-[NesterovSolve]  110    0.9998  5.657260e+05     -0.01%     6.93e-12   (PD_D2)
-[NesterovSolve]  120    0.9998  5.657050e+05     -0.00%     6.35e-12   (PD_D1)
-[NesterovSolve]  120    0.9998  5.657050e+05     -0.00%     8.35e-12   (PD_D2)
-[NesterovSolve]  130    0.9998  5.656940e+05     -0.00%     7.65e-12   (PD_D1)
-[NesterovSolve]  130    0.9998  5.656940e+05     -0.00%     1.01e-11   (PD_D2)
-[NesterovSolve]  140    0.9998  5.656890e+05     -0.00%     9.22e-12   (PD_D1)
-[NesterovSolve]  140    0.9998  5.656890e+05     -0.00%     1.21e-11   (PD_D2)
-[NesterovSolve]  150    0.9998  5.656820e+05     -0.00%     1.11e-11   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  150    0.9998  5.656820e+05     -0.00%     1.46e-11   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  160    0.9998  5.656740e+05     -0.00%     1.34e-11   (PD_D1)
-[NesterovSolve]  160    0.9998  5.656740e+05     -0.00%     1.76e-11   (PD_D2)
-[NesterovSolve]  170    0.9998  5.659510e+05     +0.05%     1.61e-11   (PD_D1)
-[NesterovSolve]  170    0.9998  5.659510e+05     +0.05%     2.12e-11   (PD_D2)
-[NesterovSolve]  180    0.9998  5.664170e+05     +0.08%     1.94e-11   (PD_D1)
-[NesterovSolve]  180    0.9998  5.664170e+05     +0.08%     2.55e-11   (PD_D2)
-[NesterovSolve]  190    0.9998  5.669180e+05     +0.09%     2.34e-11   (PD_D1)
-[NesterovSolve]  190    0.9998  5.669180e+05     +0.09%     3.08e-11   (PD_D2)
-[NesterovSolve]  200    0.9998  5.675080e+05     +0.10%     2.82e-11   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  200    0.9998  5.675080e+05     +0.10%     3.71e-11   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  210    0.9630  5.680130e+05     +0.09%     3.40e-11   (PD_D1)
-[NesterovSolve]  210    0.9998  5.680130e+05     +0.09%     4.47e-11   (PD_D2)
-[NesterovSolve]  220    0.9190  5.678990e+05     -0.02%     4.10e-11   (PD_D1)
-[NesterovSolve]  220    0.9998  5.678990e+05     -0.02%     5.38e-11   (PD_D2)
-[NesterovSolve]  230    0.8789  5.674220e+05     -0.08%     4.94e-11   (PD_D1)
-[NesterovSolve]  230    0.9998  5.674220e+05     -0.08%     6.49e-11   (PD_D2)
-[NesterovSolve]  240    0.8421  5.669980e+05     -0.07%     5.95e-11   (PD_D1)
-[NesterovSolve]  240    0.9998  5.669980e+05     -0.07%     7.82e-11   (PD_D2)
-[NesterovSolve]  250    0.8083  5.667630e+05     -0.04%     7.17e-11   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  250    0.9998  5.667630e+05     -0.04%     9.42e-11   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  260    0.7771  5.660950e+05     -0.12%     8.63e-11   (PD_D1)
-[NesterovSolve]  260    0.9998  5.660950e+05     -0.12%     1.13e-10   (PD_D2)
-[NesterovSolve]  270    0.7482  5.640510e+05     -0.36%     1.04e-10   (PD_D1)
-[NesterovSolve]  270    0.9998  5.640510e+05     -0.36%     1.37e-10   (PD_D2)
-[NesterovSolve]  280    0.7214  5.625450e+05     -0.27%     1.25e-10   (PD_D1)
-[NesterovSolve]  280    0.9998  5.625450e+05     -0.27%     1.65e-10   (PD_D2)
-[NesterovSolve]  290    0.6964  5.619010e+05     -0.11%     1.51e-10   (PD_D1)
-[NesterovSolve]  290    0.9998  5.619010e+05     -0.11%     1.98e-10   (PD_D2)
-[NesterovSolve]  300    0.6731  5.607250e+05     -0.21%     1.82e-10   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  300    0.9998  5.607250e+05     -0.21%     2.39e-10   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  310    0.6514  5.595290e+05     -0.21%     2.19e-10   (PD_D1)
-[NesterovSolve]  310    0.9998  5.595290e+05     -0.21%     2.88e-10   (PD_D2)
-[NesterovSolve]  320    0.6309  5.586560e+05     -0.16%     2.64e-10   (PD_D1)
-[NesterovSolve]  320    0.9998  5.586560e+05     -0.16%     3.47e-10   (PD_D2)
-[NesterovSolve]  330    0.6118  5.582570e+05     -0.07%     3.18e-10   (PD_D1)
-[NesterovSolve]  330    0.9998  5.582570e+05     -0.07%     4.18e-10   (PD_D2)
-[NesterovSolve]  340    0.5937  5.561350e+05     -0.38%     3.84e-10   (PD_D1)
-[NesterovSolve]  340    0.9998  5.561350e+05     -0.38%     5.04e-10   (PD_D2)
-[NesterovSolve]  350    0.5767  5.561490e+05     +0.00%     4.62e-10   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  350    0.9998  5.561490e+05     +0.00%     6.07e-10   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  360    0.5606  5.560810e+05     -0.01%     5.57e-10   (PD_D1)
-[NesterovSolve]  360    0.9998  5.560810e+05     -0.01%     7.32e-10   (PD_D2)
-[NesterovSolve]  370    0.5454  5.540900e+05     -0.36%     6.71e-10   (PD_D1)
-[NesterovSolve]  370    0.9998  5.540900e+05     -0.36%     8.82e-10   (PD_D2)
-[NesterovSolve]  380    0.5311  5.534470e+05     -0.12%     8.08e-10   (PD_D1)
-[NesterovSolve]  380    0.9998  5.534470e+05     -0.12%     1.06e-09   (PD_D2)
-[NesterovSolve]  390    0.5174  5.483400e+05     -0.92%     9.74e-10   (PD_D1)
-[NesterovSolve]  390    0.9998  5.483400e+05     -0.92%     1.28e-09   (PD_D2)
-[NesterovSolve]  400    0.5044  5.475840e+05     -0.14%     1.17e-09   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  400    0.9998  5.475840e+05     -0.14%     1.54e-09   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  410    0.4921  5.469380e+05     -0.12%     1.41e-09   (PD_D1)
-[NesterovSolve]  410    0.9998  5.469380e+05     -0.12%     1.86e-09   (PD_D2)
-[NesterovSolve]  420    0.4804  5.443810e+05     -0.47%     1.70e-09   (PD_D1)
-[NesterovSolve]  420    0.9998  5.443810e+05     -0.47%     2.24e-09   (PD_D2)
-[NesterovSolve]  430    0.4692  5.426110e+05     -0.33%     2.05e-09   (PD_D1)
-[NesterovSolve]  430    0.9998  5.426110e+05     -0.33%     2.70e-09   (PD_D2)
-[NesterovSolve]  440    0.4585  5.407590e+05     -0.34%     2.47e-09   (PD_D1)
-[NesterovSolve]  440    0.9998  5.407590e+05     -0.34%     3.25e-09   (PD_D2)
-[NesterovSolve]  450    0.4483  5.391500e+05     -0.30%     2.98e-09   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  450    0.9998  5.391500e+05     -0.30%     3.92e-09   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  460    0.4385  5.373650e+05     -0.33%     3.59e-09   (PD_D1)
-[NesterovSolve]  460    0.9998  5.373650e+05     -0.33%     4.72e-09   (PD_D2)
-[NesterovSolve]  470    0.4291  5.341470e+05     -0.60%     4.33e-09   (PD_D1)
-[NesterovSolve]  470    0.9998  5.341470e+05     -0.60%     5.69e-09   (PD_D2)
-[NesterovSolve]  480    0.4202  5.351870e+05     +0.19%     5.21e-09   (PD_D1)
-[NesterovSolve]  480    0.9998  5.351870e+05     +0.19%     6.85e-09   (PD_D2)
-[NesterovSolve]  490    0.4116  5.306470e+05     -0.85%     6.28e-09   (PD_D1)
-[NesterovSolve]  490    0.9927  5.306470e+05     -0.85%     8.26e-09   (PD_D2)
-[NesterovSolve]  500    0.4033  5.290930e+05     -0.29%     7.57e-09   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  500    0.9728  5.290930e+05     -0.29%     9.95e-09   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  510    0.3954  5.289960e+05     -0.02%     9.12e-09   (PD_D1)
-[NesterovSolve]  510    0.9537  5.289960e+05     -0.02%     1.20e-08   (PD_D2)
-[NesterovSolve]  520    0.3878  5.245530e+05     -0.84%     1.10e-08   (PD_D1)
-[NesterovSolve]  520    0.9353  5.245530e+05     -0.84%     1.44e-08   (PD_D2)
-[NesterovSolve]  530    0.3805  5.242240e+05     -0.06%     1.32e-08   (PD_D1)
-[NesterovSolve]  530    0.9176  5.242240e+05     -0.06%     1.74e-08   (PD_D2)
-[NesterovSolve]  540    0.3734  5.239490e+05     -0.05%     1.59e-08   (PD_D1)
-[NesterovSolve]  540    0.9006  5.239490e+05     -0.05%     2.10e-08   (PD_D2)
-[NesterovSolve]  550    0.3666  5.204780e+05     -0.66%     1.92e-08   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  550    0.8842  5.204780e+05     -0.66%     2.53e-08   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  560    0.3601  5.202470e+05     -0.04%     2.32e-08   (PD_D1)
-[NesterovSolve]  560    0.8684  5.202470e+05     -0.04%     3.04e-08   (PD_D2)
-[NesterovSolve]  570    0.3537  5.178130e+05     -0.47%     2.79e-08   (PD_D1)
-[NesterovSolve]  570    0.8531  5.178130e+05     -0.47%     3.67e-08   (PD_D2)
-[NesterovSolve]  580    0.3476  5.171370e+05     -0.13%     3.36e-08   (PD_D1)
-[NesterovSolve]  580    0.8384  5.171370e+05     -0.13%     4.42e-08   (PD_D2)
-[NesterovSolve]  590    0.3417  5.167420e+05     -0.08%     4.05e-08   (PD_D1)
-[NesterovSolve]  590    0.8241  5.167420e+05     -0.08%     5.32e-08   (PD_D2)
-[NesterovSolve]  600    0.3360  5.167190e+05     -0.00%     4.88e-08   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  600    0.8104  5.167190e+05     -0.00%     6.41e-08   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  610    0.3305  5.167930e+05     +0.01%     5.88e-08   (PD_D1)
-[NesterovSolve]  610    0.7971  5.167930e+05     +0.01%     7.73e-08   (PD_D2)
-[NesterovSolve]  620    0.3252  5.170690e+05     +0.05%     7.08e-08   (PD_D1)
-[NesterovSolve]  620    0.7842  5.170690e+05     +0.05%     9.31e-08   (PD_D2)
-[NesterovSolve]  630    0.3200  5.173260e+05     +0.05%     8.54e-08   (PD_D1)
-[NesterovSolve]  630    0.7717  5.173260e+05     +0.05%     1.12e-07   (PD_D2)
-[NesterovSolve]  640    0.3150  5.178830e+05     +0.11%     1.03e-07   (PD_D1)
-[NesterovSolve]  640    0.7597  5.178830e+05     +0.11%     1.35e-07   (PD_D2)
-[NesterovSolve]  650    0.3101  5.189300e+05     +0.20%     1.24e-07   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  650    0.7479  5.189300e+05     +0.20%     1.63e-07   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  660    0.3054  5.207760e+05     +0.36%     1.49e-07   (PD_D1)
-[NesterovSolve]  660    0.7366  5.207760e+05     +0.36%     1.96e-07   (PD_D2)
-[NesterovSolve]  670    0.3009  5.230330e+05     +0.43%     1.80e-07   (PD_D1)
-[NesterovSolve]  670    0.7256  5.230330e+05     +0.43%     2.36e-07   (PD_D2)
-[NesterovSolve]  680    0.2964  5.257300e+05     +0.52%     2.17e-07   (PD_D1)
-[NesterovSolve]  680    0.7149  5.257300e+05     +0.52%     2.85e-07   (PD_D2)
-[NesterovSolve]  690    0.2921  5.288590e+05     +0.60%     2.61e-07   (PD_D1)
-[NesterovSolve]  690    0.7045  5.288590e+05     +0.60%     3.43e-07   (PD_D2)
-[NesterovSolve]  700    0.2879  5.336060e+05     +0.90%     3.15e-07   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  700    0.6944  5.336060e+05     +0.90%     4.14e-07   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  710    0.2839  5.400720e+05     +1.21%     3.79e-07   (PD_D1)
-[NesterovSolve]  710    0.6847  5.400720e+05     +1.21%     4.98e-07   (PD_D2)
-[NesterovSolve]  720    0.2799  5.502340e+05     +1.88%     4.57e-07   (PD_D1)
-[NesterovSolve]  720    0.6751  5.502340e+05     +1.88%     6.01e-07   (PD_D2)
-[NesterovSolve]  730    0.2761  5.748150e+05     +4.47%     5.51e-07   (PD_D1)
-[NesterovSolve]  730    0.6659  5.748150e+05     +4.47%     7.24e-07   (PD_D2)
-[NesterovSolve]  740    0.2724  6.347750e+05    +10.43%     6.63e-07   (PD_D1)
-[NesterovSolve]  740    0.4326  6.347750e+05    +10.43%     8.72e-07   (PD_D2)
-[NesterovSolve]  750    0.2687  6.519090e+05     +2.70%     7.99e-07   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  750    0.4268  6.519090e+05     +2.70%     1.05e-06   (PD_D2)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  760    0.2652  6.793210e+05     +4.20%     9.63e-07   (PD_D1)
-[NesterovSolve]  760    0.2914  6.793210e+05     +4.20%     1.27e-06   (PD_D2)
-[NesterovSolve]  770    0.2617  6.993660e+05     +2.95%     1.16e-06   (PD_D1)
-[NesterovSolve]  770    0.2400  6.993660e+05     +2.95%     1.53e-06   (PD_D2)
-[NesterovSolve]  780    0.2584  7.085730e+05     +1.32%     1.40e-06   (PD_D1)
-[NesterovSolve]  780    0.1925  7.085730e+05     +1.32%     1.84e-06   (PD_D2)
-[NesterovSolve] PowerDomain PD_D2 finished with Overflow: 0.099741
-[NesterovSolve]  790    0.2551  7.237420e+05     +2.14%     1.68e-06   (PD_D1)
-[NesterovSolve]  800    0.2519  7.265260e+05     +0.38%     2.03e-06   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  810    0.2488  7.345370e+05     +1.10%     2.45e-06   (PD_D1)
-[NesterovSolve]  820    0.2458  7.570590e+05     +3.07%     2.95e-06   (PD_D1)
-[NesterovSolve]  830    0.2328  8.024520e+05     +6.00%     3.55e-06   (PD_D1)
-[NesterovSolve]  840    0.1696  8.393770e+05     +4.60%     4.28e-06   (PD_D1)
-[NesterovSolve]  850    0.1753  8.307140e+05     -1.03%     5.15e-06   (PD_D1)
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  860    0.1516  8.450210e+05     +1.72%     6.21e-06   (PD_D1)
-[NesterovSolve]  870    0.1499  8.714200e+05     +3.12%     7.48e-06   (PD_D1)
-[NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.081185
+[INFO GPL-0006] NumInstances:                37
+[INFO GPL-0007] NumPlaceInstances:           13
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:           24
+[INFO GPL-0010] NumNets:                     26
+[INFO GPL-0011] NumPins:                     65
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] CoreArea:             11467.248 um^2
+[INFO GPL-0017] NonPlaceInstsArea:     4654.464 um^2
+[INFO GPL-0018] PlaceInstsArea:          93.840 um^2
+[INFO GPL-0019] Util:                     1.377 %
+[INFO GPL-0020] StdInstsArea:            93.840 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0006] NumInstances:                42
+[INFO GPL-0007] NumPlaceInstances:            3
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:           39
+[INFO GPL-0010] NumNets:                     26
+[INFO GPL-0011] NumPins:                     65
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] CoreArea:             11467.248 um^2
+[INFO GPL-0017] NonPlaceInstsArea:    10566.384 um^2
+[INFO GPL-0018] PlaceInstsArea:          21.270 um^2
+[INFO GPL-0019] Util:                     2.361 %
+[INFO GPL-0020] StdInstsArea:            21.270 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0006] NumInstances:                45
+[INFO GPL-0007] NumPlaceInstances:            6
+[INFO GPL-0008] NumFixedInstances:            0
+[INFO GPL-0009] NumDummyInstances:           39
+[INFO GPL-0010] NumNets:                     26
+[INFO GPL-0011] NumPins:                     65
+[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
+[INFO GPL-0013] CoreBBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
+[INFO GPL-0016] CoreArea:             11467.248 um^2
+[INFO GPL-0017] NonPlaceInstsArea:    10566.384 um^2
+[INFO GPL-0018] PlaceInstsArea:          43.792 um^2
+[INFO GPL-0019] Util:                     4.861 %
+[INFO GPL-0020] StdInstsArea:            43.792 um^2
+[INFO GPL-0021] MacroInstsArea:           0.000 um^2
+[INFO GPL-0031] FillerInit:NumGCells:       672
+[INFO GPL-0032] FillerInit:NumGNets:         26
+[INFO GPL-0033] FillerInit:NumGPins:         65
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        7.218 um^2
+[INFO GPL-0025] IdealBinArea:            10.312 um^2
+[INFO GPL-0026] IdealBinCnt:               1112
+[INFO GPL-0027] TotalBinArea:         11467.248 um^2
+[INFO GPL-0028] BinCnt:        32     32
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
+[INFO GPL-0030] NumBins: 1024
+[INFO GPL-0031] FillerInit:NumGCells:        91
+[INFO GPL-0032] FillerInit:NumGNets:         26
+[INFO GPL-0033] FillerInit:NumGPins:         65
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        7.090 um^2
+[INFO GPL-0025] IdealBinArea:            10.129 um^2
+[INFO GPL-0026] IdealBinCnt:               1132
+[INFO GPL-0027] TotalBinArea:         11467.248 um^2
+[INFO GPL-0028] BinCnt:        32     32
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
+[INFO GPL-0030] NumBins: 1024
+[INFO GPL-0031] FillerInit:NumGCells:        86
+[INFO GPL-0032] FillerInit:NumGNets:         26
+[INFO GPL-0033] FillerInit:NumGPins:         65
+[INFO GPL-0023] TargetDensity:            0.700
+[INFO GPL-0024] AvrgPlaceInstArea:        7.299 um^2
+[INFO GPL-0025] IdealBinArea:            10.427 um^2
+[INFO GPL-0026] IdealBinCnt:               1099
+[INFO GPL-0027] TotalBinArea:         11467.248 um^2
+[INFO GPL-0028] BinCnt:        32     32
+[INFO GPL-0029] BinSize: (  3.379  3.315 )
+[INFO GPL-0030] NumBins: 1024
+[NesterovSolve] Iter:    1 overflow: 0.422 HPWL: 1127956
+[NesterovSolve] Iter:    1 overflow: 1.000 HPWL: 1127956 (PD_D1)
+[NesterovSolve] Iter:    1 overflow: 0.167 HPWL: 1127956 (PD_D2)
+[NesterovSolve] Finished with Overflow: 0.081593
+[NesterovSolve] Iter:   10 overflow: 1.000 HPWL: 449530 (PD_D1)
+[NesterovSolve] Iter:   10 overflow: 1.000 HPWL: 449530 (PD_D2)
+[NesterovSolve] Iter:   20 overflow: 1.000 HPWL: 430594 (PD_D1)
+[NesterovSolve] Iter:   20 overflow: 1.000 HPWL: 430594 (PD_D2)
+[NesterovSolve] Iter:   30 overflow: 1.000 HPWL: 428982 (PD_D1)
+[NesterovSolve] Iter:   30 overflow: 1.000 HPWL: 428982 (PD_D2)
+[NesterovSolve] Iter:   40 overflow: 1.000 HPWL: 428824 (PD_D1)
+[NesterovSolve] Iter:   40 overflow: 1.000 HPWL: 428824 (PD_D2)
+[NesterovSolve] Iter:   50 overflow: 1.000 HPWL: 428812 (PD_D1)
+[NesterovSolve] Iter:   50 overflow: 1.000 HPWL: 428812 (PD_D2)
+[NesterovSolve] Iter:   60 overflow: 1.000 HPWL: 428820 (PD_D1)
+[NesterovSolve] Iter:   60 overflow: 1.000 HPWL: 428820 (PD_D2)
+[NesterovSolve] Iter:   70 overflow: 1.000 HPWL: 428823 (PD_D1)
+[NesterovSolve] Iter:   70 overflow: 1.000 HPWL: 428823 (PD_D2)
+[NesterovSolve] Iter:   80 overflow: 1.000 HPWL: 428863 (PD_D1)
+[NesterovSolve] Iter:   80 overflow: 1.000 HPWL: 428863 (PD_D2)
+[NesterovSolve] Iter:   90 overflow: 1.000 HPWL: 428894 (PD_D1)
+[NesterovSolve] Iter:   90 overflow: 1.000 HPWL: 428894 (PD_D2)
+[NesterovSolve] Iter:  100 overflow: 1.000 HPWL: 428954 (PD_D1)
+[NesterovSolve] Iter:  100 overflow: 1.000 HPWL: 428954 (PD_D2)
+[NesterovSolve] Iter:  110 overflow: 1.000 HPWL: 429006 (PD_D1)
+[NesterovSolve] Iter:  110 overflow: 1.000 HPWL: 429006 (PD_D2)
+[NesterovSolve] Iter:  120 overflow: 1.000 HPWL: 429072 (PD_D1)
+[NesterovSolve] Iter:  120 overflow: 1.000 HPWL: 429072 (PD_D2)
+[NesterovSolve] Iter:  130 overflow: 1.000 HPWL: 429167 (PD_D1)
+[NesterovSolve] Iter:  130 overflow: 1.000 HPWL: 429167 (PD_D2)
+[NesterovSolve] Iter:  140 overflow: 1.000 HPWL: 429378 (PD_D1)
+[NesterovSolve] Iter:  140 overflow: 1.000 HPWL: 429378 (PD_D2)
+[NesterovSolve] Iter:  150 overflow: 1.000 HPWL: 429642 (PD_D1)
+[NesterovSolve] Iter:  150 overflow: 1.000 HPWL: 429642 (PD_D2)
+[NesterovSolve] Iter:  160 overflow: 1.000 HPWL: 430052 (PD_D1)
+[NesterovSolve] Iter:  160 overflow: 1.000 HPWL: 430052 (PD_D2)
+[NesterovSolve] Iter:  170 overflow: 1.000 HPWL: 430677 (PD_D1)
+[NesterovSolve] Iter:  170 overflow: 1.000 HPWL: 430677 (PD_D2)
+[NesterovSolve] Iter:  180 overflow: 1.000 HPWL: 431496 (PD_D1)
+[NesterovSolve] Iter:  180 overflow: 1.000 HPWL: 431496 (PD_D2)
+[NesterovSolve] Iter:  190 overflow: 1.000 HPWL: 432453 (PD_D1)
+[NesterovSolve] Iter:  190 overflow: 1.000 HPWL: 432453 (PD_D2)
+[NesterovSolve] Iter:  200 overflow: 1.000 HPWL: 433497 (PD_D1)
+[NesterovSolve] Iter:  200 overflow: 1.000 HPWL: 433497 (PD_D2)
+[NesterovSolve] Iter:  210 overflow: 0.963 HPWL: 434716 (PD_D1)
+[NesterovSolve] Iter:  210 overflow: 1.000 HPWL: 434716 (PD_D2)
+[NesterovSolve] Iter:  220 overflow: 0.919 HPWL: 435824 (PD_D1)
+[NesterovSolve] Iter:  220 overflow: 1.000 HPWL: 435824 (PD_D2)
+[NesterovSolve] Iter:  230 overflow: 0.879 HPWL: 436999 (PD_D1)
+[NesterovSolve] Iter:  230 overflow: 1.000 HPWL: 436999 (PD_D2)
+[NesterovSolve] Iter:  240 overflow: 0.842 HPWL: 437701 (PD_D1)
+[NesterovSolve] Iter:  240 overflow: 1.000 HPWL: 437701 (PD_D2)
+[NesterovSolve] Iter:  250 overflow: 0.808 HPWL: 437642 (PD_D1)
+[NesterovSolve] Iter:  250 overflow: 1.000 HPWL: 437642 (PD_D2)
+[NesterovSolve] Iter:  260 overflow: 0.777 HPWL: 437834 (PD_D1)
+[NesterovSolve] Iter:  260 overflow: 1.000 HPWL: 437834 (PD_D2)
+[NesterovSolve] Iter:  270 overflow: 0.748 HPWL: 437389 (PD_D1)
+[NesterovSolve] Iter:  270 overflow: 1.000 HPWL: 437389 (PD_D2)
+[NesterovSolve] Iter:  280 overflow: 0.721 HPWL: 437334 (PD_D1)
+[NesterovSolve] Iter:  280 overflow: 1.000 HPWL: 437334 (PD_D2)
+[NesterovSolve] Iter:  290 overflow: 0.696 HPWL: 438478 (PD_D1)
+[NesterovSolve] Iter:  290 overflow: 1.000 HPWL: 438478 (PD_D2)
+[NesterovSolve] Iter:  300 overflow: 0.673 HPWL: 437491 (PD_D1)
+[NesterovSolve] Iter:  300 overflow: 1.000 HPWL: 437491 (PD_D2)
+[NesterovSolve] Iter:  310 overflow: 0.651 HPWL: 437969 (PD_D1)
+[NesterovSolve] Iter:  310 overflow: 1.000 HPWL: 437969 (PD_D2)
+[NesterovSolve] Iter:  320 overflow: 0.631 HPWL: 439249 (PD_D1)
+[NesterovSolve] Iter:  320 overflow: 1.000 HPWL: 439249 (PD_D2)
+[NesterovSolve] Iter:  330 overflow: 0.612 HPWL: 440173 (PD_D1)
+[NesterovSolve] Iter:  330 overflow: 1.000 HPWL: 440173 (PD_D2)
+[NesterovSolve] Iter:  340 overflow: 0.594 HPWL: 439733 (PD_D1)
+[NesterovSolve] Iter:  340 overflow: 1.000 HPWL: 439733 (PD_D2)
+[NesterovSolve] Iter:  350 overflow: 0.577 HPWL: 439215 (PD_D1)
+[NesterovSolve] Iter:  350 overflow: 1.000 HPWL: 439215 (PD_D2)
+[NesterovSolve] Iter:  360 overflow: 0.561 HPWL: 438796 (PD_D1)
+[NesterovSolve] Iter:  360 overflow: 1.000 HPWL: 438796 (PD_D2)
+[NesterovSolve] Iter:  370 overflow: 0.545 HPWL: 437061 (PD_D1)
+[NesterovSolve] Iter:  370 overflow: 1.000 HPWL: 437061 (PD_D2)
+[NesterovSolve] Iter:  380 overflow: 0.531 HPWL: 436184 (PD_D1)
+[NesterovSolve] Iter:  380 overflow: 1.000 HPWL: 436184 (PD_D2)
+[NesterovSolve] Iter:  390 overflow: 0.517 HPWL: 436780 (PD_D1)
+[NesterovSolve] Iter:  390 overflow: 1.000 HPWL: 436780 (PD_D2)
+[NesterovSolve] Iter:  400 overflow: 0.504 HPWL: 435760 (PD_D1)
+[NesterovSolve] Iter:  400 overflow: 1.000 HPWL: 435760 (PD_D2)
+[NesterovSolve] Iter:  410 overflow: 0.492 HPWL: 433052 (PD_D1)
+[NesterovSolve] Iter:  410 overflow: 1.000 HPWL: 433052 (PD_D2)
+[NesterovSolve] Iter:  420 overflow: 0.480 HPWL: 432370 (PD_D1)
+[NesterovSolve] Iter:  420 overflow: 0.989 HPWL: 432370 (PD_D2)
+[NesterovSolve] Iter:  430 overflow: 0.469 HPWL: 431444 (PD_D1)
+[NesterovSolve] Iter:  430 overflow: 0.966 HPWL: 431444 (PD_D2)
+[NesterovSolve] Iter:  440 overflow: 0.458 HPWL: 428463 (PD_D1)
+[NesterovSolve] Iter:  440 overflow: 0.944 HPWL: 428463 (PD_D2)
+[NesterovSolve] Iter:  450 overflow: 0.448 HPWL: 428044 (PD_D1)
+[NesterovSolve] Iter:  450 overflow: 0.923 HPWL: 428044 (PD_D2)
+[NesterovSolve] Iter:  460 overflow: 0.438 HPWL: 426119 (PD_D1)
+[NesterovSolve] Iter:  460 overflow: 0.903 HPWL: 426119 (PD_D2)
+[NesterovSolve] Iter:  470 overflow: 0.429 HPWL: 423968 (PD_D1)
+[NesterovSolve] Iter:  470 overflow: 0.884 HPWL: 423968 (PD_D2)
+[NesterovSolve] Iter:  480 overflow: 0.420 HPWL: 424557 (PD_D1)
+[NesterovSolve] Iter:  480 overflow: 0.865 HPWL: 424557 (PD_D2)
+[NesterovSolve] Iter:  490 overflow: 0.412 HPWL: 423705 (PD_D1)
+[NesterovSolve] Iter:  490 overflow: 0.847 HPWL: 423705 (PD_D2)
+[NesterovSolve] Iter:  500 overflow: 0.403 HPWL: 421774 (PD_D1)
+[NesterovSolve] Iter:  500 overflow: 0.830 HPWL: 421774 (PD_D2)
+[NesterovSolve] Iter:  510 overflow: 0.395 HPWL: 421481 (PD_D1)
+[NesterovSolve] Iter:  510 overflow: 0.814 HPWL: 421481 (PD_D2)
+[NesterovSolve] Iter:  520 overflow: 0.388 HPWL: 423114 (PD_D1)
+[NesterovSolve] Iter:  520 overflow: 0.798 HPWL: 423114 (PD_D2)
+[NesterovSolve] Iter:  530 overflow: 0.380 HPWL: 417634 (PD_D1)
+[NesterovSolve] Iter:  530 overflow: 0.783 HPWL: 417634 (PD_D2)
+[NesterovSolve] Iter:  540 overflow: 0.373 HPWL: 417554 (PD_D1)
+[NesterovSolve] Iter:  540 overflow: 0.769 HPWL: 417554 (PD_D2)
+[NesterovSolve] Iter:  550 overflow: 0.367 HPWL: 417645 (PD_D1)
+[NesterovSolve] Iter:  550 overflow: 0.755 HPWL: 417645 (PD_D2)
+[NesterovSolve] Iter:  560 overflow: 0.360 HPWL: 417461 (PD_D1)
+[NesterovSolve] Iter:  560 overflow: 0.741 HPWL: 417461 (PD_D2)
+[NesterovSolve] Iter:  570 overflow: 0.354 HPWL: 417725 (PD_D1)
+[NesterovSolve] Iter:  570 overflow: 0.728 HPWL: 417725 (PD_D2)
+[NesterovSolve] Iter:  580 overflow: 0.348 HPWL: 418865 (PD_D1)
+[NesterovSolve] Iter:  580 overflow: 0.716 HPWL: 418865 (PD_D2)
+[NesterovSolve] Iter:  590 overflow: 0.342 HPWL: 416360 (PD_D1)
+[NesterovSolve] Iter:  590 overflow: 0.704 HPWL: 416360 (PD_D2)
+[NesterovSolve] Iter:  600 overflow: 0.336 HPWL: 416351 (PD_D1)
+[NesterovSolve] Iter:  600 overflow: 0.692 HPWL: 416351 (PD_D2)
+[NesterovSolve] Iter:  610 overflow: 0.330 HPWL: 416452 (PD_D1)
+[NesterovSolve] Iter:  610 overflow: 0.680 HPWL: 416452 (PD_D2)
+[NesterovSolve] Iter:  620 overflow: 0.325 HPWL: 416725 (PD_D1)
+[NesterovSolve] Iter:  620 overflow: 0.669 HPWL: 416725 (PD_D2)
+[NesterovSolve] Iter:  630 overflow: 0.320 HPWL: 417094 (PD_D1)
+[NesterovSolve] Iter:  630 overflow: 0.659 HPWL: 417094 (PD_D2)
+[NesterovSolve] Iter:  640 overflow: 0.315 HPWL: 417133 (PD_D1)
+[NesterovSolve] Iter:  640 overflow: 0.648 HPWL: 417133 (PD_D2)
+[NesterovSolve] Iter:  650 overflow: 0.310 HPWL: 417814 (PD_D1)
+[NesterovSolve] Iter:  650 overflow: 0.638 HPWL: 417814 (PD_D2)
+[NesterovSolve] Iter:  660 overflow: 0.305 HPWL: 418255 (PD_D1)
+[NesterovSolve] Iter:  660 overflow: 0.629 HPWL: 418255 (PD_D2)
+[NesterovSolve] Iter:  670 overflow: 0.301 HPWL: 419078 (PD_D1)
+[NesterovSolve] Iter:  670 overflow: 0.619 HPWL: 419078 (PD_D2)
+[NesterovSolve] Iter:  680 overflow: 0.296 HPWL: 420652 (PD_D1)
+[NesterovSolve] Iter:  680 overflow: 0.610 HPWL: 420652 (PD_D2)
+[NesterovSolve] Iter:  690 overflow: 0.292 HPWL: 421316 (PD_D1)
+[NesterovSolve] Iter:  690 overflow: 0.601 HPWL: 421316 (PD_D2)
+[NesterovSolve] Iter:  700 overflow: 0.288 HPWL: 427503 (PD_D1)
+[NesterovSolve] Iter:  700 overflow: 0.593 HPWL: 427503 (PD_D2)
+[NesterovSolve] Iter:  710 overflow: 0.284 HPWL: 431937 (PD_D1)
+[NesterovSolve] Iter:  710 overflow: 0.584 HPWL: 431937 (PD_D2)
+[NesterovSolve] Iter:  720 overflow: 0.280 HPWL: 435935 (PD_D1)
+[NesterovSolve] Iter:  720 overflow: 0.576 HPWL: 435935 (PD_D2)
+[NesterovSolve] Iter:  730 overflow: 0.276 HPWL: 441967 (PD_D1)
+[NesterovSolve] Iter:  730 overflow: 0.568 HPWL: 441967 (PD_D2)
+[NesterovSolve] Iter:  740 overflow: 0.272 HPWL: 452689 (PD_D1)
+[NesterovSolve] Iter:  740 overflow: 0.561 HPWL: 452689 (PD_D2)
+[NesterovSolve] Iter:  750 overflow: 0.269 HPWL: 464936 (PD_D1)
+[NesterovSolve] Iter:  750 overflow: 0.553 HPWL: 464936 (PD_D2)
+[NesterovSolve] Iter:  760 overflow: 0.265 HPWL: 492164 (PD_D1)
+[NesterovSolve] Iter:  760 overflow: 0.546 HPWL: 492164 (PD_D2)
+[NesterovSolve] Iter:  770 overflow: 0.262 HPWL: 573554 (PD_D1)
+[NesterovSolve] Iter:  770 overflow: 0.446 HPWL: 573554 (PD_D2)
+[NesterovSolve] Iter:  780 overflow: 0.258 HPWL: 602792 (PD_D1)
+[NesterovSolve] Iter:  780 overflow: 0.361 HPWL: 602792 (PD_D2)
+[NesterovSolve] Iter:  790 overflow: 0.255 HPWL: 641170 (PD_D1)
+[NesterovSolve] Iter:  790 overflow: 0.345 HPWL: 641170 (PD_D2)
+[NesterovSolve] Iter:  800 overflow: 0.252 HPWL: 694661 (PD_D1)
+[NesterovSolve] Iter:  800 overflow: 0.169 HPWL: 694661 (PD_D2)
+[NesterovSolve] Iter:  810 overflow: 0.249 HPWL: 682614 (PD_D1)
+[NesterovSolve] Iter:  810 overflow: 0.172 HPWL: 682614 (PD_D2)
+[NesterovSolve] Iter:  820 overflow: 0.246 HPWL: 697716 (PD_D1)
+[NesterovSolve] Iter:  820 overflow: 0.174 HPWL: 697716 (PD_D2)
+[NesterovSolve] Iter:  830 overflow: 0.243 HPWL: 722791 (PD_D1)
+[NesterovSolve] Iter:  830 overflow: 0.176 HPWL: 722791 (PD_D2)
+[NesterovSolve] Iter:  840 overflow: 0.240 HPWL: 769720 (PD_D1)
+[NesterovSolve] Iter:  840 overflow: 0.099 HPWL: 769720 (PD_D2)
+[NesterovSolve] PowerDomain PD_D2 finished with Overflow: 0.099244
+[NesterovSolve] Iter:  850 overflow: 0.237 HPWL: 792572 (PD_D1)
+[NesterovSolve] Iter:  860 overflow: 0.152 HPWL: 852570 (PD_D1)
+[NesterovSolve] Iter:  870 overflow: 0.152 HPWL: 868177 (PD_D1)
+[NesterovSolve] Iter:  880 overflow: 0.148 HPWL: 880757 (PD_D1)
+[NesterovSolve] Iter:  890 overflow: 0.146 HPWL: 917942 (PD_D1)
+[NesterovSolve] Iter:  900 overflow: 0.142 HPWL: 986907 (PD_D1)
+[NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.077729
 Placement Analysis
 ---------------------------------
-total displacement         81.5 u
-average displacement        3.3 u
-max displacement           45.4 u
-original HPWL             907.2 u
-legalized HPWL            981.7 u
-delta HPWL                    8 %
+total displacement         70.7 u
+average displacement        3.2 u
+max displacement           33.8 u
+original HPWL             996.5 u
+legalized HPWL           1062.3 u
+delta HPWL                    7 %
 
 Detailed placement improvement.
 Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 25 cells, 7 terminals, 29 edges, 71 pins, and 0 blockages.
-[INFO DPO-0109] Network stats: inst 32, edges 29, pins 71
+[INFO DPO-0100] Creating network with 22 cells, 7 terminals, 26 edges, 65 pins, and 0 blockages.
+[INFO DPO-0109] Network stats: inst 29, edges 26, pins 65
 [INFO DPO-0110] Number of regions is 3
 [INFO DPO-0401] Setting random seed to 1.
 [INFO DPO-0402] Setting maximum displacement 0 0 to 216200 216200 units.
 [INFO DPO-0320] Collected 31 fixed cells.
-[INFO DPO-0318] Collected 25 single height cells.
+[INFO DPO-0318] Collected 22 single height cells.
 [INFO DPO-0321] Collected 0 wide cells.
 [INFO DPO-0322] Image (2300, 2720) - (110400, 108800)
-[INFO DPO-0310] Assigned 25 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
+[INFO DPO-0310] Assigned 22 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
@@ -321,42 +297,40 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPO-0303] Running algorithm for independent set matching.
 [INFO DPO-0300] Set matching objective is wirelength.
-[INFO DPO-0301] Pass   1 of matching; objective is 9.826675e+05.
-[INFO DPO-0302] End of matching; objective is 9.826675e+05, improvement is 0.00 percent.
+[INFO DPO-0301] Pass   1 of matching; objective is 1.063798e+06.
+[INFO DPO-0301] Pass   2 of matching; objective is 1.032382e+06.
+[INFO DPO-0302] End of matching; objective is 1.032382e+06, improvement is 2.95 percent.
 [INFO DPO-0303] Running algorithm for global swaps.
-[INFO DPO-0306] Pass   1 of global swaps; hpwl is 9.438200e+05.
-[INFO DPO-0306] Pass   2 of global swaps; hpwl is 9.381225e+05.
-[INFO DPO-0307] End of global swaps; objective is 9.381225e+05, improvement is 4.53 percent.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 9.567825e+05.
+[INFO DPO-0306] Pass   2 of global swaps; hpwl is 9.465875e+05.
+[INFO DPO-0306] Pass   3 of global swaps; hpwl is 9.465875e+05.
+[INFO DPO-0307] End of global swaps; objective is 9.465875e+05, improvement is 8.31 percent.
 [INFO DPO-0303] Running algorithm for vertical swaps.
-[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 9.381225e+05.
-[INFO DPO-0309] End of vertical swaps; objective is 9.381225e+05, improvement is 0.00 percent.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 9.354800e+05.
+[INFO DPO-0308] Pass   2 of vertical swaps; hpwl is 9.274050e+05.
+[INFO DPO-0309] End of vertical swaps; objective is 9.274050e+05, improvement is 2.03 percent.
 [INFO DPO-0303] Running algorithm for reordering.
-[INFO DPO-0304] Pass   1 of reordering; objective is 9.381225e+05.
-[INFO DPO-0305] End of reordering; objective is 9.381225e+05, improvement is 0.00 percent.
+[INFO DPO-0304] Pass   1 of reordering; objective is 9.264850e+05.
+[INFO DPO-0305] End of reordering; objective is 9.264850e+05, improvement is 0.10 percent.
 [INFO DPO-0303] Running algorithm for random improvement.
 [INFO DPO-0324] Random improver is using displacement generator.
 [INFO DPO-0325] Random improver is using hpwl objective.
 [INFO DPO-0326] Random improver cost string is (a).
-[INFO DPO-0332] End of pass, Generator displacement called 500 times.
-[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 42, moves   442 since last reset.
-[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.381225e+05, Scratch cost 9.280175e+05, Incremental cost 9.280575e+05, Mismatch? Y
-[INFO DPO-0338] End of pass, Total cost is 9.280175e+05.
-[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 1.07 percent.
-[INFO DPO-0332] End of pass, Generator displacement called 500 times.
-[INFO DPO-0335] Generator displacement, Cumulative attempts 1000, swaps 84, moves   887 since last reset.
-[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.280175e+05, Scratch cost 9.148850e+05, Incremental cost 9.151650e+05, Mismatch? Y
-[INFO DPO-0338] End of pass, Total cost is 9.148850e+05.
-[INFO DPO-0327] Pass   2 of random improver; improvement in cost is 1.38 percent.
-[INFO DPO-0332] End of pass, Generator displacement called 500 times.
-[INFO DPO-0335] Generator displacement, Cumulative attempts 1500, swaps 128, moves  1325 since last reset.
-[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.148850e+05, Scratch cost 9.144850e+05, Incremental cost 9.144850e+05, Mismatch? N
-[INFO DPO-0338] End of pass, Total cost is 9.144850e+05.
-[INFO DPO-0327] Pass   3 of random improver; improvement in cost is 0.04 percent.
-[INFO DPO-0328] End of random improver; improvement is 2.519660 percent.
+[INFO DPO-0332] End of pass, Generator displacement called 440 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 440, swaps 30, moves   396 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.264850e+05, Scratch cost 9.001800e+05, Incremental cost 9.001800e+05, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 9.001800e+05.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 2.84 percent.
+[INFO DPO-0332] End of pass, Generator displacement called 440 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 880, swaps 61, moves   792 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 9.001800e+05, Scratch cost 9.001800e+05, Incremental cost 9.001800e+05, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 9.001800e+05.
+[INFO DPO-0327] Pass   2 of random improver; improvement in cost is 0.00 percent.
+[INFO DPO-0328] End of random improver; improvement is 2.839226 percent.
 [INFO DPO-0380] Cell flipping.
 [INFO DPO-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPO-0383] Performed 4 cell flips.
-[INFO DPO-0384] End of flipping; objective is 9.098450e+05, improvement is 0.51 percent.
+[INFO DPO-0383] Performed 2 cell flips.
+[INFO DPO-0384] End of flipping; objective is 8.963400e+05, improvement is 0.43 percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
@@ -364,8 +338,8 @@ Importing netlist into detailed improver.
 [INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL              981.7 u
-Final HPWL                 908.8 u
-Delta HPWL                  -7.4 %
+Original HPWL             1062.3 u
+Final HPWL                 894.7 u
+Delta HPWL                 -15.8 %
 
 No differences found.

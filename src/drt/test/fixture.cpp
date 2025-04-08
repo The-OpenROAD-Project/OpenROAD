@@ -28,7 +28,9 @@
 
 #include "fixture.h"
 
+#include <cstddef>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "global.h"
