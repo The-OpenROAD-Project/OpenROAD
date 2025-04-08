@@ -3,7 +3,7 @@ source "helpers.tcl"
 read_liberty ihp-sg13g2_data/sg13g2_stdcell_typ_1p20V_25C.lib
 read_lef ihp-sg13g2_data/sg13g2_tech.lef
 read_lef ihp-sg13g2_data/sg13g2_stdcell.lef
-read_def check_max_fanout1.def
+read_def check_buffers.def
 
 source ihp-sg13g2_data/setRC.tcl
 
