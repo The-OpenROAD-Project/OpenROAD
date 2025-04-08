@@ -840,6 +840,14 @@ void SimulatedAnnealingCore<T>::useBestValidResult()
         macro.setShapeF(valid_result_width, valid_result_height);
       } else {
         macro.setWidth(valid_result_width);
+        if (valid_result_width != macro.getWidth()) {
+          logger_->critical(
+              utl::MPL,
+              54,
+              "Couldn't set width to input value {}. Set to {} instead.",
+              valid_result_width,
+              macro.getWidth());
+        }
       }
     }
   }
