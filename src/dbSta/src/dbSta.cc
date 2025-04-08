@@ -35,13 +35,13 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/StaMain.hh"
 #include "sta/Units.hh"
-#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 ////////////////////////////////////////////////////////////////
@@ -155,14 +155,14 @@ class dbStaHistogram
 {
  public:
   explicit dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger)
-      :sta_(sta), network_(network), logger_(logger) {};
+      : sta_(sta), network_(network), logger_(logger) {};
 
   // Loads data_ with the slack value for each constrained endpoint.
   void loadSlackData(const MinMax* min_max);
   // Loads data_ with the critical path's length for all endpoints.
   void loadCriticalPathLengthData(bool exclude_buffers, bool exclude_inverters);
   // Populates bins_ using the current data_, which must be loaded first.
-  // `integer_bins` will enforce an integer bin_width_.
+  // `integer_bins` will enforce an integer bin_width_ (for discrete metrics).
   void populateHistogramBins(int num_bins, bool integer_bins);
   // Prints the histogram to the log. Width and precision are used to control
   // the number of digits when displaying each bin's range.
@@ -170,8 +170,8 @@ class dbStaHistogram
 
  private:
   std::vector<float> data_;
-  // Bins are defined in bins_ as equally sized windows of size bin_width_
-  // starting with bin 0 using smallest value min_val_.
+  // Bins are defined in bins_ as equally sized windows of width bin_width_
+  // starting with smallest value min_val_ at the start of bin 0.
   std::vector<int> bins_;
   float min_val_ = 0.0;
   float bin_width_ = 0.0;
@@ -712,20 +712,18 @@ void dbStaHistogram::loadCriticalPathLengthData(bool exclude_buffers,
     dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
     while (!path.isNull()) {
       Pin* pin = path.vertex(sta_)->pin();
-      Instance* sta_inst =
-          sta_->cmdNetwork()->instance(pin);
+      Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
       dbInst* inst = network_->staToDb(sta_inst);
       if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
         prev_inst = inst;
         LibertyCell* lib_cell = network_->libertyCell(inst);
-        if ((!exclude_buffers || !lib_cell->isBuffer()) &&
-            (!exclude_inverters || !lib_cell->isInverter())) {
+        if ((!exclude_buffers || !lib_cell->isBuffer())
+            && (!exclude_inverters || !lib_cell->isInverter())) {
           path_length++;
         }
       }
       path.path()->prevPath(sta_, path);
     }
-    std::cerr << "path_length " << path_length << std::endl;
     data_.push_back(path_length);
   }
 }
@@ -781,10 +779,16 @@ void dbStaHistogram::reportHistogram(int width, int precision) const
       bar_length = 1;  // Better readability when non-zero bins have a bar.
     }
     logger_->report("[{:>{}.{}f}, {:>{}.{}f}{}: {} ({})",
-                    bin_start, width, precision, bin_end, width, precision,
+                    bin_start,
+                    width,
+                    precision,
+                    bin_end,
+                    width,
+                    precision,
                     // The final bin is also closed from the right.
                     bin == num_bins - 1 ? "]" : ")",
-                    std::string(bar_length, '*'), bins_[bin]);
+                    std::string(bar_length, '*'),
+                    bins_[bin]);
   }
 }
 
@@ -796,7 +800,8 @@ void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
   histogram.reportHistogram(/*width=*/6, /*precision=*/3);
 }
 
-void dbSta::reportCplHistogram(int num_bins, bool exclude_buffers,
+void dbSta::reportCplHistogram(int num_bins,
+                               bool exclude_buffers,
                                bool exclude_inverters) const
 {
   dbStaHistogram histogram(sta_, db_network_, logger_);
