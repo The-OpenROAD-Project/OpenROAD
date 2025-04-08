@@ -1922,6 +1922,7 @@ void IOPlacer::getConstraintsFromDB()
 
 void IOPlacer::initConstraints(bool annealing)
 {
+  constraints_.clear();
   getConstraintsFromDB();
   int constraint_idx = 0;
   int constraints_no_slots = 0;
