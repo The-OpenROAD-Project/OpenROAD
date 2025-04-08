@@ -5,7 +5,7 @@ read_def "partial_tracks.def"
 
 set def_file [make_result_file partial_tracks.def]
 
-place_pin -pin_name "clk" -layer metal2 -location "4 4" -force_to_die_boundary -verbose
+place_pin -pin_name "clk" -layer metal2 -location "4 4" -force_to_die_boundary
 
 write_def $def_file
 

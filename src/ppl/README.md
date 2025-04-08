@@ -238,7 +238,6 @@ place_pin
     [-pin_size {width height}]
     [-force_to_die_boundary]
     [-placed_status]
-    [-verbose]
 ```
 
 #### Options
@@ -251,7 +250,6 @@ place_pin
 | `-pin_size` | The width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
 | `-placed_status` | When this flag is enabled, the pin will have PLACED as its placement status, instead of the FIXED status. |
-| `-verbose` | When this flag is enabled, the command will report the final pin placement if it differs from the given position. |
 
 ### Place all Pins
 
