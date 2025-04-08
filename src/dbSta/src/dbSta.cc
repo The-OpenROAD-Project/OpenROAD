@@ -158,11 +158,10 @@ class dbStaHistogram
 
   // Loads data_ with the slack value for each constrained endpoint.
   void loadSlackData(const MinMax* min_max);
-  // Loads data_ with the critical path's length for all endpoints.
-  void loadCriticalPathLengthData(bool exclude_buffers, bool exclude_inverters);
+  // Loads data_ with the logic depth for each constrained endpoint.
+  void loadLogicDepthData(bool exclude_buffers, bool exclude_inverters);
   // Populates bins_ using the current data_, which must be loaded first.
-  // `integer_bins` will enforce an integer bin_width_ (for discrete metrics).
-  void populateHistogramBins(int num_bins, bool integer_bins);
+  void populateHistogramBins(int num_bins);
   // Prints the histogram to the log. Width and precision are used to control
   // the number of digits when displaying each bin's range.
   void reportHistogram(int width, int precision) const;
@@ -174,6 +173,7 @@ class dbStaHistogram
   std::vector<int> bins_;
   float min_val_ = 0.0;
   float bin_width_ = 0.0;
+  bool integer_bins_ = false;  // Enforce int bin width (for discrete metrics).
 
   Sta* sta_;
   dbNetwork* network_;
@@ -705,9 +705,10 @@ void dbStaHistogram::loadSlackData(const MinMax* min_max)
       data_.push_back(time_unit->staToUser(slack));
     }
   }
+  integer_bins_ = false;
 }
 
-void dbStaHistogram::loadCriticalPathLengthData(bool exclude_buffers,
+void dbStaHistogram::loadLogicDepthData(bool exclude_buffers,
                                                 bool exclude_inverters)
 {
   data_.clear();
@@ -723,7 +724,7 @@ void dbStaHistogram::loadCriticalPathLengthData(bool exclude_buffers,
       if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
         prev_inst = inst;
         LibertyCell* lib_cell = network_->libertyCell(inst);
-        if ((!exclude_buffers || !lib_cell->isBuffer())
+        if (lib_cell && (!exclude_buffers || !lib_cell->isBuffer())
             && (!exclude_inverters || !lib_cell->isInverter())) {
           path_length++;
         }
@@ -732,16 +733,17 @@ void dbStaHistogram::loadCriticalPathLengthData(bool exclude_buffers,
     }
     data_.push_back(path_length);
   }
+  integer_bins_ = true;
 }
 
-void dbStaHistogram::populateHistogramBins(int num_bins, bool integer_bins)
+void dbStaHistogram::populateHistogramBins(int num_bins)
 {
   if (num_bins <= 0) {
-    logger_->warn(STA, 70, "The number of bins must be positive.");
+    logger_->error(STA, 70, "The number of bins must be positive.");
     return;
   }
   if (data_.empty()) {
-    logger_->warn(STA, 71, "No data for the histogram has been loaded.");
+    logger_->error(STA, 71, "No data for the histogram has been loaded.");
     return;
   }
   std::sort(data_.begin(), data_.end());
@@ -754,7 +756,7 @@ void dbStaHistogram::populateHistogramBins(int num_bins, bool integer_bins)
     bins_[0] = data_.size();
     return;
   }
-  if (integer_bins) {
+  if (integer_bins_) {
     bin_width_ = std::ceil(bin_width_);
   }
   for (const float& val : data_) {
@@ -770,7 +772,7 @@ void dbStaHistogram::reportHistogram(int width, int precision) const
 {
   constexpr int max_bin_width = 50;  // Max number of chars to print for a bin.
   if (data_.empty()) {
-    logger_->warn(STA, 72, "No data for the histogram has been loaded.");
+    logger_->error(STA, 72, "No data for the histogram has been loaded.");
     return;
   }
   const int num_bins = bins_.size();
@@ -803,17 +805,17 @@ void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
 {
   dbStaHistogram histogram(sta_, db_network_, logger_);
   histogram.loadSlackData(min_max);
-  histogram.populateHistogramBins(num_bins, /*integer_bins=*/false);
+  histogram.populateHistogramBins(num_bins);
   histogram.reportHistogram(/*width=*/6, /*precision=*/3);
 }
 
-void dbSta::reportCplHistogram(int num_bins,
+void dbSta::reportLogicDepthHistogram(int num_bins,
                                bool exclude_buffers,
                                bool exclude_inverters) const
 {
   dbStaHistogram histogram(sta_, db_network_, logger_);
-  histogram.loadCriticalPathLengthData(exclude_buffers, exclude_inverters);
-  histogram.populateHistogramBins(num_bins, /*integer_bins=*/true);
+  histogram.loadLogicDepthData(exclude_buffers, exclude_inverters);
+  histogram.populateHistogramBins(num_bins);
   histogram.reportHistogram(/*width=*/3, /*precision=*/0);
 }
 

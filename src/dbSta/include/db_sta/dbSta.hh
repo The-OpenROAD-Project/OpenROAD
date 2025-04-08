@@ -168,8 +168,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
 
-  // Create a critical path length histogram report.
-  void reportCplHistogram(int num_bins,
+  // Create a logic depth histogram report.
+  void reportLogicDepthHistogram(int num_bins,
                           bool exclude_buffers,
                           bool exclude_inverters) const;
 
