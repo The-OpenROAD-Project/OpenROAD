@@ -1628,16 +1628,6 @@ void dbBlock::addBTermConstraintByDirection(dbIoType direction,
 }
 
 void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
-                                    int llx,
-                                    int lly,
-                                    int urx,
-                                    int ury)
-{
-  Rect region(llx, lly, urx, ury);
-  addBTermsToConstraint(bterms, region);
-}
-
-void dbBlock::addBTermsToConstraint(const std::vector<dbBTerm*>& bterms,
                                     const Rect& constraint_region)
 {
   for (dbBTerm* bterm : bterms) {

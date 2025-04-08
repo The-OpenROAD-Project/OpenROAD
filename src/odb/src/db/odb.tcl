@@ -883,9 +883,12 @@ proc add_pins_to_top_layer { names llx lly urx ury } {
       Pin placement grid on top layer not created."
   }
 
+  set region [odb::Rect]
+  $region init $llx $lly $urx $ury
+
   set pin_list [ppl::parse_pin_names "set_io_pin_constraint" $names]
   
-  $block addBTermsToConstraint $pin_list $llx $lly $urx $ury
+  $block addBTermsToConstraint $pin_list $region
 }
 
 proc add_pin_group {pin_list order} {
