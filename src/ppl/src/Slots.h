@@ -41,6 +41,11 @@ struct IntervalHash
   std::size_t operator()(const Interval& interval) const;
 };
 
+struct RectHash
+{
+  std::size_t operator()(const Rect& rect) const;
+};
+
 struct TopLayerGrid
 {
   int layer = -1;
