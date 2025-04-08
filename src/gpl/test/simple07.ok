@@ -11,7 +11,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
-[INFO GPL-0006] Total GPL instances:                32
+[INFO GPL-0006] Number of instances:                32
 [INFO GPL-0007] Movable instances:                   1
 [INFO GPL-0008] Fixed instances:                    31
 [INFO GPL-0009] Dummy instances:                     0
@@ -31,17 +31,18 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 92385
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 92385
 [INFO GPL-0032] Uniform density:                0.0058
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.0064
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.0064
 [INFO GPL-0023] Placement target density:       0.7500
 [INFO GPL-0024] Movable insts average area:      3.754 um^2
 [INFO GPL-0025] Ideal bin area:                  5.005 um^2
 [INFO GPL-0026] Ideal bin count:                   150
 [INFO GPL-0027] Total bin area:                750.720 um^2
-[INFO GPL-0028] Bin count (X, Y):           8 *      8
+[INFO GPL-0028] Bin count (X, Y):           8 ,      8
 [INFO GPL-0029] Bin size (W * H):       2.875 *  4.080 um
 [INFO GPL-0030] Number of bins:                     64
 [NesterovSolve] HPWL: Half-Perimeter Wirelength
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.0000  8.458500e+04     +0.00%     1.04e-16  
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.0000 |  8.458500e+04 |   +0.00% |  1.04e-16 |      
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.

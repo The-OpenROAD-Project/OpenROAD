@@ -6,7 +6,7 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0006] Total GPL instances:               294
+[INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
@@ -21,23 +21,23 @@
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Uniform density:                0.5973
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.6637
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.6637
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
 [INFO GPL-0026] Ideal bin count:                   344
 [INFO GPL-0027] Total bin area:                953.876 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 *     16
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
 [NesterovSolve] HPWL: Half-Perimeter Wirelength
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.9427  3.779352e+06     +0.00%     1.15e-07  
-[NesterovSolve]   10    0.2487  9.105949e+06   +140.94%     1.75e-07  
-[NesterovSolve]   20    0.1750  6.547448e+06    -28.10%     2.58e-07  
-[NesterovSolve]   30    0.1434  6.019893e+06     -8.06%     3.80e-07  
-[NesterovSolve]   40    0.1361  5.823323e+06     -3.27%     5.60e-07  
-[NesterovSolve]   50    0.1057  5.780172e+06     -0.74%     8.24e-07  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.9427 |  3.779352e+06 |   +0.00% |  1.15e-07 |      
+       10 |   0.2487 |  9.105949e+06 | +140.94% |  1.75e-07 |      
+       20 |   0.1750 |  6.547448e+06 |  -28.10% |  2.58e-07 |      
+       30 |   0.1434 |  6.019893e+06 |   -8.06% |  3.80e-07 |      
+       40 |   0.1361 |  5.823323e+06 |   -3.27% |  5.60e-07 |      
+       50 |   0.1057 |  5.780172e+06 |   -0.74% |  8.24e-07 |      
 [NesterovSolve] Finished with Overflow: 0.099589
 

@@ -7,7 +7,7 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  1.900  1.400 ) (  7.980  7.000 ) um
-[INFO GPL-0006] Total GPL instances:                 1
+[INFO GPL-0006] Number of instances:                 1
 [INFO GPL-0007] Movable instances:                   1
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
@@ -22,17 +22,18 @@
 [INFO GPL-0020] Standard cells area:             1.862 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0032] Uniform density:                0.0547
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.0608
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.0608
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.862 um^2
 [INFO GPL-0025] Ideal bin area:                  2.660 um^2
 [INFO GPL-0026] Ideal bin count:                    12
 [INFO GPL-0027] Total bin area:                 34.048 um^2
-[INFO GPL-0028] Bin count (X, Y):           2 *      2
+[INFO GPL-0028] Bin count (X, Y):           2 ,      2
 [INFO GPL-0029] Bin size (W * H):       3.040 *  2.800 um
 [INFO GPL-0030] Number of bins:                      4
 [NesterovSolve] HPWL: Half-Perimeter Wirelength
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.0000  2.887100e+04     +0.00%     3.97e-11  
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.0000 |  2.887100e+04 |   +0.00% |  3.97e-11 |      
 [NesterovSolve] Finished with Overflow: 0.000000
 No differences found.

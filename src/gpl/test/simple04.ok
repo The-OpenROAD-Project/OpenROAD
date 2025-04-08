@@ -16,7 +16,7 @@
        Replace will regard resp_msg[6] is placed in (0, 0)
 [WARNING GPL-0001] resp_msg[5] toplevel port is not placed!
        Replace will regard resp_msg[5] is placed in (0, 0)
-[INFO GPL-0006] Total GPL instances:               294
+[INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
 [INFO GPL-0009] Dummy instances:                     0
@@ -36,59 +36,53 @@
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 4844093
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000003 HPWL: 4852555
 [INFO GPL-0032] Uniform density:                0.5973
-[INFO GPL-0033] Density w/ 90% whitespace util: 0.6637
+[INFO GPL-0033] Density w/ 90% whitespace util:     0.6637
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.769 um^2
 [INFO GPL-0026] Ideal bin count:                   344
 [INFO GPL-0027] Total bin area:                953.876 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 *     16
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
 [NesterovSolve] HPWL: Half-Perimeter Wirelength
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]    1    0.8474  3.866073e+06     +0.00%     7.13e-14  
-[NesterovSolve]   10    0.7418  4.280723e+06    +10.73%     1.11e-13  
-[NesterovSolve]   20    0.7414  4.272441e+06     -0.19%     1.80e-13  
-[NesterovSolve]   30    0.7426  4.272498e+06     +0.00%     2.93e-13  
-[NesterovSolve]   40    0.7421  4.273164e+06     +0.02%     4.78e-13  
-[NesterovSolve]   50    0.7421  4.272580e+06     -0.01%     7.78e-13  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]   60    0.7421  4.273021e+06     +0.01%     1.27e-12  
-[NesterovSolve]   70    0.7420  4.273293e+06     +0.01%     2.06e-12  
-[NesterovSolve]   80    0.7419  4.273727e+06     +0.01%     3.36e-12  
-[NesterovSolve]   90    0.7417  4.274278e+06     +0.01%     5.48e-12  
-[NesterovSolve]  100    0.7413  4.275364e+06     +0.03%     8.92e-12  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  110    0.7408  4.277149e+06     +0.04%     1.45e-11  
-[NesterovSolve]  120    0.7400  4.280020e+06     +0.07%     2.37e-11  
-[NesterovSolve]  130    0.7388  4.284556e+06     +0.11%     3.86e-11  
-[NesterovSolve]  140    0.7364  4.291737e+06     +0.17%     6.28e-11  
-[NesterovSolve]  150    0.7321  4.302504e+06     +0.25%     1.02e-10  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  160    0.7257  4.318685e+06     +0.38%     1.67e-10  
-[NesterovSolve]  170    0.7145  4.342173e+06     +0.54%     2.72e-10  
-[NesterovSolve]  180    0.7027  4.377945e+06     +0.82%     4.42e-10  
-[NesterovSolve]  190    0.6860  4.427662e+06     +1.14%     7.20e-10  
-[NesterovSolve]  200    0.6643  4.488178e+06     +1.37%     1.17e-09  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  210    0.6329  4.556995e+06     +1.53%     1.91e-09  
-[NesterovSolve]  220    0.5924  4.622981e+06     +1.45%     3.11e-09  
-[NesterovSolve]  230    0.5486  4.682738e+06     +1.29%     5.07e-09  
-[NesterovSolve]  240    0.5002  4.721241e+06     +0.82%     8.26e-09  
-[NesterovSolve]  250    0.4453  4.731161e+06     +0.21%     1.35e-08  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  260    0.3941  4.731513e+06     +0.01%     2.19e-08  
-[NesterovSolve]  270    0.3442  4.761073e+06     +0.62%     3.57e-08  
-[NesterovSolve]  280    0.3101  4.776186e+06     +0.32%     5.26e-08  
-[NesterovSolve]  290    0.2692  4.782250e+06     +0.13%     7.75e-08  
-[NesterovSolve]  300    0.2451  4.840577e+06     +1.22%     1.14e-07  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
-[NesterovSolve]  310    0.2100  4.881848e+06     +0.85%     1.68e-07  
-[NesterovSolve]  320    0.1763  4.913438e+06     +0.65%     2.48e-07  
-[NesterovSolve]  330    0.1504  4.935464e+06     +0.45%     3.65e-07  
-[NesterovSolve]  340    0.1283  4.970775e+06     +0.72%     5.38e-07  
-[NesterovSolve]  350    0.1087  4.993198e+06     +0.45%     7.92e-07  
-[NesterovSolve] Iter  Overflow          HPWL    HPWL(%)      Penalty  Group
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.8474 |  3.866073e+06 |   +0.00% |  7.13e-14 |      
+       10 |   0.7418 |  4.280723e+06 |  +10.73% |  1.11e-13 |      
+       20 |   0.7414 |  4.272441e+06 |   -0.19% |  1.80e-13 |      
+       30 |   0.7426 |  4.272498e+06 |   +0.00% |  2.93e-13 |      
+       40 |   0.7421 |  4.273164e+06 |   +0.02% |  4.78e-13 |      
+       50 |   0.7421 |  4.272580e+06 |   -0.01% |  7.78e-13 |      
+       60 |   0.7421 |  4.273021e+06 |   +0.01% |  1.27e-12 |      
+       70 |   0.7420 |  4.273293e+06 |   +0.01% |  2.06e-12 |      
+       80 |   0.7419 |  4.273727e+06 |   +0.01% |  3.36e-12 |      
+       90 |   0.7417 |  4.274278e+06 |   +0.01% |  5.48e-12 |      
+      100 |   0.7413 |  4.275364e+06 |   +0.03% |  8.92e-12 |      
+      110 |   0.7408 |  4.277149e+06 |   +0.04% |  1.45e-11 |      
+      120 |   0.7400 |  4.280020e+06 |   +0.07% |  2.37e-11 |      
+      130 |   0.7388 |  4.284556e+06 |   +0.11% |  3.86e-11 |      
+      140 |   0.7364 |  4.291737e+06 |   +0.17% |  6.28e-11 |      
+      150 |   0.7321 |  4.302504e+06 |   +0.25% |  1.02e-10 |      
+      160 |   0.7257 |  4.318685e+06 |   +0.38% |  1.67e-10 |      
+      170 |   0.7145 |  4.342173e+06 |   +0.54% |  2.72e-10 |      
+      180 |   0.7027 |  4.377945e+06 |   +0.82% |  4.42e-10 |      
+      190 |   0.6860 |  4.427662e+06 |   +1.14% |  7.20e-10 |      
+      200 |   0.6643 |  4.488178e+06 |   +1.37% |  1.17e-09 |      
+      210 |   0.6329 |  4.556995e+06 |   +1.53% |  1.91e-09 |      
+      220 |   0.5924 |  4.622981e+06 |   +1.45% |  3.11e-09 |      
+      230 |   0.5486 |  4.682738e+06 |   +1.29% |  5.07e-09 |      
+      240 |   0.5002 |  4.721241e+06 |   +0.82% |  8.26e-09 |      
+      250 |   0.4453 |  4.731161e+06 |   +0.21% |  1.35e-08 |      
+      260 |   0.3941 |  4.731513e+06 |   +0.01% |  2.19e-08 |      
+      270 |   0.3442 |  4.761073e+06 |   +0.62% |  3.57e-08 |      
+      280 |   0.3101 |  4.776186e+06 |   +0.32% |  5.26e-08 |      
+      290 |   0.2692 |  4.782250e+06 |   +0.13% |  7.75e-08 |      
+      300 |   0.2451 |  4.840577e+06 |   +1.22% |  1.14e-07 |      
+      310 |   0.2100 |  4.881848e+06 |   +0.85% |  1.68e-07 |      
+      320 |   0.1763 |  4.913438e+06 |   +0.65% |  2.48e-07 |      
+      330 |   0.1504 |  4.935464e+06 |   +0.45% |  3.65e-07 |      
+      340 |   0.1283 |  4.970775e+06 |   +0.72% |  5.38e-07 |      
+      350 |   0.1087 |  4.993198e+06 |   +0.45% |  7.92e-07 |      
 [NesterovSolve] Finished with Overflow: 0.098583
 No differences found.
