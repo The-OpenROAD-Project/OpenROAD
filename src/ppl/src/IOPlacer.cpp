@@ -1904,15 +1904,15 @@ void IOPlacer::getConstraintsFromDB()
   for (const auto& [region, pins] : pins_per_rect) {
     std::string pin_names = getPinSetOrListString(pins);
     logger_->info(utl::PPL,
-      60,
-      "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
-      "{:.2f}u) at routing layer {}.",
-      pin_names,
-      getBlock()->dbuToMicrons(region.xMin()),
-      getBlock()->dbuToMicrons(region.yMin()),
-      getBlock()->dbuToMicrons(region.xMax()),
-      getBlock()->dbuToMicrons(region.yMax()),
-      getTopLayer()->getConstName());
+                  60,
+                  "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                  "{:.2f}u) at routing layer {}.",
+                  pin_names,
+                  getBlock()->dbuToMicrons(region.xMin()),
+                  getBlock()->dbuToMicrons(region.yMin()),
+                  getBlock()->dbuToMicrons(region.xMax()),
+                  getBlock()->dbuToMicrons(region.yMax()),
+                  getTopLayer()->getConstName());
     constraints_.emplace_back(pins, Direction::invalid, region);
   }
 }
