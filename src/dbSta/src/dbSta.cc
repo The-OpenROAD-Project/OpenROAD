@@ -691,7 +691,9 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 }
 
 dbStaHistogram::dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger)
-    : sta_(sta), network_(network), logger_(logger) {};
+    : sta_(sta), network_(network), logger_(logger)
+{
+}
 
 void dbStaHistogram::loadSlackData(const MinMax* min_max)
 {
