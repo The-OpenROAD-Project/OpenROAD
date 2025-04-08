@@ -749,7 +749,8 @@ void dbStaHistogram::populateHistogramBins(int num_bins, bool integer_bins)
   if (bin_width_ == 0) {  // Special case for no variation in the data.
     bins_[0] = data_.size();
     return;
-  } else if (integer_bins) {
+  }
+  if (integer_bins) {
     bin_width_ = std::ceil(bin_width_);
   }
   for (const float& val : data_) {
