@@ -1,8 +1,5 @@
-// Copyright 2019-2023 The Regents of the University of California, Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -15,17 +12,10 @@ class dbDatabase;
 class dbLib;
 class dbTech;
 
-}  // namespace odb
-
-namespace ord {
-
-class OpenRoad;
-
-// Observer interface
-class OpenRoadObserver
+class dbDatabaseObserver
 {
  public:
-  virtual ~OpenRoadObserver()
+  virtual ~dbDatabaseObserver()
   {
     if (unregister_observer_) {
       unregister_observer_();
@@ -37,7 +27,7 @@ class OpenRoadObserver
   virtual void postReadDef(odb::dbBlock* block) = 0;
   virtual void postReadDb(odb::dbDatabase* db) = 0;
 
-  void set_unregister_observer(std::function<void()> unregister_observer)
+  void setUnregisterObserver(std::function<void()> unregister_observer)
   {
     unregister_observer_ = std::move(unregister_observer);
   }
@@ -46,4 +36,4 @@ class OpenRoadObserver
   std::function<void()> unregister_observer_;
 };
 
-}  // namespace ord
+}  // namespace odb

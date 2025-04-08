@@ -1,40 +1,10 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "object.h"
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "utl/Logger.h"
@@ -105,12 +75,12 @@ void Metrics::addMetrics(const Metrics& metrics)
   macro_area_ += metrics.macro_area_;
 }
 
-const std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
+std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
 {
   return std::pair<unsigned int, unsigned int>(num_std_cell_, num_macro_);
 }
 
-const std::pair<float, float> Metrics::getAreaStats() const
+std::pair<float, float> Metrics::getAreaStats() const
 {
   return std::pair<float, float>(std_cell_area_, macro_area_);
 }
@@ -169,7 +139,7 @@ int Cluster::getId() const
   return id_;
 }
 
-const std::string Cluster::getName() const
+const std::string& Cluster::getName() const
 {
   return name_;
 }
@@ -185,7 +155,7 @@ void Cluster::setClusterType(const ClusterType& cluster_type)
   type_ = cluster_type;
 }
 
-const ClusterType Cluster::getClusterType() const
+ClusterType Cluster::getClusterType() const
 {
   return type_;
 }
@@ -220,17 +190,17 @@ void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
   hard_macros_ = hard_macros;
 }
 
-const std::vector<odb::dbModule*> Cluster::getDbModules() const
+std::vector<odb::dbModule*> Cluster::getDbModules() const
 {
   return db_modules_;
 }
 
-const std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
+std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
 {
   return leaf_std_cells_;
 }
 
-const std::vector<odb::dbInst*> Cluster::getLeafMacros() const
+std::vector<odb::dbInst*> Cluster::getLeafMacros() const
 {
   return leaf_macros_;
 }
@@ -382,7 +352,7 @@ void Cluster::setMetrics(const Metrics& metrics)
   metrics_ = metrics;
 }
 
-const Metrics Cluster::getMetrics() const
+const Metrics& Cluster::getMetrics() const
 {
   return metrics_;
 }
@@ -477,7 +447,7 @@ void Cluster::setY(float y)
   }
 }
 
-const std::pair<float, float> Cluster::getLocation() const
+std::pair<float, float> Cluster::getLocation() const
 {
   if (!soft_macro_) {
     return {0, 0};
@@ -595,7 +565,7 @@ void Cluster::addConnection(int cluster_id, float weight)
   }
 }
 
-const std::map<int, float> Cluster::getConnection() const
+std::map<int, float> Cluster::getConnection() const
 {
   return connection_map_;
 }
@@ -735,13 +705,13 @@ void Cluster::setMacroTilings(
   macro_tilings_ = tilings;
 }
 
-const std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
+std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
 {
   return macro_tilings_;
 }
 
 // Virtual Connections
-const std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
+std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
 {
   return virtual_connections_;
 }
@@ -865,7 +835,7 @@ void HardMacro::setY(float y)
   y_ = y;
 }
 
-const std::pair<float, float> HardMacro::getLocation() const
+std::pair<float, float> HardMacro::getLocation() const
 {
   return std::pair<float, float>(x_, y_);
 }
@@ -899,7 +869,7 @@ void HardMacro::setRealY(float y)
   y_ = y - halo_height_;
 }
 
-const std::pair<float, float> HardMacro::getRealLocation() const
+std::pair<float, float> HardMacro::getRealLocation() const
 {
   return std::pair<float, float>(x_ + halo_width_, y_ + halo_height_);
 }
@@ -949,12 +919,12 @@ odb::dbInst* HardMacro::getInst() const
   return inst_;
 }
 
-const std::string HardMacro::getName() const
+const std::string& HardMacro::getName() const
 {
   return name_;
 }
 
-const std::string HardMacro::getMasterName() const
+std::string HardMacro::getMasterName() const
 {
   if (inst_ == nullptr) {
     return name_;
@@ -1001,7 +971,7 @@ SoftMacro::SoftMacro(Cluster* cluster)
 }
 
 // name
-const std::string SoftMacro::getName() const
+const std::string& SoftMacro::getName() const
 {
   return name_;
 }

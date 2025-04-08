@@ -28,12 +28,12 @@
 [InitialPlace]  Iter: 5 CG residual: 0.00000012 HPWL: 19466
 Placement Analysis
 ---------------------------------
-total displacement       1207.1 u
-average displacement       17.0 u
-max displacement           28.0 u
+total displacement       1195.4 u
+average displacement       16.8 u
+max displacement           27.1 u
 original HPWL               2.4 u
-legalized HPWL             90.9 u
-delta HPWL                 3748 %
+legalized HPWL             90.0 u
+delta HPWL                 3711 %
 
 max fanout
 
@@ -45,15 +45,15 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       143
-    final |     +3.0% |       9 |       9 |             1 |         0
+    final |     +3.0% |       7 |      10 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0039] Resized 9 instances.
-[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
+[INFO RSZ-0039] Resized 7 instances.
+[INFO RSZ-0038] Inserted 10 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-fanout5/Z                                10     70    -60 (VIOLATED)
+fanout9/Z                                10     10      0 (MET)
 
 No differences found.

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "odb/lefout.h"
 
@@ -37,6 +8,7 @@
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #include "odb/db.h"
@@ -215,27 +187,27 @@ void lefout::writeRect(const std::string& indent,
 
 void lefout::writeHeader(dbBlock* db_block)
 {
-  char left_bus_delimeter = 0;
-  char right_bus_delimeter = 0;
-  char hier_delimeter = db_block->getHierarchyDelimeter();
+  char left_bus_delimiter = 0;
+  char right_bus_delimiter = 0;
+  char hier_delimiter = db_block->getHierarchyDelimiter();
 
-  db_block->getBusDelimeters(left_bus_delimeter, right_bus_delimeter);
+  db_block->getBusDelimiters(left_bus_delimiter, right_bus_delimiter);
 
-  if (left_bus_delimeter == 0) {
-    left_bus_delimeter = '[';
+  if (left_bus_delimiter == 0) {
+    left_bus_delimiter = '[';
   }
 
-  if (right_bus_delimeter == 0) {
-    right_bus_delimeter = ']';
+  if (right_bus_delimiter == 0) {
+    right_bus_delimiter = ']';
   }
 
-  if (hier_delimeter == 0) {
-    hier_delimeter = '|';
+  if (hier_delimiter == 0) {
+    hier_delimiter = '|';
   }
 
   writeVersion("5.8");
-  writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
-  writeDividerChar(hier_delimeter);
+  writeBusBitChars(left_bus_delimiter, right_bus_delimiter);
+  writeDividerChar(hier_delimiter);
   writeUnits(/*database_units = */ db_block->getDbUnitsPerMicron());
 }
 
@@ -371,28 +343,28 @@ void lefout::writeHeader(dbLib* lib)
 {
   dbTech* tech = lib->getTech();
 
-  char left_bus_delimeter = 0;
-  char right_bus_delimeter = 0;
-  char hier_delimeter = lib->getHierarchyDelimeter();
+  char left_bus_delimiter = 0;
+  char right_bus_delimiter = 0;
+  char hier_delimiter = lib->getHierarchyDelimiter();
 
-  lib->getBusDelimeters(left_bus_delimeter, right_bus_delimeter);
+  lib->getBusDelimiters(left_bus_delimiter, right_bus_delimiter);
 
-  if (left_bus_delimeter == 0) {
-    left_bus_delimeter = '[';
+  if (left_bus_delimiter == 0) {
+    left_bus_delimiter = '[';
   }
 
-  if (right_bus_delimeter == 0) {
-    right_bus_delimeter = ']';
+  if (right_bus_delimiter == 0) {
+    right_bus_delimiter = ']';
   }
 
-  if (hier_delimeter == 0) {
-    hier_delimeter = '|';
+  if (hier_delimiter == 0) {
+    hier_delimiter = '|';
   }
 
   writeVersion(tech->getLefVersionStr());
   writeNameCaseSensitive(tech->getNamesCaseSensitive());
-  writeBusBitChars(left_bus_delimeter, right_bus_delimeter);
-  writeDividerChar(hier_delimeter);
+  writeBusBitChars(left_bus_delimiter, right_bus_delimiter);
+  writeDividerChar(hier_delimiter);
   writePropertyDefinitions(lib);
 
   if (lib->getLefUnits()) {
@@ -400,9 +372,9 @@ void lefout::writeHeader(dbLib* lib)
   }
 }
 
-void lefout::writeDividerChar(char hier_delimeter)
+void lefout::writeDividerChar(char hier_delimiter)
 {
-  fmt::print(_out, "DIVIDERCHAR \"{}\" ;\n", hier_delimeter);
+  fmt::print(_out, "DIVIDERCHAR \"{}\" ;\n", hier_delimiter);
 }
 
 void lefout::writeUnits(int database_units)
@@ -412,12 +384,12 @@ void lefout::writeUnits(int database_units)
   fmt::print(_out, "{}", "END UNITS\n");
 }
 
-void lefout::writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter)
+void lefout::writeBusBitChars(char left_bus_delimiter, char right_bus_delimiter)
 {
   fmt::print(_out,
              "BUSBITCHARS \"{}{}\" ;\n",
-             left_bus_delimeter,
-             right_bus_delimeter);
+             left_bus_delimiter,
+             right_bus_delimiter);
 }
 
 void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)

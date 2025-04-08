@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "definReader.h"
 
@@ -193,9 +164,9 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
   _db = db;
   parent_ = nullptr;
   _continue_on_errors = false;
-  hier_delimeter_ = 0;
-  left_bus_delimeter_ = 0;
-  right_bus_delimeter_ = 0;
+  hier_delimiter_ = 0;
+  left_bus_delimiter_ = 0;
+  right_bus_delimiter_ = 0;
 
   definBase::setLogger(logger);
   definBase::setMode(mode);
@@ -407,8 +378,8 @@ int definReader::divideCharCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->hier_delimeter_ = value[0];
-  if (reader->hier_delimeter_ == 0) {
+  reader->hier_delimiter_ = value[0];
+  if (reader->hier_delimiter_ == 0) {
     reader->error("Syntax error in DIVIDERCHAR statment");
     return PARSE_ERROR;
   }
@@ -420,10 +391,10 @@ int definReader::busBitCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->left_bus_delimeter_ = value[0];
-  reader->right_bus_delimeter_ = value[1];
-  if ((reader->left_bus_delimeter_ == 0)
-      || (reader->right_bus_delimeter_ == 0)) {
+  reader->left_bus_delimiter_ = value[0];
+  reader->right_bus_delimiter_ = value[1];
+  if ((reader->left_bus_delimiter_ == 0)
+      || (reader->right_bus_delimiter_ == 0)) {
     reader->error("Syntax error in BUSBITCHARS statment");
     return PARSE_ERROR;
   }
@@ -456,13 +427,13 @@ int definReader::designCallback(
         reader->_block = dbBlock::create(reader->parent_,
                                          new_name.c_str(),
                                          reader->_tech,
-                                         reader->hier_delimeter_);
+                                         reader->hier_delimiter_);
       }
     } else {
       reader->_block = dbBlock::create(reader->parent_,
                                        block_name.c_str(),
                                        reader->_tech,
-                                       reader->hier_delimeter_);
+                                       reader->hier_delimiter_);
     }
   } else {
     dbChip* chip = reader->_db->getChip();
@@ -470,12 +441,12 @@ int definReader::designCallback(
       reader->_block = chip->getBlock();
     } else {
       reader->_block = dbBlock::create(
-          chip, block_name.c_str(), reader->_tech, reader->hier_delimeter_);
+          chip, block_name.c_str(), reader->_tech, reader->hier_delimiter_);
     }
   }
   if (reader->_mode == defin::DEFAULT) {
-    reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
-                                     reader->right_bus_delimeter_);
+    reader->_block->setBusDelimiters(reader->left_bus_delimiter_,
+                                     reader->right_bus_delimiter_);
   }
   reader->_logger->info(utl::ODB, 128, "Design: {}", design);
   assert(reader->_block);
@@ -677,41 +648,8 @@ int definReader::dieAreaCallback(
       Rect r(p0.getX(), p0.getY(), p1.getX(), p1.getY());
       reader->_block->setDieArea(r);
     } else {
-      reader->_logger->warn(
-          utl::ODB,
-          124,
-          "warning: Polygon DIEAREA statement not supported.  The bounding "
-          "box will be used instead");
-      int xmin = INT_MAX;
-      int ymin = INT_MAX;
-      int xmax = INT_MIN;
-      int ymax = INT_MIN;
-      std::vector<Point>::iterator itr;
-
-      for (itr = P.begin(); itr != P.end(); ++itr) {
-        Point& p = *itr;
-        int x = p.getX();
-        int y = p.getY();
-
-        if (x < xmin) {
-          xmin = x;
-        }
-
-        if (y < ymin) {
-          ymin = y;
-        }
-
-        if (x > xmax) {
-          xmax = x;
-        }
-
-        if (y > ymax) {
-          ymax = y;
-        }
-      }
-
-      Rect r(xmin, ymin, xmax, ymax);
-      reader->_block->setDieArea(r);
+      Polygon die_area_poly(P);
+      reader->_block->setDieArea(die_area_poly);
     }
   }
   return PARSE_OK;
@@ -1921,7 +1859,15 @@ void definReader::contextLogFunctionCallback(DefParser::defiUserData data,
                                              const char* msg)
 {
   definReader* reader = (definReader*) data;
-  reader->_logger->warn(utl::ODB, 1003, msg);
+  reader->_logger->warn(utl::ODB, 3, msg);
+}
+
+void definReader::contextWarningLogFunctionCallback(
+    DefParser::defiUserData data,
+    const char* msg)
+{
+  definReader* reader = (definReader*) data;
+  reader->_logger->warn(utl::ODB, 4, msg);
 }
 
 void definReader::line(int line_num)
@@ -2014,6 +1960,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   }
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
+
+  _db->triggerPostReadDef(_block);
+
   return chip;
 }
 
@@ -2063,6 +2012,8 @@ dbBlock* definReader::createBlock(dbBlock* parent,
   }
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
+
+  _db->triggerPostReadDef(_block);
 
   return _block;
 }
@@ -2118,6 +2069,8 @@ bool definReader::createBlock(const char* file)
   defrSetPinEndCbk(pinsEndCallback);
   defrSetPinPropCbk(pinPropCallback);
   DefParser::defrSetContextLogFunction(contextLogFunctionCallback);
+  DefParser::defrSetContextWarningLogFunction(
+      contextWarningLogFunctionCallback);
 
   if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
     defrSetDieAreaCbk(dieAreaCallback);

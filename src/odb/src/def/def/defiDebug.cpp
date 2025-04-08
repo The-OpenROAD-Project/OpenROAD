@@ -35,7 +35,6 @@
 
 #include "defrData.hpp"
 #include "defrSettings.hpp"
-#include "lex.h"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

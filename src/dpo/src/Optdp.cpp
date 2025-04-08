@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "dpo/Optdp.h"
 
@@ -55,7 +26,6 @@
 #include "dpl/Padding.h"
 #include "legalize_shift.h"
 #include "network.h"
-#include "orientation.h"
 #include "router.h"
 #include "symmetry.h"
 
@@ -215,12 +185,11 @@ void Optdp::updateDbInstLocations()
     if (it_n != instMap_.end()) {
       const Node* nd = it_n->second;
 
-      const int y = nd->getBottom() + grid_->getCore().yMin();
-      const int x = nd->getLeft() + grid_->getCore().xMin();
+      const int y = nd->getBottom().v + grid_->getCore().yMin();
+      const int x = nd->getLeft().v + grid_->getCore().xMin();
 
-      dbOrientType orient = dpoToDbOrient(nd->getCurrOrient());
-      if (inst->getOrient() != orient) {
-        inst->setOrient(orient);
+      if (inst->getOrient() != nd->getCurrOrient()) {
+        inst->setOrient(nd->getCurrOrient());
       }
       int inst_x, inst_y;
       inst->getLocation(inst_x, inst_y);
@@ -683,28 +652,13 @@ void Optdp::createNetwork()
     }
     ndi->setId(n);
     ndi->setFixed(inst->isFixed() ? Node::FIXED_XY : Node::NOT_FIXED);
-
-    // Determine allowed orientations.  Current orientation
-    // is N, since we reset everything to this orientation.
-    unsigned orientations = Orientation_N;
-    if (inst->getMaster()->getSymmetryX()
-        && inst->getMaster()->getSymmetryY()) {
-      orientations |= Orientation_FN;
-      orientations |= Orientation_FS;
-      orientations |= Orientation_S;
-    } else if (inst->getMaster()->getSymmetryX()) {
-      orientations |= Orientation_FS;
-    } else if (inst->getMaster()->getSymmetryY()) {
-      orientations |= Orientation_FN;
-    }
     // else...  Account for R90?
-    ndi->setAvailOrient(orientations);
-    ndi->setCurrOrient(Orientation_N);
-    ndi->setHeight(inst->getMaster()->getHeight());
-    ndi->setWidth(inst->getMaster()->getWidth());
+    ndi->setCurrOrient(odb::dbOrientType::R0);
+    ndi->setHeight(DbuY{(int) inst->getMaster()->getHeight()});
+    ndi->setWidth(DbuX{(int) inst->getMaster()->getWidth()});
 
-    ndi->setOrigLeft(inst->getBBox()->xMin() - core.xMin());
-    ndi->setOrigBottom(inst->getBBox()->yMin() - core.yMin());
+    ndi->setOrigLeft(DbuX{inst->getBBox()->xMin() - core.xMin()});
+    ndi->setOrigBottom(DbuY{inst->getBBox()->yMin() - core.yMin()});
     ndi->setLeft(ndi->getOrigLeft());
     ndi->setBottom(ndi->getOrigBottom());
 
@@ -738,17 +692,16 @@ void Optdp::createNetwork()
     ndi->setId(n);
     ndi->setType(Node::TERMINAL);
     ndi->setFixed(Node::FIXED_XY);
-    ndi->setAvailOrient(Orientation_N);
-    ndi->setCurrOrient(Orientation_N);
+    ndi->setCurrOrient(odb::dbOrientType::R0);
 
-    int ww = (bterm->getBBox().xMax() - bterm->getBBox().xMin());
-    int hh = (bterm->getBBox().yMax() - bterm->getBBox().yMax());
+    DbuX ww(bterm->getBBox().xMax() - bterm->getBBox().xMin());
+    DbuY hh(bterm->getBBox().yMax() - bterm->getBBox().yMax());
 
     ndi->setHeight(hh);
     ndi->setWidth(ww);
 
-    ndi->setOrigLeft(bterm->getBBox().xMin() - core.xMin());
-    ndi->setOrigBottom(bterm->getBBox().yMin() - core.yMin());
+    ndi->setOrigLeft(DbuX{bterm->getBBox().xMin() - core.xMin()});
+    ndi->setOrigBottom(DbuY{bterm->getBBox().yMin() - core.yMin()});
     ndi->setLeft(ndi->getOrigLeft());
     ndi->setBottom(ndi->getOrigBottom());
 
@@ -939,8 +892,7 @@ void Optdp::createArchitecture()
     archRow->setSymmetry(symmetry);
 
     // Orientation.  From the row.
-    unsigned orient = dbToDpoOrient(row->getOrient());
-    archRow->setOrient(orient);
+    archRow->setOrient(row->getOrient());
   }
   for (const auto& skip : skip_list) {
     std::string skip_string = "[";
@@ -1137,48 +1089,5 @@ void Optdp::setUpPlacementRegions()
     }
   }
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
-}
-////////////////////////////////////////////////////////////////
-unsigned dbToDpoOrient(const dbOrientType& dbOrient)
-{
-  switch (dbOrient) {
-    case dbOrientType::MY:
-      return dpo::Orientation_FN;
-    case dbOrientType::MX:
-      return dpo::Orientation_FS;
-    case dbOrientType::R180:
-      return dpo::Orientation_S;
-    case dbOrientType::R90:
-      return dpo::Orientation_E;
-    case dbOrientType::MXR90:
-      return dpo::Orientation_FE;
-    case dbOrientType::R270:
-      return dpo::Orientation_W;
-    case dbOrientType::MYR90:
-      return dpo::Orientation_FW;
-    default:
-      return dpo::Orientation_N;
-  }
-}
-odb::dbOrientType dpoToDbOrient(const unsigned orient)
-{
-  switch (orient) {
-    case dpo::Orientation_FN:
-      return dbOrientType::MY;
-    case dpo::Orientation_FS:
-      return dbOrientType::MX;
-    case dpo::Orientation_S:
-      return dbOrientType::R180;
-    case dpo::Orientation_E:
-      return dbOrientType::R90;
-    case dpo::Orientation_FE:
-      return dbOrientType::MXR90;
-    case dpo::Orientation_W:
-      return dbOrientType::R270;
-    case dpo::Orientation_FW:
-      return dbOrientType::MYR90;
-    default:
-      return dbOrientType::R0;
-  }
 }
 }  // namespace dpo

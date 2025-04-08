@@ -1,36 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
 #include <cfloat>
@@ -303,19 +272,20 @@ void Opendp::makeCells()
     if (db_master->isCoreAutoPlaceable()) {
       cells_.emplace_back();
       Cell& cell = cells_.back();
-      cell.db_inst_ = db_inst;
+      cell.setDbInst(db_inst);
       db_inst_map_[db_inst] = &cell;
 
       Rect bbox = getBbox(db_inst);
-      cell.width_ = DbuX{bbox.dx()};
-      cell.height_ = DbuY{bbox.dy()};
-      cell.x_ = DbuX{bbox.xMin()};
-      cell.y_ = DbuY{bbox.yMin()};
-      cell.orient_ = db_inst->getOrient();
+      cell.setWidth(DbuX{bbox.dx()});
+      cell.setHeight(DbuY{bbox.dy()});
+      cell.setLeft(DbuX{bbox.xMin()});
+      cell.setBottom(DbuY{bbox.yMin()});
+      cell.setOrient(db_inst->getOrient());
       // Cell is already placed if it is FIXED.
-      cell.is_placed_ = cell.isFixed();
+      cell.setPlaced(cell.isFixed());
 
       Master& master = db_master_map_[db_master];
+      cell.setMaster(&master);
       // We only want to set this if we have multi-row cells to
       // place and not whenever we see a placed block.
       if (master.is_multi_row && db_master->isCore()) {
@@ -376,7 +346,7 @@ void Opendp::makeGroups()
     if (db_group->getRegion()) {
       std::unordered_set<DbuY> unique_heights;
       for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->height_);
+        unique_heights.insert(db_inst_map_[db_inst]->dy());
       }
       reserve_size += unique_heights.size();
     }
@@ -392,7 +362,7 @@ void Opendp::makeGroups()
     std::set<DbuY> unique_heights;
     map<DbuY, Group*> cell_height_to_group_map;
     for (auto db_inst : db_group->getInsts()) {
-      unique_heights.insert(db_inst_map_[db_inst]->height_);
+      unique_heights.insert(db_inst_map_[db_inst]->dy());
     }
     int index = 0;
     for (auto height : unique_heights) {
@@ -426,9 +396,9 @@ void Opendp::makeGroups()
 
     for (auto db_inst : db_group->getInsts()) {
       Cell* cell = db_inst_map_[db_inst];
-      Group* group = cell_height_to_group_map[cell->height_];
+      Group* group = cell_height_to_group_map[cell->dy()];
       group->cells_.push_back(cell);
-      cell->group_ = group;
+      cell->setGroup(group);
     }
   }
 }

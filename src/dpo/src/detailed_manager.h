@@ -1,47 +1,13 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-// Description:
-// Primarily for maintaining the segments.
+// Description: Primarily for maintaining the segments.
 
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "dpl/Grid.h"
@@ -55,22 +21,11 @@ class Logger;
 
 namespace dpo {
 
-////////////////////////////////////////////////////////////////////////////////
-// Defines.
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-// Forward declarations.
-////////////////////////////////////////////////////////////////////////////////
 class Architecture;
 class DetailedSeg;
 class Network;
 class RoutingParams;
 using dpl::Grid;
-
-////////////////////////////////////////////////////////////////////////////////
-// Structures.
-////////////////////////////////////////////////////////////////////////////////
 
 enum class BlockageType
 {
@@ -136,8 +91,8 @@ class DetailedMgr
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
   bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
-  double measureMaximumDisplacement(double& maxX,
-                                    double& maxY,
+  double measureMaximumDisplacement(u_int64_t& maxX,
+                                    u_int64_t& maxY,
                                     int& violatedX,
                                     int& violatedY);
 
@@ -162,7 +117,7 @@ class DetailedMgr
       std::vector<DetailedSeg*>& stack,
       std::vector<std::vector<DetailedSeg*>>& candidates);
   bool findClosestSpanOfSegments(Node* nd, std::vector<DetailedSeg*>& segments);
-  bool isInsideABlockage(const Node* nd, double position);
+  bool isInsideABlockage(const Node* nd, DbuX position);
   void assignCellsToSegments(const std::vector<Node*>& nodesToConsider);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
@@ -175,7 +130,6 @@ class DetailedMgr
       bool fix_violations);
   bool fixOneSiteGapViolations(Node* cell,
                                int one_site_gap,
-                               int newX,
                                int segment,
                                Node* violatingNode);
   void removeCellFromSegment(const Node* nd, int seg);
@@ -264,15 +218,15 @@ class DetailedMgr
 
   void getSpaceAroundCell(int seg,
                           int ix,
-                          double& space,
-                          double& larger,
+                          DbuX& space,
+                          DbuX& larger,
                           int limit = 3);
   void getSpaceAroundCell(int seg,
                           int ix,
-                          double& space_left,
-                          double& space_right,
-                          double& large_left,
-                          double& large_right,
+                          DbuX& space_left,
+                          DbuX& space_right,
+                          DbuX& large_left,
+                          DbuX& large_right,
                           int limit = 3);
 
   void removeSegmentOverlapSingle(int regId = -1);
@@ -285,15 +239,15 @@ class DetailedMgr
   void setTargetUt(double ut) { targetUt_ = ut; }
 
   // Routines for generating moves and swaps.
-  bool tryMove(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
-  bool trySwap(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+  bool tryMove(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
+  bool trySwap(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
   // For accepting or rejecting moves and swaps.
   void acceptMove();
   void rejectMove();
 
   // For help aligning cells to sites.
-  bool alignPos(const Node* ndi, int& xi, int xl, int xr);
+  bool alignPos(const Node* ndi, DbuX& xi, DbuX xl, DbuX xr);
   int getMoveLimit() { return moveLimit_; }
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
@@ -308,16 +262,16 @@ class DetailedMgr
     // Needs cell centers.
     bool operator()(Node* p, Node* q) const
     {
-      return p->getLeft() + 0.5 * p->getWidth()
-             < q->getLeft() + 0.5 * q->getWidth();
+      return p->getLeft().v + 0.5 * p->getWidth().v
+             < q->getLeft().v + 0.5 * q->getWidth().v;
     }
     bool operator()(Node*& s, double i) const
     {
-      return s->getLeft() + 0.5 * s->getWidth() < i;
+      return s->getLeft().v + 0.5 * s->getWidth().v < i;
     }
     bool operator()(double i, Node*& s) const
     {
-      return i < s->getLeft() + 0.5 * s->getWidth();
+      return i < s->getLeft().v + 0.5 * s->getWidth().v;
     }
   };
 
@@ -355,39 +309,39 @@ class DetailedMgr
 
   // Different routines for trying moves and swaps.
   bool verifyMove();
-  bool tryMove1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
-  bool tryMove2(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
-  bool tryMove3(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+  bool tryMove1(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
+  bool tryMove2(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
+  bool tryMove3(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
-  bool trySwap1(Node* ndi, int xi, int yi, int si, int xj, int yj, int sj);
+  bool trySwap1(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
   // Helper routines for making moves and swaps.
   bool shift(std::vector<Node*>& cells,
-             std::vector<int>& targetLeft,
-             std::vector<int>& posLeft,
-             int leftLimit,
-             int rightLimit,
+             std::vector<DbuX>& targetLeft,
+             std::vector<DbuX>& posLeft,
+             DbuX leftLimit,
+             DbuX rightLimit,
              int segId,
              int rowId);
-  bool shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr);
-  bool shiftLeftHelper(Node* ndi, int xj, int sj, Node* ndl);
+  bool shiftRightHelper(Node* ndi, DbuX xj, int sj, Node* ndr);
+  bool shiftLeftHelper(Node* ndi, DbuX xj, int sj, Node* ndl);
   void getSpaceToLeftAndRight(int seg, int ix, double& left, double& right);
 
   // For composing list of cells for moves or swaps.
   void clearMoveList();
   bool addToMoveList(Node* ndi,
-                     int curLeft,
-                     int curBottom,
+                     DbuX curLeft,
+                     DbuY curBottom,
                      int curSeg,
-                     int newLeft,
-                     int newBottom,
+                     DbuX newLeft,
+                     DbuY newBottom,
                      int newSeg);
   bool addToMoveList(Node* ndi,
-                     int curLeft,
-                     int curBottom,
+                     DbuX curLeft,
+                     DbuY curBottom,
                      const std::vector<int>& curSegs,
-                     int newLeft,
-                     int newBottom,
+                     DbuX newLeft,
+                     DbuY newBottom,
                      const std::vector<int>& newSegs);
 
   // Standard stuff.
@@ -436,8 +390,8 @@ class DetailedMgr
   std::vector<Node*> wideCells_;
 
   // Original cell positions.
-  std::vector<int> origBottom_;
-  std::vector<int> origLeft_;
+  std::vector<DbuY> origBottom_;
+  std::vector<DbuX> origLeft_;
 
   std::vector<Rectangle> boxes_;
 

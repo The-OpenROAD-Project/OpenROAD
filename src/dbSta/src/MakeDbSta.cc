@@ -1,8 +1,5 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "db_sta/MakeDbSta.hh"
 
@@ -56,8 +53,6 @@ void initDbSta(OpenRoad* openroad)
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
-
-  openroad->addObserver(sta);
 }
 
 }  // namespace ord

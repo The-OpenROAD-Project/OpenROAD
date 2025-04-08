@@ -1,41 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -219,20 +183,9 @@ class Opendp
   bool checkOverlap(const Cell* cell, const DbuRect& rect) const;
   static bool isInside(const Rect& cell, const Rect& box);
   bool isInside(const Cell* cell, const Rect& rect) const;
-  PixelPt diamondSearch(const Cell* cell, GridX x, GridY y) const;
-  void diamondSearchSide(const Cell* cell,
-                         GridX x,
-                         GridY y,
-                         GridX x_min,
-                         GridY y_min,
-                         GridX x_max,
-                         GridY y_max,
-                         int x_offset,
-                         int y_offset,
-                         // Return values
-                         PixelPt& best_pt,
-                         int& best_dist) const;
-  PixelPt binSearch(GridX x, const Cell* cell, GridX bin_x, GridY bin_y) const;
+  PixelPt searchNearestSite(const Cell* cell, GridX x, GridY y) const;
+  int calcDist(GridPt p0, GridPt p1) const;
+  bool canBePlaced(const Cell* cell, GridX bin_x, GridY bin_y) const;
   bool checkRegionOverlap(const Cell* cell,
                           GridX x,
                           GridY y,
@@ -403,7 +356,6 @@ class Opendp
   std::vector<std::vector<EdgeSpacingEntry>> edge_spacing_table_;
 
   // Magic numbers
-  static constexpr int bin_search_width_ = 10;
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;

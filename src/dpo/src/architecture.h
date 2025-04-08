@@ -1,54 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 #include <map>
 #include <string>
 #include <vector>
 
+#include "dpl/Coordinates.h"
+#include "odb/dbTypes.h"
 #include "rectangle.h"
 
 namespace dpo {
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 class Network;
 class Node;
+using dpl::DbuX;
+using dpl::DbuY;
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 class Architecture
 {
   // This class represents information about the layout area.
@@ -79,7 +48,7 @@ class Architecture
   int getCellHeightInRows(const Node* ndi) const;
 
   int postProcess(Network* network);
-  int find_closest_row(int y);
+  int find_closest_row(DbuY y);
 
   void clear_edge_type();
   void init_edge_type();
@@ -135,6 +104,10 @@ class Architecture
   bool getCellPadding(const Node* ndi,
                       int& leftPadding,
                       int& rightPadding) const;
+  void addCellPadding(Node* ndi, DbuX leftPadding, DbuX rightPadding);
+  bool getCellPadding(const Node* ndi,
+                      DbuX& leftPadding,
+                      DbuX& rightPadding) const;
 
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
@@ -189,8 +162,8 @@ class Architecture::Row
   void setId(int id) { id_ = id; }
   int getId() const { return id_; }
 
-  void setOrient(unsigned orient) { siteOrient_ = orient; }
-  unsigned getOrient() const { return siteOrient_; }
+  void setOrient(const odb::dbOrientType& orient) { siteOrient_ = orient; }
+  odb::dbOrientType getOrient() const { return siteOrient_; }
 
   void setSymmetry(unsigned sym) { siteSymmetry_ = sym; }
   unsigned getSymmetry() const { return siteSymmetry_; }
@@ -229,7 +202,7 @@ class Architecture::Row
   int siteWidth_ = 0;     // Width of sites in the row.
   int numSites_ = 0;      // Number of sites...  Ending X location (xmax) is =
                           // subRowOrigin_ + numSites_ * siteSpacing_;
-  unsigned siteOrient_ = 0;    // Orientation of sites in the row.
+  odb::dbOrientType siteOrient_;  // Orientation of sites in the row.
   unsigned siteSymmetry_ = 0;  // Symmetry of sites in the row.  Symmetry allows
                                // for certain orientations...
   // Voltages at the top and bottom of the row.

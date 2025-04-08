@@ -13,10 +13,15 @@ jobs:
           submodules: 'recursive'
       - name: ClangTidy Gen
         uses: The-OpenROAD-Project/clang-tidy-review@master
+        id: review
         with:
           build_dir: './build'
           cmake_command: cmake . -B build
           config_file: '.clang-tidy'
           exclude: "*/codeGenerator/templates/*"
           split_workflow: true
+          apt_packages: libomp-15-dev
       - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
+        id: upload-review
+      - if: steps.review.outputs.total_comments > 0
+        run: exit 1
