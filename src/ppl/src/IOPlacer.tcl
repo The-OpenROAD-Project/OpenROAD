@@ -277,7 +277,7 @@ proc place_pin { args } {
 
   ppl::place_pin $pin $layer $x $y $width $height \
     [info exists flags(-force_to_die_boundary)] \
-    [info exists flags(-placed_status)]\
+    [info exists flags(-placed_status)] \
     [info exists flags(-verbose)]
 }
 
