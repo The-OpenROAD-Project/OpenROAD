@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024-2025, The OpenROAD Authors
+
 function(or_integration_test_single tool_name test_name test_type check_log check_passfail)
   unset(TEST_FOUND PARENT_SCOPE)
 

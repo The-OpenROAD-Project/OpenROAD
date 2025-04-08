@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
 %rename(assign) *::operator=;
 %rename(_print) *::print;
 %rename(pre_inc) *::operator++();

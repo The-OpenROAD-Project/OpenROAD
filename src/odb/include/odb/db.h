@@ -1,38 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <list>
 #include <map>
 #include <optional>
@@ -1434,9 +1406,19 @@ class dbBlock : public dbObject
   void setDieArea(const Rect& new_rect);
 
   ///
+  /// Set the die area with polygon. Allows for non-rectangular floorplans
+  ///
+  void setDieArea(const Polygon& new_area);
+
+  ///
   /// Get the die area. The default die-area is (0,0,0,0).
   ///
   Rect getDieArea();
+
+  ///
+  /// Get the die area as a polygon. The default die-area is (0,0,0,0).
+  ///
+  Polygon getDieAreaPolygon();
 
   ///
   /// Get the core area. This computes the bbox of the rows
@@ -1668,6 +1650,7 @@ class dbBlock : public dbObject
   // For debugging only.  Print block content to an ostream.
   //
   void debugPrintContent(std::ostream& str_db);
+  void debugPrintContent() { debugPrintContent(std::cout); }
 
  private:
   void ComputeBBox();
@@ -4105,6 +4088,27 @@ class dbObstruction : public dbObject
   static void destroy(dbObstruction* obstruction);
 
   ///
+  /// Delete the blockage from the block.
+  ///
+  static dbSet<dbObstruction>::iterator destroy(
+      dbSet<dbObstruction>::iterator& itr);
+
+  ///
+  /// Returns true if this obstruction is system created. System created
+  /// obstructions represent obstructions created by non-rectangular floorplans.
+  /// The general flow is the polygonal floorplan is subtracted
+  /// from its general bounding box and the shapes that are created
+  /// by that difference are then decomposed into rectangles which
+  /// create obstructions with the system created annotation.
+  ///
+  bool isSystemReserved();
+
+  ///
+  /// Sets this obstruction as system created.
+  ///
+  void setIsSystemReserved(bool is_system_reserved);
+
+  ///
   /// Create a routing obstruction.
   ///
   static dbObstruction* create(dbBlock* block,
@@ -4161,6 +4165,21 @@ class dbBlockage : public dbObject
   bool isSoft();
 
   ///
+  /// Returns true if this blockage is system created. System created blockages
+  /// represent blockages created by non-rectangular floorplans.
+  /// The general flow is the polygonal floorplan is subtracted
+  /// from its general bounding box and the shapes that are created
+  /// by that difference are then decomposed into rectangles which
+  /// create blockages with the system created annotation.
+  ///
+  bool isSystemReserved();
+
+  ///
+  /// Sets this blockage as system created.
+  ///
+  void setIsSystemReserved(bool is_system_reserved);
+
+  ///
   /// Set the max placement density percentage in [0,100]
   ///
   void setMaxDensity(float max_density);
@@ -4186,6 +4205,11 @@ class dbBlockage : public dbObject
                             dbInst* inst = nullptr);
 
   static void destroy(dbBlockage* blockage);
+
+  ///
+  /// Delete the blockage from the block.
+  ///
+  static dbSet<dbBlockage>::iterator destroy(dbSet<dbBlockage>::iterator& itr);
 
   ///
   /// Translate a database-id back to a pointer.
