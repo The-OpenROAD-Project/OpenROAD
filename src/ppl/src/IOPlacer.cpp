@@ -2652,8 +2652,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   if (verbose && pos != original_pos) {
     logger_->info(PPL,
                   70,
-                  "Pin {} placed at ({:.2f}um, {:.2f})um instead of ({:.2f}um, "
-                  "{:.2f})um. Pin was snapped to a routing track, to the "
+                  "Pin {} placed at ({:.2f}um, {:.2f}um) instead of ({:.2f}um, "
+                  "{:.2f}um). Pin was snapped to a routing track, to the "
                   "manufacturing grid or moved away from blocked region.",
                   bterm->getName(),
                   getBlock()->dbuToMicrons(pos.x()),
