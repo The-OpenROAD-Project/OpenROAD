@@ -3686,6 +3686,87 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
+/*
+We expect each hierarchical net to have only one flat net
+associated with it.
+The routines below are called each time we move mod nets around
+so that we maintain the axiom.
+*/
+
+class ModDbNetAssociation : public PinVisitor
+{
+ public:
+  ModDbNetAssociation(dbNetwork* nwk,
+                      Logger* logger,
+                      dbModNet* mod_net,
+                      dbNet* new_flat_net,
+                      dbNet* orig_flat_net);
+  void operator()(const Pin* pin) override;
+  Logger* logger_ = nullptr;
+
+ protected:
+  dbNetwork* db_network_;
+  dbModNet* mod_net_;
+  dbNet* new_flat_net_;
+  dbNet* orig_flat_net_;
+};
+
+ModDbNetAssociation::ModDbNetAssociation(dbNetwork* nwk,
+                                         Logger* logger,
+                                         dbModNet* mod_net,
+                                         dbNet* new_flat_net,
+                                         dbNet* orig_flat_net)
+    : db_network_(nwk),
+      mod_net_(mod_net),
+      new_flat_net_(new_flat_net),
+      orig_flat_net_(orig_flat_net)
+{
+  logger_ = logger;
+}
+
+void ModDbNetAssociation::operator()(const Pin* pin)
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModBTerm* modbterm;
+  dbModITerm* moditerm;
+  db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  if (moditerm || modbterm) {
+    return;
+  }
+  dbNet* cur_flat_net = db_network_->flatNet(pin);
+
+  if (cur_flat_net == orig_flat_net_ || orig_flat_net_ == nullptr) {
+    db_network_->disconnectPin(const_cast<Pin*>(pin),
+                               db_network_->dbToSta(cur_flat_net));
+    db_network_->connectPin(const_cast<Pin*>(pin),
+                            db_network_->dbToSta(new_flat_net_));
+  } else if (cur_flat_net != orig_flat_net_) {
+    logger_->error(
+        ORD,
+        2032,
+        "Illegal hierarchy expect only one flat net type per hierarchical net");
+  }
+}
+
+/*
+We require each modnet has exactly one flat net associated with it.
+It is convenient to move modnets around during hierarchical operations
+which may change the underlying flat net associated with a modnet.
+This routine does the house keeping needed to preserve the requirement
+of one modnet having only one flat net associated with it.
+*/
+void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
+                                       dbNet* new_flat_net,
+                                       dbNet* orig_flat_net)
+{
+  ModDbNetAssociation visitor(
+      this, logger_, mod_net, new_flat_net, orig_flat_net);
+  NetSet visited_nets(this);
+  visitConnectedPins(dbToSta(mod_net), visitor, visited_nets);
+}
+
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
 {
   (void) mod_inst->swapMaster(module);

@@ -397,7 +397,8 @@ void dbJournal::redo_createObject()
       _log.pop(obj_id);
       _log.pop(parent_obj_id);
       dbModInst* parent_mod_inst = dbModInst::getModInst(_block, parent_obj_id);
-      dbModITerm::create(parent_mod_inst, name.c_str());
+      dbModITerm* mod_iterm = dbModITerm::create(parent_mod_inst, name.c_str());
+      (void) mod_iterm;
       break;
     }
 
@@ -1963,15 +1964,15 @@ void dbJournal::undo_deleteObject()
       _log.pop(modinst_id);
       // get the parent module
       dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
-      auto moditerm = dbModITerm::create(mod_inst, name.c_str());
+      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str());
+      (void) mod_iterm;
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
                  3,
                  "UNDO ECO: delete dbModiterm {} {}",
                  name.c_str(),
-                 moditerm->getId());
-      (void) moditerm;
+                 mod_iterm->getId());
       break;
     }
 

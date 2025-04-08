@@ -1776,6 +1776,7 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
   for (odb::dbBTerm* bterm : *pins) {
     if (!bterm->getFirstPinPlacementStatus().isFixed()) {
       top_layer_pins_count_++;
+      bterm->setConstraintRegion(region);
     }
   }
 }
@@ -1895,14 +1896,20 @@ Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 void IOPlacer::getConstraintsFromDB()
 {
   std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
+  std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
     // Only pins with constraints directly assigned by the user should be
     // considered.
     if (constraint_region && !bterm->isMirrored()) {
-      Interval interval = findIntervalFromRect(constraint_region.value());
-      pins_per_interval[interval].insert(bterm);
+      const Rect& region = constraint_region.value();
+      if (region.xMin() == region.xMax() || region.yMin() == region.yMax()) {
+        Interval interval = findIntervalFromRect(constraint_region.value());
+        pins_per_interval[interval].insert(bterm);
+      } else {
+        pins_per_rect[region].insert(bterm);
+      }
     }
   }
 
@@ -1918,10 +1925,15 @@ void IOPlacer::getConstraintsFromDB()
         getEdgeString(interval.getEdge()));
     constraints_.emplace_back(pins, Direction::invalid, interval);
   }
+
+  for (const auto& [region, pins] : pins_per_rect) {
+    constraints_.emplace_back(pins, Direction::invalid, region);
+  }
 }
 
 void IOPlacer::initConstraints(bool annealing)
 {
+  constraints_.clear();
   getConstraintsFromDB();
   int constraint_idx = 0;
   int constraints_no_slots = 0;
