@@ -390,13 +390,24 @@ void dbModInst::RemoveUnusedPortsAndPins()
   moditerms = getModITerms();
   modbterms = module->getModBTerms();
   for (auto mod_iterm : kill_set) {
+    dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
-    mod_bterm->disconnect();
-    dbModBTerm::destroy(mod_bterm);
-    dbModNet* moditerm_m_net = mod_iterm->getModNet();
-    mod_iterm->disconnect();
 
+    // Do the destruction in order
+    // so we always have a dbModBTerm..
+    mod_iterm->disconnect();
+    mod_bterm->disconnect();
+
+    // First destroy the net
+    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
+        && moditerm_m_net->getITerms().size() == 0
+        && moditerm_m_net->getModITerms().size() == 0
+        && moditerm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(moditerm_m_net);
+    }
+
+    // Now destory the iterm
     dbModITerm::destroy(mod_iterm);
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0
@@ -404,12 +415,10 @@ void dbModInst::RemoveUnusedPortsAndPins()
         && modbterm_m_net->getModBTerms().size() == 0) {
       dbModNet::destroy(modbterm_m_net);
     }
-    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
-        && moditerm_m_net->getITerms().size() == 0
-        && moditerm_m_net->getModITerms().size() == 0
-        && moditerm_m_net->getModBTerms().size() == 0) {
-      dbModNet::destroy(moditerm_m_net);
-    }
+    // Finally the bterm
+    dbModBTerm::destroy(mod_bterm);
+
+    // Last thing destroyed: first thing rebuilt !
   }
 }
 
