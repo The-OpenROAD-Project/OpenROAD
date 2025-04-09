@@ -460,18 +460,19 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
     // we do not need to store the pin names.. But they are
     // assumed to exist in the STA world.
     //
-    dbModITerm* moditerm = dbModITerm::create(modinst, pin_name_string.c_str());
+
     dbModBTerm* modbterm;
-    std::string port_name_str = std::move(pin_name_string);
+    std::string port_name_str = pin_name_string;  // intentionally make copy
     const size_t last_idx = port_name_str.find_last_of('/');
     if (last_idx != string::npos) {
       port_name_str = port_name_str.substr(last_idx + 1);
     }
     dbModule* module = modinst->getMaster();
     modbterm = module->findModBTerm(port_name_str.c_str());
-    moditerm->setChildModBTerm(modbterm);
-    modbterm->setParentModITerm(moditerm);
-
+    // pass the modbterm into the moditerm creator
+    // so that during journalling we keep the moditerm/modbterm correlation
+    dbModITerm* moditerm
+        = dbModITerm::create(modinst, pin_name_string.c_str(), modbterm);
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
