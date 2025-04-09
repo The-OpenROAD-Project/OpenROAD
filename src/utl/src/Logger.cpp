@@ -9,7 +9,11 @@
 #include <string_view>
 
 #include "CommandLineProgress.h"
+#if SPDLOG_VERSION < 10601
+#include "spdlog/details/pattern_formatter.h"
+#else
 #include "spdlog/pattern_formatter.h"
+#endif
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
