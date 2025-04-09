@@ -118,14 +118,6 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_top_layer_constraint(PinSet *pin_list,
-                         int x1, int y1,
-                         int x2, int y2)
-{
-  getIOPlacer()->addTopLayerConstraint(pin_list, odb::Rect(x1, y1, x2, y2));
-}
-
-void
 set_hor_length(int length)
 {
   getIOPlacer()->getParameters()->setHorizontalLength(length);
