@@ -32,8 +32,6 @@ jobs:
 
       - name: Build
         run: |
-          # Timeout is not per test, but for the entire CI job. Running
-          # times are tracked in ORFS tests over time.
           bazel test \
            -c opt \
            --keep_going \
@@ -41,7 +39,6 @@ jobs:
            --test_output=errors \
            --curses=no \
            --force_pic \
-           --test_timeout=3600,3600,3600,3600 \
            ...
 
       - name: Smoke test
