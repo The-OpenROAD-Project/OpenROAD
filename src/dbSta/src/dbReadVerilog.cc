@@ -462,7 +462,7 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
     //
 
     dbModBTerm* modbterm;
-    std::string port_name_str = std::move(pin_name_string);
+    std::string port_name_str = pin_name_string;  // intentionally make copy
     const size_t last_idx = port_name_str.find_last_of('/');
     if (last_idx != string::npos) {
       port_name_str = port_name_str.substr(last_idx + 1);
