@@ -2457,7 +2457,7 @@ bool IOPlacer::checkPinConstraints()
               PPL,
               105,
               "Pin {} is not placed in the upper layer grid region ({:.2f}um, "
-              "{:.2f}um) ({:.2f}um, {:.2f}um). ({:.2f}um, {:.2f}um, )",
+              "{:.2f}um) ({:.2f}um, {:.2f}um). ({:.2f}um, {:.2f}um)",
               pin.getName(),
               getBlock()->dbuToMicrons(constraint.box.xMin()),
               getBlock()->dbuToMicrons(constraint.box.yMin()),
