@@ -165,7 +165,7 @@ class Rect
 {
  public:
   Rect() = default;
-  Rect(const Rect& r) = default;
+  Rect(const Rect& other) = default;
   Rect(Point p1, Point p2);
   Rect(int x1, int y1, int x2, int y2);
 

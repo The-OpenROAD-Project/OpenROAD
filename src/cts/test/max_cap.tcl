@@ -4,7 +4,15 @@ read_lef sky130hs/sky130hs.tlef
 read_lef sky130hs/sky130hs_std_cell.lef
 read_liberty sky130hs/sky130hs_tt.lib
 
-set def_file "max_cap.def"
+if {[info exists ::env(TEST_TMPDIR)] && [llength $::env(TEST_TMPDIR)] > 0} {
+  # Bazel tmp dir per test
+  set tmpdir $::env(TEST_TMPDIR)
+} else {
+  # Same as before Bazel
+  set tmpdir .
+}
+set def_file $tmpdir/mac_cap.def
+
 # used to generate def
 source ../../rsz/test/hi_fanout.tcl
 write_hi_fanout_def1 $def_file 20 \
