@@ -60,7 +60,6 @@ filegroup(
         "helpers.tcl",
         "patterns.rulesok",
         "rcx_unit_test.tcl",
-        "rulesGen.log",
         "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
         "sky130hs/sky130_fd_sc_hs_merged.lef",
         "sky130hs/sky130hs.pdn.tcl",
