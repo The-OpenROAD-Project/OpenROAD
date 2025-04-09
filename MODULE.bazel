@@ -79,7 +79,7 @@ cc_library(
     hdrs = [
         "whereami.h",
     ],
-    copts= ["-I./external/_main~_repo_rules~whereami/"],
+    includes = ["."],
     visibility = ["//visibility:public",]
 )
 """,
