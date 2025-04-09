@@ -65,3 +65,26 @@ use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
 register_toolchains("@llvm_toolchain//:all")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+name = "whereami",
+    build_file_content = """
+cc_library(
+    name = "whereami",
+    srcs = [
+        "whereami.c", "whereami.h",
+    ],
+    hdrs = [
+        "whereami.h",
+    ],
+    copts= ["-I./external/_main~_repo_rules~whereami/"],
+    visibility = ["//visibility:public",]
+)
+""",
+  strip_prefix = "whereami-dcb52a058dc14530ba9ae05e4339bd3ddfae0e0e/src/",
+    url = "https://github.com/gpakosz/whereami/archive/dcb52a058dc14530ba9ae05e4339bd3ddfae0e0e.zip",
+sha256 = "307a86efe80b674e18b13f6a37e37936f1ebea174fbcaae24976f846575be647",
+
+)

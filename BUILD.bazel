@@ -63,6 +63,7 @@ cc_binary(
     deps = OPENROAD_BINARY_DEPS + [
         ":openroad_lib_private",
         "@rules_cc//cc/runfiles",
+        "@whereami//:whereami",
     ],
     malloc = "@tcmalloc//tcmalloc",
 )
