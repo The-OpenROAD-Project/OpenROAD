@@ -236,6 +236,10 @@ proc thread_count { } {
   return [ord::thread_count]
 }
 
+proc cpu_count { } {
+  return [ord::cpu_count]
+}
+
 sta::define_cmd_args "global_connect" {}
 proc global_connect { } {
   [ord::get_db_block] globalConnect

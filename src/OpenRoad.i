@@ -556,6 +556,12 @@ thread_count()
   return ord->getThreadCount();
 }
 
+int
+cpu_count()
+{
+  return std::thread::hardware_concurrency();
+}
+
 void design_created()
 {
   OpenRoad *ord = getOpenRoad();
