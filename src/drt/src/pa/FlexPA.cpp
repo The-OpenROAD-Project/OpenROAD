@@ -3,6 +3,8 @@
 
 #include "FlexPA.h"
 
+#include <omp.h>
+
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
@@ -23,11 +25,28 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "io/io.h"
 #include "serialization.h"
+#include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
 namespace drt {
+
+using utl::ThreadException;
+
+static inline void serializePatterns(
+    const std::unordered_map<
+        frInst*,
+        std::vector<std::unique_ptr<FlexPinAccessPattern>>>& patterns,
+    const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  registerTypes(ar);
+  ar << patterns;
+  file.close();
+}
 
 FlexPA::FlexPA(frDesign* in,
                Logger* logger,
@@ -72,12 +91,32 @@ void FlexPA::init()
   initAllSkipInstTerm();
 }
 
+void FlexPA::addInst(frInst* inst)
+{
+  const bool new_unique = unique_insts_.addInst(inst);
+  if (new_unique) {
+    unique_insts_.initUniqueInstPinAccess(inst);
+    initSkipInstTerm(inst);
+    genInstAccessPoints(inst);
+    prepPatternInst(inst);
+  }
+  inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
+
+  insts_set_.insert(inst);
+  if (skipAllInstTerms(inst)) {
+    return;
+  }
+  std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
+  genInstRowPattern(inst_row);
+}
+
 void FlexPA::deleteInst(frInst* inst)
 {
   const bool is_class_head = (inst == unique_insts_.getUnique(inst));
   // if inst is the class head the new head will be returned by deleteInst()
-  frInst* class_head = unique_insts_.deleteInst(inst);
   UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
+  frInst* class_head = unique_insts_.deleteInst(inst);
+
   // whole class has to be deleted
   if (!class_head) {
     unique_inst_patterns_.erase(inst);
@@ -90,6 +129,42 @@ void FlexPA::deleteInst(frInst* inst)
     unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
     unique_inst_patterns_.erase(inst);
   }
+  insts_set_.erase(inst);
+}
+
+void FlexPA::updateInst(frInst* inst)
+{
+  if (inst->hasPinAccessIdx()) {
+    if (unique_insts_.computeUniqueClass(inst)
+        == *unique_insts_.getClass(inst)) {
+    } else {
+      deleteInst(inst);
+    }
+  }
+
+  // This is necessary, if the inst was moved its position on the set is wrong,
+  // it has to be erased and inserted back again to be in the right position
+  for (auto it = insts_set_.begin(); it != insts_set_.end(); ++it) {
+    if (*it == inst) {
+      insts_set_.erase(it);
+      break;
+    }
+  }
+
+  insts_set_.insert(inst);
+
+  addInst(inst);
+}
+
+frInst* FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
+{
+  frInst* inst = design_->getTopBlock()->findInst(db_inst);
+  if (!inst) {
+    io::Parser parser(db, getDesign(), logger_, router_cfg_);
+    inst = parser.setInst(db_inst);
+  }
+  updateInst(inst);
+  return inst;
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -153,6 +228,69 @@ void FlexPA::prep()
   prepPattern();
 }
 
+void FlexPA::prepPattern()
+{
+  ProfileTask profile("PA:pattern");
+
+  const auto& unique = unique_insts_.getUnique();
+
+  // revert access points to origin
+  unique_inst_patterns_.reserve(unique.size());
+
+  int cnt = 0;
+
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (frInst* unique_inst : unique) {
+    try {
+      // only do for core and block cells
+      // TODO the above comment says "block cells" but that's not what the code
+      // does?
+      if (!isStdCell(unique_inst)) {
+        continue;
+      }
+      prepPatternInst(unique_inst);
+#pragma omp critical
+      {
+        cnt++;
+        if (router_cfg_->VERBOSE > 0) {
+          if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
+            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
+          }
+        }
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  if (router_cfg_->VERBOSE > 0) {
+    logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
+  }
+  if (isDistributed()) {
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    std::string patterns_file = fmt::format("{}/patterns.bin", shared_vol_);
+    serializePatterns(unique_inst_patterns_, patterns_file);
+    uDesc->setPath(patterns_file);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PATTERNS);
+    msg.setJobDescription(std::move(uDesc));
+    const bool ok
+        = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok) {
+      logger_->error(
+          utl::DRT, 330, "Error sending UPDATE_PATTERNS Job to cloud");
+    }
+  }
+
+  std::vector<std::vector<frInst*>> inst_rows = computeInstRows();
+  prepPatternInstRows(inst_rows);
+}
+
 void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
 {
   target_insts_ = insts;
@@ -196,6 +334,16 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
 
   // This should be already computed in initSkipInstTerm()
   return skip_unique_inst_term_.at({inst_class, in->getTerm()});
+}
+
+bool FlexPA::skipAllInstTerms(frInst* inst)
+{
+  for (auto& inst_term : inst->getInstTerms()) {
+    if (!isSkipInstTerm(inst_term.get())) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // TODO there should be a better way to get this info by getting the master
