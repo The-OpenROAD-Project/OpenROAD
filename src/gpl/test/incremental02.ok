@@ -87,7 +87,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       290 |   0.2839 |  1.298899e+09 |   +0.46% |  5.65e-09 |      
       300 |   0.2706 |  1.303676e+09 |   +0.37% |  8.31e-09 |      
 [INFO GPL-0133] Unlocked instances
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
       310 |   0.4792 |  1.157125e+09 |  -11.24% |  1.09e-08 |      
       320 |   0.4446 |  1.155200e+09 |   -0.17% |  1.45e-08 |      
       330 |   0.4060 |  1.167528e+09 |   +1.07% |  1.93e-08 |      

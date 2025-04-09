@@ -2559,7 +2559,11 @@ void NesterovBase::updateNextIter(const int iter)
       group = fmt::format(" ({})", pb_->group()->getName());
     }
 
-    if (iter == 0 || this->reprint_iter_header) {
+    if (iter == 0 || reprint_iter_header) {
+      if (iter == 0) {
+        log_->report("[NesterovSolve] HPWL: Half-Perimeter Wirelength");
+      }
+
       const std::string nesterov_header
           = fmt::format("{:>9} | {:>8} | {:>13} | {:>8} | {:>9} | {:>5}",
                         "Iteration",
@@ -2569,11 +2573,9 @@ void NesterovBase::updateNextIter(const int iter)
                         "Penalty",
                         "Group");
 
-      const std::string nesterov_divider
-          = "---------------------------------------------------------------";
-
       log_->report(nesterov_header);
-      log_->report(nesterov_divider);
+      log_->report(
+          "---------------------------------------------------------------");
 
       reprint_iter_header = false;
     }
