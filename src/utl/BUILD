@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, Precision Innovations Inc.
+# Copyright (c) 2025, The OpenROAD Authors
 
 load("//:bazel/tcl_encode.bzl", "tcl_encode")
 load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")

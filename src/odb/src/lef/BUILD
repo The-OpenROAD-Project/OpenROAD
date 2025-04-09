@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, Precision Innovations Inc.
+# Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
 
