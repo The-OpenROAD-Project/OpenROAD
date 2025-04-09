@@ -356,10 +356,37 @@ and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool
 OpenROAD uses Git for version control and contributions. 
 Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/GitGuide.md).
 
-
 ## Understanding Warning and Error Messages
 Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages
 and you may potentially find your answer [here](https://openroad.readthedocs.io/en/latest/user/MessagesFinal.html).
+
+## Supported platforms and testing strategy
+
+The priority of testing is to test the algorithms. OpenROAD uses automated tests and CI to facilitate fast and safe progress in development.
+
+The platforms used in CI are whatever abundant and inexpensive testing resources that are available, currently this is x86 Google Cloud hardware.
+
+The value of a test ranges from extremely valuable(small, fast, easy to maintain, deterministic and frequent true positives) to a liability(slow running, hard to maintain, frequent false positives, unstable).
+
+Re-running all tests of algorithms varying initial conditions such as number of CPUs, CPU architecture, platform type, etc. increases the running time of tests exponentially, but adds virtually no testing value.
+
+Platform breakage has proven rare after compilation and is normally easily fixed by a PR from the community. CI testing of platform runtime failures have limited value as few bugs are found beyond manual smoke testing from early adopter contributors. The platform specific code is mostly straightforward and a one off manual test is adequate.
+
+As a specific example, Apple Arm support, important for individuals, but not a typical abundant cloud/server compute resource, would be more than adequately supported in CI with a small smoke test: compilation + small subset of Bazel tests. With Bazel caching in place, this should run in a few minutes on average for a PR.
+
+Currently CMake and Bazel is used for testing, but eventually CMake will be phased out. If a test exists only in CMake or Bazel, that is not a problem as such, but to retire CMake of course all tests that we intend to keep must be ported to Bazel and be in CI first. The top priority is to have CI tests of the algorithms. An algorithm can be satisfactorly tested on either Bazel or CMake.
+
+Bazel, being more flexible, is likely to grow new tests that will not be backported to CMake and there will be some new tests added to CMake that are not updated in Bazel BUILD files. This is unproblematic and the expected state of affairs until CMake tests are phased out. CMake tests will not be phased out in a single PR, but gradually turned off as considered adequate to test the algorithms and the additional running time of testing in CMake is more a liability than an benefit.
+
+As of writing, Bazel is quite new and the CI infrastructure for Bazel is being tested out, so there is a strong preference for testing everything in CMake and ORFS integration make based tests, but over time CMake tests will be phased out and there will only be Bazel tests.
+
+### Build, test times and timeout
+
+The OpenROAD/ORFS CI tests have a per job timeout, not per test timeout.
+
+Regarding running times of tests, in Bazel it is easy to enumerate and record test running times over time, though test running times do not include the build times of dependencies and the line between building and testing. In OpenROAD 'test running time' is well defined, but the OpenROAD tests are generally designed to in seconds. The ORFS integration tests blur the line between build time and test running time. An ORFS Bazel test could for instance test that a completed, but failed global route build has DRC errors. The test that the DRC errors exist would run in subsequent times, but the build time of the global route could take very substantial amount of time.
+
+Bazel has a concept of grooming memory and time requirements for tests by statically categorizing tests into buckets: this feature is not used by OpenROAD/ORFS, all tests are in the biggest bucket and a timeout for the CI job as a whole is used.
 
 ## License
 
