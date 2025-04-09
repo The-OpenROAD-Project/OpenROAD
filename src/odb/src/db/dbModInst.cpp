@@ -394,8 +394,9 @@ void dbModInst::RemoveUnusedPortsAndPins()
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
 
-    // Do the destruction in order
+    // Do the destruction in order for benefit of journaller
     // so we always have a dbModBTerm..
+    // first destroy net, then dbModIterm, then dbModbterm.
     mod_iterm->disconnect();
     mod_bterm->disconnect();
 
@@ -407,7 +408,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
       dbModNet::destroy(moditerm_m_net);
     }
 
-    // Now destory the iterm
+    // Now destroy the iterm
     dbModITerm::destroy(mod_iterm);
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0
@@ -417,8 +418,6 @@ void dbModInst::RemoveUnusedPortsAndPins()
     }
     // Finally the bterm
     dbModBTerm::destroy(mod_bterm);
-
-    // Last thing destroyed: first thing rebuilt !
   }
 }
 
