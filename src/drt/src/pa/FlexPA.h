@@ -74,8 +74,6 @@ class FlexPA
 
   void addInst(frInst* inst);
   void deleteInst(frInst* inst);
-  void updateInst(frInst* inst);
-  frInst* updateInst(odb::dbDatabase* db, odb::dbInst* db_inst);
 
   int main();
 

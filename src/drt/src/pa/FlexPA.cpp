@@ -132,41 +132,6 @@ void FlexPA::deleteInst(frInst* inst)
   insts_set_.erase(inst);
 }
 
-void FlexPA::updateInst(frInst* inst)
-{
-  if (inst->hasPinAccessIdx()) {
-    if (unique_insts_.computeUniqueClass(inst)
-        == *unique_insts_.getClass(inst)) {
-    } else {
-      deleteInst(inst);
-    }
-  }
-
-  // This is necessary, if the inst was moved its position on the set is wrong,
-  // it has to be erased and inserted back again to be in the right position
-  for (auto it = insts_set_.begin(); it != insts_set_.end(); ++it) {
-    if (*it == inst) {
-      insts_set_.erase(it);
-      break;
-    }
-  }
-
-  insts_set_.insert(inst);
-
-  addInst(inst);
-}
-
-frInst* FlexPA::updateInst(odb::dbDatabase* db, odb::dbInst* db_inst)
-{
-  frInst* inst = design_->getTopBlock()->findInst(db_inst);
-  if (!inst) {
-    io::Parser parser(db, getDesign(), logger_, router_cfg_);
-    inst = parser.setInst(db_inst);
-  }
-  updateInst(inst);
-  return inst;
-}
-
 void FlexPA::applyPatternsFile(const char* file_path)
 {
   unique_inst_patterns_.clear();
