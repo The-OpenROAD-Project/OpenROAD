@@ -218,8 +218,7 @@ int main(int argc, char* argv[])
 #ifdef BAZEL_CURRENT_REPOSITORY
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
-  boost::dll::fs::error_code ec;
-  boost::dll::fs::path argv0path = boost::dll::program_location(ec);
+  boost::dll::fs::path argv0path = boost::dll::program_location();
   std::unique_ptr<Runfiles> runfiles(
       Runfiles::Create(argv0path.string(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
