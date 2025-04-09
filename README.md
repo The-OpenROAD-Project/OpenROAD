@@ -380,6 +380,12 @@ Bazel, being more flexible, is likely to grow new tests that will not be backpor
 
 As of writing, Bazel is quite new and the CI infrastructure for Bazel is being tested out, so there is a strong preference for testing everything in CMake and ORFS integration make based tests, but over time CMake tests will be phased out and there will only be Bazel tests.
 
+### Python and Tcl bindings
+
+The .tcl and Python tests are mainly intended to test the algorithms and there is no intention to replicate all .tcl tests in Python. The binding itself does not require much in the way of testing and the goal is to device testing of the binding itself for Python and .tcl that are independent of the algorithms and that runs in seconds. Retesting Python and .tcl bindings is not particularly valuable as they rarely change and much like a GUI, a manual smoke test is usually adequate. It is the algorithms that need extensive regression testing, not the Python and .tcl bindings. The Python and .tcl bindings, when they break are quite straightforward to fix with a PR, algorithms can be much trickier to fix.
+
+C++ unit-tests are preferred over .tcl tests. The .tcl tests are historically easy to articulate and run fast, and hence OpenROAD has a very extensive .tcl unit-test in lieu of C++ unit-tests suite. Even if C++ unit-tests are preferred and conversion from .tcl to C++ unit-test contributions are welcome, there is no concerted effort to convert .tcl to C++ unit-tests.
+
 ### Build, test times and timeout
 
 The OpenROAD/ORFS CI tests have a per job timeout, not per test timeout.
