@@ -627,8 +627,9 @@ std::vector<std::pair<float, float>> HierRTLMP::computeWidthCurves(
     const std::vector<std::pair<float, float>>& tilings)
 {
   std::vector<std::pair<float, float>> width_curves;
+  width_curves.reserve(tilings.size());
   for (const std::pair<float, float>& tiling : tilings) {
-    width_curves.push_back({tiling.first, tiling.first});
+    width_curves.emplace_back(tiling.first, tiling.first);
   }
 
   std::sort(width_curves.begin(), width_curves.end(), isFirstSmaller);
