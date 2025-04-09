@@ -392,12 +392,19 @@ void dbJournal::redo_createObject()
     case dbModITermObj: {
       std::string name;
       uint obj_id;
+      uint modbterm_obj_id;
       uint parent_obj_id;
       _log.pop(name);
       _log.pop(obj_id);
+      _log.pop(modbterm_obj_id);
       _log.pop(parent_obj_id);
       dbModInst* parent_mod_inst = dbModInst::getModInst(_block, parent_obj_id);
-      dbModITerm* mod_iterm = dbModITerm::create(parent_mod_inst, name.c_str());
+      dbModBTerm* mod_bterm = nullptr;
+      if (modbterm_obj_id != 0) {
+        mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_obj_id);
+      }
+      dbModITerm* mod_iterm
+          = dbModITerm::create(parent_mod_inst, name.c_str(), mod_bterm);
       (void) mod_iterm;
       break;
     }
@@ -600,10 +607,13 @@ void dbJournal::redo_deleteObject()
 
     case dbModITermObj: {
       uint obj_id;
+      uint modbterm_id;
       std::string name;
       _log.pop(name);
       _log.pop(obj_id);
+      _log.pop(modbterm_id);
       (void) name;
+      (void) modbterm_id;
       auto moditerm = dbModITerm::getModITerm(_block, obj_id);
       dbModITerm::destroy(moditerm);
       break;
@@ -1773,9 +1783,11 @@ void dbJournal::undo_createObject()
     case dbModITermObj: {
       std::string name;
       uint moditerm_id;
+      uint modbterm_id;
       uint mod_inst_parent_id;
       _log.pop(name);
       _log.pop(moditerm_id);
+      _log.pop(modbterm_id);
       _log.pop(mod_inst_parent_id);
       dbModITerm* moditerm = dbModITerm::getModITerm(_block, moditerm_id);
       (void) name;
@@ -1943,7 +1955,6 @@ void dbJournal::undo_deleteObject()
       // get the parent module
       dbModule* parent_module = dbModule::getModule(_block, module_id);
       auto modbterm = dbModBTerm::create(parent_module, name.c_str());
-
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1959,13 +1970,18 @@ void dbJournal::undo_deleteObject()
       std::string name;
       uint obj_id;
       uint modinst_id;
+      uint modbterm_id;
       _log.pop(name);
       _log.pop(obj_id);
+      _log.pop(modbterm_id);
       _log.pop(modinst_id);
       // get the parent module
       dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
-      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str());
-      (void) mod_iterm;
+      dbModBTerm* mod_bterm = nullptr;
+      if (modbterm_id != 0U) {
+        mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
+      }
+      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str(), mod_bterm);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -2134,6 +2150,7 @@ void dbJournal::undo_disconnectObject()
         dbModNet* mnet = dbModNet::getModNet(_block, modnet_id);
         mod_iterm->connect(mnet);
       }
+
       break;
     }
     default: {
