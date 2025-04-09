@@ -1338,19 +1338,26 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
   if (!first_pin.isAssignedToSection() && !first_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
+    std::vector<int64_t> larger_cost(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
         IOPin& pin = net->getIoPin(pin_idx);
+        bool has_mirrored_pin = pin.getBTerm()->hasMirroredBTerm();
         int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
         }
         dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
+        if (has_mirrored_pin) {
+          larger_cost[i]
+              += std::max(pin_hpwl,
+                         getMirroredPinCost(pin, sections[i].pos));
+        }
       }
     }
 
-    for (auto i : sortIndexes(dst)) {
+    for (auto i : sortIndexes(dst, larger_cost)) {
       int section_available_slots
           = sections[i].num_slots - sections[i].used_slots;
 
@@ -1486,15 +1493,24 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
                                   std::vector<Section>& sections)
 {
   bool pin_assigned = false;
+  bool has_mirrored_pin = io_pin.getBTerm()->hasMirroredBTerm();
 
   if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()
       && !io_pin.inFallback()) {
     std::vector<int> dst(sections.size());
+    std::vector<int> larger_cost(sections.size());
+
     for (int i = 0; i < sections.size(); i++) {
       dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos)
                + getMirroredPinCost(io_pin, sections[i].pos);
+
+      if (has_mirrored_pin) {
+        larger_cost[i]
+            = std::max(netlist_->computeIONetHPWL(idx, sections[i].pos),
+                       getMirroredPinCost(io_pin, sections[i].pos));
+      }
     }
-    for (auto i : sortIndexes(dst)) {
+    for (auto i : sortIndexes(dst, larger_cost)) {
       if (sections[i].used_slots < sections[i].num_slots) {
         sections[i].pin_indices.push_back(idx);
         sections[i].used_slots++;

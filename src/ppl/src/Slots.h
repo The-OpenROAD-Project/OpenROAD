@@ -124,13 +124,19 @@ struct Constraint
 };
 
 template <typename T>
-std::vector<size_t> sortIndexes(const std::vector<T>& v)
+std::vector<size_t> sortIndexes(const std::vector<T>& v,
+                                const std::vector<T>& tie_break)
 {
   // initialize original index locations
   std::vector<size_t> idx(v.size());
   std::iota(idx.begin(), idx.end(), 0);
+
+  // sort indexes based on comparing values in tie_break
+  std::stable_sort(idx.begin(), idx.end(), [&v, &tie_break](size_t i1, size_t i2) {
+    return tie_break[i1] < tie_break[i2];
+  });
   // sort indexes based on comparing values in v
-  std::stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {
+  std::stable_sort(idx.begin(), idx.end(), [&v, &tie_break](size_t i1, size_t i2) {
     return v[i1] < v[i2];
   });
   return idx;
