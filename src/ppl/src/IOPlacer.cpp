@@ -1351,8 +1351,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
         if (has_mirrored_pin) {
           larger_cost[i]
-              += std::max(pin_hpwl,
-                         getMirroredPinCost(pin, sections[i].pos));
+              += std::max(pin_hpwl, getMirroredPinCost(pin, sections[i].pos));
         }
       }
     }
