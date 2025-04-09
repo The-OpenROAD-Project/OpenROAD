@@ -1201,6 +1201,9 @@ cc_binary(
     deps = [
         ":opensta_lib",
         "@tk_tcl//:tcl",
+        "@boost.filesystem",
+        "@boost.system",
+
     ],
     malloc = "@tcmalloc//tcmalloc",
 )
