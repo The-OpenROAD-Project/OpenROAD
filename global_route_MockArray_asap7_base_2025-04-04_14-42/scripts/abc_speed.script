@@ -1,0 +1,35 @@
+&get -n
+&st
+&dch
+&nf
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf
+&st
+&syn2
+&if -g -K 6
+&synch2
+&nf
+&put
+buffer -c
+topo
+stime -c
+upsize -c
+dnsize -c
