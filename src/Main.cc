@@ -30,6 +30,7 @@
 
 #ifdef BAZEL_CURRENT_REPOSITORY
 #include "rules_cc/cc/runfiles/runfiles.h"
+#include "third-party/whereami/whereami.h"
 #endif
 
 #include "gui/gui.h"
@@ -215,9 +216,15 @@ int main(int argc, char* argv[])
 
 #ifdef BAZEL_CURRENT_REPOSITORY
   using rules_cc::cc::runfiles::Runfiles;
+  int length = wai_getExecutablePath(NULL, 0, NULL);
+  char* dynamic_path = (char*) malloc(length + 1);
+  wai_getExecutablePath(dynamic_path, length, NULL);
+  dynamic_path[length] = '\0';
+  std::string exec_path(dynamic_path);
+  free(dynamic_path);
   std::string error;
   std::unique_ptr<Runfiles> runfiles(
-      Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+      Runfiles::Create(exec_path.c_str(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << error << std::endl;
     return 1;
