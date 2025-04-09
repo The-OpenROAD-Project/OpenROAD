@@ -2553,7 +2553,7 @@ void NesterovBase::updateNextIter(const int iter)
       group = fmt::format(" ({})", pb_->group()->getName());
     }
 
-    if (iter == 0 || reprint_iter_header) {
+    if ((iter == 0 || reprint_iter_header) && !pb_->group()) {
       if (iter == 0) {
         log_->report("[NesterovSolve] HPWL: Half-Perimeter Wirelength");
       }

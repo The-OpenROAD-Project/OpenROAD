@@ -90,11 +90,7 @@ Using 2 tracks default min distance between IO pins.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.4225 |  1.127956e+06 |   +0.00% |  8.28e-14 |      
-Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
----------------------------------------------------------------
         1 |   0.9998 |  1.127956e+06 |   +0.00% |  6.62e-13 |  (PD_D1)
-Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
----------------------------------------------------------------
         1 |   0.1668 |  1.127956e+06 |   +0.00% |  8.77e-13 |  (PD_D2)
 [NesterovSolve] Finished with Overflow: 0.081593
        10 |   0.9998 |  4.495300e+05 |  -60.15% |  8.06e-13 |  (PD_D1)
