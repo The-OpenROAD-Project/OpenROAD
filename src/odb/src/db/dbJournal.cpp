@@ -1956,9 +1956,6 @@ void dbJournal::undo_deleteObject()
       // get the parent module
       dbModule* parent_module = dbModule::getModule(_block, module_id);
       auto modbterm = dbModBTerm::create(parent_module, name.c_str());
-      static int debug;
-      debug++;
-      printf("D %d undoing delete of dbModBTerm%s\n", debug, name.c_str());
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
@@ -1982,9 +1979,6 @@ void dbJournal::undo_deleteObject()
       // get the parent module
       dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
       auto mod_iterm = dbModITerm::create(mod_inst, name.c_str());
-      static int debug;
-      debug++;
-      printf("D %d undoing delete of dbModITerm%s\n", debug, name.c_str());
       if (modbterm_id != 0U) {
         dbModBTerm* mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
         mod_iterm->setChildModBTerm(mod_bterm);
