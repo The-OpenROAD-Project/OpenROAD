@@ -311,7 +311,6 @@ OPENROAD_LIBRARY_DEPS = [
     "@boost.stacktrace",
     "@boost.thread",
     "@boost.filesystem",
-    "@boost.system",
     "@eigen",
     "@com_github_quantamhd_lemon//:lemon",
     "@org_llvm_openmp//:openmp",
