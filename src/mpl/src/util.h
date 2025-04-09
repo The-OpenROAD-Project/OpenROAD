@@ -33,7 +33,7 @@ struct PenaltyData
 };
 
 inline bool isFirstSmaller(const std::pair<float, float>& p1,
-  const std::pair<float, float>& p2)
+                           const std::pair<float, float>& p2)
 {
   return p1.first < p2.first;
 }
