@@ -27,12 +27,6 @@ namespace gpl {
 using odb::dbBlock;
 using utl::GPL;
 
-extern const char* format_label_int;
-extern const char* format_label_float;
-extern const char* format_label_um2;
-extern const char* format_label_percent;
-extern const char* format_label_um2_with_delta;
-
 static int fastModulo(int input, int ceil);
 
 static float calculateBiVariateNormalCDF(biNormalParameters i);

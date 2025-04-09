@@ -25,12 +25,6 @@ using utl::GPL;
 
 namespace gpl {
 
-extern const char* format_label_int;
-extern const char* format_label_float;
-extern const char* format_label_um2;
-extern const char* format_label_percent;
-extern const char* format_label_um2_with_delta;
-
 Tile::Tile() = default;
 
 Tile::Tile(int x, int y, int lx, int ly, int ux, int uy, int layers)

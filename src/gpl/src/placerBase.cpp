@@ -32,11 +32,6 @@ using odb::dbSigType;
 using odb::Rect;
 using utl::GPL;
 
-extern const char* format_label_int;
-extern const char* format_label_float;
-extern const char* format_label_um2;
-extern const char* format_label_percent;
-
 static int fastModulo(int input, int ceil);
 
 static std::pair<int, int> getMinMaxIdx(int ll,
