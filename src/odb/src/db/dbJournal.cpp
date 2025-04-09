@@ -399,13 +399,12 @@ void dbJournal::redo_createObject()
       _log.pop(modbterm_obj_id);
       _log.pop(parent_obj_id);
       dbModInst* parent_mod_inst = dbModInst::getModInst(_block, parent_obj_id);
-      dbModITerm* mod_iterm = dbModITerm::create(parent_mod_inst, name.c_str());
       dbModBTerm* mod_bterm = nullptr;
       if (modbterm_obj_id != 0) {
         mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_obj_id);
       }
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm
+          = dbModITerm::create(parent_mod_inst, name.c_str(), mod_bterm);
       (void) mod_iterm;
       break;
     }
@@ -1978,12 +1977,11 @@ void dbJournal::undo_deleteObject()
       _log.pop(modinst_id);
       // get the parent module
       dbModInst* mod_inst = dbModInst::getModInst(_block, modinst_id);
-      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str());
+      dbModBTerm* mod_bterm = nullptr;
       if (modbterm_id != 0U) {
-        dbModBTerm* mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
-        mod_iterm->setChildModBTerm(mod_bterm);
-        mod_bterm->setParentModITerm(mod_iterm);
+        mod_bterm = dbModBTerm::getModBTerm(_block, modbterm_id);
       }
+      auto mod_iterm = dbModITerm::create(mod_inst, name.c_str(), mod_bterm);
       debugPrint(_logger,
                  utl::ODB,
                  "DB_ECO",
