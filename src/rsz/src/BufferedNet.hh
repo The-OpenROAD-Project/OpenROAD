@@ -122,14 +122,14 @@ class BufferedNet
   int maxLoadWireLength() const;
 
   // Rebuffer
-  const PathRef& arrivalPath() const { return arrival_path_; }
-  const PathRef& requiredPath() const { return required_path_; }
-  Delay slack(const StaState* sta) const;
-  void setRequiredPath(const PathRef& path_ref);
-  void setArrivalPath(const PathRef& path_ref);
+  const sta::RiseFallBoth* slackTransition() const
+  {
+    return slack_transitions_;
+  };
+  void setSlackTransition(const sta::RiseFallBoth* transitions);
 
-  Delay requiredDelay() const { return required_delay_; }
-  void setRequiredDelay(Delay delay);
+  Delay slack() const { return slack_; };
+  void setSlack(Delay slack);
 
   Delay delay() const { return delay_; }
   void setDelay(Delay delay);
@@ -164,19 +164,20 @@ class BufferedNet
   float max_load_slew_;
 
   // Rebuffer annotations
-  // PathRef for worst required path at load.
-  PathRef required_path_;
-  // PathRef for the corresponding arrival at driver pin.
-  PathRef arrival_path_;
-  // Max delay from here to the loads.
-  Delay required_delay_;
-  // Area of buffers on the buffer tree looking dowsmtrem from here.
+
+  // Area of buffers on the buffer tree looking downstream from here
   float area_;
+
+  // Transition we need to consider for buffer delays
+  const sta::RiseFallBoth* slack_transitions_ = nullptr;
+
+  // Slack considering the buffer/wire delays downstream of here
+  Delay slack_ = 0;
 
   // Computed delay of the buffer/wire
   Delay delay_ = 0;
 
-  // Delay from driver pin to here;
+  // Delay from driver pin to here
   Delay arrival_delay_ = 0;
 };
 

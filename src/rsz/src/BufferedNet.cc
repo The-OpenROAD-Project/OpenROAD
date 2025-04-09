@@ -69,9 +69,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
     max_load_slew_ = INF;
   }
 
-  required_path_.init();
-  required_delay_ = 0.0;
-
   area_ = 0;
 }
 
@@ -97,9 +94,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   cap_ = ref->cap() + ref2->cap();
   fanout_ = ref->fanout() + ref2->fanout();
   max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
-
-  required_path_.init();
-  required_delay_ = 0.0;
 
   area_ = ref->area() + ref2->area();
 }
@@ -130,9 +124,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = ref->fanout();
   max_load_slew_ = ref->maxLoadSlew();
 
-  required_path_.init();
-  required_delay_ = 0.0;
-
   area_ = ref->area();
 }
 
@@ -161,9 +152,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   cap_ = resizer->portCapacitance(input, corner);
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
-
-  required_path_.init();
-  required_delay_ = 0.0;
 
   area_ = ref->area() + 1;
 }
@@ -207,13 +195,13 @@ string BufferedNet::to_string(const Resizer* resizer) const
                          x,
                          y,
                          cap,
-                         delayAsString(slack(resizer), resizer));
+                         delayAsString(slack(), resizer));
     case BufferedNetType::wire:
       return fmt::format("wire ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(slack(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
     case BufferedNetType::buffer:
       return fmt::format("buffer ({}, {}) {} cap {} slack {} buffers {}",
@@ -221,14 +209,14 @@ string BufferedNet::to_string(const Resizer* resizer) const
                          y,
                          buffer_cell_->name(),
                          cap,
-                         delayAsString(slack(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
     case BufferedNetType::junction:
       return fmt::format("junction ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(slack(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
   }
   // suppress gcc warning
@@ -255,28 +243,14 @@ void BufferedNet::setMaxLoadSlew(float max_slew)
   max_load_slew_ = max_slew;
 }
 
-void BufferedNet::setRequiredPath(const PathRef& path_ref)
+void BufferedNet::setSlackTransition(const sta::RiseFallBoth* transitions)
 {
-  required_path_ = path_ref;
+  slack_transitions_ = transitions;
 }
 
-void BufferedNet::setArrivalPath(const PathRef& path_ref)
+void BufferedNet::setSlack(Delay slack)
 {
-  arrival_path_ = path_ref;
-}
-
-Required BufferedNet::slack(const StaState* sta) const
-{
-  if (required_path_.isNull()) {
-    return INF;
-  }
-  return required_path_.required(sta) - required_delay_
-         - arrival_path_.arrival(sta);
-}
-
-void BufferedNet::setRequiredDelay(Delay delay)
-{
-  required_delay_ = delay;
+  slack_ = slack;
 }
 
 void BufferedNet::setDelay(Delay delay)
