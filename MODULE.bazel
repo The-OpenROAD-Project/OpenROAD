@@ -44,6 +44,7 @@ bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.2")
 bazel_dep(name = "or-tools", version = "9.12")
 bazel_dep(name = "spdlog", version = "1.15.1")
+bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
 bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
