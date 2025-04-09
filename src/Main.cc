@@ -29,8 +29,8 @@
 #endif
 
 #ifdef BAZEL_CURRENT_REPOSITORY
-#include "rules_cc/cc/runfiles/runfiles.h"
 #include "./external/_main~_repo_rules~whereami/whereami.h"
+#include "rules_cc/cc/runfiles/runfiles.h"
 #endif
 
 #include "gui/gui.h"
