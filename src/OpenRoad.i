@@ -12,6 +12,7 @@
 #include "db_sta/dbReadVerilog.hh"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
+#include "odb/util.h"
 
 #include <thread>
 #include <vector>
@@ -579,6 +580,14 @@ std::string get_docs_path()
 {
   OpenRoad *ord = getOpenRoad();
   return ord->getDocsPath();
+}
+
+void report_hpwl()
+{
+  dbDatabase *db = OpenRoad::openRoad()->getDb();
+  dbBlock *block = db->getChip()->getBlock();
+  odb::WireLengthEvaluator w(block);
+  w.report(getLogger());
 }
 
 }
