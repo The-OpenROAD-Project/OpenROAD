@@ -1412,9 +1412,10 @@ void FlexPA::genInstAccessPoints(frInst* unique_inst)
     if (!n_aps) {
       logger_->error(DRT,
                      73,
-                     "No access point for {}/{}.",
+                     "No access point for {}/{} ({}).",
                      inst_term->getInst()->getName(),
-                     inst_term->getTerm()->getName());
+                     inst_term->getTerm()->getName(),
+                     inst_term->getInst()->getMaster()->getName());
     }
   }
 }
