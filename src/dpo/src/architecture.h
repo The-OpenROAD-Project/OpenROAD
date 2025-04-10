@@ -1,54 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 #include <map>
 #include <string>
 #include <vector>
 
+#include "dpl/Coordinates.h"
+#include "odb/dbTypes.h"
 #include "rectangle.h"
 
 namespace dpo {
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 class Network;
 class Node;
+using dpl::DbuX;
+using dpl::DbuY;
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 class Architecture
 {
   // This class represents information about the layout area.
@@ -79,11 +48,11 @@ class Architecture
   int getCellHeightInRows(const Node* ndi) const;
 
   int postProcess(Network* network);
-  int find_closest_row(int y);
+  int find_closest_row(DbuY y);
 
   void clear_edge_type();
   void init_edge_type();
-  int add_edge_type(const char* name);
+  int add_edge_type(const std::string& name);
 
   int getMinX() const { return xmin_; }
   int getMaxX() const { return xmax_; }
@@ -104,14 +73,28 @@ class Architecture
   void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
   bool getUseSpacingTable() const { return useSpacingTable_; }
   void clearSpacingTable();
-  int getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
-  void addCellSpacingUsingTable(int firstEdge, int secondEdge, int sep);
+  void initSpacingTable();
+  void addSpacingTableEntry(int first_edge,
+                            int second_edge,
+                            int spc,
+                            bool is_exact,
+                            bool except_abutted);
+  Spacing getMaxSpacing(int edge_type) const;
+  Spacing getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
 
-  const std::vector<Spacing*>& getCellSpacings() const { return cellSpacings_; }
-
-  const std::vector<std::pair<std::string, int>>& getEdgeTypes() const
+  const std::vector<std::vector<Spacing>>& getCellSpacings() const
   {
-    return edgeTypes_;
+    return cellSpacings_;
+  }
+
+  const std::map<std::string, int>& getEdgeTypes() const { return edgeTypes_; }
+  bool hasEdgeType(const std::string& edge_type) const
+  {
+    return edgeTypes_.find(edge_type) != edgeTypes_.end();
+  }
+  int getEdgeTypeIdx(const std::string& edge_type) const
+  {
+    return edgeTypes_.at(edge_type);
   }
 
   // Using padding...
@@ -121,6 +104,10 @@ class Architecture
   bool getCellPadding(const Node* ndi,
                       int& leftPadding,
                       int& rightPadding) const;
+  void addCellPadding(Node* ndi, DbuX leftPadding, DbuX rightPadding);
+  bool getCellPadding(const Node* ndi,
+                      DbuX& leftPadding,
+                      DbuX& rightPadding) const;
 
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
@@ -139,8 +126,8 @@ class Architecture
 
   // Spacing tables...
   bool useSpacingTable_ = false;
-  std::vector<std::pair<std::string, int>> edgeTypes_;
-  std::vector<Spacing*> cellSpacings_;
+  std::map<std::string, int> edgeTypes_;
+  std::vector<std::vector<Spacing>> cellSpacings_;
 
   // Padding...
   bool usePadding_ = false;
@@ -150,16 +137,16 @@ class Architecture
 class Architecture::Spacing
 {
  public:
-  Spacing(int i1, int i2, int sep);
-
-  int getFirstEdge() const { return i1_; }
-  int getSecondEdge() const { return i2_; }
-  int getSeparation() const { return sep_; }
-
- private:
-  int i1_;
-  int i2_;
-  int sep_;
+  Spacing(const int spc_in,
+          const bool is_exact_in,
+          const bool except_abutted_in)
+      : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
+  {
+  }
+  bool operator<(const Spacing& rhs) const { return spc < rhs.spc; }
+  int spc;
+  bool is_exact;
+  bool except_abutted;
 };
 
 class Architecture::Row
@@ -175,8 +162,8 @@ class Architecture::Row
   void setId(int id) { id_ = id; }
   int getId() const { return id_; }
 
-  void setOrient(unsigned orient) { siteOrient_ = orient; }
-  unsigned getOrient() const { return siteOrient_; }
+  void setOrient(const odb::dbOrientType& orient) { siteOrient_ = orient; }
+  odb::dbOrientType getOrient() const { return siteOrient_; }
 
   void setSymmetry(unsigned sym) { siteSymmetry_ = sym; }
   unsigned getSymmetry() const { return siteSymmetry_; }
@@ -215,7 +202,7 @@ class Architecture::Row
   int siteWidth_ = 0;     // Width of sites in the row.
   int numSites_ = 0;      // Number of sites...  Ending X location (xmax) is =
                           // subRowOrigin_ + numSites_ * siteSpacing_;
-  unsigned siteOrient_ = 0;    // Orientation of sites in the row.
+  odb::dbOrientType siteOrient_;  // Orientation of sites in the row.
   unsigned siteSymmetry_ = 0;  // Symmetry of sites in the row.  Symmetry allows
                                // for certain orientations...
   // Voltages at the top and bottom of the row.

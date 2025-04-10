@@ -20,8 +20,14 @@ report_equiv_cells sky130_fd_sc_hd__buf_1 -match_cell_footprint
 reset_opt_config
 
 report_equiv_cells sky130_fd_sc_hd__buf_1 -match_cell_footprint
+
 report_equiv_cells sky130_fd_sc_hd__clkinv_2
 
-set_opt_config -keep_sizing_vt true
+set_opt_config -keep_sizing_vt true -limit_sizing_area 2.0 \
+    -limit_sizing_leakage 2.0 -keep_sizing_site true
+
+report_equiv_cells sky130_fd_sc_hd__clkinv_2
+
+report_equiv_cells -all sky130_fd_sc_hd__clkinv_2
 
 report_equiv_cells sky130_fd_sc_hd__clkinv_2

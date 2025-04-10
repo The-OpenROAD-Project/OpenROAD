@@ -1,41 +1,6 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-// Includes.
-////////////////////////////////////////////////////////////////////////////////
 #include "detailed_hpwl.h"
 
 #include <vector>
@@ -43,14 +8,6 @@
 #include "detailed_orient.h"
 
 namespace dpo {
-
-////////////////////////////////////////////////////////////////////////////////
-// Defines.
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-// Classes.
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,9 +55,9 @@ double DetailedHPWL::curr()
       const Node* ndj = pinj->getNode();
 
       const double x
-          = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
       const double y
-          = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
       box.addPt(x, y);
     }
@@ -112,14 +69,7 @@ double DetailedHPWL::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(const int n,
-                           const std::vector<Node*>& nodes,
-                           const std::vector<int>& curLeft,
-                           const std::vector<int>& curBottom,
-                           const std::vector<unsigned>& curOri,
-                           const std::vector<int>& newLeft,
-                           const std::vector<int>& newBottom,
-                           const std::vector<unsigned>& newOri)
+double DetailedHPWL::delta(const Journal& journal)
 {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in WL. Note that we need to know the orientation information and
@@ -130,18 +80,13 @@ double DetailedHPWL::delta(const int n,
   double new_wl = 0.;
   Rectangle old_box, new_box;
 
-  // Put cells into their "old positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
+  const auto& changes = journal.getActions();
+  for (int i = changes.size() - 1; i >= 0; i--) {
+    mgrPtr_->undo(changes[i], true);
   }
 
   ++traversal_;
-  for (int i = 0; i < n; i++) {
-    Node* ndi = nodes[i];
+  for (const auto ndi : journal.getAffectedNodes()) {
     for (Pin* pini : ndi->getPins()) {
       Edge* edi = pini->getEdge();
 
@@ -160,8 +105,9 @@ double DetailedHPWL::delta(const int n,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        y = curr->getBottom().v + 0.5 * curr->getHeight().v
+            + pinj->getOffsetY();
 
         old_box.addPt(x, y);
       }
@@ -171,17 +117,12 @@ double DetailedHPWL::delta(const int n,
   }
 
   // Put cells into their "new positions and orientations".
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(newLeft[i]);
-    nodes[i]->setBottom(newBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], newOri[i]);
-    }
+  for (const auto& change : changes) {
+    mgrPtr_->redo(change, true);
   }
 
   ++traversal_;
-  for (int i = 0; i < n; i++) {
-    Node* ndi = nodes[i];
+  for (const auto ndi : journal.getAffectedNodes()) {
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       Pin* pini = ndi->getPins()[pi];
 
@@ -202,8 +143,9 @@ double DetailedHPWL::delta(const int n,
 
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        y = curr->getBottom().v + 0.5 * curr->getHeight().v
+            + pinj->getOffsetY();
 
         new_box.addPt(x, y);
       }
@@ -211,17 +153,6 @@ double DetailedHPWL::delta(const int n,
       new_wl += (new_box.getWidth() + new_box.getHeight());
     }
   }
-
-  // Put cells into their "old positions and orientations" before returning
-  // (leave things as they were provided to us...).
-  for (int i = 0; i < n; i++) {
-    nodes[i]->setLeft(curLeft[i]);
-    nodes[i]->setBottom(curBottom[i]);
-    if (orientPtr_ != nullptr) {
-      orientPtr_->orientAdjust(nodes[i], curOri[i]);
-    }
-  }
-
   // +ve means improvement.
   return old_wl - new_wl;
 }
@@ -259,8 +190,8 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
 
       Node* ndj = pinj->getNode();
 
-      x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-      y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
       old_box.addPt(x, y);
 
@@ -323,8 +254,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
 
         Node* ndj = pinj->getNode();
 
-        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 
@@ -334,8 +265,8 @@ double DetailedHPWL::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
-        y = ndj->getBottom() + 0.5 * ndj->getHeight() + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
 
         new_box.addPt(x, y);
       }
@@ -388,8 +319,9 @@ double DetailedHPWL::delta(Node* ndi,
       for (Pin* pinj : edi->getPins()) {
         Node* curr = pinj->getNode();
 
-        x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();
-        y = curr->getBottom() + 0.5 * curr->getHeight() + pinj->getOffsetY();
+        x = curr->getLeft().v + 0.5 * curr->getWidth().v + pinj->getOffsetX();
+        y = curr->getBottom().v + 0.5 * curr->getHeight().v
+            + pinj->getOffsetY();
 
         old_box.addPt(x, y);
 

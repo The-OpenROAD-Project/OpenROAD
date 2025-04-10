@@ -1,30 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
@@ -1578,13 +1553,15 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
         < b->getFrNet()->getAbsPriorityLvl()) {
       return false;
     }
-    Rect boxA = a->getPinBox();
-    Rect boxB = b->getPinBox();
-    auto areaA = boxA.area();
-    auto areaB = boxB.area();
-    return (a->getNumPinsIn() == b->getNumPinsIn()
-                ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB)
-                : a->getNumPinsIn() < b->getNumPinsIn());
+    const Rect boxA = a->getPinBox();
+    const Rect boxB = b->getPinBox();
+    const auto areaA = boxA.area();
+    const auto areaB = boxB.area();
+    const int pinsA = a->getNumPinsIn();
+    const int pinsB = b->getNumPinsIn();
+    const auto idA = a->getId();
+    const auto idB = b->getId();
+    return std::tie(pinsA, areaA, idA) < std::tie(pinsB, areaB, idB);
   };
   // sort
   if (mazeIter == 0) {
@@ -1677,13 +1654,14 @@ void FlexDRWorker::writeGCPatchesToDRWorker(
     if (!valid_indices.empty()) {
       // Find closest path point
       Point closest;
-      frCoord closest_dist = INT_MAX;
+      frSquaredDistance closest_dist
+          = std::numeric_limits<frSquaredDistance>::max();
       auto origin = pwire->getOrigin();
       auto box = pwire->getOffsetBox();
       for (auto p : valid_indices) {
         Point pp;
         gridGraph_.getPoint(pp, p.x(), p.y());
-        frCoord path_length = Point::squaredDistance(origin, pp);
+        frSquaredDistance path_length = Point::squaredDistance(origin, pp);
         if (path_length < closest_dist) {
           closest_dist = path_length;
           closest = pp;

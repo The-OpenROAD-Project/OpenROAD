@@ -1,36 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <cmath>
 #include <fstream>
@@ -69,8 +38,8 @@ void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
   for (Cell& cell : cells_) {
     if (cell.isStdCell()) {
       // Site alignment check
-      if (cell.x_ % grid_->getSiteWidth() != 0
-          || row_coords.find(cell.y_.v) == row_coords.end()) {
+      if (cell.xMin() % grid_->getSiteWidth() != 0
+          || row_coords.find(cell.yMin().v) == row_coords.end()) {
         site_align_failures.push_back(&cell);
         continue;
       }
@@ -94,7 +63,7 @@ void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
     if (!checkEdgeSpacing(&cell,
                           grid_->gridX(&cell),
                           grid_->gridSnapDownY(&cell),
-                          cell.orient_)) {
+                          cell.getOrient())) {
       edge_spacing_failures.emplace_back(&cell);
     }
   }
@@ -157,10 +126,10 @@ void Opendp::saveViolations(const std::vector<Cell*>& failures,
     if (!marker) {
       break;
     }
-    int xMin = (failure->x_ + core.xMin()).v;
-    int yMin = (failure->y_ + core.yMin()).v;
-    int xMax = (failure->x_ + failure->width_ + core.xMin()).v;
-    int yMax = (failure->y_ + failure->height_ + core.yMin()).v;
+    int xMin = (failure->xMin() + core.xMin()).v;
+    int yMin = (failure->yMin() + core.yMin()).v;
+    int xMax = (failure->xMin() + failure->dx() + core.xMin()).v;
+    int yMax = (failure->yMin() + failure->dy() + core.yMin()).v;
 
     if (violation_type == "overlap") {
       const Cell* o_cell = checkOverlap(*failure);
@@ -170,14 +139,14 @@ void Opendp::saveViolations(const std::vector<Cell*>& failures,
                        "Could not find overlapping cell for cell {}",
                        failure->name());
       }
-      odb::Rect o_rect(o_cell->x_.v,
-                       o_cell->y_.v,
-                       o_cell->x_.v + o_cell->width_.v,
-                       o_cell->y_.v + o_cell->height_.v);
-      odb::Rect f_rect(failure->x_.v,
-                       failure->y_.v,
-                       failure->x_.v + failure->width_.v,
-                       failure->y_.v + failure->height_.v);
+      odb::Rect o_rect(o_cell->xMin().v,
+                       o_cell->yMin().v,
+                       o_cell->xMin().v + o_cell->dx().v,
+                       o_cell->yMin().v + o_cell->dy().v);
+      odb::Rect f_rect(failure->xMin().v,
+                       failure->yMin().v,
+                       failure->xMin().v + failure->dx().v,
+                       failure->yMin().v + failure->dy().v);
 
       odb::Rect overlap_rect;
       o_rect.intersection(f_rect, overlap_rect);
@@ -187,10 +156,10 @@ void Opendp::saveViolations(const std::vector<Cell*>& failures,
       xMax = overlap_rect.xMax() + core.xMin();
       yMax = overlap_rect.yMax() + core.yMin();
 
-      marker->addSource(o_cell->db_inst_);
+      marker->addSource(o_cell->getDbInst());
     }
     marker->addShape(Rect{xMin, yMin, xMax, yMax});
-    marker->addSource(failure->db_inst_);
+    marker->addSource(failure->getDbInst());
   }
 }
 
@@ -310,7 +279,7 @@ void Opendp::reportOverlapFailure(Cell* cell) const
 /* static */
 bool Opendp::isPlaced(const Cell* cell)
 {
-  return cell->db_inst_->isPlaced();
+  return cell->getDbInst()->isPlaced();
 }
 
 bool Opendp::checkInRows(const Cell& cell) const
@@ -324,7 +293,7 @@ bool Opendp::checkInRows(const Cell& cell) const
              "height {} in rows. Y start {} y end {}",
              cell.name(),
              cell.getSite()->getName(),
-             cell.height_,
+             cell.dy(),
              grid_rect.ylo,
              grid_rect.yhi);
 
@@ -395,11 +364,11 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   const DbuPt ll2 = initialLocation(cell2, padded);
   DbuPt ur1, ur2;
   if (padded) {
-    ur1 = DbuPt(ll1.x + padding_->paddedWidth(cell1), ll1.y + cell1->height_);
-    ur2 = DbuPt(ll2.x + padding_->paddedWidth(cell2), ll2.y + cell2->height_);
+    ur1 = DbuPt(ll1.x + padding_->paddedWidth(cell1), ll1.y + cell1->dy());
+    ur2 = DbuPt(ll2.x + padding_->paddedWidth(cell2), ll2.y + cell2->dy());
   } else {
-    ur1 = DbuPt(ll1.x + cell1->width_.v, ll1.y + cell1->height_.v);
-    ur2 = DbuPt(ll2.x + cell2->width_.v, ll2.y + cell2->height_.v);
+    ur1 = DbuPt(ll1.x + cell1->dx().v, ll1.y + cell1->dy().v);
+    ur2 = DbuPt(ll2.x + cell2->dx().v, ll2.y + cell2->dy().v);
   }
   return ll1.x < ur2.x && ur1.x > ll2.x && ll1.y < ur2.y && ur1.y > ll2.y;
 }
@@ -438,20 +407,20 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 
 bool Opendp::checkRegionPlacement(const Cell* cell) const
 {
-  const DbuX x_begin = cell->x_;
-  const DbuX x_end = x_begin + cell->width_;
-  const DbuY y_begin = cell->y_;
-  const DbuY y_end = y_begin + cell->height_;
+  const DbuX x_begin = cell->xMin();
+  const DbuX x_end = x_begin + cell->dx();
+  const DbuY y_begin = cell->yMin();
+  const DbuY y_end = y_begin + cell->dy();
 
-  if (cell->region_) {
+  if (cell->getRegion()) {
     const DbuX site_width = grid_->getSiteWidth();
-    return cell->region_->contains(
+    return cell->getRegion()->contains(
                odb::Rect(x_begin.v, y_begin.v, x_end.v, y_end.v))
            && checkRegionOverlap(cell,
                                  GridX{x_begin.v / site_width.v},
-                                 GridY{y_begin.v / cell->height_.v},
+                                 GridY{y_begin.v / cell->dy().v},
                                  GridX{x_end.v / site_width.v},
-                                 GridY{y_end.v / cell->height_.v});
+                                 GridY{y_end.v / cell->dy().v});
   }
   return true;
 }
@@ -466,7 +435,7 @@ bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2)
 /* static */
 bool Opendp::isCrWtBlClass(const Cell* cell)
 {
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  dbMasterType type = cell->getDbInst()->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type.getValue()) {
     case dbMasterType::CORE:
@@ -519,7 +488,7 @@ bool Opendp::isCrWtBlClass(const Cell* cell)
 /* static */
 bool Opendp::isWellTap(const Cell* cell)
 {
-  dbMasterType type = cell->db_inst_->getMaster()->getType();
+  dbMasterType type = cell->getDbInst()->getMaster()->getType();
   return type == dbMasterType::CORE_WELLTAP;
 }
 

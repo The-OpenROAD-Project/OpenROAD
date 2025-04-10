@@ -14,6 +14,11 @@
 #include "odb/lefin.h"
 #include "utl/Logger.h"
 
+// TODO: not needed after fully switching to bazel
+#ifndef DATA_PREFIX
+#define DATA_PREFIX ""
+#endif
+
 namespace odb {
 class OdbMultiPatternedTest : public ::testing::Test
 {
@@ -31,7 +36,7 @@ class OdbMultiPatternedTest : public ::testing::Test
         lef_reader.createTechAndLib(
             "multipatterned",
             "multipatterned",
-            "data/sky130hd/sky130hd_multi_patterned.tlef"),
+            DATA_PREFIX "data/sky130hd/sky130hd_multi_patterned.tlef"),
         &odb::dbLib::destroy);
 
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),

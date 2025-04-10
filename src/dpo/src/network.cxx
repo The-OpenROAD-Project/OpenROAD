@@ -1,60 +1,26 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 #include "network.h"
 
 namespace dpo {
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 Node::Node() = default;
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-bool Node::adjustCurrOrient(const unsigned newOri)
+
+bool Node::adjustCurrOrient(const dbOrientType& newOri)
 {
   // Change the orientation of the cell, but leave the lower-left corner
   // alone.  This means changing the locations of pins and possibly
   // changing the edge types as well as the height and width.
-  unsigned curOri = currentOrient_;
+  auto curOri = currentOrient_;
   if (newOri == curOri) {
     return true;
   }
 
-  if (curOri == Orientation_E || curOri == Orientation_FE
-      || curOri == Orientation_FW || curOri == Orientation_W) {
-    if (newOri == Orientation_N || curOri == Orientation_FN
-        || curOri == Orientation_FS || curOri == Orientation_S) {
+  if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
+      || curOri == dbOrientType::R270 || curOri == dbOrientType::MYR90) {
+    if (newOri == dbOrientType::R0 || newOri == dbOrientType::MY
+        || newOri == dbOrientType::MX || newOri == dbOrientType::R180) {
       // Rotate the cell counter-clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const double dx = pin->getOffsetX();
@@ -62,20 +28,24 @@ bool Node::adjustCurrOrient(const unsigned newOri)
         pin->setOffsetX(-dy);
         pin->setOffsetY(dx);
       }
-      std::swap(h_, w_);
-      if (curOri == Orientation_E) {
-        curOri = Orientation_N;
-      } else if (curOri == Orientation_FE) {
-        curOri = Orientation_FS;
-      } else if (curOri == Orientation_FW) {
-        curOri = Orientation_FN;
+      {
+        int tmp = w_.v;
+        w_ = DbuX{h_.v};
+        h_ = DbuY{tmp};
+      }
+      if (curOri == dbOrientType::R90) {
+        curOri = dbOrientType::R0;
+      } else if (curOri == dbOrientType::MXR90) {
+        curOri = dbOrientType::MX;
+      } else if (curOri == dbOrientType::MYR90) {
+        curOri = dbOrientType::MY;
       } else {
-        curOri = Orientation_S;
+        curOri = dbOrientType::R180;
       }
     }
   } else {
-    if (newOri == Orientation_E || curOri == Orientation_FE
-        || curOri == Orientation_FW || curOri == Orientation_W) {
+    if (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90
+        || newOri == dbOrientType::MYR90 || newOri == dbOrientType::R270) {
       // Rotate the cell clockwise by 90 degrees.
       for (Pin* pin : pins_) {
         const double dx = pin->getOffsetX();
@@ -83,15 +53,19 @@ bool Node::adjustCurrOrient(const unsigned newOri)
         pin->setOffsetX(dy);
         pin->setOffsetY(-dx);
       }
-      std::swap(h_, w_);
-      if (curOri == Orientation_N) {
-        curOri = Orientation_E;
-      } else if (curOri == Orientation_FS) {
-        curOri = Orientation_FE;
-      } else if (curOri == Orientation_FN) {
-        curOri = Orientation_FW;
+      {
+        int tmp = w_.v;
+        w_ = DbuX{h_.v};
+        h_ = DbuY{tmp};
+      }
+      if (curOri == dbOrientType::R0) {
+        curOri = dbOrientType::R90;
+      } else if (curOri == dbOrientType::MX) {
+        curOri = dbOrientType::MXR90;
+      } else if (curOri == dbOrientType::MY) {
+        curOri = dbOrientType::MYR90;
       } else {
-        curOri = Orientation_W;
+        curOri = dbOrientType::R270;
       }
     }
   }
@@ -100,28 +74,36 @@ bool Node::adjustCurrOrient(const unsigned newOri)
   int mX = 1;
   int mY = 1;
   bool changeEdgeTypes = false;
-  if (curOri == Orientation_E || curOri == Orientation_FE
-      || curOri == Orientation_FW || curOri == Orientation_W) {
-    const bool test1 = (curOri == Orientation_E || curOri == Orientation_FW);
-    const bool test2 = (newOri == Orientation_E || newOri == Orientation_FW);
+  if (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90
+      || curOri == dbOrientType::MYR90 || curOri == dbOrientType::R270) {
+    const bool test1
+        = (curOri == dbOrientType::R90 || curOri == dbOrientType::MYR90);
+    const bool test2
+        = (newOri == dbOrientType::R90 || newOri == dbOrientType::MYR90);
     if (test1 != test2) {
       mX = -1;
     }
-    const bool test3 = (curOri == Orientation_E || curOri == Orientation_FE);
-    const bool test4 = (newOri == Orientation_E || newOri == Orientation_FE);
+    const bool test3
+        = (curOri == dbOrientType::R90 || curOri == dbOrientType::MXR90);
+    const bool test4
+        = (newOri == dbOrientType::R90 || newOri == dbOrientType::MXR90);
     if (test3 != test4) {
       changeEdgeTypes = true;
       mY = -1;
     }
   } else {
-    const bool test1 = (curOri == Orientation_N || curOri == Orientation_FS);
-    const bool test2 = (newOri == Orientation_N || newOri == Orientation_FS);
+    const bool test1
+        = (curOri == dbOrientType::R0 || curOri == dbOrientType::MX);
+    const bool test2
+        = (newOri == dbOrientType::R0 || newOri == dbOrientType::MX);
     if (test1 != test2) {
       changeEdgeTypes = true;
       mX = -1;
     }
-    const bool test3 = (curOri == Orientation_N || curOri == Orientation_FN);
-    const bool test4 = (newOri == Orientation_N || newOri == Orientation_FN);
+    const bool test3
+        = (curOri == dbOrientType::R0 || curOri == dbOrientType::MY);
+    const bool test4
+        = (newOri == dbOrientType::R0 || newOri == dbOrientType::MY);
     if (test3 != test4) {
       mY = -1;
     }
@@ -132,7 +114,7 @@ bool Node::adjustCurrOrient(const unsigned newOri)
     pin->setOffsetY(pin->getOffsetY() * mY);
   }
   if (changeEdgeTypes) {
-    std::swap(etl_, etr_);
+    std::swap(etls_, etrs_);
   }
   currentOrient_ = newOri;
   return true;
@@ -180,6 +162,13 @@ Edge* Network::createAndAddEdge()
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+Master* Network::createAndAddMaster()
+{
+  masters_.emplace_back(std::make_unique<Master>());
+  return masters_.back().get();
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Node* Network::createAndAddNode()
 {
   // Just allocate a node, append it and give it the id
@@ -198,10 +187,10 @@ void Network::createAndAddBlockage(const odb::Rect& bounds)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddFillerNode(const int left,
-                                      const int bottom,
-                                      const int width,
-                                      const int height)
+Node* Network::createAndAddFillerNode(const DbuX left,
+                                      const DbuY bottom,
+                                      const DbuX width,
+                                      const DbuY height)
 {
   Node* ndi = new Node();
   const int id = (int) nodes_.size();

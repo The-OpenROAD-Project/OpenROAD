@@ -1,35 +1,13 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "FlexPA_unique.h"
@@ -100,7 +78,8 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
+  std::unordered_map<frInst*,
+                     std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
@@ -145,6 +124,8 @@ class FlexPA
   bool isStdCell(frInst* unique_inst);
   bool isMacroCell(frInst* unique_inst);
 
+  void deleteInst(frInst* inst);
+
   /**
    * @brief generates all access points of a single unique instance
    *
@@ -169,6 +150,24 @@ class FlexPA
   int genPinAccess(T* pin, frInstTerm* inst_term = nullptr);
 
   /**
+   * @brief determines if the current access points are enough to say PA is done
+   * with this pin.
+   *
+   * for the access points to be considered enough there must exist a minimum of
+   * aps:
+   * 1. far enough from each other greater than the minimum specified in
+   * router_cfg.
+   * 2. far enough from the cell edge.
+   *
+   * @param aps the list of candidate access points
+   * @param inst_term terminal related to the pin
+   *
+   * @returns True if the current aps are enough for the pin
+   */
+  bool EnoughAccessPoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                          frInstTerm* inst_term);
+
+  /**
    * @brief initializes the pin accesses of a given pin only considering a given
    * cost for both the lower and upper layer.
    *
@@ -180,7 +179,7 @@ class FlexPA
    * @param lower_type lower layer access type
    * @param upper_type upper layer access type
    *
-   * @return if the initialization was sucessful
+   * @return if enough access points were found for the pin.
    */
   template <typename T>
   bool genPinAccessCostBounded(
@@ -613,11 +612,11 @@ class FlexPA
    */
   int prepPatternInstHelper(frInst* unique_inst, bool use_x);
 
-  int genPatterns(frInst* inst,
+  int genPatterns(frInst* unique_inst,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
   int genPatternsHelper(
-      frInst* inst,
+      frInst* unique_inst,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
@@ -647,7 +646,7 @@ class FlexPA
    * @brief Determines the value of all the paths of the DP problem
    */
   void genPatternsPerform(
-      frInst* inst,
+      frInst* unique_inst,
       std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
@@ -658,7 +657,7 @@ class FlexPA
   /**
    * @brief Determines the edge cost between two DP nodes
    */
-  int getEdgeCost(frInst* inst,
+  int getEdgeCost(frInst* unique_inst,
                   FlexDPNode* prev_node,
                   FlexDPNode* curr_node,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
@@ -687,7 +686,7 @@ class FlexPA
    * @brief Commits to the best path (solution) on the DP graph
    */
   bool genPatternsCommit(
-      frInst* inst,
+      frInst* unique_inst,
       const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,

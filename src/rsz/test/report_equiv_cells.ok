@@ -105,8 +105,11 @@ sky130_fd_sc_hd__inv_16                    20.019  4.00 9.79e-12  2.50   -
 sky130_fd_sc_hd__clkinv_16                 30.029  6.00 1.14e-11  2.92   -
 sky130_fd_sc_hd__bufinv_16                 30.029  6.00 1.41e-11  3.61   EL
 -----------------------------------------------------------------------------
+[INFO RSZ-0100] Cells with area > 2.0X current cell will not be considered for sizing
+[INFO RSZ-0101] Cells with leakage > 2.0X current cell will not be considered for sizing
+[INFO RSZ-0104] Cell's site will be preserved for sizing
 [INFO RSZ-0106] Cell's VT type will be preserved for sizing
-The following 14 cells are equivalent to sky130_fd_sc_hd__clkinv_2:
+The following 9 cells are equivalent to sky130_fd_sc_hd__clkinv_2:
 =============================================================================
           Cell                              Area   Area Leakage  Leakage  VT
                                            (um^2)  Ratio  (W)     Ratio  Type
@@ -120,9 +123,41 @@ sky130_fd_sc_hd__inv_4                      6.256  1.25 4.46e-12  1.14   -
 sky130_fd_sc_hd__clkinvlp_4                 7.507  1.50 1.47e-13  0.04   -
 sky130_fd_sc_hd__clkinv_4                   8.758  1.75 4.12e-12  1.05   -
 sky130_fd_sc_hd__inv_6                      8.758  1.75 4.53e-12  1.16   -
-sky130_fd_sc_hd__inv_8                     11.261  2.25 6.05e-12  1.55   -
-sky130_fd_sc_hd__clkinv_8                  16.266  3.25 6.89e-12  1.76   -
-sky130_fd_sc_hd__inv_12                    16.266  3.25 7.30e-12  1.87   -
-sky130_fd_sc_hd__inv_16                    20.019  4.00 9.79e-12  2.50   -
-sky130_fd_sc_hd__clkinv_16                 30.029  6.00 1.14e-11  2.92   -
+-----------------------------------------------------------------------------
+The following 16 cells are equivalent to sky130_fd_sc_hd__clkinv_2:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+sky130_fd_sc_hd__clkinv_1                   3.754  0.75 1.57e-12  0.40   -
+sky130_fd_sc_hd__inv_2                      3.754  0.75 4.25e-12  1.09   -
+sky130_fd_sc_hd__inv_1                      3.754  0.75 5.33e-12  1.36   -
+sky130_fd_sc_hd__clkinvlp_2                 5.005  1.00 8.01e-14  0.02   -
+sky130_fd_sc_hd__clkinv_2                   5.005  1.00 3.91e-12  1.00   -
+sky130_fd_sc_hd__inv_4                      6.256  1.25 4.46e-12  1.14   -
+sky130_fd_sc_hd__clkinvlp_4                 7.507  1.50 1.47e-13  0.04   -
+sky130_fd_sc_hd__clkinv_4                   8.758  1.75 4.12e-12  1.05   -
+sky130_fd_sc_hd__inv_6                      8.758  1.75 4.53e-12  1.16   -
+*sky130_fd_sc_hd__inv_8                    11.261  2.25 6.05e-12  1.55   -
+*sky130_fd_sc_hd__clkinv_8                 16.266  3.25 6.89e-12  1.76   -
+*sky130_fd_sc_hd__inv_12                   16.266  3.25 7.30e-12  1.87   -
+*sky130_fd_sc_hd__bufinv_8                 17.517  3.50 1.27e-11  3.26   EL
+*sky130_fd_sc_hd__inv_16                   20.019  4.00 9.79e-12  2.50   -
+*sky130_fd_sc_hd__clkinv_16                30.029  6.00 1.14e-11  2.92   -
+*sky130_fd_sc_hd__bufinv_16                30.029  6.00 1.41e-11  3.61   EL
+-----------------------------------------------------------------------------
+The following 9 cells are equivalent to sky130_fd_sc_hd__clkinv_2:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+sky130_fd_sc_hd__clkinv_1                   3.754  0.75 1.57e-12  0.40   -
+sky130_fd_sc_hd__inv_2                      3.754  0.75 4.25e-12  1.09   -
+sky130_fd_sc_hd__inv_1                      3.754  0.75 5.33e-12  1.36   -
+sky130_fd_sc_hd__clkinvlp_2                 5.005  1.00 8.01e-14  0.02   -
+sky130_fd_sc_hd__clkinv_2                   5.005  1.00 3.91e-12  1.00   -
+sky130_fd_sc_hd__inv_4                      6.256  1.25 4.46e-12  1.14   -
+sky130_fd_sc_hd__clkinvlp_4                 7.507  1.50 1.47e-13  0.04   -
+sky130_fd_sc_hd__clkinv_4                   8.758  1.75 4.12e-12  1.05   -
+sky130_fd_sc_hd__inv_6                      8.758  1.75 4.53e-12  1.16   -
 -----------------------------------------------------------------------------

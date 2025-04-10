@@ -1,40 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
 #include "detailed_reorder.h"
 
 #include <boost/tokenizer.hpp>
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "architecture.h"
@@ -169,20 +140,18 @@ void DetailedReorderer::reorder()
         }
 
         const Node* nextPtr = (istop != n - 1) ? nodes[istop + 1] : nullptr;
-        int rightLimit = segPtr->getMaxX();
+        DbuX rightLimit{segPtr->getMaxX()};
         if (nextPtr != nullptr) {
           int leftPadding, rightPadding;
           arch_->getCellPadding(nextPtr, leftPadding, rightPadding);
-          rightLimit = std::min(
-              (int) std::floor(nextPtr->getLeft() - leftPadding), rightLimit);
+          rightLimit = std::min((nextPtr->getLeft() - leftPadding), rightLimit);
         }
         const Node* prevPtr = (istrt != 0) ? nodes[istrt - 1] : nullptr;
-        int leftLimit = segPtr->getMinX();
+        DbuX leftLimit{segPtr->getMinX()};
         if (prevPtr != nullptr) {
           int leftPadding, rightPadding;
           arch_->getCellPadding(prevPtr, leftPadding, rightPadding);
-          leftLimit = std::max(
-              (int) std::ceil(prevPtr->getRight() + rightPadding), leftLimit);
+          leftLimit = std::max(prevPtr->getRight() + rightPadding, leftLimit);
         }
 
         reorder(nodes, istrt, istop, leftLimit, rightLimit, segId, rowId);
@@ -196,15 +165,17 @@ void DetailedReorderer::reorder()
 void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
                                 const int jstrt,
                                 const int jstop,
-                                const int leftLimit,
-                                const int rightLimit,
+                                const DbuX leftLimit,
+                                const DbuX rightLimit,
                                 const int segId,
                                 const int rowId)
 {
   const int size = jstop - jstrt + 1;
-
+  if (size <= 0) {
+    return;
+  }
   // XXX: Node positions still doubles!
-  std::unordered_map<const Node*, int> origLeft;
+  std::unordered_map<const Node*, DbuX> origLeft;
   for (int i = 0; i < size; i++) {
     const Node* ndi = nodes[jstrt + i];
     origLeft[ndi] = ndi->getLeft();
@@ -213,15 +184,15 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // Changed...  I want to work entirely with the left edge of
   // the cells.  If there is not enough space to satisfy
   // the cell widths _and_ the padding, then don't do anything.
-  int totalPadding = 0;
-  int totalWidth = 0;
-  std::vector<int> right(size, 0);
-  std::vector<int> left(size, 0);
-  std::vector<int> width(size, 0);
+  DbuX totalPadding{0};
+  DbuX totalWidth{0};
+  std::vector<DbuX> right(size, DbuX{0});
+  std::vector<DbuX> left(size, DbuX{0});
+  std::vector<DbuX> width(size, DbuX{0});
   for (int i = 0; i < size; i++) {
     const Node* ndi = nodes[jstrt + i];
     arch_->getCellPadding(ndi, left[i], right[i]);
-    width[i] = (int) std::ceil(ndi->getWidth());
+    width[i] = ndi->getWidth();
     totalPadding += (left[i] + right[i]);
     totalWidth += width[i];
   }
@@ -233,7 +204,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // We might have more space than required.  Space cells out
   // somewhat evenly by adding extra space to the padding.
   const int spacePerCell
-      = ((rightLimit - leftLimit) - (totalWidth + totalPadding)) / size;
+      = ((rightLimit - leftLimit) - (totalWidth + totalPadding)).v / size;
   const int siteWidth = arch_->getRow(0)->getSiteWidth();
   const int sitePerCellTotal = spacePerCell / siteWidth;
   const int sitePerCellRight = (sitePerCellTotal >> 1);
@@ -266,9 +237,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   double bestCost = cost(nodes, jstrt, jstop);
   const double origCost = bestCost;
 
-  std::vector<int> bestPosn(size, 0);  // Current positions.
-  std::vector<int> currPosn(size, 0);  // Current positions.
-  std::vector<int> order(size, 0);     // For generating permutations.
+  std::vector<DbuX> bestPosn(size, DbuX{0});  // Current positions.
+  std::vector<DbuX> currPosn(size, DbuX{0});  // Current positions.
+  std::vector<int> order(size, 0);            // For generating permutations.
   for (int i = 0; i < size; i++) {
     order[i] = i;
   }
@@ -276,18 +247,20 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   do {
     // Position the cells.
     bool dispOkay = true;
-    int x = leftLimit;
+    DbuX x = leftLimit;
     for (int i = 0; i < size; i++) {
       const int ix = order[i];
       Node* ndi = nodes[jstrt + ix];
       x += left[ix];
       currPosn[ix] = x;
-      ndi->setLeft(currPosn[ix]);
+      mgrPtr_->eraseFromGrid(ndi);
+      ndi->setLeft(DbuX{currPosn[ix]});
+      mgrPtr_->paintInGrid(ndi);
       x += width[ix];
       x += right[ix];
 
-      const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-      if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
+      const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+      if (dx > mgrPtr_->getMaxDisplacementX()) {
         dispOkay = false;
       }
     }
@@ -306,7 +279,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
     // No improvement.  Restore positions and return.
     for (size_t i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
-      ndi->setLeft(origLeft[ndi]);
+      mgrPtr_->eraseFromGrid(ndi);
+      ndi->setLeft(DbuX{origLeft[ndi]});
+      mgrPtr_->paintInGrid(ndi);
     }
     return;
   }
@@ -314,7 +289,9 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // Put cells at their best positions.
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
-    ndi->setLeft(bestPosn[i]);
+    mgrPtr_->eraseFromGrid(ndi);
+    ndi->setLeft(DbuX{bestPosn[i]});
+    mgrPtr_->paintInGrid(ndi);
   }
 
   // Need to resort.
@@ -324,23 +301,25 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   {
     bool shifted = false;
     bool failed = false;
-    int left = leftLimit;
+    DbuX left = leftLimit;
     for (int i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
 
-      int x = ndi->getLeft();
+      DbuX x = ndi->getLeft();
       if (!mgrPtr_->alignPos(ndi, x, left, rightLimit)) {
         failed = true;
         break;
       }
-      if (std::abs(x - ndi->getLeft()) != 0) {
+      if (abs(x - ndi->getLeft()) != 0) {
         shifted = true;
       }
-      ndi->setLeft(x);
+      mgrPtr_->eraseFromGrid(ndi);
+      ndi->setLeft(DbuX{x});
+      mgrPtr_->paintInGrid(ndi);
       left = ndi->getRight();
 
-      const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
-      if ((int) std::ceil(dx) > mgrPtr_->getMaxDisplacementX()) {
+      const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+      if (dx > mgrPtr_->getMaxDisplacementX()) {
         failed = true;
         break;
       }
@@ -356,12 +335,22 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
         }
       }
     }
+    if (!failed) {
+      for (int i = 0; i < size; i++) {
+        if (mgrPtr_->hasEdgeSpacingViolation(nodes[jstrt + i])) {
+          failed = true;
+          break;
+        }
+      }
+    }
 
     if (failed) {
       // Restore original placement.
       for (int i = 0; i < size; i++) {
         Node* ndi = nodes[jstrt + i];
-        ndi->setLeft(origLeft[ndi]);
+        mgrPtr_->eraseFromGrid(ndi);
+        ndi->setLeft(DbuX{origLeft[ndi]});
+        mgrPtr_->paintInGrid(ndi);
       }
       mgrPtr_->sortCellsInSeg(segId, jstrt, jstop + 1);
     }
@@ -381,6 +370,9 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
   double cost = 0.;
   for (int i = istrt; i <= istop; i++) {
     const Node* ndi = nodes[i];
+    if (mgrPtr_->hasEdgeSpacingViolation(ndi)) {
+      return std::numeric_limits<double>::max();
+    }
 
     for (int pi = 0; pi < ndi->getNumPins(); pi++) {
       const Pin* pini = ndi->getPins()[pi];
@@ -404,7 +396,7 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
         const Node* ndj = pinj->getNode();
 
         const double x
-            = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);

@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "grt/GlobalRouter.h"
 
@@ -59,6 +27,7 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -68,7 +37,6 @@
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -524,7 +492,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
+void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -2050,6 +2018,8 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  nets_to_route_.clear();
+  db_net_map_.clear();
   if (getMaxRoutingLayer() == -1) {
     setMaxRoutingLayer(computeMaxRoutingLayer());
   }
@@ -3701,7 +3671,6 @@ void GlobalRouter::makeBtermPins(Net* net,
     int posX, posY;
     bterm->getFirstPinLocation(posX, posY);
 
-    std::vector<odb::dbTechLayer*> pin_layers;
     std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
 
     const std::string pin_name = bterm->getConstName();
@@ -3741,6 +3710,8 @@ void GlobalRouter::makeBtermPins(Net* net,
       }
     }
 
+    std::vector<odb::dbTechLayer*> pin_layers;
+    pin_layers.reserve(pin_boxes.size());
     for (auto& layer_boxes : pin_boxes) {
       pin_layers.push_back(layer_boxes.first);
     }
@@ -4256,11 +4227,17 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
     odb::Point pt1(seg.init_x, seg.init_y);
     odb::Point pt2(seg.final_x, seg.final_y);
     int layer = std::max(seg.init_layer, seg.final_layer);
-    if (pt1 == pin_pos && layer > top_layer) {
-      top_layer = layer;
+    if (pt1 == pin_pos || pt2 == pin_pos) {
+      top_layer = std::max(top_layer, layer);
     }
   }
 
+  if (top_layer == -1) {
+    logger_->error(GRT,
+                   703,
+                   "No segment was found in the routing that connects to the "
+                   "pin position.");
+  }
   return top_layer;
 }
 

@@ -18,9 +18,6 @@ read_def "./testcases/boundary_push2.def"
 set_io_pin_constraint -pin_names { io_1 io_2 } -region left:*
 set_io_pin_constraint -pin_names { io_3 io_4 } -region right:*
 
-# Run random PPL to incorporate constraints' data in ODB
-place_pins -annealing -random -hor_layers metal5 -ver_layer metal6
-
 set_thread_count 0
 rtl_macro_placer -boundary_weight 0 -report_directory results/boundary_push3 -halo_width 0.3
 

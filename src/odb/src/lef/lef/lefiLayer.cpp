@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <set>
+#include <string>
 
 #include "lefiDebug.hpp"
 #include "lefrCallBacks.hpp"
@@ -3771,7 +3772,7 @@ double lefiLayer::propNumber(int i) const
   return dvalues_[i];
 }
 
-const char lefiLayer::propType(int i) const
+char lefiLayer::propType(int i) const
 {
   char msg[160];
   if (i < 0 || i >= numProps_) {

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTech.h"
 
@@ -518,14 +489,9 @@ dbSet<dbTechLayer> dbTech::getLayers()
 
 dbTechLayer* dbTech::findLayer(const char* name)
 {
-  dbSet<dbTechLayer> layers = getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    _dbTechLayer* layer = (_dbTechLayer*) *itr;
-
-    if (strcmp(layer->_name, name) == 0) {
-      return (dbTechLayer*) layer;
+  for (dbTechLayer* layer : getLayers()) {
+    if (strcmp(layer->getConstName(), name) == 0) {
+      return layer;
     }
   }
 
@@ -534,14 +500,9 @@ dbTechLayer* dbTech::findLayer(const char* name)
 
 dbTechLayer* dbTech::findLayer(int layer_number)
 {
-  dbSet<dbTechLayer> layers = getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    _dbTechLayer* layer = (_dbTechLayer*) *itr;
-
-    if (layer->_number == (uint) layer_number) {
-      return (dbTechLayer*) layer;
+  for (dbTechLayer* layer : getLayers()) {
+    if (layer->getNumber() == layer_number) {
+      return layer;
     }
   }
 
@@ -550,14 +511,9 @@ dbTechLayer* dbTech::findLayer(int layer_number)
 
 dbTechLayer* dbTech::findRoutingLayer(int level_number)
 {
-  dbSet<dbTechLayer> layers = getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    _dbTechLayer* layer = (_dbTechLayer*) *itr;
-
-    if (layer->_rlevel == (uint) level_number) {
-      return (dbTechLayer*) layer;
+  for (dbTechLayer* layer : getLayers()) {
+    if (layer->getRoutingLevel() == level_number) {
+      return layer;
     }
   }
 
@@ -757,14 +713,9 @@ dbSet<dbTechNonDefaultRule> dbTech::getNonDefaultRules()
 
 dbTechNonDefaultRule* dbTech::findNonDefaultRule(const char* name)
 {
-  dbSet<dbTechNonDefaultRule> rules = getNonDefaultRules();
-  dbSet<dbTechNonDefaultRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    _dbTechNonDefaultRule* r = (_dbTechNonDefaultRule*) *itr;
-
-    if (strcmp(r->_name, name) == 0) {
-      return (dbTechNonDefaultRule*) r;
+  for (dbTechNonDefaultRule* r : getNonDefaultRules()) {
+    if (strcmp(r->getConstName(), name) == 0) {
+      return r;
     }
   }
 
@@ -790,11 +741,8 @@ void dbTech::getSameNetRules(std::vector<dbTechSameNetRule*>& rules)
 {
   _dbTech* tech = (_dbTech*) this;
   rules.clear();
-  dbVector<dbId<_dbTechSameNetRule>>::iterator itr;
 
-  for (itr = tech->_samenet_rules.begin(); itr != tech->_samenet_rules.end();
-       ++itr) {
-    dbId<_dbTechSameNetRule> r = *itr;
+  for (const auto& r : tech->_samenet_rules) {
     rules.push_back((dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(r));
   }
 }
@@ -825,14 +773,9 @@ dbSet<dbCellEdgeSpacing> dbTech::getCellEdgeSpacingTable()
 
 dbTechViaRule* dbTech::findViaRule(const char* name)
 {
-  dbSet<dbTechViaRule> rules = getViaRules();
-  dbSet<dbTechViaRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    _dbTechViaRule* rule = (_dbTechViaRule*) *itr;
-
-    if (strcmp(name, rule->_name) == 0) {
-      return (dbTechViaRule*) rule;
+  for (dbTechViaRule* rule : getViaRules()) {
+    if (rule->getName() == name) {
+      return rule;
     }
   }
 
@@ -841,14 +784,9 @@ dbTechViaRule* dbTech::findViaRule(const char* name)
 
 dbTechViaGenerateRule* dbTech::findViaGenerateRule(const char* name)
 {
-  dbSet<dbTechViaGenerateRule> rules = getViaGenerateRules();
-  dbSet<dbTechViaGenerateRule>::iterator itr;
-
-  for (itr = rules.begin(); itr != rules.end(); ++itr) {
-    _dbTechViaGenerateRule* rule = (_dbTechViaGenerateRule*) *itr;
-
-    if (strcmp(name, rule->_name) == 0) {
-      return (dbTechViaGenerateRule*) rule;
+  for (dbTechViaGenerateRule* rule : getViaGenerateRules()) {
+    if (rule->getName() == name) {
+      return rule;
     }
   }
 
@@ -860,8 +798,6 @@ void dbTech::checkLayer(bool typeChk,
                         bool pitchChk,
                         bool spacingChk)
 {
-  dbSet<dbTechLayer> layers = getLayers();
-  dbSet<dbTechLayer>::iterator itr;
   if (!typeChk && !widthChk && !pitchChk && !spacingChk) {
     typeChk = true;
     widthChk = true;
@@ -869,13 +805,8 @@ void dbTech::checkLayer(bool typeChk,
     spacingChk = true;
   }
 
-  dbTechLayer* layer;
-  dbTechLayerType type;
-  int pitch, spacing, level;
-  uint width;
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    layer = (dbTechLayer*) *itr;
-    type = layer->getType();
+  for (dbTechLayer* layer : getLayers()) {
+    dbTechLayerType type = layer->getType();
     if (type.getValue() == dbTechLayerType::CUT) {
       continue;
     }
@@ -886,8 +817,8 @@ void dbTech::checkLayer(bool typeChk,
                                    layer->getConstName());
       continue;
     }
-    level = layer->getRoutingLevel();
-    pitch = layer->getPitch();
+    const int level = layer->getRoutingLevel();
+    const int pitch = layer->getPitch();
     if (pitchChk && pitch <= 0) {
       getImpl()->getLogger()->error(
           utl::ODB,
@@ -897,7 +828,7 @@ void dbTech::checkLayer(bool typeChk,
           level,
           pitch);
     }
-    width = layer->getWidth();
+    const int width = layer->getWidth();
     if (widthChk && width == 0) {
       getImpl()->getLogger()->error(
           utl::ODB,
@@ -907,7 +838,7 @@ void dbTech::checkLayer(bool typeChk,
           level,
           width);
     }
-    spacing = layer->getSpacing();
+    const int spacing = layer->getSpacing();
     if (spacingChk && spacing <= 0) {
       getImpl()->getLogger()->error(
           utl::ODB,

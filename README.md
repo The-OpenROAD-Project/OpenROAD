@@ -277,7 +277,7 @@ transceivers, OpenPower-based Microwatt etc.
 
 ## Build OpenROAD
 
-To build OpenROAD tools locally in your machine, follow steps
+To build OpenROAD tools locally on your machine, follow steps
 from [here](docs/user/Build.md).
 
 ## Regression Tests

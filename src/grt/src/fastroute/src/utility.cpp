@@ -1,34 +1,5 @@
-////////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018, Iowa State University All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice,
-// this list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-// this list of conditions and the following disclaimer in the documentation
-// and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its contributors
-// may be used to endorse or promote products derived from this software
-// without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-////////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
 #include <fstream>
@@ -59,8 +30,8 @@ void FastRouteCore::printEdge(int const netID, int const edgeID)
                   nodes[edge.n2].y);
   std::string routes_rpt;
   for (int i = 0; i <= edge.route.routelen; i++) {
-    routes_rpt = routes_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
-                 + std::to_string(edge.route.gridsY[i]) + ") ";
+    routes_rpt
+        += fmt::format("({}, {}) ", edge.route.gridsX[i], edge.route.gridsY[i]);
   }
   logger_->report("{}", routes_rpt);
 }
@@ -1068,8 +1039,7 @@ void FastRouteCore::printEdge3D(int netID, int edgeID)
     for (int i = 0; i <= edge.route.routelen; i++) {
       int x = tile_size_ * (edge.route.gridsX[i] + 0.5) + x_corner_;
       int y = tile_size_ * (edge.route.gridsY[i] + 0.5) + y_corner_;
-      edge_rpt = edge_rpt + "(" + std::to_string(x) + " " + std::to_string(y)
-                 + " " + std::to_string(edge.route.gridsL[i]) + ") ";
+      edge_rpt += fmt::format("({} {} {}) ", x, y, edge.route.gridsL[i]);
     }
     logger_->report("\t\t{}", edge_rpt);
   }
@@ -1690,6 +1660,7 @@ void FastRouteCore::printEdge2D(int netID, int edgeID)
 {
   const TreeEdge edge = sttrees_[netID].edges[edgeID];
   const auto& nodes = sttrees_[netID].nodes;
+  const Route& route = edge.route;
 
   logger_->report("edge {}: n1 {} ({}, {})-> n2 {}({}, {}), routeType {}",
                   edgeID,
@@ -1699,12 +1670,11 @@ void FastRouteCore::printEdge2D(int netID, int edgeID)
                   edge.n2,
                   nodes[edge.n2].x,
                   nodes[edge.n2].y,
-                  edge.route.type);
+                  route.type);
   if (edge.len > 0) {
     std::string edge_rpt;
-    for (int i = 0; i <= edge.route.routelen; i++) {
-      edge_rpt = edge_rpt + "(" + std::to_string(edge.route.gridsX[i]) + ", "
-                 + std::to_string(edge.route.gridsY[i]) + ") ";
+    for (int i = 0; i <= route.routelen; i++) {
+      edge_rpt += fmt::format("({}, {}) ", route.gridsX[i], route.gridsY[i]);
     }
     logger_->report("{}", edge_rpt);
   }
