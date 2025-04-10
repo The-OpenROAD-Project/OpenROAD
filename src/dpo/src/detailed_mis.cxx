@@ -451,7 +451,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       }
 
       // Must be in the same region.
-      if (ndj->getRegionId() != ndi->getRegionId()) {
+      if (ndj->getGroupId() != ndi->getGroupId()) {
         continue;
       }
 
@@ -744,13 +744,13 @@ double DetailedMis::getHpwl(const Node* ndi, double xi, double yi)
       const Node* ndj = pinj->getNode();
 
       const double x = (ndj == ndi)
-                           ? (xi + pinj->getOffsetX())
+                           ? (xi + pinj->getOffsetX().v)
                            : (ndj->getLeft().v + 0.5 * ndj->getWidth().v
-                              + pinj->getOffsetX());
+                              + pinj->getOffsetX().v);
       const double y = (ndj == ndi)
-                           ? (yi + pinj->getOffsetY())
+                           ? (yi + pinj->getOffsetY().v)
                            : (ndj->getBottom().v + 0.5 * ndj->getHeight().v
-                              + pinj->getOffsetY());
+                              + pinj->getOffsetY().v);
 
       box.addPt(x, y);
     }

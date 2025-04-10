@@ -18,6 +18,7 @@
 #include "architecture.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
+#include "dpl/PlacementDRC.h"
 #include "journal.h"
 #include "odb/dbTransform.h"
 #include "router.h"
@@ -31,8 +32,13 @@ namespace dpo {
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          RoutingParams* rt,
-                         Grid* grid)
-    : arch_(arch), network_(network), rt_(rt), grid_(grid)
+                         Grid* grid,
+                         PlacementDRC* drc_engine)
+    : arch_(arch),
+      network_(network),
+      rt_(rt),
+      grid_(grid),
+      drc_engine_(drc_engine)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -384,7 +390,7 @@ void DetailedMgr::findSegments()
   // Here, we need to slice up the segments to account for regions.
   std::vector<std::vector<std::pair<double, double>>> intervals;
   for (int reg = 1; reg < arch_->getNumRegions(); reg++) {
-    Architecture::Region* regPtr = arch_->getRegion(reg);
+    auto regPtr = arch_->getRegion(reg);
 
     findRegionIntervals(regPtr->getId(), intervals);
 
@@ -547,7 +553,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
   // Segments in the current row...
   for (DetailedSeg* curr : segsInRow_[row]) {
     // Updated for regions.
-    if (nd->getRegionId() != curr->getRegId()) {
+    if (nd->getGroupId() != curr->getRegId()) {
       continue;
     }
 
@@ -587,7 +593,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
       if ((vert <= dist1 || vert <= dist2)) {
         for (DetailedSeg* curr : segsInRow_[below]) {
           // Updated for regions.
-          if (nd->getRegionId() != curr->getRegId()) {
+          if (nd->getGroupId() != curr->getRegId()) {
             continue;
           }
 
@@ -627,7 +633,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
       if ((vert <= dist1 || vert <= dist2)) {
         for (DetailedSeg* curr : segsInRow_[above]) {
           // Updated for regions.
-          if (nd->getRegionId() != curr->getRegId()) {
+          if (nd->getGroupId() != curr->getRegId()) {
             continue;
           }
 
@@ -772,7 +778,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
         // are going to violate a fence region constraint.
         bool regionsOkay = true;
         for (DetailedSeg* segPtr : candidates_i) {
-          if (segPtr->getRegId() != nd->getRegionId()) {
+          if (segPtr->getRegId() != nd->getGroupId()) {
             regionsOkay = false;
           }
         }
@@ -1269,7 +1275,7 @@ void DetailedMgr::cleanup()
 {
   // Various cleanups.
   for (Node* ndi : wideCells_) {
-    ndi->setFixed(Node::NOT_FIXED);
+    ndi->setFixed(false);
   }
 }
 
@@ -1321,117 +1327,9 @@ int DetailedMgr::checkOverlapInSegments()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-namespace cell_edges {
-odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
-                            const Node* cell,
-                            const DbuX left,
-                            const DbuY bottom,
-                            const odb::dbOrientType& orient)
-{
-  odb::Rect bbox = cell->getMaster()->boundary_box_;
-  odb::dbTransform transform(orient);
-  transform.apply(bbox);
-  odb::Point offset(left.v - bbox.xMin(), bottom.v - bbox.yMin());
-  transform.setOffset(offset);
-  odb::Rect result(edge_rect);
-  transform.apply(result);
-  return result;
-}
-odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
-{
-  odb::Rect query_rect(edge_box);
-  bool is_vertical_edge = edge_box.getDir() == 0;
-  if (is_vertical_edge) {
-    // vertical edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
-  } else {
-    // horizontal edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Vertical);
-  }
-  return query_rect;
-}
-};  // namespace cell_edges
-
 bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
 {
-  if (!arch_->getUseSpacingTable()) {
-    return false;
-  }
-  const auto& master = node->getMaster();
-  if (master == nullptr) {
-    // Not a cell. (or a filler cell)
-    return false;
-  }
-  // Get the real grid coordinates from the grid indices.
-  DbuX x_real = node->getLeft();
-  DbuY y_real = node->getBottom();
-  for (const auto& edge1 : master->edges_) {
-    int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
-                  + 1;  // +1 to account for EXACT rules
-    odb::Rect edge1_box = cell_edges::transformEdgeRect(
-        edge1.getBBox(), node, x_real, y_real, node->getCurrOrient());
-    bool is_vertical_edge = edge1_box.getDir() == 0;
-    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
-    auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
-    auto xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
-    auto yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
-    auto yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
-    std::set<Node*> checked_cells;
-    // Loop over the area covered by queryRect to find neighboring edges and
-    // check violations.
-    for (auto y1 = yMin; y1 <= yMax; y1++) {
-      for (auto x1 = xMin; x1 <= xMax; x1++) {
-        const auto pixel = grid_->gridPixel(x1, y1);
-        if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == node) {
-          // Skip if pixel is empty or occupied only by the current cell.
-          continue;
-        }
-        auto cell2 = static_cast<Node*>(pixel->cell);
-        if (checked_cells.find(cell2) != checked_cells.end()) {
-          // Skip if cell was already checked
-          continue;
-        }
-        checked_cells.insert(cell2);
-        auto master2 = cell2->getMaster();
-        if (master2 == nullptr) {
-          continue;
-        }
-        for (const auto& edge2 : master2->edges_) {
-          auto spc_entry = arch_->getCellSpacingUsingTable(edge1.getEdgeType(),
-                                                           edge2.getEdgeType());
-          int spc = spc_entry.spc;
-          odb::Rect edge2_box
-              = cell_edges::transformEdgeRect(edge2.getBBox(),
-                                              cell2,
-                                              cell2->getLeft(),
-                                              cell2->getBottom(),
-                                              cell2->getCurrOrient());
-          if (edge1_box.getDir() != edge2_box.getDir()) {
-            // Skip if edges are not parallel.
-            continue;
-          }
-          if (!query_rect.overlaps(edge2_box)) {
-            // Skip if there is no PRL between the edges.
-            continue;
-          }
-          odb::Rect test_rect(edge1_box);
-          // Generalized intersection between the two edges.
-          test_rect.merge(edge2_box);
-          int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
-          if (spc_entry.is_exact) {
-            if (dist == spc) {
-              // Violation only if the distance between the edges is exactly the
-              // specified spacing.
-              return true;
-            }
-          } else if (dist < spc) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
+  return !drc_engine_->checkEdgeSpacing(node);
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1651,7 +1549,7 @@ int DetailedMgr::checkRegionAssignment()
     std::sort(temp.begin(), temp.end(), compareNodesL());
 
     for (const Node* ndi : temp) {
-      if (ndi->getRegionId() != segments_[s]->getRegId()) {
+      if (ndi->getGroupId() != segments_[s]->getRegId()) {
         ++err_n;
       }
     }
@@ -1794,15 +1692,15 @@ double DetailedMgr::getCellSpacing(const Node* ndl,
       // determine the widest pin and the parallel run length without knowing
       // the actual location of the cells...  At least I think so...
 
-      const double xmin1 = pinl->getOffsetX() - 0.5 * pinl->getPinWidth();
-      const double xmax1 = pinl->getOffsetX() + 0.5 * pinl->getPinWidth();
-      const double ymin1 = pinl->getOffsetY() - 0.5 * pinl->getPinHeight();
-      const double ymax1 = pinl->getOffsetY() + 0.5 * pinl->getPinHeight();
+      const double xmin1 = pinl->getOffsetX().v - 0.5 * pinl->getPinWidth().v;
+      const double xmax1 = pinl->getOffsetX().v + 0.5 * pinl->getPinWidth().v;
+      const double ymin1 = pinl->getOffsetY().v - 0.5 * pinl->getPinHeight().v;
+      const double ymax1 = pinl->getOffsetY().v + 0.5 * pinl->getPinHeight().v;
 
-      const double xmin2 = pinr->getOffsetX() - 0.5 * pinr->getPinWidth();
-      const double xmax2 = pinr->getOffsetX() + 0.5 * pinr->getPinWidth();
-      const double ymin2 = pinr->getOffsetY() - 0.5 * pinr->getPinHeight();
-      const double ymax2 = pinr->getOffsetY() + 0.5 * pinr->getPinHeight();
+      const double xmin2 = pinr->getOffsetX().v - 0.5 * pinr->getPinWidth().v;
+      const double xmax2 = pinr->getOffsetX().v + 0.5 * pinr->getPinWidth().v;
+      const double ymin2 = pinr->getOffsetY().v - 0.5 * pinr->getPinHeight().v;
+      const double ymax2 = pinr->getOffsetY().v + 0.5 * pinr->getPinHeight().v;
 
       const double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
                                  std::min(ymax2 - ymin2, xmax2 - xmin2));
@@ -1961,18 +1859,18 @@ void DetailedMgr::findRegionIntervals(
       || arch_->getRegion(regId)->getId() != regId) {
     internalError("Improper region id");
   }
-  Architecture::Region* regPtr = arch_->getRegion(regId);
+  auto regPtr = arch_->getRegion(regId);
 
   // Initialize.
   intervals.clear();
   intervals.resize(numSingleHeightRows_);
 
   // Look at the rectangles within the region.
-  for (const Rectangle_i& rect : regPtr->getRects()) {
-    const double xmin = rect.xmin();
-    const double xmax = rect.xmax();
-    const double ymin = rect.ymin();
-    const double ymax = rect.ymax();
+  for (const auto& rect : regPtr->getRects()) {
+    const double xmin = rect.xMin();
+    const double xmax = rect.xMax();
+    const double ymin = rect.yMin();
+    const double ymax = rect.yMax();
 
     for (int r = 0; r < numSingleHeightRows_; r++) {
       const double lb = arch_->getMinY() + r * singleRowHeight_;
@@ -2724,7 +2622,7 @@ bool DetailedMgr::tryMove1(Node* ndi,
   // Reasons to fail.  Same or bogus segment, wrong region, or
   // not single height cell.
   const int spanned = arch_->getCellHeightInRows(ndi);
-  if (sj == si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
+  if (sj == si || sj == -1 || ndi->getGroupId() != segments_[sj]->getRegId()
       || spanned != 1) {
     return false;
   }
@@ -2888,7 +2786,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   // Reasons to fail.  Different or bogus segment, wrong region, or
   // not single height cell.
   const int spanned = arch_->getCellHeightInRows(ndi);
-  if (sj != si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
+  if (sj != si || sj == -1 || ndi->getGroupId() != segments_[sj]->getRegId()
       || spanned != 1) {
     return false;
   }
@@ -3018,7 +2916,7 @@ bool DetailedMgr::tryMove3(Node* ndi,
     bool gotSeg = false;
     for (int s = 0; s < segsInRow_[r].size() && !gotSeg; s++) {
       const DetailedSeg* segPtr = segsInRow_[r][s];
-      if (segPtr->getRegId() == ndi->getRegionId()) {
+      if (segPtr->getRegId() == ndi->getGroupId()) {
         if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
           gotSeg = true;
           segs.push_back(segPtr->getSegId());

@@ -10,6 +10,7 @@
 
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
+#include "dpl/Objects.h"
 #include "rectangle.h"
 #include "utl/Logger.h"
 
@@ -194,13 +195,13 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
     // We've computed an interval for the pin.  We need to alter it to work for
     // the cell center. Also, we need to avoid going off the edge of the chip.
     nodeBbox.set_xmin(
-        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX()), xmax));
+        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX().v), xmax));
     nodeBbox.set_xmax(
-        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX()), xmin));
+        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX().v), xmin));
     nodeBbox.set_ymin(
-        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY()), ymax));
+        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY().v), ymax));
     nodeBbox.set_ymax(
-        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY()), ymin));
+        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY().v), ymin));
 
     // Record the location and pin offset used to generate this point.
 
@@ -246,13 +247,13 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
 
   int count = 0;
   for (Pin* pin : ed->getPins()) {
-    Node* other = pin->getNode();
+    auto other = pin->getNode();
     if (other == nd) {
       continue;
     }
-    curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX();
-    curY
-        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY();
+    curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX().v;
+    curY = other->getBottom().v + 0.5 * other->getHeight().v
+           + pin->getOffsetY().v;
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -295,16 +296,16 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
     new_box.reset();
 
     for (Pin* pinj : edi->getPins()) {
-      Node* ndj = pinj->getNode();
+      auto ndj = pinj->getNode();
 
-      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
 
       old_box.addPt(x, y);
 
       if (ndj == ndi) {
-        x = new_x + pinj->getOffsetX();
-        y = new_y + pinj->getOffsetY();
+        x = new_x + pinj->getOffsetX().v;
+        y = new_y + pinj->getOffsetY().v;
       }
 
       new_box.addPt(x, y);
@@ -348,10 +349,11 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
       new_box.reset();
 
       for (Pin* pinj : edi->getPins()) {
-        Node* ndj = pinj->getNode();
+        auto ndj = pinj->getNode();
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
@@ -361,8 +363,9 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }
@@ -449,7 +452,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+  if (ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 

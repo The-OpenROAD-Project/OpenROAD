@@ -3,8 +3,8 @@
 
 #include <algorithm>
 
-#include "Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -97,7 +97,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
 
 void Opendp::setGridCells()
 {
-  for (Cell& cell : cells_) {
+  for (Node& cell : cells_) {
     grid_->visitCellPixels(
         cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
   }

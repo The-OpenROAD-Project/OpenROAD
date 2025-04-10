@@ -584,7 +584,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+    if (sj == -1 || ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }
@@ -756,7 +756,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+    if (sj == -1 || ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }

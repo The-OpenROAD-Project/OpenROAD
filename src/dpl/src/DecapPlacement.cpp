@@ -5,7 +5,8 @@
 #include <vector>
 
 #include "DecapObjects.h"
-#include "Objects.h"
+#include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
 #include "odb/dbShape.h"
