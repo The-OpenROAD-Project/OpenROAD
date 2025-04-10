@@ -457,22 +457,22 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
                                       [-buffer_gain gain] \
-                                      [-initial_sizing] \
+                                      [-pre_placement] \
                                       [-match_cell_footprint] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose -initial_sizing}
+    flags {-match_cell_footprint -verbose -pre_placement}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
   set cap_margin [rsz::parse_percent_margin_arg "-cap_margin" keys]
 
-  set initial_sizing [info exists flags(-initial_sizing)]
+  set pre_placement [info exists flags(-pre_placement)]
   if { [info exists keys(-buffer_gain)] } {
-    set initial_sizing true
+    set pre_placement true
     utl::warn "RSZ" 149 "-buffer_gain is deprecated"
   }
   rsz::set_max_utilization [rsz::parse_max_util keys]
@@ -483,7 +483,7 @@ proc repair_design { args } {
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $initial_sizing $match_cell_footprint $verbose
+    $pre_placement $match_cell_footprint $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

@@ -248,7 +248,7 @@ repair_design
     [-slew_margin slew_margin]
     [-cap_margin cap_margin]
     [-max_utilization util]
-    [-initial_sizing]
+    [-pre_placement]
     [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
     [-verbose]
@@ -262,8 +262,8 @@ repair_design
 | `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-max_utilization` | Defines the percentage of core area used. |
-| `-initial_sizing` | Enables performing an initial pre-placement sizing and buffering round. |
-| `-buffer_gain` | Deprecated alias for `-initial_sizing`. The passed value is ignored. |
+| `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
+| `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
