@@ -7,6 +7,6 @@
 [INFO ODB-0132]     Created 2 special nets and 4 connections.
 [INFO ODB-0133]     Created 2 nets and 0 connections.
 [WARNING DPL-0005] Overlap check failed (1).
- block1 overlaps _277_
+ block1 (BLOCK1) overlaps _277_ (BUF_X1)
 [ERROR DPL-0033] detailed placement checks failed.
 DPL-0033

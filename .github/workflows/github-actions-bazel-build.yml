@@ -32,10 +32,14 @@ jobs:
 
       - name: Build
         run: |
-          # There are no cc_test()s yet, so just build for now.
-          # For now, just run, but don't fail the whole CI, as bazel build is
-          # experimental at this stage.
-          bazel build --keep_going --show_timestamps --curses=no ... || /bin/true
+          bazel test \
+           -c opt \
+           --keep_going \
+           --show_timestamps \
+           --test_output=errors \
+           --curses=no \
+           --force_pic \
+           ...
 
       - name: Smoke test
         run: |

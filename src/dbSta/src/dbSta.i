@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
 %{
 
 #include "odb/db.h"
@@ -183,6 +186,16 @@ report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
   sta->reportTimingHistogram(num_bins, min_max);
+}
+
+void
+report_logic_depth_histogram_cmd(int num_bins, bool exclude_buffers,
+                         bool exclude_inverters)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta->reportLogicDepthHistogram(num_bins, exclude_buffers, exclude_inverters);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog

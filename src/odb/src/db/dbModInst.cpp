@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <fstream>
 #include <string>
@@ -419,13 +390,25 @@ void dbModInst::RemoveUnusedPortsAndPins()
   moditerms = getModITerms();
   modbterms = module->getModBTerms();
   for (auto mod_iterm : kill_set) {
+    dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
-    mod_bterm->disconnect();
-    dbModBTerm::destroy(mod_bterm);
-    dbModNet* moditerm_m_net = mod_iterm->getModNet();
-    mod_iterm->disconnect();
 
+    // Do the destruction in order for benefit of journaller
+    // so we always have a dbModBTerm..
+    // first destroy net, then dbModIterm, then dbModbterm.
+    mod_iterm->disconnect();
+    mod_bterm->disconnect();
+
+    // First destroy the net
+    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
+        && moditerm_m_net->getITerms().size() == 0
+        && moditerm_m_net->getModITerms().size() == 0
+        && moditerm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(moditerm_m_net);
+    }
+
+    // Now destroy the iterm
     dbModITerm::destroy(mod_iterm);
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0
@@ -433,12 +416,8 @@ void dbModInst::RemoveUnusedPortsAndPins()
         && modbterm_m_net->getModBTerms().size() == 0) {
       dbModNet::destroy(modbterm_m_net);
     }
-    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
-        && moditerm_m_net->getITerms().size() == 0
-        && moditerm_m_net->getModITerms().size() == 0
-        && moditerm_m_net->getModBTerms().size() == 0) {
-      dbModNet::destroy(moditerm_m_net);
-    }
+    // Finally the bterm
+    dbModBTerm::destroy(mod_bterm);
   }
 }
 

@@ -1,31 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * Copyright (c) 2024, Precision Innovations Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <omp.h>
 
@@ -134,7 +108,11 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
       }
     }
     if (n_aps == 0 && !inst_term->getTerm()->getPins().empty()) {
-      logger_->error(DRT, 86, "Pin does not have an access point.");
+      logger_->error(DRT,
+                     86,
+                     "Term {} ({}) does not have any access point.",
+                     inst_term->getName(),
+                     unique_inst->getMaster()->getName());
     }
   }
   std::sort(pins.begin(),
@@ -554,6 +532,7 @@ int FlexPA::getEdgeCost(
 }
 
 std::vector<int> FlexPA::extractAccessPatternFromNodes(
+    frInst* inst,
     const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::set<std::pair<int, int>>& used_access_points)
@@ -567,7 +546,11 @@ std::vector<int> FlexPA::extractAccessPatternFromNodes(
 
   while (curr_node != source_node) {
     if (!curr_node) {
-      logger_->error(DRT, 90, "Valid access pattern not found.");
+      logger_->error(DRT,
+                     90,
+                     "Valid access pattern not found for inst {}({}).",
+                     inst->getName(),
+                     inst->getMaster()->getName());
     }
 
     auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
@@ -589,8 +572,8 @@ bool FlexPA::genPatternsCommit(
     std::set<std::pair<int, int>>& viol_access_points,
     const int max_access_point_size)
 {
-  std::vector<int> access_pattern
-      = extractAccessPatternFromNodes(nodes, pins, used_access_points);
+  std::vector<int> access_pattern = extractAccessPatternFromNodes(
+      unique_inst, nodes, pins, used_access_points);
   // not a new access pattern
   if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
     return false;
