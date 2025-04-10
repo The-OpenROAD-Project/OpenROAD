@@ -317,8 +317,10 @@ class TestHconn : public ::testing::Test
     inv1_mod_inst
         = dbModInst::create(root_mod, inv1_mod_master, "inv1_mod_inst");
 
-    inv1_mod_inst_i0_miterm = dbModITerm::create(inv1_mod_inst, "i0");
-    inv1_mod_inst_o0_miterm = dbModITerm::create(inv1_mod_inst, "o0");
+    inv1_mod_inst_i0_miterm
+        = dbModITerm::create(inv1_mod_inst, "i0", inv1_mod_i0_port);
+    inv1_mod_inst_o0_miterm
+        = dbModITerm::create(inv1_mod_inst, "o0", inv1_mod_o0_port);
     // correlate the iterms and bterms
     inv1_mod_inst_i0_miterm->setChildModBTerm(inv1_mod_i0_port);
     inv1_mod_i0_port->setParentModITerm(inv1_mod_inst_i0_miterm);
