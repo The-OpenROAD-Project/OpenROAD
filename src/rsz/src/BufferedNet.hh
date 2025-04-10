@@ -16,9 +16,6 @@
 
 namespace rsz {
 
-using std::array;
-using std::string;
-
 using utl::Logger;
 
 using odb::Point;
@@ -41,7 +38,7 @@ class RepairSetup;
 
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using Requireds = array<Required, RiseFall::index_count>;
+using Requireds = std::array<Required, RiseFall::index_count>;
 
 enum class BufferedNetType
 {
@@ -83,7 +80,7 @@ class BufferedNet
               const BufferedNetPtr& ref,
               const Corner* corner,
               const Resizer* resizer);
-  string to_string(const Resizer* resizer) const;
+  std::string to_string(const Resizer* resizer) const;
   void reportTree(const Resizer* resizer) const;
   void reportTree(int level, const Resizer* resizer) const;
   BufferedNetType type() const { return type_; }

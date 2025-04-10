@@ -178,7 +178,8 @@ void Opendp::placeRowFillers(GridY row,
       debugPrint(
           logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
       for (dbMaster* master : fillers) {
-        string inst_name = prefix + to_string(row.v) + "_" + to_string(k.v);
+        std::string inst_name
+            = prefix + to_string(row.v) + "_" + to_string(k.v);
         dbInst* inst = dbInst::create(block_,
                                       master,
                                       inst_name.c_str(),

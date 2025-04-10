@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <map>
+#include <utility>
+
 #include "Coordinates.h"
 #include "Opendp.h"
 
@@ -28,8 +31,8 @@ class Padding
   DbuX paddedWidth(const Node* cell) const;
 
  private:
-  using InstPaddingMap = map<dbInst*, pair<GridX, GridX>>;
-  using MasterPaddingMap = map<dbMaster*, pair<GridX, GridX>>;
+  using InstPaddingMap = std::map<dbInst*, std::pair<GridX, GridX>>;
+  using MasterPaddingMap = std::map<dbMaster*, std::pair<GridX, GridX>>;
 
   GridX pad_left_{0};
   GridX pad_right_{0};

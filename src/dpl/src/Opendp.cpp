@@ -240,7 +240,7 @@ void Opendp::deleteGrid()
 }
 
 void Opendp::findOverlapInRtree(const bgBox& queryBox,
-                                vector<bgBox>& overlaps) const
+                                std::vector<bgBox>& overlaps) const
 {
   overlaps.clear();
   regions_rtree_.query(boost::geometry::index::intersects(queryBox),
