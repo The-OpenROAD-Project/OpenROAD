@@ -126,8 +126,6 @@ Corner: slow
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000006 HPWL: 258856
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 258842
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000007 HPWL: 258842
-[INFO GPL-0032] Uniform density:                0.0013
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0014
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.850 um^2
 [INFO GPL-0025] Ideal bin area:                  4.071 um^2
@@ -136,11 +134,17 @@ Corner: slow
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.1930 |  1.027700e+05 |   +0.00% |  4.39e-14 |      
-[NesterovSolve] Finished with Overflow: 0.192992
+[INFO GPL-1001] Finished with Overflow: 0.192992
+[INFO GPL-1002] Placed Cell Area               59.8500
+[INFO GPL-1003] Available Free Area         47872.0200
+[INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0014
+[INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-0133] Unlocked instances
 Placement Analysis
 ---------------------------------
@@ -243,8 +247,6 @@ Corner: slow
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000011 HPWL: 210704
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000002 HPWL: 210702
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000002 HPWL: 210702
-[INFO GPL-0032] Uniform density:                0.0013
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0014
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.875 um^2
 [INFO GPL-0025] Ideal bin area:                  4.108 um^2
@@ -253,11 +255,17 @@ Corner: slow
 [INFO GPL-0028] Bin count (X, Y):          16 ,    256
 [INFO GPL-0029] Bin size (W * H):       2.494 *  4.687 um
 [INFO GPL-0030] Number of bins:                   4096
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.1876 |  8.809400e+04 |   +0.00% |  3.98e-14 |      
-[NesterovSolve] Finished with Overflow: 0.187637
+[INFO GPL-1001] Finished with Overflow: 0.187637
+[INFO GPL-1002] Placed Cell Area               60.3820
+[INFO GPL-1003] Available Free Area         47872.0200
+[INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0014
+[INFO GPL-1008]     - For 80% usage of free space: 0.0016
 [INFO GPL-0133] Unlocked instances
 Placement Analysis
 ---------------------------------

@@ -56,8 +56,6 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     4.861 %
 [INFO GPL-0020] Standard cells area:            43.792 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Uniform density:                0.0138
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0153
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.218 um^2
 [INFO GPL-0025] Ideal bin area:                 10.312 um^2
@@ -66,8 +64,6 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
 [INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0032] Uniform density:                0.0236
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0262
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.090 um^2
 [INFO GPL-0025] Ideal bin area:                 10.129 um^2
@@ -76,8 +72,6 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
 [INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0032] Uniform density:                0.0486
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0540
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      7.299 um^2
 [INFO GPL-0025] Ideal bin area:                 10.427 um^2
@@ -86,13 +80,19 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       3.379 *  3.315 um
 [INFO GPL-0030] Number of bins:                   1024
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.4225 |  1.127956e+06 |   +0.00% |  8.28e-14 |      
         1 |   0.9998 |  1.127956e+06 |   +0.00% |  6.62e-13 |  (PD_D1)
         1 |   0.1668 |  1.127956e+06 |   +0.00% |  8.77e-13 |  (PD_D2)
-[NesterovSolve] Finished with Overflow: 0.081593
+[INFO GPL-1001] Finished with Overflow: 0.081593
+[INFO GPL-1002] Placed Cell Area               93.8400
+[INFO GPL-1003] Available Free Area          6812.7840
+[INFO GPL-1004] Minimum Feasible Density        0.0200 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0153
+[INFO GPL-1008]     - For 80% usage of free space: 0.0172
        10 |   0.9998 |  4.495300e+05 |  -60.15% |  8.06e-13 |  (PD_D1)
        10 |   0.9998 |  4.495300e+05 |  -60.15% |  1.07e-12 |  (PD_D2)
        20 |   0.9998 |  4.305940e+05 |   -4.21% |  9.72e-13 |  (PD_D1)
@@ -261,14 +261,26 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       830 |   0.1761 |  7.227910e+05 |   +3.59% |  4.64e-06 |  (PD_D2)
       840 |   0.2399 |  7.697200e+05 |   +6.49% |  4.22e-06 |  (PD_D1)
       840 |   0.0992 |  7.697200e+05 |   +6.49% |  5.59e-06 |  (PD_D2)
-[NesterovSolve] PowerDomain PD_D2 finished with Overflow: 0.099244
+[INFO GPL-1000] PowerDomain PD_D2 finished with Overflow: 0.099244
+[INFO GPL-1002] Placed Cell Area               43.7920
+[INFO GPL-1003] Available Free Area           900.8640
+[INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0540
+[INFO GPL-1008]     - For 80% usage of free space: 0.0608
       850 |   0.2371 |  7.925720e+05 |   +2.97% |  5.08e-06 |  (PD_D1)
       860 |   0.1516 |  8.525700e+05 |   +7.57% |  6.13e-06 |  (PD_D1)
       870 |   0.1519 |  8.681770e+05 |   +1.83% |  7.38e-06 |  (PD_D1)
       880 |   0.1482 |  8.807570e+05 |   +1.45% |  8.89e-06 |  (PD_D1)
       890 |   0.1465 |  9.179420e+05 |   +4.22% |  1.07e-05 |  (PD_D1)
       900 |   0.1424 |  9.869070e+05 |   +7.51% |  1.29e-05 |  (PD_D1)
-[NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.077729
+[INFO GPL-1000] PowerDomain PD_D1 finished with Overflow: 0.077729
+[INFO GPL-1002] Placed Cell Area               21.2704
+[INFO GPL-1003] Available Free Area           900.8640
+[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0262
+[INFO GPL-1008]     - For 80% usage of free space: 0.0295
 Placement Analysis
 ---------------------------------
 total displacement         70.7 u

@@ -26,8 +26,6 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 595065
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 577570
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 567244
-[INFO GPL-0032] Uniform density:                0.0007
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0008
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      4.522 um^2
 [INFO GPL-0025] Ideal bin area:                  6.460 um^2
@@ -36,11 +34,17 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.0000 |  5.633130e+05 |   +0.00% |  9.92e-15 |      
-[NesterovSolve] Finished with Overflow: 0.000000
+[INFO GPL-1001] Finished with Overflow: 0.000000
+[INFO GPL-1002] Placed Cell Area                4.5220
+[INFO GPL-1003] Available Free Area          6256.3200
+[INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0008
+[INFO GPL-1008]     - For 80% usage of free space: 0.0009
 [INFO RSZ-0027] Inserted 2 input buffers.
 [INFO RSZ-0028] Inserted 2 output buffers.
 No differences found.
