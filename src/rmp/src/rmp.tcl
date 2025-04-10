@@ -114,4 +114,3 @@ proc resynth { args } {
 
   rmp::resynth_cmd
 }
-
