@@ -1348,10 +1348,10 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
           dst[i] = pin_hpwl;
           break;
         }
-        dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
+        const int mirrored_pin_cost = getMirroredPinCost(pin, sections[i].pos);
+        dst[i] += pin_hpwl + mirrored_pin_cost;
         if (has_mirrored_pin) {
-          larger_cost[i]
-              += std::max(pin_hpwl, getMirroredPinCost(pin, sections[i].pos));
+          larger_cost[i] += std::max(pin_hpwl, mirrored_pin_cost);
         }
       }
     }
@@ -1500,13 +1500,12 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
     std::vector<int> larger_cost(sections.size());
 
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos)
-               + getMirroredPinCost(io_pin, sections[i].pos);
+      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, sections[i].pos);
+      const int mirrored_pin_cost = getMirroredPinCost(io_pin, sections[i].pos);
+      dst[i] = io_net_hpwl + mirrored_pin_cost;
 
       if (has_mirrored_pin) {
-        larger_cost[i]
-            = std::max(netlist_->computeIONetHPWL(idx, sections[i].pos),
-                       getMirroredPinCost(io_pin, sections[i].pos));
+        larger_cost[i] = std::max(io_net_hpwl, mirrored_pin_cost);
       }
     }
     for (auto i : sortIndexes(dst, larger_cost)) {
