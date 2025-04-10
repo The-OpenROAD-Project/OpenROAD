@@ -38,6 +38,7 @@ target_link_libraries(rmp
     OpenSTA
     rsz
     utl_lib
+    rmp_abc_library
     ${ABC_LIBRARY}
  )
 

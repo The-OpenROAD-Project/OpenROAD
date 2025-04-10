@@ -3,8 +3,11 @@
 
 #include "delay_optimization_strategy.h"
 
+#include <mutex>
+
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
+#include "base/main/main.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
@@ -60,7 +63,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
   buffer_parameters.GainRatio = 300;
   buffer_parameters.Slew
       = abc::Abc_SclComputeAverageSlew(abc_sc_library.abc_library());
-  buffer_parameters.nDegree = 5;
+  buffer_parameters.nDegree = 3;
   buffer_parameters.fSizeOnly = 0;
   buffer_parameters.fAddBufs = false;
   buffer_parameters.fBufPis = true;
@@ -74,17 +77,14 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
   return current_network;
 }
 
+// Exclusive lock to protect the as of yet static unsafe ABC functions.
+std::mutex abc_library_mutex;
+
 utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
     const abc::Abc_Ntk_t* ntk,
     AbcLibrary& abc_library,
     utl::Logger* logger)
 {
-  auto library = static_cast<abc::Mio_Library_t*>(ntk->pManFunc);
-  // Install library for NtkMap
-  abc::Abc_FrameSetLibGen(library);
-
-  AbcPrintStats(ntk);
-
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> current_network(
       abc::Abc_NtkToLogic(const_cast<abc::Abc_Ntk_t*>(ntk)),
       &abc::Abc_NtkDelete);
@@ -95,28 +95,46 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                                   /*fRecord=*/false));
   current_network = WrapUnique(Abc_NtkBalance(current_network.get(),
                                               /*fDuplicate=*/true,
-                                              /*fSelective=*/false,
+                                              /*fSelective=*/true,
                                               /*fUpdateLevel=*/true));
+  {
+    // Lock the tech mapping and buffer since they rely on static variables.
+    const std::lock_guard<std::mutex> lock(abc_library_mutex);
 
-  current_network = WrapUnique(abc::Abc_NtkMap(current_network.get(),
-                                               nullptr,
-                                               /*DelayTarget=*/-1.0,
-                                               /*AreaMulti=*/0.0,
-                                               /*DelayMulti=*/1.0,
-                                               /*LogFan=*/10.0,
-                                               /*Slew=*/0.0,
-                                               /*Gain=*/250.0,
-                                               /*nGatesMin=*/0,
-                                               /*fRecovery=*/false,
-                                               /*fSwitching=*/false,
-                                               /*fSkipFanout=*/false,
-                                               /*fUseProfile=*/false,
-                                               /*fUseBuffs=*/true,
-                                               /*fVerbose=*/false));
+    auto library = static_cast<abc::Mio_Library_t*>(ntk->pManFunc);
 
-  abc::Abc_NtkCleanup(current_network.get(), /*fVerbose=*/false);
+    // Install library for NtkMap
+    abc::Abc_FrameSetLibGen(library);
+    abc::Mio_Gate_t* buffer_cell = abc::Mio_LibraryReadBuf(library);
+    if (!buffer_cell) {
+      logger->error(
+          utl::RMP,
+          1029,
+          "Cannot find buffer cell in abc library (ensure buffer "
+          "exists in your PDK), if it does please report this internal error.");
+    }
+    abc::Abc_FrameSetDrivingCell(strdup(abc::Mio_GateReadName(buffer_cell)));
 
-  current_network = BufferNetwork(current_network.get(), abc_library);
+    current_network = WrapUnique(abc::Abc_NtkMap(current_network.get(),
+                                                 nullptr,
+                                                 /*DelayTarget=*/1.0,
+                                                 /*AreaMulti=*/0.0,
+                                                 /*DelayMulti=*/10.0,
+                                                 /*LogFan=*/10.0,
+                                                 /*Slew=*/0.0,
+                                                 /*Gain=*/250.0,
+                                                 /*nGatesMin=*/0,
+                                                 /*fRecovery=*/true,
+                                                 /*fSwitching=*/false,
+                                                 /*fSkipFanout=*/false,
+                                                 /*fUseProfile=*/false,
+                                                 /*fUseBuffs=*/true,
+                                                 /*fVerbose=*/false));
+
+    abc::Abc_NtkCleanup(current_network.get(), /*fVerbose=*/false);
+
+    current_network = BufferNetwork(current_network.get(), abc_library);
+  }
 
   current_network = WrapUnique(abc::Abc_NtkToNetlist(current_network.get()));
 

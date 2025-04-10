@@ -10,6 +10,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <vector>
 
@@ -32,11 +33,14 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
+#include "zero_slack_strategy.h"
 
 using utl::RMP;
 using namespace abc;
 
 namespace rmp {
+
+std::once_flag init_abc_flag;
 
 void Restructure::init(utl::Logger* logger,
                        sta::dbSta* open_sta,
@@ -47,6 +51,8 @@ void Restructure::init(utl::Logger* logger,
   db_ = db;
   open_sta_ = open_sta;
   resizer_ = resizer;
+
+  std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 }
 
 void Restructure::deleteComponents()
@@ -62,6 +68,12 @@ void Restructure::reset()
 {
   lib_file_names_.clear();
   path_insts_.clear();
+}
+
+void Restructure::resynth()
+{
+  ZeroSlackStrategy zero_slack_strategy;
+  zero_slack_strategy.OptimizeDesign(open_sta_, name_generator_, logger_);
 }
 
 void Restructure::run(char* liberty_file_name,

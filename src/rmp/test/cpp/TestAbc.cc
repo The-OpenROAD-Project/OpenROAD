@@ -627,8 +627,10 @@ TEST_F(AbcTest, ResynthesisStrategyDoesNotThrow)
 {
   LoadVerilog("aes_nangate45.v", /*top=*/"aes_cipher_top");
 
+  UniqueName name_generator;
   ZeroSlackStrategy zero_slack;
-  EXPECT_NO_THROW(zero_slack.OptimizeDesign(sta_.get(), &logger_));
+  EXPECT_NO_THROW(
+      zero_slack.OptimizeDesign(sta_.get(), name_generator, &logger_));
 }
 
 TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
