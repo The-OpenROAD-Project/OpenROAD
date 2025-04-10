@@ -43,7 +43,7 @@ void FlexPA::buildInstsSet()
     if (!isStdCell(inst.get())) {
       continue;
     }
-    if (skipAllInstTerms(inst.get())) {
+    if (areAllSkipInstTerms(inst.get())) {
       continue;
     }
     insts_set_.insert(inst.get());

@@ -25,7 +25,6 @@
 #include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
-#include "io/io.h"
 #include "serialization.h"
 #include "utl/exception.h"
 
@@ -103,7 +102,7 @@ void FlexPA::addInst(frInst* inst)
   inst->setPinAccessIdx(unique_insts_.getUnique(inst)->getPinAccessIdx());
 
   insts_set_.insert(inst);
-  if (skipAllInstTerms(inst)) {
+  if (areAllSkipInstTerms(inst)) {
     return;
   }
   std::vector<frInst*> inst_row = getAdjacentInstancesCluster(inst);
@@ -301,7 +300,7 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
   return skip_unique_inst_term_.at({inst_class, in->getTerm()});
 }
 
-bool FlexPA::skipAllInstTerms(frInst* inst)
+bool FlexPA::areAllSkipInstTerms(frInst* inst)
 {
   for (auto& inst_term : inst->getInstTerms()) {
     if (!isSkipInstTerm(inst_term.get())) {
