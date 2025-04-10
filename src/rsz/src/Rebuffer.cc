@@ -821,7 +821,7 @@ void RepairSetup::addBuffers(
       Delay best_slack = -INF;
       float best_area = std::numeric_limits<float>::max();
       BufferedNetPtr best_option = nullptr, best_area_option = nullptr;
-      Delay best_option_delay;
+      Delay best_option_delay = 0;
 
       for (const BufferedNetPtr& z : Z1) {
         Delay buffer_delay = bufferDelay(
