@@ -3237,7 +3237,8 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
       = snap_data[0].available_positions;
   odb::dbITerm* lowest_grid_pin = snap_data[0].pins[0];
 
-  int lowest_pin_center_pos = origin + getPinOffset(lowest_grid_pin, target_direction);
+  int lowest_pin_center_pos
+      = origin + getPinOffset(lowest_grid_pin, target_direction);
 
   auto closest_pos = lower_bound(lowest_grid_positions.begin(),
                                  lowest_grid_positions.end(),
@@ -3331,7 +3332,7 @@ odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin)
 }
 
 int Snapper::getPinOffset(odb::dbITerm* pin,
-                         const odb::dbTechLayerDir& direction)
+                          const odb::dbTechLayerDir& direction)
 {
   int pin_width = 0;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
@@ -3348,7 +3349,7 @@ int Snapper::getPinOffset(odb::dbITerm* pin,
     pin_to_origin = mterm->getBBox().yMin();
   }
 
-  int pin_offset = pin_to_origin + (pin_width/2);
+  int pin_offset = pin_to_origin + (pin_width / 2);
 
   const odb::dbOrientType& orientation = inst_->getOrient();
   if (direction == odb::dbTechLayerDir::VERTICAL) {
@@ -3359,7 +3360,7 @@ int Snapper::getPinOffset(odb::dbITerm* pin,
   } else {
     if (orientation == odb::dbOrientType::MX
         || orientation == odb::dbOrientType::R180) {
-      pin_offset = -pin_offset;       
+      pin_offset = -pin_offset;
     }
   }
 
@@ -3395,12 +3396,12 @@ void Snapper::attemptSnapToExtraPatterns(
     const odb::dbTechLayerDir& target_direction)
 {
   const int total_attempts = 100;
-  const int total_pins = std::accumulate(
-        snap_data.begin(), snap_data.end(), 0,
-        [](int total, const LayerData& data) {
-            return total + data.pins.size();
-        }
-  );
+  const int total_pins = std::accumulate(snap_data.begin(),
+                                         snap_data.end(),
+                                         0,
+                                         [](int total, const LayerData& data) {
+                                           return total + data.pins.size();
+                                         });
 
   odb::dbITerm* snap_pin = snap_data[0].pins[0];
   const std::vector<int>& positions = snap_data[0].available_positions;
