@@ -3237,20 +3237,18 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
       = snap_data[0].available_positions;
   odb::dbITerm* lowest_grid_pin = snap_data[0].pins[0];
 
-  int lower_left_distance
-      = getPinToLowerLeftDistance(lowest_grid_pin, target_direction);
-  int half_pin_width = getPinWidth(lowest_grid_pin, target_direction) / 2;
-  int lowest_pin_center_pos = origin + lower_left_distance + half_pin_width;
+  int lowest_pin_center_pos = origin + getPinOffset(lowest_grid_pin, target_direction);
 
   auto closest_pos = lower_bound(lowest_grid_positions.begin(),
                                  lowest_grid_positions.end(),
                                  lowest_pin_center_pos);
 
-  // Subtracting one prevents errors if no position is found by lower_bound
   int starting_position_index
-      = std::distance(lowest_grid_positions.begin(), closest_pos) - 1;
-  // Clamp to 0 if lower_bound returns 0 and the previous subtraction made it -1
-  starting_position_index = std::max(0, starting_position_index);
+      = std::distance(lowest_grid_positions.begin(), closest_pos);
+  // If no position is found, use the last available
+  if (starting_position_index == lowest_grid_positions.size()) {
+    starting_position_index -= 1;
+  }
 
   snapPinToPosition(lowest_grid_pin,
                     lowest_grid_positions[starting_position_index],
@@ -3332,26 +3330,47 @@ odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin)
   return (*pin->getGeometry().begin())->getTechLayer();
 }
 
-int Snapper::getPinWidth(odb::dbITerm* pin,
-                         const odb::dbTechLayerDir& target_direction)
+int Snapper::getPinOffset(odb::dbITerm* pin,
+                         const odb::dbTechLayerDir& direction)
 {
   int pin_width = 0;
-  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+  if (direction == odb::dbTechLayerDir::VERTICAL) {
     pin_width = pin->getBBox().dx();
   } else {
     pin_width = pin->getBBox().dy();
   }
-  return pin_width;
+
+  int pin_to_origin = 0;
+  odb::dbMTerm* mterm = pin->getMTerm();
+  if (direction == odb::dbTechLayerDir::VERTICAL) {
+    pin_to_origin = mterm->getBBox().xMin();
+  } else {
+    pin_to_origin = mterm->getBBox().yMin();
+  }
+
+  int pin_offset = pin_to_origin + (pin_width/2);
+
+  const odb::dbOrientType& orientation = inst_->getOrient();
+  if (direction == odb::dbTechLayerDir::VERTICAL) {
+    if (orientation == odb::dbOrientType::MY
+        || orientation == odb::dbOrientType::R180) {
+      pin_offset = -pin_offset;
+    }
+  } else {
+    if (orientation == odb::dbOrientType::MX
+        || orientation == odb::dbOrientType::R180) {
+      pin_offset = -pin_offset;       
+    }
+  }
+
+  return pin_offset;
 }
 
 void Snapper::snapPinToPosition(odb::dbITerm* pin,
                                 int position,
                                 const odb::dbTechLayerDir& direction)
 {
-  int pin_to_lower_left = getPinToLowerLeftDistance(pin, direction);
-  int pin_offset = getPinWidth(pin, direction) / 2 + pin_to_lower_left;
-
-  int origin = position - pin_offset;
+  int origin = position - getPinOffset(pin, direction);
   alignWithManufacturingGrid(origin);
   setOrigin(origin, direction);
 }
@@ -3370,28 +3389,18 @@ void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
   }
 }
 
-int Snapper::getPinToLowerLeftDistance(
-    odb::dbITerm* pin,
-    const odb::dbTechLayerDir& target_direction)
-{
-  int pin_to_origin = 0;
-
-  odb::dbMTerm* mterm = pin->getMTerm();
-  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    pin_to_origin = mterm->getBBox().xMin();
-  } else {
-    pin_to_origin = mterm->getBBox().yMin();
-  }
-
-  return pin_to_origin;
-}
-
 void Snapper::attemptSnapToExtraPatterns(
     const int start_index,
     const SnapData& snap_data,
     const odb::dbTechLayerDir& target_direction)
 {
   const int total_attempts = 100;
+  const int total_pins = std::accumulate(
+        snap_data.begin(), snap_data.end(), 0,
+        [](int total, const LayerData& data) {
+            return total + data.pins.size();
+        }
+  );
 
   odb::dbITerm* snap_pin = snap_data[0].pins[0];
   const std::vector<int>& positions = snap_data[0].available_positions;
@@ -3416,6 +3425,9 @@ void Snapper::attemptSnapToExtraPatterns(
     if (snapped_pins > best_snapped_pins) {
       best_snapped_pins = snapped_pins;
       best_index = current_index;
+      if (best_snapped_pins == total_pins) {
+        break;
+      }
     }
   }
 

@@ -370,10 +370,7 @@ class Snapper
                            int& origin,
                            int& step,
                            const odb::dbTechLayerDir& target_direction);
-  int getPinWidth(odb::dbITerm* pin,
-                  const odb::dbTechLayerDir& target_direction);
-  int getPinToLowerLeftDistance(odb::dbITerm* pin,
-                                const odb::dbTechLayerDir& target_direction);
+  int getPinOffset(odb::dbITerm* pin, const odb::dbTechLayerDir& direction);
   void snapPinToPosition(odb::dbITerm* pin,
                          int position,
                          const odb::dbTechLayerDir& direction);
