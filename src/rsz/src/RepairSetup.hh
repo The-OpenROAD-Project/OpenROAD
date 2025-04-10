@@ -9,6 +9,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/MinMax.hh"
+#include "sta/PathRef.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 
@@ -28,6 +29,7 @@ using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
+using sta::Delay;
 using sta::Instance;
 using sta::LibertyCell;
 using sta::LibertyPort;
@@ -37,6 +39,7 @@ using sta::PathExpanded;
 using sta::PathRef;
 using sta::Pin;
 using sta::RiseFall;
+using sta::RiseFallBoth;
 using sta::Slack;
 using sta::Slew;
 using sta::StaState;
@@ -175,9 +178,10 @@ class RepairSetup : public sta::dbStaState
 
   int rebuffer(const Pin* drvr_pin);
 
+  void annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex);
   BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
   BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
-                             sta::Delay slack_target,
+                             Delay slack_target,
                              float alpha);
 
   int rebufferTopDown(const BufferedNetPtr& choice,
@@ -193,10 +197,9 @@ class RepairSetup : public sta::dbStaState
   void addBuffers(BufferedNetSeq& Z1,
                   int level,
                   bool area_oriented = false,
-                  sta::Delay threshold = 0);
-  float bufferInputCapacitance(LibertyCell* buffer_cell,
-                               const DcalcAnalysisPt* dcalc_ap);
-  std::tuple<PathRef, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
+                  Delay threshold = 0);
+  Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
+  std::tuple<Delay, Delay> drvrPinTiming(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
 
@@ -235,6 +238,9 @@ class RepairSetup : public sta::dbStaState
   // Map to block pins from being swapped more than twice for the
   // same instance.
   std::unordered_set<const sta::Instance*> swap_pin_inst_set_;
+
+  // For rebuffering
+  PathRef arrival_paths_[RiseFall::index_count];
 
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();
