@@ -420,7 +420,7 @@ def set_io_pin_constraint(
             pin_list = parse_pin_names(design, pin_names)
             # utl.info(utl.PPL, 399, "Restrict pins to ... on layer ...")
             rect = odb.Rect(llx, lly, urx, ury)
-            design.getIOPlacer().addTopLayerConstraint(pin_list, rect)
+            dbBlock.addBTermsToConstraint(pin_list, rect)
 
     elif group:
         if pin_names != None:

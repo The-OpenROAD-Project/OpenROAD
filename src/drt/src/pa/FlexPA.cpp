@@ -3,6 +3,8 @@
 
 #include "FlexPA.h"
 
+#include <omp.h>
+
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
@@ -24,10 +26,26 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
+#include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
 namespace drt {
+
+using utl::ThreadException;
+
+static inline void serializePatterns(
+    const std::unordered_map<
+        frInst*,
+        std::vector<std::unique_ptr<FlexPinAccessPattern>>>& patterns,
+    const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  registerTypes(ar);
+  ar << patterns;
+  file.close();
+}
 
 FlexPA::FlexPA(frDesign* in,
                Logger* logger,
@@ -151,6 +169,69 @@ void FlexPA::prep()
     }
   }
   prepPattern();
+}
+
+void FlexPA::prepPattern()
+{
+  ProfileTask profile("PA:pattern");
+
+  const auto& unique = unique_insts_.getUnique();
+
+  // revert access points to origin
+  unique_inst_patterns_.reserve(unique.size());
+
+  int cnt = 0;
+
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (frInst* unique_inst : unique) {
+    try {
+      // only do for core and block cells
+      // TODO the above comment says "block cells" but that's not what the code
+      // does?
+      if (!isStdCell(unique_inst)) {
+        continue;
+      }
+      prepPatternInst(unique_inst);
+#pragma omp critical
+      {
+        cnt++;
+        if (router_cfg_->VERBOSE > 0) {
+          if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
+            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
+          }
+        }
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  if (router_cfg_->VERBOSE > 0) {
+    logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
+  }
+  if (isDistributed()) {
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    std::string patterns_file = fmt::format("{}/patterns.bin", shared_vol_);
+    serializePatterns(unique_inst_patterns_, patterns_file);
+    uDesc->setPath(patterns_file);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PATTERNS);
+    msg.setJobDescription(std::move(uDesc));
+    const bool ok
+        = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok) {
+      logger_->error(
+          utl::DRT, 330, "Error sending UPDATE_PATTERNS Job to cloud");
+    }
+  }
+
+  std::vector<std::vector<frInst*>> inst_rows = computeInstRows();
+  prepPatternInstRows(inst_rows);
 }
 
 void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)

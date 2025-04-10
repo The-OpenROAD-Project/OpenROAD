@@ -301,4 +301,12 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net) const
   return bbox.dx() + bbox.dy();
 }
 
+void WireLengthEvaluator::report(utl::Logger* logger) const
+{
+  for (dbNet* net : block_->getNets()) {
+    logger->report(
+        "{} {}", net->getConstName(), block_->dbuToMicrons(hpwl(net)));
+  }
+}
+
 }  // namespace odb

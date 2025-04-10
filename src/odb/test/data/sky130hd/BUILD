@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, Precision Innovations Inc.
+# Copyright (c) 2025, The OpenROAD Authors
 
 package(
     default_visibility = ["//:__subpackages__"],
