@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "RepairDesign.hh"
 
@@ -693,18 +661,21 @@ bool RepairDesign::performGainBuffering(Net* net,
     Pin* buffer_op_pin = nullptr;
     resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
     db_network_->connectPin(buffer_ip_pin, net);
-    db_network_->connectPin(buffer_op_pin, new_net);
-    // put the mod net on the output of the buffer.
-    if (driver_mod_net) {
-      db_network_->connectPin(buffer_op_pin,
-                              db_network_->dbToSta(driver_mod_net));
-    }
+
+    // connect the buffer output to the new flat net and any modnet
+    // Keep the original input net driving the buffer.
+    // Update the hierarchical net/flat net correspondence because
+    // the hierarhical net is moved to the output of the buffer.
+
+    db_network_->connectPin(
+        buffer_op_pin, new_net, db_network_->dbToSta(driver_mod_net));
 
     repaired_net = true;
     inserted_buffer_count_++;
 
     int max_level = 0;
     for (auto it = sinks.begin(); it != group_end; it++) {
+      Pin* sink_pin = it->pin;
       LibertyPort* sink_port = network_->libertyPort(it->pin);
       Instance* sink_inst = network_->instance(it->pin);
       load -= sink_port->capacitance();
@@ -712,13 +683,14 @@ bool RepairDesign::performGainBuffering(Net* net,
         max_level = it->level;
       }
 
-      odb::dbModNet* sink_mod_net = db_network_->hierNet(it->pin);
-      sta_->disconnectPin(it->pin);
-      sta_->connectPin(sink_inst, sink_port, new_net);
-      if (sink_mod_net) {
-        db_network_->connectPin(it->pin, db_network_->dbToSta(sink_mod_net));
-      }
-
+      odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
+      // rewire the sink pin, taking care of both the flat net
+      // and the hierarchical net. Update the hierarchical net
+      // flat net correspondence
+      db_network_->disconnectPin(sink_pin);
+      db_network_->connectPin(sink_pin,
+                              db_network_->dbToSta(new_net_db),
+                              db_network_->dbToSta(sink_mod_net));
       if (it->level == 0) {
         Pin* new_pin = network_->findPin(sink_inst, sink_port);
         tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
@@ -1955,8 +1927,7 @@ bool RepairDesign::makeRepeater(
   // way from the loads to the driver.
 
   Net* load_net = nullptr;
-  dbNet* load_db_net = nullptr;           // load net, flat
-  odb::dbModNet* load_mod_net = nullptr;  // load net, hierarchical
+  dbNet* load_db_net = nullptr;  // load net, flat
 
   bool preserve_outputs = false;
   bool top_primary_output = false;
@@ -1965,13 +1936,9 @@ bool RepairDesign::makeRepeater(
   // primary output/ dont touch
 
   for (const Pin* pin : load_pins) {
-    load_db_net = db_network_->flatNet(pin);
-    load_mod_net = db_network_->hierNet(pin);
-
     if (network_->isTopLevelPort(pin)) {
-      load_net = network_->net(network_->term(pin));
-      db_network_->staToDb(load_net, load_db_net, load_mod_net);
-      load_db_net = db_network_->flatNet(pin);
+      load_db_net = db_network_->flatNet(network_->term(pin));
+
       // filter: is the top pin a primary output
       if (network_->direction(pin)->isAnyOutput()) {
         preserve_outputs = true;
@@ -1979,7 +1946,8 @@ bool RepairDesign::makeRepeater(
         break;
       }
     } else {
-      load_net = network_->net(pin);
+      load_db_net = db_network_->flatNet(pin);
+
       Instance* inst = network_->instance(pin);
       if (resizer_->dontTouch(inst)) {
         preserve_outputs = true;
@@ -1987,6 +1955,9 @@ bool RepairDesign::makeRepeater(
       }
     }
   }
+
+  // force the load net to be a flat net
+  load_net = db_network_->dbToSta(load_db_net);
 
   const bool keep_input = hasInputPort(load_net) || !preserve_outputs;
 
@@ -2089,6 +2060,7 @@ bool RepairDesign::makeRepeater(
 
   Instance* parent = nullptr;
   Pin* driver_pin = nullptr;
+  Instance* driver_instance_parent = nullptr;
 
   if (hasInputPort(load_net) || top_primary_output
       || !db_network_->hasHierarchy()) {
@@ -2112,6 +2084,8 @@ bool RepairDesign::makeRepeater(
   Point buf_loc(x, y);
   Instance* buffer
       = resizer_->makeBuffer(buffer_cell, buffer_name.c_str(), parent, buf_loc);
+  driver_instance_parent = parent;
+
   inserted_buffer_count_++;
 
   Pin* buffer_ip_pin = nullptr;
@@ -2167,14 +2141,32 @@ bool RepairDesign::makeRepeater(
       }
       // preserve any hierarchical connection on the load
       // & also connect the buffer output net to this pin
-      load_mod_net = db_network_->hierNet(pin);
       load_db_net = db_network_->flatNet(pin);
 
       // New api call: simultaneously disconnects old flat/hier net
       // and connects in new one.
-      db_network_->connectPin(const_cast<Pin*>(pin),
-                              buffer_op_net,
-                              db_network_->dbToSta(load_mod_net));
+
+      Instance* load_instance_parent
+          = db_network_->getOwningInstanceParent(const_cast<Pin*>(pin));
+
+      db_network_->disconnectPin(const_cast<Pin*>(pin));
+      if (db_network_->hasHierarchy()
+          && (driver_instance_parent != load_instance_parent)) {
+        // In hierarchical mode, construct as necessary hierarchical connection
+        // Use the original connection name if possible.
+        std::string connection_name;
+        if (!driver_pin_mod_net) {
+          connection_name = resizer_->makeUniqueNetName(parent);
+        } else {
+          connection_name = driver_pin_mod_net->getName();
+        }
+        db_network_->hierarchicalConnect(db_network_->flatPin(buffer_op_pin),
+                                         db_network_->flatPin(pin),
+                                         connection_name.c_str());
+      } else {
+        // flat mode, no hierarchy, just hook up flat nets.
+        db_network_->connectPin(const_cast<Pin*>(pin), buffer_op_net);
+      }
     }
     db_network_->connectPin(buffer_ip_pin, db_network_->dbToSta(load_db_net));
     db_network_->connectPin(buffer_op_pin, buffer_op_net);

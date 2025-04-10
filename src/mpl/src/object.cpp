@@ -1,37 +1,5 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "object.h"
 
@@ -39,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -77,13 +46,6 @@ Boundary opposite(const Boundary& pin_access)
     default:
       return NONE;
   }
-}
-
-// Compare two intervals according to starting points
-static bool comparePairFirst(const std::pair<float, float>& p1,
-                             const std::pair<float, float>& p2)
-{
-  return p1.first < p2.first;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1126,6 +1088,16 @@ void SoftMacro::shrinkArea(float percent)
     return;
   }
 
+  for (std::pair<float, float>& width_curve : width_list_) {
+    width_curve.first *= percent;
+    width_curve.second *= percent;
+  }
+
+  for (std::pair<float, float>& height_curve : height_list_) {
+    height_curve.first *= percent;
+    height_curve.second *= percent;
+  }
+
   width_ = width_ * percent;
   height_ = height_ * percent;
   area_ = width_ * height_;
@@ -1202,7 +1174,7 @@ void SoftMacro::setShapes(
   height_list_.clear();
   // sort width list based
   height_list_ = width_list;
-  std::sort(height_list_.begin(), height_list_.end(), comparePairFirst);
+  std::sort(height_list_.begin(), height_list_.end(), isFirstSmaller);
   for (auto& shape : height_list_) {
     if (width_list_.empty()
         || shape.first > width_list_[width_list_.size() - 1].second) {

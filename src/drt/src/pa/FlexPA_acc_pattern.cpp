@@ -1,31 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * Copyright (c) 2024, Precision Innovations Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <omp.h>
 
@@ -51,21 +25,9 @@ namespace drt {
 
 using utl::ThreadException;
 
-static inline void serializePatterns(
-    const std::unordered_map<
-        frInst*,
-        std::vector<std::unique_ptr<FlexPinAccessPattern>>>& patterns,
-    const std::string& file_name)
+void FlexPA::buildInstsSet()
 {
-  std::ofstream file(file_name.c_str());
-  frOArchive ar(file);
-  registerTypes(ar);
-  ar << patterns;
-  file.close();
-}
-
-void FlexPA::getInsts(std::vector<frInst*>& insts)
-{
+  insts_set_.clear();
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
     target_frinsts.insert(design_->getTopBlock()->findInst(inst));
@@ -89,107 +51,9 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
       }
     }
     if (!is_skip) {
-      insts.push_back(inst.get());
+      insts_set_.insert(inst.get());
     }
   }
-}
-
-void FlexPA::prepPattern()
-{
-  ProfileTask profile("PA:pattern");
-
-  const auto& unique = unique_insts_.getUnique();
-
-  // revert access points to origin
-  unique_inst_patterns_.reserve(unique.size());
-
-  int cnt = 0;
-
-  omp_set_num_threads(router_cfg_->MAX_THREADS);
-  ThreadException exception;
-#pragma omp parallel for schedule(dynamic)
-  for (frInst* unique_inst : unique) {
-    try {
-      // only do for core and block cells
-      // TODO the above comment says "block cells" but that's not what the code
-      // does?
-      if (!isStdCell(unique_inst)) {
-        continue;
-      }
-      prepPatternInst(unique_inst);
-#pragma omp critical
-      {
-        cnt++;
-        if (router_cfg_->VERBOSE > 0) {
-          if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
-            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
-          }
-        }
-      }
-    } catch (...) {
-      exception.capture();
-    }
-  }
-  exception.rethrow();
-  if (router_cfg_->VERBOSE > 0) {
-    logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
-  }
-  if (isDistributed()) {
-    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
-                        dst::JobMessage::BROADCAST),
-        result;
-    std::unique_ptr<PinAccessJobDescription> uDesc
-        = std::make_unique<PinAccessJobDescription>();
-    std::string patterns_file = fmt::format("{}/patterns.bin", shared_vol_);
-    serializePatterns(unique_inst_patterns_, patterns_file);
-    uDesc->setPath(patterns_file);
-    uDesc->setType(PinAccessJobDescription::UPDATE_PATTERNS);
-    msg.setJobDescription(std::move(uDesc));
-    const bool ok
-        = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
-    if (!ok) {
-      logger_->error(
-          utl::DRT, 330, "Error sending UPDATE_PATTERNS Job to cloud");
-    }
-  }
-
-  // prep pattern for each row
-  std::vector<frInst*> insts;
-  std::vector<std::vector<frInst*>> inst_rows;
-  std::vector<frInst*> row_insts;
-
-  auto instLocComp = [](frInst* const& a, frInst* const& b) {
-    const Point originA = a->getOrigin();
-    const Point originB = b->getOrigin();
-    if (originA.y() == originB.y()) {
-      return (originA.x() < originB.x());
-    }
-    return (originA.y() < originB.y());
-  };
-
-  getInsts(insts);
-  std::sort(insts.begin(), insts.end(), instLocComp);
-
-  // gen rows of insts
-  int prev_y_coord = INT_MIN;
-  int prev_x_end_coord = INT_MIN;
-  for (auto inst : insts) {
-    Point origin = inst->getOrigin();
-    if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
-      if (!row_insts.empty()) {
-        inst_rows.push_back(row_insts);
-        row_insts.clear();
-      }
-    }
-    row_insts.push_back(inst);
-    prev_y_coord = origin.y();
-    Rect inst_boundary_box = inst->getBoundaryBBox();
-    prev_x_end_coord = inst_boundary_box.xMax();
-  }
-  if (!row_insts.empty()) {
-    inst_rows.push_back(row_insts);
-  }
-  prepPatternInstRows(std::move(inst_rows));
 }
 
 void FlexPA::prepPatternInst(frInst* unique_inst)
@@ -219,7 +83,7 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
-  int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+  int pin_access_idx = unique_inst->getPinAccessIdx();
   for (auto& inst_term : unique_inst->getInstTerms()) {
     if (isSkipInstTerm(inst_term.get())) {
       continue;
@@ -244,7 +108,11 @@ int FlexPA::prepPatternInstHelper(frInst* unique_inst, const bool use_x)
       }
     }
     if (n_aps == 0 && !inst_term->getTerm()->getPins().empty()) {
-      logger_->error(DRT, 86, "Pin does not have an access point.");
+      logger_->error(DRT,
+                     86,
+                     "Term {} ({}) does not have any access point.",
+                     inst_term->getName(),
+                     unique_inst->getMaster()->getName());
     }
   }
   std::sort(pins.begin(),
@@ -272,7 +140,7 @@ int FlexPA::genPatterns(
   }
 
   int max_access_point_size = 0;
-  int pin_access_idx = unique_insts_.getPAIndex(pins[0].second->getInst());
+  int pin_access_idx = pins[0].second->getInst()->getPinAccessIdx();
   for (auto& [pin, inst_term] : pins) {
     max_access_point_size
         = std::max(max_access_point_size,
@@ -393,7 +261,7 @@ void FlexPA::genPatternsInit(
   // init pin nodes
   int pin_idx = 0;
   int ap_idx = 0;
-  int pin_access_idx = unique_insts_.getPAIndex(pins[0].second->getInst());
+  int pin_access_idx = pins[0].second->getInst()->getPinAccessIdx();
 
   for (auto& [pin, inst_term] : pins) {
     ap_idx = 0;
@@ -567,7 +435,7 @@ int FlexPA::getEdgeCost(
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     const auto& [pin_1, inst_term_1] = pins[prev_pin_idx];
     const auto target_obj = inst_term_1->getInst();
-    const int pin_access_idx = unique_insts_.getPAIndex(target_obj);
+    const int pin_access_idx = target_obj->getPinAccessIdx();
     const auto pa_1 = pin_1->getPinAccess(pin_access_idx);
     std::unique_ptr<frVia> via1;
     if (pa_1->getAccessPoint(prev_acc_point_idx)->hasAccess(frDirEnum::U)) {
@@ -664,6 +532,7 @@ int FlexPA::getEdgeCost(
 }
 
 std::vector<int> FlexPA::extractAccessPatternFromNodes(
+    frInst* inst,
     const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
     const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
     std::set<std::pair<int, int>>& used_access_points)
@@ -677,7 +546,11 @@ std::vector<int> FlexPA::extractAccessPatternFromNodes(
 
   while (curr_node != source_node) {
     if (!curr_node) {
-      logger_->error(DRT, 90, "Valid access pattern not found.");
+      logger_->error(DRT,
+                     90,
+                     "Valid access pattern not found for inst {}({}).",
+                     inst->getName(),
+                     inst->getMaster()->getName());
     }
 
     auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
@@ -699,8 +572,8 @@ bool FlexPA::genPatternsCommit(
     std::set<std::pair<int, int>>& viol_access_points,
     const int max_access_point_size)
 {
-  std::vector<int> access_pattern
-      = extractAccessPatternFromNodes(nodes, pins, used_access_points);
+  std::vector<int> access_pattern = extractAccessPatternFromNodes(
+      unique_inst, nodes, pins, used_access_points);
   // not a new access pattern
   if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
     return false;
@@ -718,7 +591,7 @@ bool FlexPA::genPatternsCommit(
     auto acc_point_idx = access_pattern[pin_idx];
     auto& [pin, inst_term] = pins[pin_idx];
     target_obj = unique_inst;
-    const int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+    const int pin_access_idx = unique_inst->getPinAccessIdx();
     const auto pa = pin->getPinAccess(pin_access_idx);
     const auto access_point = pa->getAccessPoint(acc_point_idx);
     pin_to_access_point[pin] = access_point;
@@ -829,7 +702,7 @@ void FlexPA::genPatternsPrintDebug(
       auto& [pin, inst_term] = pins[pin_cnt];
       auto unique_inst = inst_term->getInst();
       std::cout << " " << inst_term->getTerm()->getName();
-      const int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+      const int pin_access_idx = unique_inst->getPinAccessIdx();
       auto pa = pin->getPinAccess(pin_access_idx);
       auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
       Point pt(pa->getAccessPoint(curr_acc_point_idx)->getPoint());
@@ -861,7 +734,7 @@ void FlexPA::genPatternsPrint(
     if (pin_cnt != (int) pins.size()) {
       auto& [pin, inst_term] = pins[pin_cnt];
       auto unique_inst = inst_term->getInst();
-      const int pin_access_idx = unique_insts_.getPAIndex(unique_inst);
+      const int pin_access_idx = unique_inst->getPinAccessIdx();
       auto pa = pin->getPinAccess(pin_access_idx);
       auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
       std::unique_ptr<frVia> via = std::make_unique<frVia>(

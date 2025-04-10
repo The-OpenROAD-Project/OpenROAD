@@ -1,40 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "Graphics.h"
 
-#include "Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 
 namespace dpl {
@@ -70,7 +40,7 @@ void Graphics::placeInstance(dbInst* instance)
   gui->pause();
 }
 
-void Graphics::binSearch(const Cell* cell,
+void Graphics::binSearch(const Node* cell,
                          GridX xl,
                          GridY yl,
                          GridX xh,
@@ -109,13 +79,14 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Compare the squared distances to save calling sqrt
     float min_length = min_displacement_ * dp_->grid_->gridHeight(&cell).v;
     min_length *= min_length;
-    DbuX lx{core.xMin() + cell.xMin()};
-    DbuY ly{core.yMin() + cell.yMin()};
+    DbuX lx{core.xMin() + cell.getLeft()};
+    DbuY ly{core.yMin() + cell.getBottom()};
 
     auto color = cell.getDbInst() ? gui::Painter::gray : gui::Painter::red;
     painter.setPen(color);
     painter.setBrush(color);
-    painter.drawRect(Rect(lx.v, ly.v, lx.v + cell.dx().v, ly.v + cell.dy().v));
+    painter.drawRect(
+        Rect(lx.v, ly.v, lx.v + cell.getWidth().v, ly.v + cell.getHeight().v));
 
     if (!cell.getDbInst()) {
       continue;

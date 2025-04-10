@@ -1,37 +1,6 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
 #include "hier_rtlmp.h"
 
 #include <fstream>
@@ -437,7 +406,21 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getNumMacro() > 0) {
       SoftMacro macro = SoftMacro(cluster.get());
-      macro.setShapes(cluster->getMacroTilings(), true);  // force_flag = true
+      if (macro.isMacroCluster()) {
+        macro.setShapes(cluster->getMacroTilings(), true /* force */);
+      } else { /* Mixed */
+        const std::vector<std::pair<float, float>> tilings
+            = cluster->getMacroTilings();
+
+        // We can use any shape to compute the area.
+        const std::pair<float, float> shape = tilings.front();
+        const float area = shape.first * shape.second;
+        std::vector<std::pair<float, float>> width_curves
+            = computeWidthCurves(tilings);
+
+        macro.setShapes(width_curves, area);
+      }
+
       macros.push_back(macro);
     }
   }
@@ -638,6 +621,20 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     line += "\n";
     debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
+}
+
+std::vector<std::pair<float, float>> HierRTLMP::computeWidthCurves(
+    const std::vector<std::pair<float, float>>& tilings)
+{
+  std::vector<std::pair<float, float>> width_curves;
+  width_curves.reserve(tilings.size());
+  for (const std::pair<float, float>& tiling : tilings) {
+    width_curves.emplace_back(tiling.first, tiling.first);
+  }
+
+  std::sort(width_curves.begin(), width_curves.end(), isFirstSmaller);
+
+  return width_curves;
 }
 
 void HierRTLMP::calculateMacroTilings(Cluster* cluster)
@@ -2117,7 +2114,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
         width = std::sqrt(area / min_ar_);
       }
       std::vector<std::pair<float, float>> width_list;
-      width_list.emplace_back(width, area / width);
+      width_list.emplace_back(area / width /* min */, width /* max */);
       macros[soft_macro_id_map[cluster->getName()]].setShapes(width_list, area);
     } else if (cluster->getClusterType() == HardMacroCluster) {
       macros[soft_macro_id_map[cluster->getName()]].setShapes(

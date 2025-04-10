@@ -1,37 +1,5 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2025, Precision Innovations Inc.
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
 
 # TODO: this file should eventually be empty. Right now it still pulls in a few
 # dependencies via bazel_rules_hdl.
@@ -40,8 +8,9 @@ workspace(name = "openroad")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-rules_hdl_git_hash = "22e4a4afaef17df38fffc124907144983f1e6492"
-rules_hdl_git_sha256 = "e016d11b69c4eaaf2ac0757358859270db7a90f4aa725a1aee39e40f5b84efd3"
+rules_hdl_git_hash = "4bfc8987e521f2002e7b898ba94d3df4c6204913"
+
+rules_hdl_git_sha256 = "227ac0288299f2b0f31a188113cef9f733258398fd616215275bddab1e43d019"
 
 http_archive(
     name = "rules_hdl",
@@ -68,8 +37,11 @@ load("@rules_hdl//dependency_support/tk_tcl:tk_tcl.bzl", "tk_tcl")
 
 # Direct dependencies needed in Openroad
 com_github_quantamhd_lemon()
+
 edu_berkeley_abc()
+
 org_llvm_openmp()
+
 tk_tcl()
 
 # Swig exists in BCR, but in a newer version where we need to test how to make
@@ -79,11 +51,15 @@ org_swig()
 # rules_flex and rules_bison already exist in BCR, but we use rules_hdl wrappers
 # around them. We should use the rules flex/bison-provided ones.
 com_github_westes_flex()
+
 org_gnu_bison()
 
 # secondary dependencies of the above libraries. Some of these are already
 # in BCR with different name or sligtly newer API version.
 net_invisible_island_ncurses()
-net_zlib() # BCR has @zlib we use, but some above dep uses it w/ differet name
+
+net_zlib()  # BCR has @zlib we use, but some above dep uses it w/ differet name
+
 org_gnu_readline()
-org_pcre_ftp() # there is a newer pcre2 in BCR
+
+org_pcre_ftp()  # there is a newer pcre2 in BCR

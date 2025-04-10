@@ -1,41 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -43,27 +7,13 @@
 #include <vector>
 
 #include "Coordinates.h"
+#include "Objects.h"
 #include "Opendp.h"
 
 namespace dpl {
 
 using odb::dbOrientType;
 using odb::dbSite;
-
-class GridNode
-{
- public:
-  virtual ~GridNode() = default;
-  virtual bool isFixed() const = 0;
-  virtual bool isPlaced() const = 0;
-  virtual bool isHybrid() const = 0;
-  virtual DbuX xMin() const = 0;
-  virtual DbuY yMin() const = 0;
-  virtual DbuX dx() const = 0;
-  virtual DbuY dy() const = 0;
-  virtual dbInst* getDbInst() const = 0;
-  virtual DbuX siteWidth() const = 0;
-};
 
 struct GridIntervalX
 {
@@ -79,7 +29,7 @@ struct GridIntervalY
 
 struct Pixel
 {
-  GridNode* cell = nullptr;
+  Node* cell = nullptr;
   Group* group = nullptr;
   double util = 0.0;
   bool is_valid = false;     // false for dummy cells
@@ -119,10 +69,10 @@ class Grid
   GridX gridX(DbuX x) const;
   GridX gridEndX(DbuX x) const;
 
-  GridX gridX(const GridNode* cell) const;
-  GridX gridEndX(const GridNode* cell) const;
-  GridX gridPaddedX(const GridNode* cell) const;
-  GridX gridPaddedEndX(const GridNode* cell) const;
+  GridX gridX(const Node* cell) const;
+  GridX gridEndX(const Node* cell) const;
+  GridX gridPaddedX(const Node* cell) const;
+  GridX gridPaddedEndX(const Node* cell) const;
 
   GridY gridSnapDownY(DbuY y) const;
   GridY gridRoundY(DbuY y) const;
@@ -130,30 +80,30 @@ class Grid
 
   // Snap outwards to fully contain
   GridRect gridCovering(const Rect& rect) const;
-  GridRect gridCovering(const GridNode* cell) const;
-  GridRect gridCoveringPadded(const GridNode* cell) const;
+  GridRect gridCovering(const Node* cell) const;
+  GridRect gridCoveringPadded(const Node* cell) const;
 
   // Snap inwards to be fully contained
   GridRect gridWithin(const DbuRect& rect) const;
 
-  GridY gridSnapDownY(const GridNode* cell) const;
-  GridY gridRoundY(const GridNode* cell) const;
-  GridY gridEndY(const GridNode* cell) const;
+  GridY gridSnapDownY(const Node* cell) const;
+  GridY gridRoundY(const Node* cell) const;
+  GridY gridEndY(const Node* cell) const;
 
   DbuY gridYToDbu(GridY y) const;
 
-  GridX gridPaddedWidth(const GridNode* cell) const;
-  GridY gridHeight(const GridNode* cell) const;
+  GridX gridPaddedWidth(const Node* cell) const;
+  GridY gridHeight(const Node* cell) const;
   GridY gridHeight(odb::dbMaster* master) const;
   DbuY rowHeight(GridY index);
 
-  void paintPixel(GridNode* cell, GridX grid_x, GridY grid_y);
-  void erasePixel(GridNode* cell);
-  void visitCellPixels(GridNode& cell,
+  void paintPixel(Node* cell, GridX grid_x, GridY grid_y);
+  void erasePixel(Node* cell);
+  void visitCellPixels(Node& cell,
                        bool padded,
                        const std::function<void(Pixel* pixel)>& visitor) const;
   void visitCellBoundaryPixels(
-      GridNode& cell,
+      Node& cell,
       const std::function<
           void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
       const;
@@ -176,7 +126,7 @@ class Grid
   GridY getRowCount(DbuY row_height) const;
 
   Rect getCore() const { return core_; }
-  bool cellFitsInCore(GridNode* cell) const;
+  bool cellFitsInCore(Node* cell) const;
 
   bool isMultiHeight(dbMaster* master) const;
 

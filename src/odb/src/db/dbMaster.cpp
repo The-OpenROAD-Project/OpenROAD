@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbMaster.h"
 
@@ -497,11 +468,11 @@ dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
     return mterm;
   }
   char blk_left_bus_del, blk_right_bus_del;
-  block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
+  block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
 
   char lib_left_bus_del, lib_right_bus_del;
   ;
-  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+  getLib()->getBusDelimiters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {
     return mterm;
@@ -625,13 +596,9 @@ void dbMaster::setFrozen()
 
   // set the order id on the mterm.
   // this id is used to index mterms on a inst-hdr
-  dbSet<dbMTerm> mterms = getMTerms();
-  dbSet<dbMTerm>::iterator itr;
   int i = 0;
-
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    _dbMTerm* mterm = (_dbMTerm*) *itr;
-    mterm->_order_id = i++;
+  for (dbMTerm* mterm : getMTerms()) {
+    ((_dbMTerm*) mterm)->_order_id = i++;
   }
 }
 
@@ -680,32 +647,14 @@ void dbMaster::getPlacementBoundary(Rect& r)
 
 void dbMaster::transform(dbTransform& t)
 {
-  //_dbMaster * master = (_dbMaster *) this;
-  dbSet<dbBox> obs = getObstructions();
-  dbSet<dbBox>::iterator itr;
-
-  for (itr = obs.begin(); itr != obs.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    t.apply(box->_shape._rect);
+  for (dbBox* box : getObstructions()) {
+    t.apply(((_dbBox*) box)->_shape._rect);
   }
 
-  dbSet<dbMTerm> mterms = getMTerms();
-  dbSet<dbMTerm>::iterator mitr;
-
-  for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-    dbMTerm* mterm = *mitr;
-    dbSet<dbMPin> mpins = mterm->getMPins();
-    dbSet<dbMPin>::iterator pitr;
-
-    for (pitr = mpins.begin(); pitr != mpins.end(); ++pitr) {
-      dbMPin* mpin = *pitr;
-
-      dbSet<dbBox> geoms = mpin->getGeometry();
-      dbSet<dbBox>::iterator gitr;
-
-      for (gitr = geoms.begin(); gitr != geoms.end(); ++gitr) {
-        _dbBox* box = (_dbBox*) *gitr;
-        t.apply(box->_shape._rect);
+  for (dbMTerm* mterm : getMTerms()) {
+    for (dbMPin* mpin : mterm->getMPins()) {
+      for (dbBox* box : mpin->getGeometry()) {
+        t.apply(((_dbBox*) box)->_shape._rect);
       }
     }
   }

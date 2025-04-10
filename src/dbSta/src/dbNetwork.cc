@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // dbSta, OpenSTA on OpenDB
 
@@ -1811,7 +1779,13 @@ void dbNetwork::visitConnectedPins(const Net* net,
     // visit above nets
     for (dbModBTerm* modbterm : mod_net->getModBTerms()) {
       dbModule* db_module = modbterm->getParent();
+      if (db_module == nullptr) {
+        continue;
+      }
       dbModInst* mod_inst = db_module->getModInst();
+      if (mod_inst == nullptr) {
+        continue;
+      }
       std::string pin_name = modbterm->getName();
       dbModITerm* mod_iterm = mod_inst->findModITerm(pin_name.c_str());
       if (mod_iterm) {
@@ -2315,6 +2289,7 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
   dbNet* flat_net_db = nullptr;
   dbModNet* hier_net_db = nullptr;
 
+  // connect the flat net first
   if (flat_net) {
     staToDb(flat_net, flat_net_db, hier_net_db);
     if (hier_net_db) {
@@ -2323,7 +2298,6 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                      "Illegal net combination. hierarchical flat net supplied "
                      "as flat net argument to api:connectPin");
     }
-
     if (flat_net_db) {
       if (iterm) {
         iterm->connect(flat_net_db);
@@ -2339,8 +2313,10 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
   }
 
   if (hier_net) {
-    staToDb(hier_net, flat_net_db, hier_net_db);
-    if (flat_net_db) {
+    // sanity check to make hier argument is ok
+    dbNet* flat_net_local_check = nullptr;
+    staToDb(hier_net, flat_net_local_check, hier_net_db);
+    if (flat_net_local_check) {
       logger_->error(ORD,
                      2027,
                      "Illegal net combination. flat net supplied as hier net "
@@ -2362,13 +2338,19 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
+      // do the house keeping. Mod net must always have the flat net associated
+      // with it.
+      if (flat_net_db) {
+        reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
+      }
     }
   }
 }
 
 /*
 Generic pin -> net connection with support for hierarchical
-nets
+nets. If connecting a hierarchical net and associated_flat_net
+not null then reassociate the hierarhical net.
 */
 void dbNetwork::connectPin(Pin* pin, Net* net)
 {
@@ -3632,10 +3614,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
       dbModInst* parent_inst = cur_module->getModInst();
       cur_module = parent_inst->getParent();
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_inst, connection_name_o.c_str());
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm = dbModITerm::create(
+          parent_inst, connection_name_o.c_str(), mod_bterm);
       source_db_mod_net = dbModNet::create(cur_module, connection_name);
       mod_iterm->connect(source_db_mod_net);
       top_net = source_db_mod_net;
@@ -3662,10 +3642,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
       dbModInst* parent_inst = cur_module->getModInst();
       cur_module = parent_inst->getParent();
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_inst, connection_name_i.c_str());
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm = dbModITerm::create(
+          parent_inst, connection_name_i.c_str(), mod_bterm);
       if (cur_module != highest_common_module) {
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);
@@ -3712,9 +3690,90 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   }
 }
 
+/*
+We expect each hierarchical net to have only one flat net
+associated with it.
+The routines below are called each time we move mod nets around
+so that we maintain the axiom.
+*/
+
+class ModDbNetAssociation : public PinVisitor
+{
+ public:
+  ModDbNetAssociation(dbNetwork* nwk,
+                      Logger* logger,
+                      dbModNet* mod_net,
+                      dbNet* new_flat_net,
+                      dbNet* orig_flat_net);
+  void operator()(const Pin* pin) override;
+  Logger* logger_ = nullptr;
+
+ protected:
+  dbNetwork* db_network_;
+  dbModNet* mod_net_;
+  dbNet* new_flat_net_;
+  dbNet* orig_flat_net_;
+};
+
+ModDbNetAssociation::ModDbNetAssociation(dbNetwork* nwk,
+                                         Logger* logger,
+                                         dbModNet* mod_net,
+                                         dbNet* new_flat_net,
+                                         dbNet* orig_flat_net)
+    : db_network_(nwk),
+      mod_net_(mod_net),
+      new_flat_net_(new_flat_net),
+      orig_flat_net_(orig_flat_net)
+{
+  logger_ = logger;
+}
+
+void ModDbNetAssociation::operator()(const Pin* pin)
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModBTerm* modbterm;
+  dbModITerm* moditerm;
+  db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  if (moditerm || modbterm) {
+    return;
+  }
+  dbNet* cur_flat_net = db_network_->flatNet(pin);
+
+  if (cur_flat_net == orig_flat_net_ || orig_flat_net_ == nullptr) {
+    db_network_->disconnectPin(const_cast<Pin*>(pin),
+                               db_network_->dbToSta(cur_flat_net));
+    db_network_->connectPin(const_cast<Pin*>(pin),
+                            db_network_->dbToSta(new_flat_net_));
+  } else if (cur_flat_net != orig_flat_net_) {
+    logger_->error(
+        ORD,
+        2032,
+        "Illegal hierarchy expect only one flat net type per hierarchical net");
+  }
+}
+
+/*
+We require each modnet has exactly one flat net associated with it.
+It is convenient to move modnets around during hierarchical operations
+which may change the underlying flat net associated with a modnet.
+This routine does the house keeping needed to preserve the requirement
+of one modnet having only one flat net associated with it.
+*/
+void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
+                                       dbNet* new_flat_net,
+                                       dbNet* orig_flat_net)
+{
+  ModDbNetAssociation visitor(
+      this, logger_, mod_net, new_flat_net, orig_flat_net);
+  NetSet visited_nets(this);
+  visitConnectedPins(dbToSta(mod_net), visitor, visited_nets);
+}
+
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
 {
-  mod_inst->swapMaster(module);
+  (void) mod_inst->swapMaster(module);
 }
 
 }  // namespace sta

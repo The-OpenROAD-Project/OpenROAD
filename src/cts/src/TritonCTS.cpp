@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "cts/TritonCTS.h"
 
@@ -2260,7 +2228,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         odb::dbITerm* outTerm = inst->getFirstOutput();
         if (outTerm) {
           odb::dbNet* outNet = outTerm->getNet();
-          if (outNet) {
+          bool propagate = propagateClock(iterm);
+          if (outNet && propagate) {
             odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
             odb::dbSet<odb::dbITerm>::iterator iter;
             for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
@@ -2275,6 +2244,34 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
       }
     }
   }
+}
+
+bool TritonCTS::propagateClock(odb::dbITerm* input)
+{
+  odb::dbInst* inst = input->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+  if (!libertyCell) {
+    return false;
+  }
+  // Clock tree buffers
+  if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+    return true;
+  }
+  // Combinational components
+  if (!libertyCell->hasSequentials()) {
+    return true;
+  }
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+
+  // Clock Gater / Latch improvised as clock gater
+  if (inputPort) {
+    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+  }
+
+  return false;
 }
 
 // Balance latencies between macro tree and register tree

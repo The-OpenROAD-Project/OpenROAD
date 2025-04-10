@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <fstream>
 #include <string>
@@ -277,15 +248,11 @@ void dbModInst::destroy(dbModInst* modinst)
   // Note that we only destroy the module instance, not the module
   // itself
 
-  // remove the moditerm connections
-  for (auto moditerm : modinst->getModITerms()) {
-    moditerm->disconnect();
-  }
-
-  // remove the moditerms
-  dbSet<dbModITerm>::iterator moditerm_itr;
   dbSet<dbModITerm> moditerms = modinst->getModITerms();
+  dbSet<dbModITerm>::iterator moditerm_itr;
   for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
+    dbModITerm* moditerm = *moditerm_itr;
+    moditerm->disconnect();
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
@@ -423,13 +390,25 @@ void dbModInst::RemoveUnusedPortsAndPins()
   moditerms = getModITerms();
   modbterms = module->getModBTerms();
   for (auto mod_iterm : kill_set) {
+    dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
-    mod_bterm->disconnect();
-    dbModBTerm::destroy(mod_bterm);
-    dbModNet* moditerm_m_net = mod_iterm->getModNet();
-    mod_iterm->disconnect();
 
+    // Do the destruction in order for benefit of journaller
+    // so we always have a dbModBTerm..
+    // first destroy net, then dbModIterm, then dbModbterm.
+    mod_iterm->disconnect();
+    mod_bterm->disconnect();
+
+    // First destroy the net
+    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
+        && moditerm_m_net->getITerms().size() == 0
+        && moditerm_m_net->getModITerms().size() == 0
+        && moditerm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(moditerm_m_net);
+    }
+
+    // Now destroy the iterm
     dbModITerm::destroy(mod_iterm);
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0
@@ -437,31 +416,30 @@ void dbModInst::RemoveUnusedPortsAndPins()
         && modbterm_m_net->getModBTerms().size() == 0) {
       dbModNet::destroy(modbterm_m_net);
     }
-    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
-        && moditerm_m_net->getITerms().size() == 0
-        && moditerm_m_net->getModITerms().size() == 0
-        && moditerm_m_net->getModBTerms().size() == 0) {
-      dbModNet::destroy(moditerm_m_net);
-    }
+    // Finally the bterm
+    dbModBTerm::destroy(mod_bterm);
   }
 }
 
-// Swap one hierarchical module with another one.
+// debugPrint for replace_design level 1
+#define debugRDPrint1(format_str, ...) \
+  debugPrint(logger, utl::ODB, "replace_design", 1, format_str, ##__VA_ARGS__)
+// debugPrint for replace_design level 2
+#define debugRDPrint2(format_str, ...) \
+  debugPrint(logger, utl::ODB, "replace_design", 2, format_str, ##__VA_ARGS__)
+
+// Check if two hierarchical modules are swappable.
 // Two modules must have identical number of ports and port names need to match.
 // Functional equivalence is not required.
-// New module is not allowed to have multiple levels of hierarchy for now.
-// Newly instantiated modules are uniquified.
-bool dbModInst::swapMaster(dbModule* new_module)
+bool canSwapModules(dbModule* old_module,
+                    dbModule* new_module,
+                    utl::Logger* logger)
 {
-  _dbModInst* inst = (_dbModInst*) this;
-  utl::Logger* logger = getImpl()->getLogger();
-
-  dbModule* old_module = getMaster();
-  const char* old_module_name = old_module->getName();
-  const char* new_module_name = new_module->getName();
+  std::string old_module_name = old_module->getName();
+  std::string new_module_name = new_module->getName();
 
   // Check if module names differ
-  if (strcmp(old_module_name, new_module_name) == 0) {
+  if (old_module_name == new_module_name) {
     logger->warn(utl::ODB,
                  470,
                  "The modules cannot be swapped because the new module {} is "
@@ -486,14 +464,12 @@ bool dbModInst::swapMaster(dbModule* new_module)
   }
 
   // Check if module port names match
-  std::vector<_dbModBTerm*> new_ports;
-  std::vector<_dbModBTerm*> old_ports;
-  dbSet<dbModBTerm>::iterator iter;
-  for (iter = old_bterms.begin(); iter != old_bterms.end(); ++iter) {
-    old_ports.push_back((_dbModBTerm*) *iter);
+  std::vector<_dbModBTerm*> old_ports, new_ports;
+  for (auto bterm : old_bterms) {
+    old_ports.push_back((_dbModBTerm*) bterm);
   }
-  for (iter = new_bterms.begin(); iter != new_bterms.end(); ++iter) {
-    new_ports.push_back((_dbModBTerm*) *iter);
+  for (auto bterm : new_bterms) {
+    new_ports.push_back((_dbModBTerm*) bterm);
   }
   std::sort(new_ports.begin(),
             new_ports.end(),
@@ -538,50 +514,91 @@ bool dbModInst::swapMaster(dbModule* new_module)
     return false;
   }
 
+  return true;
+}
+
+// Swap one hierarchical module with another one.
+// New module is not allowed to have multiple levels of hierarchy for now.
+// Newly instantiated modules are uniquified.
+dbModInst* dbModInst::swapMaster(dbModule* new_module)
+{
+  dbModule* old_module = getMaster();
+  utl::Logger* logger = getImpl()->getLogger();
+
+  if (!canSwapModules(old_module, new_module, logger)) {
+    return nullptr;
+  }
+
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
-    std::ofstream outfile("before.txt");
+    std::ofstream outfile("before_replace_top.txt");
     getMaster()->getOwner()->debugPrintContent(outfile);
+    for (dbBlock* child_block : getMaster()->getOwner()->getChildren()) {
+      std::string filename
+          = "before_replace_" + child_block->getName() + ".txt";
+      std::ofstream outfile(filename);
+      child_block->debugPrintContent(outfile);
+    }
   }
 
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
       new_module->getName(), this->getName(), getMaster()->getOwner());
   if (new_module_copy) {
-    debugPrint(logger,
-               utl::ODB,
-               "replace_design",
-               1,
-               "Created uniquified module {} in block {}",
-               new_module_copy->getName(),
-               new_module_copy->getOwner()->getName());
+    debugRDPrint1("Created uniquified module {} in block {}",
+                  new_module_copy->getName(),
+                  new_module_copy->getOwner()->getName());
   } else {
     logger->error(utl::ODB,
                   455,
                   "Unique module {} cannot be created",
                   new_module->getName());
+    return nullptr;
   }
-  dbModule::copy(new_module, new_module_copy, this);
-  _dbModule* new_master = (_dbModule*) new_module_copy;
+
+  std::string new_name = this->getName();
+  dbModule* parent = this->getParent();
+  // save mod nets and mod iterms because creating a new mod inst doesn't
+  // create them automatically
+  std::map<std::string, dbModNet*> name_mod_net_map;
+  for (dbModITerm* old_mod_iterm : this->getModITerms()) {
+    dbModNet* old_mod_net = old_mod_iterm->getModNet();
+    name_mod_net_map[old_mod_iterm->getName()] = old_mod_net;
+  }
+
+  // Delete current mod inst and create a new one
+  dbModInst::destroy(this);
+  dbModInst* new_mod_inst
+      = dbModInst::create(parent, new_module_copy, new_name.c_str());
+  if (!new_mod_inst) {
+    logger->error(utl::ODB, 471, "Mod instance {} cannot be created", new_name);
+    return nullptr;
+  }
+
+  // Add mod iterms and connect to old mod nets
+  for (const auto& [name, old_mod_net] : name_mod_net_map) {
+    dbModITerm* new_mod_iterm = dbModITerm::create(new_mod_inst, name.c_str());
+    if (new_mod_iterm && old_mod_net) {
+      new_mod_iterm->connect(old_mod_net);
+    }
+  }
+  debugRDPrint1("New mod inst has {} mod iterms",
+                new_mod_inst->getModITerms().size());
+
+  dbModule::copy(new_module, new_module_copy, new_mod_inst);  // NOLINT
   if (logger->debugCheck(utl::ODB, "replace_design", 2)) {
-    dbSet<dbInst> insts = new_module_copy->getInsts();
-    dbSet<dbInst>::iterator inst_iter;
-    for (inst_iter = insts.begin(); inst_iter != insts.end(); ++inst_iter) {
-      dbInst* inst = *inst_iter;
-      logger->report("new_module_copy {} instance {} has the following iterms",
+    for (dbInst* inst : new_module_copy->getInsts()) {
+      logger->report("new_module_copy {} instance {} has the following iterms:",
                      new_module_copy->getName(),
                      inst->getName());
-      dbSet<dbITerm> iterms = inst->getITerms();
-      dbSet<dbITerm>::iterator it_iter;
-      for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
-        dbITerm* iterm = *it_iter;
+      for (dbITerm* iterm : inst->getITerms()) {
         logger->report("  iterm {}", iterm->getName());
       }
     }
   }
 
   // Map old mod nets to new mod nets based on new_module_copy
+  dbSet<dbModBTerm> old_bterms = old_module->getModBTerms();
   std::map<dbModNet*, dbModNet*> mod_map;  // old mod net -> new mod net
-  for (iter = old_bterms.begin(); iter != old_bterms.end(); ++iter) {
-    dbModBTerm* old_bterm = *iter;
+  for (dbModBTerm* old_bterm : old_bterms) {
     dbModBTerm* new_bterm = new_module_copy->findModBTerm(old_bterm->getName());
     if (new_bterm == nullptr) {
       logger->error(utl::ODB,
@@ -589,66 +606,46 @@ bool dbModInst::swapMaster(dbModule* new_module)
                     "modBTerm for {} is not found in copied module {}",
                     old_bterm->getName(),
                     new_module_copy->getName());
+      return nullptr;
     }
     dbModNet* old_mod_net = old_bterm->getModNet();
     dbModNet* new_mod_net = new_bterm->getModNet();
     if (new_mod_net && old_mod_net) {
       mod_map[old_mod_net] = new_mod_net;
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "old mod net {} maps to new mod net {}",
-                 old_mod_net->getName(),
-                 new_mod_net->getName());
+      debugRDPrint1("old mod net {} maps to new mod net {}",
+                    old_mod_net->getName(),
+                    new_mod_net->getName());
     }
   }
 
   // Patch connections such that boundary nets connect to new module iterms
   // instead of old module iterms
-  inst->_master = new_master->getOID();
-  new_master->_mod_inst = inst->getOID();
-  debugPrint(logger,
-             utl::ODB,
-             "replace_design",
-             1,
-             "Connecting nets that span module boundary");
+  debugRDPrint1("Connecting nets that span module boundary");
   for (const auto& [old_mod_net, new_mod_net] : mod_map) {
-    dbSet<dbITerm> old_iterms = old_mod_net->getITerms();
-    dbSet<dbITerm> new_iterms = new_mod_net->getITerms();
-    dbSet<dbITerm>::iterator it_iter;
-    for (it_iter = old_iterms.begin(); it_iter != old_iterms.end(); ++it_iter) {
-      dbITerm* old_iterm = *it_iter;
+    dbSet<dbITerm> new_iterm_set = new_mod_net->getITerms();
+    // Copy new iterms because new_mod_net iterm list can change
+    std::vector<dbITerm*> new_iterms(new_iterm_set.begin(),
+                                     new_iterm_set.end());
+    for (dbITerm* old_iterm : old_mod_net->getITerms()) {
       dbNet* flat_net = old_iterm->getNet();
-      // iterm may be connected to another hierarchical instance, so save it
-      // before disconnecting
+      if (flat_net) {
+        old_iterm->disconnectDbNet();
+        debugRDPrint1("  disconnected old iterm {} from flat net {}",
+                      old_iterm->getName(),
+                      flat_net->getName());
+      }
+      // iterm may be connected to another hierarchical instance
       dbModNet* other_mod_net = old_iterm->getModNet();
-      if (other_mod_net == old_mod_net) {
+      if (other_mod_net != old_mod_net) {
+        old_iterm->disconnectModNet();
+        old_iterm->connect(old_mod_net);  // Reconnect old mod net for later use
+        debugRDPrint1("  disconnected old iterm {} from other mod net {}",
+                      old_iterm->getName(),
+                      other_mod_net->getName());
+      } else {
         other_mod_net = nullptr;
       }
-      old_iterm->disconnect();
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "  disconnected old iterm {} from flat net {} + other mod net "
-                 "{} for mod net {}",
-                 old_iterm->getName(),
-                 (flat_net ? flat_net->getName() : "none"),
-                 (other_mod_net ? other_mod_net->getName() : "none"),
-                 old_mod_net->getName());
-      dbSet<dbITerm>::iterator new_it_iter;
-      for (new_it_iter = new_iterms.begin(); new_it_iter != new_iterms.end();
-           ++new_it_iter) {
-        dbITerm* new_iterm = *new_it_iter;
-        debugPrint(logger,
-                   utl::ODB,
-                   "replace_design",
-                   1,
-                   "  connecting iterm {} of mod net {}",
-                   new_iterm->getName(),
-                   new_mod_net->getName());
-
+      for (dbITerm* new_iterm : new_iterms) {
         if (flat_net) {
           // Bug Fix:
           // Explicitly kill connections to new_iterm
@@ -656,37 +653,60 @@ bool dbModInst::swapMaster(dbModule* new_module)
           //(for example the new_iterm on the new module
           // might be connected to some modnet).
           new_iterm->disconnect();  // kills both flat and hier net on new_iterm
+          debugRDPrint1("  disconnected all conns from new iterm {}",
+                        new_iterm->getName());
           // Connect the flat net, clears the old
           // flat net if any, but not the mod net
           new_iterm->connect(flat_net);
+          debugRDPrint1("  connected new iterm {} to flat net {}",
+                        new_iterm->getName(),
+                        flat_net->getName());
+          // this is needed because all mod nets were disconnected
+          new_iterm->connect(new_mod_net);
+          debugRDPrint1("  connected new iterm {} to mod net {}",
+                        new_iterm->getName(),
+                        new_mod_net->getName());
         }
-
         if (other_mod_net) {
           new_iterm->connect(other_mod_net);
-        }
-        debugPrint(logger,
-                   utl::ODB,
-                   "replace_design",
-                   1,
-                   "  connected new iterm {} to flat net {} + other mod net {} "
-                   "for mod net {}",
-                   new_iterm->getName(),
-                   (flat_net ? flat_net->getName() : "none"),
-                   (other_mod_net ? other_mod_net->getName() : "none"),
-                   old_mod_net->getName());
-      }
+          debugRDPrint1("  connected new iterm {} to other mod net {}",
+                        new_iterm->getName(),
+                        other_mod_net->getName());
+
+        }  // clang-format off
+      }  // for each new_iterm
+    }  //  for each old_iterm
+  }  // for each [old_mod_net, new_mod_net] pair
+  // clang-format on
+
+  // Remove any dangling nets
+  std::vector<dbNet*> nets_to_delete;
+  for (dbNet* net : parent->getOwner()->getNets()) {
+    if (net->getITerms().empty()) {
+      nets_to_delete.emplace_back(net);
+    }
+  }
+  for (dbNet* net : nets_to_delete) {
+    debugRDPrint1("  deleted dangling net {}", net->getName());
+    dbNet::destroy(net);
+  }
+
+  dbModule::copyToChildBlock(old_module);
+  debugRDPrint1("Copied to child block and deleted old module {}",
+                old_module->getName());
+  dbModule::destroy(old_module);
+
+  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
+    std::ofstream outfile("after_replace_top.txt");
+    new_mod_inst->getMaster()->getOwner()->debugPrintContent(outfile);
+    for (dbBlock* child_block : parent->getOwner()->getChildren()) {
+      std::string filename = "after_replace_" + child_block->getName() + ".txt";
+      std::ofstream outfile(filename);
+      child_block->debugPrintContent(outfile);
     }
   }
 
-  if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
-    std::ofstream outfile("after_replace.txt");
-    getMaster()->getOwner()->debugPrintContent(outfile);
-  }
-
-  // TODO: remove old module insts without destroying old module itself
-  // dbModule::destroy(old_module);
-
-  return true;
+  return new_mod_inst;
 }
 
 // User Code End dbModInstPublicMethods
