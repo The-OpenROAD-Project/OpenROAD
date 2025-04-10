@@ -137,11 +137,10 @@ class Parser
   // temporary variables
   int readLayerCnt_;
   odb::dbTechLayer* masterSliceLayer_;
-  std::map<frMaster*,
-           std::map<dbOrientType,
-                    std::map<std::vector<frCoord>,
-                             std::set<frInst*, frBlockObjectComp>>>,
-           frBlockObjectComp>
+  frOrderedIdMap<
+      frMaster*,
+      std::map<dbOrientType,
+               std::map<std::vector<frCoord>, frOrderedIdSet<frInst*>>>>
       trackOffsetMap_;
   std::vector<frTrackPattern*> prefTrackPatterns_;
 };

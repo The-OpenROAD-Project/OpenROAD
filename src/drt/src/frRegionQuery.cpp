@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "frDesign.h"
 #include "frRTree.h"
 #include "global.h"
@@ -44,8 +45,7 @@ struct frRegionQuery::Impl
 
   Impl() = default;
   void init();
-  void initOrigGuide(
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides);
+  void initOrigGuide(frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides);
   void initGuide();
   void initRPin();
   void initGRPin(std::vector<std::pair<frBlockObject*, Point>>& in);
@@ -795,13 +795,13 @@ void frRegionQuery::Impl::init()
 }
 
 void frRegionQuery::initOrigGuide(
-    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides)
+    frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides)
 {
   impl_->initOrigGuide(tmpGuides);
 }
 
 void frRegionQuery::Impl::initOrigGuide(
-    std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides)
+    frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides)
 {
   const frLayerNum numLayers = design_->getTech()->getLayers().size();
   origGuides_.clear();

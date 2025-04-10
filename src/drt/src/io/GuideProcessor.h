@@ -202,7 +202,7 @@ class GuideProcessor
   Logger* logger_;
   odb::dbDatabase* db_;
   RouterConfiguration* router_cfg_;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmp_guides_;
+  frOrderedIdMap<frNet*, std::vector<frRect>> tmp_guides_;
 };
 
 /**
