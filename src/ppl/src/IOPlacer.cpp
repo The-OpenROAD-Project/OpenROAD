@@ -2451,7 +2451,7 @@ bool IOPlacer::checkPinConstraints()
           invalid = true;
         }
       } else {
-        if (!constraint.box.overlaps(pin.getPosition())) {
+        if (!constraint.box.intersects(pin.getPosition())) {
           logger_->warn(
               PPL,
               105,
