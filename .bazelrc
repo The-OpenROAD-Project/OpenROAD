@@ -13,6 +13,7 @@ test --test_timeout=300,1800,1800,9600
 common --incompatible_disallow_empty_glob
 
 build --cxxopt "-std=c++17"        --host_cxxopt "-std=c++17"
+build --cxxopt "-xc++"             --host_cxxopt "-xc++"
 build --cxxopt "-ffp-contract=off" --host_cxxopt "-ffp-contract=off"
 
 # allow exceptions.

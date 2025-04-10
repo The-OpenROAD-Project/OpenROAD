@@ -9,7 +9,17 @@ bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
+
+# The current rules_cc 0.1.1 hardcodes script locations to `#!/bin/bash`
+# instead of using `#!/usr/bin/env bash`.
+# This is fixed by https://github.com/bazelbuild/rules_cc/pull/306 but
+# is not released yet. Use rules_cc from that commit.
 bazel_dep(name = "rules_cc", version = "0.1.1")
+git_override(
+    module_name = "rules_cc",
+    commit = "d74915024017250e46d95e91a3defc34174effe0",
+    remote = "https://github.com/bazelbuild/rules_cc",
+)
 
 # Not all boost libs are available at the latest version yet, so use a
 # slightly older one that has all we need.
@@ -64,4 +74,5 @@ llvm.toolchain(
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
+# FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains("@llvm_toolchain//:all")
