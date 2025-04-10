@@ -273,7 +273,11 @@ void Opendp::reportFailures(
 void Opendp::reportOverlapFailure(Cell* cell) const
 {
   const Cell* overlap = checkOverlap(*cell);
-  logger_->report(" {} overlaps {}", cell->name(), overlap->name());
+  logger_->report(" {} ({}) overlaps {} ({})",
+                  cell->name(),
+                  cell->getDbInst()->getMaster()->getName(),
+                  overlap->name(),
+                  overlap->getDbInst()->getMaster()->getName());
 }
 
 /* static */
