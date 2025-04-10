@@ -42,8 +42,6 @@
 [InitialPlace]  Iter: 18 conjugate gradient residual: 0.00096462 HPWL: 1313342994
 [InitialPlace]  Iter: 19 conjugate gradient residual: 0.00076246 HPWL: 1310229641
 [InitialPlace]  Iter: 20 conjugate gradient residual: 0.00085274 HPWL: 1313977511
-[INFO GPL-0032] Uniform density:                0.0498
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.0553
 [INFO GPL-0023] Placement target density:       0.3000
 [INFO GPL-0024] Movable insts average area:      2.114 um^2
 [INFO GPL-0025] Ideal bin area:                  7.045 um^2
@@ -52,7 +50,7 @@
 [INFO GPL-0028] Bin count (X, Y):         256 ,    256
 [INFO GPL-0029] Bin size (W * H):       3.905 *  3.506 um
 [INFO GPL-0030] Number of bins:                  65536
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.2991 |  1.205666e+09 |   +0.00% |  7.91e-14 |      
@@ -101,5 +99,11 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       420 |   0.1371 |  1.273793e+09 |   +0.42% |  2.53e-07 |      
       430 |   0.1211 |  1.277901e+09 |   +0.32% |  3.37e-07 |      
       440 |   0.1080 |  1.281472e+09 |   +0.28% |  4.49e-07 |      
-[NesterovSolve] Finished with Overflow: 0.099656
+[INFO GPL-1001] Finished with Overflow: 0.099656
+[INFO GPL-1002] Placed Cell Area            44590.3780
+[INFO GPL-1003] Available Free Area         896177.4080
+[INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0553
+[INFO GPL-1008]     - For 80% usage of free space: 0.0622
 No differences found.

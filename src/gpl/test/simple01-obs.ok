@@ -20,8 +20,6 @@
 [INFO GPL-0019] Utilization:                    77.496 %
 [INFO GPL-0020] Standard cells area:           569.772 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0032] Uniform density:                0.7750
-[INFO GPL-0033] Density w/ 90% whitespace util:     0.8611
 [INFO GPL-0023] Placement target density:       0.8000
 [INFO GPL-0024] Movable insts average area:      1.938 um^2
 [INFO GPL-0025] Ideal bin area:                  2.422 um^2
@@ -30,7 +28,7 @@
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[NesterovSolve] HPWL: Half-Perimeter Wirelength
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
         1 |   0.8466 |  3.825534e+06 |   +0.00% |  1.47e-11 |      
@@ -58,5 +56,12 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       220 |   0.1653 |  5.106528e+06 |   +0.25% |  3.77e-07 |      
       230 |   0.1431 |  5.140739e+06 |   +0.67% |  5.56e-07 |      
       240 |   0.1160 |  5.167295e+06 |   +0.52% |  8.19e-07 |      
-[NesterovSolve] Finished with Overflow: 0.099008
+[INFO GPL-1001] Finished with Overflow: 0.099008
+[INFO GPL-1002] Placed Cell Area              569.7720
+[INFO GPL-1003] Available Free Area           735.2240
+[INFO GPL-1004] Minimum Feasible Density        0.7800 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.8611
+[INFO GPL-1008]     - For 80% usage of free space: 0.9687
+[INFO GPL-1009]     - For 50% usage of free space: 1.5499
 No differences found.

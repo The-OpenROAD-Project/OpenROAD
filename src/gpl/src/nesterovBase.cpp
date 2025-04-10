@@ -1727,9 +1727,9 @@ void NesterovBase::initFillerGCells()
   totalFillerArea_ = movableArea_ - nesterovInstanceArea;
   uniformTargetDensity_ = static_cast<float>(nesterovInstanceArea)
                           / static_cast<float>(whiteSpaceArea_);
+  uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
 
   if (totalFillerArea_ < 0) {
-    uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
     log_->error(GPL,
                 302,
                 "Consider increasing the target density or re-floorplanning "
@@ -1739,15 +1739,6 @@ void NesterovBase::initFillerGCells()
                 targetDensity_,
                 uniformTargetDensity_);
   }
-  log_->info(
-      GPL, 32, format_label_float, "Uniform density:", uniformTargetDensity_);
-  float density_suggestion
-      = static_cast<float>(nesterovInstanceArea) / (whiteSpaceArea_ * 0.9f);
-  log_->info(GPL,
-             33,
-             format_label_float,
-             "Density w/ 90% whitespace util:",
-             density_suggestion);
 
   // limit filler cells
   const double limit_filler_ratio = 10;
@@ -2555,7 +2546,7 @@ void NesterovBase::updateNextIter(const int iter)
 
     if ((iter == 0 || reprint_iter_header) && !pb_->group()) {
       if (iter == 0) {
-        log_->report("[NesterovSolve] HPWL: Half-Perimeter Wirelength");
+        log_->info(GPL, 31, "HPWL: Half-Perimeter Wirelength");
       }
 
       const std::string nesterov_header
@@ -2726,13 +2717,69 @@ bool NesterovBase::checkConvergence()
   }
   if (sumOverflowUnscaled_ <= npVars_->targetOverflow) {
     if (pb_->group()) {
-      log_->report(
-          "[NesterovSolve] PowerDomain {} finished with Overflow: {:.6f}",
-          pb_->group()->getName(),
-          sumOverflowUnscaled_);
+      log_->info(GPL,
+                 1000,
+                 "PowerDomain {} finished with Overflow: {:.6f}",
+                 pb_->group()->getName(),
+                 sumOverflowUnscaled_);
     } else {
-      log_->report("[NesterovSolve] Finished with Overflow: {:.6f}",
-                   sumOverflowUnscaled_);
+      log_->info(
+          GPL, 1001, "Finished with Overflow: {:.6f}", sumOverflowUnscaled_);
+    }
+
+    dbBlock* block = pb_->db()->getChip()->getBlock();
+    log_->info(GPL,
+               1002,
+               format_label_float,
+               "Placed Cell Area",
+               block->dbuAreaToMicrons(nesterovInstsArea()));
+
+    log_->info(GPL,
+               1003,
+               format_label_float,
+               "Available Free Area",
+               block->dbuAreaToMicrons(whiteSpaceArea_));
+
+    log_->info(GPL,
+               1004,
+               "Minimum Feasible Density        {:.4f} (cell_area / free_area)",
+               uniformTargetDensity_);
+
+    // The target density should not fall below the uniform density,
+    // which is the lower bound: instance_area / whitespace_area.
+    // Values below this lead to negative filler area (physically invalid).
+    //
+    // While the theoretical upper bound is 1.0 (fully using all whitespace),
+    // a practical way to define the target density may be based on desired
+    // whitespace usage: instance_area / (whitespace_area * usage).
+    log_->info(GPL, 1006, "  Suggested Target Densities:");
+    log_->info(
+        GPL,
+        1007,
+        "    - For 90% usage of free space: {:.4f}",
+        static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.90));
+
+    log_->info(
+        GPL,
+        1008,
+        "    - For 80% usage of free space: {:.4f}",
+        static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.80));
+
+    if (static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.50)
+        >= 1.0) {
+      log_->info(
+          GPL,
+          1009,
+          "    - For 50% usage of free space: {:.4f}",
+          static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.50));
+    }
+
+    if (uniformTargetDensity_ > 0.95f) {
+      log_->warn(GPL,
+                 1015,
+                 "High uniform density (>{:.2f}) may cause congestion or "
+                 "legalization issues.",
+                 uniformTargetDensity_);
     }
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
