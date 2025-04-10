@@ -101,7 +101,7 @@ std::string Descriptor::convertUnits(const double value,
   if (area) {
     log_value = std::sqrt(log_value);
   }
-  int log_units = std::floor(std::log10(log_value) / 3.0) * 3;
+  int log_units = std::trunc(std::log10(log_value) / 3.0) * 3;
   double unit_scale = 1.0;
   std::string unit;
   if (log_units <= -18) {
