@@ -66,7 +66,7 @@ void OptimizeMirroring::run()
          return net_box1->hpwl() > net_box2->hpwl();
        });
 
-  vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
+  std::vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
   odb::WireLengthEvaluator eval(block_);
   int64_t hpwl_before = eval.hpwl();
   int mirror_count = mirrorCandidates(mirror_candidates);
@@ -110,9 +110,10 @@ void OptimizeMirroring::findNetBoxes()
   }
 }
 
-vector<dbInst*> OptimizeMirroring::findMirrorCandidates(NetBoxes& net_boxes)
+std::vector<dbInst*> OptimizeMirroring::findMirrorCandidates(
+    NetBoxes& net_boxes)
 {
-  vector<dbInst*> mirror_candidates;
+  std::vector<dbInst*> mirror_candidates;
   unordered_set<dbInst*> existing;
   // Find inst terms on the boundary of the net boxes.
   for (NetBox* net_box : net_boxes) {
@@ -143,7 +144,7 @@ vector<dbInst*> OptimizeMirroring::findMirrorCandidates(NetBoxes& net_boxes)
   return mirror_candidates;
 }
 
-int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
+int OptimizeMirroring::mirrorCandidates(std::vector<dbInst*>& mirror_candidates)
 {
   int mirror_count = 0;
   for (dbInst* inst : mirror_candidates) {

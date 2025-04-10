@@ -29,11 +29,11 @@ void Opendp::addDecapMaster(dbMaster* decap_master, double decap_cap)
 }
 
 // Return list of decap indices to fill gap
-vector<int> Opendp::findDecapCellIndices(const DbuX& gap_width,
-                                         const double& current,
-                                         const double& target)
+std::vector<int> Opendp::findDecapCellIndices(const DbuX& gap_width,
+                                              const double& current,
+                                              const double& target)
 {
-  vector<int> id_masters;
+  std::vector<int> id_masters;
   double cap_acum = 0.0;
   int width_acum = 0;
   const DbuX site_width = grid_->getSiteWidth();
@@ -160,7 +160,7 @@ void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
                 total_cap);
 }
 
-void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
+void Opendp::insertDecapInRow(const std::vector<GapInfo*>& gaps,
                               const DbuY gap_y,
                               const DbuX irdrop_x,
                               const DbuY irdrop_y,
@@ -198,7 +198,7 @@ void Opendp::insertDecapInPos(dbMaster* master,
                               const DbuY& pos_y)
 {
   // insert decap inst
-  string inst_name = "DECAP_" + to_string(decap_count_);
+  std::string inst_name = "DECAP_" + to_string(decap_count_);
   dbInst* inst = dbInst::create(block_,
                                 master,
                                 inst_name.c_str(),
