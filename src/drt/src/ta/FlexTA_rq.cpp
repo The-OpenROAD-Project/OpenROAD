@@ -73,10 +73,9 @@ void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
   }
 }
 
-void FlexTAWorkerRegionQuery::query(
-    const Rect& box,
-    const frLayerNum layerNum,
-    std::set<taPin*, frBlockObjectComp>& result) const
+void FlexTAWorkerRegionQuery::query(const Rect& box,
+                                    const frLayerNum layerNum,
+                                    frOrderedIdSet<taPin*>& result) const
 {
   std::vector<rq_box_value_t<taPinFig*>> temp;
   auto& tree = impl_->shapes_.at(layerNum);

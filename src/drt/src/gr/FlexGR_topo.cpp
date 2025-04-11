@@ -31,8 +31,7 @@ void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,
   auto fluteTree = stt_builder_->makeSteinerTree(xs, ys, 0);
 
   std::map<Point, frNode*> pinGCell2Nodes, steinerGCell2Nodes;
-  std::map<frNode*, std::set<frNode*, frBlockObjectComp>, frBlockObjectComp>
-      adjacencyList;
+  frOrderedIdMap<frNode*, frOrderedIdSet<frNode*>> adjacencyList;
 
   for (auto pinNode : pinGCellNodes) {
     pinGCell2Nodes[pinNode->getLoc()] = pinNode;
@@ -538,8 +537,7 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
     std::vector<frNode*>& steinerNodes)
 {
   std::map<frCoord, std::set<std::pair<frCoord, frCoord>>> horzSegs, vertSegs;
-  std::map<frNode*, std::set<frNode*, frBlockObjectComp>, frBlockObjectComp>
-      adjacencyList;
+  frOrderedIdMap<frNode*, frOrderedIdSet<frNode*>> adjacencyList;
 
   auto root = pinNodes[0];
   auto net = root->getNet();
@@ -767,7 +765,7 @@ void FlexGR::genSTTopology_build_tree_splitSeg(
     node->reset();
   }
 
-  std::set<frNode*, frBlockObjectComp> visitedNodes;
+  frOrderedIdSet<frNode*> visitedNodes;
   std::deque<frNode*> nodeQueue;
 
   nodeQueue.push_front(root);

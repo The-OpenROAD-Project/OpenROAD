@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
 namespace odb {
@@ -16,7 +17,6 @@ class Rect;
 namespace drt {
 using odb::Rect;
 class frBlockObject;
-struct frBlockObjectComp;
 class frDesign;
 class frGuide;
 class frMarker;
@@ -103,8 +103,7 @@ class frRegionQuery
   // init
   void init();
   void initGuide();
-  void initOrigGuide(
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& tmpGuides);
+  void initOrigGuide(frOrderedIdMap<frNet*, std::vector<frRect>>& tmpGuides);
   void initGRPin(std::vector<std::pair<frBlockObject*, odb::Point>>& in);
   void initRPin();
   void initDRObj();

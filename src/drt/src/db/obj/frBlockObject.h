@@ -33,6 +33,8 @@ class frBlockObject
   friend class boost::serialization::access;
 };
 
+namespace internal {
+// Don't use directly, use the sets below
 struct frBlockObjectComp
 {
   bool operator()(const frBlockObject* lhs, const frBlockObject* rhs) const
@@ -40,8 +42,23 @@ struct frBlockObjectComp
     return *lhs < *rhs;
   }
 };
+}  // namespace internal
 
-using frBlockObjectSet = std::set<frBlockObject*, frBlockObjectComp>;
-template <typename T>
-using frBlockObjectMap = std::map<frBlockObject*, T, frBlockObjectComp>;
+// A set that is compatible with keys derived from
+// frBlockObject*
+template <typename K>
+using frOrderedIdSet = std::set<K, internal::frBlockObjectComp>;
+
+// Legacy container for a frBlockObject* values; consider using the
+// templated container.
+using frBlockObjectSet = frOrderedIdSet<frBlockObject*>;
+
+template <typename K, typename V>
+using frOrderedIdMap = std::map<K, V, internal::frBlockObjectComp>;
+
+// Legacy container for a frBlockObject* key; consider using
+// using the <K, V> container.
+template <typename V>
+using frBlockObjectMap = frOrderedIdMap<frBlockObject*, V>;
+
 }  // namespace drt
