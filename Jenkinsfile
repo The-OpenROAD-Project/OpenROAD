@@ -90,18 +90,10 @@ def getParallelTests(String image) {
                         ]);
                     }
                     stage('Run Docs Tests') {
-                        timeout(time: 15, unit: 'MINUTES') {
-                            try {
-                                sh label: 'Build messages', script: 'python3 docs/src/test/make_messages.py';
-                                sh label: 'Preprocess docs', script: 'cd docs && make preprocess -j$(nproc)';
-                                sh label: 'Run Tcl syntax parser', script: 'python3 docs/src/test/man_tcl_params.py';
-                                sh label: 'Run readme parser', script: 'cd docs && make clean && python3 src/test/readme_check.py';
-                            } catch (e) {
-                                echo "Docs Tester stage failed: ${e.getMessage()}";
-                                currentBuild.result = 'FAILURE';
-                                throw e;
-                            }
-                        }
+                        sh label: 'Build messages', script: 'python3 docs/src/test/make_messages.py';
+                        sh label: 'Preprocess docs', script: 'cd docs && make preprocess -j$(nproc)';
+                        sh label: 'Run Tcl syntax parser', script: 'python3 docs/src/test/man_tcl_params.py';
+                        sh label: 'Run readme parser', script: 'cd docs && make clean && python3 src/test/readme_check.py';
                     }
                 }
             }
