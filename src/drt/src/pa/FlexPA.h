@@ -759,14 +759,11 @@ class FlexPA
   std::vector<std::vector<frInst*>> computeInstRows();
 
   /**
-   * @brief Get the instance adjacent to the left or right of a given instance
+   * @brief Verifies if both instances are abuting
    *
-   * @param inst the reference inst
-   * @param left true if looking at the left inst, false if looking at the right
-   *
-   * @returns the adjacent inst or nullptr if no adjacent inst
+   * @returns true if the instances abute
    */
-  frInst* getAdjacentInstance(frInst* inst, bool left) const;
+  bool instancesAreAbuting(frInst* inst_1, frInst* inst_2) const;
 
   /**
    * @brief Find a cluster of instances that are touching each other
