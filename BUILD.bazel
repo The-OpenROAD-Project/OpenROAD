@@ -132,23 +132,21 @@ cc_library(
 genrule(
     name = "post9",
     srcs = [
-        "src/stt/src/flt/etc/MakeDatVar.tcl",
+        "etc/file_to_string.py",
         "src/stt/src/flt/etc/POST9.dat",
     ],
     outs = ["src/stt/src/flt/etc/POST9.cpp"],
-    cmd = "$(location @tk_tcl//:tclsh) $(location src/stt/src/flt/etc/MakeDatVar.tcl) post9 \"$@\" $(location src/stt/src/flt/etc/POST9.dat)",
-    tools = ["@tk_tcl//:tclsh"],
+    cmd = "$(location etc/file_to_string.py) $(location src/stt/src/flt/etc/POST9.dat) \"$@\" post9 stt::flt",
 )
 
 genrule(
     name = "powv9",
     srcs = [
-        "src/stt/src/flt/etc/MakeDatVar.tcl",
+        "etc/file_to_string.py",
         "src/stt/src/flt/etc/POWV9.dat",
     ],
     outs = ["src/stt/src/flt/etc/POWV9.cpp"],
-    cmd = "$(location @tk_tcl//:tclsh) $(location src/stt/src/flt/etc/MakeDatVar.tcl) powv9 \"$@\" $(location src/stt/src/flt/etc/POWV9.dat)",
-    tools = ["@tk_tcl//:tclsh"],
+    cmd = "$(location etc/file_to_string.py) $(location src/stt/src/flt/etc/POWV9.dat) \"$@\" powv9 stt::flt",
 )
 
 cc_library(

@@ -14,13 +14,13 @@ set(POWV9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POWV9.cpp)
 set(POST9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POST9.cpp)
 
 add_custom_command(OUTPUT ${POWV9_CPP}
-  COMMAND ${FLUTE_HOME}/etc/MakeDatVar.tcl powv9 ${POWV9_CPP} ${POWV9_DAT}
-  DEPENDS ${POWV9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
+  COMMAND ${PROJECT_SOURCE_DIR}/etc/file_to_string.py ${POWV9_DAT} ${POWV9_CPP} powv9 stt::flt
+  DEPENDS ${POWV9_DAT} ${PROJECT_SOURCE_DIR}/etc/file_to_string.py
 )
 
 add_custom_command(OUTPUT ${POST9_CPP}
-  COMMAND ${FLUTE_HOME}/etc/MakeDatVar.tcl post9 ${POST9_CPP} ${POST9_DAT}
-  DEPENDS ${POST9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
+  COMMAND ${PROJECT_SOURCE_DIR}/etc/file_to_string.py ${POST9_DAT} ${POST9_CPP} post9 stt::flt
+  DEPENDS ${POST9_DAT} ${PROJECT_SOURCE_DIR}/etc/file_to_string.py
   )
 
 swig_lib(NAME      stt

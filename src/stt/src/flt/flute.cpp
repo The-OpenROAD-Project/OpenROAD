@@ -164,8 +164,8 @@ static void checkLUT(LUT_TYPE LUT1,
                      NUMSOLN_TYPE numsoln2);
 #endif
 
-extern const std::string post9;
-extern const std::string powv9;
+extern const char* post9[];
+extern const char* powv9[];
 
 void Flute::readLUT()
 {
@@ -250,11 +250,18 @@ inline const char* readDecimalInt(const char* s, int& value)
 // Init LUTs from base64 encoded string variables.
 void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
-  std::string pwv_string = base64_decode(powv9);
+  auto reassemble = [](const char* chunks[]) {
+    std::string reassembled;
+    for (const char** chunk = chunks; *chunk; ++chunk) {
+      reassembled += *chunk;
+    }
+    return reassembled;
+  };
+  std::string pwv_string = base64_decode(reassemble(powv9));
   const char* pwv = pwv_string.c_str();
 
 #if FLUTE_ROUTING == 1
-  std::string prt_string = base64_decode(post9);
+  std::string prt_string = base64_decode(reassemble(post9));
   const char* prt = prt_string.c_str();
 #endif
 
