@@ -32,7 +32,7 @@ jobs:
 
       - name: Build
         run: |
-          bazel test \
+          bazelisk test \
            -c opt \
            --keep_going \
            --show_timestamps \
