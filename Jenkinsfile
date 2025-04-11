@@ -82,9 +82,12 @@ def getParallelTests(String image) {
                     stage('Setup Docs Test') {
                         echo "Setting up Docs Tester environment in ${image}";
                         sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
-                        checkout([$class: 'GitSCM', branches: scm.branches, extensions: [[$class: 'SubmoduleOption', recursiveSubmodules: true]], userRemoteConfigs: scm.userRemoteConfigs])
-
-                        sh label: 'Install Pandoc', script: 'apt-get update && apt-get install -y --no-install-recommends pandoc';
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: scm.branches[0].name]],
+                            extensions: [[$class: 'SubmoduleOption', recursiveSubmodules: true]],
+                            userRemoteConfigs: scm.userRemoteConfigs
+                        ]);
                     }
                     stage('Run Docs Tests') {
                         timeout(time: 15, unit: 'MINUTES') {
