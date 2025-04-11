@@ -76,6 +76,35 @@ def baseTests(String image) {
 def getParallelTests(String image) {
 
     def ret = [
+        'Docs Tester': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup Docs Test') {
+                        echo "Setting up Docs Tester environment in ${image}";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout([$class: 'GitSCM', branches: scm.branches, extensions: [[$class: 'SubmoduleOption', recursiveSubmodules: true]], userRemoteConfigs: scm.userRemoteConfigs])
+
+                        sh label: 'Install Pandoc', script: 'apt-get update && apt-get install -y --no-install-recommends pandoc';
+                    }
+                    stage('Run Docs Tests') {
+                        timeout(time: 15, unit: 'MINUTES') {
+                            try {
+                                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                                    sh label: 'Build messages', script: 'python3 docs/src/test/make_messages.py';
+                                    sh label: 'Preprocess docs', script: 'cd docs && make preprocess -j$(nproc)';
+                                    sh label: 'Run Tcl syntax parser', script: 'python3 docs/src/test/man_tcl_params.py';
+                                    sh label: 'Run readme parser', script: 'cd docs && make clean && python3 src/test/readme_check.py';
+                                }
+                            } catch (e) {
+                                echo "Docs Tester stage failed: ${e.getMessage()}";
+                                currentBuild.result = 'FAILURE';
+                                throw e;
+                            }
+                        }
+                    }
+                }
+            }
+        },
 
         'Build without GUI': {
             node {
@@ -160,7 +189,6 @@ def getParallelTests(String image) {
                 }
             }
         }
-
     ];
 
     if (env.BRANCH_NAME == 'master') {
