@@ -15,7 +15,7 @@ namespace utl {
 std::string MetricsEntry::assembleJSON(const std::list<MetricsEntry>& entries)
 {
   std::string json = "{";
-  std::string separator = "";
+  std::string separator;
   for (MetricsEntry entry : entries) {
     json += fmt::format("{}\n\t\"{}\": {}", separator, entry.key, entry.value);
     separator = ",";
