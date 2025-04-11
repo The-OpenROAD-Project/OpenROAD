@@ -223,9 +223,9 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { diode_cell \
-                                         [-iterations iterations] \
-                                         [-ratio_margin ratio_margin]}
+sta::define_cmd_args "repair_antennas" { [-iterations iterations] \
+                                         [-ratio_margin ratio_margin] \
+                                         [diode_cell] }
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
