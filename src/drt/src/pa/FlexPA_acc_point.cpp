@@ -1119,20 +1119,12 @@ void FlexPA::updatePinStats(
   }
 }
 
-bool FlexPA::EnoughAccessPoints(
+bool FlexPA::EnoughSparsePoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     frInstTerm* inst_term)
 {
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
-  const bool is_io_pin = (inst_term == nullptr);
-  bool enough_sparse_acc_points = false;
-  bool enough_far_from_edge_points = false;
-
-  if (is_io_pin) {
-    return (aps.size() > 0);
-  }
-
   /* This is a Max Clique problem, each ap is a node, draw an edge between two
    aps if they are far away as to not intersect. n_sparse_access_points,
    ideally, is the Max Clique of this graph. the current implementation gives a
@@ -1156,27 +1148,58 @@ bool FlexPA::EnoughAccessPoints(
 
   if (is_std_cell_pin
       && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
-    enough_sparse_acc_points = true;
+    return true;
   }
   if (is_macro_cell_pin
       && n_sparse_access_points
              >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    enough_sparse_acc_points = true;
+    return true;
   }
+  return false;
+}
 
+bool FlexPA::EnoughPointsFarFromEdge(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    frInstTerm* inst_term)
+{
+  const int far_from_edge_requirement = 1;
   Rect cell_box = inst_term->getInst()->getBBox();
+  int total_far_from_edge = 0;
   for (auto& ap : aps) {
     const int colision_dist
         = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
     Rect ap_colision_box;
     Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
     if (cell_box.contains(ap_colision_box)) {
-      enough_far_from_edge_points = true;
-      break;
+      total_far_from_edge++;
+      if (total_far_from_edge >= far_from_edge_requirement) {
+        return true;
+      }
     }
   }
+  return false;
+}
 
-  return (enough_sparse_acc_points && enough_far_from_edge_points);
+bool FlexPA::EnoughAccessPoints(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    frInstTerm* inst_term,
+    pa_requirements_met& reqs)
+{
+  const bool is_io_pin = (inst_term == nullptr);
+
+  if (is_io_pin) {
+    return (aps.size() > 0);
+  }
+
+  if (!reqs.sparse_points) {
+    reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
+  }
+
+  if (!reqs.far_from_edge) {
+    reqs.far_from_edge = EnoughPointsFarFromEdge(aps, inst_term);
+  }
+
+  return (reqs.sparse_points && reqs.far_from_edge);
 }
 
 template <typename T>
@@ -1187,7 +1210,8 @@ bool FlexPA::genPinAccessCostBounded(
     T* pin,
     frInstTerm* inst_term,
     const frAccessPointEnum lower_type,
-    const frAccessPointEnum upper_type)
+    const frAccessPointEnum upper_type,
+    pa_requirements_met& reqs)
 {
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   ;
@@ -1226,7 +1250,7 @@ bool FlexPA::genPinAccessCostBounded(
     }
   }
 
-  if (!EnoughAccessPoints(aps, inst_term)) {
+  if (!EnoughAccessPoints(aps, inst_term, reqs)) {
     return false;
   }
 
@@ -1342,6 +1366,8 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
+  pa_requirements_met reqs;
+
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
                      frAccessPointEnum::Center,
@@ -1357,19 +1383,34 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         continue;
       }
       if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, pin, inst_term, lower, upper)) {
+              aps, apset, pin_shapes, pin, inst_term, lower, upper, reqs)) {
         return aps.size();
       }
     }
   }
 
   if (inst_term) {
-    logger_->warn(
-        DRT,
-        88,
-        "Exhaustive access point generation for {} ({}) is unsatisfactory.",
-        inst_term->getName(),
-        inst_term->getInst()->getMaster()->getName());
+    std::string unmet_requirements = "";
+    if (!reqs.far_from_edge) {
+      unmet_requirements
+          += "\n\tAt least "
+             + (isStdCell(inst_term->getInst())
+                    ? std::to_string(router_cfg_->MINNUMACCESSPOINT_STDCELLPIN)
+                    : std::to_string(
+                          router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN))
+             + " sparse access points";
+    }
+    if (!reqs.sparse_points) {
+      unmet_requirements += "\n\tAt least " + std::to_string(1)
+                            + " access point farm from inst edge";
+    }
+    logger_->warn(DRT,
+                  88,
+                  "Exhaustive access point generation for {} ({}) did not meet "
+                  "the requirements: {}",
+                  inst_term->getName(),
+                  inst_term->getInst()->getMaster()->getName(),
+                  unmet_requirements);
   }
 
   // inst_term aps are written back here if not early stopped
