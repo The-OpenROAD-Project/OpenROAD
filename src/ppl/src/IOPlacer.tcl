@@ -523,20 +523,6 @@ proc parse_layer_name { layer_name } {
   return $tech_layer
 }
 
-proc add_pins_to_top_layer { cmd names llx lly urx ury } {
-  set tech [ord::get_db_tech]
-  set top_layer [ppl::get_top_layer]
-
-  if { $top_layer == "NULL" } {
-    utl::error PPL 99 "Constraint up:{$llx $lly $urx $ury} cannot be created.\
-      Pin placement grid on top layer not created."
-  }
-
-  set top_layer_name [$top_layer getConstName]
-  set pin_list [ppl::parse_pin_names $cmd $names]
-  ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury
-}
-
 proc parse_pin_names { cmd names } {
   set dbBlock [ord::get_db_block]
   set pin_list {}

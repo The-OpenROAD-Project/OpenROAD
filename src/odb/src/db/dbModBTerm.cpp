@@ -272,7 +272,6 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   if (ret) {
     return ret;
   }
-
   _dbModule* module = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
@@ -427,8 +426,6 @@ void dbModBTerm::destroy(dbModBTerm* val)
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);
 
   if (block->_journal) {
-    //    printf("LOG delete dbModBTerm %s %d\n",
-    //	   val -> getName(), val -> getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(val->getName());

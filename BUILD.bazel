@@ -64,6 +64,7 @@ cc_binary(
         ":openroad_lib_private",
         "@rules_cc//cc/runfiles",
     ],
+    malloc = "@tcmalloc//tcmalloc",
 )
 
 cc_library(
@@ -1201,6 +1202,7 @@ cc_binary(
         ":opensta_lib",
         "@tk_tcl//:tcl",
     ],
+    malloc = "@tcmalloc//tcmalloc",
 )
 
 cc_library(

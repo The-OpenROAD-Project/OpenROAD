@@ -212,6 +212,7 @@ class WireLengthEvaluator
  public:
   WireLengthEvaluator(dbBlock* block) : block_(block) {}
   int64_t hpwl() const;
+  void report(utl::Logger* logger) const;
 
  private:
   int64_t hpwl(dbNet* net) const;

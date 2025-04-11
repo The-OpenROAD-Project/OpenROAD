@@ -43,4 +43,10 @@ std::size_t IntervalHash::operator()(const Interval& interval) const
                                                          interval.getLayer()});
 }
 
+std::size_t RectHash::operator()(const Rect& rect) const
+{
+  return boost::hash<std::tuple<int, int, int, int>>()(
+      {rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()});
+}
+
 }  // namespace ppl
