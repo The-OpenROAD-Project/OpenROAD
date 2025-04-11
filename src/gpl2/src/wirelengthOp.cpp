@@ -36,15 +36,14 @@
 
 #include "wirelengthOp.h"
 
-#include "placerBase.h"
-#include "placerObjects.h"
-
 #include <Kokkos_Core.hpp>
-#include "kokkosUtil.h"
-
 #include <climits>
 #include <cmath>
 #include <impl/Kokkos_HostThreadTeam.hpp>
+
+#include "kokkosUtil.h"
+#include "placerBase.h"
+#include "placerObjects.h"
 
 namespace gpl2 {
 
@@ -91,8 +90,10 @@ void WirelengthOp::initBackend()
     netPinCount += net->numPins();
   }
 
-  Kokkos::View<int*, Kokkos::HostSpace> hInstPinIdx("hInstPinIdx", instPinCount);
-  Kokkos::View<int*, Kokkos::HostSpace> hInstPinPos("hInstPinPos", numInsts_ + 1);
+  Kokkos::View<int*, Kokkos::HostSpace> hInstPinIdx("hInstPinIdx",
+                                                    instPinCount);
+  Kokkos::View<int*, Kokkos::HostSpace> hInstPinPos("hInstPinPos",
+                                                    numInsts_ + 1);
   Kokkos::View<int*, Kokkos::HostSpace> hPinInstId("hPinInstId", numPins_);
 
   Kokkos::View<int*, Kokkos::HostSpace> hNetPinIdx("hNetPinIdx", netPinCount);
@@ -100,7 +101,8 @@ void WirelengthOp::initBackend()
   Kokkos::View<int*, Kokkos::HostSpace> hPinNetId("hPinNetId", numPins_);
 
   Kokkos::View<float*, Kokkos::HostSpace> hNetWeight("hNetWeight", numNets_);
-  Kokkos::View<float*, Kokkos::HostSpace> hNetVirtualWeight("hNetVirtualWeight", numNets_);
+  Kokkos::View<float*, Kokkos::HostSpace> hNetVirtualWeight("hNetVirtualWeight",
+                                                            numNets_);
 
   int pinIdx = 0;
   for (auto pin : pbc_->pins()) {
@@ -216,95 +218,98 @@ void WirelengthOp::initBackend()
 
 // All other operations only for placeable Instances
 void updatePinLocationKernel(const int numPlaceInsts,
-                                        const Kokkos::View<const int*>& dInstPinIdx,
-                                        const Kokkos::View<const int*>& dInstPinPos,
-                                        const Kokkos::View<const int*>& dPinOffsetX,
-                                        const Kokkos::View<const int*>& dPinOffsetY,
-                                        const Kokkos::View<const int*>& instDCx,
-                                        const Kokkos::View<const int*>& instDCy,
-                                        const Kokkos::View<int*>& dPinX,
-                                        const Kokkos::View<int*>& dPinY)
+                             const Kokkos::View<const int*>& dInstPinIdx,
+                             const Kokkos::View<const int*>& dInstPinPos,
+                             const Kokkos::View<const int*>& dPinOffsetX,
+                             const Kokkos::View<const int*>& dPinOffsetY,
+                             const Kokkos::View<const int*>& instDCx,
+                             const Kokkos::View<const int*>& instDCy,
+                             const Kokkos::View<int*>& dPinX,
+                             const Kokkos::View<int*>& dPinY)
 {
-  Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instId) {
-    const int pinStart = dInstPinPos[instId];
-    const int pinEnd = dInstPinPos[instId + 1];
-    const float instDCxVal = instDCx[instId];
-    const float instDCyVal = instDCy[instId];
-    for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
-      const int pinIdx = dInstPinIdx[pinId];
-      dPinX[pinIdx] = instDCxVal + dPinOffsetX[pinIdx];
-      dPinY[pinIdx] = instDCyVal + dPinOffsetY[pinIdx];
-    }
-  });
+  Kokkos::parallel_for(
+      numPlaceInsts, KOKKOS_LAMBDA(const int instId) {
+        const int pinStart = dInstPinPos[instId];
+        const int pinEnd = dInstPinPos[instId + 1];
+        const float instDCxVal = instDCx[instId];
+        const float instDCyVal = instDCy[instId];
+        for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
+          const int pinIdx = dInstPinIdx[pinId];
+          dPinX[pinIdx] = instDCxVal + dPinOffsetX[pinIdx];
+          dPinY[pinIdx] = instDCyVal + dPinOffsetY[pinIdx];
+        }
+      });
 }
 
 void updateNetBBoxKernel(int numNets,
-                                    const Kokkos::View<const int*>& dNetPinIdx,
-                                    const Kokkos::View<const int*>& dNetPinPos,
-                                    const Kokkos::View<const int*>& dPinX,
-                                    const Kokkos::View<const int*>& dPinY,
-                                    const Kokkos::View<int*>& dNetLx,
-                                    const Kokkos::View<int*>& dNetLy,
-                                    const Kokkos::View<int*>& dNetUx,
-                                    const Kokkos::View<int*>& dNetUy,
-                                    const Kokkos::View<int*>& dNetWidthPlusHeight)
+                         const Kokkos::View<const int*>& dNetPinIdx,
+                         const Kokkos::View<const int*>& dNetPinPos,
+                         const Kokkos::View<const int*>& dPinX,
+                         const Kokkos::View<const int*>& dPinY,
+                         const Kokkos::View<int*>& dNetLx,
+                         const Kokkos::View<int*>& dNetLy,
+                         const Kokkos::View<int*>& dNetUx,
+                         const Kokkos::View<int*>& dNetUy,
+                         const Kokkos::View<int*>& dNetWidthPlusHeight)
 {
-  Kokkos::parallel_for(numNets, KOKKOS_LAMBDA (const int netId) {
-    const int pinStart = dNetPinPos[netId];
-    const int pinEnd = dNetPinPos[netId + 1];
-    int netLx = INT_MAX;
-    int netLy = INT_MAX;
-    int netUx = 0;
-    int netUy = 0;
-    for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
-      const int pinIdx = dNetPinIdx[pinId];
-      const int pinX = dPinX[pinIdx];
-      const int pinY = dPinY[pinIdx];
-      netLx = Kokkos::min(netLx, pinX);
-      netLy = Kokkos::min(netLy, pinY);
-      netUx = Kokkos::max(netUx, pinX);
-      netUy = Kokkos::max(netUy, pinY);
-    }
+  Kokkos::parallel_for(
+      numNets, KOKKOS_LAMBDA(const int netId) {
+        const int pinStart = dNetPinPos[netId];
+        const int pinEnd = dNetPinPos[netId + 1];
+        int netLx = INT_MAX;
+        int netLy = INT_MAX;
+        int netUx = 0;
+        int netUy = 0;
+        for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
+          const int pinIdx = dNetPinIdx[pinId];
+          const int pinX = dPinX[pinIdx];
+          const int pinY = dPinY[pinIdx];
+          netLx = Kokkos::min(netLx, pinX);
+          netLy = Kokkos::min(netLy, pinY);
+          netUx = Kokkos::max(netUx, pinX);
+          netUy = Kokkos::max(netUy, pinY);
+        }
 
-    if (netLx > netUx || netLy > netUy) {
-      netLx = 0;
-      netUx = 0;
-      netLy = 0;
-      netUy = 0;
-    }
+        if (netLx > netUx || netLy > netUy) {
+          netLx = 0;
+          netUx = 0;
+          netLy = 0;
+          netUy = 0;
+        }
 
-    dNetLx[netId] = netLx;
-    dNetLy[netId] = netLy;
-    dNetUx[netId] = netUx;
-    dNetUy[netId] = netUy;
-    auto netWidth = netUx - netLx;
-    auto netHeight = netUy - netLy;
-    dNetWidthPlusHeight[netId] = netWidth + netHeight;
-  });
+        dNetLx[netId] = netLx;
+        dNetLy[netId] = netLy;
+        dNetUx[netId] = netUx;
+        dNetUy[netId] = netUy;
+        auto netWidth = netUx - netLx;
+        auto netHeight = netUy - netLy;
+        dNetWidthPlusHeight[netId] = netWidth + netHeight;
+      });
 }
 
-void WirelengthOp::updatePinLocation(const Kokkos::View<const int*>& instDCx, const Kokkos::View<const int*>& instDCy)
+void WirelengthOp::updatePinLocation(const Kokkos::View<const int*>& instDCx,
+                                     const Kokkos::View<const int*>& instDCy)
 {
   updatePinLocationKernel(numPlaceInsts_,
-                                                     dInstPinIdx_,
-                                                     dInstPinPos_,
-                                                     dPinOffsetX_,
-                                                     dPinOffsetY_,
-                                                     instDCx,
-                                                     instDCy,
-                                                     dPinX_,
-                                                     dPinY_);
+                          dInstPinIdx_,
+                          dInstPinPos_,
+                          dPinOffsetX_,
+                          dPinOffsetY_,
+                          instDCx,
+                          instDCy,
+                          dPinX_,
+                          dPinY_);
 
   updateNetBBoxKernel(numNets_,
-                                                    dNetPinIdx_,
-                                                    dNetPinPos_,
-                                                    dPinX_,
-                                                    dPinY_,
-                                                    dNetLx_,
-                                                    dNetLy_,
-                                                    dNetUx_,
-                                                    dNetUy_,
-                                                    dNetWidthPlusHeight_);
+                      dNetPinIdx_,
+                      dNetPinPos_,
+                      dPinX_,
+                      dPinY_,
+                      dNetLx_,
+                      dNetLy_,
+                      dNetUx_,
+                      dNetUy_,
+                      dNetWidthPlusHeight_);
 }
 
 struct TypeConvertor
@@ -320,9 +325,12 @@ int64_t WirelengthOp::computeHPWL()
   int64_t hpwl = 0;
   auto dNetWidthPlusHeight = dNetWidthPlusHeight_;
   const int numNets = numNets_;
-  Kokkos::parallel_reduce(numNets, KOKKOS_LAMBDA (const int i, int64_t& hpwl) {
-      hpwl += (int64_t) dNetWidthPlusHeight[i];
-  }, hpwl);
+  Kokkos::parallel_reduce(
+      numNets,
+      KOKKOS_LAMBDA(const int i, int64_t& hpwl) {
+        hpwl += (int64_t) dNetWidthPlusHeight[i];
+      },
+      hpwl);
 
   return hpwl;
 }
@@ -335,209 +343,219 @@ int64_t WirelengthOp::computeWeightedHPWL(float virtualWeightFactor)
   auto dNetVirtualWeight = dNetVirtualWeight_;
   const int numNets = numNets_;
 
-  Kokkos::parallel_reduce(numNets, KOKKOS_LAMBDA (const int i, int64_t& hpwl) {
-      hpwl += (int64_t)((dNetWeight[i] + dNetVirtualWeight[i] * virtualWeightFactor) * dNetWidthPlusHeight[i]);
-  }, hpwl);
+  Kokkos::parallel_reduce(
+      numNets,
+      KOKKOS_LAMBDA(const int i, int64_t& hpwl) {
+        hpwl += (int64_t) ((dNetWeight[i]
+                            + dNetVirtualWeight[i] * virtualWeightFactor)
+                           * dNetWidthPlusHeight[i]);
+      },
+      hpwl);
 
   return hpwl;
 }
 
 // Compute aPos and aNeg
 void computeAPosNegKernel(const int numPins,
-                                     const float wlCoeffX,
-                                     const float wlCoeffY,
-                                     const Kokkos::View<const int*>& dPinX,
-                                     const Kokkos::View<const int*>& dPinY,
-                                     const Kokkos::View<const int*>& dPinNetId,
-                                     const Kokkos::View<const int*>& dNetLx,
-                                     const Kokkos::View<const int*>& dNetLy,
-                                     const Kokkos::View<const int*>& dNetUx,
-                                     const Kokkos::View<const int*>& dNetUy,
-                                     const Kokkos::View<float*>& dPinAPosX,
-                                     const Kokkos::View<float*>& dPinANegX,
-                                     const Kokkos::View<float*>& dPinAPosY,
-                                     const Kokkos::View<float*>& dPinANegY,
-                                     const Kokkos::View<float*>& dPinAPosX_modifiable_b_,
-                                     const Kokkos::View<float*>& dPinANegX_modifiable_b_,
-                                     const Kokkos::View<float*>& dPinAPosY_modifiable_b_,
-                                     const Kokkos::View<float*>& dPinANegY_modifiable_b_,
-                                     const Kokkos::View<float*>& dPinAPosX_modifiable_c_,
-                                     const Kokkos::View<float*>& dPinANegX_modifiable_c_,
-                                     const Kokkos::View<float*>& dPinAPosY_modifiable_c_,
-                                     const Kokkos::View<float*>& dPinANegY_modifiable_c_)
+                          const float wlCoeffX,
+                          const float wlCoeffY,
+                          const Kokkos::View<const int*>& dPinX,
+                          const Kokkos::View<const int*>& dPinY,
+                          const Kokkos::View<const int*>& dPinNetId,
+                          const Kokkos::View<const int*>& dNetLx,
+                          const Kokkos::View<const int*>& dNetLy,
+                          const Kokkos::View<const int*>& dNetUx,
+                          const Kokkos::View<const int*>& dNetUy,
+                          const Kokkos::View<float*>& dPinAPosX,
+                          const Kokkos::View<float*>& dPinANegX,
+                          const Kokkos::View<float*>& dPinAPosY,
+                          const Kokkos::View<float*>& dPinANegY,
+                          const Kokkos::View<float*>& dPinAPosX_modifiable_b_,
+                          const Kokkos::View<float*>& dPinANegX_modifiable_b_,
+                          const Kokkos::View<float*>& dPinAPosY_modifiable_b_,
+                          const Kokkos::View<float*>& dPinANegY_modifiable_b_,
+                          const Kokkos::View<float*>& dPinAPosX_modifiable_c_,
+                          const Kokkos::View<float*>& dPinANegX_modifiable_c_,
+                          const Kokkos::View<float*>& dPinAPosY_modifiable_c_,
+                          const Kokkos::View<float*>& dPinANegY_modifiable_c_)
 
 {
-  Kokkos::parallel_for(numPins, KOKKOS_LAMBDA (const int pinId) {
-    const int netId = dPinNetId[pinId];
-    dPinAPosX[pinId] = consistentExpf(wlCoeffX * (dPinX[pinId] - dNetUx[netId]));
-    dPinANegX[pinId]
-        = consistentExpf(-1.0 * wlCoeffX * (dPinX[pinId] - dNetLx[netId]));
-    dPinAPosY[pinId] = consistentExpf(wlCoeffY * (dPinY[pinId] - dNetUy[netId]));
-    dPinANegY[pinId]
-        = consistentExpf(-1.0 * wlCoeffY * (dPinY[pinId] - dNetLy[netId]));
-
-  });
-  Kokkos::parallel_for(numPins, KOKKOS_LAMBDA (const int pinId){
-    dPinAPosX_modifiable_b_[pinId] = dPinAPosX[pinId];
-    dPinANegX_modifiable_b_[pinId] = dPinANegX[pinId];
-    dPinAPosY_modifiable_b_[pinId] = dPinAPosY[pinId];
-    dPinANegY_modifiable_b_[pinId] = dPinANegY[pinId];
-  });
-  Kokkos::parallel_for(numPins, KOKKOS_LAMBDA (const int pinId){
-    dPinAPosX_modifiable_c_[pinId] = dPinAPosX[pinId];
-    dPinANegX_modifiable_c_[pinId] = dPinANegX[pinId];
-    dPinAPosY_modifiable_c_[pinId] = dPinAPosY[pinId];
-    dPinANegY_modifiable_c_[pinId] = dPinANegY[pinId];
-  });
+  Kokkos::parallel_for(
+      numPins, KOKKOS_LAMBDA(const int pinId) {
+        const int netId = dPinNetId[pinId];
+        dPinAPosX[pinId]
+            = consistentExpf(wlCoeffX * (dPinX[pinId] - dNetUx[netId]));
+        dPinANegX[pinId]
+            = consistentExpf(-1.0 * wlCoeffX * (dPinX[pinId] - dNetLx[netId]));
+        dPinAPosY[pinId]
+            = consistentExpf(wlCoeffY * (dPinY[pinId] - dNetUy[netId]));
+        dPinANegY[pinId]
+            = consistentExpf(-1.0 * wlCoeffY * (dPinY[pinId] - dNetLy[netId]));
+      });
+  Kokkos::parallel_for(
+      numPins, KOKKOS_LAMBDA(const int pinId) {
+        dPinAPosX_modifiable_b_[pinId] = dPinAPosX[pinId];
+        dPinANegX_modifiable_b_[pinId] = dPinANegX[pinId];
+        dPinAPosY_modifiable_b_[pinId] = dPinAPosY[pinId];
+        dPinANegY_modifiable_b_[pinId] = dPinANegY[pinId];
+      });
+  Kokkos::parallel_for(
+      numPins, KOKKOS_LAMBDA(const int pinId) {
+        dPinAPosX_modifiable_c_[pinId] = dPinAPosX[pinId];
+        dPinANegX_modifiable_c_[pinId] = dPinANegX[pinId];
+        dPinAPosY_modifiable_c_[pinId] = dPinAPosY[pinId];
+        dPinANegY_modifiable_c_[pinId] = dPinANegY[pinId];
+      });
 }
 
-
-
-
 void computeBCPosNegKernel(int numNets,
-                                      const Kokkos::View<const int*>& dNetPinPos,
-                                      const Kokkos::View<const int*>& dNetPinIdx,
-                                      const Kokkos::View<const int*>& dPinX,
-                                      const Kokkos::View<const int*>& dPinY,
-                                      const Kokkos::View<float*>& dPinAPosX_b,
-                                      const Kokkos::View<float*>& dPinANegX_b,
-                                      const Kokkos::View<float*>& dPinAPosY_b,
-                                      const Kokkos::View<float*>& dPinANegY_b,
-                                      const Kokkos::View<float*>& dPinAPosX_c,
-                                      const Kokkos::View<float*>& dPinANegX_c,
-                                      const Kokkos::View<float*>& dPinAPosY_c,
-                                      const Kokkos::View<float*>& dPinANegY_c,
-                                      const Kokkos::View<float*>& dNetBPosX,
-                                      const Kokkos::View<float*>& dNetBNegX,
-                                      const Kokkos::View<float*>& dNetBPosY,
-                                      const Kokkos::View<float*>& dNetBNegY,
-                                      const Kokkos::View<float*>& dNetCPosX,
-                                      const Kokkos::View<float*>& dNetCNegX,
-                                      const Kokkos::View<float*>& dNetCPosY,
-                                      const Kokkos::View<float*>& dNetCNegY)
+                           const Kokkos::View<const int*>& dNetPinPos,
+                           const Kokkos::View<const int*>& dNetPinIdx,
+                           const Kokkos::View<const int*>& dPinX,
+                           const Kokkos::View<const int*>& dPinY,
+                           const Kokkos::View<float*>& dPinAPosX_b,
+                           const Kokkos::View<float*>& dPinANegX_b,
+                           const Kokkos::View<float*>& dPinAPosY_b,
+                           const Kokkos::View<float*>& dPinANegY_b,
+                           const Kokkos::View<float*>& dPinAPosX_c,
+                           const Kokkos::View<float*>& dPinANegX_c,
+                           const Kokkos::View<float*>& dPinAPosY_c,
+                           const Kokkos::View<float*>& dPinANegY_c,
+                           const Kokkos::View<float*>& dNetBPosX,
+                           const Kokkos::View<float*>& dNetBNegX,
+                           const Kokkos::View<float*>& dNetBPosY,
+                           const Kokkos::View<float*>& dNetBNegY,
+                           const Kokkos::View<float*>& dNetCPosX,
+                           const Kokkos::View<float*>& dNetCNegX,
+                           const Kokkos::View<float*>& dNetCPosY,
+                           const Kokkos::View<float*>& dNetCNegY)
 {
   using team_policy = Kokkos::TeamPolicy<>;
   using team_member = typename team_policy::member_type;
-  auto tp = team_policy(numNets,Kokkos::AUTO);
+  auto tp = team_policy(numNets, Kokkos::AUTO);
 
-  Kokkos::parallel_for("ComputeBCPosNeg", tp, KOKKOS_LAMBDA(const team_member& team) {
-    const int netId = team.league_rank();
-    const int pinStart = dNetPinPos[netId];
-    const int pinEnd = dNetPinPos[netId + 1];
-    int size = pinEnd-pinStart;
+  Kokkos::parallel_for(
+      "ComputeBCPosNeg", tp, KOKKOS_LAMBDA(const team_member& team) {
+        const int netId = team.league_rank();
+        const int pinStart = dNetPinPos[netId];
+        const int pinEnd = dNetPinPos[netId + 1];
+        int size = pinEnd - pinStart;
 
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pinStart, pinEnd), KOKKOS_LAMBDA(const int pinId) {
-        const int pinIdx = dNetPinIdx[pinId];
-        dPinAPosX_c[pinIdx] = dPinX[pinIdx] * dPinAPosX_c[pinIdx];
-        dPinAPosY_c[pinIdx] = dPinY[pinIdx] * dPinAPosY_c[pinIdx];
-        dPinANegX_c[pinIdx] = dPinX[pinIdx] * dPinANegX_c[pinIdx];
-        dPinANegY_c[pinIdx] = dPinY[pinIdx] * dPinANegY_c[pinIdx];
-    });
-    team.team_barrier();
-    while (size > 1) {
-      if (size % 2) {
-        Kokkos::single(Kokkos::PerTeam(team), KOKKOS_LAMBDA {
-          const int pinIdx = dNetPinIdx[pinStart + size - 2];
-          const int halfpinIdx = dNetPinIdx[pinStart + size - 1];
-          dPinAPosX_b[pinIdx] += dPinAPosX_b[halfpinIdx];
-          dPinAPosY_b[pinIdx] += dPinAPosY_b[halfpinIdx];
-          dPinANegX_b[pinIdx] += dPinANegX_b[halfpinIdx];
-          dPinANegY_b[pinIdx] += dPinANegY_b[halfpinIdx];
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(team, pinStart, pinEnd),
+            KOKKOS_LAMBDA(const int pinId) {
+              const int pinIdx = dNetPinIdx[pinId];
+              dPinAPosX_c[pinIdx] = dPinX[pinIdx] * dPinAPosX_c[pinIdx];
+              dPinAPosY_c[pinIdx] = dPinY[pinIdx] * dPinAPosY_c[pinIdx];
+              dPinANegX_c[pinIdx] = dPinX[pinIdx] * dPinANegX_c[pinIdx];
+              dPinANegY_c[pinIdx] = dPinY[pinIdx] * dPinANegY_c[pinIdx];
+            });
+        team.team_barrier();
+        while (size > 1) {
+          if (size % 2) {
+            Kokkos::single(
+                Kokkos::PerTeam(team), KOKKOS_LAMBDA {
+                  const int pinIdx = dNetPinIdx[pinStart + size - 2];
+                  const int halfpinIdx = dNetPinIdx[pinStart + size - 1];
+                  dPinAPosX_b[pinIdx] += dPinAPosX_b[halfpinIdx];
+                  dPinAPosY_b[pinIdx] += dPinAPosY_b[halfpinIdx];
+                  dPinANegX_b[pinIdx] += dPinANegX_b[halfpinIdx];
+                  dPinANegY_b[pinIdx] += dPinANegY_b[halfpinIdx];
 
-          dPinAPosX_c[pinIdx] += dPinAPosX_c[halfpinIdx];
-          dPinAPosY_c[pinIdx] += dPinAPosY_c[halfpinIdx];
-          dPinANegX_c[pinIdx] += dPinANegX_c[halfpinIdx];
-          dPinANegY_c[pinIdx] += dPinANegY_c[halfpinIdx];
+                  dPinAPosX_c[pinIdx] += dPinAPosX_c[halfpinIdx];
+                  dPinAPosY_c[pinIdx] += dPinAPosY_c[halfpinIdx];
+                  dPinANegX_c[pinIdx] += dPinANegX_c[halfpinIdx];
+                  dPinANegY_c[pinIdx] += dPinANegY_c[halfpinIdx];
+                });
+          }
+          team.team_barrier();
+
+          int halfSize = size / 2;
+          Kokkos::parallel_for(
+              Kokkos::TeamThreadRange(team, halfSize),
+              KOKKOS_LAMBDA(const int i) {
+                const int pinIdx = dNetPinIdx[pinStart + i];
+                const int halfpinIdx = dNetPinIdx[pinStart + i + halfSize];
+
+                dPinAPosX_b[pinIdx] += dPinAPosX_b[halfpinIdx];
+                dPinAPosY_b[pinIdx] += dPinAPosY_b[halfpinIdx];
+                dPinANegX_b[pinIdx] += dPinANegX_b[halfpinIdx];
+                dPinANegY_b[pinIdx] += dPinANegY_b[halfpinIdx];
+
+                dPinAPosX_c[pinIdx] += dPinAPosX_c[halfpinIdx];
+                dPinAPosY_c[pinIdx] += dPinAPosY_c[halfpinIdx];
+                dPinANegX_c[pinIdx] += dPinANegX_c[halfpinIdx];
+                dPinANegY_c[pinIdx] += dPinANegY_c[halfpinIdx];
+              });
+          size = halfSize;
+          team.team_barrier();
+        }
+
+        Kokkos::single(Kokkos::PerTeam(team), [&]() {
+          dNetBPosX[netId] = dPinAPosX_b[dNetPinIdx[pinStart]];
+          dNetBNegX[netId] = dPinANegX_b[dNetPinIdx[pinStart]];
+          dNetBPosY[netId] = dPinAPosY_b[dNetPinIdx[pinStart]];
+          dNetBNegY[netId] = dPinANegY_b[dNetPinIdx[pinStart]];
+
+          dNetCPosX[netId] = dPinAPosX_c[dNetPinIdx[pinStart]];
+          dNetCNegX[netId] = dPinANegX_c[dNetPinIdx[pinStart]];
+          dNetCPosY[netId] = dPinAPosY_c[dNetPinIdx[pinStart]];
+          dNetCNegY[netId] = dPinANegY_c[dNetPinIdx[pinStart]];
         });
-      }
-      team.team_barrier();
-
-      int halfSize = size / 2;
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, halfSize), KOKKOS_LAMBDA(const int i) {
-        const int pinIdx = dNetPinIdx[pinStart + i];
-        const int halfpinIdx = dNetPinIdx[pinStart + i + halfSize];
-
-        dPinAPosX_b[pinIdx] += dPinAPosX_b[halfpinIdx];
-        dPinAPosY_b[pinIdx] += dPinAPosY_b[halfpinIdx];
-        dPinANegX_b[pinIdx] += dPinANegX_b[halfpinIdx];
-        dPinANegY_b[pinIdx] += dPinANegY_b[halfpinIdx];
-
-        dPinAPosX_c[pinIdx] += dPinAPosX_c[halfpinIdx];
-        dPinAPosY_c[pinIdx] += dPinAPosY_c[halfpinIdx];
-        dPinANegX_c[pinIdx] += dPinANegX_c[halfpinIdx];
-        dPinANegY_c[pinIdx] += dPinANegY_c[halfpinIdx];
-
       });
-      size = halfSize;
-      team.team_barrier();
-    }
-
-    Kokkos::single(Kokkos::PerTeam(team), [&]() {
-        dNetBPosX[netId] = dPinAPosX_b[dNetPinIdx[pinStart]];
-        dNetBNegX[netId] = dPinANegX_b[dNetPinIdx[pinStart]];
-        dNetBPosY[netId] = dPinAPosY_b[dNetPinIdx[pinStart]];
-        dNetBNegY[netId] = dPinANegY_b[dNetPinIdx[pinStart]];
-
-        dNetCPosX[netId] = dPinAPosX_c[dNetPinIdx[pinStart]];
-        dNetCNegX[netId] = dPinANegX_c[dNetPinIdx[pinStart]];
-        dNetCPosY[netId] = dPinAPosY_c[dNetPinIdx[pinStart]];
-        dNetCNegY[netId] = dPinANegY_c[dNetPinIdx[pinStart]];
-
-    });
-  });
 }
 
 void computePinWAGradKernel(const int numPins,
-                                       const float wlCoeffX,
-                                       const float wlCoeffY,
-                                       const Kokkos::View<const int*>& dPinNetId,
-                                       const Kokkos::View<const int*>& dNetPinPos,
-                                       const Kokkos::View<const int*>& dPinX,
-                                       const Kokkos::View<const int*>& dPinY,
-                                       const Kokkos::View<const float*>& dPinAPosX,
-                                       const Kokkos::View<const float*>& dPinANegX,
-                                       const Kokkos::View<const float*>& dPinAPosY,
-                                       const Kokkos::View<const float*>& dPinANegY,
-                                       const Kokkos::View<const float*>& dNetBPosX,
-                                       const Kokkos::View<const float*>& dNetBNegX,
-                                       const Kokkos::View<const float*>& dNetBPosY,
-                                       const Kokkos::View<const float*>& dNetBNegY,
-                                       const Kokkos::View<const float*>& dNetCPosX,
-                                       const Kokkos::View<const float*>& dNetCNegX,
-                                       const Kokkos::View<const float*>& dNetCPosY,
-                                       const Kokkos::View<const float*>& dNetCNegY,
-                                       const Kokkos::View<float*>& dPinGradX,
-                                       const Kokkos::View<float*>& dPinGradY)
+                            const float wlCoeffX,
+                            const float wlCoeffY,
+                            const Kokkos::View<const int*>& dPinNetId,
+                            const Kokkos::View<const int*>& dNetPinPos,
+                            const Kokkos::View<const int*>& dPinX,
+                            const Kokkos::View<const int*>& dPinY,
+                            const Kokkos::View<const float*>& dPinAPosX,
+                            const Kokkos::View<const float*>& dPinANegX,
+                            const Kokkos::View<const float*>& dPinAPosY,
+                            const Kokkos::View<const float*>& dPinANegY,
+                            const Kokkos::View<const float*>& dNetBPosX,
+                            const Kokkos::View<const float*>& dNetBNegX,
+                            const Kokkos::View<const float*>& dNetBPosY,
+                            const Kokkos::View<const float*>& dNetBNegY,
+                            const Kokkos::View<const float*>& dNetCPosX,
+                            const Kokkos::View<const float*>& dNetCNegX,
+                            const Kokkos::View<const float*>& dNetCPosY,
+                            const Kokkos::View<const float*>& dNetCNegY,
+                            const Kokkos::View<float*>& dPinGradX,
+                            const Kokkos::View<float*>& dPinGradY)
 {
+  Kokkos::parallel_for(
+      numPins, KOKKOS_LAMBDA(const int pinIdx) {
+        const int netId = dPinNetId[pinIdx];
 
-  Kokkos::parallel_for(numPins, KOKKOS_LAMBDA (const int pinIdx) {
-    const int netId = dPinNetId[pinIdx];
+        // TODO:  if we need to remove high-fanout nets,
+        // we can remove it here
 
-    // TODO:  if we need to remove high-fanout nets,
-    // we can remove it here
+        float netBNegX2 = dNetBNegX[netId] * dNetBNegX[netId];
+        float netBPosX2 = dNetBPosX[netId] * dNetBPosX[netId];
+        float netBNegY2 = dNetBNegY[netId] * dNetBNegY[netId];
+        float netBPosY2 = dNetBPosY[netId] * dNetBPosY[netId];
 
-    float netBNegX2 = dNetBNegX[netId] * dNetBNegX[netId];
-    float netBPosX2 = dNetBPosX[netId] * dNetBPosX[netId];
-    float netBNegY2 = dNetBNegY[netId] * dNetBNegY[netId];
-    float netBPosY2 = dNetBPosY[netId] * dNetBPosY[netId];
+        float pinXWlCoeffX = dPinX[pinIdx] * wlCoeffX;
+        float pinYWlCoeffY = dPinY[pinIdx] * wlCoeffY;
 
-    float pinXWlCoeffX = dPinX[pinIdx] * wlCoeffX;
-    float pinYWlCoeffY = dPinY[pinIdx] * wlCoeffY;
+        dPinGradX[pinIdx] = ((1.0f - pinXWlCoeffX) * dNetBNegX[netId]
+                             + wlCoeffX * dNetCNegX[netId])
+                                * dPinANegX[pinIdx] / netBNegX2
+                            - ((1.0f + pinXWlCoeffX) * dNetBPosX[netId]
+                               - wlCoeffX * dNetCPosX[netId])
+                                  * dPinAPosX[pinIdx] / netBPosX2;
 
-    dPinGradX[pinIdx] = ((1.0f - pinXWlCoeffX) * dNetBNegX[netId]
-                            + wlCoeffX * dNetCNegX[netId])
-                               * dPinANegX[pinIdx] / netBNegX2
-                           - ((1.0f + pinXWlCoeffX) * dNetBPosX[netId]
-                              - wlCoeffX * dNetCPosX[netId])
-                                 * dPinAPosX[pinIdx] / netBPosX2;
-
-    dPinGradY[pinIdx] = ((1.0f - pinYWlCoeffY) * dNetBNegY[netId]
-                            + wlCoeffY * dNetCNegY[netId])
-                               * dPinANegY[pinIdx] / netBNegY2
-                           - ((1.0f + pinYWlCoeffY) * dNetBPosY[netId]
-                              - wlCoeffY * dNetCPosY[netId])
-                                 * dPinAPosY[pinIdx] / netBPosY2;
-  });
+        dPinGradY[pinIdx] = ((1.0f - pinYWlCoeffY) * dNetBNegY[netId]
+                             + wlCoeffY * dNetCNegY[netId])
+                                * dPinANegY[pinIdx] / netBNegY2
+                            - ((1.0f + pinYWlCoeffY) * dNetBPosY[netId]
+                               - wlCoeffY * dNetCPosY[netId])
+                                  * dPinAPosY[pinIdx] / netBPosY2;
+      });
 }
 
 // define the kernel for updating wirelength force
@@ -555,112 +573,112 @@ void computeWirelengthGradientWAKernel(
     const Kokkos::View<float*>& wirelengthForceX,
     const Kokkos::View<float*>& wirelengthForceY)
 {
-  Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instId) {
-    const int pinStart = dInstPinPos[instId];
-    const int pinEnd = dInstPinPos[instId + 1];
-    float wlGradX = 0.0;
-    float wlGradY = 0.0;
-    for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
-      const int pinIdx = dInstPinIdx[pinId];
-      const int netId = dPinNetId[pinIdx];
-      const float weight = dNetWeight[netId]
-                           + dNetVirtualWeight[netId] * virtualWeightFactor;
-      wlGradX += dPinGradX[pinIdx] * weight;
-      wlGradY += dPinGradY[pinIdx] * weight;
-    }
+  Kokkos::parallel_for(
+      numPlaceInsts, KOKKOS_LAMBDA(const int instId) {
+        const int pinStart = dInstPinPos[instId];
+        const int pinEnd = dInstPinPos[instId + 1];
+        float wlGradX = 0.0;
+        float wlGradY = 0.0;
+        for (int pinId = pinStart; pinId < pinEnd; ++pinId) {
+          const int pinIdx = dInstPinIdx[pinId];
+          const int netId = dPinNetId[pinIdx];
+          const float weight = dNetWeight[netId]
+                               + dNetVirtualWeight[netId] * virtualWeightFactor;
+          wlGradX += dPinGradX[pinIdx] * weight;
+          wlGradY += dPinGradY[pinIdx] * weight;
+        }
 
-    wirelengthForceX[instId] = wlGradX;
-    wirelengthForceY[instId] = wlGradY;
-  });
+        wirelengthForceX[instId] = wlGradX;
+        wirelengthForceY[instId] = wlGradY;
+      });
 }
 
-void WirelengthOp::computeWireLengthForce(const float wlCoeffX,
-                                          const float wlCoeffY,
-                                          const float virtualWeightFactor,
-                                          const Kokkos::View<float*>& wirelengthForceX,
-                                          const Kokkos::View<float*>& wirelengthForceY)
+void WirelengthOp::computeWireLengthForce(
+    const float wlCoeffX,
+    const float wlCoeffY,
+    const float virtualWeightFactor,
+    const Kokkos::View<float*>& wirelengthForceX,
+    const Kokkos::View<float*>& wirelengthForceY)
 {
-
   computeAPosNegKernel(numPins_,
-                                                     wlCoeffX,
-                                                     wlCoeffY,
-                                                     dPinX_,
-                                                     dPinY_,
-                                                     dPinNetId_,
-                                                     dNetLx_,
-                                                     dNetLy_,
-                                                     dNetUx_,
-                                                     dNetUy_,
-                                                     dPinAPosX_,
-                                                     dPinANegX_,
-                                                     dPinAPosY_,
-                                                     dPinANegY_,
-                                                     dPinAPosX_modifiable_b_,
-                                                     dPinANegX_modifiable_b_,
-                                                     dPinAPosY_modifiable_b_,
-                                                     dPinANegY_modifiable_b_,
-                                                     dPinAPosX_modifiable_c_,
-                                                     dPinANegX_modifiable_c_,
-                                                     dPinAPosY_modifiable_c_,
-                                                     dPinANegY_modifiable_c_);
+                       wlCoeffX,
+                       wlCoeffY,
+                       dPinX_,
+                       dPinY_,
+                       dPinNetId_,
+                       dNetLx_,
+                       dNetLy_,
+                       dNetUx_,
+                       dNetUy_,
+                       dPinAPosX_,
+                       dPinANegX_,
+                       dPinAPosY_,
+                       dPinANegY_,
+                       dPinAPosX_modifiable_b_,
+                       dPinANegX_modifiable_b_,
+                       dPinAPosY_modifiable_b_,
+                       dPinANegY_modifiable_b_,
+                       dPinAPosX_modifiable_c_,
+                       dPinANegX_modifiable_c_,
+                       dPinAPosY_modifiable_c_,
+                       dPinANegY_modifiable_c_);
 
   computeBCPosNegKernel(numNets_,
-                                                      dNetPinPos_,
-                                                      dNetPinIdx_,
-                                                      dPinX_,
-                                                      dPinY_,
-                                                      dPinAPosX_modifiable_b_,
-                                                      dPinANegX_modifiable_b_,
-                                                      dPinAPosY_modifiable_b_,
-                                                      dPinANegY_modifiable_b_,
-                                                      dPinAPosX_modifiable_c_,
-                                                      dPinANegX_modifiable_c_,
-                                                      dPinAPosY_modifiable_c_,
-                                                      dPinANegY_modifiable_c_,
-                                                      dNetBPosX_,
-                                                      dNetBNegX_,
-                                                      dNetBPosY_,
-                                                      dNetBNegY_,
-                                                      dNetCPosX_,
-                                                      dNetCNegX_,
-                                                      dNetCPosY_,
-                                                      dNetCNegY_);
+                        dNetPinPos_,
+                        dNetPinIdx_,
+                        dPinX_,
+                        dPinY_,
+                        dPinAPosX_modifiable_b_,
+                        dPinANegX_modifiable_b_,
+                        dPinAPosY_modifiable_b_,
+                        dPinANegY_modifiable_b_,
+                        dPinAPosX_modifiable_c_,
+                        dPinANegX_modifiable_c_,
+                        dPinAPosY_modifiable_c_,
+                        dPinANegY_modifiable_c_,
+                        dNetBPosX_,
+                        dNetBNegX_,
+                        dNetBPosY_,
+                        dNetBNegY_,
+                        dNetCPosX_,
+                        dNetCNegX_,
+                        dNetCPosY_,
+                        dNetCNegY_);
 
   computePinWAGradKernel(numPins_,
-                                                       wlCoeffX,
-                                                       wlCoeffY,
-                                                       dPinNetId_,
-                                                       dNetPinPos_,
-                                                       dPinX_,
-                                                       dPinY_,
-                                                       dPinAPosX_,
-                                                       dPinANegX_,
-                                                       dPinAPosY_,
-                                                       dPinANegY_,
-                                                       dNetBPosX_,
-                                                       dNetBNegX_,
-                                                       dNetBPosY_,
-                                                       dNetBNegY_,
-                                                       dNetCPosX_,
-                                                       dNetCNegX_,
-                                                       dNetCPosY_,
-                                                       dNetCNegY_,
-                                                       dPinGradX_,
-                                                       dPinGradY_);
+                         wlCoeffX,
+                         wlCoeffY,
+                         dPinNetId_,
+                         dNetPinPos_,
+                         dPinX_,
+                         dPinY_,
+                         dPinAPosX_,
+                         dPinANegX_,
+                         dPinAPosY_,
+                         dPinANegY_,
+                         dNetBPosX_,
+                         dNetBNegX_,
+                         dNetBPosY_,
+                         dNetBNegY_,
+                         dNetCPosX_,
+                         dNetCNegX_,
+                         dNetCPosY_,
+                         dNetCNegY_,
+                         dPinGradX_,
+                         dPinGradY_);
 
   // get the force on each instance
-  computeWirelengthGradientWAKernel(
-      numPlaceInsts_,
-      virtualWeightFactor,
-      dPinNetId_,
-      dNetWeight_,
-      dNetVirtualWeight_,
-      dInstPinIdx_,
-      dInstPinPos_,
-      dPinGradX_,
-      dPinGradY_,
-      wirelengthForceX,
-      wirelengthForceY);
-  }
+  computeWirelengthGradientWAKernel(numPlaceInsts_,
+                                    virtualWeightFactor,
+                                    dPinNetId_,
+                                    dNetWeight_,
+                                    dNetVirtualWeight_,
+                                    dInstPinIdx_,
+                                    dInstPinPos_,
+                                    dPinGradX_,
+                                    dPinGradY_,
+                                    wirelengthForceX,
+                                    wirelengthForceY);
+}
 
 }  // namespace gpl2

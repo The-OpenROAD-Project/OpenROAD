@@ -108,7 +108,7 @@ proc dg_global_placement { args } {
   # flow control for initial_place
   if { [info exists flags(-skip_initial_place)] } {
     gpl2::dg_set_initial_place_max_iter_cmd 0
-  } elseif { [info exists keys(-initial_place_max_iter)] } { 
+  } elseif { [info exists keys(-initial_place_max_iter)] } {
     set initial_place_max_iter $keys(-initial_place_max_iter)
     sta::check_positive_integer "-initial_place_max_iter" $initial_place_max_iter
     gpl2::dg_set_initial_place_max_iter_cmd $initial_place_max_iter
@@ -138,7 +138,7 @@ proc dg_global_placement { args } {
 
     if { $skip_io } {
       utl::warn "GPL2" 150 "-skip_io will disable timing driven mode."
-      gpl2::dg_set_timing_driven_mode 0 
+      gpl2::dg_set_timing_driven_mode 0
     }
 
     if { [info exists keys(-timing_driven_net_reweight_overflow)] } {
@@ -160,7 +160,7 @@ proc dg_global_placement { args } {
     }
   }
 
-  if { [info exists flags(-disable_timing_driven)] } { 
+  if { [info exists flags(-disable_timing_driven)] } {
     utl::warn "GPL2" 115 "-disable_timing_driven is deprecated."
   }
 
@@ -169,39 +169,39 @@ proc dg_global_placement { args } {
   if { $routability_driven } {
     if { $skip_io } {
       utl::warn "GPL2" 151 "-skip_io will disable routability driven mode."
-      gpl2::dg_set_routability_driven_mode 0 
+      gpl2::dg_set_routability_driven_mode 0
     }
   }
   if { [info exists flags(-disable_routability_driven)] } {
     utl::warn "GPL2" 116 "-disable_routability_driven is deprecated."
   }
-  
-  if { [info exists keys(-initial_place_max_fanout)] } { 
+
+  if { [info exists keys(-initial_place_max_fanout)] } {
     set initial_place_max_fanout $keys(-initial_place_max_fanout)
     sta::check_positive_integer "-initial_place_max_fanout" $initial_place_max_fanout
     gpl2::dg_set_initial_place_max_fanout_cmd $initial_place_max_fanout
   }
-  
-  # density settings    
+
+  # density settings
   set target_density 0.7
   set uniform_mode 0
 
   if { [info exists keys(-density)] } {
-    set target_density $keys(-density) 
+    set target_density $keys(-density)
   }
 
   if { $target_density == "uniform" } {
     set uniform_mode 1
   } else {
     sta::check_positive_float "-density" $target_density
-    if {$target_density > 1.0} {
+    if { $target_density > 1.0 } {
       utl::error GPL2 135 "Target density must be in \[0, 1\]."
     }
     gpl2::dg_set_density_cmd $target_density
-  } 
-    
-  gpl2::dg_set_uniform_target_density_mode_cmd $uniform_mode 
-    
+  }
+
+  gpl2::dg_set_uniform_target_density_mode_cmd $uniform_mode
+
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
     sta::check_positive_float "-routability_max_density" $routability_max_density
@@ -209,16 +209,16 @@ proc dg_global_placement { args } {
   }
 
   # parameter to control the RePlAce divergence
-  if { [info exists keys(-min_phi_coef)] } { 
+  if { [info exists keys(-min_phi_coef)] } {
     set min_phi_coef $keys(-min_phi_coef)
     sta::check_positive_float "-min_phi_coef" $min_phi_coef
     gpl2::dg_set_min_phi_coef_cmd $min_phi_coef
-  } 
+  }
 
-  if { [info exists keys(-max_phi_coef)] } { 
+  if { [info exists keys(-max_phi_coef)] } {
     set max_phi_coef $keys(-max_phi_coef)
     sta::check_positive_float "-max_phi_coef" $max_phi_coef
-    gpl2::dg_set_max_phi_coef_cmd $max_phi_coef  
+    gpl2::dg_set_max_phi_coef_cmd $max_phi_coef
   }
 
   if { [info exists keys(-init_density_penalty)] } {
@@ -226,7 +226,7 @@ proc dg_global_placement { args } {
     sta::check_positive_float "-init_density_penalty" $density_penalty
     gpl2::dg_set_init_density_penalty_factor_cmd $density_penalty
   }
-  
+
   if { [info exists keys(-init_wirelength_coef)] } {
     set coef $keys(-init_wirelength_coef)
     sta::check_positive_float "-init_wirelength_coef" $coef
@@ -239,14 +239,14 @@ proc dg_global_placement { args } {
     gpl2::dg_set_reference_hpwl_cmd $reference_hpwl
   }
 
-  
+
   if { [info exists keys(-bin_grid_count)] } {
-    set bin_grid_count  $keys(-bin_grid_count)
+    set bin_grid_count $keys(-bin_grid_count)
     sta::check_positive_integer "-bin_grid_count" $bin_grid_count
     gpl2::dg_set_bin_grid_cnt_cmd $bin_grid_count $bin_grid_count
   }
- 
-  # overflow 
+
+  # overflow
   if { [info exists keys(-overflow)] } {
     set overflow $keys(-overflow)
     sta::check_positive_float "-overflow" $overflow
@@ -259,42 +259,42 @@ proc dg_global_placement { args } {
     sta::check_positive_float "-routability_check_overflow" $routability_check_overflow
     gpl2::dg_set_routability_check_overflow_cmd $routability_check_overflow
   }
-  
+
   # routability bloat iter
   if { [info exists keys(-routability_max_bloat_iter)] } {
     set routability_max_bloat_iter $keys(-routability_max_bloat_iter)
     sta::check_positive_float "-routability_max_bloat_iter" $routability_max_bloat_iter
     gpl2::dg_set_routability_max_bloat_iter_cmd $routability_max_bloat_iter
   }
-  
+
   # routability inflation iter
   if { [info exists keys(-routability_max_inflation_iter)] } {
     set routability_max_inflation_iter $keys(-routability_max_inflation_iter)
     sta::check_positive_float "-routability_max_inflation_iter" $routability_max_inflation_iter
     gpl2::dg_set_routability_max_inflation_iter_cmd $routability_max_inflation_iter
   }
-  
+
   # routability inflation iter
   if { [info exists keys(-routability_target_rc_metric)] } {
     set target_rc_metric $keys(-routability_target_rc_metric)
     sta::check_positive_float "-routability_target_rc_metric" $target_rc_metric
     gpl2::dg_set_routability_target_rc_metric_cmd $target_rc_metric
   }
-  
-  # routability inflation ratio coef 
+
+  # routability inflation ratio coef
   if { [info exists keys(-routability_inflation_ratio_coef)] } {
     set ratio_coef $keys(-routability_inflation_ratio_coef)
     sta::check_positive_float "-routability_inflation_ratio_coef" $ratio_coef
     gpl2::dg_set_routability_inflation_ratio_coef_cmd $ratio_coef
   }
-  
+
   # routability max inflation ratio
   if { [info exists keys(-routability_max_inflation_ratio)] } {
     set max_inflation_ratio $keys(-routability_max_inflation_ratio)
     sta::check_positive_float "-routability_max_inflation_ratio" $max_inflation_ratio
     gpl2::dg_set_routability_max_inflation_ratio_cmd $max_inflation_ratio
   }
-  
+
   # routability rc coefficients control
   if { [info exists keys(-routability_rc_coefficients)] } {
     set rc_coefficients $keys(-routability_rc_coefficients)
@@ -305,7 +305,7 @@ proc dg_global_placement { args } {
     gpl2::dg_set_routability_rc_coefficients_cmd $k1 $k2 $k3 $k4
   }
 
-  # temp code. 
+  # temp code.
   if { [info exists keys(-pad_left)] } {
     set pad_left $keys(-pad_left)
     sta::check_positive_integer "-pad_left" $pad_left
@@ -337,7 +337,7 @@ proc dg_global_placement { args } {
   if { [ord::db_has_rows] } {
     sta::check_argc_eq0 "global_placement" $args
 
-    # TODO:  Enable incremental placement 
+    # TODO:  Enable incremental placement
     if { [info exists flags(-incremental)] } {
       puts "Sorry, we do not support incremental placement yet."
     } else {

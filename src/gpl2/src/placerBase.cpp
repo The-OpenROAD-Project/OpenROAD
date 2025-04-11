@@ -37,9 +37,8 @@
 #include <odb/db.h>
 
 #include <Kokkos_Core.hpp>
-
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <numeric>
@@ -653,7 +652,8 @@ void PlacerBaseCommon::updateDBCluster()
 void PlacerBase::initBackend()
 {
   // calculate the information on the host side
-  Kokkos::View<int*, Kokkos::HostSpace> hPlaceInstIds("hPlaceInstIds", numPlaceInsts_);
+  Kokkos::View<int*, Kokkos::HostSpace> hPlaceInstIds("hPlaceInstIds",
+                                                      numPlaceInsts_);
   int instIdx = 0;
   for (auto& inst : placeInsts_) {
     hPlaceInstIds[instIdx] = inst->instId();
@@ -670,8 +670,10 @@ void PlacerBase::initBackend()
   Kokkos::View<int*, Kokkos::HostSpace> hInstDDy("hInstDDy", numInsts_);
   Kokkos::View<int*, Kokkos::HostSpace> hInstDCx("hInstDCx", numInsts_);
   Kokkos::View<int*, Kokkos::HostSpace> hInstDCy("hInstDCy", numInsts_);
-  Kokkos::View<float*, Kokkos::HostSpace> hWireLengthPrecondi("hWireLengthPrecondi", numInsts_);
-  Kokkos::View<float*, Kokkos::HostSpace> hDensityPrecondi("hDensityPrecondi", numInsts_);
+  Kokkos::View<float*, Kokkos::HostSpace> hWireLengthPrecondi(
+      "hWireLengthPrecondi", numInsts_);
+  Kokkos::View<float*, Kokkos::HostSpace> hDensityPrecondi("hDensityPrecondi",
+                                                           numInsts_);
 
   // calculate the information on the host side
   instIdx = 0;
@@ -704,24 +706,34 @@ void PlacerBase::initBackend()
   dDensityGradY_ = Kokkos::View<float*>("dDensityGradY", numInsts_);
 
   dCurSLPCoordi_ = Kokkos::View<FloatPoint*>("dCurSLPCoordi", numInsts_);
-  dCurSLPWireLengthGradX_ = Kokkos::View<float*>("dCurSLPWireLengthGradX", numInsts_);
-  dCurSLPWireLengthGradY_ = Kokkos::View<float*>("dCurSLPWireLengthGradY", numInsts_);
+  dCurSLPWireLengthGradX_
+      = Kokkos::View<float*>("dCurSLPWireLengthGradX", numInsts_);
+  dCurSLPWireLengthGradY_
+      = Kokkos::View<float*>("dCurSLPWireLengthGradY", numInsts_);
   dCurSLPDensityGradX_ = Kokkos::View<float*>("dCurSLPDensityGradX", numInsts_);
   dCurSLPDensityGradY_ = Kokkos::View<float*>("dCurSLPDensityGradY", numInsts_);
   dCurSLPSumGrads_ = Kokkos::View<FloatPoint*>("dCurSLPSumGrads", numInsts_);
 
   dPrevSLPCoordi_ = Kokkos::View<FloatPoint*>("dPrevSLPCoordi", numInsts_);
-  dPrevSLPWireLengthGradX_ = Kokkos::View<float*>("dPrevSLPWireLengthGradX", numInsts_);
-  dPrevSLPWireLengthGradY_ = Kokkos::View<float*>("dPrevSLPWireLengthGradY", numInsts_);
-  dPrevSLPDensityGradX_ = Kokkos::View<float*>("dPrevSLPDensityGradX", numInsts_);
-  dPrevSLPDensityGradY_ = Kokkos::View<float*>("dPrevSLPDensityGradY", numInsts_);
+  dPrevSLPWireLengthGradX_
+      = Kokkos::View<float*>("dPrevSLPWireLengthGradX", numInsts_);
+  dPrevSLPWireLengthGradY_
+      = Kokkos::View<float*>("dPrevSLPWireLengthGradY", numInsts_);
+  dPrevSLPDensityGradX_
+      = Kokkos::View<float*>("dPrevSLPDensityGradX", numInsts_);
+  dPrevSLPDensityGradY_
+      = Kokkos::View<float*>("dPrevSLPDensityGradY", numInsts_);
   dPrevSLPSumGrads_ = Kokkos::View<FloatPoint*>("dPrevSLPSumGrads", numInsts_);
 
   dNextSLPCoordi_ = Kokkos::View<FloatPoint*>("dNextSLPCoordi", numInsts_);
-  dNextSLPWireLengthGradX_ = Kokkos::View<float*>("dNextSLPWireLengthGradX", numInsts_);
-  dNextSLPWireLengthGradY_ = Kokkos::View<float*>("dNextSLPWireLengthGradY", numInsts_);
-  dNextSLPDensityGradX_ = Kokkos::View<float*>("dNextSLPDensityGradX", numInsts_);
-  dNextSLPDensityGradY_ = Kokkos::View<float*>("dNextSLPDensityGradY", numInsts_);
+  dNextSLPWireLengthGradX_
+      = Kokkos::View<float*>("dNextSLPWireLengthGradX", numInsts_);
+  dNextSLPWireLengthGradY_
+      = Kokkos::View<float*>("dNextSLPWireLengthGradY", numInsts_);
+  dNextSLPDensityGradX_
+      = Kokkos::View<float*>("dNextSLPDensityGradX", numInsts_);
+  dNextSLPDensityGradY_
+      = Kokkos::View<float*>("dNextSLPDensityGradY", numInsts_);
   dNextSLPSumGrads_ = Kokkos::View<FloatPoint*>("dNextSLPSumGrads", numInsts_);
 
   dCurCoordi_ = Kokkos::View<FloatPoint*>("dCurCoordi", numInsts_);
@@ -741,78 +753,80 @@ void PlacerBase::freeBackend()
 
 // Make sure the instances are within the region
 KOKKOS_FUNCTION float getDensityCoordiLayoutInside(int instWidth,
-                                              float cx,
-                                              int coreLx,
-                                              int coreUx)
+                                                   float cx,
+                                                   int coreLx,
+                                                   int coreUx)
 {
   float adjVal = cx;
-  if (cx - (float)instWidth / 2 < coreLx) {
-    adjVal = coreLx + (float)instWidth / 2;
+  if (cx - (float) instWidth / 2 < coreLx) {
+    adjVal = coreLx + (float) instWidth / 2;
   }
 
-  if (cx + (float)instWidth / 2 > coreUx) {
-    adjVal = coreUx - (float)instWidth / 2;
+  if (cx + (float) instWidth / 2 > coreUx) {
+    adjVal = coreUx - (float) instWidth / 2;
   }
 
   return adjVal;
 }
 
-void updateDensityCoordiLayoutInsideKernel(const int numInsts,
-                                                      const int coreLx,
-                                                      const int coreLy,
-                                                      const int coreUx,
-                                                      const int coreUy,
-                                                      const Kokkos::View<const int*>& instDDx,
-                                                      const Kokkos::View<const int*>& instDDy,
-                                                      const Kokkos::View<int*>& instDCx,
-                                                      const Kokkos::View<int*>& instDCy)
+void updateDensityCoordiLayoutInsideKernel(
+    const int numInsts,
+    const int coreLx,
+    const int coreLy,
+    const int coreUx,
+    const int coreUy,
+    const Kokkos::View<const int*>& instDDx,
+    const Kokkos::View<const int*>& instDDy,
+    const Kokkos::View<int*>& instDCx,
+    const Kokkos::View<int*>& instDCy)
 {
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
-    instDCx[instIdx] = getDensityCoordiLayoutInside(
-        instDDx[instIdx], instDCx[instIdx], coreLx, coreUx);
-    instDCy[instIdx] = getDensityCoordiLayoutInside(
-        instDDy[instIdx], instDCy[instIdx], coreLy, coreUy);
-  });
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int instIdx) {
+        instDCx[instIdx] = getDensityCoordiLayoutInside(
+            instDDx[instIdx], instDCx[instIdx], coreLx, coreUx);
+        instDCy[instIdx] = getDensityCoordiLayoutInside(
+            instDDy[instIdx], instDCy[instIdx], coreLy, coreUy);
+      });
 }
 
 void initDensityCoordiKernel(int numInsts,
-                                        const Kokkos::View<const int*>& instDCx,
-                                        const Kokkos::View<const int*>& instDCy,
-                                        const Kokkos::View<FloatPoint*>& dCurCoordi,
-                                        const Kokkos::View<FloatPoint*>& dCurSLPCoordi,
-                                        const Kokkos::View<FloatPoint*>& dPrevSLPCoordi)
+                             const Kokkos::View<const int*>& instDCx,
+                             const Kokkos::View<const int*>& instDCy,
+                             const Kokkos::View<FloatPoint*>& dCurCoordi,
+                             const Kokkos::View<FloatPoint*>& dCurSLPCoordi,
+                             const Kokkos::View<FloatPoint*>& dPrevSLPCoordi)
 {
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
-    const FloatPoint loc(instDCx[instIdx], instDCy[instIdx]);
-    dCurCoordi[instIdx] = loc;
-    dCurSLPCoordi[instIdx] = loc;
-    dPrevSLPCoordi[instIdx] = loc;
-  });
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int instIdx) {
+        const FloatPoint loc(instDCx[instIdx], instDCy[instIdx]);
+        dCurCoordi[instIdx] = loc;
+        dCurSLPCoordi[instIdx] = loc;
+        dPrevSLPCoordi[instIdx] = loc;
+      });
 }
 
 void PlacerBase::initDensity1()
 {
   // update density coordinate for each instance
-  updateDensityCoordiLayoutInsideKernel(
-      numInsts_,
-      bg_.lx(),
-      bg_.ly(),
-      bg_.ux(),
-      bg_.uy(),
-      dInstDDx_,
-      dInstDDy_,
-      dInstDCx_,
-      dInstDCy_);
+  updateDensityCoordiLayoutInsideKernel(numInsts_,
+                                        bg_.lx(),
+                                        bg_.ly(),
+                                        bg_.ux(),
+                                        bg_.uy(),
+                                        dInstDDx_,
+                                        dInstDDy_,
+                                        dInstDCx_,
+                                        dInstDCy_);
 
   // initialize the dCurSLPCoordi_, dPrevSLPCoordi_
   // and dCurCoordi_
 
   initDensityCoordiKernel(numInsts_,
-                                                     dInstDCx_,
-                                                     dInstDCy_,
-                                                     dCurCoordi_,
-                                                     dCurSLPCoordi_,
-                                                     dPrevSLPCoordi_);
+                          dInstDCx_,
+                          dInstDCy_,
+                          dCurCoordi_,
+                          dCurSLPCoordi_,
+                          dPrevSLPCoordi_);
 
   // We need to sync up bewteen pb and pbCommon
   updateGCellDensityCenterLocation(dCurSLPCoordi_);
@@ -839,21 +853,23 @@ void PlacerBase::initDensity1()
 // (a)  // (a) define the get distance method
 // getDistance is only defined on the host side
 HOST_FUNCTION float getDistance(const Kokkos::View<const FloatPoint*>& a,
-                           const Kokkos::View<const FloatPoint*>& b,
-                           const int numInsts)
+                                const Kokkos::View<const FloatPoint*>& b,
+                                const int numInsts)
 {
   if (numInsts <= 0) {
     return 0.0;
   }
 
-  auto aPlusbDistance  = Kokkos::View<float*, Kokkos::DefaultExecutionSpace>("aPlusbDistance", numInsts);
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int i) {
-    const FloatPoint& aPoint = a[i];
-    const FloatPoint& bPoint = b[i];
-    auto aDistance = (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
-    auto bDistance = (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
-    aPlusbDistance[i] = aDistance + bDistance;
-  });
+  auto aPlusbDistance = Kokkos::View<float*, Kokkos::DefaultExecutionSpace>(
+      "aPlusbDistance", numInsts);
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int i) {
+        const FloatPoint& aPoint = a[i];
+        const FloatPoint& bPoint = b[i];
+        auto aDistance = (aPoint.x - bPoint.x) * (aPoint.x - bPoint.x);
+        auto bDistance = (aPoint.y - bPoint.y) * (aPoint.y - bPoint.y);
+        aPlusbDistance[i] = aDistance + bDistance;
+      });
 
   float sumDistance = sumFloats(aPlusbDistance, numInsts);
   return std::sqrt(sumDistance / (2.0 * numInsts));
@@ -868,10 +884,11 @@ struct myAbs
   }
 };
 
-float PlacerBase::getStepLength(const Kokkos::View<const FloatPoint*>& prevSLPCoordi,
-                                const Kokkos::View<const FloatPoint*>& prevSLPSumGrads,
-                                const Kokkos::View<const FloatPoint*>& curSLPCoordi,
-                                const Kokkos::View<const FloatPoint*>& curSLPSumGrads) const
+float PlacerBase::getStepLength(
+    const Kokkos::View<const FloatPoint*>& prevSLPCoordi,
+    const Kokkos::View<const FloatPoint*>& prevSLPSumGrads,
+    const Kokkos::View<const FloatPoint*>& curSLPCoordi,
+    const Kokkos::View<const FloatPoint*>& curSLPSumGrads) const
 {
   float coordiDistance = getDistance(prevSLPCoordi, curSLPCoordi, numInsts_);
   float gradDistance = getDistance(prevSLPSumGrads, curSLPSumGrads, numInsts_);
@@ -898,46 +915,45 @@ float PlacerBase::initDensity2()
   sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
                          / static_cast<float>(nesterovInstsArea());
 
-  stepLength_ = getStepLength(dPrevSLPCoordi_,
-                              dPrevSLPSumGrads_,
-                              dCurSLPCoordi_,
-                              dCurSLPSumGrads_);
+  stepLength_ = getStepLength(
+      dPrevSLPCoordi_, dPrevSLPSumGrads_, dCurSLPCoordi_, dCurSLPSumGrads_);
 
   return stepLength_;
 }
 
 void sumGradientKernel(const int numInsts,
-                                  const float densityPenalty,
-                                  const float minPrecondi,
-                                  const Kokkos::View<const float*>& wireLengthPrecondi,
-                                  const Kokkos::View<const float*>& densityPrecondi,
-                                  const Kokkos::View<const float*>& wireLengthGradientsX,
-                                  const Kokkos::View<const float*>& wireLengthGradientsY,
-                                  const Kokkos::View<const float*>& densityGradientsX,
-                                  const Kokkos::View<const float*>& densityGradientsY,
-                                  const Kokkos::View<FloatPoint*>& sumGrads)
+                       const float densityPenalty,
+                       const float minPrecondi,
+                       const Kokkos::View<const float*>& wireLengthPrecondi,
+                       const Kokkos::View<const float*>& densityPrecondi,
+                       const Kokkos::View<const float*>& wireLengthGradientsX,
+                       const Kokkos::View<const float*>& wireLengthGradientsY,
+                       const Kokkos::View<const float*>& densityGradientsX,
+                       const Kokkos::View<const float*>& densityGradientsY,
+                       const Kokkos::View<FloatPoint*>& sumGrads)
 {
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
-    sumGrads[instIdx].x = wireLengthGradientsX[instIdx]
-                          + densityPenalty * densityGradientsX[instIdx];
-    sumGrads[instIdx].y = wireLengthGradientsY[instIdx]
-                          + densityPenalty * densityGradientsY[instIdx];
-    FloatPoint sumPrecondi(
-        wireLengthPrecondi[instIdx] + densityPenalty * densityPrecondi[instIdx],
-        wireLengthPrecondi[instIdx]
-            + densityPenalty * densityPrecondi[instIdx]);
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int instIdx) {
+        sumGrads[instIdx].x = wireLengthGradientsX[instIdx]
+                              + densityPenalty * densityGradientsX[instIdx];
+        sumGrads[instIdx].y = wireLengthGradientsY[instIdx]
+                              + densityPenalty * densityGradientsY[instIdx];
+        FloatPoint sumPrecondi(wireLengthPrecondi[instIdx]
+                                   + densityPenalty * densityPrecondi[instIdx],
+                               wireLengthPrecondi[instIdx]
+                                   + densityPenalty * densityPrecondi[instIdx]);
 
-    if (sumPrecondi.x < minPrecondi) {
-      sumPrecondi.x = minPrecondi;
-    }
+        if (sumPrecondi.x < minPrecondi) {
+          sumPrecondi.x = minPrecondi;
+        }
 
-    if (sumPrecondi.y < minPrecondi) {
-      sumPrecondi.y = minPrecondi;
-    }
+        if (sumPrecondi.y < minPrecondi) {
+          sumPrecondi.y = minPrecondi;
+        }
 
-    sumGrads[instIdx].x /= sumPrecondi.x;
-    sumGrads[instIdx].y /= sumPrecondi.y;
-  });
+        sumGrads[instIdx].x /= sumPrecondi.x;
+        sumGrads[instIdx].y /= sumPrecondi.y;
+      });
 }
 
 void PlacerBase::updatePrevGradient()
@@ -967,11 +983,12 @@ void PlacerBase::updateNextGradient()
                   dNextSLPSumGrads_);
 }
 
-void PlacerBase::updateGradients(const Kokkos::View<float*>& wireLengthGradientsX,
-                                 const Kokkos::View<float*>& wireLengthGradientsY,
-                                 const Kokkos::View<float*>& densityGradientsX,
-                                 const Kokkos::View<float*>& densityGradientsY,
-                                 const Kokkos::View<FloatPoint*>& sumGrads)
+void PlacerBase::updateGradients(
+    const Kokkos::View<float*>& wireLengthGradientsX,
+    const Kokkos::View<float*>& wireLengthGradientsY,
+    const Kokkos::View<float*>& densityGradientsX,
+    const Kokkos::View<float*>& densityGradientsY,
+    const Kokkos::View<FloatPoint*>& sumGrads)
 {
   if (isConverged_) {
     return;
@@ -981,25 +998,28 @@ void PlacerBase::updateGradients(const Kokkos::View<float*>& wireLengthGradients
   densityGradSum_ = 0;
 
   // get the forces on each instance
-  Kokkos::View<float*> wireLengthGradAbsXPlusY("wireLengthGradAbsXPlusY", numInsts_);
+  Kokkos::View<float*> wireLengthGradAbsXPlusY("wireLengthGradAbsXPlusY",
+                                               numInsts_);
   Kokkos::View<float*> densityGradAbsXPlusY("densityGradAbsXPlusY", numInsts_);
 
-  getWireLengthGradientWA(wireLengthGradientsX, wireLengthGradientsY, wireLengthGradAbsXPlusY);
-  getDensityGradient(densityGradientsX, densityGradientsY, densityGradAbsXPlusY);
+  getWireLengthGradientWA(
+      wireLengthGradientsX, wireLengthGradientsY, wireLengthGradAbsXPlusY);
+  getDensityGradient(
+      densityGradientsX, densityGradientsY, densityGradAbsXPlusY);
 
   wireLengthGradSum_ += sumFloatsAccurate(wireLengthGradAbsXPlusY, numInsts_);
   densityGradSum_ += sumFloatsAccurate(densityGradAbsXPlusY, numInsts_);
 
   sumGradientKernel(numInsts_,
-                                               densityPenalty_,
-                                               npVars_.minPreconditioner,
-                                               dWireLengthPrecondi_,
-                                               dDensityPrecondi_,
-                                               wireLengthGradientsX,
-                                               wireLengthGradientsY,
-                                               densityGradientsX,
-                                               densityGradientsY,
-                                               sumGrads);
+                    densityPenalty_,
+                    npVars_.minPreconditioner,
+                    dWireLengthPrecondi_,
+                    dDensityPrecondi_,
+                    wireLengthGradientsX,
+                    wireLengthGradientsY,
+                    densityGradientsX,
+                    densityGradientsY,
+                    sumGrads);
 }
 
 // sync up the instances location based on the corrodinates
@@ -1009,79 +1029,84 @@ void updateGCellDensityCenterLocationKernel(
     const Kokkos::View<int*>& instDCx,
     const Kokkos::View<int*>& instDCy)
 {
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
-    instDCx[instIdx] = coordis[instIdx].x;
-    instDCy[instIdx] = coordis[instIdx].y;
-  });
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int instIdx) {
+        instDCx[instIdx] = coordis[instIdx].x;
+        instDCy[instIdx] = coordis[instIdx].y;
+      });
 }
 
 // sync up the instances between pbCommon and current pb
 void syncPlaceInstsCommonKernel(const int numPlaceInsts,
-                                           const Kokkos::View<const int*>& placeInstIds,
-                                           const Kokkos::View<const int*>& placeInstDCx,
-                                           const Kokkos::View<const int*>& placeInstDCy,
-                                           const Kokkos::View<int*>& instDCxCommon,
-                                           const Kokkos::View<int*>& instDCyCommon)
+                                const Kokkos::View<const int*>& placeInstIds,
+                                const Kokkos::View<const int*>& placeInstDCx,
+                                const Kokkos::View<const int*>& placeInstDCy,
+                                const Kokkos::View<int*>& instDCxCommon,
+                                const Kokkos::View<int*>& instDCyCommon)
 {
-  Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instIdx) {
-
-    int instId = placeInstIds[instIdx];
-    instDCxCommon[instId] = placeInstDCx[instIdx];
-    instDCyCommon[instId] = placeInstDCy[instIdx];
-  });
+  Kokkos::parallel_for(
+      numPlaceInsts, KOKKOS_LAMBDA(const int instIdx) {
+        int instId = placeInstIds[instIdx];
+        instDCxCommon[instId] = placeInstDCx[instIdx];
+        instDCyCommon[instId] = placeInstDCy[instIdx];
+      });
 }
-void PlacerBase::updateGCellDensityCenterLocation(const Kokkos::View<const FloatPoint*>& coordis)
+void PlacerBase::updateGCellDensityCenterLocation(
+    const Kokkos::View<const FloatPoint*>& coordis)
 {
   updateGCellDensityCenterLocationKernel(
       numInsts_, coordis, dInstDCx_, dInstDCy_);
 
-  syncPlaceInstsCommonKernel(
-      numPlaceInsts_,
-      dPlaceInstIds_,
-      dInstDCx_,
-      dInstDCy_,
-      pbCommon_->dInstDCx(),
-      pbCommon_->dInstDCy());
+  syncPlaceInstsCommonKernel(numPlaceInsts_,
+                             dPlaceInstIds_,
+                             dInstDCx_,
+                             dInstDCy_,
+                             pbCommon_->dInstDCx(),
+                             pbCommon_->dInstDCy());
 
   densityOp_->updateGCellLocation(dInstDCx_, dInstDCy_);
 }
 
-void getWireLengthGradientWAKernel(const int numPlaceInsts,
-                                              const Kokkos::View<const int*>& dPlaceInstIds,
-                                              const Kokkos::View<const float*>& dWLGradXCommon,
-                                              const Kokkos::View<const float*>& dWLGradYCommon,
-                                              const Kokkos::View<float*>& dWireLengthGradX,
-                                              const Kokkos::View<float*>& dWireLengthGradY,
-                                              const Kokkos::View<float*>& dWireLengthGradAbsXPlusY)
+void getWireLengthGradientWAKernel(
+    const int numPlaceInsts,
+    const Kokkos::View<const int*>& dPlaceInstIds,
+    const Kokkos::View<const float*>& dWLGradXCommon,
+    const Kokkos::View<const float*>& dWLGradYCommon,
+    const Kokkos::View<float*>& dWireLengthGradX,
+    const Kokkos::View<float*>& dWireLengthGradY,
+    const Kokkos::View<float*>& dWireLengthGradAbsXPlusY)
 {
-  Kokkos::parallel_for(numPlaceInsts, KOKKOS_LAMBDA (const int instIdx) {
-    int instId = dPlaceInstIds[instIdx];
-    dWireLengthGradX[instIdx] = dWLGradXCommon[instId];
-    dWireLengthGradY[instIdx] = dWLGradYCommon[instId];
-    dWireLengthGradAbsXPlusY[instIdx] = fabsf(dWLGradXCommon[instId]) + fabsf(dWLGradYCommon[instId]);
-  });
+  Kokkos::parallel_for(
+      numPlaceInsts, KOKKOS_LAMBDA(const int instIdx) {
+        int instId = dPlaceInstIds[instIdx];
+        dWireLengthGradX[instIdx] = dWLGradXCommon[instId];
+        dWireLengthGradY[instIdx] = dWLGradYCommon[instId];
+        dWireLengthGradAbsXPlusY[instIdx]
+            = fabsf(dWLGradXCommon[instId]) + fabsf(dWLGradYCommon[instId]);
+      });
 }
 
-void PlacerBase::getWireLengthGradientWA(const Kokkos::View<float*>& wireLengthGradientsX,
-                                         const Kokkos::View<float*>& wireLengthGradientsY,
-                                         const Kokkos::View<float*>& wireLengthGradAbsXPlusY)
+void PlacerBase::getWireLengthGradientWA(
+    const Kokkos::View<float*>& wireLengthGradientsX,
+    const Kokkos::View<float*>& wireLengthGradientsY,
+    const Kokkos::View<float*>& wireLengthGradAbsXPlusY)
 {
-  getWireLengthGradientWAKernel(
-      numPlaceInsts_,
-      dPlaceInstIds_,
-      pbCommon_->dWLGradX(),
-      pbCommon_->dWLGradY(),
-      wireLengthGradientsX,
-      wireLengthGradientsY,
-      wireLengthGradAbsXPlusY
-      );
+  getWireLengthGradientWAKernel(numPlaceInsts_,
+                                dPlaceInstIds_,
+                                pbCommon_->dWLGradX(),
+                                pbCommon_->dWLGradY(),
+                                wireLengthGradientsX,
+                                wireLengthGradientsY,
+                                wireLengthGradAbsXPlusY);
 }
 
-void PlacerBase::getDensityGradient(const Kokkos::View<float*>& densityGradientsX,
-                                    const Kokkos::View<float*>& densityGradientsY,
-                                    const Kokkos::View<float*>& densityGradAbsXPlusY)
+void PlacerBase::getDensityGradient(
+    const Kokkos::View<float*>& densityGradientsX,
+    const Kokkos::View<float*>& densityGradientsY,
+    const Kokkos::View<float*>& densityGradAbsXPlusY)
 {
-  densityOp_->getDensityGradient(densityGradientsX, densityGradientsY, densityGradAbsXPlusY);
+  densityOp_->getDensityGradient(
+      densityGradientsX, densityGradientsY, densityGradAbsXPlusY);
 }
 
 // calculate the next state based on current state
@@ -1101,28 +1126,29 @@ void nesterovUpdateCooridnatesKernel(
     const Kokkos::View<FloatPoint*>& nextCoordiPtr,
     const Kokkos::View<FloatPoint*>& nextSLPCoordiPtr)
 {
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
-    FloatPoint nextCoordi(
-        curSLPCoordi[instIdx].x + stepLength * curSLPSumGrads[instIdx].x,
-        curSLPCoordi[instIdx].y + stepLength * curSLPSumGrads[instIdx].y);
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int instIdx) {
+        FloatPoint nextCoordi(
+            curSLPCoordi[instIdx].x + stepLength * curSLPSumGrads[instIdx].x,
+            curSLPCoordi[instIdx].y + stepLength * curSLPSumGrads[instIdx].y);
 
-    FloatPoint nextSLPCoordi(
-        nextCoordi.x + coeff * (nextCoordi.x - curCoordi[instIdx].x),
-        nextCoordi.y + coeff * (nextCoordi.y - curCoordi[instIdx].y));
+        FloatPoint nextSLPCoordi(
+            nextCoordi.x + coeff * (nextCoordi.x - curCoordi[instIdx].x),
+            nextCoordi.y + coeff * (nextCoordi.y - curCoordi[instIdx].y));
 
-    // check the boundary
-    nextCoordiPtr[instIdx]
-        = FloatPoint(getDensityCoordiLayoutInside(
-                         instDDx[instIdx], nextCoordi.x, coreLx, coreUx),
-                     getDensityCoordiLayoutInside(
-                         instDDy[instIdx], nextCoordi.y, coreLy, coreUy));
+        // check the boundary
+        nextCoordiPtr[instIdx]
+            = FloatPoint(getDensityCoordiLayoutInside(
+                             instDDx[instIdx], nextCoordi.x, coreLx, coreUx),
+                         getDensityCoordiLayoutInside(
+                             instDDy[instIdx], nextCoordi.y, coreLy, coreUy));
 
-    nextSLPCoordiPtr[instIdx]
-        = FloatPoint(getDensityCoordiLayoutInside(
-                         instDDx[instIdx], nextSLPCoordi.x, coreLx, coreUx),
-                     getDensityCoordiLayoutInside(
-                         instDDy[instIdx], nextSLPCoordi.y, coreLy, coreUy));
-  });
+        nextSLPCoordiPtr[instIdx] = FloatPoint(
+            getDensityCoordiLayoutInside(
+                instDDx[instIdx], nextSLPCoordi.x, coreLx, coreUx),
+            getDensityCoordiLayoutInside(
+                instDDy[instIdx], nextSLPCoordi.y, coreLy, coreUy));
+      });
 }
 
 void PlacerBase::nesterovUpdateCoordinates(float coeff)
@@ -1131,21 +1157,20 @@ void PlacerBase::nesterovUpdateCoordinates(float coeff)
     return;
   }
 
-  nesterovUpdateCooridnatesKernel(
-      numInsts_,
-      bg_.lx(),
-      bg_.ly(),
-      bg_.ux(),
-      bg_.uy(),
-      stepLength_,
-      coeff,
-      dInstDDx_,
-      dInstDDy_,
-      dCurCoordi_,
-      dCurSLPCoordi_,
-      dCurSLPSumGrads_,
-      dNextCoordi_,
-      dNextSLPCoordi_);
+  nesterovUpdateCooridnatesKernel(numInsts_,
+                                  bg_.lx(),
+                                  bg_.ly(),
+                                  bg_.ux(),
+                                  bg_.uy(),
+                                  stepLength_,
+                                  coeff,
+                                  dInstDDx_,
+                                  dInstDDy_,
+                                  dCurCoordi_,
+                                  dCurSLPCoordi_,
+                                  dCurSLPSumGrads_,
+                                  dNextCoordi_,
+                                  dNextSLPCoordi_);
 
   // update density
   updateGCellDensityCenterLocation(dNextSLPCoordi_);
@@ -1165,36 +1190,36 @@ void updateInitialPrevSLPCoordiKernel(
     const Kokkos::View<const FloatPoint*>& dCurSLPSumGrads,
     const Kokkos::View<FloatPoint*>& dPrevSLPCoordi)
 {
-  Kokkos::parallel_for(numInsts, KOKKOS_LAMBDA (const int instIdx) {
-    const float preCoordiX
-        = dCurSLPCoordi[instIdx].x
-          - initialPrevCoordiUpdateCoef * dCurSLPSumGrads[instIdx].x;
-    const float preCoordiY
-        = dCurSLPCoordi[instIdx].y
-          - initialPrevCoordiUpdateCoef * dCurSLPSumGrads[instIdx].y;
-    const FloatPoint newCoordi(
-        getDensityCoordiLayoutInside(
-            instDDx[instIdx], preCoordiX, coreLx, coreUx),
-        getDensityCoordiLayoutInside(
-            instDDy[instIdx], preCoordiY, coreLy, coreUy));
-    dPrevSLPCoordi[instIdx] = newCoordi;
-  });
+  Kokkos::parallel_for(
+      numInsts, KOKKOS_LAMBDA(const int instIdx) {
+        const float preCoordiX
+            = dCurSLPCoordi[instIdx].x
+              - initialPrevCoordiUpdateCoef * dCurSLPSumGrads[instIdx].x;
+        const float preCoordiY
+            = dCurSLPCoordi[instIdx].y
+              - initialPrevCoordiUpdateCoef * dCurSLPSumGrads[instIdx].y;
+        const FloatPoint newCoordi(
+            getDensityCoordiLayoutInside(
+                instDDx[instIdx], preCoordiX, coreLx, coreUx),
+            getDensityCoordiLayoutInside(
+                instDDy[instIdx], preCoordiY, coreLy, coreUy));
+        dPrevSLPCoordi[instIdx] = newCoordi;
+      });
 }
 
 void PlacerBase::updateInitialPrevSLPCoordi()
 {
-  updateInitialPrevSLPCoordiKernel(
-      numInsts_,
-      bg_.lx(),
-      bg_.ly(),
-      bg_.ux(),
-      bg_.uy(),
-      dInstDDx_,
-      dInstDDy_,
-      npVars_.initialPrevCoordiUpdateCoef,
-      dCurSLPCoordi_,
-      dCurSLPSumGrads_,
-      dPrevSLPCoordi_);
+  updateInitialPrevSLPCoordiKernel(numInsts_,
+                                   bg_.lx(),
+                                   bg_.ly(),
+                                   bg_.ux(),
+                                   bg_.uy(),
+                                   dInstDDx_,
+                                   dInstDDy_,
+                                   npVars_.initialPrevCoordiUpdateCoef,
+                                   dCurSLPCoordi_,
+                                   dCurSLPSumGrads_,
+                                   dPrevSLPCoordi_);
 }
 
 void splitString(std::string& inputString)
@@ -2405,7 +2430,9 @@ void PlacerBaseCommon::printInfo() const
 
 int64_t PlacerBaseCommon::hpwl() const
 {
-  return wlGradOp_ == nullptr ? 0 : wlGradOp_->computeWeightedHPWL(virtualWeightFactor_);
+  return wlGradOp_ == nullptr
+             ? 0
+             : wlGradOp_->computeWeightedHPWL(virtualWeightFactor_);
 }
 
 void PlacerBaseCommon::updatePinLocation()
@@ -2848,10 +2875,8 @@ bool PlacerBase::nesterovUpdateStepLength()
     return true;
   }
 
-  float newStepLength = getStepLength(dCurSLPCoordi_,
-                                      dCurSLPSumGrads_,
-                                      dNextSLPCoordi_,
-                                      dNextSLPSumGrads_);
+  float newStepLength = getStepLength(
+      dCurSLPCoordi_, dCurSLPSumGrads_, dNextSLPCoordi_, dNextSLPSumGrads_);
 
   if (Kokkos::isnan(newStepLength) || Kokkos::isinf(newStepLength)) {
     isDiverged_ = true;
@@ -3145,8 +3170,10 @@ static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron)
 {
-  int rectLx = std::max(bin->lx(), inst->lx()), rectLy = std::max(bin->ly(), inst->ly()),
-      rectUx = std::min(bin->ux(), inst->ux()), rectUy = std::min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()),
+      rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()),
+      rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;

@@ -65,7 +65,8 @@ class PoissonSolver
                     Kokkos::View<float*> electroForceY);
 
   // Compute Potential Only (not Electric Force) the row-major order
-  void solvePoissonPotential(Kokkos::View<float*> binDensity, Kokkos::View<float*> potential);
+  void solvePoissonPotential(Kokkos::View<float*> binDensity,
+                             Kokkos::View<float*> potential);
 
   // device memory management
   void initBackend();

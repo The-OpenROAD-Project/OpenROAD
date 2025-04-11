@@ -37,6 +37,7 @@
 #include <tcl.h>
 
 #include <Kokkos_Core.hpp>
+
 #include "gpl2/DgReplace.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
@@ -62,10 +63,10 @@ void initDgReplace(OpenRoad* openroad)
   Gpl2_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::gpl2_tcl_inits);
   openroad->getDgReplace()->init(openroad->getDbNetwork(),
-                                  openroad->getDb(),
-                                  openroad->getResizer(),
-                                  openroad->getGlobalRouter(),
-                                  openroad->getLogger());
+                                 openroad->getDb(),
+                                 openroad->getResizer(),
+                                 openroad->getGlobalRouter(),
+                                 openroad->getLogger());
 }
 
 void deleteDgReplace(gpl2::DgReplace* replace)

@@ -34,11 +34,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "timingBase.h"
+
 #include <algorithm>
 #include <cmath>
 #include <utility>
 
-#include "timingBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
@@ -54,8 +55,8 @@ TimingBase::TimingBase() : rs_(nullptr), log_(nullptr), nbc_(nullptr)
 }
 
 TimingBase::TimingBase(const std::shared_ptr<PlacerBaseCommon>& nbc,
-                             rsz::Resizer* rs,
-                             utl::Logger* log)
+                       rsz::Resizer* rs,
+                       utl::Logger* log)
     : TimingBase()
 {
   rs_ = rs;

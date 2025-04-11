@@ -43,16 +43,15 @@
 
 #include "initialPlace.h"
 
+#include <Eigen/IterativeLinearSolvers>
+#include <Eigen/SparseCore>
 #include <chrono>
+#include <memory>
 #include <thread>
 #include <utility>
 
 #include "placerBase.h"
 #include "utl/Logger.h"
-
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/SparseCore>
-#include <memory>
 
 namespace gpl2 {
 

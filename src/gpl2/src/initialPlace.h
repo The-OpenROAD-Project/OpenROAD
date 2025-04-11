@@ -42,11 +42,11 @@
 #include <iostream>
 #include <memory>
 
-#include "routeBase.h"
-#include "timingBase.h"
 #include "nesterovPlace.h"
 #include "placerBase.h"
 #include "placerObjects.h"
+#include "routeBase.h"
+#include "timingBase.h"
 
 namespace utl {
 class Logger;

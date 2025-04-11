@@ -36,11 +36,12 @@
 
 #pragma once
 
-#include "Kokkos_Core.hpp"
 #include <odb/db.h>
 
 #include <string>
 #include <vector>
+
+#include "Kokkos_Core.hpp"
 
 namespace odb {
 class dbDatabase;
