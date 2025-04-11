@@ -766,7 +766,7 @@ class FlexPA
   bool instancesAreAbuting(frInst* inst_1, frInst* inst_2) const;
 
   /**
-   * @brief Find a cluster of instances that are touching each other
+   * @brief Find a cluster of instances that are touching the passed instance
    *
    * @returns a vector of the clusters of touching insts
    */
