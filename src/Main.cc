@@ -324,13 +324,12 @@ int main(int argc, char* argv[])
 
 #ifdef ENABLE_KOKKOS
     Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
-      ord::OpenRoad::openRoad()->getThreadCount()
-    ));
+        ord::OpenRoad::openRoad()->getThreadCount()));
 #endif
 
 #if PY_VERSION_HEX >= 0x03080000
     initPython(cmd_argc, cmd_argv);
-    int py_rc =  Py_RunMain();
+    int py_rc = Py_RunMain();
 #else
     initPython();
     bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
@@ -345,8 +344,8 @@ int main(int argc, char* argv[])
     int py_rc = Py_Main(args.size(), args.data());
 #endif  // PY_VERSION_HEX >= 0x03080000
 #ifdef ENABLE_KOKKOS
-      Kokkos::finalize();
-#endif // ENABLE_KOKKOS
+    Kokkos::finalize();
+#endif  // ENABLE_KOKKOS
     return py_rc;
   }
 #endif  // ENABLE_PYTHON3
@@ -499,8 +498,7 @@ static int tclAppInit(int& argc,
 
 #ifdef ENABLE_KOKKOS
     Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
-      ord::OpenRoad::openRoad()->getThreadCount()
-    ));
+        ord::OpenRoad::openRoad()->getThreadCount()));
 #endif
 
     const bool gui_enabled = gui::Gui::enabled();

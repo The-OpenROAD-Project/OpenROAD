@@ -36,10 +36,10 @@
 
 #include "nesterovPlace.h"
 
-#include "routeBase.h"
-#include "timingBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
+#include "routeBase.h"
+#include "timingBase.h"
 #include "utl/Logger.h"
 
 namespace gpl2 {
@@ -132,7 +132,8 @@ void NesterovPlace::init()
   for (auto& pb : pbVec_) {
     float stepL = pb->initDensity2();
     if ((Kokkos::isnan(stepL) || Kokkos::isinf(stepL))
-        && recursionCntInitSLPCoef_ < NesterovPlaceVars::maxRecursionInitSLPCoef) {
+        && recursionCntInitSLPCoef_
+               < NesterovPlaceVars::maxRecursionInitSLPCoef) {
       npVars_.initialPrevCoordiUpdateCoef *= 10;
       std::string msg = "steplength = 0 detected. Rerunning Nesterov::init() ";
       msg += "with initPrevSLPCoef ";

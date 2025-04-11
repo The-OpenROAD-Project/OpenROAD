@@ -260,8 +260,8 @@ class PlacerBaseCommon
   int numDummyInsts_ = 0;  // for placement blockages
 
   int64_t placeInstsArea_ = 0;  // the area of place instances
-  int64_t
-      nonPlaceInstsArea_ = 0;  // the area of fixed instances and dummy instances
+  int64_t nonPlaceInstsArea_
+      = 0;  // the area of fixed instances and dummy instances
   // macroInstsArea_ + stdInstsArea_ = placeInstsArea_;
   // macroInstsArea_ should be separated
   // because of target_density tuning
@@ -540,8 +540,8 @@ class PlacerBase
   int64_t totalFillerArea_ = 0;  // the area occupied by filler
 
   int64_t placeInstsArea_ = 0;
-  int64_t
-      nonPlaceInstsArea_ = 0;  // the area of fixed instances and dummy instances
+  int64_t nonPlaceInstsArea_
+      = 0;  // the area of fixed instances and dummy instances
 
   // macroInstsArea_ + stdInstsArea_ = placeInstsArea_;
   // macroInstsArea_ should be separated
@@ -601,7 +601,7 @@ class PlacerBase
   int iter_ = 0;                         // The iteration of Nesterov placement
   bool isConverged_ = false;
   std::string divergeMsg_;
-  int divergeCode_ ;
+  int divergeCode_;
 
   // Nesterov loop data for each region
   // SLP is Step Length Prediction
@@ -650,25 +650,28 @@ class PlacerBase
   // device memory management
   void freeBackend();
 
-  float getStepLength(const Kokkos::View<const FloatPoint*>& prevSLPCoordi,
-                      const Kokkos::View<const FloatPoint*>& prevSLPSumGrads,
-                      const Kokkos::View<const FloatPoint*>& curSLPCoordi,
-                      const Kokkos::View<const FloatPoint*>& curSLPSumGrads) const;
+  float getStepLength(
+      const Kokkos::View<const FloatPoint*>& prevSLPCoordi,
+      const Kokkos::View<const FloatPoint*>& prevSLPSumGrads,
+      const Kokkos::View<const FloatPoint*>& curSLPCoordi,
+      const Kokkos::View<const FloatPoint*>& curSLPSumGrads) const;
 
-  public:  // Public needed for lambda kernels
+ public:  // Public needed for lambda kernels
   void updateGradients(const Kokkos::View<float*>& wireLengthGradientsX,
                        const Kokkos::View<float*>& wireLengthGradientsY,
                        const Kokkos::View<float*>& densityGradientsX,
                        const Kokkos::View<float*>& densityGradientsY,
                        const Kokkos::View<FloatPoint*>& sumGrads);
 
-  void updateGCellDensityCenterLocation(const Kokkos::View<const FloatPoint*>& coordis);
+  void updateGCellDensityCenterLocation(
+      const Kokkos::View<const FloatPoint*>& coordis);
 
-  void getWireLengthGradientWA(const Kokkos::View<float*>& wireLengthGradientsX,
-                               const Kokkos::View<float*>& wireLengthGradientsY,
-                               const Kokkos::View<float*>& wireLengthGradAbsXPlusY);
+  void getWireLengthGradientWA(
+      const Kokkos::View<float*>& wireLengthGradientsX,
+      const Kokkos::View<float*>& wireLengthGradientsY,
+      const Kokkos::View<float*>& wireLengthGradAbsXPlusY);
 
-  private:
+ private:
   void getDensityGradient(const Kokkos::View<float*>& densityGradientsX,
                           const Kokkos::View<float*>& densityGradientsY,
                           const Kokkos::View<float*>& densityGradAbsXPlusY);

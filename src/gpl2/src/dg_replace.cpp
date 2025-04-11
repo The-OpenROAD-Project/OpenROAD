@@ -35,14 +35,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "gpl2/DgReplace.h"
-
-#include "routeBase.h"
-#include "timingBase.h"
 #include "initialPlace.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "placerBase.h"
+#include "routeBase.h"
 #include "rsz/Resizer.hh"
+#include "timingBase.h"
 #include "utl/Logger.h"
 
 namespace gpl2 {
@@ -94,17 +93,17 @@ DgReplace::DgReplace()
       dataflowFlag_(false),
       clusterConstraintFlag_(false),
       padLeft_(0),
-      padRight_(0){};
+      padRight_(0) {};
 
 DgReplace::~DgReplace()
 {
 }
 
 void DgReplace::init(sta::dbNetwork* network,
-                      odb::dbDatabase* odb,
-                      rsz::Resizer* resizer,
-                      grt::GlobalRouter* router,
-                      utl::Logger* logger)
+                     odb::dbDatabase* odb,
+                     rsz::Resizer* resizer,
+                     grt::GlobalRouter* router,
+                     utl::Logger* logger)
 {
   network_ = network;
   db_ = odb;
@@ -439,9 +438,9 @@ void DgReplace::setRoutabilityMaxInflationRatio(float ratio)
 }
 
 void DgReplace::setRoutabilityRcCoefficients(float k1,
-                                              float k2,
-                                              float k3,
-                                              float k4)
+                                             float k2,
+                                             float k3,
+                                             float k4)
 {
   routabilityRcK1_ = k1;
   routabilityRcK2_ = k2;

@@ -81,11 +81,11 @@ class RouteBase
  public:
   RouteBase();
   RouteBase(RouteBaseVars rbVars,
-               odb::dbDatabase* db,
-               grt::GlobalRouter* grouter,
-               const std::shared_ptr<PlacerBaseCommon>& nbc,
-               std::vector<std::shared_ptr<PlacerBase>> nbVec,
-               utl::Logger* log);
+            odb::dbDatabase* db,
+            grt::GlobalRouter* grouter,
+            const std::shared_ptr<PlacerBaseCommon>& nbc,
+            std::vector<std::shared_ptr<PlacerBase>> nbVec,
+            utl::Logger* log);
   ~RouteBase();
 
  private:

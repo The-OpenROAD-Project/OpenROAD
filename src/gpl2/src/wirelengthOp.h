@@ -58,7 +58,8 @@ class WirelengthOp
   int64_t computeHPWL();
   int64_t computeWeightedHPWL(float virtualWeightFactor);
 
-  void updatePinLocation(const Kokkos::View<const int*>& instDCx, const Kokkos::View<const int*>& instDCy);
+  void updatePinLocation(const Kokkos::View<const int*>& instDCx,
+                         const Kokkos::View<const int*>& instDCy);
 
  private:
   PlacerBaseCommon* pbc_;
@@ -73,14 +74,12 @@ class WirelengthOp
   // refer to hMETIS or TritonPart for this structure
   // map inst to pins
   Kokkos::View<int*> dInstPinIdx_;
-  Kokkos::View<int*>
-      dInstPinPos_;  // start - end position of pins of each inst
-  Kokkos::View<int*> dPinInstId_;  // inst id of each pin
+  Kokkos::View<int*> dInstPinPos_;  // start - end position of pins of each inst
+  Kokkos::View<int*> dPinInstId_;   // inst id of each pin
   // map net to pins
   Kokkos::View<int*> dNetPinIdx_;
-  Kokkos::View<int*>
-      dNetPinPos_;  // start - end position of pins of each net
-  Kokkos::View<int*> dPinNetId_;  // net id of each pin
+  Kokkos::View<int*> dNetPinPos_;  // start - end position of pins of each net
+  Kokkos::View<int*> dPinNetId_;   // net id of each pin
 
   // Pin information
   Kokkos::View<int*> dPinX_;
