@@ -41,6 +41,7 @@
 
 #ifdef ENABLE_KOKKOS
 #include <Kokkos_Core.hpp>
+#include <impl/Kokkos_InitializationSettings.hpp>
 #endif
 
 using sta::findCmdLineFlag;
@@ -278,7 +279,9 @@ int main(int argc, char* argv[])
     }
 
 #ifdef ENABLE_KOKKOS
-    Kokkos::initialize();
+    Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
+      ord::OpenRoad::openRoad()->getThreadCount()
+    ));
 #endif
 
 #if PY_VERSION_HEX >= 0x03080000
@@ -449,6 +452,12 @@ static int tclAppInit(int& argc,
       ord::OpenRoad::openRoad()->setThreadCount(
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
+
+#ifdef ENABLE_KOKKOS
+    Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
+      ord::OpenRoad::openRoad()->getThreadCount()
+    ));
+#endif
 
     const bool gui_enabled = gui::Gui::enabled();
 
