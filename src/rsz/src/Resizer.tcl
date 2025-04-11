@@ -425,21 +425,23 @@ sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-slew_margin slack_margin] \
                                       [-cap_margin cap_margin] \
                                       [-buffer_gain gain] \
+                                      [-pre_placement] \
                                       [-match_cell_footprint] \
                                       [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin -buffer_gain} \
-    flags {-match_cell_footprint -verbose}
+    flags {-match_cell_footprint -verbose -pre_placement}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
   set cap_margin [rsz::parse_percent_margin_arg "-cap_margin" keys]
-  set buffer_gain 0.0
+
+  set pre_placement [info exists flags(-pre_placement)]
   if { [info exists keys(-buffer_gain)] } {
-    set buffer_gain $keys(-buffer_gain)
-    sta::check_positive_float "-buffer_gain" $buffer_gain
+    set pre_placement true
+    utl::warn "RSZ" 149 "-buffer_gain is deprecated"
   }
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
@@ -449,7 +451,7 @@ proc repair_design { args } {
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
   set verbose [info exists flags(-verbose)]
   rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin \
-    $buffer_gain $match_cell_footprint $verbose
+    $pre_placement $match_cell_footprint $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}
@@ -724,29 +726,79 @@ proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
 }
 
+namespace eval rsz {
+proc get_block { } {
+  set db [ord::get_db]
+  if { $db eq "NULL" } {
+    utl::error "RSZ" 200 "db needs to be defined for set_opt_config and related commands."
+  }
+  set chip [$db getChip]
+  if { $chip eq "NULL" } {
+    utl::error "RSZ" 201 "chip needs to be defined for set_opt_config and related commands."
+  }
+  set block [$chip getBlock]
+  if { $block eq "NULL" } {
+    utl::error "RSZ" 202 "block needs to be defined for set_opt_config and related commands."
+  }
+  return $block
+}
+
+proc set_positive_double_prop { value opt_name prop_name } {
+  sta::check_positive_float $opt_name $value
+  set block [get_block]
+  set prop [odb::dbDoubleProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbDoubleProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc set_boolean_prop { value opt_name prop_name } {
+  if { ![string is boolean $value] } {
+    utl::error "RSZ" 209 \
+      "$opt_name argument should be Boolean"
+  }
+  set block [get_block]
+  set prop [odb::dbBoolProperty_find $block $prop_name]
+  if { $prop eq "NULL" } {
+    odb::dbBoolProperty_create $block $prop_name $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc clear_double_prop { name } {
+  set block [get_block]
+  set prop [odb::dbDoubleProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+
+proc clear_bool_prop { name } {
+  set block [get_block]
+  set prop [odb::dbBoolProperty_find $block $name]
+  if { $prop ne "NULL" && $prop ne "" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+}
+
 sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-limit_sizing_leakage] \
                                           [-keep_sizing_site] \
                                           [-keep_sizing_vt] \
                                           [-sizing_area_limit] \
-                                          [-sizing_leakage_limit] }
+                                          [-sizing_leakage_limit] \
+                                          [-set_early_sizing_cap_ratio] \
+                                          [-set_early_buffer_sizing_cap_ratio]}
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
-      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt} flags {}
-  set db [ord::get_db]
-  if { $db eq "NULL" } {
-    utl::error "RSZ" 200 "db needs to be defined for set_opt_config."
-  }
-  set chip [$db getChip]
-  if { $chip eq "NULL" } {
-    utl::error "RSZ" 201 "chip needs to be defined for set_opt_config."
-  }
-  set block [$chip getBlock]
-  if { $block eq "NULL" } {
-    utl::error "RSZ" 202 "block needs to be defined for set_opt_config."
-  }
+      -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt \
+      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
 
   set area_limit "NULL"
   if { [info exists keys(-limit_sizing_area)] } {
@@ -755,13 +807,8 @@ proc set_opt_config { args } {
     set area_limit $keys(-sizing_area_limit)
   }
   if { $area_limit ne "NULL" } {
-    sta::check_positive_float "-sizing_area_limit" $area_limit
-    set area_prop [odb::dbDoubleProperty_find $block "limit_sizing_area"]
-    if { $area_prop eq "NULL" } {
-      odb::dbDoubleProperty_create $block "limit_sizing_area" $area_limit
-    } else {
-      $area_prop setValue $area_limit
-    }
+    rsz::set_positive_double_prop \
+      $area_limit "-sizing_area_limit" "limit_sizing_area"
     utl::info RSZ 100 \
       "Cells with area > ${area_limit}X current cell will not be considered for sizing"
   }
@@ -773,47 +820,37 @@ proc set_opt_config { args } {
     set leakage_limit $keys(-sizing_leakage_limit)
   }
   if { $leakage_limit ne "NULL" } {
-    sta::check_positive_float "-sizing_leakage_limit" $leakage_limit
-    set leak_prop [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
-    if { $leak_prop eq "NULL" } {
-      odb::dbDoubleProperty_create $block "limit_sizing_leakage" $leakage_limit
-    } else {
-      $leak_prop setValue $leakage_limit
-    }
+    rsz::set_positive_double_prop \
+      $leakage_limit "-sizing_leakage_limit" "limit_sizing_leakage"
     utl::info RSZ 101 \
       "Cells with leakage > ${leakage_limit}X current cell will not be considered for sizing"
   }
 
   if { [info exists keys(-keep_sizing_site)] } {
-    set keep_site $keys(-keep_sizing_site)
-    if { ![string is boolean $keep_site] } {
-      utl::error "RSZ" 209 \
-        "-keep_sizing_site argument should be Boolean"
-    }
-    set site_prop [odb::dbBoolProperty_find $block "keep_sizing_site"]
-    if { $site_prop eq "NULL" } {
-      odb::dbBoolProperty_create $block "keep_sizing_site" $keep_site
-    } else {
-      $site_prop setValue $keep_site
-    }
+    rsz::set_boolean_prop $keys(-keep_sizing_site) "-keep_sizing_site" "keep_sizing_site"
     utl::info RSZ 104 \
       "Cell's site will be preserved for sizing"
   }
 
   if { [info exists keys(-keep_sizing_vt)] } {
-    set keep_vt $keys(-keep_sizing_vt)
-    if { ![string is boolean $keep_vt] } {
-      utl::error "RSZ" 210 \
-        "-keep_sizing_vt argument should be Boolean"
-    }
-    set vt_prop [odb::dbBoolProperty_find $block "keep_sizing_vt"]
-    if { $vt_prop eq "NULL" } {
-      odb::dbBoolProperty_create $block "keep_sizing_vt" $keep_vt
-    } else {
-      $vt_prop setValue $keep_vt
-    }
+    rsz::set_boolean_prop $keys(-keep_sizing_vt) "-keep_sizing_vt" "keep_sizing_vt"
     utl::info RSZ 106 \
       "Cell's VT type will be preserved for sizing"
+  }
+
+  if { [info exists keys(-set_early_sizing_cap_ratio)] } {
+    set value $keys(-set_early_sizing_cap_ratio)
+    rsz::set_positive_double_prop $value "-set_early_sizing_cap_ratio" "early_sizing_cap_ratio"
+    utl::info RSZ 145 \
+      "Early cell sizing will use capacitance ratio of value $value"
+  }
+
+  if { [info exists keys(-set_early_buffer_sizing_cap_ratio)] } {
+    set value $keys(-set_early_buffer_sizing_cap_ratio)
+    rsz::set_positive_double_prop $value "-set_early_buffer_sizing_cap_ratio" \
+      "early_buffer_sizing_cap_ratio"
+    utl::info RSZ 147 \
+      "Early buffer sizing will use capacitance ratio of value $value"
   }
 }
 
@@ -822,60 +859,46 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-keep_sizing_site] \
                                             [-keep_sizing_vt] \
                                             [-sizing_area_limit] \
-                                            [-sizing_leakage_limit] }
+                                            [-sizing_leakage_limit] \
+                                            [-set_early_sizing_cap_ratio] \
+                                            [-set_early_buffer_sizing_cap_ratio]}
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
-                     -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt}
-  set db [ord::get_db]
-  if { $db eq "NULL" } {
-    utl::error "RSZ" 203 "db needs to be defined for reset_opt_config."
-  }
-  set chip [$db getChip]
-  if { $chip eq "NULL" } {
-    utl::error "RSZ" 204 "chip needs to be defined for reset_opt_config."
-  }
-  set block [$chip getBlock]
-  if { $block eq "NULL" } {
-    utl::error "RSZ" 205 "block needs to be defined for reset_opt_config."
-  }
-
+                     -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
+                     -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
     $reset_all || [info exists flags(-limit_sizing_area)]
     || [info exists flags(-sizing_area_limit)]
   } {
-    set area_prop [odb::dbDoubleProperty_find $block "limit_sizing_area"]
-    if { $area_prop ne "NULL" && $area_prop ne "" } {
-      odb::dbProperty_destroy $area_prop
-    }
+    rsz::clear_double_prop "limit_sizing_area"
     utl::info RSZ 102 "Cell sizing restriction based on area has been removed."
   }
   if {
     $reset_all || [info exists flags(-limit_sizing_leakage)]
     || [info exists flags(-sizing_leakage_limit)]
   } {
-    set leak_prop [odb::dbDoubleProperty_find $block "limit_sizing_leakage"]
-    if { $leak_prop ne "NULL" && $leak_prop ne "" } {
-      odb::dbProperty_destroy $leak_prop
-    }
+    rsz::clear_double_prop "limit_sizing_leakage"
     utl::info RSZ 103 "Cell sizing restriction based on leakage has been removed."
   }
   if { $reset_all || [info exists flags(-keep_sizing_site)] } {
-    set site_prop [odb::dbBoolProperty_find $block "keep_sizing_site"]
-    if { $site_prop ne "NULL" && $site_prop ne "" } {
-      odb::dbProperty_destroy $site_prop
-    }
+    rsz::clear_bool_prop "keep_sizing_site"
     utl::info RSZ 105 "Cell sizing restriction based on site has been removed."
   }
   if { $reset_all || [info exists flags(-keep_sizing_vt)] } {
-    set vt_prop [odb::dbBoolProperty_find $block "keep_sizing_vt"]
-    if { $vt_prop ne "NULL" && $vt_prop ne "" } {
-      odb::dbProperty_destroy $vt_prop
-    }
+    rsz::clear_bool_prop "keep_sizing_vt"
     utl::info RSZ 107 "Cell sizing restriction based on VT type has been removed."
+  }
+  if { $reset_all || [info exists flags(-set_early_sizing_cap_ratio)] } {
+    rsz::clear_double_prop "early_sizing_cap_ratio"
+    utl::info RSZ 146 "Capacitance ratio for early cell sizing has been unset."
+  }
+  if { $reset_all || [info exists flags(-set_early_buffer_sizing_cap_ratio)] } {
+    rsz::clear_double_prop "early_buffer_sizing_cap_ratio"
+    utl::info RSZ 148 "Capacitance ratio for early buffer sizing has been unset."
   }
 }
 
@@ -883,18 +906,7 @@ sta::define_cmd_args "report_opt_config" {}
 
 proc report_opt_config { args } {
   sta::parse_key_args "report_opt_config" args keys {} flags {}
-  set db [ord::get_db]
-  if { $db eq "NULL" } {
-    utl::error "RSZ" 206 "db needs to be defined for report_opt_config."
-  }
-  set chip [$db getChip]
-  if { $chip eq "NULL" } {
-    utl::error "RSZ" 207 "chip needs to be defined for report_opt_config"
-  }
-  set block [$chip getBlock]
-  if { $block eq "NULL" } {
-    utl::error "RSZ" 208 "block needs to be defined for report_opt_config."
-  }
+  set block [rsz::get_block]
 
   set area_limit_value "undefined"
   set area_limit [odb::dbDoubleProperty_find $block "limit_sizing_area"]
@@ -922,13 +934,27 @@ proc report_opt_config { args } {
     set keep_sizing_vt [expr { $keep_vt_value ? "true" : "false" }]
   }
 
-  puts "***********************************"
+  set sizing_cap_ratio "unset"
+  set cap_ratio_prop [odb::dbDoubleProperty_find $block "early_sizing_cap_ratio"]
+  if { $cap_ratio_prop ne "NULL" && $cap_ratio_prop ne "" } {
+    set sizing_cap_ratio [$cap_ratio_prop getValue]
+  }
+
+  set buffer_cap_ratio "unset"
+  set buffer_cap_ratio_prop [odb::dbDoubleProperty_find $block "early_buffer_sizing_cap_ratio"]
+  if { $buffer_cap_ratio_prop ne "NULL" && $buffer_cap_ratio_prop ne "" } {
+    set buffer_cap_ratio [$buffer_cap_ratio_prop getValue]
+  }
+
+  puts "*******************************************"
   puts "Optimization config:"
-  puts "-limit_sizing_area:    $area_limit_value"
-  puts "-limit_sizing_leakage: $leakage_limit_value"
-  puts "-keep_sizing_site:     $keep_site_value"
-  puts "-keep_sizing_vt:       $keep_sizing_vt"
-  puts "***********************************"
+  puts "-limit_sizing_area:                 $area_limit_value"
+  puts "-limit_sizing_leakage:              $leakage_limit_value"
+  puts "-keep_sizing_site:                  $keep_site_value"
+  puts "-keep_sizing_vt:                    $keep_sizing_vt"
+  puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
+  puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
+  puts "*******************************************"
 }
 
 sta::define_cmd_args "report_equiv_cells" { -match_cell_footprint -all }
