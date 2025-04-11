@@ -36,10 +36,9 @@
 
 #pragma once
 
-#include "Kokkos_Core.hpp"
-
 #include <memory>
 
+#include "Kokkos_Core.hpp"
 #include "placerBase.h"
 #include "placerObjects.h"
 #include "poissonSolver.h"
@@ -64,7 +63,8 @@ class DensityOp
 
   void updateDensityForceBin();
 
-  void updateGCellLocation(const Kokkos::View<const int*>& instDCx, const Kokkos::View<const int*>& instDCy);
+  void updateGCellLocation(const Kokkos::View<const int*>& instDCx,
+                           const Kokkos::View<const int*>& instDCy);
 
   float sumOverflow() const { return sumOverflow_; }
   float sumOverflowUnscaled() const { return sumOverflowUnscaled_; }

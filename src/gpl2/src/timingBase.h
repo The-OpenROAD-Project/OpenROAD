@@ -55,8 +55,8 @@ class TimingBase
  public:
   TimingBase();
   TimingBase(const std::shared_ptr<PlacerBaseCommon>& nbc,
-                rsz::Resizer* rs,
-                utl::Logger* log);
+             rsz::Resizer* rs,
+             utl::Logger* log);
 
  private:
   rsz::Resizer* rs_;
