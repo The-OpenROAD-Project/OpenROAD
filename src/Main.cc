@@ -221,8 +221,9 @@ static std::optional<std::string> getProgramLocation()
   char result[PATH_MAX + 1] = {'\0'};
   ssize_t path_len = readlink("/proc/self/exe", result, PATH_MAX);
 #endif
-  if (path_len > 0)
+  if (path_len > 0) {
     return result;
+  }
   return std::nullopt;
 }
 #endif
