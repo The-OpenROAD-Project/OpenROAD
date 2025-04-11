@@ -2,11 +2,6 @@ name: Scan Code with pre commit trigger
 
 on:
   push:
-    branches:
-    - master
-  pull_request:
-    branches:
-    - master
 
 jobs:
   scan:
