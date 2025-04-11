@@ -883,7 +883,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 
 void HierRTLMP::setPinAccessBlockages()
 {
-  if (!tree_->maps.pad_to_bterm.empty()) {
+  if (!tree_->io_pads.empty()) {
     return;
   }
 
