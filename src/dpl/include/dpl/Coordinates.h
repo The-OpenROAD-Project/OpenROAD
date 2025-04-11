@@ -12,8 +12,6 @@
 
 namespace dpl {
 
-using std::abs;
-
 // Strongly type the difference between pixel and DBU locations.
 //
 // Multiplication and division are intentionally not defined as they

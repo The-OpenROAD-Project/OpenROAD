@@ -4,12 +4,15 @@
 #include <algorithm>
 #include <cfloat>
 #include <limits>
+#include <map>
+#include <set>
 #include <string>
 #include <unordered_set>
 
-#include "Objects.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
+#include "dpl/PlacementDRC.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -34,7 +37,7 @@ void Opendp::importDb()
 
   importClear();
   grid_->examineRows(block_);
-  makeCellEdgeSpacingTable();
+  initPlacementDRC();
   makeMacros();
   makeCells();
   makeGroups();
@@ -55,7 +58,7 @@ void Opendp::makeMacros()
   vector<dbMaster*> masters;
   block_->getMasters(masters);
   for (auto db_master : masters) {
-    struct Master& master = db_master_map_[db_master];
+    Master& master = db_master_map_[db_master];
     makeMaster(&master, db_master);
   }
 }
@@ -157,9 +160,9 @@ Rect getBoundarySegment(const Rect& bbox,
 
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
-  master->is_multi_row = grid_->isMultiHeight(db_master);
-  master->edges_.clear();
-  if (edge_spacing_table_.empty()) {
+  master->setMultiRow(grid_->isMultiHeight(db_master));
+  master->clearEdges();
+  if (!drc_engine_->hasCellEdgeSpacingTable()) {
     return;
   }
   if (db_master->getType()
@@ -196,14 +199,14 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
       }
     }
     typed_segs[dir].push_back(edge_rect);
-    if (edge_types_indices_.find(edge->getEdgeType())
-        != edge_types_indices_.end()) {
+    const auto edge_idx = drc_engine_->getEdgeTypeIdx(edge->getEdgeType());
+    if (edge_idx != -1) {
       // consider only edge types defined in the spacing table
-      master->edges_.emplace_back(edge_types_indices_[edge->getEdgeType()],
-                                  edge_rect);
+      master->addEdge(MasterEdge(edge_idx, edge_rect));
     }
   }
-  if (edge_types_indices_.find("DEFAULT") == edge_types_indices_.end()) {
+  const auto default_edge_idx = drc_engine_->getEdgeTypeIdx("DEFAULT");
+  if (default_edge_idx == -1) {
     return;
   }
   // Add the remaining DEFAULT un-typed segments
@@ -213,54 +216,14 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->edges_.emplace_back(0, seg);
+      master->addEdge(MasterEdge(default_edge_idx, seg));
     }
   }
 }
 
-void Opendp::makeCellEdgeSpacingTable()
+void Opendp::initPlacementDRC()
 {
-  auto spacing_rules = db_->getTech()->getCellEdgeSpacingTable();
-  if (spacing_rules.empty()) {
-    return;
-  }
-  for (auto rule : spacing_rules) {
-    edge_types_indices_.try_emplace(rule->getFirstEdgeType(),
-                                    edge_types_indices_.size());
-    edge_types_indices_.try_emplace(rule->getSecondEdgeType(),
-                                    edge_types_indices_.size());
-  }
-  // Resize
-  const size_t size = edge_types_indices_.size();
-  edge_spacing_table_.resize(size);
-  for (size_t i = 0; i < size; i++) {
-    edge_spacing_table_[i].resize(size, EdgeSpacingEntry(0, false, false));
-  }
-  // Fill Table
-  for (auto rule : spacing_rules) {
-    std::string first_edge = rule->getFirstEdgeType();
-    std::string second_edge = rule->getSecondEdgeType();
-    const int spc = rule->getSpacing();
-    const bool exact = rule->isExact();
-    const bool except_abutted = rule->isExceptAbutted();
-    const EdgeSpacingEntry entry(spc, exact, except_abutted);
-    const int idx1 = edge_types_indices_[first_edge];
-    const int idx2 = edge_types_indices_[second_edge];
-    edge_spacing_table_[idx1][idx2] = entry;
-    edge_spacing_table_[idx2][idx1] = entry;
-  }
-}
-
-bool Opendp::hasCellEdgeSpacingTable() const
-{
-  return !edge_spacing_table_.empty();
-}
-
-int Opendp::getMaxSpacing(int edge_idx) const
-{
-  return std::max_element(edge_spacing_table_[edge_idx].begin(),
-                          edge_spacing_table_[edge_idx].end())
-      ->spc;
+  drc_engine_ = std::make_unique<PlacementDRC>(grid_.get(), db_->getTech());
 }
 
 void Opendp::makeCells()
@@ -271,7 +234,7 @@ void Opendp::makeCells()
     dbMaster* db_master = db_inst->getMaster();
     if (db_master->isCoreAutoPlaceable()) {
       cells_.emplace_back();
-      Cell& cell = cells_.back();
+      Node& cell = cells_.back();
       cell.setDbInst(db_inst);
       db_inst_map_[db_inst] = &cell;
 
@@ -281,14 +244,15 @@ void Opendp::makeCells()
       cell.setLeft(DbuX{bbox.xMin()});
       cell.setBottom(DbuY{bbox.yMin()});
       cell.setOrient(db_inst->getOrient());
-      // Cell is already placed if it is FIXED.
+      // Node is already placed if it is FIXED.
+      cell.setFixed(db_inst->isFixed());
       cell.setPlaced(cell.isFixed());
 
       Master& master = db_master_map_[db_master];
       cell.setMaster(&master);
       // We only want to set this if we have multi-row cells to
       // place and not whenever we see a placed block.
-      if (master.is_multi_row && db_master->isCore()) {
+      if (master.isMultiRow() && db_master->isCore()) {
         have_multi_row_cells_ = true;
       }
     }
@@ -346,7 +310,7 @@ void Opendp::makeGroups()
     if (db_group->getRegion()) {
       std::unordered_set<DbuY> unique_heights;
       for (auto db_inst : db_group->getInsts()) {
-        unique_heights.insert(db_inst_map_[db_inst]->dy());
+        unique_heights.insert(db_inst_map_[db_inst]->getHeight());
       }
       reserve_size += unique_heights.size();
     }
@@ -360,18 +324,19 @@ void Opendp::makeGroups()
       continue;
     }
     std::set<DbuY> unique_heights;
-    map<DbuY, Group*> cell_height_to_group_map;
+    std::map<DbuY, Group*> cell_height_to_group_map;
     for (auto db_inst : db_group->getInsts()) {
-      unique_heights.insert(db_inst_map_[db_inst]->dy());
+      unique_heights.insert(db_inst_map_[db_inst]->getHeight());
     }
     int index = 0;
     for (auto height : unique_heights) {
       groups_.emplace_back();
-      struct Group& group = groups_.back();
+      Group& group = groups_.back();
       string group_name
           = string(db_group->getName()) + "_" + std::to_string(index++);
-      group.name = std::move(group_name);
-      group.boundary.mergeInit();
+      group.setName(group_name);
+      Rect bbox;
+      bbox.mergeInit();
       cell_height_to_group_map[height] = &group;
 
       for (dbBox* boundary : region->getBoundaries()) {
@@ -389,15 +354,16 @@ void Opendp::makeGroups()
                                      /// where a region ends and another starts
           regions_rtree_.insert(bbox);
         }
-        group.region_boundaries.push_back(box);
-        group.boundary.merge(box);
+        group.addRect(box);
+        bbox.merge(box);
       }
+      group.setBoundary(bbox);
     }
 
     for (auto db_inst : db_group->getInsts()) {
-      Cell* cell = db_inst_map_[db_inst];
-      Group* group = cell_height_to_group_map[cell->dy()];
-      group->cells_.push_back(cell);
+      Node* cell = db_inst_map_[db_inst];
+      Group* group = cell_height_to_group_map[cell->getHeight()];
+      group->addCell(cell);
       cell->setGroup(group);
     }
   }

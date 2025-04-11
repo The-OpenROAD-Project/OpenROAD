@@ -10,14 +10,16 @@
 #pragma once
 
 #include <vector>
-
+namespace dpl {
+class Node;
+}
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
-class Node;
 class Network;
 class RoutingParams;
+using dpl::Node;
 
 class ShiftLegalizer
 {

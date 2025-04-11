@@ -196,13 +196,13 @@ bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox)
     // We've computed an interval for the pin.  We need to alter it to work for
     // the cell center. Also, we need to avoid going off the edge of the chip.
     nodeBbox.set_xmin(
-        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX()), xmax));
+        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX().v), xmax));
     nodeBbox.set_xmax(
-        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX()), xmin));
+        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX().v), xmin));
     nodeBbox.set_ymin(
-        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY()), ymax));
+        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY().v), ymax));
     nodeBbox.set_ymax(
-        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY()), ymin));
+        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY().v), ymin));
 
     // Record the location and pin offset used to generate this point.
 
@@ -253,9 +253,9 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
       continue;
     }
     const double curX
-        = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX();
-    const double curY
-        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY();
+        = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX().v;
+    const double curY = other->getBottom().v + 0.5 * other->getHeight().v
+                        + pin->getOffsetY().v;
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -299,15 +299,15 @@ double DetailedVerticalSwap::delta(Node* ndi, double new_x, double new_y)
       const Node* ndj = pinj->getNode();
 
       double x
-          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-      double y
-          = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+          = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+      double y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+                 + pinj->getOffsetY().v;
 
       old_box.addPt(x, y);
 
       if (ndj == ndi) {
-        x = new_x + pinj->getOffsetX();
-        y = new_y + pinj->getOffsetY();
+        x = new_x + pinj->getOffsetX().v;
+        y = new_y + pinj->getOffsetY().v;
       }
 
       new_box.addPt(x, y);
@@ -353,9 +353,9 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
         const Node* ndj = pinj->getNode();
 
         double x
-            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
         double y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
-                   + pinj->getOffsetY();
+                   + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
@@ -365,8 +365,9 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }
@@ -444,7 +445,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+  if (ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 

@@ -194,4 +194,11 @@ class Replace
   int gui_debug_start_iter_ = 0;
   bool gui_debug_update_db_every_iteration = false;
 };
+
+inline constexpr const char* format_label_int = "{:27} {:10}";
+inline constexpr const char* format_label_float = "{:27} {:10.4f}";
+inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
+inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
+inline constexpr const char* format_label_um2_with_delta
+    = "{:27} {:10.3f} um^2 ({:+.2f}%)";
 }  // namespace gpl

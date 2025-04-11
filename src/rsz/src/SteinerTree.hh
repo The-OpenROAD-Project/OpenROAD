@@ -16,8 +16,6 @@ const int SteinerNull = -1;
 
 namespace rsz {
 
-using std::vector;
-
 using utl::Logger;
 
 using odb::Point;

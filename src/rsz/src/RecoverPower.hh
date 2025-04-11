@@ -18,8 +18,6 @@ namespace rsz {
 
 class Resizer;
 
-using std::vector;
-
 using utl::Logger;
 
 using sta::Corner;
@@ -41,7 +39,7 @@ using sta::Vertex;
 class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using BufferedNetSeq = vector<BufferedNetPtr>;
+using BufferedNetSeq = std::vector<BufferedNetPtr>;
 
 class RecoverPower : public sta::dbStaState
 {

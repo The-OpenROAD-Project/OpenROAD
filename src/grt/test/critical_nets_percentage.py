@@ -12,7 +12,7 @@ design.readDef("critical_nets_percentage.def")
 
 gr = design.getGlobalRouter()
 
-guideFile = helpers.make_result_file("congestion1.guide")
+guideFile = helpers.make_result_file("critical_nets_percentage.guide")
 
 oblk = design.getBlock()
 oblk.writeGuides(guideFile)
