@@ -29,7 +29,6 @@ IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr)
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
   parms_ = std::make_unique<Parameters>();
-  top_grid_ = std::make_unique<TopLayerGrid>();
 }
 
 IOPlacer::~IOPlacer() = default;
@@ -60,7 +59,6 @@ void IOPlacer::clear()
 {
   hor_layers_.clear();
   ver_layers_.clear();
-  *top_grid_ = TopLayerGrid();
   zero_sink_ios_.clear();
   sections_.clear();
   slots_.clear();
@@ -2826,23 +2824,6 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                 min_widths_x,
                 min_widths_y,
                 database_unit);
-}
-
-void IOPlacer::addTopLayerPinPattern(odb::dbTechLayer* layer,
-                                     int x_step,
-                                     int y_step,
-                                     const Rect& region,
-                                     int pin_width,
-                                     int pin_height,
-                                     int keepout)
-{
-  *top_grid_ = {layer->getRoutingLevel(),
-                x_step,
-                y_step,
-                region,
-                pin_width,
-                pin_height,
-                keepout};
 }
 
 void IOPlacer::findSlotsForTopLayer()

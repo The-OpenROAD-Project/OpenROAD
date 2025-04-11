@@ -95,13 +95,6 @@ class IOPlacer
   void excludeInterval(Edge edge, int begin, int end);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addTopLayerPinPattern(odb::dbTechLayer* layer,
-                             int x_step,
-                             int y_step,
-                             const Rect& region,
-                             int pin_width,
-                             int pin_height,
-                             int keepout);
   odb::dbTechLayer* getTopLayer() const;
   void placePin(odb::dbBTerm* bterm,
                 odb::dbTechLayer* layer,
@@ -280,7 +273,6 @@ class IOPlacer
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
-  std::unique_ptr<TopLayerGrid> top_grid_;
 
   std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
 
