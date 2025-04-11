@@ -72,6 +72,9 @@ class FlexPA
                       const std::string& shared_vol,
                       int cloud_sz);
 
+  void addInst(frInst* inst);
+  void deleteInst(frInst* inst);
+
   int main();
 
  private:
@@ -125,6 +128,7 @@ class FlexPA
   ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
+  bool areAllSkipInstTerms(frInst* inst);
   bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
@@ -138,8 +142,6 @@ class FlexPA
 
   bool isStdCell(frInst* unique_inst);
   bool isMacroCell(frInst* unique_inst);
-
-  void deleteInst(frInst* inst);
 
   /**
    * @brief generates all access points of a single unique instance
@@ -757,6 +759,23 @@ class FlexPA
    * @returns the vector of vectors of insts
    */
   std::vector<std::vector<frInst*>> computeInstRows();
+
+  /**
+   * @brief Get the instance adjacent to the left or right of a given instance
+   *
+   * @param inst the reference inst
+   * @param left true if looking at the left inst, false if looking at the right
+   *
+   * @returns the adjacent inst or nullptr if no adjacent inst
+   */
+  frInst* getAdjacentInstance(frInst* inst, bool left) const;
+
+  /**
+   * @brief Find a cluster of instances that are touching each other
+   *
+   * @returns a vector of the clusters of touching insts
+   */
+  std::vector<frInst*> getAdjacentInstancesCluster(frInst* inst) const;
 
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 

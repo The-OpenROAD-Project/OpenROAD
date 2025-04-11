@@ -1038,18 +1038,33 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   clearDesign();
   router_cfg_->ENABLE_VIA_GEN = true;
   initDesign();
-  FlexPA pa(getDesign(), logger_, dist_, router_cfg_.get());
-  pa.setTargetInstances(target_insts);
+  pa_ = std::make_unique<FlexPA>(
+      getDesign(), logger_, dist_, router_cfg_.get());
+  pa_->setTargetInstances(target_insts);
   if (debug_->debugPA) {
-    pa.setDebug(graphics_factory_->makeUniquePAGraphics());
+    pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
   }
   if (distributed_) {
-    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    pa_->setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     dist_pool_->join();
   }
-  pa.main();
+  pa_->main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get(), true);
+}
+
+void TritonRoute::deleteInstancePAData(frInst* inst)
+{
+  if (pa_) {
+    pa_->deleteInst(inst);
+  }
+}
+
+void TritonRoute::addInstancePAData(frInst* inst)
+{
+  if (pa_) {
+    pa_->addInst(inst);
+  }
 }
 
 void TritonRoute::fixMaxSpacing(int num_threads)
