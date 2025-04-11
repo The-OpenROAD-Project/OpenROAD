@@ -220,9 +220,17 @@ node {
             build_docker_images["Test Installer - ${os.name}"] = {
                 node {
                     checkout scm;
-                    sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
-                    sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image}";
-                    dockerPush("${os.image}", 'openroad');
+                    try {
+                        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                            sh label: 'Build Docker image', script: "./etc/DockerHelper.sh create -target=builder -os=${os.image}";
+                            sh label: 'Test Docker image', script: "./etc/DockerHelper.sh test -target=builder -os=${os.image}";
+                            dockerPush("${os.image}", 'openroad');
+                        }
+                    } catch (e) {
+                        echo 'Failed regressions';
+                        currentBuild.result = 'FAILURE';
+                    }
+                    archiveArtifacts artifacts: 'persistent/**';
                 }
             }
         }
@@ -230,7 +238,6 @@ node {
         DOCKER_IMAGE = dockerPush('ubuntu22.04', 'openroad');
         echo "Docker image is ${DOCKER_IMAGE}";
     }
-    parallel(getParallelTests(DOCKER_IMAGE));
     stage('Send Email Report') {
         sendEmail();
     }
