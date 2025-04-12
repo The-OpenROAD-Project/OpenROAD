@@ -1671,7 +1671,8 @@ void dbBlock::setBTermTopLayerGrid(int layer_id,
       region_changed = true;
     }
   } else {
-    logger->error(utl::ODB, 124, "Top layer grid region is out of the die area.");
+    logger->error(
+        utl::ODB, 124, "Top layer grid region is out of the die area.");
   }
 
   if (region_changed) {
