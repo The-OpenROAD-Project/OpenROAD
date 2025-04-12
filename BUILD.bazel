@@ -6,12 +6,7 @@ load("@rules_hdl//dependency_support/com_github_westes_flex:flex.bzl", "genlex")
 load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
 load(
     "//:bazel/build_helper.bzl",
-    "OPENROAD_BINARY_DEPS",
-    "OPENROAD_BINARY_SRCS",
     "OPENROAD_BINARY_SRCS_WITHOUT_MAIN",
-    "OPENROAD_COPTS",
-    "OPENROAD_DEFINES",
-    "OPENROAD_LIBRARY_DEPS",
     "OPENROAD_LIBRARY_HDRS_INCLUDE",
     "OPENROAD_LIBRARY_INCLUDES",
     "OPENROAD_LIBRARY_SRCS_EXCLUDE",
@@ -49,9 +44,67 @@ config_setting(
     },
 )
 
+# TODO: once project is properly decomposed, we don't
+# need these blanked dependencies in multiple places anymore.
+OPENROAD_LIBRARY_DEPS = [
+    "//src/utl",
+    ":munkres",
+    ":opendb_lib",
+    ":openroad_version",
+    ":opensta_lib",
+    "@boost.asio",
+    "@boost.geometry",
+    "@boost.graph",
+    "@boost.heap",
+    "@boost.icl",
+    "@boost.json",
+    "@boost.multi_array",
+    "@boost.polygon",
+    "@boost.property_tree",
+    "@boost.stacktrace",
+    "@boost.thread",
+    "@com_github_quantamhd_lemon//:lemon",
+    "@edu_berkeley_abc//:abc-lib",
+    "@eigen",
+    "@or-tools//ortools/base:base",
+    "@or-tools//ortools/linear_solver:linear_solver",
+    "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
+    "@or-tools//ortools/sat:cp_model",
+    "@org_llvm_openmp//:openmp",
+    "@spdlog",
+    "@tk_tcl//:tcl",
+]
+
+OPENROAD_COPTS = [
+    "-fexceptions",
+    "-ffp-contract=off",  # Needed for floating point stability.
+    "-Wno-error",
+    "-Wall",
+    "-Wextra",
+    "-pedantic",
+    "-Wno-cast-qual",  # typically from TCL swigging
+    "-Wno-missing-braces",  # typically from TCL swigging
+    "-Wredundant-decls",
+    "-Wformat-security",
+    "-Wno-sign-compare",
+    "-Wno-unused-parameter",
+]
+
+OPENROAD_DEFINES = [
+    "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
+    "BUILD_TYPE=\\\"release\\\"",
+    "GPU=false",
+    "BUILD_PYTHON=false",
+    "ABC_NAMESPACE=abc",
+    "TCLRL_VERSION_STR=",
+]
+
 cc_binary(
     name = "openroad",
-    srcs = OPENROAD_BINARY_SRCS + select({
+    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
+        "src/Main.cc",
+        "src/OpenRoad.cc",
+    ] + select({
         ":platform_cli": [],
     }),
     copts = OPENROAD_COPTS,
@@ -59,12 +112,17 @@ cc_binary(
     linkopts = select({
         ":platform_cli": [],
     }),
-    visibility = ["//visibility:public"],
-    deps = OPENROAD_BINARY_DEPS + [
-        ":openroad_lib_private",
-        "@rules_cc//cc/runfiles",
-    ],
     malloc = "@tcmalloc//tcmalloc",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":opendb_lib",
+        ":openroad_lib_private",
+        ":openroad_version",
+        ":opensta_lib",
+        "//src/utl",
+        "@rules_cc//cc/runfiles",
+        "@tk_tcl//:tcl",
+    ],
 )
 
 cc_library(
@@ -321,8 +379,8 @@ tcl_encode(
 tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
-        "src/OpenRoad.tcl",
         "src/Metrics.tcl",
+        "src/OpenRoad.tcl",
     ],
     char_array_name = "openroad_swig_tcl_inits",
 )
@@ -1197,12 +1255,12 @@ cc_binary(
         "src/sta/include/sta",
         "src/sta/util",
     ],
+    malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
         ":opensta_lib",
         "@tk_tcl//:tcl",
     ],
-    malloc = "@tcmalloc//tcmalloc",
 )
 
 cc_library(
