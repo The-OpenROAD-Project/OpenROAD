@@ -551,4 +551,6 @@ def define_pin_shape_pattern(
         )
 
     dbBlock = design.getBlock()
-    dbBlock.setBTermTopLayerGrid(layer.getRoutingLevel(), x_step, y_step, rect, width, height, keepout)
+    dbBlock.setBTermTopLayerGrid(
+        layer.getRoutingLevel(), x_step, y_step, rect, width, height, keepout
+    )
