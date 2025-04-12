@@ -1630,6 +1630,93 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
+void dbBlock::setBTermTopLayerGrid(int layer_id,
+                                   int x_step,
+                                   int y_step,
+                                   Rect region,
+                                   int pin_width,
+                                   int pin_height,
+                                   int keepout)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  _dbBTermTopLayerGrid& top_layer_grid = block->_bterm_top_layer_grid;
+
+  utl::Logger* logger = block->getImpl()->getLogger();
+
+  const int half_width = pin_width / 2;
+  const int half_height = pin_height / 2;
+  const odb::Rect& die_area = getDieArea();
+  bool region_changed = false;
+
+  if (die_area.contains(region)) {
+    odb::Point lower_left(region.xMin() - half_width,
+                          region.yMin() - half_height);
+    odb::Point upper_right(region.xMax() + half_width,
+                           region.yMax() + half_height);
+
+    if (lower_left.x() < die_area.xMin()) {
+      region.set_xlo(die_area.xMin() + half_width);
+      region_changed = true;
+    }
+    if (lower_left.y() < die_area.yMin()) {
+      region.set_ylo(die_area.yMin() + half_height);
+      region_changed = true;
+    }
+    if (upper_right.x() > die_area.xMax()) {
+      region.set_xhi(die_area.xMax() - half_width);
+      region_changed = true;
+    }
+    if (upper_right.y() > die_area.yMax()) {
+      region.set_yhi(die_area.yMax() - half_height);
+      region_changed = true;
+    }
+  } else {
+    logger->error(utl::ODB, 124, "Top layer grid region is out of the die area.");
+  }
+
+  if (region_changed) {
+    logger->info(utl::ODB,
+                 273,
+                 "Top layer grid region was changed to ({}um, {}um)-({}um, "
+                 "{}um) to prevent pin shapes out of the die area.",
+                 dbuToMicrons(region.xMin()),
+                 dbuToMicrons(region.yMin()),
+                 dbuToMicrons(region.xMax()),
+                 dbuToMicrons(region.yMax()));
+  }
+
+  top_layer_grid.layer_id = layer_id;
+  top_layer_grid.x_step = x_step;
+  top_layer_grid.y_step = y_step;
+  top_layer_grid.region = region;
+  top_layer_grid.pin_width = pin_width;
+  top_layer_grid.pin_height = pin_height;
+  top_layer_grid.keepout = keepout;
+}
+
+dbBlock::dbBTermTopLayerGrid dbBlock::getBTermTopLayerGrid()
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  dbBlock::dbBTermTopLayerGrid top_layer_grid;
+  top_layer_grid.layer_id = block->_bterm_top_layer_grid.layer_id;
+  top_layer_grid.x_step = block->_bterm_top_layer_grid.x_step;
+  top_layer_grid.y_step = block->_bterm_top_layer_grid.y_step;
+  top_layer_grid.region = block->_bterm_top_layer_grid.region;
+  top_layer_grid.pin_width = block->_bterm_top_layer_grid.pin_width;
+  top_layer_grid.pin_height = block->_bterm_top_layer_grid.pin_height;
+  top_layer_grid.keepout = block->_bterm_top_layer_grid.keepout;
+
+  return top_layer_grid;
+}
+
+Rect dbBlock::getBTermTopLayerGridRegion()
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  return block->_bterm_top_layer_grid.region;
+}
+
 Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)
 {
   Rect constraint_region;
