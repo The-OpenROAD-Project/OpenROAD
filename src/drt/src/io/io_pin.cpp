@@ -30,7 +30,7 @@ void io::Parser::instAnalysis()
   }
 
   int numLayers = getTech()->getLayers().size();
-  std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+  frOrderedIdMap<frMaster*, std::tuple<frLayerNum, frLayerNum>>
       masterPinLayerRange;
   for (auto& uMaster : getDesign()->getMasters()) {
     auto master = uMaster.get();
