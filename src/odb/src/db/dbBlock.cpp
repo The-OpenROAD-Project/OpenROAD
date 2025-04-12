@@ -715,6 +715,30 @@ dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream, const _dbBTermTopLayerGrid& obj)
+{
+  stream << obj.layer_id;
+  stream << obj.x_step;
+  stream << obj.y_step;
+  stream << obj.region;
+  stream << obj.pin_width;
+  stream << obj.pin_height;
+  stream << obj.keepout;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbBTermTopLayerGrid& obj)
+{
+  stream >> obj.layer_id;
+  stream >> obj.x_step;
+  stream >> obj.y_step;
+  stream >> obj.region;
+  stream >> obj.pin_width;
+  stream >> obj.pin_height;
+  stream >> obj.keepout;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 {
   std::list<dbBlockCallBackObj*>::const_iterator cbitr;
@@ -835,6 +859,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   }
   if (db->isSchema(db_schema_block_pin_groups)) {
     stream << block._bterm_groups;
+  }
+  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+    stream << block._bterm_top_layer_grid;
   }
 
   //---------------------------------------------------------- stream out
@@ -1007,6 +1034,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   if (db->isSchema(db_schema_block_pin_groups)) {
     stream >> block._bterm_groups;
+  }
+  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+    stream >> block._bterm_top_layer_grid;
   }
 
   //---------------------------------------------------------- stream in

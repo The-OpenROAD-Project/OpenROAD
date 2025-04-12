@@ -892,6 +892,23 @@ class dbBlock : public dbObject
     std::vector<dbBTerm*> bterms;
     bool order = false;
   };
+
+  struct dbBTermTopLayerGrid
+  {
+    int layer_id = -1;
+    int x_step = -1;
+    int y_step = -1;
+    Rect region;
+    int pin_width = -1;
+    int pin_height = -1;
+    int keepout = -1;
+
+    int llx() const { return region.xMin(); }
+    int lly() const { return region.yMin(); }
+    int urx() const { return region.xMax(); }
+    int ury() const { return region.yMax(); }
+  };
+
   ///
   /// Get block chip name.
   ///
@@ -970,6 +987,27 @@ class dbBlock : public dbObject
   /// The flag order places the pins ordered in ascending x/y position.
   ///
   void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
+
+  ///
+  /// Define the top layer grid for pin placement.
+  ///
+  void setBTermTopLayerGrid(int layer_id,
+                            int x_step,
+                            int y_step,
+                            Rect region,
+                            int pin_width,
+                            int pin_height,
+                            int keepout);
+
+  ///
+  /// Get the top layer grid for pin placement.
+  ///
+  dbBTermTopLayerGrid getBTermTopLayerGrid();
+
+  ///
+  /// Get only the rectangle corresponding to the top layer grid region.
+  ///
+  Rect getBTermTopLayerGridRegion();
 
   ///
   /// Find the rectangle corresponding to the constraint region in a specific
