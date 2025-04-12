@@ -7,13 +7,13 @@
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "rsz/Resizer.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
 extern "C" {
 extern int Rsz_Init(Tcl_Interp* interp);
 }
 
-namespace sta {
+namespace rsz {
 extern const char* rsz_tcl_inits[];
 }
 
@@ -46,7 +46,7 @@ void initResizer(OpenRoad* openroad)
   // Define swig TCL commands.
   Rsz_Init(interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::rsz_tcl_inits);
+  utl::evalTclInit(interp, rsz::rsz_tcl_inits);
 }
 
 }  // namespace ord

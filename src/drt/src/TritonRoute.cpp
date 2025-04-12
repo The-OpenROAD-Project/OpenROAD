@@ -31,7 +31,6 @@
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "serialization.h"
-#include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"

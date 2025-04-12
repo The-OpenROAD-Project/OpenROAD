@@ -5,12 +5,12 @@
 
 #include "ord/OpenRoad.hh"
 #include "par/PartitionMgr.h"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace par {
 // Tcl files encoded into strings.
 extern const char* par_tcl_inits[];
-}  // namespace sta
+}  // namespace par
 
 extern "C" {
 extern int Par_Init(Tcl_Interp* interp);
@@ -27,7 +27,7 @@ void initPartitionMgr(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Par_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::par_tcl_inits);
+  utl::evalTclInit(tcl_interp, par::par_tcl_inits);
 
   par::PartitionMgr* kernel = openroad->getPartitionMgr();
 

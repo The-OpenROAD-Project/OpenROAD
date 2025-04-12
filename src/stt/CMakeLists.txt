@@ -14,12 +14,20 @@ set(POWV9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POWV9.cpp)
 set(POST9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POST9.cpp)
 
 add_custom_command(OUTPUT ${POWV9_CPP}
-  COMMAND ${PROJECT_SOURCE_DIR}/etc/file_to_string.py ${POWV9_DAT} ${POWV9_CPP} powv9 stt::flt
+  COMMAND ${CMAKE_SOURCE_DIR}/etc/file_to_string.py 
+  --inputs ${POWV9_DAT} 
+  --output ${POWV9_CPP}
+  --varname powv9 
+  --namespace stt::flt 
   DEPENDS ${POWV9_DAT} ${PROJECT_SOURCE_DIR}/etc/file_to_string.py
 )
 
 add_custom_command(OUTPUT ${POST9_CPP}
-  COMMAND ${PROJECT_SOURCE_DIR}/etc/file_to_string.py ${POST9_DAT} ${POST9_CPP} post9 stt::flt
+  COMMAND ${PROJECT_SOURCE_DIR}/etc/file_to_string.py 
+  --inputs ${POST9_DAT} 
+  --output ${POST9_CPP} 
+  --varname post9 
+  --namespace stt::flt 
   DEPENDS ${POST9_DAT} ${PROJECT_SOURCE_DIR}/etc/file_to_string.py
   )
 
@@ -59,7 +67,6 @@ target_include_directories(stt
 
 target_link_libraries(stt_lib
     utl_lib
-    OpenSTA
     odb
 )
 
@@ -67,7 +74,6 @@ target_link_libraries(stt
     stt_lib
     utl_lib
     gui
-    OpenSTA
 )
 
 messages(
