@@ -3,8 +3,13 @@
 
 #include "connect.h"
 
+#include <algorithm>
 #include <cmath>
+#include <map>
+#include <memory>
 #include <regex>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "grid.h"

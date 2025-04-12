@@ -3,6 +3,7 @@
 
 #include "heatMap.h"
 
+#include <algorithm>
 #include <vector>
 
 namespace grt {

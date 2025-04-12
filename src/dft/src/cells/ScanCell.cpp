@@ -3,8 +3,10 @@
 
 #include "ScanCell.hh"
 
+#include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "ClockDomain.hh"
 

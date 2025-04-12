@@ -9,7 +9,11 @@
 
 #include "legalize_shift.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <utility>
 #include <vector>
 
 #include "architecture.h"

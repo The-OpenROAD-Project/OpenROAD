@@ -3,6 +3,9 @@
 
 #include "rcx/ext.h"
 
+#include <functional>
+#include <string>
+
 #include "odb/wOrder.h"
 #include "parse.h"
 #include "rcx/extMeasureRC.h"

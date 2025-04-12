@@ -7,6 +7,7 @@
 #include <tcl.h>
 
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"

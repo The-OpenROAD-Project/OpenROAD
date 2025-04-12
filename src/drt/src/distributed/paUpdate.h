@@ -3,6 +3,9 @@
 
 #pragma once
 #include <boost/serialization/access.hpp>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frAccess.h"

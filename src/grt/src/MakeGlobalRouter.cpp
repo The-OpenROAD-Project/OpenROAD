@@ -3,6 +3,8 @@
 
 #include "grt/MakeGlobalRouter.h"
 
+#include <memory>
+
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"

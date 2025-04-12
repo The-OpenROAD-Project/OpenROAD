@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "Coordinates.h"
 #include "Opendp.h"
 

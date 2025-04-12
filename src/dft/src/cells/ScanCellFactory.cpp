@@ -3,7 +3,11 @@
 
 #include "ScanCellFactory.hh"
 
+#include <algorithm>
 #include <iostream>
+#include <memory>
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"

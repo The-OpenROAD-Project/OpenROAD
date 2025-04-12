@@ -3,9 +3,12 @@
 
 #include "detailed_reorder.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cstddef>
+#include <limits>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "architecture.h"

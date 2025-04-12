@@ -6,6 +6,7 @@
 #include <dst/JobMessage.h>
 #include <omp.h>
 
+#include <algorithm>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
@@ -13,9 +14,15 @@
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
+#include <limits>
+#include <map>
+#include <memory>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"

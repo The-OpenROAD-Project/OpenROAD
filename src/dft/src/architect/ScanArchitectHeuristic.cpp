@@ -4,7 +4,9 @@
 #include "ScanArchitectHeuristic.hh"
 
 #include <iostream>
+#include <memory>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"

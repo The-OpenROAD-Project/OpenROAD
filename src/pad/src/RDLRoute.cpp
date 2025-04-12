@@ -3,6 +3,8 @@
 
 #include "RDLRoute.h"
 
+#include <map>
+#include <memory>
 #include <vector>
 
 #include "odb/db.h"

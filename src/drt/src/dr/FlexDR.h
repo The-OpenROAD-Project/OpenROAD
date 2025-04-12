@@ -8,8 +8,11 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/export.hpp>
 #include <deque>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db/drObj/drMarker.h"

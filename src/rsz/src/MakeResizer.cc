@@ -3,6 +3,9 @@
 
 #include "rsz/MakeResizer.hh"
 
+#include <memory>
+#include <utility>
+
 #include "SteinerRenderer.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"

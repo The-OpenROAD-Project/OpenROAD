@@ -3,6 +3,7 @@
 
 #include "RDLGui.h"
 
+#include <map>
 #include <vector>
 
 #include "RDLRoute.h"

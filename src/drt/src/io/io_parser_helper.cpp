@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <boost/graph/connected_components.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "frBaseTypes.h"
