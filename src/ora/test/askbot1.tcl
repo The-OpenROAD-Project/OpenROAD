@@ -1,0 +1,1 @@
+askbot "testmsg"
