@@ -3,6 +3,7 @@
 
 #include "node.h"
 
+#include <memory>
 #include <string>
 
 #include "odb/db.h"

@@ -5,6 +5,13 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "dr/FlexDR.h"
 #include "frProfileTask.h"
 #include "io/io.h"

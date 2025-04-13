@@ -11,6 +11,8 @@
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 

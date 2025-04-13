@@ -3,6 +3,10 @@
 
 #include "utl/Progress.h"
 
+#include <memory>
+#include <optional>
+#include <vector>
+
 #include "utl/Logger.h"
 
 namespace utl {

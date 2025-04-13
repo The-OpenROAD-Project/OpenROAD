@@ -4,8 +4,11 @@
 #include "BufferedNet.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <memory>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "rsz/Resizer.hh"

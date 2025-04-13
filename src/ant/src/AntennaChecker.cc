@@ -6,13 +6,18 @@
 #include <omp.h>
 #include <tcl.h>
 
+#include <algorithm>
 #include <boost/pending/disjoint_sets.hpp>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <queue>
+#include <set>
 #include <utility>
+#include <vector>
 
 #include "Polygon.hh"
 #include "odb/db.h"

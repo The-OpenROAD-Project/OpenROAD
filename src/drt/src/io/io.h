@@ -5,6 +5,7 @@
 
 #include <boost/icl/interval_set.hpp>
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>

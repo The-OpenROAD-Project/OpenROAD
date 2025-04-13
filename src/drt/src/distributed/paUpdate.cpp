@@ -4,6 +4,9 @@
 #include "distributed/paUpdate.h"
 
 #include <fstream>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "distributed/frArchive.h"

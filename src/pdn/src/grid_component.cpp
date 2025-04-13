@@ -3,7 +3,12 @@
 
 #include "grid_component.h"
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "connect.h"

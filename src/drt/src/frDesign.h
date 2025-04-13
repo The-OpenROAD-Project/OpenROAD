@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frBlock.h"

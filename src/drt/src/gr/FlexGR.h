@@ -5,7 +5,9 @@
 
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
+#include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "FlexGRCMap.h"

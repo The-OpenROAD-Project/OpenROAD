@@ -3,6 +3,8 @@
 
 #include "db/drObj/drNet.h"
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "distributed/frArchive.h"

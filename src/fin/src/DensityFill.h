@@ -5,6 +5,7 @@
 
 #include <boost/property_tree/json_parser.hpp>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "odb/db.h"

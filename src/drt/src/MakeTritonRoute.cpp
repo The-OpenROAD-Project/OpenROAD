@@ -3,6 +3,9 @@
 
 #include "triton_route/MakeTritonRoute.h"
 
+#include <memory>
+#include <utility>
+
 #include "GraphicsFactory.h"
 #include "dr/FlexDR_graphics.h"
 #include "ord/OpenRoad.hh"

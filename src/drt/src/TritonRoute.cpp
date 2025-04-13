@@ -3,11 +3,17 @@
 
 #include "triton_route/TritonRoute.h"
 
+#include <algorithm>
 #include <boost/asio/post.hpp>
 #include <boost/bind/bind.hpp>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"

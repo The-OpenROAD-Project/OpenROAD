@@ -3,8 +3,11 @@
 
 #include "SimulatedAnnealingCore.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>

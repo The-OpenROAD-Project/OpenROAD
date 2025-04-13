@@ -5,6 +5,8 @@
 
 #include <QApplication>
 #include <boost/algorithm/string/predicate.hpp>
+#include <cmath>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>

@@ -3,13 +3,21 @@
 
 #include "cts/TritonCTS.h"
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"

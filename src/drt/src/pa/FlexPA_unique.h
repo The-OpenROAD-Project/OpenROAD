@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <map>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "frDesign.h"

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QPainter>
+#include <cmath>
 #include <string>
 #include <vector>
 

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <boost/polygon/polygon.hpp>
 #include <vector>
 
