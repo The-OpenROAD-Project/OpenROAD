@@ -156,7 +156,7 @@ class dbStaReport : public sta::ReportTcl
 class dbSlackHistogram : public utl::Histogram<float>
 {
  public:
-  dbSlackHistogram(Sta* sta, dbNetwork* network, Logger* logger, int bins);
+  dbSlackHistogram(Sta* sta, dbNetwork* network, Logger* logger);
 
   void populate(const MinMax* min_max);
 
@@ -169,7 +169,7 @@ class dbSlackHistogram : public utl::Histogram<float>
 class dbLogicDepthHistogram : public utl::Histogram<int>
 {
  public:
-  dbLogicDepthHistogram(Sta* sta, dbNetwork* network, Logger* logger, int bins);
+  dbLogicDepthHistogram(Sta* sta, dbNetwork* network, Logger* logger);
 
   void populate(bool exclude_buffers, bool exclude_inverters);
 
@@ -677,11 +677,8 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-dbSlackHistogram::dbSlackHistogram(Sta* sta,
-                                   dbNetwork* network,
-                                   Logger* logger,
-                                   int bins)
-    : Histogram<float>(logger, bins), sta_(sta), network_(network)
+dbSlackHistogram::dbSlackHistogram(Sta* sta, dbNetwork* network, Logger* logger)
+    : Histogram<float>(logger), sta_(sta), network_(network)
 {
 }
 
@@ -696,15 +693,12 @@ void dbSlackHistogram::populate(const MinMax* min_max)
       addData(time_unit->staToUser(slack));
     }
   }
-
-  generateBins();
 }
 
 dbLogicDepthHistogram::dbLogicDepthHistogram(Sta* sta,
                                              dbNetwork* network,
-                                             Logger* logger,
-                                             int bins)
-    : Histogram<int>(logger, bins), sta_(sta), network_(network)
+                                             Logger* logger)
+    : Histogram<int>(logger), sta_(sta), network_(network)
 {
 }
 
@@ -734,14 +728,13 @@ void dbLogicDepthHistogram::populate(bool exclude_buffers,
     }
     addData(path_length);
   }
-
-  generateBins();
 }
 
 void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
 {
-  dbSlackHistogram histogram(sta_, db_network_, logger_, num_bins);
+  dbSlackHistogram histogram(sta_, db_network_, logger_);
   histogram.populate(min_max);
+  histogram.generateBins(num_bins);
   histogram.report(/*precision=*/3);
 }
 
@@ -749,8 +742,9 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
                                       bool exclude_buffers,
                                       bool exclude_inverters) const
 {
-  dbLogicDepthHistogram histogram(sta_, db_network_, logger_, num_bins);
+  dbLogicDepthHistogram histogram(sta_, db_network_, logger_);
   histogram.populate(exclude_buffers, exclude_inverters);
+  histogram.generateBins(num_bins);
   histogram.report();
 }
 
