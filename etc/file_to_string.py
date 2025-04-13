@@ -25,15 +25,15 @@ def encode_file_to_base64_chunks(content, chunk_size=65536):
 
 def join_files(file_list):
     combined_bytes = bytearray()
-    
+
     for file_name in file_list:
         try:
-            with open(file_name, 'rb') as f:
+            with open(file_name, "rb") as f:
                 content = f.read()
                 combined_bytes.extend(content)
         except Exception as e:
             print(f"Error reading {file_name}: {e}")
-    
+
     return bytes(combined_bytes)
 
 
