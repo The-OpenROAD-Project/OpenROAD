@@ -38,7 +38,6 @@ def join_files(file_list):
 
 
 def main():
-    print(sys.argv)
     parser = argparse.ArgumentParser(description="base64 encode a set of files.")
 
     parser.add_argument(

@@ -12,7 +12,8 @@ load(
     "OPENROAD_LIBRARY_SRCS_EXCLUDE",
     "OPENROAD_LIBRARY_SRCS_INCLUDE",
 )
-load("//:bazel/tcl_encode.bzl", "tcl_encode")
+load("//:bazel/tcl_encode_sta.bzl", "tcl_encode_sta")
+load("//:bazel/tcl_encode_or.bzl", "tcl_encode")
 load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
@@ -194,7 +195,7 @@ genrule(
         "src/stt/src/flt/etc/POST9.dat",
     ],
     outs = ["src/stt/src/flt/etc/POST9.cpp"],
-    cmd = "$(location etc/file_to_string.py) $(location src/stt/src/flt/etc/POST9.dat) \"$@\" post9 stt::flt",
+    cmd = "$(location etc/file_to_string.py) --inputs $(location src/stt/src/flt/etc/POST9.dat) --output \"$@\" --varname post9 --namespace stt::flt",
 )
 
 genrule(
@@ -204,7 +205,7 @@ genrule(
         "src/stt/src/flt/etc/POWV9.dat",
     ],
     outs = ["src/stt/src/flt/etc/POWV9.cpp"],
-    cmd = "$(location etc/file_to_string.py) $(location src/stt/src/flt/etc/POWV9.dat) \"$@\" powv9 stt::flt",
+    cmd = "$(location etc/file_to_string.py) --inputs $(location src/stt/src/flt/etc/POWV9.dat) --output \"$@\" --varname powv9 --namespace stt::flt",
 )
 
 cc_library(
@@ -250,6 +251,7 @@ tcl_encode(
     ],
     out = "InitFloorplanTclInitVar.cc",
     char_array_name = "ifp_tcl_inits",
+    namespace = "ifp",
 )
 
 tcl_encode(
@@ -260,6 +262,7 @@ tcl_encode(
         ":tcl_scripts",
     ],
     char_array_name = "dbSta_tcl_inits",
+    namespace = "sta",
 )
 
 tcl_encode(
@@ -268,6 +271,7 @@ tcl_encode(
         "src/ppl/src/IOPlacer.tcl",
     ],
     char_array_name = "ppl_tcl_inits",
+    namespace = "ppl",
 )
 
 tcl_encode(
@@ -276,6 +280,7 @@ tcl_encode(
         "src/rsz/src/Resizer.tcl",
     ],
     char_array_name = "rsz_tcl_inits",
+    namespace = "rsz",
 )
 
 tcl_encode(
@@ -284,6 +289,7 @@ tcl_encode(
         "src/dpl/src/Opendp.tcl",
     ],
     char_array_name = "dpl_tcl_inits",
+    namespace = "dpl",
 )
 
 tcl_encode(
@@ -292,6 +298,7 @@ tcl_encode(
         "src/fin/src/finale.tcl",
     ],
     char_array_name = "fin_tcl_inits",
+    namespace = "fin",
 )
 
 tcl_encode(
@@ -300,6 +307,7 @@ tcl_encode(
         "src/ant/src/AntennaChecker.tcl",
     ],
     char_array_name = "ant_tcl_inits",
+    namespace = "ant",
 )
 
 tcl_encode(
@@ -308,6 +316,7 @@ tcl_encode(
         "src/grt/src/GlobalRouter.tcl",
     ],
     char_array_name = "grt_tcl_inits",
+    namespace = "grt",
 )
 
 tcl_encode(
@@ -316,6 +325,7 @@ tcl_encode(
         "src/tap/src/tapcell.tcl",
     ],
     char_array_name = "tap_tcl_inits",
+    namespace = "tap",
 )
 
 tcl_encode(
@@ -324,6 +334,7 @@ tcl_encode(
         "src/gpl/src/replace.tcl",
     ],
     char_array_name = "gpl_tcl_inits",
+    namespace = "gpl",
 )
 
 tcl_encode(
@@ -332,6 +343,7 @@ tcl_encode(
         "src/cts/src/TritonCTS.tcl",
     ],
     char_array_name = "cts_tcl_inits",
+    namespace = "cts",
 )
 
 tcl_encode(
@@ -340,6 +352,7 @@ tcl_encode(
         "src/rcx/src/OpenRCX.tcl",
     ],
     char_array_name = "rcx_tcl_inits",
+    namespace = "rcx",
 )
 
 tcl_encode(
@@ -348,6 +361,7 @@ tcl_encode(
         "src/drt/src/TritonRoute.tcl",
     ],
     char_array_name = "drt_tcl_inits",
+    namespace = "drt",
 )
 
 tcl_encode(
@@ -356,6 +370,7 @@ tcl_encode(
         "src/psm/src/pdnsim.tcl",
     ],
     char_array_name = "psm_tcl_inits",
+    namespace = "psm",
 )
 
 tcl_encode(
@@ -364,6 +379,7 @@ tcl_encode(
         "src/par/src/partitionmgr.tcl",
     ],
     char_array_name = "par_tcl_inits",
+    namespace = "par",
 )
 
 tcl_encode(
@@ -372,6 +388,7 @@ tcl_encode(
         "src/pdn/src/pdn.tcl",
     ],
     char_array_name = "pdn_tcl_inits",
+    namespace = "pdn",
 )
 
 tcl_encode(
@@ -380,7 +397,8 @@ tcl_encode(
         "src/Metrics.tcl",
         "src/OpenRoad.tcl",
     ],
-    char_array_name = "openroad_swig_tcl_inits",
+    char_array_name = "ord_tcl_inits",
+    namespace = "ord",
 )
 
 tcl_encode(
@@ -389,6 +407,7 @@ tcl_encode(
         "src/pad/src/pad.tcl",
     ],
     char_array_name = "pad_tcl_inits",
+    namespace = "pad",
 )
 
 tcl_encode(
@@ -397,6 +416,7 @@ tcl_encode(
         "src/mpl/src/mpl.tcl",
     ],
     char_array_name = "mpl_tcl_inits",
+    namespace = "mpl",
 )
 
 tcl_encode(
@@ -405,6 +425,7 @@ tcl_encode(
         "src/rmp/src/rmp.tcl",
     ],
     char_array_name = "rmp_tcl_inits",
+    namespace = "rmp",
 )
 
 tcl_encode(
@@ -413,6 +434,7 @@ tcl_encode(
         "src/dst/src/Distributed.tcl",
     ],
     char_array_name = "dst_tcl_inits",
+    namespace = "dst",
 )
 
 tcl_encode(
@@ -421,6 +443,7 @@ tcl_encode(
         "src/stt/src/SteinerTreeBuilder.tcl",
     ],
     char_array_name = "stt_tcl_inits",
+    namespace = "stt",
 )
 
 tcl_encode(
@@ -429,6 +452,7 @@ tcl_encode(
         "src/dpo/src/Optdp.tcl",
     ],
     char_array_name = "dpo_tcl_inits",
+    namespace = "dpo",
 )
 
 tcl_encode(
@@ -437,6 +461,7 @@ tcl_encode(
         "src/gui/src/gui.tcl",
     ],
     char_array_name = "gui_tcl_inits",
+    namespace = "gui",
 )
 
 tcl_encode(
@@ -445,6 +470,7 @@ tcl_encode(
         "src/upf/src/upf.tcl",
     ],
     char_array_name = "upf_tcl_inits",
+    namespace = "upf",
 )
 
 tcl_encode(
@@ -453,6 +479,7 @@ tcl_encode(
         "src/dft/src/dft.tcl",
     ],
     char_array_name = "dft_tcl_inits",
+    namespace = "dft",
 )
 
 tcl_wrap_cc(
@@ -731,7 +758,7 @@ tcl_wrap_cc(
         "src/OpenRoad.i",
         ":error_swig",
     ],
-    module = "Openroad_swig",
+    module = "ord",
     namespace_prefix = "ord",
     root_swig_src = "src/OpenRoad.i",
     swig_includes = [
@@ -1131,7 +1158,7 @@ filegroup(
     ],
 )
 
-tcl_encode(
+tcl_encode_sta(
     name = "StaTclInitVar",
     srcs = tcl_srcs,
     char_array_name = "tcl_inits",
