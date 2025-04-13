@@ -967,7 +967,7 @@ void FlexGCWorker::Impl::updateGCWorker()
   }
 
   // get all frNets, must be sorted by id
-  std::set<frNet*, frBlockObjectComp> fnets;
+  frOrderedIdSet<frNet*> fnets;
   for (auto dnet : modifiedDRNets_) {
     fnets.insert(dnet->getFrNet());
   }

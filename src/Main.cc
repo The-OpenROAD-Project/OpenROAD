@@ -199,6 +199,33 @@ static void handler(int sig)
   raise(sig);
 }
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+
+// Avoid adding any dependencies like boost.filesystem
+//
+// Returns path to running binary if possible, otherwise nullopt.
+static std::optional<std::string> getProgramLocation()
+{
+#if defined(_WIN32)
+  char result[MAX_PATH + 1] = {'\0'};
+  auto path_len = GetModuleFileNameA(NULL, result, MAX_PATH);
+#elif defined(__APPLE__)
+  char result[MAXPATHLEN + 1] = {'\0'};
+  uint32_t path_len = MAXPATHLEN;
+  if (_NSGetExecutablePath(result, &path_len) != 0) {
+    path_len = readlink("/proc/self/exe", result, MAXPATHLEN);
+  }
+#else
+  char result[PATH_MAX + 1] = {'\0'};
+  ssize_t path_len = readlink("/proc/self/exe", result, PATH_MAX);
+#endif
+  if (path_len > 0) {
+    return result;
+  }
+  return std::nullopt;
+}
+#endif
+
 int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
@@ -214,8 +241,8 @@ int main(int argc, char* argv[])
 #ifdef BAZEL_CURRENT_REPOSITORY
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
-  std::unique_ptr<Runfiles> runfiles(
-      Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
+      getProgramLocation().value(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << error << std::endl;
     return 1;

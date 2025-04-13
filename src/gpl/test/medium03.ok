@@ -7,100 +7,106 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070  9.800 ) ( 1189.970 1190.000 ) um
-[INFO GPL-0006] NumInstances:             98627
-[INFO GPL-0007] NumPlaceInstances:        93138
-[INFO GPL-0008] NumFixedInstances:         5489
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                  98214
-[INFO GPL-0011] NumPins:                 283188
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 1200.040 1199.800 ) um
-[INFO GPL-0013] CoreBBox: ( 10.070  9.800 ) ( 1189.970 1190.000 ) um
-[INFO GPL-0016] CoreArea:            1392517.980 um^2
-[INFO GPL-0017] NonPlaceInstsArea:     1460.074 um^2
-[INFO GPL-0018] PlaceInstsArea:      128253.230 um^2
-[INFO GPL-0019] Util:                     9.220 %
-[INFO GPL-0020] StdInstsArea:        128253.230 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[InitialPlace]  Iter: 1 CG residual: 0.00049662 HPWL: 668310670
-[InitialPlace]  Iter: 2 CG residual: 0.00035069 HPWL: 675483871
-[InitialPlace]  Iter: 3 CG residual: 0.00035308 HPWL: 672901876
-[InitialPlace]  Iter: 4 CG residual: 0.00042334 HPWL: 673962048
-[InitialPlace]  Iter: 5 CG residual: 0.00033383 HPWL: 673293188
-[InitialPlace]  Iter: 6 CG residual: 0.00038804 HPWL: 674344175
-[InitialPlace]  Iter: 7 CG residual: 0.00032906 HPWL: 673646677
-[InitialPlace]  Iter: 8 CG residual: 0.00030306 HPWL: 674604860
-[InitialPlace]  Iter: 9 CG residual: 0.00032999 HPWL: 673891380
-[InitialPlace]  Iter: 10 CG residual: 0.00034412 HPWL: 674796203
-[InitialPlace]  Iter: 11 CG residual: 0.00034056 HPWL: 674086274
-[InitialPlace]  Iter: 12 CG residual: 0.00039247 HPWL: 674941592
-[InitialPlace]  Iter: 13 CG residual: 0.00038014 HPWL: 674182249
-[InitialPlace]  Iter: 14 CG residual: 0.00033174 HPWL: 675049122
-[InitialPlace]  Iter: 15 CG residual: 0.00119681 HPWL: 674271949
-[InitialPlace]  Iter: 16 CG residual: 0.00030268 HPWL: 675139472
-[InitialPlace]  Iter: 17 CG residual: 0.00036920 HPWL: 674334738
-[InitialPlace]  Iter: 18 CG residual: 0.00033767 HPWL: 675136489
-[InitialPlace]  Iter: 19 CG residual: 0.00035014 HPWL: 674364231
-[InitialPlace]  Iter: 20 CG residual: 0.00032577 HPWL: 675187995
-[INFO GPL-0031] FillerInit:NumGCells:    776304
-[INFO GPL-0032] FillerInit:NumGNets:      98214
-[INFO GPL-0033] FillerInit:NumGPins:     283188
-[INFO GPL-0023] TargetDensity:            0.700
-[INFO GPL-0024] AvrgPlaceInstArea:        1.377 um^2
-[INFO GPL-0025] IdealBinArea:             1.967 um^2
-[INFO GPL-0026] IdealBinCnt:             707876
-[INFO GPL-0027] TotalBinArea:        1392517.980 um^2
-[INFO GPL-0028] BinCnt:       512    512
-[INFO GPL-0029] BinSize: (  2.304  2.305 )
-[INFO GPL-0030] NumBins: 262144
-[NesterovSolve] Iter:    1 overflow: 0.998 HPWL: 240212010
-[NesterovSolve] Iter:   10 overflow: 0.993 HPWL: 224743495
-[NesterovSolve] Iter:   20 overflow: 0.989 HPWL: 227071305
-[NesterovSolve] Iter:   30 overflow: 0.986 HPWL: 227981497
-[NesterovSolve] Iter:   40 overflow: 0.985 HPWL: 225753559
-[NesterovSolve] Iter:   50 overflow: 0.984 HPWL: 224575844
-[NesterovSolve] Iter:   60 overflow: 0.984 HPWL: 225083806
-[NesterovSolve] Iter:   70 overflow: 0.984 HPWL: 224869808
-[NesterovSolve] Iter:   80 overflow: 0.983 HPWL: 224523373
-[NesterovSolve] Iter:   90 overflow: 0.983 HPWL: 225194192
-[NesterovSolve] Iter:  100 overflow: 0.983 HPWL: 227128362
-[NesterovSolve] Iter:  110 overflow: 0.983 HPWL: 230572448
-[NesterovSolve] Iter:  120 overflow: 0.983 HPWL: 237230695
-[NesterovSolve] Iter:  130 overflow: 0.983 HPWL: 249415357
-[NesterovSolve] Iter:  140 overflow: 0.982 HPWL: 269946931
-[NesterovSolve] Iter:  150 overflow: 0.982 HPWL: 300868344
-[NesterovSolve] Iter:  160 overflow: 0.980 HPWL: 341830974
-[NesterovSolve] Iter:  170 overflow: 0.978 HPWL: 392325138
-[NesterovSolve] Iter:  180 overflow: 0.975 HPWL: 454489707
-[NesterovSolve] Iter:  190 overflow: 0.970 HPWL: 532829684
-[NesterovSolve] Iter:  200 overflow: 0.962 HPWL: 634248981
-[NesterovSolve] Iter:  210 overflow: 0.951 HPWL: 765198251
-[NesterovSolve] Iter:  220 overflow: 0.935 HPWL: 928557364
-[NesterovSolve] Iter:  230 overflow: 0.913 HPWL: 1117922012
-[NesterovSolve] Iter:  240 overflow: 0.885 HPWL: 1313825615
-[NesterovSolve] Iter:  250 overflow: 0.853 HPWL: 1485369134
-[NesterovSolve] Iter:  260 overflow: 0.818 HPWL: 1608597144
-[NesterovSolve] Iter:  270 overflow: 0.778 HPWL: 1676714060
-[NesterovSolve] Iter:  280 overflow: 0.733 HPWL: 1772715521
-[NesterovSolve] Iter:  290 overflow: 0.683 HPWL: 2011124948
-[NesterovSolve] Iter:  300 overflow: 0.630 HPWL: 2218585240
-[NesterovSolve] Iter:  310 overflow: 0.577 HPWL: 2198915278
-[NesterovSolve] Iter:  320 overflow: 0.527 HPWL: 2336903925
-[NesterovSolve] Iter:  330 overflow: 0.488 HPWL: 2656711955
-[NesterovSolve] Iter:  340 overflow: 0.474 HPWL: 2451301926
-[NesterovSolve] Iter:  350 overflow: 0.432 HPWL: 2717457709
-[NesterovSolve] Iter:  360 overflow: 0.410 HPWL: 2543515093
-[NesterovSolve] Iter:  370 overflow: 0.383 HPWL: 2360831653
-[NesterovSolve] Iter:  380 overflow: 0.345 HPWL: 2390745274
-[NesterovSolve] Iter:  390 overflow: 0.314 HPWL: 2348423075
-[NesterovSolve] Iter:  400 overflow: 0.285 HPWL: 2327965707
-[NesterovSolve] Iter:  410 overflow: 0.256 HPWL: 2308822632
-[NesterovSolve] Iter:  420 overflow: 0.226 HPWL: 2284366961
-[NesterovSolve] Iter:  430 overflow: 0.203 HPWL: 2268761925
-[NesterovSolve] Iter:  440 overflow: 0.179 HPWL: 2257920062
-[NesterovSolve] Iter:  450 overflow: 0.158 HPWL: 2250559405
-[NesterovSolve] Iter:  460 overflow: 0.137 HPWL: 2245044246
-[NesterovSolve] Iter:  470 overflow: 0.120 HPWL: 2239945066
-[NesterovSolve] Iter:  480 overflow: 0.105 HPWL: 2237081128
-[NesterovSolve] Finished with Overflow: 0.098804
+[INFO GPL-0006] Number of instances:             98627
+[INFO GPL-0007] Movable instances:               93138
+[INFO GPL-0008] Fixed instances:                  5489
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                  98214
+[INFO GPL-0011] Number of pins:                 283188
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 1200.040 1199.800 ) um
+[INFO GPL-0013] Core BBox: ( 10.070  9.800 ) ( 1189.970 1190.000 ) um
+[INFO GPL-0016] Core area:                  1392517.980 um^2
+[INFO GPL-0017] Fixed instances area:         1460.074 um^2
+[INFO GPL-0018] Movable instances area:     128253.230 um^2
+[INFO GPL-0019] Utilization:                     9.220 %
+[INFO GPL-0020] Standard cells area:        128253.230 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00049662 HPWL: 668310670
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00035069 HPWL: 675483871
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00035308 HPWL: 672901876
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00042334 HPWL: 673962048
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00033383 HPWL: 673293188
+[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00038804 HPWL: 674344175
+[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00032906 HPWL: 673646677
+[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00030306 HPWL: 674604860
+[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00032999 HPWL: 673891380
+[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00034412 HPWL: 674796203
+[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00034056 HPWL: 674086274
+[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00039247 HPWL: 674941592
+[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00038014 HPWL: 674182249
+[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00033174 HPWL: 675049122
+[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00119681 HPWL: 674271949
+[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00030268 HPWL: 675139472
+[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00036920 HPWL: 674334738
+[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00033767 HPWL: 675136489
+[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00035014 HPWL: 674364231
+[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00032577 HPWL: 675187995
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      1.377 um^2
+[INFO GPL-0025] Ideal bin area:                  1.967 um^2
+[INFO GPL-0026] Ideal bin count:                707876
+[INFO GPL-0027] Total bin area:             1392517.980 um^2
+[INFO GPL-0028] Bin count (X, Y):         512 ,    512
+[INFO GPL-0029] Bin size (W * H):       2.304 *  2.305 um
+[INFO GPL-0030] Number of bins:                 262144
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.9978 |  2.402120e+08 |   +0.00% |  1.83e-16 |      
+       10 |   0.9927 |  2.247435e+08 |   -6.44% |  2.81e-16 |      
+       20 |   0.9887 |  2.270713e+08 |   +1.04% |  4.58e-16 |      
+       30 |   0.9864 |  2.279815e+08 |   +0.40% |  7.46e-16 |      
+       40 |   0.9846 |  2.257536e+08 |   -0.98% |  1.22e-15 |      
+       50 |   0.9838 |  2.245758e+08 |   -0.52% |  1.98e-15 |      
+       60 |   0.9836 |  2.250838e+08 |   +0.23% |  3.22e-15 |      
+       70 |   0.9835 |  2.248698e+08 |   -0.10% |  5.25e-15 |      
+       80 |   0.9834 |  2.245234e+08 |   -0.15% |  8.55e-15 |      
+       90 |   0.9834 |  2.251942e+08 |   +0.30% |  1.39e-14 |      
+      100 |   0.9832 |  2.271284e+08 |   +0.86% |  2.27e-14 |      
+      110 |   0.9829 |  2.305724e+08 |   +1.52% |  3.69e-14 |      
+      120 |   0.9828 |  2.372307e+08 |   +2.89% |  6.01e-14 |      
+      130 |   0.9826 |  2.494154e+08 |   +5.14% |  9.78e-14 |      
+      140 |   0.9821 |  2.699469e+08 |   +8.23% |  1.59e-13 |      
+      150 |   0.9817 |  3.008683e+08 |  +11.45% |  2.58e-13 |      
+      160 |   0.9802 |  3.418310e+08 |  +13.61% |  4.19e-13 |      
+      170 |   0.9781 |  3.923251e+08 |  +14.77% |  6.78e-13 |      
+      180 |   0.9747 |  4.544897e+08 |  +15.85% |  1.10e-12 |      
+      190 |   0.9697 |  5.328297e+08 |  +17.24% |  1.77e-12 |      
+      200 |   0.9624 |  6.342490e+08 |  +19.03% |  2.86e-12 |      
+      210 |   0.9509 |  7.651983e+08 |  +20.65% |  4.59e-12 |      
+      220 |   0.9349 |  9.285574e+08 |  +21.35% |  7.35e-12 |      
+      230 |   0.9125 |  1.117922e+09 |  +20.39% |  1.17e-11 |      
+      240 |   0.8850 |  1.313826e+09 |  +17.52% |  1.87e-11 |      
+      250 |   0.8533 |  1.485369e+09 |  +13.06% |  2.99e-11 |      
+      260 |   0.8175 |  1.608597e+09 |   +8.30% |  4.80e-11 |      
+      270 |   0.7779 |  1.676714e+09 |   +4.23% |  7.75e-11 |      
+      280 |   0.7329 |  1.772716e+09 |   +5.73% |  1.25e-10 |      
+      290 |   0.6829 |  2.011125e+09 |  +13.45% |  1.99e-10 |      
+      300 |   0.6299 |  2.218585e+09 |  +10.32% |  3.16e-10 |      
+      310 |   0.5769 |  2.198915e+09 |   -0.89% |  5.13e-10 |      
+      320 |   0.5265 |  2.336904e+09 |   +6.28% |  8.25e-10 |      
+      330 |   0.4878 |  2.656712e+09 |  +13.69% |  1.29e-09 |      
+      340 |   0.4737 |  2.451302e+09 |   -7.73% |  2.10e-09 |      
+      350 |   0.4325 |  2.717458e+09 |  +10.86% |  3.32e-09 |      
+      360 |   0.4104 |  2.543515e+09 |   -6.40% |  5.37e-09 |      
+      370 |   0.3827 |  2.360832e+09 |   -7.18% |  8.65e-09 |      
+      380 |   0.3454 |  2.390745e+09 |   +1.27% |  1.38e-08 |      
+      390 |   0.3141 |  2.348423e+09 |   -1.77% |  2.03e-08 |      
+      400 |   0.2854 |  2.327966e+09 |   -0.87% |  2.98e-08 |      
+      410 |   0.2560 |  2.308823e+09 |   -0.82% |  4.39e-08 |      
+      420 |   0.2263 |  2.284367e+09 |   -1.06% |  6.47e-08 |      
+      430 |   0.2028 |  2.268762e+09 |   -0.68% |  9.53e-08 |      
+      440 |   0.1785 |  2.257920e+09 |   -0.48% |  1.40e-07 |      
+      450 |   0.1576 |  2.250559e+09 |   -0.33% |  2.07e-07 |      
+      460 |   0.1375 |  2.245044e+09 |   -0.25% |  3.05e-07 |      
+      470 |   0.1203 |  2.239945e+09 |   -0.23% |  4.49e-07 |      
+      480 |   0.1048 |  2.237081e+09 |   -0.13% |  6.61e-07 |      
+[INFO GPL-1001] Finished with Overflow: 0.098804
+[INFO GPL-1002] Placed Cell Area            128253.2300
+[INFO GPL-1003] Available Free Area         1391057.9060
+[INFO GPL-1004] Minimum Feasible Density        0.1000 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.1024
+[INFO GPL-1008]     - For 80% usage of free space: 0.1152
 No differences found.
 final hpwl: 2765001013
