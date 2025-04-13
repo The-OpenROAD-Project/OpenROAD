@@ -247,11 +247,20 @@ tcl_encode(
     name = "init_floorplan_tcl",
     srcs = [
         "src/ifp/src/InitFloorplan.tcl",
-        "src/odb/src/db/odb.tcl",
     ],
     out = "InitFloorplanTclInitVar.cc",
     char_array_name = "ifp_tcl_inits",
     namespace = "ifp",
+)
+
+tcl_encode(
+    name = "odb_tcl",
+    srcs = [
+        "src/odb/src/swig/tcl/odb.tcl",
+    ],
+    out = "OdbTclInitVar.cc",
+    char_array_name = "odbtcl_tcl_inits",
+    namespace = "odb",
 )
 
 tcl_encode(
@@ -532,7 +541,7 @@ tcl_wrap_cc(
         "src/sta",
     ],
     deps = [
-        ":opendb_tcl",
+        ":opendb_swig",
     ],
 )
 
@@ -890,7 +899,7 @@ filegroup(
 ## OPENDB
 
 filegroup(
-    name = "opendb_tcl_common",
+    name = "opendb_swig_common",
     srcs = [
         "src/odb/src/swig/common/swig_common.cpp",
         "src/odb/src/swig/common/swig_common.h",
@@ -899,7 +908,7 @@ filegroup(
 )
 
 tcl_wrap_cc(
-    name = "opendb_tcl",
+    name = "opendb_swig",
     srcs = glob([
         "src/odb/src/swig/tcl/*.i",
         "src/odb/src/swig/common/*.i",

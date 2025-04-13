@@ -31,6 +31,7 @@
 #include "gui/MakeGui.h"
 #include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
+#include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -64,7 +65,6 @@ extern const char* ord_tcl_inits[];
 // Swig uses C linkage for init functions.
 extern "C" {
 extern int Ord_Init(Tcl_Interp* interp);
-extern int Odbtcl_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -186,7 +186,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
 
   initLogger(logger_, tcl_interp);
   initGui(this);  // first so we can register our sink with the logger
-  Odbtcl_Init(tcl_interp);
+  initOdb(this);
   initUpf(this);
   initInitFloorplan(this);
   initDbSta(this);
