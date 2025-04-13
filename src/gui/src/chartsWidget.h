@@ -75,9 +75,6 @@ class HistogramView : public QChartView
   float computeBucketInterval();
   float computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
-  int computeNumberofBuckets(int bucket_interval,
-                             float max_slack,
-                             float min_slack);
   int computeNumberOfDigits(float value);
 
   void populateBins();
