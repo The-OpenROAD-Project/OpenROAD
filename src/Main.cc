@@ -41,6 +41,7 @@
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
@@ -69,11 +70,10 @@ using std::string;
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
-  X(odb)
+  X(odb)                                 \
+  X(ord)
 
-#define FOREACH_TOOL(X)            \
-  FOREACH_TOOL_WITHOUT_OPENROAD(X) \
-  X(openroad_swig)
+#define FOREACH_TOOL(X) FOREACH_TOOL_WITHOUT_OPENROAD(X)
 
 extern "C" {
 #define X(name) extern PyObject* PyInit__##name##_py();
@@ -95,11 +95,12 @@ static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
 
 #ifdef ENABLE_PYTHON3
-namespace sta {
-#define X(name) extern const char* name##_py_python_inits[];
+#define X(name)                                \
+  namespace name {                             \
+  extern const char* name##_py_python_inits[]; \
+  }
 FOREACH_TOOL(X)
 #undef X
-}  // namespace sta
 
 #if PY_VERSION_HEX >= 0x03080000
 static void initPython(int argc, char* argv[])
@@ -125,22 +126,21 @@ static void initPython()
 #else
   Py_Initialize();
 #endif
-#define X(name)                                                       \
-  {                                                                   \
-    char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
-    PyObject* code                                                    \
-        = Py_CompileString(unencoded, #name "_py.py", Py_file_input); \
-    if (code == nullptr) {                                            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not compile " #name "_py\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    if (PyImport_ExecCodeModule(#name, code) == nullptr) {            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not add module " #name "\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    delete[] unencoded;                                               \
+#define X(name)                                                               \
+  {                                                                           \
+    std::string unencoded = utl::base64_decode(name::name##_py_python_inits); \
+    PyObject* code                                                            \
+        = Py_CompileString(unencoded.c_str(), #name "_py.py", Py_file_input); \
+    if (code == nullptr) {                                                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not compile " #name "_py\n");             \
+      exit(1);                                                                \
+    }                                                                         \
+    if (PyImport_ExecCodeModule(#name, code) == nullptr) {                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not add module " #name "\n");             \
+      exit(1);                                                                \
+    }                                                                         \
   }
   FOREACH_TOOL_WITHOUT_OPENROAD(X)
 #undef X
@@ -150,9 +150,9 @@ static void initPython()
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
   {
-    char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "openroad.py", Py_file_input);
+    std::string unencoded = utl::base64_decode(ord::ord_py_python_inits);
+    PyObject* code
+        = Py_CompileString(unencoded.c_str(), "openroad.py", Py_file_input);
     if (code == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not compile openroad.py\n");
@@ -164,8 +164,6 @@ static void initPython()
       fprintf(stderr, "Error: could not add module openroad\n");
       exit(1);
     }
-
-    delete[] unencoded;
   }
 }
 #endif

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("//:bazel/tcl_encode.bzl", "tcl_encode")
+load("//:bazel/tcl_encode_or.bzl", "tcl_encode")
 load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
@@ -26,6 +26,7 @@ cc_library(
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
         "src/prometheus/metrics_server.cpp",
+        "src/decode.cpp",
         "src/timer.cpp",
     ],
     hdrs = [
@@ -36,6 +37,7 @@ cc_library(
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
         "include/utl/algorithms.h",
+        "include/utl/decode.h",
         "include/utl/deleter.h",
         "include/utl/exception.h",
         "include/utl/prometheus/atomic_floating.h",
@@ -95,4 +97,5 @@ tcl_encode(
     ],
     char_array_name = "utl_tcl_inits",
     visibility = ["//visibility:public"],
+    namespace = "utl",
 )
