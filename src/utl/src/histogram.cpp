@@ -8,19 +8,24 @@
 namespace utl {
 
 template <typename DataType>
-Histogram<DataType>::Histogram(Logger* logger, int bins) : logger_(logger)
+Histogram<DataType>::Histogram(Logger* logger) : logger_(logger)
+{
+  bins_.resize(1, 0);
+}
+
+template <typename DataType>
+void Histogram<DataType>::generateBins(int bins,
+                                       std::optional<DataType> bin_min,
+                                       std::optional<DataType> bin_width)
 {
   if (bins <= 0) {
     logger_->error(UTL, 70, "The number of bins must be positive.");
   }
 
-  // Populate each bin with count.
+  // Reset and populate each bin with count.
+  std::fill(bins_.begin(), bins_.end(), 0);
   bins_.resize(bins, 0);
-}
 
-template <typename DataType>
-void Histogram<DataType>::generateBins()
-{
   if (!hasData()) {
     logger_->warn(UTL, 71, "No data for the histogram has been loaded.");
     return;
@@ -28,24 +33,16 @@ void Histogram<DataType>::generateBins()
 
   std::sort(data_.begin(), data_.end());
 
-  min_val_ = data_.front();
-
-  bin_width_ = computeBinWidth();
-  const int bins = getBinCount();
+  min_val_ = bin_min.value_or(data_.front());
+  bin_width_ = bin_width.value_or(computeBinWidth());
 
   if (bin_width_ == 0) {  // Special case for no variation in the data.
     bins_[0] = data_.size();
     return;
   }
 
-  const float bin_width = bin_width_;
-
   for (const auto& val : data_) {
-    int bin = static_cast<int>((val - min_val_) / bin_width);
-    if (bin >= bins) {  // Special case for val with the maximum value.
-      bin = bins - 1;
-    }
-    bins_[bin]++;
+    bins_[getBinIndex(val)]++;
   }
 }
 
@@ -57,7 +54,7 @@ void Histogram<DataType>::report(int precision) const
     return;
   }
 
-  const int num_bins = getBinCount();
+  const int num_bins = getBinsCount();
   const int largest_bin = *std::max_element(bins_.begin(), bins_.end());
 
   int bin_label_width = 0;
@@ -69,9 +66,8 @@ void Histogram<DataType>::report(int precision) const
   }
 
   // Print the histogram.
-  for (int bin = 0; bin < num_bins; ++bin) {
-    const DataType bin_start = min_val_ + bin * bin_width_;
-    const DataType bin_end = min_val_ + (bin + 1) * bin_width_;
+  for (int bin = 0; bin < num_bins; bin++) {
+    const auto& [bin_start, bin_end] = getBinRange(bin);
     int bar_length  // Round the bar length to its closest value.
         = (max_bin_print_width_ * bins_[bin] + largest_bin / 2) / largest_bin;
     if (bar_length == 0 && bins_[bin] > 0) {
@@ -87,32 +83,58 @@ void Histogram<DataType>::report(int precision) const
   }
 }
 
+template <typename DataType>
+int Histogram<DataType>::getBinIndex(DataType val) const
+{
+  if (bin_width_ == 0) {
+    return 0;
+  }
+
+  const int bins = getBinsCount();
+
+  int bin = static_cast<int>((val - min_val_) / static_cast<float>(bin_width_));
+  if (bin >= bins) {  // Special case for val with the maximum value.
+    bin = bins - 1;
+  }
+
+  return bin;
+}
+
+template <typename DataType>
+std::pair<DataType, DataType> Histogram<DataType>::getBinRange(int idx) const
+{
+  const DataType bin_start = min_val_ + idx * bin_width_;
+  const DataType bin_end = min_val_ + (idx + 1) * bin_width_;
+
+  return {bin_start, bin_end};
+}
+
 template <>
 int Histogram<int>::computeBinWidth() const
 {
   const float width
-      = (data_.back() - getBinMinimum()) / static_cast<float>(getBinCount());
+      = (data_.back() - getBinsMinimum()) / static_cast<float>(getBinsCount());
   return std::ceil(width);
 }
 
 template <>
-std::string Histogram<int>::formatBin(int pt, int width, int precision) const
+std::string Histogram<int>::formatBin(int val, int width, int precision) const
 {
-  return fmt::format("{:>{}}", pt, width);
+  return fmt::format("{:>{}}", val, width);
 }
 
 template <>
 float Histogram<float>::computeBinWidth() const
 {
-  return (data_.back() - getBinMinimum()) / getBinCount();
+  return (data_.back() - getBinsMinimum()) / getBinsCount();
 }
 
 template <>
-std::string Histogram<float>::formatBin(float pt,
+std::string Histogram<float>::formatBin(float val,
                                         int width,
                                         int precision) const
 {
-  return fmt::format("{:>{}.{}f}", pt, width, precision);
+  return fmt::format("{:>{}.{}f}", val, width, precision);
 }
 
 template class Histogram<float>;

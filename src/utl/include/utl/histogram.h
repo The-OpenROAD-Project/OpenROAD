@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -14,33 +16,55 @@ template <typename DataType>
 class Histogram
 {
  public:
-  Histogram(Logger* logger, int bins);
+  Histogram(Logger* logger);
   virtual ~Histogram() = default;
 
   // Prints the histogram to the log. precision is used to control
   // the number of digits when displaying each bin's range.
   void report(int precision = 0) const;
 
-  DataType getBinWidth() const { return bin_width_; }
-  DataType getBinMinimum() const { return min_val_; }
-  DataType getBinRange() const { return bins_.size() * getBinWidth(); }
-  DataType getBinMaximum() const { return getBinRange() + getBinMinimum(); }
-  int getBinCount() const { return bins_.size(); }
+  DataType getMinValue() const
+  {
+    return *std::min_element(data_.begin(), data_.end());
+  }
+  DataType getMaxValue() const
+  {
+    return *std::max_element(data_.begin(), data_.end());
+  }
+  int getMinBinCount() const
+  {
+    return *std::min_element(bins_.begin(), bins_.end());
+  }
+  int getMaxBinCount() const
+  {
+    return *std::max_element(bins_.begin(), bins_.end());
+  }
+
+  DataType getBinsWidth() const { return bin_width_; }
+  DataType getBinsMinimum() const { return min_val_; }
+  DataType getBinsRange() const { return getBinsCount() * getBinsWidth(); }
+  DataType getBinsMaximum() const { return getBinsRange() + getBinsMinimum(); }
+  int getBinsCount() const { return bins_.size(); }
+  int getBinIndex(DataType val) const;
+  std::pair<DataType, DataType> getBinRange(int idx) const;
 
   const std::vector<int>& getBins() const { return bins_; }
   void clearData() { data_.clear(); }
   bool hasData() const { return !data_.empty(); }
+  const std::vector<DataType> getData() const { return data_; }
 
   Logger* getLogger() const { return logger_; }
 
   // populate needs to call this to add data to the histogram
   void addData(DataType data) { data_.push_back(data); }
   // called after populate to build the bins data
-  void generateBins();
+  void generateBins(int bins,
+                    std::optional<DataType> bin_min = {},
+                    std::optional<DataType> bin_width = {});
 
  private:
   DataType computeBinWidth() const;
-  std::string formatBin(DataType pt, int width, int precision) const;
+  std::string formatBin(DataType val, int width, int precision) const;
 
   Logger* logger_;
 
