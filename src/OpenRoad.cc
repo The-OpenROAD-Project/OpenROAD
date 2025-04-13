@@ -29,7 +29,7 @@
 #include "gpl/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
-#include "ifp//MakeInitFloorplan.hh"
+#include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
@@ -51,6 +51,7 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "triton_route/MakeTritonRoute.h"
+#include "upf/MakeUpf.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/ScopedTemporaryFile.h"
@@ -60,15 +61,10 @@ namespace ord {
 extern const char* ord_tcl_inits[];
 }  // namespace ord
 
-namespace upf {
-extern const char* upf_tcl_inits[];
-}
-
 // Swig uses C linkage for init functions.
 extern "C" {
 extern int Ord_Init(Tcl_Interp* interp);
 extern int Odbtcl_Init(Tcl_Interp* interp);
-extern int Upf_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -191,8 +187,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initLogger(logger_, tcl_interp);
   initGui(this);  // first so we can register our sink with the logger
   Odbtcl_Init(tcl_interp);
-  Upf_Init(tcl_interp);
-  utl::evalTclInit(tcl_interp, upf::upf_tcl_inits);
+  initUpf(this);
   initInitFloorplan(this);
   initDbSta(this);
   initResizer(this);
