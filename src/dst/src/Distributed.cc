@@ -7,7 +7,9 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/thread/thread.hpp>
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "LoadBalancer.h"
 #include "Worker.h"

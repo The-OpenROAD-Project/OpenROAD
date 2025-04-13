@@ -2,6 +2,10 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "gc/FlexGC_impl.h"

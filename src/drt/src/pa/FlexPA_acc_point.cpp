@@ -3,6 +3,13 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
 #include "frProfileTask.h"

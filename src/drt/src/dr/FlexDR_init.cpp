@@ -2,6 +2,12 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "dr/FlexDR.h"

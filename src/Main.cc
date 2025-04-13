@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have

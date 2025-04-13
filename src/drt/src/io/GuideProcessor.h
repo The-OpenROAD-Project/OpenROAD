@@ -4,6 +4,9 @@
 #pragma once
 
 #include <boost/icl/interval_set.hpp>
+#include <map>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "db/tech/frTechObject.h"

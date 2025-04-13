@@ -3,6 +3,7 @@
 
 #include "fft.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>

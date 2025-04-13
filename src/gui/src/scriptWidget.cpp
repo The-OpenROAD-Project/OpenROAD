@@ -12,6 +12,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <cerrno>
+#include <functional>
 #include <mutex>
 
 #include "gui/gui.h"

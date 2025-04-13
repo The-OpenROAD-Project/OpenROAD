@@ -3,6 +3,7 @@
 
 #include "router.h"
 
+#include <algorithm>
 #include <vector>
 
 namespace dpo {

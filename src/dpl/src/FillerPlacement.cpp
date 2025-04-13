@@ -2,6 +2,8 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <limits>
+#include <utility>
 
 #include "dpl/Grid.h"
 #include "dpl/Objects.h"

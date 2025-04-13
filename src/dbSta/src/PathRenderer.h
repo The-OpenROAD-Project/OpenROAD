@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "AbstractPathRenderer.h"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"

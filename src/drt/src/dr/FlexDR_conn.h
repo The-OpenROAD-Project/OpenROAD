@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <map>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "dr/AbstractDRGraphics.h"

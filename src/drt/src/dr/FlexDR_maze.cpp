@@ -4,8 +4,13 @@
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
 #include <chrono>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "db/gcObj/gcNet.h"
