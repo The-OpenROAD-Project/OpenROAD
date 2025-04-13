@@ -199,7 +199,6 @@ swig_lib(NAME      ord
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    Metrics.tcl
-                   ${ODB_HOME}/src/db/odb.tcl
 )
 
 target_link_libraries(ord
