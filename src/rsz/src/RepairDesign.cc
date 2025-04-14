@@ -861,8 +861,6 @@ void RepairDesign::repairNet(Net* net,
     const Corner* corner = sta_->cmdCorner();
     bool repaired_net = false;
 
-    const bool can_repair = !resizer_->dontTouch(drvr_pin);
-
     // Fanout is addressed by creating region repeaters
     if (check_fanout) {
       float fanout, max_fanout, fanout_slack;
