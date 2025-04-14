@@ -87,11 +87,6 @@ void FlexGCWorker::updateGCWorker()
   impl_->updateGCWorker();
 }
 
-void FlexGCWorker::end()
-{
-  impl_->end();
-}
-
 void FlexGCWorker::initPA0(const frDesign* design)
 {
   impl_->initPA0(design);

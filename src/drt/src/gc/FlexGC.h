@@ -48,7 +48,6 @@ class FlexGCWorker
   // others
   void init(const frDesign* design);
   int main();
-  void end();
   void clearPWires();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
   void initPA0(const frDesign* design);
