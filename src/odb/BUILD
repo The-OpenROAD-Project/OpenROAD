@@ -77,8 +77,6 @@ cc_library(
 tcl_wrap_cc(
     name = "swig",
     srcs = glob([
-        "src/swig/tcl/*.i",
-        "src/swig/common/*.i",
         "include/odb/*.h",
     ]) + [
         "//:src/Design.i",
