@@ -721,7 +721,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTermTopLayerGrid& obj)
 {
-  stream << obj.layer_id;
+  stream << obj.layer;
   stream << obj.x_step;
   stream << obj.y_step;
   stream << obj.region;
@@ -733,7 +733,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTermTopLayerGrid& obj)
 
 dbIStream& operator>>(dbIStream& stream, _dbBTermTopLayerGrid& obj)
 {
-  stream >> obj.layer_id;
+  stream >> obj.layer;
   stream >> obj.x_step;
   stream >> obj.y_step;
   stream >> obj.region;
@@ -1634,7 +1634,7 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
-void dbBlock::setBTermTopLayerGrid(int layer_id,
+void dbBlock::setBTermTopLayerGrid(dbTechLayer* layer,
                                    int x_step,
                                    int y_step,
                                    Rect region,
@@ -1690,7 +1690,7 @@ void dbBlock::setBTermTopLayerGrid(int layer_id,
                  dbuToMicrons(region.yMax()));
   }
 
-  top_layer_grid.layer_id = layer_id;
+  top_layer_grid.layer = layer->getId();
   top_layer_grid.x_step = x_step;
   top_layer_grid.y_step = y_step;
   top_layer_grid.region = region;
@@ -1704,7 +1704,15 @@ dbBlock::dbBTermTopLayerGrid dbBlock::getBTermTopLayerGrid()
   _dbBlock* block = (_dbBlock*) this;
 
   dbBlock::dbBTermTopLayerGrid top_layer_grid;
-  top_layer_grid.layer_id = block->_bterm_top_layer_grid.layer_id;
+
+  odb::dbTech* tech = getDb()->getTech();
+  dbTechLayer* layer = nullptr;
+  if (block->_bterm_top_layer_grid.layer.isValid()) {
+    layer = odb::dbTechLayer::getTechLayer(tech,
+                                           block->_bterm_top_layer_grid.layer);
+  }
+
+  top_layer_grid.layer = layer;
   top_layer_grid.x_step = block->_bterm_top_layer_grid.x_step;
   top_layer_grid.y_step = block->_bterm_top_layer_grid.y_step;
   top_layer_grid.region = block->_bterm_top_layer_grid.region;

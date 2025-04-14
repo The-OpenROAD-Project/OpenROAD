@@ -79,7 +79,7 @@ void IOPlacer::clear()
 odb::dbTechLayer* IOPlacer::getTopLayer() const
 {
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  return getTech()->findRoutingLayer(top_grid.layer_id);
+  return top_grid.layer;
 }
 
 void IOPlacer::clearConstraints()
@@ -1625,7 +1625,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
   }
 
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  if (pin.getLayer() != top_grid.layer_id) {
+  if (top_grid.layer == nullptr
+      || pin.getLayer() != top_grid.layer->getRoutingLevel()) {
     int required_min_area = 0;
 
     if (hor_layers_.find(pin.getLayer()) == hor_layers_.end()
@@ -2709,7 +2710,9 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
   int min_spacing, init_track, num_track;
 
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  if (layer != top_grid.layer_id) {  // pin is placed in the die boundaries
+  if (top_grid.layer == nullptr
+      || layer != top_grid.layer->getRoutingLevel()) {  // pin is placed in the
+                                                        // die boundaries
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
       pos.setY(round(static_cast<double>((pos.y() - init_track)) / min_spacing)
@@ -2855,8 +2858,11 @@ void IOPlacer::findSlotsForTopLayer()
   if (top_layer_slots_.empty() && top_grid.pin_width > 0) {
     for (int x = top_grid.llx(); x < top_grid.urx(); x += top_grid.x_step) {
       for (int y = top_grid.lly(); y < top_grid.ury(); y += top_grid.y_step) {
-        top_layer_slots_.push_back(
-            {false, false, Point(x, y), top_grid.layer_id, Edge::invalid});
+        top_layer_slots_.push_back({false,
+                                    false,
+                                    Point(x, y),
+                                    top_grid.layer->getRoutingLevel(),
+                                    Edge::invalid});
       }
     }
 
@@ -2873,7 +2879,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   // Get routing obstructions
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
-    if (box->getTechLayer()->getRoutingLevel() == top_grid.layer_id) {
+    if (top_grid.layer != nullptr
+        && box->getTechLayer()->getRoutingLevel()
+               == top_grid.layer->getRoutingLevel()) {
       odb::Rect obstruction_rect = box->getBox();
       obstructions.push_back(obstruction_rect);
     }
@@ -2885,7 +2893,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
-            if (wire->getTechLayer()->getRoutingLevel() == top_grid.layer_id) {
+            if (top_grid.layer != nullptr
+                && wire->getTechLayer()->getRoutingLevel()
+                       == top_grid.layer->getRoutingLevel()) {
               odb::Rect obstruction_rect = wire->getBox();
               obstructions.push_back(obstruction_rect);
             }
@@ -2900,7 +2910,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (odb::dbBPin* pin : term->getBPins()) {
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
-          if (box->getTechLayer()->getRoutingLevel() == top_grid.layer_id) {
+          if (top_grid.layer != nullptr
+              && box->getTechLayer()->getRoutingLevel()
+                     == top_grid.layer->getRoutingLevel()) {
             odb::Rect obstruction_rect = box->getBox();
             obstructions.push_back(obstruction_rect);
           }

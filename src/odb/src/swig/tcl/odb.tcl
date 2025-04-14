@@ -935,7 +935,7 @@ proc define_pin_shape_pattern { args } {
     set keepout [[[ord::get_db_tech] findLayer $keys(-layer)] getSpacing $max_dim]
   }
 
-  $block setBTermTopLayerGrid [$layer getRoutingLevel] $x_step $y_step region $width $height $keepout
+  $block setBTermTopLayerGrid $layer $x_step $y_step region $width $height $keepout
 }
 
 namespace eval odb {

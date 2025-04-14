@@ -895,7 +895,7 @@ class dbBlock : public dbObject
 
   struct dbBTermTopLayerGrid
   {
-    int layer_id = -1;
+    dbTechLayer* layer = nullptr;
     int x_step = -1;
     int y_step = -1;
     Rect region;
@@ -991,7 +991,7 @@ class dbBlock : public dbObject
   ///
   /// Define the top layer grid for pin placement.
   ///
-  void setBTermTopLayerGrid(int layer_id,
+  void setBTermTopLayerGrid(dbTechLayer* layer,
                             int x_step,
                             int y_step,
                             Rect region,

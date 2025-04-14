@@ -127,7 +127,7 @@ struct _dbBTermGroup
 
 struct _dbBTermTopLayerGrid
 {
-  int layer_id = -1;
+  dbId<_dbTechLayer> layer;
   int x_step = -1;
   int y_step = -1;
   Rect region;
