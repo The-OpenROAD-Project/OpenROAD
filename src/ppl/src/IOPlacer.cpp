@@ -1711,8 +1711,12 @@ void IOPlacer::updatePinArea(IOPin& pin)
                      getBlock()->dbuAreaToMicrons(required_min_area));
     }
   } else {
-    int pin_width = top_grid.pin_width;
-    int pin_height = top_grid.pin_height;
+    if (!top_grid.pin_width || !top_grid.pin_height) {
+      logger_->error(
+          utl::PPL, 113, "Pin width/height for top layer grid not found.");
+    }
+    int pin_width = top_grid.pin_width.value();
+    int pin_height = top_grid.pin_height.value();
 
     if (pin_width % mfg_grid != 0) {
       pin_width
@@ -2861,11 +2865,15 @@ void IOPlacer::findSlotsForTopLayer()
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
   if (top_layer_slots_.empty() && top_grid.pin_width > 0) {
     if (top_grid.region.isRect()) {
+      if (!top_grid.x_step || !top_grid.y_step) {
+        logger_->error(
+            utl::PPL, 114, "x_step/y_step for top layer grid not found.");
+      }
       const Rect& top_grid_region = top_grid.region.getEnclosingRect();
       for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
-           x += top_grid.x_step) {
+           x += top_grid.x_step.value()) {
         for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
-             y += top_grid.y_step) {
+             y += top_grid.y_step.value()) {
           top_layer_slots_.push_back({false,
                                       false,
                                       Point(x, y),
@@ -2930,14 +2938,23 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
   }
 
+  if (!top_grid.pin_width || !top_grid.pin_height) {
+    logger_->error(
+        utl::PPL, 115, "Pin width/height for top layer grid not found.");
+  }
+
+  if (!top_grid.keepout) {
+    logger_->error(utl::PPL, 116, "Pin keepout for top layer grid not found.");
+  }
+
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
   for (auto& slot : top_layer_slots_) {
     odb::Point& point = slot.pos;
-    if (point.x() - top_grid.pin_width / 2 < die_area.xMin()
-        || point.y() - top_grid.pin_height / 2 < die_area.yMin()
-        || point.x() + top_grid.pin_width / 2 > die_area.xMax()
-        || point.y() + top_grid.pin_height / 2 > die_area.yMax()) {
+    if (point.x() - top_grid.pin_width.value() / 2 < die_area.xMin()
+        || point.y() - top_grid.pin_height.value() / 2 < die_area.yMin()
+        || point.x() + top_grid.pin_width.value() / 2 > die_area.xMax()
+        || point.y() + top_grid.pin_height.value() / 2 > die_area.yMax()) {
       // mark slot as blocked since it extends beyond the die area
       slot.blocked = true;
     }
@@ -2949,10 +2966,12 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       odb::Point& point = slot.pos;
       // mock slot with keepout
       odb::Rect pin_rect(
-          point.x() - top_grid.pin_width / 2 - top_grid.keepout,
-          point.y() - top_grid.pin_height / 2 - top_grid.keepout,
-          point.x() + top_grid.pin_width / 2 + top_grid.keepout,
-          point.y() + top_grid.pin_height / 2 + top_grid.keepout);
+          point.x() - top_grid.pin_width.value() / 2 - top_grid.keepout.value(),
+          point.y() - top_grid.pin_height.value() / 2
+              - top_grid.keepout.value(),
+          point.x() + top_grid.pin_width.value() / 2 + top_grid.keepout.value(),
+          point.y() + top_grid.pin_height.value() / 2
+              + top_grid.keepout.value());
       if (rect.intersects(pin_rect)) {  // mark slot as blocked
         slot.blocked = true;
       }
@@ -2971,8 +2990,11 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
   if (top_grid.region.isRect()) {
     const Rect& top_grid_region = top_grid.region.getEnclosingRect();
+    if (!top_grid.x_step || !top_grid.y_step) {
+      logger_->error(utl::PPL, 117, "x_step for top layer grid not found.");
+    }
     for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
-         x += top_grid.x_step) {
+         x += top_grid.x_step.value()) {
       if (x < lb_x || x > ub_x) {
         continue;
       }

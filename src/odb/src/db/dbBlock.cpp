@@ -1707,18 +1707,29 @@ dbBlock::dbBTermTopLayerGrid dbBlock::getBTermTopLayerGrid()
 
   odb::dbTech* tech = getDb()->getTech();
   dbTechLayer* layer = nullptr;
-  if (block->_bterm_top_layer_grid.layer.isValid()) {
-    layer = odb::dbTechLayer::getTechLayer(tech,
-                                           block->_bterm_top_layer_grid.layer);
+  const auto& top_grid = block->_bterm_top_layer_grid;
+
+  if (top_grid.layer.isValid()) {
+    layer = odb::dbTechLayer::getTechLayer(tech, top_grid.layer);
   }
 
   top_layer_grid.layer = layer;
-  top_layer_grid.x_step = block->_bterm_top_layer_grid.x_step;
-  top_layer_grid.y_step = block->_bterm_top_layer_grid.y_step;
-  top_layer_grid.region = block->_bterm_top_layer_grid.region;
-  top_layer_grid.pin_width = block->_bterm_top_layer_grid.pin_width;
-  top_layer_grid.pin_height = block->_bterm_top_layer_grid.pin_height;
-  top_layer_grid.keepout = block->_bterm_top_layer_grid.keepout;
+  top_layer_grid.x_step = top_grid.x_step != -1
+                              ? std::optional<int>(top_grid.x_step)
+                              : std::nullopt;
+  top_layer_grid.y_step = top_grid.y_step != -1
+                              ? std::optional<int>(top_grid.y_step)
+                              : std::nullopt;
+  top_layer_grid.region = top_grid.region;
+  top_layer_grid.pin_width = top_grid.pin_width != -1
+                                 ? std::optional<int>(top_grid.pin_width)
+                                 : std::nullopt;
+  top_layer_grid.pin_height = top_grid.pin_height != -1
+                                  ? std::optional<int>(top_grid.pin_height)
+                                  : std::nullopt;
+  top_layer_grid.keepout = top_grid.keepout != -1
+                               ? std::optional<int>(top_grid.keepout)
+                               : std::nullopt;
 
   return top_layer_grid;
 }

@@ -896,12 +896,12 @@ class dbBlock : public dbObject
   struct dbBTermTopLayerGrid
   {
     dbTechLayer* layer = nullptr;
-    int x_step = -1;
-    int y_step = -1;
+    std::optional<int> x_step;
+    std::optional<int> y_step;
     Polygon region;
-    int pin_width = -1;
-    int pin_height = -1;
-    int keepout = -1;
+    std::optional<int> pin_width;
+    std::optional<int> pin_height;
+    std::optional<int> keepout;
   };
 
   ///
