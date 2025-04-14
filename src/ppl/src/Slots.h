@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
+#include <set>
 #include <vector>
 
 #include "Netlist.h"

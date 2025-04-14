@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <vector>
 
 #include "dbUtil.h"
 #include "ext_options.h"

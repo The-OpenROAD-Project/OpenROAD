@@ -112,10 +112,8 @@ target_include_directories(drt_lib
 target_link_libraries(drt_lib
   PUBLIC
     stt_lib
-    OpenSTA
     utl_lib
     dst
-    dbSta_lib
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}

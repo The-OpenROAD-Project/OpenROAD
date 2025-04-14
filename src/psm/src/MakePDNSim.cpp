@@ -7,9 +7,9 @@
 
 #include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace psm {
 extern const char* psm_tcl_inits[];
 }
 
@@ -28,7 +28,7 @@ void initPDNSim(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Psm_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::psm_tcl_inits);
+  utl::evalTclInit(tcl_interp, psm::psm_tcl_inits);
   openroad->getPDNSim()->init(openroad->getLogger(),
                               openroad->getDb(),
                               openroad->getSta(),

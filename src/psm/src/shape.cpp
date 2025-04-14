@@ -5,7 +5,13 @@
 
 #include <boost/geometry.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <cmath>
+#include <functional>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "node.h"

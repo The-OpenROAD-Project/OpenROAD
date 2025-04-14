@@ -45,7 +45,6 @@ target_include_directories(dpo
 target_link_libraries(dpo
   PRIVATE
     odb
-    OpenSTA
     utl_lib
     dpl_lib
 )

@@ -3,6 +3,7 @@
 
 #include "dbBTerm.h"
 
+#include <optional>
 #include <string>
 
 #include "dbArrayTable.h"

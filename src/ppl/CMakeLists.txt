@@ -36,7 +36,6 @@ target_include_directories(ppl
 target_link_libraries(ppl
   PUBLIC
     Munkres
-    OpenSTA
     odb
     utl_lib
     gui
@@ -61,7 +60,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(ppl_py
     PUBLIC
       ppl
-      OpenSTA
       odb
       Boost::boost
   )

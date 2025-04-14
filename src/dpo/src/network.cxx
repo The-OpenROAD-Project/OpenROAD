@@ -3,6 +3,8 @@
 
 #include "network.h"
 
+#include <memory>
+
 #include "dpl/Objects.h"
 namespace dpo {
 

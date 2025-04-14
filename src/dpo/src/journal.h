@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <set>
+#include <vector>
 
 #include "network.h"
 

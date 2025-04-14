@@ -6,9 +6,14 @@
 #include <QApplication>
 #include <QThread>
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
+#include <limits>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "heatMapSetup.h"

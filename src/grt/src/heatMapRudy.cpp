@@ -3,6 +3,8 @@
 
 #include "heatMapRudy.h"
 
+#include <algorithm>
+#include <cmath>
 #include <vector>
 
 #include "odb/db.h"

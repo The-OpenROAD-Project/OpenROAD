@@ -3,6 +3,7 @@
 
 #include "Grid.h"
 
+#include <cmath>
 #include <complex>
 
 namespace grt {

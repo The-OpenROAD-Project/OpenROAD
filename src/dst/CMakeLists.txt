@@ -33,7 +33,6 @@ target_include_directories(dst_lib
 target_link_libraries(dst_lib
   PUBLIC
     utl_lib
-    OpenSTA
     ${TCL_LIBRARY}
     ${ZLIB_LIBRARIES}
     Boost::serialization

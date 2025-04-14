@@ -3,6 +3,10 @@
 
 #include "power_cells.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frNode.h"
@@ -10,7 +12,7 @@ namespace drt {
 
 void FlexGRWorker::end()
 {
-  std::set<frNet*, frBlockObjectComp> modNets;
+  frOrderedIdSet<frNet*> modNets;
   endGetModNets(modNets);
   endRemoveNets(modNets);
   endAddNets(modNets);
@@ -21,7 +23,7 @@ void FlexGRWorker::end()
   cleanup();
 }
 
-void FlexGRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexGRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
@@ -36,15 +38,13 @@ void FlexGRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
   }
 }
 
-void FlexGRWorker::endRemoveNets(
-    const std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexGRWorker::endRemoveNets(const frOrderedIdSet<frNet*>& modNets)
 {
   endRemoveNets_objs(modNets);
   endRemoveNets_nodes(modNets);
 }
 
-void FlexGRWorker::endRemoveNets_objs(
-    const std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexGRWorker::endRemoveNets_objs(const frOrderedIdSet<frNet*>& modNets)
 {
   // remove pathSeg and via (all nets based)
   std::vector<grBlockObject*> result;
@@ -91,8 +91,7 @@ void FlexGRWorker::endRemoveNets_via(grVia* via)
   net->removeGRVia(via);
 }
 
-void FlexGRWorker::endRemoveNets_nodes(
-    const std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexGRWorker::endRemoveNets_nodes(const frOrderedIdSet<frNet*>& modNets)
 {
   for (auto fnet : modNets) {
     for (auto net : owner2nets_[fnet]) {
@@ -142,7 +141,7 @@ void FlexGRWorker::endRemoveNets_nodes_net(grNet* net, frNet* fnet)
   }
 }
 
-void FlexGRWorker::endAddNets(std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexGRWorker::endAddNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto fnet : modNets) {
     for (auto net : owner2nets_[fnet]) {

@@ -3,6 +3,7 @@
 
 #include "grids.h"
 
+#include <algorithm>
 #include <cstdio>
 
 namespace rcx {

@@ -6,6 +6,7 @@
 #include <dst/JobMessage.h>
 #include <omp.h>
 
+#include <algorithm>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/io/ios_state.hpp>
@@ -13,9 +14,15 @@
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
+#include <limits>
+#include <map>
+#include <memory>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
@@ -329,14 +336,12 @@ void FlexDR::initGCell2BoundaryPin()
   auto gCellPatterns = topBlock->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  auto tmpVec = std::vector<std::map<frNet*,
-                                     std::set<std::pair<Point, frLayerNum>>,
-                                     frBlockObjectComp>>((int) ygp.getCount());
-  gcell2BoundaryPin_
-      = std::vector<std::vector<std::map<frNet*,
-                                         std::set<std::pair<Point, frLayerNum>>,
-                                         frBlockObjectComp>>>(
-          (int) xgp.getCount(), tmpVec);
+  auto tmpVec = std::vector<
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>>(
+      (int) ygp.getCount());
+  gcell2BoundaryPin_ = std::vector<std::vector<
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>>>(
+      (int) xgp.getCount(), tmpVec);
   for (auto& net : topBlock->getNets()) {
     auto netPtr = net.get();
     for (auto& guide : net->getGuides()) {
@@ -501,14 +506,13 @@ void FlexDR::removeGCell2BoundaryPin()
   gcell2BoundaryPin_.shrink_to_fit();
 }
 
-std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
+frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
                                 const Rect& routeBox) const
 {
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-      bp;
+  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>> bp;
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);

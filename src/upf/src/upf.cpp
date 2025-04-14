@@ -3,7 +3,12 @@
 
 #include "upf/upf.h"
 
+#include <cmath>
+#include <limits>
+#include <map>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

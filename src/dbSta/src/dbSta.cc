@@ -15,9 +15,12 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <regex>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "AbstractPathRenderer.h"

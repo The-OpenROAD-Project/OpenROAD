@@ -6,8 +6,12 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "FlexPA.h"
 #include "db/infra/frTime.h"

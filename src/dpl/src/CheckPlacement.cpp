@@ -3,7 +3,9 @@
 
 #include <cmath>
 #include <fstream>
+#include <functional>
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "dpl/Grid.h"

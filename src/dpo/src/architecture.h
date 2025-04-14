@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <limits>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dpl/Coordinates.h"

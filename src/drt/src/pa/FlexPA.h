@@ -6,7 +6,12 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -29,8 +34,8 @@ class access;
 namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
-using ViaRawPriorityTuple
-    = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
+using ViaRawPriorityTuple = std::
+    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>;
 
 struct frInstLocationComp
 {

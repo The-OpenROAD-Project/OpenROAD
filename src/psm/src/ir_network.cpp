@@ -3,9 +3,14 @@
 
 #include "ir_network.h"
 
+#include <algorithm>
 #include <fstream>
 #include <list>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "connection.h"

@@ -9,10 +9,12 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <random>
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "fft.h"
 #include "nesterovPlace.h"

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <iostream>
+#include <set>
 
 #include "dbCore.h"
 #include "odb/dbDatabaseObserver.h"

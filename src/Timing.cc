@@ -5,6 +5,9 @@
 
 #include <tcl.h>
 
+#include <algorithm>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

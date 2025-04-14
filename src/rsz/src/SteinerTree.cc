@@ -3,6 +3,7 @@
 
 #include "SteinerTree.hh"
 
+#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <string>

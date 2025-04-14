@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 
 #include "db/obj/frShape.h"

@@ -24,10 +24,15 @@
 #include <lemon/preflow.h>
 #include <lemon/smart_graph.h>
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <map>
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "architecture.h"
