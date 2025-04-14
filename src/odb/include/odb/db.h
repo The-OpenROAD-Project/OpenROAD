@@ -898,15 +898,10 @@ class dbBlock : public dbObject
     dbTechLayer* layer = nullptr;
     int x_step = -1;
     int y_step = -1;
-    Rect region;
+    Polygon region;
     int pin_width = -1;
     int pin_height = -1;
     int keepout = -1;
-
-    int llx() const { return region.xMin(); }
-    int lly() const { return region.yMin(); }
-    int urx() const { return region.xMax(); }
-    int ury() const { return region.yMax(); }
   };
 
   ///
@@ -1005,9 +1000,9 @@ class dbBlock : public dbObject
   dbBTermTopLayerGrid getBTermTopLayerGrid();
 
   ///
-  /// Get only the rectangle corresponding to the top layer grid region.
+  /// Get only the polygon corresponding to the top layer grid region.
   ///
-  Rect getBTermTopLayerGridRegion();
+  Polygon getBTermTopLayerGridRegion();
 
   ///
   /// Find the rectangle corresponding to the constraint region in a specific

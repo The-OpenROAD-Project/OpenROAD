@@ -1900,18 +1900,22 @@ void IOPlacer::getConstraintsFromDB()
         pins_per_interval[interval].insert(bterm);
       } else {
         const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-        if (!top_grid.region.contains(region)) {
-          logger_->error(
-              utl::PPL,
-              25,
-              "Constraint region ({:.2f}u, {:.2f}u)-({:.2f}u, {:.2f}u) at top "
-              "layer is not contained in the top layer grid.",
-              getBlock()->dbuToMicrons(region.xMin()),
-              getBlock()->dbuToMicrons(region.yMin()),
-              getBlock()->dbuToMicrons(region.xMax()),
-              getBlock()->dbuToMicrons(region.yMax()));
+        // TODO: support rectilinear shapes
+        if (top_grid.region.isRect()) {
+          const Rect& top_grid_region = top_grid.region.getEnclosingRect();
+          if (!top_grid_region.contains(region)) {
+            logger_->error(utl::PPL,
+                           25,
+                           "Constraint region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                           "{:.2f}u) at top "
+                           "layer is not contained in the top layer grid.",
+                           getBlock()->dbuToMicrons(region.xMin()),
+                           getBlock()->dbuToMicrons(region.yMin()),
+                           getBlock()->dbuToMicrons(region.xMax()),
+                           getBlock()->dbuToMicrons(region.yMax()));
+          }
+          pins_per_rect[region].insert(bterm);
         }
-        pins_per_rect[region].insert(bterm);
       }
     }
   }
@@ -2856,13 +2860,18 @@ void IOPlacer::findSlotsForTopLayer()
 {
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
   if (top_layer_slots_.empty() && top_grid.pin_width > 0) {
-    for (int x = top_grid.llx(); x < top_grid.urx(); x += top_grid.x_step) {
-      for (int y = top_grid.lly(); y < top_grid.ury(); y += top_grid.y_step) {
-        top_layer_slots_.push_back({false,
-                                    false,
-                                    Point(x, y),
-                                    top_grid.layer->getRoutingLevel(),
-                                    Edge::invalid});
+    if (top_grid.region.isRect()) {
+      const Rect& top_grid_region = top_grid.region.getEnclosingRect();
+      for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
+           x += top_grid.x_step) {
+        for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
+             y += top_grid.y_step) {
+          top_layer_slots_.push_back({false,
+                                      false,
+                                      Point(x, y),
+                                      top_grid.layer->getRoutingLevel(),
+                                      Edge::invalid});
+        }
       }
     }
 
@@ -2960,48 +2969,52 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
   std::vector<Section> sections;
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  for (int x = top_grid.llx(); x < top_grid.urx(); x += top_grid.x_step) {
-    if (x < lb_x || x > ub_x) {
-      continue;
-    }
-    std::vector<Slot>::iterator it = std::find_if(
-        top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
-          return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
-        });
-    int edge_begin = it - top_layer_slots_.begin();
-    int edge_x = top_layer_slots_[edge_begin].pos.x();
-
-    it = std::find_if(top_layer_slots_.begin() + edge_begin,
-                      top_layer_slots_.end(),
-                      [&](Slot s) {
-                        return s.pos.x() != edge_x || s.pos.x() >= ub_x
-                               || s.pos.y() >= ub_y;
-                      });
-    int edge_end = it - top_layer_slots_.begin() - 1;
-    int end_slot = 0;
-
-    while (end_slot < edge_end) {
-      int blocked_slots = 0;
-      end_slot = edge_begin + slots_per_section_ - 1;
-      if (end_slot > edge_end) {
-        end_slot = edge_end;
+  if (top_grid.region.isRect()) {
+    const Rect& top_grid_region = top_grid.region.getEnclosingRect();
+    for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
+         x += top_grid.x_step) {
+      if (x < lb_x || x > ub_x) {
+        continue;
       }
-      for (int i = edge_begin; i <= end_slot; ++i) {
-        if (top_layer_slots_[i].blocked) {
-          blocked_slots++;
+      std::vector<Slot>::iterator it = std::find_if(
+          top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
+            return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
+          });
+      int edge_begin = it - top_layer_slots_.begin();
+      int edge_x = top_layer_slots_[edge_begin].pos.x();
+
+      it = std::find_if(top_layer_slots_.begin() + edge_begin,
+                        top_layer_slots_.end(),
+                        [&](Slot s) {
+                          return s.pos.x() != edge_x || s.pos.x() >= ub_x
+                                 || s.pos.y() >= ub_y;
+                        });
+      int edge_end = it - top_layer_slots_.begin() - 1;
+      int end_slot = 0;
+
+      while (end_slot < edge_end) {
+        int blocked_slots = 0;
+        end_slot = edge_begin + slots_per_section_ - 1;
+        if (end_slot > edge_end) {
+          end_slot = edge_end;
         }
-      }
-      int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec;
-      n_sec.pos = top_layer_slots_.at(half_length_pt).pos;
-      n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
-      n_sec.begin_slot = edge_begin;
-      n_sec.end_slot = end_slot;
-      n_sec.used_slots = 0;
-      n_sec.edge = Edge::invalid;
+        for (int i = edge_begin; i <= end_slot; ++i) {
+          if (top_layer_slots_[i].blocked) {
+            blocked_slots++;
+          }
+        }
+        int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
+        Section n_sec;
+        n_sec.pos = top_layer_slots_.at(half_length_pt).pos;
+        n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
+        n_sec.begin_slot = edge_begin;
+        n_sec.end_slot = end_slot;
+        n_sec.used_slots = 0;
+        n_sec.edge = Edge::invalid;
 
-      sections.push_back(n_sec);
-      edge_begin = ++end_slot;
+        sections.push_back(n_sec);
+        edge_begin = ++end_slot;
+      }
     }
   }
 

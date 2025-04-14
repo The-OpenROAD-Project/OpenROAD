@@ -400,10 +400,12 @@ def set_io_pin_constraint(
         mo = re.fullmatch("(up):(.*)", region)
         if mo.group(2) == "*":
             top_grid_region = dbBlock.getBTermTopLayerGridRegion()
-            llx = top_grid_region.xMin()
-            lly = top_grid_region.yMin()
-            urx = top_grid_region.xMax()
-            ury = top_grid_region.yMax()
+            if top_grid_region.isRect():
+                region_rect = top_grid_region.getEnclosingRect()
+                llx = region_rect.xMin()
+                lly = region_rect.yMin()
+                urx = region_rect.xMax()
+                ury = region_rect.yMax()
 
         elif len(mo.group(2).split()) == 4:
             llx, lly, urx, ury = mo.group(2).split()

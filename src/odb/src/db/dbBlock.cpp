@@ -1723,7 +1723,7 @@ dbBlock::dbBTermTopLayerGrid dbBlock::getBTermTopLayerGrid()
   return top_layer_grid;
 }
 
-Rect dbBlock::getBTermTopLayerGridRegion()
+Polygon dbBlock::getBTermTopLayerGridRegion()
 {
   _dbBlock* block = (_dbBlock*) this;
 

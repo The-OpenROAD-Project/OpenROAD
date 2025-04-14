@@ -130,7 +130,7 @@ struct _dbBTermTopLayerGrid
   dbId<_dbTechLayer> layer;
   int x_step = -1;
   int y_step = -1;
-  Rect region;
+  Polygon region;
   int pin_width = -1;
   int pin_height = -1;
   int keepout = -1;
