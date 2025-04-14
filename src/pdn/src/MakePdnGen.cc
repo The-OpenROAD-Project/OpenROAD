@@ -11,15 +11,11 @@
 #include "pdn/PdnGen.hh"
 #include "power_cells.h"
 #include "renderer.h"
-
-namespace sta {
-
-extern const char* pdn_tcl_inits[];
-extern void evalTclInit(Tcl_Interp*, const char*[]);
-
-}  // namespace sta
+#include "utl/decode.h"
 
 namespace pdn {
+extern const char* pdn_tcl_inits[];
+
 extern "C" {
 extern int Pdn_Init(Tcl_Interp* interp);
 }
@@ -33,7 +29,7 @@ void initPdnGen(OpenRoad* openroad)
   // Define swig TCL commands.
   pdn::Pdn_Init(interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::pdn_tcl_inits);
+  utl::evalTclInit(interp, pdn::pdn_tcl_inits);
 
   openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
 }

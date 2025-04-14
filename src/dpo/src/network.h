@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -29,7 +30,6 @@ using dpl::GridY;
 using dpl::Master;
 using dpl::Pin;
 using odb::dbOrientType;
-
 
 class Network
 {

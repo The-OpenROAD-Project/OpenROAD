@@ -4,6 +4,8 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "db/infra/frPoint.h"

@@ -138,10 +138,20 @@ endif()
 add_subdirectory(src)
 add_subdirectory(test)
 
-# After all compiled, look for the respective flags
+# Not currently used but may become useful again with Kokkos
 target_compile_definitions(openroad PRIVATE GPU)
-target_compile_definitions(openroad PRIVATE BUILD_PYTHON)
-target_compile_definitions(openroad PRIVATE BUILD_GUI)
+
+if(BUILD_PYTHON)
+  target_compile_definitions(openroad PRIVATE BUILD_PYTHON=1)
+else()
+  target_compile_definitions(openroad PRIVATE BUILD_PYTHON=0)
+endif()
+
+if(BUILD_GUI)
+  target_compile_definitions(openroad PRIVATE BUILD_GUI=1)
+else()
+  target_compile_definitions(openroad PRIVATE BUILD_GUI=0)
+endif()
 
 ####################################################################
 

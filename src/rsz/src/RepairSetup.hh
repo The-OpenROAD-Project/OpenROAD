@@ -22,8 +22,6 @@ class Resizer;
 class RemoveBuffer;
 
 using odb::Point;
-using std::pair;
-using std::vector;
 using utl::Logger;
 
 using sta::Corner;
@@ -48,7 +46,7 @@ using sta::Vertex;
 class BufferedNet;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using BufferedNetSeq = vector<BufferedNetPtr>;
+using BufferedNetSeq = std::vector<BufferedNetPtr>;
 struct SlackEstimatorParams
 {
   Pin* driver_pin;
@@ -158,7 +156,7 @@ class RepairSetup : public sta::dbStaState
                   PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
-      const vector<pair<Vertex*, Slack>>& fanout_slacks);
+      const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
   bool cloneDriver(const PathRef* drvr_path,
                    int drvr_index,
                    Slack drvr_slack,

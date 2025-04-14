@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "Coordinates.h"
 #include "Opendp.h"
 
@@ -151,15 +154,15 @@ class Group
 {
  public:
   // getters
-  string getName() const;
-  const vector<Rect>& getRects() const;
-  vector<Node*> getCells() const;
+  std::string getName() const;
+  const std::vector<Rect>& getRects() const;
+  std::vector<Node*> getCells() const;
   const Rect& getBBox() const;
   double getUtil() const;
   int getId() const;
   // setters
   void setId(int id);
-  void setName(const string& in);
+  void setName(const std::string& in);
   void addRect(const Rect& in);
   void addCell(Node* cell);
   void setBoundary(const Rect& in);
@@ -167,9 +170,9 @@ class Group
 
  private:
   int id_;
-  string name_;
-  vector<Rect> region_boundaries_;
-  vector<Node*> cells_;
+  std::string name_;
+  std::vector<Rect> region_boundaries_;
+  std::vector<Node*> cells_;
   Rect boundary_;
   double util_{0.0};
 };

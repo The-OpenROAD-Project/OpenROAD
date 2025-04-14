@@ -3,9 +3,12 @@
 
 #include "ifp/InitFloorplan.hh"
 
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>

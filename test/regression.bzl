@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
+
 """Instantiate a regression test based on .py or .tcl
 files using resources in //test:regression_resources"""
 
@@ -12,11 +15,17 @@ def _pop(kwargs, key, default):
 def regression_test(
         name,
         **kwargs):
-    test_files = native.glob([name + "." + ext for ext in [
-        # TODO once Python is supported, add the .py files to the
-        # "py",
-        "tcl",
-    ]])
+    # TODO: we should _not_ have the magic to figure out if tcl or py exists
+    # in here but rather in the BUILD file and just pass the resulting
+    # name = "foo-tcl", test_file = "foo.tcl" to this regression test macro.
+    test_files = native.glob(
+        [name + "." + ext for ext in [
+            # TODO once Python is supported, add the .py files to the
+            # "py",
+            "tcl",
+        ]],
+        allow_empty = True,  # Allow to be empty; see also TODO above.
+    )
     for test_file in test_files:
         ext = test_file.split(".")[-1]
         native.sh_test(
@@ -27,7 +36,6 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = _pop(kwargs, "size", "small"),
-            timeout = _pop(kwargs, "timeout", "moderate"),
             srcs = ["//test:bazel_test.sh"],
             args = [],
             data = [

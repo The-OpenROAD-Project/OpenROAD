@@ -4,13 +4,13 @@
 #include "tap/MakeTapcell.h"
 
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
 #include "tap/tapcell.h"
+#include "utl/decode.h"
 
-namespace sta {
+namespace tap {
 // Tcl files encoded into strings.
 extern const char* tap_tcl_inits[];
-}  // namespace sta
+}  // namespace tap
 
 extern "C" {
 extern int Tap_Init(Tcl_Interp* interp);
@@ -33,7 +33,7 @@ void initTapcell(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Tap_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::tap_tcl_inits);
+  utl::evalTclInit(tcl_interp, tap::tap_tcl_inits);
   openroad->getTapcell()->init(openroad->getDb(), openroad->getLogger());
 }
 

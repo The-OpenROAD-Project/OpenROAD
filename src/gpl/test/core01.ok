@@ -6,56 +6,62 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  1.140  1.120 ) ( 35.150 34.720 ) um
-[INFO GPL-0006] NumInstances:               294
-[INFO GPL-0007] NumPlaceInstances:          294
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                    364
-[INFO GPL-0011] NumPins:                   1122
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 36.290 35.840 ) um
-[INFO GPL-0013] CoreBBox: (  1.140  1.120 ) ( 35.150 34.720 ) um
-[INFO GPL-0016] CoreArea:              1142.736 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:         569.772 um^2
-[INFO GPL-0019] Util:                    49.860 %
-[INFO GPL-0020] StdInstsArea:           569.772 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[INFO GPL-0031] FillerInit:NumGCells:       358
-[INFO GPL-0032] FillerInit:NumGNets:        364
-[INFO GPL-0033] FillerInit:NumGPins:       1122
-[INFO GPL-0023] TargetDensity:            0.600
-[INFO GPL-0024] AvrgPlaceInstArea:        1.938 um^2
-[INFO GPL-0025] IdealBinArea:             3.230 um^2
-[INFO GPL-0026] IdealBinCnt:                353
-[INFO GPL-0027] TotalBinArea:          1142.736 um^2
-[INFO GPL-0028] BinCnt:        16     16
-[INFO GPL-0029] BinSize: (  2.126  2.100 )
-[INFO GPL-0030] NumBins: 256
-[NesterovSolve] Iter:    1 overflow: 0.842 HPWL: 4367093
-[NesterovSolve] Iter:   10 overflow: 0.724 HPWL: 4900892
-[NesterovSolve] Iter:   20 overflow: 0.724 HPWL: 4883420
-[NesterovSolve] Iter:   30 overflow: 0.723 HPWL: 4888748
-[NesterovSolve] Iter:   40 overflow: 0.720 HPWL: 4897860
-[NesterovSolve] Iter:   50 overflow: 0.715 HPWL: 4911115
-[NesterovSolve] Iter:   60 overflow: 0.707 HPWL: 4930407
-[NesterovSolve] Iter:   70 overflow: 0.697 HPWL: 4959233
-[NesterovSolve] Iter:   80 overflow: 0.686 HPWL: 5002782
-[NesterovSolve] Iter:   90 overflow: 0.666 HPWL: 5060497
-[NesterovSolve] Iter:  100 overflow: 0.638 HPWL: 5115778
-[NesterovSolve] Iter:  110 overflow: 0.609 HPWL: 5191328
-[NesterovSolve] Iter:  120 overflow: 0.568 HPWL: 5254758
-[NesterovSolve] Iter:  130 overflow: 0.521 HPWL: 5302776
-[NesterovSolve] Iter:  140 overflow: 0.469 HPWL: 5301161
-[NesterovSolve] Iter:  150 overflow: 0.415 HPWL: 5270987
-[NesterovSolve] Iter:  160 overflow: 0.364 HPWL: 5255911
-[NesterovSolve] Iter:  170 overflow: 0.319 HPWL: 5269140
-[NesterovSolve] Iter:  180 overflow: 0.292 HPWL: 5317618
-[NesterovSolve] Iter:  190 overflow: 0.263 HPWL: 5354023
-[NesterovSolve] Iter:  200 overflow: 0.231 HPWL: 5395277
-[NesterovSolve] Iter:  210 overflow: 0.202 HPWL: 5428927
-[NesterovSolve] Iter:  220 overflow: 0.177 HPWL: 5462337
-[NesterovSolve] Iter:  230 overflow: 0.155 HPWL: 5494122
-[NesterovSolve] Iter:  240 overflow: 0.132 HPWL: 5521148
-[NesterovSolve] Iter:  250 overflow: 0.116 HPWL: 5550712
-[NesterovSolve] Finished with Overflow: 0.099426
+[INFO GPL-0006] Number of instances:               294
+[INFO GPL-0007] Movable instances:                 294
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    364
+[INFO GPL-0011] Number of pins:                   1122
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 36.290 35.840 ) um
+[INFO GPL-0013] Core BBox: (  1.140  1.120 ) ( 35.150 34.720 ) um
+[INFO GPL-0016] Core area:                    1142.736 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        569.772 um^2
+[INFO GPL-0019] Utilization:                    49.860 %
+[INFO GPL-0020] Standard cells area:           569.772 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0023] Placement target density:       0.6000
+[INFO GPL-0024] Movable insts average area:      1.938 um^2
+[INFO GPL-0025] Ideal bin area:                  3.230 um^2
+[INFO GPL-0026] Ideal bin count:                   353
+[INFO GPL-0027] Total bin area:               1142.736 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       2.126 *  2.100 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.8415 |  4.367093e+06 |   +0.00% |  1.21e-11 |      
+       10 |   0.7235 |  4.900892e+06 |  +12.22% |  1.88e-11 |      
+       20 |   0.7237 |  4.883420e+06 |   -0.36% |  3.06e-11 |      
+       30 |   0.7228 |  4.888748e+06 |   +0.11% |  4.98e-11 |      
+       40 |   0.7197 |  4.897860e+06 |   +0.19% |  8.12e-11 |      
+       50 |   0.7152 |  4.911115e+06 |   +0.27% |  1.32e-10 |      
+       60 |   0.7073 |  4.930407e+06 |   +0.39% |  2.15e-10 |      
+       70 |   0.6971 |  4.959233e+06 |   +0.58% |  3.51e-10 |      
+       80 |   0.6857 |  5.002782e+06 |   +0.88% |  5.71e-10 |      
+       90 |   0.6660 |  5.060497e+06 |   +1.15% |  9.31e-10 |      
+      100 |   0.6379 |  5.115778e+06 |   +1.09% |  1.52e-09 |      
+      110 |   0.6088 |  5.191328e+06 |   +1.48% |  2.47e-09 |      
+      120 |   0.5685 |  5.254758e+06 |   +1.22% |  4.02e-09 |      
+      130 |   0.5214 |  5.302776e+06 |   +0.91% |  6.55e-09 |      
+      140 |   0.4691 |  5.301161e+06 |   -0.03% |  1.07e-08 |      
+      150 |   0.4146 |  5.270987e+06 |   -0.57% |  1.74e-08 |      
+      160 |   0.3638 |  5.255911e+06 |   -0.29% |  2.83e-08 |      
+      170 |   0.3193 |  5.269140e+06 |   +0.25% |  4.34e-08 |      
+      180 |   0.2921 |  5.317618e+06 |   +0.92% |  6.40e-08 |      
+      190 |   0.2628 |  5.354023e+06 |   +0.68% |  9.42e-08 |      
+      200 |   0.2310 |  5.395277e+06 |   +0.77% |  1.39e-07 |      
+      210 |   0.2019 |  5.428927e+06 |   +0.62% |  2.05e-07 |      
+      220 |   0.1771 |  5.462337e+06 |   +0.62% |  3.01e-07 |      
+      230 |   0.1547 |  5.494122e+06 |   +0.58% |  4.44e-07 |      
+      240 |   0.1321 |  5.521148e+06 |   +0.49% |  6.54e-07 |      
+      250 |   0.1156 |  5.550712e+06 |   +0.54% |  9.63e-07 |      
+[INFO GPL-1001] Finished with Overflow: 0.099426
+[INFO GPL-1002] Placed Cell Area              569.7720
+[INFO GPL-1003] Available Free Area          1142.7360
+[INFO GPL-1004] Minimum Feasible Density        0.5000 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.5540
+[INFO GPL-1008]     - For 80% usage of free space: 0.6233
 No differences found.

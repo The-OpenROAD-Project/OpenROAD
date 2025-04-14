@@ -3,6 +3,10 @@
 
 #include "db/drObj/drPin.h"
 
+#include <algorithm>
+#include <limits>
+#include <utility>
+
 #include "distributed/frArchive.h"
 
 namespace drt {

@@ -5,8 +5,17 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"

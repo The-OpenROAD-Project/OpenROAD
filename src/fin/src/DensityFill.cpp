@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <boost/lexical_cast.hpp>
+#include <memory>
 #include <utility>
 #include <vector>
 

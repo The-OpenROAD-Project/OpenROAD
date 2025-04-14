@@ -7,6 +7,7 @@
 #include <boost/asio/thread_pool.hpp>
 #include <boost/thread/thread.hpp>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>

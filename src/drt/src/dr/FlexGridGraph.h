@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 #include <cstdint>
@@ -10,7 +11,9 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "FlexMazeTypes.h"

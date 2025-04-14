@@ -3,10 +3,16 @@
 
 #include "straps.h"
 
+#include <algorithm>
 #include <boost/geometry.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <functional>
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "connect.h"

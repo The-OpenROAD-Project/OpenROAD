@@ -3,8 +3,12 @@
 
 #include "stt/pd.h"
 
+#include <algorithm>
 #include <boost/heap/d_ary_heap.hpp>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <map>
 #include <numeric>
 #include <utility>
 #include <vector>

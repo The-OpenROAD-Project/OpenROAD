@@ -3,7 +3,9 @@
 
 #include <cmath>
 #include <fstream>
+#include <functional>
 #include <limits>
+#include <string>
 #include <vector>
 
 #include "dpl/Grid.h"
@@ -21,17 +23,18 @@ using utl::DPL;
 
 using utl::format_as;
 
-void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
+void Opendp::checkPlacement(const bool verbose,
+                            const std::string& report_file_name)
 {
   importDb();
 
-  vector<Node*> placed_failures;
-  vector<Node*> in_rows_failures;
-  vector<Node*> overlap_failures;
-  vector<Node*> one_site_gap_failures;
-  vector<Node*> site_align_failures;
-  vector<Node*> region_placement_failures;
-  vector<Node*> edge_spacing_failures;
+  std::vector<Node*> placed_failures;
+  std::vector<Node*> in_rows_failures;
+  std::vector<Node*> overlap_failures;
+  std::vector<Node*> one_site_gap_failures;
+  std::vector<Node*> site_align_failures;
+  std::vector<Node*> region_placement_failures;
+  std::vector<Node*> edge_spacing_failures;
 
   initGrid();
   groupAssignCellRegions();
@@ -116,7 +119,7 @@ void Opendp::checkPlacement(const bool verbose, const string& report_file_name)
 
 void Opendp::saveViolations(const std::vector<Node*>& failures,
                             odb::dbMarkerCategory* category,
-                            const string& violation_type) const
+                            const std::string& violation_type) const
 {
   const Rect core = grid_->getCore();
   for (auto failure : failures) {
@@ -233,7 +236,7 @@ void Opendp::saveFailures(const vector<Node*>& placed_failures,
   }
 }
 
-void Opendp::writeJsonReport(const string& filename)
+void Opendp::writeJsonReport(const std::string& filename)
 {
   auto* tool_category = block_->findMarkerCategory("DPL");
   if (tool_category) {
@@ -271,7 +274,11 @@ void Opendp::reportFailures(
 void Opendp::reportOverlapFailure(Node* cell) const
 {
   const Node* overlap = checkOverlap(*cell);
-  logger_->report(" {} overlaps {}", cell->name(), overlap->name());
+  logger_->report(" {} ({}) overlaps {} ({})",
+                  cell->name(),
+                  cell->getDbInst()->getMaster()->getName(),
+                  overlap->name(),
+                  overlap->getDbInst()->getMaster()->getName());
 }
 
 /* static */

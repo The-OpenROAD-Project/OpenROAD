@@ -107,6 +107,32 @@ proc report_timing_histogram { args } {
   report_timing_histogram_cmd $num_bins $min_max
 }
 
+define_cmd_args "report_logic_depth_histogram" { \
+  [-num_bins num_bins] [-exclude_buffers] [-exclude_inverters]}
+
+proc report_logic_depth_histogram { args } {
+  parse_key_args "report_logic_depth_histogram" args keys \
+    {-num_bins} flags {-exclude_buffers -exclude_inverters}
+
+  check_argc_eq0 "report_logic_depth_histogram" $args
+
+  set num_bins 10
+  if { [info exists keys(-num_bins)] } {
+    set num_bins $keys(-num_bins)
+  }
+
+  set exclude_buffers false
+  if { [info exists flags(-exclude_buffers)] } {
+    set exclude_buffers true
+  }
+
+  set exclude_inverters false
+  if { [info exists flags(-exclude_inverters)] } {
+    set exclude_inverters true
+  }
+
+  report_logic_depth_histogram_cmd $num_bins $exclude_buffers $exclude_inverters
+}
 
 # redefine sta::sta_warn/error to call utl::warn/error
 proc sta_error { id msg } {

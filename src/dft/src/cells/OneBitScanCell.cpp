@@ -3,7 +3,9 @@
 
 #include "OneBitScanCell.hh"
 
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "ClockDomain.hh"
 #include "db_sta/dbSta.hh"

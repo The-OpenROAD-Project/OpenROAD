@@ -3,7 +3,11 @@
 
 #pragma once
 
+#include <map>
+#include <memory>
 #include <queue>
+#include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 

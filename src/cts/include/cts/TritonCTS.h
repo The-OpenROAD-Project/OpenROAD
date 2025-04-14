@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_set>
@@ -189,6 +190,7 @@ class TritonCTS
                                float& sumArrivals,
                                unsigned& numSinks,
                                sta::Graph* graph);
+  bool propagateClock(odb::dbITerm* input);
   void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,

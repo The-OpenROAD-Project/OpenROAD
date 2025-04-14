@@ -26,7 +26,6 @@ target_link_libraries(fin
   PRIVATE
     odb
     gui
-    OpenSTA
     Boost::boost
 )
 

@@ -138,7 +138,11 @@ function(swig_lib)
     set(LANG_INIT ${CMAKE_CURRENT_BINARY_DIR}/${ARG_NAME}-${ARG_LANGUAGE}InitVar.cc)
 
     add_custom_command(OUTPUT ${LANG_INIT}
-      COMMAND ${OPENSTA_HOME}/etc/TclEncode.tcl ${LANG_INIT} ${ARG_NAME}_${ARG_LANGUAGE}_inits ${ARG_SCRIPTS}
+      COMMAND ${CMAKE_SOURCE_DIR}/etc/file_to_string.py
+      --inputs ${ARG_SCRIPTS}
+      --output ${LANG_INIT}
+      --varname ${ARG_NAME}_${ARG_LANGUAGE}_inits
+      --namespace ${ARG_NAMESPACE}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS ${ARG_SCRIPTS}
     )

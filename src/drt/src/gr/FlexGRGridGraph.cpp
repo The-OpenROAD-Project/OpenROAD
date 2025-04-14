@@ -4,6 +4,7 @@
 #include "gr/FlexGRGridGraph.h"
 
 #include <iostream>
+#include <map>
 
 #include "gr/FlexGR.h"
 

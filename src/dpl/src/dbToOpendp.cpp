@@ -4,8 +4,12 @@
 #include <algorithm>
 #include <cfloat>
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "dpl/Grid.h"
 #include "dpl/Objects.h"
@@ -322,7 +326,7 @@ void Opendp::makeGroups()
       continue;
     }
     std::set<DbuY> unique_heights;
-    map<DbuY, Group*> cell_height_to_group_map;
+    std::map<DbuY, Group*> cell_height_to_group_map;
     for (auto db_inst : db_group->getInsts()) {
       unique_heights.insert(db_inst_map_[db_inst]->getHeight());
     }

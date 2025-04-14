@@ -3,6 +3,7 @@
 
 #include "rings.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "domain.h"

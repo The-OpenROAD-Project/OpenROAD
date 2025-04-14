@@ -3,7 +3,14 @@
 
 #include "pad/ICeWall.h"
 
+#include <algorithm>
 #include <boost/icl/interval_set.hpp>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "RDLGui.h"

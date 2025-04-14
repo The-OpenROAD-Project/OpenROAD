@@ -3,7 +3,9 @@
 
 #include "placerBase.h"
 
+#include <algorithm>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1241,27 +1243,30 @@ void PlacerBase::printInfo() const
   dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
              6,
-             "{:20} {:10}",
-             "NumInstances:",
+             format_label_int,
+             "Number of instances:",
              placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
-  log_->info(GPL, 7, "{:20} {:10}", "NumPlaceInstances:", placeInsts_.size());
-  log_->info(GPL, 8, "{:20} {:10}", "NumFixedInstances:", fixedInsts_.size());
-  log_->info(GPL, 9, "{:20} {:10}", "NumDummyInstances:", dummyInsts_.size());
-  log_->info(GPL, 10, "{:20} {:10}", "NumNets:", pbCommon_->nets().size());
-  log_->info(GPL, 11, "{:20} {:10}", "NumPins:", pbCommon_->pins().size());
+  log_->info(
+      GPL, 7, format_label_int, "Movable instances:", placeInsts_.size());
+  log_->info(GPL, 8, format_label_int, "Fixed instances:", fixedInsts_.size());
+  log_->info(GPL, 9, format_label_int, "Dummy instances:", dummyInsts_.size());
+  log_->info(
+      GPL, 10, format_label_int, "Number of nets:", pbCommon_->nets().size());
+  log_->info(
+      GPL, 11, format_label_int, "Number of pins:", pbCommon_->pins().size());
 
   log_->info(GPL,
              12,
-             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
-             "DieBBox:",
+             "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "Die BBox:",
              block->dbuToMicrons(die_.dieLx()),
              block->dbuToMicrons(die_.dieLy()),
              block->dbuToMicrons(die_.dieUx()),
              block->dbuToMicrons(die_.dieUy()));
   log_->info(GPL,
              13,
-             "{:9} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
-             "CoreBBox:",
+             "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "Core BBox:",
              block->dbuToMicrons(die_.coreLx()),
              block->dbuToMicrons(die_.coreLy()),
              block->dbuToMicrons(die_.coreUx()),
@@ -1273,32 +1278,32 @@ void PlacerBase::printInfo() const
 
   log_->info(GPL,
              16,
-             "{:20} {:10.3f} um^2",
-             "CoreArea:",
+             format_label_um2,
+             "Core area:",
              block->dbuAreaToMicrons(coreArea));
   log_->info(GPL,
              17,
-             "{:20} {:10.3f} um^2",
-             "NonPlaceInstsArea:",
+             format_label_um2,
+             "Fixed instances area:",
              block->dbuAreaToMicrons(nonPlaceInstsArea_));
 
   log_->info(GPL,
              18,
-             "{:20} {:10.3f} um^2",
-             "PlaceInstsArea:",
+             format_label_um2,
+             "Movable instances area:",
              block->dbuAreaToMicrons(placeInstsArea_));
-  log_->info(GPL, 19, "{:20} {:10.3f} %", "Util:", util);
+  log_->info(GPL, 19, "{:27} {:10.3f} %", "Utilization:", util);
 
   log_->info(GPL,
              20,
-             "{:20} {:10.3f} um^2",
-             "StdInstsArea:",
+             format_label_um2,
+             "Standard cells area:",
              block->dbuAreaToMicrons(stdInstsArea_));
 
   log_->info(GPL,
              21,
-             "{:20} {:10.3f} um^2",
-             "MacroInstsArea:",
+             format_label_um2,
+             "Large instances area:",
              block->dbuAreaToMicrons(macroInstsArea_));
 
   if (util >= 100.1) {

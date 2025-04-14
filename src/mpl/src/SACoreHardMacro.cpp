@@ -3,6 +3,7 @@
 
 #include "SACoreHardMacro.h"
 
+#include <cmath>
 #include <vector>
 
 #include "MplObserver.h"

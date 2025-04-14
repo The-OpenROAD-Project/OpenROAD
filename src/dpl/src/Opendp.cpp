@@ -10,7 +10,10 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "DplObserver.h"
 #include "dpl/Grid.h"
@@ -240,7 +243,7 @@ void Opendp::deleteGrid()
 }
 
 void Opendp::findOverlapInRtree(const bgBox& queryBox,
-                                vector<bgBox>& overlaps) const
+                                std::vector<bgBox>& overlaps) const
 {
   overlaps.clear();
   regions_rtree_.query(boost::geometry::index::intersects(queryBox),

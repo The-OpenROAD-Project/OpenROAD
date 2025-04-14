@@ -3,6 +3,9 @@
 
 #include "dpl/Objects.h"
 
+#include <string>
+#include <vector>
+
 namespace dpl {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -394,15 +397,15 @@ bool Node::adjustCurrOrient(const dbOrientType& newOri)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-string Group::getName() const
+std::string Group::getName() const
 {
   return name_;
 }
-const vector<Rect>& Group::getRects() const
+const std::vector<Rect>& Group::getRects() const
 {
   return region_boundaries_;
 }
-vector<Node*> Group::getCells() const
+std::vector<Node*> Group::getCells() const
 {
   return cells_;
 }
@@ -422,7 +425,7 @@ void Group::setId(int id)
 {
   id_ = id;
 }
-void Group::setName(const string& in)
+void Group::setName(const std::string& in)
 {
   name_ = in;
 }

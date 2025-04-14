@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -93,7 +94,6 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,

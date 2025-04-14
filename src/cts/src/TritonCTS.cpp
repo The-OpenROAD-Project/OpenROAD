@@ -3,13 +3,21 @@
 
 #include "cts/TritonCTS.h"
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"
@@ -2228,7 +2236,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         odb::dbITerm* outTerm = inst->getFirstOutput();
         if (outTerm) {
           odb::dbNet* outNet = outTerm->getNet();
-          if (outNet) {
+          bool propagate = propagateClock(iterm);
+          if (outNet && propagate) {
             odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
             odb::dbSet<odb::dbITerm>::iterator iter;
             for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
@@ -2243,6 +2252,34 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
       }
     }
   }
+}
+
+bool TritonCTS::propagateClock(odb::dbITerm* input)
+{
+  odb::dbInst* inst = input->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+  if (!libertyCell) {
+    return false;
+  }
+  // Clock tree buffers
+  if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+    return true;
+  }
+  // Combinational components
+  if (!libertyCell->hasSequentials()) {
+    return true;
+  }
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+
+  // Clock Gater / Latch improvised as clock gater
+  if (inputPort) {
+    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+  }
+
+  return false;
 }
 
 // Balance latencies between macro tree and register tree

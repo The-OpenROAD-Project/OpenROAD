@@ -9,6 +9,8 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <set>
 #include <stack>
 #include <string>

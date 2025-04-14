@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "frDesign.h"

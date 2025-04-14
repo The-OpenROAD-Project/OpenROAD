@@ -10,9 +10,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"

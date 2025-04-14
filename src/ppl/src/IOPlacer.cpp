@@ -4,9 +4,17 @@
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
@@ -341,13 +349,14 @@ void IOPlacer::randomPlacement(const std::vector<int>& pin_indices,
         if (slot_idx < 0) {
           odb::dbTechLayer* layer
               = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-          logger_->error(utl::PPL,
-                         85,
-                         "Mirrored position ({}, {}) at layer {} is not a "
-                         "valid position for pin placement.",
-                         mirrored_pos.getX(),
-                         mirrored_pos.getY(),
-                         layer->getName());
+          logger_->error(
+              utl::PPL,
+              85,
+              "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not a "
+              "valid position for pin placement.",
+              getBlock()->dbuToMicrons(mirrored_pos.getX()),
+              getBlock()->dbuToMicrons(mirrored_pos.getY()),
+              layer->getName());
         }
         slots[slot_idx].used = true;
         slots[slot_idx].blocked = true;
@@ -490,14 +499,15 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment)
   if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-    logger_->error(utl::PPL,
-                   91,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin {} placement.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA",
-                   mirrored_pin.getName());
+    logger_->error(
+        utl::PPL,
+        91,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not a "
+        "valid position for pin {} placement.",
+        getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        layer ? layer->getName() : "NA",
+        mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }
@@ -515,12 +525,13 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
   }
 
   if (slot_idx == -1) {
-    logger_->error(utl::PPL,
-                   101,
-                   "Slot for position ({}, {}) in layer {} not found",
-                   position.getX(),
-                   position.getY(),
-                   layer);
+    logger_->error(
+        utl::PPL,
+        101,
+        "Slot for position ({:.2f}um, {:.2f}um) in layer {} not found",
+        getBlock()->dbuToMicrons(position.getX()),
+        getBlock()->dbuToMicrons(position.getY()),
+        layer);
   }
 
   return slot_idx;
@@ -1090,16 +1101,6 @@ void IOPlacer::defineSlots()
         getBlock()->dbuToMicrons(die_margin),
         getBlock()->dbuToMicrons(new_margin));
   }
-
-  if (top_layer_pins_count_ > top_layer_slots_.size()) {
-    logger_->error(PPL,
-                   11,
-                   "Number of IO pins assigned to the top layer ({}) exceeds "
-                   "maximum number of available "
-                   "top layer positions ({}).",
-                   top_layer_pins_count_,
-                   top_layer_slots_.size());
-  }
 }
 
 void IOPlacer::findSections(int begin,
@@ -1345,19 +1346,25 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
   if (!first_pin.isAssignedToSection() && !first_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
+    std::vector<int64_t> larger_cost(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
         IOPin& pin = net->getIoPin(pin_idx);
+        bool has_mirrored_pin = pin.getBTerm()->hasMirroredBTerm();
         int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
         }
-        dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
+        const int mirrored_pin_cost = getMirroredPinCost(pin, sections[i].pos);
+        dst[i] += pin_hpwl + mirrored_pin_cost;
+        if (has_mirrored_pin) {
+          larger_cost[i] += std::max(pin_hpwl, mirrored_pin_cost);
+        }
       }
     }
 
-    for (auto i : sortIndexes(dst)) {
+    for (auto i : sortIndexes(dst, larger_cost)) {
       int section_available_slots
           = sections[i].num_slots - sections[i].used_slots;
 
@@ -1493,15 +1500,23 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
                                   std::vector<Section>& sections)
 {
   bool pin_assigned = false;
+  bool has_mirrored_pin = io_pin.getBTerm()->hasMirroredBTerm();
 
   if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()
       && !io_pin.inFallback()) {
     std::vector<int> dst(sections.size());
+    std::vector<int> larger_cost(sections.size());
+
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos)
-               + getMirroredPinCost(io_pin, sections[i].pos);
+      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, sections[i].pos);
+      const int mirrored_pin_cost = getMirroredPinCost(io_pin, sections[i].pos);
+      dst[i] = io_net_hpwl + mirrored_pin_cost;
+
+      if (has_mirrored_pin) {
+        larger_cost[i] = std::max(io_net_hpwl, mirrored_pin_cost);
+      }
     }
-    for (auto i : sortIndexes(dst)) {
+    for (auto i : sortIndexes(dst, larger_cost)) {
       if (sections[i].used_slots < sections[i].num_slots) {
         sections[i].pin_indices.push_back(idx);
         sections[i].used_slots++;
@@ -1756,30 +1771,6 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
-void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
-{
-  Constraint constraint(*pins, Direction::invalid, region);
-  std::string pin_names = getPinSetOrListString(*pins);
-
-  logger_->info(utl::PPL,
-                60,
-                "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
-                "{:.2f}u) at routing layer {}.",
-                pin_names,
-                getBlock()->dbuToMicrons(region.xMin()),
-                getBlock()->dbuToMicrons(region.yMin()),
-                getBlock()->dbuToMicrons(region.xMax()),
-                getBlock()->dbuToMicrons(region.yMax()),
-                getTopLayer()->getConstName());
-
-  constraints_.push_back(constraint);
-  for (odb::dbBTerm* bterm : *pins) {
-    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
-      top_layer_pins_count_++;
-    }
-  }
-}
-
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
 {
   hor_layers_.insert(layer->getRoutingLevel());
@@ -1895,14 +1886,20 @@ Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 void IOPlacer::getConstraintsFromDB()
 {
   std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
+  std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
     // Only pins with constraints directly assigned by the user should be
     // considered.
     if (constraint_region && !bterm->isMirrored()) {
-      Interval interval = findIntervalFromRect(constraint_region.value());
-      pins_per_interval[interval].insert(bterm);
+      const Rect& region = constraint_region.value();
+      if (region.xMin() == region.xMax() || region.yMin() == region.yMax()) {
+        Interval interval = findIntervalFromRect(constraint_region.value());
+        pins_per_interval[interval].insert(bterm);
+      } else {
+        pins_per_rect[region].insert(bterm);
+      }
     }
   }
 
@@ -1918,13 +1915,40 @@ void IOPlacer::getConstraintsFromDB()
         getEdgeString(interval.getEdge()));
     constraints_.emplace_back(pins, Direction::invalid, interval);
   }
+
+  top_layer_pins_count_ = 0;
+  for (const auto& [region, pins] : pins_per_rect) {
+    std::string pin_names = getPinSetOrListString(pins);
+    logger_->info(utl::PPL,
+                  60,
+                  "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                  "{:.2f}u) at routing layer {}.",
+                  pin_names,
+                  getBlock()->dbuToMicrons(region.xMin()),
+                  getBlock()->dbuToMicrons(region.yMin()),
+                  getBlock()->dbuToMicrons(region.xMax()),
+                  getBlock()->dbuToMicrons(region.yMax()),
+                  getTopLayer()->getConstName());
+    top_layer_pins_count_ += pins.size();
+    constraints_.emplace_back(pins, Direction::invalid, region);
+  }
 }
 
 void IOPlacer::initConstraints(bool annealing)
 {
+  constraints_.clear();
   getConstraintsFromDB();
   int constraint_idx = 0;
   int constraints_no_slots = 0;
+  if (top_layer_pins_count_ > top_layer_slots_.size()) {
+    logger_->error(PPL,
+                   11,
+                   "Number of IO pins assigned to the top layer ({}) exceeds "
+                   "maximum number of available "
+                   "top layer positions ({}).",
+                   top_layer_pins_count_,
+                   top_layer_slots_.size());
+  }
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -2381,14 +2405,14 @@ void IOPlacer::checkPinPlacement()
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == pin.getPosition()) {
           odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-          logger_->warn(
-              PPL,
-              106,
-              "At least 2 pins in position ({}, {}), layer {}, port {}.",
-              pos.x(),
-              pos.y(),
-              tech_layer->getName(),
-              pin.getName().c_str());
+          logger_->warn(PPL,
+                        106,
+                        "At least 2 pins in position ({:.2f}um, {:.2f}um), "
+                        "layer {}, port {}.",
+                        getBlock()->dbuToMicrons(pos.x()),
+                        getBlock()->dbuToMicrons(pos.y()),
+                        tech_layer->getName(),
+                        pin.getName().c_str());
           invalid = true;
         }
       }
@@ -2435,14 +2459,19 @@ bool IOPlacer::checkPinConstraints()
           invalid = true;
         }
       } else {
-        if (!constraint.box.overlaps(pin.getPosition())) {
+        if (!constraint.box.intersects(pin.getPosition())) {
           logger_->warn(
               PPL,
               105,
-              "Pin {} is not placed in the upper layer grid region {}. {}",
+              "Pin {} is not placed in the upper layer grid region ({:.2f}um, "
+              "{:.2f}um) ({:.2f}um, {:.2f}um). ({:.2f}um, {:.2f}um)",
               pin.getName(),
-              constraint.box,
-              pin.getPosition());
+              getBlock()->dbuToMicrons(constraint.box.xMin()),
+              getBlock()->dbuToMicrons(constraint.box.yMin()),
+              getBlock()->dbuToMicrons(constraint.box.xMax()),
+              getBlock()->dbuToMicrons(constraint.box.yMax()),
+              getBlock()->dbuToMicrons(pin.getPosition().x()),
+              getBlock()->dbuToMicrons(pin.getPosition().y()));
           invalid = true;
         }
       }
@@ -2635,12 +2664,18 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   excludeInterval(interval);
 
-  logger_->info(PPL,
-                70,
-                "Pin {} placed at ({:.2f}um, {:.2f}um).",
-                bterm->getName(),
-                getBlock()->dbuToMicrons(pos.x()),
-                getBlock()->dbuToMicrons(pos.y()));
+  if (pos != Point(x, y)) {
+    logger_->info(PPL,
+                  70,
+                  "Pin {} placed at ({:.2f}um, {:.2f}um) instead of ({:.2f}um, "
+                  "{:.2f}um). Pin was snapped to a routing track, to the "
+                  "manufacturing grid or moved away from blocked region.",
+                  bterm->getName(),
+                  getBlock()->dbuToMicrons(pos.x()),
+                  getBlock()->dbuToMicrons(pos.y()),
+                  getBlock()->dbuToMicrons(x),
+                  getBlock()->dbuToMicrons(y));
+  }
 }
 
 void IOPlacer::movePinToTrack(odb::Point& pos,

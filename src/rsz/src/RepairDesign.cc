@@ -3,7 +3,13 @@
 
 #include "RepairDesign.hh"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -648,7 +654,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     dbNet* new_net_db = db_network_->staToDb(new_net);
     new_net_db->setSigType(net_db->getSigType());
 
-    string buffer_name = resizer_->makeUniqueInstName("gain");
+    std::string buffer_name = resizer_->makeUniqueInstName("gain");
     const Point drvr_loc = db_network_->location(drvr_pin);
 
     // create instance in driver parent
@@ -661,18 +667,21 @@ bool RepairDesign::performGainBuffering(Net* net,
     Pin* buffer_op_pin = nullptr;
     resizer_->getBufferPins(inst, buffer_ip_pin, buffer_op_pin);
     db_network_->connectPin(buffer_ip_pin, net);
-    db_network_->connectPin(buffer_op_pin, new_net);
-    // put the mod net on the output of the buffer.
-    if (driver_mod_net) {
-      db_network_->connectPin(buffer_op_pin,
-                              db_network_->dbToSta(driver_mod_net));
-    }
+
+    // connect the buffer output to the new flat net and any modnet
+    // Keep the original input net driving the buffer.
+    // Update the hierarchical net/flat net correspondence because
+    // the hierarhical net is moved to the output of the buffer.
+
+    db_network_->connectPin(
+        buffer_op_pin, new_net, db_network_->dbToSta(driver_mod_net));
 
     repaired_net = true;
     inserted_buffer_count_++;
 
     int max_level = 0;
     for (auto it = sinks.begin(); it != group_end; it++) {
+      Pin* sink_pin = it->pin;
       LibertyPort* sink_port = network_->libertyPort(it->pin);
       Instance* sink_inst = network_->instance(it->pin);
       load -= sink_port->capacitance();
@@ -680,13 +689,14 @@ bool RepairDesign::performGainBuffering(Net* net,
         max_level = it->level;
       }
 
-      odb::dbModNet* sink_mod_net = db_network_->hierNet(it->pin);
-      sta_->disconnectPin(it->pin);
-      sta_->connectPin(sink_inst, sink_port, new_net);
-      if (sink_mod_net) {
-        db_network_->connectPin(it->pin, db_network_->dbToSta(sink_mod_net));
-      }
-
+      odb::dbModNet* sink_mod_net = db_network_->hierNet(sink_pin);
+      // rewire the sink pin, taking care of both the flat net
+      // and the hierarchical net. Update the hierarchical net
+      // flat net correspondence
+      db_network_->disconnectPin(sink_pin);
+      db_network_->connectPin(sink_pin,
+                              db_network_->dbToSta(new_net_db),
+                              db_network_->dbToSta(sink_mod_net));
       if (it->level == 0) {
         Pin* new_pin = network_->findPin(sink_inst, sink_port);
         tree_boundary.push_back(graph_->pinLoadVertex(new_pin));
@@ -1899,7 +1909,7 @@ bool RepairDesign::makeRepeater(
 {
   LibertyPort *buffer_input_port, *buffer_output_port;
   buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  string buffer_name = resizer_->makeUniqueInstName(reason);
+  std::string buffer_name = resizer_->makeUniqueInstName(reason);
 
   debugPrint(logger_,
              RSZ,
