@@ -31,9 +31,9 @@ jobs:
       - name: Correct Build Directory Ownership
         if: always()
         run: |
-          echo "Attempting to change ownership of ${{ github.workspace }}/build back to runner user..."
+          echo "Attempting to change ownership of ${{ github.workspace }} back to runner user..."
           # Use sudo with the full path to chown, targeting the build directory
-          sudo /usr/bin/chown -R $(id -u):$(id -g) ${{ github.workspace }}/build
+          sudo /usr/bin/chown -R $(id -u):$(id -g) ${{ github.workspace }}
           echo "Ownership change attempt finished."
         shell: bash
       - if: steps.review.outputs.total_comments > 0
