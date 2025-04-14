@@ -35,11 +35,13 @@ class Logger;
 }
 
 namespace mpl {
+struct Curve;
 struct Rect;
 class HardMacro;
 class SoftMacro;
 class Cluster;
 
+using CurveList = std::vector<Curve>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
 using Point = std::pair<float, float>;
 
@@ -70,6 +72,16 @@ using Point = std::pair<float, float>;
 // (fixed position, preferred locations, and others) are on macros.  This means
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
+
+// Bounds of a certain cluster's dimension.
+// Used for either width or height.
+struct Curve
+{
+  Curve(float min, float max) : min(min), max(max) {}
+
+  float min{0.0f};
+  float max{0.0f};
+};
 
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster
@@ -492,10 +504,8 @@ class SoftMacro
   // height_list_
   void setShapes(const std::vector<std::pair<float, float>>& shapes,
                  bool force_flag = false);  // < <width, height>
-  // This function for specify shape curves (piecewise function),
-  // for StdCellCluster and MixedCluster
-  void setShapes(const std::vector<std::pair<float, float>>& width_list,
-                 float area);
+  void setShapes(const CurveList& width_curves, float area);
+
   float getX() const { return x_; }
   float getY() const { return y_; }
 
@@ -529,9 +539,7 @@ class SoftMacro
 
  private:
   // utility function
-  int findPos(std::vector<std::pair<float, float>>& list,
-              float& value,
-              bool increase_order);
+  int findCurveIndex(const CurveList& list, float& value, bool increasing_list);
 
   // We define x_, y_ and orientation_ here
   // Also enable the multi-threading
@@ -541,9 +549,10 @@ class SoftMacro
   float height_ = 0.0;     // height_
   float area_ = 0.0;       // area of the standard cell cluster
   std::string name_ = "";  // macro name
-  // variables to describe shape curves (discrete or piecewise curves)
-  std::vector<std::pair<float, float>> width_list_;   // nondecreasing order
-  std::vector<std::pair<float, float>> height_list_;  // nonincreasing order
+
+  // Curves to describe shapes (discrete or piecewise).
+  CurveList width_curves_;   // nondecreasing order
+  CurveList height_curves_;  // nonincreasing order
 
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;

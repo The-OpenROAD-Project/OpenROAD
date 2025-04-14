@@ -142,7 +142,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
-  std::vector<std::pair<float, float>> computeWidthCurves(
+  CurveList computeWidthCurves(
       const std::vector<std::pair<float, float>>& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();

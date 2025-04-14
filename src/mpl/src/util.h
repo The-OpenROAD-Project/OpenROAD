@@ -33,10 +33,11 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-inline bool isFirstSmaller(const std::pair<float, float>& p1,
-                           const std::pair<float, float>& p2)
+// Utility to help sorting width curves.
+inline bool isMinimumSmaller(const Curve& width_curve_a,
+                             const Curve& width_curve_b)
 {
-  return p1.first < p2.first;
+  return width_curve_a.min < width_curve_b.min;
 }
 
 }  // namespace mpl

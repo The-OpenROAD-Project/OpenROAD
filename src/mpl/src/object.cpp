@@ -999,26 +999,26 @@ void SoftMacro::setLocation(const std::pair<float, float>& location)
   y_ = location.second;
 }
 
-// This is a utility function called by SetWidth, SetHeight
-int SoftMacro::findPos(std::vector<std::pair<float, float>>& list,
-                       float& value,
-                       bool increase_order)
+// Find the curve index of the range to which 'value' belongs.
+int SoftMacro::findCurveIndex(const CurveList& list,
+                              float& value,
+                              bool increasing_list)
 {
   // We assume the value is within the range of list
   int idx = 0;
-  if (increase_order) {
-    while ((idx < list.size()) && (list[idx].second < value)) {
+  if (increasing_list) {
+    while ((idx < list.size()) && (list[idx].max < value)) {
       idx++;
     }
-    if (list[idx].first > value) {
-      value = list[idx].first;
+    if (list[idx].min > value) {
+      value = list[idx].min;
     }
-  } else {
-    while ((idx < list.size()) && (list[idx].second > value)) {
+  } else { /* Height Curve */
+    while ((idx < list.size()) && (list[idx].min > value)) {
       idx++;
     }
-    if (list[idx].first < value) {
-      value = list[idx].first;
+    if (list[idx].max < value) {
+      value = list[idx].max;
     }
   }
   return idx;
@@ -1026,52 +1026,52 @@ int SoftMacro::findPos(std::vector<std::pair<float, float>>& list,
 
 void SoftMacro::setWidth(float width)
 {
-  if (width <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.empty() || cluster_ == nullptr
-      || cluster_->getClusterType() == HardMacroCluster
+  if (width <= 0.0 || area_ == 0.0
+      || width_curves_.size() != height_curves_.size() || width_curves_.empty()
+      || cluster_ == nullptr || cluster_->getClusterType() == HardMacroCluster
       || cluster_->isIOCluster()) {
     return;
   }
 
-  // the width_list_ is sorted in nondecreasing order
-  if (width <= width_list_[0].first) {
-    width_ = width_list_[0].first;
-    height_ = height_list_[0].first;
+  // The width curves are sorted in nondecreasing order.
+  if (width <= width_curves_.front().min) {
+    width_ = width_curves_.front().min;
+    height_ = height_curves_.front().max;
     area_ = width_ * height_;
-  } else if (width >= width_list_[width_list_.size() - 1].second) {
-    width_ = width_list_[width_list_.size() - 1].second;
-    height_ = height_list_[height_list_.size() - 1].second;
+  } else if (width >= width_curves_.back().max) {
+    width_ = width_curves_.back().max;
+    height_ = height_curves_.back().min;
     area_ = width_ * height_;
   } else {
     width_ = width;
-    int idx = findPos(width_list_, width_, true);
-    area_ = width_list_[idx].second * height_list_[idx].second;
+    int idx = findCurveIndex(width_curves_, width_, true);
+    area_ = width_curves_[idx].max * height_curves_[idx].min;
     height_ = area_ / width_;
   }
 }
 
 void SoftMacro::setHeight(float height)
 {
-  if (height <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.empty() || cluster_ == nullptr
-      || cluster_->getClusterType() == HardMacroCluster
+  if (height <= 0.0 || area_ == 0.0
+      || width_curves_.size() != height_curves_.size() || width_curves_.empty()
+      || cluster_ == nullptr || cluster_->getClusterType() == HardMacroCluster
       || cluster_->isIOCluster()) {
     return;
   }
 
-  // the height_list_ is sorted in nonincreasing order
-  if (height >= height_list_[0].first) {
-    height_ = height_list_[0].first;
-    width_ = width_list_[0].first;
+  // The height curves are sorted in nonincreasing order.
+  if (height >= height_curves_.front().max) {
+    height_ = height_curves_.front().max;
+    width_ = width_curves_.front().min;
     area_ = width_ * height_;
-  } else if (height <= height_list_[height_list_.size() - 1].second) {
-    height_ = height_list_[height_list_.size() - 1].second;
-    width_ = width_list_[width_list_.size() - 1].second;
+  } else if (height <= height_curves_.back().min) {
+    height_ = height_curves_.back().min;
+    width_ = width_curves_.back().max;
     area_ = width_ * height_;
   } else {
     height_ = height;
-    int idx = findPos(height_list_, height_, false);
-    area_ = width_list_[idx].second * height_list_[idx].second;
+    int idx = findCurveIndex(height_curves_, height_, false);
+    area_ = width_curves_[idx].max * height_curves_[idx].min;
     width_ = area_ / height_;
   }
 }
@@ -1086,21 +1086,21 @@ void SoftMacro::shrinkArea(float percent)
     percent = 1.0;
   }
 
-  if (area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.empty() || cluster_ == nullptr
+  if (area_ == 0.0 || width_curves_.size() != height_curves_.size()
+      || width_curves_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() != StdCellCluster
       || cluster_->isIOCluster()) {
     return;
   }
 
-  for (std::pair<float, float>& width_curve : width_list_) {
-    width_curve.first *= percent;
-    width_curve.second *= percent;
+  for (Curve& width_curve : width_curves_) {
+    width_curve.min *= percent;
+    width_curve.max *= percent;
   }
 
-  for (std::pair<float, float>& height_curve : height_list_) {
-    height_curve.first *= percent;
-    height_curve.second *= percent;
+  for (Curve& height_curve : height_curves_) {
+    height_curve.max *= percent;
+    height_curve.min *= percent;
   }
 
   width_ = width_ * percent;
@@ -1110,40 +1110,40 @@ void SoftMacro::shrinkArea(float percent)
 
 void SoftMacro::setArea(float area)
 {
-  if (area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.empty() || cluster_ == nullptr
+  if (area_ == 0.0 || width_curves_.size() != height_curves_.size()
+      || width_curves_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
       || cluster_->isIOCluster()
-      || area <= width_list_[0].first * height_list_[0].first) {
+      || area <= width_curves_.front().min * height_curves_.front().max) {
     return;
   }
 
   // area must be larger than area_
-  std::vector<std::pair<float, float>> width_list;
-  std::vector<std::pair<float, float>> height_list;
-  for (int i = 0; i < width_list_.size(); i++) {
-    const float min_width = width_list_[i].first;
-    const float min_height = height_list_[i].second;
+  CurveList width_curves;
+  CurveList height_curves;
+  for (int i = 0; i < width_curves_.size(); i++) {
+    const float min_width = width_curves_[i].min;
+    const float min_height = height_curves_[i].min;
     const float max_width = area / min_height;
     const float max_height = area / min_width;
-    if (width_list.empty()
-        || min_width > width_list[width_list.size() - 1].second) {
-      width_list.emplace_back(min_width, max_width);
-      height_list.emplace_back(max_height, min_height);
+    if (width_curves.empty() || min_width > width_curves.back().max) {
+      width_curves.emplace_back(min_width, max_width);
+      height_curves.emplace_back(min_height, max_height);
     } else {
-      width_list[width_list.size() - 1].second = max_width;
-      height_list[height_list.size() - 1].second = min_height;
+      width_curves.back().max = max_width;
+      height_curves.back().min = min_height;
     }
   }
 
-  width_list_ = std::move(width_list);
-  height_list_ = std::move(height_list);
+  width_curves_ = std::move(width_curves);
+  height_curves_ = std::move(height_curves);
   area_ = area;
-  width_ = width_list_[0].first;
-  height_ = height_list_[0].first;
+  width_ = width_curves_[0].min;
+  height_ = height_curves_[0].max;
 }
 
-// This function for discrete shape curves, HardMacroCluster
+// Method to set the shape possibilites for Macro clusters.
+// The shape curves are discrete.
 void SoftMacro::setShapes(const std::vector<std::pair<float, float>>& shapes,
                           bool force_flag)
 {
@@ -1153,47 +1153,56 @@ void SoftMacro::setShapes(const std::vector<std::pair<float, float>>& shapes,
     return;
   }
 
-  // Here we do not need to sort width_list_, height_list_
+  // Here we do not need to sort width_curves_, height_list_
   for (auto& shape : shapes) {
-    width_list_.emplace_back(shape.first, shape.first);
-    height_list_.emplace_back(shape.second, shape.second);
+    width_curves_.emplace_back(shape.first, shape.first);
+    height_curves_.emplace_back(shape.second, shape.second);
   }
   width_ = shapes[0].first;
   height_ = shapes[0].second;
   area_ = shapes[0].first * shapes[0].second;
 }
 
-// This function for specify shape curves (piecewise function),
-// for StdCellCluster and MixedCluster
-void SoftMacro::setShapes(
-    const std::vector<std::pair<float, float>>& width_list,
-    float area)
+// Method to set the shape possibilities for the following cluster types:
+// - Mixed
+// - Std Cell
+//
+// The shape curves are piecewise.
+void SoftMacro::setShapes(const CurveList& width_curves, float area)
 {
-  if (width_list.empty() || area <= 0.0 || cluster_ == nullptr
+  if (width_curves.empty() || area <= 0.0 || cluster_ == nullptr
       || cluster_->isIOCluster()
       || cluster_->getClusterType() == HardMacroCluster) {
     return;
   }
   area_ = area;
-  width_list_.clear();
-  height_list_.clear();
+  width_curves_.clear();
+  height_curves_.clear();
   // sort width list based
-  height_list_ = width_list;
-  std::sort(height_list_.begin(), height_list_.end(), isFirstSmaller);
-  for (auto& shape : height_list_) {
-    if (width_list_.empty()
-        || shape.first > width_list_[width_list_.size() - 1].second) {
-      width_list_.push_back(shape);
-    } else if (shape.second > width_list_[width_list_.size() - 1].second) {
-      width_list_[width_list_.size() - 1].second = shape.second;
+  height_curves_ = width_curves;
+
+  // As, at this point, the list of height curves is actually a
+  // list of width curves, we can use the isMinimumSmaller
+  // utility to do the sorting.
+  std::sort(height_curves_.begin(), height_curves_.end(), isMinimumSmaller);
+
+  for (auto& height_curve : height_curves_) {
+    if (width_curves_.empty() || height_curve.max > width_curves_.back().max) {
+      width_curves_.push_back(height_curve);
+    } else if (height_curve.min > width_curves_.back().max) {
+      width_curves_.back().max = height_curve.min;
     }
   }
-  height_list_.clear();
-  for (auto& shape : width_list_) {
-    height_list_.emplace_back(area / shape.first, area / shape.second);
+
+  height_curves_.clear();
+
+  for (auto& width_curve : width_curves_) {
+    height_curves_.emplace_back(area / width_curve.max /* min */,
+                                area / width_curve.min /* max */);
   }
-  width_ = width_list_[0].first;
-  height_ = height_list_[0].first;
+
+  width_ = width_curves_.front().min;
+  height_ = height_curves_.front().max;
 }
 
 float SoftMacro::getArea() const
@@ -1237,18 +1246,18 @@ void SoftMacro::resizeRandomly(
     std::uniform_real_distribution<float>& distribution,
     std::mt19937& generator)
 {
-  if (width_list_.empty()) {
+  if (width_curves_.empty()) {
     return;
   }
 
   boost::random::uniform_int_distribution<> index_distribution(
-      0, width_list_.size() - 1);
+      0, width_curves_.size() - 1);
   const int idx = index_distribution(generator);
 
-  const float min_width = width_list_[idx].first;
-  const float max_width = width_list_[idx].second;
+  const float min_width = width_curves_[idx].min;
+  const float max_width = width_curves_[idx].max;
   width_ = min_width + distribution(generator) * (max_width - min_width);
-  area_ = width_list_[idx].first * height_list_[idx].first;
+  area_ = width_curves_[idx].min * height_curves_[idx].max;
   height_ = area_ / width_;
 }
 
