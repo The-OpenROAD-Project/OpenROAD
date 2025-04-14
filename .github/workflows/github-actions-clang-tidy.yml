@@ -32,7 +32,6 @@ jobs:
         if: always()
         run: |
           echo "Attempting to change ownership of ${{ github.workspace }} back to runner user..."
-          # Use sudo with the full path to chown, targeting the build directory
           sudo /usr/bin/chown -R $(id -u):$(id -g) ${{ github.workspace }}
           echo "Ownership change attempt finished."
         shell: bash
