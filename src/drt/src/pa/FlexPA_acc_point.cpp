@@ -3,6 +3,13 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
 #include "frProfileTask.h"
@@ -1332,7 +1339,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::set<std::pair<Point, frLayerNum>> apset;
 
   if (graphics_) {
-    std::set<frInst*, frBlockObjectComp>* inst_class = nullptr;
+    frOrderedIdSet<frInst*>* inst_class = nullptr;
     if (inst_term) {
       inst_class = unique_insts_.getClass(inst_term->getInst());
     }

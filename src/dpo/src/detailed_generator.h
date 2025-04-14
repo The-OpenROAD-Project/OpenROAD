@@ -5,11 +5,13 @@
 
 #include <string>
 #include <vector>
-
+namespace dpl {
+class Node;
+}
 namespace dpo {
 
 class DetailedMgr;
-class Node;
+using dpl::Node;
 
 class DetailedGenerator
 {

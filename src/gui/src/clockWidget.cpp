@@ -18,6 +18,9 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QWidgetAction>
+#include <cmath>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 

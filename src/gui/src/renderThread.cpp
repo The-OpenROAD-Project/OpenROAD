@@ -5,6 +5,7 @@
 
 #include <QPainterPath>
 #include <QPolygon>
+#include <cmath>
 #include <string>
 #include <vector>
 

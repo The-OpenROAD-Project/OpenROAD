@@ -8,7 +8,9 @@
 // move generators, different objectives and a cost function in order
 // to improve a placement.
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cmath>
 #include <cstddef>
 #include <stack>
 #include <string>
@@ -584,7 +586,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+    if (sj == -1 || ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }
@@ -756,7 +758,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+    if (sj == -1 || ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }

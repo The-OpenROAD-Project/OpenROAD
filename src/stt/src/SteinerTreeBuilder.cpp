@@ -3,7 +3,11 @@
 
 #include "stt/SteinerTreeBuilder.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <map>
+#include <set>
 #include <utility>
 #include <vector>
 

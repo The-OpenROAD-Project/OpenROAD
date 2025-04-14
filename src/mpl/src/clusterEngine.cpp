@@ -3,7 +3,13 @@
 
 #include "clusterEngine.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"

@@ -3,21 +3,21 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
-#include "geom.h"
-#include "db.h"
-#include "dbShape.h"
-#include "dbViaParams.h"
-#include "dbWireCodec.h"
-#include "dbBlockCallBackObj.h"
-#include "dbIterator.h"
-#include "dbTransform.h"
-#include "dbWireGraph.h"
-#include "dbMap.h"
-#include "dbSet.h"
-#include "dbTypes.h"
-#include "geom.h"
-#include "wOrder.h"
-#include "util.h"
+#include "odb/geom.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbViaParams.h"
+#include "odb/dbWireCodec.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbIterator.h"
+#include "odb/dbTransform.h"
+#include "odb/dbWireGraph.h"
+#include "odb/dbMap.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/wOrder.h"
+#include "odb/util.h"
 
 using namespace odb;
 %}

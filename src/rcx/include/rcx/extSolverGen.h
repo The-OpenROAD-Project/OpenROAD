@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "extprocess.h"
 
 namespace rcx {

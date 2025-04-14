@@ -3,7 +3,10 @@
 
 #include "MakeWireParasitics.h"
 
+#include <cmath>
 #include <cstddef>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"

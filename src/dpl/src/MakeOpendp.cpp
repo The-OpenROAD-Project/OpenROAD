@@ -7,12 +7,12 @@
 
 #include "dpl/Opendp.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace dpl {
 // Tcl files encoded into strings.
 extern const char* dpl_tcl_inits[];
-}  // namespace sta
+}  // namespace dpl
 
 extern "C" {
 extern int Dpl_Init(Tcl_Interp* interp);
@@ -36,7 +36,7 @@ void initOpendp(OpenRoad* openroad)
   // Define swig TCL commands.
   Dpl_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::dpl_tcl_inits);
+  utl::evalTclInit(tcl_interp, dpl::dpl_tcl_inits);
   openroad->getOpendp()->init(openroad->getDb(), openroad->getLogger());
 }
 

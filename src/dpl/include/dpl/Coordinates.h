@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <boost/operators.hpp>
 #include <cmath>
 #include <functional>
@@ -11,8 +12,6 @@
 #include "Opendp.h"
 
 namespace dpl {
-
-using std::abs;
 
 // Strongly type the difference between pixel and DBU locations.
 //

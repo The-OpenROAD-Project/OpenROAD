@@ -4,9 +4,17 @@
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
@@ -2451,7 +2459,7 @@ bool IOPlacer::checkPinConstraints()
           invalid = true;
         }
       } else {
-        if (!constraint.box.overlaps(pin.getPosition())) {
+        if (!constraint.box.intersects(pin.getPosition())) {
           logger_->warn(
               PPL,
               105,

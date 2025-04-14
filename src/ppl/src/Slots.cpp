@@ -3,7 +3,9 @@
 
 #include "Slots.h"
 
+#include <algorithm>
 #include <boost/functional/hash.hpp>
+#include <limits>
 #include <vector>
 
 namespace ppl {

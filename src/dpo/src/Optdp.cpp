@@ -5,12 +5,15 @@
 
 #include <odb/db.h>
 
+#include <algorithm>
 #include <boost/format.hpp>
 #include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -23,7 +26,9 @@
 #include "detailed.h"
 #include "detailed_manager.h"
 #include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Padding.h"
+#include "dpl/PlacementDRC.h"
 #include "legalize_shift.h"
 #include "network.h"
 #include "router.h"
@@ -33,6 +38,7 @@ namespace dpo {
 
 using utl::DPO;
 
+using dpl::Master;
 using odb::dbBlock;
 using odb::dbBlockage;
 using odb::dbBox;
@@ -84,7 +90,7 @@ void Optdp::improvePlacement(const int seed,
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
   // A manager to track cells.
-  dpo::DetailedMgr mgr(arch_, network_, routeinfo_, grid_);
+  dpo::DetailedMgr mgr(arch_, network_, routeinfo_, grid_, drc_engine_);
   mgr.setLogger(logger_);
   // Various settings.
   mgr.setSeed(seed);
@@ -137,6 +143,7 @@ void Optdp::improvePlacement(const int seed,
   delete network_;
   delete arch_;
   delete routeinfo_;
+  delete drc_engine_;
 
   const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
 
@@ -163,14 +170,14 @@ void Optdp::import()
   // createLayerMap(); // Does nothing right now.
   // createNdrMap(); // Does nothing right now.
   setupMasterPowers();  // Call prior to network and architecture creation.
-  initSpacingTable();
+  initPlacementDRC();
   createNetwork();       // Create network; _MUST_ do before architecture.
   createArchitecture();  // Create architecture.
   // createRouteInformation(); // Does nothing right now.
   createGrid();
   initPadding();  // Need to do after network creation.
   // setUpNdrRules(); // Does nothing right now.
-  setUpPlacementRegions();  // Regions.
+  setUpPlacementGroups();  // Regions.
 }
 
 ////////////////////////////////////////////////////////////////
@@ -188,8 +195,8 @@ void Optdp::updateDbInstLocations()
       const int y = nd->getBottom().v + grid_->getCore().yMin();
       const int x = nd->getLeft().v + grid_->getCore().xMin();
 
-      if (inst->getOrient() != nd->getCurrOrient()) {
-        inst->setOrient(nd->getCurrOrient());
+      if (inst->getOrient() != nd->getOrient()) {
+        inst->setOrient(nd->getOrient());
       }
       int inst_x, inst_y;
       inst->getLocation(inst_x, inst_y);
@@ -201,32 +208,9 @@ void Optdp::updateDbInstLocations()
 }
 
 ////////////////////////////////////////////////////////////////
-void Optdp::initSpacingTable()
+void Optdp::initPlacementDRC()
 {
-  auto db_spacing_tbl = db_->getTech()->getCellEdgeSpacingTable();
-  arch_->setUseSpacingTable(!db_spacing_tbl.empty());
-  if (db_spacing_tbl.empty()) {
-    return;
-  }
-  // initialize edge types
-  arch_->init_edge_type();
-  for (const auto& entry : db_spacing_tbl) {
-    arch_->add_edge_type(entry->getFirstEdgeType());
-    arch_->add_edge_type(entry->getSecondEdgeType());
-  }
-  // fill the spacing table
-  arch_->initSpacingTable();
-  // Fill Table
-  for (const auto& entry : db_spacing_tbl) {
-    std::string first_edge = entry->getFirstEdgeType();
-    std::string second_edge = entry->getSecondEdgeType();
-    const int spc = entry->getSpacing();
-    const bool exact = entry->isExact();
-    const bool except_abutted = entry->isExceptAbutted();
-    const int idx1 = arch_->getEdgeTypes().at(first_edge);
-    const int idx2 = arch_->getEdgeTypes().at(second_edge);
-    arch_->addSpacingTableEntry(idx1, idx2, spc, exact, except_abutted);
-  }
+  drc_engine_ = new PlacementDRC(grid_, db_->getTech());
 }
 
 ////////////////////////////////////////////////////////////////
@@ -236,7 +220,6 @@ void Optdp::initPadding()
 
   // Need to turn on padding.
   arch_->setUsePadding(true);
-  arch_->init_edge_type();
 
   // Create and edge type for each amount of padding.  This
   // can be done by querying OpenDP.
@@ -462,17 +445,17 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
   }
   auto master = network_->createAndAddMaster();
   masterMap_[db_master] = master;
-  db_master->getPlacementBoundary(master->boundary_box_);
-  master->edges_.clear();
-  if (!arch_->getUseSpacingTable()) {
+  Rect bbox;
+  db_master->getPlacementBoundary(bbox);
+  master->setBBox(bbox);
+  master->clearEdges();
+  if (!drc_engine_->hasCellEdgeSpacingTable()) {
     return master;
   }
   if (db_master->getType()
       == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
     return nullptr;
   }
-  Rect bbox;
-  db_master->getPlacementBoundary(bbox);
   std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<Rect>> typed_segs;
   int num_rows = std::lround(db_master->getHeight() / (double) min_row_height);
   for (auto edge : db_master->getEdgeTypes()) {
@@ -501,13 +484,14 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
       }
     }
     typed_segs[dir].push_back(edge_rect);
-    if (arch_->hasEdgeType(edge->getEdgeType())) {
+    const auto edge_type_idx = drc_engine_->getEdgeTypeIdx(edge->getEdgeType());
+    if (edge_type_idx != -1) {
       // consider only edge types defined in the spacing table
-      master->edges_.emplace_back(arch_->getEdgeTypeIdx(edge->getEdgeType()),
-                                  edge_rect);
+      master->addEdge(dpl::MasterEdge(edge_type_idx, edge_rect));
     }
   }
-  if (!arch_->hasEdgeType("DEFAULT")) {
+  const auto default_edge_type_idx = drc_engine_->getEdgeTypeIdx("DEFAULT");
+  if (default_edge_type_idx == -1) {
     return master;
   }
   // Add the remaining DEFAULT un-typed segments
@@ -517,7 +501,7 @@ Master* Optdp::getMaster(odb::dbMaster* db_master)
     const auto default_segs
         = edge_calc::difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->edges_.emplace_back(0, seg);
+      master->addEdge(dpl::MasterEdge(default_edge_type_idx, seg));
     }
   }
   return master;
@@ -636,24 +620,10 @@ void Optdp::createNetwork()
     ndi->setType(Node::CELL);
     ndi->setDbInst(inst);
     ndi->setMaster(getMaster(inst->getMaster()));
-    // Set left and right edge types:
-    {
-      for (auto edge_type : inst->getMaster()->getEdgeTypes()) {
-        if (arch_->hasEdgeType(edge_type->getEdgeType())) {
-          if (edge_type->getEdgeDir() == odb::dbMasterEdgeType::RIGHT) {
-            ndi->addRigthEdgeType(
-                arch_->getEdgeTypeIdx(edge_type->getEdgeType()));
-          } else if (edge_type->getEdgeDir() == odb::dbMasterEdgeType::LEFT) {
-            ndi->addLeftEdgeType(
-                arch_->getEdgeTypeIdx(edge_type->getEdgeType()));
-          }
-        }
-      }
-    }
     ndi->setId(n);
-    ndi->setFixed(inst->isFixed() ? Node::FIXED_XY : Node::NOT_FIXED);
+    ndi->setFixed(inst->isFixed());
     // else...  Account for R90?
-    ndi->setCurrOrient(odb::dbOrientType::R0);
+    ndi->setOrient(odb::dbOrientType::R0);
     ndi->setHeight(DbuY{(int) inst->getMaster()->getHeight()});
     ndi->setWidth(DbuX{(int) inst->getMaster()->getWidth()});
 
@@ -672,9 +642,6 @@ void Optdp::createNetwork()
       ndi->setTopPower(it_m->second.first);
     }
 
-    // Regions setup later!
-    ndi->setRegionId(0);
-
     ++n;  // Next node.
   }
   for (dbBTerm* bterm : bterms) {
@@ -691,8 +658,8 @@ void Optdp::createNetwork()
     // Fill in data.
     ndi->setId(n);
     ndi->setType(Node::TERMINAL);
-    ndi->setFixed(Node::FIXED_XY);
-    ndi->setCurrOrient(odb::dbOrientType::R0);
+    ndi->setFixed(true);
+    ndi->setOrient(odb::dbOrientType::R0);
 
     DbuX ww(bterm->getBBox().xMax() - bterm->getBBox().xMin());
     DbuY hh(bterm->getBBox().yMax() - bterm->getBBox().yMax());
@@ -708,9 +675,6 @@ void Optdp::createNetwork()
     // Not relevant for terminal.
     ndi->setBottomPower(Architecture::Row::Power_UNK);
     ndi->setTopPower(Architecture::Row::Power_UNK);
-
-    // Not relevant for terminal.
-    ndi->setRegionId(0);  // Set in another routine.
 
     ++n;  // Next node.
   }
@@ -762,17 +726,17 @@ void Optdp::createNetwork()
         // Due to old bookshelf, my offsets are from the
         // center of the cell whereas in DEF, it's from
         // the bottom corner.
-        double ww = mTerm->getBBox().dx();
-        double hh = mTerm->getBBox().dy();
-        double xx = (mTerm->getBBox().xMax() + mTerm->getBBox().xMin()) * 0.5;
-        double yy = (mTerm->getBBox().yMax() + mTerm->getBBox().yMin()) * 0.5;
-        double dx = xx - (master->getWidth() / 2.0);
-        double dy = yy - (master->getHeight() / 2.0);
+        auto ww = mTerm->getBBox().dx();
+        auto hh = mTerm->getBBox().dy();
+        auto xx = mTerm->getBBox().xCenter();
+        auto yy = mTerm->getBBox().yCenter();
+        auto dx = xx - ((int) master->getWidth() / 2);
+        auto dy = yy - ((int) master->getHeight() / 2);
 
-        ptr->setOffsetX(dx);
-        ptr->setOffsetY(dy);
-        ptr->setPinHeight(hh);
-        ptr->setPinWidth(ww);
+        ptr->setOffsetX(DbuX{dx});
+        ptr->setOffsetY(DbuY{dy});
+        ptr->setPinHeight(DbuY{hh});
+        ptr->setPinWidth(DbuX{ww});
         ptr->setPinLayer(0);  // Set to zero since not currently used.
 
         ++p;  // next pin.
@@ -798,10 +762,10 @@ void Optdp::createNetwork()
                                              network_->getEdge(e));
 
         // These don't need an offset.
-        ptr->setOffsetX(0.0);
-        ptr->setOffsetY(0.0);
-        ptr->setPinHeight(0.0);
-        ptr->setPinWidth(0.0);
+        ptr->setOffsetX(DbuX{0});
+        ptr->setOffsetY(DbuY{0});
+        ptr->setPinHeight(DbuY{0});
+        ptr->setPinWidth(DbuX{0});
         ptr->setPinLayer(0);  // Set to zero since not currently used.
 
         ++p;  // next pin.
@@ -1017,7 +981,7 @@ void Optdp::createGrid()
       db_, db_->getChip()->getBlock(), std::make_shared<dpl::Padding>(), 0, 0);
 }
 ////////////////////////////////////////////////////////////////
-void Optdp::setUpPlacementRegions()
+void Optdp::setUpPlacementGroups()
 {
   int xmin = arch_->getMinX();
   int xmax = arch_->getMaxX();
@@ -1027,25 +991,19 @@ void Optdp::setUpPlacementRegions()
   dbBlock* block = db_->getChip()->getBlock();
   auto core = block->getCoreArea();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
-  Architecture::Region* rptr = nullptr;
+  Group* rptr = nullptr;
   int count = 0;
-  Rectangle_i tempRect;
 
   // Default region.
   rptr = arch_->createAndAddRegion();
-  rptr->setId(count);
-  ++count;
+  rptr->setId(count++);
 
-  tempRect.set_xmin(xmin);
-  tempRect.set_xmax(xmax);
-  tempRect.set_ymin(ymin);
-  tempRect.set_ymax(ymax);
-  rptr->addRect(tempRect);
-
-  rptr->setMinX(xmin);
-  rptr->setMaxX(xmax);
-  rptr->setMinY(ymin);
-  rptr->setMaxY(ymax);
+  rptr->addRect({xmin, ymin, xmax, ymax});
+  rptr->setBoundary(Rect(xmin, ymin, xmax, ymax));
+  // rptr->setMinX(xmin);
+  // rptr->setMaxX(xmax);
+  // rptr->setMinY(ymin);
+  // rptr->setMaxY(ymax);
 
   auto db_groups = block->getGroups();
   for (auto db_group : db_groups) {
@@ -1055,34 +1013,29 @@ void Optdp::setUpPlacementRegions()
       rptr->setId(count);
       ++count;
       auto boundaries = parent->getBoundaries();
+      Rect bbox;
+      bbox.mergeInit();
       for (dbBox* boundary : boundaries) {
         Rect box = boundary->getBox();
         box.moveDelta(-core.xMin(), -core.yMin());
-
         xmin = std::max(arch_->getMinX(), box.xMin());
         xmax = std::min(arch_->getMaxX(), box.xMax());
         ymin = std::max(arch_->getMinY(), box.yMin());
         ymax = std::min(arch_->getMaxY(), box.yMax());
 
-        tempRect.set_xmin(xmin);
-        tempRect.set_xmax(xmax);
-        tempRect.set_ymin(ymin);
-        tempRect.set_ymax(ymax);
-        rptr->addRect(tempRect);
-
-        rptr->setMinX(std::min(xmin, rptr->getMinX()));
-        rptr->setMaxX(std::max(xmax, rptr->getMaxX()));
-        rptr->setMinY(std::min(ymin, rptr->getMinY()));
-        rptr->setMaxY(std::max(ymax, rptr->getMaxY()));
+        rptr->addRect({xmin, ymin, xmax, ymax});
+        bbox.merge({xmin, ymin, xmax, ymax});
       }
+      rptr->setBoundary(bbox);
 
       // The instances within this region.
       for (auto db_inst : db_group->getInsts()) {
         it_n = instMap_.find(db_inst);
         if (instMap_.end() != it_n) {
           Node* nd = it_n->second;
-          if (nd->getRegionId() == 0) {
-            nd->setRegionId(rptr->getId());
+          if (nd->getGroupId() == 0) {
+            nd->setGroupId(rptr->getId());
+            nd->setGroup(rptr);
           }
         }
       }

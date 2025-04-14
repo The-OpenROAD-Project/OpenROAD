@@ -3,20 +3,28 @@
 
 #pragma once
 
+#include <limits>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dpl/Coordinates.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rectangle.h"
+namespace dpl {
+class Group;
+class Node;
 
+}  // namespace dpl
 namespace dpo {
 
 class Network;
-class Node;
 using dpl::DbuX;
 using dpl::DbuY;
+using dpl::Group;
+using dpl::Node;
 
 class Architecture
 {
@@ -24,8 +32,6 @@ class Architecture
 
  public:
   class Row;
-  class Spacing;
-  class Region;
 
   ~Architecture();
 
@@ -34,13 +40,10 @@ class Architecture
   Architecture::Row* getRow(int r) const { return rows_[r]; }
   Architecture::Row* createAndAddRow();
 
-  const std::vector<Architecture::Region*>& getRegions() const
-  {
-    return regions_;
-  }
+  const std::vector<Group*>& getRegions() const { return regions_; }
   int getNumRegions() const { return (int) regions_.size(); }
-  Architecture::Region* getRegion(int r) const { return regions_[r]; }
-  Architecture::Region* createAndAddRegion();
+  Group* getRegion(int r) const { return regions_[r]; }
+  Group* createAndAddRegion();
 
   bool isSingleHeightCell(const Node* ndi) const;
   bool isMultiHeightCell(const Node* ndi) const;
@@ -49,10 +52,6 @@ class Architecture
 
   int postProcess(Network* network);
   int find_closest_row(DbuY y);
-
-  void clear_edge_type();
-  void init_edge_type();
-  int add_edge_type(const std::string& name);
 
   int getMinX() const { return xmin_; }
   int getMaxX() const { return xmax_; }
@@ -68,34 +67,6 @@ class Architecture
   void setMaxY(int ymax) { ymax_ = ymax; }
 
   bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
-
-  // Using tables...
-  void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
-  bool getUseSpacingTable() const { return useSpacingTable_; }
-  void clearSpacingTable();
-  void initSpacingTable();
-  void addSpacingTableEntry(int first_edge,
-                            int second_edge,
-                            int spc,
-                            bool is_exact,
-                            bool except_abutted);
-  Spacing getMaxSpacing(int edge_type) const;
-  Spacing getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
-
-  const std::vector<std::vector<Spacing>>& getCellSpacings() const
-  {
-    return cellSpacings_;
-  }
-
-  const std::map<std::string, int>& getEdgeTypes() const { return edgeTypes_; }
-  bool hasEdgeType(const std::string& edge_type) const
-  {
-    return edgeTypes_.find(edge_type) != edgeTypes_.end();
-  }
-  int getEdgeTypeIdx(const std::string& edge_type) const
-  {
-    return edgeTypes_.at(edge_type);
-  }
 
   // Using padding...
   void setUsePadding(bool val = true) { usePadding_ = val; }
@@ -122,31 +93,11 @@ class Architecture
   std::vector<Row*> rows_;
 
   // Regions...
-  std::vector<Region*> regions_;
-
-  // Spacing tables...
-  bool useSpacingTable_ = false;
-  std::map<std::string, int> edgeTypes_;
-  std::vector<std::vector<Spacing>> cellSpacings_;
+  std::vector<Group*> regions_;
 
   // Padding...
   bool usePadding_ = false;
   std::map<int, std::pair<int, int>> cellPaddings_;  // Padding to left,right.
-};
-
-class Architecture::Spacing
-{
- public:
-  Spacing(const int spc_in,
-          const bool is_exact_in,
-          const bool except_abutted_in)
-      : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
-  {
-  }
-  bool operator<(const Spacing& rhs) const { return spc < rhs.spc; }
-  int spc;
-  bool is_exact;
-  bool except_abutted;
 };
 
 class Architecture::Row
@@ -208,39 +159,6 @@ class Architecture::Row
   // Voltages at the top and bottom of the row.
   int powerTop_ = Power_UNK;
   int powerBot_ = Power_UNK;
-};
-
-class Architecture::Region
-{
- public:
-  int getId() const { return id_; }
-  void setId(int id) { id_ = id; }
-
-  int getMinX() const { return xmin_; }
-  int getMaxX() const { return xmax_; }
-  int getMinY() const { return ymin_; }
-  int getMaxY() const { return ymax_; }
-
-  void setMinX(int xmin) { xmin_ = xmin; }
-  void setMaxX(int xmax) { xmax_ = xmax; }
-  void setMinY(int ymin) { ymin_ = ymin; }
-  void setMaxY(int ymax) { ymax_ = ymax; }
-
-  void addRect(Rectangle_i& rect) { rects_.push_back(rect); }
-  const std::vector<Rectangle_i>& getRects() const { return rects_; }
-
- private:
-  // Id for the region.
-  int id_ = -1;
-
-  // Box around all sub-rectangles.
-  int xmin_ = std::numeric_limits<int>::max();
-  int ymin_ = std::numeric_limits<int>::max();
-  int xmax_ = std::numeric_limits<int>::lowest();
-  int ymax_ = std::numeric_limits<int>::lowest();
-
-  // Sub-rectangles forming the rectilinear region.
-  std::vector<Rectangle_i> rects_;
 };
 
 }  // namespace dpo

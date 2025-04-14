@@ -3,8 +3,11 @@
 
 #include "SimulatedAnnealingCore.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -777,7 +780,8 @@ void SimulatedAnnealingCore<T>::fastSA()
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
 
-    if ((num_restart <= max_num_restart)
+    if (best_valid_result_.macro_id_to_width.empty()
+        && (num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
       shrink();

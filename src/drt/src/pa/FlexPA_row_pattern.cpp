@@ -6,8 +6,12 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "FlexPA.h"
 #include "db/infra/frTime.h"
@@ -45,7 +49,7 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts_set_) {
-    Point origin = inst->getOrigin();
+    Point origin = inst->getBoundaryBBox().ll();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
@@ -63,55 +67,56 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
   return inst_rows;
 }
 
-frInst* FlexPA::getAdjacentInstance(frInst* inst, bool left) const
+bool FlexPA::instancesAreAbuting(frInst* inst_1, frInst* inst_2) const
 {
-  frInst* adjacent_inst = nullptr;
-  frInst* left_inst = nullptr;
-  frInst* right_inst = nullptr;
-  auto inst_it = insts_set_.find(inst);
-  if (left && inst_it != insts_set_.begin()) {
-    adjacent_inst = *std::prev(inst_it);
-    left_inst = adjacent_inst;
-    right_inst = inst;
-  } else if (inst_it != insts_set_.end()) {
-    adjacent_inst = *std::next(inst_it);
-    left_inst = inst;
-    right_inst = adjacent_inst;
+  if (inst_1->getOrigin().getY() != inst_2->getOrigin().getY()) {
+    return false;
+  }
+  frInst *left_inst, *right_inst;
+  if (inst_1->getOrigin().getX() < inst_2->getOrigin().getX()) {
+    left_inst = inst_1;
+    right_inst = inst_2;
   } else {
-    return nullptr;
+    left_inst = inst_2;
+    right_inst = inst_1;
   }
 
-  if (left_inst->getBoundaryBBox().xMax() != right_inst->getOrigin().getX()) {
-    return nullptr;
+  if (left_inst->getBoundaryBBox().xMax()
+      != right_inst->getBoundaryBBox().xMin()) {
+    return false;
   }
 
-  if (left_inst->getOrigin().getY() != right_inst->getOrigin().getY()) {
-    return nullptr;
-  }
-  return adjacent_inst;
+  return true;
 }
 
 std::vector<frInst*> FlexPA::getAdjacentInstancesCluster(frInst* inst) const
 {
-  const bool left = true;
-  const bool right = false;
+  const auto inst_it = insts_set_.find(inst);
   std::vector<frInst*> adj_inst_cluster;
 
-  frInst* left_inst = getAdjacentInstance(inst, left);
-  while (left_inst != nullptr) {
-    adj_inst_cluster.push_back(left_inst);
-    // the right instance can be ignored, since it was added in the line above
-    left_inst = getAdjacentInstance(left_inst, left);
+  adj_inst_cluster.push_back(inst);
+
+  if (inst_it != insts_set_.begin()) {
+    auto current_inst_it = inst_it;
+    auto prev_inst_it = std::prev(inst_it);
+    while (prev_inst_it != insts_set_.begin()
+           && instancesAreAbuting(*current_inst_it, *prev_inst_it)) {
+      adj_inst_cluster.push_back(*prev_inst_it);
+      current_inst_it--;
+      prev_inst_it--;
+    }
   }
 
   std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
-  adj_inst_cluster.push_back(inst);
-
-  frInst* right_inst = getAdjacentInstance(inst, right);
-  while (right_inst != nullptr) {
-    adj_inst_cluster.push_back(right_inst);
-    // the left instance can be ignored, since it was added in the line above
-    right_inst = getAdjacentInstance(right_inst, right);
+  if (inst_it != insts_set_.end()) {
+    auto current_inst_it = inst_it;
+    auto next_inst_it = std::next(inst_it);
+    while (next_inst_it != insts_set_.end()
+           && instancesAreAbuting(*current_inst_it, *next_inst_it)) {
+      adj_inst_cluster.push_back(*next_inst_it);
+      current_inst_it++;
+      next_inst_it++;
+    }
   }
 
   return adj_inst_cluster;
@@ -140,7 +145,6 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
             result;
         std::unique_ptr<PinAccessJobDescription> uDesc
             = std::make_unique<PinAccessJobDescription>();
-        uDesc->setPath(path);
         uDesc->setType(PinAccessJobDescription::INST_ROWS);
         msg.setJobDescription(std::move(uDesc));
         const bool ok

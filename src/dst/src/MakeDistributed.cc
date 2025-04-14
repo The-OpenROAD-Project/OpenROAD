@@ -7,12 +7,12 @@
 
 #include "dst/Distributed.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace dst {
 // Tcl files encoded into strings.
 extern const char* dst_tcl_inits[];
-}  // namespace sta
+}  // namespace dst
 
 extern "C" {
 extern int Dst_Init(Tcl_Interp* interp);
@@ -35,7 +35,7 @@ void initDistributed(OpenRoad* openroad)
   // Define swig TCL commands.
   auto tcl_interp = openroad->tclInterp();
   Dst_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::dst_tcl_inits);
+  utl::evalTclInit(tcl_interp, dst::dst_tcl_inits);
   openroad->getDistributed()->init(openroad->getLogger());
 }
 

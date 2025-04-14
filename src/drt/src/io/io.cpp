@@ -3,10 +3,17 @@
 
 #include "io/io.h"
 
+#include <algorithm>
+#include <cmath>
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "db/tech/frConstraint.h"

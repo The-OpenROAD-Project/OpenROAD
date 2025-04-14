@@ -12,6 +12,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QVBoxLayout>
+#include <functional>
 #include <random>
 #include <string>
 #include <vector>

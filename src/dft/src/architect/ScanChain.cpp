@@ -4,7 +4,11 @@
 #include "ScanChain.hh"
 
 #include <cstddef>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"

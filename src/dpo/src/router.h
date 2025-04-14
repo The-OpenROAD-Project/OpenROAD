@@ -8,11 +8,13 @@
 
 #include "rectangle.h"
 
-namespace dpo {
+namespace dpl {
 class Node;
 }
 
 namespace dpo {
+
+using dpl::Node;
 
 class RoutingParams
 {

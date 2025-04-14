@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "db/drObj/drBlockObject.h"
 
 namespace drt {

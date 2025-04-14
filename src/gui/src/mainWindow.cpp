@@ -16,6 +16,7 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QWidgetAction>
+#include <cmath>
 #include <iomanip>
 #include <map>
 #include <sstream>

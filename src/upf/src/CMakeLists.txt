@@ -27,6 +27,11 @@ swig_lib(NAME      upf
          SCRIPTS   upf.tcl
 )
 
+target_sources(upf
+  PRIVATE
+    MakeUpf.cpp
+)
+
 messages(
   TARGET upf
   OUTPUT_DIR ..
@@ -37,4 +42,9 @@ target_link_libraries(upf
     odb
     upf_lib
     utl_lib
+)
+
+target_include_directories(upf
+  PUBLIC
+    ../include
 )

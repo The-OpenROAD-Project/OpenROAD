@@ -3,6 +3,10 @@
 
 #include "SACoreSoftMacro.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 

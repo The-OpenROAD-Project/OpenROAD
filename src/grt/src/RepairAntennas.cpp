@@ -7,10 +7,12 @@
 
 #include <algorithm>
 #include <boost/pending/disjoint_sets.hpp>
+#include <cmath>
 #include <limits>
 #include <map>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Net.h"

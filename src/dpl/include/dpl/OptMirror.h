@@ -18,9 +18,6 @@ using odb::dbInst;
 using odb::dbNet;
 using odb::Rect;
 
-using std::unordered_map;
-using std::vector;
-
 using utl::Logger;
 
 class NetBox
@@ -38,8 +35,8 @@ class NetBox
   bool ignore_ = false;
 };
 
-using NetBoxMap = unordered_map<dbNet*, NetBox>;
-using NetBoxes = vector<NetBox*>;
+using NetBoxMap = std::unordered_map<dbNet*, NetBox>;
+using NetBoxes = std::vector<NetBox*>;
 
 class OptimizeMirroring
 {
@@ -49,7 +46,7 @@ class OptimizeMirroring
   void run();
 
  private:
-  int mirrorCandidates(vector<dbInst*>& mirror_candidates);
+  int mirrorCandidates(std::vector<dbInst*>& mirror_candidates);
   void findNetBoxes();
   std::vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
 

@@ -6,8 +6,11 @@
 #include <QInputDialog>
 #include <QStringList>
 #include <boost/algorithm/string.hpp>
+#include <cmath>
+#include <functional>
 #include <iomanip>
 #include <limits>
+#include <optional>
 #include <queue>
 #include <regex>
 #include <sstream>

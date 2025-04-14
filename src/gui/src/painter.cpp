@@ -3,6 +3,7 @@
 
 #include "painter.h"
 
+#include <cmath>
 #include <string>
 
 namespace gui {
