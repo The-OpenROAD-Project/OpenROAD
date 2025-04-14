@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace ord {
 
-class OpenRoad;
-
-void initOdb(OpenRoad* openroad);
+void initOdb(Tcl_Interp* interp);
 
 }  // namespace ord
