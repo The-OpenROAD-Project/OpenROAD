@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, James Cherry, Parallax Software, Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -93,6 +61,41 @@ class InitFloorplan
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
+
+  // Rect in DBU to set the die area of the top level block.
+  void makeDie(const odb::Rect& die);
+
+  // utilization is in [0, 100]%. This routine will calculate the required
+  // core area for all the standard cells and macros based on the desired
+  // utilization. It will then add core space to each side, and will set
+  // the die area of the top level block to that calculated value.
+  void makeDieUtilization(double utilization,
+                          double aspect_ratio,
+                          int core_space_bottom,
+                          int core_space_top,
+                          int core_space_left,
+                          int core_space_right);
+
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern. core space is the padding on each side
+  // to inset the rows.
+  void makeRowsWithSpacing(int core_space_bottom,
+                           int core_space_top,
+                           int core_space_left,
+                           int core_space_right,
+                           odb::dbSite* base_site,
+                           const std::vector<odb::dbSite*>& additional_sites
+                           = {},
+                           RowParity row_parity = RowParity::NONE,
+                           const std::set<odb::dbSite*>& flipped_sites = {});
+
+  // The base_site determines the single-height rows.  For hybrid rows it is
+  // a site containing a row pattern.
+  void makeRows(const odb::Rect& core,
+                odb::dbSite* base_site,
+                const std::vector<odb::dbSite*>& additional_sites = {},
+                RowParity row_parity = RowParity::NONE,
+                const std::set<odb::dbSite*>& flipped_sites = {});
 
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,

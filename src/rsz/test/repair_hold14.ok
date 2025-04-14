@@ -7,6 +7,11 @@
 worst slack -0.97
 worst slack 0.26
 [INFO RSZ-0046] Found 1 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.972 |  -0.972 | r1/D
+    final |       0 |       3 |            0 |   +44.4% |   0.326 |   0.000 | r1/D
+--------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 3 hold buffers.
 Startpoint: in1 (input port clocked by clk)
 Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -39,6 +44,11 @@ Path Type: min
 
 
 [INFO RSZ-0046] Found 1 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.374 |  -0.374 | r1/D
+    final |       0 |       1 |            0 |   +10.3% |   0.180 |   0.000 | r1/D
+--------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 1 hold buffers.
 Startpoint: in1 (input port clocked by clk)
 Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)

@@ -1,37 +1,9 @@
-//////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "rings.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "domain.h"
@@ -76,13 +48,33 @@ void Rings::checkDieArea() const
   ring_outline.set_ylo(ring_outline.yMin() - ver_width);
   ring_outline.set_yhi(ring_outline.yMax() + ver_width);
 
-  if (!getBlock()->getDieArea().contains(ring_outline)) {
+  const odb::Rect die_area = getBlock()->getDieArea();
+
+  if (!die_area.contains(ring_outline)) {
     if (allow_outside_die_) {
       getLogger()->warn(
           utl::PDN, 239, "Ring shape falls outside the die bounds.");
     } else {
+      const double dbus = getBlock()->getDbUnitsPerMicron();
+
+      int xbounds = std::max(die_area.xMin() - ring_outline.xMin(),
+                             ring_outline.xMax() - die_area.xMax());
+      if (xbounds < 0) {
+        xbounds = 0;
+      }
+      int ybounds = std::max(die_area.yMin() - ring_outline.yMin(),
+                             ring_outline.yMax() - die_area.yMax());
+      if (ybounds < 0) {
+        ybounds = 0;
+      }
       getLogger()->error(
-          utl::PDN, 351, "Ring shape falls outside the die bounds.");
+          utl::PDN,
+          351,
+          "PDN rings do not fit inside the die area by {} um in X and {} um in "
+          "Y. Either reduce the ring area or increase the core to die spacing "
+          "to accommodate. Use -allow_out_of_die if this is intentional.",
+          xbounds / dbus,
+          ybounds / dbus);
     }
   }
 }
@@ -333,6 +325,7 @@ void Rings::makeShapes(const Shape::ShapeTreeMap& other_shapes)
 std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
+  layers.reserve(layers_.size());
   for (const auto& layer_def : layers_) {
     layers.push_back(layer_def.layer);
   }

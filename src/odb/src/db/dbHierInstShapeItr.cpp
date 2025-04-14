@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "odb/ZException.h"
 #include "odb/db.h"
@@ -74,16 +45,12 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
 
   if (!isFiltered(filter, INST_OBS | INST_VIA)) {
     _callback->beginObstructions(master);
-    dbSet<dbBox> boxes = master->getObstructions();
-    dbSet<dbBox>::iterator itr;
-    bool filter_via = isFiltered(filter, INST_VIA);
-    bool filter_obs = isFiltered(filter, INST_OBS);
+    const bool filter_via = isFiltered(filter, INST_VIA);
+    const bool filter_obs = isFiltered(filter, INST_OBS);
 
     dbShape s;
 
-    for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-      dbBox* box = *itr;
-
+    for (dbBox* box : master->getObstructions()) {
       if (box->isVia()) {
         if (!filter_via) {
           getShape(box, s);
@@ -114,26 +81,13 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
   }
 
   if (!isFiltered(filter, INST_PIN)) {
-    dbSet<dbMTerm> mterms = master->getMTerms();
-    dbSet<dbMTerm>::iterator mitr;
     dbShape s;
 
-    for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
-      dbMTerm* mterm = *mitr;
+    for (dbMTerm* mterm : master->getMTerms()) {
       _callback->beginMTerm(mterm);
-
-      dbSet<dbMPin> mpins = mterm->getMPins();
-      dbSet<dbMPin>::iterator pitr;
-
-      for (pitr = mpins.begin(); pitr != mpins.end(); ++pitr) {
-        dbMPin* pin = *pitr;
+      for (dbMPin* pin : mterm->getMPins()) {
         _callback->beginMPin(pin);
-
-        dbSet<dbBox> geoms = pin->getGeometry();
-        dbSet<dbBox>::iterator gitr;
-
-        for (gitr = geoms.begin(); gitr != geoms.end(); ++gitr) {
-          dbBox* box = *gitr;
+        for (dbBox* box : pin->getGeometry()) {
           getShape(box, s);
 
           if (!_callback->nextBoxShape(box, s)) {
@@ -144,10 +98,8 @@ bool dbHierInstShapeItr::iterate_leaf(dbInst* inst, unsigned filter, int level)
             return false;
           }
         }
-
         _callback->endMPin();
       }
-
       _callback->endMTerm();
     }
   }
@@ -170,16 +122,8 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
   dbShape shape;
 
   if (!isFiltered(filter, BLOCK_PIN)) {
-    dbSet<dbBTerm> bterms = child->getBTerms();
-    dbSet<dbBTerm>::iterator bitr;
-
-    for (bitr = bterms.begin(); bitr != bterms.end(); ++bitr) {
-      dbBTerm* bterm = *bitr;
-      dbSet<dbBPin> bpins = bterm->getBPins();
-      dbSet<dbBPin>::iterator pitr;
-
-      for (pitr = bpins.begin(); pitr != bpins.end(); ++pitr) {
-        dbBPin* pin = *pitr;
+    for (dbBTerm* bterm : child->getBTerms()) {
+      for (dbBPin* pin : bterm->getBPins()) {
         _callback->beginBPin(pin);
 
         for (dbBox* box : pin->getBoxes()) {
@@ -198,11 +142,7 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
   }
 
   if (!isFiltered(filter, BLOCK_OBS)) {
-    dbSet<dbObstruction> obstructions = child->getObstructions();
-    dbSet<dbObstruction>::iterator oitr;
-
-    for (oitr = obstructions.begin(); oitr != obstructions.end(); ++oitr) {
-      dbObstruction* obs = *oitr;
+    for (dbObstruction* obs : child->getObstructions()) {
       dbBox* box = obs->getBBox();
       getShape(box, shape);
       _callback->beginObstruction(obs);
@@ -218,24 +158,14 @@ bool dbHierInstShapeItr::iterate_inst(dbInst* inst, unsigned filter, int level)
     }
   }
 
-  dbSet<dbInst> insts = child->getInsts();
-  dbSet<dbInst>::iterator iitr;
-
-  for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
-    dbInst* inst = *iitr;
-
+  for (dbInst* inst : child->getInsts()) {
     if (!iterate_inst(inst, filter, ++level)) {
       _transforms.pop_back();
       return false;
     }
   }
 
-  dbSet<dbNet> nets = child->getNets();
-  dbSet<dbNet>::iterator nitr;
-
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    dbNet* net = *nitr;
-
+  for (dbNet* net : child->getNets()) {
     _callback->beginNet(net);
 
     bool draw_segments;
@@ -360,12 +290,7 @@ bool dbHierInstShapeItr::iterate_swires(unsigned filter,
                                         bool draw_vias,
                                         bool draw_segments)
 {
-  dbSet<dbSWire> swires = net->getSWires();
-  dbSet<dbSWire>::iterator itr;
-
-  for (itr = swires.begin(); itr != swires.end(); ++itr) {
-    dbSWire* swire = *itr;
-
+  for (dbSWire* swire : net->getSWires()) {
     if (!iterate_swire(filter, swire, draw_vias, draw_segments)) {
       return false;
     }
@@ -386,13 +311,9 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
     return true;
   }
 
-  dbSet<dbSBox> boxes = swire->getWires();
-  dbSet<dbSBox>::iterator itr;
   dbShape shape;
 
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    dbBox* box = *itr;
-
+  for (dbBox* box : swire->getWires()) {
     if (box->isVia()) {
       if (draw_vias == true) {
         getShape(box, shape);

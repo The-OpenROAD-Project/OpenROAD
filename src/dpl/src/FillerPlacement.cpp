@@ -1,41 +1,12 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <limits>
+#include <utility>
 
-#include "Grid.h"
-#include "Objects.h"
+#include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -128,7 +99,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
 
 void Opendp::setGridCells()
 {
-  for (Cell& cell : cells_) {
+  for (Node& cell : cells_) {
     grid_->visitCellPixels(
         cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
   }
@@ -141,7 +112,7 @@ std::pair<dbSite*, dbOrientType> Opendp::fillSite(Pixel* pixel)
   dbSite* selected_site = nullptr;
   dbOrientType selected_orient;
   DbuY min_height{std::numeric_limits<int>::max()};
-  for (auto [site, orient] : pixel->sites) {
+  for (const auto& [site, orient] : pixel->sites) {
     DbuY site_height{site->getHeight()};
     if (site_height < min_height) {
       min_height = site_height;
@@ -177,13 +148,13 @@ void Opendp::placeRowFillers(GridY row,
     dbTechLayer* implant = nullptr;
     if (j > 0) {
       auto pixel = grid_->gridPixel(j - 1, row);
-      if (pixel->cell && pixel->cell->db_inst_) {
-        implant = getImplant(pixel->cell->db_inst_->getMaster());
+      if (pixel->cell && pixel->cell->getDbInst()) {
+        implant = getImplant(pixel->cell->getDbInst()->getMaster());
       }
     } else if (k < row_site_count) {
       auto pixel = grid_->gridPixel(k, row);
-      if (pixel->cell && pixel->cell->db_inst_) {
-        implant = getImplant(pixel->cell->db_inst_->getMaster());
+      if (pixel->cell && pixel->cell->getDbInst()) {
+        implant = getImplant(pixel->cell->getDbInst()->getMaster());
       }
     } else {  // totally empty row - use anything
       implant = filler_masters_by_implant.begin()->first;
@@ -209,7 +180,8 @@ void Opendp::placeRowFillers(GridY row,
       debugPrint(
           logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
       for (dbMaster* master : fillers) {
-        string inst_name = prefix + to_string(row.v) + "_" + to_string(k.v);
+        std::string inst_name
+            = prefix + to_string(row.v) + "_" + to_string(k.v);
         dbInst* inst = dbInst::create(block_,
                                       master,
                                       inst_name.c_str(),
@@ -237,9 +209,9 @@ const char* Opendp::gridInstName(GridY row, GridX col)
     return "core_right";
   }
 
-  const Cell* cell = grid_->gridPixel(col, row)->cell;
+  const auto cell = grid_->gridPixel(col, row)->cell;
   if (cell) {
-    return cell->db_inst_->getConstName();
+    return cell->getDbInst()->getConstName();
   }
   return "?";
 }

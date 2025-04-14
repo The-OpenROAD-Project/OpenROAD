@@ -1,39 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbMTerm.h"
 
 #include <spdlog/fmt/ostr.h>
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "dbDatabase.h"
@@ -119,96 +92,11 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
   return true;
 }
 
-void _dbMTerm::differences(dbDiff& diff,
-                           const char* field,
-                           const _dbMTerm& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._io_type);
-  DIFF_FIELD(_flags._sig_type);
-  DIFF_FIELD(_flags._shape_type);
-  DIFF_FIELD(_order_id);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_next_mterm);
-  DIFF_FIELD(_pins);
-  DIFF_FIELD(_targets);
-  DIFF_FIELD(_oxide1);
-  DIFF_FIELD(_oxide2);
-  DIFF_VECTOR_PTR(_par_met_area);
-  DIFF_VECTOR_PTR(_par_met_sidearea);
-  DIFF_VECTOR_PTR(_par_cut_area);
-  DIFF_VECTOR_PTR(_diffarea);
-  DIFF_END
-}
-
-void _dbMTerm::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._io_type);
-  DIFF_OUT_FIELD(_flags._sig_type);
-  DIFF_OUT_FIELD(_flags._shape_type);
-  DIFF_OUT_FIELD(_order_id);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_next_mterm);
-  DIFF_OUT_FIELD(_pins);
-  DIFF_OUT_FIELD(_targets);
-  DIFF_OUT_FIELD(_oxide1);
-  DIFF_OUT_FIELD(_oxide2);
-  DIFF_OUT_VECTOR_PTR(_par_met_area);
-  DIFF_OUT_VECTOR_PTR(_par_met_sidearea);
-  DIFF_OUT_VECTOR_PTR(_par_cut_area);
-  DIFF_OUT_VECTOR_PTR(_diffarea);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbMTerm - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-_dbMTerm::_dbMTerm(_dbDatabase*, const _dbMTerm& m)
-    : _flags(m._flags),
-      _order_id(m._order_id),
-      _name(nullptr),
-      _next_entry(m._next_entry),
-      _next_mterm(m._next_mterm),
-      _pins(m._pins),
-      _targets(m._targets),
-      _oxide1(m._oxide1),
-      _oxide2(m._oxide2),
-      _sta_port(m._sta_port)
-{
-  if (m._name) {
-    _name = strdup(m._name);
-    ZALLOCATED(_name);
-  }
-
-  dbVector<_dbTechAntennaAreaElement*>::const_iterator itr;
-
-  for (itr = m._par_met_area.begin(); itr != m._par_met_area.end(); ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _par_met_area.push_back(e);
-  }
-
-  for (itr = m._par_met_sidearea.begin(); itr != m._par_met_sidearea.end();
-       ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _par_met_sidearea.push_back(e);
-  }
-
-  for (itr = m._par_cut_area.begin(); itr != m._par_cut_area.end(); ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _par_cut_area.push_back(e);
-  }
-
-  for (itr = m._diffarea.begin(); itr != m._diffarea.end(); ++itr) {
-    _dbTechAntennaAreaElement* e = new _dbTechAntennaAreaElement(*(*itr));
-    _diffarea.push_back(e);
-  }
-}
 
 _dbMTerm::~_dbMTerm()
 {
@@ -299,11 +187,11 @@ char* dbMTerm::getName(dbBlock* block, dbMaster* master, char* ttname)
   char* mtname = (char*) getConstName();
   char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
   uint ii = 0;
-  block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
+  block->getBusDelimiters(blk_left_bus_del, blk_right_bus_del);
   if (blk_left_bus_del == '\0' || blk_right_bus_del == '\0') {
     return mtname;
   }
-  master->getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+  master->getLib()->getBusDelimiters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
@@ -515,33 +403,24 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
 
-  dbVector<_dbTechAntennaAreaElement*>::iterator ant_iter;
-
   dbMaster* tpmtr = (dbMaster*) mterm->getOwner();
   dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
   dbTech* tech = tplib->getTech();
 
-  for (ant_iter = mterm->_par_met_area.begin();
-       ant_iter != mterm->_par_met_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
+  for (auto ant : mterm->_par_met_area) {
+    ant->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_par_met_sidearea.begin();
-       ant_iter != mterm->_par_met_sidearea.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
+  for (auto ant : mterm->_par_met_sidearea) {
+    ant->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_par_cut_area.begin();
-       ant_iter != mterm->_par_cut_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
+  for (auto ant : mterm->_par_cut_area) {
+    ant->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
   }
 
-  for (ant_iter = mterm->_diffarea.begin(); ant_iter != mterm->_diffarea.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNADIFFAREA", tech, writer);
+  for (auto ant : mterm->_diffarea) {
+    ant->writeLef("ANTENNADIFFAREA", tech, writer);
   }
 
   if (hasDefaultAntennaModel()) {
@@ -584,6 +463,30 @@ dbMTerm* dbMTerm::getMTerm(dbMaster* master_, uint dbid_)
 {
   _dbMaster* master = (_dbMaster*) master_;
   return (dbMTerm*) master->_mterm_tbl->getPtr(dbid_);
+}
+
+void _dbMTerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+
+  // These fields have unusal pointer ownship semantics relative to
+  // the rest of odb (not a table but a vector of owning pointers).
+  // Should be just by value.
+  info.children_["_par_met_area"].add(_par_met_area);
+  info.children_["_par_met_area"].size
+      += _par_met_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_par_met_sidearea"].add(_par_met_sidearea);
+  info.children_["_par_met_sidearea"].size
+      += _par_met_sidearea.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_par_cut_area"].add(_par_cut_area);
+  info.children_["_par_cut_area"].size
+      += _par_cut_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_diffarea"].add(_diffarea);
+  info.children_["_diffarea"].size
+      += _diffarea.size() * sizeof(_dbTechAntennaAreaElement);
 }
 
 }  // namespace odb

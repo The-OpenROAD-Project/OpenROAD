@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024-2025, The OpenROAD Authors
+
 # To use Nix just to get an environment with dependencies:
 #   1. Install Nix: https://github.com/DeterminateSystems/nix-installer
 #   2. Invoke `nix develop` in your shell. First invocation will
@@ -13,7 +16,7 @@
 
 {
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixos-24.05;
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
   };
 
   outputs = {self, nixpkgs, ...}: {

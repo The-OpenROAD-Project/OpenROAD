@@ -1,39 +1,15 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
 #include "graphics.h"
 
+#include <cmath>
+#include <limits>
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "object.h"
@@ -129,30 +105,33 @@ void Graphics::saStep(const std::vector<HardMacro>& macros)
 }
 
 template <typename T>
-void Graphics::report(const char* name, const std::optional<T>& value)
+void Graphics::report(const std::optional<T>& value)
 {
   if (value) {
-    auto penalty = value.value();
+    const PenaltyData& penalty_data = value.value();
+    const float normalized_penalty
+        = penalty_data.value / penalty_data.normalization_factor;
+
     logger_->report(
         "{:25}(Norm penalty {:>8.4f}) * (weight {:>8.4f}) = cost {:>8.4f}",
-        name,
-        penalty.norm_penalty,
-        penalty.weight,
-        penalty.norm_penalty * penalty.weight);
+        penalty_data.name,
+        normalized_penalty,
+        penalty_data.weight,
+        normalized_penalty * penalty_data.weight);
   }
 }
 
 void Graphics::report(const float norm_cost)
 {
-  report("Area", area_penalty_);
-  report("Outline Penalty", outline_penalty_);
-  report("Wirelength", wirelength_penalty_);
-  report("Fence Penalty", fence_penalty_);
-  report("Guidance Penalty", guidance_penalty_);
-  report("Boundary Penalty", boundary_penalty_);
-  report("Macro Blockage Penalty", macro_blockage_penalty_);
-  report("Notch Penalty", notch_penalty_);
-  report("Normalized Cost", std::optional<Penalty>({1.0f, norm_cost}));
+  report(area_penalty_);
+  report(outline_penalty_);
+  report(wirelength_penalty_);
+  report(fence_penalty_);
+  report(guidance_penalty_);
+  report(boundary_penalty_);
+  report(macro_blockage_penalty_);
+  report(notch_penalty_);
+  report(std::optional<PenaltyData>({"Total", 1.0f, norm_cost, 1.0f}));
 }
 
 void Graphics::drawResult()
@@ -259,42 +238,42 @@ void Graphics::resetPenalties()
   notch_penalty_.reset();
 }
 
-void Graphics::setNotchPenalty(const Penalty& penalty)
+void Graphics::setNotchPenalty(const PenaltyData& penalty)
 {
   notch_penalty_ = penalty;
 }
 
-void Graphics::setMacroBlockagePenalty(const Penalty& penalty)
+void Graphics::setMacroBlockagePenalty(const PenaltyData& penalty)
 {
   macro_blockage_penalty_ = penalty;
 }
 
-void Graphics::setBoundaryPenalty(const Penalty& penalty)
+void Graphics::setBoundaryPenalty(const PenaltyData& penalty)
 {
   boundary_penalty_ = penalty;
 }
 
-void Graphics::setFencePenalty(const Penalty& penalty)
+void Graphics::setFencePenalty(const PenaltyData& penalty)
 {
   fence_penalty_ = penalty;
 }
 
-void Graphics::setGuidancePenalty(const Penalty& penalty)
+void Graphics::setGuidancePenalty(const PenaltyData& penalty)
 {
   guidance_penalty_ = penalty;
 }
 
-void Graphics::setAreaPenalty(const Penalty& penalty)
+void Graphics::setAreaPenalty(const PenaltyData& penalty)
 {
   area_penalty_ = penalty;
 }
 
-void Graphics::setOutlinePenalty(const Penalty& penalty)
+void Graphics::setOutlinePenalty(const PenaltyData& penalty)
 {
   outline_penalty_ = penalty;
 }
 
-void Graphics::setWirelengthPenalty(const Penalty& penalty)
+void Graphics::setWirelengthPenalty(const PenaltyData& penalty)
 {
   wirelength_penalty_ = penalty;
 }
@@ -444,7 +423,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    if (cluster->isIOCluster()) {
+    if (cluster->isClusterOfUnplacedIOPins()) {
       continue;
     }
 
@@ -607,7 +586,7 @@ void Graphics::drawBundledNets(gui::Painter& painter,
     const T& source = macros[bundled_net.terminals.first];
     const T& target = macros[bundled_net.terminals.second];
 
-    if (target.isIOCluster()) {
+    if (target.isClusterOfUnplacedIOPins()) {
       drawDistToIoConstraintBoundary(painter, source, target);
       continue;
     }

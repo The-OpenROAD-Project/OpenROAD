@@ -1,45 +1,5 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, Parallax Software, Inc.
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
-
-# The location used by etc/DependencyInstaller.sh
-# lib64 is used for CentOS and openSUSE
-# lib is used for Ubuntu and MacOS
-list(APPEND CMAKE_INSTALL_RPATH
-  "/opt/or-tools/lib64"
-  "/opt/or-tools/lib"
-)
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
@@ -48,6 +8,9 @@ list(APPEND CMAKE_PREFIX_PATH
   "/opt/or-tools/lib64/cmake"
   "/opt/or-tools/lib/cmake"
 )
+
+# Link to where ortools was found
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include("openroad")
 
@@ -230,16 +193,15 @@ endif()
 
 ################################################################
 
-swig_lib(NAME      openroad_swig
+swig_lib(NAME      ord
          NAMESPACE ord
          I_FILE    OpenRoad.i
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    Metrics.tcl
-                   ${ODB_HOME}/src/db/odb.tcl
 )
 
-target_link_libraries(openroad_swig
+target_link_libraries(ord
   PRIVATE
     dbSta
     odb
@@ -342,7 +304,7 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   pad
-  openroad_swig
+  ord
   gpl
   dpl
   dpo
@@ -409,14 +371,14 @@ if (Python3_FOUND AND BUILD_PYTHON)
   message(STATUS "Python3 enabled")
   target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
 
-  swig_lib(NAME      openroad_swig_py
+  swig_lib(NAME      ord_py
            NAMESPACE ord
            LANGUAGE  python
            I_FILE    OpenRoad-py.i
-           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/ord_py.py
   )
 
-  target_link_libraries(openroad_swig_py
+  target_link_libraries(ord_py
     PRIVATE
       dbSta
       odb
@@ -424,7 +386,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       ifp
   )
   target_link_libraries(openroad
-    openroad_swig_py
+    ord_py
     odb_py
     ifp_py
     utl_py

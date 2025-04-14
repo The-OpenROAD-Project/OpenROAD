@@ -1,43 +1,18 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "object.h"
 
+#include <algorithm>
 #include <boost/random/uniform_int_distribution.hpp>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -78,13 +53,6 @@ Boundary opposite(const Boundary& pin_access)
   }
 }
 
-// Compare two intervals according to starting points
-static bool comparePairFirst(const std::pair<float, float>& p1,
-                             const std::pair<float, float>& p2)
-{
-  return p1.first < p2.first;
-}
-
 ///////////////////////////////////////////////////////////////////////
 // Metrics Class
 Metrics::Metrics(unsigned int num_std_cell,
@@ -106,12 +74,12 @@ void Metrics::addMetrics(const Metrics& metrics)
   macro_area_ += metrics.macro_area_;
 }
 
-const std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
+std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
 {
   return std::pair<unsigned int, unsigned int>(num_std_cell_, num_macro_);
 }
 
-const std::pair<float, float> Metrics::getAreaStats() const
+std::pair<float, float> Metrics::getAreaStats() const
 {
   return std::pair<float, float>(std_cell_area_, macro_area_);
 }
@@ -170,7 +138,7 @@ int Cluster::getId() const
   return id_;
 }
 
-const std::string Cluster::getName() const
+const std::string& Cluster::getName() const
 {
   return name_;
 }
@@ -186,7 +154,7 @@ void Cluster::setClusterType(const ClusterType& cluster_type)
   type_ = cluster_type;
 }
 
-const ClusterType Cluster::getClusterType() const
+ClusterType Cluster::getClusterType() const
 {
   return type_;
 }
@@ -221,17 +189,17 @@ void Cluster::specifyHardMacros(std::vector<HardMacro*>& hard_macros)
   hard_macros_ = hard_macros;
 }
 
-const std::vector<odb::dbModule*> Cluster::getDbModules() const
+std::vector<odb::dbModule*> Cluster::getDbModules() const
 {
   return db_modules_;
 }
 
-const std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
+std::vector<odb::dbInst*> Cluster::getLeafStdCells() const
 {
   return leaf_std_cells_;
 }
 
-const std::vector<odb::dbInst*> Cluster::getLeafMacros() const
+std::vector<odb::dbInst*> Cluster::getLeafMacros() const
 {
   return leaf_macros_;
 }
@@ -265,8 +233,12 @@ std::string Cluster::getClusterTypeString() const
 {
   std::string cluster_type;
 
-  if (is_io_cluster_) {
-    return "IO";
+  if (is_cluster_of_unplaced_io_pins_) {
+    return "Unplaced IO Pins";
+  }
+
+  if (is_io_pad_cluster_) {
+    return "IO Pad";
   }
 
   switch (type_) {
@@ -288,7 +260,7 @@ std::string Cluster::getIsLeafString() const
 {
   std::string is_leaf_string;
 
-  if (!is_io_cluster_ && children_.empty()) {
+  if (!isIOCluster() && children_.empty()) {
     is_leaf_string = "Leaf";
   }
 
@@ -328,19 +300,27 @@ void Cluster::copyInstances(const Cluster& cluster)
   }
 }
 
-void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
-                             const float width,
-                             const float height,
-                             const Boundary constraint_boundary)
+void Cluster::setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
+                                           const float width,
+                                           const float height,
+                                           const Boundary constraint_boundary)
 {
-  is_io_cluster_ = true;
+  is_cluster_of_unplaced_io_pins_ = true;
   constraint_boundary_ = constraint_boundary;
+  soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
+}
+
+void Cluster::setAsIOPadCluster(const std::pair<float, float>& pos,
+                                float width,
+                                float height)
+{
+  is_io_pad_cluster_ = true;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
 bool Cluster::isIOCluster() const
 {
-  return is_io_cluster_;
+  return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_;
 }
 
 void Cluster::setAsArrayOfInterconnectedMacros()
@@ -371,7 +351,7 @@ void Cluster::setMetrics(const Metrics& metrics)
   metrics_ = metrics;
 }
 
-const Metrics Cluster::getMetrics() const
+const Metrics& Cluster::getMetrics() const
 {
   return metrics_;
 }
@@ -466,7 +446,7 @@ void Cluster::setY(float y)
   }
 }
 
-const std::pair<float, float> Cluster::getLocation() const
+std::pair<float, float> Cluster::getLocation() const
 {
   if (!soft_macro_) {
     return {0, 0};
@@ -584,7 +564,7 @@ void Cluster::addConnection(int cluster_id, float weight)
   }
 }
 
-const std::map<int, float> Cluster::getConnection() const
+std::map<int, float> Cluster::getConnection() const
 {
   return connection_map_;
 }
@@ -680,55 +660,6 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   return -1;
 }
 
-// Pin Access Support
-void Cluster::setPinAccess(int cluster_id,
-                           Boundary pin_access,
-                           float net_weight)
-{
-  if (cluster_id < 0) {
-    logger_->error(MPL,
-                   38,
-                   "Cannot set pin access for {} boundary.",
-                   toString(pin_access));
-  }
-  pin_access_map_[cluster_id]
-      = std::pair<Boundary, float>(pin_access, net_weight);
-}
-
-const std::pair<Boundary, float> Cluster::getPinAccess(int cluster_id)
-{
-  return pin_access_map_[cluster_id];
-}
-
-const std::map<int, std::pair<Boundary, float>> Cluster::getPinAccessMap() const
-{
-  return pin_access_map_;
-}
-
-const std::map<Boundary, std::map<Boundary, float>>
-Cluster::getBoundaryConnection() const
-{
-  return boundary_connection_map_;
-}
-
-void Cluster::addBoundaryConnection(Boundary pin_a,
-                                    Boundary pin_b,
-                                    float num_net)
-{
-  if (boundary_connection_map_.find(pin_a) == boundary_connection_map_.end()) {
-    std::map<Boundary, float> pin_map;
-    pin_map[pin_b] = num_net;
-    boundary_connection_map_[pin_a] = std::move(pin_map);
-  } else {
-    if (boundary_connection_map_[pin_a].find(pin_b)
-        == boundary_connection_map_[pin_a].end()) {
-      boundary_connection_map_[pin_a][pin_b] = num_net;
-    } else {
-      boundary_connection_map_[pin_a][pin_b] += num_net;
-    }
-  }
-}
-
 // Print Basic Information
 // Normally we call this after macro placement is done
 void Cluster::printBasicInformation(utl::Logger* logger) const
@@ -773,13 +704,13 @@ void Cluster::setMacroTilings(
   macro_tilings_ = tilings;
 }
 
-const std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
+std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
 {
   return macro_tilings_;
 }
 
 // Virtual Connections
-const std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
+std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
 {
   return virtual_connections_;
 }
@@ -866,14 +797,14 @@ bool HardMacro::operator==(const HardMacro& macro) const
 }
 
 // Cluster support to identify if a fixed terminal correponds
-// to an IO cluster when running HardMacro SA.
-bool HardMacro::isIOCluster() const
+// to a cluster of unplaced IO pins when running HardMacro SA.
+bool HardMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
     return false;
   }
 
-  return cluster_->isIOCluster();
+  return cluster_->isClusterOfUnplacedIOPins();
 }
 
 // Get Physical Information
@@ -903,7 +834,7 @@ void HardMacro::setY(float y)
   y_ = y;
 }
 
-const std::pair<float, float> HardMacro::getLocation() const
+std::pair<float, float> HardMacro::getLocation() const
 {
   return std::pair<float, float>(x_, y_);
 }
@@ -937,7 +868,7 @@ void HardMacro::setRealY(float y)
   y_ = y - halo_height_;
 }
 
-const std::pair<float, float> HardMacro::getRealLocation() const
+std::pair<float, float> HardMacro::getRealLocation() const
 {
   return std::pair<float, float>(x_ + halo_width_, y_ + halo_height_);
 }
@@ -987,12 +918,12 @@ odb::dbInst* HardMacro::getInst() const
   return inst_;
 }
 
-const std::string HardMacro::getName() const
+const std::string& HardMacro::getName() const
 {
   return name_;
 }
 
-const std::string HardMacro::getMasterName() const
+std::string HardMacro::getMasterName() const
 {
   if (inst_ == nullptr) {
     return name_;
@@ -1039,7 +970,7 @@ SoftMacro::SoftMacro(Cluster* cluster)
 }
 
 // name
-const std::string SoftMacro::getName() const
+const std::string& SoftMacro::getName() const
 {
   return name_;
 }
@@ -1162,6 +1093,16 @@ void SoftMacro::shrinkArea(float percent)
     return;
   }
 
+  for (std::pair<float, float>& width_curve : width_list_) {
+    width_curve.first *= percent;
+    width_curve.second *= percent;
+  }
+
+  for (std::pair<float, float>& height_curve : height_list_) {
+    height_curve.first *= percent;
+    height_curve.second *= percent;
+  }
+
   width_ = width_ * percent;
   height_ = height_ * percent;
   area_ = width_ * height_;
@@ -1238,7 +1179,7 @@ void SoftMacro::setShapes(
   height_list_.clear();
   // sort width list based
   height_list_ = width_list;
-  std::sort(height_list_.begin(), height_list_.end(), comparePairFirst);
+  std::sort(height_list_.begin(), height_list_.end(), isFirstSmaller);
   for (auto& shape : height_list_) {
     if (width_list_.empty()
         || shape.first > width_list_[width_list_.size() - 1].second) {
@@ -1355,13 +1296,13 @@ bool SoftMacro::isMixedCluster() const
   return (cluster_->getClusterType() == MixedCluster);
 }
 
-bool SoftMacro::isIOCluster() const
+bool SoftMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
     return false;
   }
 
-  return cluster_->isIOCluster();
+  return cluster_->isClusterOfUnplacedIOPins();
 }
 
 void SoftMacro::setLocationF(float x, float y)

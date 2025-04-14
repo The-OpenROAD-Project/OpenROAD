@@ -1,35 +1,5 @@
-############################################################################
-## BSD 3-Clause License
-##
-## Copyright (c) 2021, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE
-## DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-## SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-## CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-## OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2025, The OpenROAD Authors
 
 sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -min_num_macro  min_num_macro \
@@ -58,8 +28,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_util   target_util \
                                           -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
-                                          -snap_layer snap_layer \
-                                          -bus_planning \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                         }
@@ -72,10 +40,10 @@ proc rtl_macro_placer { args } {
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight -macro_blockage_weight  \
          -pin_access_th -target_util \
-         -target_dead_space -min_ar -snap_layer \
+         -target_dead_space -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-bus_planning}
+    flags {}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -115,7 +83,6 @@ proc rtl_macro_placer { args } {
   set target_util 0.25
   set target_dead_space 0.05
   set min_ar 0.33
-  set snap_layer -1
   set report_directory "hier_rtlmp"
 
   if { [info exists keys(-max_num_macro)] } {
@@ -207,9 +174,6 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-min_ar)] } {
     set min_ar $keys(-min_ar)
   }
-  if { [info exists keys(-snap_layer)] } {
-    set snap_layer $keys(-snap_layer)
-  }
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)
   }
@@ -240,8 +204,6 @@ proc rtl_macro_placer { args } {
       $target_util \
       $target_dead_space \
       $min_ar \
-      $snap_layer \
-      [info exists flags(-bus_planning)] \
       $report_directory]
   } {
     return false

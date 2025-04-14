@@ -53,7 +53,7 @@ create_power_domain
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-elements` | List of module paths that belong this this domain OR `*` for top domain. |
+| `-elements` | List of module paths that belong this this domain OR `.` for top domain. |
 | `name` | Domain name. |
 
 ### Create Logic Port
@@ -120,11 +120,11 @@ set_isolation
 | Switch Name | Description | 
 | ----- | ----- |
 | `-domain` | Power domain |
-| `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`). |
+| `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`), default value is `both`. |
 | `-clamp_value` | Value the isolation can drive (`0`, `1`). |
 | `-isolation_signal` | The control signal for this strategy. |
-| `-isolation_sense` | The active level of isolation control signal. |
-| `-location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`). |
+| `-isolation_sense` | The active level of isolation control signal (`high`, `low`), default value is `high`. |
+| `-location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`), default value is `self`. |
 | `-update` | Only available if using existing strategy, will error if the strategy doesn't exist. |
 | `name` | Isolation strategy name. |
 
@@ -134,9 +134,10 @@ This command sets the interface cell.
 
 ```tcl 
 use_interface_cell
-    [-domain domain]
-    [-strategy strategy]
-    [-lib_cells lib_cells]
+    -domain domain
+    -strategy strategy
+    -lib_cells lib_cells
+    interface_implementation_name
 ```
 
 #### Options
@@ -146,6 +147,7 @@ use_interface_cell
 | `-domain` | Power domain name. |
 | `-strategy` | Isolation strategy name. |
 | `-lib_cells` | List of lib cells that could be used. |
+| `interface_implementation_name` | For compatibility only. OpenRoad doesn't use it. |
 
 ### Set Domain Area
 

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbInstHdr.h"
 
@@ -76,34 +47,6 @@ bool _dbInstHdr::operator==(const _dbInstHdr& rhs) const
   }
 
   return true;
-}
-
-void _dbInstHdr::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbInstHdr& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_mterm_cnt);
-  DIFF_FIELD(_id);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_FIELD(_lib);
-  DIFF_FIELD(_master);
-  DIFF_VECTOR(_mterms);
-  DIFF_FIELD(_inst_cnt);
-  DIFF_END
-}
-
-void _dbInstHdr::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_mterm_cnt);
-  DIFF_OUT_FIELD(_id);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-  DIFF_OUT_FIELD(_lib);
-  DIFF_OUT_FIELD(_master);
-  DIFF_OUT_VECTOR(_mterms);
-  DIFF_OUT_FIELD(_inst_cnt);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -225,12 +168,8 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   inst_hdr->_mterms.resize(master->_mterm_cnt);
 
   // mterms, this set is ordered: {output, inout, input}
-  dbSet<dbMTerm> mterms = master_->getMTerms();
-  dbSet<dbMTerm>::iterator itr;
   int i = 0;
-
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    dbMTerm* mterm = *itr;
+  for (dbMTerm* mterm : master_->getMTerms()) {
     inst_hdr->_mterms[i++] = mterm->getImpl()->getOID();
   }
 
@@ -245,6 +184,14 @@ void dbInstHdr::destroy(dbInstHdr* inst_hdr_)
   assert(inst_hdr->_inst_cnt == 0);
   block->_inst_hdr_hash.remove(inst_hdr);
   block->_inst_hdr_tbl->destroy(inst_hdr);
+}
+
+void _dbInstHdr::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["mterms"].add(_mterms);
 }
 
 }  // namespace odb

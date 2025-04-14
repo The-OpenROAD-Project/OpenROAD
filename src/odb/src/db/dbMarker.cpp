@@ -1,45 +1,16 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbMarker.h"
 
 #include <cstdint>
 #include <cstring>
+#include <string>
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbITerm.h"
 #include "dbInst.h"
 #include "dbMarkerCategory.h"
@@ -102,41 +73,6 @@ bool _dbMarker::operator<(const _dbMarker& rhs) const
   return true;
 }
 
-void _dbMarker::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbMarker& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.visited_);
-  DIFF_FIELD(flags_.visible_);
-  DIFF_FIELD(flags_.waived_);
-  DIFF_FIELD(parent_);
-  DIFF_FIELD(layer_);
-  DIFF_FIELD(comment_);
-  DIFF_FIELD(line_number_);
-  // User Code Begin Differences
-  // DIFF_FIELD(sources_);
-  // User Code End Differences
-  DIFF_END
-}
-
-void _dbMarker::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.visited_);
-  DIFF_OUT_FIELD(flags_.visible_);
-  DIFF_OUT_FIELD(flags_.waived_);
-  DIFF_OUT_FIELD(parent_);
-  DIFF_OUT_FIELD(layer_);
-  DIFF_OUT_FIELD(comment_);
-  DIFF_OUT_FIELD(line_number_);
-
-  // User Code Begin Out
-  // DIFF_FIELD(sources_);
-  // User Code End Out
-  DIFF_END
-}
-
 _dbMarker::_dbMarker(_dbDatabase* db)
 {
   flags_ = {};
@@ -144,21 +80,6 @@ _dbMarker::_dbMarker(_dbDatabase* db)
   // User Code Begin Constructor
   flags_.visible_ = true;
   // User Code End Constructor
-}
-
-_dbMarker::_dbMarker(_dbDatabase* db, const _dbMarker& r)
-{
-  flags_.visited_ = r.flags_.visited_;
-  flags_.visible_ = r.flags_.visible_;
-  flags_.waived_ = r.flags_.waived_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  parent_ = r.parent_;
-  layer_ = r.layer_;
-  comment_ = r.comment_;
-  line_number_ = r.line_number_;
-  // User Code Begin CopyConstructor
-  shapes_ = r.shapes_;
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
@@ -258,6 +179,18 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
   }
   // User Code End <<
   return stream;
+}
+
+void _dbMarker::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["comment"].add(comment_);
+  info.children_["sources"].add(sources_);
+  info.children_["shapes"].add(shapes_);
+  // User Code End collectMemInfo
 }
 
 // User Code Begin PrivateMethods
@@ -851,10 +784,8 @@ dbMarker* dbMarker::create(dbMarkerCategory* category)
   _dbMarker* marker = _category->marker_tbl_->create();
 
   _dbBlock* block = marker->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCreate((dbMarker*) marker);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerCreate((dbMarker*) marker);
   }
 
   return (dbMarker*) marker;
@@ -865,10 +796,8 @@ void dbMarker::destroy(dbMarker* marker)
   _dbMarker* _marker = (_dbMarker*) marker;
 
   _dbBlock* block = _marker->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerDestroy(marker);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerDestroy(marker);
   }
 
   _dbMarkerCategory* category = (_dbMarkerCategory*) _marker->getOwner();

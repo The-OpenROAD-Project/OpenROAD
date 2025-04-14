@@ -1,42 +1,12 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -78,13 +48,6 @@ using utl::Logger;
 // A list of pins that will be placed together in the die boundary
 using PinSet = std::set<odb::dbBTerm*>;
 using PinList = std::vector<odb::dbBTerm*>;
-using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
-
-struct PinGroup
-{
-  PinList pins;
-  bool order;
-};
 
 struct PinGroupByIndex
 {
@@ -131,16 +94,8 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
-  void addDirectionConstraint(Direction direction,
-                              Edge edge,
-                              int begin,
-                              int end);
-  void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
-  void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addPinGroup(PinList* group, bool order);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,
                              int x_step,
                              int y_step,
@@ -190,14 +145,14 @@ class IOPlacer
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
   std::vector<int> findValidSlots(const Constraint& constraint, bool top_layer);
   void randomPlacement();
-  void randomPlacement(std::vector<int> pin_indices,
-                       std::vector<int> slot_indices,
+  void randomPlacement(const std::vector<int>& pin_indices,
+                       const std::vector<int>& slot_indices,
+                       Edge edge,
                        bool top_layer,
                        bool is_group);
+  std::string getSlotsLocation(Edge edge, bool top_layer);
   int placeFallbackPins(bool random);
-  void assignMirroredPins(IOPin& io_pin,
-                          MirroredPins& mirrored_pins,
-                          std::vector<IOPin>& assignment);
+  void assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
                            std::vector<Slot>& slots);
@@ -209,6 +164,7 @@ class IOPlacer
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
+  std::vector<Point> findLayerSlots(int layer, Edge edge);
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
@@ -220,6 +176,9 @@ class IOPlacer
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
+  void initExcludedIntervals();
+  Interval findIntervalFromRect(const odb::Rect& rect);
+  void getConstraintsFromDB();
   void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
@@ -232,7 +191,8 @@ class IOPlacer
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
-  void assignMirroredPin(IOPin& io_pin);
+  void assignMirroredPinToSection(IOPin& io_pin);
+  int getMirroredPinCost(IOPin& io_pin, const odb::Point& position);
   int assignGroupsToSections(int& mirrored_pins_cnt);
   int updateSection(Section& section, std::vector<Slot>& slots);
   int updateConstraintSections(Constraint& constraint);
@@ -274,13 +234,13 @@ class IOPlacer
                              int num_pins,
                              int& new_begin,
                              int& new_end);
+  int getMinDistanceForInterval(const Interval& interval);
   int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
 
   // db functions
   void findConstraintRegion(const Interval& interval,
                             const Rect& constraint_box,
                             Rect& region);
-  void commitConstraintsToDB();
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
   void initCore(const std::set<int>& hor_layer_idxs,
@@ -309,8 +269,6 @@ class IOPlacer
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<PinGroup> pin_groups_;
-  MirroredPins mirrored_pins_;
   FallbackPins fallback_pins_;
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_shapes_;
 

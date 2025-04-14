@@ -1,42 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbBusPort.h"
 
 #include "dbBlock.h"
-#include "dbBusPort.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
@@ -82,51 +51,11 @@ bool _dbBusPort::operator<(const _dbBusPort& rhs) const
   return true;
 }
 
-void _dbBusPort::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbBusPort& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags);
-  DIFF_FIELD(_from);
-  DIFF_FIELD(_to);
-  DIFF_FIELD(_port);
-  DIFF_FIELD(_members);
-  DIFF_FIELD(_last);
-  DIFF_FIELD(_parent);
-  DIFF_END
-}
-
-void _dbBusPort::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags);
-  DIFF_OUT_FIELD(_from);
-  DIFF_OUT_FIELD(_to);
-  DIFF_OUT_FIELD(_port);
-  DIFF_OUT_FIELD(_members);
-  DIFF_OUT_FIELD(_last);
-  DIFF_OUT_FIELD(_parent);
-
-  DIFF_END
-}
-
 _dbBusPort::_dbBusPort(_dbDatabase* db)
 {
   _flags = 0;
   _from = 0;
   _to = 0;
-}
-
-_dbBusPort::_dbBusPort(_dbDatabase* db, const _dbBusPort& r)
-{
-  _flags = r._flags;
-  _from = r._from;
-  _to = r._to;
-  _port = r._port;
-  _members = r._members;
-  _last = r._last;
-  _parent = r._parent;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbBusPort& obj)
@@ -179,6 +108,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbBusPort& obj)
     stream << obj._parent;
   }
   return stream;
+}
+
+void _dbBusPort::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
 }
 
 _dbBusPort::~_dbBusPort()
@@ -269,8 +204,6 @@ dbModule* dbBusPort::getParent() const
  */
 dbModBTerm* dbBusPort::getBusIndexedElement(int index)
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
-  _dbBlock* block_ = (_dbBlock*) obj->getOwner();
   int offset;
   if (getUpdown()) {
     offset = index - getFrom();
@@ -286,10 +219,14 @@ dbModBTerm* dbBusPort::getBusIndexedElement(int index)
     // count on the order of the modbterms (eg
     // if some have been deleted or added in non-linear way).
     //
+    /* This leads to wrong bus member access outside bus port
     if (obj->_flags == 0U) {
+      _dbBlock* block_ = (_dbBlock*) obj->getOwner();
+      _dbBusPort* obj = (_dbBusPort*) this;
       return (dbModBTerm*) (block_->_modbterm_tbl->getPtr(obj->getId() + offset
                                                           + 1));
     }
+    */
     int i = 0;
     dbSet<dbModBTerm> busport_members = getBusPortMembers();
     for (auto cur : busport_members) {

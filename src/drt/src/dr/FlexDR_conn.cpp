@@ -1,34 +1,16 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dr/FlexDR_conn.h"
 
 #include <omp.h>
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "dr/FlexDR.h"
 #include "frProfileTask.h"
@@ -58,9 +40,8 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
     const frNet* net,
     const Point& pt,
     const frLayerNum lNum,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2epMap)
+    frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+        pin2epMap)
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
@@ -91,9 +72,8 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
 void FlexDRConnectivityChecker::buildPin2epMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2epMap)
+    frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+        pin2epMap)
 {
   // to avoid delooping fake planar ep in pin
   std::set<std::pair<Point, frLayerNum>> extEndPoints;
@@ -274,9 +254,8 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
 void FlexDRConnectivityChecker::nodeMap_pin(
     const std::vector<frConnFig*>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*,
-                   std::set<std::pair<Point, frLayerNum>>,
-                   frBlockObjectComp>& pin2epMap,
+    const frOrderedIdMap<frBlockObject*,
+                         std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
@@ -293,9 +272,8 @@ void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*,
-                   std::set<std::pair<Point, frLayerNum>>,
-                   frBlockObjectComp>& pin2epMap,
+    const frOrderedIdMap<frBlockObject*,
+                         std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   nodeMap_routeObjEnd(net, netRouteObjs, nodeMap);
@@ -328,6 +306,33 @@ bool FlexDRConnectivityChecker::astar(
       const auto idx1 = *it1;
       for (; it2 != idxS.end(); it2++) {
         const auto idx2 = *it2;
+        if ((idx1 >= nNetRouteObjs) ^ (idx2 >= nNetRouteObjs)) {
+          // one of them is a pin
+          // check that the route object connects to the pin
+          const auto route_obj_idx = (idx1 >= nNetRouteObjs) ? idx2 : idx1;
+          if (netRouteObjs[route_obj_idx]->typeId() == frcPathSeg) {
+            auto ps = static_cast<frPathSeg*>(netRouteObjs[route_obj_idx]);
+            bool valid_connection = false;
+            if (ps->getBeginPoint() == pr.first
+                && ps->getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
+              valid_connection = true;
+            }
+            if (ps->getEndPoint() == pr.first
+                && ps->getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
+              valid_connection = true;
+            }
+            if (!valid_connection) {
+              continue;
+            }
+          } else if (netRouteObjs[route_obj_idx]->typeId() == frcVia) {
+            auto via = static_cast<frVia*>(netRouteObjs[route_obj_idx]);
+            if (!via->isBottomConnected() && !via->isTopConnected()) {
+              continue;
+            }
+          } else {
+            continue;
+          }
+        }
         adjVec[idx1].push_back(idx2);
         adjVec[idx2].push_back(idx1);
       }
@@ -819,12 +824,12 @@ void FlexDRConnectivityChecker::handleOverlaps_perform(
     if (isHorz) {
       segSpans.push_back({{bp.x(), ep.x()}, idx});
       if (bp.x() >= ep.x()) {
-        std::cout << "Error1: bp.x() >= ep.x()" << bp << "  " << ep << "\n";
+        std::cout << "Error1: bp.x() >= ep.x()" << bp << " " << ep << "\n";
       }
     } else {
       segSpans.push_back({{bp.y(), ep.y()}, idx});
       if (bp.y() >= ep.y()) {
-        std::cout << "Error2: bp.y() >= ep.y()" << bp << "  " << ep << "\n";
+        std::cout << "Error2: bp.y() >= ep.y()" << bp << " " << ep << "\n";
       }
     }
   }
@@ -1252,9 +1257,8 @@ void FlexDRConnectivityChecker::check(int iter)
                             vertNewSegSpans);
     }
     // net->term/instTerm->pt_layer
-    std::vector<std::map<frBlockObject*,
-                         std::set<std::pair<Point, frLayerNum>>,
-                         frBlockObjectComp>>
+    std::vector<
+        frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>>
         aPin2epMap(batchSize);
     std::vector<std::vector<frBlockObject*>> aNetPins(batchSize);
     std::vector<std::map<std::pair<Point, frLayerNum>, std::set<int>>> aNodeMap(
@@ -1338,7 +1342,7 @@ void FlexDRConnectivityChecker::check(int iter)
       graphics_->debugWholeDesign();
     }
     auto writer = io::Writer(getDesign(), logger_);
-    writer.updateDb(router_->getDb(), router_cfg_);
+    writer.updateDb(router_->getDb(), router_cfg_, true);
     logger_->error(utl::DRT, 206, "checkConnectivity error.");
   }
 }
@@ -1347,7 +1351,7 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(
     drt::TritonRoute* router,
     Logger* logger,
     RouterConfiguration* router_cfg,
-    FlexDRGraphics* graphics,
+    AbstractDRGraphics* graphics,
     bool save_updates)
     : router_(router),
       logger_(logger),

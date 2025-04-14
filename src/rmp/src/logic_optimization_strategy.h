@@ -1,11 +1,9 @@
-// Copyright 2024 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #pragma once
 
+#include "abc_library_factory.h"
 #include "base/abc/abc.h"
 #include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
@@ -47,8 +45,11 @@ class LogicOptimizationStrategy
   // 1. Apply logic optimization techniques (e.g., technology mapping,
   //    buffering, area/delay optimization) to the copy.
   // 2. Return a new network that is optimized according to the strategy.
-  virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t>
-  Optimize(const abc::Abc_Ntk_t* ntk, utl::Logger* logger) = 0;
+  virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
+      const abc::Abc_Ntk_t* ntk,
+      AbcLibrary& abc_library,
+      utl::Logger* logger)
+      = 0;
 };
 
 }  // namespace rmp

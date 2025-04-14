@@ -1,38 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "ext2dBox.h"
@@ -48,7 +20,6 @@
 #include "rcx/extPattern.h"
 #include "rcx/extSolverGen.h"
 #include "rcx/ext_options.h"
-#include "rcx/gseq.h"
 #include "util.h"
 
 namespace utl {
@@ -61,6 +32,7 @@ using namespace odb;
 
 class extMeasure;
 class extMeasureRC;
+struct SEQ;
 
 using odb::Ath__array1D;
 using odb::AthPool;
@@ -68,7 +40,7 @@ using odb::uint;
 using utl::Logger;
 
 class extSpef;
-class Ath__gridTable;
+class GridTable;
 
 // CoupleOptions seriously needs to be rewriten to use a class with named
 // members. -cherry 05/09/2021
@@ -506,6 +478,7 @@ class extRCTable
 class extMain;
 class extMeasure;
 class extMainOptions;
+class gs;
 
 class extRCModel
 {
@@ -1015,7 +988,7 @@ class extMeasure
   double _peffR;
   bool _skipResCalc = false;
 
-  Ath__gridTable* _search = NULL;
+  GridTable* _search = nullptr;
   bool IsDebugNet1();
   static int getMetIndexOverUnder(int met,
                                   int mUnder,
@@ -1836,16 +1809,16 @@ class extMain
                            bool v = false);
   bool modelExists(const char* extRules);
 
-  uint addInstsGs(Ath__array1D<uint>* instTable,
-                  Ath__array1D<uint>* tmpInstIdTable,
-                  uint dir);
-  uint addObsShapesOnPlanes(odb::dbInst* inst,
+  void addInstsGeometries(const Ath__array1D<uint>* instTable,
+                          Ath__array1D<uint>* tmpInstIdTable,
+                          uint dir);
+  void addObsShapesOnPlanes(odb::dbInst* inst,
                             bool rotatedFlag,
                             bool swap_coords);
-  uint addItermShapesOnPlanes(odb::dbInst* inst,
+  void addItermShapesOnPlanes(odb::dbInst* inst,
                               bool rotatedFlag,
                               bool swap_coords);
-  uint addShapeOnGs(dbShape* s, bool swap_coords);
+  void addShapeOnGs(dbShape* s, bool swap_coords);
 
   void initRunEnv(extMeasureRC& m);
   uint _ccContextDepth = 0;
@@ -2000,11 +1973,11 @@ class extMain
                     odb::Rect& maxRectGs,
                     bool* hasSdbWires,
                     bool& hasGsWires);
-  uint addNetShapesGs(odb::dbNet* net,
+  void addNetShapesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
                       int dir);
-  uint addNetSboxesGs(odb::dbNet* net,
+  void addNetSboxesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
                       int dir);
@@ -2015,17 +1988,17 @@ class extMain
                     uint ccFlag,
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
-  uint initPlanes(uint dir,
-                  int* wLL,
-                  int* wUR,
+  void initPlanes(uint dir,
+                  const int* wLL,
+                  const int* wUR,
                   uint layerCnt,
-                  uint* pitchTable,
-                  uint* widthTable,
+                  const uint* pitchTable,
+                  const uint* widthTable,
                   const uint* dirTable,
-                  int* bb_ll);
+                  const int* bb_ll);
 
   bool isIncluded(odb::Rect& r, uint dir, const int* ll, const int* ur);
-  bool matchDir(uint dir, odb::Rect& r);
+  bool matchDir(uint dir, const odb::Rect& r);
   bool isIncludedInsearch(odb::Rect& r,
                           uint dir,
                           const int* bb_ll,
@@ -2293,24 +2266,22 @@ class extMain
                                 uint wtype);
 
   //--------------- Window
-  uint addShapeOnGS(odb::dbNet* net,
-                    uint sId,
-                    odb::Rect& r,
+  void addShapeOnGS(const odb::Rect& r,
                     bool plane,
                     odb::dbTechLayer* layer,
                     bool gsRotated,
                     bool swap_coords,
                     int dir);
 
-  uint fill_gs4(int dir,
-                int* ll,
-                int* ur,
-                int* lo_gs,
-                int* hi_gs,
+  void fill_gs4(int dir,
+                const int* ll,
+                const int* ur,
+                const int* lo_gs,
+                const int* hi_gs,
                 uint layerCnt,
-                uint* dirTable,
-                uint* pitchTable,
-                uint* widthTable);
+                const uint* dirTable,
+                const uint* pitchTable,
+                const uint* widthTable);
 
   uint addInsts(uint dir,
                 int* lo_gs,
@@ -2789,7 +2760,7 @@ class extMain
   std::vector<odb::dbBTerm*> _connectedBTerm;
   std::vector<odb::dbITerm*> _connectedITerm;
 
-  Ath__gridTable* _search = nullptr;
+  GridTable* _search = nullptr;
 
   int _noVariationIndex;
 

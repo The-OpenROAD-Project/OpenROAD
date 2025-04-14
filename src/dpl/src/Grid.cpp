@@ -1,52 +1,19 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "Grid.h"
+#include "dpl/Grid.h"
 
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
+#include <functional>
 #include <limits>
+#include <memory>
+#include <utility>
 #include <vector>
 
-#include "Objects.h"
-#include "Padding.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
+#include "dpl/Padding.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -209,11 +176,11 @@ Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 }
 
 void Grid::visitCellPixels(
-    Cell& cell,
+    Node& cell,
     bool padded,
     const std::function<void(Pixel* pixel)>& visitor) const
 {
-  dbInst* inst = cell.db_inst_;
+  dbInst* inst = cell.getDbInst();
   auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
   const Rect core = getCore();
@@ -253,13 +220,12 @@ void Grid::visitCellPixels(
 }
 
 void Grid::visitCellBoundaryPixels(
-    Cell& cell,
-    bool padded,
+    Node& cell,
     const std::function<
         void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
     const
 {
-  dbInst* inst = cell.db_inst_;
+  dbInst* inst = cell.getDbInst();
 
   auto visit = [&visitor, this](const GridX x_start,
                                 const GridX x_end,
@@ -305,14 +271,13 @@ void Grid::visitCellBoundaryPixels(
     }
   }
   if (!have_obstructions) {
-    const auto grid_rect
-        = padded ? gridCoveringPadded(&cell) : gridCovering(&cell);
+    const auto grid_rect = gridCovering(&cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
                "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
-               cell.name(),
+               cell.getDbInst()->getName(),
                cell.isHybrid(),
                grid_rect.ylo,
                grid_rect.yhi);
@@ -321,69 +286,56 @@ void Grid::visitCellBoundaryPixels(
   }
 }
 
-void Grid::erasePixel(Cell* cell)
+void Grid::erasePixel(Node* cell)
 {
-  if (!(cell->isFixed() || !cell->is_placed_)) {
+  if (!(cell->isFixed() || !cell->isPlaced())) {
     const auto grid_rect = gridCoveringPadded(cell);
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
                "Checking cell {} isHybrid {}",
-               cell->name(),
+               cell->getDbInst()->getName(),
                cell->isHybrid());
     debugPrint(logger_,
                DPL,
                "hybrid",
                1,
                "Checking cell {} in rows. Y start {} y end {}",
-               cell->name(),
+               cell->getDbInst()->getName(),
                grid_rect.ylo,
                grid_rect.yhi);
 
     for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
       for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
         Pixel* pixel = gridPixel(x, y);
-        if (nullptr == pixel) {
+        if (pixel == nullptr || pixel->cell != cell) {
           continue;
         }
         pixel->cell = nullptr;
         pixel->util = 0;
       }
     }
-    cell->is_placed_ = false;
-    cell->hold_ = false;
   }
 }
 
-void Grid::paintPixel(Cell* cell, GridX grid_x, GridY grid_y)
+void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
-  assert(!cell->is_placed_);
+  assert(!cell->isPlaced());
   GridX x_end = grid_x + gridPaddedWidth(cell);
   GridY grid_height = gridHeight(cell);
   GridY y_end = grid_y + grid_height;
 
-  setGridPaddedLoc(cell, grid_x, grid_y);
-  cell->is_placed_ = true;
-
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
       Pixel* pixel = gridPixel(x, y);
-      if (pixel->cell) {
-        logger_->error(
-            DPL, 13, "Cannot paint grid because it is already occupied.");
-      } else {
-        pixel->cell = cell;
-        pixel->util = 1.0;
-      }
+      pixel->cell = cell;
+      pixel->util = 1.0;
     }
   }
-
-  cell->orient_ = gridPixel(grid_x, grid_y)
-                      ->sites.at(cell->db_inst_->getMaster()->getSite());
 }
 
-GridX Grid::gridPaddedWidth(const Cell* cell) const
+GridX Grid::gridPaddedWidth(const Node* cell) const
 {
   return GridX{divCeil(padding_->paddedWidth(cell).v, getSiteWidth().v)};
 }
@@ -404,16 +356,16 @@ GridY Grid::gridHeight(odb::dbMaster* master) const
   return GridY{static_cast<int>(site->getRowPattern().size())};
 }
 
-GridY Grid::gridHeight(const Cell* cell) const
+GridY Grid::gridHeight(const Node* cell) const
 {
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
-    return GridY{max(1, divCeil(cell->height_.v, row_height.v))};
+    return GridY{max(1, divCeil(cell->getHeight().v, row_height.v))};
   }
-  if (!cell->db_inst_) {
+  if (!cell->getDbInst()) {
     return GridY{1};
   }
-  auto site = cell->db_inst_->getMaster()->getSite();
+  auto site = cell->getDbInst()->getMaster()->getSite();
   if (!site->hasRowPattern()) {
     return GridY{1};
   }
@@ -431,14 +383,15 @@ GridX Grid::gridX(DbuX x) const
   return GridX{x.v / getSiteWidth().v};
 }
 
-GridX Grid::gridX(const Cell* cell) const
+GridX Grid::gridX(const Node* cell) const
 {
-  return gridX(cell->x_);
+  return gridX(cell->getLeft());
 }
 
-GridX Grid::gridPaddedX(const Cell* cell) const
+GridX Grid::gridPaddedX(const Node* cell) const
 {
-  return gridX(cell->x_ - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
+  return gridX(cell->getLeft()
+               - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
 }
 
 GridY Grid::getRowCount(DbuY row_height) const
@@ -454,7 +407,7 @@ GridRect Grid::gridCovering(const Rect& rect) const
           .yhi = gridEndY(DbuY{rect.yMax()})};
 }
 
-GridRect Grid::gridCovering(const Cell* cell) const
+GridRect Grid::gridCovering(const Node* cell) const
 {
   return {.xlo = gridX(cell),
           .ylo = gridSnapDownY(cell),
@@ -462,7 +415,7 @@ GridRect Grid::gridCovering(const Cell* cell) const
           .yhi = gridEndY(cell)};
 }
 
-GridRect Grid::gridCoveringPadded(const Cell* cell) const
+GridRect Grid::gridCoveringPadded(const Node* cell) const
 {
   return {.xlo = gridPaddedX(cell),
           .ylo = gridSnapDownY(cell),
@@ -512,14 +465,14 @@ GridY Grid::gridEndY(DbuY y) const
   return GridY{static_cast<int>(it - row_index_to_y_dbu_.begin())};
 }
 
-GridY Grid::gridSnapDownY(const Cell* cell) const
+GridY Grid::gridSnapDownY(const Node* cell) const
 {
-  return gridSnapDownY(cell->y_);
+  return gridSnapDownY(cell->getBottom());
 }
 
-GridY Grid::gridRoundY(const Cell* cell) const
+GridY Grid::gridRoundY(const Node* cell) const
 {
-  return gridRoundY(cell->y_);
+  return gridRoundY(cell->getBottom());
 }
 
 DbuY Grid::gridYToDbu(GridY y) const
@@ -530,34 +483,29 @@ DbuY Grid::gridYToDbu(GridY y) const
   return row_index_to_y_dbu_.at(y.v);
 }
 
-void Grid::setGridPaddedLoc(Cell* cell, GridX x, GridY y) const
-{
-  cell->x_ = gridToDbu(x + padding_->padLeft(cell), getSiteWidth());
-  cell->y_ = gridYToDbu(y);
-}
-
-GridX Grid::gridPaddedEndX(const Cell* cell) const
+GridX Grid::gridPaddedEndX(const Node* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x
-      = cell->xMax() + gridToDbu(padding_->padRight(cell), site_width);
+  const DbuX end_x = cell->getLeft() + cell->getWidth()
+                     + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
-GridX Grid::gridEndX(const Cell* cell) const
+GridX Grid::gridEndX(const Node* cell) const
 {
-  return GridX{divCeil((cell->x_ + cell->width_).v, getSiteWidth().v)};
+  return GridX{
+      divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
 }
 
-GridY Grid::gridEndY(const Cell* cell) const
+GridY Grid::gridEndY(const Node* cell) const
 {
-  return gridEndY(cell->y_ + cell->height_);
+  return gridEndY(cell->getBottom() + cell->getHeight());
 }
 
-bool Grid::cellFitsInCore(Cell* cell) const
+bool Grid::cellFitsInCore(Node* cell) const
 {
   return gridPaddedWidth(cell) <= getRowSiteCount()
-         && cell->height_.v <= core_.dy();
+         && cell->getHeight().v <= core_.dy();
 }
 
 void Grid::examineRows(dbBlock* block)

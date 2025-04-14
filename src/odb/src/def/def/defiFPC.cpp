@@ -33,7 +33,7 @@
 #include <cstring>
 
 #include "defiDebug.hpp"
-#include "lex.h"
+#include "defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
@@ -221,9 +221,9 @@ void defiFPC::getPart(int index, int* corner, int* typ, char** name) const
     // 4 for bottom left  0 for topright
     // 2 for row   0 for comps
     if (corner)
-      *corner = (int) ((rowOrComp_[index] & 4) ? 'B' : 'T');
+      *corner = static_cast<unsigned char>((rowOrComp_[index] & 4) ? 'B' : 'T');
     if (typ)
-      *typ = (int) ((rowOrComp_[index] & 2) ? 'R' : 'C');
+      *typ = static_cast<unsigned char>((rowOrComp_[index] & 2) ? 'R' : 'C');
     if (name)
       *name = names_[index];
   }

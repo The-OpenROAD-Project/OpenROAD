@@ -25,9 +25,13 @@ or_integration_tests(
     read_verilog11
     readdb_hier
     report_cell_usage
+    report_cell_usage_file
     report_cell_usage_modinsts
     report_cell_usage_modinsts_metrics
+    report_cell_usage_physical_only
     report_json1
+    report_timing_histogram
+    report_logic_depth_histogram
     sdc_get1
     sdc_names1
     sdc_names2

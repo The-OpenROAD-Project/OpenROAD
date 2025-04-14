@@ -1,32 +1,9 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "FlexPA.h"
+
+#include <omp.h>
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
@@ -35,10 +12,14 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include "FlexPA_graphics.h"
+#include "AbstractPAGraphics.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -48,10 +29,26 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "serialization.h"
+#include "utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 
 namespace drt {
+
+using utl::ThreadException;
+
+static inline void serializePatterns(
+    const std::unordered_map<
+        frInst*,
+        std::vector<std::unique_ptr<FlexPinAccessPattern>>>& patterns,
+    const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  registerTypes(ar);
+  ar << patterns;
+  file.close();
+}
 
 FlexPA::FlexPA(frDesign* in,
                Logger* logger,
@@ -68,13 +65,9 @@ FlexPA::FlexPA(frDesign* in,
 // must be out-of-line due to the unique_ptr
 FlexPA::~FlexPA() = default;
 
-void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
+void FlexPA::setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics)
 {
-  const bool on = settings->debugPA;
-  graphics_ = on && FlexPAGraphics::guiActive()
-                  ? std::make_unique<FlexPAGraphics>(
-                        settings, design_, db, logger_, router_cfg_)
-                  : nullptr;
+  graphics_ = std::move(pa_graphics);
 }
 
 void FlexPA::init()
@@ -97,7 +90,27 @@ void FlexPA::init()
   initTrackCoords();
 
   unique_insts_.init();
-  initSkipInstTerm();
+  initAllSkipInstTerm();
+}
+
+void FlexPA::deleteInst(frInst* inst)
+{
+  const bool is_class_head = (inst == unique_insts_.getUnique(inst));
+  // if inst is the class head the new head will be returned by deleteInst()
+  frInst* class_head = unique_insts_.deleteInst(inst);
+  UniqueInsts::InstSet* unique_class = unique_insts_.getClass(inst);
+  // whole class has to be deleted
+  if (!class_head) {
+    unique_inst_patterns_.erase(inst);
+    for (auto& inst_term : inst->getInstTerms()) {
+      skip_unique_inst_term_.erase({unique_class, inst_term->getTerm()});
+    }
+  }
+  // new class representative has to be chosen
+  else if (is_class_head) {
+    unique_inst_patterns_[class_head] = std::move(unique_inst_patterns_[inst]);
+    unique_inst_patterns_.erase(inst);
+  }
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -159,6 +172,69 @@ void FlexPA::prep()
     }
   }
   prepPattern();
+}
+
+void FlexPA::prepPattern()
+{
+  ProfileTask profile("PA:pattern");
+
+  const auto& unique = unique_insts_.getUnique();
+
+  // revert access points to origin
+  unique_inst_patterns_.reserve(unique.size());
+
+  int cnt = 0;
+
+  omp_set_num_threads(router_cfg_->MAX_THREADS);
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (frInst* unique_inst : unique) {
+    try {
+      // only do for core and block cells
+      // TODO the above comment says "block cells" but that's not what the code
+      // does?
+      if (!isStdCell(unique_inst)) {
+        continue;
+      }
+      prepPatternInst(unique_inst);
+#pragma omp critical
+      {
+        cnt++;
+        if (router_cfg_->VERBOSE > 0) {
+          if (cnt % (cnt > 1000 ? 1000 : 100) == 0) {
+            logger_->info(DRT, 79, "  Complete {} unique inst patterns.", cnt);
+          }
+        }
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  if (router_cfg_->VERBOSE > 0) {
+    logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
+  }
+  if (isDistributed()) {
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    std::string patterns_file = fmt::format("{}/patterns.bin", shared_vol_);
+    serializePatterns(unique_inst_patterns_, patterns_file);
+    uDesc->setPath(patterns_file);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PATTERNS);
+    msg.setJobDescription(std::move(uDesc));
+    const bool ok
+        = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok) {
+      logger_->error(
+          utl::DRT, 330, "Error sending UPDATE_PATTERNS Job to cloud");
+    }
+  }
+
+  std::vector<std::vector<frInst*>> inst_rows = computeInstRows();
+  prepPatternInstRows(inst_rows);
 }
 
 void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)

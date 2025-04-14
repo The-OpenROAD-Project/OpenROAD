@@ -1,47 +1,16 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbBlockage.h"
 
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "odb/dbDiff.h"
 #include "odb/dbSet.h"
 
 namespace odb {
@@ -147,67 +116,6 @@ bool _dbBlockage::operator<(const _dbBlockage& rhs) const
   return false;
 }
 
-void _dbBlockage::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbBlockage& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_OBJECT(_bbox, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_inst);
-  } else {
-    if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.diff("_inst", lhs_inst->_name, rhs_inst->_name);
-    } else if (_inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      diff.out(dbDiff::LEFT, "_inst", lhs_inst->_name);
-    } else if (rhs._inst) {
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.out(dbDiff::RIGHT, "_inst", rhs_inst->_name);
-    }
-  }
-
-  DIFF_FIELD(_flags._pushed_down);
-  DIFF_FIELD(_flags._soft);
-  DIFF_FIELD(_max_density);
-  DIFF_END
-}
-
-void _dbBlockage::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_OBJECT(_bbox, blk->_box_tbl);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_inst);
-  } else {
-    if (_inst) {
-      _dbBlock* blk = (_dbBlock*) getOwner();
-      _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
-      diff.out(side, "_inst", inst->_name);
-    } else {
-      diff.out(side, "_inst", "(nullptr)");
-    }
-  }
-
-  DIFF_OUT_FIELD(_flags._pushed_down);
-  DIFF_OUT_FIELD(_flags._soft);
-  DIFF_OUT_FIELD(_max_density);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbBlockage - Methods
@@ -267,6 +175,18 @@ dbBlock* dbBlockage::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+bool dbBlockage::isSystemReserved()
+{
+  _dbBlockage* bkg = (_dbBlockage*) this;
+  return bkg->_flags._is_system_reserved;
+}
+
+void dbBlockage::setIsSystemReserved(bool is_system_reserved)
+{
+  _dbBlockage* bkg = (_dbBlockage*) this;
+  bkg->_flags._is_system_reserved = is_system_reserved;
+}
+
 dbBlockage* dbBlockage::create(dbBlock* block_,
                                int x1,
                                int y1,
@@ -298,10 +218,47 @@ dbBlockage* dbBlockage::create(dbBlock* block_,
   return (dbBlockage*) bkg;
 }
 
+void dbBlockage::destroy(dbBlockage* blockage)
+{
+  _dbBlockage* bkg = (_dbBlockage*) blockage;
+  _dbBlock* block = (_dbBlock*) blockage->getBlock();
+
+  if (blockage->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
+    logger->error(
+        utl::ODB,
+        1112,
+        "You cannot delete a system created blockage (isSystemReserved).");
+  }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBlockageDestroy(blockage);
+  }
+
+  block->_box_tbl->destroy(block->_box_tbl->getPtr(bkg->_bbox));
+
+  block->_blockage_tbl->destroy(bkg);
+}
+
 dbBlockage* dbBlockage::getBlockage(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbBlockage*) block->_blockage_tbl->getPtr(dbid_);
+}
+
+void _dbBlockage::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+dbSet<dbBlockage>::iterator dbBlockage::destroy(
+    dbSet<dbBlockage>::iterator& itr)
+{
+  dbBlockage* bt = *itr;
+  dbSet<dbBlockage>::iterator next = ++itr;
+  destroy(bt);
+  return next;
 }
 
 }  // namespace odb

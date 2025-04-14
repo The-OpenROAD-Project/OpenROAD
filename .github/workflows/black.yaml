@@ -1,11 +1,18 @@
 name: Lint Python
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: psf/black@stable
-
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Run black
+        uses: psf/black@stable

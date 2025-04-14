@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -40,17 +8,19 @@
 #include <cstdlib>
 #include <iomanip>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-#include "Metrics.h"
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
+#include "utl/Metrics.h"
 #if FMT_VERSION >= 110000
 #include "spdlog/fmt/ranges.h"
 #endif
@@ -58,6 +28,11 @@
 #include "spdlog/spdlog.h"
 
 namespace utl {
+
+class PrometheusMetricsServer;
+class PrometheusRegistry;
+
+class Progress;
 
 // Keep this sorted
 #define FOREACH_TOOL(X) \
@@ -234,6 +209,11 @@ class Logger
     return (it != groups.end() && level <= it->second);
   }
 
+  void startPrometheusEndpoint(uint16_t port);
+  std::shared_ptr<PrometheusRegistry> getRegistry();
+  bool isPrometheusServerReadyToServe();
+  uint16_t getPrometheusPort();
+
   void suppressMessage(ToolId tool, int id);
   void unsuppressMessage(ToolId tool, int id);
 
@@ -265,10 +245,16 @@ class Logger
   void teeStringBegin();
   std::string teeStringEnd();
 
+  // Progress interface
+  Progress* progress() const { return progress_.get(); }
+  std::unique_ptr<Progress> swapProgress(Progress* progress);
+
  private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
   std::vector<MetricsPolicy> metrics_policies_;
+
+  std::unique_ptr<Progress> progress_;
 
   template <typename... Args>
   void log(ToolId tool,
@@ -350,6 +336,10 @@ class Logger
   std::unique_ptr<std::ostringstream> string_redirect_;
   std::unique_ptr<std::ofstream> file_redirect_;
 
+  // Prometheus server metrics collection
+  std::shared_ptr<PrometheusRegistry> prometheus_registry_;
+  std::unique_ptr<PrometheusMetricsServer> prometheus_metrics_;
+
   // This matrix is pre-allocated so it can be safely updated
   // from multiple threads without locks.
   using MessageCounter = std::array<std::atomic_int16_t, max_message_id + 1>;
@@ -386,9 +376,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int)
-      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
-                  std::true_type());
+  static auto test(int) -> decltype(std::declval<std::ostream>()
+                                        << std::declval<T>(),
+                                    std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerCutClassRule.h"
@@ -37,7 +8,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -83,38 +53,6 @@ bool _dbTechLayerCutClassRule::operator<(
   return true;
 }
 
-void _dbTechLayerCutClassRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerCutClassRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.cuts_valid_);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(width_);
-  DIFF_FIELD(length_);
-  DIFF_FIELD(num_cuts_);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbTechLayerCutClassRule::out(dbDiff& diff,
-                                   char side,
-                                   const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.cuts_valid_);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(width_);
-  DIFF_OUT_FIELD(length_);
-  DIFF_OUT_FIELD(num_cuts_);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  DIFF_END
-}
-
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -122,20 +60,6 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
-}
-
-_dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
-    _dbDatabase* db,
-    const _dbTechLayerCutClassRule& r)
-{
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.cuts_valid_ = r.flags_.cuts_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  _name = r._name;
-  width_ = r.width_;
-  length_ = r.length_;
-  num_cuts_ = r.num_cuts_;
-  _next_entry = r._next_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
@@ -164,6 +88,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   stream << obj.num_cuts_;
   stream << obj._next_entry;
   return stream;
+}
+
+void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()

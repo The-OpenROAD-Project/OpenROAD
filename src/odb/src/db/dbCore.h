@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -44,6 +15,12 @@
 ///  dbTablePage
 ///
 
+#include <map>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "dbAttrTable.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
@@ -56,11 +33,116 @@ namespace odb {
 class _dbDatabase;
 class _dbProperty;
 class dbObjectTable;
+template <typename T>
+class dbHashTable;
+template <typename T>
+class dbIntHashTable;
+template <typename T>
+class dbMatrix;
+template <class T, const uint P, const uint S>
+class dbPagedVector;
 
 #define DB_ALLOC_BIT 0x80000000
 #define DB_OFFSET_MASK (~DB_ALLOC_BIT)
 
 using GetObjTbl_t = dbObjectTable* (dbObject::*) (dbObjectType);
+
+struct MemInfo
+{
+  std::map<const char*, MemInfo> children_;
+  int cnt{0};
+  uint64_t size{0};
+
+  void add(const char* str)
+  {
+    if (str) {
+      cnt++;
+      size += strlen(str);
+    }
+  }
+
+  void add(const std::string& str) { add(str.c_str()); }
+
+  template <typename T>
+  void add(const std::vector<T>& vec)
+  {
+    cnt += 1;
+    size += vec.size() * sizeof(T);
+  }
+
+  template <class T, const uint P, const uint S>
+  void add(const dbPagedVector<T, P, S>& vec)
+  {
+    cnt += 1;
+    size += vec.size() * sizeof(T);
+  }
+
+  template <typename T>
+  void add(const dbHashTable<T>& table)
+  {
+    cnt += 1;
+    size += table._hash_tbl.size() * sizeof(dbId<T>);
+  }
+
+  template <typename T>
+  void add(const dbIntHashTable<T>& table)
+  {
+    cnt += 1;
+    size += table._hash_tbl.size() * sizeof(dbId<T>);
+  }
+
+  template <typename T>
+  void add(const dbMatrix<T>& matrix)
+  {
+    cnt += 1;
+    size += matrix.numElems() * sizeof(T);
+  }
+
+  template <typename Key, typename T>
+  void add(const std::map<Key, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(Key) + sizeof(T));
+  }
+
+  template <typename T>
+  void add(const std::map<std::string, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(std::string) + sizeof(T));
+    MemInfo& key_info = children_["key"];
+    for (const auto& [key, value] : map) {
+      key_info.cnt += 1;
+      key_info.size += key.size();
+    }
+  }
+
+  template <typename Key, typename T>
+  void add(const std::unordered_map<Key, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(Key) + sizeof(T));
+  }
+
+  template <typename T>
+  void add(const std::unordered_map<std::string, T>& map)
+  {
+    cnt += 1;
+    size += map.size() * (sizeof(std::string) + sizeof(T));
+    MemInfo& key_info = children_["key"];
+    for (const auto& [key, value] : map) {
+      key_info.cnt += 1;
+      key_info.size += key.size();
+    }
+  }
+
+  template <typename T>
+  void add(const std::set<T>& set)
+  {
+    cnt += 1;
+    size += set.size() * sizeof(T);
+  }
+};
 
 ///////////////////////////////////////////////////////////////
 /// _dbObject definition

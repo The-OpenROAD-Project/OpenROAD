@@ -42,7 +42,7 @@ COMPONENTS 368 ;
     - clkbuf_4_8__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 141948 26508 ) N ;
     - clkbuf_4_9__f_CELL\/clk2 CLKBUF_X3 + SOURCE TIMING + PLACED ( 135237 124256 ) N ;
     - clkbuf_4_9__f_clk_regs CLKBUF_X3 + SOURCE TIMING + PLACED ( 135237 35368 ) N ;
-    - clkbuf_regs_0_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 99481 48451 ) N ;
+    - clkbuf_regs_0_clk CLKBUF_X3 + SOURCE TIMING + PLACED ( 103228 51229 ) N ;
     - clkload0 INV_X2 + SOURCE TIMING + PLACED ( 37181 26644 ) N ;
     - clkload1 INV_X4 + SOURCE TIMING + PLACED ( 28978 35266 ) N ;
     - clkload10 INV_X2 + SOURCE TIMING + PLACED ( 176988 31963 ) N ;

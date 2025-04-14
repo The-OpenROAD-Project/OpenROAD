@@ -1,50 +1,23 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "db_sta/dbReadVerilog.hh"
 
 #include <odb/dbSet.h>
 
+#include <cstddef>
+#include <fstream>
 #include <map>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
@@ -76,6 +49,9 @@ using utl::ORD;
 using sta::Cell;
 using sta::CellPortBitIterator;
 using sta::CellPortIterator;
+using sta::ConcreteCell;
+using sta::ConcreteCellPortIterator;
+using sta::ConcretePort;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
 using sta::Instance;
@@ -94,6 +70,7 @@ using sta::PinSeq;
 using sta::Port;
 using sta::PortDirection;
 using sta::Term;
+using sta::VerilogReader;
 using utl::Logger;
 
 dbVerilogNetwork::dbVerilogNetwork()
@@ -119,6 +96,22 @@ void initDbVerilogNetwork(ord::OpenRoad* openroad)
   openroad->getVerilogNetwork()->init(sta->getDbNetwork());
 }
 
+void setDbNetworkLinkFunc(ord::OpenRoad* openroad,
+                          VerilogReader* verilog_reader)
+{
+  if (verilog_reader) {
+    openroad->getVerilogNetwork()->setLinkFunc(
+        [=](const char* top_cell_name, bool make_black_boxes) -> Instance* {
+          return verilog_reader->linkNetwork(
+              top_cell_name,
+              make_black_boxes,
+              // don't delete modules after link so we can swap to
+              // uninstantiated modules if needed
+              false);
+        });
+  }
+}
+
 void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
 {
   delete verilog_network;
@@ -135,17 +128,18 @@ Cell* dbVerilogNetwork::findAnyCell(const char* name)
   return cell;
 }
 
-void dbReadVerilog(const char* filename,
-                   dbVerilogNetwork* verilog_network,
-                   sta::VerilogReader* verilog_reader)
+// Cell is a black box if all the ports have unknown port directions
+bool dbVerilogNetwork::isBlackBox(ConcreteCell* cell)
 {
-  if (verilog_reader == nullptr) {
-    verilog_reader = new sta::VerilogReader(verilog_network);
+  std::unique_ptr<ConcreteCellPortIterator> port_iter{cell->portIterator()};
+  while (port_iter->hasNext()) {
+    ConcretePort* port = port_iter->next();
+    if (port->direction() != PortDirection::unknown()) {
+      return false;
+    }
   }
-  verilog_reader->read(filename);
+  return true;
 }
-
-////////////////////////////////////////////////////////////////
 
 class Verilog2db
 {
@@ -155,7 +149,13 @@ class Verilog2db
              Logger* logger,
              bool hierarchy);
   void makeBlock();
+  void makeUnusedBlock(const char* name);
   void makeDbNetlist();
+  void makeUnusedDbNetlist();
+  void processUnusedCells(const char* top_cell_name,
+                          dbVerilogNetwork* verilog_network,
+                          bool link_make_black_boxes);
+  void restoreTopBlock(const char* orig_top_cell_name);
 
  private:
   struct LineInfo
@@ -186,10 +186,12 @@ class Verilog2db
   bool hasTerminals(Net* net) const;
   dbMaster* getMaster(Cell* cell);
   void storeLineInfo(const std::string& attribute, dbInst* db_inst);
+  void makeModNets(Instance* inst);
 
   Network* network_;
   dbDatabase* db_;
   dbBlock* block_ = nullptr;
+  dbBlock* top_block_ = nullptr;
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
   // Map file names to a unique id to avoid having to store the full file name
@@ -200,18 +202,20 @@ class Verilog2db
   std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
   static const std::regex line_info_re;
+  std::vector<ConcreteCell*> unused_cells_;
 };
 
 // Example: "./designs/src/gcd/gcd.v:571.3-577.6"
 const std::regex Verilog2db::line_info_re("^(.*):(\\d+)\\.\\d+-\\d+\\.\\d+$");
 
-void dbLinkDesign(const char* top_cell_name,
+bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
-                  sta::VerilogReader* verilog_reader,
                   dbDatabase* db,
                   Logger* logger,
                   bool hierarchy)
 {
+  debugPrint(
+      logger, utl::ODB, "dbReadVerilog", 1, "dbLinkDesign {}", top_cell_name);
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
@@ -219,8 +223,12 @@ void dbLinkDesign(const char* top_cell_name,
     Verilog2db v2db(verilog_network, db, logger, hierarchy);
     v2db.makeBlock();
     v2db.makeDbNetlist();
-    delete verilog_reader;
+    // Link unused modules in case if we want to swap to such modules later
+    v2db.processUnusedCells(
+        top_cell_name, verilog_network, link_make_black_boxes);
   }
+
+  return success;
 }
 
 Verilog2db::Verilog2db(Network* network,
@@ -264,7 +272,7 @@ void Verilog2db::makeBlock()
   }
   dbTech* tech = db_->getTech();
   block_->setDefUnits(tech->getLefUnits());
-  block_->setBusDelimeters('[', ']');
+  block_->setBusDelimiters('[', ']');
 }
 
 void Verilog2db::makeDbNetlist()
@@ -365,7 +373,7 @@ void Verilog2db::makeDbModule(
 
     if (modinst == nullptr) {
       logger_->error(ORD,
-                     2014,
+                     2023,
                      "hierachical instance creation failed for {} of {}",
                      network_->name(inst),
                      network_->name(cell));
@@ -453,18 +461,19 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
     // we do not need to store the pin names.. But they are
     // assumed to exist in the STA world.
     //
-    dbModITerm* moditerm = dbModITerm::create(modinst, pin_name_string.c_str());
+
     dbModBTerm* modbterm;
-    std::string port_name_str = std::move(pin_name_string);
+    std::string port_name_str = pin_name_string;  // intentionally make copy
     const size_t last_idx = port_name_str.find_last_of('/');
     if (last_idx != string::npos) {
       port_name_str = port_name_str.substr(last_idx + 1);
     }
     dbModule* module = modinst->getMaster();
     modbterm = module->findModBTerm(port_name_str.c_str());
-    moditerm->setChildModBTerm(modbterm);
-    modbterm->setParentModITerm(moditerm);
-
+    // pass the modbterm into the moditerm creator
+    // so that during journalling we keep the moditerm/modbterm correlation
+    dbModITerm* moditerm
+        = dbModITerm::create(modinst, pin_name_string.c_str(), modbterm);
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -511,6 +520,12 @@ void Verilog2db::makeChildInsts(Instance* inst,
       }
 
       auto db_inst = dbInst::create(block_, master, child_name, false, module);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "Child inst {} created in makeChildInsts",
+                 db_inst->getName());
 
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
@@ -644,6 +659,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
 
     const char* net_name = network_->pathName(net);
     dbNet* db_net = dbNet::create(block_, net_name);
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               2,
+               "makeDbNets created net {}",
+               db_net->getName());
     if (network_->isPower(net)) {
       db_net->setSigType(odb::dbSigType::POWER);
     }
@@ -666,6 +687,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
         const char* port_name = network_->portName(pin);
         if (block_->findBTerm(port_name) == nullptr) {
           dbBTerm* bterm = dbBTerm::create(db_net, port_name);
+          debugPrint(logger_,
+                     utl::ODB,
+                     "dbReadVerilog",
+                     2,
+                     "makeDbNets created bterm {}",
+                     bterm->getName());
           dbIoType io_type = staToDb(network_->direction(pin));
           bterm->setIoType(io_type);
         }
@@ -679,6 +706,13 @@ void Verilog2db::makeDbNets(const Instance* inst)
           dbMTerm* mterm = master->findMTerm(block_, port_name);
           if (mterm) {
             db_inst->getITerm(mterm)->connect(db_net);
+            debugPrint(logger_,
+                       utl::ODB,
+                       "dbReadVerilog",
+                       2,
+                       "makeDbNets connected mterm {} to net {}",
+                       mterm->getName(),
+                       db_net->getName());
           }
         }
       }
@@ -705,6 +739,14 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
   // Given a hierarchical instance, get the pins on the outside
   // and the inside of the instance and construct the modnets
 
+  debugPrint(logger_,
+             utl::ODB,
+             "dbReadVerilog",
+             2,
+             "makeVModNets inst: {} mod_inst: {}",
+             network_->name(inst),
+             mod_inst->getName());
+
   dbModule* parent_module = mod_inst->getParent();
   dbModule* child_module = mod_inst->getMaster();
 
@@ -728,6 +770,13 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
       mod_iterm = mod_bterm->getParentModITerm();
       if (mod_iterm) {
         mod_iterm->connect(upper_mod_net);
+        debugPrint(logger_,
+                   utl::ODB,
+                   "dbReadVerilog",
+                   2,
+                   "makeVModNets connected mod_iterm {} to upper_mod_net {}",
+                   mod_iterm->getName(),
+                   upper_mod_net->getName());
       }
     }
 
@@ -740,6 +789,13 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
         staToDb(parent_module, pin, bterm, iterm, mod_bterm, mod_iterm);
         if (bterm) {
           bterm->connect(upper_mod_net);
+          debugPrint(logger_,
+                     utl::ODB,
+                     "dbReadVerilog",
+                     2,
+                     "makeVModNets connected bterm {} to upper_mod_net {}",
+                     bterm->getName(),
+                     upper_mod_net->getName());
         }
       }
     }
@@ -762,6 +818,13 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
       dbModBTerm* mod_bterm = child_module->findModBTerm(pin_name.c_str());
       dbModNet* lower_mod_net = constructModNet(below_pin_net, child_module);
       mod_bterm->connect(lower_mod_net);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "makeVModNets connected mod_bterm {} to lower_mod_net {}",
+                 mod_bterm->getName(),
+                 lower_mod_net->getName());
     }
   }
 }
@@ -781,6 +844,13 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
   db_mod_net = module->getModNet(net_name);
   if (!db_mod_net) {
     db_mod_net = dbModNet::create(module, net_name);
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "created mod_net {} in module {}",
+               net_name,
+               module->getName());
   }
   for (auto& [name, pin] : net_pin_map) {
     dbITerm* iterm = nullptr;
@@ -795,12 +865,40 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
     // parent -> modbterm
     if (iterm) {
       iterm->connect(db_mod_net);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "connected iterm {} to mod net {}",
+                 iterm->getName(),
+                 db_mod_net->getName());
     } else if (bterm) {
       bterm->connect(db_mod_net);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "connected bterm {} to mod net {}",
+                 bterm->getName(),
+                 db_mod_net->getName());
     } else if (mod_bterm) {
       mod_bterm->connect(db_mod_net);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "connected mod_bterm {} to mod net {}",
+                 mod_bterm->getName(),
+                 db_mod_net->getName());
     } else if (mod_iterm) {
       mod_iterm->connect(db_mod_net);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 2,
+                 "connected mod_iterm {} to mod net {}",
+                 mod_iterm->getName(),
+                 db_mod_net->getName());
     }
   }
   return db_mod_net;
@@ -838,4 +936,181 @@ dbMaster* Verilog2db::getMaster(Cell* cell)
   return nullptr;
 }
 
-}  // namespace ord
+//
+// Create top-level mod nets to connect boundary bterms and iterms
+//
+void Verilog2db::makeModNets(Instance* inst)
+{
+  dbModule* module = block_->getTopModule();
+  std::unique_ptr<InstancePinIterator> pinIter{network_->pinIterator(inst)};
+  while (pinIter->hasNext()) {
+    Pin* inst_pin = pinIter->next();
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "makeModNets processing pin {}",
+               network_->name(inst_pin));
+
+    Net* below_pin_net;
+    Term* below_term = network_->term(inst_pin);
+    if (below_term) {
+      below_pin_net = network_->net(below_term);
+      if (below_pin_net) {
+        const char* below_net_name = network_->name(below_pin_net);
+        debugPrint(logger_,
+                   utl::ODB,
+                   "dbReadVerilog",
+                   1,
+                   "makeModNets below_net is {} for pin {}",
+                   below_net_name,
+                   network_->name(inst_pin));
+        if (module->getModNet(below_net_name)) {
+          debugPrint(logger_,
+                     utl::ODB,
+                     "dbReadVerilog",
+                     1,
+                     "makeModNets skips mod net creation for {} because it "
+                     "already exists",
+                     below_net_name);
+          continue;
+        }
+        dbModBTerm* mod_bterm
+            = module->findModBTerm(network_->name(below_term));
+        dbModNet* lower_mod_net = constructModNet(below_pin_net, module);
+        mod_bterm->connect(lower_mod_net);
+        debugPrint(logger_,
+                   utl::ODB,
+                   "dbReadVerilog",
+                   1,
+                   "makeModNets connected mod_bterm {} to lower_mod_net {}",
+                   mod_bterm->getName(),
+                   lower_mod_net->getName());
+      }
+    }
+  }
+}
+
+//
+// Collect all unused modules such that they can be linked later
+//
+void Verilog2db::processUnusedCells(const char* top_cell_name,
+                                    dbVerilogNetwork* verilog_network,
+                                    bool link_make_black_boxes)
+{
+  // Collect all unused modules
+  std::unique_ptr<sta::LibraryIterator> libraryIterator{
+      network_->libraryIterator()};
+  while (libraryIterator->hasNext()) {
+    sta::ConcreteLibrary* lib
+        = (sta::ConcreteLibrary*) (libraryIterator->next());
+    std::unique_ptr<sta::ConcreteLibraryCellIterator> lib_cell_iter{
+        lib->cellIterator()};
+    while (lib_cell_iter->hasNext()) {
+      sta::ConcreteCell* curr_cell = lib_cell_iter->next();
+      if (!block_->findModule(curr_cell->name())
+          && !verilog_network->isBlackBox(curr_cell)) {
+        unused_cells_.emplace_back(curr_cell);
+        debugPrint(logger_,
+                   utl::ODB,
+                   "dbReadVerilog",
+                   1,
+                   "Found unused cell {}",
+                   curr_cell->name());
+      }
+    }
+  }
+
+  // Link each unused module and populate content in a separate child block.
+  // There will one child block for each unused module.
+  for (ConcreteCell* cell : unused_cells_) {
+    makeUnusedBlock(cell->name());
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Linking unused cell {}",
+               cell->name());
+    // It is important to use actual top cell name as top module name
+    (void) verilog_network->linkNetwork(
+        cell->name(), link_make_black_boxes, verilog_network->report());
+
+    makeUnusedDbNetlist();
+    if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
+      std::string out_file_name
+          = "child_block_" + std::string(cell->name()) + ".txt";
+      std::ofstream out_file(out_file_name.c_str());
+      block_->debugPrintContent(out_file);
+    }
+  }
+
+  if (!unused_cells_.empty()) {
+    restoreTopBlock(top_cell_name);
+    if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {
+      std::ofstream out_file("top_block.txt");
+      block_->debugPrintContent(out_file);
+    }
+  }
+}
+
+//
+// makeUnusedBlock: create a separate block for each unused module
+//
+void Verilog2db::makeUnusedBlock(const char* name)
+{
+  dbChip* chip = db_->getChip();
+  if (chip == nullptr) {
+    chip = dbChip::create(db_);
+  }
+  // Create a child block
+  if (top_block_ == nullptr) {
+    top_block_ = chip->getBlock();
+  }
+  dbTech* tech = db_->getTech();
+  block_ = dbBlock::create(top_block_, name, tech, network_->pathDivider());
+  block_->setDefUnits(tech->getLefUnits());
+  block_->setBusDelimiters('[', ']');
+  debugPrint(logger_,
+             utl::ODB,
+             "dbReadVerilog",
+             1,
+             "Created child block {} under parent block {}",
+             block_->getName(),
+             top_block_->getName());
+}
+
+//
+// makeUnusedDbNetlist: populate module content
+//
+void Verilog2db::makeUnusedDbNetlist()
+{
+  recordBusPortsOrder();
+  Instance* inst = network_->topInstance();
+  dbModule* module = block_->getTopModule();
+  Cell* cell = network_->cell(inst);
+  makeModBTerms(cell, module);
+  InstPairs inst_pairs;
+  makeChildInsts(inst, module, inst_pairs);
+  makeDbNets(inst);
+  // Create top-level mod nets
+  makeModNets(inst);
+  if (hierarchy_) {
+    makeVModNets(inst_pairs);
+  }
+  for (auto inst : dont_touch_insts) {
+    inst->setDoNotTouch(true);
+  }
+}
+
+//
+// restoreTopBlock: restore original top cell and block
+//
+void Verilog2db::restoreTopBlock(const char* orig_top_cell_name)
+{
+  Instance* top_inst = network_->findInstance(orig_top_cell_name);
+  ConcreteNetwork* cnetwork = static_cast<ConcreteNetwork*>(network_);
+  cnetwork->setTopInstance(top_inst);
+  block_ = top_block_;
+}
+
+}  // Namespace ord

@@ -1,41 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbObstruction.h"
 
 #include "dbBlock.h"
 #include "dbBox.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbInst.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -66,6 +36,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
   _flags._spare_bits = 0;
+  _flags._is_system_reserved = 0;
   _min_spacing = 0;
   _effective_width = 0;
 }
@@ -98,6 +69,11 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
     // assume false for older databases
     obs._flags._except_pg_nets = false;
+  }
+
+  if (!db->isSchema(db_schema_die_area_is_polygon)) {
+    // assume false for older databases
+    obs._flags._is_system_reserved = false;
   }
 
   return stream;
@@ -138,77 +114,6 @@ bool _dbObstruction::operator==(const _dbObstruction& rhs) const
   }
 
   return true;
-}
-
-void _dbObstruction::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbObstruction& rhs) const
-{
-  _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-  _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._slot_obs);
-  DIFF_FIELD(_flags._fill_obs);
-  DIFF_FIELD(_flags._except_pg_nets);
-  DIFF_FIELD(_flags._pushed_down);
-  DIFF_FIELD(_flags._has_min_spacing);
-  DIFF_FIELD(_flags._has_effective_width);
-  DIFF_FIELD(_min_spacing);
-  DIFF_FIELD(_effective_width);
-
-  if (!diff.deepDiff()) {
-    DIFF_FIELD(_inst);
-  } else {
-    if (_inst && rhs._inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.diff("_inst", lhs_inst->_name, rhs_inst->_name);
-    } else if (_inst) {
-      _dbBlock* lhs_blk = (_dbBlock*) getOwner();
-      _dbInst* lhs_inst = lhs_blk->_inst_tbl->getPtr(_inst);
-      diff.out(dbDiff::LEFT, "_inst", lhs_inst->_name);
-    } else if (rhs._inst) {
-      _dbBlock* rhs_blk = (_dbBlock*) rhs.getOwner();
-      _dbInst* rhs_inst = rhs_blk->_inst_tbl->getPtr(rhs._inst);
-      diff.out(dbDiff::RIGHT, "_inst", rhs_inst->_name);
-    }
-  }
-
-  DIFF_OBJECT(_bbox, lhs_blk->_box_tbl, rhs_blk->_box_tbl);
-  DIFF_END
-}
-
-void _dbObstruction::out(dbDiff& diff, char side, const char* field) const
-{
-  _dbBlock* blk = (_dbBlock*) getOwner();
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._slot_obs);
-  DIFF_OUT_FIELD(_flags._fill_obs);
-  DIFF_OUT_FIELD(_flags._except_pg_nets);
-  DIFF_OUT_FIELD(_flags._pushed_down);
-  DIFF_OUT_FIELD(_flags._has_min_spacing);
-  DIFF_OUT_FIELD(_flags._has_effective_width);
-  DIFF_OUT_FIELD(_min_spacing);
-  DIFF_OUT_FIELD(_effective_width);
-
-  if (!diff.deepDiff()) {
-    DIFF_OUT_FIELD(_inst);
-  } else {
-    if (_inst) {
-      _dbBlock* blk = (_dbBlock*) getOwner();
-      _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
-      diff.out(side, "_inst", inst->_name);
-    } else {
-      diff.out(side, "_inst", "(nullptr)");
-    }
-  }
-
-  DIFF_OUT_OBJECT(_bbox, blk->_box_tbl);
-  DIFF_END
 }
 
 bool _dbObstruction::operator<(const _dbObstruction& rhs) const
@@ -427,6 +332,18 @@ dbBlock* dbObstruction::getBlock()
   return (dbBlock*) getImpl()->getOwner();
 }
 
+bool dbObstruction::isSystemReserved()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  return obs->_flags._is_system_reserved;
+}
+
+void dbObstruction::setIsSystemReserved(bool is_system_reserved)
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  obs->_flags._is_system_reserved = is_system_reserved;
+}
+
 dbObstruction* dbObstruction::create(dbBlock* block_,
                                      dbTechLayer* layer_,
                                      int x1,
@@ -464,11 +381,29 @@ void dbObstruction::destroy(dbObstruction* obstruction)
 {
   _dbObstruction* obs = (_dbObstruction*) obstruction;
   _dbBlock* block = (_dbBlock*) obs->getOwner();
+
+  if (obstruction->isSystemReserved()) {
+    utl::Logger* logger = block->getLogger();
+    logger->error(
+        utl::ODB,
+        1111,
+        "You cannot delete a system created obstruction (isSystemReserved).");
+  }
+
   for (auto callback : block->_callbacks) {
     callback->inDbObstructionDestroy(obstruction);
   }
   dbProperty::destroyProperties(obs);
   block->_obstruction_tbl->destroy(obs);
+}
+
+dbSet<dbObstruction>::iterator dbObstruction::destroy(
+    dbSet<dbObstruction>::iterator& itr)
+{
+  dbObstruction* bt = *itr;
+  dbSet<dbObstruction>::iterator next = ++itr;
+  destroy(bt);
+  return next;
 }
 
 dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)
@@ -477,4 +412,9 @@ dbObstruction* dbObstruction::getObstruction(dbBlock* block_, uint dbid_)
   return (dbObstruction*) block->_obstruction_tbl->getPtr(dbid_);
 }
 
+void _dbObstruction::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
 }  // namespace odb

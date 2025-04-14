@@ -1,41 +1,13 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbMarkerCategory.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbMarker.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -46,6 +18,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string>
 
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"
@@ -88,37 +61,6 @@ bool _dbMarkerCategory::operator<(const _dbMarkerCategory& rhs) const
   return true;
 }
 
-void _dbMarkerCategory::differences(dbDiff& diff,
-                                    const char* field,
-                                    const _dbMarkerCategory& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(description_);
-  DIFF_FIELD(source_);
-  DIFF_FIELD(max_markers_);
-  DIFF_TABLE(marker_tbl_);
-  DIFF_TABLE(categories_tbl_);
-  DIFF_HASH_TABLE(categories_hash_);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbMarkerCategory::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(description_);
-  DIFF_OUT_FIELD(source_);
-  DIFF_OUT_FIELD(max_markers_);
-  DIFF_OUT_TABLE(marker_tbl_);
-  DIFF_OUT_TABLE(categories_tbl_);
-  DIFF_OUT_HASH_TABLE(categories_hash_);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-
-  DIFF_END
-}
-
 _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
 {
   _name = nullptr;
@@ -131,20 +73,6 @@ _dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db)
       (GetObjTbl_t) &_dbMarkerCategory::getObjectTable,
       dbMarkerCategoryObj);
   categories_hash_.setTable(categories_tbl_);
-}
-
-_dbMarkerCategory::_dbMarkerCategory(_dbDatabase* db,
-                                     const _dbMarkerCategory& r)
-{
-  _name = r._name;
-  description_ = r.description_;
-  source_ = r.source_;
-  max_markers_ = r.max_markers_;
-  marker_tbl_ = new dbTable<_dbMarker>(db, this, *r.marker_tbl_);
-  categories_tbl_
-      = new dbTable<_dbMarkerCategory>(db, this, *r.categories_tbl_);
-  categories_hash_.setTable(categories_tbl_);
-  _next_entry = r._next_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMarkerCategory& obj)
@@ -184,6 +112,19 @@ dbObjectTable* _dbMarkerCategory::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbMarkerCategory::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  marker_tbl_->collectMemInfo(info.children_["marker_tbl_"]);
+
+  categories_tbl_->collectMemInfo(info.children_["categories_tbl_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["categories_hash"].add(categories_hash_);
+  // User Code End collectMemInfo
 }
 
 _dbMarkerCategory::~_dbMarkerCategory()
@@ -834,10 +775,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 
   parent->_marker_category_hash.insert(_category);
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = parent->_callbacks.begin(); cbitr != parent->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  for (auto cb : parent->_callbacks) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -884,10 +823,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
   parent->categories_hash_.insert(_category);
 
   _dbBlock* block = parent->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -924,10 +861,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
   if (_category->isTopCategory()) {
     _dbBlock* block = (_dbBlock*) _category->getOwner();
 
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbMarkerCategoryDestroy(category);
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     block->_marker_category_hash.remove(_category);
@@ -936,10 +871,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
     _dbBlock* block = parent->getBlock();
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbMarkerCategoryDestroy(category);
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     parent->categories_hash_.remove(_category);

@@ -1,43 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerArraySpacingRule.h"
 
 #include <cstdint>
 #include <cstring>
+#include <map>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -86,42 +57,6 @@ bool _dbTechLayerArraySpacingRule::operator<(
   return true;
 }
 
-void _dbTechLayerArraySpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerArraySpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.parallel_overlap_);
-  DIFF_FIELD(flags_.long_array_);
-  DIFF_FIELD(flags_.via_width_valid_);
-  DIFF_FIELD(flags_.within_valid_);
-  DIFF_FIELD(via_width_);
-  DIFF_FIELD(cut_spacing_);
-  DIFF_FIELD(within_);
-  DIFF_FIELD(array_width_);
-  DIFF_FIELD(cut_class_);
-  DIFF_END
-}
-
-void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
-                                       char side,
-                                       const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.parallel_overlap_);
-  DIFF_OUT_FIELD(flags_.long_array_);
-  DIFF_OUT_FIELD(flags_.via_width_valid_);
-  DIFF_OUT_FIELD(flags_.within_valid_);
-  DIFF_OUT_FIELD(via_width_);
-  DIFF_OUT_FIELD(cut_spacing_);
-  DIFF_OUT_FIELD(within_);
-  DIFF_OUT_FIELD(array_width_);
-  DIFF_OUT_FIELD(cut_class_);
-
-  DIFF_END
-}
-
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -129,22 +64,6 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
   cut_spacing_ = 0;
   within_ = 0;
   array_width_ = 0;
-}
-
-_dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerArraySpacingRule& r)
-{
-  flags_.parallel_overlap_ = r.flags_.parallel_overlap_;
-  flags_.long_array_ = r.flags_.long_array_;
-  flags_.via_width_valid_ = r.flags_.via_width_valid_;
-  flags_.within_valid_ = r.flags_.within_valid_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  via_width_ = r.via_width_;
-  cut_spacing_ = r.cut_spacing_;
-  within_ = r.within_;
-  array_width_ = r.array_width_;
-  cut_class_ = r.cut_class_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
@@ -176,6 +95,16 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.array_spacing_map_;
   stream << obj.cut_class_;
   return stream;
+}
+
+void _dbTechLayerArraySpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["array_spacing_map"].add(array_spacing_map_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

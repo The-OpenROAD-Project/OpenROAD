@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #include "mainWindow.h"
 
@@ -45,12 +16,14 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QWidgetAction>
+#include <cmath>
 #include <iomanip>
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "GUIProgress.h"
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
 #include "chartsWidget.h"
@@ -72,6 +45,7 @@
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/Progress.h"
 #include "utl/algorithms.h"
 
 // must be loaded in global namespace
@@ -253,6 +227,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           [=](const SelectionSet& selected) { addHighlighted(selected); });
   connect(
       inspector_, &Inspector::setCommand, script_, &ScriptWidget::setCommand);
+  connect(script_,
+          &ScriptWidget::commandAboutToExecute,
+          inspector_,
+          &Inspector::setReadOnly);
+  connect(script_,
+          &ScriptWidget::commandExecuted,
+          inspector_,
+          &Inspector::unsetReadOnly);
 
   connect(hierarchy_widget_,
           &BrowserWidget::select,
@@ -441,6 +423,10 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<BufferTree>();
   gui->unregisterDescriptor<odb::dbITerm*>();
   gui->unregisterDescriptor<odb::dbMTerm*>();
+
+  if (cli_progress_ != nullptr) {
+    logger_->swapProgress(cli_progress_.release());
+  }
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -1510,6 +1496,10 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
 void MainWindow::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
+
+  auto progress = std::make_unique<GUIProgress>(logger_, this);
+  cli_progress_ = logger_->swapProgress(progress.release());
+
   controls_->setLogger(logger);
   script_->setLogger(logger);
   viewers_->setLogger(logger);

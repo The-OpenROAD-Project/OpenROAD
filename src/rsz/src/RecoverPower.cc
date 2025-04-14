@@ -1,39 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2023, Precision Innovations Inc.
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "RecoverPower.hh"
+
+#include <algorithm>
+#include <string>
 
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -76,9 +47,10 @@ void RecoverPower::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
-bool RecoverPower::recoverPower(const float recover_power_percent)
+bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 {
   bool recovered = false;
   init();
@@ -118,6 +90,14 @@ bool RecoverPower::recoverPower(const float recover_power_percent)
   Vertex* worst_vertex;
   sta_->worstSlack(max_, worst_slack_before, worst_vertex);
 
+  if (max_end_count > 5 * max_print_interval_) {
+    print_interval_ = max_print_interval_;
+  } else {
+    print_interval_ = min_print_interval_;
+  }
+
+  printProgress(0, false, false);
+
   int end_index = 0;
   int failed_move_threshold = 0;
   for (Vertex* end : ends_with_slack) {
@@ -131,9 +111,13 @@ bool RecoverPower::recoverPower(const float recover_power_percent)
                RSZ,
                "recover_power",
                2,
-               "Doing {} /{}",
+               "Doing {} / {}",
                end_index,
                max_end_count);
+    if (verbose || end_index == 1) {
+      printProgress(end_index, false, false);
+    }
+
     if (end_index > max_end_count) {
       resizer_->journalEnd();
       break;
@@ -217,6 +201,9 @@ bool RecoverPower::recoverPower(const float recover_power_percent)
       }
     }
   }
+
+  printProgress(end_index, true, true);
+
   bad_vertices_.clear();
 
   // TODO: Add the appropriate metric here
@@ -466,6 +453,42 @@ int RecoverPower::fanout(Vertex* vertex)
     fanout++;
   }
   return fanout;
+}
+
+void RecoverPower::printProgress(int iteration, bool force, bool end) const
+{
+  const bool start = iteration == 0;
+
+  if (start && !end) {
+    logger_->report("Iteration |   Area    |  Resized |   WNS    | Endpt");
+    logger_->report("---------------------------------------------------");
+  }
+
+  if (iteration % print_interval_ == 0 || force || end) {
+    Slack wns;
+    Vertex* worst_vertex;
+    sta_->worstSlack(max_, wns, worst_vertex);
+
+    std::string itr_field = fmt::format("{}", iteration);
+    if (end) {
+      itr_field = "final";
+    }
+
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
+    logger_->report(
+        "{: >9s} | {: >+8.1f}% | {: >8d} | {: >8s} | {}",
+        itr_field,
+        area_growth / initial_design_area_ * 1e2,
+        resize_count_,
+        delayAsString(wns, sta_, 3),
+        worst_vertex != nullptr ? worst_vertex->name(network_) : "");
+  }
+
+  if (end) {
+    logger_->report("---------------------------------------------------");
+  }
 }
 
 }  // namespace rsz

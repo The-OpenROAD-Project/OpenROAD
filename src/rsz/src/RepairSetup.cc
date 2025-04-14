@@ -1,41 +1,15 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "RepairSetup.hh"
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
 
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -85,11 +59,13 @@ void RepairSetup::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+  initial_design_area_ = resizer_->computeDesignArea();
 }
 
 bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const double repair_tns_end_percent,
                               const int max_passes,
+                              const int max_repairs_per_pass,
                               const bool verbose,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
@@ -100,6 +76,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   bool repaired = false;
   init();
   constexpr int digits = 3;
+  max_repairs_per_pass_ = max_repairs_per_pass;
   inserted_buffer_count_ = 0;
   split_load_buffer_count_ = 0;
   resize_count_ = 0;
@@ -170,11 +147,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   int opto_iteration = 0;
   bool prev_termination = false;
   bool two_cons_terminations = false;
-  if (verbose) {
-    printProgress(opto_iteration, false, false, false, num_viols);
-  }
+  printProgress(opto_iteration, false, false, false, num_viols);
   float fix_rate_threshold = inc_fix_rate_threshold_;
+  if (!violating_ends.empty()) {
+    min_viol_ = -violating_ends.back().second;
+    max_viol_ = -violating_ends.front().second;
+  }
   for (const auto& end_original_slack : violating_ends) {
+    fallback_ = false;
     Vertex* end = end_original_slack.first;
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
@@ -211,7 +191,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     resizer_->journalBegin();
     while (pass <= max_passes) {
       opto_iteration++;
-      if (verbose) {
+      if (verbose || opto_iteration == 1) {
         printProgress(opto_iteration, false, false, false, num_viols);
       }
       if (terminateProgress(opto_iteration,
@@ -226,7 +206,20 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           prev_termination = true;
         }
-        resizer_->journalEnd();
+
+        // Restore to previous good checkpoint
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   2,
+                   "Restoring best slack end slack {} worst slack {}",
+                   delayAsString(prev_end_slack, sta_, digits),
+                   delayAsString(prev_worst_slack, sta_, digits));
+        resizer_->journalRestore(resize_count_,
+                                 inserted_buffer_count_,
+                                 cloned_gate_count_,
+                                 swap_pin_count_,
+                                 removed_buffer_count_);
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -325,6 +318,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // Progress, Save checkpoint so we can back up to here.
         resizer_->journalBegin();
       } else {
+        fallback_ = true;
         // Allow slack to increase to get out of local minima.
         // Do not update prev_end_slack so it saves the high water mark.
         decreasing_slack_passes++;
@@ -370,7 +364,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       pass++;
     }  // while pass <= max_passes
-    if (verbose) {
+    if (verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, false, num_viols);
     }
     if (two_cons_terminations) {
@@ -390,9 +384,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     repairSetupLastGasp(params, num_viols);
   }
 
-  if (verbose) {
-    printProgress(opto_iteration, true, true, false, num_viols);
-  }
+  printProgress(opto_iteration, true, true, false, num_viols);
 
   if (removed_buffer_count_ > 0) {
     repaired = true;
@@ -439,6 +431,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 void RepairSetup::repairSetup(const Pin* end_pin)
 {
   init();
+  max_repairs_per_pass_ = 1;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   swap_pin_count_ = 0;
@@ -495,7 +488,7 @@ bool RepairSetup::repairPath(PathRef& path,
                              const float setup_slack_margin)
 {
   PathExpanded expanded(&path, sta_);
-  bool changed = false;
+  int changed = 0;
 
   if (expanded.size() > 1) {
     const int path_length = expanded.size();
@@ -537,7 +530,27 @@ bool RepairSetup::repairPath(PathRef& path,
                  || (pair1.second == pair2.second && pair1.first > pair2.first);
         });
     // Attack gates with largest load delays first.
+    int repairs_per_pass = 1;
+    if (max_viol_ - min_viol_ != 0.0) {
+      repairs_per_pass
+          += std::round((max_repairs_per_pass_ - 1) * (-path_slack - min_viol_)
+                        / (max_viol_ - min_viol_));
+    }
+    if (fallback_) {
+      repairs_per_pass = 1;
+    }
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               3,
+               "Path slack: {}, repairs: {}, load_delays: {}",
+               delayAsString(path_slack, sta_, 3),
+               repairs_per_pass,
+               load_delays.size());
     for (const auto& [drvr_index, ignored] : load_delays) {
+      if (changed >= repairs_per_pass) {
+        break;
+      }
       const PathRef* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       const Pin* drvr_pin = drvr_vertex->pin();
@@ -561,21 +574,21 @@ bool RepairSetup::repairPath(PathRef& path,
                        drvr_index,
                        &expanded,
                        setup_slack_margin)) {
-          changed = true;
-          break;
+          changed++;
+          continue;
         }
       }
 
       if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
-        changed = true;
-        break;
+        changed++;
+        continue;
       }
 
       // Pin swapping
       if (!skip_pin_swap) {
         if (swapPins(drvr_path, drvr_index, &expanded)) {
-          changed = true;
-          break;
+          changed++;
+          continue;
         }
       }
 
@@ -597,8 +610,8 @@ bool RepairSetup::repairPath(PathRef& path,
                      network_->pathName(drvr_pin),
                      rebuffer_count);
           inserted_buffer_count_ += rebuffer_count;
-          changed = true;
-          break;
+          changed++;
+          continue;
         }
       }
 
@@ -609,8 +622,8 @@ bool RepairSetup::repairPath(PathRef& path,
                  db_network_->instance(drvr_pin))
                  == resizer_->inserted_buffer_set_.end()
           && cloneDriver(drvr_path, drvr_index, path_slack, &expanded)) {
-        changed = true;
-        break;
+        changed++;
+        continue;
       }
 
       if (!skip_buffering) {
@@ -620,13 +633,17 @@ bool RepairSetup::repairPath(PathRef& path,
           const int init_buffer_count = inserted_buffer_count_;
           splitLoads(drvr_path, drvr_index, path_slack, &expanded);
           split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
-          changed = true;
-          break;
+          changed++;
+          continue;
         }
       }
     }
+    for (auto inst : buf_to_remove_) {
+      resizer_->removeBuffer(inst, /* recordJournal */ true);
+    }
+    buf_to_remove_.clear();
   }
-  return changed;
+  return changed > 0;
 }
 
 void RepairSetup::debugCheckMultipleBuffers(PathRef& path,
@@ -858,8 +875,8 @@ bool RepairSetup::removeDrvr(const PathRef* drvr_path,
       return false;
     }
 
-    if (resizer_->removeBuffer(
-            drvr, /* honorDontTouch */ true, /* recordJournal */ true)) {
+    if (resizer_->canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
+      buf_to_remove_.push_back(drvr);
       removed_buffer_count_++;
       return true;
     }
@@ -977,7 +994,7 @@ bool RepairSetup::estimatedSlackOK(const SlackEstimatorParams& params)
                  "because side input pin {} will have a violating slack of {}:"
                  " old slack={}, slack margin={}, delay_degrad={}",
                  db_network_->name(params.driver),
-                 db_network_->name(side_input_pin), new_slack, old_slack, 
+                 db_network_->name(side_input_pin), new_slack, old_slack,
                  params.setup_slack_margin, delay_degrad);
       // clang-format on
       return false;
@@ -1557,8 +1574,11 @@ int RepairSetup::fanout(Vertex* vertex)
   int fanout = 0;
   VertexOutEdgeIterator edge_iter(vertex, graph_);
   while (edge_iter.hasNext()) {
-    edge_iter.next();
-    fanout++;
+    Edge* edge = edge_iter.next();
+    // Disregard output->output timing arcs
+    if (edge->isWire()) {
+      fanout++;
+    }
   }
   return fanout;
 }
@@ -1777,13 +1797,13 @@ void RepairSetup::printProgress(const int iteration,
   if (start && !end) {
     logger_->report(
         "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "    WNS   |   TNS      |  Viol  | Worst");
+        "   Area   |    WNS   |   TNS      |  Viol  | Worst");
     logger_->report(
         "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |            | Endpts | Endpt");
+        "          |          |            | Endpts | Endpt");
     logger_->report(
         "-----------------------------------------------------------"
-        "----------------------------------------");
+        "---------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1798,15 +1818,19 @@ void RepairSetup::printProgress(const int iteration,
       itr_field = "final";
     }
 
+    const double design_area = resizer_->computeDesignArea();
+    const double area_growth = design_area - initial_design_area_;
+
     logger_->report(
-        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} | {: >8s} "
-        "| {: >10s} | {: >6d} | {}",
+        "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
+        "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
         removed_buffer_count_,
         resize_count_,
         inserted_buffer_count_ + split_load_buffer_count_ + rebuffer_net_count_,
         cloned_gate_count_,
         swap_pin_count_,
+        area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
         max(0, num_viols),
@@ -1816,7 +1840,7 @@ void RepairSetup::printProgress(const int iteration,
   if (end) {
     logger_->report(
         "-----------------------------------------------------------"
-        "----------------------------------------");
+        "---------------------------------------------------");
   }
 }
 
@@ -1906,9 +1930,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
   // clang-format on
   swap_pin_inst_set_.clear();  // Make sure we do not swap the same pin twice.
   int opto_iteration = params.iteration;
-  if (params.verbose) {
-    printProgress(opto_iteration, false, false, true, num_viols);
-  }
+  printProgress(opto_iteration, false, false, true, num_viols);
 
   float prev_tns = curr_tns;
   Slack curr_worst_slack = violating_ends[0].second;
@@ -1918,6 +1940,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
   float fix_rate_threshold = inc_fix_rate_threshold_;
 
   for (const auto& end_original_slack : violating_ends) {
+    fallback_ = false;
     Vertex* end = end_original_slack.first;
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
@@ -1949,7 +1972,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       if (opto_iteration % opto_small_interval_ == 0) {
         prev_termination = false;
       }
-      if (params.verbose) {
+      if (params.verbose || opto_iteration == 1) {
         printProgress(opto_iteration, false, false, true, num_viols);
       }
       if (end_slack > params.setup_slack_margin) {
@@ -2002,6 +2025,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         resizer_->journalEnd();
         resizer_->journalBegin();
       } else {
+        fallback_ = true;
         resizer_->journalRestore(resize_count_,
                                  inserted_buffer_count_,
                                  cloned_gate_count_,
@@ -2019,7 +2043,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       pass++;
     }  // while pass <= max_last_gasp_passes_
-    if (params.verbose) {
+    if (params.verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, true, num_viols);
     }
     if (two_cons_terminations) {

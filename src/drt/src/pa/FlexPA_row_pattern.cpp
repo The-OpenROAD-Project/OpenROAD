@@ -1,41 +1,19 @@
-/* Authors: Lutong Wang, Bangqi Xu*/
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * Copyright (c) 2024, Precision Innovations Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <omp.h>
 
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "FlexPA.h"
-#include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/frArchive.h"
@@ -57,6 +35,36 @@ static inline void serializeInstRows(
   paUpdate update;
   update.setInstRows(inst_rows);
   paUpdate::serialize(update, file_name);
+}
+
+std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
+{
+  // prep pattern for each row
+  std::vector<std::vector<frInst*>> inst_rows;
+  std::vector<frInst*> row_insts;
+
+  buildInstsSet();
+
+  // gen rows of insts
+  int prev_y_coord = INT_MIN;
+  int prev_x_end_coord = INT_MIN;
+  for (auto inst : insts_set_) {
+    Point origin = inst->getOrigin();
+    if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
+      if (!row_insts.empty()) {
+        inst_rows.push_back(row_insts);
+        row_insts.clear();
+      }
+    }
+    row_insts.push_back(inst);
+    prev_y_coord = origin.y();
+    Rect inst_boundary_box = inst->getBoundaryBBox();
+    prev_x_end_coord = inst_boundary_box.xMax();
+  }
+  if (!row_insts.empty()) {
+    inst_rows.push_back(row_insts);
+  }
+  return inst_rows;
 }
 
 void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
@@ -135,15 +143,12 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
   } else {
     omp_set_num_threads(router_cfg_->MAX_THREADS);
     // choose access pattern of a row of insts
-    int rowIdx = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int) inst_rows.size(); i++) {  // NOLINT
+    for (auto& inst_row : inst_rows) {  // NOLINT
       try {
-        auto& instRow = inst_rows[i];
-        genInstRowPattern(instRow);
+        genInstRowPattern(inst_row);
 #pragma omp critical
         {
-          rowIdx++;
           cnt++;
           if (router_cfg_->VERBOSE > 0) {
             if (cnt % (cnt > 100000 ? 100000 : 10000) == 0) {
@@ -201,8 +206,8 @@ void FlexPA::genInstRowPatternInit(
   // init inst nodes
   for (int inst_idx = 0; inst_idx < (int) insts.size(); inst_idx++) {
     auto& inst = insts[inst_idx];
-    const int unique_inst_idx = unique_insts_.getIndex(inst);
-    auto& inst_patterns = unique_inst_patterns_[unique_inst_idx];
+    auto unique_inst = unique_insts_.getUnique(inst);
+    auto& inst_patterns = unique_inst_patterns_[unique_inst];
     nodes[inst_idx]
         = std::vector<std::unique_ptr<FlexDPNode>>(inst_patterns.size());
     for (int acc_pattern_idx = 0; acc_pattern_idx < (int) inst_patterns.size();
@@ -257,52 +262,50 @@ void FlexPA::genInstRowPatternCommit(
     const std::vector<frInst*>& insts)
 {
   const bool is_debug_mode = false;
-  FlexDPNode* curr_node = nodes[insts.size()][0].get();
-  int inst_cnt = insts.size();
+
+  const FlexDPNode* source_node = nodes[insts.size() + 1][0].get();
+  const FlexDPNode* sink_node = nodes[insts.size()][0].get();
+
+  FlexDPNode* curr_node = sink_node->getPrevNode();
   std::vector<int> inst_access_pattern_idx(insts.size(), -1);
-  while (curr_node->hasPrevNode()) {
+  while (curr_node != source_node) {
+    if (!curr_node) {
+      std::string inst_names;
+      for (frInst* inst : insts) {
+        inst_names += '\n' + inst->getName();
+      }
+      logger_->error(DRT,
+                     85,
+                     "Valid access pattern combination not found for {}",
+                     inst_names);
+    }
+
     // non-virtual node
-    if (inst_cnt != (int) insts.size()) {
-      auto [curr_inst_idx, curr_acc_patterns_idx] = curr_node->getIdx();
-      inst_access_pattern_idx[curr_inst_idx] = curr_acc_patterns_idx;
+    auto [curr_inst_idx, curr_acc_patterns_idx] = curr_node->getIdx();
+    inst_access_pattern_idx[curr_inst_idx] = curr_acc_patterns_idx;
 
-      auto& inst = insts[curr_inst_idx];
-      int access_point_idx = 0;
-      const int unique_inst_idx = unique_insts_.getIndex(inst);
-      auto access_pattern
-          = unique_inst_patterns_[unique_inst_idx][curr_acc_patterns_idx].get();
-      auto& access_points = access_pattern->getPattern();
+    frInst* inst = insts[curr_inst_idx];
+    int access_point_idx = 0;
+    frInst* unique_inst = unique_insts_.getUnique(inst);
+    auto access_pattern
+        = unique_inst_patterns_[unique_inst][curr_acc_patterns_idx].get();
+    auto& access_points = access_pattern->getPattern();
 
-      // update inst_term ap
-      for (auto& inst_term : inst->getInstTerms()) {
-        if (isSkipInstTerm(inst_term.get())) {
-          continue;
-        }
+    // update inst_term ap
+    for (auto& inst_term : inst->getInstTerms()) {
+      if (isSkipInstTerm(inst_term.get())) {
+        continue;
+      }
 
-        int pin_idx = 0;
-        // to avoid unused variable warning in GCC
-        for (int i = 0; i < (int) (inst_term->getTerm()->getPins().size());
-             i++) {
-          auto& access_point = access_points[access_point_idx];
-          inst_term->setAccessPoint(pin_idx, access_point);
-          pin_idx++;
-          access_point_idx++;
-        }
+      // to avoid unused variable warning in GCC
+      for (int pin_idx = 0; pin_idx < inst_term->getTerm()->getPins().size();
+           pin_idx++) {
+        frAccessPoint* access_point = access_points[access_point_idx];
+        inst_term->setAccessPoint(pin_idx, access_point);
+        access_point_idx++;
       }
     }
     curr_node = curr_node->getPrevNode();
-    inst_cnt--;
-  }
-
-  if (inst_cnt != -1) {
-    std::string inst_names;
-    for (frInst* inst : insts) {
-      inst_names += '\n' + inst->getName();
-    }
-    logger_->error(DRT,
-                   85,
-                   "Valid access pattern combination not found for {}",
-                   inst_names);
   }
 
   if (is_debug_mode) {
@@ -327,9 +330,9 @@ void FlexPA::genInstRowPatternPrint(
       // print debug information
       auto& inst = insts[curr_inst_idx];
       int access_point_idx = 0;
-      const int unique_inst_idx = unique_insts_.getIndex(inst);
+      auto unique_inst = unique_insts_.getUnique(inst);
       auto access_pattern
-          = unique_inst_patterns_[unique_inst_idx][curr_acc_pattern_idx].get();
+          = unique_inst_patterns_[unique_inst][curr_acc_pattern_idx].get();
       auto& access_points = access_pattern->getPattern();
 
       for (auto& inst_term : inst->getInstTerms()) {
@@ -384,13 +387,13 @@ int FlexPA::getEdgeCost(FlexDPNode* prev_node,
   std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
   // push the vias from prev inst access pattern and curr inst access pattern
   const auto prev_inst = insts[prev_inst_idx];
-  const auto prev_unique_inst_idx = unique_insts_.getIndex(prev_inst);
+  const auto prev_unique_inst = unique_insts_.getUnique(prev_inst);
   const auto curr_inst = insts[curr_inst_idx];
-  const auto curr_unique_inst_idx = unique_insts_.getIndex(curr_inst);
+  const auto curr_unique_inst = unique_insts_.getUnique(curr_inst);
   const auto prev_pin_access_pattern
-      = unique_inst_patterns_[prev_unique_inst_idx][prev_acc_pattern_idx].get();
+      = unique_inst_patterns_[prev_unique_inst][prev_acc_pattern_idx].get();
   const auto curr_pin_access_pattern
-      = unique_inst_patterns_[curr_unique_inst_idx][curr_acc_pattern_idx].get();
+      = unique_inst_patterns_[curr_unique_inst][curr_acc_pattern_idx].get();
   addAccessPatternObj(
       prev_inst, prev_pin_access_pattern, objs, temp_vias, true);
   addAccessPatternObj(

@@ -1,37 +1,5 @@
-############################################################################
-##
-## Copyright (c) 2022, The Regents of the University of California
-## All rights reserved.
-##
-## BSD 3-Clause License
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
 
 sta::define_cmd_args "read_upf" { [-file file] }
 proc read_upf { args } {
@@ -54,7 +22,7 @@ proc write_upf { args } {
 #
 # Arguments:
 #
-# - elements: list of module paths that belong to this domain OR '*' for top domain
+# - elements: list of module paths that belong to this domain OR '.' for top domain
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
@@ -204,8 +172,8 @@ proc set_isolation { args } {
   set applies_to ""
   set clamp_value ""
   set isolation_signal ""
-  set isolation_sense "high"
-  set location "self"
+  set isolation_sense ""
+  set location ""
   set update 0
 
   if { ![info exists keys(-domain)] } {
@@ -225,16 +193,19 @@ proc set_isolation { args } {
     set isolation_signal $keys(-isolation_signal)
   }
 
+  if { [info exists flags(-update)] } {
+    set update 1
+  } else {
+    set isolation_sense "high"
+    set location "self"
+  }
+
   if { [info exists keys(-isolation_sense)] } {
     set isolation_sense $keys(-isolation_sense)
   }
 
   if { [info exists keys(-location)] } {
     set location $keys(-location)
-  }
-
-  if { [info exists flags(-update)] } {
-    set update 1
   }
 
   upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value \
@@ -248,11 +219,13 @@ proc set_isolation { args } {
 # - domain: power domain
 # - strategy: isolation strategy name
 # - lib_cells: list of lib cells that could be used
+# - interface_implementation_name: for compatibility only. OpenRoad doesn't use it.
 
 sta::define_cmd_args "use_interface_cell" { \
-    [-domain domain] \
-    [-strategy strategy] \
-    [-lib_cells lib_cells]
+    -domain domain \
+    -strategy strategy \
+    -lib_cells lib_cells \
+    interface_implementation_name
 }
 proc use_interface_cell { args } {
   upf::check_block_exists
@@ -260,7 +233,7 @@ proc use_interface_cell { args } {
   sta::parse_key_args "use_interface_cell" args \
     keys {-domain -strategy -lib_cells} flags {}
 
-  sta::check_argc_eq0 "use_interface_cell" $args
+  sta::check_argc_eq1 "use_interface_cell" $args
 
   set domain ""
   set strategy ""
@@ -268,18 +241,26 @@ proc use_interface_cell { args } {
 
   if { [info exists keys(-domain)] } {
     set domain $keys(-domain)
+  } else {
+    utl::error UPF 75 "-domain is required for use_interface_cell"
   }
 
   if { [info exists keys(-strategy)] } {
     set strategy $keys(-strategy)
+  } else {
+    utl::error UPF 76 "-strategy is required for use_interface_cell"
   }
 
   if { [info exists keys(-lib_cells)] } {
     set lib_cells $keys(-lib_cells)
+  } else {
+    utl::error UPF 77 "-lib_cells is required for use_interface_cell"
   }
 
-  foreach {cell} $lib_cells {
-    upf::use_interface_cell_cmd $domain $strategy $cell
+  foreach {strat} $strategy {
+    foreach {cell} $lib_cells {
+      upf::use_interface_cell_cmd $domain $strat $cell
+    }
   }
 }
 

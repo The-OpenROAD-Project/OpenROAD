@@ -5,7 +5,6 @@ or_integration_tests(
     bterm_hier_create
     check_routing_tracks
     create_sboxes
-    db_read_write
     def_parser
     design_is_routed1
     design_is_routed2
@@ -36,9 +35,10 @@ or_integration_tests(
     read_def58
     read_lef
     read_zipped
-    replace_design1
-    replace_design2
-    replace_design3
+    replace_hier_mod1
+    replace_hier_mod2
+    replace_hier_mod3
+    replace_hier_mod4
     rounding
     row_settings
     sky130hd_multi_patterned
@@ -53,7 +53,6 @@ or_integration_tests(
     cpp_tests
     dump_netlists
     dump_netlists_withfill
-    parser_unit_test
     test_block
     test_bterm
     test_destroy

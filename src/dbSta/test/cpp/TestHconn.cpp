@@ -8,12 +8,14 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -303,6 +305,7 @@ class TestHconn : public ::testing::Test
     sta_->postReadDef(block);
 
     root_mod = dbModule::create(block, "root_mod");
+
     // The bterms are created below during wiring
     // Note a bterm without a parent is a root bterm.
 
@@ -314,8 +317,10 @@ class TestHconn : public ::testing::Test
     inv1_mod_inst
         = dbModInst::create(root_mod, inv1_mod_master, "inv1_mod_inst");
 
-    inv1_mod_inst_i0_miterm = dbModITerm::create(inv1_mod_inst, "i0");
-    inv1_mod_inst_o0_miterm = dbModITerm::create(inv1_mod_inst, "o0");
+    inv1_mod_inst_i0_miterm
+        = dbModITerm::create(inv1_mod_inst, "i0", inv1_mod_i0_port);
+    inv1_mod_inst_o0_miterm
+        = dbModITerm::create(inv1_mod_inst, "o0", inv1_mod_o0_port);
     // correlate the iterms and bterms
     inv1_mod_inst_i0_miterm->setChildModBTerm(inv1_mod_i0_port);
     inv1_mod_i0_port->setParentModITerm(inv1_mod_inst_i0_miterm);
@@ -860,8 +865,14 @@ TEST_F(TestHconn, ConnectionMade)
   //  std::stringstream str_str_initial;
   //  DbStrDebugHierarchy(block, str_str_initial);
   //  printf("The initial design: %s\n", str_str_initial.str().c_str());
+
+  // ECO test: get initial state before we start modifying
+  // the design. Then at end we undo everything and
+  // validate initial state preserved
+
   size_t initial_db_net_count = block->getNets().size();
   size_t initial_mod_net_count = block->getModNets().size();
+  odb::dbDatabase::beginEco(block);
 
   //
   //
@@ -944,8 +955,11 @@ TEST_F(TestHconn, ConnectionMade)
   //
   std::string flat_net_name = inv1_2->getName() + inv4_4_ip->getName('/');
   std::string hier_net_name = "test_hier_" + flat_net_name;
+
   dbNet* flat_net = dbNet::create(block, flat_net_name.c_str(), false);
+
   inv1_2_inst_op0->connect(flat_net);
+
   inv4_4_ip->connect(flat_net);
 
   //
@@ -995,13 +1009,52 @@ TEST_F(TestHconn, ConnectionMade)
     }
   }
 
+  // Get the final design state statistics
+
   size_t final_db_net_count = block->getNets().size();
   size_t final_mod_net_count = block->getModNets().size();
 
   EXPECT_EQ(initial_db_net_count, 6);
   EXPECT_EQ(initial_mod_net_count, 23);
-  EXPECT_EQ(final_mod_net_count, 27);
+  EXPECT_EQ(final_mod_net_count, 26);
   EXPECT_EQ(final_db_net_count, 7);
+
+  //
+  // Journalling test.
+  // Undo everything and check initial state preserved
+  //
+  odb::dbDatabase::endEco(block);
+  odb::dbDatabase::undoEco(block);
+
+  size_t restored_db_net_count = block->getNets().size();
+  size_t restored_mod_net_count = block->getModNets().size();
+
+  EXPECT_EQ(restored_mod_net_count, initial_mod_net_count);
+  EXPECT_EQ(restored_db_net_count, initial_db_net_count);
+
+  // Test deletion of a dbModInst
+  size_t num_mod_insts_before_delete = block->getModInsts().size();
+  size_t num_mod_iterms_before_delete = block->getModITerms().size();
+  dbModInst::destroy(inv1_mod_inst);
+  size_t num_mod_insts_after_delete = block->getModInsts().size();
+  size_t num_mod_iterms_after_delete = block->getModITerms().size();
+
+  // Test deletion of a dbModule
+  size_t num_mods_before_delete = block->getModules().size();
+  size_t num_mod_bterms_before_delete = block->getModBTerms().size();
+  dbModule::destroy(inv1_mod_master);
+  size_t num_mods_after_delete = block->getModules().size();
+  size_t num_mod_bterms_after_delete = block->getModBTerms().size();
+
+  // we have killed one module instance
+  EXPECT_EQ((num_mods_before_delete - num_mods_after_delete), 1);
+  // we have killed one module
+  EXPECT_EQ((num_mod_insts_before_delete - num_mod_insts_after_delete), 1);
+  // we are deleting an inverter, so expect to delete 2 ports
+  EXPECT_EQ((num_mod_bterms_before_delete - num_mod_bterms_after_delete), 2);
+  // and the number of moditerms reduced should be the same (2)
+  EXPECT_EQ((num_mod_iterms_before_delete - num_mod_iterms_after_delete),
+            (num_mod_bterms_before_delete - num_mod_bterms_after_delete));
 }
 
 }  // namespace odb

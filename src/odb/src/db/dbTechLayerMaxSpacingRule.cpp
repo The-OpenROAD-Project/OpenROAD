@@ -1,40 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerMaxSpacingRule.h"
 
+#include <string>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -61,39 +33,9 @@ bool _dbTechLayerMaxSpacingRule::operator<(
   return true;
 }
 
-void _dbTechLayerMaxSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerMaxSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(cut_class_);
-  DIFF_FIELD(max_spacing_);
-  DIFF_END
-}
-
-void _dbTechLayerMaxSpacingRule::out(dbDiff& diff,
-                                     char side,
-                                     const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(cut_class_);
-  DIFF_OUT_FIELD(max_spacing_);
-
-  DIFF_END
-}
-
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
 {
   max_spacing_ = 0;
-}
-
-_dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(
-    _dbDatabase* db,
-    const _dbTechLayerMaxSpacingRule& r)
-{
-  cut_class_ = r.cut_class_;
-  max_spacing_ = r.max_spacing_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMaxSpacingRule& obj)
@@ -108,6 +50,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
   stream << obj.cut_class_;
   stream << obj.max_spacing_;
   return stream;
+}
+
+void _dbTechLayerMaxSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["cut_class"].add(cut_class_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

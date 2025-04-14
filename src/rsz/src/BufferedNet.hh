@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -47,9 +15,6 @@
 #include "utl/Logger.h"
 
 namespace rsz {
-
-using std::array;
-using std::string;
 
 using utl::Logger;
 
@@ -69,10 +34,11 @@ using sta::Unit;
 using sta::Units;
 
 class Resizer;
+class RepairSetup;
 
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using Requireds = array<Required, RiseFall::index_count>;
+using Requireds = std::array<Required, RiseFall::index_count>;
 
 enum class BufferedNetType
 {
@@ -114,7 +80,7 @@ class BufferedNet
               const BufferedNetPtr& ref,
               const Corner* corner,
               const Resizer* resizer);
-  string to_string(const Resizer* resizer) const;
+  std::string to_string(const Resizer* resizer) const;
   void reportTree(const Resizer* resizer) const;
   void reportTree(int level, const Resizer* resizer) const;
   BufferedNetType type() const { return type_; }
@@ -153,13 +119,25 @@ class BufferedNet
   int maxLoadWireLength() const;
 
   // Rebuffer
-  Required required(const StaState* sta) const;
+  const PathRef& arrivalPath() const { return arrival_path_; }
   const PathRef& requiredPath() const { return required_path_; }
+  Delay slack(const StaState* sta) const;
   void setRequiredPath(const PathRef& path_ref);
+  void setArrivalPath(const PathRef& path_ref);
+
   Delay requiredDelay() const { return required_delay_; }
   void setRequiredDelay(Delay delay);
+
+  Delay delay() const { return delay_; }
+  void setDelay(Delay delay);
+
+  Delay arrivalDelay() const { return arrival_delay_; }
+  void setArrivalDelay(Delay delay);
+
   // Downstream buffer count.
   int bufferCount() const;
+
+  float area() const { return area_; }
 
   static constexpr int null_layer = -1;
 
@@ -185,8 +163,18 @@ class BufferedNet
   // Rebuffer annotations
   // PathRef for worst required path at load.
   PathRef required_path_;
+  // PathRef for the corresponding arrival at driver pin.
+  PathRef arrival_path_;
   // Max delay from here to the loads.
   Delay required_delay_;
+  // Area of buffers on the buffer tree looking dowsmtrem from here.
+  float area_;
+
+  // Computed delay of the buffer/wire
+  Delay delay_ = 0;
+
+  // Delay from driver pin to here;
+  Delay arrival_delay_ = 0;
 };
 
 }  // namespace rsz

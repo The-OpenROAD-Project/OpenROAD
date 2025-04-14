@@ -1,6 +1,10 @@
 # Helper functions common to multiple regressions.
 
-set test_dir [file dirname [file normalize [info script]]]
+if {[info exists ::env(TEST_TMPDIR)]} {
+  set test_dir $::env(TEST_TMPDIR)
+} else {
+  set test_dir [file dirname [file normalize [info script]]]
+}
 set result_dir [file join $test_dir "results"]
 
 proc make_result_file { filename } {

@@ -1,38 +1,21 @@
-/////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2024, Precision Innovations Inc.
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
+
 #include "GuideProcessor.h"
 
 #include <omp.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "db/infra/frTime.h"
 #include "frProfileTask.h"
@@ -702,6 +685,17 @@ void addTouchingGuidesBridges(TrackIntervalsByLayer& intvs, utl::Logger* logger)
   }
 }
 
+std::vector<int> getVisitedIndices(const std::set<int>& indices,
+                                   const std::vector<bool>& visited)
+{
+  std::vector<int> visited_indices;
+  std::copy_if(indices.begin(),
+               indices.end(),
+               std::back_inserter(visited_indices),
+               [&visited](int idx) { return visited[idx]; });
+  return visited_indices;
+}
+
 }  // namespace
 
 bool GuideProcessor::readGuides()
@@ -1240,8 +1234,20 @@ void GuideProcessor::genGuides_split(
                                 rects);
           } else {
             auto curr_idx_it = split_indices.begin();
+            split::addSplitRect(track_idx,
+                                *curr_idx_it,
+                                *curr_idx_it,
+                                layer_num,
+                                is_horizontal,
+                                rects);
             auto prev_idx_it = curr_idx_it++;
             while (curr_idx_it != split_indices.end()) {
+              split::addSplitRect(track_idx,
+                                  *curr_idx_it,
+                                  *curr_idx_it,
+                                  layer_num,
+                                  is_horizontal,
+                                  rects);
               split::addSplitRect(track_idx,
                                   *prev_idx_it,
                                   *curr_idx_it,
@@ -1456,7 +1462,9 @@ GuidePathFinder::GuidePathFinder(
       logger_(logger),
       router_cfg_(router_cfg),
       net_(net),
-      force_feed_through_(force_feed_through)
+      force_feed_through_(force_feed_through),
+      pin_gcell_map_(pin_gcell_map),
+      rects_(rects)
 {
   buildNodeMap(rects, pin_gcell_map);
   constructAdjList();
@@ -1600,17 +1608,25 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 
 void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
 {
+  auto hasVisitedIndices = [this](const Point3D& pt) {
+    if (node_map_.find(pt) == node_map_.end()) {
+      return false;
+    }
+    const auto& indices = getVisitedIndices(node_map_.at(pt), visited_);
+    return !indices.empty();
+  };
   for (auto& [pt, indices] : node_map_) {
-    std::vector<int> visited_indices;
-    std::copy_if(indices.begin(),
-                 indices.end(),
-                 std::back_inserter(visited_indices),
-                 [this](int idx) { return visited_[idx]; });
+    std::vector<int> visited_indices = getVisitedIndices(indices, visited_);
     const uint num_indices = visited_indices.size();
     if (num_indices == 2) {
       const auto first_idx = *(visited_indices.begin());
       const auto second_idx = *std::prev(visited_indices.end());
       if (!isGuideIdx(first_idx) || !isGuideIdx(second_idx)) {
+        continue;
+      }
+      // Check if there is a connection to upper or lower layer
+      if (hasVisitedIndices(Point3D(pt, pt.z() + 2))
+          || hasVisitedIndices(Point3D(pt, pt.z() - 2))) {
         continue;
       }
       auto& rect1 = rects[first_idx];
@@ -1751,7 +1767,7 @@ GuidePathFinder::getInitSearchQueue()
     for (int i = 0; i < getNodeCount(); i++) {
       if (is_on_path_[i]) {
         if (router_cfg_->ALLOW_PIN_AS_FEEDTHROUGH && isPinIdx(i)) {
-          // penalize feedthrough in normal mode
+          // TODO: set cost to 0
           queue.push({i, prev_idx_[i], 2});
         } else if (isForceFeedThrough() && isPinIdx(i)) {
           // penalize feedthrough in fallback mode
@@ -1790,8 +1806,14 @@ bool GuidePathFinder::traverseGraph()
       // visit other nodes
       for (auto neighbor_idx : adj_list_[curr_wavefront.node_idx]) {
         if (!visited_[neighbor_idx]) {
-          queue.push(
-              {neighbor_idx, curr_wavefront.node_idx, curr_wavefront.cost + 1});
+          int cost = 1;
+          if (!isPinIdx(neighbor_idx)) {
+            cost += rects_[neighbor_idx].getBBox().dx()
+                    + rects_[neighbor_idx].getBBox().dy();
+          }
+          queue.push({neighbor_idx,
+                      curr_wavefront.node_idx,
+                      curr_wavefront.cost + cost});
         }
       }
     }

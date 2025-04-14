@@ -1,41 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbModITerm.h"
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbJournal.h"
 #include "dbModBTerm.h"
@@ -82,52 +52,9 @@ bool _dbModITerm::operator<(const _dbModITerm& rhs) const
   return true;
 }
 
-void _dbModITerm::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbModITerm& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_parent);
-  DIFF_FIELD(_child_modbterm);
-  DIFF_FIELD(_mod_net);
-  DIFF_FIELD(_next_net_moditerm);
-  DIFF_FIELD(_prev_net_moditerm);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_prev_entry);
-  DIFF_END
-}
-
-void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_parent);
-  DIFF_OUT_FIELD(_child_modbterm);
-  DIFF_OUT_FIELD(_mod_net);
-  DIFF_OUT_FIELD(_next_net_moditerm);
-  DIFF_OUT_FIELD(_prev_net_moditerm);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_prev_entry);
-
-  DIFF_END
-}
-
 _dbModITerm::_dbModITerm(_dbDatabase* db)
 {
   _name = nullptr;
-}
-
-_dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
-{
-  _name = r._name;
-  _parent = r._parent;
-  _child_modbterm = r._child_modbterm;
-  _mod_net = r._mod_net;
-  _next_net_moditerm = r._next_net_moditerm;
-  _prev_net_moditerm = r._prev_net_moditerm;
-  _next_entry = r._next_entry;
-  _prev_entry = r._prev_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
@@ -198,6 +125,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
   return stream;
 }
 
+void _dbModITerm::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
+}
+
 _dbModITerm::~_dbModITerm()
 {
   if (_name) {
@@ -262,11 +199,14 @@ dbModBTerm* dbModITerm::getChildModBTerm() const
   return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_child_modbterm);
 }
 
-dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
+dbModITerm* dbModITerm::create(dbModInst* parentInstance,
+                               const char* name,
+                               dbModBTerm* modbterm)
 {
   _dbModInst* parent = (_dbModInst*) parentInstance;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModITerm* moditerm = block->_moditerm_tbl->create();
+
   // defaults
   moditerm->_mod_net = 0;
   moditerm->_next_net_moditerm = 0;
@@ -287,8 +227,20 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::CREATE_OBJECT);
     block->_journal->pushParam(dbModITermObj);
+    block->_journal->pushParam(name);
     block->_journal->pushParam(moditerm->getId());
+    if (modbterm) {
+      block->_journal->pushParam(modbterm->getId());
+    } else {
+      block->_journal->pushParam(0U);
+    }
+    block->_journal->pushParam(parent->getId());
     block->_journal->endAction();
+  }
+
+  if (modbterm) {
+    ((dbModITerm*) moditerm)->setChildModBTerm(modbterm);
+    modbterm->setParentModITerm(((dbModITerm*) moditerm));
   }
 
   return (dbModITerm*) moditerm;
@@ -334,6 +286,15 @@ void dbModITerm::disconnect()
     return;
   }
   _dbModNet* _modnet = _block->_modnet_tbl->getPtr(_moditerm->_mod_net);
+
+  if (_block->_journal) {
+    _block->_journal->beginAction(dbJournal::DISCONNECT_OBJECT);
+    _block->_journal->pushParam(dbModITermObj);
+    _block->_journal->pushParam(_moditerm->getId());
+    _block->_journal->pushParam(_moditerm->_mod_net);
+    _block->_journal->endAction();
+  }
+
   _moditerm->_mod_net = 0;
   _dbModITerm* next_moditerm
       = (_moditerm->_next_net_moditerm != 0)
@@ -351,6 +312,7 @@ void dbModITerm::disconnect()
   if (next_moditerm) {
     next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
   }
+  _moditerm->_mod_net = 0;
 }
 
 dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
@@ -363,8 +325,18 @@ void dbModITerm::destroy(dbModITerm* val)
 {
   _dbModITerm* _moditerm = (_dbModITerm*) val;
   _dbBlock* block = (_dbBlock*) _moditerm->getOwner();
-
   _dbModInst* mod_inst = block->_modinst_tbl->getPtr(_moditerm->_parent);
+
+  if (block->_journal) {
+    block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    block->_journal->pushParam(dbModITermObj);
+    block->_journal->pushParam(val->getName());
+    block->_journal->pushParam(val->getId());
+    block->_journal->pushParam(_moditerm->_child_modbterm);
+    block->_journal->pushParam(_moditerm->_parent);
+    block->_journal->endAction();
+  }
+
   // snip out the mod iterm, from doubly linked list
   uint prev = _moditerm->_prev_entry;
   uint next = _moditerm->_next_entry;
@@ -384,6 +356,15 @@ void dbModITerm::destroy(dbModITerm* val)
   _moditerm->_next_entry = 0;
   mod_inst->_moditerm_hash.erase(val->getName());
   block->_moditerm_tbl->destroy(_moditerm);
+}
+
+dbSet<dbModITerm>::iterator dbModITerm::destroy(
+    dbSet<dbModITerm>::iterator& itr)
+{
+  dbModITerm* moditerm = *itr;
+  dbSet<dbModITerm>::iterator next = ++itr;
+  destroy(moditerm);
+  return next;
 }
 
 // User Code End dbModITermPublicMethods

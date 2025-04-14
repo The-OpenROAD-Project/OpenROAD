@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -39,7 +7,9 @@
 #define MAX_SECTIONS_RECOMMENDED 600
 
 #include <algorithm>
+#include <cstddef>
 #include <numeric>
+#include <set>
 #include <vector>
 
 #include "Netlist.h"
@@ -65,6 +35,16 @@ class Interval
   int begin_;
   int end_;
   int layer_;
+};
+
+struct IntervalHash
+{
+  std::size_t operator()(const Interval& interval) const;
+};
+
+struct RectHash
+{
+  std::size_t operator()(const Rect& rect) const;
 };
 
 struct TopLayerGrid
@@ -145,15 +125,18 @@ struct Constraint
 };
 
 template <typename T>
-std::vector<size_t> sortIndexes(const std::vector<T>& v)
+std::vector<size_t> sortIndexes(const std::vector<T>& v,
+                                const std::vector<T>& tie_break)
 {
   // initialize original index locations
   std::vector<size_t> idx(v.size());
   std::iota(idx.begin(), idx.end(), 0);
+
   // sort indexes based on comparing values in v
-  std::stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {
-    return v[i1] < v[i2];
-  });
+  std::stable_sort(
+      idx.begin(), idx.end(), [&v, &tie_break](size_t i1, size_t i2) {
+        return std::tie(v[i1], tie_break[i1]) < std::tie(v[i2], tie_break[i2]);
+      });
   return idx;
 }
 

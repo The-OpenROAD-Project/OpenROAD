@@ -1,46 +1,23 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "cts/TritonCTS.h"
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"
@@ -95,6 +72,10 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip->getBlock();
+  options_->addOwner(block);
+
   setupCharacterization();
   findClockRoots();
   populateTritonCTS();
@@ -122,6 +103,7 @@ void TritonCTS::runTritonCts()
   sinkBuffers_.clear();
   regTreeRootBufIndex_ = 0;
   delayBufIndex_ = 0;
+  options_->removeOwner();
 }
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
@@ -567,23 +549,38 @@ void TritonCTS::reportCtsMetrics()
     file << "Total number of Clock Subnets: " << options_->getNumClockSubnets()
          << ".\n";
     file << "Total number of Sinks: " << options_->getNumSinks() << ".\n";
+
+    file << "Buffers used:\n";
+    for (const auto& [master, count] : options_->getBufferCount()) {
+      file << "  " << master->getName() << ": " << count << "\n";
+    }
+    if (!options_->getDummyCount().empty()) {
+      file << "Dummys used:\n";
+      for (const auto& [master, count] : options_->getDummyCount()) {
+        file << "  " << master->getName() << ": " << count << "\n";
+      }
+    }
     file.close();
 
   } else {
-    logger_->info(CTS,
-                  3,
-                  "Total number of Clock Roots: {}.",
-                  options_->getNumClockRoots());
-    logger_->info(CTS,
-                  4,
-                  "Total number of Buffers Inserted: {}.",
-                  options_->getNumBuffersInserted());
-    logger_->info(CTS,
-                  5,
-                  "Total number of Clock Subnets: {}.",
-                  options_->getNumClockSubnets());
-    logger_->info(
-        CTS, 6, "Total number of Sinks: {}.", options_->getNumSinks());
+    logger_->report("Total number of Clock Roots: {}.",
+                    options_->getNumClockRoots());
+    logger_->report("Total number of Buffers Inserted: {}.",
+                    options_->getNumBuffersInserted());
+    logger_->report("Total number of Clock Subnets: {}.",
+                    options_->getNumClockSubnets());
+    logger_->report("Total number of Sinks: {}.", options_->getNumSinks());
+
+    logger_->report("Cells used:");
+    for (const auto& [master, count] : options_->getBufferCount()) {
+      logger_->report("  {}: {}", master->getName(), count);
+    }
+    if (!options_->getDummyCount().empty()) {
+      logger_->report("Dummys used:");
+      for (const auto& [master, count] : options_->getDummyCount()) {
+        logger_->report("  {}: {}", master->getName(), count);
+      }
+    }
   }
 }
 
@@ -1182,7 +1179,7 @@ bool TritonCTS::separateMacroRegSinks(
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
       // Treat clock gaters like macro sink
-      if (hasInsertionDelay(inst, mterm) || !isSink(iterm)) {
+      if (hasInsertionDelay(inst, mterm) || !isSink(iterm) || inst->isBlock()) {
         macroSinks.emplace_back(inst, mterm);
       } else {
         registerSinks.emplace_back(inst, mterm);
@@ -1235,10 +1232,14 @@ Clock TritonCTS::forkRegisterClockNetwork(
   secondNet = odb::dbNet::create(block_, newClockName.c_str());
   secondNet->setSigType(odb::dbSigType::CLOCK);
 
-  odb::dbModule* first_net_module
-      = network_->getNetDriverParentModule(network_->dbToSta(firstNet));
-  odb::dbModule* second_net_module
-      = network_->getNetDriverParentModule(network_->dbToSta(secondNet));
+  sta::Pin* first_pin_driver = nullptr;
+  odb::dbModule* first_net_module = network_->getNetDriverParentModule(
+      network_->dbToSta(firstNet), first_pin_driver);
+  (void) first_pin_driver;
+  sta::Pin* second_pin_driver = nullptr;
+  odb::dbModule* second_net_module = network_->getNetDriverParentModule(
+      network_->dbToSta(secondNet), second_pin_driver);
+  (void) second_pin_driver;
   odb::dbModule* target_module = nullptr;
   if ((first_net_module != nullptr)
       && (first_net_module == second_net_module)) {
@@ -1260,16 +1261,18 @@ Clock TritonCTS::forkRegisterClockNetwork(
                   + clockNet.getSdcName();
   odb::dbInst* clockBuf = odb::dbInst::create(
       block_, master, topBufferName.c_str(), false, target_module);
-  odb::dbITerm* inputTerm = getFirstInput(clockBuf);
-  odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
-  inputTerm->connect(firstNet);
-  outputTerm->connect(secondNet);
 
   // place new clock buffer near center of mass for registers
   odb::Rect bbox = secondNet->getTermBBox();
   clockBuf->setSourceType(odb::dbSourceType::TIMING);
   clockBuf->setLocation(bbox.xCenter(), bbox.yCenter());
   clockBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  // connect root buffer to clock net
+  odb::dbITerm* inputTerm = getFirstInput(clockBuf);
+  odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
+  inputTerm->connect(firstNet);
+  outputTerm->connect(secondNet);
 
   // initialize new clock net
   std::string driver = std::string(clockBuf->getConstName()) + "/"
@@ -1310,8 +1313,10 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   Clock& clockNet = builder->getClock();
   odb::dbNet* topClockNet = clockNet.getNetObj();
   // gets the module for the driver for the net
-  odb::dbModule* top_module
-      = network_->getNetDriverParentModule(network_->dbToSta(topClockNet));
+  sta::Pin* pin_driver = nullptr;
+  odb::dbModule* top_module = network_->getNetDriverParentModule(
+      network_->dbToSta(topClockNet), pin_driver);
+  (void) pin_driver;
 
   disconnectAllSinksFromNet(topClockNet);
 
@@ -2037,7 +2042,7 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
                    dummyCell->name());
   }
   std::string cellName
-      = std::string("clkload") + std::to_string(dummyLoadIndex_++);
+      = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
   dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());
@@ -2118,7 +2123,12 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
   float clkPathArrival = 0.0;
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
-    if (path->clkEdge(openSta_)->transition() != sta::RiseFall::rise()) {
+    const sta::ClockEdge* clock_edge = path->clkEdge(openSta_);
+    if (clock_edge == nullptr) {
+      continue;
+    }
+
+    if (clock_edge->transition() != sta::RiseFall::rise()) {
       // only populate with rising edges
       continue;
     }
@@ -2226,7 +2236,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         odb::dbITerm* outTerm = inst->getFirstOutput();
         if (outTerm) {
           odb::dbNet* outNet = outTerm->getNet();
-          if (outNet) {
+          bool propagate = propagateClock(iterm);
+          if (outNet && propagate) {
             odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
             odb::dbSet<odb::dbITerm>::iterator iter;
             for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
@@ -2241,6 +2252,34 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
       }
     }
   }
+}
+
+bool TritonCTS::propagateClock(odb::dbITerm* input)
+{
+  odb::dbInst* inst = input->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+  if (!libertyCell) {
+    return false;
+  }
+  // Clock tree buffers
+  if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+    return true;
+  }
+  // Combinational components
+  if (!libertyCell->hasSequentials()) {
+    return true;
+  }
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+
+  // Clock Gater / Latch improvised as clock gater
+  if (inputPort) {
+    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+  }
+
+  return false;
 }
 
 // Balance latencies between macro tree and register tree

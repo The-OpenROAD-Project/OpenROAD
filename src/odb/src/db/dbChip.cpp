@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbChip.h"
 
@@ -68,28 +39,6 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   return true;
 }
 
-void _dbChip::differences(dbDiff& diff,
-                          const char* field,
-                          const _dbChip& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_top);
-  DIFF_TABLE_NO_DEEP(_block_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbChip::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_TABLE_NO_DEEP(_block_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbChip - Methods
@@ -106,19 +55,6 @@ _dbChip::_dbChip(_dbDatabase* db)
 
   _name_cache
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbChip::getObjectTable);
-
-  _block_itr = new dbBlockItr(_block_tbl);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-}
-
-_dbChip::_dbChip(_dbDatabase* db, const _dbChip& c) : _top(c._top)
-{
-  _block_tbl = new dbTable<_dbBlock>(db, this, *c._block_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(db, this, *c._prop_tbl);
-
-  _name_cache = new _dbNameCache(db, this, *c._name_cache);
 
   _block_itr = new dbBlockItr(_block_tbl);
 
@@ -209,6 +145,16 @@ void dbChip::destroy(dbChip* chip_)
   dbProperty::destroyProperties(chip);
   db->_chip_tbl->destroy(chip);
   db->_chip = 0;
+}
+
+void _dbChip::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  _block_tbl->collectMemInfo(info.children_["block"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
 }
 
 }  // namespace odb

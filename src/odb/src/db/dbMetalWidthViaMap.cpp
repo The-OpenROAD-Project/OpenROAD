@@ -1,40 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbMetalWidthViaMap.h"
 
+#include <string>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -80,37 +52,6 @@ bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const
   return true;
 }
 
-void _dbMetalWidthViaMap::differences(dbDiff& diff,
-                                      const char* field,
-                                      const _dbMetalWidthViaMap& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(via_cut_class_);
-  DIFF_FIELD(cut_layer_);
-  DIFF_FIELD(below_layer_width_low_);
-  DIFF_FIELD(below_layer_width_high_);
-  DIFF_FIELD(above_layer_width_low_);
-  DIFF_FIELD(above_layer_width_high_);
-  DIFF_FIELD(via_name_);
-  DIFF_FIELD(pg_via_);
-  DIFF_END
-}
-
-void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(via_cut_class_);
-  DIFF_OUT_FIELD(cut_layer_);
-  DIFF_OUT_FIELD(below_layer_width_low_);
-  DIFF_OUT_FIELD(below_layer_width_high_);
-  DIFF_OUT_FIELD(above_layer_width_low_);
-  DIFF_OUT_FIELD(above_layer_width_high_);
-  DIFF_OUT_FIELD(via_name_);
-  DIFF_OUT_FIELD(pg_via_);
-
-  DIFF_END
-}
-
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
 {
   via_cut_class_ = false;
@@ -119,19 +60,6 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
   above_layer_width_low_ = 0;
   above_layer_width_high_ = 0;
   pg_via_ = false;
-}
-
-_dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
-                                         const _dbMetalWidthViaMap& r)
-{
-  via_cut_class_ = r.via_cut_class_;
-  cut_layer_ = r.cut_layer_;
-  below_layer_width_low_ = r.below_layer_width_low_;
-  below_layer_width_high_ = r.below_layer_width_high_;
-  above_layer_width_low_ = r.above_layer_width_low_;
-  above_layer_width_high_ = r.above_layer_width_high_;
-  via_name_ = r.via_name_;
-  pg_via_ = r.pg_via_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
@@ -158,6 +86,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   stream << obj.via_name_;
   stream << obj.pg_via_;
   return stream;
+}
+
+void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["via_name"].add(via_name_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

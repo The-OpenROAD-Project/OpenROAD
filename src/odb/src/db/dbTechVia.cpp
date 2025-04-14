@@ -1,37 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechVia.h"
 
+#include <string>
 #include <vector>
 
 #include "dbBox.h"
@@ -114,48 +86,6 @@ bool _dbTechVia::operator==(const _dbTechVia& rhs) const
   }
 
   return true;
-}
-
-void _dbTechVia::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbTechVia& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._default_via);
-  DIFF_FIELD(_flags._top_of_stack);
-  DIFF_FIELD(_flags._has_params);
-  DIFF_FIELD(_resistance);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_pattern);
-  DIFF_FIELD(_bbox);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(_top);
-  DIFF_FIELD(_bottom);
-  DIFF_FIELD(_non_default_rule);
-  DIFF_FIELD(_generate_rule);
-  DIFF_STRUCT(_via_params);
-  DIFF_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
-}
-
-void _dbTechVia::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._default_via);
-  DIFF_OUT_FIELD(_flags._top_of_stack);
-  DIFF_OUT_FIELD(_flags._has_params);
-  DIFF_OUT_FIELD(_resistance);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_pattern);
-  DIFF_OUT_FIELD(_bbox);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(_top);
-  DIFF_OUT_FIELD(_bottom);
-  DIFF_OUT_FIELD(_non_default_rule);
-  DIFF_OUT_FIELD(_generate_rule);
-  DIFF_OUT_STRUCT(_via_params);
-  DIFF_OUT_FIELD_NO_DEEP(_next_entry);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -530,19 +460,17 @@ dbTechVia* dbTechVia::getTechVia(dbTech* tech_, uint dbid_)
 
 void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
 {
-  int rows = P.getNumCutRows();
-  int cols = P.getNumCutCols();
-  int row;
+  const int rows = P.getNumCutRows();
+  const int cols = P.getNumCutCols();
   int y = 0;
   int maxX = 0;
   int maxY = 0;
   std::vector<Rect> cutRects;
 
-  for (row = 0; row < rows; ++row) {
-    int col;
+  for (int row = 0; row < rows; ++row) {
     int x = 0;
 
-    for (col = 0; col < cols; ++col) {
+    for (int col = 0; col < cols; ++col) {
       maxX = x + P.getXCutSize();
       maxY = y + P.getYCutSize();
       Rect r(x, y, maxX, maxY);
@@ -557,12 +485,10 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
 
   dbTechLayer* cut_layer = P.getCutLayer();
 
-  int dx = maxX / 2;
-  int dy = maxY / 2;
-  std::vector<Rect>::iterator itr;
+  const int dx = maxX / 2;
+  const int dy = maxY / 2;
 
-  for (itr = cutRects.begin(); itr != cutRects.end(); ++itr) {
-    Rect& r = *itr;
+  for (Rect& r : cutRects) {
     r.moveDelta(-dx, -dy);
     r.moveDelta(P.getXOrigin(), P.getYOrigin());
     dbBox::create(
@@ -574,13 +500,13 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
   maxX -= dx;
   maxY -= dy;
 
-  int top_minX
+  const int top_minX
       = minX - P.getXTopEnclosure() + P.getXOrigin() + P.getXTopOffset();
-  int top_minY
+  const int top_minY
       = minY - P.getYTopEnclosure() + P.getYOrigin() + P.getYTopOffset();
-  int top_maxX
+  const int top_maxX
       = maxX + P.getXTopEnclosure() + P.getXOrigin() + P.getXTopOffset();
-  int top_maxY
+  const int top_maxY
       = maxY + P.getYTopEnclosure() + P.getYOrigin() + P.getYTopOffset();
   dbBox::create((dbTechVia*) via,
                 P.getTopLayer(),
@@ -589,13 +515,13 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
                 top_maxX,
                 top_maxY);
 
-  int bot_minX
+  const int bot_minX
       = minX - P.getXBottomEnclosure() + P.getXOrigin() + P.getXBottomOffset();
-  int bot_minY
+  const int bot_minY
       = minY - P.getYBottomEnclosure() + P.getYOrigin() + P.getYBottomOffset();
-  int bot_maxX
+  const int bot_maxX
       = maxX + P.getXBottomEnclosure() + P.getXOrigin() + P.getXBottomOffset();
-  int bot_maxY
+  const int bot_maxY
       = maxY + P.getYBottomEnclosure() + P.getYOrigin() + P.getYBottomOffset();
   dbBox::create((dbTechVia*) via,
                 P.getBottomLayer(),
@@ -603,6 +529,15 @@ void create_via_boxes(_dbTechVia* via, const dbViaParams& P)
                 bot_minY,
                 bot_maxX,
                 bot_maxY);
+}
+
+void _dbTechVia::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["pattern"].add(_pattern);
 }
 
 }  // namespace odb

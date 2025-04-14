@@ -1,43 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbTechLayerMinCutRule.h"
 
 #include <cstdint>
 #include <cstring>
+#include <map>
+#include <string>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
@@ -104,56 +76,6 @@ bool _dbTechLayerMinCutRule::operator<(const _dbTechLayerMinCutRule& rhs) const
   return true;
 }
 
-void _dbTechLayerMinCutRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerMinCutRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.per_cut_class_);
-  DIFF_FIELD(flags_.within_cut_dist_valid);
-  DIFF_FIELD(flags_.from_above_);
-  DIFF_FIELD(flags_.from_below_);
-  DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.area_valid_);
-  DIFF_FIELD(flags_.area_within_dist_valid_);
-  DIFF_FIELD(flags_.same_metal_overlap);
-  DIFF_FIELD(flags_.fully_enclosed_);
-  DIFF_FIELD(num_cuts_);
-  DIFF_FIELD(width_);
-  DIFF_FIELD(within_cut_dist);
-  DIFF_FIELD(length_);
-  DIFF_FIELD(length_within_dist_);
-  DIFF_FIELD(area_);
-  DIFF_FIELD(area_within_dist_);
-  DIFF_END
-}
-
-void _dbTechLayerMinCutRule::out(dbDiff& diff,
-                                 char side,
-                                 const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.per_cut_class_);
-  DIFF_OUT_FIELD(flags_.within_cut_dist_valid);
-  DIFF_OUT_FIELD(flags_.from_above_);
-  DIFF_OUT_FIELD(flags_.from_below_);
-  DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.area_valid_);
-  DIFF_OUT_FIELD(flags_.area_within_dist_valid_);
-  DIFF_OUT_FIELD(flags_.same_metal_overlap);
-  DIFF_OUT_FIELD(flags_.fully_enclosed_);
-  DIFF_OUT_FIELD(num_cuts_);
-  DIFF_OUT_FIELD(width_);
-  DIFF_OUT_FIELD(within_cut_dist);
-  DIFF_OUT_FIELD(length_);
-  DIFF_OUT_FIELD(length_within_dist_);
-  DIFF_OUT_FIELD(area_);
-  DIFF_OUT_FIELD(area_within_dist_);
-
-  DIFF_END
-}
-
 _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
 {
   flags_ = {};
@@ -164,28 +86,6 @@ _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
   length_within_dist_ = 0;
   area_ = 0;
   area_within_dist_ = 0;
-}
-
-_dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db,
-                                               const _dbTechLayerMinCutRule& r)
-{
-  flags_.per_cut_class_ = r.flags_.per_cut_class_;
-  flags_.within_cut_dist_valid = r.flags_.within_cut_dist_valid;
-  flags_.from_above_ = r.flags_.from_above_;
-  flags_.from_below_ = r.flags_.from_below_;
-  flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.area_valid_ = r.flags_.area_valid_;
-  flags_.area_within_dist_valid_ = r.flags_.area_within_dist_valid_;
-  flags_.same_metal_overlap = r.flags_.same_metal_overlap;
-  flags_.fully_enclosed_ = r.flags_.fully_enclosed_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  num_cuts_ = r.num_cuts_;
-  width_ = r.width_;
-  within_cut_dist = r.within_cut_dist;
-  length_ = r.length_;
-  length_within_dist_ = r.length_within_dist_;
-  area_ = r.area_;
-  area_within_dist_ = r.area_within_dist_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
@@ -220,6 +120,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
   stream << obj.area_;
   stream << obj.area_within_dist_;
   return stream;
+}
+
+void _dbTechLayerMinCutRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["cut_class_cuts_map"].add(cut_class_cuts_map_);
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

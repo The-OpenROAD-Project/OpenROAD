@@ -1,43 +1,16 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
 
 #include "SteinerTree.hh"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -57,6 +30,7 @@ using sta::PinSet;
 
 using odb::dbInst;
 using odb::dbMasterType;
+using odb::dbModInst;
 
 ////////////////////////////////////////////////////////////////
 
@@ -207,10 +181,7 @@ double Resizer::wireClkResistance(const Corner* corner) const
   if (wire_clk_res_.empty()) {
     return 0.0;
   }
-  double h_clk_res = wire_clk_res_[corner->index()].h_res;
-  if (h_clk_res > 0.0) {
-    return h_clk_res;
-  }
+
   return (wire_clk_res_[corner->index()].h_res
           + wire_clk_res_[corner->index()].v_res)
          / 2;
@@ -348,6 +319,12 @@ void Resizer::updateParasitics(bool save_guides)
   switch (parasitics_src_) {
     case ParasiticsSrc::placement:
       for (const Net* net : parasitics_invalid_) {
+        //
+        // TODO: remove this check (we expect all to be flat net)
+        //
+        if (!(db_network_->isFlat(net))) {
+          continue;
+        }
         estimateWireParasitic(net);
       }
       parasitics_invalid_.clear();
@@ -420,14 +397,25 @@ void Resizer::estimateWireParasitics(SpefWriter* spef_writer)
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
     sta_->setParasiticAnalysisPts(true);
+    LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
+    // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
+    // This is because netlist changes may invalidate cached net driver pin data
+    network_->Network::clear();
+    network_->setDefaultLibertyLibrary(default_lib);
 
-    NetIterator* net_iter = network_->netIterator(network_->topInstance());
-    while (net_iter->hasNext()) {
-      Net* net = net_iter->next();
-      estimateWireParasitic(net, spef_writer);
+    // Hierarchy flow change
+    // go through all nets, not just the ones in the instance
+    // Get the net set from the block
+    // old code:
+    // NetIterator* net_iter = network_->netIterator(network_->topInstance());
+    // Note that in hierarchy mode, this will not present all the nets,
+    // which is intent here. So get all flat nets from block
+    //
+    odb::dbSet<odb::dbNet> nets = block_->getNets();
+    for (auto db_net : nets) {
+      Net* cur_net = db_network_->dbToSta(db_net);
+      estimateWireParasitic(cur_net, spef_writer);
     }
-    delete net_iter;
-
     parasitics_src_ = ParasiticsSrc::placement;
     parasitics_invalid_.clear();
   }
@@ -686,6 +674,7 @@ void Resizer::net2Pins(const Net* net, const Pin*& pin1, const Pin*& pin2) const
 {
   pin1 = nullptr;
   pin2 = nullptr;
+
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   if (pin_iter->hasNext()) {
     pin1 = pin_iter->next();
@@ -704,7 +693,12 @@ bool Resizer::isPadPin(const Pin* pin) const
 
 bool Resizer::isPad(const Instance* inst) const
 {
-  dbInst* db_inst = db_network_->staToDb(inst);
+  dbInst* db_inst;
+  dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  if (mod_inst) {
+    return false;
+  }
   const auto type = db_inst->getMaster()->getType().getValue();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -756,7 +750,7 @@ bool Resizer::isPad(const Instance* inst) const
 
 void Resizer::parasiticsInvalid(const Net* net)
 {
-  odb::dbNet* db_net = db_network_->flatNet(net);
+  dbNet* db_net = db_network_->flatNet(net);
   if (haveEstimatedParasitics()) {
     debugPrint(logger_,
                RSZ,

@@ -1,40 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbGDSARef.h"
 
+#include <cstdint>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -74,47 +49,10 @@ bool _dbGDSARef::operator<(const _dbGDSARef& rhs) const
   return true;
 }
 
-void _dbGDSARef::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbGDSARef& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_origin);
-  DIFF_FIELD(_lr);
-  DIFF_FIELD(_ul);
-  DIFF_FIELD(_num_rows);
-  DIFF_FIELD(_num_columns);
-  DIFF_FIELD(_structure);
-  DIFF_END
-}
-
-void _dbGDSARef::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_origin);
-  DIFF_OUT_FIELD(_lr);
-  DIFF_OUT_FIELD(_ul);
-  DIFF_OUT_FIELD(_num_rows);
-  DIFF_OUT_FIELD(_num_columns);
-  DIFF_OUT_FIELD(_structure);
-
-  DIFF_END
-}
-
 _dbGDSARef::_dbGDSARef(_dbDatabase* db)
 {
   _num_rows = 1;
   _num_columns = 1;
-}
-
-_dbGDSARef::_dbGDSARef(_dbDatabase* db, const _dbGDSARef& r)
-{
-  _origin = r._origin;
-  _lr = r._lr;
-  _ul = r._ul;
-  _num_rows = r._num_rows;
-  _num_columns = r._num_columns;
-  _structure = r._structure;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSARef& obj)
@@ -141,6 +79,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbGDSARef& obj)
   stream << obj._num_columns;
   stream << obj._structure;
   return stream;
+}
+
+void _dbGDSARef::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["propattr"].add(_propattr);
+  for (auto& [i, s] : _propattr) {
+    info.children_["propattr"].add(s);
+  }
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

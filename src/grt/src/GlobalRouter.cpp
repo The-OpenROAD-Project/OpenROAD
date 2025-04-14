@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "grt/GlobalRouter.h"
 
@@ -41,8 +9,12 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <istream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
 #include <set>
 #include <sstream>
@@ -59,6 +31,7 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -68,7 +41,6 @@
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -456,6 +428,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                                      diode_mterm,
                                                      ratio_margin,
                                                      num_threads);
+      updateDbCongestion();
     }
     if (violations) {
       IncrementalGRoute incr_groute(this, block_);
@@ -523,7 +496,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
+void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -1674,6 +1647,12 @@ bool GlobalRouter::hasAvailableResources(bool is_horizontal,
   return cap > 0;
 }
 
+// Find the position of the middle of a GCell closest to the position
+odb::Point GlobalRouter::getPositionOnGrid(const odb::Point& real_position)
+{
+  return grid_->getPositionOnGrid(real_position);
+}
+
 void GlobalRouter::updateResources(const int& init_x,
                                    const int& init_y,
                                    const int& final_x,
@@ -1822,9 +1801,11 @@ bool GlobalRouter::isPinReachable(const Pin& pin, const odb::Point& pos_on_grid)
 
   int edge_cap = 0;
   if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    edge_cap
-        = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
-  } else {
+    if (pin_y != 0) {
+      edge_cap
+          = fastroute_->getEdgeCapacity(pin_x, pin_y - 1, pin_x, pin_y, layer);
+    }
+  } else if (pin_x != 0) {
     edge_cap
         = fastroute_->getEdgeCapacity(pin_x - 1, pin_y, pin_x, pin_y, layer);
   }
@@ -2041,6 +2022,8 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  nets_to_route_.clear();
+  db_net_map_.clear();
   if (getMaxRoutingLayer() == -1) {
     setMaxRoutingLayer(computeMaxRoutingLayer());
   }
@@ -2431,6 +2414,10 @@ void GlobalRouter::saveGuides()
   int offset_y = grid_origin_.y();
 
   bool guide_is_congested = is_congested_ && !allow_congestion_;
+
+  int net_with_jumpers, total_jumpers;
+  net_with_jumpers = 0;
+  total_jumpers = 0;
   for (odb::dbNet* db_net : block_->getNets()) {
     auto iter = routes_.find(db_net);
     if (iter == routes_.end()) {
@@ -2439,6 +2426,7 @@ void GlobalRouter::saveGuides()
     Net* net = db_net_map_[db_net];
     GRoute& route = iter->second;
 
+    int jumper_count = 0;
     if (!route.empty()) {
       db_net->clearGuides();
       for (GSegment& segment : route) {
@@ -2487,14 +2475,26 @@ void GlobalRouter::saveGuides()
               db_net, layer, layer, box, guide_is_congested);
           if (is_jumper) {
             guide->setIsJumper(true);
+            jumper_count++;
           }
         }
       }
+    }
+    if (jumper_count) {
+      total_jumpers += jumper_count;
+      net_with_jumpers++;
     }
     auto dbGuides = db_net->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible())
       dbGuides.reverse();
   }
+  debugPrint(logger_,
+             GRT,
+             "jumper_insertion",
+             2,
+             "Remaining jumpers {} in {} repaired nets after GRT",
+             total_jumpers,
+             net_with_jumpers);
 }
 
 void GlobalRouter::writeSegments(const char* file_name)
@@ -2995,6 +2995,8 @@ void GlobalRouter::computeWirelength()
   for (auto& net_route : routes_) {
     total_wirelength += computeNetWirelength(net_route.first);
   }
+  logger_->metric("global_route__wirelength",
+                  total_wirelength / block_->getDefUnits());
   if (verbose_)
     logger_->info(GRT,
                   18,
@@ -3673,7 +3675,6 @@ void GlobalRouter::makeBtermPins(Net* net,
     int posX, posY;
     bterm->getFirstPinLocation(posX, posY);
 
-    std::vector<odb::dbTechLayer*> pin_layers;
     std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
 
     const std::string pin_name = bterm->getConstName();
@@ -3713,6 +3714,8 @@ void GlobalRouter::makeBtermPins(Net* net,
       }
     }
 
+    std::vector<odb::dbTechLayer*> pin_layers;
+    pin_layers.reserve(pin_boxes.size());
     for (auto& layer_boxes : pin_boxes) {
       pin_layers.push_back(layer_boxes.first);
     }
@@ -4228,11 +4231,17 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
     odb::Point pt1(seg.init_x, seg.init_y);
     odb::Point pt2(seg.final_x, seg.final_y);
     int layer = std::max(seg.init_layer, seg.final_layer);
-    if (pt1 == pin_pos && layer > top_layer) {
-      top_layer = layer;
+    if (pt1 == pin_pos || pt2 == pin_pos) {
+      top_layer = std::max(top_layer, layer);
     }
   }
 
+  if (top_layer == -1) {
+    logger_->error(GRT,
+                   703,
+                   "No segment was found in the routing that connects to the "
+                   "pin position.");
+  }
   return top_layer;
 }
 

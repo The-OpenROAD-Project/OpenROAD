@@ -1,35 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+
+#include "gseq.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -157,7 +131,7 @@ uint extMeasure::createNetSingleWire(char* dirName,
   ll[!_dir] = ll[!_dir] + w_layout / 2;
 
   char left, right;
-  _block->getBusDelimeters(left, right);
+  _block->getBusDelimiters(left, right);
 
   char netName[1024];
   sprintf(netName, "%s%c%d%c", dirName, left, idCnt, right);
@@ -243,7 +217,7 @@ uint extMeasure::createDiagNetSingleWire(char* dirName,
   }
 
   char left, right;
-  _block->getBusDelimeters(left, right);
+  _block->getBusDelimiters(left, right);
 
   char netName[1024];
   sprintf(netName, "%s%c%d%c", dirName, left, idCnt, right);
@@ -769,34 +743,7 @@ uint extMeasure::swap_coords(uint initCnt,
 
 uint extMeasure::getOverlapSeq(uint met, SEQ* s, Ath__array1D<SEQ*>* resTable)
 {
-  uint len1 = 0;
-
-  if (!_rotatedGs) {
-    len1 = _pixelTable->get_seq(s->_ll, s->_ur, _dir, met, resTable);
-  } else {
-    if (_dir > 0) {  // extracting horizontal segments
-      len1 = _pixelTable->get_seq(s->_ll, s->_ur, _dir, met, resTable);
-    } else {
-      int sll[2];
-      int sur[2];
-
-      sll[0] = s->_ll[1];
-      sll[1] = s->_ll[0];
-      sur[0] = s->_ur[1];
-      sur[1] = s->_ur[0];
-
-      uint initCnt = resTable->getCnt();
-
-      len1 = _pixelTable->get_seq(sll, sur, !_dir, met, resTable);
-
-      swap_coords(initCnt, resTable->getCnt(), resTable);
-    }
-  }
-
-  if ((len1 >= 0) && (len1 <= _len)) {
-    return len1;
-  }
-  return 0;
+  return getOverlapSeq(met, s->_ll, s->_ur, resTable);
 }
 
 uint extMeasure::getOverlapSeq(uint met,
@@ -807,10 +754,10 @@ uint extMeasure::getOverlapSeq(uint met,
   uint len1 = 0;
 
   if (!_rotatedGs) {
-    len1 = _pixelTable->get_seq(ll, ur, _dir, met, resTable);
+    len1 = _pixelTable->getSeq(ll, ur, _dir, met, resTable);
   } else {
     if (_dir > 0) {  // extracting horizontal segments
-      len1 = _pixelTable->get_seq(ll, ur, _dir, met, resTable);
+      len1 = _pixelTable->getSeq(ll, ur, _dir, met, resTable);
     } else {
       int sll[2];
       int sur[2];
@@ -822,7 +769,7 @@ uint extMeasure::getOverlapSeq(uint met,
 
       uint initCnt = resTable->getCnt();
 
-      len1 = _pixelTable->get_seq(sll, sur, !_dir, met, resTable);
+      len1 = _pixelTable->getSeq(sll, sur, !_dir, met, resTable);
 
       swap_coords(initCnt, resTable->getCnt(), resTable);
     }

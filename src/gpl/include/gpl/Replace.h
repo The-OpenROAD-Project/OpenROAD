@@ -1,35 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -69,6 +39,9 @@ class TimingBase;
 class InitialPlace;
 class NesterovPlace;
 
+using Cluster = std::vector<odb::dbInst*>;
+using Clusters = std::vector<Cluster>;
+
 class Replace
 {
  public:
@@ -86,6 +59,7 @@ class Replace
   void doInitialPlace(int threads);
   void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
+  void addPlacementCluster(const Cluster& cluster);
   int doNesterovPlace(int threads, int start_iter = 0);
 
   // Initial Place param settings
@@ -140,7 +114,8 @@ class Replace
                 bool draw_bins,
                 bool initial,
                 odb::dbInst* inst,
-                int start_iter);
+                int start_iter,
+                bool update_db);
 
  private:
   bool initNesterovPlace(int threads);
@@ -194,7 +169,7 @@ class Replace
 
   int routabilityMaxInflationIter_ = 4;
 
-  float timingNetWeightMax_ = 1.9;
+  float timingNetWeightMax_ = 5;
   float keepResizeBelowOverflow_ = 0.3;
 
   bool timingDrivenMode_ = true;
@@ -205,6 +180,7 @@ class Replace
   bool disableRevertIfDiverge_ = false;
 
   std::vector<int> timingNetWeightOverflows_;
+  Clusters clusters_;
 
   // temp variable; OpenDB should have these values.
   int padLeft_ = 0;
@@ -216,5 +192,13 @@ class Replace
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
+  bool gui_debug_update_db_every_iteration = false;
 };
+
+inline constexpr const char* format_label_int = "{:27} {:10}";
+inline constexpr const char* format_label_float = "{:27} {:10.4f}";
+inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
+inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
+inline constexpr const char* format_label_um2_with_delta
+    = "{:27} {:10.3f} um^2 ({:+.2f}%)";
 }  // namespace gpl

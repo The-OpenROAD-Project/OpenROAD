@@ -1,37 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechNonDefaultRule.h"
 
+#include <string>
 #include <vector>
 
 #include "dbBlock.h"
@@ -169,44 +141,6 @@ bool _dbTechNonDefaultRule::operator==(const _dbTechNonDefaultRule& rhs) const
   return true;
 }
 
-void _dbTechNonDefaultRule::differences(dbDiff& diff,
-                                        const char* field,
-                                        const _dbTechNonDefaultRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._hard_spacing);
-  DIFF_FIELD(_flags._block_rule);
-  DIFF_FIELD(_name);
-  DIFF_VECTOR(_layer_rules);
-  DIFF_VECTOR(_vias);
-  DIFF_VECTOR(_samenet_rules);
-  DIFF_MATRIX(_samenet_matrix);
-  DIFF_VECTOR(_use_vias);
-  DIFF_VECTOR(_use_rules);
-  DIFF_VECTOR(_cut_layers);
-  DIFF_VECTOR(_min_cuts);
-  DIFF_END
-}
-
-void _dbTechNonDefaultRule::out(dbDiff& diff,
-                                char side,
-                                const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._hard_spacing);
-  DIFF_OUT_FIELD(_flags._block_rule);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_VECTOR(_layer_rules);
-  DIFF_OUT_VECTOR(_vias);
-  DIFF_OUT_VECTOR(_samenet_rules);
-  DIFF_OUT_MATRIX(_samenet_matrix);
-  DIFF_OUT_VECTOR(_use_vias);
-  DIFF_OUT_VECTOR(_use_rules);
-  DIFF_OUT_VECTOR(_cut_layers);
-  DIFF_OUT_VECTOR(_min_cuts);
-  DIFF_END
-}
-
 _dbTech* _dbTechNonDefaultRule::getTech()
 {
 #if 0  // dead code generates warnings -cherry
@@ -221,6 +155,22 @@ _dbBlock* _dbTechNonDefaultRule::getBlock()
 {
   assert(_flags._block_rule == 1);
   return (_dbBlock*) getOwner();
+}
+
+void _dbTechNonDefaultRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["_layer_rules"].add(_layer_rules);
+  info.children_["_vias"].add(_vias);
+  info.children_["_samenet_rules"].add(_samenet_rules);
+  info.children_["_samenet_matrix"].add(_samenet_matrix);
+  info.children_["_use_vias"].add(_use_vias);
+  info.children_["_use_rules"].add(_use_rules);
+  info.children_["_cut_layers"].add(_cut_layers);
+  info.children_["_min_cuts"].add(_min_cuts);
 }
 
 bool _dbTechNonDefaultRule::operator<(const _dbTechNonDefaultRule& rhs) const
@@ -284,13 +234,8 @@ void dbTechNonDefaultRule::getLayerRules(
 
   layer_rules.clear();
 
-  dbVector<dbId<_dbTechLayerRule>>::iterator itr;
-
-  for (itr = rule->_layer_rules.begin(); itr != rule->_layer_rules.end();
-       ++itr) {
-    dbId<_dbTechLayerRule> id = *itr;
-
-    if (id != 0) {
+  for (const auto& id : rule->_layer_rules) {
+    if (id.isValid()) {
       layer_rules.push_back((dbTechLayerRule*) layer_rule_tbl->getPtr(id));
     }
   }
@@ -300,17 +245,15 @@ void dbTechNonDefaultRule::getVias(std::vector<dbTechVia*>& vias)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
+  vias.clear();
+
   if (rule->_flags._block_rule == 1) {  // not supported on block rules
     return;
   }
 
   _dbTech* tech = rule->getTech();
-  vias.clear();
 
-  dbVector<dbId<_dbTechVia>>::iterator itr;
-
-  for (itr = rule->_vias.begin(); itr != rule->_vias.end(); ++itr) {
-    dbId<_dbTechVia> id = *itr;
+  for (const auto& id : rule->_vias) {
     vias.push_back((dbTechVia*) tech->_via_tbl->getPtr(id));
   }
 }
@@ -342,19 +285,16 @@ void dbTechNonDefaultRule::getSameNetRules(
 {
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) this;
 
+  rules.clear();
+
   if (ndrule->_flags._block_rule == 1) {  // not supported on block rules
     return;
   }
 
   _dbTech* tech = ndrule->getTech();
-  rules.clear();
-  dbVector<dbId<_dbTechSameNetRule>>::iterator itr;
 
-  for (itr = ndrule->_samenet_rules.begin();
-       itr != ndrule->_samenet_rules.end();
-       ++itr) {
-    dbId<_dbTechSameNetRule> r = *itr;
-    rules.push_back((dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(r));
+  for (const auto& id : ndrule->_samenet_rules) {
+    rules.push_back((dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(id));
   }
 }
 
@@ -381,10 +321,7 @@ void dbTechNonDefaultRule::getUseVias(std::vector<dbTechVia*>& vias)
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
   _dbTech* tech = rule->getTech();
 
-  dbVector<dbId<_dbTechVia>>::iterator itr;
-
-  for (itr = rule->_use_vias.begin(); itr != rule->_use_vias.end(); ++itr) {
-    dbId<_dbTechVia> vid = *itr;
+  for (const auto& vid : rule->_use_vias) {
     dbTechVia* via = dbTechVia::getTechVia((dbTech*) tech, vid);
     vias.push_back(via);
   }
@@ -402,32 +339,26 @@ void dbTechNonDefaultRule::getUseViaRules(
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
   _dbTech* tech = rule->getTech();
 
-  dbVector<dbId<_dbTechViaGenerateRule>>::iterator itr;
-
-  for (itr = rule->_use_rules.begin(); itr != rule->_use_rules.end(); ++itr) {
-    dbId<_dbTechViaGenerateRule> rid = *itr;
+  for (const auto& rid : rule->_use_rules) {
     dbTechViaGenerateRule* rule
         = dbTechViaGenerateRule::getTechViaGenerateRule((dbTech*) tech, rid);
     rules.push_back(rule);
   }
 }
 
-void dbTechNonDefaultRule::setMinCuts(dbTechLayer* cut_layer, int count)
+void dbTechNonDefaultRule::setMinCuts(dbTechLayer* cut_layer, const int count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  uint id = cut_layer->getId();
-  dbVector<dbId<_dbTechLayer>>::iterator itr;
+  const uint id = cut_layer->getId();
   uint idx = 0;
 
-  for (itr = rule->_cut_layers.begin(); itr != rule->_cut_layers.end();
-       ++itr, ++idx) {
-    dbId<_dbTechLayer> lid = *itr;
-
+  for (const auto& lid : rule->_cut_layers) {
     if (lid == id) {
       rule->_min_cuts[idx] = count;
       return;
     }
+    ++idx;
   }
 
   rule->_cut_layers.push_back(id);
@@ -438,18 +369,15 @@ bool dbTechNonDefaultRule::getMinCuts(dbTechLayer* cut_layer, int& count)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
 
-  uint id = cut_layer->getId();
-  dbVector<dbId<_dbTechLayer>>::iterator itr;
+  const uint id = cut_layer->getId();
   uint idx = 0;
 
-  for (itr = rule->_cut_layers.begin(); itr != rule->_cut_layers.end();
-       ++itr, ++idx) {
-    dbId<_dbTechLayer> lid = *itr;
-
+  for (const auto& lid : rule->_cut_layers) {
     if (lid == id) {
       count = rule->_min_cuts[idx];
       return true;
     }
+    ++idx;
   }
 
   return false;

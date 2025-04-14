@@ -30,6 +30,7 @@
 #include "lefrSettings.hpp"
 
 #include <cstring>
+#include <string>
 
 #include "lef_parser.hpp"
 
@@ -590,7 +591,7 @@ void lefrSettings::addLef58Type(const char* lef58Type, const char** layerType)
   for (; **layerType; layerType++) {
     std::string typesPair(lef58Type);
 
-    typesPair = typesPair + " " + *layerType;
+    typesPair.append(" ").append(*layerType);
 
     Lef58TypePairs.insert(typesPair);
   }
@@ -602,7 +603,7 @@ std::string lefrSettings::getLayerLef58Types(const char* type) const
   StringSet::const_iterator pairsIter = Lef58TypePairs.begin();
 
   for (; pairsIter != Lef58TypePairs.end(); ++pairsIter) {
-    const std::string pair(*pairsIter);
+    const std::string& pair(*pairsIter);
     int sepIdx = pair.find(' ');
 
     if (pair.substr(sepIdx + 1) != type) {

@@ -1,46 +1,19 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
+#include "util.h"
 
 namespace odb {
 class dbBlock;
@@ -66,7 +39,6 @@ namespace mpl {
 struct BundledNet;
 class Cluster;
 class HardMacro;
-class Metrics;
 struct Rect;
 class SoftMacro;
 class Snapper;
@@ -139,7 +111,6 @@ class HierRTLMP
   void setTargetUtil(float target_util);
   void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
-  void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -147,7 +118,6 @@ class HierRTLMP
   void setDebugSkipSteps(bool skip_steps);
   void setDebugOnlyFinalResult(bool only_final_result);
   void setDebugTargetClusterId(int target_cluster_id);
-  void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
@@ -166,20 +136,17 @@ class HierRTLMP
   void updateMacroOnDb(const HardMacro* hard_macro);
   void commitMacroPlacementToDb();
   void clear();
-  void FDPlacement(std::vector<Rect>& blocks,
-                   const std::vector<BundledNet>& nets,
-                   float outline_width,
-                   float outline_height,
-                   const std::string& file_name);
 
   // Coarse Shaping
   void runCoarseShaping();
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  std::vector<std::pair<float, float>> computeWidthCurves(
+      const std::vector<std::pair<float, float>>& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
-  std::vector<Cluster*> getIOClusters();
+  std::vector<Cluster*> getClustersOfUnplacedIOPins();
   float computePinAccessBlockagesDepth(const std::vector<Cluster*>& io_clusters,
                                        const Rect& die);
   void createPinAccessBlockage(Boundary constraint_boundary,
@@ -195,11 +162,9 @@ class HierRTLMP
                       float target_dead_space);
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
-  void runHierarchicalMacroPlacement(Cluster* parent);
   void adjustMacroBlockageWeight();
-  void reportSAWeights();
-  void runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent);
-  void runEnhancedHierarchicalMacroPlacement(Cluster* parent);
+  void placeChildren(Cluster* parent);
+  void placeChildrenUsingMinimumTargetUtil(Cluster* parent);
 
   void findOverlappingBlockages(std::vector<Rect>& blockages,
                                 std::vector<Rect>& placement_blockages,
@@ -207,6 +172,9 @@ class HierRTLMP
   void computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
                               const Rect& blockage,
                               const Rect& outline);
+  void createFixedTerminals(Cluster* parent,
+                            std::map<std::string, int>& soft_macro_id_map,
+                            std::vector<SoftMacro>& soft_macros);
   void updateChildrenShapesAndLocations(
       Cluster* parent,
       const std::vector<SoftMacro>& shaped_macros,
@@ -247,14 +215,15 @@ class HierRTLMP
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
-  // Bus Planning
-  void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
-                       std::vector<BundledNet>& nets_old);
-  void adjustCongestionWeight();
-
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
+
+  // For debugging
+  template <typename SACore>
+  void printPlacementResult(Cluster* parent,
+                            const Rect& outline,
+                            SACore* sa_core);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -264,16 +233,6 @@ class HierRTLMP
   std::unique_ptr<PhysicalHierarchy> tree_;
 
   std::unique_ptr<ClusteringEngine> clustering_engine_;
-
-  // flag variables
-  const bool dynamic_congestion_weight_flag_ = false;
-  // Our experiments show that for most testcases, turn off bus planning
-  // can generate better results.
-
-  // We recommend that you turn on this flag for technology nodes with very
-  // limited routing layers such as SkyWater130.  But for NanGate45,
-  // ASASP7, you should turn off this option.
-  bool bus_planning_on_ = false;
 
   // Parameters related to macro placement
   std::string report_directory_;
@@ -295,23 +254,23 @@ class HierRTLMP
 
   float pin_access_th_ = 0.1;  // each pin access is modeled as a SoftMacro
   float pin_access_th_orig_ = 0.1;
-  float pin_access_net_width_ratio_
-      = 0.1;  // define the ratio of number of connections
-              // related to IOs to the range of these IO spans
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
-  int snap_layer_ = 4;
+  // For cluster and macro placement.
+  SACoreWeights placement_core_weights_;
 
-  // SA related parameters
-  // weight for different penalty
-  float area_weight_ = 0.1;
-  float outline_weight_ = 1.0;
-  float wirelength_weight_ = 1.0;
-  float guidance_weight_ = 10.0;
-  float fence_weight_ = 10.0;
+  // For generation of shape curves for Mixed / Std Cell clusters
+  // and generation of tilings for Macro clusters.
+  const SACoreWeights shaping_core_weights_{1.0f /* area */,
+                                            1000.0f /* outline */,
+                                            0.0f /* wirelength */,
+                                            0.0f /* guidance */,
+                                            0.0f /* fence */};
+
+  // Soft-Especific Weights
   float boundary_weight_ = 5.0;
-  float notch_weight_ = 1.0;
+  float notch_weight_ = 1.0;  // Used inside Core, but only for Soft.
   float macro_blockage_weight_ = 1.0;
 
   std::map<std::string, Rect> fences_;   // macro_name, fence
@@ -332,12 +291,6 @@ class HierRTLMP
   float exchange_swap_prob_ = 0.2;
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
-
-  // statistics of the design
-  Metrics* metrics_ = nullptr;
-
-  const int bus_net_threshold_ = 32;  // only for bus planning
-  float congestion_weight_ = 0.5;     // for balance timing and congestion
 
   // since we convert from the database unit to the micrometer
   // during calculation, we may loss some accuracy.

@@ -1,38 +1,5 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2019, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
-
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
 
 sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-tap_prefix tap_prefix]\
@@ -79,6 +46,10 @@ proc tapcell { args } {
 
   if { [info exists keys(-endcap_cpp)] } {
     utl::warn TAP 14 "endcap_cpp option is deprecated."
+  }
+
+  if { [info exists flags(-disallow_one_site_gaps)] } {
+    utl::warn TAP 17 "disallow_one_site_gaps option is deprecated."
   }
 
   set dist -1
@@ -198,7 +169,7 @@ proc tapcell { args } {
     $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master \
     $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master \
     $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master \
-    $tapcell_master $dist $disallow_one_site_gaps
+    $tapcell_master $dist
 }
 
 sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\
@@ -398,7 +369,9 @@ proc place_tapcells { args } {
     set master [tap::find_master $keys(-master)]
   }
 
-  tap::insert_tapcells $master $dist
+  tap::insert_tapcells \
+    $master \
+    $dist
 }
 
 namespace eval tap {

@@ -1,44 +1,17 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include "gpl/Replace.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
@@ -81,17 +54,18 @@ class GCell
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
 
-  Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
+
+  std::string name() const;
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
 
-  void setClusteredInstance(const std::vector<Instance*>& insts);
-  void setInstance(Instance* inst);
-  void clearInstances();
-  void setFiller();
+  void updateLocations();
+
+  bool isLocked() const;
+  void lock();
 
   // normal coordinates
   int lx() const;
@@ -131,10 +105,10 @@ class GCell
   float densityScale() const { return densityScale_; }
 
   bool isInstance() const;
-  bool isClusteredInstance() const;
   bool isFiller() const;
   bool isMacroInstance() const;
   bool isStdInstance() const;
+  bool contains(odb::dbInst* db_inst) const;
 
   void print(utl::Logger* logger) const;
 
@@ -566,16 +540,13 @@ class Bin
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
 
-  const int64_t binArea() const;
-  const int64_t nonPlaceArea() const { return nonPlaceArea_; }
-  const int64_t instPlacedArea() const { return instPlacedArea_; }
-  const int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  const int64_t instPlacedAreaUnscaled() const
-  {
-    return instPlacedAreaUnscaled_;
-  }
+  int64_t binArea() const;
+  int64_t nonPlaceArea() const { return nonPlaceArea_; }
+  int64_t instPlacedArea() const { return instPlacedArea_; }
+  int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
-  const int64_t fillerArea() const { return fillerArea_; }
+  int64_t fillerArea() const { return fillerArea_; }
 
  private:
   // index
@@ -773,7 +744,7 @@ class NesterovPlaceVars
   float minPreconditioner = 1.0;            // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
   float referenceHpwl = 446000000;          // refDeltaHpwl
-  float routabilityCheckOverflow = 0.30;
+  float routability_end_overflow = 0.30;
   float keepResizeBelowOverflow = 0.3;
 
   static const int maxRecursionWlCoef = 10;
@@ -781,7 +752,7 @@ class NesterovPlaceVars
 
   bool timingDrivenMode = true;
   int timingDrivenIterCounter = 0;
-  bool routabilityDrivenMode = true;
+  bool routability_driven_mode = true;
   bool disableRevertIfDiverge = false;
 
   bool debug = false;
@@ -790,6 +761,7 @@ class NesterovPlaceVars
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
   int debug_start_iter = 0;
+  bool debug_update_db_every_iteration = false;
 
   void reset();
 };
@@ -802,7 +774,8 @@ class NesterovBaseCommon
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log,
-                     int num_threads);
+                     int num_threads,
+                     const Clusters& clusters);
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
@@ -876,8 +849,10 @@ class NesterovBaseCommon
 
   // TODO do this for each region? Also, manage this properly if other callbacks
   // are implemented.
-  int64_t getDeltaArea() { return deltaArea_; }
-  void resetDeltaArea() { deltaArea_ = 0; }
+  int64_t getDeltaArea() { return delta_area_; }
+  void resetDeltaArea() { delta_area_ = 0; }
+  int64_t getNewGcellsCount() { return new_gcells_count_; }
+  void resetNewGcellsCount() { new_gcells_count_ = 0; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -907,8 +882,10 @@ class NesterovBaseCommon
   std::deque<Pin> pb_pins_stor_;
 
   int num_threads_;
-  int64_t deltaArea_;
-  nesterovDbCbk* db_cbk_;
+  int64_t delta_area_;
+  uint new_gcells_count_;
+  bool reprint_iter_header;
+  nesterovDbCbk* db_cbk_{nullptr};
 };
 
 // Stores instances belonging to a specific power domain
@@ -1060,6 +1037,7 @@ class NesterovBase
                       const std::vector<FloatPoint>& curSLPSumGrads_);
 
   void updateNextIter(int iter);
+  void setTrueReprintIterHeader() { reprint_iter_header = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
   void cutFillerCoordinates();
 
@@ -1067,7 +1045,7 @@ class NesterovBase
 
   bool checkConvergence();
   bool checkDivergence();
-  bool revertDivergence();
+  bool revertToSnapshot();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
@@ -1176,6 +1154,7 @@ class NesterovBase
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
+  int64_t prevReportedHpwl_ = 0;
 
   float isDiverged_ = false;
 
@@ -1190,6 +1169,7 @@ class NesterovBase
   float hpwlWithMinSumOverflow_ = 1e30;
   int iter_ = 0;
   bool isConverged_ = false;
+  bool reprint_iter_header;
 
   // Snapshot data for routability, parallel vectors
   std::vector<FloatPoint> snapshotCoordi_;

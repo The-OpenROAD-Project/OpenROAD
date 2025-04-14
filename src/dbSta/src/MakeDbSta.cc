@@ -1,12 +1,11 @@
-// Copyright 2023 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "db_sta/MakeDbSta.hh"
 
 #include <tcl.h>
+
+#include <memory>
 
 #include "PathRenderer.h"
 #include "db_sta/dbNetwork.hh"
@@ -15,7 +14,7 @@
 #include "heatMap.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
 extern "C" {
 extern int Dbsta_Init(Tcl_Interp* interp);
@@ -55,9 +54,7 @@ void initDbSta(OpenRoad* openroad)
   // Define swig TCL commands.
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
-
-  openroad->addObserver(sta);
+  utl::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
 }
 
 }  // namespace ord

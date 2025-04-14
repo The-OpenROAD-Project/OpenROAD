@@ -175,9 +175,19 @@ MACRO MOCK_SINGLE
   PROPERTY LEF58_EDGETYPE "
     EDGETYPE LEFT VERTICAL_EDGE_1 ;
     EDGETYPE RIGHT VERTICAL_EDGE_1 ; " ;
-  PIN A1 
+  PIN A1
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.1 0.1 0.2  ;
+    END
   END A1
-  PIN A2 
+  PIN A2
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.4 0.1 0.5  ;
+    END
   END A2
   PIN ZN 
   END ZN
@@ -199,9 +209,18 @@ MACRO MOCK_DOUBLE
     EDGETYPE LEFT VERTICAL_EDGE_2 CELLROW 2 ;
     EDGETYPE RIGHT VERTICAL_EDGE_1 CELLROW 1 ;
     EDGETYPE RIGHT VERTICAL_EDGE_2 CELLROW 2 ; " ;
-  PIN A1 
+  PIN A1
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.1 0.1 0.2  ;
+    END
   END A1
-  PIN A2 
+  PIN A2
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.7 0.1 0.8  ;
+    END
   END A2
   PIN ZN 
   END ZN
@@ -218,9 +237,18 @@ MACRO MOCK_TRIPLE
   SIZE 0.76 BY 4.2 ;
   SYMMETRY X Y ;
   SITE TripleHeightSite ;
-  PIN A1 
+  PIN A1
+    PORT
+      LAYER metal1 ;
+        RECT 0 0.1 0.1 0.2  ;
+    END
   END A1
-  PIN A2 
+  PIN A2
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.2 0.1 1.3  ;
+    END
   END A2
   PIN ZN 
   END ZN

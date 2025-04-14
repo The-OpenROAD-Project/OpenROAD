@@ -1,40 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbScanList.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbScanChain.h"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
@@ -59,32 +29,10 @@ bool _dbScanList::operator<(const _dbScanList& rhs) const
   return true;
 }
 
-void _dbScanList::differences(dbDiff& diff,
-                              const char* field,
-                              const _dbScanList& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_TABLE(scan_insts_);
-  DIFF_END
-}
-
-void _dbScanList::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_TABLE(scan_insts_);
-
-  DIFF_END
-}
-
 _dbScanList::_dbScanList(_dbDatabase* db)
 {
   scan_insts_ = new dbTable<_dbScanInst>(
       db, this, (GetObjTbl_t) &_dbScanList::getObjectTable, dbScanInstObj);
-}
-
-_dbScanList::_dbScanList(_dbDatabase* db, const _dbScanList& r)
-{
-  scan_insts_ = new dbTable<_dbScanInst>(db, this, *r.scan_insts_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
@@ -108,6 +56,13 @@ dbObjectTable* _dbScanList::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbScanList::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_insts_->collectMemInfo(info.children_["scan_insts_"]);
 }
 
 _dbScanList::~_dbScanList()

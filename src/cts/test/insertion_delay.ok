@@ -14,8 +14,7 @@
 [INFO CTS-0011]  Clock net "clk_regs" for registers has 278 sinks.
 [INFO CTS-0008] TritonCTS found 2 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 1 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 1.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 10 and with maximum cluster diameter of 60.0 um.
@@ -33,8 +32,7 @@
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 1.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 1 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
 [INFO CTS-0028]  Total number of sinks: 278.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 10 and with maximum cluster diameter of 60.0 um.
@@ -71,7 +69,7 @@
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 279
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 74.54 um
+[INFO CTS-0101]  Average sink wire length 72.77 um
 [INFO CTS-0102]  Path depth 3 - 3
 [INFO CTS-0207]  Leaf load cells 1
 Found 0 unconnected buffers.

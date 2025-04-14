@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbPolygon.h"
@@ -37,7 +8,6 @@
 #include <cstring>
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "odb/db.h"
@@ -86,35 +56,6 @@ bool _dbPolygon::operator<(const _dbPolygon& rhs) const
   return true;
 }
 
-void _dbPolygon::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbPolygon& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(flags_.owner_type_);
-  DIFF_FIELD(flags_.layer_id_);
-  DIFF_FIELD(polygon_);
-  DIFF_FIELD(design_rule_width_);
-  DIFF_FIELD(owner_);
-  DIFF_FIELD(next_pbox_);
-  DIFF_FIELD(boxes_);
-  DIFF_END
-}
-
-void _dbPolygon::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(flags_.owner_type_);
-  DIFF_OUT_FIELD(flags_.layer_id_);
-  DIFF_OUT_FIELD(polygon_);
-  DIFF_OUT_FIELD(design_rule_width_);
-  DIFF_OUT_FIELD(owner_);
-  DIFF_OUT_FIELD(next_pbox_);
-  DIFF_OUT_FIELD(boxes_);
-
-  DIFF_END
-}
-
 _dbPolygon::_dbPolygon(_dbDatabase* db)
 {
   flags_ = {};
@@ -123,18 +64,6 @@ _dbPolygon::_dbPolygon(_dbDatabase* db)
   owner_ = 0;
   next_pbox_ = 0;
   boxes_ = 0;
-}
-
-_dbPolygon::_dbPolygon(_dbDatabase* db, const _dbPolygon& r)
-{
-  flags_.owner_type_ = r.flags_.owner_type_;
-  flags_.layer_id_ = r.flags_.layer_id_;
-  flags_.spare_bits_ = r.flags_.spare_bits_;
-  polygon_ = r.polygon_;
-  design_rule_width_ = r.design_rule_width_;
-  owner_ = r.owner_;
-  next_pbox_ = r.next_pbox_;
-  boxes_ = r.boxes_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbPolygon& obj)
@@ -163,6 +92,16 @@ dbOStream& operator<<(dbOStream& stream, const _dbPolygon& obj)
   stream << obj.next_pbox_;
   stream << obj.boxes_;
   return stream;
+}
+
+void _dbPolygon::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["polygon"].add(polygon_.getPoints());
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -264,16 +203,12 @@ void _dbPolygon::decompose()
   std::vector<Rect> rects;
   decompose_polygon(polygon_.getPoints(), rects);
 
-  std::vector<Rect>::iterator itr;
-
-  for (itr = rects.begin(); itr != rects.end(); ++itr) {
-    Rect& r = *itr;
-
-    dbBox::create((dbPolygon*) this, r.xMin(), r.yMin(), r.xMax(), r.yMax());
+  dbPolygon* polygon = (dbPolygon*) this;
+  for (Rect& r : rects) {
+    dbBox::create(polygon, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
 
-  dbPolygon* pbox = (dbPolygon*) this;
-  dbSet<dbBox> geoms = pbox->getGeometry();
+  dbSet<dbBox> geoms = polygon->getGeometry();
 
   // Reverse the stored order to match the created order.
   if (geoms.reversible() && geoms.orderReversed()) {

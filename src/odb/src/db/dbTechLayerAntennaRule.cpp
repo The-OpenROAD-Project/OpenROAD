@@ -1,39 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechLayerAntennaRule.h"
 
 #include <spdlog/fmt/ostr.h>
 
+#include <utility>
 #include <vector>
 
 #include "dbDatabase.h"
@@ -69,37 +41,6 @@ bool _ARuleFactor::operator==(const _ARuleFactor& rhs) const
   return true;
 }
 
-void _ARuleFactor::differences(dbDiff& diff,
-                               const char* field,
-                               const _ARuleFactor& rhs) const
-{
-  if (field) {
-    diff.begin_object("<> %s\n", field);
-  } else {
-    diff.begin_object("<> _ARuleFactor\n");
-  }
-
-  DIFF_FIELD(_factor);
-  DIFF_FIELD(_explicit);
-  DIFF_FIELD(_diff_use_only);
-
-  diff.end_object();
-}
-
-void _ARuleFactor::out(dbDiff& diff, char side, const char* field) const
-{
-  if (field) {
-    diff.begin_object("%c %s\n", side, field);
-  } else {
-    diff.begin_object("%c _ARuleFactor\n", side);
-  }
-
-  DIFF_OUT_FIELD(_factor);
-  DIFF_OUT_FIELD(_explicit);
-  DIFF_OUT_FIELD(_diff_use_only);
-  diff.end_object();
-}
-
 bool _ARuleRatio::operator==(const _ARuleRatio& rhs) const
 {
   if (_ratio != rhs._ratio) {
@@ -115,36 +56,6 @@ bool _ARuleRatio::operator==(const _ARuleRatio& rhs) const
   }
 
   return true;
-}
-
-void _ARuleRatio::differences(dbDiff& diff,
-                              const char* field,
-                              const _ARuleRatio& rhs) const
-{
-  if (field) {
-    diff.begin_object("<> %s\n", field);
-  } else {
-    diff.begin_object("<> _ARuleRatio\n");
-  }
-
-  DIFF_FIELD(_ratio);
-  DIFF_VECTOR(_diff_idx);
-  DIFF_VECTOR(_diff_ratio);
-  diff.end_object();
-}
-
-void _ARuleRatio::out(dbDiff& diff, char side, const char* field) const
-{
-  if (field) {
-    diff.begin_object("%c %s\n", side, field);
-  } else {
-    diff.begin_object("%c _ARuleRatio\n", side);
-  }
-
-  DIFF_OUT_FIELD(_ratio);
-  DIFF_OUT_VECTOR(_diff_idx);
-  DIFF_OUT_VECTOR(_diff_ratio);
-  diff.end_object();
 }
 
 bool _dbTechLayerAntennaRule::operator==(
@@ -197,45 +108,6 @@ bool _dbTechLayerAntennaRule::operator==(
   return true;
 }
 
-void _dbTechLayerAntennaRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerAntennaRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_layer);
-  DIFF_STRUCT(_area_mult);
-  DIFF_STRUCT(_sidearea_mult);
-  DIFF_STRUCT(_par_area_val);
-  DIFF_STRUCT(_cum_area_val);
-  DIFF_STRUCT(_par_sidearea_val);
-  DIFF_STRUCT(_cum_sidearea_val);
-  DIFF_STRUCT(_area_diff_reduce_val);
-  DIFF_FIELD(_gate_plus_diff_factor);
-  DIFF_FIELD(_area_minus_diff_factor);
-  DIFF_FIELD(_has_antenna_cumroutingpluscut);
-  DIFF_END
-}
-
-void _dbTechLayerAntennaRule::out(dbDiff& diff,
-                                  char side,
-                                  const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_STRUCT(_area_mult);
-  DIFF_OUT_STRUCT(_sidearea_mult);
-  DIFF_OUT_STRUCT(_par_area_val);
-  DIFF_OUT_STRUCT(_cum_area_val);
-  DIFF_OUT_STRUCT(_par_sidearea_val);
-  DIFF_OUT_STRUCT(_cum_sidearea_val);
-  DIFF_OUT_STRUCT(_area_diff_reduce_val);
-  DIFF_OUT_FIELD(_gate_plus_diff_factor);
-  DIFF_OUT_FIELD(_area_minus_diff_factor);
-  DIFF_OUT_FIELD(_has_antenna_cumroutingpluscut);
-  DIFF_END
-}
-
 bool _dbTechAntennaAreaElement::operator==(
     const _dbTechAntennaAreaElement& rhs) const
 {
@@ -248,37 +120,6 @@ bool _dbTechAntennaAreaElement::operator==(
   }
 
   return true;
-}
-
-void _dbTechAntennaAreaElement::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechAntennaAreaElement& rhs) const
-{
-  if (field) {
-    diff.begin_object("<> %s\n", field);
-  } else {
-    diff.begin_object("<> _dbTechAntennaAreaElement\n");
-  }
-
-  DIFF_FIELD(_area);
-  DIFF_FIELD(_lyidx);
-  diff.end_object();
-}
-
-void _dbTechAntennaAreaElement::out(dbDiff& diff,
-                                    char side,
-                                    const char* field) const
-{
-  if (field) {
-    diff.begin_object("%c %s\n", side, field);
-  } else {
-    diff.begin_object("%c _dbTechAntennaAreaElement\n", side);
-  }
-
-  DIFF_OUT_FIELD(_area);
-  DIFF_OUT_FIELD(_lyidx);
-  diff.end_object();
 }
 
 bool _dbTechAntennaPinModel::operator==(const _dbTechAntennaPinModel& rhs) const
@@ -304,33 +145,6 @@ bool _dbTechAntennaPinModel::operator==(const _dbTechAntennaPinModel& rhs) const
   }
 
   return true;
-}
-
-void _dbTechAntennaPinModel::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechAntennaPinModel& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_mterm);
-  DIFF_VECTOR_PTR(_gate_area);
-  DIFF_VECTOR_PTR(_max_area_car);
-  DIFF_VECTOR_PTR(_max_sidearea_car);
-  DIFF_VECTOR_PTR(_max_cut_car);
-  DIFF_END
-}
-
-void _dbTechAntennaPinModel::out(dbDiff& diff,
-                                 char side,
-                                 const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_mterm);
-  DIFF_OUT_VECTOR_PTR(_gate_area);
-  DIFF_OUT_VECTOR_PTR(_max_area_car);
-  DIFF_OUT_VECTOR_PTR(_max_sidearea_car);
-  DIFF_OUT_VECTOR_PTR(_max_cut_car);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -1031,21 +845,23 @@ void dbTechAntennaPinModel::getGateArea(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(getImpl()->getDatabase(), xmod->_gate_area, data);
+  _dbTechAntennaPinModel::getAntennaValues(
+      getImpl()->getDatabase(), xmod->_gate_area, data);
 }
 
 void dbTechAntennaPinModel::getMaxAreaCAR(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(getImpl()->getDatabase(), xmod->_max_area_car, data);
+  _dbTechAntennaPinModel::getAntennaValues(
+      getImpl()->getDatabase(), xmod->_max_area_car, data);
 }
 
 void dbTechAntennaPinModel::getMaxSideAreaCAR(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(
+  _dbTechAntennaPinModel::getAntennaValues(
       getImpl()->getDatabase(), xmod->_max_sidearea_car, data);
 }
 
@@ -1053,35 +869,28 @@ void dbTechAntennaPinModel::getMaxCutCAR(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  xmod->getAntennaValues(getImpl()->getDatabase(), xmod->_max_cut_car, data);
+  _dbTechAntennaPinModel::getAntennaValues(
+      getImpl()->getDatabase(), xmod->_max_cut_car, data);
 }
 
 void dbTechAntennaPinModel::writeLef(dbTech* tech, lefout& writer) const
 {
   _dbTechAntennaPinModel* xmod = (_dbTechAntennaPinModel*) this;
-  dbVector<_dbTechAntennaAreaElement*>::iterator ant_iter;
 
-  for (ant_iter = xmod->_gate_area.begin(); ant_iter != xmod->_gate_area.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAGATEAREA", tech, writer);
+  for (auto ant : xmod->_gate_area) {
+    ant->writeLef("ANTENNAGATEAREA", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_area_car.begin();
-       ant_iter != xmod->_max_area_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXAREACAR", tech, writer);
+  for (auto ant : xmod->_max_area_car) {
+    ant->writeLef("ANTENNAMAXAREACAR", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_sidearea_car.begin();
-       ant_iter != xmod->_max_sidearea_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXSIDEAREACAR", tech, writer);
+  for (auto ant : xmod->_max_sidearea_car) {
+    ant->writeLef("ANTENNAMAXSIDEAREACAR", tech, writer);
   }
 
-  for (ant_iter = xmod->_max_cut_car.begin();
-       ant_iter != xmod->_max_cut_car.end();
-       ant_iter++) {
-    (*ant_iter)->writeLef("ANTENNAMAXCUTCAR", tech, writer);
+  for (auto ant : xmod->_max_cut_car) {
+    ant->writeLef("ANTENNAMAXCUTCAR", tech, writer);
   }
 }
 
@@ -1091,6 +900,31 @@ dbTechAntennaPinModel* dbTechAntennaPinModel::getAntennaPinModel(
 {
   _dbMaster* master = (_dbMaster*) _master;
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(dbid);
+}
+
+void _dbTechLayerAntennaRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechAntennaPinModel::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["_gate_area"].add(_gate_area);
+  info.children_["_gate_area"].size
+      += _gate_area.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_max_area_car"].add(_max_area_car);
+  info.children_["_max_area_car"].size
+      += _max_area_car.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_max_sidearea_car"].add(_max_sidearea_car);
+  info.children_["_max_sidearea_car"].size
+      += _max_sidearea_car.size() * sizeof(_dbTechAntennaAreaElement);
+  info.children_["_max_cut_car"].add(_max_cut_car);
+  info.children_["_max_cut_car"].size
+      += _max_cut_car.size() * sizeof(_dbTechAntennaAreaElement);
 }
 
 }  // namespace odb

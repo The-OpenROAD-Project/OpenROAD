@@ -1,8 +1,5 @@
-// Copyright 2025 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025-2025, The OpenROAD Authors
 
 #include "zero_slack_strategy.h"
 
@@ -15,7 +12,9 @@
 #include "logic_cut.h"
 #include "logic_extractor.h"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Search.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogWriter.hh"
 #include "unique_name.h"
@@ -61,6 +60,11 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
 
   std::vector<sta::Vertex*> candidate_vertices = GetNegativeEndpoints(sta);
 
+  // Disable incremental timing.
+  sta->graphDelayCalc()->delaysInvalid();
+  sta->search()->arrivalsInvalid();
+  sta->search()->endpointsInvalid();
+
   rmp::UniqueName unique_name;
   for (sta::Vertex* negative_endpoint : candidate_vertices) {
     LogicExtractorFactory logic_extractor(sta, logger);
@@ -72,7 +76,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
 
     DelayOptimizationStrategy strategy(sta);
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
-        = strategy.Optimize(mapped_abc_network.get(), logger);
+        = strategy.Optimize(mapped_abc_network.get(), abc_library, logger);
 
     cut.InsertMappedAbcNetwork(
         remapped.get(), abc_library, network, unique_name, logger);

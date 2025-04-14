@@ -1,42 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbScanChain.h"
 
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
-#include "dbDiff.hpp"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
@@ -79,35 +51,6 @@ bool _dbScanChain::operator<(const _dbScanChain& rhs) const
   return true;
 }
 
-void _dbScanChain::differences(dbDiff& diff,
-                               const char* field,
-                               const _dbScanChain& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(name_);
-  DIFF_FIELD(scan_in_);
-  DIFF_FIELD(scan_out_);
-  DIFF_FIELD(scan_enable_);
-  DIFF_FIELD(test_mode_);
-  DIFF_FIELD(test_mode_name_);
-  DIFF_TABLE(scan_partitions_);
-  DIFF_END
-}
-
-void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(name_);
-  DIFF_OUT_FIELD(scan_in_);
-  DIFF_OUT_FIELD(scan_out_);
-  DIFF_OUT_FIELD(scan_enable_);
-  DIFF_OUT_FIELD(test_mode_);
-  DIFF_OUT_FIELD(test_mode_name_);
-  DIFF_OUT_TABLE(scan_partitions_);
-
-  DIFF_END
-}
-
 _dbScanChain::_dbScanChain(_dbDatabase* db)
 {
   scan_partitions_ = new dbTable<_dbScanPartition>(
@@ -115,18 +58,6 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbScanChain::getObjectTable,
       dbScanPartitionObj);
-}
-
-_dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
-{
-  name_ = r.name_;
-  scan_in_ = r.scan_in_;
-  scan_out_ = r.scan_out_;
-  scan_enable_ = r.scan_enable_;
-  test_mode_ = r.test_mode_;
-  test_mode_name_ = r.test_mode_name_;
-  scan_partitions_
-      = new dbTable<_dbScanPartition>(db, this, *r.scan_partitions_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
@@ -162,6 +93,13 @@ dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbScanChain::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  scan_partitions_->collectMemInfo(info.children_["scan_partitions_"]);
 }
 
 _dbScanChain::~_dbScanChain()

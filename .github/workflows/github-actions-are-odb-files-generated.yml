@@ -1,8 +1,12 @@
 name: Check That ODB Files Are Generated
+
 on:
-  # Triggers the workflow on push or pull request events
   push:
+    branches:
+    - master
   pull_request:
+    branches:
+    - master
 
 jobs:
   format:
@@ -10,8 +14,7 @@ jobs:
     steps:
       - name: setup
         run: |
-          sudo apt update
-          sudo apt install -y python3-jinja2 git
+          python3 -m pip install -U --user jinja2==3.1.6
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
@@ -26,7 +29,7 @@ jobs:
             echo ::group::Non-Empty Git Status Oputput
             git status --porcelain
             echo ::endgroup::
-            
+
             echo ::group::Non-Empty Git Diff Oputput
             git diff
             echo ::endgroup::
@@ -35,4 +38,3 @@ jobs:
             printf "run ./generate in the src/odb/src/codeGenerator folder"
             exit 1
           fi
-

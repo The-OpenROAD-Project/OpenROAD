@@ -1,37 +1,19 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "io/io.h"
 
+#include <algorithm>
+#include <cmath>
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "db/tech/frConstraint.h"
@@ -123,34 +105,34 @@ void io::Parser::setTracks(odb::dbBlock* block)
   }
 }
 
-void io::Parser::setInst(odb::dbInst* inst)
+frInst* io::Parser::setInst(odb::dbInst* db_inst)
 {
-  frMaster* master = getDesign()->name2master_.at(inst->getMaster()->getName());
-  auto uInst = std::make_unique<frInst>(inst->getName(), master, inst);
-  auto tmpInst = uInst.get();
+  frMaster* master
+      = getDesign()->name2master_.at(db_inst->getMaster()->getName());
+  auto inst = std::make_unique<frInst>(db_inst->getName(), master, db_inst);
 
   int x, y;
-  inst->getLocation(x, y);
-  tmpInst->setOrigin(Point(x, y));
-  tmpInst->setOrient(inst->getOrient());
+  db_inst->getLocation(x, y);
+  inst->setOrigin(Point(x, y));
+  inst->setOrient(db_inst->getOrient());
   int numInstTerms = 0;
-  tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
-  for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
-    auto term = uTerm.get();
+  inst->setPinAccessIdx(db_inst->getPinAccessIdx());
+  for (auto& term : inst->getMaster()->getTerms()) {
     std::unique_ptr<frInstTerm> instTerm
-        = std::make_unique<frInstTerm>(tmpInst, term);
+        = std::make_unique<frInstTerm>(inst.get(), term.get());
     instTerm->setIndexInOwner(numInstTerms++);
     int pinCnt = term->getPins().size();
     instTerm->setAPSize(pinCnt);
-    tmpInst->addInstTerm(std::move(instTerm));
+    inst->addInstTerm(std::move(instTerm));
   }
-  for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
-    auto blk = uBlk.get();
+  for (auto& blk : inst->getMaster()->getBlockages()) {
     std::unique_ptr<frInstBlockage> instBlk
-        = std::make_unique<frInstBlockage>(tmpInst, blk);
-    tmpInst->addInstBlockage(std::move(instBlk));
+        = std::make_unique<frInstBlockage>(inst.get(), blk.get());
+    inst->addInstBlockage(std::move(instBlk));
   }
-  getBlock()->addInst(std::move(uInst));
+  frInst* raw_inst = inst.get();
+  getBlock()->addInst(std::move(inst));
+  return raw_inst;
 }
 
 void io::Parser::setInsts(odb::dbBlock* block)
@@ -1244,7 +1226,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
     }
   }
   for (auto db_inst : db->getChip()->getBlock()->getInsts()) {
-    auto inst = getBlock()->findInst(db_inst->getName());
+    auto inst = getBlock()->findInst(db_inst);
     if (inst == nullptr) {
       continue;
     }
@@ -3089,7 +3071,7 @@ void io::Parser::updateDesign()
   auto block = db_->getChip()->getBlock();
   getBlock()->removeDeletedInsts();
   for (auto db_inst : block->getInsts()) {
-    auto inst = getBlock()->findInst(db_inst->getName());
+    auto inst = getBlock()->findInst(db_inst);
     if (inst == nullptr) {
       setInst(db_inst);
     }

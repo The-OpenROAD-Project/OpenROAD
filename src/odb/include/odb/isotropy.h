@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // This is adapted from Boost Polygon's isotropy.hpp.  The original
 // includes many extraneous includes and unrelated code to the
@@ -81,6 +49,8 @@ class Direction1D
   // [East/North/Up -> High] [West/South/Down -> Low]
   constexpr explicit Direction1D(const Direction3D& other);
 
+  Direction1D& operator=(const Direction1D& other) = default;
+
   constexpr operator Value() const { return static_cast<Value>(value_); }
   Direction1D flipped() const { return Value(value_ ^ 1); }
 
@@ -92,7 +62,7 @@ class Direction1D
   bool operator>=(const Direction1D& d) const { return value_ >= d.value_; }
 
  private:
-  const unsigned char value_ = Low;
+  unsigned char value_ = Low;
 };
 
 // Models the axis orientation in two dimensional space.  The
@@ -112,13 +82,15 @@ class Orientation2D
   // [West / East -> Horizontal] [South / North -> Vertical]
   constexpr explicit Orientation2D(const Direction2D& other);
 
+  Orientation2D& operator=(const Orientation2D& other) = default;
+
   constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Horizontal -> Vertical] [Vertical -> Horizontal]
   Orientation2D turn_90() const { return Value(value_ ^ 1); }
 
   // [Horizontal: Low->West, High->East] [Vertical: Low->South, High->North]
-  constexpr Direction2D getDirection(Direction1D dir) const;
+  constexpr Direction2D getDirection(const Direction1D& dir) const;
 
   bool operator==(const Orientation2D& d) const { return value_ == d.value_; }
   bool operator!=(const Orientation2D& d) const { return value_ != d.value_; }
@@ -128,7 +100,7 @@ class Orientation2D
   bool operator>=(const Orientation2D& d) const { return value_ >= d.value_; }
 
  private:
-  const unsigned char value_ = Horizontal;
+  unsigned char value_ = Horizontal;
 };
 
 // Models a direction in two dimensional space.  The possible values
@@ -147,6 +119,8 @@ class Direction2D
   constexpr Direction2D() = default;
   constexpr Direction2D(const Direction2D& other) = default;
   constexpr Direction2D(const Value value) : value_(value) {}
+
+  Direction2D& operator=(const Direction2D& other) = default;
 
   bool operator==(const Direction2D& d) const { return value_ == d.value_; }
   bool operator!=(const Direction2D& d) const { return value_ != d.value_; }
@@ -178,7 +152,7 @@ class Direction2D
   bool is_negative() const { return !is_positive(); }
 
  private:
-  const unsigned char value_ = West;
+  unsigned char value_ = West;
 };
 
 // This is axis orientation in three dimensional space.  This implicitly
@@ -199,10 +173,12 @@ class Orientation3D
   constexpr explicit Orientation3D(const Direction2D& other);
   constexpr explicit Orientation3D(const Direction3D& other);
 
+  Orientation3D& operator=(const Orientation3D& other) = default;
+
   constexpr operator Value() const { return static_cast<Value>(value_); }
 
   // [Proximal: Low->down, High->Up] [others as Orientation2D]
-  constexpr Direction3D getDirection(Direction1D dir) const;
+  constexpr Direction3D getDirection(const Direction1D& dir) const;
 
   bool operator==(const Orientation3D&& d) const { return value_ == d.value_; }
   bool operator!=(const Orientation3D&& d) const { return value_ != d.value_; }
@@ -212,7 +188,7 @@ class Orientation3D
   bool operator>=(const Orientation3D&& d) const { return value_ >= d.value_; }
 
  private:
-  const unsigned char value_ = Orientation2D::Horizontal;
+  unsigned char value_ = Orientation2D::Horizontal;
 };
 
 // Models a direction in three dimensional space.  This implicitly
@@ -233,6 +209,8 @@ class Direction3D
   constexpr Direction3D(const Direction2D::Value value) : value_(value) {}
   constexpr Direction3D(const Value value) : value_(value) {}
 
+  Direction3D& operator=(const Direction3D& other) = default;
+
   bool operator==(const Direction3D& d) const { return value_ == d.value_; }
   bool operator!=(const Direction3D& d) const { return value_ != d.value_; }
   bool operator<(const Direction3D& d) const { return value_ < d.value_; }
@@ -251,7 +229,7 @@ class Direction3D
   bool is_negative() const { return !is_positive(); }
 
  private:
-  const unsigned char value_ = Direction2D::West;
+  unsigned char value_ = Direction2D::West;
 };
 
 constexpr Direction1D::Direction1D(const Direction2D& other) : value_(other & 1)
@@ -267,7 +245,7 @@ constexpr Orientation2D::Orientation2D(const Direction2D& other)
 {
 }
 
-constexpr Direction2D Orientation2D::getDirection(Direction1D dir) const
+constexpr Direction2D Orientation2D::getDirection(const Direction1D& dir) const
 {
   return Direction2D(Direction2D::Value((value_ << 1) + dir));
 }
@@ -282,7 +260,7 @@ constexpr Orientation3D::Orientation3D(const Direction3D& other)
 {
 }
 
-constexpr Direction3D Orientation3D::getDirection(Direction1D dir) const
+constexpr Direction3D Orientation3D::getDirection(const Direction1D& dir) const
 {
   return Direction3D(Direction3D::Value((value_ << 1) + dir));
 }

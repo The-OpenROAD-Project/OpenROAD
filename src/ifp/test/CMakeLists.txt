@@ -16,6 +16,8 @@ or_integration_tests(
     init_floorplan_even_rows
     init_floorplan_flip_sites
     init_floorplan_odd_rows
+    init_floorplan_polygon
+    make_rows
     make_tracks1
     make_tracks2
     make_tracks3

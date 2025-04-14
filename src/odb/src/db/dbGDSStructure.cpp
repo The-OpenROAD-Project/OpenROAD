@@ -1,40 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
 
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbGDSARef.h"
 #include "dbGDSBoundary.h"
 #include "dbGDSBox.h"
@@ -86,37 +56,6 @@ bool _dbGDSStructure::operator<(const _dbGDSStructure& rhs) const
   return true;
 }
 
-void _dbGDSStructure::differences(dbDiff& diff,
-                                  const char* field,
-                                  const _dbGDSStructure& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_TABLE(boundaries_);
-  DIFF_TABLE(boxes_);
-  DIFF_TABLE(paths_);
-  DIFF_TABLE(srefs_);
-  DIFF_TABLE(arefs_);
-  DIFF_TABLE(texts_);
-  DIFF_END
-}
-
-void _dbGDSStructure::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_TABLE(boundaries_);
-  DIFF_OUT_TABLE(boxes_);
-  DIFF_OUT_TABLE(paths_);
-  DIFF_OUT_TABLE(srefs_);
-  DIFF_OUT_TABLE(arefs_);
-  DIFF_OUT_TABLE(texts_);
-
-  DIFF_END
-}
-
 _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
 {
   _name = nullptr;
@@ -135,18 +74,6 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSARefObj);
   texts_ = new dbTable<_dbGDSText>(
       db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
-}
-
-_dbGDSStructure::_dbGDSStructure(_dbDatabase* db, const _dbGDSStructure& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  boundaries_ = new dbTable<_dbGDSBoundary>(db, this, *r.boundaries_);
-  boxes_ = new dbTable<_dbGDSBox>(db, this, *r.boxes_);
-  paths_ = new dbTable<_dbGDSPath>(db, this, *r.paths_);
-  srefs_ = new dbTable<_dbGDSSRef>(db, this, *r.srefs_);
-  arefs_ = new dbTable<_dbGDSARef>(db, this, *r.arefs_);
-  texts_ = new dbTable<_dbGDSText>(db, this, *r.texts_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
@@ -194,6 +121,27 @@ dbObjectTable* _dbGDSStructure::getObjectTable(dbObjectType type)
       break;
   }
   return getTable()->getObjectTable(type);
+}
+void _dbGDSStructure::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  boundaries_->collectMemInfo(info.children_["boundaries_"]);
+
+  boxes_->collectMemInfo(info.children_["boxes_"]);
+
+  paths_->collectMemInfo(info.children_["paths_"]);
+
+  srefs_->collectMemInfo(info.children_["srefs_"]);
+
+  arefs_->collectMemInfo(info.children_["arefs_"]);
+
+  texts_->collectMemInfo(info.children_["texts_"]);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  // User Code End collectMemInfo
 }
 
 _dbGDSStructure::~_dbGDSStructure()

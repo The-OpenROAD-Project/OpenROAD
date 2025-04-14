@@ -1,36 +1,5 @@
-#############################################################################
-##
-## Copyright (c) 2019, The Regents of the University of California
-## All rights reserved.
-##
-## BSD 3-Clause License
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-#############################################################################
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2025, The OpenROAD Authors
 
 sta::define_cmd_args "detailed_placement" { \
                            [-max_displacement disp|{disp_x disp_y}] \
@@ -41,7 +10,6 @@ proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps}
 
-  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
@@ -66,6 +34,11 @@ proc detailed_placement { args } {
   }
 
   sta::check_argc_eq0 "detailed_placement" $args
+
+  if { [info exists flags(-disallow_one_site_gaps)] } {
+    utl::warn DPL 3 "-disallow_one_site_gaps is deprecated"
+  }
+
   if { [ord::db_has_rows] } {
     set site [dpl::get_row_site]
     # Convert displacement from microns to sites.
@@ -74,7 +47,7 @@ proc detailed_placement { args } {
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
-      $disallow_one_site_gaps $file_name
+      $file_name
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -159,13 +132,15 @@ proc check_placement { args } {
   sta::parse_key_args "check_placement" args \
     keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
   set verbose [info exists flags(-verbose)]
-  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   sta::check_argc_eq0 "check_placement" $args
   set file_name ""
   if { [info exists keys(-report_file_name)] } {
     set file_name $keys(-report_file_name)
   }
-  dpl::check_placement_cmd $verbose $disallow_one_site_gaps $file_name
+  if { [info exists flags(-disallow_one_site_gaps)] } {
+    utl::warn DPL 4 "-disallow_one_site_gaps is deprecated"
+  }
+  dpl::check_placement_cmd $verbose $file_name
 }
 
 sta::define_cmd_args "optimize_mirroring" {}

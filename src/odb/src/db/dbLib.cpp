@@ -1,36 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbLib.h"
+
+#include <string>
 
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
@@ -61,15 +34,15 @@ bool _dbLib::operator==(const _dbLib& rhs) const
     return false;
   }
 
-  if (_hier_delimeter != rhs._hier_delimeter) {
+  if (_hier_delimiter != rhs._hier_delimiter) {
     return false;
   }
 
-  if (_left_bus_delimeter != rhs._left_bus_delimeter) {
+  if (_left_bus_delimiter != rhs._left_bus_delimiter) {
     return false;
   }
 
-  if (_right_bus_delimeter != rhs._right_bus_delimeter) {
+  if (_right_bus_delimiter != rhs._right_bus_delimiter) {
     return false;
   }
 
@@ -116,48 +89,6 @@ bool _dbLib::operator==(const _dbLib& rhs) const
   return true;
 }
 
-void _dbLib::differences(dbDiff& diff,
-                         const char* field,
-                         const _dbLib& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_lef_units);
-  DIFF_FIELD(_dbu_per_micron);
-  DIFF_FIELD(_hier_delimeter);
-  DIFF_FIELD(_left_bus_delimeter);
-  DIFF_FIELD(_right_bus_delimeter);
-  DIFF_FIELD(_spare);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_tech);
-  DIFF_HASH_TABLE(_master_hash);
-  DIFF_HASH_TABLE(_site_hash);
-  DIFF_TABLE_NO_DEEP(_master_tbl);
-  DIFF_TABLE_NO_DEEP(_site_tbl);
-  DIFF_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
-void _dbLib::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_lef_units);
-  DIFF_OUT_FIELD(_dbu_per_micron);
-  DIFF_OUT_FIELD(_hier_delimeter);
-  DIFF_OUT_FIELD(_left_bus_delimeter);
-  DIFF_OUT_FIELD(_right_bus_delimeter);
-  DIFF_OUT_FIELD(_spare);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_tech);
-  DIFF_OUT_HASH_TABLE(_master_hash);
-  DIFF_OUT_HASH_TABLE(_site_hash);
-  DIFF_OUT_TABLE_NO_DEEP(_master_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_site_tbl);
-  DIFF_OUT_TABLE_NO_DEEP(_prop_tbl);
-  DIFF_OUT_NAME_CACHE(_name_cache);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // _dbLib - Methods
@@ -167,9 +98,9 @@ _dbLib::_dbLib(_dbDatabase* db)
 {
   _lef_units = 0;
   _dbu_per_micron = 1000;
-  _hier_delimeter = 0;
-  _left_bus_delimeter = 0;
-  _right_bus_delimeter = 0;
+  _hier_delimiter = 0;
+  _left_bus_delimiter = 0;
+  _right_bus_delimiter = 0;
   _spare = 0;
   _name = nullptr;
 
@@ -184,36 +115,6 @@ _dbLib::_dbLib(_dbDatabase* db)
 
   _name_cache
       = new _dbNameCache(db, this, (GetObjTbl_t) &_dbLib::getObjectTable);
-
-  _prop_itr = new dbPropertyItr(_prop_tbl);
-
-  _master_hash.setTable(_master_tbl);
-  _site_hash.setTable(_site_tbl);
-}
-
-_dbLib::_dbLib(_dbDatabase* db, const _dbLib& l)
-    : _lef_units(l._lef_units),
-      _dbu_per_micron(l._dbu_per_micron),
-      _hier_delimeter(l._hier_delimeter),
-      _left_bus_delimeter(l._left_bus_delimeter),
-      _right_bus_delimeter(l._right_bus_delimeter),
-      _spare(l._spare),
-      _name(nullptr),
-      _master_hash(l._master_hash),
-      _site_hash(l._site_hash)
-{
-  if (l._name) {
-    _name = strdup(l._name);
-    ZALLOCATED(_name);
-  }
-
-  _master_tbl = new dbTable<_dbMaster>(db, this, *l._master_tbl);
-
-  _site_tbl = new dbTable<_dbSite>(db, this, *l._site_tbl);
-
-  _prop_tbl = new dbTable<_dbProperty>(db, this, *l._prop_tbl);
-
-  _name_cache = new _dbNameCache(db, this, *l._name_cache);
 
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
@@ -239,9 +140,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
   dbOStreamScope scope(stream, fmt::format("dbLib({})", lib._name));
   stream << lib._lef_units;
   stream << lib._dbu_per_micron;
-  stream << lib._hier_delimeter;
-  stream << lib._left_bus_delimeter;
-  stream << lib._right_bus_delimeter;
+  stream << lib._hier_delimiter;
+  stream << lib._left_bus_delimiter;
+  stream << lib._right_bus_delimiter;
   stream << lib._spare;
   stream << lib._name;
   stream << lib._master_hash;
@@ -258,9 +159,9 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
 {
   stream >> lib._lef_units;
   stream >> lib._dbu_per_micron;
-  stream >> lib._hier_delimeter;
-  stream >> lib._left_bus_delimeter;
-  stream >> lib._right_bus_delimeter;
+  stream >> lib._hier_delimiter;
+  stream >> lib._left_bus_delimiter;
+  stream >> lib._right_bus_delimiter;
   stream >> lib._spare;
   stream >> lib._name;
   stream >> lib._master_hash;
@@ -366,30 +267,30 @@ void dbLib::setLefUnits(int units)
   lib->_lef_units = units;
 }
 
-char dbLib::getHierarchyDelimeter()
+char dbLib::getHierarchyDelimiter()
 {
   _dbLib* lib = (_dbLib*) this;
-  return lib->_hier_delimeter;
+  return lib->_hier_delimiter;
 }
 
-void dbLib::setBusDelimeters(char left, char right)
+void dbLib::setBusDelimiters(char left, char right)
 {
   _dbLib* lib = (_dbLib*) this;
-  lib->_left_bus_delimeter = left;
-  lib->_right_bus_delimeter = right;
+  lib->_left_bus_delimiter = left;
+  lib->_right_bus_delimiter = right;
 }
 
-void dbLib::getBusDelimeters(char& left, char& right)
+void dbLib::getBusDelimiters(char& left, char& right)
 {
   _dbLib* lib = (_dbLib*) this;
-  left = lib->_left_bus_delimeter;
-  right = lib->_right_bus_delimeter;
+  left = lib->_left_bus_delimiter;
+  right = lib->_right_bus_delimiter;
 }
 
 dbLib* dbLib::create(dbDatabase* db_,
                      const char* name,
                      dbTech* tech,
-                     char hier_delimeter)
+                     char hier_delimiter)
 {
   if (db_->findLib(name)) {
     return nullptr;
@@ -402,7 +303,7 @@ dbLib* dbLib::create(dbDatabase* db_,
   _dbLib* lib = db->_lib_tbl->create();
   lib->_name = strdup(name);
   ZALLOCATED(lib->_name);
-  lib->_hier_delimeter = hier_delimeter;
+  lib->_hier_delimiter = hier_delimiter;
   lib->_dbu_per_micron = tech->getDbUnitsPerMicron();
   lib->_tech = tech->getId();
   return (dbLib*) lib;
@@ -420,6 +321,20 @@ void dbLib::destroy(dbLib* lib_)
   _dbDatabase* db = lib->getDatabase();
   dbProperty::destroyProperties(lib);
   db->_lib_tbl->destroy(lib);
+}
+
+void _dbLib::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
+  info.children_["master_hash"].add(_master_hash);
+  info.children_["site_hash"].add(_site_hash);
+  _master_tbl->collectMemInfo(info.children_["master"]);
+  _site_tbl->collectMemInfo(info.children_["site"]);
+  _prop_tbl->collectMemInfo(info.children_["prop"]);
+  _name_cache->collectMemInfo(info.children_["name_cache"]);
 }
 
 }  // namespace odb

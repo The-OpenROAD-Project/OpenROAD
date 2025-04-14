@@ -1,39 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <map>
+#include <memory>
 #include <queue>
+#include <set>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "object.h"
@@ -54,6 +29,7 @@ namespace mpl {
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
+using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
 struct DataFlowHypergraph
 {
@@ -80,20 +56,17 @@ struct DataFlow
 
   // Macro Pins --> Registers
   // Registers --> Macro Pins
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_pins_and_regs;
+  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_regs;
 
   // IO --> Register
   // Register --> IO
   // IO --> Macro Pin
   // Macro Pin --> IO
-  std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
-      io_and_regs;
+  std::vector<std::pair<odb::dbBTerm*, PathInsts>> io_and_regs;
 
   // Macro Pin --> Macros
   // Macros --> Macro Pin
-  std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
-      macro_pins_and_macros;
+  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_macros;
 };
 
 struct PhysicalHierarchyMaps
@@ -106,7 +79,8 @@ struct PhysicalHierarchyMaps
   ModuleToMetricsMap module_to_metrics;
 
   // Only for designs with IO Pads
-  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_inst;
+  std::map<odb::dbInst*, odb::dbBTerm*> pad_to_bterm;
+  std::map<odb::dbBTerm*, odb::dbInst*> bterm_to_pad;
 };
 
 struct PhysicalHierarchy
@@ -156,7 +130,6 @@ class ClusteringEngine
 
   void run();
 
-  void setDesignMetrics(Metrics* design_metrics);
   void setTree(PhysicalHierarchy* tree);
 
   // Methods to update the tree as the hierarchical
@@ -191,6 +164,8 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
+  void createIOPadClusters();
+  void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);
   void classifyBoundariesStateForIOs();
   std::map<Boundary, float> computeBlockageExtensionMap();
   Boundary getConstraintBoundary(const odb::Rect& die,
@@ -205,7 +180,7 @@ class ClusteringEngine
                               int& y,
                               int& width,
                               int& height);
-  void mapIOPads();
+  void mapIOPinsAndPads();
   void treatEachMacroAsSingleCluster();
   void incorporateNewCluster(std::unique_ptr<Cluster> cluster, Cluster* parent);
   void setClusterMetrics(Cluster* cluster);
@@ -278,6 +253,8 @@ class ClusteringEngine
 
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   float computeMicronArea(odb::dbInst* inst);
+
+  bool isValidNet(odb::dbNet* net);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;

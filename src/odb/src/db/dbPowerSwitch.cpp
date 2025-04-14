@@ -1,41 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbPowerSwitch.h"
 
+#include <map>
+#include <string>
+
 #include "dbBlock.h"
 #include "dbDatabase.h"
-#include "dbDiff.hpp"
 #include "dbHashTable.hpp"
 #include "dbMTerm.h"
 #include "dbMaster.h"
@@ -74,43 +47,9 @@ bool _dbPowerSwitch::operator<(const _dbPowerSwitch& rhs) const
   return true;
 }
 
-void _dbPowerSwitch::differences(dbDiff& diff,
-                                 const char* field,
-                                 const _dbPowerSwitch& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_lib_cell);
-  DIFF_FIELD(_lib);
-  DIFF_FIELD(_power_domain);
-  DIFF_END
-}
-
-void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_lib_cell);
-  DIFF_OUT_FIELD(_lib);
-  DIFF_OUT_FIELD(_power_domain);
-
-  DIFF_END
-}
-
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
 {
   _name = nullptr;
-}
-
-_dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
-{
-  _name = r._name;
-  _next_entry = r._next_entry;
-  _lib_cell = r._lib_cell;
-  _lib = r._lib;
-  _power_domain = r._power_domain;
 }
 
 dbIStream& operator>>(dbIStream& stream, dbPowerSwitch::UPFIOSupplyPort& obj)
@@ -231,6 +170,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._port_map;
   // User Code End <<
   return stream;
+}
+
+void _dbPowerSwitch::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.children_["name"].add(_name);
+  info.children_["in_supply_port"].add(_in_supply_port);
+  info.children_["control_port"].add(_control_port);
+  info.children_["acknowledge_port"].add(_acknowledge_port);
+  info.children_["on_state"].add(_on_state);
+  info.children_["port_map"].add(_port_map);
+  // User Code End collectMemInfo
 }
 
 _dbPowerSwitch::~_dbPowerSwitch()

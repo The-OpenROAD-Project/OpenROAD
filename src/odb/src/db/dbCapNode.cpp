@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbCapNode.h"
 
@@ -105,50 +76,6 @@ bool _dbCapNode::operator==(const _dbCapNode& rhs) const
   return true;
 }
 
-void _dbCapNode::differences(dbDiff& diff,
-                             const char* field,
-                             const _dbCapNode& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._internal);
-  DIFF_FIELD(_flags._iterm);
-  DIFF_FIELD(_flags._bterm);
-  DIFF_FIELD(_flags._branch);
-  DIFF_FIELD(_flags._foreign);
-  DIFF_FIELD(_flags._childrenCnt);
-  DIFF_FIELD(_flags._select);
-
-  // if (stream.getDatabase()->isSchema(ADS_DB_CAPNODE_NAME))
-  DIFF_FIELD(_flags._name);
-
-  DIFF_FIELD(_node_num);
-  DIFF_FIELD(_net);
-  DIFF_FIELD(_next);
-  DIFF_FIELD(_cc_segs);
-  DIFF_END
-}
-
-void _dbCapNode::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._internal);
-  DIFF_OUT_FIELD(_flags._iterm);
-  DIFF_OUT_FIELD(_flags._bterm);
-  DIFF_OUT_FIELD(_flags._branch);
-  DIFF_OUT_FIELD(_flags._foreign);
-  DIFF_OUT_FIELD(_flags._childrenCnt);
-  DIFF_OUT_FIELD(_flags._select);
-
-  // if (stream.getDatabase()->isSchema(ADS_DB_CAPNODE_NAME))
-  DIFF_OUT_FIELD(_flags._name);
-
-  DIFF_OUT_FIELD(_node_num);
-  DIFF_OUT_FIELD(_net);
-  DIFF_OUT_FIELD(_next);
-  DIFF_OUT_FIELD(_cc_segs);
-  DIFF_END
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbCapNode - Methods
@@ -157,14 +84,10 @@ void _dbCapNode::out(dbDiff& diff, char side, const char* field) const
 
 bool dbCapNode::needAdjustCC(double ccThreshHold)
 {
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  uint cornerCnt = ((dbBlock*) getImpl()->getOwner())->getCornerCount();
-  uint corner;
-  uint cid;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
-    for (corner = 0; corner < cornerCnt; corner++) {
+  const uint cornerCnt = ((dbBlock*) getImpl()->getOwner())->getCornerCount();
+  for (dbCCSeg* cc : getCCSegs()) {
+    for (uint corner = 0; corner < cornerCnt; corner++) {
+      uint cid;
       if (cc->getTheOtherCapn(this, cid)->getNet()->getCcAdjustFactor() > 0) {
         continue;
       }
@@ -179,19 +102,13 @@ bool dbCapNode::needAdjustCC(double ccThreshHold)
 bool dbCapNode::groundCC(float gndFactor)
 {
   bool grounded = false;
-  uint vicNetId = getNet()->getId();
-  uint agrNetId;
-  dbCapNode* agrNode;
-  double deltaC;
-  uint cid;
+  const uint vicNetId = getNet()->getId();
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
-  uint cornerCnt = block->_corners_per_block;
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
-    agrNode = cc->getTheOtherCapn(this, cid);
-    agrNetId = agrNode->getNet()->getId();
+  const uint cornerCnt = block->_corners_per_block;
+  for (dbCCSeg* cc : getCCSegs()) {
+    uint cid;
+    dbCapNode* agrNode = cc->getTheOtherCapn(this, cid);
+    uint agrNetId = agrNode->getNet()->getId();
     if (agrNetId < vicNetId) {
       continue;  //  avoid duplicate grounding
     }
@@ -209,7 +126,7 @@ bool dbCapNode::groundCC(float gndFactor)
     }
     grounded = true;
     for (uint ii = 0; ii < cornerCnt; ii++) {
-      deltaC = cc->getCapacitance(ii) * gndFactor;
+      const double deltaC = cc->getCapacitance(ii) * gndFactor;
       addCapacitance(deltaC, ii);
       agrNode->addCapacitance(deltaC, ii);
     }
@@ -222,16 +139,12 @@ void dbCapNode::adjustCC(uint adjOrder,
                          std::vector<dbCCSeg*>& adjustedCC,
                          std::vector<dbNet*>& halonets)
 {
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  dbNet* agrNet;
-  uint cid;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    dbCCSeg* cc = *ccitr;
+  for (dbCCSeg* cc : getCCSegs()) {
     if (cc->isMarked()) {
       continue;
     }
-    agrNet = cc->getTheOtherCapn(this, cid)->getNet();
+    uint cid;
+    dbNet* agrNet = cc->getTheOtherCapn(this, cid)->getNet();
     if (agrNet->getCcAdjustFactor() > 0
         && agrNet->getCcAdjustOrder() < adjOrder) {
       continue;
@@ -347,12 +260,8 @@ void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
   if (totalcap == nullptr || MillerMult == 0) {
     return;
   }
-  dbSet<dbCCSeg> ccSegs = getCCSegs();
-  dbSet<dbCCSeg>::iterator ccitr;
-  for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-    double ccmult = MillerMult;
-    dbCCSeg* cc = *ccitr;
-    cc->accAllCcCap(totalcap, ccmult);
+  for (dbCCSeg* cc : getCCSegs()) {
+    cc->accAllCcCap(totalcap, MillerMult);
   }
 }
 
@@ -1135,4 +1044,11 @@ dbCapNode* dbCapNode::getCapNode(dbBlock* block_, uint dbid_)
   _dbBlock* block = (_dbBlock*) block_;
   return (dbCapNode*) block->_cap_node_tbl->getPtr(dbid_);
 }
+
+void _dbCapNode::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
 }  // namespace odb

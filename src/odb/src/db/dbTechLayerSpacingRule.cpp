@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbTechLayerSpacingRule.h"
 
@@ -46,6 +17,18 @@ namespace odb {
 
 template class dbTable<_dbTechLayerSpacingRule>;
 template class dbTable<_dbTechV55InfluenceEntry>;
+
+void _dbTechLayerSpacingRule::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
+
+void _dbTechV55InfluenceEntry::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+}
 
 bool _dbTechLayerSpacingRule::operator==(
     const _dbTechLayerSpacingRule& rhs) const
@@ -113,53 +96,6 @@ bool _dbTechLayerSpacingRule::operator==(
   return true;
 }
 
-void _dbTechLayerSpacingRule::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechLayerSpacingRule& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._rule);
-  DIFF_FIELD(_flags._except_same_pgnet);
-  DIFF_FIELD(_flags._cut_stacking);
-  DIFF_FIELD(_flags._cut_center_to_center);
-  DIFF_FIELD(_flags._cut_same_net);
-  DIFF_FIELD(_flags._cut_parallel_overlap);
-  DIFF_FIELD(_spacing);
-  DIFF_FIELD(_length_or_influence);
-  DIFF_FIELD(_r1min);
-  DIFF_FIELD(_r1max);
-  DIFF_FIELD(_r2min);
-  DIFF_FIELD(_r2max);
-  DIFF_FIELD(_cut_area);
-  DIFF_FIELD(_layer);
-  DIFF_FIELD(_cut_layer_below);
-  DIFF_END
-}
-
-void _dbTechLayerSpacingRule::out(dbDiff& diff,
-                                  char side,
-                                  const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._rule);
-  DIFF_OUT_FIELD(_flags._except_same_pgnet);
-  DIFF_OUT_FIELD(_flags._cut_stacking);
-  DIFF_OUT_FIELD(_flags._cut_center_to_center);
-  DIFF_OUT_FIELD(_flags._cut_same_net);
-  DIFF_OUT_FIELD(_flags._cut_parallel_overlap);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_OUT_FIELD(_length_or_influence);
-  DIFF_OUT_FIELD(_r1min);
-  DIFF_OUT_FIELD(_r1max);
-  DIFF_OUT_FIELD(_r2min);
-  DIFF_OUT_FIELD(_r2max);
-  DIFF_OUT_FIELD(_cut_area);
-  DIFF_OUT_FIELD(_layer);
-  DIFF_OUT_FIELD(_cut_layer_below);
-  DIFF_END
-}
-
 bool _dbTechV55InfluenceEntry::operator==(
     const _dbTechV55InfluenceEntry& rhs) const
 {
@@ -176,29 +112,6 @@ bool _dbTechV55InfluenceEntry::operator==(
   }
 
   return true;
-}
-
-void _dbTechV55InfluenceEntry::differences(
-    dbDiff& diff,
-    const char* field,
-    const _dbTechV55InfluenceEntry& rhs) const
-{
-  DIFF_BEGIN
-  DIFF_FIELD(_width);
-  DIFF_FIELD(_within);
-  DIFF_FIELD(_spacing);
-  DIFF_END
-}
-
-void _dbTechV55InfluenceEntry::out(dbDiff& diff,
-                                   char side,
-                                   const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_width);
-  DIFF_OUT_FIELD(_within);
-  DIFF_OUT_FIELD(_spacing);
-  DIFF_END
 }
 
 ////////////////////////////////////////////////////////////////////

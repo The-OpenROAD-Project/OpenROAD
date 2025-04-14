@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -181,8 +149,14 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Port* port) const override;
   ObjectId id(const Cell* cell) const override;
 
+  // generic connect pin -> net, supports all pin/net types
+  void connectPin(Pin* pin, Net* net) override;
+  // generic connect pin -> flat_net, hier_net.
+  void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
   // hierarchical support functions
-  dbModule* getNetDriverParentModule(Net* net);
+  dbModule* getNetDriverParentModule(Net* net,
+                                     Pin*& driver_pin,
+                                     bool hier = false);
   Instance* getOwningInstanceParent(Pin* pin);
 
   bool ConnectionToModuleExists(dbITerm* source_pin,
@@ -190,6 +164,7 @@ class dbNetwork : public ConcreteNetwork
                                 dbModBTerm*& dest_modbterm,
                                 dbModITerm*& dest_moditerm);
 
+  bool connected(Pin* source_pin, Pin* dest_pin);
   void hierarchicalConnect(dbITerm* source_pin,
                            dbITerm* dest_pin,
                            const char* connection_name);
@@ -199,7 +174,7 @@ class dbNetwork : public ConcreteNetwork
   dbModule* findHighestCommonModule(std::vector<dbModule*>& itree1,
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
-  void replaceDesign(dbModInst* mod_inst, dbModule* module);
+  void replaceHierModule(dbModInst* mod_inst, dbModule* module);
 
   ////////////////////////////////////////////////////////////////
   //
@@ -227,7 +202,9 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
+  using ConcreteNetwork::isLeaf;
   bool isLeaf(const Instance* instance) const override;
+  bool isLeaf(const Pin* pin) const override;
   Port* findPort(const Cell* cell, const char* name) const override;
   Instance* findInstance(const char* path_name) const override;
   Instance* findChild(const Instance* parent, const char* name) const override;
@@ -254,6 +231,9 @@ class dbNetwork : public ConcreteNetwork
   dbITerm* flatPin(const Pin* pin) const;
   dbModITerm* hierPin(const Pin* pin) const;
 
+  bool isFlat(const Pin* pin) const;
+  bool isFlat(const Net* net) const;
+
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
@@ -262,6 +242,7 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Terminal functions
   Net* net(const Term* term) const override;
+  dbNet* flatNet(const Term* term) const;
   Pin* pin(const Term* term) const override;
   ObjectId id(const Term* term) const override;
 
@@ -315,11 +296,13 @@ class dbNetwork : public ConcreteNetwork
   void replaceCell(Instance* inst, Cell* cell) override;
   // Deleting instance also deletes instance pins.
   void deleteInstance(Instance* inst) override;
+
   // Connect the port on an instance to a net.
   Pin* connect(Instance* inst, Port* port, Net* net) override;
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;
   void connectPinAfter(Pin* pin);
   void disconnectPin(Pin* pin) override;
+  void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;
@@ -336,6 +319,9 @@ class dbNetwork : public ConcreteNetwork
   void setHierarchy() { hierarchy_ = true; }
   void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
+  void reassociateHierFlatNet(dbModNet* mod_net,
+                              dbNet* new_flat_net,
+                              dbNet* orig_flat_net);
 
   int fromIndex(const Port* port) const override;
   int toIndex(const Port* port) const override;

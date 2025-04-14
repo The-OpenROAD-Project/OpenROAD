@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021-2025, The OpenROAD Authors
+
 add_library(db
     dbBTerm.cpp 
     dbStream.cpp 
@@ -41,7 +44,6 @@ add_library(db
     dbSBox.cpp 
     dbSWireItr.cpp 
     dbSBoxItr.cpp 
-    dbDiff.cpp 
     dbSite.cpp 
     dbCCSeg.cpp 
     dbCCSegItr.cpp 

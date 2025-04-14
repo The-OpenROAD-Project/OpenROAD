@@ -201,7 +201,7 @@ const char* defrData::upperCase(const char* str)
 
   to = shiftBuf;
   while (*place) {
-    int i = (int) *place;
+    int i = static_cast<unsigned char>(*place);
     place++;
     *to++ = defiShift[i];
   }
@@ -243,7 +243,7 @@ int defrData::validateMaskShiftInput(const char* shiftMask,
 
   // Verification of the mask string
   for (int i = 0; i < shiftMaskLength; i++) {
-    int curShift = shiftMask[i];
+    int curShift = static_cast<unsigned char>(shiftMask[i]);
 
     if (curShift < '0' || curShift > '9') {
       hasError = 1;

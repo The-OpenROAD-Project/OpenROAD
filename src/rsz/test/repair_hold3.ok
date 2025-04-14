@@ -6,6 +6,11 @@
 worst slack -0.03
 worst slack 1.95
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.034 |  -0.048 | r2/D
+    final |       0 |       2 |            0 |    +6.3% |   0.010 |   0.000 | r3/D
+--------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 2 hold buffers.
 Repair timing output passed/skipped equivalence test
 worst slack 0.01

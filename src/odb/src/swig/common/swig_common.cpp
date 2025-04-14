@@ -1,29 +1,5 @@
-/*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "swig_common.h"
 
@@ -31,6 +7,7 @@
 
 #include <array>
 #include <fstream>
+#include <string>
 #include <vector>
 
 #include "odb/defin.h"
@@ -39,58 +16,6 @@
 #include "utl/Logger.h"
 
 using namespace boost::polygon::operators;
-
-bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2)
-{
-  // Sadly the diff report is too implementation specific to reveal much about
-  // the structural differences.
-  FILE* report = fopen("diffs.rpt", "w");
-  bool diffs = odb::dbDatabase::diff(db1, db2, report, 2);
-  fclose(report);
-  if (diffs) {
-    printf("Differences found.\n");
-    odb::dbChip* chip1 = db1->getChip();
-    odb::dbChip* chip2 = db2->getChip();
-    odb::dbBlock* block1 = chip1->getBlock();
-    odb::dbBlock* block2 = chip2->getBlock();
-
-    int inst_count1 = block1->getInsts().size();
-    int inst_count2 = block2->getInsts().size();
-    if (inst_count1 != inst_count2)
-      printf(" instances %d != %d.\n", inst_count1, inst_count2);
-
-    int pin_count1 = block1->getBTerms().size();
-    int pin_count2 = block2->getBTerms().size();
-    if (pin_count1 != pin_count2)
-      printf(" pins %d != %d.\n", pin_count1, pin_count2);
-
-    int net_count1 = block1->getNets().size();
-    int net_count2 = block2->getNets().size();
-    if (net_count1 != net_count2)
-      printf(" nets %d != %d.\n", net_count1, net_count2);
-  } else
-    printf("No differences found.\n");
-  return diffs;
-}
-
-bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
-{
-  // Copy the database to get the tech and libraries.
-  odb::dbDatabase* db2 = odb::dbDatabase::duplicate(db1);
-  odb::dbChip* chip2 = db2->getChip();
-  if (chip2)
-    odb::dbChip::destroy(chip2);
-  utl::Logger* logger = new utl::Logger();
-  odb::defin def_reader(db2, logger);
-  std::vector<odb::dbLib*> search_libs;
-  for (odb::dbLib* lib : db2->getLibs())
-    search_libs.push_back(lib);
-  def_reader.createChip(search_libs, def_filename, db1->getTech());
-  if (db2->getChip())
-    return db_diff(db1, db2);
-
-  return false;
-}
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {

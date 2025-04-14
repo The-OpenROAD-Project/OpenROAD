@@ -85,6 +85,11 @@ Path Type: min
 
 
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.088 |  -0.196 | r2/D
+    final |       0 |      10 |            0 |   +36.6% |   0.009 |   0.000 | r2/D
+--------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 10 hold buffers.
 worst slack 0.01
 worst slack 1.88

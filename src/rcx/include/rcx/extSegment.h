@@ -1,49 +1,17 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, IC BENCH, Dimitris Fotakis
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
-#ifndef ADS_EXTSEGMENT_H
-#define ADS_EXTSEGMENT_H
+#pragma once
 
 #include <dbUtil.h>
-#include <gseq.h>
 
 #include "extprocess.h"
-#include "gseq.h"
+#include "grids.h"
 #include "odb/db.h"
 #include "odb/dbExtControl.h"
 #include "odb/dbShape.h"
 #include "odb/odb.h"
 #include "odb/util.h"
-#include "wire.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)
@@ -69,7 +37,7 @@ class Logger;
 
 namespace rcx {
 using namespace odb;
-class Ath__wire;
+class Wire;
 
 class extMeasure;
 
@@ -93,31 +61,29 @@ class extSegment  // assume cross-section on the z-direction
   int _metOver;
   uint _id;
 
-  Ath__wire* _wire;
-  Ath__wire* _up;
-  Ath__wire* _down;
+  Wire* _wire;
+  Wire* _up;
+  Wire* _down;
 
-  // extSegment(uint dir, Ath__wire *w2, int dist);
+  // extSegment(uint dir, Wire *w2, int dist);
   //  ~extSegment();
 
   // extSegment();
-  // extSegment(uint d, Ath__wire *w, int xy, int len, Ath__wire *up, Ath__wire
+  // extSegment(uint d, Wire *w, int xy, int len, Wire *up, Wire
   // *down, int metOver=-1, int metUnder=-1);
   void set(uint d,
-           Ath__wire* w,
+           Wire* w,
            int xy,
            int len,
-           Ath__wire* up,
-           Ath__wire* down,
+           Wire* up,
+           Wire* down,
            int metOver = -1,
            int metUnder = -1);
-  int GetDist(Ath__wire* w1, Ath__wire* w2);
-  int setUpDown(bool up, Ath__wire* w1);
+  int GetDist(Wire* w1, Wire* w2);
+  int setUpDown(bool up, Wire* w1);
 
   friend class extMeasure;
   friend class extRCModel;
 };
 
 }  // namespace rcx
-
-#endif

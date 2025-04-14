@@ -1,36 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbRegion.h"
+
+#include <string>
 
 #include "dbBlock.h"
 #include "dbBox.h"
@@ -131,40 +104,6 @@ bool _dbRegion::operator<(const _dbRegion& rhs) const
     return true;
   }
   return _boxes < rhs._boxes;
-}
-
-void _dbRegion::differences(dbDiff& diff,
-                            const char* field,
-                            const _dbRegion& rhs) const
-{
-  if (diff.deepDiff()) {
-    return;
-  }
-
-  DIFF_BEGIN
-  DIFF_FIELD(_flags._type);
-  DIFF_FIELD(_flags._invalid);
-  DIFF_FIELD(_name);
-  DIFF_FIELD(_insts);
-  DIFF_FIELD(_boxes);
-  DIFF_FIELD(groups_);
-  DIFF_END
-}
-
-void _dbRegion::out(dbDiff& diff, char side, const char* field) const
-{
-  if (diff.deepDiff()) {
-    return;
-  }
-
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(_flags._type);
-  DIFF_OUT_FIELD(_flags._invalid);
-  DIFF_OUT_FIELD(_name);
-  DIFF_OUT_FIELD(_insts);
-  DIFF_OUT_FIELD(_boxes);
-  DIFF_OUT_FIELD(groups_);
-  DIFF_END
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbRegion& r)
@@ -425,6 +364,14 @@ dbRegion* dbRegion::getRegion(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbRegion*) block->_region_tbl->getPtr(dbid_);
+}
+
+void _dbRegion::collectMemInfo(MemInfo& info)
+{
+  info.cnt++;
+  info.size += sizeof(*this);
+
+  info.children_["name"].add(_name);
 }
 
 }  // namespace odb

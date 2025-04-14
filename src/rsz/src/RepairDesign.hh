@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -50,8 +18,6 @@ namespace rsz {
 
 class Resizer;
 enum class ParasiticsSrc;
-
-using std::vector;
 
 using sta::Corner;
 using sta::dbNetwork;
@@ -77,7 +43,7 @@ class LoadRegion
 
   PinSeq pins_;
   Rect bbox_;  // dbu
-  vector<LoadRegion> regions_;
+  std::vector<LoadRegion> regions_;
 };
 
 class RepairDesign : dbStaState
@@ -107,13 +73,32 @@ class RepairDesign : dbStaState
                  double cap_margin);
   void repairClkNets(double max_wire_length);
   void repairClkInverters();
+  void reportViolationCounters(bool invalidate_driver_vertices,
+                               int slew_violations,
+                               int cap_violations,
+                               int fanout_violations,
+                               int length_violations,
+                               int repaired_net_count);
+  void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
  protected:
   void init();
 
   bool getCin(const Pin* drvr_pin, float& cin);
+  bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
+  void performEarlySizingRound(float gate_gain,
+                               float buffer_gain,
+                               int& repaired_net_count);
+
+  void checkDriverArcSlew(const Corner* corner,
+                          const Instance* inst,
+                          const TimingArc* arc,
+                          float load_cap,
+                          float limit,
+                          float& violation);
+  bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
 
   void repairNet(Net* net,
                  const Pin* drvr_pin,
@@ -128,29 +113,11 @@ class RepairDesign : dbStaState
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
-  bool needRepairSlew(const Pin* drvr_pin,
-                      int& slew_violations,
-                      float& max_cap,
-                      const Corner*& corner);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
                      const Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
-  bool needRepair(const Pin* drvr_pin,
-                  const Corner*& corner,
-                  int max_length,
-                  int wire_length,
-                  bool check_cap,
-                  bool check_slew,
-                  float& max_cap,
-                  int& slew_violations,
-                  int& cap_violations,
-                  int& length_violations);
-  bool checkLimits(const Pin* drvr_pin,
-                   bool check_slew,
-                   bool check_cap,
-                   bool check_fanout);
   void checkSlew(const Pin* drvr_pin,
                  // Return values.
                  Slew& slew,
@@ -192,7 +159,9 @@ class RepairDesign : dbStaState
                       double load_cap,
                       double slew,
                       const DcalcAnalysisPt* dcalc_ap);
-  LoadRegion findLoadRegions(const Pin* drvr_pin, int max_fanout);
+  LoadRegion findLoadRegions(const Net* net,
+                             const Pin* drvr_pin,
+                             int max_fanout);
   void subdivideRegion(LoadRegion& region, int max_fanout);
   void makeRegionRepeaters(LoadRegion& region,
                            int max_fanout,
@@ -214,7 +183,7 @@ class RepairDesign : dbStaState
   Rect findBbox(PinSeq& pins);
   Point findClosedPinLoc(const Pin* drvr_pin, PinSeq& pins);
   bool isRepeater(const Pin* load_pin);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     const Point& loc,
                     LibertyCell* buffer_cell,
                     bool resize,
@@ -224,7 +193,7 @@ class RepairDesign : dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew);
-  void makeRepeater(const char* reason,
+  bool makeRepeater(const char* reason,
                     int x,
                     int y,
                     LibertyCell* buffer_cell,
@@ -253,6 +222,7 @@ class RepairDesign : dbStaState
   PreChecks* pre_checks_ = nullptr;
   Resizer* resizer_;
   int dbu_ = 0;
+  double initial_design_area_ = 0;
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
 
   // Gain buffering
@@ -273,11 +243,12 @@ class RepairDesign : dbStaState
   const MinMax* max_ = MinMax::max();
 
   int print_interval_ = 0;
+  std::shared_ptr<ResizerObserver> graphics_;
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr int min_print_interval_ = 10;
-  static constexpr int max_print_interval_ = 100;
+  static constexpr int max_print_interval_ = 1000;
 };
 
 }  // namespace rsz

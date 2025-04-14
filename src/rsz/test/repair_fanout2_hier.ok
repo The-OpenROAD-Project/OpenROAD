@@ -1,0 +1,57 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[WARNING GPL-0001] clk1 toplevel port is not placed!
+       Replace will regard clk1 is placed in (0, 0)
+[INFO GPL-0006] Number of instances:                71
+[INFO GPL-0007] Movable instances:                  71
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                      2
+[INFO GPL-0011] Number of pins:                    143
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        321.062 um^2
+[INFO GPL-0019] Utilization:                     0.671 %
+[INFO GPL-0020] Standard cells area:           321.062 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 18520
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 27440
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 25496
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 24876
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 24732
+Placement Analysis
+---------------------------------
+total displacement       1145.8 u
+average displacement       16.1 u
+max displacement           25.9 u
+original HPWL               2.3 u
+legalized HPWL             90.0 u
+delta HPWL                 3754 %
+
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+drvr/Q                                   10     70    -60 (VIOLATED)
+
+[INFO RSZ-0058] Using max wire length 530um.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       143
+    final |     +2.8% |       8 |       9 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0039] Resized 8 instances.
+[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
+max fanout
+
+Pin                                   Limit Fanout  Slack
+---------------------------------------------------------
+fanout8/Z                                10     10      0 (MET)
+
+No differences found.
