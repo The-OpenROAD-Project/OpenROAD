@@ -472,17 +472,28 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           raw, label, scaled);
       std::system(scaleCmd.c_str());
       std::filesystem::remove(raw);
-    
-      if (routability_driven_ || timing_driven_) {
-        std::string special = fmt::format("{}/iter_{:05d}.png", special_modes_dir, iter);
-        std::string copyCmd = fmt::format("cp {} {}", scaled, special);
-        std::system(copyCmd.c_str());
-    
-        // Flags only used here, so reset them here
-        routability_driven_ = false;
-        timing_driven_ = false;
-      }
     }
+
+    if (timing_driven_ && graphics_) {
+      std::string raw = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
+      std::string special = fmt::format("{}/iter_{:05d}.png", special_modes_dir, iter);
+      std::string label = fmt::format("Iter {} | R: {} | T: {}",
+                                      iter,
+                                      routabilityDrivenCount,
+                                      timingDrivenCount);
+    
+      graphics_->saveGuiImage(raw);
+    
+      std::string annotateCmd = fmt::format(
+          "convert {} -resize 50% -colors 64 -strip -quality 85 "
+          "-gravity SouthEast -pointsize 20 -fill yellow "
+          "-annotate +5+5 '{}' PNG8:{}",
+          raw, label, special);
+      std::system(annotateCmd.c_str());
+      std::filesystem::remove(raw);
+      timing_driven_ = false;
+    }
+    
     
 
     // timing driven feature
@@ -737,8 +748,32 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (npVars_.routability_driven_mode && is_routability_need_
         && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
       nbVec_[0]->setTrueReprintIterHeader();
-      routability_driven_ = true;
       ++routabilityDrivenCount;
+
+    if (graphics_) {
+      std::string raw = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
+      // std::string heatmap = fmt::format("{}/special_raw_heatmap_{:05d}.png", special_modes_dir, iter);
+      std::string special = fmt::format("{}/iter_{:05d}.png", special_modes_dir, iter);
+      std::string label = fmt::format("Iter {} | R: {} | T: {}",
+                                      iter,
+                                      routabilityDrivenCount,
+                                      timingDrivenCount);    
+      graphics_->saveGuiImage(raw);
+
+      // graphics_->saveGuiImageWithHeatmap(heatmap);
+    
+      std::string annotate_cmd = fmt::format(
+          "convert {} -resize 50% -colors 64 -strip -quality 85 "
+          "-gravity SouthEast -pointsize 20 -fill yellow "
+          "-annotate +5+5 '{}' PNG8:{}",
+          raw, label, special);
+    
+      std::system(annotate_cmd.c_str());
+    
+      std::filesystem::remove(raw);
+    }
+      
+
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();

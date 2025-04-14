@@ -84,7 +84,7 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   static bool guiActive();
   
   void saveGuiImage(const std::string& filename);
-
+  void saveGuiImageWithHeatmap(const std::string& filename);
  private:
   enum HeatMapType
   {

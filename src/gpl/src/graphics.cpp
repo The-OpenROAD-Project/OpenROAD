@@ -517,4 +517,17 @@ void Graphics::saveGuiImage(const std::string& filename)
   }
 }
 
+void Graphics::saveGuiImageWithHeatmap(const std::string& filename) {
+  if (!gui::Gui::enabled()) {
+    logger_->warn(utl::GPL, 998, "GUI is not active. Cannot save '{}'.", filename);
+    return;
+  }
+
+  gui::Gui* gui = gui::Gui::get();
+  gui->setDisplayControlsVisible("Heat Maps/Placement Density", true);
+  // gui->redraw();
+  gui->saveImage(filename.c_str());
+  gui->setDisplayControlsVisible("Heat Maps/Placement Density", false);
+}
+
 }  // namespace gpl
