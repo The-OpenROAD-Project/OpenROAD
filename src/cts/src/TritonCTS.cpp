@@ -1159,7 +1159,8 @@ bool TritonCTS::separateMacroRegSinks(
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
-    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()) {
+    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()
+        && inst->getSourceType() == odb::dbSourceType::TIMING) {
       logger_->warn(CTS,
                     105,
                     "Net \"{}\" already has clock buffer {}. Skipping...",
