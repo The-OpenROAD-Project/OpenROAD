@@ -3,7 +3,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
-[INFO ODB-0424] Top layer grid region was changed to (0.8um, 1.25um)-(90um, 90um) to prevent pin shapes out of the die area.
 [WARNING STA-0366] port 'qq' not found.
 [ERROR PPL-0061] Pins {qq} for set_io_pin_constraint command were not found.
 PPL-0061

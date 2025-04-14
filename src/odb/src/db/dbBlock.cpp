@@ -1646,48 +1646,11 @@ void dbBlock::setBTermTopLayerGrid(dbTechLayer* layer,
   _dbBTermTopLayerGrid& top_layer_grid = block->_bterm_top_layer_grid;
 
   utl::Logger* logger = block->getImpl()->getLogger();
-
-  const int half_width = pin_width / 2;
-  const int half_height = pin_height / 2;
   const odb::Rect& die_area = getDieArea();
-  bool region_changed = false;
 
-  if (die_area.contains(region)) {
-    odb::Point lower_left(region.xMin() - half_width,
-                          region.yMin() - half_height);
-    odb::Point upper_right(region.xMax() + half_width,
-                           region.yMax() + half_height);
-
-    if (lower_left.x() < die_area.xMin()) {
-      region.set_xlo(die_area.xMin() + half_width);
-      region_changed = true;
-    }
-    if (lower_left.y() < die_area.yMin()) {
-      region.set_ylo(die_area.yMin() + half_height);
-      region_changed = true;
-    }
-    if (upper_right.x() > die_area.xMax()) {
-      region.set_xhi(die_area.xMax() - half_width);
-      region_changed = true;
-    }
-    if (upper_right.y() > die_area.yMax()) {
-      region.set_yhi(die_area.yMax() - half_height);
-      region_changed = true;
-    }
-  } else {
+  if (!die_area.contains(region)) {
     logger->error(
         utl::ODB, 124, "Top layer grid region is out of the die area.");
-  }
-
-  if (region_changed) {
-    logger->info(utl::ODB,
-                 424,
-                 "Top layer grid region was changed to ({}um, {}um)-({}um, "
-                 "{}um) to prevent pin shapes out of the die area.",
-                 dbuToMicrons(region.xMin()),
-                 dbuToMicrons(region.yMin()),
-                 dbuToMicrons(region.xMax()),
-                 dbuToMicrons(region.yMax()));
   }
 
   top_layer_grid.layer = layer->getId();

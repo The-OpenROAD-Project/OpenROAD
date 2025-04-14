@@ -2223,10 +2223,10 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections,
 void IOPlacer::updateSlots()
 {
   for (Slot& slot : slots_) {
-    slot.blocked = slot.used;
+    slot.blocked = slot.blocked || slot.used;
   }
   for (Slot& slot : top_layer_slots_) {
-    slot.blocked = slot.used;
+    slot.blocked = slot.blocked || slot.used;
   }
 }
 
@@ -2863,18 +2863,35 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
 void IOPlacer::findSlotsForTopLayer()
 {
   const auto& top_grid = getBlock()->getBTermTopLayerGrid();
+  const odb::Rect& die_area = getBlock()->getDieArea();
+
   if (top_layer_slots_.empty() && top_grid.pin_width > 0) {
     if (top_grid.region.isRect()) {
       if (!top_grid.x_step || !top_grid.y_step) {
         logger_->error(
             utl::PPL, 114, "x_step/y_step for top layer grid not found.");
       }
+      if (!top_grid.pin_width || !top_grid.pin_height) {
+        logger_->error(
+            utl::PPL, 118, "Pin width/height for top layer grid not found.");
+      }
+
+      const int half_width = top_grid.pin_width.value() / 2;
+      const int half_height = top_grid.pin_height.value() / 2;
       const Rect& top_grid_region = top_grid.region.getEnclosingRect();
       for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
            x += top_grid.x_step.value()) {
         for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
              y += top_grid.y_step.value()) {
-          top_layer_slots_.push_back({false,
+          Point ll(x - half_width, y - half_height);
+          Point lr(x + half_width, y - half_height);
+          Point ul(x - half_width, y + half_height);
+          Point ur(x + half_width, y + half_height);
+          bool blocked = !die_area.intersects(ll) || !die_area.intersects(lr)
+                         || !die_area.intersects(ul)
+                         || !die_area.intersects(ur);
+
+          top_layer_slots_.push_back({blocked,
                                       false,
                                       Point(x, y),
                                       top_grid.layer->getRoutingLevel(),
