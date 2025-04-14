@@ -3,7 +3,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
-[INFO ODB-0273] Top layer grid region was changed to (0.8um, 1.25um)-(90um, 90um) to prevent pin shapes out of the die area.
+[INFO ODB-0424] Top layer grid region was changed to (0.8um, 1.25um)-(90um, 90um) to prevent pin shapes out of the die area.
 Found 0 macro blocks.
 [INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (70.00u, 50.00u)-(75.00u, 80.00u) at routing layer metal10.
 [INFO PPL-0001] Number of available slots 2494

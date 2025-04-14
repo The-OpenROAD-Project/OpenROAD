@@ -1902,7 +1902,7 @@ void IOPlacer::getConstraintsFromDB()
         if (!top_grid.region.contains(region)) {
           logger_->error(
               utl::PPL,
-              10,
+              25,
               "Constraint region ({:.2f}u, {:.2f}u)-({:.2f}u, {:.2f}u) at top "
               "layer is not contained in the top layer grid.",
               getBlock()->dbuToMicrons(region.xMin()),

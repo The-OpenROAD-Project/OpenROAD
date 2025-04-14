@@ -1681,7 +1681,7 @@ void dbBlock::setBTermTopLayerGrid(int layer_id,
 
   if (region_changed) {
     logger->info(utl::ODB,
-                 273,
+                 424,
                  "Top layer grid region was changed to ({}um, {}um)-({}um, "
                  "{}um) to prevent pin shapes out of the die area.",
                  dbuToMicrons(region.xMin()),
