@@ -4,9 +4,17 @@
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"

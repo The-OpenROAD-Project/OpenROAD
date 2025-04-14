@@ -9,6 +9,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <cstdio>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "odb/db.h"

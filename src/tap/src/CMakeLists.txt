@@ -27,7 +27,6 @@ target_link_libraries(tap
   PRIVATE
     utl_lib
     odb
-    OpenSTA
     Boost::boost
 )
 
@@ -49,7 +48,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       tap
       odb
-      OpenSTA
   )
 
 endif()

@@ -7,6 +7,7 @@
 #include <boost/geometry/algorithms/equals.hpp>
 #include <boost/geometry/geometries/register/box.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
+#include <utility>
 
 #include "db/infra/frBox.h"
 #include "db/infra/frPoint.h"

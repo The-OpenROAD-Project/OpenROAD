@@ -8,7 +8,9 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
 #include <random>
 #include <string>
 

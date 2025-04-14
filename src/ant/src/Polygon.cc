@@ -3,6 +3,7 @@
 
 #include "Polygon.hh"
 
+#include <map>
 #include <vector>
 
 #include "odb/dbShape.h"

@@ -29,6 +29,7 @@
 
 #include "defiAlias.hpp"
 
+#include <map>
 #include <string>
 
 #include "defrData.hpp"

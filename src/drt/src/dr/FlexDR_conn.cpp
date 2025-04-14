@@ -5,6 +5,13 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "dr/FlexDR.h"
 #include "frProfileTask.h"
 #include "io/io.h"
@@ -33,9 +40,8 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
     const frNet* net,
     const Point& pt,
     const frLayerNum lNum,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2epMap)
+    frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+        pin2epMap)
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
@@ -66,9 +72,8 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
 void FlexDRConnectivityChecker::buildPin2epMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
-    std::map<frBlockObject*,
-             std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2epMap)
+    frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+        pin2epMap)
 {
   // to avoid delooping fake planar ep in pin
   std::set<std::pair<Point, frLayerNum>> extEndPoints;
@@ -249,9 +254,8 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
 void FlexDRConnectivityChecker::nodeMap_pin(
     const std::vector<frConnFig*>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*,
-                   std::set<std::pair<Point, frLayerNum>>,
-                   frBlockObjectComp>& pin2epMap,
+    const frOrderedIdMap<frBlockObject*,
+                         std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
@@ -268,9 +272,8 @@ void FlexDRConnectivityChecker::buildNodeMap(
     const frNet* net,
     const NetRouteObjs& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*,
-                   std::set<std::pair<Point, frLayerNum>>,
-                   frBlockObjectComp>& pin2epMap,
+    const frOrderedIdMap<frBlockObject*,
+                         std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   nodeMap_routeObjEnd(net, netRouteObjs, nodeMap);
@@ -1254,9 +1257,8 @@ void FlexDRConnectivityChecker::check(int iter)
                             vertNewSegSpans);
     }
     // net->term/instTerm->pt_layer
-    std::vector<std::map<frBlockObject*,
-                         std::set<std::pair<Point, frLayerNum>>,
-                         frBlockObjectComp>>
+    std::vector<
+        frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>>
         aPin2epMap(batchSize);
     std::vector<std::vector<frBlockObject*>> aNetPins(batchSize);
     std::vector<std::map<std::pair<Point, frLayerNum>, std::set<int>>> aNodeMap(

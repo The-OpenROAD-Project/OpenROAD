@@ -3,8 +3,10 @@
 
 #include "detailed_orient.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cstddef>
+#include <limits>
 #include <string>
 #include <vector>
 

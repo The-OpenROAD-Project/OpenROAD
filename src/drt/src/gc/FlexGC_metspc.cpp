@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "gc/FlexGC_impl.h"
 
 namespace drt {

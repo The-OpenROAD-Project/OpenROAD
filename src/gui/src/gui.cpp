@@ -5,6 +5,8 @@
 
 #include <QApplication>
 #include <boost/algorithm/string/predicate.hpp>
+#include <cmath>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -25,9 +27,9 @@
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
-#include "sta/StaMain.hh"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 #include "utl/exception.h"
 
 extern int cmd_argc;
@@ -1617,10 +1619,10 @@ std::string Descriptor::Property::toString(const std::any& value)
 
 }  // namespace gui
 
-namespace sta {
+namespace gui {
 // Tcl files encoded into strings.
 extern const char* gui_tcl_inits[];
-}  // namespace sta
+}  // namespace gui
 
 extern "C" {
 struct Tcl_Interp;
@@ -1636,7 +1638,7 @@ void initGui(OpenRoad* openroad)
 {
   // Define swig TCL commands.
   Gui_Init(openroad->tclInterp());
-  sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
+  utl::evalTclInit(openroad->tclInterp(), gui::gui_tcl_inits);
 
   // ensure gui is made
   auto* gui = gui::Gui::get();

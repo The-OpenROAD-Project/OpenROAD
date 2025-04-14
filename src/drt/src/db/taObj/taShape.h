@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
 

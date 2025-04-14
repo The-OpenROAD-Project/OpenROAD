@@ -3,6 +3,8 @@
 
 #include "connection.h"
 
+#include <limits>
+#include <memory>
 #include <string>
 
 #include "node.h"

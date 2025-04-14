@@ -3,7 +3,10 @@
 
 #include "gpl/Replace.h"
 
+#include <algorithm>
 #include <iostream>
+#include <memory>
+#include <utility>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

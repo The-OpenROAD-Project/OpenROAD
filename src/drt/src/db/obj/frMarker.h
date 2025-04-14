@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <memory>
 #include <set>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frFig.h"

@@ -3,6 +3,7 @@
 
 #include "RecoverPower.hh"
 
+#include <algorithm>
 #include <string>
 
 #include "db_sta/dbNetwork.hh"

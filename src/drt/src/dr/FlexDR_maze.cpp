@@ -4,8 +4,13 @@
 #include <algorithm>
 #include <boost/polygon/polygon.hpp>
 #include <chrono>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "db/gcObj/gcNet.h"
@@ -2181,9 +2186,8 @@ void FlexDRWorker::modEolCosts_poly(gcNet* net, ModCostType modType)
 
 void FlexDRWorker::routeNet_prep(
     drNet* net,
-    std::set<drPin*, frBlockObjectComp>& unConnPins,
-    std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-        mazeIdx2unConnPins,
+    frOrderedIdSet<drPin*>& unConnPins,
+    std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
     std::set<FlexMazeIdx>& apMazeIdx,
     std::set<FlexMazeIdx>& realPinAPMazeIdx,
     std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
@@ -2250,9 +2254,8 @@ void FlexDRWorker::routeNet_prep(
 }
 
 void FlexDRWorker::routeNet_setSrc(
-    std::set<drPin*, frBlockObjectComp>& unConnPins,
-    std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-        mazeIdx2unConnPins,
+    frOrderedIdSet<drPin*>& unConnPins,
+    std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
     std::vector<FlexMazeIdx>& connComps,
     FlexMazeIdx& ccMazeIdx1,
     FlexMazeIdx& ccMazeIdx2,
@@ -2349,8 +2352,7 @@ void FlexDRWorker::routeNet_setSrc(
 drPin* FlexDRWorker::routeNet_getNextDst(
     FlexMazeIdx& ccMazeIdx1,
     FlexMazeIdx& ccMazeIdx2,
-    std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-        mazeIdx2unConnPins,
+    std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
     std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes)
 {
   Point pt;
@@ -2398,9 +2400,8 @@ void FlexDRWorker::mazePinInit()
 void FlexDRWorker::routeNet_postAstarUpdate(
     std::vector<FlexMazeIdx>& path,
     std::vector<FlexMazeIdx>& connComps,
-    std::set<drPin*, frBlockObjectComp>& unConnPins,
-    std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-        mazeIdx2unConnPins,
+    frOrderedIdSet<drPin*>& unConnPins,
+    std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
     bool isFirstConn)
 {
   // first point is dst
@@ -3193,8 +3194,8 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
   if (graphics_) {
     graphics_->show(true);
   }
-  std::set<drPin*, frBlockObjectComp> unConnPins;
-  std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>> mazeIdx2unConnPins;
+  frOrderedIdSet<drPin*> unConnPins;
+  std::map<FlexMazeIdx, frOrderedIdSet<drPin*>> mazeIdx2unConnPins;
   std::map<FlexMazeIdx, frBox3D*>
       mazeIdx2TaperBox;  // access points -> taper box: used to efficiently know
                          // what points are in what taper boxes

@@ -3,7 +3,12 @@
 
 #pragma once
 
+#include <algorithm>
+#include <map>
 #include <memory>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db/gcObj/gcNet.h"

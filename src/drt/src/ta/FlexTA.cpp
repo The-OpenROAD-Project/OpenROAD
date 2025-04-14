@@ -8,8 +8,11 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "AbstractTAGraphics.h"
 #include "db/infra/frTime.h"

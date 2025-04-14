@@ -3,6 +3,8 @@
 
 #include "db/tech/frLayer.h"
 
+#include <algorithm>
+
 namespace drt {
 
 void frLayer::printAllConstraints(utl::Logger* logger)

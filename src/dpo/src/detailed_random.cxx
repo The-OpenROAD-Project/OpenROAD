@@ -8,7 +8,9 @@
 // move generators, different objectives and a cost function in order
 // to improve a placement.
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cmath>
 #include <cstddef>
 #include <stack>
 #include <string>

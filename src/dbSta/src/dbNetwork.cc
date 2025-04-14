@@ -46,6 +46,9 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "db_sta/dbNetwork.hh"
 
 #include <algorithm>
+#include <limits>
+#include <memory>
+#include <set>
 #include <unordered_set>
 #include <vector>
 

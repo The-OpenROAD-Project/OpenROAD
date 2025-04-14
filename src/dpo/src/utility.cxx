@@ -3,6 +3,8 @@
 
 #include "utility.h"
 
+#include <algorithm>
+
 #include "network.h"
 #include "rectangle.h"
 
