@@ -186,7 +186,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
 
   initLogger(logger_, tcl_interp);
   initGui(this);  // first so we can register our sink with the logger
-  initOdb(this);
+  initOdb(tcl_interp);
   initUpf(this);
   initInitFloorplan(this);
   initDbSta(this);
