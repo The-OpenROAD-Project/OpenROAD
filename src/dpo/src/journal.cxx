@@ -41,7 +41,7 @@ void Journal::undo(const JournalAction& action, const bool positions_only) const
       node->setLeft(DbuX{action.getOrigLeft()});
       node->setBottom(action.getOrigBottom());
       if (!positions_only) {
-        mgr_->paintInGrid(node);
+        paintInGrid(grid_, node);
         for (auto seg : action.getOrigSegs()) {
           if (seg < 0) {
             continue;
@@ -70,7 +70,7 @@ void Journal::redo(const JournalAction& action, const bool positions_only) const
       node->setLeft(DbuX{action.getNewLeft()});
       node->setBottom(action.getNewBottom());
       if (!positions_only) {
-        mgr_->paintInGrid(node);
+        paintInGrid(grid_, node);
         for (auto seg : action.getNewSegs()) {
           if (seg < 0) {
             continue;
