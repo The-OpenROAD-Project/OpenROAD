@@ -10,10 +10,9 @@
 #include <vector>
 
 #include "architecture.h"
-#include "detailed_manager.h"
 #include "detailed_segment.h"
 #include "network.h"
-#include "router.h"
+#include "optimization/detailed_manager.h"
 
 namespace dpo {
 

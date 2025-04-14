@@ -12,10 +12,10 @@
 #include <vector>
 
 #include "dpl/Grid.h"
-#include "journal.h"
 #include "network.h"
 #include "rectangle.h"
-#include "utility.h"
+#include "util/journal.h"
+#include "util/utility.h"
 namespace utl {
 class Logger;
 }  // namespace utl

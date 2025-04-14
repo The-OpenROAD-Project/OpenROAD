@@ -25,7 +25,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "detailed_orient.h"
+#include "optimization/detailed_orient.h"
 #include "utl/Logger.h"
 
 namespace dpo {

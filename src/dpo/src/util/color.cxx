@@ -8,7 +8,7 @@
 
 namespace dpo {
 
-Graph::Graph(const int num_nodes)
+ColorGraph::ColorGraph(const int num_nodes)
 {
   adj_.resize(num_nodes);
 
@@ -17,13 +17,13 @@ Graph::Graph(const int num_nodes)
   num_colors_ = 0;
 }
 
-void Graph::addEdge(const int u, const int v)
+void ColorGraph::addEdge(const int u, const int v)
 {
   adj_[u].push_back(v);
   adj_[v].push_back(u);
 }
 
-void Graph::removeDuplicateEdges()
+void ColorGraph::removeDuplicateEdges()
 {
   for (auto& adj : adj_) {
     std::sort(adj.begin(), adj.end());
@@ -31,7 +31,7 @@ void Graph::removeDuplicateEdges()
   }
 }
 
-void Graph::greedyColoring()
+void ColorGraph::greedyColoring()
 {
   removeDuplicateEdges();
   std::fill(color_.begin(), color_.end(), -1);

@@ -24,15 +24,15 @@
 // My stuff.
 #include "architecture.h"
 #include "detailed.h"
-#include "detailed_manager.h"
 #include "dpl/Grid.h"
 #include "dpl/Objects.h"
 #include "dpl/Padding.h"
 #include "dpl/PlacementDRC.h"
 #include "legalize_shift.h"
 #include "network.h"
+#include "optimization/detailed_manager.h"
 #include "router.h"
-#include "symmetry.h"
+#include "util/symmetry.h"
 
 namespace dpo {
 

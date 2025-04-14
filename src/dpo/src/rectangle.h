@@ -115,7 +115,4 @@ class Rectangle_b
 
 using Rectangle = Rectangle_b<double>;  // Legacy.
 
-using Rectangle_d = Rectangle_b<double>;
-using Rectangle_i = Rectangle_b<int>;
-
 }  // namespace dpo

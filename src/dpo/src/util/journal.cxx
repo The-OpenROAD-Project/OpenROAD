@@ -3,8 +3,8 @@
 
 #include "journal.h"
 
-#include "detailed_manager.h"
 #include "dpl/Grid.h"
+#include "optimization/detailed_manager.h"
 
 namespace dpo {
 void Journal::clearJournal()

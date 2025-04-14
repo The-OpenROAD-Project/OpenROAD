@@ -36,13 +36,12 @@
 #include <vector>
 
 #include "architecture.h"
-#include "color.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
-#include "journal.h"
 #include "network.h"
 #include "rectangle.h"
-#include "router.h"
+#include "util/color.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
@@ -262,7 +261,7 @@ void DetailedMis::colorCells()
     movable_[ndi->getId()] = true;
   }
 
-  Graph gr(network_->getNumNodes());
+  ColorGraph gr(network_->getNumNodes());
   for (int e = 0; e < network_->getNumEdges(); e++) {
     const Edge* edi = network_->getEdge(e);
 

@@ -17,29 +17,32 @@ target_sources(dpo
     src/Optdp.cpp
     src/MakeOptdp.cpp
     src/architecture.cxx
-    src/color.cxx
+    src/util/color.cxx
     src/network.cxx
     src/router.cxx
-    src/utility.cxx
+    src/util/utility.cxx
     src/legalize_shift.cxx
     src/detailed.cxx
-    src/detailed_manager.cxx
-    src/detailed_mis.cxx
-    src/detailed_reorder.cxx
-    src/detailed_global.cxx
-    src/detailed_vertical.cxx
-    src/detailed_displacement.cxx
-    src/detailed_hpwl.cxx
-    src/detailed_abu.cxx
-    src/detailed_random.cxx
-    src/detailed_orient.cxx
-    src/journal.cxx
+    src/optimization/detailed_manager.cxx
+    src/optimization/detailed_mis.cxx
+    src/optimization/detailed_reorder.cxx
+    src/optimization/detailed_global.cxx
+    src/optimization/detailed_vertical.cxx
+    src/objective/detailed_displacement.cxx
+    src/objective/detailed_hpwl.cxx
+    src/objective/detailed_abu.cxx
+    src/optimization/detailed_random.cxx
+    src/optimization/detailed_orient.cxx
+    src/util/journal.cxx
 )
 
 target_include_directories(dpo
   PUBLIC
     include
     ${LEMON_INCLUDE_DIRS}
+  
+  PRIVATE
+    src
 )
 
 target_link_libraries(dpo

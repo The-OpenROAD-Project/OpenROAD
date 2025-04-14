@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "utility.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 // For detailed improvement.
 #include "detailed_manager.h"
@@ -24,12 +24,12 @@
 #include "detailed_random.h"
 #include "detailed_segment.h"
 // Detailed placement objectives.
-#include "detailed_abu.h"
-#include "detailed_displacement.h"
 #include "detailed_global.h"
-#include "detailed_hpwl.h"
-#include "detailed_objective.h"
 #include "detailed_vertical.h"
+#include "objective/detailed_abu.h"
+#include "objective/detailed_displacement.h"
+#include "objective/detailed_hpwl.h"
+#include "objective/detailed_objective.h"
 
 using utl::DPO;
 

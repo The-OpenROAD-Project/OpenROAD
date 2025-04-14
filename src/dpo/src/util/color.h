@@ -7,10 +7,10 @@
 
 namespace dpo {
 
-class Graph
+class ColorGraph
 {
  public:
-  explicit Graph(int num_nodes);
+  explicit ColorGraph(int num_nodes);
   void addEdge(int u, int v);
   void greedyColoring();
 

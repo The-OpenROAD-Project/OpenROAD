@@ -11,20 +11,20 @@
 #include <utility>
 #include <vector>
 
-#include "utility.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 // Detailed management of segments.
-#include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "optimization/detailed_manager.h"
 // Detailed placement algorithms.
 #include "detailed.h"
-#include "detailed_global.h"
-#include "detailed_mis.h"
-#include "detailed_orient.h"
-#include "detailed_random.h"
-#include "detailed_reorder.h"
-#include "detailed_vertical.h"
+#include "optimization/detailed_global.h"
+#include "optimization/detailed_mis.h"
+#include "optimization/detailed_orient.h"
+#include "optimization/detailed_random.h"
+#include "optimization/detailed_reorder.h"
+#include "optimization/detailed_vertical.h"
 
 using utl::DPO;
 

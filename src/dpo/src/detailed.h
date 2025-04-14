@@ -11,7 +11,6 @@
 
 #include "architecture.h"
 #include "network.h"
-#include "router.h"
 
 namespace dpo {
 

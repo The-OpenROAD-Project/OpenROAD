@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "architecture.h"
-#include "detailed_manager.h"
 #include "detailed_segment.h"
+#include "optimization/detailed_manager.h"
 #include "utl/Logger.h"
 
 using utl::DPO;

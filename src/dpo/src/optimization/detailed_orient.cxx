@@ -13,8 +13,8 @@
 #include "architecture.h"
 #include "detailed_manager.h"
 #include "detailed_segment.h"
-#include "symmetry.h"
-#include "utility.h"
+#include "util/symmetry.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPO;

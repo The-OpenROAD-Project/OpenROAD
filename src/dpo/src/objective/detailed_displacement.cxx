@@ -12,8 +12,8 @@
 #include <utility>
 #include <vector>
 
-#include "detailed_manager.h"
-#include "detailed_orient.h"
+#include "optimization/detailed_manager.h"
+#include "optimization/detailed_orient.h"
 
 namespace dpo {
 

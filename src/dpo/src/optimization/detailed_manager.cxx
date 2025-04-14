@@ -21,10 +21,10 @@
 #include "detailed_orient.h"
 #include "detailed_segment.h"
 #include "dpl/PlacementDRC.h"
-#include "journal.h"
 #include "odb/dbTransform.h"
 #include "router.h"
-#include "utility.h"
+#include "util/journal.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
