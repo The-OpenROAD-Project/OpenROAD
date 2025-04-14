@@ -1,0 +1,82 @@
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO CLOCKED_MACRO
+  CLASS BLOCK ;
+  FOREIGN CLOCKED_MACRO 0 0 ;
+  ORIGIN 0 0 ;
+  SYMMETRY X Y ;
+  SIZE 100 BY 430 ;
+  PIN I1
+    DIRECTION INPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 210 0.140 210.070  ;
+    END
+  END I1
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER metal3 ;
+        RECT 0 210.280 0.140 210.350  ;
+    END
+  END CK
+  PIN O1 
+    DIRECTION OUTPUT ;
+    PORT
+      LAYER metal3 ;
+        RECT 99.860 210 100 210.070  ;
+    END
+  END O1 
+  OBS
+      LAYER metal3 ;
+        RECT 0 0 100 430 ;
+  END
+END CLOCKED_MACRO 
+
+SITE DoubleHeightSite
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 2.8 ;
+END DoubleHeightSite
+
+SITE TripleHeightSite
+  SYMMETRY Y ;
+  CLASS core ;
+  SIZE 0.19 BY 4.2 ;
+END TripleHeightSite
+
+SITE HybridG
+ SYMMETRY X Y ;
+ CLASS core ;
+ SIZE 0.19 BY 1.4 ;
+END HybridG
+
+SITE HybridA
+ SYMMETRY X Y ;
+ CLASS core ;
+ SIZE 0.19 BY 1.8 ;
+END HybridA
+
+SITE HybridAG
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridA N HybridG FS ;
+END HybridAG
+
+SITE HybridAG2
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridA FS HybridG N ;
+END HybridAG2
+
+SITE HybridGA
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridG FS HybridA N ;
+END HybridGA
