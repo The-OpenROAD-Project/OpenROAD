@@ -5,12 +5,15 @@
 
 #include <odb/db.h>
 
+#include <algorithm>
 #include <boost/format.hpp>
 #include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "dpl/Opendp.h"

@@ -3,7 +3,13 @@
 
 #include "RepairDesign.hh"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>

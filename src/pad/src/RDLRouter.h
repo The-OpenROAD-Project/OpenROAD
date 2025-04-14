@@ -8,6 +8,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <map>
 #include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"

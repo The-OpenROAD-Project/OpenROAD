@@ -2,6 +2,7 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include "DataType.h"

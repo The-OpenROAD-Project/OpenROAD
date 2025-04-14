@@ -3,11 +3,17 @@
 
 #include "triton_route/TritonRoute.h"
 
+#include <algorithm>
 #include <boost/asio/post.hpp>
 #include <boost/bind/bind.hpp>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
@@ -31,7 +37,6 @@
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
 #include "serialization.h"
-#include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"

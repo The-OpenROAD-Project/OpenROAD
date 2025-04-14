@@ -14,6 +14,8 @@
 
 #include "rsz/OdbCallBack.hh"
 
+#include <memory>
+
 #include "rsz/Resizer.hh"
 
 namespace rsz {

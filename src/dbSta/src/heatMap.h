@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "AbstractPowerDensityDataSource.h"
 #include "gui/heatMap.h"
 

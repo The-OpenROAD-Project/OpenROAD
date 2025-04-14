@@ -8,6 +8,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/unique_ptr.hpp>
 #include <sstream>
+#include <string>
 
 #include "dst/BalancerJobDescription.h"
 

@@ -4,9 +4,12 @@
 #include "TechChar.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <fstream>
+#include <functional>
 #include <iomanip>
+#include <limits>
 #include <ostream>
 #include <sstream>
 #include <string>

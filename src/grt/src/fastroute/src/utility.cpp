@@ -2,9 +2,13 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <limits>
 #include <queue>
 #include <random>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "DataType.h"

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "db/drObj/drAccessPattern.h"

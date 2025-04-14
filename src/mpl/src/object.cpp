@@ -3,6 +3,10 @@
 
 #include "object.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>

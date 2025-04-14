@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>

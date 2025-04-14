@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <unordered_set>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "odb/dbTypes.h"

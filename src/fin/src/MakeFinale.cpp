@@ -7,12 +7,12 @@
 
 #include "fin/Finale.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace fin {
 // Tcl files encoded into strings.
 extern const char* fin_tcl_inits[];
-}  // namespace sta
+}  // namespace fin
 
 extern "C" {
 extern int Fin_Init(Tcl_Interp* interp);
@@ -36,7 +36,7 @@ void initFinale(OpenRoad* openroad)
   // Define swig TCL commands.
   Fin_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(tcl_interp, sta::fin_tcl_inits);
+  utl::evalTclInit(tcl_interp, fin::fin_tcl_inits);
   openroad->getFinale()->init(openroad->getDb(), openroad->getLogger());
 }
 

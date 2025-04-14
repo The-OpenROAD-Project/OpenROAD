@@ -8,6 +8,7 @@
 #include <boost/unordered/unordered_set.hpp>
 #include <deque>
 #include <functional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>

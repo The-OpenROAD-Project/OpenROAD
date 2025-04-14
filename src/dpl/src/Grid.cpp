@@ -5,7 +5,10 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
+#include <functional>
 #include <limits>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "dpl/Objects.h"

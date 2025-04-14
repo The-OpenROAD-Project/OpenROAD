@@ -3,7 +3,11 @@
 
 #include "sroute.h"
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
+#include <limits>
+#include <map>
 #include <vector>
 
 #include "domain.h"

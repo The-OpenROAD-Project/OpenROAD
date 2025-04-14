@@ -3,6 +3,7 @@
 
 #include "rcx/dbUtil.h"
 
+#include <utility>
 #include <vector>
 
 #include "odb/array1.h"

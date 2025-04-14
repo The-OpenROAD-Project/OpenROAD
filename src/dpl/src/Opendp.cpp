@@ -10,7 +10,10 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "DplObserver.h"
 #include "dpl/Grid.h"

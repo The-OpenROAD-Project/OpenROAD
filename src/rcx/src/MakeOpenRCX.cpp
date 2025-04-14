@@ -5,12 +5,12 @@
 
 #include "ord/OpenRoad.hh"
 #include "rcx/ext.h"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace rcx {
 // Tcl files encoded into strings.
 extern const char* rcx_tcl_inits[];
-}  // namespace sta
+}  // namespace rcx
 
 namespace rcx {
 extern "C" {
@@ -37,8 +37,8 @@ void initOpenRCX(OpenRoad* openroad)
                                ord::OpenRoad::getVersion(),
                                [openroad] {
                                  rcx::Rcx_Init(openroad->tclInterp());
-                                 sta::evalTclInit(openroad->tclInterp(),
-                                                  sta::rcx_tcl_inits);
+                                 utl::evalTclInit(openroad->tclInterp(),
+                                                  rcx::rcx_tcl_inits);
                                });
 }
 

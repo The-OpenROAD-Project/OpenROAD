@@ -15,7 +15,7 @@ help_dict, proc_dict, readme_dict = {}, {}, {}
 
 # Directories to exclude (according to md_roff_compat)
 exclude = ["sta"]
-include = ["./src/odb/src/db/odb.tcl"]
+include = ["./src/odb/src/swig/tcl/odb.tcl"]
 
 for path in glob.glob("./src/*/src/*tcl") + include:
     # exclude these dirs which are not compiled in man (do not have readmes).

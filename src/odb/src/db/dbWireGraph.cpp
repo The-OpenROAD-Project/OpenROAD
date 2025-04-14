@@ -3,6 +3,7 @@
 
 #include "odb/dbWireGraph.h"
 
+#include <map>
 #include <string>
 #include <vector>
 
