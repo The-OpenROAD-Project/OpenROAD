@@ -8,6 +8,9 @@
 #include <boost/geometry/index/rtree.hpp>
 #include <cstddef>
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"

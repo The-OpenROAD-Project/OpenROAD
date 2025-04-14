@@ -12,9 +12,11 @@
 #include <boost/serialization/export.hpp>
 #include <boost/thread/thread.hpp>
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "LoadBalancer.h"

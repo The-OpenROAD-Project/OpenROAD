@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <map>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "frDesign.h"
@@ -22,7 +25,7 @@ namespace drt {
 class UniqueInsts
 {
  public:
-  using InstSet = std::set<frInst*, frBlockObjectComp>;
+  using InstSet = frOrderedIdSet<frInst*>;
   // if target_insts is non-empty then analysis is limited to
   // those instances.
   UniqueInsts(frDesign* design,
@@ -80,7 +83,7 @@ class UniqueInsts
 
  private:
   using LayerRange = std::pair<frLayerNum, frLayerNum>;
-  using MasterLayerRange = std::map<frMaster*, LayerRange, frBlockObjectComp>;
+  using MasterLayerRange = frOrderedIdMap<frMaster*, LayerRange>;
 
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
@@ -149,15 +152,15 @@ class UniqueInsts
   // All the unique instances
   std::vector<frInst*> unique_;
   // Maps all instances to their representative unique instance
-  std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
+  frOrderedIdMap<frInst*, frInst*> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
   std::unordered_map<frInst*, InstSet*> inst_to_class_;
   // Maps a unique instance to its index in unique_
-  std::map<frInst*, int, frBlockObjectComp> unique_to_idx_;
+  frOrderedIdMap<frInst*, int> unique_to_idx_;
   // master orient track-offset to instances
-  std::map<frMaster*,
-           std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
-           frBlockObjectComp>
+  frOrderedIdMap<
+      frMaster*,
+      std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>>
       master_orient_trackoffset_to_insts_;
   std::vector<frTrackPattern*> pref_track_patterns_;
   MasterLayerRange master_to_pin_layer_range_;

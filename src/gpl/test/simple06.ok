@@ -6,23 +6,23 @@
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0006] NumInstances:               294
-[INFO GPL-0007] NumPlaceInstances:          294
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                    364
-[INFO GPL-0011] NumPins:                   1122
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0016] CoreArea:               953.876 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:         569.772 um^2
-[INFO GPL-0019] Util:                    59.732 %
-[INFO GPL-0020] StdInstsArea:           569.772 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[InitialPlace]  Iter: 1 CG residual: 0.00000009 HPWL: 5668660
-[InitialPlace]  Iter: 2 CG residual: 0.00000004 HPWL: 5048725
-[InitialPlace]  Iter: 3 CG residual: 0.00000002 HPWL: 5034377
-[InitialPlace]  Iter: 4 CG residual: 0.00000007 HPWL: 5036666
-[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 5036282
+[INFO GPL-0006] Number of instances:               294
+[INFO GPL-0007] Movable instances:                 294
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    364
+[INFO GPL-0011] Number of pins:                   1122
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        569.772 um^2
+[INFO GPL-0019] Utilization:                    59.732 %
+[INFO GPL-0020] Standard cells area:           569.772 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 5668660
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5048725
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5034377
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5036666
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5036282
 No differences found.

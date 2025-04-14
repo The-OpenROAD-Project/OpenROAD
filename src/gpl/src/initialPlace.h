@@ -5,6 +5,7 @@
 
 #include <Eigen/SparseCore>
 #include <memory>
+#include <vector>
 
 #include "nesterovPlace.h"
 #include "odb/db.h"

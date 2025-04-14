@@ -5,11 +5,17 @@
 
 #include <omp.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"

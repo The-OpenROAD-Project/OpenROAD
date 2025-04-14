@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <map>
 #include <vector>
 
 #include "AbstractMakeWireParasitics.h"

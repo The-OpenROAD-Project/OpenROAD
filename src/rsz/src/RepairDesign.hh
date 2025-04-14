@@ -19,8 +19,6 @@ namespace rsz {
 class Resizer;
 enum class ParasiticsSrc;
 
-using std::vector;
-
 using sta::Corner;
 using sta::dbNetwork;
 using sta::dbSta;
@@ -45,7 +43,7 @@ class LoadRegion
 
   PinSeq pins_;
   Rect bbox_;  // dbu
-  vector<LoadRegion> regions_;
+  std::vector<LoadRegion> regions_;
 };
 
 class RepairDesign : dbStaState

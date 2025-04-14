@@ -3,10 +3,15 @@
 
 #include "via.h"
 
+#include <algorithm>
 #include <boost/polygon/polygon.hpp>
+#include <cmath>
 #include <cstddef>
 #include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "connect.h"

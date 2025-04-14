@@ -4,8 +4,11 @@
 #include "BufferedNet.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <memory>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "rsz/Resizer.hh"
@@ -190,7 +193,7 @@ void BufferedNet::reportTree(const int level, const Resizer* resizer) const
   }
 }
 
-string BufferedNet::to_string(const Resizer* resizer) const
+std::string BufferedNet::to_string(const Resizer* resizer) const
 {
   Network* sdc_network = resizer->sdcNetwork();
   Units* units = resizer->units();
@@ -377,7 +380,7 @@ BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
   return nullptr;
 }
 
-using SteinerPtAdjacents = vector<vector<SteinerPt>>;
+using SteinerPtAdjacents = std::vector<std::vector<SteinerPt>>;
 using SteinerPtPinVisited = std::unordered_set<Point, PointHash, PointEqual>;
 
 static BufferedNetPtr makeBufferedNetFromTree(
@@ -515,8 +518,8 @@ class RoutePtEqual
   bool operator()(const RoutePt& pt1, const RoutePt& pt2) const;
 };
 
-using GRoutePtAdjacents
-    = std::unordered_map<RoutePt, vector<RoutePt>, RoutePtHash, RoutePtEqual>;
+using GRoutePtAdjacents = std::
+    unordered_map<RoutePt, std::vector<RoutePt>, RoutePtHash, RoutePtEqual>;
 
 size_t RoutePtHash::operator()(const RoutePt& pt) const
 {

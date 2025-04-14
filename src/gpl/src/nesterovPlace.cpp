@@ -7,6 +7,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -442,7 +443,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       log_->info(GPL,
                  101,
-                 "   Iter: {}, overflow: {:.3f}, keep rsz at: {}, HPWL: {}",
+                 "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
+                 "HPWL: {}",
                  iter + 1,
                  average_overflow_,
                  npVars_.keepResizeBelowOverflow,
@@ -465,6 +467,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+      nbVec_[0]->setTrueReprintIterHeader();
 
       for (auto& nb : nbVec_) {
         nb_gcells_after_td += nb->gCells().size();
@@ -656,6 +659,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // check routability using RUDY or GR
     if (npVars_.routability_driven_mode && is_routability_need_
         && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
+      nbVec_[0]->setTrueReprintIterHeader();
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
@@ -677,7 +681,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
-        log_->info(GPL, 89, "Routability: revert back to snapshot");
+        log_->info(
+            GPL, 89, "Routability end iteration: revert back to snapshot");
       }
     }
 

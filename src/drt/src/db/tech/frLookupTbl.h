@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 
 #include "frBaseTypes.h"

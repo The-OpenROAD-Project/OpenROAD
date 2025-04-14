@@ -3,6 +3,9 @@
 
 #include "GraphicsFactory.h"
 
+#include <memory>
+#include <utility>
+
 namespace drt {
 
 GraphicsFactory::GraphicsFactory() = default;

@@ -1,5 +1,9 @@
 #include "ScanCellMock.hh"
 
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "ClockDomain.hh"
 
 namespace dft {

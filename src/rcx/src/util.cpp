@@ -4,6 +4,7 @@
 #include "util.h"
 
 #include <memory>
+#include <vector>
 
 #include "odb/db.h"
 #include "parse.h"

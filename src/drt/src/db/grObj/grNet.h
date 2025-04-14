@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "db/grObj/grBlockObject.h"
@@ -49,13 +50,11 @@ class grNet : public grBlockObject
   {
     return pinGCellNodePairs;
   }
-  const std::map<grNode*, std::vector<grNode*>, frBlockObjectComp>&
-  getGCell2PinNodes() const
+  const frOrderedIdMap<grNode*, std::vector<grNode*>>& getGCell2PinNodes() const
   {
     return gcell2PinNodes;
   }
-  std::map<grNode*, std::vector<grNode*>, frBlockObjectComp>&
-  getGCell2PinNodes()
+  frOrderedIdMap<grNode*, std::vector<grNode*>>& getGCell2PinNodes()
   {
     return gcell2PinNodes;
   }
@@ -69,14 +68,11 @@ class grNet : public grBlockObject
   {
     return pinNodePairs;
   }
-  const std::map<grNode*, frNode*, frBlockObjectComp>& getGR2FrPinNode() const
+  const frOrderedIdMap<grNode*, frNode*>& getGR2FrPinNode() const
   {
     return gr2FrPinNode;
   }
-  std::map<grNode*, frNode*, frBlockObjectComp>& getGR2FrPinNode()
-  {
-    return gr2FrPinNode;
-  }
+  frOrderedIdMap<grNode*, frNode*>& getGR2FrPinNode() { return gr2FrPinNode; }
   bool isModified() const { return modified; }
   int getNumOverConGCells() const { return numOverConGCells; }
   int getNumPinsIn() const { return numPinsIn; }
@@ -122,7 +118,7 @@ class grNet : public grBlockObject
     pinGCellNodePairs = in;
   }
   void setGCell2PinNodes(
-      const std::map<grNode*, std::vector<grNode*>, frBlockObjectComp>& in)
+      const frOrderedIdMap<grNode*, std::vector<grNode*>>& in)
   {
     gcell2PinNodes = in;
   }
@@ -131,7 +127,7 @@ class grNet : public grBlockObject
   {
     pinNodePairs = in;
   }
-  void setGR2FrPinNode(const std::map<grNode*, frNode*, frBlockObjectComp>& in)
+  void setGR2FrPinNode(const frOrderedIdMap<grNode*, frNode*>& in)
   {
     gr2FrPinNode = in;
   }
@@ -190,11 +186,11 @@ class grNet : public grBlockObject
 
   // pair of <pinNode, gcellNode> with first (0th) element always being root
   std::vector<std::pair<grNode*, grNode*>> pinGCellNodePairs;
-  std::map<grNode*, std::vector<grNode*>, frBlockObjectComp> gcell2PinNodes;
+  frOrderedIdMap<grNode*, std::vector<grNode*>> gcell2PinNodes;
   // unique, first (0th) element always being root
   std::vector<grNode*> pinGCellNodes;
   std::vector<std::pair<frNode*, grNode*>> pinNodePairs;
-  std::map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
+  frOrderedIdMap<grNode*, frNode*> gr2FrPinNode;
   // std::set<frBlockObject*>                 fNetTerms;
   std::list<std::unique_ptr<grNode>> nodes;
   grNode* root{nullptr};

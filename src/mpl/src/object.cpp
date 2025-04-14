@@ -3,10 +3,15 @@
 
 #include "object.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "util.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -45,13 +50,6 @@ Boundary opposite(const Boundary& pin_access)
     default:
       return NONE;
   }
-}
-
-// Compare two intervals according to starting points
-static bool comparePairFirst(const std::pair<float, float>& p1,
-                             const std::pair<float, float>& p2)
-{
-  return p1.first < p2.first;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1094,6 +1092,16 @@ void SoftMacro::shrinkArea(float percent)
     return;
   }
 
+  for (std::pair<float, float>& width_curve : width_list_) {
+    width_curve.first *= percent;
+    width_curve.second *= percent;
+  }
+
+  for (std::pair<float, float>& height_curve : height_list_) {
+    height_curve.first *= percent;
+    height_curve.second *= percent;
+  }
+
   width_ = width_ * percent;
   height_ = height_ * percent;
   area_ = width_ * height_;
@@ -1170,7 +1178,7 @@ void SoftMacro::setShapes(
   height_list_.clear();
   // sort width list based
   height_list_ = width_list;
-  std::sort(height_list_.begin(), height_list_.end(), comparePairFirst);
+  std::sort(height_list_.begin(), height_list_.end(), isFirstSmaller);
   for (auto& shape : height_list_) {
     if (width_list_.empty()
         || shape.first > width_list_[width_list_.size() - 1].second) {

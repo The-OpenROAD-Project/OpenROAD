@@ -7,17 +7,15 @@
 
 #include "ord/OpenRoad.hh"
 #include "pad/ICeWall.h"
-#include "sta/StaMain.hh"
-
-namespace sta {
+#include "utl/decode.h"
 
 extern "C" {
 extern int Pad_Init(Tcl_Interp* interp);
 }
 
+namespace pad {
 extern const char* pad_tcl_inits[];
-
-}  // namespace sta
+}  // namespace pad
 
 namespace ord {
 
@@ -35,9 +33,9 @@ void initICeWall(OpenRoad* openroad)
 {
   Tcl_Interp* interp = openroad->tclInterp();
   // Define swig TCL commands.
-  sta::Pad_Init(interp);
+  Pad_Init(interp);
   // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::pad_tcl_inits);
+  utl::evalTclInit(interp, pad::pad_tcl_inits);
 
   auto* icewall = openroad->getICeWall();
   icewall->init(openroad->getDb(), openroad->getLogger());

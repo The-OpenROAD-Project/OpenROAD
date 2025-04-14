@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <limits>
 #include <vector>
 
 #include "counter.h"

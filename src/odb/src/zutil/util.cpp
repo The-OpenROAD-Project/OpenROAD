@@ -3,6 +3,8 @@
 
 #include "odb/util.h"
 
+#include <algorithm>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <string>
@@ -299,6 +301,14 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net) const
 
   Rect bbox = net->getTermBBox();
   return bbox.dx() + bbox.dy();
+}
+
+void WireLengthEvaluator::report(utl::Logger* logger) const
+{
+  for (dbNet* net : block_->getNets()) {
+    logger->report(
+        "{} {}", net->getConstName(), block_->dbuToMicrons(hpwl(net)));
+  }
 }
 
 }  // namespace odb

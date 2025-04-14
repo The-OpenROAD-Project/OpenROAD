@@ -5,11 +5,15 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cerrno>
+#include <cmath>
 #include <fstream>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbAccessPoint.h"

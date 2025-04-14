@@ -6,18 +6,14 @@ load("@rules_hdl//dependency_support/com_github_westes_flex:flex.bzl", "genlex")
 load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
 load(
     "//:bazel/build_helper.bzl",
-    "OPENROAD_BINARY_DEPS",
-    "OPENROAD_BINARY_SRCS",
     "OPENROAD_BINARY_SRCS_WITHOUT_MAIN",
-    "OPENROAD_COPTS",
-    "OPENROAD_DEFINES",
-    "OPENROAD_LIBRARY_DEPS",
     "OPENROAD_LIBRARY_HDRS_INCLUDE",
     "OPENROAD_LIBRARY_INCLUDES",
     "OPENROAD_LIBRARY_SRCS_EXCLUDE",
     "OPENROAD_LIBRARY_SRCS_INCLUDE",
 )
-load("//:bazel/tcl_encode.bzl", "tcl_encode")
+load("//:bazel/tcl_encode_sta.bzl", "tcl_encode_sta")
+load("//:bazel/tcl_encode_or.bzl", "tcl_encode")
 load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
@@ -49,9 +45,67 @@ config_setting(
     },
 )
 
+# TODO: once project is properly decomposed, we don't
+# need these blanked dependencies in multiple places anymore.
+OPENROAD_LIBRARY_DEPS = [
+    "//src/utl",
+    ":munkres",
+    ":opendb_lib",
+    ":openroad_version",
+    ":opensta_lib",
+    "@boost.asio",
+    "@boost.geometry",
+    "@boost.graph",
+    "@boost.heap",
+    "@boost.icl",
+    "@boost.json",
+    "@boost.multi_array",
+    "@boost.polygon",
+    "@boost.property_tree",
+    "@boost.stacktrace",
+    "@boost.thread",
+    "@com_github_quantamhd_lemon//:lemon",
+    "@edu_berkeley_abc//:abc-lib",
+    "@eigen",
+    "@or-tools//ortools/base:base",
+    "@or-tools//ortools/linear_solver:linear_solver",
+    "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
+    "@or-tools//ortools/sat:cp_model",
+    "@org_llvm_openmp//:openmp",
+    "@spdlog",
+    "@tk_tcl//:tcl",
+]
+
+OPENROAD_COPTS = [
+    "-fexceptions",
+    "-ffp-contract=off",  # Needed for floating point stability.
+    "-Wno-error",
+    "-Wall",
+    "-Wextra",
+    "-pedantic",
+    "-Wno-cast-qual",  # typically from TCL swigging
+    "-Wno-missing-braces",  # typically from TCL swigging
+    "-Wredundant-decls",
+    "-Wformat-security",
+    "-Wno-sign-compare",
+    "-Wno-unused-parameter",
+]
+
+OPENROAD_DEFINES = [
+    "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
+    "BUILD_TYPE=\\\"release\\\"",
+    "GPU=false",
+    "BUILD_PYTHON=false",
+    "ABC_NAMESPACE=abc",
+    "TCLRL_VERSION_STR=",
+]
+
 cc_binary(
     name = "openroad",
-    srcs = OPENROAD_BINARY_SRCS + select({
+    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
+        "src/Main.cc",
+        "src/OpenRoad.cc",
+    ] + select({
         ":platform_cli": [],
     }),
     copts = OPENROAD_COPTS,
@@ -59,12 +113,17 @@ cc_binary(
     linkopts = select({
         ":platform_cli": [],
     }),
-    visibility = ["//visibility:public"],
-    deps = OPENROAD_BINARY_DEPS + [
-        ":openroad_lib_private",
-        "@rules_cc//cc/runfiles",
-    ],
     malloc = "@tcmalloc//tcmalloc",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":opendb_lib",
+        ":openroad_lib_private",
+        ":openroad_version",
+        ":opensta_lib",
+        "//src/utl",
+        "@rules_cc//cc/runfiles",
+        "@tk_tcl//:tcl",
+    ],
 )
 
 cc_library(
@@ -132,23 +191,21 @@ cc_library(
 genrule(
     name = "post9",
     srcs = [
-        "src/stt/src/flt/etc/MakeDatVar.tcl",
+        "etc/file_to_string.py",
         "src/stt/src/flt/etc/POST9.dat",
     ],
     outs = ["src/stt/src/flt/etc/POST9.cpp"],
-    cmd = "$(location @tk_tcl//:tclsh) $(location src/stt/src/flt/etc/MakeDatVar.tcl) post9 \"$@\" $(location src/stt/src/flt/etc/POST9.dat)",
-    tools = ["@tk_tcl//:tclsh"],
+    cmd = "$(location etc/file_to_string.py) --inputs $(location src/stt/src/flt/etc/POST9.dat) --output \"$@\" --varname post9 --namespace stt::flt",
 )
 
 genrule(
     name = "powv9",
     srcs = [
-        "src/stt/src/flt/etc/MakeDatVar.tcl",
+        "etc/file_to_string.py",
         "src/stt/src/flt/etc/POWV9.dat",
     ],
     outs = ["src/stt/src/flt/etc/POWV9.cpp"],
-    cmd = "$(location @tk_tcl//:tclsh) $(location src/stt/src/flt/etc/MakeDatVar.tcl) powv9 \"$@\" $(location src/stt/src/flt/etc/POWV9.dat)",
-    tools = ["@tk_tcl//:tclsh"],
+    cmd = "$(location etc/file_to_string.py) --inputs $(location src/stt/src/flt/etc/POWV9.dat) --output \"$@\" --varname powv9 --namespace stt::flt",
 )
 
 cc_library(
@@ -190,10 +247,20 @@ tcl_encode(
     name = "init_floorplan_tcl",
     srcs = [
         "src/ifp/src/InitFloorplan.tcl",
-        "src/odb/src/db/odb.tcl",
     ],
     out = "InitFloorplanTclInitVar.cc",
     char_array_name = "ifp_tcl_inits",
+    namespace = "ifp",
+)
+
+tcl_encode(
+    name = "odb_tcl",
+    srcs = [
+        "src/odb/src/swig/tcl/odb.tcl",
+    ],
+    out = "OdbTclInitVar.cc",
+    char_array_name = "odbtcl_tcl_inits",
+    namespace = "odb",
 )
 
 tcl_encode(
@@ -204,6 +271,7 @@ tcl_encode(
         ":tcl_scripts",
     ],
     char_array_name = "dbSta_tcl_inits",
+    namespace = "sta",
 )
 
 tcl_encode(
@@ -212,6 +280,7 @@ tcl_encode(
         "src/ppl/src/IOPlacer.tcl",
     ],
     char_array_name = "ppl_tcl_inits",
+    namespace = "ppl",
 )
 
 tcl_encode(
@@ -220,6 +289,7 @@ tcl_encode(
         "src/rsz/src/Resizer.tcl",
     ],
     char_array_name = "rsz_tcl_inits",
+    namespace = "rsz",
 )
 
 tcl_encode(
@@ -228,6 +298,7 @@ tcl_encode(
         "src/dpl/src/Opendp.tcl",
     ],
     char_array_name = "dpl_tcl_inits",
+    namespace = "dpl",
 )
 
 tcl_encode(
@@ -236,6 +307,7 @@ tcl_encode(
         "src/fin/src/finale.tcl",
     ],
     char_array_name = "fin_tcl_inits",
+    namespace = "fin",
 )
 
 tcl_encode(
@@ -244,6 +316,7 @@ tcl_encode(
         "src/ant/src/AntennaChecker.tcl",
     ],
     char_array_name = "ant_tcl_inits",
+    namespace = "ant",
 )
 
 tcl_encode(
@@ -252,6 +325,7 @@ tcl_encode(
         "src/grt/src/GlobalRouter.tcl",
     ],
     char_array_name = "grt_tcl_inits",
+    namespace = "grt",
 )
 
 tcl_encode(
@@ -260,6 +334,7 @@ tcl_encode(
         "src/tap/src/tapcell.tcl",
     ],
     char_array_name = "tap_tcl_inits",
+    namespace = "tap",
 )
 
 tcl_encode(
@@ -268,6 +343,7 @@ tcl_encode(
         "src/gpl/src/replace.tcl",
     ],
     char_array_name = "gpl_tcl_inits",
+    namespace = "gpl",
 )
 
 tcl_encode(
@@ -276,6 +352,7 @@ tcl_encode(
         "src/cts/src/TritonCTS.tcl",
     ],
     char_array_name = "cts_tcl_inits",
+    namespace = "cts",
 )
 
 tcl_encode(
@@ -284,6 +361,7 @@ tcl_encode(
         "src/rcx/src/OpenRCX.tcl",
     ],
     char_array_name = "rcx_tcl_inits",
+    namespace = "rcx",
 )
 
 tcl_encode(
@@ -292,6 +370,7 @@ tcl_encode(
         "src/drt/src/TritonRoute.tcl",
     ],
     char_array_name = "drt_tcl_inits",
+    namespace = "drt",
 )
 
 tcl_encode(
@@ -300,6 +379,7 @@ tcl_encode(
         "src/psm/src/pdnsim.tcl",
     ],
     char_array_name = "psm_tcl_inits",
+    namespace = "psm",
 )
 
 tcl_encode(
@@ -308,6 +388,7 @@ tcl_encode(
         "src/par/src/partitionmgr.tcl",
     ],
     char_array_name = "par_tcl_inits",
+    namespace = "par",
 )
 
 tcl_encode(
@@ -316,15 +397,17 @@ tcl_encode(
         "src/pdn/src/pdn.tcl",
     ],
     char_array_name = "pdn_tcl_inits",
+    namespace = "pdn",
 )
 
 tcl_encode(
     name = "openroad_tcl",
     srcs = [":tcl_util"] + [
-        "src/OpenRoad.tcl",
         "src/Metrics.tcl",
+        "src/OpenRoad.tcl",
     ],
-    char_array_name = "openroad_swig_tcl_inits",
+    char_array_name = "ord_tcl_inits",
+    namespace = "ord",
 )
 
 tcl_encode(
@@ -333,6 +416,7 @@ tcl_encode(
         "src/pad/src/pad.tcl",
     ],
     char_array_name = "pad_tcl_inits",
+    namespace = "pad",
 )
 
 tcl_encode(
@@ -341,6 +425,7 @@ tcl_encode(
         "src/mpl/src/mpl.tcl",
     ],
     char_array_name = "mpl_tcl_inits",
+    namespace = "mpl",
 )
 
 tcl_encode(
@@ -349,6 +434,7 @@ tcl_encode(
         "src/rmp/src/rmp.tcl",
     ],
     char_array_name = "rmp_tcl_inits",
+    namespace = "rmp",
 )
 
 tcl_encode(
@@ -357,6 +443,7 @@ tcl_encode(
         "src/dst/src/Distributed.tcl",
     ],
     char_array_name = "dst_tcl_inits",
+    namespace = "dst",
 )
 
 tcl_encode(
@@ -365,6 +452,7 @@ tcl_encode(
         "src/stt/src/SteinerTreeBuilder.tcl",
     ],
     char_array_name = "stt_tcl_inits",
+    namespace = "stt",
 )
 
 tcl_encode(
@@ -373,6 +461,7 @@ tcl_encode(
         "src/dpo/src/Optdp.tcl",
     ],
     char_array_name = "dpo_tcl_inits",
+    namespace = "dpo",
 )
 
 tcl_encode(
@@ -381,6 +470,7 @@ tcl_encode(
         "src/gui/src/gui.tcl",
     ],
     char_array_name = "gui_tcl_inits",
+    namespace = "gui",
 )
 
 tcl_encode(
@@ -389,6 +479,7 @@ tcl_encode(
         "src/upf/src/upf.tcl",
     ],
     char_array_name = "upf_tcl_inits",
+    namespace = "upf",
 )
 
 tcl_encode(
@@ -397,6 +488,7 @@ tcl_encode(
         "src/dft/src/dft.tcl",
     ],
     char_array_name = "dft_tcl_inits",
+    namespace = "dft",
 )
 
 tcl_wrap_cc(
@@ -449,7 +541,7 @@ tcl_wrap_cc(
         "src/sta",
     ],
     deps = [
-        ":opendb_tcl",
+        ":opendb_swig",
     ],
 )
 
@@ -675,7 +767,7 @@ tcl_wrap_cc(
         "src/OpenRoad.i",
         ":error_swig",
     ],
-    module = "Openroad_swig",
+    module = "ord",
     namespace_prefix = "ord",
     root_swig_src = "src/OpenRoad.i",
     swig_includes = [
@@ -807,7 +899,7 @@ filegroup(
 ## OPENDB
 
 filegroup(
-    name = "opendb_tcl_common",
+    name = "opendb_swig_common",
     srcs = [
         "src/odb/src/swig/common/swig_common.cpp",
         "src/odb/src/swig/common/swig_common.h",
@@ -816,7 +908,7 @@ filegroup(
 )
 
 tcl_wrap_cc(
-    name = "opendb_tcl",
+    name = "opendb_swig",
     srcs = glob([
         "src/odb/src/swig/tcl/*.i",
         "src/odb/src/swig/common/*.i",
@@ -1075,7 +1167,7 @@ filegroup(
     ],
 )
 
-tcl_encode(
+tcl_encode_sta(
     name = "StaTclInitVar",
     srcs = tcl_srcs,
     char_array_name = "tcl_inits",
@@ -1197,12 +1289,12 @@ cc_binary(
         "src/sta/include/sta",
         "src/sta/util",
     ],
+    malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
         ":opensta_lib",
         "@tk_tcl//:tcl",
     ],
-    malloc = "@tcmalloc//tcmalloc",
 )
 
 cc_library(

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <csignal>
+#include <memory>
 
 #include "utl/Progress.h"
 

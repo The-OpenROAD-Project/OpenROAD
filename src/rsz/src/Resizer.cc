@@ -3,12 +3,17 @@
 
 #include "rsz/Resizer.hh"
 
+#include <algorithm>
 #include <boost/functional/hash.hpp>
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <map>
+#include <memory>
 #include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "AbstractSteinerRenderer.h"

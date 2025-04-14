@@ -884,6 +884,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t delta_area_;
   uint new_gcells_count_;
+  bool reprint_iter_header;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
@@ -1036,6 +1037,7 @@ class NesterovBase
                       const std::vector<FloatPoint>& curSLPSumGrads_);
 
   void updateNextIter(int iter);
+  void setTrueReprintIterHeader() { reprint_iter_header = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
   void cutFillerCoordinates();
 
@@ -1152,6 +1154,7 @@ class NesterovBase
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
+  int64_t prevReportedHpwl_ = 0;
 
   float isDiverged_ = false;
 
@@ -1166,6 +1169,7 @@ class NesterovBase
   float hpwlWithMinSumOverflow_ = 1e30;
   int iter_ = 0;
   bool isConverged_ = false;
+  bool reprint_iter_header;
 
   // Snapshot data for routability, parallel vectors
   std::vector<FloatPoint> snapshotCoordi_;
