@@ -507,4 +507,13 @@ bool Graphics::guiActive()
   return gui::Gui::enabled();
 }
 
+void Graphics::saveGuiImage(const std::string& filename)
+{
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->saveImage(filename.c_str());
+  } else {
+    logger_->warn(utl::GPL, 999, "GUI is not active. Cannot save '{}'.", filename);
+  }
+}
+
 }  // namespace gpl

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <filesystem>
 
 #include "graphics.h"
 #include "nesterovBase.h"
@@ -317,6 +318,47 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->resetMinSumOverflow();
   }
 
+  namespace fs = std::filesystem;
+  const char* reports_dir_env = std::getenv("REPORTS_DIR");
+  std::string reports_dir = reports_dir_env ? reports_dir_env : "reports";
+  std::string gif_frames_dir = reports_dir + "/gif_frames";
+  std::string special_modes_dir = reports_dir + "/special_modes";
+  std::string gif_output = reports_dir + "/placement.gif";
+  
+  
+  // gif_frames or reports_dir
+  if (fs::exists(reports_dir)) {
+    for (const auto& entry : fs::directory_iterator(reports_dir)) {
+      if (entry.path().filename() != "special_modes") {  // avoid deleting subdir
+        fs::remove_all(entry.path());
+      }
+    }
+  } else {
+    fs::create_directories(reports_dir);
+  }
+  
+  if (fs::exists(special_modes_dir)) {
+    for (const auto& entry : fs::directory_iterator(special_modes_dir)) {
+      fs::remove_all(entry.path());
+    }
+  } else {
+    fs::create_directories(special_modes_dir);
+  }
+
+  if (fs::exists(gif_frames_dir)) {
+    for (const auto& entry : fs::directory_iterator(gif_frames_dir)) {
+      fs::remove_all(entry.path());
+    }
+  } else {
+    fs::create_directories(gif_frames_dir);
+  }
+  
+
+  int routabilityDrivenCount = 0;
+  int timingDrivenCount = 0;
+
+  
+
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {
@@ -394,10 +436,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     updateNextIter(iter);
 
     // For JPEG Saving
-    // debug
-    if (npVars_.debug && npVars_.debug_update_db_every_iteration) {
+    // graphics_ is only true if debug mode is active
+    if (graphics_ && npVars_.debug_update_db_every_iteration) {
       updateDb();
     }
+
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
       bool update
@@ -408,6 +451,38 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         graphics_->cellPlot(pause);
       }
     }
+
+
+   
+    if (graphics_ && iter % 10 == 0) {
+      std::string raw = fmt::format("{}/full_{:05d}.png", gif_frames_dir, iter);
+      std::string scaled = fmt::format("{}/iter_{:05d}.png", gif_frames_dir, iter);      
+      std::string label = fmt::format("Iter {} | R: {} | T: {}",
+                                      iter,
+                                      routabilityDrivenCount,
+                                      timingDrivenCount);
+    
+      graphics_->saveGuiImage(raw);
+    
+      std::string scaleCmd = fmt::format(
+          "convert {} -resize 50% -colors 64 -strip -quality 85 "
+          "-gravity SouthEast -pointsize 20 -fill white "
+          "-annotate +5+5 '{}' PNG8:{}",
+          raw, label, scaled);
+      std::system(scaleCmd.c_str());
+      std::filesystem::remove(raw);
+    
+      if (routability_driven_ || timing_driven_) {
+        std::string special = fmt::format("{}/iter_{:05d}.png", special_modes_dir, iter);
+        std::string copyCmd = fmt::format("cp {} {}", scaled, special);
+        std::system(copyCmd.c_str());
+    
+        // Flags only used here, so reset them here
+        routability_driven_ = false;
+        timing_driven_ = false;
+      }
+    }
+    
 
     // timing driven feature
     // if virtual, do reweight on timing-critical nets,
@@ -467,6 +542,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
       nbVec_[0]->setTrueReprintIterHeader();
+      timing_driven_ = true;
+      ++timingDrivenCount;
 
       for (auto& nb : nbVec_) {
         nb_gcells_after_td += nb->gCells().size();
@@ -657,8 +734,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     // check routability using RUDY or GR
     if (npVars_.routability_driven_mode && is_routability_need_
-        && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
+        && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
       nbVec_[0]->setTrueReprintIterHeader();
+      routability_driven_ = true;
+      ++routabilityDrivenCount;
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
@@ -692,6 +771,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numConverge == nbVec_.size()) {
+      if(graphics_) {
+        std::string gifCmd = fmt::format("convert -delay 15 -loop 0 {}/iter_*.png {}/placement.gif", 
+          reports_dir + "/gif_frames", reports_dir);
+        std::system(gifCmd.c_str());
+      }
       break;
     }
   }
