@@ -121,7 +121,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
       break;
     }
     //=====================================================================
-    Path *end_path = sta_->vertexWorstSlackPath(end, max_);
+    Path* end_path = sta_->vertexWorstSlackPath(end, max_);
     Vertex* const changed = recoverPower(end_path, end_slack_before);
     if (changed) {
       resizer_->updateParasitics(true);

@@ -249,7 +249,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // clang-format on
         break;
       }
-      Path *end_path = sta_->vertexWorstSlackPath(end, max_);
+      Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
       const bool changed = repairPath(end_path,
                                       end_slack,
@@ -644,8 +644,7 @@ bool RepairSetup::repairPath(Path* path,
   return changed > 0;
 }
 
-void RepairSetup::debugCheckMultipleBuffers(Path* path,
-                                            PathExpanded* expanded)
+void RepairSetup::debugCheckMultipleBuffers(Path* path, PathExpanded* expanded)
 {
   if (expanded->size() > 1) {
     const int path_length = expanded->size();
@@ -688,7 +687,7 @@ bool RepairSetup::swapPins(const Path* drvr_path,
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
   const int in_index = drvr_index - 1;
-  const Path*  in_path = expanded->path(in_index);
+  const Path* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
 
   if (!resizer_->dontTouch(drvr)) {
@@ -1978,7 +1977,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
         resizer_->journalEnd();
         break;
       }
-      Path *end_path = sta_->vertexWorstSlackPath(end, max_);
+      Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
       const bool changed = repairPath(end_path,
                                       end_slack,

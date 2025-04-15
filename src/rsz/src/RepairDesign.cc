@@ -496,7 +496,7 @@ bool RepairDesign::performGainBuffering(Net* net,
   struct EnqueuedPin
   {
     Pin* pin;
-    Path *required_path;
+    Path* required_path;
     Delay required_delay;
     int level;
 
@@ -553,8 +553,7 @@ bool RepairDesign::performGainBuffering(Net* net,
       Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
         Vertex* vertex = graph_->pinLoadVertex(pin);
-        Path* req_path
-            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+        Path* req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
         sinks.push_back({const_cast<Pin*>(pin), req_path, 0.0, 0});
       } else {
         logger_->warn(RSZ,

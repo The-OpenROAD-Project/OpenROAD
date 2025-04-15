@@ -249,11 +249,11 @@ Required BufferedNet::required() const
 
 Required BufferedNet::slack() const
 {
-   if (required_path_) {
-     return required_path_->required() - required_delay_
-       - arrival_path_->arrival();
-   }
-   return INF;
+  if (required_path_) {
+    return required_path_->required() - required_delay_
+           - arrival_path_->arrival();
+  }
+  return INF;
 }
 
 void BufferedNet::setRequiredDelay(Delay delay)
