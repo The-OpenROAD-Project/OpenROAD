@@ -98,3 +98,25 @@ pip.parse(
     requirements_lock = "//bazel:requirements_lock_3_13.txt",
 )
 use_repo(pip, "openroad-pip")
+
+bazel_dep(name = "bazel-orfs")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+git_override(
+    module_name = "bazel-orfs",
+    commit = "afa5638555b82222d3e2f20aa29c7c7c05ad87c5",
+    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+)
+
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+orfs.default(
+    # Official image https://hub.docker.com/r/openroad/orfs/tags
+    image = "docker.io/openroad/orfs:v3.0-2881-ga8a56ba9",
+    # Use OpenROAD of this repo instead of from the docker image
+    openroad = "//:openroad",
+    sha256 = "8c6474c59a5ea54d87bd1a1881697c2f83d833f8904a15ac19a3ccd8228fc05b",
+)
+use_repo(orfs, "com_github_nixos_patchelf_download")
+use_repo(orfs, "docker_orfs")
