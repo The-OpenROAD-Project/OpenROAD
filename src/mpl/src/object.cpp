@@ -54,30 +54,6 @@ Boundary opposite(const Boundary& pin_access)
 }
 
 ///////////////////////////////////////////////////////////////////////
-
-/*
-  Tiling Operators
-
-  The original implentation used std::pair to represent tilings.
-  These overloads mimic the behavior w.r.t how tilings would get
-  ordered in a std::set.
-*/
-
-bool Tiling::operator==(const Tiling& tiling) const
-{
-  return width_ == tiling.width() && height_ == tiling.height();
-}
-
-bool Tiling::operator<(const Tiling& tiling) const
-{
-  if (width_ != tiling.width()) {
-    return width_ < tiling.width();
-  }
-
-  return height_ < tiling.height();
-}
-
-///////////////////////////////////////////////////////////////////////
 // Metrics Class
 Metrics::Metrics(unsigned int num_std_cell,
                  unsigned int num_macro,

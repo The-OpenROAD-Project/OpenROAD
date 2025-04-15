@@ -17,6 +17,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
+#include "shapes.h"
 
 namespace odb {
 class Rect;
@@ -35,8 +36,6 @@ class Logger;
 }
 
 namespace mpl {
-struct Curve;
-struct Tiling;
 struct Rect;
 class HardMacro;
 class SoftMacro;
@@ -75,36 +74,6 @@ using Point = std::pair<float, float>;
 // (fixed position, preferred locations, and others) are on macros.  This means
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
-
-// Bounds of a certain cluster's dimension.
-// Used for either width or height.
-struct Curve
-{
-  Curve(float min, float max) : min(min), max(max) {}
-
-  float min{0.0f};
-  float max{0.0f};
-};
-
-// Coarse shape of a cluster that contains macros.
-class Tiling
-{
- public:
-  Tiling() = default;
-  Tiling(float width, float height) : width_(width), height_(height) {}
-
-  float width() const { return width_; }
-  float height() const { return height_; }
-  float area() const { return width_ * height_; }
-  float aspectRatio() const { return height_ / width_; }
-
-  bool operator==(const Tiling& tiling) const;
-  bool operator<(const Tiling& tiling) const;
-
- private:
-  float width_{0.0f};
-  float height_{0.0f};
-};
 
 // Define the position of pin access blockage
 // It can be {bottom, left, top, right} boundary of the cluster

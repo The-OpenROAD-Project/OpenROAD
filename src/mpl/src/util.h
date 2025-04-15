@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>
 
+#include "shapes.h"
+
 namespace mpl {
 
 struct SACoreWeights
