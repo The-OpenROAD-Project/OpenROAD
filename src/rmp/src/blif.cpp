@@ -594,8 +594,9 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
 {
   auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
   auto path = open_sta_->vertexWorstArrivalPath(vert, sta::MinMax::max());
-  if (path == nullptr)
+  if (path == nullptr) {
     return 0;
+  }
 
   auto ap = path->pathAnalysisPt(open_sta_);
   auto arr = open_sta_->vertexArrival(
