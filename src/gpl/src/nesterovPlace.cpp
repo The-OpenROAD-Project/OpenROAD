@@ -587,6 +587,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numDiverge > 0) {
+      isDiverged_ = true;
       log_->report("Divergence occured in {} regions.", numDiverge);
 
       // TODO: this divergence treatment uses the non-deterministic aspect of
