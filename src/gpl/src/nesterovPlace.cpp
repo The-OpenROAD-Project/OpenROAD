@@ -72,10 +72,10 @@ NesterovPlace::~NesterovPlace()
 void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
-  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
-  auto densityGradSum_ = nb->getDensityGradSum();
+  float wireLengthGradSum = nb->getWireLengthGradSum();
+  float densityGradSum = nb->getDensityGradSum();
 
-  if (wireLengthGradSum_ == 0
+  if (wireLengthGradSum == 0
       && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
@@ -98,23 +98,16 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
     return;
   }
 
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
-      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    num_region_diverged_ = 1;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
 void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
-  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
-  auto densityGradSum_ = nb->getDensityGradSum();
+  float wireLengthGradSum = nb->getWireLengthGradSum();
+  float densityGradSum = nb->getDensityGradSum();
 
-  if (wireLengthGradSum_ == 0
+  if (wireLengthGradSum == 0
       && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
@@ -137,24 +130,17 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
     return;
   }
 
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
-      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    num_region_diverged_ = 1;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
 void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
 
-  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
-  auto densityGradSum_ = nb->getDensityGradSum();
+  float wireLengthGradSum = nb->getWireLengthGradSum();
+  float densityGradSum = nb->getDensityGradSum();
 
-  if (wireLengthGradSum_ == 0
+  if (wireLengthGradSum == 0
       && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
@@ -176,15 +162,7 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
     updateNextGradient(nb);
     return;
   }
-
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
-      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    num_region_diverged_ = 1;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
 void NesterovPlace::init()
@@ -771,6 +749,22 @@ void NesterovPlace::updateNextIter(const int iter)
 void NesterovPlace::updateDb()
 {
   nbc_->updateDbGCells();
+}
+
+// divergence detection on
+// Wirelength / density gradient calculation
+void NesterovPlace::checkInvalidValues(float wireLengthGradSum,
+                                       float densityGradSum)
+{
+  if (std::isnan(wireLengthGradSum) || std::isnan(densityGradSum)
+      || std::isinf(wireLengthGradSum) || std::isinf(densityGradSum)) {
+    divergeMsg_
+        = "RePlAce diverged at wire/density gradient Sum. An internal value is "
+          "NaN or Inf.";
+    divergeCode_ = 306;
+    num_region_diverged_ = 1;
+    return;
+  }
 }
 
 nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
