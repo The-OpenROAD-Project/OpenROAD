@@ -118,10 +118,10 @@ cc_binary(
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb",
         ":openroad_lib_private",
         ":openroad_version",
         ":opensta_lib",
+        "//src/odb",
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
