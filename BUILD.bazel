@@ -93,7 +93,7 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
-    "BUILD_TYPE=\\\"release\\\"",
+    "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
