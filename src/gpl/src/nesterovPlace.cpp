@@ -102,7 +102,7 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
   // Wirelength / density gradient calculation
   if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
       || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    isDiverged_ = true;
+    num_region_diverged_ = 1;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
   }
@@ -141,7 +141,7 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
   // Wirelength / density gradient calculation
   if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
       || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    isDiverged_ = true;
+    num_region_diverged_ = 1;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
   }
@@ -181,7 +181,7 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
   // Wirelength / density gradient calculation
   if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
       || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    isDiverged_ = true;
+    num_region_diverged_ = 1;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
   }
@@ -276,7 +276,7 @@ void NesterovPlace::reset()
   baseWireLengthCoef_ = 0;
   wireLengthCoefX_ = wireLengthCoefY_ = 0;
   prevHpwl_ = 0;
-  isDiverged_ = false;
+  num_region_diverged_ = 0;
   is_routability_need_ = true;
 
   divergeMsg_ = "";
@@ -290,7 +290,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function,
   // replace must be skipped.
-  if (isDiverged_) {
+  if (num_region_diverged_ > 0) {
     log_->error(GPL, divergeCode_, divergeMsg_);
     return 0;
   }
@@ -340,29 +340,27 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
-      int numDiverge = 0;
+      num_region_diverged_ = 0;
       for (auto& nb : nbVec_) {
         updateNextGradient(nb);
-        numDiverge += nb->isDiverged();
+        num_region_diverged_ += nb->isDiverged();
       }
 
       // NaN or inf is detected in WireLength/Density Coef
-      if (numDiverge > 0 || isDiverged_) {
-        isDiverged_ = true;
+      if (num_region_diverged_ > 0) {
         divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
         divergeCode_ = 306;
         break;
       }
 
       int stepLengthLimitOK = 0;
-      numDiverge = 0;
+      num_region_diverged_ = 0;
       for (auto& nb : nbVec_) {
         stepLengthLimitOK += nb->nesterovUpdateStepLength();
-        numDiverge += nb->isDiverged();
+        num_region_diverged_ += nb->isDiverged();
       }
 
-      if (numDiverge > 0) {
-        isDiverged_ = true;
+      if (num_region_diverged_ > 0) {
         divergeMsg_ = "RePlAce diverged at newStepLength.";
         divergeCode_ = 305;
         break;
@@ -388,7 +386,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                  "Backtracking limit reached so a small step will be taken");
     }
 
-    if (isDiverged_) {
+    if (num_region_diverged_ > 0) {
       break;
     }
 
@@ -565,7 +563,18 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
-    if (!npVars_.disableRevertIfDiverge) {
+    // diverge detection on
+    // large max_phi_cof value + large design
+    //
+    // 1) happen overflow < 20%
+    // 2) Hpwl is growing
+
+    num_region_diverged_ = 0;
+    for (auto& nb : nbVec_) {
+      num_region_diverged_ += nb->checkDivergence();
+    }
+
+    if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0) {
       if (is_min_hpwl_) {
         diverge_snapshot_WlCoefX = wireLengthCoefX_;
         diverge_snapshot_WlCoefY = wireLengthCoefY_;
@@ -575,19 +584,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         is_diverge_snapshot_saved = true;
       }
     }
-    // diverge detection on
-    // large max_phi_cof value + large design
-    //
-    // 1) happen overflow < 20%
-    // 2) Hpwl is growing
 
-    int numDiverge = 0;
-    for (auto& nb : nbVec_) {
-      numDiverge += nb->checkDivergence();
-    }
-
-    if (numDiverge > 0) {
-      log_->report("Divergence occured in {} regions.", numDiverge);
+    if (num_region_diverged_ > 0) {
+      log_->report("Divergence occured in {} regions.", num_region_diverged_);
 
       // TODO: this divergence treatment uses the non-deterministic aspect of
       // routability inflation to try one more time if a divergence is detected.
@@ -635,9 +634,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for (auto& nb : nbVec_) {
           nb->revertToSnapshot();
         }
-        isDiverged_ = false;
+        num_region_diverged_ = 0;
         break;
       } else {
+        divergeMsg_
+            = "RePlAce divergence detected: "
+              "Current overflow is low and increasing relative to minimum,"
+              "and the HPWL has significantly worsened. "
+              "Consider re-running with a smaller max_phi_cof value.";
+        divergeCode_ = 307;
         break;
       }
     }
@@ -700,7 +705,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // db should be updated.
   updateDb();
 
-  if (isDiverged_) {
+  if (num_region_diverged_ > 0) {
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
