@@ -43,7 +43,6 @@ bool Detailed::improve(DetailedMgr& mgr)
 
   arch_ = mgr.getArchitecture();
   network_ = mgr.getNetwork();
-  rt_ = mgr.getRoutingParams();  // Can be NULL.
 
   // Parse the script string and run each command.
   boost::char_separator<char> separators(" \r\t\n", ";");
@@ -145,13 +144,13 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   logger->info(DPO, 303, "Running algorithm for {:s}.", command);
 
   if (strcmp(args[0].c_str(), "mis") == 0) {
-    DetailedMis mis(arch_, network_, rt_);
+    DetailedMis mis(arch_, network_);
     mis.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "gs") == 0) {
-    DetailedGlobalSwap gs(arch_, network_, rt_);
+    DetailedGlobalSwap gs(arch_, network_);
     gs.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
-    DetailedVerticalSwap vs(arch_, network_, rt_);
+    DetailedVerticalSwap vs(arch_, network_);
     vs.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
     DetailedReorderer ro(arch_, network_);
