@@ -190,28 +190,18 @@ class CtsOptions : public odb::dbBlockCallBackObj
   {
     sinkClusteringLevels_ = levels;
   }
-  void setMacroSinkClusteringUseMaxCap(bool useMaxCap)
-  {
-    macroSinkClusteringUseMaxCap_ = useMaxCap;
-  }
-  bool getMacroSinkClusteringUseMaxCap() const
-  {
-    return macroSinkClusteringUseMaxCap_;
-  }
 
   double getMacroMaxDiameter() const { return macroMaxDiameter_; }
   void setMacroMaxDiameter(double distance)
   {
     macroMaxDiameter_ = distance;
-    macroSinkClusteringUseMaxCap_ = false;
     macroMaxDiameterSet_ = true;
   }
   bool isMacroMaxDiameterSet() const { return macroMaxDiameterSet_; }
   unsigned getMacroSinkClusteringSize() const { return macroSinkClustersSize_; }
-  void setMacroSinkClusteringSize(unsigned size)
+  void setMacroClusteringSize(unsigned size)
   {
     macroSinkClustersSize_ = size;
-    macroSinkClusteringUseMaxCap_ = false;
     macroSinkClustersSizeSet_ = true;
   }
   bool isMacroSinkClusteringSizeSet() const
@@ -308,7 +298,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool maxDiameterSet_ = false;
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
-  bool macroSinkClusteringUseMaxCap_ = false;
   double macroMaxDiameter_ = 50;
   bool macroMaxDiameterSet_ = true;
   unsigned macroSinkClustersSize_ = 4;

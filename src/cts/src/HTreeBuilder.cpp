@@ -1175,7 +1175,7 @@ void HTreeBuilder::run()
                              ? options_->getMacroSinkClusteringSize()
                              : options_->getSinkClusteringSize();
   bool useMaxCap = (type_ == TreeType::MacroTree)
-                       ? options_->getMacroSinkClusteringUseMaxCap()
+                       ? false
                        : options_->getSinkClusteringUseMaxCap();
 
   logger_->info(

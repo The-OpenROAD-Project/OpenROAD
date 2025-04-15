@@ -31,7 +31,7 @@ SinkClustering::SinkClustering(const CtsOptions* options,
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
       useMaxCapLimit_((HTree->getTreeType() == TreeType::MacroTree)
-                          ? options_->getMacroSinkClusteringUseMaxCap()
+                          ? false
                           : options->getSinkClusteringUseMaxCap()),
       scaleFactor_(1),
       HTree_(HTree)
