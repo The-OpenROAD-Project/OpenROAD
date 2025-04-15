@@ -216,7 +216,7 @@ class FlexPA
    * for planar access
    */
   template <typename T>
-  int FlexPA::genPinAccessViaSpecific(
+  int genPinAccessViaSpecific(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
