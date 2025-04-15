@@ -40,4 +40,10 @@ inline bool isMinimumSmaller(const Curve& width_curve_a,
   return width_curve_a.min < width_curve_b.min;
 }
 
+// Utility to help sorting tilings.
+inline bool isAreaSmaller(const Tiling& tiling_a, const Tiling& tiling_b)
+{
+  return tiling_a.area() < tiling_b.area();
+}
+
 }  // namespace mpl

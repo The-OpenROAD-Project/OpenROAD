@@ -36,12 +36,15 @@ class Logger;
 
 namespace mpl {
 struct Curve;
+struct Tiling;
 struct Rect;
 class HardMacro;
 class SoftMacro;
 class Cluster;
 
 using CurveList = std::vector<Curve>;
+using TilingList = std::vector<Tiling>;
+using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
 using Point = std::pair<float, float>;
 
@@ -81,6 +84,26 @@ struct Curve
 
   float min{0.0f};
   float max{0.0f};
+};
+
+// Coarse shape of a cluster that contains macros.
+class Tiling
+{
+ public:
+  Tiling() = default;
+  Tiling(float width, float height) : width_(width), height_(height) {}
+
+  float width() const { return width_; }
+  float height() const { return height_; }
+  float area() const { return width_ * height_; }
+  float aspectRatio() const { return height_ / width_; }
+
+  bool operator==(const Tiling& tiling) const;
+  bool operator<(const Tiling& tiling) const;
+
+ private:
+  float width_{0.0f};
+  float height_{0.0f};
 };
 
 // Define the position of pin access blockage
@@ -268,9 +291,8 @@ class Cluster
   void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
 
-  void setMacroTilings(const std::vector<std::pair<float, float>>& tilings);
-  // TODO: return const reference iff precondition ok (see comment in Cluster)
-  std::vector<std::pair<float, float>> getMacroTilings() const;
+  void setTilings(const TilingList& tilings);
+  const TilingList& getTilings() const;
 
  private:
   // Private Variables
@@ -307,8 +329,7 @@ class Cluster
   Cluster* parent_ = nullptr;  // parent of current cluster
   UniqueClusterVector children_;
 
-  // macro tilings for hard macros
-  std::vector<std::pair<float, float>> macro_tilings_;  // <width, height>
+  TilingList tilings_;
 
   // To support grouping small clusters based connection signature,
   // we define connection_map_
@@ -499,11 +520,7 @@ class SoftMacro
   void setArea(float area);        // only for StdCellCluster and MixedCluster
   void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
-  // This function for discrete shape curves, HardMacroCluster
-  // If force_flag_ = true, it will force the update of width_list_ and
-  // height_list_
-  void setShapes(const std::vector<std::pair<float, float>>& shapes,
-                 bool force_flag = false);  // < <width, height>
+  void setShapes(const TilingList& tilings, bool force = false);
   void setShapes(const CurveList& width_curves, float area);
 
   float getX() const { return x_; }

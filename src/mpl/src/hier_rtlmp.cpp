@@ -336,13 +336,6 @@ void HierRTLMP::setRootShapes()
   tree_->root->setSoftMacro(std::move(root_soft_macro));
 }
 
-// Compare two intervals according to the product
-static bool comparePairProduct(const std::pair<float, float>& p1,
-                               const std::pair<float, float>& p2)
-{
-  return p1.first * p1.second < p2.first * p2.second;
-}
-
 // Determine the macro tilings within each cluster in a bottom-up manner.
 // (Post-Order DFS manner)
 // Coarse shaping:  In this step, we only consider the size of macros
@@ -412,17 +405,12 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     if (cluster->getNumMacro() > 0) {
       SoftMacro macro = SoftMacro(cluster.get());
       if (macro.isMacroCluster()) {
-        macro.setShapes(cluster->getMacroTilings(), true /* force */);
+        macro.setShapes(cluster->getTilings(), true /* force */);
       } else { /* Mixed */
-        const std::vector<std::pair<float, float>> tilings
-            = cluster->getMacroTilings();
-
-        // We can use any shape to compute the area.
-        const std::pair<float, float> shape = tilings.front();
-        const float area = shape.first * shape.second;
+        const TilingList& tilings = cluster->getTilings();
         CurveList width_curves = computeWidthCurves(tilings);
-
-        macro.setShapes(width_curves, area);
+        // Note that we can use the area of any tiling.
+        macro.setShapes(width_curves, tilings.front().area());
       }
 
       macros.push_back(macro);
@@ -433,17 +421,13 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   if (macros.size() == 1) {
     for (auto& cluster : parent->getChildren()) {
       if (cluster->getNumMacro() > 0) {
-        parent->setMacroTilings(cluster->getMacroTilings());
+        parent->setTilings(cluster->getTilings());
         return;
       }
     }
   }
 
-  debugPrint(
-      logger_, MPL, "coarse_shaping", 1, "Running SA to calculate tiling...");
-
-  // call simulated annealing to determine tilings
-  std::set<std::pair<float, float>> macro_tilings;  // <width, height>
+  TilingSet tilings_set;
   // the probability of all actions should be summed to 1.0.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
@@ -516,8 +500,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
@@ -576,41 +559,43 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
   }
-  std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
-                                               macro_tilings.end());
-  std::sort(tilings.begin(), tilings.end(), comparePairProduct);
-  for (auto& shape : tilings) {
+
+  TilingList tilings_list(tilings_set.begin(), tilings_set.end());
+  std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
+
+  for (auto& tiling : tilings_list) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
                2,
                "width: {}, height: {}, aspect_ratio: {}, min_ar: {}",
-               shape.first,
-               shape.second,
-               shape.second / shape.first,
+               tiling.width(),
+               tiling.height(),
+               tiling.aspectRatio(),
                min_ar_);
   }
+
   // we do not want very strange tilings if we have choices
-  std::vector<std::pair<float, float>> new_tilings;
-  for (auto& tiling : tilings) {
-    if (tiling.second / tiling.first >= min_ar_
-        && tiling.second / tiling.first <= 1.0 / min_ar_) {
-      new_tilings.push_back(tiling);
+  TilingList new_tilings_list;
+  for (auto& tiling : tilings_list) {
+    if (tiling.aspectRatio() >= min_ar_
+        && tiling.aspectRatio() <= 1.0 / min_ar_) {
+      new_tilings_list.push_back(tiling);
     }
   }
-  // if there are valid tilings
-  if (!new_tilings.empty()) {
-    tilings = std::move(new_tilings);
+
+  if (!new_tilings_list.empty()) {
+    tilings_list = std::move(new_tilings_list);
   }
-  // update parent
-  parent->setMacroTilings(tilings);
-  if (tilings.empty()) {
+
+  parent->setTilings(tilings_list);
+
+  if (tilings_list.empty()) {
     logger_->error(MPL,
                    3,
                    "There are no valid tilings for mixed cluster: {}",
@@ -618,22 +603,21 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   } else {
     std::string line
         = "The macro tiling for mixed cluster " + parent->getName() + "  ";
-    for (auto& shape : tilings) {
-      line += " < " + std::to_string(shape.first) + " , ";
-      line += std::to_string(shape.second) + " >  ";
+    for (auto& tiling : tilings_list) {
+      line += " < " + std::to_string(tiling.width()) + " , ";
+      line += std::to_string(tiling.height()) + " >  ";
     }
     line += "\n";
     debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
 }
 
-CurveList HierRTLMP::computeWidthCurves(
-    const std::vector<std::pair<float, float>>& tilings)
+CurveList HierRTLMP::computeWidthCurves(const TilingList& tilings)
 {
   CurveList width_curves;
   width_curves.reserve(tilings.size());
-  for (const std::pair<float, float>& tiling : tilings) {
-    width_curves.emplace_back(tiling.first, tiling.first);
+  for (const Tiling& tiling : tilings) {
+    width_curves.emplace_back(tiling.width(), tiling.width());
   }
 
   std::sort(width_curves.begin(), width_curves.end(), isMinimumSmaller);
@@ -648,16 +632,15 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  std::set<std::pair<float, float>> macro_tilings;  // <width, height>
+  TilingSet tilings_set;
 
   if (hard_macros.size() == 1) {
     float width = hard_macros[0]->getWidth();
     float height = hard_macros[0]->getHeight();
 
-    std::vector<std::pair<float, float>> tilings;
-
+    TilingList tilings;
     tilings.emplace_back(width, height);
-    cluster->setMacroTilings(tilings);
+    cluster->setTilings(tilings);
 
     debugPrint(logger_,
                MPL,
@@ -756,8 +739,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
@@ -811,39 +793,39 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
   }
 
-  // sort the tilings based on area
-  std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
-                                               macro_tilings.end());
-  std::sort(tilings.begin(), tilings.end(), comparePairProduct);
-  for (auto& shape : tilings) {
+  TilingList tilings_list(tilings_set.begin(), tilings_set.end());
+  std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
+
+  for (auto& tiling : tilings_list) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
                2,
                "width: {}, height: {}",
-               shape.first,
-               shape.second);
+               tiling.width(),
+               tiling.height());
   }
+
   // we only keep the minimum area tiling since all the macros has the same size
   // later this can be relaxed.  But this may cause problems because the
   // minimizing the wirelength may leave holes near the boundary
-  std::vector<std::pair<float, float>> new_tilings;
-  for (auto& tiling : tilings) {
-    if (tiling.first * tiling.second <= tilings[0].first * tilings[0].second) {
-      new_tilings.push_back(tiling);
+  TilingList new_tilings_list;
+  float first_tiling_area = tilings_list.front().area();
+  for (auto& tiling : tilings_list) {
+    if (tiling.area() <= first_tiling_area) {
+      new_tilings_list.push_back(tiling);
     }
   }
-  tilings = std::move(new_tilings);
-  // update parent
-  cluster->setMacroTilings(tilings);
-  if (tilings.empty()) {
+  tilings_list = std::move(new_tilings_list);
+  cluster->setTilings(tilings_list);
+
+  if (tilings_list.empty()) {
     logger_->error(MPL,
                    4,
                    "No valid tilings for hard macro cluster: {}",
@@ -851,9 +833,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
-  for (auto& shape : tilings) {
-    line += " < " + std::to_string(shape.first) + " , ";
-    line += std::to_string(shape.second) + " >  ";
+  for (auto& tiling : tilings_list) {
+    line += " < " + std::to_string(tiling.width()) + " , ";
+    line += std::to_string(tiling.height()) + " >  ";
   }
   line += "\n";
   debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
@@ -862,7 +844,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 // Used only for arrays of interconnected macros.
 void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 {
-  std::vector<std::pair<float, float>> tight_packing_tilings;
+  TilingList tight_packing_tilings;
 
   int divider = 1;
   int columns = 0, rows = 0;
@@ -882,7 +864,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
     ++divider;
   }
 
-  macro_array->setMacroTilings(tight_packing_tilings);
+  macro_array->setTilings(tight_packing_tilings);
 }
 
 void HierRTLMP::setPinAccessBlockages()
@@ -2024,14 +2006,15 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_cluster_area += cluster->getStdCellArea();
     } else if (cluster->getClusterType() == HardMacroCluster) {
-      std::vector<std::pair<float, float>> shapes;
-      for (auto& shape : cluster->getMacroTilings()) {
-        if (shape.first < outline_width * (1 + conversion_tolerance_)
-            && shape.second < outline_height * (1 + conversion_tolerance_)) {
-          shapes.push_back(shape);
+      TilingList valid_tilings;
+      for (auto& tiling : cluster->getTilings()) {
+        if (tiling.width() < outline_width * (1 + conversion_tolerance_)
+            && tiling.height() < outline_height * (1 + conversion_tolerance_)) {
+          valid_tilings.push_back(tiling);
         }
       }
-      if (shapes.empty()) {
+
+      if (valid_tilings.empty()) {
         logger_->error(MPL,
                        7,
                        "Not enough space in cluster: {} for "
@@ -2039,18 +2022,20 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                        parent->getName(),
                        cluster->getName());
       }
-      macro_cluster_area += shapes[0].first * shapes[0].second;
-      cluster->setMacroTilings(shapes);
+
+      macro_cluster_area += valid_tilings.front().area();
+      cluster->setTilings(valid_tilings);
     } else {  // mixed cluster
       std_cell_mixed_cluster_area += cluster->getStdCellArea();
-      std::vector<std::pair<float, float>> shapes;
-      for (auto& shape : cluster->getMacroTilings()) {
-        if (shape.first < outline_width * (1 + conversion_tolerance_)
-            && shape.second < outline_height * (1 + conversion_tolerance_)) {
-          shapes.push_back(shape);
+      TilingList valid_tilings;
+      for (auto& tiling : cluster->getTilings()) {
+        if (tiling.width() < outline_width * (1 + conversion_tolerance_)
+            && tiling.height() < outline_height * (1 + conversion_tolerance_)) {
+          valid_tilings.push_back(tiling);
         }
       }
-      if (shapes.empty()) {
+
+      if (valid_tilings.empty()) {
         logger_->error(MPL,
                        8,
                        "Not enough space in cluster: {} for "
@@ -2058,8 +2043,9 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                        parent->getName(),
                        cluster->getName());
       }
-      macro_mixed_cluster_area += shapes[0].first * shapes[0].second;
-      cluster->setMacroTilings(shapes);
+
+      macro_mixed_cluster_area += valid_tilings.front().area();
+      cluster->setTilings(valid_tilings);
     }  // end for cluster type
   }
 
@@ -2122,33 +2108,30 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                                                               area);
     } else if (cluster->getClusterType() == HardMacroCluster) {
       macros[soft_macro_id_map[cluster->getName()]].setShapes(
-          cluster->getMacroTilings());
+          cluster->getTilings());
       debugPrint(logger_,
                  MPL,
                  "fine_shaping",
                  2,
                  "hard_macro_cluster : {}",
                  cluster->getName());
-      for (auto& shape : cluster->getMacroTilings()) {
+      for (auto& tiling : cluster->getTilings()) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
                    2,
                    "    ( {} , {} ) ",
-                   shape.first,
-                   shape.second);
+                   tiling.width(),
+                   tiling.height());
       }
     } else {  // Mixed cluster
-      const std::vector<std::pair<float, float>> tilings
-          = cluster->getMacroTilings();
+      const TilingList& tilings = cluster->getTilings();
       CurveList width_curves;
-      // use the largest area
-      float area = tilings[tilings.size() - 1].first
-                   * tilings[tilings.size() - 1].second;
+      float area = tilings.back().area();
       area += cluster->getStdCellArea() / target_util;
-      for (auto& shape : tilings) {
-        if (shape.first * shape.second <= area) {
-          width_curves.emplace_back(shape.first, area / shape.second);
+      for (auto& tiling : tilings) {
+        if (tiling.area() <= area) {
+          width_curves.emplace_back(tiling.width(), area / tiling.height());
         }
       }
 
@@ -2159,6 +2142,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                  "name:  {} area: {}",
                  cluster->getName(),
                  area);
+
       debugPrint(logger_, MPL, "fine_shaping", 2, "width_list :  ");
       for (auto& width_curve : width_curves) {
         debugPrint(logger_,

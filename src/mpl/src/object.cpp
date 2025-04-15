@@ -54,6 +54,30 @@ Boundary opposite(const Boundary& pin_access)
 }
 
 ///////////////////////////////////////////////////////////////////////
+
+/*
+  Tiling Operators
+
+  The original implentation used std::pair to represent tilings.
+  These overloads mimic the behavior w.r.t how tilings would get
+  ordered in a std::set.
+*/
+
+bool Tiling::operator==(const Tiling& tiling) const
+{
+  return width_ == tiling.width() && height_ == tiling.height();
+}
+
+bool Tiling::operator<(const Tiling& tiling) const
+{
+  if (width_ != tiling.width()) {
+    return width_ < tiling.width();
+  }
+
+  return height_ < tiling.height();
+}
+
+///////////////////////////////////////////////////////////////////////
 // Metrics Class
 Metrics::Metrics(unsigned int num_std_cell,
                  unsigned int num_macro,
@@ -698,15 +722,14 @@ SoftMacro* Cluster::getSoftMacro() const
   return soft_macro_.get();
 }
 
-void Cluster::setMacroTilings(
-    const std::vector<std::pair<float, float>>& tilings)
+void Cluster::setTilings(const TilingList& tilings)
 {
-  macro_tilings_ = tilings;
+  tilings_ = tilings;
 }
 
-std::vector<std::pair<float, float>> Cluster::getMacroTilings() const
+const TilingList& Cluster::getTilings() const
 {
-  return macro_tilings_;
+  return tilings_;
 }
 
 // Virtual Connections
@@ -1144,23 +1167,23 @@ void SoftMacro::setArea(float area)
 
 // Method to set the shape possibilites for Macro clusters.
 // The shape curves are discrete.
-void SoftMacro::setShapes(const std::vector<std::pair<float, float>>& shapes,
-                          bool force_flag)
+void SoftMacro::setShapes(const TilingList& tilings, bool force)
 {
-  if (!force_flag
-      && (shapes.empty() || cluster_ == nullptr
+  if (!force
+      && (tilings.empty() || cluster_ == nullptr
           || cluster_->getClusterType() != HardMacroCluster)) {
     return;
   }
 
-  // Here we do not need to sort width_curves_, height_list_
-  for (auto& shape : shapes) {
-    width_curves_.emplace_back(shape.first, shape.first);
-    height_curves_.emplace_back(shape.second, shape.second);
+  // Here we do not need to sort the shape curves.
+  for (auto& tiling : tilings) {
+    width_curves_.emplace_back(tiling.width(), tiling.width());
+    height_curves_.emplace_back(tiling.height(), tiling.height());
   }
-  width_ = shapes[0].first;
-  height_ = shapes[0].second;
-  area_ = shapes[0].first * shapes[0].second;
+
+  width_ = tilings.front().width();
+  height_ = tilings.front().height();
+  area_ = width_ * height_;
 }
 
 // Method to set the shape possibilities for the following cluster types:
