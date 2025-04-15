@@ -77,3 +77,25 @@ use_repo(llvm, "llvm_toolchain")
 
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains("@llvm_toolchain//:all")
+
+bazel_dep(name = "bazel-orfs")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+git_override(
+    module_name = "bazel-orfs",
+    commit = "e98ba98412be26266ae85e85824d13d268cac4ce",
+    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+)
+
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+orfs.default(
+    # Official image https://hub.docker.com/r/openroad/orfs/tags
+    image = "docker.io/openroad/orfs:v3.0-2833-gb434ab0f",
+    # Use OpenROAD of this repo instead of from the docker image
+    openroad = "//:openroad",
+    sha256 = "ba6f6e7cd6b1ab980f6342b8c80c8421b1bb8e3c951704278bcde7381d025123",
+)
+use_repo(orfs, "com_github_nixos_patchelf_download")
+use_repo(orfs, "docker_orfs")
