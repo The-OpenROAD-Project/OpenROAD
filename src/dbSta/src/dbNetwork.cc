@@ -742,7 +742,8 @@ const char* dbNetwork::name(const Cell* cell) const
   return nullptr;
 }
 
-std::string dbNetwork::getAttribute(const Cell* cell, const std::string& key) const
+std::string dbNetwork::getAttribute(const Cell* cell,
+                                    const std::string& key) const
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -762,7 +763,9 @@ std::string dbNetwork::getAttribute(const Cell* cell, const std::string& key) co
   return "";
 }
 
-void dbNetwork::setAttribute(Cell* cell, const std::string& key, const std::string& value)
+void dbNetwork::setAttribute(Cell* cell,
+                             const std::string& key,
+                             const std::string& value)
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -1099,7 +1102,8 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
   return new DbInstanceNetIterator(instance, this);
 }
 
-std::string dbNetwork::getAttribute(const Instance* inst, const std::string& key) const
+std::string dbNetwork::getAttribute(const Instance* inst,
+                                    const std::string& key) const
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
