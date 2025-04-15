@@ -785,7 +785,7 @@ void FlexPA::filterViaAccess(
     const gtl::polygon_90_set_data<frCoord>& polyset,
     T* pin,
     frInstTerm* inst_term,
-    bool deep_search)
+    bool try_all_vias)
 {
   const Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
@@ -827,7 +827,7 @@ void FlexPA::filterViaAccess(
     // hardcode first two single vias
     for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
       via_defs.emplace_back(via_defs.size(), via_def);
-      if (via_defs.size() >= max_num_via_trial && !deep_search) {
+      if (via_defs.size() >= max_num_via_trial && !try_all_vias) {
         break;
       }
     }
@@ -1036,14 +1036,14 @@ void FlexPA::filterSingleAPAccesses(
     const std::vector<gtl::polygon_90_data<frCoord>>& polys,
     T* pin,
     frInstTerm* inst_term,
-    bool deep_search)
+    bool try_all_vias)
 {
-  if (!deep_search) {
+  if (!try_all_vias) {
     for (const frDirEnum dir : frDirEnumPlanar) {
       filterPlanarAccess(ap, polys, dir, pin, inst_term);
     }
   }
-  filterViaAccess(ap, polys, polyset, pin, inst_term, deep_search);
+  filterViaAccess(ap, polys, polyset, pin, inst_term, try_all_vias);
 }
 
 template <typename T>
@@ -1052,7 +1052,7 @@ void FlexPA::filterMultipleAPAccesses(
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     T* pin,
     frInstTerm* inst_term,
-    const bool& is_std_cell_pin)
+    const bool is_std_cell_pin)
 {
   std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
       pin_shapes.size());
@@ -1076,16 +1076,17 @@ void FlexPA::filterMultipleAPAccesses(
       has_access |= ap->hasAccess();
     }
   }
-  if (!has_access) {
-    for (auto& ap : aps) {
-      const auto layer_num = ap->getLayerNum();
-      filterSingleAPAccesses(ap.get(),
-                             pin_shapes[layer_num],
-                             layer_polys[layer_num],
-                             pin,
-                             inst_term,
-                             true);
-    }
+  if (has_access) {
+    return;
+  }
+  for (auto& ap : aps) {
+    const auto layer_num = ap->getLayerNum();
+    filterSingleAPAccesses(ap.get(),
+                           pin_shapes[layer_num],
+                           layer_polys[layer_num],
+                           pin,
+                           inst_term,
+                           true);
   }
 }
 
@@ -1327,6 +1328,17 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
     }
   }
   return pin_shapes;
+}
+
+template <typename T>
+int FlexPA::genPinAccessViaSpecific(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
+    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    T* pin,
+    frInstTerm* inst_term,
+    frVia* via)
+{
 }
 
 // first create all access points with costs

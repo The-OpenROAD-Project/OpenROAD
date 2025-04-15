@@ -211,6 +211,19 @@ class FlexPA
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
 
+  /**
+   * @brief generates access points for a specific via type. Set via = nullptr
+   * for planar access
+   */
+  template <typename T>
+  int FlexPA::genPinAccessViaSpecific(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      T* pin,
+      frInstTerm* inst_term,
+      frVia* via);
+
   void getViasFromMetalWidthMap(
       const Point& pt,
       frLayerNum layer_num,
@@ -435,7 +448,7 @@ class FlexPA
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
       frInstTerm* inst_term,
-      const bool& is_std_cell_pin);
+      const bool is_std_cell_pin);
 
   /**
    * @brief Filters the accesses of a single access point
@@ -445,7 +458,7 @@ class FlexPA
    * @param polys a vector of pin shapes on all layers of the current pin
    * @param pin access pin
    * @param inst_term terminal
-   * @param deep_search TODO: not sure
+   * @param try_all_vias wether or not all vias will be attempted
    */
   template <typename T>
   void filterSingleAPAccesses(
@@ -454,7 +467,7 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
       T* pin,
       frInstTerm* inst_term,
-      bool deep_search = false);
+      bool try_all_vias = false);
 
   /**
    * @brief Filters access in a given planar direction.
@@ -530,8 +543,7 @@ class FlexPA
    * @param polyset polys auxilary set (same information as polys)
    * @param pin access pin
    * @param inst_term instance terminal
-   * @param deep_search TODO: I understand one of its uses but not why "deep
-   * search"
+   * @param try_all_vias wether or not all vias will be attempted
    */
   template <typename T>
   void filterViaAccess(
@@ -540,7 +552,7 @@ class FlexPA
       const gtl::polygon_90_set_data<frCoord>& polyset,
       T* pin,
       frInstTerm* inst_term,
-      bool deep_search = false);
+      bool try_all_vias = false);
 
   /**
    * @brief Checks if a Via has at least one valid planar access
