@@ -27,6 +27,4 @@ bool Tiling::operator<(const Tiling& tiling) const
   return height_ < tiling.height();
 }
 
-}
-
-
+}  // namespace mpl

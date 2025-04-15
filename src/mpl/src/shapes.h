@@ -35,4 +35,4 @@ class Tiling
   float height_{0.0f};
 };
 
-}
+}  // namespace mpl
