@@ -12,12 +12,13 @@ tns max -6.294
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
-    final |       4 |       2 |        3 |      0 |     0 |   +13.2% |   -0.439 |       -2.2 |      6 | r7/D
+    final |       4 |       4 |        4 |      1 |     0 |   +26.0% |   -0.428 |       -2.4 |      6 | r2/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 4 buffers.
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0041] Resized 2 instances.
+[INFO RSZ-0041] Resized 4 instances.
+[INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack max -0.44
-tns max -2.156
+worst slack max -0.43
+tns max -2.380

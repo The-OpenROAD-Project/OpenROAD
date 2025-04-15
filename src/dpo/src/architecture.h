@@ -1,63 +1,37 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+#include <limits>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "dpl/Coordinates.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "rectangle.h"
-
-namespace dpo {
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-class Network;
+namespace dpl {
+class Group;
 class Node;
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+}  // namespace dpl
+namespace dpo {
+
+class Network;
+using dpl::DbuX;
+using dpl::DbuY;
+using dpl::Group;
+using dpl::Node;
+
 class Architecture
 {
   // This class represents information about the layout area.
 
  public:
   class Row;
-  class Spacing;
-  class Region;
 
   ~Architecture();
 
@@ -66,13 +40,10 @@ class Architecture
   Architecture::Row* getRow(int r) const { return rows_[r]; }
   Architecture::Row* createAndAddRow();
 
-  const std::vector<Architecture::Region*>& getRegions() const
-  {
-    return regions_;
-  }
+  const std::vector<Group*>& getRegions() const { return regions_; }
   int getNumRegions() const { return (int) regions_.size(); }
-  Architecture::Region* getRegion(int r) const { return regions_[r]; }
-  Architecture::Region* createAndAddRegion();
+  Group* getRegion(int r) const { return regions_[r]; }
+  Group* createAndAddRegion();
 
   bool isSingleHeightCell(const Node* ndi) const;
   bool isMultiHeightCell(const Node* ndi) const;
@@ -80,11 +51,7 @@ class Architecture
   int getCellHeightInRows(const Node* ndi) const;
 
   int postProcess(Network* network);
-  int find_closest_row(int y);
-
-  void clear_edge_type();
-  void init_edge_type();
-  int add_edge_type(const std::string& name);
+  int find_closest_row(DbuY y);
 
   int getMinX() const { return xmin_; }
   int getMaxX() const { return xmax_; }
@@ -101,34 +68,6 @@ class Architecture
 
   bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
 
-  // Using tables...
-  void setUseSpacingTable(bool val = true) { useSpacingTable_ = val; }
-  bool getUseSpacingTable() const { return useSpacingTable_; }
-  void clearSpacingTable();
-  void initSpacingTable();
-  void addSpacingTableEntry(int first_edge,
-                            int second_edge,
-                            int spc,
-                            bool is_exact,
-                            bool except_abutted);
-  Spacing getMaxSpacing(int edge_type) const;
-  Spacing getCellSpacingUsingTable(int firstEdge, int secondEdge) const;
-
-  const std::vector<std::vector<Spacing>>& getCellSpacings() const
-  {
-    return cellSpacings_;
-  }
-
-  const std::map<std::string, int>& getEdgeTypes() const { return edgeTypes_; }
-  bool hasEdgeType(const std::string& edge_type) const
-  {
-    return edgeTypes_.find(edge_type) != edgeTypes_.end();
-  }
-  int getEdgeTypeIdx(const std::string& edge_type) const
-  {
-    return edgeTypes_.at(edge_type);
-  }
-
   // Using padding...
   void setUsePadding(bool val = true) { usePadding_ = val; }
   bool getUsePadding() const { return usePadding_; }
@@ -136,6 +75,10 @@ class Architecture
   bool getCellPadding(const Node* ndi,
                       int& leftPadding,
                       int& rightPadding) const;
+  void addCellPadding(Node* ndi, DbuX leftPadding, DbuX rightPadding);
+  bool getCellPadding(const Node* ndi,
+                      DbuX& leftPadding,
+                      DbuX& rightPadding) const;
 
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
@@ -150,31 +93,11 @@ class Architecture
   std::vector<Row*> rows_;
 
   // Regions...
-  std::vector<Region*> regions_;
-
-  // Spacing tables...
-  bool useSpacingTable_ = false;
-  std::map<std::string, int> edgeTypes_;
-  std::vector<std::vector<Spacing>> cellSpacings_;
+  std::vector<Group*> regions_;
 
   // Padding...
   bool usePadding_ = false;
   std::map<int, std::pair<int, int>> cellPaddings_;  // Padding to left,right.
-};
-
-class Architecture::Spacing
-{
- public:
-  Spacing(const int spc_in,
-          const bool is_exact_in,
-          const bool except_abutted_in)
-      : spc(spc_in), is_exact(is_exact_in), except_abutted(except_abutted_in)
-  {
-  }
-  bool operator<(const Spacing& rhs) const { return spc < rhs.spc; }
-  int spc;
-  bool is_exact;
-  bool except_abutted;
 };
 
 class Architecture::Row
@@ -236,39 +159,6 @@ class Architecture::Row
   // Voltages at the top and bottom of the row.
   int powerTop_ = Power_UNK;
   int powerBot_ = Power_UNK;
-};
-
-class Architecture::Region
-{
- public:
-  int getId() const { return id_; }
-  void setId(int id) { id_ = id; }
-
-  int getMinX() const { return xmin_; }
-  int getMaxX() const { return xmax_; }
-  int getMinY() const { return ymin_; }
-  int getMaxY() const { return ymax_; }
-
-  void setMinX(int xmin) { xmin_ = xmin; }
-  void setMaxX(int xmax) { xmax_ = xmax; }
-  void setMinY(int ymin) { ymin_ = ymin; }
-  void setMaxY(int ymax) { ymax_ = ymax; }
-
-  void addRect(Rectangle_i& rect) { rects_.push_back(rect); }
-  const std::vector<Rectangle_i>& getRects() const { return rects_; }
-
- private:
-  // Id for the region.
-  int id_ = -1;
-
-  // Box around all sub-rectangles.
-  int xmin_ = std::numeric_limits<int>::max();
-  int ymin_ = std::numeric_limits<int>::max();
-  int xmax_ = std::numeric_limits<int>::lowest();
-  int ymax_ = std::numeric_limits<int>::lowest();
-
-  // Sub-rectangles forming the rectilinear region.
-  std::vector<Rectangle_i> rects_;
 };
 
 }  // namespace dpo

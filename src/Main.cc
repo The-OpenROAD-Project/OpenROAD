@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <libgen.h>
 #include <tcl.h>
@@ -45,6 +13,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
@@ -60,6 +29,10 @@
 #include <tclExtend.h>
 #endif
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+#include "rules_cc/cc/runfiles/runfiles.h"
+#endif
+
 #include "gui/gui.h"
 #include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
@@ -68,6 +41,7 @@
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
@@ -96,11 +70,10 @@ using std::string;
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
-  X(odb)
+  X(odb)                                 \
+  X(ord)
 
-#define FOREACH_TOOL(X)            \
-  FOREACH_TOOL_WITHOUT_OPENROAD(X) \
-  X(openroad_swig)
+#define FOREACH_TOOL(X) FOREACH_TOOL_WITHOUT_OPENROAD(X)
 
 extern "C" {
 #define X(name) extern PyObject* PyInit__##name##_py();
@@ -122,11 +95,12 @@ static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
 
 #ifdef ENABLE_PYTHON3
-namespace sta {
-#define X(name) extern const char* name##_py_python_inits[];
+#define X(name)                                \
+  namespace name {                             \
+  extern const char* name##_py_python_inits[]; \
+  }
 FOREACH_TOOL(X)
 #undef X
-}  // namespace sta
 
 #if PY_VERSION_HEX >= 0x03080000
 static void initPython(int argc, char* argv[])
@@ -152,22 +126,21 @@ static void initPython()
 #else
   Py_Initialize();
 #endif
-#define X(name)                                                       \
-  {                                                                   \
-    char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
-    PyObject* code                                                    \
-        = Py_CompileString(unencoded, #name "_py.py", Py_file_input); \
-    if (code == nullptr) {                                            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not compile " #name "_py\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    if (PyImport_ExecCodeModule(#name, code) == nullptr) {            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not add module " #name "\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    delete[] unencoded;                                               \
+#define X(name)                                                               \
+  {                                                                           \
+    std::string unencoded = utl::base64_decode(name::name##_py_python_inits); \
+    PyObject* code                                                            \
+        = Py_CompileString(unencoded.c_str(), #name "_py.py", Py_file_input); \
+    if (code == nullptr) {                                                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not compile " #name "_py\n");             \
+      exit(1);                                                                \
+    }                                                                         \
+    if (PyImport_ExecCodeModule(#name, code) == nullptr) {                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not add module " #name "\n");             \
+      exit(1);                                                                \
+    }                                                                         \
   }
   FOREACH_TOOL_WITHOUT_OPENROAD(X)
 #undef X
@@ -177,9 +150,9 @@ static void initPython()
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
   {
-    char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "openroad.py", Py_file_input);
+    std::string unencoded = utl::base64_decode(ord::ord_py_python_inits);
+    PyObject* code
+        = Py_CompileString(unencoded.c_str(), "openroad.py", Py_file_input);
     if (code == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not compile openroad.py\n");
@@ -191,8 +164,6 @@ static void initPython()
       fprintf(stderr, "Error: could not add module openroad\n");
       exit(1);
     }
-
-    delete[] unencoded;
   }
 }
 #endif
@@ -229,6 +200,33 @@ static void handler(int sig)
   raise(sig);
 }
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+
+// Avoid adding any dependencies like boost.filesystem
+//
+// Returns path to running binary if possible, otherwise nullopt.
+static std::optional<std::string> getProgramLocation()
+{
+#if defined(_WIN32)
+  char result[MAX_PATH + 1] = {'\0'};
+  auto path_len = GetModuleFileNameA(NULL, result, MAX_PATH);
+#elif defined(__APPLE__)
+  char result[MAXPATHLEN + 1] = {'\0'};
+  uint32_t path_len = MAXPATHLEN;
+  if (_NSGetExecutablePath(result, &path_len) != 0) {
+    path_len = readlink("/proc/self/exe", result, MAXPATHLEN);
+  }
+#else
+  char result[PATH_MAX + 1] = {'\0'};
+  ssize_t path_len = readlink("/proc/self/exe", result, PATH_MAX);
+#endif
+  if (path_len > 0) {
+    return result;
+  }
+  return std::nullopt;
+}
+#endif
+
 int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
@@ -240,6 +238,19 @@ int main(int argc, char* argv[])
       break;
     }
   }
+
+#ifdef BAZEL_CURRENT_REPOSITORY
+  using rules_cc::cc::runfiles::Runfiles;
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
+      getProgramLocation().value(), BAZEL_CURRENT_REPOSITORY, &error));
+  if (!runfiles) {
+    std::cerr << error << std::endl;
+    return 1;
+  }
+  std::string path = runfiles->Rlocation("tk_tcl/library/");
+  setenv("TCL_LIBRARY", path.c_str(), 0);
+#endif
 
   // Generate a stacktrace on crash
   signal(SIGABRT, handler);
@@ -490,6 +501,7 @@ static int tclAppInit(int& argc,
 
     if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
       showUsage(argv[0], init_filename);
+      exit(1);
     } else {
       if (argc == 2) {
         char* cmd_file = argv[1];

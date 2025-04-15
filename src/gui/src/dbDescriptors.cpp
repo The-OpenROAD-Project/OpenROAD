@@ -1,45 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "dbDescriptors.h"
 
 #include <QInputDialog>
 #include <QStringList>
 #include <boost/algorithm/string.hpp>
+#include <cmath>
+#include <functional>
 #include <iomanip>
 #include <limits>
+#include <optional>
 #include <queue>
 #include <regex>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "bufferTreeDescriptor.h"
@@ -184,7 +159,7 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
            return false;
          }
          // check for illegal characters
-         for (const char ch : {obj->getBlock()->getHierarchyDelimeter()}) {
+         for (const char ch : {obj->getBlock()->getHierarchyDelimiter()}) {
            if (new_name.find(ch) != std::string::npos) {
              return false;
            }
@@ -2265,6 +2240,16 @@ Descriptor::Properties DbBlockageDescriptor::getDBProperties(
       {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}};
 
   return props;
+}
+
+Descriptor::Actions DbBlockageDescriptor::getActions(std::any object) const
+{
+  auto blk = std::any_cast<odb::dbBlockage*>(object);
+  return Actions(
+      {{"Delete", [blk]() {
+          odb::dbBlockage::destroy(blk);
+          return Selected();  // unselect since this object is now gone
+        }}});
 }
 
 Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const

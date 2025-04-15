@@ -19,7 +19,7 @@
 	"orderReversed": "true",
         "flags":["private"],	
         "sequential": 0,
-        "includes": ["dbModBTerm.h", "dbModule.h", "dbBusPort.h"]
+        "includes": ["dbModule.h", "dbBusPort.h"]
     },
     {
       "name": "dbModuleInstItr",
@@ -47,7 +47,7 @@
 	"orderReversed": "true",
         "flags":["private"],	
         "sequential": 0,
-	"includes": ["dbModBTerm.h", "dbModule.h", "dbBusPort.h"]
+	"includes": ["dbModule.h", "dbBusPort.h"]
     },
     {
         "name": "dbModuleModInstModITermItr",

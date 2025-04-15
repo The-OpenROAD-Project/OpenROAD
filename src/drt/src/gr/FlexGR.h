@@ -1,36 +1,13 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
+#include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "FlexGRCMap.h"
@@ -89,15 +66,11 @@ class FlexGR
   Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   RouterConfiguration* router_cfg_;
-  std::map<frNet*,
-           std::map<std::pair<int, int>, std::vector<frNode*>>,
-           frBlockObjectComp>
+  frOrderedIdMap<frNet*, std::map<std::pair<int, int>, std::vector<frNode*>>>
       net2GCellIdx2Nodes_;
-  std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2GCellNodes_;
-  std::map<frNet*, std::vector<frNode*>, frBlockObjectComp> net2SteinerNodes_;
-  std::map<frNet*,
-           std::map<frNode*, std::vector<frNode*>, frBlockObjectComp>,
-           frBlockObjectComp>
+  frOrderedIdMap<frNet*, std::vector<frNode*>> net2GCellNodes_;
+  frOrderedIdMap<frNet*, std::vector<frNode*>> net2SteinerNodes_;
+  frOrderedIdMap<frNet*, frOrderedIdMap<frNode*, std::vector<frNode*>>>
       net2GCellNode2RPinNodes_;
   std::vector<frCoord> trackPitches_;
   std::vector<frCoord> line2ViaPitches_;
@@ -362,7 +335,7 @@ class FlexGRWorker
 
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;
-  std::map<frNet*, std::vector<grNet*>, frBlockObjectComp> owner2nets_;
+  frOrderedIdMap<frNet*, std::vector<grNet*>> owner2nets_;
 
   FlexGRGridGraph gridGraph_;
   FlexGRWorkerRegionQuery rq_;
@@ -380,20 +353,19 @@ class FlexGRWorker
   // init
   void init();
   void initNets();
-  void initNets_roots(
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots);
+  void initNets_roots(frOrderedIdSet<frNet*>& nets,
+                      frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots);
   void initNetObjs_roots_pathSeg(
       grPathSeg* pathSeg,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots);
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots);
   void initNetObjs_roots_via(
       grVia* via,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots);
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots);
   void initNets_searchRepair(
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots);
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots);
   void initNet(frNet* net, const std::vector<frNode*>& netRoots);
   void initNet_initNodes(grNet* net, frNode* fRoot);
   void initNet_initRoot(grNet* net);
@@ -409,7 +381,7 @@ class FlexGRWorker
   void initNets_printNets();
   void initNets_printNet(grNet* net);
   void initNets_printFNets(
-      std::map<frNet*, std::vector<frNode*>, frBlockObjectComp>& netRoots);
+      frOrderedIdMap<frNet*, std::vector<frNode*>>& netRoots);
   void initNets_printFNet(frNode* root);
 
   // route
@@ -426,12 +398,12 @@ class FlexGRWorker
   void mazeNetInit_removeNetNodes(grNet* net);
   bool routeNet(grNet* net);
   void routeNet_prep(grNet* net,
-                     std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
+                     frOrderedIdSet<grNode*>& unConnPinGCellNodes,
                      std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode,
                      std::map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode);
   void routeNet_setSrc(
       grNet* net,
-      std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
+      frOrderedIdSet<grNode*>& unConnPinGCellNodes,
       std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode,
       std::vector<FlexMazeIdx>& connComps,
       FlexMazeIdx& ccMazeIdx1,
@@ -444,7 +416,7 @@ class FlexGRWorker
   grNode* routeNet_postAstarUpdate(
       std::vector<FlexMazeIdx>& path,
       std::vector<FlexMazeIdx>& connComps,
-      std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
+      frOrderedIdSet<grNode*>& unConnPinGCellNodes,
       std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode);
   void routeNet_postAstarWritePath(
       grNet* net,
@@ -458,15 +430,15 @@ class FlexGRWorker
   void route_decayHistCost();
 
   // end
-  void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
-  void endRemoveNets(const std::set<frNet*, frBlockObjectComp>& modNets);
-  void endRemoveNets_objs(const std::set<frNet*, frBlockObjectComp>& modNets);
+  void endGetModNets(frOrderedIdSet<frNet*>& modNets);
+  void endRemoveNets(const frOrderedIdSet<frNet*>& modNets);
+  void endRemoveNets_objs(const frOrderedIdSet<frNet*>& modNets);
   void endRemoveNets_pathSeg(grPathSeg* pathSeg);
   void endRemoveNets_via(grVia* via);
-  void endRemoveNets_nodes(const std::set<frNet*, frBlockObjectComp>& modNets);
+  void endRemoveNets_nodes(const frOrderedIdSet<frNet*>& modNets);
   void endRemoveNets_nodes_net(grNet* net, frNet* fnet);
   void endRemoveNets_node(frNode* node);
-  void endAddNets(std::set<frNet*, frBlockObjectComp>& modNets);
+  void endAddNets(frOrderedIdSet<frNet*>& modNets);
   void endAddNets_stitchRouteBound(grNet* net);
   void endAddNets_stitchRouteBound_node(grNode* node);
   void endAddNets_addNet(grNet* net, frNet* fnet);

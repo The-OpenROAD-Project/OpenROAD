@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // dbSta, OpenSTA on OpenDB
 
@@ -47,9 +15,12 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <regex>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "AbstractPathRenderer.h"
@@ -68,6 +39,7 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Path.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
@@ -181,6 +153,36 @@ class dbStaReport : public sta::ReportTcl
   Logger* logger_ = nullptr;
 };
 
+// Helper class for histogram reporting.
+class dbStaHistogram
+{
+ public:
+  dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger);
+
+  // Loads data_ with the slack value for each constrained endpoint.
+  void loadSlackData(const MinMax* min_max);
+  // Loads data_ with the logic depth for each constrained endpoint.
+  void loadLogicDepthData(bool exclude_buffers, bool exclude_inverters);
+  // Populates bins_ using the current data_, which must be loaded first.
+  void populateHistogramBins(int num_bins);
+  // Prints the histogram to the log. Width and precision are used to control
+  // the number of digits when displaying each bin's range.
+  void reportHistogram(int width, int precision) const;
+
+ private:
+  std::vector<float> data_;
+  // Bins are defined in bins_ as equally sized windows of width bin_width_
+  // starting with smallest value min_val_ at the start of bin 0.
+  std::vector<int> bins_;
+  float min_val_ = 0.0;
+  float bin_width_ = 0.0;
+  bool integer_bins_ = false;  // Enforce int bin width (for discrete metrics).
+
+  Sta* sta_;
+  dbNetwork* network_;
+  Logger* logger_;
+};
+
 class dbStaCbk : public dbBlockCallBackObj
 {
  public:
@@ -232,6 +234,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
                      utl::Logger* logger)
 {
   db_ = db;
+  db->addObserver(this);
   logger_ = logger;
   makeComponents();
   if (tcl_interp) {
@@ -690,59 +693,133 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+dbStaHistogram::dbStaHistogram(Sta* sta, dbNetwork* network, Logger* logger)
+    : sta_(sta), network_(network), logger_(logger)
 {
-  if (num_bins <= 0) {
-    logger_->warn(STA, 70, "The number of bins must be positive.");
-    return;
-  }
-  const int max_bin_width = 50;  // Maximum number of chars to print for a bin.
+}
 
-  // Get and sort the slacks.
+void dbStaHistogram::loadSlackData(const MinMax* min_max)
+{
+  data_.clear();
   sta::Unit* time_unit = sta_->units()->timeUnit();
-  std::vector<float> slacks;
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     float slack = sta_->vertexSlack(vertex, min_max);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
-      slacks.push_back(time_unit->staToUser(slack));
+      data_.push_back(time_unit->staToUser(slack));
     }
   }
-  if (slacks.empty()) {
-    logger_->warn(STA, 71, "No constrained slacks found.");
+  integer_bins_ = false;
+}
+
+void dbStaHistogram::loadLogicDepthData(bool exclude_buffers,
+                                        bool exclude_inverters)
+{
+  data_.clear();
+  sta_->worstSlack(MinMax::max());  // Update timing.
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    int path_length = 0;
+    Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
+    dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
+    while (path) {
+      Pin* pin = path->vertex(sta_)->pin();
+      Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
+      dbInst* inst = network_->staToDb(sta_inst);
+      if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
+        prev_inst = inst;
+        LibertyCell* lib_cell = network_->libertyCell(inst);
+        if (lib_cell && (!exclude_buffers || !lib_cell->isBuffer())
+            && (!exclude_inverters || !lib_cell->isInverter())) {
+          path_length++;
+        }
+      }
+      path = path->prevPath();
+    }
+    data_.push_back(path_length);
+  }
+  integer_bins_ = true;
+}
+
+void dbStaHistogram::populateHistogramBins(int num_bins)
+{
+  if (num_bins <= 0) {
+    logger_->error(STA, 70, "The number of bins must be positive.");
     return;
   }
-  std::sort(slacks.begin(), slacks.end());
+  if (data_.empty()) {
+    logger_->error(STA, 71, "No data for the histogram has been loaded.");
+    return;
+  }
+  std::sort(data_.begin(), data_.end());
 
   // Populate each bin with count.
-  std::vector<int> bins(num_bins, 0);
-  const float min_slack = slacks.front();
-  const float bin_range = (slacks.back() - min_slack) / num_bins;
-  for (const float& slack : slacks) {
-    int bin = static_cast<int>((slack - min_slack) / bin_range);
-    if (bin >= num_bins) {  // Special case for paths with the maximum slack.
+  bins_.resize(num_bins, 0);
+  min_val_ = data_.front();
+  bin_width_ = (data_.back() - min_val_) / num_bins;
+  if (bin_width_ == 0) {  // Special case for no variation in the data.
+    bins_[0] = data_.size();
+    return;
+  }
+  if (integer_bins_) {
+    bin_width_ = std::ceil(bin_width_);
+  }
+  for (const float& val : data_) {
+    int bin = static_cast<int>((val - min_val_) / bin_width_);
+    if (bin >= num_bins) {  // Special case for val with the maximum value.
       bin = num_bins - 1;
     }
-    bins[bin]++;
+    bins_[bin]++;
   }
+}
+
+void dbStaHistogram::reportHistogram(int width, int precision) const
+{
+  constexpr int max_bin_width = 50;  // Max number of chars to print for a bin.
+  if (data_.empty()) {
+    logger_->error(STA, 72, "No data for the histogram has been loaded.");
+    return;
+  }
+  const int num_bins = bins_.size();
+  const int largest_bin = *std::max_element(bins_.begin(), bins_.end());
 
   // Print the histogram.
-  const int largest_bin = *std::max_element(bins.begin(), bins.end());
   for (int bin = 0; bin < num_bins; ++bin) {
-    const float bin_start = min_slack + bin * bin_range;
-    const float bin_end = min_slack + (bin + 1) * bin_range;
+    const float bin_start = min_val_ + bin * bin_width_;
+    const float bin_end = min_val_ + (bin + 1) * bin_width_;
     int bar_length  // Round the bar length to its closest value.
-        = (max_bin_width * bins[bin] + largest_bin / 2) / largest_bin;
-    if (bar_length == 0 && bins[bin] > 0) {
+        = (max_bin_width * bins_[bin] + largest_bin / 2) / largest_bin;
+    if (bar_length == 0 && bins_[bin] > 0) {
       bar_length = 1;  // Better readability when non-zero bins have a bar.
     }
-    logger_->report("[{:>6.3f}, {:>6.3f}{}: {} ({})",
+    logger_->report("[{:>{}.{}f}, {:>{}.{}f}{}: {} ({})",
                     bin_start,
+                    width,
+                    precision,
                     bin_end,
+                    width,
+                    precision,
                     // The final bin is also closed from the right.
                     bin == num_bins - 1 ? "]" : ")",
                     std::string(bar_length, '*'),
-                    bins[bin]);
+                    bins_[bin]);
   }
+}
+
+void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+{
+  dbStaHistogram histogram(sta_, db_network_, logger_);
+  histogram.loadSlackData(min_max);
+  histogram.populateHistogramBins(num_bins);
+  histogram.reportHistogram(/*width=*/6, /*precision=*/3);
+}
+
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  dbStaHistogram histogram(sta_, db_network_, logger_);
+  histogram.loadLogicDepthData(exclude_buffers, exclude_inverters);
+  histogram.populateHistogramBins(num_bins);
+  histogram.reportHistogram(/*width=*/3, /*precision=*/0);
 }
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)

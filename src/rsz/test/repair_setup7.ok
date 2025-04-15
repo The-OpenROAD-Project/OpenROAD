@@ -11,10 +11,10 @@ worst slack max -1.95
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
-    final |       0 |      37 |        9 |      0 |     0 |   +75.3% |   -0.631 |       -2.8 |      6 | r2/D
+    final |       0 |      43 |        8 |      0 |     0 |   +69.4% |   -0.631 |       -3.1 |      6 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 3 buffers.
-[INFO RSZ-0041] Resized 37 instances.
+[INFO RSZ-0040] Inserted 2 buffers.
+[INFO RSZ-0041] Resized 43 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 worst slack max -0.63

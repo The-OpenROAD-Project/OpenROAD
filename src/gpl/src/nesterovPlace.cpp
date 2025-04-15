@@ -1,35 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 // Debug controls: npinit, updateGrad, np, updateNextIter
 
@@ -37,7 +7,9 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "graphics.h"
@@ -471,7 +443,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       log_->info(GPL,
                  101,
-                 "   Iter: {}, overflow: {:.3f}, keep rsz at: {}, HPWL: {}",
+                 "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
+                 "HPWL: {}",
                  iter + 1,
                  average_overflow_,
                  npVars_.keepResizeBelowOverflow,
@@ -494,6 +467,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+      nbVec_[0]->setTrueReprintIterHeader();
 
       for (auto& nb : nbVec_) {
         nb_gcells_after_td += nb->gCells().size();
@@ -685,6 +659,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // check routability using RUDY or GR
     if (npVars_.routability_driven_mode && is_routability_need_
         && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
+      nbVec_[0]->setTrueReprintIterHeader();
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
@@ -706,7 +681,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
-        log_->info(GPL, 89, "Routability: revert back to snapshot");
+        log_->info(
+            GPL, 89, "Routability end iteration: revert back to snapshot");
       }
     }
 

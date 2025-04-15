@@ -1,37 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbMarkerCategory.h"
+
+#include <string>
 
 #include "dbBlock.h"
 #include "dbDatabase.h"
@@ -45,6 +18,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string>
 
 #include "dbHashTable.hpp"
 #include "odb/dbBlockCallBackObj.h"
@@ -801,10 +775,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbBlock* block, const char* name)
 
   parent->_marker_category_hash.insert(_category);
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = parent->_callbacks.begin(); cbitr != parent->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  for (auto cb : parent->_callbacks) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -851,10 +823,8 @@ dbMarkerCategory* dbMarkerCategory::create(dbMarkerCategory* category,
   parent->categories_hash_.insert(_category);
 
   _dbBlock* block = parent->getBlock();
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
+  for (auto cb : block->_callbacks) {
+    cb->inDbMarkerCategoryCreate((dbMarkerCategory*) _category);
   }
 
   return (dbMarkerCategory*) _category;
@@ -891,10 +861,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
   if (_category->isTopCategory()) {
     _dbBlock* block = (_dbBlock*) _category->getOwner();
 
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbMarkerCategoryDestroy(category);
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     block->_marker_category_hash.remove(_category);
@@ -903,10 +871,8 @@ void dbMarkerCategory::destroy(dbMarkerCategory* category)
     _dbMarkerCategory* parent = (_dbMarkerCategory*) _category->getOwner();
 
     _dbBlock* block = parent->getBlock();
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbMarkerCategoryDestroy(category);
+    for (auto cb : block->_callbacks) {
+      cb->inDbMarkerCategoryDestroy(category);
     }
 
     parent->categories_hash_.remove(_category);

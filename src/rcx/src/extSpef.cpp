@@ -1,38 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "rcx/extSpef.h"
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "name.h"
@@ -132,7 +104,7 @@ void extSpef::setLogger(Logger* logger)
   logger_ = logger;
 }
 
-char* extSpef::getDelimeter()
+char* extSpef::getDelimiter()
 {
   return _delimiter;
 }
@@ -501,9 +473,9 @@ void extSpef::writePort(const uint node)
   fprintf(_outFP, " *C %f %f\n", db2nm * pt.x(), db2nm * pt.y());
 }
 
-void extSpef::writeSingleRC(const double val, const bool delimeter)
+void extSpef::writeSingleRC(const double val, const bool delimiter)
 {
-  if (delimeter) {
+  if (delimiter) {
     fprintf(_outFP, "%s%g", _delimiter, val * _cap_unit);
   } else {
     fprintf(_outFP, "%g", val * _cap_unit);
@@ -1311,7 +1283,7 @@ const char* extSpef::addEscChar(const char* iname, const bool esc_bus_brkts)
   while (iname[ii] != '\0') {
     char ch = iname[ii];
     if (!std::isalnum(ch) && ch != '_' && ch != '\\' && ch != '/'
-        &&  // hier delimeters are already escaped if needed
+        &&  // hier delimiters are already escaped if needed
         (esc_bus_brkts || (ch != '[' && ch != ']'))
         // Check if there is an escape char before
         // the non-alphanumeric character

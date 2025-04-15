@@ -1,37 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbVia.h"
 
+#include <string>
 #include <vector>
 
 #include "dbBlock.h"
@@ -447,13 +419,10 @@ dbVia* dbVia::create(dbBlock* block,
   via->_rotated_via_id = blk_via->getId();
 
   dbTransform t(orient);
-  dbSet<dbBox> boxes = blk_via->getBoxes();
-  dbSet<dbBox>::iterator itr;
 
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    dbTechLayer* l = (dbTechLayer*) box->getTechLayer();
-    Rect r = box->_shape._rect;
+  for (dbBox* box : blk_via->getBoxes()) {
+    dbTechLayer* l = box->getTechLayer();
+    Rect r = ((_dbBox*) box)->_shape._rect;
     t.apply(r);
     dbBox::create((dbVia*) via, l, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
@@ -478,13 +447,10 @@ dbVia* dbVia::create(dbBlock* block,
   via->_rotated_via_id = tech_via->getId();
 
   dbTransform t(orient);
-  dbSet<dbBox> boxes = tech_via->getBoxes();
-  dbSet<dbBox>::iterator itr;
 
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    _dbBox* box = (_dbBox*) *itr;
-    dbTechLayer* l = (dbTechLayer*) box->getTechLayer();
-    Rect r = box->_shape._rect;
+  for (dbBox* box : tech_via->getBoxes()) {
+    dbTechLayer* l = box->getTechLayer();
+    Rect r = ((_dbBox*) box)->_shape._rect;
     t.apply(r);
     dbBox::create((dbVia*) via, l, r.xMin(), r.yMin(), r.xMax(), r.yMax());
   }
@@ -492,9 +458,7 @@ dbVia* dbVia::create(dbBlock* block,
   return (dbVia*) via;
 }
 
-static dbVia* copyVia(dbBlock* block, dbVia* via, bool copyRotatedVia);
-
-dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
+static dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbVia* via = (_dbVia*) via_;
@@ -513,11 +477,7 @@ dbVia* copyVia(dbBlock* block_, dbVia* via_, bool copyRotatedVia)
   cvia->_top = via->_top;
   cvia->_bottom = via->_bottom;
 
-  dbSet<dbBox> boxes = via_->getBoxes();
-  dbSet<dbBox>::iterator itr;
-
-  for (itr = boxes.begin(); itr != boxes.end(); ++itr) {
-    dbBox* b = *itr;
+  for (dbBox* b : via_->getBoxes()) {
     dbTechLayer* l = b->getTechLayer();
     dbBox::create((dbVia*) cvia, l, b->xMin(), b->yMin(), b->xMax(), b->yMax());
   }
@@ -548,12 +508,8 @@ dbVia* dbVia::copy(dbBlock* dst, dbVia* src)
 
 bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
 {
-  dbSet<dbVia> vias = src_->getVias();
-  dbSet<dbVia>::iterator itr;
-
   // copy non rotated via's first
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbVia* v = *itr;
+  for (dbVia* v : src_->getVias()) {
     _dbVia* via = (_dbVia*) v;
 
     if (!v->isViaRotated()) {
@@ -564,8 +520,7 @@ bool dbVia::copy(dbBlock* dst_, dbBlock* src_)
   }
 
   // copy rotated via's last
-  for (itr = vias.begin(); itr != vias.end(); ++itr) {
-    dbVia* v = *itr;
+  for (dbVia* v : src_->getVias()) {
     _dbVia* via = (_dbVia*) v;
 
     if (v->isViaRotated()) {

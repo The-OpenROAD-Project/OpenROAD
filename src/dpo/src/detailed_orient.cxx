@@ -1,43 +1,13 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, Andrew Kennings
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 #include "detailed_orient.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cstddef>
+#include <limits>
+#include <string>
 #include <vector>
 
 #include "architecture.h"
@@ -51,8 +21,6 @@ using utl::DPO;
 
 namespace dpo {
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 DetailedOrient::DetailedOrient(Architecture* arch, Network* network)
     : arch_(arch),
       network_(network),
@@ -152,7 +120,7 @@ int DetailedOrient::orientCells(int& changed)
         bottom = std::min(bottom, segPtr->getRowId());
       }
       if (bottom < arch_->getNumRows()) {
-        unsigned origOrient = ndi->getCurrOrient();
+        unsigned origOrient = ndi->getOrient();
         if (arch_->isSingleHeightCell(ndi)) {
           if (!orientSingleHeightCellForRow(ndi, bottom)) {
             ++errors;
@@ -165,7 +133,7 @@ int DetailedOrient::orientCells(int& changed)
           // ? Whoops.
           ++errors;
         }
-        if (origOrient != ndi->getCurrOrient()) {
+        if (origOrient != ndi->getOrient()) {
           ++changed;
         }
       } else {
@@ -193,7 +161,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
       // I'm not sure the following is correct, but I am going
       // to change the orientation the same way I would for a
       // single height cell when flipping about X.
-      switch (ndi->getCurrOrient()) {
+      switch (ndi->getOrient()) {
         case dbOrientType::R0:
           ndi->adjustCurrOrient(dbOrientType::MX);
           break;
@@ -240,7 +208,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   }
 
   unsigned rowOri = arch_->getRow(row)->getOrient();
-  unsigned cellOri = ndi->getCurrOrient();
+  unsigned cellOri = ndi->getOrient();
 
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
     if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
@@ -284,7 +252,7 @@ int DetailedOrient::flipCells()
   // assume the cells are already properly oriented for the row.
 
   int leftPadding, rightPadding;
-  double lx, rx;
+  DbuX lx, rx;
 
   int nflips = 0;
   for (int s = 0; s < mgrPtr_->getNumSegments(); s++) {
@@ -333,14 +301,14 @@ int DetailedOrient::flipCells()
         for (Pin* pinj : edi->getPins()) {
           Node* ndj = pinj->getNode();
 
-          double x
-              = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
+          double x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
+                     + pinj->getOffsetX().v;
           oldMinX = std::min(oldMinX, x);
           oldMaxX = std::max(oldMaxX, x);
 
           if (ndj == ndi) {
-            x = ndj->getLeft() + 0.5 * ndj->getWidth()
-                - pinj->getOffsetX();  // flipped.
+            x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
+                - pinj->getOffsetX().v;  // flipped.
           }
           newMinX = std::min(newMinX, x);
           newMaxX = std::max(newMaxX, x);
@@ -356,12 +324,12 @@ int DetailedOrient::flipCells()
       // Check potential violation due to padding.
       Node* ndl = (i == 0) ? nullptr : nodes[i - 1];
       Node* ndr = (i == nodes.size() - 1) ? nullptr : nodes[i + 1];
-      lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
+      lx = (ndl == nullptr) ? DbuX{segment->getMinX()} : ndl->getRight();
       if (ndl) {
         arch_->getCellPadding(ndl, leftPadding, rightPadding);
         lx += rightPadding;
       }
-      rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
+      rx = (ndr == nullptr) ? DbuX{segment->getMaxX()} : ndr->getLeft();
       if (ndr) {
         arch_->getCellPadding(ndr, leftPadding, rightPadding);
         rx -= leftPadding;
@@ -374,7 +342,7 @@ int DetailedOrient::flipCells()
           || ndi->getRight() + leftPadding > rx) {
         continue;
       }
-      dbOrientType orig_orient = ndi->getCurrOrient();
+      dbOrientType orig_orient = ndi->getOrient();
       dbOrientType flipped_orient;
       switch (orig_orient) {
         case dbOrientType::R0:
@@ -399,8 +367,8 @@ int DetailedOrient::flipCells()
         continue;
       }
       // Check potential violation due to edge spacing.
-      lx = (ndl == nullptr) ? segment->getMinX() : (ndl->getRight());
-      rx = (ndr == nullptr) ? segment->getMaxX() : (ndr->getLeft());
+      lx = (ndl == nullptr) ? DbuX{segment->getMinX()} : ndl->getRight();
+      rx = (ndr == nullptr) ? DbuX{segment->getMaxX()} : ndr->getLeft();
       // Based on edge spacing, the cell must reside within
       // [lx,rx].
       if (ndi->getWidth() > (rx - lx)) {
@@ -432,7 +400,7 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row)
   // around the Y-axis previously to improve WL...
 
   unsigned rowOri = arch_->getRow(row)->getOrient();
-  unsigned cellOri = ndi->getCurrOrient();
+  unsigned cellOri = ndi->getOrient();
 
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
     if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {

@@ -1,44 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <algorithm>
 #include <boost/operators.hpp>
 #include <cmath>
 #include <functional>
@@ -47,8 +12,6 @@
 #include "Opendp.h"
 
 namespace dpl {
-
-using std::abs;
 
 // Strongly type the difference between pixel and DBU locations.
 //
@@ -64,7 +27,9 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
                          public boost::modable<TypedCoordinate<T>>,
                          public boost::modable<TypedCoordinate<T>, int>,
                          public boost::incrementable<TypedCoordinate<T>>,
-                         public boost::decrementable<TypedCoordinate<T>>
+                         public boost::decrementable<TypedCoordinate<T>>,
+                         public boost::dividable<TypedCoordinate<T>>,
+                         public boost::multipliable<TypedCoordinate<T>>
 {
   explicit TypedCoordinate(const int v = 0) : v(v) {}
   TypedCoordinate(const TypedCoordinate<T>& v) = default;
@@ -116,6 +81,18 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
     --v;
     return *this;
   }
+  // dividable
+  TypedCoordinate& operator/=(const TypedCoordinate& rhs)
+  {
+    v /= rhs.v;
+    return *this;
+  }
+  // multipliable
+  TypedCoordinate& operator*=(const TypedCoordinate& rhs)
+  {
+    v *= rhs.v;
+    return *this;
+  }
 
   int v;
 };
@@ -136,6 +113,7 @@ struct GridPt
 {
   GridPt() = default;
   GridPt(GridX x, GridY y) : x(x), y(y) {}
+  bool operator==(const GridPt& p) const { return (x == p.x) && (y == p.y); }
   GridX x{0};
   GridY y{0};
 };
@@ -245,6 +223,17 @@ struct hash<dpl::TypedCoordinate<T>>
   std::size_t operator()(const dpl::TypedCoordinate<T>& tc) const noexcept
   {
     return std::hash<int>()(tc.v);
+  }
+};
+
+template <>
+struct hash<dpl::GridPt>
+{
+  std::size_t operator()(const dpl::GridPt& p) const
+  {
+    size_t hashX = std::hash<dpl::GridX>{}(p.x);
+    size_t hashY = std::hash<dpl::GridY>{}(p.y);
+    return hashX ^ (hashY + 0x9e3779b9 + (hashX << 6) + (hashX >> 2));
   }
 };
 
