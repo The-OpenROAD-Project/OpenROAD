@@ -22,9 +22,9 @@ Display Timing Path Cuts Statistics
 	Total number of timing-noncritical paths = 51
 	The worst number of cuts on timing-critical paths = 1
 	The average number of cuts on timing-critical paths = 1.00
-	Total number of timing-noncritical to timing critical paths = 32
+	Total number of timing-noncritical to timing critical paths = 30
 	The worst number of cuts on timing-non2critical paths = 2
-	The average number of cuts on timing-non2critical paths = 1.28
+	The average number of cuts on timing-non2critical paths = 1.30
 [INFO PAR-0001] Writing partition to verilog.
 No differences found.
 No differences found.
