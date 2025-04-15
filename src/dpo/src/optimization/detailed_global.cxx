@@ -22,14 +22,11 @@ using utl::DPO;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
-                                       Network* network,
-                                       RoutingParams* rt)
+DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch, Network* network)
     : DetailedGenerator("global swap"),
       mgr_(nullptr),
       arch_(arch),
       network_(network),
-      rt_(rt),
       skipNetsLargerThanThis_(100),
       traversal_(0),
       attempts_(0),
@@ -40,8 +37,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::DetailedGlobalSwap()
-    : DetailedGlobalSwap(nullptr, nullptr, nullptr)
+DetailedGlobalSwap::DetailedGlobalSwap() : DetailedGlobalSwap(nullptr, nullptr)
 {
 }
 
@@ -70,7 +66,6 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   mgr_ = mgrPtr;
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
-  rt_ = mgr_->getRoutingParams();
 
   int passes = 1;
   double tol = 0.01;
@@ -476,7 +471,6 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr)
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
@@ -493,7 +487,6 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 

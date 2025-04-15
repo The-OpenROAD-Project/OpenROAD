@@ -5,7 +5,6 @@
 
 #include <tcl.h>
 
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 namespace odb {
@@ -19,13 +18,12 @@ extern int Odbtcl_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-void initOdb(OpenRoad* openroad)
+void initOdb(Tcl_Interp* interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
-  Odbtcl_Init(tcl_interp);
+  Odbtcl_Init(interp);
   // Eval encoded sta TCL sources.
-  utl::evalTclInit(tcl_interp, odb::odbtcl_tcl_inits);
+  utl::evalTclInit(interp, odb::odbtcl_tcl_inits);
 }
 
 }  // namespace ord

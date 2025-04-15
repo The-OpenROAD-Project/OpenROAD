@@ -4,6 +4,7 @@
 #include "SACoreSoftMacro.h"
 
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <map>
 #include <set>
@@ -713,15 +714,17 @@ void SACoreSoftMacro::calNotchPenalty()
 
 void SACoreSoftMacro::resizeOneCluster()
 {
-  // TODO: See for explanation
-  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
-  float random_variable_0_1;
-  do {
-    random_variable_0_1 = distribution_(generator_);
-  } while (random_variable_0_1 >= 1.0);
+  if (pos_seq_.empty()) {
+    logger_->error(
+        utl::MPL,
+        51,
+        "Position sequence array is empty, please report this internal error");
+  }
 
-  const int idx
-      = static_cast<int>(std::floor(random_variable_0_1 * pos_seq_.size()));
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, pos_seq_.size() - 1);
+  const int idx = index_distribution(generator_);
+
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {

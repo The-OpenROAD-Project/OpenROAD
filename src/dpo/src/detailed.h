@@ -43,7 +43,6 @@ class Detailed
 
   Architecture* arch_ = nullptr;
   Network* network_ = nullptr;
-  RoutingParams* rt_ = nullptr;
 };
 
 }  // namespace dpo

@@ -19,7 +19,6 @@ target_sources(dpo
     src/architecture.cxx
     src/util/color.cxx
     src/network.cxx
-    src/router.cxx
     src/util/utility.cxx
     src/legalize_shift.cxx
     src/detailed.cxx

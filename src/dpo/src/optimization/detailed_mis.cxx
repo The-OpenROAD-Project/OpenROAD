@@ -66,10 +66,8 @@ struct DetailedMis::Bucket
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedMis::DetailedMis(Architecture* arch,
-                         Network* network,
-                         RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt)
+DetailedMis::DetailedMis(Architecture* arch, Network* network)
+    : arch_(arch), network_(network)
 {
 }
 
