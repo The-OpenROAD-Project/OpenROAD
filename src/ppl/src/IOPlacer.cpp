@@ -2854,9 +2854,10 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
 
 void IOPlacer::initTopLayerGrid()
 {
-  if (getBlock()->getBTermTopLayerGrid()) {
+  auto top_layer_grid = getBlock()->getBTermTopLayerGrid();
+  if (top_layer_grid) {
     top_grid_ = std::make_unique<odb::dbBlock::dbBTermTopLayerGrid>(
-        getBlock()->getBTermTopLayerGrid().value());
+        top_layer_grid.value());
   }
 }
 
