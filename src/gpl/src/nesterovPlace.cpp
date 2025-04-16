@@ -11,7 +11,6 @@
 #include <sstream>
 #include <utility>
 #include <vector>
-#include <filesystem>
 
 #include "graphics.h"
 #include "nesterovBase.h"
@@ -327,10 +326,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   std::string gif_output = reports_dir + "/placement.gif";
   
   
-  // gif_frames or reports_dir
   if (fs::exists(reports_dir)) {
     for (const auto& entry : fs::directory_iterator(reports_dir)) {
-      if (entry.path().filename() != "special_modes") {  // avoid deleting subdir
+      if (entry.path().filename() != "special_modes") {
         fs::remove_all(entry.path());
       }
     }
@@ -465,32 +463,20 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     
       graphics_->saveGuiImage(raw);
     
-      std::string scaleCmd = fmt::format(
-          "convert {} -resize 50% -colors 64 -strip -quality 85 "
-          "-gravity SouthEast -pointsize 20 -fill white "
-          "-annotate +5+5 '{}' PNG8:{}",
-          raw, label, scaled);
-      std::system(scaleCmd.c_str());
-      std::filesystem::remove(raw);
+      graphics_->scaleAndAnnotateImage(raw, scaled, label);
     }
 
+    //If a timing-driven iteration previously happened, save image.
     if (timing_driven_ && graphics_) {
       std::string raw = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
-      std::string special = fmt::format("{}/iter_{:05d}.png", special_modes_dir, iter);
+      std::string special = fmt::format("{}/timing_iter_{:05d}.png", special_modes_dir, iter);
       std::string label = fmt::format("Iter {} | R: {} | T: {}",
                                       iter,
                                       routabilityDrivenCount,
                                       timingDrivenCount);
     
       graphics_->saveGuiImage(raw);
-    
-      std::string annotateCmd = fmt::format(
-          "convert {} -resize 50% -colors 64 -strip -quality 85 "
-          "-gravity SouthEast -pointsize 20 -fill yellow "
-          "-annotate +5+5 '{}' PNG8:{}",
-          raw, label, special);
-      std::system(annotateCmd.c_str());
-      std::filesystem::remove(raw);
+      graphics_->scaleAndAnnotateImage(raw, special, label, "yellow");
       timing_driven_ = false;
     }
     
@@ -751,28 +737,28 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       nbVec_[0]->setTrueReprintIterHeader();
       ++routabilityDrivenCount;
 
-    // if (graphics_) 
-    {
-      std::string raw = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
-      std::string heatmap = fmt::format("{}/special_raw_heatmap_{:05d}.png", special_modes_dir, iter);
-      std::string special = fmt::format("{}/iter_{:05d}.png", special_modes_dir, iter);
+    if (graphics_) {
+      std::string density_img = fmt::format("{}/rout_density_{:05d}.png", special_modes_dir, iter);
+      std::string rudy_img = fmt::format("{}/rout_rudy_{:05d}.png", special_modes_dir, iter);
+      std::string special = fmt::format("{}/rout_iter_{:05d}.png", special_modes_dir, iter);
       std::string label = fmt::format("Iter {} | R: {} | T: {}",
                                       iter,
                                       routabilityDrivenCount,
-                                      timingDrivenCount);    
-      graphics_->saveGuiImage(raw);
+                                      timingDrivenCount);
+      
+      graphics_->saveGuiImageWithHeatmaps(density_img, rudy_img);
 
-      graphics_->saveGuiImageWithHeatmap(heatmap);
-    
-      std::string annotate_cmd = fmt::format(
-          "convert {} -resize 50% -colors 64 -strip -quality 85 "
-          "-gravity SouthEast -pointsize 20 -fill yellow "
-          "-annotate +5+5 '{}' PNG8:{}",
-          raw, label, special);
-    
-      std::system(annotate_cmd.c_str());
-    
-      std::filesystem::remove(raw);
+      std::string density_tmp = density_img + ".tmp.png";
+      graphics_->scaleAndAnnotateImage(density_img, density_tmp, label, "white");
+      std::filesystem::rename(density_tmp, density_img);
+      
+      std::string rudy_tmp = rudy_img + ".tmp.png";
+      graphics_->scaleAndAnnotateImage(rudy_img, rudy_tmp, label, "white");
+      std::filesystem::rename(rudy_tmp, rudy_img);
+                                      
+
+      
+      
     }
       
 
@@ -807,7 +793,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           end_routability_area += nb->nesterovInstsArea();
         }
         double percent_diff = 100.0 * (end_routability_area - original_area) / original_area;
-      log_->report("End routability - original area: {:.2f}, new area: {:.2f}, change: {:.2f}%. Change in area due to total routability inflations.", block->dbuAreaToMicrons(original_area), block->dbuAreaToMicrons(end_routability_area), percent_diff);
+      // log_->report("End routability - original area: {:.2f}, new area: {:.2f}, change: {:.2f}%. Change in area due to total routability inflations.", block->dbuAreaToMicrons(original_area), block->dbuAreaToMicrons(end_routability_area), percent_diff);
       }
     }
 
@@ -832,7 +818,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     new_area += nb->nesterovInstsArea();
   }
   double percent_diff = 100.0 * (new_area - original_area) / original_area;
-  log_->report("Original area: {:.2f}, new area: {:.2f}, change: {:.2f}%, New area due to routability inflation and/or timing-driven otimizations.", block->dbuAreaToMicrons(original_area), block->dbuAreaToMicrons(new_area), percent_diff);
+  // log_->report("Original area: {:.2f}, new area: {:.2f}, change: {:.2f}%, New area due to routability inflation and/or timing-driven otimizations.", block->dbuAreaToMicrons(original_area), block->dbuAreaToMicrons(new_area), percent_diff);
   // in all case including diverge,
   // db should be updated.
   updateDb();

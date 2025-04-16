@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+// #include <filesystem>
 
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -84,7 +85,11 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   static bool guiActive();
   
   void saveGuiImage(const std::string& filename);
-  void saveGuiImageWithHeatmap(const std::string& filename);
+  void saveGuiImageWithHeatmaps(const std::string& density_filename, const std::string& rudy_filename);
+  void scaleAndAnnotateImage(const std::string& input_path,
+    const std::string& output_path,
+    const std::string& label,
+    const std::string& fill_color = "white");
  private:
   enum HeatMapType
   {

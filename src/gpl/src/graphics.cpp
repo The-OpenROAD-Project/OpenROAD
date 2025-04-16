@@ -510,6 +510,7 @@ bool Graphics::guiActive()
 
 void Graphics::saveGuiImage(const std::string& filename)
 {
+  logger_->report("saveGuiImage()");
   if (gui::Gui::enabled()) {
     gui::Gui::get()->saveImage(filename.c_str());
   } else {
@@ -517,17 +518,45 @@ void Graphics::saveGuiImage(const std::string& filename)
   }
 }
 
-void Graphics::saveGuiImageWithHeatmap(const std::string& filename) {
+void Graphics::scaleAndAnnotateImage(const std::string& input_path,
+  const std::string& output_path,
+  const std::string& label,
+  const std::string& fill_color)
+{
+  std::string cmd = fmt::format(
+  "convert {} -resize 50% -colors 64 -strip -quality 85 "
+  "-gravity SouthEast -pointsize 20 -fill {} "
+  "-annotate +5+5 '{}' PNG8:{}",
+  input_path,
+  fill_color,
+  label,
+  output_path);
+
+  std::system(cmd.c_str());
+  std::filesystem::remove(input_path);
+}
+
+
+void Graphics::saveGuiImageWithHeatmaps(const std::string& density_filename,
+  const std::string& rudy_filename) {
+  logger_->report("saveGuiImageWithHeatmaps()");
   if (!gui::Gui::enabled()) {
-    logger_->warn(utl::GPL, 998, "GUI is not active. Cannot save '{}'.", filename);
+    logger_->warn(utl::GPL, 998,
+    "GUI is not active. Cannot save images '{}', '{}'.",
+    density_filename, rudy_filename);
     return;
   }
 
   gui::Gui* gui = gui::Gui::get();
+  // Placement Density
   gui->setDisplayControlsVisible("Heat Maps/Placement Density", true);
-  // gui->redraw();
-  gui->saveImage(filename.c_str());
+  gui->saveImage(density_filename.c_str());
   gui->setDisplayControlsVisible("Heat Maps/Placement Density", false);
+
+  // Estimated Congestion (RUDY)
+  gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)", true);
+  gui->saveImage(rudy_filename.c_str());
+  gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)", false);
 }
 
 }  // namespace gpl

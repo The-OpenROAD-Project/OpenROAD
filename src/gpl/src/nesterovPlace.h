@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
