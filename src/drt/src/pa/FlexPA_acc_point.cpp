@@ -385,10 +385,11 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
               !is_layer1_horz,
               offset);
   if (!is_macro_cell_pin || !use_center_line) {
+    auto base_layer_num = layer_num;  // clang-tidy pleaser
     genAPCosted(lower_type,
                 layer1_coords,
                 layer1_track_coords,
-                layer_num,
+                base_layer_num,
                 layer_num,
                 rect,
                 is_layer1_horz);
