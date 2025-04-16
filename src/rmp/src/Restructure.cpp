@@ -10,6 +10,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <mutex>
 #include <sstream>
 #include <vector>

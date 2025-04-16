@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "FlexPA.h"
@@ -144,7 +146,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void FlexPAGraphics::startPin(frMPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* inst_class)
+                              frOrderedIdSet<frInst*>* inst_class)
 {
   pin_ = nullptr;
 
@@ -173,7 +175,7 @@ void FlexPAGraphics::startPin(frMPin* pin,
 
 void FlexPAGraphics::startPin(frBPin* pin,
                               frInstTerm* inst_term,
-                              std::set<frInst*, frBlockObjectComp>* inst_class)
+                              frOrderedIdSet<frInst*>* inst_class)
 {
   pin_ = nullptr;
 

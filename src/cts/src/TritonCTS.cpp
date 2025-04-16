@@ -3,13 +3,21 @@
 
 #include "cts/TritonCTS.h"
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"
@@ -1159,7 +1167,8 @@ bool TritonCTS::separateMacroRegSinks(
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
-    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()) {
+    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()
+        && inst->getSourceType() == odb::dbSourceType::TIMING) {
       logger_->warn(CTS,
                     105,
                     "Net \"{}\" already has clock buffer {}. Skipping...",

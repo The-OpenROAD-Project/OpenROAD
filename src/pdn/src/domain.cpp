@@ -3,8 +3,10 @@
 
 #include "domain.h"
 
+#include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "grid.h"

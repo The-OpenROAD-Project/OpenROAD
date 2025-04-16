@@ -21,6 +21,7 @@
 
 #include "detailed_abu.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <vector>
 

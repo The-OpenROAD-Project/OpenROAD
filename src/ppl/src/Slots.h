@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
+#include <set>
 #include <vector>
 
 #include "Netlist.h"
@@ -44,22 +45,6 @@ struct IntervalHash
 struct RectHash
 {
   std::size_t operator()(const Rect& rect) const;
-};
-
-struct TopLayerGrid
-{
-  int layer = -1;
-  int x_step = -1;
-  int y_step = -1;
-  Rect region;
-  int pin_width = -1;
-  int pin_height = -1;
-  int keepout = -1;
-
-  int llx() { return region.xMin(); }
-  int lly() { return region.yMin(); }
-  int urx() { return region.xMax(); }
-  int ury() { return region.yMax(); }
 };
 
 // Slot: an on-track position in the die boundary where a pin
@@ -124,15 +109,18 @@ struct Constraint
 };
 
 template <typename T>
-std::vector<size_t> sortIndexes(const std::vector<T>& v)
+std::vector<size_t> sortIndexes(const std::vector<T>& v,
+                                const std::vector<T>& tie_break)
 {
   // initialize original index locations
   std::vector<size_t> idx(v.size());
   std::iota(idx.begin(), idx.end(), 0);
+
   // sort indexes based on comparing values in v
-  std::stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {
-    return v[i1] < v[i2];
-  });
+  std::stable_sort(
+      idx.begin(), idx.end(), [&v, &tie_break](size_t i1, size_t i2) {
+        return std::tie(v[i1], tie_break[i1]) < std::tie(v[i2], tie_break[i2]);
+      });
   return idx;
 }
 

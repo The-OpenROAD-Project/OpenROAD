@@ -10,14 +10,15 @@
 #pragma once
 
 #include <vector>
-
+namespace dpl {
+class Node;
+}
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
-class Node;
 class Network;
-class RoutingParams;
+using dpl::Node;
 
 class ShiftLegalizer
 {
@@ -38,7 +39,6 @@ class ShiftLegalizer
   DetailedMgr* mgr_ = nullptr;
   Architecture* arch_ = nullptr;
   Network* network_ = nullptr;
-  RoutingParams* rt_ = nullptr;
 
   // For clumping.
   std::vector<Clump> clumps_;

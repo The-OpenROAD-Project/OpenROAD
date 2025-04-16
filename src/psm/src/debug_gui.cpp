@@ -3,7 +3,13 @@
 
 #include "debug_gui.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <vector>
 
 #include "connection.h"
 #include "ir_network.h"

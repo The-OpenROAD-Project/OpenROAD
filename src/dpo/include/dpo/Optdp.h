@@ -20,20 +20,23 @@ class Logger;
 namespace dpl {
 class Opendp;
 class Grid;
+class Master;
+class Edge;
+class Node;
+class PlacementDRC;
+
 }  // namespace dpl
 
 namespace dpo {
 
-class RoutingParams;
 class Architecture;
 class Network;
-class Node;
-class Edge;
-class Pin;
-class Master;
 
+using dpl::Edge;
 using dpl::Grid;
+using dpl::Node;
 using dpl::Opendp;
+using dpl::PlacementDRC;
 using odb::dbDatabase;
 using odb::dbOrientType;
 using utl::Logger;
@@ -58,7 +61,7 @@ class Optdp
   void import();
   void updateDbInstLocations();
 
-  void initSpacingTable();
+  void initPlacementDRC();
   void initPadding();
   void createLayerMap();
   void createNdrMap();
@@ -68,8 +71,8 @@ class Optdp
   void createRouteInformation();
   void createGrid();
   void setUpNdrRules();
-  void setUpPlacementRegions();
-  Master* getMaster(odb::dbMaster* db_master);
+  void setUpPlacementGroups();
+  dpl::Master* getMaster(odb::dbMaster* db_master);
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -78,15 +81,16 @@ class Optdp
   // My stuff.
   Architecture* arch_ = nullptr;  // Information about rows, etc.
   Network* network_ = nullptr;    // The netlist, cells, etc.
-  RoutingParams* routeinfo_
-      = nullptr;  // Route info we might consider (future).
   Grid* grid_ = nullptr;
+
+  // placement DRC enging.
+  PlacementDRC* drc_engine_ = nullptr;
 
   // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;
   std::unordered_map<odb::dbNet*, Edge*> netMap_;
   std::unordered_map<odb::dbBTerm*, Node*> termMap_;
-  std::unordered_map<odb::dbMaster*, Master*> masterMap_;
+  std::unordered_map<odb::dbMaster*, dpl::Master*> masterMap_;
 
   // For monitoring power alignment.
   std::unordered_set<odb::dbTechLayer*> pwrLayers_;

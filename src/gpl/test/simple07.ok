@@ -11,36 +11,42 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
 [INFO GPL-0004] CoreBBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
-[INFO GPL-0006] NumInstances:                32
-[INFO GPL-0007] NumPlaceInstances:            1
-[INFO GPL-0008] NumFixedInstances:           31
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                      2
-[INFO GPL-0011] NumPins:                      4
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 34.165 54.885 ) um
-[INFO GPL-0013] CoreBBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
-[INFO GPL-0016] CoreArea:               750.720 um^2
-[INFO GPL-0017] NonPlaceInstsArea:       98.845 um^2
-[INFO GPL-0018] PlaceInstsArea:           3.754 um^2
-[INFO GPL-0019] Util:                     0.576 %
-[INFO GPL-0020] StdInstsArea:             3.754 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[InitialPlace]  Iter: 1 CG residual: 0.00000008 HPWL: 93755
-[InitialPlace]  Iter: 2 CG residual: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 3 CG residual: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 4 CG residual: 0.00000008 HPWL: 92385
-[InitialPlace]  Iter: 5 CG residual: 0.00000008 HPWL: 92385
-[INFO GPL-0031] FillerInit:NumGCells:       130
-[INFO GPL-0032] FillerInit:NumGNets:          2
-[INFO GPL-0033] FillerInit:NumGPins:          4
-[INFO GPL-0023] TargetDensity:            0.750
-[INFO GPL-0024] AvrgPlaceInstArea:        3.754 um^2
-[INFO GPL-0025] IdealBinArea:             5.005 um^2
-[INFO GPL-0026] IdealBinCnt:                150
-[INFO GPL-0027] TotalBinArea:           750.720 um^2
-[INFO GPL-0028] BinCnt:         8      8
-[INFO GPL-0029] BinSize: (  2.875  4.080 )
-[INFO GPL-0030] NumBins: 64
-[NesterovSolve] Iter:    1 overflow: 0.000 HPWL: 84585
-[NesterovSolve] Finished with Overflow: 0.000000
+[INFO GPL-0006] Number of instances:                32
+[INFO GPL-0007] Movable instances:                   1
+[INFO GPL-0008] Fixed instances:                    31
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                      2
+[INFO GPL-0011] Number of pins:                      4
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 34.165 54.885 ) um
+[INFO GPL-0013] Core BBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
+[INFO GPL-0016] Core area:                     750.720 um^2
+[INFO GPL-0017] Fixed instances area:           98.845 um^2
+[INFO GPL-0018] Movable instances area:          3.754 um^2
+[INFO GPL-0019] Utilization:                     0.576 %
+[INFO GPL-0020] Standard cells area:             3.754 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 93755
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 92385
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 92385
+[INFO GPL-0023] Placement target density:       0.7500
+[INFO GPL-0024] Movable insts average area:      3.754 um^2
+[INFO GPL-0025] Ideal bin area:                  5.005 um^2
+[INFO GPL-0026] Ideal bin count:                   150
+[INFO GPL-0027] Total bin area:                750.720 um^2
+[INFO GPL-0028] Bin count (X, Y):           8 ,      8
+[INFO GPL-0029] Bin size (W * H):       2.875 *  4.080 um
+[INFO GPL-0030] Number of bins:                     64
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        1 |   0.0000 |  8.458500e+04 |   +0.00% |  1.04e-16 |      
+[INFO GPL-1001] Finished with Overflow: 0.000000
+[INFO GPL-1002] Placed Cell Area                3.7536
+[INFO GPL-1003] Available Free Area           651.8752
+[INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.0064
+[INFO GPL-1008]     - For 80% usage of free space: 0.0072
 No differences found.

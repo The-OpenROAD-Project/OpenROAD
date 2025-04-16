@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
-[INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (70.00u, 50.00u)-(95.00u, 100.00u) at routing layer metal10.
+[INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (70.00u, 50.00u)-(75.00u, 80.00u) at routing layer metal10.
 [INFO PPL-0001] Number of available slots 2494
 [INFO PPL-0062] Number of top layer slots 361
 [INFO PPL-0002] Number of I/O             54
@@ -12,5 +12,5 @@ Found 0 macro blocks.
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 946.95 um.
+[INFO PPL-0012] I/O nets HPWL: 1006.83 um.
 No differences found.

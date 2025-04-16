@@ -4,6 +4,7 @@
 #include "ClockDomainHash.hh"
 
 #include <cstddef>
+#include <functional>
 
 namespace dft {
 

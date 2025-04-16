@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <utility>
+
 #include "db/drObj/drFig.h"
 #include "db/infra/frSegStyle.h"
 #include "dr/FlexMazeTypes.h"

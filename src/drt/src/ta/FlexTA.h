@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -58,7 +59,7 @@ class FlexTAWorkerRegionQuery
   void remove(taPinFig* fig);
   void query(const Rect& box,
              frLayerNum layerNum,
-             std::set<taPin*, frBlockObjectComp>& result) const;
+             frOrderedIdSet<taPin*>& result) const;
 
   void addCost(const Rect& box,
                frLayerNum layerNum,
@@ -252,38 +253,33 @@ class FlexTAWorker
                                       const Rect& box2,
                                       frCoord& dx,
                                       frCoord& dy);
-  void addCost(taPinFig* fig,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
-  void subCost(taPinFig* fig,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+  void addCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
+  void subCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
   void modCost(taPinFig* fig,
                bool isAddCost,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+               frOrderedIdSet<taPin*>* pinS = nullptr);
   void modMinSpacingCostPlanar(const Rect& box,
                                frLayerNum lNum,
                                taPinFig* fig,
                                bool isAddCost,
-                               std::set<taPin*, frBlockObjectComp>* pinS
-                               = nullptr);
+                               frOrderedIdSet<taPin*>* pinS = nullptr);
   void modMinSpacingCostVia(const Rect& box,
                             frLayerNum lNum,
                             taPinFig* fig,
                             bool isAddCost,
                             bool isUpperVia,
                             bool isCurrPs,
-                            std::set<taPin*, frBlockObjectComp>* pinS
-                            = nullptr);
+                            frOrderedIdSet<taPin*>* pinS = nullptr);
   void modCutSpacingCost(const Rect& box,
                          frLayerNum lNum,
                          taPinFig* fig,
                          bool isAddCost,
-                         std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+                         frOrderedIdSet<taPin*>* pinS = nullptr);
 
   // initTA
   void assign();
   void assignIroute(taPin* iroute);
-  void assignIroute_init(taPin* iroute,
-                         std::set<taPin*, frBlockObjectComp>* pinS);
+  void assignIroute_init(taPin* iroute, frOrderedIdSet<taPin*>* pinS);
   void assignIroute_availTracks(taPin* iroute,
                                 frLayerNum& lNum,
                                 int& idx1,
@@ -311,8 +307,8 @@ class FlexTAWorker
                                          frLayerNum lNum);
   void assignIroute_updateIroute(taPin* iroute,
                                  frCoord bestTrackLoc,
-                                 std::set<taPin*, frBlockObjectComp>* pinS);
-  void assignIroute_updateOthers(std::set<taPin*, frBlockObjectComp>& pinS);
+                                 frOrderedIdSet<taPin*>* pinS);
+  void assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS);
 
   // end
   void end();

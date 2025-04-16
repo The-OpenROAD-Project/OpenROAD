@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "grids.h"

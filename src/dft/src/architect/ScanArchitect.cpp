@@ -3,7 +3,13 @@
 
 #include "ScanArchitect.hh"
 
+#include <algorithm>
 #include <cstddef>
+#include <map>
+#include <memory>
+#include <optional>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"
