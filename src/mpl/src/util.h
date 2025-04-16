@@ -36,8 +36,8 @@ struct PenaltyData
 };
 
 // Utility to help sorting width curves.
-inline bool isMinimumSmaller(const Curve& width_curve_a,
-                             const Curve& width_curve_b)
+inline bool isMinWidthSmaller(const Curve& width_curve_a,
+                              const Curve& width_curve_b)
 {
   return width_curve_a.min < width_curve_b.min;
 }
@@ -45,7 +45,11 @@ inline bool isMinimumSmaller(const Curve& width_curve_a,
 // Utility to help sorting tilings.
 inline bool isAreaSmaller(const Tiling& tiling_a, const Tiling& tiling_b)
 {
-  return tiling_a.area() < tiling_b.area();
+  if (tiling_a.area() != tiling_b.area()) {
+    return tiling_a.area() < tiling_b.area();
+  }
+
+  return tiling_a.width() < tiling_b.width();
 }
 
 }  // namespace mpl

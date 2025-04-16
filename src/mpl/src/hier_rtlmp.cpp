@@ -620,7 +620,7 @@ CurveList HierRTLMP::computeWidthCurves(const TilingList& tilings)
     width_curves.emplace_back(tiling.width(), tiling.width());
   }
 
-  std::sort(width_curves.begin(), width_curves.end(), isMinimumSmaller);
+  std::sort(width_curves.begin(), width_curves.end(), isMinWidthSmaller);
 
   return width_curves;
 }

@@ -1181,9 +1181,9 @@ void SoftMacro::setShapes(const CurveList& width_curves, float area)
   height_curves_ = width_curves;
 
   // As, at this point, the list of height curves is actually a
-  // list of width curves, we can use the isMinimumSmaller
+  // list of width curves, we can use the isMinWidthSmaller
   // utility to do the sorting.
-  std::sort(height_curves_.begin(), height_curves_.end(), isMinimumSmaller);
+  std::sort(height_curves_.begin(), height_curves_.end(), isMinWidthSmaller);
 
   for (auto& height_curve : height_curves_) {
     if (width_curves_.empty() || height_curve.max > width_curves_.back().max) {
