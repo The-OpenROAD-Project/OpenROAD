@@ -66,25 +66,9 @@ void FlexPA::genAPOnTrack(
  */
 
 void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
-                           const frLayerNum layer_num,
                            const frCoord low,
                            const frCoord high)
 {
-  // // if touching two tracks, then no center??
-  // int candidates_on_grid = 0;
-  // for (auto it = coords.lower_bound(low); it != coords.end(); it++) {
-  //   auto& [coordinate, cost] = *it;
-  //   if (coordinate > high) {
-  //     break;
-  //   }
-  //   if (cost == frAccessPointEnum::OnGrid) {
-  //     candidates_on_grid++;
-  //   }
-  // }
-  // if (candidates_on_grid >= 3) {
-  //   return;
-  // }
-
   // If there are less than 3 coords OnGrid will create a Centered Access Point
   frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
   frCoord coord = (low + high) / 2 / manu_grid * manu_grid;
@@ -165,11 +149,12 @@ void FlexPA::genAPCosted(
       genAPOnTrack(coords, track_coords, rect_min + offset, rect_max - offset);
       break;
 
-      // frAccessPointEnum::Halfgrid not defined
+    // frAccessPointEnum::HalfGrid not defined
+    case (frAccessPointEnum::HalfGrid):
+      break;
 
     case (frAccessPointEnum::Center):
-      genAPCentered(
-          coords, base_layer_num, rect_min + offset, rect_max - offset);
+      genAPCentered(coords, rect_min + offset, rect_max - offset);
       break;
 
     case (frAccessPointEnum::EncOpt):
@@ -391,39 +376,26 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   auto& layer1_coords = is_layer1_horz ? y_coords : x_coords;
   auto& layer2_coords = is_layer1_horz ? x_coords : y_coords;
 
-  const frAccessPointEnum frDirEnums[] = {frAccessPointEnum::OnGrid,
-                                          frAccessPointEnum::Center,
-                                          frAccessPointEnum::EncOpt,
-                                          frAccessPointEnum::NearbyGrid};
-
-  for (const auto cost : frDirEnums) {
-    if (upper_type >= cost) {
-      genAPCosted(cost,
-                  layer2_coords,
-                  layer2_track_coords,
-                  layer_num,
-                  second_layer_num,
-                  rect,
-                  !is_layer1_horz,
-                  offset);
-    }
-  }
-  if (!(is_macro_cell_pin && use_center_line)) {
-    for (const auto cost : frDirEnums) {
-      if (lower_type >= cost) {
-        genAPCosted(cost,
-                    layer1_coords,
-                    layer1_track_coords,
-                    layer_num,
-                    layer_num,
-                    rect,
-                    is_layer1_horz);
-      }
-    }
+  genAPCosted(upper_type,
+              layer2_coords,
+              layer2_track_coords,
+              layer_num,
+              second_layer_num,
+              rect,
+              !is_layer1_horz,
+              offset);
+  if (!is_macro_cell_pin || !use_center_line) {
+    genAPCosted(lower_type,
+                layer1_coords,
+                layer1_track_coords,
+                layer_num,
+                layer_num,
+                rect,
+                is_layer1_horz);
   } else {
     const int layer1_rect_min = is_layer1_horz ? gtl::yl(rect) : gtl::xl(rect);
     const int layer1_rect_max = is_layer1_horz ? gtl::yh(rect) : gtl::xh(rect);
-    genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
+    genAPCentered(layer1_coords, layer1_rect_min, layer1_rect_max);
     for (auto& [layer1_coord, cost] : layer1_coords) {
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
     }
@@ -1328,18 +1300,6 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
     }
   }
   return pin_shapes;
-}
-
-template <typename T>
-int FlexPA::genPinAccessViaSpecific(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    std::set<std::pair<Point, frLayerNum>>& apset,
-    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
-    T* pin,
-    frInstTerm* inst_term,
-    frVia* via)
-{
-  return 0;
 }
 
 // first create all access points with costs

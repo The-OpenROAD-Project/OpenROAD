@@ -211,19 +211,6 @@ class FlexPA
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
 
-  /**
-   * @brief generates access points for a specific via type. Set via = nullptr
-   * for planar access
-   */
-  template <typename T>
-  int genPinAccessViaSpecific(
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
-      T* pin,
-      frInstTerm* inst_term,
-      frVia* via);
-
   void getViasFromMetalWidthMap(
       const Point& pt,
       frLayerNum layer_num,
@@ -331,12 +318,10 @@ class FlexPA
    * will generate a Centered access point to compensate
    *
    * @param coords map from candidate access points to their cost
-   * @param layer_num number of the layer
    * @param low lower range of coordinates considered
    * @param high higher range of coordinates considered
    */
   void genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
-                     frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
 
@@ -448,7 +433,7 @@ class FlexPA
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       T* pin,
       frInstTerm* inst_term,
-      const bool is_std_cell_pin);
+      bool is_std_cell_pin);
 
   /**
    * @brief Filters the accesses of a single access point

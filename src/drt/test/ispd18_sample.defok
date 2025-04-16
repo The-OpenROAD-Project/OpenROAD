@@ -63,14 +63,14 @@ NETS 11 ;
       NEW Metal2 ( 95800 78470 ) VIA23_1C
       NEW Metal1 ( 95800 83790 ) VIA12_1C_V ;
     - net1231 ( inst5821 B ) ( inst5275 Y ) + USE SIGNAL
-      + ROUTED Metal3 ( 85800 77710 ) ( 91000 * )
-      NEW Metal2 ( 85800 77710 ) ( * 86450 )
-      NEW Metal2 ( 85400 86450 ) ( 85800 * )
-      NEW Metal1 ( 91000 77710 ) VIA12_1C_V
-      NEW Metal2 ( 91000 77710 ) VIA23_1C
-      NEW Metal2 ( 85800 77710 ) VIA23_1C
-      NEW Metal1 ( 85400 86450 ) VIA12_1C_V
-      NEW Metal2 ( 91000 77710 ) RECT ( -70 -442 70 0 )  ;
+      + ROUTED Metal2 ( 90600 76950 ) ( 91000 * )
+      NEW Metal2 ( 90600 76950 ) ( * 81890 )
+      NEW Metal3 ( 85400 81890 ) ( 90600 * )
+      NEW Metal2 ( 85400 81890 ) ( * 86450 )
+      NEW Metal1 ( 91000 76950 ) VIA12_1C_V
+      NEW Metal2 ( 90600 81890 ) VIA23_1C
+      NEW Metal2 ( 85400 81890 ) VIA23_1C
+      NEW Metal1 ( 85400 86450 ) VIA12_1C_V ;
     - net1232 ( inst4382 C ) ( inst4062 Y ) + USE SIGNAL
       + ROUTED Metal3 ( 85400 79990 ) ( 98200 * )
       NEW Metal2 ( 98200 79990 ) ( * 86450 )
@@ -136,12 +136,12 @@ NETS 11 ;
       NEW Metal1 ( 91800 86830 ) VIA12_1C_V
       NEW Metal2 ( 102600 80370 ) RECT ( -70 -442 70 0 )  ;
     - net1240 ( inst3502 A ) ( inst2015 Y ) + USE SIGNAL
-      + ROUTED Metal2 ( 91000 79230 ) ( * 80750 )
-      NEW Metal3 ( 91000 79230 ) ( 96200 * )
-      NEW Metal2 ( 96200 76950 ) ( * 79230 )
-      NEW Metal1 ( 91000 80750 ) VIA12_1C
-      NEW Metal2 ( 91000 79230 ) VIA23_1C
-      NEW Metal2 ( 96200 79230 ) VIA23_1C
-      NEW Metal1 ( 96200 76950 ) VIA12_1C_V ;
+      + ROUTED Metal2 ( 96200 76950 ) ( * 77710 )
+      NEW Metal3 ( 91000 77710 ) ( 96200 * )
+      NEW Metal2 ( 91000 77710 ) ( * 80750 )
+      NEW Metal1 ( 96200 76950 ) VIA12_1C_V
+      NEW Metal2 ( 96200 77710 ) VIA23_1C
+      NEW Metal2 ( 91000 77710 ) VIA23_1C
+      NEW Metal1 ( 91000 80750 ) VIA12_1C ;
 END NETS
 END DESIGN
