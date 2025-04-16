@@ -51,7 +51,6 @@ add_library(drt_lib
   src/ta/FlexTA_assign.cpp
   src/ta/FlexTA.cpp
   src/global.cpp
-  src/gc/FlexGC_end.cpp
   src/gc/FlexGC_rq.cpp
   src/gc/FlexGC.cpp
   src/gc/FlexGC_init.cpp
