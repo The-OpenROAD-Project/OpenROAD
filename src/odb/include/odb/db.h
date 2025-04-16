@@ -999,7 +999,7 @@ class dbBlock : public dbObject
   ///
   /// Get the top layer grid for pin placement.
   ///
-  dbBTermTopLayerGrid getBTermTopLayerGrid();
+  std::optional<dbBTermTopLayerGrid> getBTermTopLayerGrid();
 
   ///
   /// Get only the polygon corresponding to the top layer grid region.

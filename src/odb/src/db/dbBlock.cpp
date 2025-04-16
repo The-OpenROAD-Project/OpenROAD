@@ -1657,20 +1657,19 @@ void dbBlock::setBTermTopLayerGrid(
   top_grid.keepout = top_layer_grid.keepout;
 }
 
-dbBlock::dbBTermTopLayerGrid dbBlock::getBTermTopLayerGrid()
+std::optional<dbBlock::dbBTermTopLayerGrid> dbBlock::getBTermTopLayerGrid()
 {
   _dbBlock* block = (_dbBlock*) this;
 
   dbBlock::dbBTermTopLayerGrid top_layer_grid;
 
   odb::dbTech* tech = getDb()->getTech();
-  dbTechLayer* layer = nullptr;
-  if (block->_bterm_top_layer_grid.layer.isValid()) {
-    layer = odb::dbTechLayer::getTechLayer(tech,
-                                           block->_bterm_top_layer_grid.layer);
+  if (block->_bterm_top_layer_grid.region.getPoints().empty()) {
+    return std::nullopt;
   }
 
-  top_layer_grid.layer = layer;
+  top_layer_grid.layer = odb::dbTechLayer::getTechLayer(
+      tech, block->_bterm_top_layer_grid.layer);
   top_layer_grid.x_step = block->_bterm_top_layer_grid.x_step;
   top_layer_grid.y_step = block->_bterm_top_layer_grid.y_step;
   top_layer_grid.region = block->_bterm_top_layer_grid.region;
