@@ -212,12 +212,6 @@ void set_pin_placement_file(const char* file_name)
   getIOPlacer()->getParameters()->setPinPlacementFile(file_name);
 }
 
-odb::dbTechLayer*
-get_top_layer()
-{
-  return getIOPlacer()->getTopLayer();
-}
-
 void
 place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,

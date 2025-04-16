@@ -1684,7 +1684,16 @@ Polygon dbBlock::getBTermTopLayerGridRegion()
 {
   _dbBlock* block = (_dbBlock*) this;
 
-  return block->_bterm_top_layer_grid.region;
+  const Polygon& region = block->_bterm_top_layer_grid.region;
+  if (region.getPoints().empty()) {
+    utl::Logger* logger = block->getImpl()->getLogger();
+    logger->error(utl::ODB,
+                  428,
+                  "Cannot get top layer grid region. Pin placement grid on top "
+                  "layer not created.");
+  }
+
+  return region;
 }
 
 Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)

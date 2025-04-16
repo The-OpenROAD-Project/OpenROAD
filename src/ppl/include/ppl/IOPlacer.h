@@ -96,7 +96,6 @@ class IOPlacer
   void excludeInterval(Edge edge, int begin, int end);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  odb::dbTechLayer* getTopLayer() const;
   void placePin(odb::dbBTerm* bterm,
                 odb::dbTechLayer* layer,
                 int x,

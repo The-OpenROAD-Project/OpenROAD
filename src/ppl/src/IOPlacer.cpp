@@ -76,12 +76,6 @@ void IOPlacer::clear()
   *parms_ = Parameters();
 }
 
-odb::dbTechLayer* IOPlacer::getTopLayer() const
-{
-  const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  return top_grid.value().layer;
-}
-
 void IOPlacer::clearConstraints()
 {
   constraints_.clear();
@@ -1888,6 +1882,7 @@ void IOPlacer::getConstraintsFromDB()
 {
   std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
   std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
+  auto top_grid = getBlock()->getBTermTopLayerGrid();
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
@@ -1899,11 +1894,12 @@ void IOPlacer::getConstraintsFromDB()
         Interval interval = findIntervalFromRect(constraint_region.value());
         pins_per_interval[interval].insert(bterm);
       } else {
-        const auto& top_grid = getBlock()->getBTermTopLayerGrid();
         // TODO: support rectilinear shapes
+        if (!top_grid) {
+          logger_->error(utl::PPL, 121, "Top layer grid not found.");
+        }
         if (top_grid.value().region.isRect()) {
-          const Rect& top_grid_region
-              = top_grid.value().region.getEnclosingRect();
+          const Rect& top_grid_region = top_grid.value().region.getEnclosingRect();
           if (!top_grid_region.contains(region)) {
             logger_->error(utl::PPL,
                            25,
@@ -1946,7 +1942,7 @@ void IOPlacer::getConstraintsFromDB()
                   getBlock()->dbuToMicrons(region.yMin()),
                   getBlock()->dbuToMicrons(region.xMax()),
                   getBlock()->dbuToMicrons(region.yMax()),
-                  getTopLayer()->getConstName());
+                  top_grid.value().layer->getConstName());
     top_layer_pins_count_ += pins.size();
     constraints_.emplace_back(pins, Direction::invalid, region);
   }

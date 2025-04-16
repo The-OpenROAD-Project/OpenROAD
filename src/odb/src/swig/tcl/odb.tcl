@@ -741,13 +741,6 @@ proc set_io_pin_constraint { args } {
         odb::add_names_constraint $names $edge $begin $end
       }
     } elseif { [regexp -all {(up):(.*)} $region - edge box] } {
-      set top_layer [ppl::get_top_layer]
-
-      if { $top_layer == "NULL" } {
-        utl::error PPL 99 "Constraint at the top layer grid cannot be created.\
-          Pin placement grid on top layer not created."
-      }
-
       if { $box == "*" } {
         set top_grid_region [$block getBTermTopLayerGridRegion]
         if { [$top_grid_region isRect] } {
