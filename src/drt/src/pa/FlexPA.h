@@ -41,7 +41,7 @@ struct frInstLocationComp
 {
   bool operator()(const frInst* lhs, const frInst* rhs) const
   {
-    Point lp = lhs->getBoundaryBBox().ll(), rp = rhs->getBoundaryBBox().ll();
+    Point lp = lhs->getOrigin(), rp = rhs->getOrigin();
     if (lp.getY() != rp.getY()) {
       return lp.getY() < rp.getY();
     }
@@ -762,20 +762,6 @@ class FlexPA
    * @returns the vector of vectors of insts
    */
   std::vector<std::vector<frInst*>> computeInstRows();
-
-  /**
-   * @brief Verifies if both instances are abuting
-   *
-   * @returns true if the instances abute
-   */
-  bool instancesAreAbuting(frInst* inst_1, frInst* inst_2) const;
-
-  /**
-   * @brief Find a cluster of instances that are touching the passed instance
-   *
-   * @returns a vector of the clusters of touching insts
-   */
-  std::vector<frInst*> getAdjacentInstancesCluster(frInst* inst) const;
 
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 
