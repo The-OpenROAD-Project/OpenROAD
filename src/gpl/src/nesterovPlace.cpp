@@ -355,7 +355,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   int routabilityDrivenCount = 0;
   int timingDrivenCount = 0;
-  int64_t original_area = 0;
   
 
   // Core Nesterov Loop
