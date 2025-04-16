@@ -32,7 +32,7 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr)
+IOPlacer::IOPlacer() : top_grid_(nullptr), ioplacer_renderer_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
@@ -1618,9 +1618,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
     logger_->error(PPL, 20, "Manufacturing grid is not defined.");
   }
 
-  const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  if (!top_grid
-      || pin.getLayer() != top_grid.value().layer->getRoutingLevel()) {
+  if (top_grid_ == nullptr
+      || pin.getLayer() != top_grid_->layer->getRoutingLevel()) {
     int required_min_area = 0;
 
     if (hor_layers_.find(pin.getLayer()) == hor_layers_.end()
@@ -1705,8 +1704,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
                      getBlock()->dbuAreaToMicrons(required_min_area));
     }
   } else {
-    int pin_width = top_grid.value().pin_width;
-    int pin_height = top_grid.value().pin_height;
+    int pin_width = top_grid_->pin_width;
+    int pin_height = top_grid_->pin_height;
 
     if (pin_width % mfg_grid != 0) {
       pin_width
@@ -1882,7 +1881,6 @@ void IOPlacer::getConstraintsFromDB()
 {
   std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
   std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
-  auto top_grid = getBlock()->getBTermTopLayerGrid();
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
@@ -1895,12 +1893,11 @@ void IOPlacer::getConstraintsFromDB()
         pins_per_interval[interval].insert(bterm);
       } else {
         // TODO: support rectilinear shapes
-        if (!top_grid) {
+        if (top_grid_ == nullptr) {
           logger_->error(utl::PPL, 121, "Top layer grid not found.");
         }
-        if (top_grid.value().region.isRect()) {
-          const Rect& top_grid_region
-              = top_grid.value().region.getEnclosingRect();
+        if (top_grid_->region.isRect()) {
+          const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
           if (!top_grid_region.contains(region)) {
             logger_->error(utl::PPL,
                            25,
@@ -1932,7 +1929,7 @@ void IOPlacer::getConstraintsFromDB()
   }
 
   top_layer_pins_count_ = 0;
-  if (top_grid) {
+  if (top_grid_ != nullptr) {
     for (const auto& [region, pins] : pins_per_rect) {
       std::string pin_names = getPinSetOrListString(pins);
       logger_->info(
@@ -1945,7 +1942,7 @@ void IOPlacer::getConstraintsFromDB()
           getBlock()->dbuToMicrons(region.yMin()),
           getBlock()->dbuToMicrons(region.xMax()),
           getBlock()->dbuToMicrons(region.yMax()),
-          top_grid.value().layer->getConstName());
+          top_grid_->layer->getConstName());
       top_layer_pins_count_ += pins.size();
       constraints_.emplace_back(pins, Direction::invalid, region);
     }
@@ -2714,12 +2711,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
   odb::dbTrackGrid* track_grid = getBlock()->findTrackGrid(tech_layer);
   int min_spacing, init_track, num_track;
 
-  const auto& top_grid = getBlock()->getBTermTopLayerGrid();
-  if (!top_grid
-      || layer
-             != top_grid.value()
-                    .layer->getRoutingLevel()) {  // pin is placed in the
-                                                  // die boundaries
+  // pin is placed in the die boundaries
+  if (top_grid_ == nullptr || layer != top_grid_->layer->getRoutingLevel()) {
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
       pos.setY(round(static_cast<double>((pos.y() - init_track)) / min_spacing)
@@ -2859,21 +2852,29 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                 database_unit);
 }
 
+void IOPlacer::initTopLayerGrid()
+{
+  if (getBlock()->getBTermTopLayerGrid()) {
+    top_grid_ = std::make_unique<odb::dbBlock::dbBTermTopLayerGrid>(
+        getBlock()->getBTermTopLayerGrid().value());
+  }
+}
+
 void IOPlacer::findSlotsForTopLayer()
 {
-  auto top_grid = getBlock()->getBTermTopLayerGrid();
+  initTopLayerGrid();
   const odb::Rect& die_area = getBlock()->getDieArea();
 
-  if (top_grid && top_layer_slots_.empty() && top_grid.value().pin_width > 0) {
-    auto grid = top_grid.value();
-    if (grid.region.isRect()) {
-      const int half_width = grid.pin_width / 2;
-      const int half_height = grid.pin_height / 2;
-      const Rect& top_grid_region = grid.region.getEnclosingRect();
+  if (top_grid_ != nullptr && top_layer_slots_.empty()
+      && top_grid_->pin_width > 0) {
+    if (top_grid_->region.isRect()) {
+      const int half_width = top_grid_->pin_width / 2;
+      const int half_height = top_grid_->pin_height / 2;
+      const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
       for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
-           x += grid.x_step) {
+           x += top_grid_->x_step) {
         for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
-             y += grid.y_step) {
+             y += top_grid_->y_step) {
           Point ll(x - half_width, y - half_height);
           Point lr(x + half_width, y - half_height);
           Point ul(x - half_width, y + half_height);
@@ -2885,7 +2886,7 @@ void IOPlacer::findSlotsForTopLayer()
           top_layer_slots_.push_back({blocked,
                                       false,
                                       Point(x, y),
-                                      grid.layer->getRoutingLevel(),
+                                      top_grid_->layer->getRoutingLevel(),
                                       Edge::invalid});
         }
       }
@@ -2897,16 +2898,15 @@ void IOPlacer::findSlotsForTopLayer()
 
 void IOPlacer::filterObstructedSlotsForTopLayer()
 {
-  const auto& top_grid = getBlock()->getBTermTopLayerGrid();
   // Collect top_grid obstructions
   std::vector<odb::Rect> obstructions;
 
   // Get routing obstructions
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
-    if (top_grid && top_grid.value().layer != nullptr
+    if (top_grid_ != nullptr && top_grid_->layer != nullptr
         && box->getTechLayer()->getRoutingLevel()
-               == top_grid.value().layer->getRoutingLevel()) {
+               == top_grid_->layer->getRoutingLevel()) {
       odb::Rect obstruction_rect = box->getBox();
       obstructions.push_back(obstruction_rect);
     }
@@ -2918,9 +2918,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
-            if (top_grid && top_grid.value().layer != nullptr
+            if (top_grid_ != nullptr && top_grid_->layer != nullptr
                 && wire->getTechLayer()->getRoutingLevel()
-                       == top_grid.value().layer->getRoutingLevel()) {
+                       == top_grid_->layer->getRoutingLevel()) {
               odb::Rect obstruction_rect = wire->getBox();
               obstructions.push_back(obstruction_rect);
             }
@@ -2935,9 +2935,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (odb::dbBPin* pin : term->getBPins()) {
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
-          if (top_grid && top_grid.value().layer != nullptr
+          if (top_grid_ != nullptr && top_grid_->layer != nullptr
               && box->getTechLayer()->getRoutingLevel()
-                     == top_grid.value().layer->getRoutingLevel()) {
+                     == top_grid_->layer->getRoutingLevel()) {
             odb::Rect obstruction_rect = box->getBox();
             obstructions.push_back(obstruction_rect);
           }
@@ -2946,19 +2946,14 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
   }
 
-  odb::dbBlock::dbBTermTopLayerGrid grid;
-  if (top_grid) {
-    grid = top_grid.value();
-  }
-
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
   for (auto& slot : top_layer_slots_) {
     odb::Point& point = slot.pos;
-    if (point.x() - grid.pin_width / 2 < die_area.xMin()
-        || point.y() - grid.pin_height / 2 < die_area.yMin()
-        || point.x() + grid.pin_width / 2 > die_area.xMax()
-        || point.y() + grid.pin_height / 2 > die_area.yMax()) {
+    if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
+        || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
+        || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
+        || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
       // mark slot as blocked since it extends beyond the die area
       slot.blocked = true;
     }
@@ -2969,10 +2964,11 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (auto& slot : top_layer_slots_) {
       odb::Point& point = slot.pos;
       // mock slot with keepout
-      odb::Rect pin_rect(point.x() - grid.pin_width / 2 - grid.keepout,
-                         point.y() - grid.pin_height / 2 - grid.keepout,
-                         point.x() + grid.pin_width / 2 + grid.keepout,
-                         point.y() + grid.pin_height / 2 + grid.keepout);
+      odb::Rect pin_rect(
+          point.x() - top_grid_->pin_width / 2 - top_grid_->keepout,
+          point.y() - top_grid_->pin_height / 2 - top_grid_->keepout,
+          point.x() + top_grid_->pin_width / 2 + top_grid_->keepout,
+          point.y() + top_grid_->pin_height / 2 + top_grid_->keepout);
       if (rect.intersects(pin_rect)) {  // mark slot as blocked
         slot.blocked = true;
       }
@@ -2988,14 +2984,10 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
   int ub_y = region.yMax();
 
   std::vector<Section> sections;
-  if (!getBlock()->getBTermTopLayerGrid()) {
-    logger_->error(utl::PPL, 99, "Top layer grid not found.");
-  }
-  auto top_grid = getBlock()->getBTermTopLayerGrid().value();
-  if (top_grid.region.isRect()) {
-    const Rect& top_grid_region = top_grid.region.getEnclosingRect();
+  if (top_grid_->region.isRect()) {
+    const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
     for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
-         x += top_grid.x_step) {
+         x += top_grid_->x_step) {
       if (x < lb_x || x > ub_x) {
         continue;
       }
