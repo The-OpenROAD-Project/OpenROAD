@@ -591,7 +591,11 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
+#ifdef BAZEL_CURRENT_REPOSITORY
+      strcasecmp(BUILD_TYPE, "opt") == 0
+#else
       strcasecmp(BUILD_TYPE, "release") == 0
+#endif
           ? ""
           : fmt::format(" : {}", BUILD_TYPE));
   logger->report(

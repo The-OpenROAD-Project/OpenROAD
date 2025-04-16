@@ -24,10 +24,9 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":init_floorplan_swig",
     ":init_floorplan_tcl",
     #OpenDB
-    ":odb_tcl",
-    ":opendb_swig",
-    ":opendb_swig_common",
-    #Upf
+    "//src/odb:tcl",
+    "//src/odb:swig",
+    #UPF
     ":upf_swig",
     ":upf_tcl",
     #DbSTA
@@ -280,8 +279,6 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/utl/src/*.h",
     #InitFp
     "src/ifp/src/*.cc",
-    #OpenDB
-    "src/odb/src/swig/tcl/MakeOdb.cpp",
     #DbSTA
     "src/dbSta/src/*.cc",
     "src/dbSta/src/*.cpp",

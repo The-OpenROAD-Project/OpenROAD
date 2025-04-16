@@ -49,7 +49,7 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts_set_) {
-    Point origin = inst->getOrigin();
+    Point origin = inst->getBoundaryBBox().ll();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
@@ -65,6 +65,61 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
     inst_rows.push_back(row_insts);
   }
   return inst_rows;
+}
+
+bool FlexPA::instancesAreAbuting(frInst* inst_1, frInst* inst_2) const
+{
+  if (inst_1->getOrigin().getY() != inst_2->getOrigin().getY()) {
+    return false;
+  }
+  frInst *left_inst, *right_inst;
+  if (inst_1->getOrigin().getX() < inst_2->getOrigin().getX()) {
+    left_inst = inst_1;
+    right_inst = inst_2;
+  } else {
+    left_inst = inst_2;
+    right_inst = inst_1;
+  }
+
+  if (left_inst->getBoundaryBBox().xMax()
+      != right_inst->getBoundaryBBox().xMin()) {
+    return false;
+  }
+
+  return true;
+}
+
+std::vector<frInst*> FlexPA::getAdjacentInstancesCluster(frInst* inst) const
+{
+  const auto inst_it = insts_set_.find(inst);
+  std::vector<frInst*> adj_inst_cluster;
+
+  adj_inst_cluster.push_back(inst);
+
+  if (inst_it != insts_set_.begin()) {
+    auto current_inst_it = inst_it;
+    auto prev_inst_it = std::prev(inst_it);
+    while (prev_inst_it != insts_set_.begin()
+           && instancesAreAbuting(*current_inst_it, *prev_inst_it)) {
+      adj_inst_cluster.push_back(*prev_inst_it);
+      current_inst_it--;
+      prev_inst_it--;
+    }
+  }
+
+  std::reverse(adj_inst_cluster.begin(), adj_inst_cluster.end());
+  if (inst_it != insts_set_.end()) {
+    auto current_inst_it = inst_it;
+    auto next_inst_it = std::next(inst_it);
+    while (next_inst_it != insts_set_.end()
+           && instancesAreAbuting(*current_inst_it, *next_inst_it)) {
+      adj_inst_cluster.push_back(*next_inst_it);
+      current_inst_it++;
+      next_inst_it++;
+    }
+  }
+
+  return adj_inst_cluster;
 }
 
 void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)

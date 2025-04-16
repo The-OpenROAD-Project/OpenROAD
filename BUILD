@@ -28,6 +28,8 @@ package(
 exports_files([
     "LICENSE",
     "src/sta/etc/TclEncode.tcl",
+    "src/Design.i",
+    "src/Exception.i",
 ])
 
 string_flag(
@@ -50,7 +52,7 @@ config_setting(
 OPENROAD_LIBRARY_DEPS = [
     "//src/utl",
     ":munkres",
-    ":opendb_lib",
+    "//src/odb",
     ":openroad_version",
     ":opensta_lib",
     "@boost.asio",
@@ -93,7 +95,7 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
-    "BUILD_TYPE=\\\"release\\\"",
+    "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
@@ -116,10 +118,10 @@ cc_binary(
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
-        ":opendb_lib",
         ":openroad_lib_private",
         ":openroad_version",
         ":opensta_lib",
+        "//src/odb",
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
@@ -251,16 +253,6 @@ tcl_encode(
     out = "InitFloorplanTclInitVar.cc",
     char_array_name = "ifp_tcl_inits",
     namespace = "ifp",
-)
-
-tcl_encode(
-    name = "odb_tcl",
-    srcs = [
-        "src/odb/src/swig/tcl/odb.tcl",
-    ],
-    out = "OdbTclInitVar.cc",
-    char_array_name = "odbtcl_tcl_inits",
-    namespace = "odb",
 )
 
 tcl_encode(
@@ -511,10 +503,8 @@ tcl_wrap_cc(
         "src/ifp/src/InitFloorplan.i",
         ":design_swig",
         ":error_swig",
-    ] + glob([
-        "src/odb/src/swig/tcl/*.i",
-        "src/odb/src/swig/common/*.i",
-    ]),
+        "//src/odb:swig_imports",
+    ],
     module = "ifp",
     namespace_prefix = "ifp",
     root_swig_src = "src/ifp/src/InitFloorplan.i",
@@ -541,7 +531,7 @@ tcl_wrap_cc(
         "src/sta",
     ],
     deps = [
-        ":opendb_swig",
+        "//src/odb:swig",
     ],
 )
 
@@ -636,10 +626,8 @@ tcl_wrap_cc(
     srcs = [
         "src/gpl/src/replace.i",
         ":error_swig",
-    ] + glob([
-        "src/odb/src/swig/tcl/*.i",
-        "src/odb/src/swig/common/*.i",
-    ]),
+        "//src/odb:swig_imports",
+    ],
     module = "gpl",
     namespace_prefix = "gpl",
     root_swig_src = "src/gpl/src/replace.i",
@@ -669,11 +657,8 @@ tcl_wrap_cc(
     srcs = [
         "src/tap/src/tapcell.i",
         ":error_swig",
-    ] + glob([
-        "src/odb/src/swig/tcl/*.i",
-        "src/odb/src/swig/common/*.i",
-        "src/odb/include/odb/*.h",
-    ]),
+        "//src/odb:swig_imports",
+    ],
     module = "tap",
     namespace_prefix = "tap",
     root_swig_src = "src/tap/src/tapcell.i",
@@ -746,11 +731,8 @@ tcl_wrap_cc(
     srcs = [
         "src/pdn/src/PdnGen.i",
         ":error_swig",
-    ] + glob([
-        "src/odb/src/swig/tcl/*.i",
-        "src/odb/src/swig/common/*.i",
-        "src/odb/include/odb/*.h",
-    ]),
+        "//src/odb:swig_imports",
+    ],
     module = "pdn",
     namespace_prefix = "pdn",
     root_swig_src = "src/pdn/src/PdnGen.i",
@@ -780,11 +762,8 @@ tcl_wrap_cc(
     srcs = [
         "src/pad/src/pad.i",
         ":error_swig",
-    ] + glob([
-        "src/odb/src/swig/tcl/*.i",
-        "src/odb/src/swig/common/*.i",
-        "src/odb/include/odb/*.h",
-    ]),
+        "//src/odb:swig_imports",
+    ],
     module = "pad",
     namespace_prefix = "pad",
     root_swig_src = "src/pad/src/pad.i",
@@ -896,48 +875,9 @@ filegroup(
     ],
 )
 
-## OPENDB
-
-filegroup(
-    name = "opendb_swig_common",
-    srcs = [
-        "src/odb/src/swig/common/swig_common.cpp",
-        "src/odb/src/swig/common/swig_common.h",
-    ],
-    visibility = ["//:__subpackages__"],
-)
-
-tcl_wrap_cc(
-    name = "opendb_swig",
-    srcs = glob([
-        "src/odb/src/swig/tcl/*.i",
-        "src/odb/src/swig/common/*.i",
-        "src/odb/include/odb/*.h",
-    ]) + [
-        "src/Design.i",
-        "src/Exception.i",
-    ],
-    module = "odbtcl",
-    namespace_prefix = "odb",
-    root_swig_src = "src/odb/src/swig/common/odb.i",
-    swig_includes = [
-        "src/odb/include",
-        "src/odb/include/odb",
-        "src/odb/src/swig/tcl",
-    ],
-    swig_options = [
-        # These values are derived from the CMakeList.txt and represent the "rules" this swig file
-        # breaks. Swig refuses to compile our swig files unless we acknowledge we are ignoring the
-        # following warnings. They can be derived by attemtpting to compile without them and fixing
-        # the warnings one by one.
-        "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
-    ],
-)
-
 tcl_wrap_cc(
     name = "upf_swig",
     srcs = glob([
-        "src/odb/include/odb/*.h",
         "src/upf/include/upf/*.h",
     ]) + [
         "src/upf/src/upf.i",
@@ -950,70 +890,6 @@ tcl_wrap_cc(
         "src/upf/include",
     ],
 )
-
-cc_library(
-    name = "opendb_lib",
-    srcs = glob([
-        "src/odb/src/cdl/*.cpp",
-        "src/odb/src/db/*.cpp",
-        "src/odb/src/db/*.h",
-        "src/odb/src/db/*.hpp",
-        "src/odb/src/zutil/*.cpp",
-        "src/odb/src/defout/*.cpp",
-        "src/odb/src/defout/*.h",
-        "src/odb/src/defin/*.cpp",
-        "src/odb/src/defin/*.h",
-        "src/odb/src/lefin/*.cpp",
-        "src/odb/src/lefin/*.h",
-        "src/odb/src/lefout/*.cpp",
-    ]),
-    hdrs = glob([
-        "src/odb/include/odb/*.h",
-        "src/odb/include/odb/*.hpp",
-        "src/odb/src/db/*.h",
-    ]),
-    copts = [
-        "-fexceptions",
-        "-Wno-error",
-    ],
-    features = [
-        "-use_header_modules",
-    ],
-    includes = [
-        "src/odb/include",
-        "src/odb/include/odb",
-        "src/odb/src/def/def",
-        "src/odb/src/def/defzlib",
-        "src/odb/src/def/lefzlib",
-        "src/odb/src/lef/lef",
-        "src/odb/src/lef/lefin",
-        "src/odb/src/lef/lefzlib",
-    ],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        "//src/odb/src/def",
-        "//src/odb/src/def:defzlib",
-        "//src/odb/src/lef",
-        "//src/odb/src/lef:lefzlib",
-        "//src/utl",
-        "@boost.algorithm",
-        "@boost.bind",
-        "@boost.config",
-        "@boost.fusion",
-        "@boost.geometry",
-        "@boost.lambda",
-        "@boost.optional",
-        "@boost.phoenix",
-        "@boost.polygon",
-        "@boost.property_tree",
-        "@boost.spirit",
-        "@spdlog",
-        "@tk_tcl//:tcl",
-        "@zlib",
-    ],
-)
-
-## OPENDB
 
 ## OpenSTA
 genlex(
