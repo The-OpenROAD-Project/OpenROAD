@@ -14,7 +14,6 @@ class Architecture;
 class DetailedMgr;
 class DetailedObjective;
 class Network;
-class RoutingParams;
 
 class DetailedRandom
 {
@@ -101,7 +100,6 @@ class RandomGenerator : public DetailedGenerator
   DetailedMgr* mgr_ = nullptr;
   Architecture* arch_ = nullptr;
   Network* network_ = nullptr;
-  RoutingParams* rt_ = nullptr;
 
   int attempts_ = 0;
   int moves_ = 0;
@@ -122,7 +120,6 @@ class DisplacementGenerator : public DetailedGenerator
   DetailedMgr* mgr_ = nullptr;
   Architecture* arch_ = nullptr;
   Network* network_ = nullptr;
-  RoutingParams* rt_ = nullptr;
 
   int attempts_ = 0;
   int moves_ = 0;

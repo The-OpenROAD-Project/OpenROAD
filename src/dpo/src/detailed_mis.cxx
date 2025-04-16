@@ -42,7 +42,6 @@
 #include "journal.h"
 #include "network.h"
 #include "rectangle.h"
-#include "router.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
@@ -67,10 +66,8 @@ struct DetailedMis::Bucket
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedMis::DetailedMis(Architecture* arch,
-                         Network* network,
-                         RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt)
+DetailedMis::DetailedMis(Architecture* arch, Network* network)
+    : arch_(arch), network_(network)
 {
 }
 

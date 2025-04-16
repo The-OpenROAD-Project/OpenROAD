@@ -23,7 +23,6 @@
 #include "dpl/PlacementDRC.h"
 #include "journal.h"
 #include "odb/dbTransform.h"
-#include "router.h"
 #include "utility.h"
 #include "utl/Logger.h"
 
@@ -33,14 +32,9 @@ namespace dpo {
 
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
-                         RoutingParams* rt,
                          Grid* grid,
                          PlacementDRC* drc_engine)
-    : arch_(arch),
-      network_(network),
-      rt_(rt),
-      grid_(grid),
-      drc_engine_(drc_engine)
+    : arch_(arch), network_(network), grid_(grid), drc_engine_(drc_engine)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -188,50 +182,6 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
       if (ymin < yt && ymax > yb) {
         blockages_[r].emplace_back(xmin, xmax, 0, 0, BlockageType::Placement);
-      }
-    }
-  }
-
-  if (includeRouteBlockages && rt_ != nullptr) {
-    // Turn M1 and M2 routing blockages into placement blockages.  The idea
-    // here is to be quite conservative and prevent the possibility of pin
-    // access problems.  We *ONLY* consider routing obstacles to be placement
-    // obstacles if they overlap with an *ENTIRE* site.
-
-    for (int layer = 0; layer <= 1 && layer < rt_->num_layers_; layer++) {
-      const std::vector<Rectangle>& rects = rt_->layerBlockages_[layer];
-      for (const auto& rect : rects) {
-        const double xmin = rect.xmin();
-        const double xmax = rect.xmax();
-        const double ymin = rect.ymin();
-        const double ymax = rect.ymax();
-
-        for (int r = 0; r < numSingleHeightRows_; r++) {
-          const double lb = arch_->getMinY() + r * singleRowHeight_;
-          const double ub = lb + singleRowHeight_;
-
-          if (ymax >= ub && ymin <= lb) {
-            // Blockage overlaps with the entire row span in the Y-dir...
-            // Sites are possibly completely covered!
-
-            const double originX = arch_->getRow(r)->getLeft();
-            const double siteSpacing = arch_->getRow(r)->getSiteSpacing();
-
-            const int i0 = (int) std::floor((xmin - originX) / siteSpacing);
-            int i1 = (int) std::floor((xmax - originX) / siteSpacing);
-            if (originX + i1 * siteSpacing != xmax) {
-              ++i1;
-            }
-
-            if (i1 > i0) {
-              blockages_[r].emplace_back(originX + i0 * siteSpacing,
-                                         originX + i1 * siteSpacing,
-                                         0,
-                                         0,
-                                         BlockageType::Routing);
-            }
-          }
-        }
       }
     }
   }
@@ -1095,53 +1045,6 @@ double DetailedMgr::measureMaximumDisplacement(u_int64_t& maxX,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::setupObstaclesForDrc()
-{
-  // Setup rectangular obstacles for short and pin access checks.  Do only as
-  // rectangles per row and per layer.  I had used rtrees, but it wasn't working
-  // any better.
-  obstacles_.resize(arch_->getRows().size());
-
-  for (int row_id = 0; row_id < arch_->getRows().size(); row_id++) {
-    obstacles_[row_id].resize(rt_->num_layers_);
-
-    const double originX = arch_->getRow(row_id)->getLeft();
-    const double siteSpacing = arch_->getRow(row_id)->getSiteSpacing();
-    const int numSites = arch_->getRow(row_id)->getNumSites();
-
-    // Blockages relevant to this row...
-    for (int layer_id = 0; layer_id < rt_->num_layers_; layer_id++) {
-      obstacles_[row_id][layer_id].clear();
-
-      const std::vector<Rectangle>& rects = rt_->layerBlockages_[layer_id];
-      for (const auto& rect : rects) {
-        // Extract obstacles which interfere with this row only.
-        const double xmin = originX;
-        const double xmax = originX + numSites * siteSpacing;
-        const double ymin = arch_->getRow(row_id)->getBottom();
-        const double ymax = arch_->getRow(row_id)->getTop();
-
-        if (rect.xmax() <= xmin) {
-          continue;
-        }
-        if (rect.xmin() >= xmax) {
-          continue;
-        }
-        if (rect.ymax() <= ymin) {
-          continue;
-        }
-        if (rect.ymin() >= ymax) {
-          continue;
-        }
-
-        obstacles_[row_id][layer_id].push_back(rect);
-      }
-    }
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::collectSingleHeightCells()
 {
   // Routine to collect only the movable single height cells.
@@ -1652,76 +1555,12 @@ int DetailedMgr::checkRowAlignment()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedMgr::getCellSpacing(const Node* ndl,
-                                   const Node* ndr,
-                                   const bool checkPinsOnCells)
+double DetailedMgr::getCellSpacing(const Node* ndl, const Node* ndr)
 {
-  // Compute any required spacing between cells.  This could be from an edge
-  // type rule, or due to adjacent pins on the cells.  Checking pins on cells is
-  // more time consuming.
-
   if (ndl == nullptr || ndr == nullptr) {
     return 0.0;
   }
-  const double spacing1 = arch_->getCellSpacing(ndl, ndl);
-  if (!checkPinsOnCells) {
-    return spacing1;
-  }
-  double spacing2 = 0.0;
-  {
-    const Pin* pinl = nullptr;
-    const Pin* pinr = nullptr;
-
-    // Right-most pin on the left cell.
-    for (const Pin* pin : ndl->getPins()) {
-      if (pinl == nullptr || pin->getOffsetX() > pinl->getOffsetX()) {
-        pinl = pin;
-      }
-    }
-
-    // Left-most pin on the right cell.
-    for (const Pin* pin : ndr->getPins()) {
-      if (pinr == nullptr || pin->getOffsetX() < pinr->getOffsetX()) {
-        pinr = pin;
-      }
-    }
-    // If pins on the same layer, do something.
-    if (pinl != nullptr && pinr != nullptr
-        && pinl->getPinLayer() == pinr->getPinLayer()) {
-      // Determine the spacing requirements between these two pins.   Then,
-      // translate this into a spacing requirement between the two cells.  XXX:
-      // Since it is implicit that the cells are in the same row, we can
-      // determine the widest pin and the parallel run length without knowing
-      // the actual location of the cells...  At least I think so...
-
-      const double xmin1 = pinl->getOffsetX().v - 0.5 * pinl->getPinWidth().v;
-      const double xmax1 = pinl->getOffsetX().v + 0.5 * pinl->getPinWidth().v;
-      const double ymin1 = pinl->getOffsetY().v - 0.5 * pinl->getPinHeight().v;
-      const double ymax1 = pinl->getOffsetY().v + 0.5 * pinl->getPinHeight().v;
-
-      const double xmin2 = pinr->getOffsetX().v - 0.5 * pinr->getPinWidth().v;
-      const double xmax2 = pinr->getOffsetX().v + 0.5 * pinr->getPinWidth().v;
-      const double ymin2 = pinr->getOffsetY().v - 0.5 * pinr->getPinHeight().v;
-      const double ymax2 = pinr->getOffsetY().v + 0.5 * pinr->getPinHeight().v;
-
-      const double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
-                                 std::min(ymax2 - ymin2, xmax2 - xmin2));
-      const double py
-          = std::max(0.0, std::min(ymax1, ymax2) - std::max(ymin1, ymin2));
-
-      spacing2 = rt_->get_spacing(pinl->getPinLayer(), ww, py);
-      const double gapl = (0.5 * ndl->getWidth().v) - xmax1;
-      const double gapr = xmin2 - (-0.5 * ndr->getWidth().v);
-      spacing2 = std::max(0.0, spacing2 - gapl - gapr);
-
-      if (spacing2 > spacing1) {
-        // The spacing requirement due to the routing layer is larger than the
-        // spacing requirement due to the edge constraint.  Interesting.
-        ;
-      }
-    }
-  }
-  return std::max(spacing1, spacing2);
+  return arch_->getCellSpacing(ndl, ndl);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
