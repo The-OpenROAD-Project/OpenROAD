@@ -35,11 +35,11 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-// Utility to help sorting width curves.
-inline bool isMinWidthSmaller(const Curve& width_curve_a,
-                              const Curve& width_curve_b)
+// Utility to help sorting width intervals.
+inline bool isMinWidthSmaller(const Interval& width_interval_a,
+                              const Interval& width_interval_b)
 {
-  return width_curve_a.min < width_curve_b.min;
+  return width_interval_a.min < width_interval_b.min;
 }
 
 // Utility to help sorting tilings.

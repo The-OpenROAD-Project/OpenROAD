@@ -7,9 +7,9 @@ namespace mpl {
 
 // Bounds of a certain cluster's dimension.
 // Used for either width or height.
-struct Curve
+struct Interval
 {
-  Curve(float min, float max) : min(min), max(max) {}
+  Interval(float min, float max) : min(min), max(max) {}
 
   float min{0.0f};
   float max{0.0f};

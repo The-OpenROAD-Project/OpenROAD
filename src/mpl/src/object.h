@@ -41,7 +41,7 @@ class HardMacro;
 class SoftMacro;
 class Cluster;
 
-using CurveList = std::vector<Curve>;
+using IntervalList = std::vector<Interval>;
 using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
@@ -490,7 +490,7 @@ class SoftMacro
   void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
   void setShapes(const TilingList& tilings, bool force = false);
-  void setShapes(const CurveList& width_curves, float area);
+  void setShapes(const IntervalList& width_intervals, float area);
 
   float getX() const { return x_; }
   float getY() const { return y_; }
@@ -524,8 +524,9 @@ class SoftMacro
   float getMacroUtil() const;
 
  private:
-  // utility function
-  int findCurveIndex(const CurveList& list, float& value, bool increasing_list);
+  int findIntervalIndex(const IntervalList& interval_list,
+                        float& value,
+                        bool increasing_list);
 
   // We define x_, y_ and orientation_ here
   // Also enable the multi-threading
@@ -536,9 +537,10 @@ class SoftMacro
   float area_ = 0.0;       // area of the standard cell cluster
   std::string name_ = "";  // macro name
 
-  // Curves to describe shapes (discrete or piecewise).
-  CurveList width_curves_;   // nondecreasing order
-  CurveList height_curves_;  // nonincreasing order
+  // The shape curve (discrete or piecewise) of a cluster is the
+  // combination of its width/height intervals.
+  IntervalList width_intervals_;   // nondecreasing order
+  IntervalList height_intervals_;  // nonincreasing order
 
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;

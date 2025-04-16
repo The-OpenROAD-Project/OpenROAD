@@ -142,7 +142,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
-  CurveList computeWidthCurves(const TilingList& tilings);
+  IntervalList computeWidthIntervals(const TilingList& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
@@ -259,8 +259,7 @@ class HierRTLMP
   // For cluster and macro placement.
   SACoreWeights placement_core_weights_;
 
-  // For generation of shape curves for Mixed / Std Cell clusters
-  // and generation of tilings for Macro clusters.
+  // For generation of the coarse shape (tiling) of clusters with macros.
   const SACoreWeights shaping_core_weights_{1.0f /* area */,
                                             1000.0f /* outline */,
                                             0.0f /* wirelength */,

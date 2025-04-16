@@ -327,9 +327,9 @@ void HierRTLMP::setRootShapes()
 
   const float root_area = tree_->floorplan_shape.getArea();
   const float root_width = tree_->floorplan_shape.getWidth();
-  const CurveList root_width_list = {Curve(root_width, root_width)};
+  const IntervalList root_width_intervals = {Interval(root_width, root_width)};
 
-  root_soft_macro->setShapes(root_width_list, root_area);
+  root_soft_macro->setShapes(root_width_intervals, root_area);
   root_soft_macro->setWidth(root_width);  // This will set height automatically
   root_soft_macro->setX(tree_->floorplan_shape.xMin());
   root_soft_macro->setY(tree_->floorplan_shape.yMin());
@@ -408,9 +408,9 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
         macro.setShapes(cluster->getTilings(), true /* force */);
       } else { /* Mixed */
         const TilingList& tilings = cluster->getTilings();
-        CurveList width_curves = computeWidthCurves(tilings);
+        IntervalList width_intervals = computeWidthIntervals(tilings);
         // Note that we can use the area of any tiling.
-        macro.setShapes(width_curves, tilings.front().area());
+        macro.setShapes(width_intervals, tilings.front().area());
       }
 
       macros.push_back(macro);
@@ -612,17 +612,17 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
 }
 
-CurveList HierRTLMP::computeWidthCurves(const TilingList& tilings)
+IntervalList HierRTLMP::computeWidthIntervals(const TilingList& tilings)
 {
-  CurveList width_curves;
-  width_curves.reserve(tilings.size());
+  IntervalList width_intervals;
+  width_intervals.reserve(tilings.size());
   for (const Tiling& tiling : tilings) {
-    width_curves.emplace_back(tiling.width(), tiling.width());
+    width_intervals.emplace_back(tiling.width(), tiling.width());
   }
 
-  std::sort(width_curves.begin(), width_curves.end(), isMinWidthSmaller);
+  std::sort(width_intervals.begin(), width_intervals.end(), isMinWidthSmaller);
 
-  return width_curves;
+  return width_intervals;
 }
 
 void HierRTLMP::calculateMacroTilings(Cluster* cluster)
@@ -2103,8 +2103,9 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
         area = cluster->getArea() / std_cell_util;
         width = std::sqrt(area / min_ar_);
       }
-      CurveList width_curves = {Curve(area / width /* min */, width /* max */)};
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_curves,
+      IntervalList width_intervals
+          = {Interval(area / width /* min */, width /* max */)};
+      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_intervals,
                                                               area);
     } else if (cluster->getClusterType() == HardMacroCluster) {
       macros[soft_macro_id_map[cluster->getName()]].setShapes(
@@ -2126,12 +2127,12 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
       }
     } else {  // Mixed cluster
       const TilingList& tilings = cluster->getTilings();
-      CurveList width_curves;
+      IntervalList width_intervals;
       float area = tilings.back().area();
       area += cluster->getStdCellArea() / target_util;
       for (auto& tiling : tilings) {
         if (tiling.area() <= area) {
-          width_curves.emplace_back(tiling.width(), area / tiling.height());
+          width_intervals.emplace_back(tiling.width(), area / tiling.height());
         }
       }
 
@@ -2144,16 +2145,16 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                  area);
 
       debugPrint(logger_, MPL, "fine_shaping", 2, "width_list :  ");
-      for (auto& width_curve : width_curves) {
+      for (auto& width_interval : width_intervals) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
                    2,
                    " [  {} {}  ] ",
-                   width_curve.min,
-                   width_curve.max);
+                   width_interval.min,
+                   width_interval.max);
       }
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_curves,
+      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_intervals,
                                                               area);
     }
   }
