@@ -1634,32 +1634,27 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   block->_bterm_groups.push_back(std::move(group));
 }
 
-void dbBlock::setBTermTopLayerGrid(dbTechLayer* layer,
-                                   int x_step,
-                                   int y_step,
-                                   Rect region,
-                                   int pin_width,
-                                   int pin_height,
-                                   int keepout)
+void dbBlock::setBTermTopLayerGrid(
+    const dbBlock::dbBTermTopLayerGrid& top_layer_grid)
 {
   _dbBlock* block = (_dbBlock*) this;
-  _dbBTermTopLayerGrid& top_layer_grid = block->_bterm_top_layer_grid;
+  _dbBTermTopLayerGrid& top_grid = block->_bterm_top_layer_grid;
 
   utl::Logger* logger = block->getImpl()->getLogger();
   const odb::Rect& die_area = getDieArea();
 
-  if (!die_area.contains(region)) {
+  if (!die_area.contains(top_layer_grid.region.getEnclosingRect())) {
     logger->error(
         utl::ODB, 124, "Top layer grid region is out of the die area.");
   }
 
-  top_layer_grid.layer = layer->getId();
-  top_layer_grid.x_step = x_step;
-  top_layer_grid.y_step = y_step;
-  top_layer_grid.region = region;
-  top_layer_grid.pin_width = pin_width;
-  top_layer_grid.pin_height = pin_height;
-  top_layer_grid.keepout = keepout;
+  top_grid.layer = top_layer_grid.layer->getId();
+  top_grid.x_step = top_layer_grid.x_step;
+  top_grid.y_step = top_layer_grid.y_step;
+  top_grid.region = top_layer_grid.region;
+  top_grid.pin_width = top_layer_grid.pin_width;
+  top_grid.pin_height = top_layer_grid.pin_height;
+  top_grid.keepout = top_layer_grid.keepout;
 }
 
 dbBlock::dbBTermTopLayerGrid dbBlock::getBTermTopLayerGrid()

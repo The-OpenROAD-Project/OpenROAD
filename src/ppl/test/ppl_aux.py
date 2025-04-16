@@ -553,6 +553,6 @@ def define_pin_shape_pattern(
         )
 
     dbBlock = design.getBlock()
-    dbBlock.setBTermTopLayerGrid(
-        layer, x_step, y_step, rect, width, height, keepout
+    odb.set_bterm_top_layer_grid(
+        dbBlock, layer, x_step, y_step, rect, width, height, keepout
     )

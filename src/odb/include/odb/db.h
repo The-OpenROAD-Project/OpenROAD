@@ -986,13 +986,7 @@ class dbBlock : public dbObject
   ///
   /// Define the top layer grid for pin placement.
   ///
-  void setBTermTopLayerGrid(dbTechLayer* layer,
-                            int x_step,
-                            int y_step,
-                            Rect region,
-                            int pin_width,
-                            int pin_height,
-                            int keepout);
+  void setBTermTopLayerGrid(const dbBTermTopLayerGrid& top_layer_grid);
 
   ///
   /// Get the top layer grid for pin placement.
