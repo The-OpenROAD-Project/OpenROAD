@@ -79,7 +79,7 @@ void Replace::reset()
   routabilityCheckOverflow_ = 0.3;
   routabilityMaxDensity_ = 0.99;
   routabilityTargetRcMetric_ = 1.01;
-  routabilityInflationRatioCoef_ = 5;
+  routabilityInflationRatioCoef_ = 3;
   routabilityMaxInflationRatio_ = 6;
   routabilityRcK1_ = routabilityRcK2_ = 1.0;
   routabilityRcK3_ = routabilityRcK4_ = 0.0;
