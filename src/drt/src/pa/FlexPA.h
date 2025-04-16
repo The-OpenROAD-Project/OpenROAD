@@ -41,7 +41,7 @@ struct frInstLocationComp
 {
   bool operator()(const frInst* lhs, const frInst* rhs) const
   {
-    Point lp = lhs->getBoundaryBBox().ll(), rp = rhs->getBoundaryBBox().ll();
+    Point lp = lhs->getOrigin(), rp = rhs->getOrigin();
     if (lp.getY() != rp.getY()) {
       return lp.getY() < rp.getY();
     }

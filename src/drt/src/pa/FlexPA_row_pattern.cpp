@@ -49,7 +49,7 @@ std::vector<std::vector<frInst*>> FlexPA::computeInstRows()
   int prev_y_coord = INT_MIN;
   int prev_x_end_coord = INT_MIN;
   for (auto inst : insts_set_) {
-    Point origin = inst->getBoundaryBBox().ll();
+    Point origin = inst->getOrigin();
     if (origin.y() != prev_y_coord || origin.x() > prev_x_end_coord) {
       if (!row_insts.empty()) {
         inst_rows.push_back(row_insts);
