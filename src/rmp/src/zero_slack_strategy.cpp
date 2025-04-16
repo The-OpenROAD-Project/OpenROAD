@@ -61,7 +61,8 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   std::vector<sta::Vertex*> candidate_vertices = GetNegativeEndpoints(sta);
 
   if (candidate_vertices.empty()) {
-    logger->warn(utl::RMP, 1030, "All endpoints have positive slack, nothing to do.");
+    logger->warn(
+        utl::RMP, 1030, "All endpoints have positive slack, nothing to do.");
     return;
   }
 

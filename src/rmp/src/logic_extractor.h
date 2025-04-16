@@ -57,8 +57,7 @@ class LogicExtractorFactory
   std::vector<sta::Pin*> GetPrimaryOutputs(
       std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Vertex*> GetCutVertices(AbcLibrary& abc_network);
-  sta::InstanceSet GetCutInstances(
-      std::vector<sta::Vertex*>& cut_vertices);
+  sta::InstanceSet GetCutInstances(std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Pin*> FilterUndrivenOutputs(
       std::vector<sta::Pin*>& primary_outputs,
       sta::InstanceSet& cut_instances);

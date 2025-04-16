@@ -37,10 +37,7 @@ class LogicCut
   {
     return primary_outputs_;
   }
-  const sta::InstanceSet& cut_instances() const
-  {
-    return cut_instances_;
-  }
+  const sta::InstanceSet& cut_instances() const { return cut_instances_; }
 
   bool IsEmpty() const
   {

@@ -165,7 +165,8 @@ void ConnectPinToDriver(
     std::unordered_map<sta::Net*, abc::Abc_Obj_t*>& abc_net_map,
     utl::Logger* logger,
     abc::Abc_Ntk_t& abc_network,
-    const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>& abc_instances)
+    const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>&
+        abc_instances)
 {
   sta::Instance* instance = network->instance(output_pin);
   if (abc_instances.find(instance) == abc_instances.end()) {
@@ -216,17 +217,17 @@ void ConnectPinToDriver(
   abc_net_map[net] = abc_net;
 }
 
-void CreateNets(
-    const std::vector<sta::Net*>& output_nets,
-    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
-        abc_primary_input_nets,
-    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
-        abc_primary_output_nets,
-    const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>& abc_instances,
-    abc::Abc_Ntk_t& abc_network,
-    sta::dbNetwork* network,
-    abc::Mio_Library_t* library,
-    utl::Logger* logger)
+void CreateNets(const std::vector<sta::Net*>& output_nets,
+                const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+                    abc_primary_input_nets,
+                const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+                    abc_primary_output_nets,
+                const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>&
+                    abc_instances,
+                abc::Abc_Ntk_t& abc_network,
+                sta::dbNetwork* network,
+                abc::Mio_Library_t* library,
+                utl::Logger* logger)
 {
   // Sometimes we might create a net that drives multiple pins.
   // Save them here so that the ConnectPinToDriver function can reuse
@@ -263,17 +264,19 @@ void CreateNets(
       = MioGateToPortOrder(library);
 
   // Sort instances for stability.
-  std::vector<std::pair<const sta::Instance*, abc::Abc_Obj_t*>> sorted_instances;
+  std::vector<std::pair<const sta::Instance*, abc::Abc_Obj_t*>>
+      sorted_instances;
   sorted_instances.reserve(abc_instances.size());
   for (auto& [sta_instance, abc_instance] : abc_instances) {
     sorted_instances.emplace_back(sta_instance, abc_instance);
   }
-  std::sort(sorted_instances.begin(),
-            sorted_instances.end(),
-            [network](const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& a,
-                      const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& b) {
-              return network->id(a.first) < network->id(b.first);
-            });
+  std::sort(
+      sorted_instances.begin(),
+      sorted_instances.end(),
+      [network](const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& a,
+                const std::pair<const sta::Instance*, abc::Abc_Obj_t*>& b) {
+        return network->id(a.first) < network->id(b.first);
+      });
 
   // Loop through all the other instances
   for (auto& [sta_instance, abc_instance] : sorted_instances) {
@@ -366,10 +369,9 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
   return abc_network;
 }
 
-sta::Instance* GetLogicalParentInstance(
-    sta::InstanceSet& cut_instances,
-    sta::dbNetwork* network,
-    utl::Logger* logger)
+sta::Instance* GetLogicalParentInstance(sta::InstanceSet& cut_instances,
+                                        sta::dbNetwork* network,
+                                        utl::Logger* logger)
 {
   // In physical designs with hierarchy we need to figure out
   // the parent module in which instances should be placed.
