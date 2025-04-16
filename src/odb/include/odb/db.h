@@ -899,17 +899,17 @@ class dbBlock : public dbObject
     dbTechLayer* layer = nullptr;
     // The distance between each valid position on the grid in the x- and
     // y-directions, respectively.
-    int x_step;
-    int y_step;
+    int x_step = 0;
+    int y_step = 0;
     // The region of the placement grid.
     Polygon region;
     // The width and height of the pins assigned to this grid. The centers of
     // the pins are placed on the grid positions.
-    int pin_width;
-    int pin_height;
+    int pin_width = 0;
+    int pin_height = 0;
     // The boundary around existing routing obstructions that the pins should
     // avoid.
-    int keepout;
+    int keepout = 0;
   };
 
   ///
