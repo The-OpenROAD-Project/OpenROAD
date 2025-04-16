@@ -1617,16 +1617,10 @@ std::string Descriptor::Property::toString(const std::any& value)
   return "<unknown>";
 }
 
-}  // namespace gui
-
-namespace gui {
 // Tcl files encoded into strings.
 extern const char* gui_tcl_inits[];
-}  // namespace gui
 
-extern "C" {
-struct Tcl_Interp;
-}
+}  // namespace gui
 
 namespace ord {
 
@@ -1634,15 +1628,15 @@ extern "C" {
 extern int Gui_Init(Tcl_Interp* interp);
 }
 
-void initGui(OpenRoad* openroad)
+void initGui(Tcl_Interp* interp, odb::dbDatabase* db, utl::Logger* logger)
 {
   // Define swig TCL commands.
-  Gui_Init(openroad->tclInterp());
-  utl::evalTclInit(openroad->tclInterp(), gui::gui_tcl_inits);
+  Gui_Init(interp);
+  utl::evalTclInit(interp, gui::gui_tcl_inits);
 
   // ensure gui is made
   auto* gui = gui::Gui::get();
-  gui->init(openroad->getDb(), openroad->getLogger());
+  gui->init(db, logger);
 }
 
 }  // namespace ord
