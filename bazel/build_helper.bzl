@@ -103,8 +103,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     "include/ord/*.hh",
     #InitFp
     "src/ifp/include/ifp/*.hh",
-    #GUI
-    "src/gui/include/gui/*.h",
     #STA
     "src/sta/include/sta/*.hh",
     #DbSTA
