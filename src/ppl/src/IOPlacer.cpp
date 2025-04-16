@@ -1899,7 +1899,8 @@ void IOPlacer::getConstraintsFromDB()
           logger_->error(utl::PPL, 121, "Top layer grid not found.");
         }
         if (top_grid.value().region.isRect()) {
-          const Rect& top_grid_region = top_grid.value().region.getEnclosingRect();
+          const Rect& top_grid_region
+              = top_grid.value().region.getEnclosingRect();
           if (!top_grid_region.contains(region)) {
             logger_->error(utl::PPL,
                            25,
