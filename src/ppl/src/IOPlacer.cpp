@@ -1932,20 +1932,23 @@ void IOPlacer::getConstraintsFromDB()
   }
 
   top_layer_pins_count_ = 0;
-  for (const auto& [region, pins] : pins_per_rect) {
-    std::string pin_names = getPinSetOrListString(pins);
-    logger_->info(utl::PPL,
-                  60,
-                  "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
-                  "{:.2f}u) at routing layer {}.",
-                  pin_names,
-                  getBlock()->dbuToMicrons(region.xMin()),
-                  getBlock()->dbuToMicrons(region.yMin()),
-                  getBlock()->dbuToMicrons(region.xMax()),
-                  getBlock()->dbuToMicrons(region.yMax()),
-                  top_grid.value().layer->getConstName());
-    top_layer_pins_count_ += pins.size();
-    constraints_.emplace_back(pins, Direction::invalid, region);
+  if (top_grid) {
+    for (const auto& [region, pins] : pins_per_rect) {
+      std::string pin_names = getPinSetOrListString(pins);
+      logger_->info(
+          utl::PPL,
+          60,
+          "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+          "{:.2f}u) at routing layer {}.",
+          pin_names,
+          getBlock()->dbuToMicrons(region.xMin()),
+          getBlock()->dbuToMicrons(region.yMin()),
+          getBlock()->dbuToMicrons(region.xMax()),
+          getBlock()->dbuToMicrons(region.yMax()),
+          top_grid.value().layer->getConstName());
+      top_layer_pins_count_ += pins.size();
+      constraints_.emplace_back(pins, Direction::invalid, region);
+    }
   }
 }
 
@@ -2858,21 +2861,19 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
 
 void IOPlacer::findSlotsForTopLayer()
 {
-  if (!getBlock()->getBTermTopLayerGrid()) {
-    return;
-  }
-  auto top_grid = getBlock()->getBTermTopLayerGrid().value();
+  auto top_grid = getBlock()->getBTermTopLayerGrid();
   const odb::Rect& die_area = getBlock()->getDieArea();
 
-  if (top_layer_slots_.empty() && top_grid.pin_width > 0) {
-    if (top_grid.region.isRect()) {
-      const int half_width = top_grid.pin_width / 2;
-      const int half_height = top_grid.pin_height / 2;
-      const Rect& top_grid_region = top_grid.region.getEnclosingRect();
+  if (top_grid && top_layer_slots_.empty() && top_grid.value().pin_width > 0) {
+    auto grid = top_grid.value();
+    if (grid.region.isRect()) {
+      const int half_width = grid.pin_width / 2;
+      const int half_height = grid.pin_height / 2;
+      const Rect& top_grid_region = grid.region.getEnclosingRect();
       for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
-           x += top_grid.x_step) {
+           x += grid.x_step) {
         for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
-             y += top_grid.y_step) {
+             y += grid.y_step) {
           Point ll(x - half_width, y - half_height);
           Point lr(x + half_width, y - half_height);
           Point ul(x - half_width, y + half_height);
@@ -2884,7 +2885,7 @@ void IOPlacer::findSlotsForTopLayer()
           top_layer_slots_.push_back({blocked,
                                       false,
                                       Point(x, y),
-                                      top_grid.layer->getRoutingLevel(),
+                                      grid.layer->getRoutingLevel(),
                                       Edge::invalid});
         }
       }
@@ -2903,7 +2904,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
   // Get routing obstructions
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
-    if (top_grid.value().layer != nullptr
+    if (top_grid && top_grid.value().layer != nullptr
         && box->getTechLayer()->getRoutingLevel()
                == top_grid.value().layer->getRoutingLevel()) {
       odb::Rect obstruction_rect = box->getBox();
@@ -2917,7 +2918,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
-            if (top_grid.value().layer != nullptr
+            if (top_grid && top_grid.value().layer != nullptr
                 && wire->getTechLayer()->getRoutingLevel()
                        == top_grid.value().layer->getRoutingLevel()) {
               odb::Rect obstruction_rect = wire->getBox();
@@ -2934,7 +2935,7 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (odb::dbBPin* pin : term->getBPins()) {
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
-          if (top_grid.value().layer != nullptr
+          if (top_grid && top_grid.value().layer != nullptr
               && box->getTechLayer()->getRoutingLevel()
                      == top_grid.value().layer->getRoutingLevel()) {
             odb::Rect obstruction_rect = box->getBox();
@@ -2945,14 +2946,19 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     }
   }
 
+  odb::dbBlock::dbBTermTopLayerGrid grid;
+  if (top_grid) {
+    grid = top_grid.value();
+  }
+
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
   for (auto& slot : top_layer_slots_) {
     odb::Point& point = slot.pos;
-    if (point.x() - top_grid.value().pin_width / 2 < die_area.xMin()
-        || point.y() - top_grid.value().pin_height / 2 < die_area.yMin()
-        || point.x() + top_grid.value().pin_width / 2 > die_area.xMax()
-        || point.y() + top_grid.value().pin_height / 2 > die_area.yMax()) {
+    if (point.x() - grid.pin_width / 2 < die_area.xMin()
+        || point.y() - grid.pin_height / 2 < die_area.yMin()
+        || point.x() + grid.pin_width / 2 > die_area.xMax()
+        || point.y() + grid.pin_height / 2 > die_area.yMax()) {
       // mark slot as blocked since it extends beyond the die area
       slot.blocked = true;
     }
@@ -2963,13 +2969,10 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (auto& slot : top_layer_slots_) {
       odb::Point& point = slot.pos;
       // mock slot with keepout
-      odb::Rect pin_rect(
-          point.x() - top_grid.value().pin_width / 2 - top_grid.value().keepout,
-          point.y() - top_grid.value().pin_height / 2
-              - top_grid.value().keepout,
-          point.x() + top_grid.value().pin_width / 2 + top_grid.value().keepout,
-          point.y() + top_grid.value().pin_height / 2
-              + top_grid.value().keepout);
+      odb::Rect pin_rect(point.x() - grid.pin_width / 2 - grid.keepout,
+                         point.y() - grid.pin_height / 2 - grid.keepout,
+                         point.x() + grid.pin_width / 2 + grid.keepout,
+                         point.y() + grid.pin_height / 2 + grid.keepout);
       if (rect.intersects(pin_rect)) {  // mark slot as blocked
         slot.blocked = true;
       }
