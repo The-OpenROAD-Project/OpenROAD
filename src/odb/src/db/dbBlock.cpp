@@ -1648,6 +1648,37 @@ void dbBlock::setBTermTopLayerGrid(
         utl::ODB, 124, "Top layer grid region is out of the die area.");
   }
 
+  if (top_layer_grid.x_step <= 0) {
+    logger->error(
+        utl::ODB,
+        400,
+        "The x_step for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.y_step <= 0) {
+    logger->error(
+        utl::ODB,
+        401,
+        "The y_step for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.pin_width <= 0) {
+    logger->error(
+        utl::ODB,
+        402,
+        "The pin width for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.pin_height <= 0) {
+    logger->error(
+        utl::ODB,
+        403,
+        "The pin height for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.keepout <= 0) {
+    logger->error(
+        utl::ODB,
+        404,
+        "The pin keepout for the top layer grid must be greater than zero.");
+  }
+
   top_grid.layer = top_layer_grid.layer->getId();
   top_grid.x_step = top_layer_grid.x_step;
   top_grid.y_step = top_layer_grid.y_step;
