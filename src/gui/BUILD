@@ -26,6 +26,7 @@ cc_library(
     includes = ["include"],
     deps = [
         "//src/odb",
+        "@boost.multi_array",
         "@tk_tcl//:tcl",
     ],
 )
