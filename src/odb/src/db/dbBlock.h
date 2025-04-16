@@ -128,12 +128,12 @@ struct _dbBTermGroup
 struct _dbBTermTopLayerGrid
 {
   dbId<_dbTechLayer> layer;
-  int x_step = -1;
-  int y_step = -1;
+  int x_step;
+  int y_step;
   Polygon region;
-  int pin_width = -1;
-  int pin_height = -1;
-  int keepout = -1;
+  int pin_width;
+  int pin_height;
+  int keepout;
 };
 
 class _dbBlock : public _dbObject

@@ -895,13 +895,21 @@ class dbBlock : public dbObject
 
   struct dbBTermTopLayerGrid
   {
+    // The single top-most routing layer of the placement grid.
     dbTechLayer* layer = nullptr;
-    int x_step = -1;
-    int y_step = -1;
+    // The distance between each valid position on the grid in the x- and
+    // y-directions, respectively.
+    int x_step;
+    int y_step;
+    // The region of the placement grid.
     Polygon region;
-    int pin_width = -1;
-    int pin_height = -1;
-    int keepout = -1;
+    // The width and height of the pins assigned to this grid. The centers of
+    // the pins are placed on the grid positions.
+    int pin_width;
+    int pin_height;
+    // The boundary around existing routing obstructions that the pins should
+    // avoid.
+    int keepout;
   };
 
   ///
