@@ -1651,31 +1651,31 @@ void dbBlock::setBTermTopLayerGrid(
   if (top_layer_grid.x_step <= 0) {
     logger->error(
         utl::ODB,
-        400,
+        500,
         "The x_step for the top layer grid must be greater than zero.");
   }
   if (top_layer_grid.y_step <= 0) {
     logger->error(
         utl::ODB,
-        401,
+        501,
         "The y_step for the top layer grid must be greater than zero.");
   }
   if (top_layer_grid.pin_width <= 0) {
     logger->error(
         utl::ODB,
-        402,
+        502,
         "The pin width for the top layer grid must be greater than zero.");
   }
   if (top_layer_grid.pin_height <= 0) {
     logger->error(
         utl::ODB,
-        403,
+        503,
         "The pin height for the top layer grid must be greater than zero.");
   }
   if (top_layer_grid.keepout <= 0) {
     logger->error(
         utl::ODB,
-        404,
+        504,
         "The pin keepout for the top layer grid must be greater than zero.");
   }
 
