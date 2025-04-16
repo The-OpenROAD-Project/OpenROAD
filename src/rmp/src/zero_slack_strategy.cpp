@@ -58,11 +58,16 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
 
   sta::dbNetwork* network = sta->getDbNetwork();
 
+  std::vector<sta::Vertex*> candidate_vertices = GetNegativeEndpoints(sta);
+
+  if (candidate_vertices.empty()) {
+    logger->warn(utl::RMP, 1030, "All endpoints have positive slack, nothing to do.");
+    return;
+  }
+
   AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
   AbcLibrary abc_library = factory.Build();
-
-  std::vector<sta::Vertex*> candidate_vertices = GetNegativeEndpoints(sta);
 
   // Disable incremental timing.
   sta->graphDelayCalc()->delaysInvalid();

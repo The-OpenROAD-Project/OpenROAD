@@ -63,12 +63,12 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> BufferNetwork(
   buffer_parameters.GainRatio = 300;
   buffer_parameters.Slew
       = abc::Abc_SclComputeAverageSlew(abc_sc_library.abc_library());
-  buffer_parameters.nDegree = 3;
+  buffer_parameters.nDegree = 8;
   buffer_parameters.fSizeOnly = 0;
-  buffer_parameters.fAddBufs = false;
+  buffer_parameters.fAddBufs = true;
   buffer_parameters.fBufPis = true;
-  buffer_parameters.fUseWireLoads = 0;
-  buffer_parameters.fVerbose = true;
+  buffer_parameters.fUseWireLoads = false;
+  buffer_parameters.fVerbose = false;
   buffer_parameters.fVeryVerbose = false;
 
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> current_network
@@ -119,8 +119,8 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                                  nullptr,
                                                  /*DelayTarget=*/1.0,
                                                  /*AreaMulti=*/0.0,
-                                                 /*DelayMulti=*/10.0,
-                                                 /*LogFan=*/10.0,
+                                                 /*DelayMulti=*/2.5,
+                                                 /*LogFan=*/0.0,
                                                  /*Slew=*/0.0,
                                                  /*Gain=*/250.0,
                                                  /*nGatesMin=*/0,
@@ -128,7 +128,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                                  /*fSwitching=*/false,
                                                  /*fSkipFanout=*/false,
                                                  /*fUseProfile=*/false,
-                                                 /*fUseBuffs=*/true,
+                                                 /*fUseBuffs=*/false,
                                                  /*fVerbose=*/false));
 
     abc::Abc_NtkCleanup(current_network.get(), /*fVerbose=*/false);

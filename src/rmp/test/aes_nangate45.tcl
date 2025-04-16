@@ -7,12 +7,26 @@ read_verilog ./aes_nangate45.v
 link_design aes_cipher_top
 read_sdc ./aes_nangate45.sdc
 
-report_checks 
 
 puts "-- Before --\n"
+report_cell_usage
 report_timing_histogram
-resynth
-puts "-- After --\n"
-report_timing_histogram
+report_checks
+report_wns
+report_tns
 
-report_checks 
+puts "-- After --\n"
+
+resynth
+report_timing_histogram
+report_cell_usage
+report_checks
+report_wns
+report_tns
+
+resynth
+report_timing_histogram
+report_cell_usage
+report_checks
+report_wns
+report_tns
