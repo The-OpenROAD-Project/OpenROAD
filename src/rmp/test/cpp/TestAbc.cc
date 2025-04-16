@@ -649,7 +649,8 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
 
   std::vector<sta::Net*> primary_inputs = {};
   std::vector<sta::Net*> primary_outputs = {flop_net};
-  std::unordered_set<sta::Instance*> cut_instances = {flop_input_instance};
+  sta::InstanceSet cut_instances(network);
+  cut_instances.insert(flop_input_instance);
   LogicCut cut(primary_inputs, primary_outputs, cut_instances);
 
   // Create abc network that matches the underlying LogicCut
