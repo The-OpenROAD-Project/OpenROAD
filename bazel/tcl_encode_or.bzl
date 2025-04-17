@@ -13,10 +13,10 @@ def _tcl_encode_or_impl(ctx):
     output_file = ctx.actions.declare_file(outfile_name)
 
     args = ctx.actions.args()
-    args.add_all('--inputs', ctx.files.srcs)
-    args.add('--output', output_file)
-    args.add('--varname', ctx.attr.char_array_name)
-    args.add('--namespace', ctx.attr.namespace)
+    args.add_all("--inputs", ctx.files.srcs)
+    args.add("--output", output_file)
+    args.add("--varname", ctx.attr.char_array_name)
+    args.add("--namespace", ctx.attr.namespace)
 
     ctx.actions.run(
         outputs = [output_file],
@@ -27,7 +27,6 @@ def _tcl_encode_or_impl(ctx):
     )
     return [DefaultInfo(files = depset([output_file]))]
 
-    
 tcl_encode = rule(
     implementation = _tcl_encode_or_impl,
     attrs = {
