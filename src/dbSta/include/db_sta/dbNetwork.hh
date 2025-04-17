@@ -215,7 +215,9 @@ class dbNetwork : public ConcreteNetwork
   void setAttribute(Instance* instance,
                     const string& key,
                     const string& value) override;
-  dbModNet* findRelatedModNet(const dbNet*) const;
+  bool findRelatedModNet(const dbNet*, std::set<dbModNet*>& modnet_set) const;
+  dbNet* findRelatedDbNet(const dbModNet*) const;
+  dbModNet* findModNetForPin(const Pin*);
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
