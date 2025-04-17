@@ -15,6 +15,7 @@
 namespace dpl {
 class Group;
 class Node;
+class Padding;
 
 }  // namespace dpl
 namespace dpo {
@@ -68,17 +69,17 @@ class Architecture
   bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
 
   // Using padding...
+  void setPadding(dpl::Padding* padding) { padding_ = padding; }
+  void setSiteWidth(const DbuX& site_width) { site_width_ = site_width; }
   void setUsePadding(bool val = true) { usePadding_ = val; }
   bool getUsePadding() const { return usePadding_; }
-  void addCellPadding(Node* ndi, int leftPadding, int rightPadding);
   bool getCellPadding(const Node* ndi,
                       int& leftPadding,
                       int& rightPadding) const;
-  void addCellPadding(Node* ndi, DbuX leftPadding, DbuX rightPadding);
   bool getCellPadding(const Node* ndi,
                       DbuX& leftPadding,
                       DbuX& rightPadding) const;
-
+  void flipCellPadding(const Node* ndi);
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
 
  private:
@@ -96,7 +97,8 @@ class Architecture
 
   // Padding...
   bool usePadding_ = false;
-  std::map<int, std::pair<int, int>> cellPaddings_;  // Padding to left,right.
+  dpl::Padding* padding_;
+  DbuX site_width_;
 };
 
 class Architecture::Row

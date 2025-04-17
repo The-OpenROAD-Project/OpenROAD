@@ -1237,7 +1237,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
         logger_->report("Violation in {}", network_->getNodeName(ndl->getId()));
         ++err_n;
       }
-      if (!(gap >= padding - 1.0e-3)) {
+      if (gap < padding) {
         ++err_p;
       }
     }

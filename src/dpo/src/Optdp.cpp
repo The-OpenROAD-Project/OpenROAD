@@ -216,32 +216,10 @@ void Optdp::initPadding()
   // Grab information from OpenDP.
 
   // Need to turn on padding.
-  arch_->setUsePadding(true);
-
-  // Create and edge type for each amount of padding.  This
-  // can be done by querying OpenDP.
-  odb::dbSite* site = nullptr;
-  for (auto* row : db_->getChip()->getBlock()->getRows()) {
-    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
-      site = row->getSite();
-      break;
-    }
-  }
-  if (site == nullptr) {
-    return;
-  }
-  const int siteWidth = site->getWidth();
-
-  for (dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
-    const auto it_n = instMap_.find(inst);
-    if (it_n != instMap_.end()) {
-      Node* ndi = it_n->second;
-      const int leftPadding = opendp_->padLeft(inst);
-      const int rightPadding = opendp_->padRight(inst);
-      arch_->addCellPadding(
-          ndi, leftPadding * siteWidth, rightPadding * siteWidth);
-    }
-  }
+  auto padding = opendp_->getPadding();
+  arch_->setUsePadding(padding != nullptr);
+  arch_->setPadding(padding);
+  arch_->setSiteWidth(grid_->getSiteWidth());
 }
 
 ////////////////////////////////////////////////////////////////
