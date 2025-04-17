@@ -256,8 +256,8 @@ void HTreeBuilder::initSinkRegion()
                              ? options_->getMacroSinkClusteringSize()
                              : options_->getSinkClusteringSize();
   unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
-                             ? min_clustering_macro_sinks_
-                             : min_clustering_sinks_;
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
 
   logger_->info(CTS,
                 20,

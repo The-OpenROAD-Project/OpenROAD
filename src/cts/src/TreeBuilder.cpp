@@ -40,10 +40,12 @@ void TreeBuilder::mergeBlockages()
   }
 
   // Set macros clustering diameter as 2 * macros highest dimention.
-  double max_diameter = block->dbuToMicrons(2 * std::max(macros_max_dx, macros_max_dy));
+  double max_diameter
+      = block->dbuToMicrons(2 * std::max(macros_max_dx, macros_max_dy));
 
-  if(max_diameter && !options_->isMacroMaxDiameterSet()){
-    options_->setMacroMaxDiameter(std::max(max_diameter, options_->getMacroMaxDiameter()));
+  if (max_diameter && !options_->isMacroMaxDiameterSet()) {
+    options_->setMacroMaxDiameter(
+        std::max(max_diameter, options_->getMacroMaxDiameter()));
   }
 
   // Add the hard blockages into the polygon set
