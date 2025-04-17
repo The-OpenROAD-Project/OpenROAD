@@ -39,20 +39,20 @@ enum class BlockageType
 
 struct Blockage
 {
-  int x_min;
-  int x_max;
-  int pad_left;
-  int pad_right;
+  DbuX x_min;
+  DbuX x_max;
+  DbuX pad_left;
+  DbuX pad_right;
   BlockageType type;
 
-  Blockage(int xmin, int xmax, int pad_l, int pad_r, BlockageType t)
+  Blockage(DbuX xmin, DbuX xmax, DbuX pad_l, DbuX pad_r, BlockageType t)
       : x_min(xmin), x_max(xmax), pad_left(pad_l), pad_right(pad_r), type(t)
   {
   }
-  int getXMin() const { return x_min; }
-  int getXMax() const { return x_max; }
-  int getPaddedXMin() const { return x_min - pad_left; }
-  int getPaddedXMax() const { return x_max + pad_right; }
+  DbuX getXMin() const { return x_min; }
+  DbuX getXMax() const { return x_max; }
+  DbuX getPaddedXMin() const { return x_min - pad_left; }
+  DbuX getPaddedXMax() const { return x_max + pad_right; }
   bool isFixedInstance() const { return type == BlockageType::FixedInstance; }
   bool isPlacement() const { return type == BlockageType::Placement; }
 };
