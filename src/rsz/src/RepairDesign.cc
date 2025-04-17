@@ -101,9 +101,7 @@ void RepairDesign::repairDesign(double max_wire_length,
                           repaired_net_count);
 }
 
-void RepairDesign::performEarlySizingRound(float gate_gain,
-                                           float buffer_gain,
-                                           int& repaired_net_count)
+void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 {
   // keep track of user annotations so we don't remove them
   std::set<std::pair<Vertex*, int>> slew_user_annotated;
@@ -182,7 +180,7 @@ void RepairDesign::repairDesign(
     double max_wire_length,  // zero for none (meters)
     double slew_margin,
     double cap_margin,
-    double buffer_gain,
+    bool initial_sizing,
     bool verbose,
     int& repaired_net_count,
     int& slew_violations,
@@ -193,7 +191,6 @@ void RepairDesign::repairDesign(
   init();
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
-  buffer_gain_ = buffer_gain;
 
   slew_violations = 0;
   cap_violations = 0;
@@ -210,8 +207,8 @@ void RepairDesign::repairDesign(
   sta_->searchPreamble();
   search_->findAllArrivals();
 
-  if (buffer_gain_ != 0.0) {
-    performEarlySizingRound(4.0f, buffer_gain_, repaired_net_count);
+  if (initial_sizing) {
+    performEarlySizingRound(repaired_net_count);
   }
 
   resizer_->incrementalParasiticsBegin();
@@ -293,7 +290,6 @@ void RepairDesign::repairClkNets(double max_wire_length)
 
   slew_margin_ = 0.0;
   cap_margin_ = 0.0;
-  buffer_gain_ = 0.0;
 
   // Need slews to resize inserted buffers.
   sta_->findDelays();
@@ -367,7 +363,6 @@ void RepairDesign::repairNet(Net* net,
   init();
   slew_margin_ = slew_margin;
   cap_margin_ = cap_margin;
-  buffer_gain_ = 0.0;
 
   int slew_violations = 0;
   int cap_violations = 0;
@@ -573,7 +568,8 @@ bool RepairDesign::performGainBuffering(Net* net,
   // to ask for delays to be recomputed
   std::vector<Vertex*> tree_boundary;
 
-  const float max_buf_load = bufferCin(buffer_sizes_.back()) * buffer_gain_;
+  const float max_buf_load
+      = bufferCin(buffer_sizes_.back()) * resizer_->buffer_sizing_cap_ratio_;
 
   float cin;
   float has_driver_cin = getLargestSizeCin(drvr_pin, cin);
@@ -610,7 +606,7 @@ bool RepairDesign::performGainBuffering(Net* net,
     // its output pin
     auto size = buffer_sizes_.begin();
     for (; size != buffer_sizes_.end() - 1; size++) {
-      if (bufferCin(*size) > load_acc / buffer_gain_) {
+      if (bufferCin(*size) > load_acc / resizer_->buffer_sizing_cap_ratio_) {
         break;
       }
     }
@@ -857,21 +853,6 @@ void RepairDesign::repairNet(Net* net,
                sdc_network_->pathName(drvr_pin));
     const Corner* corner = sta_->cmdCorner();
     bool repaired_net = false;
-
-    const bool can_repair = !resizer_->dontTouch(drvr_pin);
-
-    if (can_repair && buffer_gain_ != 0.0) {
-      float fanout, max_fanout, fanout_slack;
-      sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
-
-      if (performGainBuffering(net, drvr_pin, max_fanout)) {
-        repaired_net = true;
-      }
-      if (resizer_->resizeToCapRatio(drvr_pin, false)) {
-        repaired_net = true;
-        resize_count_ += 1;
-      }
-    }
 
     // Fanout is addressed by creating region repeaters
     if (check_fanout) {
