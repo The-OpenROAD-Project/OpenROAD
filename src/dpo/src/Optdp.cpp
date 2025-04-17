@@ -828,12 +828,12 @@ void Optdp::createArchitecture()
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(origin.x() - core.xMin());
-    archRow->setBottom(origin.y() - core.yMin());
-    archRow->setSiteSpacing(row->getSpacing());
+    archRow->setSubRowOrigin(DbuX{origin.x() - core.xMin()});
+    archRow->setBottom(DbuY{origin.y() - core.yMin()});
+    archRow->setSiteSpacing(DbuX{row->getSpacing()});
     archRow->setNumSites(row->getSiteCount());
-    archRow->setSiteWidth(site->getWidth());
-    archRow->setHeight(site->getHeight());
+    archRow->setSiteWidth(DbuX{site->getWidth()});
+    archRow->setHeight(DbuY{site->getHeight()});
 
     // Set defaults.  Top and bottom power is set below.
     archRow->setBottomPower(Architecture::Row::Power_UNK);
@@ -872,10 +872,10 @@ void Optdp::createArchitecture()
   }
   // Get surrounding box.
   {
-    int xmin = std::numeric_limits<int>::max();
-    int xmax = std::numeric_limits<int>::lowest();
-    int ymin = std::numeric_limits<int>::max();
-    int ymax = std::numeric_limits<int>::lowest();
+    DbuX xmin = std::numeric_limits<DbuX>::max();
+    DbuX xmax = std::numeric_limits<DbuX>::lowest();
+    DbuY ymin = std::numeric_limits<DbuY>::max();
+    DbuY ymax = std::numeric_limits<DbuY>::lowest();
     for (int r = 0; r < arch_->getNumRows(); r++) {
       Architecture::Row* row = arch_->getRow(r);
 
@@ -892,10 +892,10 @@ void Optdp::createArchitecture()
 
   for (int r = 0; r < arch_->getNumRows(); r++) {
     int numSites = arch_->getRow(r)->getNumSites();
-    int originX = arch_->getRow(r)->getLeft();
-    int siteSpacing = arch_->getRow(r)->getSiteSpacing();
-    int siteWidth = arch_->getRow(r)->getSiteWidth();
-    const int endGap = siteWidth - siteSpacing;
+    DbuX originX = arch_->getRow(r)->getLeft();
+    DbuX siteSpacing = arch_->getRow(r)->getSiteSpacing();
+    DbuX siteWidth = arch_->getRow(r)->getSiteWidth();
+    const DbuX endGap = siteWidth - siteSpacing;
     if (originX < arch_->getMinX()) {
       originX = arch_->getMinX();
       if (arch_->getRow(r)->getLeft() != originX) {
@@ -903,7 +903,7 @@ void Optdp::createArchitecture()
       }
     }
     if (originX + numSites * siteSpacing + endGap > arch_->getMaxX()) {
-      numSites = (arch_->getMaxX() - endGap - originX) / siteSpacing;
+      numSites = ((arch_->getMaxX() - endGap - originX) / siteSpacing).v;
       if (arch_->getRow(r)->getNumSites() != numSites) {
         arch_->getRow(r)->setNumSites(numSites);
       }
@@ -952,8 +952,8 @@ void Optdp::createArchitecture()
         Rect rect = sbox->getBox();
         rect.moveDelta(core.xMin(), core.yMin());
         for (size_t r = 0; r < arch_->getNumRows(); r++) {
-          int yb = arch_->getRow(r)->getBottom();
-          int yt = arch_->getRow(r)->getTop();
+          DbuY yb = arch_->getRow(r)->getBottom();
+          DbuY yt = arch_->getRow(r)->getTop();
 
           if (yb >= rect.yMin() && yb <= rect.yMax()) {
             arch_->getRow(r)->setBottomPower(pwr);
@@ -980,10 +980,10 @@ void Optdp::createGrid()
 ////////////////////////////////////////////////////////////////
 void Optdp::setUpPlacementGroups()
 {
-  int xmin = arch_->getMinX();
-  int xmax = arch_->getMaxX();
-  int ymin = arch_->getMinY();
-  int ymax = arch_->getMaxY();
+  int xmin = arch_->getMinX().v;
+  int xmax = arch_->getMaxX().v;
+  int ymin = arch_->getMinY().v;
+  int ymax = arch_->getMaxY().v;
 
   dbBlock* block = db_->getChip()->getBlock();
   auto core = block->getCoreArea();
@@ -1015,10 +1015,10 @@ void Optdp::setUpPlacementGroups()
       for (dbBox* boundary : boundaries) {
         Rect box = boundary->getBox();
         box.moveDelta(-core.xMin(), -core.yMin());
-        xmin = std::max(arch_->getMinX(), box.xMin());
-        xmax = std::min(arch_->getMaxX(), box.xMax());
-        ymin = std::max(arch_->getMinY(), box.yMin());
-        ymax = std::min(arch_->getMaxY(), box.yMax());
+        xmin = std::max(arch_->getMinX().v, box.xMin());
+        xmax = std::min(arch_->getMaxX().v, box.xMax());
+        ymin = std::max(arch_->getMinY().v, box.yMin());
+        ymax = std::min(arch_->getMaxY().v, box.yMax());
 
         rptr->addRect({xmin, ymin, xmax, ymax});
         bbox.merge({xmin, ymin, xmax, ymax});

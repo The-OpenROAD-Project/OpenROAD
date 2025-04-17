@@ -6,7 +6,6 @@
 #include <algorithm>
 
 #include "network.h"
-#include "rectangle.h"
 
 namespace dpo {
 
@@ -34,10 +33,10 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(const Network* nw)
+uint64_t Utility::hpwl(const Network* nw)
 {
   // Compute the wire length for the given placement.
-  double totWL = 0.0;
+  uint64_t totWL = 0;
   for (unsigned e = 0; e < nw->getNumEdges(); e++) {
     const Edge* ed = nw->getEdge(e);
     totWL += hpwl(ed);
@@ -45,13 +44,13 @@ double Utility::hpwl(const Network* nw)
   return totWL;
 }
 
-double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
+uint64_t Utility::hpwl(const Network* nw, uint64_t& hpwlx, uint64_t& hpwly)
 {
-  hpwlx = 0.0;
-  hpwly = 0.0;
+  hpwlx = 0;
+  hpwly = 0;
   // Compute the wire length for the given placement.
   unsigned numEdges = nw->getNumEdges();
-  Rectangle box;
+  odb::Rect box;
   for (unsigned e = 0; e < numEdges; e++) {
     const Edge* ed = nw->getEdge(e);
 
@@ -60,53 +59,49 @@ double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
       continue;
     }
 
-    box.reset();
+    box.mergeInit();
     for (const Pin* pin : ed->getPins()) {
       const Node* ndi = pin->getNode();
-      const double py
-          = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY().v;
-      const double px
-          = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX().v;
-      box.addPt(px, py);
+      const DbuY py = ndi->getCenterY() + pin->getOffsetY();
+      const DbuX px = ndi->getCenterX() + pin->getOffsetX();
+      box.merge(odb::Point(px.v, py.v));
     }
-    hpwlx += box.getWidth();
-    hpwly += box.getHeight();
+    hpwlx += box.dx();
+    hpwly += box.dy();
   }
   return hpwlx + hpwly;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(const Edge* ed)
+uint64_t Utility::hpwl(const Edge* ed)
 {
-  double hpwlx = 0.0;
-  double hpwly = 0.0;
+  uint64_t hpwlx = 0;
+  uint64_t hpwly = 0;
   return hpwl(ed, hpwlx, hpwly);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
+uint64_t Utility::hpwl(const Edge* ed, uint64_t& hpwlx, uint64_t& hpwly)
 {
-  hpwlx = 0.0;
-  hpwly = 0.0;
+  hpwlx = 0;
+  hpwly = 0;
 
   const int numPins = ed->getNumPins();
   if (numPins <= 1) {
-    return 0.0;
+    return 0;
   }
 
-  Rectangle box;
+  odb::Rect box;
   for (const Pin* pin : ed->getPins()) {
     const Node* ndi = pin->getNode();
-    const double py
-        = ndi->getBottom().v + 0.5 * ndi->getHeight().v + pin->getOffsetY().v;
-    const double px
-        = ndi->getLeft().v + 0.5 * ndi->getWidth().v + pin->getOffsetX().v;
-    box.addPt(px, py);
+    const DbuY py = ndi->getCenterY() + pin->getOffsetY();
+    const DbuX px = ndi->getCenterX() + pin->getOffsetX();
+    box.merge(odb::Point(px.v, py.v));
   }
-  hpwlx = box.getWidth();
-  hpwly = box.getHeight();
+  hpwlx = box.dx();
+  hpwly = box.dy();
   return hpwlx + hpwly;
 }
 

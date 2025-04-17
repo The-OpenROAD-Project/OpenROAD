@@ -68,6 +68,8 @@ class Node
   DbuY getTop() const;
   DbuX getWidth() const;
   DbuY getHeight() const;
+  DbuX getCenterX() const;
+  DbuY getCenterY() const;
   dbInst* getDbInst() const;
   dbOrientType getOrient() const;
   bool isFixed() const;
@@ -185,6 +187,7 @@ class Edge
   int getNumPins() const;
   const std::vector<Pin*>& getPins() const;
   void addPin(Pin* pin);
+  uint64_t hpwl() const;
 
  private:
   int id_ = 0;

@@ -42,20 +42,8 @@ COMPONENTS 25 ;
     - t1 MOCK_TRIPLE + PLACED ( 11400 8400 ) FS ;
     - u2 MOCK_DOUBLE + PLACED ( 7220 11200 ) N ;
 END COMPONENTS
-PINS 6 ;
-    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL ;
-    - clk2 + NET clk2 + DIRECTION INPUT + USE SIGNAL ;
-    - clk3 + NET clk3 + DIRECTION INPUT + USE SIGNAL ;
-    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL ;
-    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL ;
-END PINS
 NETS 6 ;
-    - clk1 ( PIN clk1 ) ( u2 A1 ) + USE SIGNAL ;
-    - clk2 ( PIN clk2 ) ( r3 A1 ) ( r2 A1 ) + USE SIGNAL ;
-    - clk3 ( PIN clk3 ) ( t1 A1 ) ( r1 A1 ) + USE SIGNAL ;
-    - in1 ( PIN in1 ) + USE SIGNAL ;
-    - in2 ( PIN in2 ) + USE SIGNAL ;
-    - out ( PIN out ) + USE SIGNAL ;
+    - clk2 ( r3 A1 ) ( r2 A1 ) + USE SIGNAL ;
+    - clk3 ( t1 A1 ) ( r1 A1 ) + USE SIGNAL ;
 END NETS
 END DESIGN

@@ -70,9 +70,9 @@ void DetailedABU::init()
 
   abuTargUt_ = mgrPtr_->getTargetUt();  // XXX: Need to set this somehow!!!
 
-  abuGridUnit_ = BIN_DIM * arch_->getRow(0)->getHeight();
-  abuGridNumX_ = (int) ceil((arch_->getWidth()) / abuGridUnit_);
-  abuGridNumY_ = (int) ceil((arch_->getHeight()) / abuGridUnit_);
+  abuGridUnit_ = BIN_DIM * arch_->getRow(0)->getHeight().v;
+  abuGridNumX_ = (int) ceil((arch_->getWidth().v) / abuGridUnit_);
+  abuGridNumY_ = (int) ceil((arch_->getHeight().v) / abuGridUnit_);
   abuNumBins_ = abuGridNumX_ * abuGridNumY_;
   abuBins_.resize(abuNumBins_);
 
@@ -89,15 +89,15 @@ void DetailedABU::init()
 
       abuBins_[binId].id = binId;
 
-      abuBins_[binId].lx = arch_->getMinX() + k * abuGridUnit_;
-      abuBins_[binId].ly = arch_->getMinY() + j * abuGridUnit_;
+      abuBins_[binId].lx = arch_->getMinX().v + k * abuGridUnit_;
+      abuBins_[binId].ly = arch_->getMinY().v + j * abuGridUnit_;
       abuBins_[binId].hx = abuBins_[binId].lx + abuGridUnit_;
       abuBins_[binId].hy = abuBins_[binId].ly + abuGridUnit_;
 
       abuBins_[binId].hx
-          = std::min(abuBins_[binId].hx, (double) arch_->getMaxX());
+          = std::min(abuBins_[binId].hx, (double) arch_->getMaxX().v);
       abuBins_[binId].hy
-          = std::min(abuBins_[binId].hy, (double) arch_->getMaxY());
+          = std::min(abuBins_[binId].hy, (double) arch_->getMaxY().v);
 
       double w = abuBins_[binId].hx - abuBins_[binId].lx;
       double h = abuBins_[binId].hy - abuBins_[binId].ly;
@@ -124,14 +124,14 @@ void DetailedABU::init()
     const double ymax = nd->getTop().v;
 
     const int lcol
-        = std::max((int) floor((xmin - arch_->getMinX()) / abuGridUnit_), 0);
+        = std::max((int) floor((xmin - arch_->getMinX().v) / abuGridUnit_), 0);
     const int rcol
-        = std::min((int) floor((xmax - arch_->getMinX()) / abuGridUnit_),
+        = std::min((int) floor((xmax - arch_->getMinX().v) / abuGridUnit_),
                    abuGridNumX_ - 1);
     const int brow
-        = std::max((int) floor((ymin - arch_->getMinY()) / abuGridUnit_), 0);
+        = std::max((int) floor((ymin - arch_->getMinY().v) / abuGridUnit_), 0);
     const int trow
-        = std::min((int) floor((ymax - arch_->getMinY()) / abuGridUnit_),
+        = std::min((int) floor((ymax - arch_->getMinY().v) / abuGridUnit_),
                    abuGridNumY_ - 1);
 
     for (int j = brow; j <= trow; j++) {
@@ -195,13 +195,15 @@ void DetailedABU::computeUtils()
     const double nhy = nd->getTop().v;
 
     const int lcol
-        = std::max((int) floor((nlx - arch_->getMinX()) / abuGridUnit_), 0);
-    const int rcol = std::min(
-        (int) floor((nrx - arch_->getMinX()) / abuGridUnit_), abuGridNumX_ - 1);
+        = std::max((int) floor((nlx - arch_->getMinX().v) / abuGridUnit_), 0);
+    const int rcol
+        = std::min((int) floor((nrx - arch_->getMinX().v) / abuGridUnit_),
+                   abuGridNumX_ - 1);
     const int brow
-        = std::max((int) floor((nly - arch_->getMinY()) / abuGridUnit_), 0);
-    const int trow = std::min(
-        (int) floor((nhy - arch_->getMinY()) / abuGridUnit_), abuGridNumY_ - 1);
+        = std::max((int) floor((nly - arch_->getMinY().v) / abuGridUnit_), 0);
+    const int trow
+        = std::min((int) floor((nhy - arch_->getMinY().v) / abuGridUnit_),
+                   abuGridNumY_ - 1);
 
     // Cell area...
     for (int j = brow; j <= trow; j++) {
@@ -540,10 +542,10 @@ void DetailedABU::updateBins(const Node* nd,
     mgrPtr_->internalError("Problem updating bins for utilization objective");
   }
 
-  const double lx = x - 0.5 * nd->getWidth().v - arch_->getMinX();
-  const double ux = x + 0.5 * nd->getWidth().v - arch_->getMinX();
-  const double ly = y - 0.5 * nd->getHeight().v - arch_->getMinY();
-  const double uy = y + 0.5 * nd->getHeight().v - arch_->getMinY();
+  const double lx = x - 0.5 * nd->getWidth().v - arch_->getMinX().v;
+  const double ux = x + 0.5 * nd->getWidth().v - arch_->getMinX().v;
+  const double ly = y - 0.5 * nd->getHeight().v - arch_->getMinY().v;
+  const double uy = y + 0.5 * nd->getHeight().v - arch_->getMinY().v;
 
   const int lcol = std::max((int) floor(lx / abuGridUnit_), 0);
   const int rcol = std::min((int) floor(ux / abuGridUnit_), abuGridNumX_ - 1);

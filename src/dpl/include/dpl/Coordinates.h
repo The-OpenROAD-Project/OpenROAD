@@ -7,6 +7,7 @@
 #include <boost/operators.hpp>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <ostream>
 
 #include "Opendp.h"
@@ -29,7 +30,9 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
                          public boost::incrementable<TypedCoordinate<T>>,
                          public boost::decrementable<TypedCoordinate<T>>,
                          public boost::dividable<TypedCoordinate<T>>,
-                         public boost::multipliable<TypedCoordinate<T>>
+                         public boost::dividable<TypedCoordinate<T>, int>,
+                         public boost::multipliable<TypedCoordinate<T>>,
+                         public boost::multipliable<TypedCoordinate<T>, int>
 {
   explicit TypedCoordinate(const int v = 0) : v(v) {}
   TypedCoordinate(const TypedCoordinate<T>& v) = default;
@@ -87,10 +90,20 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
     v /= rhs.v;
     return *this;
   }
+  TypedCoordinate& operator/=(const int rhs)
+  {
+    v /= rhs;
+    return *this;
+  }
   // multipliable
   TypedCoordinate& operator*=(const TypedCoordinate& rhs)
   {
     v *= rhs.v;
+    return *this;
+  }
+  TypedCoordinate& operator*=(const int rhs)
+  {
+    v *= rhs;
     return *this;
   }
 
@@ -235,6 +248,35 @@ struct hash<dpl::GridPt>
     size_t hashY = std::hash<dpl::GridY>{}(p.y);
     return hashX ^ (hashY + 0x9e3779b9 + (hashX << 6) + (hashX >> 2));
   }
+};
+
+// Partial specialization for all TypedCoordinate<T>
+template <typename T>
+struct numeric_limits<dpl::TypedCoordinate<T>>
+{
+  static constexpr bool is_specialized = true;
+
+  static constexpr dpl::TypedCoordinate<T> min() noexcept
+  {
+    return dpl::TypedCoordinate<T>{numeric_limits<int>::min()};
+  }
+
+  static constexpr dpl::TypedCoordinate<T> max() noexcept
+  {
+    return dpl::TypedCoordinate<T>{numeric_limits<int>::max()};
+  }
+
+  static constexpr dpl::TypedCoordinate<T> lowest() noexcept
+  {
+    return dpl::TypedCoordinate<T>{numeric_limits<int>::lowest()};
+  }
+
+  // Mirror numeric_limits<int> properties
+  static constexpr bool is_signed = numeric_limits<int>::is_signed;
+  static constexpr bool is_integer = numeric_limits<int>::is_integer;
+  static constexpr bool is_exact = numeric_limits<int>::is_exact;
+  static constexpr int digits = numeric_limits<int>::digits;
+  // Add other members as needed...
 };
 
 }  // namespace std

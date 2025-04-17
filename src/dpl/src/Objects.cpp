@@ -93,6 +93,14 @@ DbuY Node::getHeight() const
 {
   return height_;
 }
+DbuX Node::getCenterX() const
+{
+  return left_ + width_ / DbuX{2};
+}
+DbuY Node::getCenterY() const
+{
+  return bottom_ + height_ / DbuY{2};
+}
 dbInst* Node::getDbInst() const
 {
   return db_inst_;
@@ -467,6 +475,21 @@ const std::vector<Pin*>& Edge::getPins() const
 void Edge::addPin(Pin* pin)
 {
   pins_.emplace_back(pin);
+}
+uint64_t Edge::hpwl() const
+{
+  odb::Rect rect;
+  rect.mergeInit();
+  for (const Pin* pinj : getPins()) {
+    const Node* ndj = pinj->getNode();
+
+    const DbuX x = ndj->getCenterX() + pinj->getOffsetX();
+    const DbuY y = ndj->getCenterY() + pinj->getOffsetY();
+
+    rect.merge(odb::Point(x.v, y.v));
+  }
+
+  return rect.dx() + rect.dy();
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

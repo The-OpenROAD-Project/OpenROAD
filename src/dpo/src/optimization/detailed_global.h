@@ -7,9 +7,11 @@
 #include <vector>
 
 #include "detailed_generator.h"
-#include "rectangle.h"
 namespace dpl {
 class Edge;
+}
+namespace odb {
+class Rect;
 }
 namespace dpo {
 class Architecture;
@@ -34,11 +36,8 @@ class DetailedGlobalSwap : public DetailedGenerator
 
  private:
   void globalSwap();  // tries to avoid overlap.
-  bool calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox);
-  bool getRange(Node*, Rectangle&);
-  double delta(Node* ndi, double new_x, double new_y);
-  double delta(Node* ndi, Node* ndj);
-
+  bool calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox);
+  bool getRange(Node*, odb::Rect&);
   bool generate(Node* ndi);
 
   // Standard stuff.

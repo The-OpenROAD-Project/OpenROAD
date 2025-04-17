@@ -39,7 +39,6 @@
 #include "detailed_manager.h"
 #include "detailed_segment.h"
 #include "network.h"
-#include "rectangle.h"
 #include "util/color.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
@@ -129,9 +128,9 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
 
   mgrPtr_->resortSegments();
-  double hpwl_x, hpwl_y;
-  double curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
-  const double init_hpwl = curr_hpwl;
+  uint64_t hpwl_x, hpwl_y;
+  int64_t curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+  const int64_t init_hpwl = curr_hpwl;
 
   double tot_disp, max_disp, avg_disp;
   double curr_disp = Utility::disp_l1(network_, tot_disp, max_disp, avg_disp);
@@ -156,10 +155,10 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     // Run the algo here...
     place();
 
-    const double last_hpwl = curr_hpwl;
+    const int64_t last_hpwl = curr_hpwl;
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
     if (obj_ == DetailedMis::Hpwl
-        && std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
+        && std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
       break;
     }
     const double last_disp = curr_disp;
@@ -174,7 +173,8 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   double curr_imp;
   double curr_obj;
   if (obj_ == DetailedMis::Hpwl) {
-    const double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+    const double hpwl_imp
+        = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
     curr_imp = hpwl_imp;
     curr_obj = curr_hpwl;
   } else {
@@ -313,10 +313,10 @@ void DetailedMis::buildGrid()
   // Builds a coarse grid over the placement region for locating cells.
   traversal_ = 0;
 
-  const double xmin = arch_->getMinX();
-  const double xmax = arch_->getMaxX();
-  const double ymin = arch_->getMinY();
-  const double ymax = arch_->getMaxY();
+  const double xmin = arch_->getMinX().v;
+  const double xmax = arch_->getMaxX().v;
+  const double ymin = arch_->getMinY().v;
+  const double ymax = arch_->getMaxY().v;
 
   // Design each grid bin to hold a few hundred cells.  Do this based on the
   // average width and height of the cells.
@@ -365,8 +365,8 @@ void DetailedMis::populateGrid()
     }
   }
 
-  const double xmin = arch_->getMinX();
-  const double ymin = arch_->getMinY();
+  const double xmin = arch_->getMinX().v;
+  const double ymin = arch_->getMinY().v;
 
   // Insert cells into the constructed grid.
   cellToBinMap_.clear();
@@ -401,7 +401,7 @@ void DetailedMis::clearGrid()
 //////////////////////////////////////////////////////////////////////////////////
 bool DetailedMis::gatherNeighbours(Node* ndi)
 {
-  const double singleRowHeight = arch_->getRow(0)->getHeight();
+  const double singleRowHeight = arch_->getRow(0)->getHeight().v;
 
   neighbours_.clear();
   neighbours_.push_back(ndi);
@@ -568,12 +568,10 @@ void DetailedMis::solveMatch()
       // Okay to assign the cell to this location.
       if (obj_ == DetailedMis::Hpwl) {
         icost = getHpwl(ndi,
-                        pos[j].first.v + 0.5 * ndi->getWidth().v,
-                        pos[j].second.v + 0.5 * ndi->getHeight().v);
+                        pos[j].first + ndi->getWidth() / 2,
+                        pos[j].second + ndi->getHeight() / 2);
       } else {
-        icost = getDisp(ndi,
-                        pos[j].first.v + 0.5 * ndi->getWidth().v,
-                        pos[j].second.v + 0.5 * ndi->getHeight().v);
+        icost = getDisp(ndi, pos[j].first, pos[j].second);
       }
 
       // Node to spot.
@@ -708,27 +706,22 @@ void DetailedMis::solveMatch()
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-double DetailedMis::getDisp(const Node* ndi, double xi, double yi)
+uint64_t DetailedMis::getDisp(const Node* ndi, DbuX xi, DbuY yi)
 {
   // Compute displacement of cell ndi if placed at (xi,y1) from its orig pos.
-
-  // Specified target is cell center.  Need to offset.
-  xi -= 0.5 * ndi->getWidth().v;
-  yi -= 0.5 * ndi->getHeight().v;
-  const double dx = std::fabs(xi - ndi->getOrigLeft().v);
-  const double dy = std::fabs(yi - ndi->getOrigBottom().v);
-  return dx + dy;
+  const DbuX dx = abs(xi - ndi->getOrigLeft());
+  const DbuY dy = abs(yi - ndi->getOrigBottom());
+  return dx.v + dy.v;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-double DetailedMis::getHpwl(const Node* ndi, double xi, double yi)
+uint64_t DetailedMis::getHpwl(const Node* ndi, DbuX xi, DbuY yi)
 {
   // Compute the HPWL of nets connected to ndi assuming ndi is at the
   // specified (xi,yi).
 
-  double hpwl = 0.;
-  Rectangle box;
+  uint64_t hpwl = 0.;
   for (int pi = 0; pi < ndi->getNumPins(); pi++) {
     const Pin* pini = ndi->getPins()[pi];
 
@@ -738,26 +731,22 @@ double DetailedMis::getHpwl(const Node* ndi, double xi, double yi)
     if (npins <= 1 || npins > skipEdgesLargerThanThis_) {
       continue;
     }
-
-    box.reset();
+    odb::Rect box;
+    box.mergeInit();
     for (int pj = 0; pj < edi->getNumPins(); pj++) {
       const Pin* pinj = edi->getPins()[pj];
 
       const Node* ndj = pinj->getNode();
 
-      const double x = (ndj == ndi)
-                           ? (xi + pinj->getOffsetX().v)
-                           : (ndj->getLeft().v + 0.5 * ndj->getWidth().v
-                              + pinj->getOffsetX().v);
-      const double y = (ndj == ndi)
-                           ? (yi + pinj->getOffsetY().v)
-                           : (ndj->getBottom().v + 0.5 * ndj->getHeight().v
-                              + pinj->getOffsetY().v);
+      const DbuX x = (ndj == ndi) ? (xi + pinj->getOffsetX())
+                                  : (ndj->getCenterX() + pinj->getOffsetX());
+      const DbuY y = (ndj == ndi) ? (yi + pinj->getOffsetY())
+                                  : (ndj->getCenterY() + pinj->getOffsetY());
 
-      box.addPt(x, y);
+      box.merge(odb::Point(x.v, y.v));
     }
-    if (box.xmax() >= box.xmin() && box.ymax() >= box.ymin()) {
-      hpwl += (box.getWidth() + box.getHeight());
+    if (box.xMax() >= box.xMin() && box.yMax() >= box.yMin()) {
+      hpwl += (box.dx() + box.dy());
     }
   }
 

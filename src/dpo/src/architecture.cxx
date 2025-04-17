@@ -27,11 +27,11 @@ struct compareRowBottom
   {
     return p->getBottom() < q->getBottom();
   }
-  bool operator()(Architecture::Row*& s, double i) const
+  bool operator()(Architecture::Row*& s, DbuY i) const
   {
     return s->getBottom() < i;
   }
-  bool operator()(double i, Architecture::Row*& s) const
+  bool operator()(DbuY i, Architecture::Row*& s) const
   {
     return i < s->getBottom();
   }
@@ -70,7 +70,7 @@ bool Architecture::isMultiHeightCell(const Node* ndi) const
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::getCellHeightInRows(const Node* ndi) const
 {
-  return std::lround(ndi->getHeight().v / (double) rows_[0]->getHeight());
+  return std::lround(ndi->getHeight().v / (double) rows_[0]->getHeight().v);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,10 +101,10 @@ int Architecture::postProcess(Network* network)
   // It would be better to update the architecture to simply understand
   // subrows...
 
-  xmin_ = std::numeric_limits<int>::max();
-  xmax_ = std::numeric_limits<int>::lowest();
-  ymin_ = std::numeric_limits<int>::max();
-  ymax_ = std::numeric_limits<int>::lowest();
+  xmin_ = std::numeric_limits<DbuX>::max();
+  xmax_ = std::numeric_limits<DbuX>::lowest();
+  ymin_ = std::numeric_limits<DbuY>::max();
+  ymax_ = std::numeric_limits<DbuY>::lowest();
 
   // Sort rows.
   std::stable_sort(rows_.begin(), rows_.end(), compareRowBottom());
@@ -120,29 +120,29 @@ int Architecture::postProcess(Network* network)
   // NEW.  Search for sub-rows.
   std::vector<Architecture::Row*> subrows;
   std::vector<Architecture::Row*> rows;
-  std::vector<std::pair<int, int>> intervals;
+  std::vector<std::pair<DbuX, DbuX>> intervals;
   int count = 0;
   for (int r = 0; r < rows_.size();) {
     subrows.clear();
     subrows.push_back(rows_[r++]);
     while (r < rows_.size()
-           && std::abs(rows_[r]->getBottom() - subrows[0]->getBottom()) == 0) {
+           && abs(rows_[r]->getBottom() - subrows[0]->getBottom()) == 0) {
       subrows.push_back(rows_[r++]);
     }
 
     // Convert subrows to intervals.
     intervals.clear();
     for (auto subrow : subrows) {
-      const int lx = subrow->getLeft();
-      const int rx = subrow->getRight();
+      const DbuX lx = subrow->getLeft();
+      const DbuX rx = subrow->getRight();
       intervals.emplace_back(lx, rx);
     }
     std::sort(intervals.begin(), intervals.end());
 
-    std::stack<std::pair<int, int>> s;
+    std::stack<std::pair<DbuX, DbuX>> s;
     s.push(intervals[0]);
     for (size_t i = 1; i < intervals.size(); i++) {
-      std::pair<int, int> top = s.top();  // copy.
+      std::pair<DbuX, DbuX> top = s.top();  // copy.
       if (top.second < intervals[i].first) {
         s.push(intervals[i]);  // new interval.
       } else {
@@ -155,7 +155,7 @@ int Architecture::postProcess(Network* network)
     }
     intervals.clear();
     while (!s.empty()) {
-      const std::pair<int, int> temp = s.top();  // copy.
+      const std::pair<DbuX, DbuX> temp = s.top();  // copy.
       intervals.push_back(temp);
       s.pop();
     }
@@ -165,9 +165,9 @@ int Architecture::postProcess(Network* network)
     // If more than one subrow, convert to a single row
     // and delete the unnecessary subrows.
     if (subrows.size() > 1) {
-      const int lx = intervals.front().first;
-      const int rx = intervals.back().second;
-      subrows[0]->setNumSites((rx - lx) / subrows[0]->getSiteSpacing());
+      const DbuX lx = intervals.front().first;
+      const DbuX rx = intervals.back().second;
+      subrows[0]->setNumSites(((rx - lx) / subrows[0]->getSiteSpacing()).v);
       subrows[0]->setSubRowOrigin(lx);
 
       // Delete un-needed rows.
@@ -233,14 +233,13 @@ int Architecture::find_closest_row(const DbuY y)
   int r = 0;
   if (y > rows_[0]->getBottom()) {
     auto row_l
-        = std::lower_bound(rows_.begin(), rows_.end(), y.v, compareRowBottom());
+        = std::lower_bound(rows_.begin(), rows_.end(), y, compareRowBottom());
     if (row_l == rows_.end() || (*row_l)->getBottom() > y) {
       --row_l;
     }
     r = (int) (row_l - rows_.begin());
     if (r < rows_.size() - 1) {
-      if (std::abs(rows_[r + 1]->getBottom() - y.v)
-          < std::abs(rows_[r]->getBottom() - y.v)) {
+      if (abs(rows_[r + 1]->getBottom() - y) < abs(rows_[r]->getBottom() - y)) {
         ++r;
       }
     }
@@ -263,7 +262,7 @@ bool Architecture::powerCompatible(const Node* ndi,
 
   // Number of spanned rows.
   const int spanned
-      = std::lround(ndi->getHeight().v / (double) row->getHeight());
+      = std::lround(ndi->getHeight().v / (double) row->getHeight().v);
   const int lo = row->getId();
   const int hi = lo + spanned - 1;
   if (hi >= rows_.size()) {

@@ -362,10 +362,11 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     // in which the cell is assigned.
     for (size_t j = 0; j < mgr_->getNumReverseCellToSegs(ndi->getId()); j++) {
       DetailedSeg* segPtr = mgr_->getReverseCellToSegs(ndi->getId())[j];
-      int xmin = segPtr->getMinX();
-      int xmax = segPtr->getMaxX();
+      DbuX xmin = segPtr->getMinX();
+      DbuX xmax = segPtr->getMaxX();
       // Left edge always within segment.
-      r->posn_ = std::min(std::max(r->posn_, xmin), xmax - ndi->getWidth().v);
+      r->posn_
+          = std::min(std::max(r->posn_, xmin.v), xmax.v - ndi->getWidth().v);
     }
 
     ++clumpId;

@@ -64,8 +64,8 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
 
   mgrPtr_->getLogger()->info(DPO, 380, "Cell flipping.");
-  double hpwl_x, hpwl_y;
-  double init_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+  uint64_t hpwl_x, hpwl_y;
+  int64_t init_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
   // Orient cells correctly for each row.
   int changed = 0;
@@ -89,13 +89,13 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     mgrPtr_->getLogger()->info(DPO, 383, "Performed {:d} cell flips.", nflips);
   }
 
-  double curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
-  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  int64_t curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+  double curr_imp = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
   mgrPtr_->getLogger()->info(
       DPO,
       384,
       "End of flipping; objective is {:.6e}, improvement is {:.2f} percent.",
-      curr_hpwl,
+      (double) curr_hpwl,
       curr_imp);
 }
 

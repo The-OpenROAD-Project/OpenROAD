@@ -13,7 +13,6 @@
 
 #include "dpl/Grid.h"
 #include "network.h"
-#include "rectangle.h"
 #include "util/journal.h"
 #include "util/utility.h"
 namespace utl {
@@ -40,20 +39,20 @@ enum class BlockageType
 
 struct Blockage
 {
-  double x_min;
-  double x_max;
+  int x_min;
+  int x_max;
   int pad_left;
   int pad_right;
   BlockageType type;
 
-  Blockage(double xmin, double xmax, int pad_l, int pad_r, BlockageType t)
+  Blockage(int xmin, int xmax, int pad_l, int pad_r, BlockageType t)
       : x_min(xmin), x_max(xmax), pad_left(pad_l), pad_right(pad_r), type(t)
   {
   }
-  double getXMin() const { return x_min; }
-  double getXMax() const { return x_max; }
-  double getPaddedXMin() const { return x_min - pad_left; }
-  double getPaddedXMax() const { return x_max + pad_right; }
+  int getXMin() const { return x_min; }
+  int getXMax() const { return x_max; }
+  int getPaddedXMin() const { return x_min - pad_left; }
+  int getPaddedXMax() const { return x_max + pad_right; }
   bool isFixedInstance() const { return type == BlockageType::FixedInstance; }
   bool isPlacement() const { return type == BlockageType::Placement; }
 };
@@ -95,25 +94,21 @@ class DetailedMgr
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
   bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
-  double measureMaximumDisplacement(u_int64_t& maxX,
-                                    u_int64_t& maxY,
-                                    int& violatedX,
-                                    int& violatedY);
 
   void internalError(const std::string& msg);
 
   void findBlockages(bool includeRouteBlockages = true);
   void findRegionIntervals(
       int regId,
-      std::vector<std::vector<std::pair<double, double>>>& intervals);
+      std::vector<std::vector<std::pair<DbuX, DbuX>>>& intervals);
 
   void findSegments();
   DetailedSeg* findClosestSegment(const Node* nd);
   void findClosestSpanOfSegmentsDfs(
       const Node* ndi,
       DetailedSeg* segPtr,
-      double xmin,
-      double xmax,
+      DbuX xmin,
+      DbuX xmax,
       int bot,
       int top,
       std::vector<DetailedSeg*>& stack,
@@ -131,12 +126,12 @@ class DetailedMgr
       std::vector<std::vector<int>>& violating_cells,
       bool fix_violations);
   bool fixOneSiteGapViolations(Node* cell,
-                               int one_site_gap,
+                               DbuX one_site_gap,
                                int segment,
                                Node* violatingNode);
   void removeCellFromSegment(const Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
-  double getCellSpacing(const Node* ndl, const Node* ndr);
+  int getCellSpacing(const Node* ndl, const Node* ndr);
 
   void collectSingleHeightCells();
   void collectMultiHeightCells();
@@ -153,7 +148,7 @@ class DetailedMgr
   int getNumSegments() const { return static_cast<int>(segments_.size()); }
   DetailedSeg* getSegment(int s) const { return segments_[s]; }
   int getNumSingleHeightRows() const { return numSingleHeightRows_; }
-  int getSingleRowHeight() const { return singleRowHeight_; }
+  DbuY getSingleRowHeight() const { return singleRowHeight_; }
 
   int getNumCellsInSeg(int segId) const { return cellsInSeg_[segId].size(); }
   const std::vector<Node*>& getCellsInSeg(int segId) const
@@ -260,17 +255,10 @@ class DetailedMgr
     // Needs cell centers.
     bool operator()(Node* p, Node* q) const
     {
-      return p->getLeft().v + 0.5 * p->getWidth().v
-             < q->getLeft().v + 0.5 * q->getWidth().v;
+      return p->getCenterX() < q->getCenterX();
     }
-    bool operator()(Node*& s, double i) const
-    {
-      return s->getLeft().v + 0.5 * s->getWidth().v < i;
-    }
-    bool operator()(double i, Node*& s) const
-    {
-      return i < s->getLeft().v + 0.5 * s->getWidth().v;
-    }
+    bool operator()(Node*& s, DbuX i) const { return s->getCenterX() < i; }
+    bool operator()(DbuX i, Node*& s) const { return i < s->getCenterX(); }
   };
 
  private:
@@ -287,8 +275,7 @@ class DetailedMgr
 
   struct compareIntervals
   {
-    bool operator()(std::pair<double, double> i1,
-                    std::pair<double, double> i2) const
+    bool operator()(std::pair<DbuX, DbuX> i1, std::pair<DbuX, DbuX> i2) const
     {
       if (i1.first == i2.first) {
         return i1.second < i2.second;
@@ -323,7 +310,6 @@ class DetailedMgr
              int rowId);
   bool shiftRightHelper(Node* ndi, DbuX xj, int sj, Node* ndr);
   bool shiftLeftHelper(Node* ndi, DbuX xj, int sj, Node* ndl);
-  void getSpaceToLeftAndRight(int seg, int ix, double& left, double& right);
 
   // For composing list of cells for moves or swaps.
   void clearMoveList();
@@ -354,10 +340,10 @@ class DetailedMgr
 
   // Info about rows.
   int numSingleHeightRows_;
-  int singleRowHeight_;
+  DbuY singleRowHeight_;
 
   // Generic place for utilization.
-  double targetUt_;
+  double targetUt_{1.0};
 
   // Target displacement limits.
   int maxDispX_;

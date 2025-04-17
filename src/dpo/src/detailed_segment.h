@@ -19,13 +19,13 @@ class DetailedSeg
   void setRegId(int regId) { regId_ = regId; }
   int getRegId() const { return regId_; }
 
-  void setMinX(int xmin) { xmin_ = xmin; }
-  int getMinX() const { return xmin_; }
+  void setMinX(DbuX xmin) { xmin_ = xmin; }
+  DbuX getMinX() const { return xmin_; }
 
-  void setMaxX(int xmax) { xmax_ = xmax; }
-  int getMaxX() const { return xmax_; }
+  void setMaxX(DbuX xmax) { xmax_ = xmax; }
+  DbuX getMaxX() const { return xmax_; }
 
-  int getWidth() const { return xmax_ - xmin_; }
+  DbuX getWidth() const { return xmax_ - xmin_; }
 
   void setUtil(int util) { util_ = util; }
   int getUtil() const { return util_; }
@@ -38,8 +38,8 @@ class DetailedSeg
   int rowId_ = -1;
   int regId_ = 0;
   // Span of segment...
-  int xmin_ = std::numeric_limits<int>::max();
-  int xmax_ = std::numeric_limits<int>::lowest();
+  DbuX xmin_ = std::numeric_limits<DbuX>::max();
+  DbuX xmax_ = std::numeric_limits<DbuX>::lowest();
   // Total width of cells in segment...
   int util_ = 0;
 };
