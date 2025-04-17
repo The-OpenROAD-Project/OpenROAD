@@ -1735,8 +1735,6 @@ void FlexDRWorker::route_queue()
   // write back GC patches
   writeGCPatchesToDRWorker();
 
-  gcWorker_->end();
-
   setMarkers(gcWorker_->getMarkers());
 
   for (auto& net : nets_) {

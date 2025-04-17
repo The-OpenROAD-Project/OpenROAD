@@ -125,6 +125,17 @@ struct _dbBTermGroup
   bool order = false;
 };
 
+struct _dbBTermTopLayerGrid
+{
+  dbId<_dbTechLayer> layer;
+  int x_step = 0;
+  int y_step = 0;
+  Polygon region;
+  int pin_width = 0;
+  int pin_height = 0;
+  int keepout = 0;
+};
+
 class _dbBlock : public _dbObject
 {
  public:
@@ -182,6 +193,7 @@ class _dbBlock : public _dbObject
   int _min_layer_for_clock;
   int _max_layer_for_clock;
   std::vector<_dbBTermGroup> _bterm_groups;
+  _dbBTermTopLayerGrid _bterm_top_layer_grid;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* _bterm_tbl;
@@ -308,5 +320,8 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block);
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTermGroup& obj);
 dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj);
+
+dbOStream& operator<<(dbOStream& stream, const _dbBTermTopLayerGrid& obj);
+dbIStream& operator>>(dbIStream& stream, _dbBTermTopLayerGrid& obj);
 
 }  // namespace odb

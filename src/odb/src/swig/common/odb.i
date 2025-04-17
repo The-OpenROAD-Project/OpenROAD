@@ -75,4 +75,11 @@ using namespace odb;
 %include "odb/wOrder.h"
 
 std::string generateMacroPlacementString(odb::dbBlock* block);
-
+void set_bterm_top_layer_grid(odb::dbBlock* block,
+                              odb::dbTechLayer* layer,
+                              int x_step,
+                              int y_step,
+                              odb::Rect region,
+                              int width,
+                              int height,
+                              int keepout);
