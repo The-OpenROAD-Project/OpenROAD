@@ -1351,9 +1351,6 @@ bool RepairSetup::cloneDriver(const PathRef* drvr_path,
 
   odb::dbITerm* clone_output_iterm = db_network_->flatPin(clone_output_pin);
 
-  static int debug;
-  debug++;
-
   // Divide the list of pins in half and connect them to the new net we
   // created as part of gate cloning. Skip ports connected to the original net
   int split_index = fanout_slacks.size() / 2;
