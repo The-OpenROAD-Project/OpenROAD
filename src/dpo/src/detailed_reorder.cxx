@@ -70,11 +70,11 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
 
   mgrPtr_->resortSegments();
 
-  double hpwl_x, hpwl_y;
-  double curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
-  const double init_hpwl = curr_hpwl;
+  uint64_t hpwl_x, hpwl_y;
+  int64_t curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
+  const int64_t init_hpwl = curr_hpwl;
   for (int p = 1; p <= passes; p++) {
-    const double last_hpwl = curr_hpwl;
+    const int64_t last_hpwl = curr_hpwl;
 
     reorder();
 
@@ -84,21 +84,22 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
                                304,
                                "Pass {:3d} of reordering; objective is {:.6e}.",
                                p,
-                               curr_hpwl);
+                               (double) curr_hpwl);
 
-    if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
+    if (std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
       // std::cout << "Terminating due to low improvement." << std::endl;
       break;
     }
   }
   mgrPtr_->resortSegments();
 
-  const double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  const double curr_imp
+      = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
   mgrPtr_->getLogger()->info(
       DPO,
       305,
       "End of reordering; objective is {:.6e}, improvement is {:.2f} percent.",
-      curr_hpwl,
+      (double) curr_hpwl,
       curr_imp);
 }
 
@@ -206,10 +207,10 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
 
   // We might have more space than required.  Space cells out
   // somewhat evenly by adding extra space to the padding.
-  const int spacePerCell
-      = ((rightLimit - leftLimit) - (totalWidth + totalPadding)).v / size;
-  const int siteWidth = arch_->getRow(0)->getSiteWidth().v;
-  const int sitePerCellTotal = spacePerCell / siteWidth;
+  const DbuX spacePerCell
+      = ((rightLimit - leftLimit) - (totalWidth + totalPadding)) / size;
+  const DbuX siteWidth = arch_->getRow(0)->getSiteWidth();
+  const int sitePerCellTotal = (spacePerCell / siteWidth).v;
   const int sitePerCellRight = (sitePerCellTotal >> 1);
   const int sitePerCellLeft = sitePerCellTotal - sitePerCellRight;
   for (int i = 0; i < size; i++) {
@@ -257,7 +258,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
       x += left[ix];
       currPosn[ix] = x;
       mgrPtr_->eraseFromGrid(ndi);
-      ndi->setLeft(DbuX{currPosn[ix]});
+      ndi->setLeft(currPosn[ix]);
       mgrPtr_->paintInGrid(ndi);
       x += width[ix];
       x += right[ix];
@@ -283,7 +284,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
     for (size_t i = 0; i < size; i++) {
       Node* ndi = nodes[jstrt + i];
       mgrPtr_->eraseFromGrid(ndi);
-      ndi->setLeft(DbuX{origLeft[ndi]});
+      ndi->setLeft(origLeft[ndi]);
       mgrPtr_->paintInGrid(ndi);
     }
     return;
@@ -293,7 +294,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   for (int i = 0; i < size; i++) {
     Node* ndi = nodes[jstrt + i];
     mgrPtr_->eraseFromGrid(ndi);
-    ndi->setLeft(DbuX{bestPosn[i]});
+    ndi->setLeft(bestPosn[i]);
     mgrPtr_->paintInGrid(ndi);
   }
 
@@ -317,7 +318,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
         shifted = true;
       }
       mgrPtr_->eraseFromGrid(ndi);
-      ndi->setLeft(DbuX{x});
+      ndi->setLeft(x);
       mgrPtr_->paintInGrid(ndi);
       left = ndi->getRight();
 
@@ -352,7 +353,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
       for (int i = 0; i < size; i++) {
         Node* ndi = nodes[jstrt + i];
         mgrPtr_->eraseFromGrid(ndi);
-        ndi->setLeft(DbuX{origLeft[ndi]});
+        ndi->setLeft(origLeft[ndi]);
         mgrPtr_->paintInGrid(ndi);
       }
       mgrPtr_->sortCellsInSeg(segId, jstrt, jstop + 1);
@@ -391,20 +392,19 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
       }
       edgeMask_[edi->getId()] = traversal_;
 
-      double xmin = std::numeric_limits<double>::max();
-      double xmax = -std::numeric_limits<double>::max();
+      DbuX xmin = std::numeric_limits<DbuX>::max();
+      DbuX xmax = std::numeric_limits<DbuX>::min();
       for (int pj = 0; pj < edi->getNumPins(); pj++) {
         const Pin* pinj = edi->getPins()[pj];
 
         const Node* ndj = pinj->getNode();
 
-        const double x
-            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        const DbuX x = ndj->getCenterX() + pinj->getOffsetX();
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);
       }
-      cost += xmax - xmin;
+      cost += (xmax - xmin).v;
     }
   }
   return cost;

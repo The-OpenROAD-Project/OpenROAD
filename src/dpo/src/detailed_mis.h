@@ -6,14 +6,18 @@
 #include <map>
 #include <string>
 #include <vector>
+
+#include "dpl/Coordinates.h"
 namespace dpl {
 class Node;
-}
+}  // namespace dpl
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
 class Network;
+using dpl::DbuX;
+using dpl::DbuY;
 using dpl::Node;
 
 class DetailedMisParams
@@ -67,8 +71,8 @@ class DetailedMis
   void populateGrid();
   bool gatherNeighbours(Node* ndi);
   void solveMatch();
-  double getHpwl(const Node* ndi, double xi, double yi);
-  double getDisp(const Node* ndi, double xi, double yi);
+  uint64_t getHpwl(const Node* ndi, DbuX xi, DbuY yi);
+  uint64_t getDisp(const Node* ndi, DbuX xi, DbuY yi);
 
  public:
   /* DetailedMisParams _params; */

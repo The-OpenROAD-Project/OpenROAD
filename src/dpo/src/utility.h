@@ -38,10 +38,10 @@ class Utility
 
   static double disp_l1(Network* nw, double& tot, double& max, double& avg);
 
-  static double hpwl(const Network* nw);
-  static double hpwl(const Network* nw, double& hpwlx, double& hpwly);
-  static double hpwl(const Edge* ed);
-  static double hpwl(const Edge*, double& hpwlx, double& hpwly);
+  static uint64_t hpwl(const Network* nw);
+  static uint64_t hpwl(const Network* nw, uint64_t& hpwlx, uint64_t& hpwly);
+  static uint64_t hpwl(const Edge* ed);
+  static uint64_t hpwl(const Edge*, uint64_t& hpwlx, uint64_t& hpwly);
 };
 
 }  // namespace dpo

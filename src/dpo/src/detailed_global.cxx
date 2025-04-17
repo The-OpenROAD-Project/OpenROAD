@@ -13,7 +13,6 @@
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
 #include "dpl/Objects.h"
-#include "rectangle.h"
 #include "utl/Logger.h"
 
 namespace dpo {
@@ -79,7 +78,8 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   passes = std::max(passes, 1);
   tol = std::max(tol, 0.01);
 
-  double last_hpwl, curr_hpwl, init_hpwl, hpwl_x, hpwl_y;
+  int64_t last_hpwl, curr_hpwl, init_hpwl;
+  uint64_t hpwl_x, hpwl_y;
 
   curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   init_hpwl = curr_hpwl;
@@ -94,19 +94,22 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
-    mgr_->getLogger()->info(
-        DPO, 306, "Pass {:3d} of global swaps; hpwl is {:.6e}.", p, curr_hpwl);
+    mgr_->getLogger()->info(DPO,
+                            306,
+                            "Pass {:3d} of global swaps; hpwl is {:.6e}.",
+                            p,
+                            (double) curr_hpwl);
 
-    if (std::fabs(curr_hpwl - last_hpwl) / last_hpwl <= tol) {
+    if (std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
       break;
     }
   }
-  double curr_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+  double curr_imp = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
   mgr_->getLogger()->info(DPO,
                           307,
                           "End of global swaps; objective is {:.6e}, "
                           "improvement is {:.2f} percent.",
-                          curr_hpwl,
+                          (double) curr_hpwl,
                           curr_imp);
 }
 
@@ -154,7 +157,7 @@ void DetailedGlobalSwap::globalSwap()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
+bool DetailedGlobalSwap::getRange(Node* nd, odb::Rect& nodeBbox)
 {
   // Determines the median location for a node.
 
@@ -164,10 +167,10 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   Pin* pin;
   unsigned t = 0;
 
-  double xmin = arch_->getMinX().v;
-  double xmax = arch_->getMaxX().v;
-  double ymin = arch_->getMinY().v;
-  double ymax = arch_->getMaxY().v;
+  DbuX xmin = arch_->getMinX();
+  DbuX xmax = arch_->getMaxX();
+  DbuY ymin = arch_->getMinY();
+  DbuY ymax = arch_->getMaxY();
 
   xpts_.clear();
   ypts_.clear();
@@ -176,7 +179,7 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
 
     ed = pin->getEdge();
 
-    nodeBbox.reset();
+    nodeBbox.mergeInit();
 
     int numPins = ed->getNumPins();
     if (numPins <= 1) {
@@ -191,22 +194,22 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
 
     // We've computed an interval for the pin.  We need to alter it to work for
     // the cell center. Also, we need to avoid going off the edge of the chip.
-    nodeBbox.set_xmin(
-        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX().v), xmax));
-    nodeBbox.set_xmax(
-        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX().v), xmin));
-    nodeBbox.set_ymin(
-        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY().v), ymax));
-    nodeBbox.set_ymax(
-        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY().v), ymin));
+    nodeBbox.set_xlo(std::min(
+        std::max(xmin.v, nodeBbox.xMin() - pin->getOffsetX().v), xmax.v));
+    nodeBbox.set_xhi(std::max(
+        std::min(xmax.v, nodeBbox.xMax() - pin->getOffsetX().v), xmin.v));
+    nodeBbox.set_ylo(std::min(
+        std::max(ymin.v, nodeBbox.yMin() - pin->getOffsetY().v), ymax.v));
+    nodeBbox.set_yhi(std::max(
+        std::min(ymax.v, nodeBbox.yMax() - pin->getOffsetY().v), ymin.v));
 
     // Record the location and pin offset used to generate this point.
 
-    xpts_.push_back(nodeBbox.xmin());
-    xpts_.push_back(nodeBbox.xmax());
+    xpts_.push_back(nodeBbox.xMin());
+    xpts_.push_back(nodeBbox.xMax());
 
-    ypts_.push_back(nodeBbox.ymin());
-    ypts_.push_back(nodeBbox.ymax());
+    ypts_.push_back(nodeBbox.yMin());
+    ypts_.push_back(nodeBbox.yMax());
 
     ++t;
     ++t;
@@ -224,23 +227,24 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   std::sort(xpts_.begin(), xpts_.end());
   std::sort(ypts_.begin(), ypts_.end());
 
-  nodeBbox.set_xmin(xpts_[mid - 1]);
-  nodeBbox.set_xmax(xpts_[mid]);
+  nodeBbox.set_xlo(xpts_[mid - 1]);
+  nodeBbox.set_xhi(xpts_[mid]);
 
-  nodeBbox.set_ymin(ypts_[mid - 1]);
-  nodeBbox.set_ymax(ypts_[mid]);
+  nodeBbox.set_ylo(ypts_[mid - 1]);
+  nodeBbox.set_yhi(ypts_[mid]);
 
   return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
+bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox)
 {
   // Computes the bounding box of an edge.  Node 'nd' is the node to SKIP.
-  double curX, curY;
+  DbuX curX;
+  DbuY curY;
 
-  bbox.reset();
+  bbox.mergeInit();
 
   int count = 0;
   for (Pin* pin : ed->getPins()) {
@@ -248,132 +252,19 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
     if (other == nd) {
       continue;
     }
-    curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX().v;
-    curY = other->getBottom().v + 0.5 * other->getHeight().v
-           + pin->getOffsetY().v;
+    curX = other->getCenterX() + pin->getOffsetX().v;
+    curY = other->getCenterY() + pin->getOffsetY().v;
 
-    bbox.set_xmin(std::min(curX, bbox.xmin()));
-    bbox.set_xmax(std::max(curX, bbox.xmax()));
-    bbox.set_ymin(std::min(curY, bbox.ymin()));
-    bbox.set_ymax(std::max(curY, bbox.ymax()));
+    bbox.set_xlo(std::min(curX.v, bbox.xMin()));
+    bbox.set_xhi(std::max(curX.v, bbox.xMax()));
+    bbox.set_ylo(std::min(curY.v, bbox.yMin()));
+    bbox.set_yhi(std::max(curY.v, bbox.yMax()));
 
     ++count;
   }
 
   return (count == 0) ? false : true;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
-{
-  // Compute change in wire length for moving node to new position.
-
-  double old_wl = 0.;
-  double new_wl = 0.;
-  double x, y;
-  Rectangle old_box, new_box;
-
-  ++traversal_;
-  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-    Pin* pini = ndi->getPins()[pi];
-
-    Edge* edi = pini->getEdge();
-
-    int npins = edi->getNumPins();
-    if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
-      continue;
-    }
-    if (edgeMask_[edi->getId()] == traversal_) {
-      continue;
-    }
-    edgeMask_[edi->getId()] = traversal_;
-
-    old_box.reset();
-    new_box.reset();
-
-    for (Pin* pinj : edi->getPins()) {
-      auto ndj = pinj->getNode();
-
-      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
-
-      old_box.addPt(x, y);
-
-      if (ndj == ndi) {
-        x = new_x + pinj->getOffsetX().v;
-        y = new_y + pinj->getOffsetY().v;
-      }
-
-      new_box.addPt(x, y);
-    }
-    old_wl += old_box.getWidth() + old_box.getHeight();
-    new_wl += new_box.getWidth() + new_box.getHeight();
-  }
-  return old_wl - new_wl;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
-{
-  // Compute change in wire length for swapping the two nodes.
-
-  double old_wl = 0.;
-  double new_wl = 0.;
-  double x, y;
-  Rectangle old_box, new_box;
-  Node* nodes[2];
-  nodes[0] = ndi;
-  nodes[1] = ndj;
-
-  ++traversal_;
-  for (int c = 0; c <= 1; c++) {
-    Node* ndi = nodes[c];
-    for (Pin* pini : ndi->getPins()) {
-      Edge* edi = pini->getEdge();
-
-      int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
-        continue;
-      }
-      if (edgeMask_[edi->getId()] == traversal_) {
-        continue;
-      }
-      edgeMask_[edi->getId()] = traversal_;
-
-      old_box.reset();
-      new_box.reset();
-
-      for (Pin* pinj : edi->getPins()) {
-        auto ndj = pinj->getNode();
-
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
-            + pinj->getOffsetY().v;
-
-        old_box.addPt(x, y);
-
-        if (ndj == nodes[0]) {
-          ndj = nodes[1];
-        } else if (ndj == nodes[1]) {
-          ndj = nodes[0];
-        }
-
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
-            + pinj->getOffsetY().v;
-
-        new_box.addPt(x, y);
-      }
-
-      old_wl += old_box.getWidth() + old_box.getHeight();
-      new_wl += new_box.getWidth() + new_box.getHeight();
-    }
-  }
-  return old_wl - new_wl;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool DetailedGlobalSwap::generate(Node* ndi)
@@ -382,13 +273,13 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   double xi = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
   // Determine optimal region.
-  Rectangle_d bbox;
+  odb::Rect bbox;
   if (!getRange(ndi, bbox)) {
     // Failed to find an optimal region.
     return false;
   }
-  if (xi >= bbox.xmin() && xi <= bbox.xmax() && yi >= bbox.ymin()
-      && yi <= bbox.ymax()) {
+  if (xi >= bbox.xMin() && xi <= bbox.xMax() && yi >= bbox.yMin()
+      && yi <= bbox.yMax()) {
     // If cell inside box, do nothing.
     return false;
   }
@@ -399,29 +290,29 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   // get into the optimal region.
   int dispX, dispY;
   mgr_->getMaxDisplacement(dispX, dispY);
-  Rectangle_d lbox(ndi->getLeft().v - dispX,
-                   ndi->getBottom().v - dispY,
-                   ndi->getLeft().v + dispX,
-                   ndi->getBottom().v + dispY);
-  if (lbox.xmax() <= bbox.xmin()) {
-    bbox.set_xmin(ndi->getLeft().v);
-    bbox.set_xmax(lbox.xmax());
-  } else if (lbox.xmin() >= bbox.xmax()) {
-    bbox.set_xmin(lbox.xmin());
-    bbox.set_xmax(ndi->getLeft().v);
+  odb::Rect lbox(ndi->getLeft().v - dispX,
+                 ndi->getBottom().v - dispY,
+                 ndi->getLeft().v + dispX,
+                 ndi->getBottom().v + dispY);
+  if (lbox.xMax() <= bbox.xMin()) {
+    bbox.set_xlo(ndi->getLeft().v);
+    bbox.set_xhi(lbox.xMax());
+  } else if (lbox.xMin() >= bbox.xMax()) {
+    bbox.set_xlo(lbox.xMin());
+    bbox.set_xhi(ndi->getLeft().v);
   } else {
-    bbox.set_xmin(std::max(bbox.xmin(), lbox.xmin()));
-    bbox.set_xmax(std::min(bbox.xmax(), lbox.xmax()));
+    bbox.set_xlo(std::max(bbox.xMin(), lbox.xMin()));
+    bbox.set_xhi(std::min(bbox.xMax(), lbox.xMax()));
   }
-  if (lbox.ymax() <= bbox.ymin()) {
-    bbox.set_ymin(ndi->getBottom().v);
-    bbox.set_ymax(lbox.ymax());
-  } else if (lbox.ymin() >= bbox.ymax()) {
-    bbox.set_ymin(lbox.ymin());
-    bbox.set_ymax(ndi->getBottom().v);
+  if (lbox.yMax() <= bbox.yMin()) {
+    bbox.set_ylo(ndi->getBottom().v);
+    bbox.set_yhi(lbox.yMax());
+  } else if (lbox.yMin() >= bbox.yMax()) {
+    bbox.set_ylo(lbox.yMin());
+    bbox.set_yhi(ndi->getBottom().v);
   } else {
-    bbox.set_ymin(std::max(bbox.ymin(), lbox.ymin()));
-    bbox.set_ymax(std::min(bbox.ymax(), lbox.ymax()));
+    bbox.set_ylo(std::max(bbox.yMin(), lbox.yMin()));
+    bbox.set_yhi(std::min(bbox.yMax(), lbox.yMax()));
   }
 
   if (mgr_->getNumReverseCellToSegs(ndi->getId()) != 1) {
@@ -430,9 +321,9 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   int si = mgr_->getReverseCellToSegs(ndi->getId())[0]->getSegId();
 
   // Position target so center of cell at center of box.
-  DbuX xj{(int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
+  DbuX xj{(int) std::floor(0.5 * (bbox.xMin() + bbox.xMax())
                            - 0.5 * ndi->getWidth().v)};
-  DbuY yj{(int) std::floor(0.5 * (bbox.ymin() + bbox.ymax())
+  DbuY yj{(int) std::floor(0.5 * (bbox.yMin() + bbox.yMax())
                            - 0.5 * ndi->getHeight().v)};
 
   // Row and segment for the destination.

@@ -14,7 +14,6 @@
 #include "dpl/Grid.h"
 #include "journal.h"
 #include "network.h"
-#include "rectangle.h"
 #include "utility.h"
 namespace utl {
 class Logger;

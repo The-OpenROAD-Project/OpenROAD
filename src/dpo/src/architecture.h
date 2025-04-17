@@ -12,7 +12,6 @@
 #include "dpl/Coordinates.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "rectangle.h"
 namespace dpl {
 class Group;
 class Node;
