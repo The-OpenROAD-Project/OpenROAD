@@ -4087,10 +4087,6 @@ class ModNetForPin : public PinVisitor
 
 void ModNetForPin::operator()(const Pin* pin)
 {
-  // ignore the driver. We want to search everything else.
-  //  if (pin == drvr_pin_){
-  //    return;
-  //  }
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModBTerm* modbterm;
