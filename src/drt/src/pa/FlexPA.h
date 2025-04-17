@@ -33,9 +33,9 @@ class access;
 
 namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower, via name
-using ViaRawPriorityTuple = std::
-    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>;
+// lowerArea, not align lower
+using ViaRawPriorityTuple
+    = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
 
 struct frInstLocationComp
 {
