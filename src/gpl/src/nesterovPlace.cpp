@@ -439,14 +439,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
 
       for (auto& nb : nbVec_) {
-        nb_gcells_before_td += nb->gCells().size();
+        nb_gcells_before_td += nb->nbGCells().size();
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
       nbVec_[0]->setTrueReprintIterHeader();
 
       for (auto& nb : nbVec_) {
-        nb_gcells_after_td += nb->gCells().size();
+        nb_gcells_after_td += nb->nbGCells().size();
       }
 
       nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
