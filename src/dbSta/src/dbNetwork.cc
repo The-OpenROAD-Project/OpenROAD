@@ -4006,18 +4006,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
                 ->getOwningInstanceParent(const_cast<Pin*>(pin));
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
-        /*
-        printf("Flat net logical inconsistency on pin %s (parent %s), badly
-        formed hierarchical Flat Nets are %s (%p)  %s (%p)   mod net is %s (%p)
-        (owner %s)\n", sta_nwk -> pathName(pin), db_network_ ->
-        name(owning_instance), dbnet_ -> getName().c_str(), dbnet_,
-               candidate_flat_net -> getName().c_str(),
-               candidate_flat_net,
-               db_network_->name(search_net_),
-               search_net_,
-               db_modnet -> getParent() -> getName()
-               );
-        */
+        // TODO: uncomment error: 2030, once all cases pass.
         /*
         logger_->error(
             ORD,
