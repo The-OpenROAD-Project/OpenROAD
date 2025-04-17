@@ -164,8 +164,11 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       const DbuY yt = arch_->getRow(r)->getTop();
 
       if (ymin < yt && ymax > yb) {
-        blockages_[r].emplace_back(
-            xmin.v, xmax.v, pad_left, pad_right, BlockageType::FixedInstance);
+        blockages_[r].emplace_back(xmin,
+                                   xmax,
+                                   DbuX{pad_left},
+                                   DbuX{pad_right},
+                                   BlockageType::FixedInstance);
       }
     }
   }
@@ -183,7 +186,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
       if (ymin < yt && ymax > yb) {
         blockages_[r].emplace_back(
-            xmin.v, xmax.v, 0, 0, BlockageType::Placement);
+            xmin, xmax, DbuX{0}, DbuX{0}, BlockageType::Placement);
       }
     }
   }
@@ -279,7 +282,7 @@ void DetailedMgr::findSegments()
       if (blockages_[r][0].getPaddedXMin() > std::max(arch_->getMinX(), lx)) {
         DbuX x1 = std::max(arch_->getMinX(), lx);
         DbuX x2 = std::min(std::min(arch_->getMaxX(), rx),
-                           DbuX{blockages_[r][0].getPaddedXMin()});
+                           blockages_[r][0].getPaddedXMin());
 
         if (x2 > x1) {
           auto segment = new DetailedSeg();
@@ -298,9 +301,9 @@ void DetailedMgr::findSegments()
         if (blockages_[r][i].getPaddedXMin()
             > blockages_[r][i - 1].getPaddedXMax()) {
           DbuX x1 = std::max(std::max(arch_->getMinX(), lx),
-                             DbuX{blockages_[r][i - 1].getPaddedXMax()});
+                             blockages_[r][i - 1].getPaddedXMax());
           DbuX x2 = std::min(std::min(arch_->getMaxX(), rx),
-                             DbuX{blockages_[r][i].getPaddedXMin()});
+                             blockages_[r][i].getPaddedXMin());
 
           if (x2 > x1) {
             auto segment = new DetailedSeg();
@@ -318,10 +321,9 @@ void DetailedMgr::findSegments()
       }
       if (blockages_[r][n - 1].getPaddedXMax()
           < std::min(arch_->getMaxX(), rx)) {
-        DbuX x1
-            = std::min(std::min(arch_->getMaxX(), rx),
-                       std::max(std::max(arch_->getMinX(), lx),
-                                DbuX{blockages_[r][n - 1].getPaddedXMax()}));
+        DbuX x1 = std::min(std::min(arch_->getMaxX(), rx),
+                           std::max(std::max(arch_->getMinX(), lx),
+                                    blockages_[r][n - 1].getPaddedXMax()));
         DbuX x2 = std::min(arch_->getMaxX(), rx);
 
         if (x2 > x1) {
@@ -898,7 +900,7 @@ bool DetailedMgr::isInsideABlockage(const Node* nd, const DbuX position)
     auto it = std::lower_bound(
         blockages_[r].begin(),
         blockages_[r].end(),
-        Blockage(position.v, position.v, 0, 0, BlockageType::None),
+        Blockage(position, position, DbuX{0}, DbuX{0}, BlockageType::None),
         [](const Blockage& block, const Blockage& target) {
           return block.getXMax() < target.getXMin();
         });
