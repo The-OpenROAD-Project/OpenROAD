@@ -7,7 +7,6 @@
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
-#include "base/main/main.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
@@ -30,6 +29,7 @@ extern Abc_Ntk_t* Abc_NtkMap(Abc_Ntk_t* pNtk,
                              int fUseBuffs,
                              int fVerbose);
 extern void Abc_FrameSetLibGen(void* pLib);
+extern void Abc_FrameSetDrivingCell(char* pName);
 }  // namespace abc
 
 namespace rmp {
