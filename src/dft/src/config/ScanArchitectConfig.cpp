@@ -3,6 +3,7 @@
 
 #include "ScanArchitectConfig.hh"
 
+#include <optional>
 #include <string>
 
 #include "Formatting.hh"

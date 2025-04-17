@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -121,7 +123,10 @@ class frLayer
     return secondaryViaDefs_.at(idx);
   }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol_; }
-  std::set<const frViaDef*> getViaDefs() const { return viaDefs_; }
+  std::set<const frViaDef*, frViaDefComp> getViaDefs() const
+  {
+    return viaDefs_;
+  }
   dbTechLayerType getType() const
   {
     if (fakeCut_) {
@@ -850,7 +855,7 @@ class frLayer
   std::vector<const frViaDef*> secondaryViaDefs_;
   bool hasMinStepViol_{false};
   bool unidirectional_{false};
-  std::set<const frViaDef*> viaDefs_;
+  std::set<const frViaDef*, frViaDefComp> viaDefs_;
   std::vector<frLef58CutClass*> cutClasses_;
   std::map<std::string, int> name2CutClassIdxMap_;
   frCollection<frConstraint*> constraints_;

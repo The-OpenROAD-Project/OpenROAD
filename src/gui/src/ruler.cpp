@@ -4,6 +4,8 @@
 #include "ruler.h"
 
 #include <boost/geometry.hpp>
+#include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 

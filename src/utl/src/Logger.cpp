@@ -5,8 +5,10 @@
 
 #include <atomic>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <string_view>
+#include <utility>
 
 #include "CommandLineProgress.h"
 #if SPDLOG_VERSION < 10601

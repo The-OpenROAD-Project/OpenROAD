@@ -6,9 +6,9 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "rmp/Restructure.h"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace rmp {
 extern const char* rmp_tcl_inits[];
 }
 
@@ -28,7 +28,7 @@ void initRestructure(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Rmp_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::rmp_tcl_inits);
+  utl::evalTclInit(tcl_interp, rmp::rmp_tcl_inits);
   openroad->getRestructure()->init(openroad->getLogger(),
                                    openroad->getSta(),
                                    openroad->getDb(),

@@ -3,6 +3,7 @@
 
 #include "dbRSeg.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "dbBlock.h"

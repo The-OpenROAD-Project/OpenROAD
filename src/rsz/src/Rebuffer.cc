@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 #include "BufferedNet.hh"
 #include "RepairSetup.hh"
@@ -933,11 +937,23 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
     }
 
     case BufferedNetType::load: {
+      const Pin* load_pin = choice->loadPin();
+
+      if (resizer_->dontTouch(load_pin)) {
+        debugPrint(logger_,
+                   RSZ,
+                   "rebuffer",
+                   3,
+                   "{:{}s}connect load: skipped on {} due to dont touch",
+                   "",
+                   level,
+                   sdc_network_->pathName(load_pin));
+        return 0;
+      }
+
       odb::dbNet* db_net = nullptr;
       odb::dbModNet* db_modnet = nullptr;
       db_network_->staToDb(net, db_net, db_modnet);
-
-      const Pin* load_pin = choice->loadPin();
 
       // only access at dbnet level
       Net* load_net = network_->net(load_pin);

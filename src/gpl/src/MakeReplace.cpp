@@ -7,9 +7,9 @@
 
 #include "gpl/Replace.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace gpl {
 extern const char* gpl_tcl_inits[];
 }
 
@@ -28,7 +28,7 @@ void initReplace(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Gpl_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::gpl_tcl_inits);
+  utl::evalTclInit(tcl_interp, gpl::gpl_tcl_inits);
   openroad->getReplace()->init(openroad->getDb(),
                                openroad->getSta(),
                                openroad->getResizer(),

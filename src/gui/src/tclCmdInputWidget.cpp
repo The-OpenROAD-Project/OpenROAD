@@ -8,6 +8,7 @@
 #include <QMimeData>
 #include <QScrollBar>
 #include <QTextStream>
+#include <functional>
 #include <regex>
 #include <string>
 

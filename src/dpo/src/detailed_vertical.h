@@ -9,18 +9,20 @@
 #include "detailed_generator.h"
 #include "rectangle.h"
 
+namespace dpl {
+class Edge;
+}
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
-class Edge;
 class Network;
-class RoutingParams;
+using dpl::Edge;
 
 class DetailedVerticalSwap : public DetailedGenerator
 {
  public:
-  DetailedVerticalSwap(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedVerticalSwap(Architecture* arch, Network* network);
   DetailedVerticalSwap();
 
   // Intefaces for scripting.
@@ -45,7 +47,6 @@ class DetailedVerticalSwap : public DetailedGenerator
   DetailedMgr* mgr_;
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   // Other.
   int skipNetsLargerThanThis_;

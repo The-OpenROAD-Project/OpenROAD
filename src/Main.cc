@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
@@ -40,6 +41,7 @@
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
@@ -68,11 +70,10 @@ using std::string;
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
-  X(odb)
+  X(odb)                                 \
+  X(ord)
 
-#define FOREACH_TOOL(X)            \
-  FOREACH_TOOL_WITHOUT_OPENROAD(X) \
-  X(openroad_swig)
+#define FOREACH_TOOL(X) FOREACH_TOOL_WITHOUT_OPENROAD(X)
 
 extern "C" {
 #define X(name) extern PyObject* PyInit__##name##_py();
@@ -94,11 +95,12 @@ static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
 
 #ifdef ENABLE_PYTHON3
-namespace sta {
-#define X(name) extern const char* name##_py_python_inits[];
+#define X(name)                                \
+  namespace name {                             \
+  extern const char* name##_py_python_inits[]; \
+  }
 FOREACH_TOOL(X)
 #undef X
-}  // namespace sta
 
 #if PY_VERSION_HEX >= 0x03080000
 static void initPython(int argc, char* argv[])
@@ -124,22 +126,21 @@ static void initPython()
 #else
   Py_Initialize();
 #endif
-#define X(name)                                                       \
-  {                                                                   \
-    char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
-    PyObject* code                                                    \
-        = Py_CompileString(unencoded, #name "_py.py", Py_file_input); \
-    if (code == nullptr) {                                            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not compile " #name "_py\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    if (PyImport_ExecCodeModule(#name, code) == nullptr) {            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not add module " #name "\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    delete[] unencoded;                                               \
+#define X(name)                                                               \
+  {                                                                           \
+    std::string unencoded = utl::base64_decode(name::name##_py_python_inits); \
+    PyObject* code                                                            \
+        = Py_CompileString(unencoded.c_str(), #name "_py.py", Py_file_input); \
+    if (code == nullptr) {                                                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not compile " #name "_py\n");             \
+      exit(1);                                                                \
+    }                                                                         \
+    if (PyImport_ExecCodeModule(#name, code) == nullptr) {                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not add module " #name "\n");             \
+      exit(1);                                                                \
+    }                                                                         \
   }
   FOREACH_TOOL_WITHOUT_OPENROAD(X)
 #undef X
@@ -149,9 +150,9 @@ static void initPython()
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
   {
-    char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "openroad.py", Py_file_input);
+    std::string unencoded = utl::base64_decode(ord::ord_py_python_inits);
+    PyObject* code
+        = Py_CompileString(unencoded.c_str(), "openroad.py", Py_file_input);
     if (code == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not compile openroad.py\n");
@@ -163,8 +164,6 @@ static void initPython()
       fprintf(stderr, "Error: could not add module openroad\n");
       exit(1);
     }
-
-    delete[] unencoded;
   }
 }
 #endif
@@ -201,6 +200,33 @@ static void handler(int sig)
   raise(sig);
 }
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+
+// Avoid adding any dependencies like boost.filesystem
+//
+// Returns path to running binary if possible, otherwise nullopt.
+static std::optional<std::string> getProgramLocation()
+{
+#if defined(_WIN32)
+  char result[MAX_PATH + 1] = {'\0'};
+  auto path_len = GetModuleFileNameA(NULL, result, MAX_PATH);
+#elif defined(__APPLE__)
+  char result[MAXPATHLEN + 1] = {'\0'};
+  uint32_t path_len = MAXPATHLEN;
+  if (_NSGetExecutablePath(result, &path_len) != 0) {
+    path_len = readlink("/proc/self/exe", result, MAXPATHLEN);
+  }
+#else
+  char result[PATH_MAX + 1] = {'\0'};
+  ssize_t path_len = readlink("/proc/self/exe", result, PATH_MAX);
+#endif
+  if (path_len > 0) {
+    return result;
+  }
+  return std::nullopt;
+}
+#endif
+
 int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
@@ -216,8 +242,8 @@ int main(int argc, char* argv[])
 #ifdef BAZEL_CURRENT_REPOSITORY
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
-  std::unique_ptr<Runfiles> runfiles(
-      Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
+      getProgramLocation().value(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << error << std::endl;
     return 1;
@@ -565,7 +591,11 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
+#ifdef BAZEL_CURRENT_REPOSITORY
+      strcasecmp(BUILD_TYPE, "opt") == 0
+#else
       strcasecmp(BUILD_TYPE, "release") == 0
+#endif
           ? ""
           : fmt::format(" : {}", BUILD_TYPE));
   logger->report(

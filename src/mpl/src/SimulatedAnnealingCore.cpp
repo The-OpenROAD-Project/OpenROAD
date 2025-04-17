@@ -3,8 +3,12 @@
 
 #include "SimulatedAnnealingCore.h"
 
+#include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -598,27 +602,14 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
 template <class T>
 void SimulatedAnnealingCore<T>::generateRandomIndices(int& index1, int& index2)
 {
-  // TODO: See for explanation.
-  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
-  // This code is ugly on purpose to incentivize merging the proper
-  // fix.
-  float random_variable_0_1_index1;
-  float random_variable_0_1_index2;
-  do {
-    random_variable_0_1_index1 = distribution_(generator_);
-    random_variable_0_1_index2 = distribution_(generator_);
-  } while (random_variable_0_1_index1 >= 1.0
-           || random_variable_0_1_index2 >= 1.0);
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, pos_seq_.size() - 1);
 
-  index1 = (int) (std::floor(random_variable_0_1_index1 * pos_seq_.size()));
-  index2 = (int) (std::floor(random_variable_0_1_index2 * pos_seq_.size()));
+  index1 = index_distribution(generator_);
+  index2 = index_distribution(generator_);
 
   while (index1 == index2) {
-    do {
-      random_variable_0_1_index2 = distribution_(generator_);
-    } while (random_variable_0_1_index2 >= 1.0);
-
-    index2 = (int) (std::floor(random_variable_0_1_index2 * pos_seq_.size()));
+    index2 = index_distribution(generator_);
   }
 }
 
@@ -777,7 +768,8 @@ void SimulatedAnnealingCore<T>::fastSA()
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
 
-    if ((num_restart <= max_num_restart)
+    if (best_valid_result_.macro_id_to_width.empty()
+        && (num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
             && (outline_penalty_ > 0.0))) {
       shrink();

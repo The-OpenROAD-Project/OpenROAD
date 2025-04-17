@@ -30,10 +30,6 @@ class SpefWriter;
 
 namespace rsz {
 
-using std::array;
-using std::string;
-using std::vector;
-
 using utl::Logger;
 
 using odb::dbBlock;
@@ -120,7 +116,7 @@ class NetHash
 };
 
 using CellTargetLoadMap = Map<LibertyCell*, float>;
-using TgtSlews = array<Slew, RiseFall::index_count>;
+using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
 enum class ParasiticsSrc
 {
@@ -389,7 +385,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Return net slack, if any (indicated by the bool).
   std::optional<Slack> resizeNetSlack(const Net* net);
   // db flavor
-  vector<dbNet*> resizeWorstSlackDbNets();
+  std::vector<dbNet*> resizeWorstSlackDbNets();
   std::optional<Slack> resizeNetSlack(const dbNet* db_net);
 
   ////////////////////////////////////////////////////////////////
@@ -442,7 +438,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   void findFastBuffers();
   bool isLinkCell(LibertyCell* cell) const;
   void findTargetLoads();
-  void balanceBin(const vector<odb::dbInst*>& bin,
+  void balanceBin(const std::vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
 
   //==============================
@@ -563,10 +559,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
                          double wire_length,  // meters
                          const Corner* corner,
                          Parasitics* parasitics);
-  string makeUniqueNetName(Instance* parent = nullptr);
+  std::string makeUniqueNetName(Instance* parent = nullptr);
   Net* makeUniqueNet();
-  string makeUniqueInstName(const char* base_name);
-  string makeUniqueInstName(const char* base_name, bool underscore);
+  std::string makeUniqueInstName(const char* base_name);
+  std::string makeUniqueInstName(const char* base_name, bool underscore);
   bool overMaxArea();
   bool bufferBetweenPorts(Instance* buffer);
   bool hasPort(const Net* net);
@@ -706,14 +702,14 @@ class Resizer : public dbStaState, public dbNetworkObserver
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
-  vector<vector<double>> layer_res_;  // ohms/meter
-  vector<vector<double>> layer_cap_;  // Farads/meter
+  std::vector<std::vector<double>> layer_res_;  // ohms/meter
+  std::vector<std::vector<double>> layer_cap_;  // Farads/meter
   // Signal wire RC indexed by corner->index
-  vector<ParasiticsResistance> wire_signal_res_;   // ohms/metre
-  vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
+  std::vector<ParasiticsResistance> wire_signal_res_;   // ohms/metre
+  std::vector<ParasiticsCapacitance> wire_signal_cap_;  // Farads/meter
   // Clock wire RC.
-  vector<ParasiticsResistance> wire_clk_res_;   // ohms/metre
-  vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
+  std::vector<ParasiticsResistance> wire_clk_res_;   // ohms/metre
+  std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 

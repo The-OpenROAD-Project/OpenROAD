@@ -3,8 +3,12 @@
 
 #pragma once
 
+#include <algorithm>
+#include <limits>
+#include <map>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "db/drObj/drBlockObject.h"

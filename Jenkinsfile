@@ -76,6 +76,28 @@ def baseTests(String image) {
 def getParallelTests(String image) {
 
     def ret = [
+        'Docs Tester': {
+            node {
+                withDockerContainer(args: '-u root', image: image) {
+                    stage('Setup Docs Test') {
+                        echo "Setting up Docs Tester environment in ${image}";
+                        sh label: 'Configure git', script: "git config --system --add safe.directory '*'";
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: scm.branches[0].name]],
+                            extensions: [[$class: 'SubmoduleOption', recursiveSubmodules: true]],
+                            userRemoteConfigs: scm.userRemoteConfigs
+                        ]);
+                    }
+                    stage('Run Docs Tests') {
+                        sh label: 'Build messages', script: 'python3 docs/src/test/make_messages.py';
+                        sh label: 'Preprocess docs', script: 'cd docs && make preprocess -j$(nproc)';
+                        sh label: 'Run Tcl syntax parser', script: 'python3 docs/src/test/man_tcl_params.py';
+                        sh label: 'Run readme parser', script: 'cd docs && make clean && python3 src/test/readme_check.py';
+                    }
+                }
+            }
+        },
 
         'Build without GUI': {
             node {
@@ -160,7 +182,6 @@ def getParallelTests(String image) {
                 }
             }
         }
-
     ];
 
     if (env.BRANCH_NAME == 'master') {
