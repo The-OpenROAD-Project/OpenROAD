@@ -3708,17 +3708,6 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         }
       }
     }
-
-    // do the house keeping. Flush dbNet/dbModNet association
-    // fix up correspondence between hierarchical net and flat net.
-    /*
-    odb::dbNet* source_flat_net = flatNet(dbToSta(source_pin));
-    odb::dbModNet* source_hier_net = hierNet(dbToSta(source_pin));
-    if (source_hier_net) {
-      reassociateHierFlatNet(source_hier_net, source_flat_net, nullptr);
-      ;
-    }
-    */
   }
 }
 
