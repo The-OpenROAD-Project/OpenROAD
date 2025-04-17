@@ -7,17 +7,15 @@
 #include <vector>
 
 #include "detailed_generator.h"
-namespace dpl {
-class Edge;
-}
+
 namespace odb {
 class Rect;
 }
-namespace dpo {
+namespace dpl {
+class Edge;
 class Architecture;
 class DetailedMgr;
 class Network;
-using dpl::Edge;
 
 class DetailedGlobalSwap : public DetailedGenerator
 {
@@ -59,4 +57,4 @@ class DetailedGlobalSwap : public DetailedGenerator
   int swaps_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

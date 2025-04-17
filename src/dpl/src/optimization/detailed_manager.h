@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 
-#include "dpl/Grid.h"
-#include "network.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/network.h"
 #include "util/journal.h"
 #include "util/utility.h"
 namespace utl {
@@ -20,14 +20,10 @@ class Logger;
 }  // namespace utl
 namespace dpl {
 class PlacementDRC;
-}
-namespace dpo {
 
 class Architecture;
 class DetailedSeg;
 class Network;
-using dpl::Grid;
-using dpl::PlacementDRC;
 
 enum class BlockageType
 {
@@ -378,4 +374,4 @@ class DetailedMgr
   int moveLimit_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

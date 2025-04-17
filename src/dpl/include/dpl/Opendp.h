@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>  // pair
 #include <vector>
 
@@ -37,6 +38,10 @@ using odb::Rect;
 class Node;
 class Group;
 class Master;
+class Edge;
+
+class Architecture;
+class Network;
 struct Pixel;
 
 class DplObserver;
@@ -302,6 +307,10 @@ class Opendp
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
+
+  Architecture* arch_ = nullptr;  // Information about rows, etc.
+  Network* network_ = nullptr;    // The netlist, cells, etc.
+
   std::shared_ptr<Padding> padding_;
   std::unique_ptr<PlacementDRC> drc_engine_;
 
@@ -310,6 +319,17 @@ class Opendp
 
   std::map<const dbMaster*, Master> db_master_map_;
   std::map<dbInst*, Node*> db_inst_map_;
+
+  // Some maps.
+  std::unordered_map<odb::dbInst*, Node*> instMap_;
+  std::unordered_map<odb::dbNet*, Edge*> netMap_;
+  std::unordered_map<odb::dbBTerm*, Node*> termMap_;
+
+  // For monitoring power alignment.
+  std::unordered_set<odb::dbTechLayer*> pwrLayers_;
+  std::unordered_set<odb::dbTechLayer*> gndLayers_;
+  std::unordered_map<odb::dbMaster*, std::pair<int, int>>
+      masterPwrs_;  // top,bot
 
   bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites

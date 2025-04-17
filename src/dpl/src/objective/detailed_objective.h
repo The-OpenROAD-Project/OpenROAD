@@ -9,12 +9,12 @@
 #include <string>
 #include <vector>
 
-#include "architecture.h"
-#include "detailed_segment.h"
-#include "network.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/detailed_segment.h"
+#include "infrastructure/network.h"
 #include "optimization/detailed_manager.h"
 
-namespace dpo {
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
@@ -42,4 +42,4 @@ class DetailedObjective
   const std::string name_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

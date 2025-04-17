@@ -8,7 +8,7 @@
 
 #include "detailed_objective.h"
 
-namespace dpo {
+namespace dpl {
 
 class DetailedOrient;
 
@@ -89,4 +89,4 @@ class DetailedABU : public DetailedObjective
   std::vector<double> utilTotals_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

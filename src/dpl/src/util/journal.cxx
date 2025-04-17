@@ -3,10 +3,10 @@
 
 #include "journal.h"
 
-#include "dpl/Grid.h"
+#include "infrastructure/Grid.h"
 #include "optimization/detailed_manager.h"
 
-namespace dpo {
+namespace dpl {
 void Journal::clearJournal()
 {
   actions_.clear();
@@ -82,4 +82,4 @@ void Journal::redo(const JournalAction& action, const bool positions_only) const
   }
 }
 
-}  // namespace dpo
+}  // namespace dpl

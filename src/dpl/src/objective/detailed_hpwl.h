@@ -11,7 +11,7 @@
 
 #include "detailed_objective.h"
 
-namespace dpo {
+namespace dpl {
 
 class DetailedOrient;
 class DetailedMgr;
@@ -41,4 +41,4 @@ class DetailedHPWL : public DetailedObjective
   std::vector<int> edgeMask_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

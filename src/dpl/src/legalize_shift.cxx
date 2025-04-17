@@ -16,14 +16,14 @@
 #include <utility>
 #include <vector>
 
-#include "architecture.h"
-#include "detailed_segment.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 struct ShiftLegalizer::Clump
 {
@@ -513,4 +513,4 @@ bool ShiftLegalizer::violated(Clump* r, Clump*& l, int& dist)
   return l != nullptr;
 }
 
-}  // namespace dpo
+}  // namespace dpl

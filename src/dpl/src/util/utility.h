@@ -6,14 +6,13 @@
 #include <boost/random/mersenne_twister.hpp>
 
 namespace dpl {
-class Edge;
 }
 
-namespace dpo {
+namespace dpl {
 using Placer_RNG = boost::mt19937;
 
 class Network;
-using dpl::Edge;
+class Edge;
 
 class Utility
 {
@@ -44,4 +43,4 @@ class Utility
   static uint64_t hpwl(const Edge*, uint64_t& hpwlx, uint64_t& hpwly);
 };
 
-}  // namespace dpo
+}  // namespace dpl

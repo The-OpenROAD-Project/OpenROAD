@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace dpo {
+namespace dpl {
 
 class ColorGraph
 {
@@ -29,4 +29,4 @@ class ColorGraph
   int num_colors_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

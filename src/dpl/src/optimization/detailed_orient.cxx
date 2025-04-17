@@ -10,16 +10,16 @@
 #include <string>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_manager.h"
-#include "detailed_segment.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/detailed_segment.h"
 #include "util/symmetry.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 DetailedOrient::DetailedOrient(Architecture* arch, Network* network)
     : arch_(arch),
@@ -507,4 +507,4 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
   return true;
 }
 
-}  // namespace dpo
+}  // namespace dpl

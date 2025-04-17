@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "dpl/Grid.h"
+#include "Grid.h"
 
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
@@ -11,9 +11,9 @@
 #include <utility>
 #include <vector>
 
-#include "dpl/Objects.h"
+#include "Objects.h"
+#include "Padding.h"
 #include "dpl/Opendp.h"
-#include "dpl/Padding.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 

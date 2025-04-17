@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Coordinates.h"
+#include "infrastructure/Coordinates.h"
 
 namespace odb {
 class dbTech;

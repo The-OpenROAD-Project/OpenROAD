@@ -8,7 +8,7 @@
 
 #include "detailed_generator.h"
 
-namespace dpo {
+namespace dpl {
 
 class Architecture;
 class DetailedMgr;
@@ -126,4 +126,4 @@ class DisplacementGenerator : public DetailedGenerator
   int swaps_ = 0;
 };
 
-}  // namespace dpo
+}  // namespace dpl

@@ -9,21 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include "dpl/Coordinates.h"
+#include "Coordinates.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 namespace dpl {
 class Group;
 class Node;
-
-}  // namespace dpl
-namespace dpo {
-
 class Network;
-using dpl::DbuX;
-using dpl::DbuY;
-using dpl::Group;
-using dpl::Node;
 
 class Architecture
 {
@@ -158,4 +150,4 @@ class Architecture::Row
   int powerBot_ = Power_UNK;
 };
 
-}  // namespace dpo
+}  // namespace dpl

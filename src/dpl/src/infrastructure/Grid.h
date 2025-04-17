@@ -12,7 +12,7 @@
 
 #include "Coordinates.h"
 #include "Objects.h"
-#include "Opendp.h"
+#include "dpl/Opendp.h"
 
 namespace dpl {
 

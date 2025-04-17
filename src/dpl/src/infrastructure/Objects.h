@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "Coordinates.h"
-#include "Opendp.h"
+#include "dpl/Opendp.h"
 
 namespace dpl {
 

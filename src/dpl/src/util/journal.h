@@ -10,10 +10,7 @@
 #include "network.h"
 namespace dpl {
 class Grid;
-}
-namespace dpo {
 
-using dpl::Grid;
 class DetailedMgr;
 
 class JournalAction
@@ -87,4 +84,4 @@ class Journal
   std::set<Node*> affected_nodes_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

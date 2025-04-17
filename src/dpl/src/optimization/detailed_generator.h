@@ -7,12 +7,8 @@
 #include <vector>
 namespace dpl {
 class Node;
-}
-namespace dpo {
 
 class DetailedMgr;
-using dpl::Node;
-
 class DetailedGenerator
 {
  public:
@@ -33,4 +29,4 @@ class DetailedGenerator
   const std::string name_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

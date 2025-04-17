@@ -8,9 +8,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Coordinates.h"
+#include "Objects.h"
 #include "architecture.h"
-#include "dpl/Coordinates.h"
-#include "dpl/Objects.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 namespace dpl {
@@ -18,17 +18,7 @@ class Master;
 class Pin;
 class Grid;
 class Edge;
-}  // namespace dpl
 
-namespace dpo {
-
-using dpl::DbuX;
-using dpl::DbuY;
-using dpl::Edge;
-using dpl::GridX;
-using dpl::GridY;
-using dpl::Master;
-using dpl::Pin;
 using odb::dbOrientType;
 
 class Network
@@ -117,4 +107,4 @@ class Network
   std::vector<std::unique_ptr<Master>> masters_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

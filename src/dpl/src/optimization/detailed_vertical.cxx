@@ -12,14 +12,14 @@
 
 #include "detailed_manager.h"
 #include "detailed_orient.h"
-#include "detailed_segment.h"
+#include "infrastructure/detailed_segment.h"
 #include "objective/detailed_hpwl.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -388,4 +388,4 @@ void DetailedVerticalSwap::stats()
       moves_);
 }
 
-}  // namespace dpo
+}  // namespace dpl

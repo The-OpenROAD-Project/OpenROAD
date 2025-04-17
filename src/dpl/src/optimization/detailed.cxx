@@ -15,7 +15,7 @@
 #include "utl/Logger.h"
 
 // Detailed management of segments.
-#include "detailed_segment.h"
+#include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"
 // Detailed placement algorithms.
 #include "detailed.h"
@@ -28,7 +28,7 @@
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
@@ -173,4 +173,4 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   // mgr_->checkEdgeSpacingInSegments();
 }
 
-}  // namespace dpo
+}  // namespace dpl

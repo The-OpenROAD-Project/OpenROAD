@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "dpl/Padding.h"
+#include "Padding.h"
 
-#include "dpl/Objects.h"
+#include "Objects.h"
 
 namespace dpl {
 

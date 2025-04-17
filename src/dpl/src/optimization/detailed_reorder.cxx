@@ -11,15 +11,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_manager.h"
-#include "detailed_segment.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/detailed_segment.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -410,4 +410,4 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
   return cost;
 }
 
-}  // namespace dpo
+}  // namespace dpl

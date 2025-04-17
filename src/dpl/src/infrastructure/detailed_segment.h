@@ -5,10 +5,8 @@
 
 #include <limits>
 
-#include "dpl/Coordinates.h"
-namespace dpo {
-using dpl::DbuX;
-using dpl::DbuY;
+#include "Coordinates.h"
+namespace dpl {
 class DetailedSeg
 {
  public:
@@ -49,4 +47,4 @@ class DetailedSeg
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-}  // namespace dpo
+}  // namespace dpl

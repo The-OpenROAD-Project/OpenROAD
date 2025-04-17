@@ -33,7 +33,7 @@
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 bool DetailedRandom::isOperator(char ch) const
 {
@@ -800,4 +800,4 @@ void DisplacementGenerator::stats()
       moves_);
 }
 
-}  // namespace dpo
+}  // namespace dpl

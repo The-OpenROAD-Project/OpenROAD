@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace dpo {
+namespace dpl {
 
 ColorGraph::ColorGraph(const int num_nodes)
 {
@@ -63,4 +63,4 @@ void ColorGraph::greedyColoring()
   }
 }
 
-}  // namespace dpo
+}  // namespace dpl

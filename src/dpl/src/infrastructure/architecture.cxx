@@ -14,12 +14,12 @@
 #include <utility>
 #include <vector>
 
-#include "dpl/Objects.h"
+#include "Objects.h"
 #include "network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 
-namespace dpo {
+namespace dpl {
 
 struct compareRowBottom
 {
@@ -409,4 +409,4 @@ int Architecture::getCellSpacing(const Node* leftNode,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-}  // namespace dpo
+}  // namespace dpl

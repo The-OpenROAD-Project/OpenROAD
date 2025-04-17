@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "dpl/Objects.h"
+#include "Objects.h"
 
 #include <string>
 #include <vector>

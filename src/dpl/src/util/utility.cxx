@@ -5,9 +5,9 @@
 
 #include <algorithm>
 
-#include "network.h"
+#include "infrastructure/network.h"
 
-namespace dpo {
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,4 +105,4 @@ uint64_t Utility::hpwl(const Edge* ed, uint64_t& hpwlx, uint64_t& hpwly)
   return hpwlx + hpwly;
 }
 
-}  // namespace dpo
+}  // namespace dpl

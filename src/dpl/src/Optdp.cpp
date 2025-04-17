@@ -22,18 +22,18 @@
 #include "utl/Logger.h"
 
 // My stuff.
+#include "PlacementDRC.h"
 #include "architecture.h"
 #include "detailed.h"
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
-#include "dpl/Padding.h"
-#include "dpl/PlacementDRC.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "legalize_shift.h"
-#include "network.h"
 #include "optimization/detailed_manager.h"
 #include "util/symmetry.h"
 
-namespace dpo {
+namespace dpl {
 
 using utl::DPO;
 
@@ -1040,4 +1040,4 @@ void Optdp::setUpPlacementGroups()
   }
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
-}  // namespace dpo
+}  // namespace dpl

@@ -35,17 +35,17 @@
 #include <utility>
 #include <vector>
 
-#include "architecture.h"
 #include "detailed_manager.h"
-#include "detailed_segment.h"
-#include "network.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/detailed_segment.h"
+#include "infrastructure/network.h"
 #include "util/color.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -753,4 +753,4 @@ uint64_t DetailedMis::getHpwl(const Node* ndi, DbuX xi, DbuY yi)
   return hpwl;
 }
 
-}  // namespace dpo
+}  // namespace dpl

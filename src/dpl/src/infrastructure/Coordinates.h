@@ -10,7 +10,7 @@
 #include <limits>
 #include <ostream>
 
-#include "Opendp.h"
+#include "dpl/Opendp.h"
 
 namespace dpl {
 

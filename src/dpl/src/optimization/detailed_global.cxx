@@ -11,11 +11,11 @@
 #include <vector>
 
 #include "detailed_manager.h"
-#include "dpl/Objects.h"
+#include "infrastructure/Objects.h"
 #include "objective/detailed_hpwl.h"
 #include "utl/Logger.h"
 
-namespace dpo {
+namespace dpl {
 
 using utl::DPO;
 
@@ -399,4 +399,4 @@ void DetailedGlobalSwap::stats()
       moves_);
 }
 
-}  // namespace dpo
+}  // namespace dpl

@@ -11,7 +11,7 @@
 
 #include "detailed_objective.h"
 
-namespace dpo {
+namespace dpl {
 
 class DetailedOrient;
 class DetailedMgr;
@@ -43,4 +43,4 @@ class DetailedDisplacement : public DetailedObjective
   int nSets_ = 0;
 };
 
-}  // namespace dpo
+}  // namespace dpl

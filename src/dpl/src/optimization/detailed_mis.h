@@ -7,18 +7,12 @@
 #include <string>
 #include <vector>
 
-#include "dpl/Coordinates.h"
+#include "infrastructure/Coordinates.h"
 namespace dpl {
 class Node;
-}  // namespace dpl
-namespace dpo {
-
 class Architecture;
 class DetailedMgr;
 class Network;
-using dpl::DbuX;
-using dpl::DbuY;
-using dpl::Node;
 
 class DetailedMisParams
 {
@@ -107,4 +101,4 @@ class DetailedMis
   Objective obj_ = DetailedMis::Hpwl;
 };
 
-}  // namespace dpo
+}  // namespace dpl

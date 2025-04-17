@@ -6,17 +6,12 @@
 #include <string>
 #include <vector>
 
-#include "dpl/Coordinates.h"
+#include "infrastructure/Coordinates.h"
 namespace dpl {
 class Node;
-}
-namespace dpo {
-
 class Architecture;
 class DetailedMgr;
 class Network;
-using dpl::DbuX;
-using dpl::Node;
 class DetailedReorderer
 {
  public:
@@ -50,4 +45,4 @@ class DetailedReorderer
   int windowSize_ = 3;
 };
 
-}  // namespace dpo
+}  // namespace dpl

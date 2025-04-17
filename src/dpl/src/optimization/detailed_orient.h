@@ -10,13 +10,9 @@
 #include <vector>
 namespace dpl {
 class Node;
-}
-namespace dpo {
-
 class Architecture;
 class DetailedMgr;
 class Network;
-using dpl::Node;
 
 class DetailedOrient
 {
@@ -47,4 +43,4 @@ class DetailedOrient
   std::vector<int> edgeMask_;
 };
 
-}  // namespace dpo
+}  // namespace dpl

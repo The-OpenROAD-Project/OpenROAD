@@ -17,10 +17,10 @@
 #include <utility>
 #include <vector>
 
-#include "architecture.h"
+#include "PlacementDRC.h"
 #include "detailed_orient.h"
-#include "detailed_segment.h"
-#include "dpl/PlacementDRC.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/detailed_segment.h"
 #include "odb/dbTransform.h"
 #include "util/journal.h"
 #include "util/utility.h"
@@ -28,7 +28,7 @@
 
 using utl::DPO;
 
-namespace dpo {
+namespace dpl {
 
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
@@ -3186,4 +3186,4 @@ void DetailedMgr::paintInGrid(Node* node)
   node->adjustCurrOrient(
       pixel->sites.at(node->getDbInst()->getMaster()->getSite()));
 }
-}  // namespace dpo
+}  // namespace dpl

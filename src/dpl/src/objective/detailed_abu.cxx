@@ -28,7 +28,7 @@
 #include "optimization/detailed_orient.h"
 #include "utl/Logger.h"
 
-namespace dpo {
+namespace dpl {
 
 using utl::DPO;
 
@@ -682,4 +682,4 @@ double DetailedABU::alpha()
   return ABU_ALPHA;
 }
 
-}  // namespace dpo
+}  // namespace dpl

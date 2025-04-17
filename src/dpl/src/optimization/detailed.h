@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 
-#include "architecture.h"
-#include "network.h"
+#include "infrastructure/architecture.h"
+#include "infrastructure/network.h"
 
-namespace dpo {
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Forward declarations.
@@ -45,4 +45,4 @@ class Detailed
   Network* network_ = nullptr;
 };
 
-}  // namespace dpo
+}  // namespace dpl
