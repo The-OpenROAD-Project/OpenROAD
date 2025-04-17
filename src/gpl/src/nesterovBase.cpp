@@ -1988,15 +1988,14 @@ void NesterovBase::updateAreas()
     reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto it = NB_gCells_.begin(); it < NB_gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
-    if (gCell == nullptr) {
-      continue;
-    }
-    if (gCell->isMacroInstance()) {
-      macroInstsArea_ += static_cast<int64_t>(gCell->dx())
+    if (gCell != nullptr) {
+      if (gCell->isMacroInstance()) {
+        macroInstsArea_ += static_cast<int64_t>(gCell->dx())
+                           * static_cast<int64_t>(gCell->dy());
+      } else if (gCell->isStdInstance()) {
+        stdInstsArea_ += static_cast<int64_t>(gCell->dx())
                          * static_cast<int64_t>(gCell->dy());
-    } else if (gCell->isStdInstance()) {
-      stdInstsArea_ += static_cast<int64_t>(gCell->dx())
-                       * static_cast<int64_t>(gCell->dy());
+      }
     }
   }
 
