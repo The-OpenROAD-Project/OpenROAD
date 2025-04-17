@@ -288,21 +288,7 @@ TEST_F(AbcTestAsap7, ImportsWithoutErrors)
 {
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
-  AbcLibrary abc_library = factory.Build();
-
-  // std::set<std::string> abc_cells;
-  // using ::testing::Contains;
-  // using ::testing::Not;
-
-  // for (size_t i = 0; i < Vec_PtrSize(&abc_library.abc_library()->vCells);
-  // i++) {
-  //   abc::SC_Cell* abc_cell = static_cast<abc::SC_Cell*>(
-  //       abc::Vec_PtrEntry(&abc_library.abc_library()->vCells, i));
-  //   abc_cells.emplace(abc_cell->pName);
-  // }
-
-  // EXPECT_THAT(abc_cells, Not(Contains("ANTENNA_X1")));
-  // EXPECT_THAT(abc_cells, Not(Contains("FILLCELL_X1")));
+  EXPECT_NO_THROW(factory.Build());
 }
 
 TEST_F(AbcTest, DoesNotContainSequentialCells)
