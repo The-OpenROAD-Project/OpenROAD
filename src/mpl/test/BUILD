@@ -71,6 +71,10 @@ filegroup(
         "testcases/boundary_push1.def",
         "testcases/boundary_push2.def",
         "testcases/centralization1.def",
+        "testcases/clocked_macro.def",
+        "testcases/clocked_macro.lef",
+        "testcases/clocked_macro.lib",
+        "testcases/clocked_macro.v",
         "testcases/guides1.def",
         "testcases/guides1.v",
         "testcases/io_constraints1.def",
@@ -83,10 +87,6 @@ filegroup(
         "testcases/no_unfixed_macros.def",
         "testcases/orientation_improve1.def",
         "testcases/orientation_improve1.lef",
-        "testcases/clocked_macro.def",
-        "testcases/clocked_macro.v",
-        "testcases/clocked_macro.lib",
-        "testcases/clocked_macro.lef",
     ],
 )
 
