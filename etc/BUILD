@@ -5,5 +5,4 @@ py_binary(
     ],
     main = "file_to_string.py",
     visibility = ["//visibility:public"],
-    # deps = ["@openroad-pip//matplotlib"],
 )
