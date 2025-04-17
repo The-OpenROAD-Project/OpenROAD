@@ -47,22 +47,6 @@ struct RectHash
   std::size_t operator()(const Rect& rect) const;
 };
 
-struct TopLayerGrid
-{
-  int layer = -1;
-  int x_step = -1;
-  int y_step = -1;
-  Rect region;
-  int pin_width = -1;
-  int pin_height = -1;
-  int keepout = -1;
-
-  int llx() { return region.xMin(); }
-  int lly() { return region.yMin(); }
-  int urx() { return region.xMax(); }
-  int ury() { return region.yMax(); }
-};
-
 // Slot: an on-track position in the die boundary where a pin
 // can be placed
 struct Slot

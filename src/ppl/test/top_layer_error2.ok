@@ -4,6 +4,6 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0060] Restrict pins [ clk req_msg[0] req_msg[10] req_msg[11] req_msg[12] ... ] to region (0.00u, 0.00u)-(100.13u, 100.80u) at routing layer metal7.
+[INFO PPL-0060] Restrict pins [ clk req_msg[0] req_msg[10] req_msg[11] req_msg[12] ... ] to region (10.07u, 11.20u)-(90.25u, 91.00u) at routing layer metal7.
 [ERROR PPL-0011] Number of IO pins assigned to the top layer (54) exceeds maximum number of available top layer positions (40).
 PPL-0011

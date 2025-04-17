@@ -7,7 +7,7 @@
 [INFO ODB-0133]     Created 54 nets and 155 connections.
 Found 1 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (0.00u, 0.00u)-(279.96u, 280.13u) at routing layer met5.
+[INFO PPL-0060] Restrict pins [ clk req_rdy req_val reset resp_rdy ... ] to region (50.00u, 50.00u)-(250.00u, 250.00u) at routing layer met5.
 [INFO PPL-0001] Number of available slots 866
 [INFO PPL-0062] Number of top layer slots 900
 [INFO PPL-0002] Number of I/O             54

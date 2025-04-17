@@ -58,6 +58,7 @@ or_integration_tests(
     global_connect_with_dont_touch_warning
     macros
     macros_add_twice
+    macro_channel_with_secondary_repair
     macros_cells
     macros_cells_dont_touch
     macros_cells_extend_boundary

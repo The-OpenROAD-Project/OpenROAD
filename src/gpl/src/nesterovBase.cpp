@@ -2611,8 +2611,6 @@ bool NesterovBase::nesterovUpdateStepLength()
 
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
-    divergeMsg_ = "RePlAce diverged at newStepLength.";
-    divergeCode_ = 305;
     return false;
   }
 
@@ -2805,9 +2803,6 @@ bool NesterovBase::checkDivergence()
   if (sumOverflowUnscaled_ < 0.2f
       && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
-    divergeMsg_ = "RePlAce divergence detected. ";
-    divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
-    divergeCode_ = 307;
     isDiverged_ = true;
   }
 
@@ -2830,8 +2825,6 @@ bool NesterovBase::revertToSnapshot()
   updateDensityForceBin();
 
   isDiverged_ = false;
-  divergeCode_ = 0;
-  divergeMsg_ = "";
 
   return true;
 }

@@ -21,7 +21,7 @@ ppl_aux.define_pin_shape_pattern(
 ppl_aux.set_io_pin_constraint(
     design,
     pin_names="clk resp_val req_val resp_rdy reset req_rdy",
-    region="up:70 50 95 100",
+    region="up:70 50 75 80",
 )
 
 ppl_aux.place_pins(

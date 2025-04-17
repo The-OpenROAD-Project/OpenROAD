@@ -14,7 +14,6 @@ namespace dpo {
 class Architecture;
 class DetailedMgr;
 class Network;
-class RoutingParams;
 using dpl::Node;
 
 class DetailedMisParams
@@ -51,7 +50,7 @@ class DetailedMis
   };
 
  public:
-  DetailedMis(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedMis(Architecture* arch, Network* network);
   virtual ~DetailedMis();
 
   void run(DetailedMgr* mgrPtr, const std::string& command);
@@ -78,7 +77,6 @@ class DetailedMis
 
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   std::vector<Node*> candidates_;
   std::vector<bool> movable_;

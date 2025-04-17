@@ -111,7 +111,6 @@ filegroup(
         "asap7_data/asap7.lib",
         "asap7_data/fakeram7_256x32.lef",
         "asap7_data/riscv.def",
-        "extract_utils.py",
         "gcd_all_vss-em.rptok",
         "gcd_all_vss-spice.spok",
         "gcd_all_vss-voltage.rptok",

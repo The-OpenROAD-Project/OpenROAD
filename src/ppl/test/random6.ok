@@ -5,6 +5,6 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0060] Restrict pins [ clk req_msg[31] req_msg[30] req_msg[29] req_msg[28] ... ] to region (0.10u, 0.07u)-(90.00u, 90.00u) at routing layer metal10.
+[INFO PPL-0060] Restrict pins [ clk req_msg[31] req_msg[30] req_msg[29] req_msg[28] ... ] to region (0.95u, 4.20u)-(90.00u, 90.00u) at routing layer metal10.
 [INFO PPL-0007] Random pin placement.
 No differences found.

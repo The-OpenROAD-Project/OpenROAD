@@ -158,7 +158,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
 
-  std::vector<Net*> nets = findNets();
+  std::vector<Net*> nets = findNets(true);
   checkPinPlacement();
   initNetlist(nets);
 
@@ -2037,7 +2037,7 @@ void GlobalRouter::initGridAndNets()
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
-  std::vector<Net*> nets = findNets();
+  std::vector<Net*> nets = findNets(false);
   initNetlist(nets);
 }
 
@@ -3461,9 +3461,11 @@ static bool nameLess(const Net* a, const Net* b)
   return a->getName() < b->getName();
 }
 
-std::vector<Net*> GlobalRouter::findNets()
+std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 {
-  initClockNets();
+  if (init_clock_nets) {
+    initClockNets();
+  }
 
   std::vector<odb::dbNet*> db_nets;
   if (nets_to_route_.empty()) {

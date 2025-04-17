@@ -59,7 +59,6 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
-  rt_ = mgr_->getRoutingParams();
 
   // Categorize the cells and create the different segments.
   mgr.collectFixedCells();

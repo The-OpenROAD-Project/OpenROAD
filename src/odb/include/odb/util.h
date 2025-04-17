@@ -19,6 +19,9 @@ class dbBlock;
 class dbBox;
 class dbDatabase;
 class dbNet;
+class dbTechLayer;
+class Rect;
+class Polygon;
 
 // A class that implements an array that can grow efficiently
 template <class T>
@@ -206,6 +209,15 @@ void cutRows(dbBlock* block,
 // Generates a string with the macro placement in mpl input format for
 // individual macro placement
 std::string generateMacroPlacementString(dbBlock* block);
+
+void set_bterm_top_layer_grid(dbBlock* block,
+                              dbTechLayer* layer,
+                              int x_step,
+                              int y_step,
+                              Rect region,
+                              int width,
+                              int height,
+                              int keepout);
 
 class WireLengthEvaluator
 {

@@ -52,6 +52,8 @@ class NesterovPlace
 
   void updateDb();
 
+  void checkInvalidValues(float wireLengthGradSum, float densityGradSum);
+
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
 
@@ -112,7 +114,7 @@ class NesterovPlace
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
 
-  bool isDiverged_ = false;
+  int num_region_diverged_ = 0;
   bool is_routability_need_ = true;
   float routability_save_snapshot_ = 0.6;
 

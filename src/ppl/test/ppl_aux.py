@@ -399,11 +399,13 @@ def set_io_pin_constraint(
         # no walrus in < 3.8
         mo = re.fullmatch("(up):(.*)", region)
         if mo.group(2) == "*":
-            die_area = dbBlock.getDieArea()
-            llx = die_area.xMin()
-            lly = die_area.yMin()
-            urx = die_area.xMax()
-            ury = die_area.yMax()
+            top_grid_region = dbBlock.getBTermTopLayerGridRegion()
+            if top_grid_region.isRect():
+                region_rect = top_grid_region.getEnclosingRect()
+                llx = region_rect.xMin()
+                lly = region_rect.yMin()
+                urx = region_rect.xMax()
+                ury = region_rect.yMax()
 
         elif len(mo.group(2).split()) == 4:
             llx, lly, urx, ury = mo.group(2).split()
@@ -550,6 +552,7 @@ def define_pin_shape_pattern(
             design.getTech().getDB().getTech().findLayer(layer_name).getSpacing(max_dim)
         )
 
-    design.getIOPlacer().addTopLayerPinPattern(
-        layer, x_step, y_step, rect, width, height, keepout
+    dbBlock = design.getBlock()
+    odb.set_bterm_top_layer_grid(
+        dbBlock, layer, x_step, y_step, rect, width, height, keepout
     )

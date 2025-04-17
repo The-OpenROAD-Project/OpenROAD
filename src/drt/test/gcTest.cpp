@@ -81,7 +81,6 @@ struct GCFixture : public Fixture
 
     worker.init(design.get());
     worker.main();
-    worker.end();
   }
 
   FlexGCWorker worker;

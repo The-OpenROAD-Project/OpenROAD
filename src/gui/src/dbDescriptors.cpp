@@ -98,53 +98,63 @@ static void populateODBProperties(Descriptor::Properties& props,
 
 std::string Descriptor::convertUnits(const double value,
                                      const bool area,
-                                     int digits)
+                                     const int digits)
 {
+  auto format = [area, value, digits](int log_units) {
+    double unit_scale = 1.0;
+    std::string unit;
+    if (log_units <= -18) {
+      unit_scale = 1e18;
+      unit = "a";
+    } else if (log_units <= -15) {
+      unit_scale = 1e15;
+      unit = "f";
+    } else if (log_units <= -12) {
+      unit_scale = 1e12;
+      unit = "p";
+    } else if (log_units <= -9) {
+      unit_scale = 1e9;
+      unit = "n";
+    } else if (log_units <= -6) {
+      unit_scale = 1e6;
+      const char* micron = "μ";
+      unit = micron;
+    } else if (log_units <= -3) {
+      unit_scale = 1e3;
+      unit = "m";
+    } else if (log_units <= 0) {
+    } else if (log_units <= 3) {
+      unit_scale = 1e-3;
+      unit = "k";
+    } else if (log_units <= 6) {
+      unit_scale = 1e-6;
+      unit = "M";
+    } else if (log_units <= 9) {
+      unit_scale = 1e-9;
+      unit = "G";
+    }
+    if (area) {
+      unit_scale *= unit_scale;
+    }
+
+    auto str = utl::to_numeric_string(value * unit_scale, digits);
+    return std::make_pair(str, unit);
+  };
+
   double log_value = value;
   if (area) {
     log_value = std::sqrt(log_value);
   }
-  int log_units = std::floor(std::log10(log_value) / 3.0) * 3;
-  double unit_scale = 1.0;
-  std::string unit;
-  if (log_units <= -18) {
-    unit_scale = 1e18;
-    unit = "a";
-  } else if (log_units <= -15) {
-    unit_scale = 1e15;
-    unit = "f";
-  } else if (log_units <= -12) {
-    unit_scale = 1e12;
-    unit = "p";
-  } else if (log_units <= -9) {
-    unit_scale = 1e9;
-    unit = "n";
-  } else if (log_units <= -6) {
-    unit_scale = 1e6;
-    const char* micron = "μ";
-    unit = micron;
-  } else if (log_units <= -3) {
-    unit_scale = 1e3;
-    unit = "m";
-  } else if (log_units <= 0) {
-  } else if (log_units <= 3) {
-    unit_scale = 1e-3;
-    unit = "k";
-  } else if (log_units <= 6) {
-    unit_scale = 1e-6;
-    unit = "M";
-  } else if (log_units <= 9) {
-    unit_scale = 1e-9;
-    unit = "G";
-  }
-  if (area) {
-    unit_scale *= unit_scale;
-  }
+  // Try both ways and see what produces the better result.
+  auto [s1, u1] = format(std::trunc(std::log10(log_value) / 3.0) * 3);
+  auto [s2, u2] = format(std::floor(std::log10(log_value) / 3.0) * 3);
 
-  auto str = utl::to_numeric_string(value * unit_scale, digits);
-  str += " " + unit;
-
-  return str;
+  // Don't include the unit size in the comparison as the micron
+  // symbol counts as two characters.
+  if (s1.size() < s2.size()) {
+    return s1 + " " + u1;
+  }
+  return s2 + " " + u2;
 }
 
 // renames an object

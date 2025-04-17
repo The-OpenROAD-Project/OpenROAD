@@ -1156,10 +1156,7 @@ class NesterovBase
   int64_t prevHpwl_ = 0;
   int64_t prevReportedHpwl_ = 0;
 
-  float isDiverged_ = false;
-
-  std::string divergeMsg_;
-  int divergeCode_ = 0;
+  bool isDiverged_ = false;
 
   NesterovPlaceVars* npVars_;
 

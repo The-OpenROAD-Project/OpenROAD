@@ -27,7 +27,6 @@ namespace dpo {
 class Architecture;
 class DetailedSeg;
 class Network;
-class RoutingParams;
 using dpl::Grid;
 using dpl::PlacementDRC;
 
@@ -70,7 +69,6 @@ class DetailedMgr
  public:
   DetailedMgr(Architecture* arch,
               Network* network,
-              RoutingParams* rt,
               Grid* grid,
               PlacementDRC* drc_engine);
   virtual ~DetailedMgr();
@@ -79,7 +77,6 @@ class DetailedMgr
 
   Architecture* getArchitecture() const { return arch_; }
   Network* getNetwork() const { return network_; }
-  RoutingParams* getRoutingParams() const { return rt_; }
 
   void setLogger(utl::Logger* logger) { logger_ = logger; }
   utl::Logger* getLogger() const { return logger_; }
@@ -102,8 +99,6 @@ class DetailedMgr
                                     int& violatedY);
 
   void internalError(const std::string& msg);
-
-  void setupObstaclesForDrc();
 
   void findBlockages(bool includeRouteBlockages = true);
   void findRegionIntervals(
@@ -139,9 +134,7 @@ class DetailedMgr
                                Node* violatingNode);
   void removeCellFromSegment(const Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
-  double getCellSpacing(const Node* ndl,
-                        const Node* ndr,
-                        bool checkPinsOnCells);
+  double getCellSpacing(const Node* ndl, const Node* ndr);
 
   void collectSingleHeightCells();
   void collectMultiHeightCells();
@@ -352,7 +345,6 @@ class DetailedMgr
   // Standard stuff.
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
   Grid* grid_;
   PlacementDRC* drc_engine_;
   Journal journal;
@@ -381,9 +373,6 @@ class DetailedMgr
   // size == #nodes
   std::vector<std::vector<DetailedSeg*>> reverseCellToSegs_;
 
-  // For short and pin access stuff...
-  std::vector<std::vector<std::vector<Rectangle>>> obstacles_;
-
   // Random number generator.
   std::unique_ptr<Placer_RNG> rng_;
 
@@ -398,8 +387,6 @@ class DetailedMgr
   // Original cell positions.
   std::vector<DbuY> origBottom_;
   std::vector<DbuX> origLeft_;
-
-  std::vector<Rectangle> boxes_;
 
   // For generating a move list... (size = moveLimit_)
   int moveLimit_;

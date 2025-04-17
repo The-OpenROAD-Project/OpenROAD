@@ -1936,10 +1936,12 @@ void RepairChannelStraps::cutShapes(
       region.merge(shape->getRect());
     }
   }
-  if (isHorizontal()) {
-    setStrapStartEnd(region.xMin(), region.xMax());
-  } else {
-    setStrapStartEnd(region.yMin(), region.yMax());
+  if (!region.isInverted()) {
+    if (isHorizontal()) {
+      setStrapStartEnd(region.xMin(), region.xMax());
+    } else {
+      setStrapStartEnd(region.yMin(), region.yMax());
+    }
   }
 }
 

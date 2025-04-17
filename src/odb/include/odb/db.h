@@ -892,6 +892,26 @@ class dbBlock : public dbObject
     std::vector<dbBTerm*> bterms;
     bool order = false;
   };
+
+  struct dbBTermTopLayerGrid
+  {
+    // The single top-most routing layer of the placement grid.
+    dbTechLayer* layer = nullptr;
+    // The distance between each valid position on the grid in the x- and
+    // y-directions, respectively.
+    int x_step = 0;
+    int y_step = 0;
+    // The region of the placement grid.
+    Polygon region;
+    // The width and height of the pins assigned to this grid. The centers of
+    // the pins are placed on the grid positions.
+    int pin_width = 0;
+    int pin_height = 0;
+    // The boundary around existing routing obstructions that the pins should
+    // avoid.
+    int keepout = 0;
+  };
+
   ///
   /// Get block chip name.
   ///
@@ -970,6 +990,21 @@ class dbBlock : public dbObject
   /// The flag order places the pins ordered in ascending x/y position.
   ///
   void addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order);
+
+  ///
+  /// Define the top layer grid for pin placement.
+  ///
+  void setBTermTopLayerGrid(const dbBTermTopLayerGrid& top_layer_grid);
+
+  ///
+  /// Get the top layer grid for pin placement.
+  ///
+  std::optional<dbBTermTopLayerGrid> getBTermTopLayerGrid();
+
+  ///
+  /// Get only the polygon corresponding to the top layer grid region.
+  ///
+  Polygon getBTermTopLayerGridRegion();
 
   ///
   /// Find the rectangle corresponding to the constraint region in a specific

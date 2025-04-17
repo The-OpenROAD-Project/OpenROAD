@@ -719,6 +719,30 @@ dbIStream& operator>>(dbIStream& stream, _dbBTermGroup& obj)
   return stream;
 }
 
+dbOStream& operator<<(dbOStream& stream, const _dbBTermTopLayerGrid& obj)
+{
+  stream << obj.layer;
+  stream << obj.x_step;
+  stream << obj.y_step;
+  stream << obj.region;
+  stream << obj.pin_width;
+  stream << obj.pin_height;
+  stream << obj.keepout;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbBTermTopLayerGrid& obj)
+{
+  stream >> obj.layer;
+  stream >> obj.x_step;
+  stream >> obj.y_step;
+  stream >> obj.region;
+  stream >> obj.pin_width;
+  stream >> obj.pin_height;
+  stream >> obj.keepout;
+  return stream;
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
 {
   std::list<dbBlockCallBackObj*>::const_iterator cbitr;
@@ -839,6 +863,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   }
   if (db->isSchema(db_schema_block_pin_groups)) {
     stream << block._bterm_groups;
+  }
+  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+    stream << block._bterm_top_layer_grid;
   }
 
   //---------------------------------------------------------- stream out
@@ -1011,6 +1038,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   }
   if (db->isSchema(db_schema_block_pin_groups)) {
     stream >> block._bterm_groups;
+  }
+  if (db->isSchema(db_schema_bterm_top_layer_grid)) {
+    stream >> block._bterm_top_layer_grid;
   }
 
   //---------------------------------------------------------- stream in
@@ -1602,6 +1632,99 @@ void dbBlock::addBTermGroup(const std::vector<dbBTerm*>& bterms, bool order)
   }
   group.order = order;
   block->_bterm_groups.push_back(std::move(group));
+}
+
+void dbBlock::setBTermTopLayerGrid(
+    const dbBlock::dbBTermTopLayerGrid& top_layer_grid)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  _dbBTermTopLayerGrid& top_grid = block->_bterm_top_layer_grid;
+
+  utl::Logger* logger = block->getImpl()->getLogger();
+  const odb::Rect& die_area = getDieArea();
+
+  if (!die_area.contains(top_layer_grid.region.getEnclosingRect())) {
+    logger->error(
+        utl::ODB, 124, "Top layer grid region is out of the die area.");
+  }
+
+  if (top_layer_grid.x_step <= 0) {
+    logger->error(
+        utl::ODB,
+        500,
+        "The x_step for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.y_step <= 0) {
+    logger->error(
+        utl::ODB,
+        501,
+        "The y_step for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.pin_width <= 0) {
+    logger->error(
+        utl::ODB,
+        502,
+        "The pin width for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.pin_height <= 0) {
+    logger->error(
+        utl::ODB,
+        503,
+        "The pin height for the top layer grid must be greater than zero.");
+  }
+  if (top_layer_grid.keepout <= 0) {
+    logger->error(
+        utl::ODB,
+        504,
+        "The pin keepout for the top layer grid must be greater than zero.");
+  }
+
+  top_grid.layer = top_layer_grid.layer->getId();
+  top_grid.x_step = top_layer_grid.x_step;
+  top_grid.y_step = top_layer_grid.y_step;
+  top_grid.region = top_layer_grid.region;
+  top_grid.pin_width = top_layer_grid.pin_width;
+  top_grid.pin_height = top_layer_grid.pin_height;
+  top_grid.keepout = top_layer_grid.keepout;
+}
+
+std::optional<dbBlock::dbBTermTopLayerGrid> dbBlock::getBTermTopLayerGrid()
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  dbBlock::dbBTermTopLayerGrid top_layer_grid;
+
+  odb::dbTech* tech = getDb()->getTech();
+  if (block->_bterm_top_layer_grid.region.getPoints().empty()) {
+    return std::nullopt;
+  }
+
+  top_layer_grid.layer = odb::dbTechLayer::getTechLayer(
+      tech, block->_bterm_top_layer_grid.layer);
+  top_layer_grid.x_step = block->_bterm_top_layer_grid.x_step;
+  top_layer_grid.y_step = block->_bterm_top_layer_grid.y_step;
+  top_layer_grid.region = block->_bterm_top_layer_grid.region;
+  top_layer_grid.pin_width = block->_bterm_top_layer_grid.pin_width;
+  top_layer_grid.pin_height = block->_bterm_top_layer_grid.pin_height;
+  top_layer_grid.keepout = block->_bterm_top_layer_grid.keepout;
+
+  return top_layer_grid;
+}
+
+Polygon dbBlock::getBTermTopLayerGridRegion()
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  const Polygon& region = block->_bterm_top_layer_grid.region;
+  if (region.getPoints().empty()) {
+    utl::Logger* logger = block->getImpl()->getLogger();
+    logger->error(utl::ODB,
+                  428,
+                  "Cannot get top layer grid region. Pin placement grid on top "
+                  "layer not created.");
+  }
+
+  return region;
 }
 
 Rect dbBlock::findConstraintRegion(const Direction2D& edge, int begin, int end)

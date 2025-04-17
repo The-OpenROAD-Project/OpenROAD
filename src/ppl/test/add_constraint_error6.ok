@@ -5,5 +5,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 253 components and 1357 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 155 connections.
-[ERROR PPL-0099] Constraint up:{0 0 279960 280130} cannot be created. Pin placement grid on top layer not created.
-PPL-0099
+[ERROR ODB-0428] Cannot get top layer grid region. Pin placement grid on top layer not created.
+ODB-0428
