@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "MplTest.h"
 
 namespace mpl {

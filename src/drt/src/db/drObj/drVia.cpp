@@ -3,6 +3,8 @@
 
 #include "db/drObj/drVia.h"
 
+#include <algorithm>
+
 #include "db/drObj/drNet.h"
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"

@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>

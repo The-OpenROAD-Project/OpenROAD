@@ -86,8 +86,6 @@ target_link_libraries(rcx
   PUBLIC
     rcx_lib
     utl_lib
-  PRIVATE
-    OpenSTA
 )
 
 messages(

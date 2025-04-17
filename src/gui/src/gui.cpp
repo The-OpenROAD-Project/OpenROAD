@@ -5,6 +5,8 @@
 
 #include <QApplication>
 #include <boost/algorithm/string/predicate.hpp>
+#include <cmath>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -25,9 +27,9 @@
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
-#include "sta/StaMain.hh"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 #include "utl/exception.h"
 
 extern int cmd_argc;
@@ -1615,16 +1617,10 @@ std::string Descriptor::Property::toString(const std::any& value)
   return "<unknown>";
 }
 
-}  // namespace gui
-
-namespace sta {
 // Tcl files encoded into strings.
 extern const char* gui_tcl_inits[];
-}  // namespace sta
 
-extern "C" {
-struct Tcl_Interp;
-}
+}  // namespace gui
 
 namespace ord {
 
@@ -1632,15 +1628,15 @@ extern "C" {
 extern int Gui_Init(Tcl_Interp* interp);
 }
 
-void initGui(OpenRoad* openroad)
+void initGui(Tcl_Interp* interp, odb::dbDatabase* db, utl::Logger* logger)
 {
   // Define swig TCL commands.
-  Gui_Init(openroad->tclInterp());
-  sta::evalTclInit(openroad->tclInterp(), sta::gui_tcl_inits);
+  Gui_Init(interp);
+  utl::evalTclInit(interp, gui::gui_tcl_inits);
 
   // ensure gui is made
   auto* gui = gui::Gui::get();
-  gui->init(openroad->getDb(), openroad->getLogger());
+  gui->init(db, logger);
 }
 
 }  // namespace ord

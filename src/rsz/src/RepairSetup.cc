@@ -3,7 +3,11 @@
 
 #include "RepairSetup.hh"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -539,9 +543,10 @@ bool RepairSetup::repairPath(PathRef& path,
                RSZ,
                "repair_setup",
                3,
-               "Path slack: {}, repairs: {}",
+               "Path slack: {}, repairs: {}, load_delays: {}",
                delayAsString(path_slack, sta_, 3),
-               repairs_per_pass);
+               repairs_per_pass,
+               load_delays.size());
     for (const auto& [drvr_index, ignored] : load_delays) {
       if (changed >= repairs_per_pass) {
         break;

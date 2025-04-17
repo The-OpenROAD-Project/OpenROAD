@@ -213,21 +213,6 @@ void set_pin_placement_file(const char* file_name)
 }
 
 void
-create_pin_shape_pattern(odb::dbTechLayer* layer, int x_step, int y_step,
-                         const odb::Rect& region,
-                         int pin_width, int pin_height, int keepout)
-{
-  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, region,
-                                       pin_width, pin_height, keepout);
-}
-
-odb::dbTechLayer*
-get_top_layer()
-{
-  return getIOPlacer()->getTopLayer();
-}
-
-void
 place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,
           bool force_to_die_bound, bool placed_status)

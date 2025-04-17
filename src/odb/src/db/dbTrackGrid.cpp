@@ -4,6 +4,7 @@
 #include "dbTrackGrid.h"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 #include "dbBlock.h"

@@ -2,6 +2,10 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <iostream>
+#include <limits>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "gc/FlexGC_impl.h"
@@ -81,11 +85,6 @@ void FlexGCWorker::checkMinStep(gcPin* pin)
 void FlexGCWorker::updateGCWorker()
 {
   impl_->updateGCWorker();
-}
-
-void FlexGCWorker::end()
-{
-  impl_->end();
 }
 
 void FlexGCWorker::initPA0(const frDesign* design)

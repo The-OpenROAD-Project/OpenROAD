@@ -29,7 +29,6 @@ target_include_directories(ant_lib
 target_link_libraries(ant_lib
   PUBLIC
     odb
-    OpenSTA
     utl_lib
     OpenMP::OpenMP_CXX
 )
@@ -66,7 +65,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(ant_py
     PUBLIC
       odb
-      OpenSTA
       grt
       utl_lib
   )

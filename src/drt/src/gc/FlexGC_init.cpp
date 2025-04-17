@@ -2,6 +2,10 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <iostream>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "db/drObj/drNet.h"
@@ -967,7 +971,7 @@ void FlexGCWorker::Impl::updateGCWorker()
   }
 
   // get all frNets, must be sorted by id
-  std::set<frNet*, frBlockObjectComp> fnets;
+  frOrderedIdSet<frNet*> fnets;
   for (auto dnet : modifiedDRNets_) {
     fnets.insert(dnet->getFrNet());
   }

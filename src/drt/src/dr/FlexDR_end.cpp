@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "dr/FlexDR.h"
 
 namespace drt {
 
-void FlexDRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexDRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
@@ -56,11 +60,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // -------------------
     if (isInitDR()
         && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
-      if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
@@ -139,11 +139,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   } else if (begin.y() == end.y()) {
     if (isInitDR()
         && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
-      if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     // if cross routeBBox
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
@@ -257,9 +253,8 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
 
 void FlexDRWorker::endRemoveNets(
     frDesign* design,
-    std::set<frNet*, frBlockObjectComp>& modNets,
-    std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        boundPts)
+    frOrderedIdSet<frNet*>& modNets,
+    frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts)
 {
   std::vector<frBlockObject*> result;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
@@ -585,8 +580,7 @@ void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
 }
 void FlexDRWorker::endAddNets(
     frDesign* design,
-    std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        boundPts)
+    frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts)
 {
   for (auto& net : nets_) {
     if (!net->isModified()) {
@@ -691,11 +685,10 @@ bool FlexDRWorker::end(frDesign* design)
     return false;
   }
   save_updates_ = dist_on_;
-  std::set<frNet*, frBlockObjectComp> modNets;
+  frOrderedIdSet<frNet*> modNets;
   endGetModNets(modNets);
   // get lock
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-      boundPts;
+  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>> boundPts;
   endRemoveNets(design, modNets, boundPts);
   endAddNets(design, boundPts);  // if two subnets have diff isModified()
                                  // status, then should always write back

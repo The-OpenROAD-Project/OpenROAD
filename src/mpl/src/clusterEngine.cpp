@@ -3,7 +3,13 @@
 
 #include "clusterEngine.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -676,7 +682,8 @@ void ClusteringEngine::computeMacroPinVertices(VerticesMaps& vertices_maps)
 {
   for (auto& [macro, hard_macro] : tree_->maps.inst_to_hard) {
     for (odb::dbITerm* pin : macro->getITerms()) {
-      if (pin->getSigType() != odb::dbSigType::SIGNAL) {
+      if (pin->getSigType() != odb::dbSigType::SIGNAL
+          && pin->getSigType() != odb::dbSigType::CLOCK) {
         continue;
       }
 

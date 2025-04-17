@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <stack>
 #include <string>
@@ -17,7 +18,6 @@
 #include "network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
-#include "router.h"
 
 namespace dpo {
 

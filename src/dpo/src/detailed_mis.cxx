@@ -24,10 +24,15 @@
 #include <lemon/preflow.h>
 #include <lemon/smart_graph.h>
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <map>
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "architecture.h"
@@ -37,7 +42,6 @@
 #include "journal.h"
 #include "network.h"
 #include "rectangle.h"
-#include "router.h"
 #include "utl/Logger.h"
 
 using utl::DPO;
@@ -62,10 +66,8 @@ struct DetailedMis::Bucket
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedMis::DetailedMis(Architecture* arch,
-                         Network* network,
-                         RoutingParams* rt)
-    : arch_(arch), network_(network), rt_(rt)
+DetailedMis::DetailedMis(Architecture* arch, Network* network)
+    : arch_(arch), network_(network)
 {
 }
 

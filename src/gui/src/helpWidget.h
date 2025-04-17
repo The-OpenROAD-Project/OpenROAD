@@ -7,6 +7,7 @@
 #include <QDockWidget>
 #include <QListWidget>
 #include <QTextBrowser>
+#include <string>
 
 #include "gui/gui.h"
 

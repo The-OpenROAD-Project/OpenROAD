@@ -4,6 +4,7 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <map>
 #include <ostream>
 #include <sstream>
 #include <string>

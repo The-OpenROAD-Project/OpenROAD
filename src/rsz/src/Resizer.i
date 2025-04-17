@@ -455,7 +455,7 @@ void
 repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,
-                  double buffer_gain,
+                  bool pre_placement,
                   bool match_cell_footprint,
                   bool verbose)
 {
@@ -464,7 +464,7 @@ repair_design_cmd(double max_length,
   resizer->repairDesign(max_length,
                         slew_margin,
                         cap_margin,
-                        buffer_gain,
+                        pre_placement,
                         match_cell_footprint,
                         verbose);
 }

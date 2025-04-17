@@ -4,6 +4,9 @@
 #include "FlexPA_unique.h"
 
 #include <algorithm>
+#include <limits>
+#include <memory>
+#include <set>
 #include <vector>
 
 #include "distributed/frArchive.h"
