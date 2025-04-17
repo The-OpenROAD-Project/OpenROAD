@@ -187,6 +187,7 @@ class Edge
   int getNumPins() const;
   const std::vector<Pin*>& getPins() const;
   void addPin(Pin* pin);
+  uint64_t hpwl() const;
 
  private:
   int id_ = 0;

@@ -476,6 +476,21 @@ void Edge::addPin(Pin* pin)
 {
   pins_.emplace_back(pin);
 }
+uint64_t Edge::hpwl() const
+{
+  odb::Rect rect;
+  rect.mergeInit();
+  for (const Pin* pinj : getPins()) {
+    const Node* ndj = pinj->getNode();
+
+    const DbuX x = ndj->getCenterX() + pinj->getOffsetX();
+    const DbuY y = ndj->getCenterY() + pinj->getOffsetY();
+
+    rect.merge(odb::Point(x.v, y.v));
+  }
+
+  return rect.dx() + rect.dy();
+}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 

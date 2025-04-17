@@ -29,14 +29,6 @@ class DetailedDisplacement : public DetailedObjective
 
   // Other.
   void init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr);
-  uint64_t delta(Node* ndi, DbuX new_x, DbuY new_y);
-  uint64_t delta(Node* ndi, Node* ndj);
-  uint64_t delta(Node* ndi,
-                 DbuX target_xi,
-                 DbuY target_yi,
-                 Node* ndj,
-                 DbuX target_xj,
-                 DbuY target_yj);
 
  private:
   Architecture* arch_;

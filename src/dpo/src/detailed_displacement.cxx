@@ -148,92 +148,9 @@ double DetailedDisplacement::delta(const Journal& journal)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-uint64_t DetailedDisplacement::delta(Node* ndi, DbuX new_x, DbuY new_y)
-{
-  // Compute change in displacement for moving node to new position.
-
-  // Targets are centers, but computation is with left and bottom...
-  new_x -= ndi->getWidth() / 2;
-  new_y -= ndi->getHeight() / 2;
-
-  DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
-  DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
-  const uint64_t old_disp = dx.v + dy.v;
-
-  dx = abs(new_x - ndi->getOrigLeft().v);
-  dy = abs(new_y - ndi->getOrigBottom().v);
-  const uint64_t new_disp = dx.v + dy.v;
-
-  // +ve means improvement.
-  return old_disp - new_disp;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates)
 {
   candidates.clear();
   candidates = mgrPtr_->getSingleHeightCells();
 }
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-uint64_t DetailedDisplacement::delta(Node* ndi, Node* ndj)
-{
-  // Compute change in wire length for swapping the two nodes.
-  DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
-  DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
-  uint64_t old_disp = dx.v + dy.v;
-  dx = abs(ndj->getLeft() - ndj->getOrigLeft());
-  dy = abs(ndj->getBottom() - ndj->getOrigBottom());
-  old_disp += dx.v + dy.v;
-
-  dx = abs(ndj->getLeft() - ndi->getOrigLeft());
-  dy = abs(ndj->getBottom() - ndi->getOrigBottom());
-  uint64_t new_disp = dx.v + dy.v;
-  dx = abs(ndi->getLeft() - ndj->getOrigLeft());
-  dy = abs(ndi->getBottom() - ndj->getOrigBottom());
-  new_disp += dx.v + dy.v;
-
-  // +ve means improvement.
-  return old_disp - new_disp;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-uint64_t DetailedDisplacement::delta(Node* ndi,
-                                     DbuX target_xi,
-                                     DbuY target_yi,
-                                     Node* ndj,
-                                     DbuX target_xj,
-                                     DbuY target_yj)
-{
-  // Compute change in wire length for swapping the two nodes at specified
-  // targets.
-
-  // Targets are centers, but computation is with left and bottom...
-  target_xi -= ndi->getWidth() / 2;
-  target_yi -= ndi->getHeight() / 2;
-
-  target_xj -= ndj->getWidth() / 2;
-  target_yj -= ndj->getHeight() / 2;
-
-  DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
-  DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
-  uint64_t old_disp = dx.v + dy.v;
-  dx = abs(ndj->getLeft() - ndj->getOrigLeft());
-  dy = abs(ndj->getBottom() - ndj->getOrigBottom());
-  old_disp += dx.v + dy.v;
-
-  dx = abs(target_xi - ndi->getOrigLeft());
-  dy = abs(target_yi - ndi->getOrigBottom());
-  uint64_t new_disp = dx.v + dy.v;
-  dx = abs(target_xj - ndj->getOrigLeft());
-  dy = abs(target_yj - ndj->getOrigBottom());
-  new_disp += dx.v + dy.v;
-
-  // +ve means improvement.
-  return old_disp - new_disp;
-}
-
 }  // namespace dpo
