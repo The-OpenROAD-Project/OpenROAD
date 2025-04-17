@@ -30,7 +30,7 @@ namespace dpo {
 DetailedDisplacement::DetailedDisplacement(Architecture* arch)
     : DetailedObjective("disp"),
       arch_(arch),
-      singleRowHeight_(arch_->getRow(0)->getHeight().v)
+      singleRowHeight_(arch_->getRow(0)->getHeight())
 {
 }
 
@@ -68,19 +68,19 @@ void DetailedDisplacement::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedDisplacement::curr()
 {
-  std::fill(tot_.begin(), tot_.end(), 0.0);
+  std::fill(tot_.begin(), tot_.end(), 0);
   for (auto ndi : mgrPtr_->getSingleHeightCells()) {
-    const double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-    const double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
-    tot_[1] += dx + dy;
+    const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+    const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
+    tot_[1] += dx.v + dy.v;
   }
   for (size_t s = 2; s < mgrPtr_->getNumMultiHeights(); s++) {
     for (size_t i = 0; i < mgrPtr_->getMultiHeightCells(s).size(); i++) {
       const Node* ndi = mgrPtr_->getMultiHeightCells(s)[i];
 
-      const double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-      const double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
-      tot_[s] += dx + dy;
+      const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+      const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
+      tot_[s] += dx.v + dy.v;
     }
   }
 
@@ -90,7 +90,7 @@ double DetailedDisplacement::curr()
       disp += tot_[i] / (double) count_[i];
     }
   }
-  disp /= singleRowHeight_;
+  disp /= (double) singleRowHeight_.v;
   disp /= (double) nSets_;
 
   return disp;
@@ -103,7 +103,7 @@ double DetailedDisplacement::delta(const Journal& journal)
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
 
-  std::fill(del_.begin(), del_.end(), 0.0);
+  std::fill(del_.begin(), del_.end(), 0);
 
   // Put cells into their "old positions and orientations".
   const auto& changes = journal.getActions();
@@ -112,12 +112,12 @@ double DetailedDisplacement::delta(const Journal& journal)
   }
 
   for (const auto ndi : journal.getAffectedNodes()) {
-    const int spanned = std::lround(ndi->getHeight().v / singleRowHeight_);
+    const int spanned = (ndi->getHeight() / singleRowHeight_).v;
 
-    const double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-    const double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
+    const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+    const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
 
-    del_[spanned] += (dx + dy);
+    del_[spanned] += (dx.v + dy.v);
   }
 
   // Put cells into their "new positions and orientations".
@@ -126,11 +126,11 @@ double DetailedDisplacement::delta(const Journal& journal)
   }
 
   for (const auto ndi : journal.getAffectedNodes()) {
-    const double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-    const double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
+    const DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+    const DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
 
     const int spanned = arch_->getCellHeightInRows(ndi);
-    del_[spanned] -= (dx + dy);
+    del_[spanned] -= (dx.v + dy.v);
   }
 
   double delta = 0.;
@@ -139,7 +139,7 @@ double DetailedDisplacement::delta(const Journal& journal)
       delta += del_[i] / (double) count_[i];
     }
   }
-  delta /= singleRowHeight_;
+  delta /= (double) singleRowHeight_.v;
   delta /= (double) nSets_;
 
   // +ve means improvement.
@@ -148,21 +148,21 @@ double DetailedDisplacement::delta(const Journal& journal)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y)
+uint64_t DetailedDisplacement::delta(Node* ndi, DbuX new_x, DbuY new_y)
 {
   // Compute change in displacement for moving node to new position.
 
   // Targets are centers, but computation is with left and bottom...
-  new_x -= 0.5 * ndi->getWidth().v;
-  new_y -= 0.5 * ndi->getHeight().v;
+  new_x -= ndi->getWidth() / 2;
+  new_y -= ndi->getHeight() / 2;
 
-  double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-  double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
-  const double old_disp = dx + dy;
+  DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+  DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
+  const uint64_t old_disp = dx.v + dy.v;
 
-  dx = std::fabs(new_x - ndi->getOrigLeft().v);
-  dy = std::fabs(new_y - ndi->getOrigBottom().v);
-  const double new_disp = dx + dy;
+  dx = abs(new_x - ndi->getOrigLeft().v);
+  dy = abs(new_y - ndi->getOrigBottom().v);
+  const uint64_t new_disp = dx.v + dy.v;
 
   // +ve means improvement.
   return old_disp - new_disp;
@@ -178,22 +178,22 @@ void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(Node* ndi, Node* ndj)
+uint64_t DetailedDisplacement::delta(Node* ndi, Node* ndj)
 {
   // Compute change in wire length for swapping the two nodes.
-  double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-  double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
-  double old_disp = dx + dy;
-  dx = std::fabs(ndj->getLeft().v - ndj->getOrigLeft().v);
-  dy = std::fabs(ndj->getBottom().v - ndj->getOrigBottom().v);
-  old_disp += dx + dy;
+  DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+  DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
+  uint64_t old_disp = dx.v + dy.v;
+  dx = abs(ndj->getLeft() - ndj->getOrigLeft());
+  dy = abs(ndj->getBottom() - ndj->getOrigBottom());
+  old_disp += dx.v + dy.v;
 
-  dx = std::fabs(ndj->getLeft().v - ndi->getOrigLeft().v);
-  dy = std::fabs(ndj->getBottom().v - ndi->getOrigBottom().v);
-  double new_disp = dx + dy;
-  dx = std::fabs(ndi->getLeft().v - ndj->getOrigLeft().v);
-  dy = std::fabs(ndi->getBottom().v - ndj->getOrigBottom().v);
-  new_disp += dx + dy;
+  dx = abs(ndj->getLeft() - ndi->getOrigLeft());
+  dy = abs(ndj->getBottom() - ndi->getOrigBottom());
+  uint64_t new_disp = dx.v + dy.v;
+  dx = abs(ndi->getLeft() - ndj->getOrigLeft());
+  dy = abs(ndi->getBottom() - ndj->getOrigBottom());
+  new_disp += dx.v + dy.v;
 
   // +ve means improvement.
   return old_disp - new_disp;
@@ -201,36 +201,36 @@ double DetailedDisplacement::delta(Node* ndi, Node* ndj)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(Node* ndi,
-                                   double target_xi,
-                                   double target_yi,
-                                   Node* ndj,
-                                   double target_xj,
-                                   double target_yj)
+uint64_t DetailedDisplacement::delta(Node* ndi,
+                                     DbuX target_xi,
+                                     DbuY target_yi,
+                                     Node* ndj,
+                                     DbuX target_xj,
+                                     DbuY target_yj)
 {
   // Compute change in wire length for swapping the two nodes at specified
   // targets.
 
   // Targets are centers, but computation is with left and bottom...
-  target_xi -= 0.5 * ndi->getWidth().v;
-  target_yi -= 0.5 * ndi->getHeight().v;
+  target_xi -= ndi->getWidth() / 2;
+  target_yi -= ndi->getHeight() / 2;
 
-  target_xj -= 0.5 * ndj->getWidth().v;
-  target_yj -= 0.5 * ndj->getHeight().v;
+  target_xj -= ndj->getWidth() / 2;
+  target_yj -= ndj->getHeight() / 2;
 
-  double dx = std::fabs(ndi->getLeft().v - ndi->getOrigLeft().v);
-  double dy = std::fabs(ndi->getBottom().v - ndi->getOrigBottom().v);
-  double old_disp = dx + dy;
-  dx = std::fabs(ndj->getLeft().v - ndj->getOrigLeft().v);
-  dy = std::fabs(ndj->getBottom().v - ndj->getOrigBottom().v);
-  old_disp += dx + dy;
+  DbuX dx = abs(ndi->getLeft() - ndi->getOrigLeft());
+  DbuY dy = abs(ndi->getBottom() - ndi->getOrigBottom());
+  uint64_t old_disp = dx.v + dy.v;
+  dx = abs(ndj->getLeft() - ndj->getOrigLeft());
+  dy = abs(ndj->getBottom() - ndj->getOrigBottom());
+  old_disp += dx.v + dy.v;
 
-  dx = std::fabs(target_xi - ndi->getOrigLeft().v);
-  dy = std::fabs(target_yi - ndi->getOrigBottom().v);
-  double new_disp = dx + dy;
-  dx = std::fabs(target_xj - ndj->getOrigLeft().v);
-  dy = std::fabs(target_yj - ndj->getOrigBottom().v);
-  new_disp += dx + dy;
+  dx = abs(target_xi - ndi->getOrigLeft());
+  dy = abs(target_yi - ndi->getOrigBottom());
+  uint64_t new_disp = dx.v + dy.v;
+  dx = abs(target_xj - ndj->getOrigLeft());
+  dy = abs(target_yj - ndj->getOrigBottom());
+  new_disp += dx.v + dy.v;
 
   // +ve means improvement.
   return old_disp - new_disp;

@@ -29,14 +29,14 @@ class DetailedDisplacement : public DetailedObjective
 
   // Other.
   void init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr);
-  double delta(Node* ndi, double new_x, double new_y);
-  double delta(Node* ndi, Node* ndj);
-  double delta(Node* ndi,
-               double target_xi,
-               double target_yi,
-               Node* ndj,
-               double target_xj,
-               double target_yj);
+  uint64_t delta(Node* ndi, DbuX new_x, DbuY new_y);
+  uint64_t delta(Node* ndi, Node* ndj);
+  uint64_t delta(Node* ndi,
+                 DbuX target_xi,
+                 DbuY target_yi,
+                 Node* ndj,
+                 DbuX target_xj,
+                 DbuY target_yj);
 
  private:
   Architecture* arch_;
@@ -45,9 +45,9 @@ class DetailedDisplacement : public DetailedObjective
   DetailedOrient* orientPtr_ = nullptr;
 
   // Other.
-  double singleRowHeight_;
-  std::vector<double> tot_;
-  std::vector<double> del_;
+  DbuY singleRowHeight_;
+  std::vector<uint64_t> tot_;
+  std::vector<uint64_t> del_;
   std::vector<int> count_;
   int nSets_ = 0;
 };
