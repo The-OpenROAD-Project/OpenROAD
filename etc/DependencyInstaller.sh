@@ -371,6 +371,14 @@ _installUbuntuPackages() {
         zlib1g-dev
 
     packages=()
+
+    # Choose libstdc++ version
+    if _versionCompare $1 -ge 24.04; then
+        packages+=("libstdc++-14-dev")
+    elif _versionCompare $1 -ge 22.10; then
+        packages+=("libstdc++-12-dev")
+    fi
+
     # Chose Python version
     if _versionCompare $1 -ge 24.04; then
         packages+=("libpython3.12")
