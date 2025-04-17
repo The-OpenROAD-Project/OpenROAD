@@ -214,7 +214,7 @@ class AbcTestAsap7 : public AbcTest
            "./asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
            "./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz"};
 
-    for (const std::string liberty_path& : liberty_paths) {
+    for (const std::string& liberty_path : liberty_paths) {
       auto path = std::filesystem::canonical(liberty_path);
       library_ = sta_->readLiberty(path.string().c_str(),
                                    sta_->findCorner("default"),
