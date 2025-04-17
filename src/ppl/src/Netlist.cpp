@@ -4,6 +4,7 @@
 #include "Netlist.h"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 #include "Slots.h"

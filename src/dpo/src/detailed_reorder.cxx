@@ -3,9 +3,12 @@
 
 #include "detailed_reorder.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cstddef>
+#include <limits>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "architecture.h"
@@ -396,7 +399,7 @@ double DetailedReorderer::cost(const std::vector<Node*>& nodes,
         const Node* ndj = pinj->getNode();
 
         const double x
-            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+            = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
 
         xmin = std::min(xmin, x);
         xmax = std::max(xmax, x);

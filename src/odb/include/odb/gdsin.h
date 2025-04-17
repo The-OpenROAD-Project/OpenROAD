@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <set>
 #include <string>
 #include <vector>
 

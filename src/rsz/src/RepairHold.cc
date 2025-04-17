@@ -3,6 +3,7 @@
 
 #include "RepairHold.hh"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 

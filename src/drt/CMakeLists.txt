@@ -51,7 +51,6 @@ add_library(drt_lib
   src/ta/FlexTA_assign.cpp
   src/ta/FlexTA.cpp
   src/global.cpp
-  src/gc/FlexGC_end.cpp
   src/gc/FlexGC_rq.cpp
   src/gc/FlexGC.cpp
   src/gc/FlexGC_init.cpp
@@ -112,10 +111,8 @@ target_include_directories(drt_lib
 target_link_libraries(drt_lib
   PUBLIC
     stt_lib
-    OpenSTA
     utl_lib
     dst
-    dbSta_lib
     Threads::Threads
     OpenMP::OpenMP_CXX
     ${Boost_LIBRARIES}

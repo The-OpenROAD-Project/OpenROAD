@@ -7,10 +7,10 @@
 #include <tcl.h>
 
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"
-#include "ord/OpenRoad.hh"
 
 namespace gui {
 
@@ -167,10 +167,8 @@ int startGui(int& argc,
 
 namespace ord {
 
-class OpenRoad;
-void initGui(OpenRoad* openroad)
+void initGui(Tcl_Interp* interp, odb::dbDatabase* db, utl::Logger* logger)
 {
-  auto interp = openroad->tclInterp();
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
       "proc save_image { args } {"

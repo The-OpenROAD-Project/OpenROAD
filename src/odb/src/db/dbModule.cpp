@@ -17,7 +17,9 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstddef>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbModNet.h"

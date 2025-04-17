@@ -4,7 +4,11 @@
 #pragma once
 
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -138,6 +142,8 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  std::vector<std::pair<float, float>> computeWidthCurves(
+      const std::vector<std::pair<float, float>>& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();

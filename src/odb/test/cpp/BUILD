@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, Precision Innovations Inc.
+# Copyright (c) 2025, The OpenROAD Authors
 
 package(
     features = ["layering_check"],
@@ -19,7 +19,7 @@ cc_test(
     ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//:opendb_lib",
+        "//src/odb",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -37,7 +37,7 @@ cc_test(
     ],
     linkstatic = True,  # TODO: remove once deps define all symbols
     deps = [
-        "//:opendb_lib",
+        "//src/odb",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

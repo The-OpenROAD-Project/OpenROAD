@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <vector>
 
 #include "io.h"
@@ -30,7 +31,7 @@ void io::Parser::instAnalysis()
   }
 
   int numLayers = getTech()->getLayers().size();
-  std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+  frOrderedIdMap<frMaster*, std::tuple<frLayerNum, frLayerNum>>
       masterPinLayerRange;
   for (auto& uMaster : getDesign()->getMasters()) {
     auto master = uMaster.get();

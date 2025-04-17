@@ -3,8 +3,12 @@
 
 #include "initialPlace.h"
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
+#include <memory>
 #include <utility>
+#include <vector>
 
 #include "placerBase.h"
 #include "solver.h"
@@ -64,10 +68,12 @@ void InitialPlace::doBicgstabPlace(int threads)
                            log_,
                            threads);
     float error_max = std::max(error.x, error.y);
-    log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
-                 iter,
-                 error_max,
-                 pbc_->hpwl());
+    log_->report(
+        "[InitialPlace]  Iter: {} conjugate gradient residual: {:0.8f} HPWL: "
+        "{}",
+        iter,
+        error_max,
+        pbc_->hpwl());
     updateCoordi();
 
     if (graphics) {

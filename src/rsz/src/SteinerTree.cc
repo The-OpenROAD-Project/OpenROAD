@@ -3,6 +3,7 @@
 
 #include "SteinerTree.hh"
 
+#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -62,7 +63,8 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
   int pin_count = pinlocs.size();
   bool is_placed = true;
   if (pin_count >= 2) {
-    vector<int> x, y;  // Two separate vectors of coordinates needed by flute.
+    std::vector<int> x;  // Two separate vectors of coordinates needed by flute.
+    std::vector<int> y;
     int drvr_idx = 0;  // The "driver_pin" or the root of the Steiner tree.
     for (int i = 0; i < pin_count; i++) {
       const PinLoc& pinloc = pinlocs[i];

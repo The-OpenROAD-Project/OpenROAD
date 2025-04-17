@@ -23,7 +23,9 @@
 #include <QToolTip>
 #include <QTranslator>
 #include <boost/geometry.hpp>
+#include <cmath>
 #include <deque>
+#include <functional>
 #include <limits>
 #include <tuple>
 #include <utility>

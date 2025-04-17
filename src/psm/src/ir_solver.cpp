@@ -4,9 +4,17 @@
 #include "ir_solver.h"
 
 #include <Eigen/SparseLU>
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <list>
+#include <map>
+#include <memory>
+#include <optional>
 #include <queue>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "connection.h"
 #include "db_sta/dbNetwork.hh"

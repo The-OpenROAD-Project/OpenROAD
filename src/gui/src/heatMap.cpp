@@ -6,9 +6,14 @@
 #include <QApplication>
 #include <QThread>
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
+#include <limits>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "heatMapSetup.h"
@@ -100,8 +105,6 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
 
 void HeatMapDataSource::redraw()
 {
-  ensureMap();
-
   if (issue_redraw_) {
     renderer_->redraw();
   }
@@ -393,7 +396,8 @@ void HeatMapDataSource::setupMap()
              utl::GUI,
              "HeatMap",
              1,
-             "Generating {}x{} map",
+             "{} - Generating {}x{} map",
+             name_,
              x_grid_size,
              y_grid_size);
   map_.resize(boost::extents[x_grid_size][y_grid_size]);
@@ -465,6 +469,13 @@ void HeatMapDataSource::setXYMapGrid(const std::vector<int>& x_grid,
 
 void HeatMapDataSource::destroyMap()
 {
+  if (destroy_map_) {
+    return;
+  }
+
+  debugPrint(
+      logger_, utl::GUI, "HeatMap", 1, "{} - destroy map requested", name_);
+
   destroy_map_ = true;
 
   redraw();
@@ -492,19 +503,19 @@ void HeatMapDataSource::ensureMap()
   std::unique_lock<std::mutex> lock(ensure_mutex_);
 
   if (destroy_map_) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Destroying map");
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Destroying map", name_);
     clearMap();
     destroy_map_ = false;
   }
 
   const bool build_map = map_[0][0] == nullptr;
   if (build_map) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Setting up map");
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Setting up map", name_);
     setupMap();
   }
 
   if (build_map || !isPopulated()) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Populating map");
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Populating map", name_);
 
     const bool update_cursor
         = gui::Gui::enabled()
@@ -519,7 +530,8 @@ void HeatMapDataSource::ensureMap()
     }
 
     if (isPopulated()) {
-      debugPrint(logger_, utl::GUI, "HeatMap", 1, "Correcting map scale");
+      debugPrint(
+          logger_, utl::GUI, "HeatMap", 1, "{} - Correcting map scale", name_);
       correctMapScale(map_);
     }
 
@@ -532,7 +544,8 @@ void HeatMapDataSource::ensureMap()
   }
 
   if (!colors_correct_ && isPopulated()) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Assigning map colors");
+    debugPrint(
+        logger_, utl::GUI, "HeatMap", 1, "{} - Assigning map colors", name_);
     assignMapColors();
   }
 }

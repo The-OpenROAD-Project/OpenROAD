@@ -3,6 +3,13 @@
 
 #include <omp.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
 #include "frProfileTask.h"
@@ -702,7 +709,6 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   if (graphics_) {
     graphics_->setPlanarAP(ap, ps, design_rule_checker.getMarkers());
@@ -1012,7 +1018,6 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   const bool no_drv = design_rule_checker.getMarkers().empty();
 
@@ -1332,7 +1337,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::set<std::pair<Point, frLayerNum>> apset;
 
   if (graphics_) {
-    std::set<frInst*, frBlockObjectComp>* inst_class = nullptr;
+    frOrderedIdSet<frInst*>* inst_class = nullptr;
     if (inst_term) {
       inst_class = unique_insts_.getClass(inst_term->getInst());
     }
@@ -1361,6 +1366,15 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         return aps.size();
       }
     }
+  }
+
+  if (inst_term) {
+    logger_->warn(
+        DRT,
+        88,
+        "Exhaustive access point generation for {} ({}) is unsatisfactory.",
+        inst_term->getName(),
+        inst_term->getInst()->getMaster()->getName());
   }
 
   // inst_term aps are written back here if not early stopped
@@ -1403,9 +1417,10 @@ void FlexPA::genInstAccessPoints(frInst* unique_inst)
     if (!n_aps) {
       logger_->error(DRT,
                      73,
-                     "No access point for {}/{}.",
+                     "No access point for {}/{} ({}).",
                      inst_term->getInst()->getName(),
-                     inst_term->getTerm()->getName());
+                     inst_term->getTerm()->getName(),
+                     inst_term->getInst()->getMaster()->getName());
     }
   }
 }

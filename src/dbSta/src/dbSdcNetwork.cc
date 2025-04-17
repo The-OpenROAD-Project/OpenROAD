@@ -3,6 +3,7 @@
 
 #include "dbSdcNetwork.hh"
 
+#include <memory>
 #include <string>
 
 #include "sta/ParseBus.hh"

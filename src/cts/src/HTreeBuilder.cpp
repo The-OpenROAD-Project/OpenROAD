@@ -3,9 +3,12 @@
 
 #include "HTreeBuilder.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>

@@ -1,0 +1,23 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: ./testcases/clocked_macro.lef, created 1 library cells
+[WARNING STA-1171] ./testcases/clocked_macro.lib line 32, default_max_transition is 0.0.
+[INFO ODB-0128] Design: clocked_macro
+[INFO ODB-0253]     Updated 1 components.
+Die Area: (0.00, 0.00) (450.00, 450.00),  Floorplan Area: (4.94, 4.20) (444.98, 443.80)
+	Number of std cell instances: 0
+	Area of std cell instances: 0.00
+	Number of macros: 1
+	Area of macros: 43000.00
+	Halo width: 4.00
+	Halo height: 4.00
+	Area of macros with halos: 47304.00
+	Area of std cell instances + Area of macros: 43000.00
+	Floorplan area: 193441.58
+	Design Utilization: 0.22
+	Floorplan Utilization: 0.00
+	Manufacturing Grid: 10
+
+[WARNING MPL-0026] Design has no IO pins!
+[WARNING MPL-0025] Design has no standard cells!
+[WARNING MPL-0027] Design has only macros!
+No differences found.

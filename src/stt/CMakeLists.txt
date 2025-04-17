@@ -14,13 +14,21 @@ set(POWV9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POWV9.cpp)
 set(POST9_CPP ${CMAKE_CURRENT_BINARY_DIR}/POST9.cpp)
 
 add_custom_command(OUTPUT ${POWV9_CPP}
-  COMMAND ${FLUTE_HOME}/etc/MakeDatVar.tcl powv9 ${POWV9_CPP} ${POWV9_DAT}
-  DEPENDS ${POWV9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
+  COMMAND ${CMAKE_SOURCE_DIR}/etc/file_to_string.py 
+  --inputs ${POWV9_DAT} 
+  --output ${POWV9_CPP}
+  --varname powv9 
+  --namespace stt::flt 
+  DEPENDS ${POWV9_DAT} ${PROJECT_SOURCE_DIR}/etc/file_to_string.py
 )
 
 add_custom_command(OUTPUT ${POST9_CPP}
-  COMMAND ${FLUTE_HOME}/etc/MakeDatVar.tcl post9 ${POST9_CPP} ${POST9_DAT}
-  DEPENDS ${POST9_DAT} ${FLUTE_HOME}/etc/MakeDatVar.tcl
+  COMMAND ${PROJECT_SOURCE_DIR}/etc/file_to_string.py 
+  --inputs ${POST9_DAT} 
+  --output ${POST9_CPP} 
+  --varname post9 
+  --namespace stt::flt 
+  DEPENDS ${POST9_DAT} ${PROJECT_SOURCE_DIR}/etc/file_to_string.py
   )
 
 swig_lib(NAME      stt
@@ -59,7 +67,6 @@ target_include_directories(stt
 
 target_link_libraries(stt_lib
     utl_lib
-    OpenSTA
     odb
 )
 
@@ -67,7 +74,6 @@ target_link_libraries(stt
     stt_lib
     utl_lib
     gui
-    OpenSTA
 )
 
 messages(

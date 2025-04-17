@@ -46,6 +46,9 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "db_sta/dbNetwork.hh"
 
 #include <algorithm>
+#include <limits>
+#include <memory>
+#include <set>
 #include <unordered_set>
 #include <vector>
 
@@ -2289,6 +2292,7 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
   dbNet* flat_net_db = nullptr;
   dbModNet* hier_net_db = nullptr;
 
+  // connect the flat net first
   if (flat_net) {
     staToDb(flat_net, flat_net_db, hier_net_db);
     if (hier_net_db) {
@@ -2297,7 +2301,6 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                      "Illegal net combination. hierarchical flat net supplied "
                      "as flat net argument to api:connectPin");
     }
-
     if (flat_net_db) {
       if (iterm) {
         iterm->connect(flat_net_db);
@@ -2313,8 +2316,10 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
   }
 
   if (hier_net) {
-    staToDb(hier_net, flat_net_db, hier_net_db);
-    if (flat_net_db) {
+    // sanity check to make hier argument is ok
+    dbNet* flat_net_local_check = nullptr;
+    staToDb(hier_net, flat_net_local_check, hier_net_db);
+    if (flat_net_local_check) {
       logger_->error(ORD,
                      2027,
                      "Illegal net combination. flat net supplied as hier net "
@@ -2336,13 +2341,19 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
+      // do the house keeping. Mod net must always have the flat net associated
+      // with it.
+      if (flat_net_db) {
+        reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
+      }
     }
   }
 }
 
 /*
 Generic pin -> net connection with support for hierarchical
-nets
+nets. If connecting a hierarchical net and associated_flat_net
+not null then reassociate the hierarhical net.
 */
 void dbNetwork::connectPin(Pin* pin, Net* net)
 {
@@ -3606,10 +3617,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
       dbModInst* parent_inst = cur_module->getModInst();
       cur_module = parent_inst->getParent();
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_inst, connection_name_o.c_str());
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm = dbModITerm::create(
+          parent_inst, connection_name_o.c_str(), mod_bterm);
       source_db_mod_net = dbModNet::create(cur_module, connection_name);
       mod_iterm->connect(source_db_mod_net);
       top_net = source_db_mod_net;
@@ -3636,10 +3645,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
       dbModInst* parent_inst = cur_module->getModInst();
       cur_module = parent_inst->getParent();
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_inst, connection_name_i.c_str());
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm = dbModITerm::create(
+          parent_inst, connection_name_i.c_str(), mod_bterm);
       if (cur_module != highest_common_module) {
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);

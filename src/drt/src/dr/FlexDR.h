@@ -8,8 +8,11 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/export.hpp>
 #include <deque>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db/drObj/drMarker.h"
@@ -133,9 +136,8 @@ class FlexDR
   Logger* logger_;
   odb::dbDatabase* db_;
   RouterConfiguration* router_cfg_;
-  std::vector<std::vector<std::map<frNet*,
-                                   std::set<std::pair<Point, frLayerNum>>,
-                                   frBlockObjectComp>>>
+  std::vector<std::vector<
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>>>
       gcell2BoundaryPin_;
 
   FlexDRViaData via_data_;
@@ -163,7 +165,7 @@ class FlexDR
   void init_halfViaEncArea();
 
   void removeGCell2BoundaryPin();
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
+  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>
   initDR_mergeBoundaryPin(int startX,
                           int startY,
                           int size,
@@ -281,18 +283,16 @@ class FlexDRWorker
   void setExtBox(const Rect& boxIn) { extBox_ = boxIn; }
   void setDrcBox(const Rect& boxIn) { drcBox_ = boxIn; }
   void setDRIter(int in) { drIter_ = in; }
-  void setDRIter(int in,
-                 std::map<frNet*,
-                          std::set<std::pair<Point, frLayerNum>>,
-                          frBlockObjectComp>& bp)
+  void setDRIter(
+      int in,
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& bp)
   {
     drIter_ = in;
     boundaryPin_ = std::move(bp);
   }
   bool isCongested() const { return isCongested_; }
-  void setBoundaryPins(std::map<frNet*,
-                                std::set<std::pair<Point, frLayerNum>>,
-                                frBlockObjectComp>& bp)
+  void setBoundaryPins(
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& bp)
   {
     boundaryPin_ = std::move(bp);
   }
@@ -502,8 +502,7 @@ class FlexDRWorker
   frUInt4 workerFixedShapeCost_{0};
   float workerMarkerDecay_{0};
   // used in init route as gr boundary pin
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-      boundaryPin_;
+  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>> boundaryPin_;
   int pinCnt_{0};
   int initNumMarkers_{0};
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
@@ -513,7 +512,7 @@ class FlexDRWorker
 
   // local storage
   std::vector<std::unique_ptr<drNet>> nets_;
-  std::map<frNet*, std::vector<drNet*>, frBlockObjectComp> owner2nets_;
+  frOrderedIdMap<frNet*, std::vector<drNet*>> owner2nets_;
   FlexGridGraph gridGraph_;
   std::vector<frMarker> markers_;
   std::vector<frMarker> bestMarkers_;
@@ -545,54 +544,47 @@ class FlexDRWorker
   void initRipUpNetsFromMarkers();
   void initNetObjs(
       const frDesign* design,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netRouteObjs,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
-  void initNetObjs_pathSeg(frPathSeg* pathSeg,
-                           std::set<frNet*, frBlockObjectComp>& nets,
-                           std::map<frNet*,
-                                    std::vector<std::unique_ptr<drConnFig>>,
-                                    frBlockObjectComp>& netRouteObjs,
-                           std::map<frNet*,
-                                    std::vector<std::unique_ptr<drConnFig>>,
-                                    frBlockObjectComp>& netExtObjs);
-  void initNetObjs_via(const frVia* via,
-                       std::set<frNet*, frBlockObjectComp>& nets,
-                       std::map<frNet*,
-                                std::vector<std::unique_ptr<drConnFig>>,
-                                frBlockObjectComp>& netRouteObjs,
-                       std::map<frNet*,
-                                std::vector<std::unique_ptr<drConnFig>>,
-                                frBlockObjectComp>& netExtObjs);
-  void initNetObjs_patchWire(frPatchWire* pwire,
-                             std::set<frNet*, frBlockObjectComp>& nets,
-                             std::map<frNet*,
-                                      std::vector<std::unique_ptr<drConnFig>>,
-                                      frBlockObjectComp>& netRouteObjs,
-                             std::map<frNet*,
-                                      std::vector<std::unique_ptr<drConnFig>>,
-                                      frBlockObjectComp>& netExtObjs);
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netOrigGuides,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netGuides);
+  void initNetObjs_pathSeg(
+      frPathSeg* pathSeg,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs);
+  void initNetObjs_via(
+      const frVia* via,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs);
+  void initNetObjs_patchWire(
+      frPatchWire* pwire,
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs);
   void initNets_segmentTerms(const Point& bp,
                              frLayerNum lNum,
                              const frNet* net,
                              frBlockObjectSet& terms);
   void initNets_initDR(
       const frDesign* design,
-      std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netRouteObjs,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netGuides);
+      frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netOrigGuides,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netGuides);
   int initNets_initDR_helper_getObjComponent(
       drConnFig* obj,
       const std::vector<std::vector<int>>& connectedComponents,
@@ -607,36 +599,31 @@ class FlexDRWorker
 
   void initNets_searchRepair(
       const frDesign* design,
-      const std::set<frNet*, frBlockObjectComp>& nets,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netRouteObjs,
-      std::map<frNet*,
-               std::vector<std::unique_ptr<drConnFig>>,
-               frBlockObjectComp>& netExtObjs,
-      std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides);
+      const frOrderedIdSet<frNet*>& nets,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netRouteObjs,
+      frOrderedIdMap<frNet*, std::vector<std::unique_ptr<drConnFig>>>&
+          netExtObjs,
+      frOrderedIdMap<frNet*, std::vector<frRect>>& netOrigGuides);
   void initNets_searchRepair_pin2epMap(
       const frDesign* design,
       const frNet* net,
       const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap);
+      frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+          pin2epMap);
 
   void initNets_searchRepair_pin2epMap_helper(
       const frDesign* design,
       const frNet* net,
       const Point& bp,
       frLayerNum lNum,
-      std::map<frBlockObject*,
-               std::set<std::pair<Point, frLayerNum>>,
-               frBlockObjectComp>& pin2epMap);
+      frOrderedIdMap<frBlockObject*, std::set<std::pair<Point, frLayerNum>>>&
+          pin2epMap);
   void initNets_searchRepair_nodeMap(
       const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
-      const std::map<frBlockObject*,
-                     std::set<std::pair<Point, frLayerNum>>,
-                     frBlockObjectComp>& pin2epMap,
+      const frOrderedIdMap<frBlockObject*,
+                           std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
       std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
 
   void initNets_searchRepair_nodeMap_routeObjEnd(
@@ -657,9 +644,8 @@ class FlexDRWorker
   void initNets_searchRepair_nodeMap_pin(
       const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
       std::vector<frBlockObject*>& netPins,
-      const std::map<frBlockObject*,
-                     std::set<std::pair<Point, frLayerNum>>,
-                     frBlockObjectComp>& pin2epMap,
+      const frOrderedIdMap<frBlockObject*,
+                           std::set<std::pair<Point, frLayerNum>>>& pin2epMap,
       std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap);
   void initNets_searchRepair_connComp(
       frNet* net,
@@ -895,20 +881,19 @@ class FlexDRWorker
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
   bool routeNet(drNet* net, std::vector<FlexMazeIdx>& paths);
-  void routeNet_prep(drNet* net,
-                     std::set<drPin*, frBlockObjectComp>& unConnPins,
-                     std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-                         mazeIdx2unConnPins,
-                     std::set<FlexMazeIdx>& apMazeIdx,
-                     std::set<FlexMazeIdx>& realPinAPMazeIdx,
-                     std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
-                     std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
+  void routeNet_prep(
+      drNet* net,
+      frOrderedIdSet<drPin*>& unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
+      std::set<FlexMazeIdx>& apMazeIdx,
+      std::set<FlexMazeIdx>& realPinAPMazeIdx,
+      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
+      std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
   void routeNet_prepAreaMap(drNet* net,
                             std::map<FlexMazeIdx, frCoord>& areaMap);
   void routeNet_setSrc(
-      std::set<drPin*, frBlockObjectComp>& unConnPins,
-      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-          mazeIdx2unConnPins,
+      frOrderedIdSet<drPin*>& unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
       std::vector<FlexMazeIdx>& connComps,
       FlexMazeIdx& ccMazeIdx1,
       FlexMazeIdx& ccMazeIdx2,
@@ -917,15 +902,13 @@ class FlexDRWorker
   drPin* routeNet_getNextDst(
       FlexMazeIdx& ccMazeIdx1,
       FlexMazeIdx& ccMazeIdx2,
-      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-          mazeIdx2unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
       std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
   void routeNet_postAstarUpdate(
       std::vector<FlexMazeIdx>& path,
       std::vector<FlexMazeIdx>& connComps,
-      std::set<drPin*, frBlockObjectComp>& unConnPins,
-      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
-          mazeIdx2unConnPins,
+      frOrderedIdSet<drPin*>& unConnPins,
+      std::map<FlexMazeIdx, frOrderedIdSet<drPin*>>& mazeIdx2unConnPins,
       bool isFirstConn);
   void routeNet_postAstarWritePath(
       drNet* net,
@@ -1044,21 +1027,19 @@ class FlexDRWorker
   // end
   void cleanup();
   void identifyCongestionLevel();
-  void endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets);
-  void endRemoveNets(frDesign* design,
-                     std::set<frNet*, frBlockObjectComp>& modNets,
-                     std::map<frNet*,
-                              std::set<std::pair<Point, frLayerNum>>,
-                              frBlockObjectComp>& boundPts);
+  void endGetModNets(frOrderedIdSet<frNet*>& modNets);
+  void endRemoveNets(
+      frDesign* design,
+      frOrderedIdSet<frNet*>& modNets,
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts);
   void endRemoveNets_pathSeg(frDesign* design,
                              frPathSeg* pathSeg,
                              std::set<std::pair<Point, frLayerNum>>& boundPts);
   void endRemoveNets_via(frDesign* design, frVia* via);
   void endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire);
-  void endAddNets(frDesign* design,
-                  std::map<frNet*,
-                           std::set<std::pair<Point, frLayerNum>>,
-                           frBlockObjectComp>& boundPts);
+  void endAddNets(
+      frDesign* design,
+      frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts);
   void endAddNets_pathSeg(frDesign* design, drPathSeg* pathSeg);
   void endAddNets_via(frDesign* design, drVia* via);
   void endAddNets_patchWire(frDesign* design, drPatchWire* pwire);

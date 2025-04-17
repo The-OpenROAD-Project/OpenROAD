@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <boost/graph/connected_components.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "frBaseTypes.h"
@@ -79,7 +83,7 @@ void io::Parser::initDefaultVias()
       continue;
     }
     // Check whether viaDefs set is empty
-    std::set<const frViaDef*> viaDefs = layer->getViaDefs();
+    const auto& viaDefs = layer->getViaDefs();
     if (!viaDefs.empty()) {
       std::map<int, std::map<viaRawPriorityTuple, const frViaDef*>>
           cuts2ViaDefs;
@@ -257,7 +261,7 @@ void io::Parser::initSecondaryVias()
     if (!has_default_viadef || !has_max_spacing_constraints) {
       continue;
     }
-    std::set<const frViaDef*> viadefs = layer->getViaDefs();
+    const auto& viadefs = layer->getViaDefs();
     if (!viadefs.empty()) {
       std::map<int, std::map<viaRawPriorityTuple, const frViaDef*>>
           cuts_to_viadefs;

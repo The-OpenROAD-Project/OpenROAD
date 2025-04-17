@@ -3,6 +3,10 @@
 
 #include "SimulatedAnnealing.h"
 
+#include <algorithm>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"

@@ -3,6 +3,8 @@
 
 #include "PathRenderer.h"
 
+#include <memory>
+
 #include "db_sta/dbNetwork.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/TimingRole.hh"

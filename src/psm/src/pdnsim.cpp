@@ -3,6 +3,9 @@
 
 #include "psm/pdnsim.h"
 
+#include <algorithm>
+#include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 

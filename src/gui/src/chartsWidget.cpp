@@ -11,6 +11,8 @@
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -438,7 +440,7 @@ void HistogramView::setBucketInterval()
   const float exact_interval
       = (max_slack_ - min_slack_) / default_number_of_buckets_;
 
-  int snap_interval = computeSnapBucketInterval(exact_interval);
+  const float snap_interval = computeSnapBucketInterval(exact_interval);
 
   // We compute a new number of buckets based on the snap interval.
   const int new_number_of_buckets
@@ -458,7 +460,7 @@ void HistogramView::setBucketInterval()
   }
 }
 
-int HistogramView::computeNumberofBuckets(const int bucket_interval,
+int HistogramView::computeNumberofBuckets(const float bucket_interval,
                                           const float max_slack,
                                           const float min_slack)
 {
@@ -488,14 +490,14 @@ float HistogramView::computeSnapBucketDecimalInterval(float minimum_interval)
   return std::ceil(integer_part) / std::pow(10, power_count);
 }
 
-int HistogramView::computeSnapBucketInterval(float exact_interval)
+float HistogramView::computeSnapBucketInterval(float exact_interval)
 {
   if (exact_interval < 10) {
     return std::ceil(exact_interval);
   }
 
-  int snap_interval = 0;
-  int digits = computeNumberOfDigits(static_cast<int>(exact_interval));
+  float snap_interval = 0;
+  const int digits = computeNumberOfDigits(exact_interval);
 
   while (snap_interval < exact_interval) {
     snap_interval += 5 * std::pow(10, digits - 2);
@@ -504,7 +506,7 @@ int HistogramView::computeSnapBucketInterval(float exact_interval)
   return snap_interval;
 }
 
-int HistogramView::computeNumberOfDigits(int value)
+int HistogramView::computeNumberOfDigits(float value)
 {
   return static_cast<int>(std::log10(value)) + 1;
 }

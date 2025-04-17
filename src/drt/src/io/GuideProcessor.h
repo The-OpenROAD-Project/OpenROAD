@@ -4,6 +4,9 @@
 #pragma once
 
 #include <boost/icl/interval_set.hpp>
+#include <map>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "db/tech/frTechObject.h"
@@ -202,7 +205,7 @@ class GuideProcessor
   Logger* logger_;
   odb::dbDatabase* db_;
   RouterConfiguration* router_cfg_;
-  std::map<frNet*, std::vector<frRect>, frBlockObjectComp> tmp_guides_;
+  frOrderedIdMap<frNet*, std::vector<frRect>> tmp_guides_;
 };
 
 /**

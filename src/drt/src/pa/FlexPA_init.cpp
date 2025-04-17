@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <vector>
 
@@ -89,7 +91,8 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
                          is_not_upper_align,
                          layer2_area,
                          layer1_area,
-                         is_not_lower_align);
+                         is_not_lower_align,
+                         via_def->getName());
 }
 
 void FlexPA::initTrackCoords()

@@ -3,8 +3,10 @@
 
 #include "detailed_orient.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <cstddef>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -118,7 +120,7 @@ int DetailedOrient::orientCells(int& changed)
         bottom = std::min(bottom, segPtr->getRowId());
       }
       if (bottom < arch_->getNumRows()) {
-        unsigned origOrient = ndi->getCurrOrient();
+        unsigned origOrient = ndi->getOrient();
         if (arch_->isSingleHeightCell(ndi)) {
           if (!orientSingleHeightCellForRow(ndi, bottom)) {
             ++errors;
@@ -131,7 +133,7 @@ int DetailedOrient::orientCells(int& changed)
           // ? Whoops.
           ++errors;
         }
-        if (origOrient != ndi->getCurrOrient()) {
+        if (origOrient != ndi->getOrient()) {
           ++changed;
         }
       } else {
@@ -159,7 +161,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
       // I'm not sure the following is correct, but I am going
       // to change the orientation the same way I would for a
       // single height cell when flipping about X.
-      switch (ndi->getCurrOrient()) {
+      switch (ndi->getOrient()) {
         case dbOrientType::R0:
           ndi->adjustCurrOrient(dbOrientType::MX);
           break;
@@ -206,7 +208,7 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
   }
 
   unsigned rowOri = arch_->getRow(row)->getOrient();
-  unsigned cellOri = ndi->getCurrOrient();
+  unsigned cellOri = ndi->getOrient();
 
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
     if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {
@@ -299,14 +301,14 @@ int DetailedOrient::flipCells()
         for (Pin* pinj : edi->getPins()) {
           Node* ndj = pinj->getNode();
 
-          double x
-              = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
+          double x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
+                     + pinj->getOffsetX().v;
           oldMinX = std::min(oldMinX, x);
           oldMaxX = std::max(oldMaxX, x);
 
           if (ndj == ndi) {
             x = ndj->getLeft().v + 0.5 * ndj->getWidth().v
-                - pinj->getOffsetX();  // flipped.
+                - pinj->getOffsetX().v;  // flipped.
           }
           newMinX = std::min(newMinX, x);
           newMaxX = std::max(newMaxX, x);
@@ -340,7 +342,7 @@ int DetailedOrient::flipCells()
           || ndi->getRight() + leftPadding > rx) {
         continue;
       }
-      dbOrientType orig_orient = ndi->getCurrOrient();
+      dbOrientType orig_orient = ndi->getOrient();
       dbOrientType flipped_orient;
       switch (orig_orient) {
         case dbOrientType::R0:
@@ -398,7 +400,7 @@ unsigned DetailedOrient::orientFind(Node* ndi, int row)
   // around the Y-axis previously to improve WL...
 
   unsigned rowOri = arch_->getRow(row)->getOrient();
-  unsigned cellOri = ndi->getCurrOrient();
+  unsigned cellOri = ndi->getOrient();
 
   if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
     if (cellOri == dbOrientType::R0 || cellOri == dbOrientType::MY) {

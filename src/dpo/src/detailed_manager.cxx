@@ -9,6 +9,8 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <set>
 #include <stack>
 #include <string>
@@ -18,9 +20,9 @@
 #include "architecture.h"
 #include "detailed_orient.h"
 #include "detailed_segment.h"
+#include "dpl/PlacementDRC.h"
 #include "journal.h"
 #include "odb/dbTransform.h"
-#include "router.h"
 #include "utility.h"
 #include "utl/Logger.h"
 
@@ -30,9 +32,9 @@ namespace dpo {
 
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
-                         RoutingParams* rt,
-                         Grid* grid)
-    : arch_(arch), network_(network), rt_(rt), grid_(grid)
+                         Grid* grid,
+                         PlacementDRC* drc_engine)
+    : arch_(arch), network_(network), grid_(grid), drc_engine_(drc_engine)
 {
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
@@ -180,50 +182,6 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
       if (ymin < yt && ymax > yb) {
         blockages_[r].emplace_back(xmin, xmax, 0, 0, BlockageType::Placement);
-      }
-    }
-  }
-
-  if (includeRouteBlockages && rt_ != nullptr) {
-    // Turn M1 and M2 routing blockages into placement blockages.  The idea
-    // here is to be quite conservative and prevent the possibility of pin
-    // access problems.  We *ONLY* consider routing obstacles to be placement
-    // obstacles if they overlap with an *ENTIRE* site.
-
-    for (int layer = 0; layer <= 1 && layer < rt_->num_layers_; layer++) {
-      const std::vector<Rectangle>& rects = rt_->layerBlockages_[layer];
-      for (const auto& rect : rects) {
-        const double xmin = rect.xmin();
-        const double xmax = rect.xmax();
-        const double ymin = rect.ymin();
-        const double ymax = rect.ymax();
-
-        for (int r = 0; r < numSingleHeightRows_; r++) {
-          const double lb = arch_->getMinY() + r * singleRowHeight_;
-          const double ub = lb + singleRowHeight_;
-
-          if (ymax >= ub && ymin <= lb) {
-            // Blockage overlaps with the entire row span in the Y-dir...
-            // Sites are possibly completely covered!
-
-            const double originX = arch_->getRow(r)->getLeft();
-            const double siteSpacing = arch_->getRow(r)->getSiteSpacing();
-
-            const int i0 = (int) std::floor((xmin - originX) / siteSpacing);
-            int i1 = (int) std::floor((xmax - originX) / siteSpacing);
-            if (originX + i1 * siteSpacing != xmax) {
-              ++i1;
-            }
-
-            if (i1 > i0) {
-              blockages_[r].emplace_back(originX + i0 * siteSpacing,
-                                         originX + i1 * siteSpacing,
-                                         0,
-                                         0,
-                                         BlockageType::Routing);
-            }
-          }
-        }
       }
     }
   }
@@ -384,7 +342,7 @@ void DetailedMgr::findSegments()
   // Here, we need to slice up the segments to account for regions.
   std::vector<std::vector<std::pair<double, double>>> intervals;
   for (int reg = 1; reg < arch_->getNumRegions(); reg++) {
-    Architecture::Region* regPtr = arch_->getRegion(reg);
+    auto regPtr = arch_->getRegion(reg);
 
     findRegionIntervals(regPtr->getId(), intervals);
 
@@ -547,7 +505,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
   // Segments in the current row...
   for (DetailedSeg* curr : segsInRow_[row]) {
     // Updated for regions.
-    if (nd->getRegionId() != curr->getRegId()) {
+    if (nd->getGroupId() != curr->getRegId()) {
       continue;
     }
 
@@ -587,7 +545,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
       if ((vert <= dist1 || vert <= dist2)) {
         for (DetailedSeg* curr : segsInRow_[below]) {
           // Updated for regions.
-          if (nd->getRegionId() != curr->getRegId()) {
+          if (nd->getGroupId() != curr->getRegId()) {
             continue;
           }
 
@@ -627,7 +585,7 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
       if ((vert <= dist1 || vert <= dist2)) {
         for (DetailedSeg* curr : segsInRow_[above]) {
           // Updated for regions.
-          if (nd->getRegionId() != curr->getRegId()) {
+          if (nd->getGroupId() != curr->getRegId()) {
             continue;
           }
 
@@ -772,7 +730,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
         // are going to violate a fence region constraint.
         bool regionsOkay = true;
         for (DetailedSeg* segPtr : candidates_i) {
-          if (segPtr->getRegId() != nd->getRegionId()) {
+          if (segPtr->getRegId() != nd->getGroupId()) {
             regionsOkay = false;
           }
         }
@@ -1087,53 +1045,6 @@ double DetailedMgr::measureMaximumDisplacement(u_int64_t& maxX,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::setupObstaclesForDrc()
-{
-  // Setup rectangular obstacles for short and pin access checks.  Do only as
-  // rectangles per row and per layer.  I had used rtrees, but it wasn't working
-  // any better.
-  obstacles_.resize(arch_->getRows().size());
-
-  for (int row_id = 0; row_id < arch_->getRows().size(); row_id++) {
-    obstacles_[row_id].resize(rt_->num_layers_);
-
-    const double originX = arch_->getRow(row_id)->getLeft();
-    const double siteSpacing = arch_->getRow(row_id)->getSiteSpacing();
-    const int numSites = arch_->getRow(row_id)->getNumSites();
-
-    // Blockages relevant to this row...
-    for (int layer_id = 0; layer_id < rt_->num_layers_; layer_id++) {
-      obstacles_[row_id][layer_id].clear();
-
-      const std::vector<Rectangle>& rects = rt_->layerBlockages_[layer_id];
-      for (const auto& rect : rects) {
-        // Extract obstacles which interfere with this row only.
-        const double xmin = originX;
-        const double xmax = originX + numSites * siteSpacing;
-        const double ymin = arch_->getRow(row_id)->getBottom();
-        const double ymax = arch_->getRow(row_id)->getTop();
-
-        if (rect.xmax() <= xmin) {
-          continue;
-        }
-        if (rect.xmin() >= xmax) {
-          continue;
-        }
-        if (rect.ymax() <= ymin) {
-          continue;
-        }
-        if (rect.ymin() >= ymax) {
-          continue;
-        }
-
-        obstacles_[row_id][layer_id].push_back(rect);
-      }
-    }
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::collectSingleHeightCells()
 {
   // Routine to collect only the movable single height cells.
@@ -1269,7 +1180,7 @@ void DetailedMgr::cleanup()
 {
   // Various cleanups.
   for (Node* ndi : wideCells_) {
-    ndi->setFixed(Node::NOT_FIXED);
+    ndi->setFixed(false);
   }
 }
 
@@ -1321,117 +1232,9 @@ int DetailedMgr::checkOverlapInSegments()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-namespace cell_edges {
-odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
-                            const Node* cell,
-                            const DbuX left,
-                            const DbuY bottom,
-                            const odb::dbOrientType& orient)
-{
-  odb::Rect bbox = cell->getMaster()->boundary_box_;
-  odb::dbTransform transform(orient);
-  transform.apply(bbox);
-  odb::Point offset(left.v - bbox.xMin(), bottom.v - bbox.yMin());
-  transform.setOffset(offset);
-  odb::Rect result(edge_rect);
-  transform.apply(result);
-  return result;
-}
-odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
-{
-  odb::Rect query_rect(edge_box);
-  bool is_vertical_edge = edge_box.getDir() == 0;
-  if (is_vertical_edge) {
-    // vertical edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
-  } else {
-    // horizontal edge
-    query_rect = query_rect.bloat(spc, odb::Orientation2D::Vertical);
-  }
-  return query_rect;
-}
-};  // namespace cell_edges
-
 bool DetailedMgr::hasEdgeSpacingViolation(const Node* node) const
 {
-  if (!arch_->getUseSpacingTable()) {
-    return false;
-  }
-  const auto& master = node->getMaster();
-  if (master == nullptr) {
-    // Not a cell. (or a filler cell)
-    return false;
-  }
-  // Get the real grid coordinates from the grid indices.
-  DbuX x_real = node->getLeft();
-  DbuY y_real = node->getBottom();
-  for (const auto& edge1 : master->edges_) {
-    int max_spc = arch_->getMaxSpacing(edge1.getEdgeType()).spc
-                  + 1;  // +1 to account for EXACT rules
-    odb::Rect edge1_box = cell_edges::transformEdgeRect(
-        edge1.getBBox(), node, x_real, y_real, node->getCurrOrient());
-    bool is_vertical_edge = edge1_box.getDir() == 0;
-    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
-    auto xMin = grid_->gridX(DbuX(query_rect.xMin()));
-    auto xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
-    auto yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
-    auto yMax = grid_->gridEndY(DbuY(query_rect.yMax()));
-    std::set<Node*> checked_cells;
-    // Loop over the area covered by queryRect to find neighboring edges and
-    // check violations.
-    for (auto y1 = yMin; y1 <= yMax; y1++) {
-      for (auto x1 = xMin; x1 <= xMax; x1++) {
-        const auto pixel = grid_->gridPixel(x1, y1);
-        if (pixel == nullptr || pixel->cell == nullptr || pixel->cell == node) {
-          // Skip if pixel is empty or occupied only by the current cell.
-          continue;
-        }
-        auto cell2 = static_cast<Node*>(pixel->cell);
-        if (checked_cells.find(cell2) != checked_cells.end()) {
-          // Skip if cell was already checked
-          continue;
-        }
-        checked_cells.insert(cell2);
-        auto master2 = cell2->getMaster();
-        if (master2 == nullptr) {
-          continue;
-        }
-        for (const auto& edge2 : master2->edges_) {
-          auto spc_entry = arch_->getCellSpacingUsingTable(edge1.getEdgeType(),
-                                                           edge2.getEdgeType());
-          int spc = spc_entry.spc;
-          odb::Rect edge2_box
-              = cell_edges::transformEdgeRect(edge2.getBBox(),
-                                              cell2,
-                                              cell2->getLeft(),
-                                              cell2->getBottom(),
-                                              cell2->getCurrOrient());
-          if (edge1_box.getDir() != edge2_box.getDir()) {
-            // Skip if edges are not parallel.
-            continue;
-          }
-          if (!query_rect.overlaps(edge2_box)) {
-            // Skip if there is no PRL between the edges.
-            continue;
-          }
-          odb::Rect test_rect(edge1_box);
-          // Generalized intersection between the two edges.
-          test_rect.merge(edge2_box);
-          int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
-          if (spc_entry.is_exact) {
-            if (dist == spc) {
-              // Violation only if the distance between the edges is exactly the
-              // specified spacing.
-              return true;
-            }
-          } else if (dist < spc) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
+  return !drc_engine_->checkEdgeSpacing(node);
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -1651,7 +1454,7 @@ int DetailedMgr::checkRegionAssignment()
     std::sort(temp.begin(), temp.end(), compareNodesL());
 
     for (const Node* ndi : temp) {
-      if (ndi->getRegionId() != segments_[s]->getRegId()) {
+      if (ndi->getGroupId() != segments_[s]->getRegId()) {
         ++err_n;
       }
     }
@@ -1752,76 +1555,12 @@ int DetailedMgr::checkRowAlignment()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedMgr::getCellSpacing(const Node* ndl,
-                                   const Node* ndr,
-                                   const bool checkPinsOnCells)
+double DetailedMgr::getCellSpacing(const Node* ndl, const Node* ndr)
 {
-  // Compute any required spacing between cells.  This could be from an edge
-  // type rule, or due to adjacent pins on the cells.  Checking pins on cells is
-  // more time consuming.
-
   if (ndl == nullptr || ndr == nullptr) {
     return 0.0;
   }
-  const double spacing1 = arch_->getCellSpacing(ndl, ndl);
-  if (!checkPinsOnCells) {
-    return spacing1;
-  }
-  double spacing2 = 0.0;
-  {
-    const Pin* pinl = nullptr;
-    const Pin* pinr = nullptr;
-
-    // Right-most pin on the left cell.
-    for (const Pin* pin : ndl->getPins()) {
-      if (pinl == nullptr || pin->getOffsetX() > pinl->getOffsetX()) {
-        pinl = pin;
-      }
-    }
-
-    // Left-most pin on the right cell.
-    for (const Pin* pin : ndr->getPins()) {
-      if (pinr == nullptr || pin->getOffsetX() < pinr->getOffsetX()) {
-        pinr = pin;
-      }
-    }
-    // If pins on the same layer, do something.
-    if (pinl != nullptr && pinr != nullptr
-        && pinl->getPinLayer() == pinr->getPinLayer()) {
-      // Determine the spacing requirements between these two pins.   Then,
-      // translate this into a spacing requirement between the two cells.  XXX:
-      // Since it is implicit that the cells are in the same row, we can
-      // determine the widest pin and the parallel run length without knowing
-      // the actual location of the cells...  At least I think so...
-
-      const double xmin1 = pinl->getOffsetX() - 0.5 * pinl->getPinWidth();
-      const double xmax1 = pinl->getOffsetX() + 0.5 * pinl->getPinWidth();
-      const double ymin1 = pinl->getOffsetY() - 0.5 * pinl->getPinHeight();
-      const double ymax1 = pinl->getOffsetY() + 0.5 * pinl->getPinHeight();
-
-      const double xmin2 = pinr->getOffsetX() - 0.5 * pinr->getPinWidth();
-      const double xmax2 = pinr->getOffsetX() + 0.5 * pinr->getPinWidth();
-      const double ymin2 = pinr->getOffsetY() - 0.5 * pinr->getPinHeight();
-      const double ymax2 = pinr->getOffsetY() + 0.5 * pinr->getPinHeight();
-
-      const double ww = std::max(std::min(ymax1 - ymin1, xmax1 - xmin1),
-                                 std::min(ymax2 - ymin2, xmax2 - xmin2));
-      const double py
-          = std::max(0.0, std::min(ymax1, ymax2) - std::max(ymin1, ymin2));
-
-      spacing2 = rt_->get_spacing(pinl->getPinLayer(), ww, py);
-      const double gapl = (0.5 * ndl->getWidth().v) - xmax1;
-      const double gapr = xmin2 - (-0.5 * ndr->getWidth().v);
-      spacing2 = std::max(0.0, spacing2 - gapl - gapr);
-
-      if (spacing2 > spacing1) {
-        // The spacing requirement due to the routing layer is larger than the
-        // spacing requirement due to the edge constraint.  Interesting.
-        ;
-      }
-    }
-  }
-  return std::max(spacing1, spacing2);
+  return arch_->getCellSpacing(ndl, ndl);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1961,18 +1700,18 @@ void DetailedMgr::findRegionIntervals(
       || arch_->getRegion(regId)->getId() != regId) {
     internalError("Improper region id");
   }
-  Architecture::Region* regPtr = arch_->getRegion(regId);
+  auto regPtr = arch_->getRegion(regId);
 
   // Initialize.
   intervals.clear();
   intervals.resize(numSingleHeightRows_);
 
   // Look at the rectangles within the region.
-  for (const Rectangle_i& rect : regPtr->getRects()) {
-    const double xmin = rect.xmin();
-    const double xmax = rect.xmax();
-    const double ymin = rect.ymin();
-    const double ymax = rect.ymax();
+  for (const auto& rect : regPtr->getRects()) {
+    const double xmin = rect.xMin();
+    const double xmax = rect.xMax();
+    const double ymin = rect.yMin();
+    const double ymax = rect.yMax();
 
     for (int r = 0; r < numSingleHeightRows_; r++) {
       const double lb = arch_->getMinY() + r * singleRowHeight_;
@@ -2724,7 +2463,7 @@ bool DetailedMgr::tryMove1(Node* ndi,
   // Reasons to fail.  Same or bogus segment, wrong region, or
   // not single height cell.
   const int spanned = arch_->getCellHeightInRows(ndi);
-  if (sj == si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
+  if (sj == si || sj == -1 || ndi->getGroupId() != segments_[sj]->getRegId()
       || spanned != 1) {
     return false;
   }
@@ -2888,7 +2627,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   // Reasons to fail.  Different or bogus segment, wrong region, or
   // not single height cell.
   const int spanned = arch_->getCellHeightInRows(ndi);
-  if (sj != si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
+  if (sj != si || sj == -1 || ndi->getGroupId() != segments_[sj]->getRegId()
       || spanned != 1) {
     return false;
   }
@@ -3018,7 +2757,7 @@ bool DetailedMgr::tryMove3(Node* ndi,
     bool gotSeg = false;
     for (int s = 0; s < segsInRow_[r].size() && !gotSeg; s++) {
       const DetailedSeg* segPtr = segsInRow_[r][s];
-      if (segPtr->getRegId() == ndi->getRegionId()) {
+      if (segPtr->getRegId() == ndi->getGroupId()) {
         if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
           gotSeg = true;
           segs.push_back(segPtr->getSegId());
