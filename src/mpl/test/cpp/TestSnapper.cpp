@@ -83,9 +83,9 @@ TEST_F(TestSnapper, SingleLayer)
 
   // Snapped to manufacturing grid
   EXPECT_EQ(macro->getOrigin().x(), 1500);
-  // 1487 (origin) + 25 (pin center) equals 1512 which is
+  // 1523 (origin) + 25 (pin center) equals 1548 which is
   // a multiple of 36 (pin is aligned to track)
-  EXPECT_EQ(macro->getOrigin().y(), 1487);
+  EXPECT_EQ(macro->getOrigin().y(), 1523);
 }
 
 // Snaps a macro with two pins, with pins in different layers but same direction
