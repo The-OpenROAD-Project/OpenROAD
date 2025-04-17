@@ -182,6 +182,7 @@ filegroup(
         "nangate_macros/fakeram45_32x64.lef",
         "nangate_macros/fakeram45_64x32.lef",
         "nangate_macros/fakeram45_64x32_overlapping_ports.lef",
+        "nangate_macros/fakeram45_256x16.lef",
         "nangate_macros/floorplan.def",
         "nangate_macros/floorplan_narrow.def",
         "nangate_macros/floorplan_orient.def",
