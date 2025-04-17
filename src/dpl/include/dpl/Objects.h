@@ -68,6 +68,8 @@ class Node
   DbuY getTop() const;
   DbuX getWidth() const;
   DbuY getHeight() const;
+  DbuX getCenterX() const;
+  DbuY getCenterY() const;
   dbInst* getDbInst() const;
   dbOrientType getOrient() const;
   bool isFixed() const;

@@ -30,7 +30,7 @@ namespace dpo {
 DetailedDisplacement::DetailedDisplacement(Architecture* arch)
     : DetailedObjective("disp"),
       arch_(arch),
-      singleRowHeight_(arch_->getRow(0)->getHeight())
+      singleRowHeight_(arch_->getRow(0)->getHeight().v)
 {
 }
 

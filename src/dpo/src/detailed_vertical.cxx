@@ -166,10 +166,10 @@ bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox)
 
   unsigned t = 0;
 
-  const double xmin = arch_->getMinX();
-  const double xmax = arch_->getMaxX();
-  const double ymin = arch_->getMinY();
-  const double ymax = arch_->getMaxY();
+  const double xmin = arch_->getMinX().v;
+  const double xmax = arch_->getMaxX().v;
+  const double ymin = arch_->getMinY().v;
+  const double ymax = arch_->getMaxY().v;
 
   xpts_.clear();
   ypts_.clear();

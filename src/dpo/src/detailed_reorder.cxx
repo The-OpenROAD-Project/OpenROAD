@@ -208,7 +208,7 @@ void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
   // somewhat evenly by adding extra space to the padding.
   const int spacePerCell
       = ((rightLimit - leftLimit) - (totalWidth + totalPadding)).v / size;
-  const int siteWidth = arch_->getRow(0)->getSiteWidth();
+  const int siteWidth = arch_->getRow(0)->getSiteWidth().v;
   const int sitePerCellTotal = spacePerCell / siteWidth;
   const int sitePerCellRight = (sitePerCellTotal >> 1);
   const int sitePerCellLeft = sitePerCellTotal - sitePerCellRight;

@@ -313,10 +313,10 @@ void DetailedMis::buildGrid()
   // Builds a coarse grid over the placement region for locating cells.
   traversal_ = 0;
 
-  const double xmin = arch_->getMinX();
-  const double xmax = arch_->getMaxX();
-  const double ymin = arch_->getMinY();
-  const double ymax = arch_->getMaxY();
+  const double xmin = arch_->getMinX().v;
+  const double xmax = arch_->getMaxX().v;
+  const double ymin = arch_->getMinY().v;
+  const double ymax = arch_->getMaxY().v;
 
   // Design each grid bin to hold a few hundred cells.  Do this based on the
   // average width and height of the cells.
@@ -365,8 +365,8 @@ void DetailedMis::populateGrid()
     }
   }
 
-  const double xmin = arch_->getMinX();
-  const double ymin = arch_->getMinY();
+  const double xmin = arch_->getMinX().v;
+  const double ymin = arch_->getMinY().v;
 
   // Insert cells into the constructed grid.
   cellToBinMap_.clear();
@@ -401,7 +401,7 @@ void DetailedMis::clearGrid()
 //////////////////////////////////////////////////////////////////////////////////
 bool DetailedMis::gatherNeighbours(Node* ndi)
 {
-  const double singleRowHeight = arch_->getRow(0)->getHeight();
+  const double singleRowHeight = arch_->getRow(0)->getHeight().v;
 
   neighbours_.clear();
   neighbours_.push_back(ndi);

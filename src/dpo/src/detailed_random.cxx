@@ -520,12 +520,12 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
   network_ = mgr->getNetwork();
 
   const int ydim = mgr_->getNumSingleHeightRows();
-  double xwid = arch_->getRow(0)->getSiteSpacing();
+  double xwid = arch_->getRow(0)->getSiteSpacing().v;
   const int xdim
-      = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
+      = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()).v / xwid));
 
-  xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
-  double ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
+  xwid = (arch_->getMaxX() - arch_->getMinX()).v / (double) xdim;
+  double ywid = (arch_->getMaxY() - arch_->getMinY()).v / (double) ydim;
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
   const int spanned_i = arch_->getCellHeightInRows(ndi);
@@ -555,9 +555,9 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
 
     // Random position within a box centered about (xi,yi).
     const int grid_xi = std::min(
-        xdim - 1, std::max(0, (int) ((xi - arch_->getMinX()) / xwid)));
+        xdim - 1, std::max(0, (int) ((xi - arch_->getMinX().v) / xwid)));
     const int grid_yi = std::min(
-        ydim - 1, std::max(0, (int) ((yi - arch_->getMinY()) / ywid)));
+        ydim - 1, std::max(0, (int) ((yi - arch_->getMinY().v) / ywid)));
 
     const int rel_x = mgr_->getRandom(2 * rlx + 1);
     const int rel_y = mgr_->getRandom(2 * rly + 1);
@@ -568,13 +568,13 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
         = std::min(ydim - 1, std::max(0, (grid_yi - rly + rel_y)));
 
     // Position of the destination.
-    const double xj = arch_->getMinX() + grid_xj * xwid;
-    double yj = arch_->getMinY() + grid_yj * ywid;
+    const double xj = arch_->getMinX().v + grid_xj * xwid;
+    double yj = arch_->getMinY().v + grid_yj * ywid;
 
     // Row and segment for the destination.
-    int rj = (int) ((yj - arch_->getMinY()) / mgr_->getSingleRowHeight());
+    int rj = (int) ((yj - arch_->getMinY().v) / mgr_->getSingleRowHeight().v);
     rj = std::min(mgr_->getNumSingleHeightRows() - 1, std::max(0, rj));
-    yj = arch_->getRow(rj)->getBottom();
+    yj = arch_->getRow(rj)->getBottom().v;
     int sj = -1;
     for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
       const DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
@@ -647,12 +647,12 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   network_ = mgr->getNetwork();
 
   const int ydim = mgr_->getNumSingleHeightRows();
-  double xwid = arch_->getRow(0)->getSiteSpacing();
+  double xwid = arch_->getRow(0)->getSiteSpacing().v;
   const int xdim
-      = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
+      = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()).v / xwid));
 
-  xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
-  double ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
+  xwid = (arch_->getMaxX() - arch_->getMinX()).v / (double) xdim;
+  double ywid = (arch_->getMaxY() - arch_->getMinY()).v / (double) ydim;
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
@@ -684,9 +684,9 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       const double orig_xc = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;
 
       const int grid_xi = std::min(
-          xdim - 1, std::max(0, (int) ((orig_xc - arch_->getMinX()) / xwid)));
+          xdim - 1, std::max(0, (int) ((orig_xc - arch_->getMinX().v) / xwid)));
       const int grid_yi = std::min(
-          ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY()) / ywid)));
+          ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY().v) / ywid)));
 
       const int rel_x = mgr_->getRandom(2 * rlx + 1);
       const int rel_y = mgr_->getRandom(2 * rly + 1);
@@ -696,8 +696,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       const int grid_yj
           = std::min(ydim - 1, std::max(0, (grid_yi - rly + rel_y)));
 
-      xj = arch_->getMinX() + grid_xj * xwid;
-      yj = arch_->getMinY() + grid_yj * ywid;
+      xj = arch_->getMinX().v + grid_xj * xwid;
+      yj = arch_->getMinY().v + grid_yj * ywid;
     }
     if (false) {
       // The original position.
@@ -713,14 +713,14 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       double curr_xc = ndi->getLeft().v + 0.5 * ndi->getWidth().v;
 
       int grid_xi = std::min(
-          xdim - 1, std::max(0, (int) ((curr_xc - arch_->getMinX()) / xwid)));
+          xdim - 1, std::max(0, (int) ((curr_xc - arch_->getMinX().v) / xwid)));
       int grid_yi = std::min(
-          ydim - 1, std::max(0, (int) ((curr_yc - arch_->getMinY()) / ywid)));
+          ydim - 1, std::max(0, (int) ((curr_yc - arch_->getMinY().v) / ywid)));
 
       int grid_xj = std::min(
-          xdim - 1, std::max(0, (int) ((orig_xc - arch_->getMinX()) / xwid)));
+          xdim - 1, std::max(0, (int) ((orig_xc - arch_->getMinX().v) / xwid)));
       int grid_yj = std::min(
-          ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY()) / ywid)));
+          ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY().v) / ywid)));
 
       if (grid_xi > grid_xj) {
         std::swap(grid_xi, grid_xj);
@@ -738,14 +738,14 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       grid_xj = std::min(xdim - 1, std::max(0, (grid_xi + rel_x)));
       grid_yj = std::min(ydim - 1, std::max(0, (grid_yi + rel_y)));
 
-      xj = arch_->getMinX() + grid_xj * xwid;
-      yj = arch_->getMinY() + grid_yj * ywid;
+      xj = arch_->getMinX().v + grid_xj * xwid;
+      yj = arch_->getMinY().v + grid_yj * ywid;
     }
 
     // Row and segment for the destination.
-    int rj = (int) ((yj - arch_->getMinY()) / mgr_->getSingleRowHeight());
+    int rj = (int) ((yj - arch_->getMinY().v) / mgr_->getSingleRowHeight().v);
     rj = std::min(mgr_->getNumSingleHeightRows() - 1, std::max(0, rj));
-    yj = arch_->getRow(rj)->getBottom();
+    yj = arch_->getRow(rj)->getBottom().v;
     int sj = -1;
     for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
       DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];

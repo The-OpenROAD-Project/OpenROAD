@@ -53,18 +53,18 @@ class Architecture
   int postProcess(Network* network);
   int find_closest_row(DbuY y);
 
-  int getMinX() const { return xmin_; }
-  int getMaxX() const { return xmax_; }
-  int getMinY() const { return ymin_; }
-  int getMaxY() const { return ymax_; }
+  DbuX getMinX() const { return xmin_; }
+  DbuX getMaxX() const { return xmax_; }
+  DbuY getMinY() const { return ymin_; }
+  DbuY getMaxY() const { return ymax_; }
 
-  int getWidth() const { return xmax_ - xmin_; }
-  int getHeight() const { return ymax_ - ymin_; }
+  DbuX getWidth() const { return xmax_ - xmin_; }
+  DbuY getHeight() const { return ymax_ - ymin_; }
 
-  void setMinX(int xmin) { xmin_ = xmin; }
-  void setMaxX(int xmax) { xmax_ = xmax; }
-  void setMinY(int ymin) { ymin_ = ymin; }
-  void setMaxY(int ymax) { ymax_ = ymax; }
+  void setMinX(DbuX xmin) { xmin_ = xmin; }
+  void setMaxX(DbuX xmax) { xmax_ = xmax; }
+  void setMinY(DbuY ymin) { ymin_ = ymin; }
+  void setMaxY(DbuY ymax) { ymax_ = ymax; }
 
   bool powerCompatible(const Node* ndi, const Row* row, bool& flip) const;
 
@@ -84,10 +84,10 @@ class Architecture
 
  private:
   // Boundary around rows.
-  int xmin_ = std::numeric_limits<int>::max();
-  int xmax_ = std::numeric_limits<int>::lowest();
-  int ymin_ = std::numeric_limits<int>::max();
-  int ymax_ = std::numeric_limits<int>::lowest();
+  DbuX xmin_ = std::numeric_limits<DbuX>::max();
+  DbuX xmax_ = std::numeric_limits<DbuX>::lowest();
+  DbuY ymin_ = std::numeric_limits<DbuY>::max();
+  DbuY ymax_ = std::numeric_limits<DbuY>::lowest();
 
   // Rows...
   std::vector<Row*> rows_;
@@ -119,20 +119,20 @@ class Architecture::Row
   void setSymmetry(unsigned sym) { siteSymmetry_ = sym; }
   unsigned getSymmetry() const { return siteSymmetry_; }
 
-  void setBottom(int bottom) { rowLoc_ = bottom; }
-  void setHeight(int height) { rowHeight_ = height; }
-  void setSubRowOrigin(int origin) { subRowOrigin_ = origin; }
-  void setSiteSpacing(int spacing) { siteSpacing_ = spacing; }
-  void setSiteWidth(int width) { siteWidth_ = width; }
+  void setBottom(DbuY bottom) { rowLoc_ = bottom; }
+  void setHeight(DbuY height) { rowHeight_ = height; }
+  void setSubRowOrigin(DbuX origin) { subRowOrigin_ = origin; }
+  void setSiteSpacing(DbuX spacing) { siteSpacing_ = spacing; }
+  void setSiteWidth(DbuX width) { siteWidth_ = width; }
   void setNumSites(int nsites) { numSites_ = nsites; }
 
-  int getBottom() const { return rowLoc_; }
-  int getTop() const { return rowLoc_ + rowHeight_; }
-  int getLeft() const { return subRowOrigin_; }
-  int getRight() const { return subRowOrigin_ + numSites_ * siteSpacing_; }
-  int getHeight() const { return rowHeight_; }
-  int getSiteWidth() const { return siteWidth_; }
-  int getSiteSpacing() const { return siteSpacing_; }
+  DbuY getBottom() const { return rowLoc_; }
+  DbuY getTop() const { return rowLoc_ + rowHeight_; }
+  DbuX getLeft() const { return subRowOrigin_; }
+  DbuX getRight() const { return subRowOrigin_ + numSites_ * siteSpacing_.v; }
+  DbuY getHeight() const { return rowHeight_; }
+  DbuX getSiteWidth() const { return siteWidth_; }
+  DbuX getSiteSpacing() const { return siteSpacing_; }
   int getNumSites() const { return numSites_; }
 
   void setTopPower(int pwr) { powerTop_ = pwr; }
@@ -141,17 +141,15 @@ class Architecture::Row
   void setBottomPower(int pwr) { powerBot_ = pwr; }
   int getBottomPower() const { return powerBot_; }
 
-  double getCenterY() const { return rowLoc_ + 0.5 * rowHeight_; }
-
  private:
   int id_ = -1;           // Every row  needs an id...  Filled in after sorting.
-  int rowLoc_ = 0;        // Y-location of the row.
-  int rowHeight_ = 0;     // Height of the row.
-  int subRowOrigin_ = 0;  // Starting X location (xmin) of the row.
-  int siteSpacing_ = 0;   // Spacing between sites in the row. XXX: Likely
+  DbuY rowLoc_{0};        // Y-location of the row.
+  DbuY rowHeight_{0};     // Height of the row.
+  DbuX subRowOrigin_{0};  // Starting X location (xmin) of the row.
+  DbuX siteSpacing_{0};   // Spacing between sites in the row. XXX: Likely
                           // assumed to be the same as the width...
-  int siteWidth_ = 0;     // Width of sites in the row.
-  int numSites_ = 0;      // Number of sites...  Ending X location (xmax) is =
+  DbuX siteWidth_{0};     // Width of sites in the row.
+  int numSites_{0};       // Number of sites...  Ending X location (xmax) is =
                           // subRowOrigin_ + numSites_ * siteSpacing_;
   odb::dbOrientType siteOrient_;  // Orientation of sites in the row.
   unsigned siteSymmetry_ = 0;  // Symmetry of sites in the row.  Symmetry allows

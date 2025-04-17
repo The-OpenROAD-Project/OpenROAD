@@ -93,6 +93,14 @@ DbuY Node::getHeight() const
 {
   return height_;
 }
+DbuX Node::getCenterX() const
+{
+  return left_ + width_ / DbuX{2};
+}
+DbuY Node::getCenterY() const
+{
+  return bottom_ + height_ / DbuY{2};
+}
 dbInst* Node::getDbInst() const
 {
   return db_inst_;

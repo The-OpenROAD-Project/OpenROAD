@@ -29,7 +29,9 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
                          public boost::incrementable<TypedCoordinate<T>>,
                          public boost::decrementable<TypedCoordinate<T>>,
                          public boost::dividable<TypedCoordinate<T>>,
-                         public boost::multipliable<TypedCoordinate<T>>
+                         public boost::dividable<TypedCoordinate<T>, int>,
+                         public boost::multipliable<TypedCoordinate<T>>,
+                         public boost::multipliable<TypedCoordinate<T>, int>
 {
   explicit TypedCoordinate(const int v = 0) : v(v) {}
   TypedCoordinate(const TypedCoordinate<T>& v) = default;
@@ -87,10 +89,20 @@ struct TypedCoordinate : public boost::totally_ordered<TypedCoordinate<T>>,
     v /= rhs.v;
     return *this;
   }
+  TypedCoordinate& operator/=(const int rhs)
+  {
+    v /= rhs;
+    return *this;
+  }
   // multipliable
   TypedCoordinate& operator*=(const TypedCoordinate& rhs)
   {
     v *= rhs.v;
+    return *this;
+  }
+  TypedCoordinate& operator*=(const int rhs)
+  {
+    v *= rhs;
     return *this;
   }
 

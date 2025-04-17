@@ -164,10 +164,10 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   Pin* pin;
   unsigned t = 0;
 
-  double xmin = arch_->getMinX();
-  double xmax = arch_->getMaxX();
-  double ymin = arch_->getMinY();
-  double ymax = arch_->getMaxY();
+  double xmin = arch_->getMinX().v;
+  double xmax = arch_->getMaxX().v;
+  double ymin = arch_->getMinY().v;
+  double ymax = arch_->getMaxY().v;
 
   xpts_.clear();
   ypts_.clear();
