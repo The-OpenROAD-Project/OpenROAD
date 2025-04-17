@@ -23,7 +23,7 @@ def _tcl_encode_or_impl(ctx):
         inputs = ctx.files.srcs,
         arguments = [args],
         #tools = [ctx.executable._tclsh, ctx.file._encode_script],
-        executable = ctx.file._encode_script,
+        executable = ctx.executable._encode_script,
     )
     return [DefaultInfo(files = depset([output_file]))]
 
@@ -48,8 +48,10 @@ tcl_encode = rule(
             doc = "Files to be wrapped.",
         ),
         "_encode_script": attr.label(
-            default = "//:etc/file_to_string.py",
-            allow_single_file = True,
+            default = "//etc:file_to_string",
+            executable = True,
+            allow_files = True,
+            cfg = "exec",
         ),
     },
 )
