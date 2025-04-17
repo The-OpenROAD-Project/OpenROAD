@@ -1595,13 +1595,12 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
       inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
     }
     gCell->updateLocations();
-    NB_gCells_.emplace_back(
-        GCellHandle(nbc_.get(), nbc_->getGCellIndex(gCell)));
+    NB_gCells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
   }
 
   // add filler cells to gCells_
   for (size_t i = 0; i < fillerStor_.size(); ++i) {
-    NB_gCells_.emplace_back(GCellHandle(this, i));
+    NB_gCells_.emplace_back(this, i);
   }
 
   debugPrint(log_,
@@ -1989,6 +1988,9 @@ void NesterovBase::updateAreas()
     reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto it = NB_gCells_.begin(); it < NB_gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
+    if (gCell == nullptr) {
+      continue;
+    }
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
                          * static_cast<int64_t>(gCell->dy());
@@ -2949,7 +2951,7 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
     new_instances.push_back(db_inst);
-    NB_gCells_.emplace_back(GCellHandle(nbc_.get(), stor_index));
+    NB_gCells_.emplace_back(nbc_.get(), stor_index);
     size_t gcells_index = NB_gCells_.size() - 1;
     db_inst_index_map_[db_inst] = gcells_index;
 
