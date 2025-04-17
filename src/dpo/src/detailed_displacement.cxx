@@ -148,9 +148,4 @@ double DetailedDisplacement::delta(const Journal& journal)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates)
-{
-  candidates.clear();
-  candidates = mgrPtr_->getSingleHeightCells();
-}
 }  // namespace dpo
