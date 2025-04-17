@@ -166,7 +166,6 @@ filegroup(
         "asap7_vias/asap7sc7p5t_27_R_1x.lef",
         "asap7_vias/floorplan.def",
         "asap7_vias/floorplan_repair.def",
-        "helpers.py",
         "helpers.tcl",
         "nangate_bsg_black_parrot/Nangate45_maxwidth.lef",
         "nangate_bsg_black_parrot/dummy_pads.lef",
