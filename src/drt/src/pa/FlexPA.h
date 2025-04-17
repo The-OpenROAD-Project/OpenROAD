@@ -77,6 +77,9 @@ class FlexPA
                       const std::string& shared_vol,
                       int cloud_sz);
 
+  void addInst(frInst* inst);
+  void deleteInst(frInst* inst);
+
   int main();
 
  private:
@@ -130,6 +133,7 @@ class FlexPA
   ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
+  bool areAllSkipInstTerms(frInst* inst);
   bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
@@ -143,8 +147,6 @@ class FlexPA
 
   bool isStdCell(frInst* unique_inst);
   bool isMacroCell(frInst* unique_inst);
-
-  void deleteInst(frInst* inst);
 
   /**
    * @brief generates all access points of a single unique instance
