@@ -3367,6 +3367,15 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
       }
     }
   }
+
+  if (net) {
+    PinSet* drivers = this->drivers(net);
+    if (drivers && !drivers->empty()) {
+      PinSet::Iterator drvr_iter(drivers);
+      const Pin* drvr_pin = drvr_iter.next();
+      driver_pin = const_cast<Pin*>(drvr_pin);
+    }
+  }
   // default to top module
   return block_->getTopModule();
 }
@@ -3699,13 +3708,14 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
 
     // do the house keeping. Flush dbNet/dbModNet association
     // fix up correspondence between hierarchical net and flat net.
-
+    /*
     odb::dbNet* source_flat_net = flatNet(dbToSta(source_pin));
     odb::dbModNet* source_hier_net = hierNet(dbToSta(source_pin));
     if (source_hier_net) {
       reassociateHierFlatNet(source_hier_net, source_flat_net, nullptr);
       ;
     }
+    */
   }
 }
 
@@ -3979,7 +3989,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 
   dbNet* candidate_flat_net = db_network_->flatNet(pin);
   if (candidate_flat_net) {
-
     //
     //----------------------------
     //
