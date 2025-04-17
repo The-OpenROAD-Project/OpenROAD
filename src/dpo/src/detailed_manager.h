@@ -106,8 +106,8 @@ class DetailedMgr
   void findClosestSpanOfSegmentsDfs(
       const Node* ndi,
       DetailedSeg* segPtr,
-      int xmin,
-      int xmax,
+      DbuX xmin,
+      DbuX xmax,
       int bot,
       int top,
       std::vector<DetailedSeg*>& stack,
