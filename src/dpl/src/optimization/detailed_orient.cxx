@@ -382,8 +382,7 @@ int DetailedOrient::flipCells()
       // we need to change the orientiation.
 
       // Update/swap paddings.
-      arch_->getCellPadding(ndi, leftPadding, rightPadding);
-      arch_->addCellPadding(ndi, rightPadding, leftPadding);
+      arch_->flipCellPadding(ndi);
       ++nflips;
     }
   }

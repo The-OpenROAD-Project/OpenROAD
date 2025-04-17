@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Objects.h"
+#include "Padding.h"
 #include "network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -326,52 +327,33 @@ bool Architecture::powerCompatible(const Node* ndi,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void Architecture::addCellPadding(Node* ndi, int leftPadding, int rightPadding)
-{
-  cellPaddings_[ndi->getId()] = {leftPadding, rightPadding};
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 bool Architecture::getCellPadding(const Node* ndi,
                                   int& leftPadding,
                                   int& rightPadding) const
 {
-  auto it = cellPaddings_.find(ndi->getId());
-  if (it == cellPaddings_.end()) {
-    rightPadding = 0;
-    leftPadding = 0;
-    return false;
-  }
-  std::tie(leftPadding, rightPadding) = it->second;
+  leftPadding = dpl::gridToDbu(padding_->padLeft(ndi), site_width_).v;
+  rightPadding = dpl::gridToDbu(padding_->padRight(ndi), site_width_).v;
   return true;
 }
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-void Architecture::addCellPadding(Node* ndi,
-                                  DbuX leftPadding,
-                                  DbuX rightPadding)
-{
-  cellPaddings_[ndi->getId()] = {leftPadding.v, rightPadding.v};
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::getCellPadding(const Node* ndi,
                                   DbuX& leftPadding,
                                   DbuX& rightPadding) const
 {
-  auto it = cellPaddings_.find(ndi->getId());
-  if (it == cellPaddings_.end()) {
-    rightPadding = DbuX{0};
-    leftPadding = DbuX{0};
-    return false;
-  }
-  leftPadding = DbuX{it->second.first};
-  rightPadding = DbuX{it->second.second};
+  leftPadding = dpl::gridToDbu(padding_->padLeft(ndi), site_width_);
+  rightPadding = dpl::gridToDbu(padding_->padRight(ndi), site_width_);
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Architecture::flipCellPadding(const Node* ndi)
+{
+  GridX left_padding = padding_->padLeft(ndi);
+  GridX right_padding = padding_->padLeft(ndi);
+  padding_->setPadding(ndi->getDbInst(), right_padding, left_padding);
+}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::getCellSpacing(const Node* leftNode,
@@ -391,16 +373,14 @@ int Architecture::getCellSpacing(const Node* leftNode,
 
     int separation = 0;
     if (leftNode != nullptr) {
-      const auto it = cellPaddings_.find(leftNode->getId());
-      if (it != cellPaddings_.end()) {
-        separation += it->second.second;
-      }
+      DbuX left_padding, right_padding;
+      getCellPadding(leftNode, left_padding, right_padding);
+      separation += right_padding.v;
     }
     if (rightNode != nullptr) {
-      const auto it = cellPaddings_.find(rightNode->getId());
-      if (it != cellPaddings_.end()) {
-        separation += it->second.first;
-      }
+      DbuX left_padding, right_padding;
+      getCellPadding(rightNode, left_padding, right_padding);
+      separation += left_padding.v;
     }
     retval = std::max(retval, separation);
   }

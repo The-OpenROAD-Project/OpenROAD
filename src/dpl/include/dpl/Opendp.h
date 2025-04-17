@@ -129,6 +129,7 @@ class Opendp
 
   // Find a cluster of instances that are touching each other
   std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
+  Padding* getPadding() { return padding_.get(); }
 
  private:
   using bgPoint
