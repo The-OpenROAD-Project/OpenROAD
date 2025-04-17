@@ -4,6 +4,7 @@
 #include "object.h"
 
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <map>
 #include <memory>
@@ -1239,15 +1240,11 @@ void SoftMacro::resizeRandomly(
   if (width_list_.empty()) {
     return;
   }
-  // TODO: See for explanation
-  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
-  float random_variable_0_1;
-  do {
-    random_variable_0_1 = distribution(generator);
-  } while (random_variable_0_1 >= 1.0);
 
-  const int idx
-      = static_cast<int>(std::floor(random_variable_0_1 * width_list_.size()));
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, width_list_.size() - 1);
+  const int idx = index_distribution(generator);
+
   const float min_width = width_list_[idx].first;
   const float max_width = width_list_[idx].second;
   width_ = min_width + distribution(generator) * (max_width - min_width);

@@ -18,7 +18,6 @@
 #include "network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
-#include "router.h"
 
 namespace dpo {
 
