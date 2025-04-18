@@ -33,6 +33,7 @@ using sta::fuzzyLess;
 using sta::fuzzyLessEqual;
 using sta::INF;
 using sta::NetConnectedPinIterator;
+using sta::Path;
 using sta::PinSeq;
 
 // Template magic to make it easier to write algorithms descending
@@ -60,6 +61,7 @@ struct visitor
   visitor(const visitor&) = delete;
   visitor& operator=(const visitor&) = delete;
 };
+
 template <typename F, class... Args>
 decltype(auto) visitTree(F&& f, Args&&... args)
 {
@@ -76,7 +78,7 @@ void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& options)
   std::unordered_map<BufferedNet*, Slack> slacks;
 
   for (const BufferedNetPtr& p : options) {
-    slacks[p.get()] = p->slack(sta);
+    slacks[p.get()] = p->slack();
   }
 
   sort(options.begin(),
@@ -101,7 +103,7 @@ void pruneCapVsSlackOptions(StaState* sta, BufferedNetSeq& options)
   // higher capacitance than the lowest found so far.
   for (size_t pi = si; pi < options.size(); pi++) {
     const BufferedNetPtr& p = options[pi];
-    float cap = p->cap();
+    const float cap = p->cap();
     // If cap is the same or worse than lowest_cap_seen, remove solution p.
     if (fuzzyLess(cap, lowest_cap_seen)) {
       // Otherwise copy the survivor down.
@@ -129,7 +131,7 @@ void pruneCapVsAreaOptions(StaState* sta, BufferedNetSeq& options)
   size_t si = 1;
   for (size_t pi = si; pi < options.size(); pi++) {
     const BufferedNetPtr& p = options[pi];
-    float cap = p->cap();
+    const float cap = p->cap();
     // If cap is the same or worse than lowest_cap_seen, remove solution p.
     if (fuzzyLess(cap, lowest_cap_seen)) {
       // Otherwise copy the survivor down.
@@ -148,7 +150,7 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
   using BnetPtr = BufferedNetPtr;
 
   const BnetSeq Z = visitTree(
-      [this](auto& recurse, int level, const BnetPtr& bnet) -> BnetSeq {
+      [this](auto& recurse, const int level, const BnetPtr& bnet) -> BnetSeq {
         switch (bnet->type()) {
           case BnetType::wire: {
             BnetSeq Z = recurse(bnet->ref());
@@ -169,7 +171,7 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
             for (const BnetPtr& p : Z1) {
               for (const BnetPtr& q : Z2) {
                 const BufferedNetPtr& min_req
-                    = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
+                    = fuzzyLess(p->slack(), q->slack()) ? p : q;
                 BufferedNetPtr junc
                     = make_shared<BufferedNet>(BufferedNetType::junction,
                                                bnet->location(),
@@ -190,11 +192,10 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
           case BufferedNetType::load: {
             const Pin* load_pin = bnet->loadPin();
             Vertex* vertex = graph_->pinLoadVertex(load_pin);
-            PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
-            PathRef arrival_path;
-            if (!req_path.isNull()) {
-              TimingArc* arc;
-              req_path.prevPath(sta_, arrival_path, arc);
+            Path* req_path = sta_->vertexWorstSlackPath(vertex, max_);
+            Path* arrival_path = nullptr;
+            if (req_path) {
+              arrival_path = req_path->prevPath();
             }
             bnet->setArrivalPath(arrival_path);
             bnet->setRequiredPath(req_path);
@@ -225,8 +226,8 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
   int i = 1;
   for (const BufferedNetPtr& p : Z) {
     // Find slack for drvr_pin into option.
-    const PathRef& req_path = p->requiredPath();
-    if (!req_path.isNull()) {
+    const Path* req_path = p->requiredPath();
+    if (req_path) {
       Slack slack = slackAtDriverPin(p, i);
       if (best_option == nullptr || fuzzyGreater(slack, best_slack)) {
         best_slack = slack;
@@ -248,18 +249,21 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
 
 // Recover area on a rebuffering choice without regressing timing
 BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
-                                        Delay slack_target,
-                                        float alpha)
+                                        const Delay slack_target,
+                                        const float alpha)
 {
   using BnetType = BufferedNetType;
   using BnetSeq = BufferedNetSeq;
   using BnetPtr = BufferedNetPtr;
 
-  Delay drvr_delay = bnet->slack(sta_) - slackAtDriverPin(bnet);
+  const Delay drvr_delay = bnet->slack() - slackAtDriverPin(bnet);
 
   // spread down arrival delay
   visitTree(
-      [](auto& recurse, int level, const BnetPtr& bnet, Delay arrival) -> int {
+      [](auto& recurse,
+         const int level,
+         const BnetPtr& bnet,
+         const Delay arrival) -> int {
         bnet->setArrivalDelay(arrival);
         switch (bnet->type()) {
           case BnetType::wire:
@@ -279,7 +283,9 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
       drvr_delay);
 
   BnetSeq Z = visitTree(
-      [&](auto& recurse, int level, const BnetPtr& bnet) -> BufferedNetSeq {
+      [&](auto& recurse,
+          const int level,
+          const BnetPtr& bnet) -> BufferedNetSeq {
         switch (bnet->type()) {
           case BnetType::buffer: {
             assert(bnet->ref()->type() == BnetType::wire);
@@ -291,7 +297,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
                        level,
                        true,
                        (slack_target + bnet->arrivalDelay()) * alpha
-                           + bnet->slack(sta_) * (1.0 - alpha));
+                           + bnet->slack() * (1.0 - alpha));
             return Z;
           }
           case BnetType::wire: {
@@ -303,7 +309,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
                        level,
                        true,
                        (slack_target + bnet->arrivalDelay()) * alpha
-                           + bnet->slack(sta_) * (1.0 - alpha));
+                           + bnet->slack() * (1.0 - alpha));
             return Z;
           }
           case BnetType::junction: {
@@ -312,8 +318,9 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             BnetSeq Z;
             Z.reserve(Z1.size() * Z2.size());
 
-            Delay threshold = (slack_target + bnet->arrivalDelay()) * alpha
-                              + bnet->slack(sta_) * (1.0 - alpha);
+            const Delay threshold
+                = (slack_target + bnet->arrivalDelay()) * alpha
+                  + bnet->slack() * (1.0 - alpha);
 
             Delay last_resort_slack = -INF;
             const BnetPtr *last_resort_p, *last_resort_q;
@@ -322,14 +329,14 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             for (const BnetPtr& p : Z1) {
               for (const BnetPtr& q : Z2) {
                 const BnetPtr& min_req
-                    = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
+                    = fuzzyLess(p->slack(), q->slack()) ? p : q;
 
-                if (Z.empty() && min_req->slack(sta_) > last_resort_slack) {
+                if (Z.empty() && min_req->slack() > last_resort_slack) {
                   last_resort_p = &p;
                   last_resort_q = &q;
                 }
 
-                if (fuzzyLess(min_req->slack(sta_), threshold)) {
+                if (fuzzyLess(min_req->slack(), threshold)) {
                   // Filter out an option that doesn't meet local timing
                   // threshold
                   continue;
@@ -357,9 +364,10 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
             if (Z.empty() && last_resort_p && last_resort_q) {
               // No option met the timing threshold (probably due to rounding
               // errors), pick at least what came closest
-              const BnetPtr &p = *last_resort_p, &q = *last_resort_q;
+              const BnetPtr& p = *last_resort_p;
+              const BnetPtr& q = *last_resort_q;
               const BnetPtr& min_req
-                  = fuzzyLess(p->slack(sta_), q->slack(sta_)) ? p : q;
+                  = fuzzyLess(p->slack(), q->slack()) ? p : q;
               auto junc = make_shared<BufferedNet>(
                   BnetType::junction, bnet->location(), p, q, resizer_);
               junc->setArrivalPath(min_req->arrivalPath());
@@ -401,14 +409,16 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
 
   Delay best_slack = -INF;
   float best_area = std::numeric_limits<float>::max();
-  BufferedNetPtr best_slack_option = nullptr, best_area_option = nullptr;
-  int best_slack_index = 0, best_area_index = 0;
+  BufferedNetPtr best_slack_option = nullptr;
+  BufferedNetPtr best_area_option = nullptr;
+  int best_slack_index = 0;
+  int best_area_index = 0;
   int i = 1;
   for (const BufferedNetPtr& p : Z) {
     // Find slack for drvr_pin into option.
-    const PathRef& req_path = p->requiredPath();
-    if (!req_path.isNull()) {
-      Slack slack = slackAtDriverPin(p, i);
+    const Path* req_path = p->requiredPath();
+    if (req_path) {
+      const Slack slack = slackAtDriverPin(p, i);
       if (best_slack_option == nullptr || fuzzyGreater(slack, best_slack)) {
         best_slack = slack;
         best_slack_option = p;
@@ -481,7 +491,7 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
     BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
 
     if (bnet) {
-      bool debug = (drvr_pin == resizer_->debug_pin_);
+      const bool debug = (drvr_pin == resizer_->debug_pin_);
       if (debug) {
         logger_->setDebugLevel(RSZ, "rebuffer", 3);
       }
@@ -499,9 +509,9 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
         Delay drvr_gate_delay;
         std::tie(std::ignore, drvr_gate_delay) = drvrPinTiming(best_option);
 
-        Delay target = slackAtDriverPin(best_option)
-                       - (drvr_gate_delay + best_option->requiredDelay())
-                             * rebuffer_relaxation_factor_;
+        const Delay target = slackAtDriverPin(best_option)
+                             - (drvr_gate_delay + best_option->requiredDelay())
+                                   * rebuffer_relaxation_factor_;
 
         for (int i = 0; i < 5 && best_option; i++) {
           best_option = recoverArea(best_option, target, ((float) (1 + i)) / 5);
@@ -534,7 +544,7 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
           // as we move the modnet and dbnet around we will get a clash
           //(the dbNet name now exposed is the same as the modnet name)
           // so we uniquify the modnet name
-          std::string new_name = resizer_->makeUniqueNetName();
+          const std::string new_name = resizer_->makeUniqueNetName();
           db_modnet->rename(new_name.c_str());
         }
 
@@ -573,19 +583,18 @@ Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet)
   return slackAtDriverPin(bnet, -1);
 }
 
-std::tuple<PathRef, Delay> RepairSetup::drvrPinTiming(
+std::tuple<const Path*, Delay> RepairSetup::drvrPinTiming(
     const BufferedNetPtr& bnet)
 {
-  const PathRef& req_path = bnet->requiredPath();
-  if (!req_path.isNull()) {
-    const PathRef& arrival_path = bnet->arrivalPath();
-    PathRef driver_path;
-    TimingArc* driver_arc;
-    arrival_path.prevPath(sta_, driver_path, driver_arc);
-    if (!driver_path.isNull()) {
-      const DcalcAnalysisPt* dcalc_ap = arrival_path.dcalcAnalysisPt(sta_);
+  const Path* req_path = bnet->requiredPath();
+  if (req_path) {
+    const Path* arrival_path = bnet->arrivalPath();
+    TimingArc* driver_arc = arrival_path->prevArc(resizer_);
+    Path* driver_path = arrival_path->prevPath();
+    if (driver_path) {
+      const DcalcAnalysisPt* dcalc_ap = arrival_path->dcalcAnalysisPt(sta_);
       sta::LoadPinIndexMap load_pin_index_map(network_);
-      Slew slew = graph_->slew(driver_path.vertex(sta_),
+      Slew slew = graph_->slew(driver_path->vertex(sta_),
                                driver_arc->fromEdge()->asRiseFall(),
                                dcalc_ap->index());
       auto dcalc_result
@@ -601,21 +610,21 @@ std::tuple<PathRef, Delay> RepairSetup::drvrPinTiming(
 
     return {arrival_path, 0};
   }
-  return {PathRef{}, 0};
+  return {nullptr, 0};
 }
 
 Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet,
                                     // Only used for debug print.
-                                    int index)
+                                    const int index)
 {
-  const PathRef& req_path = bnet->requiredPath();
-  if (!req_path.isNull()) {
-    PathRef drvr_path;
+  const Path* req_path = bnet->requiredPath();
+  if (req_path) {
+    const Path* drvr_path;
     Delay drvr_gate_delay;
     std::tie(drvr_path, drvr_gate_delay) = drvrPinTiming(bnet);
 
-    Delay slack = req_path.required(sta_) - bnet->requiredDelay()
-                  - drvr_gate_delay - drvr_path.arrival(sta_);
+    const Delay slack = req_path->required() - bnet->requiredDelay()
+                        - drvr_gate_delay - drvr_path->arrival();
 
     if (index >= 0) {
       debugPrint(logger_,
@@ -660,24 +669,23 @@ bool RepairSetup::hasTopLevelOutputPort(Net* net)
 }
 
 BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
-                                    Point wire_end,
-                                    int wire_layer,
-                                    int level)
+                                    const Point& wire_end,
+                                    const int wire_layer,
+                                    const int level)
 {
-  const PathRef& req_path = p->requiredPath();
-  const Corner* corner = req_path.isNull()
-                             ? sta_->cmdCorner()
-                             : req_path.dcalcAnalysisPt(sta_)->corner();
+  const Path* req_path = p->requiredPath();
+  const Corner* corner = !req_path ? sta_->cmdCorner()
+                                   : req_path->dcalcAnalysisPt(sta_)->corner();
 
   BufferedNetPtr z = make_shared<BufferedNet>(
       BufferedNetType::wire, wire_end, wire_layer, p, corner, resizer_);
 
   double layer_res, layer_cap;
   z->wireRC(corner, resizer_, layer_res, layer_cap);
-  double wire_length = resizer_->dbuToMeters(z->length());
-  double wire_res = wire_length * layer_res;
-  double wire_cap = wire_length * layer_cap;
-  double wire_delay = wire_res * (wire_cap / 2 + p->cap());
+  const double wire_length = resizer_->dbuToMeters(z->length());
+  const double wire_res = wire_length * layer_res;
+  const double wire_cap = wire_length * layer_cap;
+  const double wire_delay = wire_res * (wire_cap / 2 + p->cap());
 
   z->setArrivalPath(p->arrivalPath());
   z->setRequiredPath(req_path);
@@ -700,9 +708,9 @@ BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
 
 void RepairSetup::addBuffers(
     BufferedNetSeq& Z1,
-    int level,
-    bool area_oriented /*=false*/,
-    Delay slack_threshold /*=0; used for area mode only*/)
+    const int level,
+    const bool area_oriented /*=false*/,
+    const Delay slack_threshold /*=0; used for area mode only*/)
 {
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
@@ -711,26 +719,27 @@ void RepairSetup::addBuffers(
       buffer_cell->bufferPorts(in, out);
       Delay best_slack = -INF;
       float best_area = std::numeric_limits<float>::max();
-      BufferedNetPtr best_option = nullptr, best_area_option = nullptr;
+      BufferedNetPtr best_option = nullptr;
+      BufferedNetPtr best_area_option = nullptr;
 
       for (const BufferedNetPtr& z : Z1) {
-        PathRef req_path = z->requiredPath();
+        const Path* req_path = z->requiredPath();
         // Do not buffer unconstrained paths.
-        if (!req_path.isNull()) {
-          const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
-          Delay buffer_delay
+        if (req_path) {
+          const DcalcAnalysisPt* dcalc_ap = req_path->dcalcAnalysisPt(sta_);
+          const Delay buffer_delay
               = resizer_->bufferDelay(buffer_cell,
-                                      req_path.transition(sta_),
+                                      req_path->transition(sta_),
                                       z->cap() + out->capacitance(),
                                       dcalc_ap);
-          Delay slack = z->slack(sta_) - buffer_delay;
+          const Delay slack = z->slack() - buffer_delay;
           if (fuzzyGreater(slack, best_slack)) {
             best_slack = slack;
             best_option = z;
           }
 
           if (area_oriented) {
-            float buffered_area = z->area() + 1;
+            const float buffered_area = z->area() + 1;
             if (fuzzyGreaterEqual(slack, slack_threshold)
                 && buffered_area < best_area) {
               best_area = buffered_area;
@@ -748,18 +757,18 @@ void RepairSetup::addBuffers(
 
       if (best_option) {
         Required slack = INF;
-        PathRef req_path = best_option->requiredPath();
+        const Path* req_path = best_option->requiredPath();
         float buffer_cap = 0.0;
         Delay buffer_delay = 0.0;
-        if (!req_path.isNull()) {
-          const DcalcAnalysisPt* dcalc_ap = req_path.dcalcAnalysisPt(sta_);
+        if (req_path) {
+          const DcalcAnalysisPt* dcalc_ap = req_path->dcalcAnalysisPt(sta_);
           buffer_cap = bufferInputCapacitance(buffer_cell, dcalc_ap);
           buffer_delay
               = resizer_->bufferDelay(buffer_cell,
-                                      req_path.transition(sta_),
+                                      req_path->transition(sta_),
                                       best_option->cap() + out->capacitance(),
                                       dcalc_ap);
-          slack = req_path.slack(sta_) - buffer_delay;
+          slack = req_path->slack(sta_) - buffer_delay;
         }
         bool prune = false;
         if (!area_oriented) {
@@ -767,7 +776,7 @@ void RepairSetup::addBuffers(
           // another existing buffer option.
           for (const BufferedNetPtr& buffer_option : buffered_options) {
             if (fuzzyLessEqual(buffer_option->cap(), buffer_cap)
-                && fuzzyGreaterEqual(buffer_option->slack(sta_), slack)) {
+                && fuzzyGreaterEqual(buffer_option->slack(), slack)) {
               prune = true;
               break;
             }
@@ -821,14 +830,14 @@ float RepairSetup::bufferInputCapacitance(LibertyCell* buffer_cell,
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  int lib_ap = dcalc_ap->libertyIndex();
-  LibertyPort* corner_input = input->cornerPort(lib_ap);
+  const int lib_ap = dcalc_ap->libertyIndex();
+  const LibertyPort* corner_input = input->cornerPort(lib_ap);
   return corner_input->capacitance();
 }
 
 int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
                                  Net* net,  // output of buffer.
-                                 int level,
+                                 const int level,
                                  Instance* parent_in,
                                  odb::dbITerm* mod_net_drvr,
                                  odb::dbModNet* mod_net_in)
@@ -837,10 +846,10 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name = resizer_->makeUniqueInstName("rebuffer");
+      const std::string buffer_name = resizer_->makeUniqueInstName("rebuffer");
 
       // HFix: make net in hierarchy
-      std::string net_name = resizer_->makeUniqueNetName();
+      const std::string net_name = resizer_->makeUniqueNetName();
       Net* net2 = db_network_->makeNet(net_name.c_str(), parent);
 
       LibertyCell* buffer_cell = choice->bufferCell();
@@ -901,7 +910,7 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
         buffer_op_iterm->connect(mod_net_in);
       }
 
-      int buffer_count = rebufferTopDown(
+      const int buffer_count = rebufferTopDown(
           choice->ref(), net2, level + 1, parent, buffer_op_iterm, mod_net_in);
 
       // ip_net

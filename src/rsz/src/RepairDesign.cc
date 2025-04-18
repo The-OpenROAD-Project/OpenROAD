@@ -24,8 +24,6 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
 #include "sta/RiseFallValues.hh"
 #include "sta/Sdc.hh"
@@ -493,16 +491,16 @@ bool RepairDesign::performGainBuffering(Net* net,
   struct EnqueuedPin
   {
     Pin* pin;
-    PathRef required_path;
+    Path* required_path;
     Delay required_delay;
     int level;
 
-    Required required(const StaState* sta) const
+    Required required(const StaState*) const
     {
-      if (required_path.isNull()) {
+      if (required_path == nullptr) {
         return INF;
       }
-      return required_path.required(sta) - required_delay;
+      return required_path->required() - required_delay;
     }
 
     std::pair<Required, int> sort_label(const StaState* sta) const
@@ -550,8 +548,7 @@ bool RepairDesign::performGainBuffering(Net* net,
       Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
         Vertex* vertex = graph_->pinLoadVertex(pin);
-        PathRef req_path
-            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+        Path* req_path = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
         sinks.push_back({const_cast<Pin*>(pin), req_path, 0.0, 0});
       } else {
         logger_->warn(RSZ,
@@ -736,7 +733,7 @@ void RepairDesign::checkDriverArcSlew(const Corner* corner,
                                       float& violation)
 {
   const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
-  RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+  const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
   GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
   Pin* in_pin = network_->findPin(inst, arc->from()->name());
 
@@ -787,7 +784,7 @@ bool RepairDesign::repairDriverSlew(const Corner* corner, const Pin* drvr_pin)
           float limit_w_margin = maxSlewMargined(limit);
 
           for (TimingArcSet* arc_set : size_cell->timingArcSets()) {
-            TimingRole* role = arc_set->role();
+            const TimingRole* role = arc_set->role();
             if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
                 && role != TimingRole::tristateEnable()
                 && role != TimingRole::clockTreePathMin()

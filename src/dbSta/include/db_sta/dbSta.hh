@@ -157,7 +157,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void unregisterStaState(dbStaState* state);
 
   // Highlight path in the gui.
-  void highlight(PathRef* path);
+  void highlight(Path* path);
 
   std::string getInstanceTypeText(InstType type) const;
   InstType getInstanceType(odb::dbInst* inst);

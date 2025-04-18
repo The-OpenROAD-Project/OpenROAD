@@ -56,7 +56,7 @@ find_logic_constants()
 }
 
 void
-highlight_path_cmd(PathRef *path)
+highlight_path_cmd(Path *path)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();

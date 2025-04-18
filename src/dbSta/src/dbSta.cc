@@ -39,7 +39,7 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/PathRef.hh"
+#include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
@@ -718,10 +718,10 @@ void dbStaHistogram::loadLogicDepthData(bool exclude_buffers,
   sta_->worstSlack(MinMax::max());  // Update timing.
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     int path_length = 0;
-    PathRef path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
+    Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
     dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
-    while (!path.isNull()) {
-      Pin* pin = path.vertex(sta_)->pin();
+    while (path) {
+      Pin* pin = path->vertex(sta_)->pin();
       Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
       dbInst* inst = network_->staToDb(sta_inst);
       if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
@@ -732,7 +732,7 @@ void dbStaHistogram::loadLogicDepthData(bool exclude_buffers,
           path_length++;
         }
       }
-      path.path()->prevPath(sta_, path);
+      path = path->prevPath();
     }
     data_.push_back(path_length);
   }
@@ -1137,7 +1137,7 @@ void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
 ////////////////////////////////////////////////////////////////
 
 // Highlight path in the gui.
-void dbSta::highlight(PathRef* path)
+void dbSta::highlight(Path* path)
 {
   path_renderer_->highlight(path);
 }

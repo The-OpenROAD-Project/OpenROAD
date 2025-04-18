@@ -14,7 +14,7 @@ original HPWL            2531.1 u
 legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
-worst slack -0.39
+worst slack max -0.39
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -27,5 +27,5 @@ worst slack -0.39
 [INFO RSZ-0040] Inserted 1 buffers.
 [INFO RSZ-0041] Resized 2 instances.
 Repair timing output passed/skipped equivalence test
-worst slack 0.01
-worst slack -0.10
+worst slack max 0.01
+worst slack max -0.10
