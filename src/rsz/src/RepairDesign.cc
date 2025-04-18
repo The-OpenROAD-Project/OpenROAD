@@ -2195,8 +2195,12 @@ bool RepairDesign::makeRepeater(
     buffer_op_net = new_net;
     buffer_ip_net = db_network_->dbToSta(ip_net_db);
 
-    db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
-    db_network_->connectPin(buffer_op_pin, buffer_op_net);
+    // For backward compatibility with existing flat case
+    //(Turns out order of connectivity breaks placer!)
+    if (db_network_->hasHierarchy()) {
+      db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
+      db_network_->connectPin(buffer_op_pin, buffer_op_net);
+    }
 
     // The new net is on the output side, we leave the driver
     // untouched and clean it up later.
@@ -2226,6 +2230,13 @@ bool RepairDesign::makeRepeater(
         // flat mode, no hierarchy, just hook up flat nets.
         db_network_->connectPin(const_cast<Pin*>(pin), (Net*) buffer_op_net);
       }
+    }
+
+    // post wire up buffer to preserve regressions in flat mode
+    // Turns out order of connectivy breaks placer.
+    if (!db_network_->hasHierarchy()) {
+      db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
+      db_network_->connectPin(buffer_op_pin, buffer_op_net);
     }
 
     //
