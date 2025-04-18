@@ -791,6 +791,14 @@ void set_debug_cmd(const char* net_name,
   resizer->setDebugGraphics(std::move(graphics));
 }
 
+void
+fully_rebuffer(Pin *pin)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->fullyRebuffer(pin);
+}
+
 } // namespace
 
 %} // inline

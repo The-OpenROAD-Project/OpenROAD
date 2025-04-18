@@ -109,6 +109,7 @@ class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
+class Rebuffer;
 class ResizerObserver;
 
 class CloneMove;
@@ -433,6 +434,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
+  void fullyRebuffer(Pin* pin);
 
  protected:
   void init();
@@ -705,6 +707,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   RepairDesign* repair_design_;
   RepairSetup* repair_setup_;
   RepairHold* repair_hold_;
+  Rebuffer* rebuffer_;
   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
@@ -842,6 +845,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class SwapPinsMove;
   friend class UnbufferMove;
   friend class IncrementalParasiticsGuard;
+  friend class Rebuffer;
 };
 
 class IncrementalParasiticsGuard

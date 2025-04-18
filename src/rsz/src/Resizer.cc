@@ -20,6 +20,7 @@
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
+#include "Rebuffer.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
@@ -124,6 +125,7 @@ Resizer::Resizer()
       repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
+      rebuffer_(new Rebuffer(this)),
       wire_signal_res_(0.0),
       wire_signal_cap_(0.0),
       wire_clk_res_(0.0),
@@ -656,7 +658,7 @@ void Resizer::findFastBuffers()
                && bufferSizeOutmatched(fast_buffers.back(), size, R_max)) {
           debugPrint(logger_,
                      RSZ,
-                     "gain_buffering",
+                     "resizer",
                      2,
                      "{} trumps {}",
                      size->name(),
@@ -667,7 +669,7 @@ void Resizer::findFastBuffers()
       } else {
         debugPrint(logger_,
                    RSZ,
-                   "gain_buffering",
+                   "resizer",
                    2,
                    "{} trumps {}",
                    fast_buffers.back()->name(),
@@ -676,9 +678,9 @@ void Resizer::findFastBuffers()
     }
   }
 
-  debugPrint(logger_, RSZ, "gain_buffering", 1, "pre-selected buffers:");
+  debugPrint(logger_, RSZ, "resizer", 1, "pre-selected buffers:");
   for (auto size : fast_buffers) {
-    debugPrint(logger_, RSZ, "gain_buffering", 1, " - {}", size->name());
+    debugPrint(logger_, RSZ, "resizer", 1, " - {}", size->name());
   }
 
   buffer_fast_sizes_ = {fast_buffers.begin(), fast_buffers.end()};
@@ -4314,6 +4316,12 @@ void Resizer::copyDontUseFromLiberty()
       }
     }
   }
+}
+
+void Resizer::fullyRebuffer(Pin* user_pin)
+{
+  resizePreamble();
+  rebuffer_->fullyRebuffer(user_pin);
 }
 
 void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)

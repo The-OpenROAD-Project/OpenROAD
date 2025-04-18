@@ -15,6 +15,7 @@
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include <spdlog/fmt/fmt.h>
 
+#include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -140,7 +141,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
 
-  area_ = ref->area() + 1;
+  area_ = ref->area() + buffer_cell_->area();
 }
 
 void BufferedNet::reportTree(const Resizer* resizer) const
@@ -177,34 +178,40 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
   switch (type_) {
     case BufferedNetType::load:
       // {:{}s} format indents level spaces.
-      return fmt::format("load {} ({}, {}) cap {} slack {}",
+      return fmt::format("load {} ({}, {}) cap {} slack {} load sl {}",
                          sdc_network->pathName(load_pin_),
                          x,
                          y,
                          cap,
-                         delayAsString(slack(), resizer));
+                         delayAsString(slack(), resizer),
+                         delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::wire:
-      return fmt::format("wire ({}, {}) cap {} slack {} buffers {}",
+      return fmt::format("wire ({}, {}) cap {} slack {} buffers {} load sl {}",
                          x,
                          y,
                          cap,
                          delayAsString(slack(), resizer),
-                         bufferCount());
+                         bufferCount(),
+                         delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::buffer:
-      return fmt::format("buffer ({}, {}) {} cap {} slack {} buffers {}",
-                         x,
-                         y,
-                         buffer_cell_->name(),
-                         cap,
-                         delayAsString(slack(), resizer),
-                         bufferCount());
+      return fmt::format(
+          "buffer ({}, {}) {} cap {} slack {} buffers {} load sl {}",
+          x,
+          y,
+          buffer_cell_->name(),
+          cap,
+          delayAsString(slack(), resizer),
+          bufferCount(),
+          delayAsString(maxLoadSlew(), resizer));
     case BufferedNetType::junction:
-      return fmt::format("junction ({}, {}) cap {} slack {} buffers {}",
-                         x,
-                         y,
-                         cap,
-                         delayAsString(slack(), resizer),
-                         bufferCount());
+      return fmt::format(
+          "junction ({}, {}) cap {} slack {} buffers {} load sl {}",
+          x,
+          y,
+          cap,
+          delayAsString(slack(), resizer),
+          bufferCount(),
+          delayAsString(maxLoadSlew(), resizer));
   }
   // suppress gcc warning
   return "";
@@ -290,16 +297,21 @@ void BufferedNet::wireRC(const Corner* corner,
     resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   }
   if (layer_ == BufferedNet::null_layer) {
-    const double dx
-        = resizer->dbuToMeters(std::abs(location_.x() - ref_->location().x()))
-          / resizer->dbuToMeters(length());
-    const double dy
-        = resizer->dbuToMeters(std::abs(location_.y() - ref_->location().y()))
-          / resizer->dbuToMeters(length());
-    res = dx * resizer->wireSignalHResistance(corner)
-          + dy * resizer->wireSignalVResistance(corner);
-    cap = dx * resizer->wireSignalHCapacitance(corner)
-          + dy * resizer->wireSignalVCapacitance(corner);
+    if (length() == 0) {
+      res = 0;
+      cap = 0;
+    } else {
+      const double dx
+          = resizer->dbuToMeters(std::abs(location_.x() - ref_->location().x()))
+            / resizer->dbuToMeters(length());
+      const double dy
+          = resizer->dbuToMeters(std::abs(location_.y() - ref_->location().y()))
+            / resizer->dbuToMeters(length());
+      res = dx * resizer->wireSignalHResistance(corner)
+            + dy * resizer->wireSignalVResistance(corner);
+      cap = dx * resizer->wireSignalHCapacitance(corner)
+            + dy * resizer->wireSignalVCapacitance(corner);
+    }
   } else {
     odb::dbTech* tech = resizer->db_->getTech();
     resizer->layerRC(tech->findRoutingLayer(layer_), corner, res, cap);
@@ -781,6 +793,14 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
                   db_network_->pathName(drvr_pin));
   }
   return nullptr;
+}
+
+bool BufferedNet::fitsEnvelope(Metrics target)
+{
+  return maxLoadWireLength() <= target.max_load_wl && slack() >= target.slack
+         && sta::fuzzyLessEqual(cap(), target.cap)
+         && sta::fuzzyGreaterEqual(maxLoadSlew(), target.max_load_slew)
+         && sta::fuzzyLessEqual(fanout(), target.fanout);
 }
 
 }  // namespace rsz
