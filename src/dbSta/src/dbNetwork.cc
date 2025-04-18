@@ -1693,6 +1693,10 @@ Instance* dbNetwork::instance(const Net*) const
 
 bool dbNetwork::isPower(const Net* net) const
 {
+  dbNet* dnet = staToDb(net);
+  return (dnet->getSigType() == dbSigType::POWER);
+  // TODO: make this work for modnets
+  /*
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1706,10 +1710,16 @@ bool dbNetwork::isPower(const Net* net) const
     }
   }
   return false;
+  */
 }
 
 bool dbNetwork::isGround(const Net* net) const
 {
+  dbNet* dnet = staToDb(net);
+  return (dnet->getSigType() == dbSigType::GROUND);
+
+  // TODO: make this work for modnets
+  /*
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1723,6 +1733,7 @@ bool dbNetwork::isGround(const Net* net) const
     }
   }
   return false;
+  */
 }
 
 NetPinIterator* dbNetwork::pinIterator(const Net* net) const
@@ -3574,7 +3585,7 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
   dbNet* source_db_net = source_pin->getNet();
   if (!source_db_net) {
     std::string connection_name_str(connection_name);
-    std::string flat_name = connection_name_str + +"_flat";
+    std::string flat_name = connection_name_str + "_flat";
     source_db_net = dbNet::create(block(), flat_name.c_str(), false);
     source_pin->connect(source_db_net);
   }
