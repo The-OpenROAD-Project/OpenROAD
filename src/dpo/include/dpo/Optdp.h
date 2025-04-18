@@ -29,7 +29,6 @@ class PlacementDRC;
 
 namespace dpo {
 
-class RoutingParams;
 class Architecture;
 class Network;
 
@@ -82,8 +81,6 @@ class Optdp
   // My stuff.
   Architecture* arch_ = nullptr;  // Information about rows, etc.
   Network* network_ = nullptr;    // The netlist, cells, etc.
-  RoutingParams* routeinfo_
-      = nullptr;  // Route info we might consider (future).
   Grid* grid_ = nullptr;
 
   // placement DRC enging.

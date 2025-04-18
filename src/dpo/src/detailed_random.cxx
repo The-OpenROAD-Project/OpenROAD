@@ -518,7 +518,6 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   const int ydim = mgr_->getNumSingleHeightRows();
   double xwid = arch_->getRow(0)->getSiteSpacing();
@@ -646,7 +645,6 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   const int ydim = mgr_->getNumSingleHeightRows();
   double xwid = arch_->getRow(0)->getSiteSpacing();

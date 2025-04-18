@@ -53,6 +53,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/utl",
     ":munkres",
     "//src/odb",
+    "//src/gui",
     ":openroad_version",
     ":opensta_lib",
     "@boost.asio",
@@ -95,7 +96,7 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
-    "BUILD_TYPE=\\\"release\\\"",
+    "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
@@ -118,10 +119,10 @@ cc_binary(
     malloc = "@tcmalloc//tcmalloc",
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb",
         ":openroad_lib_private",
         ":openroad_version",
         ":opensta_lib",
+        "//src/odb",
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
@@ -131,11 +132,7 @@ cc_binary(
 cc_library(
     name = "openroad_lib_private",
     srcs = glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE + [
-            #GUI Disabled
-            "src/gui/src/stub.cpp",
-            "src/gui/src/stub_heatMap.cpp",
-        ],
+        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
         allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
@@ -161,11 +158,7 @@ cc_library(
 cc_library(
     name = "openroad_lib",
     srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE + [
-            #GUI Disabled
-            "src/gui/src/stub.cpp",
-            "src/gui/src/stub_heatMap.cpp",
-        ],
+        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
         allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
@@ -454,15 +447,6 @@ tcl_encode(
     ],
     char_array_name = "dpo_tcl_inits",
     namespace = "dpo",
-)
-
-tcl_encode(
-    name = "gui_tcl",
-    srcs = [
-        "src/gui/src/gui.tcl",
-    ],
-    char_array_name = "gui_tcl_inits",
-    namespace = "gui",
 )
 
 tcl_encode(
@@ -844,21 +828,6 @@ tcl_wrap_cc(
         "src/dft/src",
     ],
 )
-
-#tcl_wrap_cc(
-#    name = "gui_swig",
-#    srcs = [
-#        "src/gui/src/gui.i",
-#        ":error_swig",
-#    ],
-#    module = "gui",
-#    namespace_prefix = "gui",
-#    root_swig_src = "src/gui/src/gui.i",
-#    runtime_header = "src/gui/src/tclSwig.h",
-#    swig_includes = [
-#        "src/gui/src",
-#    ],
-#)
 
 filegroup(
     name = "error_swig",

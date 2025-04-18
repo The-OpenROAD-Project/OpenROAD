@@ -347,7 +347,6 @@ bool FlexPA::genPatternsGC(
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   const bool no_drv = design_rule_checker.getMarkers().empty();
   if (owners) {
