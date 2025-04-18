@@ -187,7 +187,7 @@ void TimingPath::populateNodeList(sta::Path* path,
     const bool pin_is_clock = sta->isClock(pin);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
-    const auto arrival = ref->arrival(sta);
+    const auto arrival = ref->arrival();
 
     // based on:
     // https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
@@ -655,20 +655,20 @@ void ClockTree::addPath(sta::PathExpanded& path,
     return;
   }
 
-  const sta::PathRef* ref = path.path(idx);
+  const sta::Path* ref = path.path(idx);
   sta::Vertex* vertex = ref->vertex(sta);
   sta::Pin* pin = vertex->pin();
   sta::Net* net = getNet(pin);
 
   ClockTree* add_to_tree = getTree(net);
-  if (add_to_tree->addVertex(vertex, ref->arrival(sta))) {
+  if (add_to_tree->addVertex(vertex, ref->arrival())) {
     add_to_tree->addPath(path, idx + 1, sta);
   }
 }
 
 void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
 {
-  const sta::PathRef* start = path.startPath();
+  const sta::Path* start = path.startPath();
   if (start->clkEdge(sta)->transition() != sta::RiseFall::rise()) {
     // only populate with rising edges
     return;
@@ -1350,7 +1350,7 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
   for (sta::Vertex* src_vertex : *graph->regClkVertices()) {
     sta::VertexPathIterator path_iter(src_vertex, sta_);
     while (path_iter.hasNext()) {
-      sta::PathVertex* path = path_iter.next();
+      sta::Path* path = path_iter.next();
 
       if (path->dcalcAnalysisPt(sta_)->corner() != corner_) {
         continue;

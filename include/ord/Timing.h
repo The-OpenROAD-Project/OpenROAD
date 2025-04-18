@@ -84,14 +84,14 @@ class Timing
 
  private:
   sta::dbSta* getSta();
-  sta::MinMax* getMinMax(MinMax type);
+  const sta::MinMax* getMinMax(MinMax type);
   sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
   std::array<sta::Vertex*, 2> vertices(const sta::Pin* pin);
   bool isEndpoint(sta::Pin* sta_pin);
   float getPinSlew(sta::Pin* sta_pin, MinMax minmax);
   float getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax);
   float getPinSlack(sta::Pin* sta_pin, RiseFall rf, MinMax minmax);
-  float slewAllCorners(sta::Vertex* vertex, sta::MinMax* minmax);
+  float slewAllCorners(sta::Vertex* vertex, const sta::MinMax* minmax);
   std::vector<float> arrivalsClk(const sta::RiseFall* rf,
                                  sta::Clock* clk,
                                  const sta::RiseFall* clk_rf,

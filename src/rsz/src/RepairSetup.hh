@@ -33,8 +33,8 @@ using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
+using sta::Path;
 using sta::PathExpanded;
-using sta::PathRef;
 using sta::Pin;
 using sta::RiseFall;
 using sta::Slack;
@@ -53,8 +53,8 @@ struct SlackEstimatorParams
   Pin* prev_driver_pin;
   Pin* driver_input_pin;
   Instance* driver;
-  const PathRef* driver_path;
-  const PathRef* prev_driver_path;
+  const Path* driver_path;
+  const Path* prev_driver_path;
   LibertyCell* driver_cell;
   const float setup_slack_margin;
   const Corner* corner;
@@ -112,14 +112,14 @@ class RepairSetup : public sta::dbStaState
 
  private:
   void init();
-  bool repairPath(PathRef& path,
+  bool repairPath(Path* path,
                   Slack path_slack,
                   bool skip_pin_swap,
                   bool skip_gate_cloning,
                   bool skip_buffering,
                   bool skip_buffer_removal,
                   float setup_slack_margin);
-  void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
+  void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
   bool simulateExpr(
       sta::FuncExpr* expr,
       sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
@@ -134,10 +134,8 @@ class RepairSetup : public sta::dbStaState
   void equivCellPins(const LibertyCell* cell,
                      LibertyPort* input_port,
                      sta::LibertyPortSet& ports);
-  bool swapPins(const PathRef* drvr_path,
-                int drvr_index,
-                PathExpanded* expanded);
-  bool removeDrvr(const PathRef* drvr_path,
+  bool swapPins(const Path* drvr_path, int drvr_index, PathExpanded* expanded);
+  bool removeDrvr(const Path* drvr_path,
                   LibertyCell* drvr_cell,
                   int drvr_index,
                   PathExpanded* expanded,
@@ -151,17 +149,17 @@ class RepairSetup : public sta::dbStaState
                                float delay_adjust,
                                SlackEstimatorParams params,
                                bool accept_if_slack_improves);
-  bool upsizeDrvr(const PathRef* drvr_path,
+  bool upsizeDrvr(const Path* drvr_path,
                   int drvr_index,
                   PathExpanded* expanded);
   Point computeCloneGateLocation(
       const Pin* drvr_pin,
       const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
-  bool cloneDriver(const PathRef* drvr_path,
+  bool cloneDriver(const Path* drvr_path,
                    int drvr_index,
                    Slack drvr_slack,
                    PathExpanded* expanded);
-  void splitLoads(const PathRef* drvr_path,
+  void splitLoads(const Path* drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
                   PathExpanded* expanded);
@@ -187,7 +185,7 @@ class RepairSetup : public sta::dbStaState
                       odb::dbITerm* mod_net_drvr,
                       odb::dbModNet* mod_net);
   BufferedNetPtr addWire(const BufferedNetPtr& p,
-                         Point wire_end,
+                         const Point& wire_end,
                          int wire_layer,
                          int level);
   void addBuffers(BufferedNetSeq& Z1,
@@ -196,7 +194,7 @@ class RepairSetup : public sta::dbStaState
                   sta::Delay threshold = 0);
   float bufferInputCapacitance(LibertyCell* buffer_cell,
                                const DcalcAnalysisPt* dcalc_ap);
-  std::tuple<PathRef, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
+  std::tuple<const Path*, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet);
   Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
 

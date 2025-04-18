@@ -19,7 +19,7 @@ class PathRenderer : public gui::Renderer, public AbstractPathRenderer
   explicit PathRenderer(dbSta* sta);
   ~PathRenderer() override;
 
-  void highlight(PathRef* path) override;
+  void highlight(Path* path) override;
 
   void drawObjects(gui::Painter& /* painter */) override;
 
