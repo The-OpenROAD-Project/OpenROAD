@@ -1888,7 +1888,7 @@ bool RepairDesign::makeRepeater(
     Pin*& repeater_in_pin,
     Pin*& repeater_out_pin)
 {
-  // Free variables set by the lambdas
+  // Free vars set by the lambdas
 
   Net* load_net = nullptr;
   dbNet* load_db_net = nullptr;  // load net, flat
@@ -2196,7 +2196,13 @@ bool RepairDesign::makeRepeater(
     buffer_ip_net = db_network_->dbToSta(ip_net_db);
 
     // For backward compatibility with existing flat case
-    //(Turns out order of connectivity breaks placer!)
+    //(Turns out order of connectivity breaks placer regression)
+    //
+    // note in hierarchical mode we are setting up the buffer
+    // connections before doing the hierarchical conneciton,
+    // this means hiearchical connect can use the buffer_op_pin
+    // net, a new net, without having to make a new one).
+    //
     if (db_network_->hasHierarchy()) {
       db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
       db_network_->connectPin(buffer_op_pin, buffer_op_net);
@@ -2234,6 +2240,8 @@ bool RepairDesign::makeRepeater(
 
     // post wire up buffer to preserve regressions in flat mode
     // Turns out order of connectivy breaks placer.
+    // Hook up the buffer here.
+    //
     if (!db_network_->hasHierarchy()) {
       db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
       db_network_->connectPin(buffer_op_pin, buffer_op_net);
