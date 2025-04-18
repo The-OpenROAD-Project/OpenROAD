@@ -3732,11 +3732,9 @@ class DbNetConnectedToBTerm : public PinVisitor
 {
  public:
   DbNetConnectedToBTerm(dbNetwork* nwk, dbModNet* mod_net, dbNet* flat_net)
-      : db_network_(nwk),
-        mod_net_(mod_net),
-        flat_net_(flat_net),
-        bterm_(nullptr)
+      : db_network_(nwk), mod_net_(mod_net), flat_net_(flat_net)
   {
+    bterm_ = nullptr;
   }
   void operator()(const Pin* pin) override;
   dbBTerm* bterm() { return bterm_; }
@@ -4058,7 +4056,7 @@ bool dbNetwork::findRelatedModNet(const dbNet* net,
   NetSet visited_nets(this);
   visitConnectedPins(dbToSta(net), visitor, visited_nets);
   modnet_set = visitor.modnets_;
-  return (modnet_set.size() != 0);
+  return (!modnet_set.empty());
 }
 
 /*
@@ -4082,8 +4080,9 @@ class ModNetForPin : public PinVisitor
 {
  public:
   ModNetForPin(dbNetwork* nwk, dbModule* scope, const Pin* drvr_pin)
-      : db_network_(nwk), scope_(scope), drvr_pin_(drvr_pin), modnet_(nullptr)
+      : db_network_(nwk), scope_(scope), drvr_pin_(drvr_pin)
   {
+    modnet_ = nullptr;
   }
 
   void operator()(const Pin* pin) override;
