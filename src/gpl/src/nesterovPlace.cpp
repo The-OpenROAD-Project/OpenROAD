@@ -297,7 +297,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   log_->report("NBC gcells print before gpl iterations:");
-  nbc_->printGCells();
+  nbc_->printGCellsToFile("dumpGCells.txt");
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {

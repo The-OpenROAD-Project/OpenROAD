@@ -282,6 +282,30 @@ void GCell::print(utl::Logger* logger, bool print_only_name=true) const
   }
 }
 
+void GCell::printToFile(const std::string& filename, bool print_only_name = true) const {
+  std::ofstream out(filename, std::ios::app); 
+  if (!out.is_open()) {
+    return; 
+  }
+
+  if (!insts_.empty()) {
+    out << "print gcell:" << insts_[0]->dbInst()->getName() << "\n";
+  } else {
+    out << "print gcell insts_ empty! (filler cell)\n";
+  }
+
+  if (!print_only_name) {
+    out << fmt::format("insts_ size: {}, gPins_ size: {}\n", insts_.size(), gPins_.size());
+    out << fmt::format("lx_: {} ly_: {} ux_: {} uy_: {}\n", lx_, ly_, ux_, uy_);
+    out << fmt::format("dLx_: {} dLy_: {} dUx_: {} dUy_: {}\n", dLx_, dLy_, dUx_, dUy_);
+    out << fmt::format("densityScale_: {} gradientX_: {} gradientY_: {}\n",
+                       densityScale_, gradientX_, gradientY_);
+  }
+
+  out.close();
+}
+
+
 ////////////////////////////////////////////////
 // GNet
 
@@ -2993,9 +3017,11 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
     curCoordi_.emplace_back();
     nextCoordi_.emplace_back();
     initCoordi_.emplace_back();
-    snapshotCoordi_.emplace_back();
-    snapshotSLPCoordi_.emplace_back();
-    snapshotSLPSumGrads_.emplace_back();
+    if(curSLPCoordi_.size() == snapshotCoordi_.size() + 1) {
+      snapshotCoordi_.emplace_back();
+      snapshotSLPCoordi_.emplace_back();
+      snapshotSLPSumGrads_.emplace_back();
+    }
 
     rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
@@ -3032,7 +3058,7 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 
 void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
 {
-  log_->report("NBC createGNet");
+  // log_->report("NBC createGNet");
   Net gpl_net(db_net, skip_io_mode);
   pb_nets_stor_.push_back(gpl_net);
   GNet gnet(&pb_nets_stor_.back());
@@ -3044,7 +3070,7 @@ void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
 
 void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 {
-  log_->report("NBC createITerm");
+  // log_->report("NBC createITerm");
   Pin gpl_pin(iTerm);
   pb_pins_stor_.push_back(gpl_pin);
   GPin gpin(&pb_pins_stor_.back());
@@ -3058,7 +3084,7 @@ void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 //  maintaining consistency in NBC::gcellStor_ and NB::gCells_
 void NesterovBase::destroyGCell(odb::dbInst* db_inst)
 {
-  log_->report("NesterovBase::destroyGCel");
+  // log_->report("NesterovBase::destroyGCel");
   auto db_it = db_inst_to_NB_index_map_.find(db_inst);
   if (db_it != db_inst_to_NB_index_map_.end()) {
     size_t last_index = NB_gCells_.size() - 1;
@@ -3068,10 +3094,9 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
     //   gCells_[gcell_index]->insts()[0]->dbInst()->getName(), gcell_index, 
     //   gCells_[last_index]->print(), last_index);
         
-
-      log_->reportLiteral(fmt::format("\nNB gcell(index):{}, ", gcell_index));
+      log_->report("NB_gCells_.size():{}", NB_gCells_.size());
+      log_->reportLiteral(fmt::format("NB gcell(index):{}, ", gcell_index));
       NB_gCells_[gcell_index]->print(log_);
-
       log_->reportLiteral(fmt::format("NB last(index):{}, ", last_index));
       NB_gCells_[last_index]->print(log_);
 
@@ -3138,10 +3163,10 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyGCell(odb::dbInst* db
   size_t index_remove = it->second;
   size_t last_index = gCellStor_.size() - 1;
 
-  log_->report("\nNesterovBaseCommon::destroyGCell");
-  log_->report("before destroy gCellStor_.size(): {}", gCellStor_.size());
-  log_->report("destroying {} in NBC", gCellStor_[index_remove].insts()[0]->dbInst()->getName());
-  log_->report("last index {} in NBC", gCellStor_[last_index].insts()[0]->dbInst()->getName());
+  // log_->report("\nNesterovBaseCommon::destroyGCell");
+  // log_->report("before destroy gCellStor_.size(): {}", gCellStor_.size());
+  // log_->report("destroying {} in NBC", gCellStor_[index_remove].insts()[0]->dbInst()->getName());
+  // log_->report("last index {} in NBC", gCellStor_[last_index].insts()[0]->dbInst()->getName());
 
   db_inst_to_NBC_index_map_.erase(it);
 
@@ -3184,6 +3209,7 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
 
 void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
 {
+  // log_->report("NesterovBaseCommon::destroyGNet");
   auto db_it = db_net_to_NBC_index_map_.find(db_net);
   if (db_it == db_net_to_NBC_index_map_.end()) {
     log_->report("error: db_net not found in db_net_to_NBC_index_map_ for net: {}",
@@ -3193,9 +3219,8 @@ void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
 
   size_t index_remove = db_it->second;
   size_t last_index = gNetStor_.size() - 1;
-
-  log_->report("NesterovBaseCommon::destroyGNet");
-  log_->report("destroying net {} at index {}", db_net->getName(), index_remove);
+  
+  // log_->report("destroying net {} at index {}", db_net->getName(), index_remove);
 
   if (index_remove > last_index) {
     log_->report("error: index {} out of bounds for gNetStor_ (max: {})",
@@ -3207,7 +3232,7 @@ void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
   if (index_remove != last_index) {
     std::swap(gNetStor_[index_remove], gNetStor_[last_index]);
 
-    // ✅ Update index map for the swapped net
+    // Update index map for the swapped net
     odb::dbNet* swapped_net = gNetStor_[index_remove].nets()[0]->dbNet();
     db_net_to_NBC_index_map_[swapped_net] = index_remove;
   }
@@ -3220,14 +3245,14 @@ void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
 
 
 void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
-{  
+{
+  log_->report("NesterovBaseCommon::destroyITerm");
   auto db_it = db_iterm_to_NBC_index_map_.find(db_iterm);
   if (db_it != db_iterm_to_NBC_index_map_.end()) {
     // log_->report("before destroy gPinStor_.size():{}", gPinStor_.size());
     size_t last_index = gPinStor_.size() - 1;
     size_t index_remove = db_it->second;
 
-    log_->report("NesterovBaseCommon::destroyITerm");
     log_->report("destroying {} in NBC", gPinStor_[index_remove].pin()->dbITerm()->getName());
     if (index_remove > last_index) {
       log_->report("error: index {} out of bounds for gPinStor_ (max:{})",
@@ -3262,6 +3287,9 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
   if (remove_index >= vec.size()) {
     log_->report("Error: remove_index {} out of bounds for vector size {}.",
                  remove_index, vec.size());
+    // log_->report("vec.size():{},remove_index:{},last_index:{}",vec.size(),remove_index,last_index);
+    // log_->error(GPL,944,"Error: remove_index {} out of bounds for vector size {}.",
+    //             remove_index, vec.size());
     return;
   }
 
@@ -3296,9 +3324,13 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(curCoordi_, remove_index, last_index);
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
-  swapAndPop(snapshotCoordi_, remove_index, last_index);
-  swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
-  swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
+  // Avoid modifying this if snapshot has not been saved yet. 
+  //   Maybe there is a better way to make sure instead of comparing vector sizes
+  if(curSLPCoordi_.size() == snapshotCoordi_.size()) {
+    swapAndPop(snapshotCoordi_, remove_index, last_index);
+    swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
+    swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
+  }
 }
 
 void NesterovBaseCommon::printGCells()
@@ -3307,6 +3339,21 @@ void NesterovBaseCommon::printGCells()
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     log_->reportLiteral(fmt::format("idx:{}", i));
     gCellStor_[i].print(log_);
+  }
+}
+
+void NesterovBaseCommon::printGCellsToFile(const std::string& filename) {
+  std::ofstream out(filename);
+  if (!out.is_open()) return;
+
+  out << "gCellStor_.size(): " << gCellStor_.size() << "\n";
+  out.close();  // reuse printToFile which appends
+
+  for (size_t i = 0; i < gCellStor_.size(); ++i) {
+    std::ofstream out_idx(filename, std::ios::app);
+    out_idx << fmt::format("idx:{}\n", i);
+    out_idx.close();
+    gCellStor_[i].printToFile(filename);
   }
 }
 
