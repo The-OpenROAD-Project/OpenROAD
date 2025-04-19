@@ -524,7 +524,7 @@ void extMeasureRC::DeleteMarkTable(Ath__array1D<Wire*>** tbl, uint n)
   for (uint ii = 0; ii < n; ii++) {
     delete tbl[ii];
   }
-  delete tbl;
+  delete[] tbl;
 }
 FILE* extMeasureRC::OpenFile(const char* name, const char* perms)
 {
