@@ -214,8 +214,10 @@ class frNet : public frBlockObject
     }
     absPriorityLvl = max;
   }
-  bool isSpecial() const { return isSpecial_; }
-  void setIsSpecial(bool s) { isSpecial_ = s; }
+  bool isSpecial() const { return is_special_; }
+  void setIsSpecial(bool s) { is_special_ = s; }
+  bool isConnectedByAbutment() const { return is_connected_by_abutment_; }
+  void setIsConnectedByAbutment(bool s) { is_connected_by_abutment_ = s; }
   frPinFig* getPinFig(const int& id) { return all_pinfigs_[id]; }
   void setOrigGuides(const std::vector<frRect>& guides)
   {
@@ -254,7 +256,8 @@ class frNet : public frBlockObject
   int absPriorityLvl{0};  // absolute priority level: will be checked in net
                           // ordering before other criteria
   bool isClock_{false};
-  bool isSpecial_{false};
+  bool is_special_{false};
+  bool is_connected_by_abutment_{false};
   bool hasInitialRouting_{false};
   bool isFixed_{false};
 

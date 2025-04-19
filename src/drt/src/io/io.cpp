@@ -964,6 +964,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
 {
   bool is_special = db_net->isSpecial();
   bool has_jumpers = db_net->hasJumpers();
+  bool is_abuted = db_net->isConnectedByAbutment();
   if (!is_special && db_net->getSigType().isSupply()) {
     logger_->error(DRT,
                    305,
@@ -972,31 +973,30 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
                    db_net->getName(),
                    db_net->getSigType().getString());
   }
-  std::unique_ptr<frNet> uNetIn
+  std::unique_ptr<frNet> net_in
       = std::make_unique<frNet>(db_net->getName(), router_cfg_);
-  auto netIn = uNetIn.get();
   if (db_net->getNonDefaultRule()) {
-    uNetIn->updateNondefaultRule(
+    net_in->updateNondefaultRule(
         getTech()->getNondefaultRule(db_net->getNonDefaultRule()->getName()));
   }
   if (db_net->getSigType() == dbSigType::CLOCK) {
-    uNetIn->updateIsClock(true);
+    net_in->updateIsClock(true);
   }
   if (is_special) {
-    uNetIn->setIsSpecial(true);
+    net_in->setIsSpecial(true);
   }
-  if (has_jumpers) {
-    uNetIn->setHasJumpers(has_jumpers);
-  }
-  updateNetRouting(netIn, db_net);
-  netIn->setType(db_net->getSigType());
+  net_in->setHasJumpers(has_jumpers);
+  net_in->setIsConnectedByAbutment(is_abuted);
+  updateNetRouting(net_in.get(), db_net);
+  net_in->setType(db_net->getSigType());
+  frNet* raw_net_in = net_in.get();
   if (is_special) {
-    getBlock()->addSNet(std::move(uNetIn));
+    getBlock()->addSNet(std::move(net_in));
   } else {
-    getBlock()->addNet(std::move(uNetIn));
+    getBlock()->addNet(std::move(net_in));
   }
 
-  return netIn;
+  return raw_net_in;
 }
 
 void updatefrAccessPoint(odb::dbAccessPoint* db_ap,

@@ -78,6 +78,13 @@ class UniqueInsts
    */
   frInst* deleteInst(frInst* inst);
 
+  /**
+   * @brief this function if for debugging. It makes the inst the class head.
+   * This is relevant when debugguin with the gui, this is the inst that will
+   * fail in PA, not other inst in its family
+   */
+  void forceInstAsClassHead(frInst* inst);
+
   void report() const;
   void setDesign(frDesign* design) { design_ = design; }
 
