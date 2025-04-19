@@ -1,6 +1,7 @@
 or_integration_tests(
   "rmp"
   TESTS
+    aes_nangate45
     blif_reader
     blif_reader_const
     blif_reader_sequential

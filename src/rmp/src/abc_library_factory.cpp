@@ -22,6 +22,7 @@
 // clang-format on
 #include "map/scl/sclLib.h"
 #include "sta/FuncExpr.hh"
+#include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
@@ -236,6 +237,13 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     std::unordered_set<std::string> pins;
     for (sta::TimingArcSet* arc_set :
          cell_port->libertyCell()->timingArcSets(nullptr, cell_port)) {
+      // If the from pin is an output it means that this is
+      // an output to output timing arc, and not something we
+      // care about or can represent in ABC. Skip it.
+      if (arc_set->from()->direction()->isOutput()) {
+        continue;
+      }
+
       std::string arc_pin_name = arc_set->from()->name();
       if (pins.find(arc_pin_name) != pins.end()) {
         continue;
@@ -380,11 +388,27 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
     abc_cell->area = cell->area();
     abc_cell->drive_strength = 0;
 
+    // These are conditional leakages. Just average them
+    // since abc can only accept a single value.
+    sta::LeakagePowerSeq* leakage_powers = cell->leakagePowers();
+    std::optional<float> average_leakage;
+    for (sta::LeakagePower* power : *leakage_powers) {
+      if (!average_leakage) {
+        average_leakage = power->power();
+        continue;
+      }
+      average_leakage = average_leakage.value() + power->power();
+    }
+
     bool leakage_power_exists;
     float leakage_power = 0;
     cell->leakagePower(leakage_power, leakage_power_exists);
     if (leakage_power_exists) {
       abc_cell->leakage = power_unit->staToUser(leakage_power);
+    } else if (average_leakage) {
+      // We know we'll always have at least one leakage power since average
+      // is present.
+      abc_cell->leakage = average_leakage.value() / leakage_powers->size();
     } else {
       logger_->warn(utl::RMP,
                     22,

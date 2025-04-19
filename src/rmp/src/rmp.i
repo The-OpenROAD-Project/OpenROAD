@@ -40,6 +40,10 @@ void set_tiehi_port_cmd(LibertyPort* tieHiport)
   getRestructure()->setTieHiPort(tieHiport);
 }
 
+void resynth_cmd() {
+  getRestructure()->resynth();
+}
+
 void
 restructure_cmd(char* liberty_file_name, char* target, float slack_threshold,
                 int depth_threshold, char* workdir_name, char* abc_logfile)
