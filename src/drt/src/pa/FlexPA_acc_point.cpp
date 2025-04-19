@@ -335,13 +335,11 @@ void FlexPA::createMultipleAccessPoints(
  * @details Generates all necessary access points from a rectangle shape
  * In this case a rectangle is one of the pin shapes of the pin
  */
-void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                            std::set<std::pair<Point, frLayerNum>>& apset,
-                            const gtl::rectangle_data<frCoord>& rect,
+void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             const frLayerNum layer_num,
-                            const bool allow_planar,
-                            const bool allow_via,
-                            frAccessPointEnum lower_type,
+                            std::map<frCoord, frAccessPointEnum>& x_coords,
+                            std::map<frCoord, frAccessPointEnum>& y_coords,
+                            frAccessPointEnum& lower_type,
                             const frAccessPointEnum upper_type,
                             const bool is_macro_cell_pin)
 {
@@ -364,8 +362,6 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   auto& layer2_track_coords = track_coords_[second_layer_num];
   const bool is_layer1_horz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
 
-  std::map<frCoord, frAccessPointEnum> x_coords;
-  std::map<frCoord, frAccessPointEnum> y_coords;
   int hwidth = layer->getWidth() / 2;
   bool use_center_line = false;
   if (is_macro_cell_pin && !layer->getLef58RightWayOnGridOnlyConstraint()) {
@@ -432,18 +428,6 @@ void FlexPA::genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
   if (is_macro_cell_pin && use_center_line && is_layer1_horz) {
     lower_type = frAccessPointEnum::OnGrid;
   }
-
-  createMultipleAccessPoints(aps,
-                             apset,
-                             rect,
-                             layer_num,
-                             allow_planar,
-                             allow_via,
-                             is_layer1_horz,
-                             x_coords,
-                             y_coords,
-                             lower_type,
-                             upper_type);
 }
 
 void FlexPA::genAPsFromLayerShapes(
@@ -456,10 +440,6 @@ void FlexPA::genAPsFromLayerShapes(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  if (getDesign()->getTech()->getLayer(layer_num)->getType()
-      != dbTechLayerType::ROUTING) {
-    return;
-  }
   bool allow_planar = true;
   bool is_macro_cell_pin = false;
   if (inst_term) {
@@ -490,16 +470,32 @@ void FlexPA::genAPsFromLayerShapes(
   }
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
+  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  const bool is_layer1_horz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
   for (auto& bbox_rect : maxrects) {
-    genAPsFromRect(aps,
-                   apset,
-                   bbox_rect,
+    frAccessPointEnum this_lower_type = lower_type;
+    std::map<frCoord, frAccessPointEnum> x_coords;
+    std::map<frCoord, frAccessPointEnum> y_coords;
+
+    genAPsFromRect(bbox_rect,
                    layer_num,
-                   allow_planar,
-                   allow_via,
-                   lower_type,
+                   x_coords,
+                   y_coords,
+                   this_lower_type,
                    upper_type,
                    is_macro_cell_pin);
+
+    createMultipleAccessPoints(aps,
+                               apset,
+                               bbox_rect,
+                               layer_num,
+                               allow_planar,
+                               allow_via,
+                               is_layer1_horz,
+                               x_coords,
+                               y_coords,
+                               this_lower_type,
+                               upper_type);
   }
 }
 

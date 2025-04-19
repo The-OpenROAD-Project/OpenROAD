@@ -287,13 +287,11 @@ class FlexPA
    * @param upper_type highest access type considered
    * @param is_macro_cell_pin if the pin belongs to a macro
    */
-  void genAPsFromRect(std::vector<std::unique_ptr<frAccessPoint>>& aps,
-                      std::set<std::pair<Point, frLayerNum>>& apset,
-                      const gtl::rectangle_data<frCoord>& rect,
+  void genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                       frLayerNum layer_num,
-                      bool allow_planar,
-                      bool allow_via,
-                      frAccessPointEnum lower_type,
+                      std::map<frCoord, frAccessPointEnum>& x_coords,
+                      std::map<frCoord, frAccessPointEnum>& y_coords,
+                      frAccessPointEnum& lower_type,
                       frAccessPointEnum upper_type,
                       bool is_macro_cell_pin);
 
