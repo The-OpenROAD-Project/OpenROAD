@@ -595,6 +595,9 @@ void RepairAntennas::getPlacementBlockages(r_tree& fixed_insts,
                                            int& fixed_inst_count)
 {
   for (odb::dbBlockage* blockage : block_->getBlockages()) {
+    if (blockage->isSoft()) {
+      continue;
+    }
     odb::Rect bbox = blockage->getBBox()->getBox();
 
     box blockage_box(point(bbox.xMin(), bbox.yMin()),
