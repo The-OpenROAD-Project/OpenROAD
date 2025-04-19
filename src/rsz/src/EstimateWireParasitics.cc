@@ -10,6 +10,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
+#include "rcx/ext.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
@@ -236,26 +237,17 @@ double Resizer::wireClkVCapacitance(const Corner* corner) const
 
 ////////////////////////////////////////////////////////////////
 
-void Resizer::ensureParasitics()
-{
-  estimateParasitics(global_router_->haveRoutes()
-                         ? ParasiticsSrc::global_routing
-                         : ParasiticsSrc::placement);
-}
-
-void Resizer::estimateParasitics(ParasiticsSrc src)
-{
-  std::map<Corner*, std::ostream*> spef_streams;
-  estimateParasitics(src, spef_streams);
-}
-
 void Resizer::estimateParasitics(ParasiticsSrc src,
-                                 std::map<Corner*, std::ostream*>& spef_streams)
+                                 std::map<Corner*, std::ostream*>& spef_streams,
+                                 const char* ext_model_path)
 {
   std::unique_ptr<SpefWriter> spef_writer;
   if (!spef_streams.empty()) {
     spef_writer = std::make_unique<SpefWriter>(logger_, sta_, spef_streams);
   }
+
+  ExtractOptions ext_options;
+  ext_options.ext_model_file = ext_model_path;
 
   switch (src) {
     case ParasiticsSrc::placement:
@@ -266,7 +258,8 @@ void Resizer::estimateParasitics(ParasiticsSrc src,
       parasitics_src_ = ParasiticsSrc::global_routing;
       break;
     case ParasiticsSrc::detailed_routing:
-      // TODO: call rcx to extract parasitics and load them to STA
+      openrcx_->extract(ext_options);
+      // TODO: load parasitics to STA
       parasitics_src_ = ParasiticsSrc::detailed_routing;
       break;
     case ParasiticsSrc::none:

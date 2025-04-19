@@ -280,29 +280,40 @@ proc set_wire_rc { args } {
   }
 }
 
-sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
-                                            [-spef_file filename]}
+sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing|-detailed_routing \
+                                            [-spef_file spef_file] \
+                                            [-ext_model_file model_file]}
 
 proc estimate_parasitics { args } {
   sta::parse_key_args "estimate_parasitics" args \
-    keys {-spef_file} flags {-placement -global_routing}
+    keys {-spef_file -ext_model_file} flags {-placement -global_routing -detailed_routing}
 
-  set filename ""
+  set spef_file ""
   if { [info exists keys(-spef_file)] } {
-    set filename $keys(-spef_file)
+    set spef_file $keys(-spef_file)
+  }
+
+  set ext_model_file ""
+  if { [info exists keys(-ext_model_file)] } {
+    set ext_model_file $keys(-ext_model_file)
   }
 
   if { [info exists flags(-placement)] } {
     if { [rsz::check_corner_wire_cap] } {
-      rsz::estimate_parasitics_cmd "placement" $filename
+      rsz::estimate_parasitics_cmd "placement" $spef_file $ext_model_file
     }
   } elseif { [info exists flags(-global_routing)] } {
     if { [grt::have_routes] } {
       # should check for layer rc
-      rsz::estimate_parasitics_cmd "global_routing" $filename
+      rsz::estimate_parasitics_cmd "global_routing" $spef_file $ext_model_file
     } else {
       utl::error RSZ 5 "Run global_route before estimating parasitics for global routing."
     }
+  } elseif { [info exists flags(-detailed_routing)] } {
+    if { ![design_is_routed] } {
+      utl::error RSZ 87 "Design is not routed."
+    }
+    rsz::estimate_parasitics_cmd "detailed_routing" $spef_file $ext_model_file
   } else {
     utl::error RSZ 3 "missing -placement or -global_routing flag."
   }
@@ -603,9 +614,6 @@ proc repair_timing { args } {
   }
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
-  if { [design_is_routed] } {
-    rsz::set_parasitics_src "detailed_routing"
-  }
 
   set max_repairs_per_pass 1
   if { [info exists keys(-max_repairs_per_pass)] } {
