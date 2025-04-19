@@ -4137,4 +4137,15 @@ dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
   return mdfp_visitor.modnet();
 }
 
+bool dbNetwork::hasHierarchicalElements() const
+{
+  if (block()->getModNets().size() != 0) {
+    return true;
+  }
+  if (block()->getModules().size() != 0) {
+    return true;
+  }
+  return false;
+}
+
 }  // namespace sta

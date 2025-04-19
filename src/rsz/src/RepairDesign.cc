@@ -2169,10 +2169,12 @@ bool RepairDesign::makeRepeater(
   }
 
   // original code to preserve regressions
-  // It turns out that the placer is sensitve to the buffer
-  // connection order ! So we simply preserve the original code.
+  // It turns out that original code is sensitive to buffer
+  // connection order. To preserve backward compatibility
+  // in regressions we keep original code for designs without
+  // hierarchical elements
 
-  if (!db_network_->hasHierarchy()) {
+  if (!db_network_->hasHierarchicalElements()) {
     if (keep_input) {
       //
       // Case 1
@@ -2248,6 +2250,7 @@ bool RepairDesign::makeRepeater(
           db_network_->connectPin(const_cast<Pin*>(pin), ip_net);
         }
       }
+      // Note bufffers connected at end in original code
       db_network_->connectPin(buffer_ip_pin, buffer_ip_net);
       db_network_->connectPin(buffer_op_pin, buffer_op_net);
     }  // case 2
@@ -2255,6 +2258,7 @@ bool RepairDesign::makeRepeater(
 
   //
   // new code, which supports hierarchy
+  // and wires the buffer in different order
   //
   else {
     if (keep_input) {
@@ -2439,8 +2443,7 @@ bool RepairDesign::makeRepeater(
           // non repeater loads go on input side
           db_network_->connectPin(const_cast<Pin*>(pin), (Net*) buffer_ip_net);
 
-          if (db_network_->hasHierarchy()
-              && (driver_instance_parent != load_instance_parent)) {
+          if (driver_instance_parent != load_instance_parent) {
             std::string connection_name;
             // todo use preferred name
             connection_name = resizer_->makeUniqueNetName(parent);
