@@ -21,7 +21,7 @@ PathRenderer::PathRenderer(dbSta* sta) : sta_(sta)
 
 PathRenderer::~PathRenderer() = default;
 
-void PathRenderer::highlight(PathRef* path)
+void PathRenderer::highlight(Path* path)
 {
   path_ = std::make_unique<PathExpanded>(path, sta_);
 }
@@ -33,11 +33,11 @@ void PathRenderer::drawObjects(gui::Painter& painter)
   }
   dbNetwork* network = sta_->getDbNetwork();
   for (unsigned int i = 0; i < path_->size(); i++) {
-    const PathRef* path = path_->path(i);
-    TimingArc* prev_arc = path_->prevArc(i);
+    const Path* path = path_->path(i);
+    const TimingArc* prev_arc = path->prevArc(sta_);
     // Draw lines for wires on the path.
     if (prev_arc && prev_arc->role()->isWire()) {
-      const PathRef* prev_path = path_->path(i - 1);
+      const Path* prev_path = path_->path(i - 1);
       const Pin* pin = path->pin(sta_);
       const Pin* prev_pin = prev_path->pin(sta_);
       const odb::Point pt1 = network->location(pin);

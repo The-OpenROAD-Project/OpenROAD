@@ -11,7 +11,6 @@
 
 #include "architecture.h"
 #include "network.h"
-#include "router.h"
 
 namespace dpo {
 
@@ -44,7 +43,6 @@ class Detailed
 
   Architecture* arch_ = nullptr;
   Network* network_ = nullptr;
-  RoutingParams* rt_ = nullptr;
 };
 
 }  // namespace dpo

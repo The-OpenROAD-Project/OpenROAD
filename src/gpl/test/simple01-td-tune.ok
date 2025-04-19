@@ -92,10 +92,10 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      230 |   0.5680 |  4.421087e+06 |   +2.09% |  5.74e-09 |      
-      240 |   0.5248 |  4.500705e+06 |   +1.80% |  9.35e-09 |      
+      230 |   0.5680 |  4.421086e+06 |   +2.09% |  5.74e-09 |      
+      240 |   0.5248 |  4.500722e+06 |   +1.80% |  9.35e-09 |      
 [INFO GPL-0100] Timing-driven iteration 4/7, virtual: true.
-[INFO GPL-0101]    Iter: 247, overflow: 0.491, keep resizer changes at: 0.3, HPWL: 4573895
+[INFO GPL-0101]    Iter: 247, overflow: 0.491, keep resizer changes at: 0.3, HPWL: 4573904
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -105,10 +105,10 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      250 |   0.4759 |  4.593620e+06 |   +2.06% |  1.52e-08 |      
-      260 |   0.4218 |  4.639152e+06 |   +0.99% |  2.48e-08 |      
+      250 |   0.4759 |  4.593613e+06 |   +2.06% |  1.52e-08 |      
+      260 |   0.4218 |  4.639154e+06 |   +0.99% |  2.48e-08 |      
 [INFO GPL-0100] Timing-driven iteration 5/7, virtual: true.
-[INFO GPL-0101]    Iter: 265, overflow: 0.393, keep resizer changes at: 0.3, HPWL: 4653629
+[INFO GPL-0101]    Iter: 265, overflow: 0.393, keep resizer changes at: 0.3, HPWL: 4653652
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -118,8 +118,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0106] Timing-driven: worst slack 1.4e-09
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      270 |   0.3652 |  4.678508e+06 |   +0.85% |  4.04e-08 |      
-      280 |   0.3127 |  4.689400e+06 |   +0.23% |  6.13e-08 |      
+      270 |   0.3652 |  4.678491e+06 |   +0.85% |  4.04e-08 |      
+      280 |   0.3127 |  4.689380e+06 |   +0.23% |  6.13e-08 |      
 [INFO GPL-0100] Timing-driven iteration 6/7, virtual: false.
 [INFO GPL-0101]    Iter: 284, overflow: 0.288, keep resizer changes at: 0.3, HPWL: 4702543
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -135,11 +135,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.62693805
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      290 |   0.2991 |  2.899794e+06 |  -38.16% |  9.04e-08 |      
-      300 |   0.2897 |  3.011545e+06 |   +3.85% |  1.33e-07 |      
-      310 |   0.2266 |  2.948151e+06 |   -2.11% |  1.96e-07 |      
+      290 |   0.2991 |  2.899793e+06 |  -38.16% |  9.04e-08 |      
+      300 |   0.2897 |  3.011495e+06 |   +3.85% |  1.33e-07 |      
+      310 |   0.2266 |  2.948114e+06 |   -2.10% |  1.96e-07 |      
 [INFO GPL-0100] Timing-driven iteration 7/7, virtual: false.
-[INFO GPL-0101]    Iter: 318, overflow: 0.193, keep resizer changes at: 0.3, HPWL: 2973941
+[INFO GPL-0101]    Iter: 318, overflow: 0.193, keep resizer changes at: 0.3, HPWL: 2973949
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       356
@@ -155,12 +155,12 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0110] Timing-driven: new target density: 0.63195753
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      320 |   0.1879 |  3.022250e+06 |   +2.51% |  2.89e-07 |      
-      330 |   0.1725 |  3.031660e+06 |   +0.31% |  4.26e-07 |      
-      340 |   0.1475 |  3.082839e+06 |   +1.69% |  6.27e-07 |      
-      350 |   0.1274 |  3.095701e+06 |   +0.42% |  9.24e-07 |      
-      360 |   0.1059 |  3.097717e+06 |   +0.07% |  1.36e-06 |      
-[INFO GPL-1001] Finished with Overflow: 0.099247
+      320 |   0.1879 |  3.022236e+06 |   +2.51% |  2.89e-07 |      
+      330 |   0.1724 |  3.031746e+06 |   +0.31% |  4.26e-07 |      
+      340 |   0.1475 |  3.082787e+06 |   +1.68% |  6.27e-07 |      
+      350 |   0.1272 |  3.095986e+06 |   +0.43% |  9.24e-07 |      
+      360 |   0.1058 |  3.097402e+06 |   +0.05% |  1.36e-06 |      
+[INFO GPL-1001] Finished with Overflow: 0.099041
 [INFO GPL-1002] Placed Cell Area              488.3760
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.5120 (cell_area / free_area)
@@ -168,5 +168,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.5689
 [INFO GPL-1008]     - For 80% usage of free space: 0.6400
 [INFO GPL-1009]     - For 50% usage of free space: 1.0240
-worst slack 1.40
+worst slack max 1.40
 No differences found.

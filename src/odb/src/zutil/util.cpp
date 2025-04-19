@@ -249,6 +249,21 @@ std::string generateMacroPlacementString(dbBlock* block)
   return macro_placement;
 }
 
+void set_bterm_top_layer_grid(dbBlock* block,
+                              dbTechLayer* layer,
+                              int x_step,
+                              int y_step,
+                              Rect region,
+                              int width,
+                              int height,
+                              int keepout)
+{
+  Polygon polygon_region(region);
+  dbBlock::dbBTermTopLayerGrid top_layer_grid
+      = {layer, x_step, y_step, polygon_region, width, height, keepout};
+  block->setBTermTopLayerGrid(top_layer_grid);
+}
+
 bool hasOneSiteMaster(dbDatabase* db)
 {
   for (dbLib* lib : db->getLibs()) {

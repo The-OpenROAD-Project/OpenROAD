@@ -300,6 +300,22 @@ void Resizer::initBlock()
     }
     sizing_keep_vt_ = false;
   }
+
+  dbDoubleProperty* cap_ratio_prop
+      = dbDoubleProperty::find(block_, "early_sizing_cap_ratio");
+  if (cap_ratio_prop) {
+    sizing_cap_ratio_ = cap_ratio_prop->getValue();
+  } else {
+    sizing_cap_ratio_ = default_sizing_cap_ratio_;
+  }
+
+  dbDoubleProperty* buffer_cap_ratio_prop
+      = dbDoubleProperty::find(block_, "early_buffer_sizing_cap_ratio");
+  if (buffer_cap_ratio_prop) {
+    buffer_sizing_cap_ratio_ = buffer_cap_ratio_prop->getValue();
+  } else {
+    buffer_sizing_cap_ratio_ = default_buffer_sizing_cap_ratio_;
+  }
 }
 
 void Resizer::init()
@@ -736,7 +752,7 @@ static void populateBufferCapTestPoints(LibertyCell* cell,
                                         std::vector<float>& points)
 {
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
-    TimingRole* role = arc_set->role();
+    const TimingRole* role = arc_set->role();
     if (role == TimingRole::combinational() && arc_set->from() == in
         && arc_set->to() == out) {
       for (TimingArc* arc : arc_set->arcs()) {
@@ -2039,7 +2055,6 @@ bool Resizer::getCin(const LibertyCell* cell, float& cin)
 
 int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
 {
-  float max_cap_ratio = 4.0f;
   Instance* inst = network_->instance(drvr_pin);
   LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
@@ -2050,9 +2065,8 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
     // Includes net parasitic capacitance.
     load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_dcalc_ap_);
     if (load_cap > 0.0 && getCin(cell, cin)) {
-      if (cell->isBuffer()) {
-        max_cap_ratio = 9.0f;
-      }
+      float cap_ratio
+          = cell->isBuffer() ? buffer_sizing_cap_ratio_ : sizing_cap_ratio_;
 
       LibertyCellSeq equiv_cells = getSwappableCells(cell);
       LibertyCell *best = nullptr, *highest_cin_cell = nullptr;
@@ -2061,7 +2075,7 @@ int Resizer::resizeToCapRatio(const Pin* drvr_pin, bool upsize_only)
         float size_cin;
         if ((!cell->isBuffer() || buffer_fast_sizes_.count(size))
             && getCin(size, size_cin)) {
-          if (load_cap < size_cin * max_cap_ratio) {
+          if (load_cap < size_cin * cap_ratio) {
             if (upsize_only && size == cell) {
               // The current size of the cell fits the criteria, apply no
               // sizing
@@ -2771,7 +2785,7 @@ float Resizer::findTargetLoad(LibertyCell* cell)
   float target_load_sum = 0.0;
   int arc_count = 0;
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
-    TimingRole* role = arc_set->role();
+    const TimingRole* role = arc_set->role();
     if (!role->isTimingCheck() && role != TimingRole::tristateDisable()
         && role != TimingRole::tristateEnable()
         && role != TimingRole::clockTreePathMin()
@@ -2789,7 +2803,7 @@ float Resizer::findTargetLoad(LibertyCell* cell)
                    cell->name(),
                    arc->from()->name(),
                    arc->to()->name(),
-                   arc->toEdge()->asString(),
+                   arc->toEdge()->to_string(),
                    arc_target_load);
         target_load_sum += arc_target_load;
         arc_count++;
@@ -2926,8 +2940,8 @@ void Resizer::findBufferTargetSlews(LibertyCell* buffer,
     for (TimingArc* arc : arc_set->arcs()) {
       GateTimingModel* model = dynamic_cast<GateTimingModel*>(arc->model());
       if (model != nullptr) {
-        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        RiseFall* out_rf = arc->toEdge()->asRiseFall();
+        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const RiseFall* out_rf = arc->toEdge()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
@@ -3467,7 +3481,7 @@ void Resizer::findSwapPinCandidate(LibertyPort* input_port,
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
-        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         LibertyPort* port = arc->from();
         float in_slew = 0.0;
         auto it = input_slew_map_.find(port);
@@ -3536,7 +3550,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
-        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         // use annotated slews if available
         LibertyPort* port = arc->from();
@@ -3585,7 +3599,7 @@ void Resizer::gateDelays(const LibertyPort* drvr_port,
   for (TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
       for (TimingArc* arc : arc_set->arcs()) {
-        RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
         LoadPinIndexMap load_pin_index_map(network_);
         ArcDcalcResult dcalc_result
@@ -3802,8 +3816,8 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
     for (TimingArcSet* arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
         for (TimingArc* arc : arc_set->arcs()) {
-          RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-          RiseFall* drvr_rf = arc->toEdge()->asRiseFall();
+          const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
+          const RiseFall* drvr_rf = arc->toEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
           Parasitic* drvr_parasitic
               = arc_delay_calc->findParasitic(drvr_pin, drvr_rf, dcalc_ap);

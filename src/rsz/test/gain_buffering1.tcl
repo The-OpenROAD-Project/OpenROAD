@@ -20,5 +20,5 @@ set_dont_use {sky130_fd_sc_hd__probe_*
 set_dont_touch _53_
 
 report_checks -fields {fanout}
-repair_design -buffer_gain 4.0
+repair_design -pre_placement
 report_checks -fields {fanout}

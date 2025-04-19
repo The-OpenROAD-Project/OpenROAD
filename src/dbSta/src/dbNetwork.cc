@@ -674,7 +674,7 @@ const char* dbNetwork::name(const Port* port) const
 
   if (hierarchy_) {
     size_t last_idx = name.find_last_of('/');
-    if (last_idx != string::npos) {
+    if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
     }
   }
@@ -721,7 +721,7 @@ const char* dbNetwork::name(const Instance* instance) const
 
   if (hierarchy_) {
     size_t last_idx = name.find_last_of('/');
-    if (last_idx != string::npos) {
+    if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
     }
   }
@@ -742,7 +742,8 @@ const char* dbNetwork::name(const Cell* cell) const
   return nullptr;
 }
 
-string dbNetwork::getAttribute(const Cell* cell, const string& key) const
+std::string dbNetwork::getAttribute(const Cell* cell,
+                                    const std::string& key) const
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -762,7 +763,9 @@ string dbNetwork::getAttribute(const Cell* cell, const string& key) const
   return "";
 }
 
-void dbNetwork::setAttribute(Cell* cell, const string& key, const string& value)
+void dbNetwork::setAttribute(Cell* cell,
+                             const std::string& key,
+                             const std::string& value)
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -1099,7 +1102,8 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
   return new DbInstanceNetIterator(instance, this);
 }
 
-string dbNetwork::getAttribute(const Instance* inst, const string& key) const
+std::string dbNetwork::getAttribute(const Instance* inst,
+                                    const std::string& key) const
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
@@ -1120,8 +1124,8 @@ string dbNetwork::getAttribute(const Instance* inst, const string& key) const
 }
 
 void dbNetwork::setAttribute(Instance* instance,
-                             const string& key,
-                             const string& value)
+                             const std::string& key,
+                             const std::string& value)
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
@@ -1653,7 +1657,7 @@ const char* dbNetwork::name(const Net* net) const
       //
       // If this is not a hierarchical name, return it
       //
-      if (name.find_last_of('/') == string::npos) {
+      if (name.find_last_of('/') == std::string::npos) {
         return tmpStringCopy(name.c_str());
       }
       //
@@ -1669,11 +1673,11 @@ const char* dbNetwork::name(const Net* net) const
         Pin* related_pin = dbToSta(connected_iterm);
         std::string related_pin_name_string = sta_nwk->pathName(related_pin);
         const size_t last_idx = related_pin_name_string.find_last_of('/');
-        if (last_idx != string::npos) {
+        if (last_idx != std::string::npos) {
           related_pin_name_string = related_pin_name_string.substr(0, last_idx);
           const size_t second_last_idx
               = related_pin_name_string.find_last_of('/');
-          if (second_last_idx != string::npos) {
+          if (second_last_idx != std::string::npos) {
             std::string header_to_remove
                 = related_pin_name_string.substr(0, second_last_idx);
             size_t pos = name.find(header_to_remove);
@@ -2105,7 +2109,7 @@ void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 // is msb first or lsb first.
 bool dbNetwork::portMsbFirst(const char* port_name, const char* cell_name)
 {
-  string key = "bus_msb_first ";
+  std::string key = "bus_msb_first ";
   //  key += port_name;
   key = key + port_name + " " + cell_name;
   dbBoolProperty* property = odb::dbBoolProperty::find(block_, key.c_str());

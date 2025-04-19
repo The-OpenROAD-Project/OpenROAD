@@ -38,7 +38,6 @@ class SimulatedAnnealing;
 struct Constraint;
 struct Section;
 struct Slot;
-struct TopLayerGrid;
 
 using odb::Point;
 using odb::Rect;
@@ -96,14 +95,6 @@ class IOPlacer
   void excludeInterval(Edge edge, int begin, int end);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addTopLayerPinPattern(odb::dbTechLayer* layer,
-                             int x_step,
-                             int y_step,
-                             const Rect& region,
-                             int pin_width,
-                             int pin_height,
-                             int keepout);
-  odb::dbTechLayer* getTopLayer() const;
   void placePin(odb::dbBTerm* bterm,
                 odb::dbTechLayer* layer,
                 int x,
@@ -139,7 +130,6 @@ class IOPlacer
   bool checkMirroredPins();
   void reportHPWL();
   void printConfig(bool annealing = false);
-  void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
@@ -165,6 +155,7 @@ class IOPlacer
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
   std::vector<Point> findLayerSlots(int layer, Edge edge);
+  void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
@@ -281,7 +272,7 @@ class IOPlacer
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
-  std::unique_ptr<TopLayerGrid> top_grid_;
+  std::unique_ptr<odb::dbBlock::dbBTermTopLayerGrid> top_grid_;
 
   std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
 
