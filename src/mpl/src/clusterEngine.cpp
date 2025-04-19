@@ -87,6 +87,7 @@ void ClusteringEngine::init()
     return;
   }
 
+  setDieArea();
   setFloorplanShape();
   searchForFixedInstsInsideFloorplanShape();
 
@@ -104,6 +105,19 @@ void ClusteringEngine::init()
   }
 
   reportDesignData();
+}
+
+// Note: The die area's dimensions will be used inside
+// SA Core when computing the wirelength in a situation in which
+// the target cluster is a cluster of unplaced IOs.
+void ClusteringEngine::setDieArea()
+{
+  const odb::Rect& die = block_->getDieArea();
+
+  tree_->die_area = Rect(block_->dbuToMicrons(die.xMin()),
+                         block_->dbuToMicrons(die.yMin()),
+                         block_->dbuToMicrons(die.xMax()),
+                         block_->dbuToMicrons(die.yMax()));
 }
 
 float ClusteringEngine::computeMacroWithHaloArea(
