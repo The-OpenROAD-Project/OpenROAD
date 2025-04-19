@@ -17,6 +17,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
+#include "shapes.h"
 
 namespace odb {
 class Rect;
@@ -40,6 +41,9 @@ class HardMacro;
 class SoftMacro;
 class Cluster;
 
+using IntervalList = std::vector<Interval>;
+using TilingList = std::vector<Tiling>;
+using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
 using Point = std::pair<float, float>;
 
@@ -256,9 +260,8 @@ class Cluster
   void setSoftMacro(std::unique_ptr<SoftMacro> soft_macro);
   SoftMacro* getSoftMacro() const;
 
-  void setMacroTilings(const std::vector<std::pair<float, float>>& tilings);
-  // TODO: return const reference iff precondition ok (see comment in Cluster)
-  std::vector<std::pair<float, float>> getMacroTilings() const;
+  void setTilings(const TilingList& tilings);
+  const TilingList& getTilings() const;
 
  private:
   // Private Variables
@@ -295,8 +298,7 @@ class Cluster
   Cluster* parent_ = nullptr;  // parent of current cluster
   UniqueClusterVector children_;
 
-  // macro tilings for hard macros
-  std::vector<std::pair<float, float>> macro_tilings_;  // <width, height>
+  TilingList tilings_;
 
   // To support grouping small clusters based connection signature,
   // we define connection_map_
@@ -487,15 +489,9 @@ class SoftMacro
   void setArea(float area);        // only for StdCellCluster and MixedCluster
   void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
-  // This function for discrete shape curves, HardMacroCluster
-  // If force_flag_ = true, it will force the update of width_list_ and
-  // height_list_
-  void setShapes(const std::vector<std::pair<float, float>>& shapes,
-                 bool force_flag = false);  // < <width, height>
-  // This function for specify shape curves (piecewise function),
-  // for StdCellCluster and MixedCluster
-  void setShapes(const std::vector<std::pair<float, float>>& width_list,
-                 float area);
+  void setShapes(const TilingList& tilings, bool force = false);
+  void setShapes(const IntervalList& width_intervals, float area);
+
   float getX() const { return x_; }
   float getY() const { return y_; }
 
@@ -528,10 +524,9 @@ class SoftMacro
   float getMacroUtil() const;
 
  private:
-  // utility function
-  int findPos(std::vector<std::pair<float, float>>& list,
-              float& value,
-              bool increase_order);
+  int findIntervalIndex(const IntervalList& interval_list,
+                        float& value,
+                        bool increasing_list);
 
   // We define x_, y_ and orientation_ here
   // Also enable the multi-threading
@@ -541,9 +536,11 @@ class SoftMacro
   float height_ = 0.0;     // height_
   float area_ = 0.0;       // area of the standard cell cluster
   std::string name_ = "";  // macro name
-  // variables to describe shape curves (discrete or piecewise curves)
-  std::vector<std::pair<float, float>> width_list_;   // nondecreasing order
-  std::vector<std::pair<float, float>> height_list_;  // nonincreasing order
+
+  // The shape curve (discrete or piecewise) of a cluster is the
+  // combination of its width/height intervals.
+  IntervalList width_intervals_;   // nondecreasing order
+  IntervalList height_intervals_;  // nonincreasing order
 
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
