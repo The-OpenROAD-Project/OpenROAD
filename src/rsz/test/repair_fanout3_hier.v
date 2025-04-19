@@ -14,14 +14,15 @@ module hi_fanout (clk1, net0);
 
    DFF_X1 drvr (.CK(clk1),
 		.Q(net0));
+   
    hi_fanout_child hi_fanout_inst1(net0,clk1);
    hi_fanout_child hi_fanout_inst2(net0,clk1);   
 endmodule
 
 
 module hi_fanout_child (net0,clk1);
-   input net0;
-   input clk1;
+   input net0; //34 loads
+   input clk1; //34 loads
 
  DFF_X1 load0 (.D(net0),
     .CK(clk1));
