@@ -697,6 +697,7 @@ class FlexDRWorker
   void initTrackCoords_pin(drNet* net,
                            frLayerCoordTrackPatternMap& xMap,
                            frLayerCoordTrackPatternMap& yMap);
+  frLayerNum initTrackCoords_getNonPref(frLayerNum lNum);
   void initMazeIdx();
   void initMazeIdx_connFig(drConnFig* connFig);
   void initMazeIdx_ap(drAccessPattern* ap);
