@@ -32,6 +32,13 @@ jobs:
 
       - name: Build
         run: |
+          # FIXME When we're fully switched to MODULE.bazel, we can
+          # select tests with a simple top level "...", but for
+          # now we don't want to build any tests that "..." picks
+          # up from WORKSPACE. Also, we don't want to build any
+          # tests that are marked as tags=["manual"], because
+          # it is used as a feature-toggle for unfinished tests
+          # that are in master for collaboration prior to deployment.
           bazel test \
            -c opt \
            --keep_going \
@@ -39,7 +46,8 @@ jobs:
            --test_output=errors \
            --curses=no \
            --force_pic \
-           ...
+           --build_tag_filters=-manual \
+           test/... src/...
 
       - name: Smoke test
         run: |
