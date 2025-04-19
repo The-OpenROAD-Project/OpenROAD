@@ -4142,9 +4142,6 @@ bool dbNetwork::hasHierarchicalElements() const
   if (block()->getModNets().size() != 0) {
     return true;
   }
-  if (block()->getModules().size() != 0) {
-    return true;
-  }
   return false;
 }
 
