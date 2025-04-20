@@ -163,8 +163,8 @@ class tmg_conn
   int _stbtx2[200];
   int _stbty2[200];
   dbBTerm* _slicedTileBTerm[200];
-  tmg_conn_search* _search;
-  tmg_conn_graph* _graph;
+  std::unique_ptr<tmg_conn_search> _search;
+  std::unique_ptr<tmg_conn_graph> _graph;
   std::vector<tmg_rc> _rcV;
   std::vector<tmg_rcpt> _ptV;
   std::vector<tmg_rcterm> _termV;

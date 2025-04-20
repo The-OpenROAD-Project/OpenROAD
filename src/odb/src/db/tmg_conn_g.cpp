@@ -381,7 +381,7 @@ void tmg_conn::relocateShorts()
 void tmg_conn::removeShortLoops()
 {
   if (!_graph) {
-    _graph = new tmg_conn_graph();
+    _graph = std::make_unique<tmg_conn_graph>();
   }
   _graph->init(_ptV.size(), _shortV.size());
   tcg_pt* pgV = _graph->_ptV;

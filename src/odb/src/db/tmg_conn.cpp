@@ -62,8 +62,6 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _csVV.reserve(1024);
   _csNV.reserve(1024);
   _shortV.reserve(1024);
-  _search = nullptr;
-  _graph = nullptr;
   _cut_end_extMin = 1;
   _need_short_wire_id = 0;
   _first_for_clear = nullptr;
@@ -71,11 +69,7 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _swireNetCnt = 0;
 }
 
-tmg_conn::~tmg_conn()
-{
-  delete _search;
-  delete _graph;
-}
+tmg_conn::~tmg_conn() = default;
 
 int tmg_conn::ptDist(const int fr, const int to) const
 {
@@ -593,7 +587,7 @@ void tmg_conn::findConnections()
     return;
   }
   if (!_search) {
-    _search = new tmg_conn_search();
+    _search = std::make_unique<tmg_conn_search>();
   }
   _search->clear();
 
