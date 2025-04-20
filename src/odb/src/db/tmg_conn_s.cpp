@@ -12,7 +12,7 @@ struct tcs_shape
 {
   tcs_shape* next = nullptr;
   Rect bounds;
-  int lev = 0;
+  int level = 0;
   int isVia = 0;
   int id = 0;
 
@@ -22,13 +22,13 @@ struct tcs_shape
   int yMax() const { return bounds.yMax(); }
 };
 
-struct tcs_lev
+struct tcs_level
 {
   tcs_shape* shape_list = nullptr;
   tcs_shape* last_shape = nullptr;
-  tcs_lev* left = nullptr;
-  tcs_lev* right = nullptr;
-  tcs_lev* parent = nullptr;
+  tcs_level* left = nullptr;
+  tcs_level* right = nullptr;
+  tcs_level* parent = nullptr;
   Rect bounds;
   int n = 0;
 
@@ -39,7 +39,7 @@ struct tcs_lev
   void reset();
 };
 
-void tcs_lev::reset()
+void tcs_level::reset()
 {
   shape_list = nullptr;
   last_shape = nullptr;
@@ -55,21 +55,21 @@ class tmg_conn_search::Impl
  public:
   Impl();
   void clear();
-  void addShape(int lev, const Rect& bounds, int isVia, int id);
-  void searchStart(int lev, const Rect& bounds, int isVia);
+  void addShape(int level, const Rect& bounds, int isVia, int id);
+  void searchStart(int level, const Rect& bounds, int isVia);
   bool searchNext(int* id);
 
  private:
   void sort();
-  void sort_level(tcs_lev* bin);
+  void sort_level(tcs_level* bin);
 
   std::deque<tcs_shape> _shapes;
-  tcs_lev _levAllV[32768];
+  tcs_level _levAllV[32768];
   int _levAllN;
-  std::array<tcs_lev*, 32> _levV;
+  std::array<tcs_level*, 32> _levV;
   Rect _search_box;
   int _srcVia;
-  tcs_lev* _bin;
+  tcs_level* _bin;
   tcs_shape* _cur;
   bool _sorted;
 
@@ -94,18 +94,18 @@ void tmg_conn_search::Impl::clear()
   _sorted = false;
 }
 
-void tmg_conn_search::Impl::addShape(const int lev,
+void tmg_conn_search::Impl::addShape(const int level,
                                      const Rect& bounds,
                                      const int isVia,
                                      const int id)
 {
   tcs_shape* shape = &_shapes.emplace_back();
-  shape->lev = lev;
+  shape->level = level;
   shape->bounds = bounds;
   shape->isVia = isVia;
   shape->id = id;
   shape->next = nullptr;
-  tcs_lev* slev = _levV[lev];
+  tcs_level* slev = _levV[level];
   if (slev->shape_list == nullptr) {
     slev->shape_list = shape;
     slev->bounds = shape->bounds;
@@ -117,12 +117,14 @@ void tmg_conn_search::Impl::addShape(const int lev,
   slev->n++;
 }
 
-void tmg_conn_search::Impl::searchStart(int lev, const Rect& bounds, int isVia)
+void tmg_conn_search::Impl::searchStart(int level,
+                                        const Rect& bounds,
+                                        int isVia)
 {
   if (!_sorted) {
     sort();
   }
-  _bin = _levV[lev];
+  _bin = _levV[level];
   _cur = _bin->shape_list;
   _search_box = bounds;
   _srcVia = isVia;
@@ -205,10 +207,10 @@ bool tmg_conn_search::Impl::searchNext(int* id)
   return false;
 }
 
-static void tcs_lev_init(tcs_lev* bin,
-                         tcs_lev* parent,
-                         tcs_lev* left = nullptr,
-                         tcs_lev* right = nullptr)
+static void tcs_level_init(tcs_level* bin,
+                         tcs_level* parent,
+                         tcs_level* left = nullptr,
+                         tcs_level* right = nullptr)
 {
   bin->shape_list = nullptr;
   bin->last_shape = nullptr;
@@ -218,7 +220,7 @@ static void tcs_lev_init(tcs_lev* bin,
   bin->n = 0;
 }
 
-static void tcs_lev_add(tcs_lev* bin, tcs_shape* shape)
+static void tcs_level_add(tcs_level* bin, tcs_shape* shape)
 {
   if (bin->shape_list == nullptr) {
     bin->shape_list = shape;
@@ -231,7 +233,7 @@ static void tcs_lev_add(tcs_lev* bin, tcs_shape* shape)
   bin->n++;
 }
 
-static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* shape)
+static void tcs_level_add_no_bb(tcs_level* bin, tcs_shape* shape)
 {
   if (bin->shape_list == nullptr) {
     bin->shape_list = shape;
@@ -242,14 +244,14 @@ static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* shape)
   bin->n++;
 }
 
-static void tcs_lev_wrap(tcs_lev* bin)
+static void tcs_level_wrap(tcs_level* bin)
 {
   if (bin->last_shape) {
     bin->last_shape->next = nullptr;
   }
 }
 
-void tmg_conn_search::Impl::sort_level(tcs_lev* bin)
+void tmg_conn_search::Impl::sort_level(tcs_level* bin)
 {
   if (_levAllN >= 32767) {
     return;
@@ -257,41 +259,41 @@ void tmg_conn_search::Impl::sort_level(tcs_lev* bin)
   if (bin->n < sort_threshold) {
     return;
   }
-  tcs_lev* left = _levAllV + _levAllN++;
-  tcs_lev_init(left, bin);
+  tcs_level* left = _levAllV + _levAllN++;
+  tcs_level_init(left, bin);
 
-  tcs_lev* right = _levAllV + _levAllN++;
-  tcs_lev_init(right, bin);
+  tcs_level* right = _levAllV + _levAllN++;
+  tcs_level_init(right, bin);
 
   tcs_shape* shape = bin->shape_list;
-  tcs_lev_init(bin, bin->parent, left, right);
+  tcs_level_init(bin, bin->parent, left, right);
 
   if (bin->bounds.dx() >= bin->bounds.dy()) {
     const int xmid = bin->bounds.xCenter();
     for (; shape; shape = shape->next) {
       if (shape->xMax() < xmid) {
-        tcs_lev_add(left, shape);
+        tcs_level_add(left, shape);
       } else if (shape->xMin() > xmid) {
-        tcs_lev_add(right, shape);
+        tcs_level_add(right, shape);
       } else {
-        tcs_lev_add_no_bb(bin, shape);
+        tcs_level_add_no_bb(bin, shape);
       }
     }
   } else {
     const int ymid = bin->bounds.yCenter();
     for (; shape; shape = shape->next) {
       if (shape->yMax() < ymid) {
-        tcs_lev_add(left, shape);
+        tcs_level_add(left, shape);
       } else if (shape->yMin() > ymid) {
-        tcs_lev_add(right, shape);
+        tcs_level_add(right, shape);
       } else {
-        tcs_lev_add_no_bb(bin, shape);
+        tcs_level_add_no_bb(bin, shape);
       }
     }
   }
-  tcs_lev_wrap(bin);
-  tcs_lev_wrap(left);
-  tcs_lev_wrap(right);
+  tcs_level_wrap(bin);
+  tcs_level_wrap(left);
+  tcs_level_wrap(right);
   sort_level(left);
   sort_level(right);
 }
@@ -320,14 +322,14 @@ void tmg_conn_search::clear()
   impl_->clear();
 }
 
-void tmg_conn_search::addShape(int lev, const Rect& bounds, int isVia, int id)
+void tmg_conn_search::addShape(int level, const Rect& bounds, int isVia, int id)
 {
-  impl_->addShape(lev, bounds, isVia, id);
+  impl_->addShape(level, bounds, isVia, id);
 }
 
-void tmg_conn_search::searchStart(int lev, const Rect& bounds, int isVia)
+void tmg_conn_search::searchStart(int level, const Rect& bounds, int isVia)
 {
-  impl_->searchStart(lev, bounds, isVia);
+  impl_->searchStart(level, bounds, isVia);
 }
 
 bool tmg_conn_search::searchNext(int* id)

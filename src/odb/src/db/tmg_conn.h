@@ -200,8 +200,8 @@ class tmg_conn_search
   tmg_conn_search();
   ~tmg_conn_search();
   void clear();
-  void addShape(int lev, const Rect& bounds, int isVia, int id);
-  void searchStart(int lev, const Rect& bounds, int isVia);
+  void addShape(int level, const Rect& bounds, int isVia, int id);
+  void searchStart(int level, const Rect& bounds, int isVia);
   bool searchNext(int* id);
 
  private:
