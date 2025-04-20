@@ -78,8 +78,7 @@ int tmg_conn::ptDist(const int fr, const int to) const
 
 tmg_rcpt* tmg_conn::allocPt(int x, int y, dbTechLayer* layer)
 {
-  _ptV.emplace_back();
-  tmg_rcpt* pt = &_ptV.back();
+  tmg_rcpt* pt = &_ptV.emplace_back();
   pt->_x = x;
   pt->_y = y;
   pt->_layer = layer;
@@ -173,12 +172,11 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
 }
 void tmg_conn::addITerm(dbITerm* iterm)
 {
-  _termV.emplace_back();
   _tstackV.emplace_back();
   _csVV.emplace_back();
   _csNV.emplace_back();
 
-  tmg_rcterm& x = _termV.back();
+  tmg_rcterm& x = _termV.emplace_back();
   x._iterm = iterm;
   x._bterm = nullptr;
   x._pt = nullptr;
@@ -187,12 +185,11 @@ void tmg_conn::addITerm(dbITerm* iterm)
 
 void tmg_conn::addBTerm(dbBTerm* bterm)
 {
-  _termV.emplace_back();
   _tstackV.emplace_back();
   _csVV.emplace_back();
   _csNV.emplace_back();
 
-  tmg_rcterm& x = _termV.back();
+  tmg_rcterm& x = _termV.emplace_back();
   x._iterm = nullptr;
   x._bterm = bterm;
   x._pt = nullptr;
@@ -201,8 +198,7 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
 
 void tmg_conn::addShort(const int i0, const int i1)
 {
-  _shortV.emplace_back();
-  tmg_rcshort& x = _shortV.back();
+  tmg_rcshort& x = _shortV.emplace_back();
   x._i0 = i0;
   x._i1 = i1;
   x._skip = false;
