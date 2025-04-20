@@ -36,7 +36,19 @@ struct tcs_lev
   int yMin() const { return bounds.yMin(); }
   int xMax() const { return bounds.xMax(); }
   int yMax() const { return bounds.yMax(); }
+  void reset();
 };
+
+void tcs_lev::reset()
+{
+  shape_list = nullptr;
+  last_shape = nullptr;
+  left = nullptr;
+  right = nullptr;
+  parent = nullptr;
+  bounds.reset(0, 0, 0, 0);
+  n = 0;
+}
 
 class tmg_conn_search::Impl
 {
@@ -103,13 +115,7 @@ void tmg_conn_search::Impl::clear()
   _levAllN = 0;
   for (int j = 0; j < 32; j++) {
     _levV[j] = _levAllV + _levAllN++;
-    _levV[j]->shape_list = nullptr;
-    _levV[j]->last_shape = nullptr;
-    _levV[j]->left = nullptr;
-    _levV[j]->right = nullptr;
-    _levV[j]->parent = nullptr;
-    _levV[j]->n = 0;
-    _levV[j]->bounds = {0, 0, 0, 0};
+    _levV[j]->reset();
   }
   _sorted = false;
 }
