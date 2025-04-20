@@ -3,8 +3,13 @@
 
 #include "grid.h"
 
+#include <algorithm>
 #include <boost/geometry.hpp>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "connect.h"

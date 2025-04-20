@@ -6,7 +6,12 @@
 #include <boost/polygon/polygon.hpp>
 #include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -28,9 +33,23 @@ class access;
 
 namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower, via name
+// lowerArea, not align lower
 using ViaRawPriorityTuple
     = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
+
+struct frInstLocationComp
+{
+  bool operator()(const frInst* lhs, const frInst* rhs) const
+  {
+    Point lp = lhs->getBoundaryBBox().ll(), rp = rhs->getBoundaryBBox().ll();
+    if (lp.getY() != rp.getY()) {
+      return lp.getY() < rp.getY();
+    }
+    return lp.getX() < rp.getX();
+  }
+};
+
+using frInstLocationSet = std::set<frInst*, frInstLocationComp>;
 
 class FlexPinAccessPattern;
 class FlexDPNode;
@@ -92,6 +111,7 @@ class FlexPA
            std::map<int, std::map<ViaRawPriorityTuple, const frViaDef*>>>
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
+  frInstLocationSet insts_set_;
 
   std::string remote_host_;
   uint16_t remote_port_ = -1;
@@ -306,6 +326,12 @@ class FlexPA
                      frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
+
+  void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
+                            const gtl::rectangle_data<frCoord>& rect,
+                            const frViaDef* via_def,
+                            frLayerNum layer_num,
+                            bool is_curr_layer_horz);
 
   /**
    * @brief Generates an Enclosed Boundary access point
@@ -670,6 +696,7 @@ class FlexPA
    * @brief Extracts the access patterns given the graph nodes composing the
    * access points relationship
    *
+   * @param inst instance
    * @param nodes {pin,access_point} nodes of the access pattern graph
    * @param pins vector of pins of the unique instance
    * @param used_access_points a set of all used access points
@@ -678,6 +705,7 @@ class FlexPA
    * access_pattern[pin_idx] = access_point_idx of the pin
    */
   std::vector<int> extractAccessPatternFromNodes(
+      frInst* inst,
       const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::pair<int, int>>& used_access_points);
@@ -728,7 +756,32 @@ class FlexPA
       PatternType pattern_type,
       std::set<frBlockObject*>* owners = nullptr);
 
-  void getInsts(std::vector<frInst*>& insts);
+  /**
+   * @brief populates the insts_set_ data structure
+   */
+  void buildInstsSet();
+
+  /**
+   * @brief organizes all the insts in a vector of clusters, each cluster being
+   * a vector of insts a adjacent insts
+   *
+   * @returns the vector of vectors of insts
+   */
+  std::vector<std::vector<frInst*>> computeInstRows();
+
+  /**
+   * @brief Verifies if both instances are abuting
+   *
+   * @returns true if the instances abute
+   */
+  bool instancesAreAbuting(frInst* inst_1, frInst* inst_2) const;
+
+  /**
+   * @brief Find a cluster of instances that are touching the passed instance
+   *
+   * @returns a vector of the clusters of touching insts
+   */
+  std::vector<frInst*> getAdjacentInstancesCluster(frInst* inst) const;
 
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 

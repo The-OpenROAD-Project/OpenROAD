@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <map>
 #include <vector>
 
 #include "AbstractMakeWireParasitics.h"
@@ -128,7 +129,7 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   sta::dbNetwork* network_;
   sta::Parasitics* parasitics_;
   sta::ArcDelayCalc* arc_delay_calc_;
-  sta::MinMax* min_max_;
+  const sta::MinMax* min_max_;
   size_t resistor_id_;
 };
 

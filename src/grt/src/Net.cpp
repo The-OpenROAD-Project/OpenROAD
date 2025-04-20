@@ -3,6 +3,9 @@
 
 #include "Net.h"
 
+#include <algorithm>
+#include <limits>
+#include <set>
 #include <string>
 #include <vector>
 

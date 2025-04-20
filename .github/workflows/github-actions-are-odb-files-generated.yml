@@ -1,8 +1,12 @@
 name: Check That ODB Files Are Generated
+
 on:
-  # Triggers the workflow on push or pull request events
   push:
+    branches:
+    - master
   pull_request:
+    branches:
+    - master
 
 jobs:
   format:

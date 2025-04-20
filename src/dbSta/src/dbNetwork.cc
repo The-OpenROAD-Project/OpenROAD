@@ -46,6 +46,9 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "db_sta/dbNetwork.hh"
 
 #include <algorithm>
+#include <limits>
+#include <memory>
+#include <set>
 #include <unordered_set>
 #include <vector>
 
@@ -671,7 +674,7 @@ const char* dbNetwork::name(const Port* port) const
 
   if (hierarchy_) {
     size_t last_idx = name.find_last_of('/');
-    if (last_idx != string::npos) {
+    if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
     }
   }
@@ -718,7 +721,7 @@ const char* dbNetwork::name(const Instance* instance) const
 
   if (hierarchy_) {
     size_t last_idx = name.find_last_of('/');
-    if (last_idx != string::npos) {
+    if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
     }
   }
@@ -739,7 +742,8 @@ const char* dbNetwork::name(const Cell* cell) const
   return nullptr;
 }
 
-string dbNetwork::getAttribute(const Cell* cell, const string& key) const
+std::string dbNetwork::getAttribute(const Cell* cell,
+                                    const std::string& key) const
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -759,7 +763,9 @@ string dbNetwork::getAttribute(const Cell* cell, const string& key) const
   return "";
 }
 
-void dbNetwork::setAttribute(Cell* cell, const string& key, const string& value)
+void dbNetwork::setAttribute(Cell* cell,
+                             const std::string& key,
+                             const std::string& value)
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -1096,7 +1102,8 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
   return new DbInstanceNetIterator(instance, this);
 }
 
-string dbNetwork::getAttribute(const Instance* inst, const string& key) const
+std::string dbNetwork::getAttribute(const Instance* inst,
+                                    const std::string& key) const
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
@@ -1117,8 +1124,8 @@ string dbNetwork::getAttribute(const Instance* inst, const string& key) const
 }
 
 void dbNetwork::setAttribute(Instance* instance,
-                             const string& key,
-                             const string& value)
+                             const std::string& key,
+                             const std::string& value)
 {
   dbInst* db_inst;
   dbModInst* mod_inst;
@@ -1650,7 +1657,7 @@ const char* dbNetwork::name(const Net* net) const
       //
       // If this is not a hierarchical name, return it
       //
-      if (name.find_last_of('/') == string::npos) {
+      if (name.find_last_of('/') == std::string::npos) {
         return tmpStringCopy(name.c_str());
       }
       //
@@ -1666,11 +1673,11 @@ const char* dbNetwork::name(const Net* net) const
         Pin* related_pin = dbToSta(connected_iterm);
         std::string related_pin_name_string = sta_nwk->pathName(related_pin);
         const size_t last_idx = related_pin_name_string.find_last_of('/');
-        if (last_idx != string::npos) {
+        if (last_idx != std::string::npos) {
           related_pin_name_string = related_pin_name_string.substr(0, last_idx);
           const size_t second_last_idx
               = related_pin_name_string.find_last_of('/');
-          if (second_last_idx != string::npos) {
+          if (second_last_idx != std::string::npos) {
             std::string header_to_remove
                 = related_pin_name_string.substr(0, second_last_idx);
             size_t pos = name.find(header_to_remove);
@@ -2102,7 +2109,7 @@ void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 // is msb first or lsb first.
 bool dbNetwork::portMsbFirst(const char* port_name, const char* cell_name)
 {
-  string key = "bus_msb_first ";
+  std::string key = "bus_msb_first ";
   //  key += port_name;
   key = key + port_name + " " + cell_name;
   dbBoolProperty* property = odb::dbBoolProperty::find(block_, key.c_str());
@@ -2289,6 +2296,7 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
   dbNet* flat_net_db = nullptr;
   dbModNet* hier_net_db = nullptr;
 
+  // connect the flat net first
   if (flat_net) {
     staToDb(flat_net, flat_net_db, hier_net_db);
     if (hier_net_db) {
@@ -2297,7 +2305,6 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                      "Illegal net combination. hierarchical flat net supplied "
                      "as flat net argument to api:connectPin");
     }
-
     if (flat_net_db) {
       if (iterm) {
         iterm->connect(flat_net_db);
@@ -2313,8 +2320,10 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
   }
 
   if (hier_net) {
-    staToDb(hier_net, flat_net_db, hier_net_db);
-    if (flat_net_db) {
+    // sanity check to make hier argument is ok
+    dbNet* flat_net_local_check = nullptr;
+    staToDb(hier_net, flat_net_local_check, hier_net_db);
+    if (flat_net_local_check) {
       logger_->error(ORD,
                      2027,
                      "Illegal net combination. flat net supplied as hier net "
@@ -2336,13 +2345,19 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
+      // do the house keeping. Mod net must always have the flat net associated
+      // with it.
+      if (flat_net_db) {
+        reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
+      }
     }
   }
 }
 
 /*
 Generic pin -> net connection with support for hierarchical
-nets
+nets. If connecting a hierarchical net and associated_flat_net
+not null then reassociate the hierarhical net.
 */
 void dbNetwork::connectPin(Pin* pin, Net* net)
 {
@@ -3606,10 +3621,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
       dbModInst* parent_inst = cur_module->getModInst();
       cur_module = parent_inst->getParent();
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_inst, connection_name_o.c_str());
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm = dbModITerm::create(
+          parent_inst, connection_name_o.c_str(), mod_bterm);
       source_db_mod_net = dbModNet::create(cur_module, connection_name);
       mod_iterm->connect(source_db_mod_net);
       top_net = source_db_mod_net;
@@ -3636,10 +3649,8 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       mod_bterm->setSigType(dbSigType::SIGNAL);
       dbModInst* parent_inst = cur_module->getModInst();
       cur_module = parent_inst->getParent();
-      dbModITerm* mod_iterm
-          = dbModITerm::create(parent_inst, connection_name_i.c_str());
-      mod_iterm->setChildModBTerm(mod_bterm);
-      mod_bterm->setParentModITerm(mod_iterm);
+      dbModITerm* mod_iterm = dbModITerm::create(
+          parent_inst, connection_name_i.c_str(), mod_bterm);
       if (cur_module != highest_common_module) {
         dest_db_mod_net = dbModNet::create(cur_module, connection_name);
         mod_iterm->connect(dest_db_mod_net);
@@ -3684,6 +3695,87 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
       }
     }
   }
+}
+
+/*
+We expect each hierarchical net to have only one flat net
+associated with it.
+The routines below are called each time we move mod nets around
+so that we maintain the axiom.
+*/
+
+class ModDbNetAssociation : public PinVisitor
+{
+ public:
+  ModDbNetAssociation(dbNetwork* nwk,
+                      Logger* logger,
+                      dbModNet* mod_net,
+                      dbNet* new_flat_net,
+                      dbNet* orig_flat_net);
+  void operator()(const Pin* pin) override;
+  Logger* logger_ = nullptr;
+
+ protected:
+  dbNetwork* db_network_;
+  dbModNet* mod_net_;
+  dbNet* new_flat_net_;
+  dbNet* orig_flat_net_;
+};
+
+ModDbNetAssociation::ModDbNetAssociation(dbNetwork* nwk,
+                                         Logger* logger,
+                                         dbModNet* mod_net,
+                                         dbNet* new_flat_net,
+                                         dbNet* orig_flat_net)
+    : db_network_(nwk),
+      mod_net_(mod_net),
+      new_flat_net_(new_flat_net),
+      orig_flat_net_(orig_flat_net)
+{
+  logger_ = logger;
+}
+
+void ModDbNetAssociation::operator()(const Pin* pin)
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  dbModBTerm* modbterm;
+  dbModITerm* moditerm;
+  db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
+
+  if (moditerm || modbterm) {
+    return;
+  }
+  dbNet* cur_flat_net = db_network_->flatNet(pin);
+
+  if (cur_flat_net == orig_flat_net_ || orig_flat_net_ == nullptr) {
+    db_network_->disconnectPin(const_cast<Pin*>(pin),
+                               db_network_->dbToSta(cur_flat_net));
+    db_network_->connectPin(const_cast<Pin*>(pin),
+                            db_network_->dbToSta(new_flat_net_));
+  } else if (cur_flat_net != orig_flat_net_) {
+    logger_->error(
+        ORD,
+        2032,
+        "Illegal hierarchy expect only one flat net type per hierarchical net");
+  }
+}
+
+/*
+We require each modnet has exactly one flat net associated with it.
+It is convenient to move modnets around during hierarchical operations
+which may change the underlying flat net associated with a modnet.
+This routine does the house keeping needed to preserve the requirement
+of one modnet having only one flat net associated with it.
+*/
+void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
+                                       dbNet* new_flat_net,
+                                       dbNet* orig_flat_net)
+{
+  ModDbNetAssociation visitor(
+      this, logger_, mod_net, new_flat_net, orig_flat_net);
+  NetSet visited_nets(this);
+  visitConnectedPins(dbToSta(mod_net), visitor, visited_nets);
 }
 
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)

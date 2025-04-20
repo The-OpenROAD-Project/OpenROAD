@@ -3,7 +3,9 @@
 
 #include "Slots.h"
 
+#include <algorithm>
 #include <boost/functional/hash.hpp>
+#include <limits>
 #include <vector>
 
 namespace ppl {
@@ -41,6 +43,12 @@ std::size_t IntervalHash::operator()(const Interval& interval) const
                                                          interval.getBegin(),
                                                          interval.getEnd(),
                                                          interval.getLayer()});
+}
+
+std::size_t RectHash::operator()(const Rect& rect) const
+{
+  return boost::hash<std::tuple<int, int, int, int>>()(
+      {rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()});
 }
 
 }  // namespace ppl

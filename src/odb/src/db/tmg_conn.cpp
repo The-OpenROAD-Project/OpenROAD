@@ -3,6 +3,7 @@
 
 #include "tmg_conn.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 

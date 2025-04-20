@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 571 components and 2554 component-terminals.
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
-worst slack 1.34
+worst slack max 1.34
 [INFO RSZ-0028] Inserted 18 output buffers.
 [INFO RSZ-0058] Using max wire length 693um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -21,8 +21,8 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
     final |       0 |     109 |            0 |   +12.9% |   0.200 |   0.000 | _870_/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 109 hold buffers.
-worst slack 0.20
-worst slack 1.25
+worst slack min 0.20
+worst slack max 1.25
 max slew
 
 Pin                                    Limit    Slew   Slack

@@ -5,6 +5,7 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>

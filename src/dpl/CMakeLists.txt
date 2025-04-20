@@ -22,12 +22,12 @@ add_library(dpl_lib
   src/FillerPlacement.cpp
   src/DecapPlacement.cpp
   src/OptMirror.cpp
+  src/PlacementDRC.cpp
 )
 
 target_link_libraries(dpl_lib
   PUBLIC
     odb
-    OpenSTA
   PRIVATE
     utl_lib
 )

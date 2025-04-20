@@ -742,11 +742,14 @@ proc set_io_pin_constraint { args } {
       }
     } elseif { [regexp -all {(up):(.*)} $region - edge box] } {
       if { $box == "*" } {
-        set die_area [$block getDieArea]
-        set llx [$die_area xMin]
-        set lly [$die_area yMin]
-        set urx [$die_area xMax]
-        set ury [$die_area yMax]
+        set top_grid_region [$block getBTermTopLayerGridRegion]
+        if { [$top_grid_region isRect] } {
+          set region_rect [$top_grid_region getEnclosingRect]
+          set llx [$region_rect xMin]
+          set lly [$region_rect yMin]
+          set urx [$region_rect xMax]
+          set ury [$region_rect yMax]
+        }
       } elseif {
         [regexp -all \
           {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} \
@@ -762,7 +765,7 @@ proc set_io_pin_constraint { args } {
 
       if { [info exists keys(-pin_names)] } {
         set names $keys(-pin_names)
-        ppl::add_pins_to_top_layer "set_io_pin_constraint" $names $llx $lly $urx $ury
+        odb::add_pins_to_top_layer $names $llx $lly $urx $ury
       }
     } else {
       utl::warn PPL 73 "Constraint with region $region has an invalid edge."
@@ -855,6 +858,89 @@ proc clear_io_pin_constraints { args } {
   ppl::clear_constraints
 }
 
+sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
+                                                 [-x_step x_step] \
+                                                 [-y_step y_step] \
+                                                 [-region region] \
+                                                 [-size size] \
+                                                 [-pin_keepout dist]}
+
+proc define_pin_shape_pattern { args } {
+  sta::parse_key_args "define_pin_shape_pattern" args \
+    keys {-layer -x_step -y_step -region -size -pin_keepout} flags {}
+
+  sta::check_argc_eq0 "define_pin_shape_pattern" $args
+
+  if { [info exists keys(-layer)] } {
+    set layer_name $keys(-layer)
+    set layer [ppl::parse_layer_name $layer_name]
+
+    if { $layer == 0 } {
+      utl::error PPL 52 "Routing layer not found for name $layer_name."
+    }
+  } else {
+    utl::error PPL 53 "-layer is required."
+  }
+
+  if { [info exists keys(-x_step)] && [info exists keys(-y_step)] } {
+    set x_step [ord::microns_to_dbu $keys(-x_step)]
+    set y_step [ord::microns_to_dbu $keys(-y_step)]
+  } else {
+    utl::error PPL 54 "-x_step and -y_step are required."
+  }
+
+  set block [ord::get_db_block]
+  if { [info exists keys(-region)] } {
+    set region $keys(-region)
+    if {
+      [regexp -all \
+        {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} \
+        $region - llx lly urx ury]
+    } {
+      set llx [ord::microns_to_dbu $llx]
+      set lly [ord::microns_to_dbu $lly]
+      set urx [ord::microns_to_dbu $urx]
+      set ury [ord::microns_to_dbu $ury]
+    } elseif { $region == "*" } {
+      set die_area [$block getDieArea]
+      set llx [$die_area xMin]
+      set lly [$die_area yMin]
+      set urx [$die_area xMax]
+      set ury [$die_area yMax]
+    } else {
+      utl::error PPL 63 "-region is not a list of 4 values {llx lly urx ury}."
+    }
+    odb::Rect region $llx $lly $urx $ury
+  } else {
+    utl::error PPL 55 "-region is required."
+  }
+
+  if { [info exists keys(-size)] } {
+    set size $keys(-size)
+    if { [llength $size] != 2 } {
+      utl::error PPL 56 "-size is not a list of 2 values."
+    }
+    lassign $size width height
+    set width [ord::microns_to_dbu $width]
+    set height [ord::microns_to_dbu $height]
+  } else {
+    utl::error PPL 57 "-size is required."
+  }
+
+  if { [info exists keys(-pin_keepout)] } {
+    sta::check_positive_float "pin_keepout" $keys(-pin_keepout)
+    set keepout [ord::microns_to_dbu $keys(-pin_keepout)]
+  } else {
+    set max_dim $width
+    if { $max_dim < $height } {
+      set max_dim $height
+    }
+    set keepout [[[ord::get_db_tech] findLayer $keys(-layer)] getSpacing $max_dim]
+  }
+
+  odb::set_bterm_top_layer_grid $block $layer $x_step $y_step region $width $height $keepout
+}
+
 namespace eval odb {
 
 proc add_direction_constraint { dir edge begin end } {
@@ -868,10 +954,20 @@ proc add_direction_constraint { dir edge begin end } {
 proc add_names_constraint { names edge begin end } {
   set block [get_block]
 
-  set pin_list [ppl::parse_pin_names "set_io_pin_constraints" $names]
+  set pin_list [ppl::parse_pin_names "set_io_pin_constraint" $names]
   set constraint_region [$block findConstraintRegion $edge $begin $end]
 
   $block addBTermsToConstraint $pin_list $constraint_region
+}
+
+proc add_pins_to_top_layer { names llx lly urx ury } {
+  set block [get_block]
+  set region [odb::Rect]
+  $region init $llx $lly $urx $ury
+
+  set pin_list [ppl::parse_pin_names "set_io_pin_constraint" $names]
+  
+  $block addBTermsToConstraint $pin_list $region
 }
 
 proc add_pin_group {pin_list order} {

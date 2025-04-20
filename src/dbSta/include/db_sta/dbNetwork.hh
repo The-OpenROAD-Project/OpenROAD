@@ -211,10 +211,11 @@ class dbNetwork : public ConcreteNetwork
   InstanceChildIterator* childIterator(const Instance* instance) const override;
   InstancePinIterator* pinIterator(const Instance* instance) const override;
   InstanceNetIterator* netIterator(const Instance* instance) const override;
-  string getAttribute(const Instance* inst, const string& key) const override;
+  std::string getAttribute(const Instance* inst,
+                           const std::string& key) const override;
   void setAttribute(Instance* instance,
-                    const string& key,
-                    const string& value) override;
+                    const std::string& key,
+                    const std::string& value) override;
   dbModNet* findRelatedModNet(const dbNet*) const;
 
   ////////////////////////////////////////////////////////////////
@@ -249,10 +250,11 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Cell functions
   const char* name(const Cell* cell) const override;
-  string getAttribute(const Cell* cell, const string& key) const override;
+  std::string getAttribute(const Cell* cell,
+                           const std::string& key) const override;
   void setAttribute(Cell* cell,
-                    const string& key,
-                    const string& value) override;
+                    const std::string& key,
+                    const std::string& value) override;
 
   bool isConcreteCell(const Cell*) const;
   void registerConcreteCell(const Cell*);
@@ -319,6 +321,9 @@ class dbNetwork : public ConcreteNetwork
   void setHierarchy() { hierarchy_ = true; }
   void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
+  void reassociateHierFlatNet(dbModNet* mod_net,
+                              dbNet* new_flat_net,
+                              dbNet* orig_flat_net);
 
   int fromIndex(const Port* port) const override;
   int toIndex(const Port* port) const override;

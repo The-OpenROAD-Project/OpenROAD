@@ -5,9 +5,11 @@
 
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
+#include <map>
 #include <optional>
 #include <set>
 #include <string>

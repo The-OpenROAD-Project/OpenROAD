@@ -3,6 +3,7 @@
 
 #include "dbSdcNetwork.hh"
 
+#include <memory>
 #include <string>
 
 #include "sta/ParseBus.hh"
@@ -10,8 +11,8 @@
 
 namespace sta {
 
-static string escapeDividers(const char* token, const Network* network);
-static string escapeBrackets(const char* token, const Network* network);
+static std::string escapeDividers(const char* token, const Network* network);
+static std::string escapeBrackets(const char* token, const Network* network);
 
 dbSdcNetwork::dbSdcNetwork(Network* network) : SdcNetwork(network)
 {
@@ -204,13 +205,13 @@ Pin* dbSdcNetwork::findPin(const char* path_name) const
   return pin;
 }
 
-static string escapeDividers(const char* token, const Network* network)
+static std::string escapeDividers(const char* token, const Network* network)
 {
   return escapeChars(
       token, network->pathDivider(), '\0', network->pathEscape());
 }
 
-static string escapeBrackets(const char* token, const Network* network)
+static std::string escapeBrackets(const char* token, const Network* network)
 {
   return escapeChars(token, '[', ']', network->pathEscape());
 }

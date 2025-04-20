@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QVBoxLayout>
+#include <memory>
 #include <string>
 
 #include "mainWindow.h"

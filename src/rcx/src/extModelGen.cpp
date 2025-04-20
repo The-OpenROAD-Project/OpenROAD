@@ -3,6 +3,9 @@
 
 #include "rcx/extModelGen.h"
 
+#include <string>
+#include <vector>
+
 #include "parse.h"
 
 namespace rcx {

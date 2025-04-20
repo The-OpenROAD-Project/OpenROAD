@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
+#include <utility>
 #include <vector>
 
 #include "ta/FlexTA.h"
@@ -23,12 +26,11 @@ frSquaredDistance FlexTAWorker::box2boxDistSquare(const Rect& box1,
 }
 
 // must be current TA layer
-void FlexTAWorker::modMinSpacingCostPlanar(
-    const Rect& box,
-    frLayerNum lNum,
-    taPinFig* fig,
-    bool isAddCost,
-    std::set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
+                                           frLayerNum lNum,
+                                           taPinFig* fig,
+                                           bool isAddCost,
+                                           frOrderedIdSet<taPin*>* pinS)
 {
   // obj1 = curr obj
   frCoord width1 = box.minDXDY();
@@ -106,14 +108,13 @@ void FlexTAWorker::modMinSpacingCostPlanar(
 }
 
 // given a shape on any routing layer n, block via @(n+1) if isUpperVia is true
-void FlexTAWorker::modMinSpacingCostVia(
-    const Rect& box,
-    frLayerNum lNum,
-    taPinFig* fig,
-    bool isAddCost,
-    bool isUpperVia,
-    bool isCurrPs,
-    std::set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
+                                        frLayerNum lNum,
+                                        taPinFig* fig,
+                                        bool isAddCost,
+                                        bool isUpperVia,
+                                        bool isCurrPs,
+                                        frOrderedIdSet<taPin*>* pinS)
 {
   // obj1 = curr obj
   frCoord width1 = box.minDXDY();
@@ -294,7 +295,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
                                      frLayerNum lNum,
                                      taPinFig* fig,
                                      bool isAddCost,
-                                     std::set<taPin*, frBlockObjectComp>* pinS)
+                                     frOrderedIdSet<taPin*>* pinS)
 {
   if (!getDesign()->getTech()->getLayer(lNum)->hasCutSpacing()) {
     return;
@@ -492,21 +493,19 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   }
 }
 
-void FlexTAWorker::addCost(taPinFig* fig,
-                           std::set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::addCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS)
 {
   modCost(fig, true, pinS);
 }
 
-void FlexTAWorker::subCost(taPinFig* fig,
-                           std::set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::subCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS)
 {
   modCost(fig, false, pinS);
 }
 
 void FlexTAWorker::modCost(taPinFig* fig,
                            bool isAddCost,
-                           std::set<taPin*, frBlockObjectComp>* pinS)
+                           frOrderedIdSet<taPin*>* pinS)
 {
   if (fig->typeId() == tacPathSeg) {
     auto obj = static_cast<taPathSeg*>(fig);
@@ -879,7 +878,7 @@ frUInt4 FlexTAWorker::assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc)
       auto lNum = obj->getLayerNum();
       pitch = getDesign()->getTech()->getLayer(lNum)->getPitch();
       auto& workerRegionQuery = getWorkerRegionQuery();
-      std::set<taPin*, frBlockObjectComp> result;
+      frOrderedIdSet<taPin*> result;
       Rect box;
       if (isH) {
         box.init(bp.x(), trackLoc, ep.x(), trackLoc);
@@ -1097,10 +1096,9 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   return bestTrackLoc;
 }
 
-void FlexTAWorker::assignIroute_updateIroute(
-    taPin* iroute,
-    frCoord bestTrackLoc,
-    std::set<taPin*, frBlockObjectComp>* pinS)
+void FlexTAWorker::assignIroute_updateIroute(taPin* iroute,
+                                             frCoord bestTrackLoc,
+                                             frOrderedIdSet<taPin*>* pinS)
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -1142,7 +1140,7 @@ void FlexTAWorker::assignIroute_updateIroute(
 }
 
 void FlexTAWorker::assignIroute_init(taPin* iroute,
-                                     std::set<taPin*, frBlockObjectComp>* pinS)
+                                     frOrderedIdSet<taPin*>* pinS)
 {
   auto& workerRegionQuery = getWorkerRegionQuery();
   // subCost
@@ -1155,8 +1153,7 @@ void FlexTAWorker::assignIroute_init(taPin* iroute,
   }
 }
 
-void FlexTAWorker::assignIroute_updateOthers(
-    std::set<taPin*, frBlockObjectComp>& pinS)
+void FlexTAWorker::assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS)
 {
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   if (isInitTA()) {
@@ -1200,7 +1197,7 @@ void FlexTAWorker::assignIroute_updateOthers(
 
 void FlexTAWorker::assignIroute(taPin* iroute)
 {
-  std::set<taPin*, frBlockObjectComp> pinS;
+  frOrderedIdSet<taPin*> pinS;
   assignIroute_init(iroute, &pinS);
   frLayerNum lNum;
   int idx1, idx2;

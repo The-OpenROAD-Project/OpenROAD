@@ -6,7 +6,7 @@ module top (clk,
  output [7:0] y;
 
 
- sky130_fd_sc_hd__buf_1 gain1 (.A(y[6]),
+ sky130_fd_sc_hd__buf_2 gain1 (.A(y[6]),
     .X(net1));
  sky130_fd_sc_hd__and3_1 _47_ (.A(y[0]),
     .B(y[1]),
@@ -117,7 +117,7 @@ module hier_flop (CLK,
  output Q;
 
 
- sky130_fd_sc_hd__buf_1 gain3 (.A(y[0]),
+ sky130_fd_sc_hd__buf_2 gain3 (.A(y[0]),
     .X(Q));
  sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
     .Q(y[0]),
@@ -131,7 +131,7 @@ module hier_flop_U2 (CLK,
  output Q;
 
 
- sky130_fd_sc_hd__buf_1 gain2 (.A(y[1]),
+ sky130_fd_sc_hd__buf_2 gain2 (.A(y[1]),
     .X(Q));
  sky130_fd_sc_hd__dfxtp_1 _69_ (.D(D),
     .Q(y[1]),

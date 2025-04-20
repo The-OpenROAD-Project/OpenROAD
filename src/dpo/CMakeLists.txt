@@ -19,7 +19,6 @@ target_sources(dpo
     src/architecture.cxx
     src/color.cxx
     src/network.cxx
-    src/router.cxx
     src/utility.cxx
     src/legalize_shift.cxx
     src/detailed.cxx
@@ -45,7 +44,6 @@ target_include_directories(dpo
 target_link_libraries(dpo
   PRIVATE
     odb
-    OpenSTA
     utl_lib
     dpl_lib
 )

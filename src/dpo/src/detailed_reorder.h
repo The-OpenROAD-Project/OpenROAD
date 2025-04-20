@@ -7,14 +7,16 @@
 #include <vector>
 
 #include "dpl/Coordinates.h"
+namespace dpl {
+class Node;
+}
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
 class Network;
-class Node;
 using dpl::DbuX;
-
+using dpl::Node;
 class DetailedReorderer
 {
  public:

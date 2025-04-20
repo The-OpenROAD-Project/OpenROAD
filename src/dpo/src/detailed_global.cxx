@@ -3,13 +3,16 @@
 
 #include "detailed_global.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cmath>
 #include <cstddef>
 #include <string>
 #include <vector>
 
 #include "detailed_hpwl.h"
 #include "detailed_manager.h"
+#include "dpl/Objects.h"
 #include "rectangle.h"
 #include "utl/Logger.h"
 
@@ -19,14 +22,11 @@ using utl::DPO;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
-                                       Network* network,
-                                       RoutingParams* rt)
+DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch, Network* network)
     : DetailedGenerator("global swap"),
       mgr_(nullptr),
       arch_(arch),
       network_(network),
-      rt_(rt),
       skipNetsLargerThanThis_(100),
       traversal_(0),
       attempts_(0),
@@ -37,8 +37,7 @@ DetailedGlobalSwap::DetailedGlobalSwap(Architecture* arch,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedGlobalSwap::DetailedGlobalSwap()
-    : DetailedGlobalSwap(nullptr, nullptr, nullptr)
+DetailedGlobalSwap::DetailedGlobalSwap() : DetailedGlobalSwap(nullptr, nullptr)
 {
 }
 
@@ -67,7 +66,6 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
   mgr_ = mgrPtr;
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
-  rt_ = mgr_->getRoutingParams();
 
   int passes = 1;
   double tol = 0.01;
@@ -194,13 +192,13 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
     // We've computed an interval for the pin.  We need to alter it to work for
     // the cell center. Also, we need to avoid going off the edge of the chip.
     nodeBbox.set_xmin(
-        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX()), xmax));
+        std::min(std::max(xmin, nodeBbox.xmin() - pin->getOffsetX().v), xmax));
     nodeBbox.set_xmax(
-        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX()), xmin));
+        std::max(std::min(xmax, nodeBbox.xmax() - pin->getOffsetX().v), xmin));
     nodeBbox.set_ymin(
-        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY()), ymax));
+        std::min(std::max(ymin, nodeBbox.ymin() - pin->getOffsetY().v), ymax));
     nodeBbox.set_ymax(
-        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY()), ymin));
+        std::max(std::min(ymax, nodeBbox.ymax() - pin->getOffsetY().v), ymin));
 
     // Record the location and pin offset used to generate this point.
 
@@ -246,13 +244,13 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
 
   int count = 0;
   for (Pin* pin : ed->getPins()) {
-    Node* other = pin->getNode();
+    auto other = pin->getNode();
     if (other == nd) {
       continue;
     }
-    curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX();
-    curY
-        = other->getBottom().v + 0.5 * other->getHeight().v + pin->getOffsetY();
+    curX = other->getLeft().v + 0.5 * other->getWidth().v + pin->getOffsetX().v;
+    curY = other->getBottom().v + 0.5 * other->getHeight().v
+           + pin->getOffsetY().v;
 
     bbox.set_xmin(std::min(curX, bbox.xmin()));
     bbox.set_xmax(std::max(curX, bbox.xmax()));
@@ -295,16 +293,16 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
     new_box.reset();
 
     for (Pin* pinj : edi->getPins()) {
-      Node* ndj = pinj->getNode();
+      auto ndj = pinj->getNode();
 
-      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+      x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+      y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY().v;
 
       old_box.addPt(x, y);
 
       if (ndj == ndi) {
-        x = new_x + pinj->getOffsetX();
-        y = new_y + pinj->getOffsetY();
+        x = new_x + pinj->getOffsetX().v;
+        y = new_y + pinj->getOffsetY().v;
       }
 
       new_box.addPt(x, y);
@@ -348,10 +346,11 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
       new_box.reset();
 
       for (Pin* pinj : edi->getPins()) {
-        Node* ndj = pinj->getNode();
+        auto ndj = pinj->getNode();
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         old_box.addPt(x, y);
 
@@ -361,8 +360,9 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
           ndj = nodes[0];
         }
 
-        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX();
-        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v + pinj->getOffsetY();
+        x = ndj->getLeft().v + 0.5 * ndj->getWidth().v + pinj->getOffsetX().v;
+        y = ndj->getBottom().v + 0.5 * ndj->getHeight().v
+            + pinj->getOffsetY().v;
 
         new_box.addPt(x, y);
       }
@@ -449,7 +449,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
+  if (ndi->getGroupId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 
@@ -471,7 +471,6 @@ void DetailedGlobalSwap::init(DetailedMgr* mgr)
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
@@ -488,7 +487,6 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 

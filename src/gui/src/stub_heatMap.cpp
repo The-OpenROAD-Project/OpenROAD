@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
+#include <functional>
+#include <string>
 #include <vector>
 
 #include "gui/heatMap.h"

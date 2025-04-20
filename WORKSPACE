@@ -8,9 +8,9 @@ workspace(name = "openroad")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-rules_hdl_git_hash = "22e4a4afaef17df38fffc124907144983f1e6492"
+rules_hdl_git_hash = "4bfc8987e521f2002e7b898ba94d3df4c6204913"
 
-rules_hdl_git_sha256 = "e016d11b69c4eaaf2ac0757358859270db7a90f4aa725a1aee39e40f5b84efd3"
+rules_hdl_git_sha256 = "227ac0288299f2b0f31a188113cef9f733258398fd616215275bddab1e43d019"
 
 http_archive(
     name = "rules_hdl",

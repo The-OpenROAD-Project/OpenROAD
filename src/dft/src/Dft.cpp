@@ -6,6 +6,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <iostream>
+#include <memory>
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"

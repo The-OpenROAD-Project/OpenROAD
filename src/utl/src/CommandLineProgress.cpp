@@ -3,6 +3,8 @@
 
 #include "CommandLineProgress.h"
 
+#include <memory>
+
 #include "utl/Logger.h"
 
 namespace utl {

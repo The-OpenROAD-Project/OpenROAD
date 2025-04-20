@@ -3,11 +3,14 @@
 
 #pragma once
 
+#include <map>
+#include <utility>
+
 #include "Coordinates.h"
 #include "Opendp.h"
 
 namespace dpl {
-class GridNode;
+class Node;
 class Padding
 {
  public:
@@ -21,15 +24,15 @@ class Padding
 
   // Find instance/master/global padding value for an instance.
   GridX padLeft(dbInst* inst) const;
-  GridX padLeft(const GridNode* cell) const;
+  GridX padLeft(const Node* cell) const;
   GridX padRight(dbInst* inst) const;
-  GridX padRight(const GridNode* cell) const;
+  GridX padRight(const Node* cell) const;
   bool isPaddedType(dbInst* inst) const;
-  DbuX paddedWidth(const GridNode* cell) const;
+  DbuX paddedWidth(const Node* cell) const;
 
  private:
-  using InstPaddingMap = map<dbInst*, pair<GridX, GridX>>;
-  using MasterPaddingMap = map<dbMaster*, pair<GridX, GridX>>;
+  using InstPaddingMap = std::map<dbInst*, std::pair<GridX, GridX>>;
+  using MasterPaddingMap = std::map<dbMaster*, std::pair<GridX, GridX>>;
 
   GridX pad_left_{0};
   GridX pad_right_{0};

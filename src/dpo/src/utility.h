@@ -5,11 +5,15 @@
 
 #include <boost/random/mersenne_twister.hpp>
 
+namespace dpl {
+class Edge;
+}
+
 namespace dpo {
 using Placer_RNG = boost::mt19937;
 
-class Edge;
 class Network;
+using dpl::Edge;
 
 class Utility
 {

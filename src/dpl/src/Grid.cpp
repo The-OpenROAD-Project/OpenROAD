@@ -5,10 +5,13 @@
 
 #include <boost/polygon/polygon.hpp>
 #include <cmath>
+#include <functional>
 #include <limits>
+#include <memory>
+#include <utility>
 #include <vector>
 
-#include "Objects.h"
+#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
 #include "dpl/Padding.h"
 #include "odb/dbTransform.h"
@@ -173,7 +176,7 @@ Pixel* Grid::gridPixel(GridX grid_x, GridY grid_y) const
 }
 
 void Grid::visitCellPixels(
-    GridNode& cell,
+    Node& cell,
     bool padded,
     const std::function<void(Pixel* pixel)>& visitor) const
 {
@@ -217,7 +220,7 @@ void Grid::visitCellPixels(
 }
 
 void Grid::visitCellBoundaryPixels(
-    GridNode& cell,
+    Node& cell,
     const std::function<
         void(Pixel* pixel, odb::Direction2D edge, GridX x, GridY y)>& visitor)
     const
@@ -283,7 +286,7 @@ void Grid::visitCellBoundaryPixels(
   }
 }
 
-void Grid::erasePixel(GridNode* cell)
+void Grid::erasePixel(Node* cell)
 {
   if (!(cell->isFixed() || !cell->isPlaced())) {
     const auto grid_rect = gridCoveringPadded(cell);
@@ -316,7 +319,7 @@ void Grid::erasePixel(GridNode* cell)
   }
 }
 
-void Grid::paintPixel(GridNode* cell, GridX grid_x, GridY grid_y)
+void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
   assert(!cell->isPlaced());
   GridX x_end = grid_x + gridPaddedWidth(cell);
@@ -332,7 +335,7 @@ void Grid::paintPixel(GridNode* cell, GridX grid_x, GridY grid_y)
   }
 }
 
-GridX Grid::gridPaddedWidth(const GridNode* cell) const
+GridX Grid::gridPaddedWidth(const Node* cell) const
 {
   return GridX{divCeil(padding_->paddedWidth(cell).v, getSiteWidth().v)};
 }
@@ -353,11 +356,11 @@ GridY Grid::gridHeight(odb::dbMaster* master) const
   return GridY{static_cast<int>(site->getRowPattern().size())};
 }
 
-GridY Grid::gridHeight(const GridNode* cell) const
+GridY Grid::gridHeight(const Node* cell) const
 {
   if (uniform_row_height_) {
     DbuY row_height = uniform_row_height_.value();
-    return GridY{max(1, divCeil(cell->dy().v, row_height.v))};
+    return GridY{max(1, divCeil(cell->getHeight().v, row_height.v))};
   }
   if (!cell->getDbInst()) {
     return GridY{1};
@@ -380,14 +383,14 @@ GridX Grid::gridX(DbuX x) const
   return GridX{x.v / getSiteWidth().v};
 }
 
-GridX Grid::gridX(const GridNode* cell) const
+GridX Grid::gridX(const Node* cell) const
 {
-  return gridX(cell->xMin());
+  return gridX(cell->getLeft());
 }
 
-GridX Grid::gridPaddedX(const GridNode* cell) const
+GridX Grid::gridPaddedX(const Node* cell) const
 {
-  return gridX(cell->xMin()
+  return gridX(cell->getLeft()
                - gridToDbu(padding_->padLeft(cell), getSiteWidth()));
 }
 
@@ -404,7 +407,7 @@ GridRect Grid::gridCovering(const Rect& rect) const
           .yhi = gridEndY(DbuY{rect.yMax()})};
 }
 
-GridRect Grid::gridCovering(const GridNode* cell) const
+GridRect Grid::gridCovering(const Node* cell) const
 {
   return {.xlo = gridX(cell),
           .ylo = gridSnapDownY(cell),
@@ -412,7 +415,7 @@ GridRect Grid::gridCovering(const GridNode* cell) const
           .yhi = gridEndY(cell)};
 }
 
-GridRect Grid::gridCoveringPadded(const GridNode* cell) const
+GridRect Grid::gridCoveringPadded(const Node* cell) const
 {
   return {.xlo = gridPaddedX(cell),
           .ylo = gridSnapDownY(cell),
@@ -462,14 +465,14 @@ GridY Grid::gridEndY(DbuY y) const
   return GridY{static_cast<int>(it - row_index_to_y_dbu_.begin())};
 }
 
-GridY Grid::gridSnapDownY(const GridNode* cell) const
+GridY Grid::gridSnapDownY(const Node* cell) const
 {
-  return gridSnapDownY(cell->yMin());
+  return gridSnapDownY(cell->getBottom());
 }
 
-GridY Grid::gridRoundY(const GridNode* cell) const
+GridY Grid::gridRoundY(const Node* cell) const
 {
-  return gridRoundY(cell->yMin());
+  return gridRoundY(cell->getBottom());
 }
 
 DbuY Grid::gridYToDbu(GridY y) const
@@ -480,28 +483,29 @@ DbuY Grid::gridYToDbu(GridY y) const
   return row_index_to_y_dbu_.at(y.v);
 }
 
-GridX Grid::gridPaddedEndX(const GridNode* cell) const
+GridX Grid::gridPaddedEndX(const Node* cell) const
 {
   const DbuX site_width = getSiteWidth();
-  const DbuX end_x = cell->xMin() + cell->dx()
+  const DbuX end_x = cell->getLeft() + cell->getWidth()
                      + gridToDbu(padding_->padRight(cell), site_width);
   return GridX{divCeil(end_x.v, site_width.v)};
 }
 
-GridX Grid::gridEndX(const GridNode* cell) const
+GridX Grid::gridEndX(const Node* cell) const
 {
-  return GridX{divCeil((cell->xMin() + cell->dx()).v, getSiteWidth().v)};
+  return GridX{
+      divCeil((cell->getLeft() + cell->getWidth()).v, getSiteWidth().v)};
 }
 
-GridY Grid::gridEndY(const GridNode* cell) const
+GridY Grid::gridEndY(const Node* cell) const
 {
-  return gridEndY(cell->yMin() + cell->dy());
+  return gridEndY(cell->getBottom() + cell->getHeight());
 }
 
-bool Grid::cellFitsInCore(GridNode* cell) const
+bool Grid::cellFitsInCore(Node* cell) const
 {
   return gridPaddedWidth(cell) <= getRowSiteCount()
-         && cell->dy().v <= core_.dy();
+         && cell->getHeight().v <= core_.dy();
 }
 
 void Grid::examineRows(dbBlock* block)
