@@ -71,7 +71,6 @@ class tmg_conn_search::Impl
   int _srcVia;
   tcs_lev* _bin;
   tcs_shape* _cur;
-  tcs_shape* _pcur;
   bool _sorted;
 
   static constexpr int sort_threshold = 1024;
@@ -82,7 +81,6 @@ tmg_conn_search::Impl::Impl()
   _srcVia = 0;
   _bin = nullptr;
   _cur = nullptr;
-  _pcur = nullptr;
   clear();
 }
 
@@ -126,7 +124,6 @@ void tmg_conn_search::Impl::searchStart(int lev, const Rect& bounds, int isVia)
   }
   _bin = _levV[lev];
   _cur = _bin->shape_list;
-  _pcur = nullptr;
   _search_box = bounds;
   _srcVia = isVia;
 }
@@ -145,7 +142,6 @@ bool tmg_conn_search::Impl::searchNext(int* id)
     while (_cur) {
       if (_cur->bounds.overlaps(_search_box)) {
         *id = _cur->id;
-        _pcur = _cur;
         _cur = _cur->next;
         return true;
       }
@@ -188,7 +184,6 @@ bool tmg_conn_search::Impl::searchNext(int* id)
           }
         }
         *id = _cur->id;
-        _pcur = _cur;
         _cur = _cur->next;
         return true;
       }
@@ -196,7 +191,6 @@ bool tmg_conn_search::Impl::searchNext(int* id)
     if (_bin->left) {
       _bin = _bin->left;
       _cur = _bin->shape_list;
-      _pcur = nullptr;
     } else {
       while (_bin->parent && _bin == _bin->parent->right) {
         _bin = _bin->parent;
@@ -205,7 +199,6 @@ bool tmg_conn_search::Impl::searchNext(int* id)
       if (_bin) {
         _bin = _bin->right;
         _cur = _bin->shape_list;
-        _pcur = nullptr;
       }
     }
   }
