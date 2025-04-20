@@ -54,7 +54,6 @@ class tmg_conn_search::Impl
 {
  public:
   Impl();
-  ~Impl();
   void clear();
   void addShape(int lev, const Rect& bounds, int isVia, int id);
   void searchStart(int lev, const Rect& bounds, int isVia);
@@ -64,10 +63,7 @@ class tmg_conn_search::Impl
   void sort();
   void sort_level(tcs_lev* bin);
 
-  tcs_shape** _shV;
-  int _shJ;
-  int _shJmax;
-  int _shN;
+  std::deque<tcs_shape> _shapes;
   tcs_lev _levAllV[32768];
   int _levAllN;
   std::array<tcs_lev*, 32> _levV;
@@ -83,14 +79,6 @@ class tmg_conn_search::Impl
 
 tmg_conn_search::Impl::Impl()
 {
-  _shN = 0;
-  _shJ = 0;
-  _shJmax = 256;
-  _shV = (tcs_shape**) malloc(_shJmax * sizeof(tcs_shape*));
-  for (int j = 0; j < _shJmax; j++) {
-    _shV[j] = nullptr;
-  }
-  _shV[0] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
   _srcVia = 0;
   _bin = nullptr;
   _cur = nullptr;
@@ -98,20 +86,8 @@ tmg_conn_search::Impl::Impl()
   clear();
 }
 
-tmg_conn_search::Impl::~Impl()
-{
-  for (int j = 0; j < _shJmax; j++) {
-    if (_shV[j]) {
-      free(_shV[j]);
-    }
-  }
-  free(_shV);
-}
-
 void tmg_conn_search::Impl::clear()
 {
-  _shN = 0;
-  _shJ = 0;
   _levAllN = 0;
   for (int j = 0; j < _levV.size(); j++) {
     _levV[j] = _levAllV + _levAllN++;
@@ -125,22 +101,7 @@ void tmg_conn_search::Impl::addShape(const int lev,
                                      const int isVia,
                                      const int id)
 {
-  if (_shN == 32768) {
-    if (_shJ == _shJmax) {
-      int j = _shJmax;
-      _shJmax *= 2;
-      _shV = (tcs_shape**) realloc(_shV, _shJmax * sizeof(tcs_shape*));
-      for (; j < _shJmax; j++) {
-        _shV[j] = nullptr;
-      }
-    }
-    _shJ++;
-    if (!_shV[_shJ]) {
-      _shV[_shJ] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
-    }
-    _shN = 0;
-  }
-  tcs_shape* shape = _shV[_shJ] + _shN++;
+  tcs_shape* shape = &_shapes.emplace_back();
   shape->lev = lev;
   shape->bounds = bounds;
   shape->isVia = isVia;
