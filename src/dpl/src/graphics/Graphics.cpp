@@ -3,9 +3,9 @@
 
 #include "Graphics.h"
 
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
 
 namespace dpl {
 

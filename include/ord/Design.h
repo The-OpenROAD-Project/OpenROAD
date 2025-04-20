@@ -67,9 +67,9 @@ namespace drt {
 class TritonRoute;
 }
 
-namespace dpo {
-class Optdp;
-}
+// namespace dpo {
+// class Optdp;
+// }
 
 namespace fin {
 class Finale;
@@ -160,7 +160,7 @@ class Design
   cts::TritonCTS* getTritonCts();
   dft::Dft* getDft();
   dpl::Opendp* getOpendp();
-  dpo::Optdp* getOptdp();
+  // dpo::Optdp* getOptdp();
   drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
   gpl::Replace* getReplace();

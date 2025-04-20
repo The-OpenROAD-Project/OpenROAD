@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dpo/Optdp.h"
+#include "dpl/Optdp.h"
 
 #include <odb/db.h>
 
@@ -23,13 +23,13 @@
 
 // My stuff.
 #include "PlacementDRC.h"
-#include "architecture.h"
-#include "detailed.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "legalize_shift.h"
+#include "optimization/detailed.h"
 #include "optimization/detailed_manager.h"
 #include "util/symmetry.h"
 
@@ -89,7 +89,7 @@ void Optdp::improvePlacement(const int seed,
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
   // A manager to track cells.
-  dpo::DetailedMgr mgr(arch_, network_, grid_, drc_engine_);
+  DetailedMgr mgr(arch_, network_, grid_, drc_engine_);
   mgr.setLogger(logger_);
   // Various settings.
   mgr.setSeed(seed);
@@ -101,7 +101,7 @@ void Optdp::improvePlacement(const int seed,
   // improvement.  If it errors or prints a warning when
   // given a legal placement, that likely means there is
   // a bug in my code somewhere.
-  dpo::ShiftLegalizer lg;
+  ShiftLegalizer lg;
   lg.legalize(mgr);
 
   // Detailed improvement.  Runs through a number of different
@@ -110,7 +110,7 @@ void Optdp::improvePlacement(const int seed,
   // like density, displacement, etc. in addition to wirelength.
   // Everything done through a script string.
 
-  dpo::DetailedParams dtParams;
+  DetailedParams dtParams;
   dtParams.script_ = "";
   // Maximum independent set matching.
   dtParams.script_ += "mis -p 10 -t 0.005;";
@@ -129,7 +129,7 @@ void Optdp::improvePlacement(const int seed,
   }
 
   // Run the script.
-  dpo::Detailed dt(dtParams);
+  Detailed dt(dtParams);
   dt.improve(mgr);
 
   // Write solution back.
@@ -820,13 +820,13 @@ void Optdp::createArchitecture()
     // Symmetry.  From the site.
     unsigned symmetry = 0x00000000;
     if (site->getSymmetryX()) {
-      symmetry |= dpo::Symmetry_X;
+      symmetry |= Symmetry_X;
     }
     if (site->getSymmetryY()) {
-      symmetry |= dpo::Symmetry_Y;
+      symmetry |= Symmetry_Y;
     }
     if (site->getSymmetryR90()) {
-      symmetry |= dpo::Symmetry_ROT90;
+      symmetry |= Symmetry_ROT90;
     }
     archRow->setSymmetry(symmetry);
 

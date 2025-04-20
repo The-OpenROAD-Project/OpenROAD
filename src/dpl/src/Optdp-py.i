@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
-
+// clang-format off
 %{
 
-#include "dpo/Optdp.h"
+#include "dpl/Optdp.h"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 

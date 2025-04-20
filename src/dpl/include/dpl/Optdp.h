@@ -25,18 +25,9 @@ class Edge;
 class Node;
 class PlacementDRC;
 
-}  // namespace dpl
-
-namespace dpo {
-
 class Architecture;
 class Network;
 
-using dpl::Edge;
-using dpl::Grid;
-using dpl::Node;
-using dpl::Opendp;
-using dpl::PlacementDRC;
 using odb::dbDatabase;
 using odb::dbOrientType;
 using utl::Logger;
@@ -99,4 +90,4 @@ class Optdp
       masterPwrs_;  // top,bot
 };
 
-}  // namespace dpo
+}  // namespace dpl

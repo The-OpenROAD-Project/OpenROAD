@@ -7,7 +7,7 @@
 #include <set>
 #include <vector>
 
-#include "network.h"
+#include "infrastructure/network.h"
 namespace dpl {
 class Grid;
 

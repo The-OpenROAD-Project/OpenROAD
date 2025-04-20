@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-#include "DplObserver.h"
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
+#include "graphics/DplObserver.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"

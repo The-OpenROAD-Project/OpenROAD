@@ -4,7 +4,7 @@
 include("openroad")
 find_package(TCL)
 find_package(Boost)
-
+find_package(LEMON NAMES LEMON lemon REQUIRED)
 swig_lib(NAME         dpl
          NAMESPACE    dpl
          I_FILE       src/Opendp.i
@@ -14,10 +14,10 @@ swig_lib(NAME         dpl
 add_library(dpl_lib
   src/Opendp.cpp
   src/dbToOpendp.cpp
-  src/Grid.cpp
+  src/infrastructure/Grid.cpp
   src/CheckPlacement.cpp
-  src/Objects.cpp
-  src/Padding.cpp
+  src/infrastructure/Objects.cpp
+  src/infrastructure/Padding.cpp
   src/Place.cpp
   src/FillerPlacement.cpp
   src/DecapPlacement.cpp
@@ -35,13 +35,33 @@ target_link_libraries(dpl_lib
 target_include_directories(dpl_lib
   PUBLIC
     include
+    ${LEMON_INCLUDE_DIRS}
 )
 
 target_sources(dpl
   PRIVATE
     src/MakeOpendp.cpp
-    src/Graphics.cpp
-    src/DplObserver.h
+    src/graphics/Graphics.cpp
+    src/graphics/DplObserver.h
+
+    src/Optdp.cpp
+    src/infrastructure/architecture.cxx
+    src/util/color.cxx
+    src/infrastructure/network.cxx
+    src/util/utility.cxx
+    src/legalize_shift.cxx
+    src/optimization/detailed.cxx
+    src/optimization/detailed_manager.cxx
+    src/optimization/detailed_mis.cxx
+    src/optimization/detailed_reorder.cxx
+    src/optimization/detailed_global.cxx
+    src/optimization/detailed_vertical.cxx
+    src/objective/detailed_displacement.cxx
+    src/objective/detailed_hpwl.cxx
+    src/objective/detailed_abu.cxx
+    src/optimization/detailed_random.cxx
+    src/optimization/detailed_orient.cxx
+    src/util/journal.cxx
 )
 
 target_include_directories(dpl

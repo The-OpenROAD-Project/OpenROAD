@@ -55,9 +55,9 @@ namespace dpl {
 class Opendp;
 }
 
-namespace dpo {
-class Optdp;
-}
+// namespace dpo {
+// class Optdp;
+// }
 
 namespace fin {
 class Finale;
@@ -144,7 +144,7 @@ class OpenRoad
   cts::TritonCTS* getTritonCts() { return tritonCts_; }
   dbVerilogNetwork* getVerilogNetwork() { return verilog_network_; }
   dpl::Opendp* getOpendp() { return opendp_; }
-  dpo::Optdp* getOptdp() { return optdp_; }
+  // dpo::Optdp* getOptdp() { return optdp_; }
   fin::Finale* getFinale() { return finale_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
@@ -234,7 +234,7 @@ class OpenRoad
   rsz::Resizer* resizer_ = nullptr;
   ppl::IOPlacer* ioPlacer_ = nullptr;
   dpl::Opendp* opendp_ = nullptr;
-  dpo::Optdp* optdp_ = nullptr;
+  // dpo::Optdp* optdp_ = nullptr;
   fin::Finale* finale_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;

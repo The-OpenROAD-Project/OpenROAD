@@ -5,8 +5,8 @@
 
 #include <memory>
 
-#include "dpl/Objects.h"
-namespace dpo {
+#include "infrastructure/Objects.h"
+namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,4 +108,4 @@ Pin* Network::createAndAddPin(Node* nd, Edge* ed)
   return ptr;
 }
 
-}  // namespace dpo
+}  // namespace dpl

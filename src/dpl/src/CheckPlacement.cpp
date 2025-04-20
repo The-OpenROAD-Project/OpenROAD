@@ -8,11 +8,11 @@
 #include <string>
 #include <vector>
 
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
+#include "PlacementDRC.h"
 #include "dpl/Opendp.h"
-#include "dpl/Padding.h"
-#include "dpl/PlacementDRC.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
 #include "utl/Logger.h"
 namespace dpl {
 

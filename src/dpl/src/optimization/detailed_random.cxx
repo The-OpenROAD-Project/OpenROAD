@@ -22,7 +22,7 @@
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "detailed_random.h"
-#include "detailed_segment.h"
+#include "infrastructure/detailed_segment.h"
 // Detailed placement objectives.
 #include "detailed_global.h"
 #include "detailed_vertical.h"

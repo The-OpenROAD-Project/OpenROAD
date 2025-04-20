@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dpo/MakeOptdp.h"
+#include "dpl/MakeOptdp.h"
 
 #include <tcl.h>
 
-#include "dpo/Optdp.h"
+#include "dpl/Optdp.h"
 #include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
