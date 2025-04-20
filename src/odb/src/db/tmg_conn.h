@@ -167,9 +167,8 @@ class tmg_conn
   tmg_conn_graph* _graph;
   std::vector<tmg_rc> _rcV;
   std::vector<tmg_rcpt> _ptV;
-  tmg_rcterm* _termV;
-  tmg_rcterm** _tstackV;
-  int _termN;
+  std::vector<tmg_rcterm> _termV; //MATT
+  std::vector<tmg_rcterm*> _tstackV; //MATT
   tmg_rcshort* _shortV;
   int _shortN;
   dbNet* _net;
@@ -184,13 +183,12 @@ class tmg_conn
   int _misc_cnt;
   int _cut_end_extMin;
   int _need_short_wire_id;
-  std::vector<std::array<tmg_connect_shape, 32>> _csVV;
+  std::vector<std::array<tmg_connect_shape, 32>> _csVV; //MATT
   std::array<tmg_connect_shape, 32>* _csV;
-  int* _csNV;
+  std::vector<int> _csNV; //MATT
   int _csN;
   tmg_rcpt* _first_for_clear;
 
-  int _termNmax;
   int _shortNmax;
   int _last_id;
   int _firstSegmentAfterVia;
