@@ -122,7 +122,7 @@ class tmg_conn
   void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
-  tmg_rcpt* allocPt();
+  tmg_rcpt* allocPt(int x, int y, dbTechLayer* layer);
   void addRc(const dbShape& s, int from_idx, int to_idx);
   void addRc(int k,
              const tmg_rc_sh& s,

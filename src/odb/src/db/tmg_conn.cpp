@@ -89,10 +89,14 @@ int tmg_conn::ptDist(const int fr, const int to) const
   return abs(_ptV[fr]._x - _ptV[to]._x) + abs(_ptV[fr]._y - _ptV[to]._y);
 }
 
-tmg_rcpt* tmg_conn::allocPt()
+tmg_rcpt* tmg_conn::allocPt(int x, int y, dbTechLayer* layer)
 {
   _ptV.emplace_back();
-  return &_ptV.back();
+  tmg_rcpt* pt = &_ptV.back();
+  pt->_x = x;
+  pt->_y = y;
+  pt->_layer = layer;
+  return pt;
 }
 
 void tmg_conn::addRc(const dbShape& s, const int from_idx, const int to_idx)
@@ -304,16 +308,10 @@ void tmg_conn::loadSWire(dbNet* net)
 
       if (_ptV.empty() || layer1 != _ptV.back()._layer || x1 != _ptV.back()._x
           || y1 != _ptV.back()._y) {
-        tmg_rcpt* pt = allocPt();
-        pt->_x = x1;
-        pt->_y = y1;
-        pt->_layer = layer1;
+        allocPt(x1, y1, layer1);
       }
 
-      tmg_rcpt* pt = allocPt();
-      pt->_x = x2;
-      pt->_y = y2;
-      pt->_layer = layer2;
+      allocPt(x2, y2, layer2);
       addRc(shape, _ptV.size() - 2, _ptV.size() - 1);
       _rcV.back()._shape._rule = nullptr;
     }
@@ -330,17 +328,11 @@ void tmg_conn::loadWire(dbWire* wire)
     if (_ptV.empty() || path.layer != _ptV.back()._layer
         || path.point.getX() != _ptV.back()._x
         || path.point.getY() != _ptV.back()._y) {
-      auto pt = allocPt();
-      pt->_x = path.point.getX();
-      pt->_y = path.point.getY();
-      pt->_layer = path.layer;
+      allocPt(path.point.getX(), path.point.getY(), path.layer);
     }
     dbWirePathShape pathShape;
     while (pitr.getNextShape(pathShape)) {
-      auto pt = allocPt();
-      pt->_x = pathShape.point.getX();
-      pt->_y = pathShape.point.getY();
-      pt->_layer = pathShape.layer;
+      allocPt(pathShape.point.getX(), pathShape.point.getY(), pathShape.layer);
       addRc(pathShape.shape, _ptV.size() - 2, _ptV.size() - 1);
       _rcV.back()._shape._rule = path.rule;
     }
@@ -417,10 +409,7 @@ void tmg_conn::splitBySj(const int j,
       y = _ptV[_rcV[k]._from_idx]._y;
     }
     klast = k;
-    tmg_rcpt* pt = allocPt();
-    pt->_x = x;
-    pt->_y = y;
-    pt->_layer = tlayer;
+    tmg_rcpt* pt = allocPt(x, y, tlayer);
     pt->_tindex = -1;
     pt->_t_alt = nullptr;
     pt->_next_for_term = nullptr;
