@@ -60,8 +60,8 @@ Path Type: max
           -0.37   slack (VIOLATED)
 
 
-wns -0.37
-tns -83.81
+wns max -0.37
+tns max -83.81
 -- After --
 
 [WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
@@ -137,8 +137,8 @@ Path Type: max
           -0.33   slack (VIOLATED)
 
 
-wns -0.33
-tns -59.40
+wns max -0.33
+tns max -59.40
 [WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC0_X1
 [WARNING RMP-0022] Leakage power doesn't exist for cell LOGIC1_X1
 Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
@@ -208,5 +208,5 @@ Path Type: max
           -0.35   slack (VIOLATED)
 
 
-wns -0.35
-tns -58.39
+wns max -0.35
+tns max -58.39
