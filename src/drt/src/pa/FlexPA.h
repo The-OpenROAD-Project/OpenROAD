@@ -327,6 +327,12 @@ class FlexPA
                      frCoord low,
                      frCoord high);
 
+  void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
+                            const gtl::rectangle_data<frCoord>& rect,
+                            const frViaDef* via_def,
+                            frLayerNum layer_num,
+                            bool is_curr_layer_horz);
+
   /**
    * @brief Generates an Enclosed Boundary access point
    *
