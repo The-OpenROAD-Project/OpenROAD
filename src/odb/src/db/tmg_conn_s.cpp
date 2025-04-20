@@ -86,25 +86,28 @@ class tmg_conn_search::Impl
   std::deque<tcs_shape> _shapes;
   std::deque<tcs_level> _levels;
   std::array<tcs_level*, 32> _root_for_level;
+
+  // Used during searching
   Rect _search_box;
-  int _search_via;
-  tcs_level* _search_bin;
-  tcs_shape* _search_shape_list;
-  bool _sorted;
+  int _search_via{0};
+  tcs_level* _search_bin{nullptr};
+  tcs_shape* _search_shape_list{nullptr};
+
+  // Sorting happens after all the shapes have been added and the
+  // first searchStart happens
+  bool _sorted{false};
 
   static constexpr int sort_threshold = 1024;
 };
 
 tmg_conn_search::Impl::Impl()
 {
-  _search_via = 0;
-  _search_bin = nullptr;
-  _search_shape_list = nullptr;
   clear();
 }
 
 void tmg_conn_search::Impl::clear()
 {
+  _shapes.clear();
   _levels.clear();
   for (int j = 0; j < _root_for_level.size(); j++) {
     _root_for_level[j] = &_levels.emplace_back();
