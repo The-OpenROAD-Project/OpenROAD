@@ -95,30 +95,30 @@ tmg_rcpt* tmg_conn::allocPt()
   return &_ptV.back();
 }
 
-void tmg_conn::addRc(const dbShape& s, const int ifr, const int ito)
+void tmg_conn::addRc(const dbShape& s, const int from_idx, const int to_idx)
 {
   tmg_rc x;
-  x._ifr = ifr;
-  x._ito = ito;
+  x._from_idx = from_idx;
+  x._to_idx = to_idx;
   x._shape._rect.reset(s.xMin(), s.yMin(), s.xMax(), s.yMax());
   x._shape._layer = s.getTechLayer();
   x._shape._tech_via = s.getTechVia();
   x._shape._block_via = s.getVia();
   x._shape._rule = nullptr;
   if (x._shape._tech_via || x._shape._block_via) {
-    x._vert = 0;
+    x._is_vertical = false;
     x._width = 0;
-  } else if (_ptV[ifr]._x != _ptV[ito]._x) {
-    x._vert = 0;
+  } else if (_ptV[from_idx]._x != _ptV[to_idx]._x) {
+    x._is_vertical = false;
     x._width = s.yMax() - s.yMin();
-  } else if (_ptV[ifr]._y != _ptV[ito]._y) {
-    x._vert = 1;
+  } else if (_ptV[from_idx]._y != _ptV[to_idx]._y) {
+    x._is_vertical = true;
     x._width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
-    x._vert = 0;
+    x._is_vertical = false;
     x._width = s.xMax() - s.xMin();
   } else {
-    x._vert = 0;
+    x._is_vertical = false;
     x._width = 0;
   }
   x._default_ext = x._width / 2;
@@ -135,14 +135,14 @@ void tmg_conn::addRc(const int k,
                      const int ymax)
 {
   tmg_rc x;
-  x._ifr = ifr;
-  x._ito = ito;
+  x._from_idx = ifr;
+  x._to_idx = ito;
   x._shape._rect.reset(xmin, ymin, xmax, ymax);
   x._shape._layer = s._layer;
   x._shape._tech_via = s._tech_via;
   x._shape._block_via = s._block_via;
   x._shape._rule = s._rule;
-  x._vert = _rcV[k]._vert;
+  x._is_vertical = _rcV[k]._is_vertical;
   x._width = _rcV[k]._width;
   x._default_ext = x._width / 2;
   _rcV.push_back(x);
@@ -156,15 +156,15 @@ tmg_rc* tmg_conn::addRcPatch(const int ifr, const int ito)
     return nullptr;
   }
   tmg_rc x;
-  x._ifr = ifr;
-  x._ito = ito;
+  x._from_idx = ifr;
+  x._to_idx = ito;
   x._shape._layer = layer;
   x._shape._tech_via = nullptr;
   x._shape._block_via = nullptr;
   x._width = layer->getWidth();  // trouble for nondefault
-  x._vert = (_ptV[ifr]._y != _ptV[ito]._y);
+  x._is_vertical = (_ptV[ifr]._y != _ptV[ito]._y);
   int xlo, ylo, xhi, yhi;
-  if (x._vert) {
+  if (x._is_vertical) {
     xlo = _ptV[ifr]._x;
     xhi = xlo;
     std::tie(ylo, yhi) = std::minmax(_ptV[ifr]._y, _ptV[ito]._y);
@@ -364,39 +364,40 @@ void tmg_conn::splitBySj(const int j,
     if (k == klast || k == j) {
       continue;
     }
-    if (_rcV[j]._ito == _rcV[k]._ifr || _rcV[j]._ifr == _rcV[k]._ito) {
+    if (_rcV[j]._to_idx == _rcV[k]._from_idx
+        || _rcV[j]._from_idx == _rcV[k]._to_idx) {
       continue;
     }
-    if (!sj->isVia() && _rcV[j]._vert == _rcV[k]._vert) {
+    if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
     tmg_rc_sh* sk = &(_rcV[k]._shape);
     if (sk->isVia()) {
       continue;
     }
-    dbTechLayer* tlayer = _ptV[_rcV[k]._ifr]._layer;
+    dbTechLayer* tlayer = _ptV[_rcV[k]._from_idx]._layer;
     int nxmin = sk->xMin();
     int nxmax = sk->xMax();
     int nymin = sk->yMin();
     int nymax = sk->yMax();
     int x;
     int y;
-    if (_rcV[k]._vert) {
+    if (_rcV[k]._is_vertical) {
       if (sjyMin - sk->yMin() < _rcV[k]._width) {
         continue;
       }
       if (sk->yMax() - sjyMax < _rcV[k]._width) {
         continue;
       }
-      if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
-        _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
-        nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
+      if (_ptV[_rcV[k]._from_idx]._y > _ptV[_rcV[k]._to_idx]._y) {
+        _rcV[k]._shape.setYmin(_ptV[_rcV[j]._from_idx]._y - _rcV[k]._width / 2);
+        nymax = _ptV[_rcV[j]._from_idx]._y + _rcV[k]._width / 2;
       } else {
-        _rcV[k]._shape.setYmax(_ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2);
-        nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
+        _rcV[k]._shape.setYmax(_ptV[_rcV[j]._from_idx]._y + _rcV[k]._width / 2);
+        nymin = _ptV[_rcV[j]._from_idx]._y - _rcV[k]._width / 2;
       }
-      x = _ptV[_rcV[k]._ifr]._x;
-      y = _ptV[_rcV[j]._ifr]._y;
+      x = _ptV[_rcV[k]._from_idx]._x;
+      y = _ptV[_rcV[j]._from_idx]._y;
     } else {
       if (sjxMin - sk->xMin() < _rcV[k]._width) {
         continue;
@@ -404,15 +405,15 @@ void tmg_conn::splitBySj(const int j,
       if (sk->xMax() - sjxMax < _rcV[k]._width) {
         continue;
       }
-      if (_ptV[_rcV[k]._ifr]._x > _ptV[_rcV[k]._ito]._x) {
-        _rcV[k]._shape.setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2);
-        nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
+      if (_ptV[_rcV[k]._from_idx]._x > _ptV[_rcV[k]._to_idx]._x) {
+        _rcV[k]._shape.setXmin(_ptV[_rcV[j]._from_idx]._x - _rcV[k]._width / 2);
+        nxmax = _ptV[_rcV[j]._from_idx]._x + _rcV[k]._width / 2;
       } else {
-        _rcV[k]._shape.setXmax(_ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2);
-        nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
+        _rcV[k]._shape.setXmax(_ptV[_rcV[j]._from_idx]._x + _rcV[k]._width / 2);
+        nxmin = _ptV[_rcV[j]._from_idx]._x - _rcV[k]._width / 2;
       }
-      x = _ptV[_rcV[j]._ifr]._x;
-      y = _ptV[_rcV[k]._ifr]._y;
+      x = _ptV[_rcV[j]._from_idx]._x;
+      y = _ptV[_rcV[k]._from_idx]._y;
     }
     klast = k;
     tmg_rcpt* pt = allocPt();
@@ -426,8 +427,8 @@ void tmg_conn::splitBySj(const int j,
     pt->_c2pinpt = false;
     pt->_next_for_clear = nullptr;
     pt->_sring = nullptr;
-    const int endTo = _rcV[k]._ito;
-    _rcV[k]._ito = _ptV.size() - 1;
+    const int endTo = _rcV[k]._to_idx;
+    _rcV[k]._to_idx = _ptV.size() - 1;
     // create new tmg_rc
     addRc(
         k, _rcV[k]._shape, _ptV.size() - 1, endTo, nxmin, nymin, nxmax, nymax);
@@ -454,8 +455,8 @@ void tmg_conn::splitTtop()
         layt = vv->getTopLayer();
         boxes = vv->getBoxes();
       }
-      const int via_x = _ptV[_rcV[j]._ifr]._x;
-      const int via_y = _ptV[_rcV[j]._ifr]._y;
+      const int via_x = _ptV[_rcV[j]._from_idx]._x;
+      const int via_y = _ptV[_rcV[j]._from_idx]._y;
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
           splitBySj(j,
@@ -629,8 +630,8 @@ void tmg_conn::findConnections()
   }
   _first_for_clear = nullptr;
   for (size_t j = 0; j < _rcV.size() - 1; j++) {
-    if (_rcV[j]._ito == _rcV[j + 1]._ifr) {
-      _ptV[_rcV[j]._ito]._fre = false;
+    if (_rcV[j]._to_idx == _rcV[j + 1]._from_idx) {
+      _ptV[_rcV[j]._to_idx]._fre = false;
     }
   }
 
@@ -638,8 +639,8 @@ void tmg_conn::findConnections()
   for (size_t j = 0; j < _rcV.size(); j++) {
     tmg_rc_sh* s = &(_rcV[j]._shape);
     if (s->isVia()) {
-      const int via_x = _ptV[_rcV[j]._ifr]._x;
-      const int via_y = _ptV[_rcV[j]._ifr]._y;
+      const int via_x = _ptV[_rcV[j]._from_idx]._x;
+      const int via_y = _ptV[_rcV[j]._from_idx]._y;
 
       dbTechLayer* layb = nullptr;
       dbTechLayer* layt = nullptr;
@@ -689,10 +690,10 @@ void tmg_conn::findConnections()
   // find self-intersections of wires
   for (int j = 0; j < (int) _rcV.size() - 1; j++) {
     const tmg_rc_sh* s = &(_rcV[j]._shape);
-    const int conn_next = (_rcV[j]._ito == _rcV[j + 1]._ifr);
+    const int conn_next = (_rcV[j]._to_idx == _rcV[j + 1]._from_idx);
     if (s->isVia()) {
-      const int via_x = _ptV[_rcV[j]._ifr]._x;
-      const int via_y = _ptV[_rcV[j]._ifr]._y;
+      const int via_x = _ptV[_rcV[j]._from_idx]._x;
+      const int via_y = _ptV[_rcV[j]._from_idx]._y;
 
       dbTechLayer* layb = nullptr;
       dbTechLayer* layt = nullptr;
@@ -951,10 +952,10 @@ void tmg_conn::connectShapes(const int j, const int k)
 {
   const tmg_rc_sh* sa = &(_rcV[j]._shape);
   const tmg_rc_sh* sb = &(_rcV[k]._shape);
-  const int afr = _rcV[j]._ifr;
-  const int ato = _rcV[j]._ito;
-  const int bfr = _rcV[k]._ifr;
-  const int bto = _rcV[k]._ito;
+  const int afr = _rcV[j]._from_idx;
+  const int ato = _rcV[j]._to_idx;
+  const int bfr = _rcV[k]._from_idx;
+  const int bto = _rcV[k]._to_idx;
   const int xlo = std::max(sa->xMin(), sb->xMin());
   const int ylo = std::max(sa->yMin(), sb->yMin());
   const int xhi = std::min(sa->xMax(), sb->xMax());
@@ -1063,8 +1064,8 @@ void tmg_conn::connectTerm(const int j, const bool soft)
 
   for (int ii = 0; ii < _csN; ii++) {
     const int k = (*_csV)[ii].k;
-    tmg_rcpt* pfr = &_ptV[_rcV[k]._ifr];
-    tmg_rcpt* pto = &_ptV[_rcV[k]._ito];
+    tmg_rcpt* pfr = &_ptV[_rcV[k]._from_idx];
+    tmg_rcpt* pto = &_ptV[_rcV[k]._to_idx];
     const Point afr(pfr->_x, pfr->_y);
     if ((*_csV)[ii].rtlev == pfr->_layer->getRoutingLevel()
         && (*_csV)[ii].rect.intersects(afr)) {
@@ -1119,8 +1120,8 @@ void tmg_conn::connectTerm(const int j, const bool soft)
 
   for (int ii = 0; ii < _csN; ii++) {
     const int k = (*_csV)[ii].k;
-    tmg_rcpt* pfr = &_ptV[_rcV[k]._ifr];
-    tmg_rcpt* pto = &_ptV[_rcV[k]._ito];
+    tmg_rcpt* pfr = &_ptV[_rcV[k]._from_idx];
+    tmg_rcpt* pto = &_ptV[_rcV[k]._to_idx];
     if (pfr->_c2pinpt) {
       if (!(pto->_pinpt || pto->_c2pinpt)) {
         pto->_next_for_clear = _first_for_clear;
@@ -1140,8 +1141,8 @@ void tmg_conn::connectTerm(const int j, const bool soft)
   tmg_rcterm* x = _termV + j;
   for (int ii = 0; ii < _csN; ii++) {
     const int k = (*_csV)[ii].k;
-    const int bfr = _rcV[k]._ifr;
-    const int bto = _rcV[k]._ito;
+    const int bfr = _rcV[k]._from_idx;
+    const int bto = _rcV[k]._to_idx;
     const bool cfr = _ptV[bfr]._pinpt;
     const bool cto = _ptV[bto]._pinpt;
     if (soft && !cfr && !cto) {
@@ -1261,8 +1262,8 @@ void tmg_conn::connectTermSoft(const int j,
                                const int k)
 {
   const tmg_rc_sh* sb = &(_rcV[k]._shape);
-  const int bfr = _rcV[k]._ifr;
-  const int bto = _rcV[k]._ito;
+  const int bfr = _rcV[k]._from_idx;
+  const int bto = _rcV[k]._to_idx;
   const int xlo = std::max(rect.xMin(), sb->xMin());
   const int ylo = std::max(rect.yMin(), sb->yMin());
   const int xhi = std::min(rect.xMax(), sb->xMax());
@@ -1618,10 +1619,10 @@ int tmg_conn::getExtension(const int ipt, const tmg_rc* rc)
 {
   const tmg_rcpt* p = &_ptV[ipt];
   tmg_rcpt* pto;
-  if (ipt == rc->_ifr) {
-    pto = &_ptV[rc->_ito];
-  } else if (ipt == rc->_ito) {
-    pto = &_ptV[rc->_ifr];
+  if (ipt == rc->_from_idx) {
+    pto = &_ptV[rc->_to_idx];
+  } else if (ipt == rc->_to_idx) {
+    pto = &_ptV[rc->_from_idx];
   } else {
     logger_->error(ODB, 16, "problem in getExtension()");
   }

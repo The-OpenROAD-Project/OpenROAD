@@ -44,10 +44,10 @@ class tmg_rc_sh
 
 struct tmg_rc
 {
-  int _ifr;  // index to _ptV
-  int _ito;
+  int _from_idx;  // index to _ptV
+  int _to_idx;
   tmg_rc_sh _shape;
-  int _vert;
+  bool _is_vertical;
   int _width;
   int _default_ext;
 };
@@ -123,7 +123,7 @@ class tmg_conn
   bool checkConnected();
   void checkVisited();
   tmg_rcpt* allocPt();
-  void addRc(const dbShape& s, int ifr, int ito);
+  void addRc(const dbShape& s, int from_idx, int to_idx);
   void addRc(int k,
              const tmg_rc_sh& s,
              int ifr,

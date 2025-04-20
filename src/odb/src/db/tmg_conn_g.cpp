@@ -389,11 +389,11 @@ void tmg_conn::removeShortLoops()
   // setup paths
   int npath = -1;
   for (size_t j = 0; j < _rcV.size(); j++) {
-    if (j == 0 || _rcV[j]._ifr != _rcV[j - 1]._ito) {
+    if (j == 0 || _rcV[j]._from_idx != _rcV[j - 1]._to_idx) {
       ++npath;
     }
-    pgV[_rcV[j]._ifr].ipath = npath;
-    pgV[_rcV[j]._ito].ipath = npath;
+    pgV[_rcV[j]._from_idx].ipath = npath;
+    pgV[_rcV[j]._to_idx].ipath = npath;
   }
   npath++;
 
@@ -527,7 +527,7 @@ void tmg_conn::removeWireLoops()
   }
   // add all path edges
   for (size_t j = 0; j < _rcV.size(); j++) {
-    _graph->addEdges(this, _rcV[j]._ifr, _rcV[j]._ito, j);
+    _graph->addEdges(this, _rcV[j]._from_idx, _rcV[j]._to_idx, j);
   }
 
   // remove loops that have shorts by removing
