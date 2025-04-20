@@ -81,14 +81,15 @@ class tmg_conn_search::Impl
   void sort();
   void sort_level(tcs_level* bin);
 
+  // Use deque so that emplace_back doesn't move prior elements so pointer
+  // into these structures are safe.
   std::deque<tcs_shape> _shapes;
-  tcs_level _levAllV[32768];
-  int _levAllN;
+  std::deque<tcs_level> _levels;
   std::array<tcs_level*, 32> _root_for_level;
   Rect _search_box;
-  int _src_via;
-  tcs_level* _bin;
-  tcs_shape* _cur;
+  int _search_via;
+  tcs_level* _search_bin;
+  tcs_shape* _search_shape_list;
   bool _sorted;
 
   static constexpr int sort_threshold = 1024;
@@ -96,17 +97,17 @@ class tmg_conn_search::Impl
 
 tmg_conn_search::Impl::Impl()
 {
-  _src_via = 0;
-  _bin = nullptr;
-  _cur = nullptr;
+  _search_via = 0;
+  _search_bin = nullptr;
+  _search_shape_list = nullptr;
   clear();
 }
 
 void tmg_conn_search::Impl::clear()
 {
-  _levAllN = 0;
+  _levels.clear();
   for (int j = 0; j < _root_for_level.size(); j++) {
-    _root_for_level[j] = _levAllV + _levAllN++;
+    _root_for_level[j] = &_levels.emplace_back();
     _root_for_level[j]->reset();
   }
   _sorted = false;
@@ -142,83 +143,84 @@ void tmg_conn_search::Impl::searchStart(const int level,
   if (!_sorted) {
     sort();
   }
-  _bin = _root_for_level.at(level);
-  _cur = _bin->shape_list;
+  _search_bin = _root_for_level.at(level);
+  _search_shape_list = _search_bin->shape_list;
   _search_box = bounds;
-  _src_via = is_via;
+  _search_via = is_via;
 }
 
-// _src_via = 0 ==> wire
-//          = 1 ==> via
-//          = 2 ==> pin
+// _search_via = 0 ==> wire
+//             = 1 ==> via
+//             = 2 ==> pin
 bool tmg_conn_search::Impl::searchNext(int* id)
 {
   *id = -1;
-  if (!_bin) {
+  if (!_search_bin) {
     return false;
   }
   // this is for speed for ordinary small nets
-  if (_src_via == 1 && !_bin->parent && !_bin->left && !_bin->right) {
-    while (_cur) {
-      if (_cur->bounds.overlaps(_search_box)) {
-        *id = _cur->id;
-        _cur = _cur->next;
+  if (_search_via == 1 && !_search_bin->parent && !_search_bin->left
+      && !_search_bin->right) {
+    while (_search_shape_list) {
+      if (_search_shape_list->bounds.overlaps(_search_box)) {
+        *id = _search_shape_list->id;
+        _search_shape_list = _search_shape_list->next;
         return true;
       }
-      _cur = _cur->next;
+      _search_shape_list = _search_shape_list->next;
     }
     return false;
   }
 
-  while (_bin) {
+  while (_search_bin) {
     bool not_here = false;
-    if (!_bin->bounds.intersects(_search_box)) {
+    if (!_search_bin->bounds.intersects(_search_box)) {
       not_here = true;
     }
     if (!not_here) {
-      while (_cur) {
-        if (_src_via == 1 || _cur->is_via == 1) {
-          if (!_cur->bounds.overlaps(_search_box)) {
-            _cur = _cur->next;
+      while (_search_shape_list) {
+        if (_search_via == 1 || _search_shape_list->is_via == 1) {
+          if (!_search_shape_list->bounds.overlaps(_search_box)) {
+            _search_shape_list = _search_shape_list->next;
             continue;
           }
         } else {
-          if (!_cur->bounds.intersects(_search_box)) {
-            _cur = _cur->next;
+          if (!_search_shape_list->bounds.intersects(_search_box)) {
+            _search_shape_list = _search_shape_list->next;
             continue;
           }
-          if (_src_via == 0
-              && (_cur->xMin() == _search_box.xMax()
-                  || _search_box.xMin() == _cur->xMax())) {
-            if (!_cur->bounds.intersects(_search_box)) {
-              _cur = _cur->next;
+          if (_search_via == 0
+              && (_search_shape_list->xMin() == _search_box.xMax()
+                  || _search_box.xMin() == _search_shape_list->xMax())) {
+            if (!_search_shape_list->bounds.intersects(_search_box)) {
+              _search_shape_list = _search_shape_list->next;
               continue;
             }
-          } else if (_src_via == 0
-                     && (_cur->yMin() == _search_box.yMax()
-                         || _search_box.yMin() == _cur->yMax())) {
-            if (!_cur->bounds.intersects(_search_box)) {
-              _cur = _cur->next;
+          } else if (_search_via == 0
+                     && (_search_shape_list->yMin() == _search_box.yMax()
+                         || _search_box.yMin() == _search_shape_list->yMax())) {
+            if (!_search_shape_list->bounds.intersects(_search_box)) {
+              _search_shape_list = _search_shape_list->next;
               continue;
             }
           }
         }
-        *id = _cur->id;
-        _cur = _cur->next;
+        *id = _search_shape_list->id;
+        _search_shape_list = _search_shape_list->next;
         return true;
       }
     }
-    if (_bin->left) {
-      _bin = _bin->left;
-      _cur = _bin->shape_list;
+    if (_search_bin->left) {
+      _search_bin = _search_bin->left;
+      _search_shape_list = _search_bin->shape_list;
     } else {
-      while (_bin->parent && _bin == _bin->parent->right) {
-        _bin = _bin->parent;
+      while (_search_bin->parent && _search_bin == _search_bin->parent->right) {
+        _search_bin = _search_bin->parent;
       }
-      _bin = _bin->parent;
-      if (_bin) {
-        _bin = _bin->right;
-        _cur = _bin->shape_list;
+      _search_bin = _search_bin->parent;
+      if (_search_bin) {
+        _search_bin = _search_bin->right;
+        _search_shape_list = _search_bin->shape_list;
       }
     }
   }
@@ -247,16 +249,13 @@ static void tcs_level_wrap(tcs_level* bin)
 
 void tmg_conn_search::Impl::sort_level(tcs_level* bin)
 {
-  if (_levAllN >= 32767) {
-    return;
-  }
   if (bin->num_shapes < sort_threshold) {
     return;
   }
-  tcs_level* left = _levAllV + _levAllN++;
+  tcs_level* left = &_levels.emplace_back();
   tcs_level_init(left, bin);
 
-  tcs_level* right = _levAllV + _levAllN++;
+  tcs_level* right = &_levels.emplace_back();
   tcs_level_init(right, bin);
 
   tcs_shape* shape = bin->shape_list;
