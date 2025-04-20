@@ -91,7 +91,7 @@ class tmg_conn_search::Impl
   Rect _search_box;
   int _search_via{0};
   tcs_level* _search_bin{nullptr};
-  tcs_shape* _search_shape_list{nullptr};
+  tcs_shape* _search_shape{nullptr};
 
   // Sorting happens after all the shapes have been added and the
   // first searchStart happens
@@ -147,7 +147,7 @@ void tmg_conn_search::Impl::searchStart(const int level,
     sort();
   }
   _search_bin = _root_for_level.at(level);
-  _search_shape_list = _search_bin->shape_list;
+  _search_shape = _search_bin->shape_list;
   _search_box = bounds;
   _search_via = is_via;
 }
@@ -161,54 +161,65 @@ bool tmg_conn_search::Impl::searchNext(int* id)
   // this is for speed for ordinary small nets
   if (_search_via == 1 && !_search_bin->parent && !_search_bin->left
       && !_search_bin->right) {
-    while (_search_shape_list) {
-      if (_search_shape_list->bounds.overlaps(_search_box)) {
-        *id = _search_shape_list->id;
-        _search_shape_list = _search_shape_list->next;
+    while (_search_shape) {
+      if (_search_shape->bounds.overlaps(_search_box)) {
+        *id = _search_shape->id;
+        _search_shape = _search_shape->next;
         return true;
       }
-      _search_shape_list = _search_shape_list->next;
+      _search_shape = _search_shape->next;
     }
     return false;
   }
 
   while (_search_bin) {
     if (_search_bin->bounds.intersects(_search_box)) {
-      while (_search_shape_list) {
-        if (_search_via == 1 || _search_shape_list->is_via == 1) {
-          if (!_search_shape_list->bounds.overlaps(_search_box)) {
-            _search_shape_list = _search_shape_list->next;
+      while (_search_shape) {
+        if (_search_via == 1 || _search_shape->is_via == 1) {
+          if (!_search_shape->bounds.overlaps(_search_box)) {
+            _search_shape = _search_shape->next;
             continue;
           }
         } else {
-          if (!_search_shape_list->bounds.intersects(_search_box)) {
-            _search_shape_list = _search_shape_list->next;
+          if (!_search_shape->bounds.intersects(_search_box)) {
+            _search_shape = _search_shape->next;
             continue;
           }
+          // Skip wire segments that are abutting but staggered, eg
+          //        |-------
+          //   -----|
+          //        |-------
+          //   ------
           if (_search_via == 0
-              && (_search_shape_list->xMin() == _search_box.xMax()
-                  || _search_box.xMin() == _search_shape_list->xMax())) {
-            if (!_search_shape_list->bounds.intersects(_search_box)) {
-              _search_shape_list = _search_shape_list->next;
+              && (_search_shape->xMin() == _search_box.xMax()
+                  || _search_box.xMin() == _search_shape->xMax())) {
+            if ((_search_shape->yMax() < _search_box.yMax()
+                 && _search_shape->yMin() < _search_box.yMin())
+                || (_search_shape->yMax() > _search_box.yMax()
+                    && _search_shape->yMin() > _search_box.yMin())) {
+              _search_shape = _search_shape->next;
               continue;
             }
           } else if (_search_via == 0
-                     && (_search_shape_list->yMin() == _search_box.yMax()
-                         || _search_box.yMin() == _search_shape_list->yMax())) {
-            if (!_search_shape_list->bounds.intersects(_search_box)) {
-              _search_shape_list = _search_shape_list->next;
+                     && (_search_shape->yMin() == _search_box.yMax()
+                         || _search_box.yMin() == _search_shape->yMax())) {
+            if ((_search_shape->xMax() < _search_box.xMax()
+                 && _search_shape->xMin() < _search_box.xMin())
+                || (_search_shape->xMax() > _search_box.xMax()
+                    && _search_shape->xMin() > _search_box.xMin())) {
+              _search_shape = _search_shape->next;
               continue;
             }
           }
         }
-        *id = _search_shape_list->id;
-        _search_shape_list = _search_shape_list->next;
+        *id = _search_shape->id;
+        _search_shape = _search_shape->next;
         return true;
       }
     }
     if (_search_bin->left) {
       _search_bin = _search_bin->left;
-      _search_shape_list = _search_bin->shape_list;
+      _search_shape = _search_bin->shape_list;
     } else {
       while (_search_bin->parent && _search_bin == _search_bin->parent->right) {
         _search_bin = _search_bin->parent;
@@ -216,7 +227,7 @@ bool tmg_conn_search::Impl::searchNext(int* id)
       _search_bin = _search_bin->parent;
       if (_search_bin) {
         _search_bin = _search_bin->right;
-        _search_shape_list = _search_bin->shape_list;
+        _search_shape = _search_bin->shape_list;
       }
     }
   }
