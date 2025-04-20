@@ -173,11 +173,7 @@ bool tmg_conn_search::Impl::searchNext(int* id)
   }
 
   while (_search_bin) {
-    bool not_here = false;
-    if (!_search_bin->bounds.intersects(_search_box)) {
-      not_here = true;
-    }
-    if (!not_here) {
+    if (_search_bin->bounds.intersects(_search_box)) {
       while (_search_shape_list) {
         if (_search_via == 1 || _search_shape_list->is_via == 1) {
           if (!_search_shape_list->bounds.overlaps(_search_box)) {
