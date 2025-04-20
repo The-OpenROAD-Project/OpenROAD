@@ -10,20 +10,27 @@ namespace odb {
 
 struct tcs_shape
 {
+  int xMin() const { return bounds.xMin(); }
+  int yMin() const { return bounds.yMin(); }
+  int xMax() const { return bounds.xMax(); }
+  int yMax() const { return bounds.yMax(); }
+
   tcs_shape* next = nullptr;
   Rect bounds;
   int level = 0;
   int is_via = 0;
   int id = 0;
-
-  int xMin() const { return bounds.xMin(); }
-  int yMin() const { return bounds.yMin(); }
-  int xMax() const { return bounds.xMax(); }
-  int yMax() const { return bounds.yMax(); }
 };
 
 struct tcs_level
 {
+  int xMin() const { return bounds.xMin(); }
+  int yMin() const { return bounds.yMin(); }
+  int xMax() const { return bounds.xMax(); }
+  int yMax() const { return bounds.yMax(); }
+  void reset();
+  void add_shape(tcs_shape* shape, bool update_bounds = true);
+
   tcs_shape* shape_list = nullptr;
   tcs_shape* last_shape = nullptr;
   tcs_level* left = nullptr;
@@ -31,13 +38,6 @@ struct tcs_level
   tcs_level* parent = nullptr;
   Rect bounds;
   int num_shapes = 0;
-
-  int xMin() const { return bounds.xMin(); }
-  int yMin() const { return bounds.yMin(); }
-  int xMax() const { return bounds.xMax(); }
-  int yMax() const { return bounds.yMax(); }
-  void reset();
-  void add_shape(tcs_shape* shape, bool update_bounds = true);
 };
 
 void tcs_level::reset()
