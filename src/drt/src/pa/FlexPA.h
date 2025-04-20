@@ -37,6 +37,29 @@ namespace drt {
 using ViaRawPriorityTuple
     = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
 
+// struct LayerRectComp
+// {
+//   bool operator()(const std::pair<int, gtl::rectangle_data<frCoord>>& lhs,
+//                   const std::pair<int, gtl::rectangle_data<frCoord>>& rhs)
+//                   const
+//   {
+//     if (lhs.first != rhs.first)
+//       return lhs.first < rhs.first;
+
+//     const auto& rect1 = lhs.second;
+//     const auto& rect2 = rhs.second;
+
+//     if (gtl::xl(rect1) != gtl::xl(rect2))
+//       return gtl::xl(rect1) < gtl::xl(rect2);
+//     return gtl::yl(rect1) < gtl::yl(rect2);
+//   }
+// };
+using RectCoordMap = std::pair<gtl::rectangle_data<frCoord>,
+                               std::pair<std::map<frCoord, frAccessPointEnum>,
+                                         std::map<frCoord, frAccessPointEnum>>>;
+
+using LayerToRectCoordsMap = std::map<int, std::vector<RectCoordMap>>;
+
 struct frInstLocationComp
 {
   bool operator()(const frInst* lhs, const frInst* rhs) const
@@ -244,6 +267,7 @@ class FlexPA
    */
   template <typename T>
   void genAPsFromPinShapes(
+      LayerToRectCoordsMap& layer_rect_to_coords,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       T* pin,
@@ -265,6 +289,7 @@ class FlexPA
    * @param upper_type highest access type considered
    */
   void genAPsFromLayerShapes(
+      LayerToRectCoordsMap& layer_rect_to_coords,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       frInstTerm* inst_term,

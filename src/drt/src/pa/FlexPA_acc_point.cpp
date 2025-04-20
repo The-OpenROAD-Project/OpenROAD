@@ -431,6 +431,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
 }
 
 void FlexPA::genAPsFromLayerShapes(
+    LayerToRectCoordsMap& layer_rect_to_coords,
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     frInstTerm* inst_term,
@@ -485,6 +486,9 @@ void FlexPA::genAPsFromLayerShapes(
                    upper_type,
                    is_macro_cell_pin);
 
+    layer_rect_to_coords[layer_num].push_back(
+        {bbox_rect, {x_coords, y_coords}});
+
     createMultipleAccessPoints(aps,
                                apset,
                                bbox_rect,
@@ -507,6 +511,7 @@ void FlexPA::genAPsFromLayerShapes(
 
 template <typename T>
 void FlexPA::genAPsFromPinShapes(
+    LayerToRectCoordsMap& layer_rect_to_coords,
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     T* pin,
@@ -522,7 +527,8 @@ void FlexPA::genAPsFromPinShapes(
     if (!it->empty()
         && getDesign()->getTech()->getLayer(layer_num)->getType()
                == dbTechLayerType::ROUTING) {
-      genAPsFromLayerShapes(aps,
+      genAPsFromLayerShapes(layer_rect_to_coords,
+                            aps,
                             apset,
                             inst_term,
                             *it,
@@ -1190,13 +1196,36 @@ bool FlexPA::genPinAccessCostBounded(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
+  // logger_->report("[BNMFW] New Cost Profile");
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
-  ;
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
-  genAPsFromPinShapes(
-      new_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
+  LayerToRectCoordsMap layer_rect_to_coords;
+  genAPsFromPinShapes(layer_rect_to_coords,
+                      new_aps,
+                      apset,
+                      pin,
+                      inst_term,
+                      pin_shapes,
+                      lower_type,
+                      upper_type);
+  // for (const auto& [layer_num, rect_coords]: layer_rect_to_coords) {
+  //   logger_->report("[BNMFW] Layer={}", (int) layer_num);
+  //   for (const auto& [rect, coords]: rect_coords) {
+  //     const auto& [x_coords, y_coords] = coords;
+  //     logger_->report("[BNMFW] X coords:");
+  //     for (const auto& [coordinate, cost]: x_coords) {
+  //       logger_->report("[BNMFW] coord={} cost={}", (int) coordinate, (int)
+  //       cost);
+  //     }
+  //     logger_->report("[BNMFW] Y coords:");
+  //     for (const auto& [coordinate, cost]: y_coords) {
+  //       logger_->report("[BNMFW] coord={} cost={}", (int) coordinate, (int)
+  //       cost);
+  //     }
+  //   }
+  // }
   filterMultipleAPAccesses(
       new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
@@ -1327,6 +1356,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 template <typename T>
 int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
+  // logger_->report("[BNMFW] New Pin");
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
