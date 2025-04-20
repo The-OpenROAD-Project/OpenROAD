@@ -70,7 +70,7 @@ class tmg_conn_search::Impl
   int _shN;
   tcs_lev _levAllV[32768];
   int _levAllN;
-  tcs_lev* _levV[32];
+  std::array<tcs_lev*, 32> _levV;
   Rect _search_box;
   int _srcVia;
   tcs_lev* _bin;
@@ -113,17 +113,17 @@ void tmg_conn_search::Impl::clear()
   _shN = 0;
   _shJ = 0;
   _levAllN = 0;
-  for (int j = 0; j < 32; j++) {
+  for (int j = 0; j < _levV.size(); j++) {
     _levV[j] = _levAllV + _levAllN++;
     _levV[j]->reset();
   }
   _sorted = false;
 }
 
-void tmg_conn_search::Impl::addShape(int lev,
+void tmg_conn_search::Impl::addShape(const int lev,
                                      const Rect& bounds,
-                                     int isVia,
-                                     int id)
+                                     const int isVia,
+                                     const int id)
 {
   if (_shN == 32768) {
     if (_shJ == _shJmax) {
@@ -251,13 +251,16 @@ bool tmg_conn_search::Impl::searchNext(int* id)
   return false;
 }
 
-static void tcs_lev_init(tcs_lev* bin)
+static void tcs_lev_init(tcs_lev* bin,
+                         tcs_lev* parent,
+                         tcs_lev* left = nullptr,
+                         tcs_lev* right = nullptr)
 {
   bin->shape_list = nullptr;
   bin->last_shape = nullptr;
-  bin->left = nullptr;
-  bin->right = nullptr;
-  bin->parent = nullptr;
+  bin->left = left;
+  bin->right = right;
+  bin->parent = parent;
   bin->n = 0;
 }
 
@@ -301,19 +304,13 @@ void tmg_conn_search::Impl::sort_level(tcs_lev* bin)
     return;
   }
   tcs_lev* left = _levAllV + _levAllN++;
-  tcs_lev_init(left);
-  left->parent = bin;
+  tcs_lev_init(left, bin);
 
   tcs_lev* right = _levAllV + _levAllN++;
-  tcs_lev_init(right);
-  right->parent = bin;
+  tcs_lev_init(right, bin);
 
   tcs_shape* shape = bin->shape_list;
-  tcs_lev* par = bin->parent;
-  tcs_lev_init(bin);
-  bin->parent = par;
-  bin->left = left;
-  bin->right = right;
+  tcs_lev_init(bin, bin->parent, left, right);
 
   if (bin->bounds.dx() >= bin->bounds.dy()) {
     const int xmid = bin->bounds.xCenter();
