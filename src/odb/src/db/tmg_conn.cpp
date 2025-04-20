@@ -127,16 +127,16 @@ void tmg_conn::addRc(const dbShape& s, const int from_idx, const int to_idx)
 
 void tmg_conn::addRc(const int k,
                      const tmg_rc_sh& s,
-                     const int ifr,
-                     const int ito,
+                     const int from_idx,
+                     const int to_idx,
                      const int xmin,
                      const int ymin,
                      const int xmax,
                      const int ymax)
 {
   tmg_rc x;
-  x._from_idx = ifr;
-  x._to_idx = ito;
+  x._from_idx = from_idx;
+  x._to_idx = to_idx;
   x._shape._rect.reset(xmin, ymin, xmax, ymax);
   x._shape._layer = s._layer;
   x._shape._tech_via = s._tech_via;
@@ -148,30 +148,31 @@ void tmg_conn::addRc(const int k,
   _rcV.push_back(x);
 }
 
-tmg_rc* tmg_conn::addRcPatch(const int ifr, const int ito)
+tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
 {
-  dbTechLayer* layer = _ptV[ifr]._layer;
-  if (!layer || layer != _ptV[ito]._layer
-      || (_ptV[ifr]._x != _ptV[ito]._x && _ptV[ifr]._y != _ptV[ito]._y)) {
+  dbTechLayer* layer = _ptV[from_idx]._layer;
+  if (!layer || layer != _ptV[to_idx]._layer
+      || (_ptV[from_idx]._x != _ptV[to_idx]._x
+          && _ptV[from_idx]._y != _ptV[to_idx]._y)) {
     return nullptr;
   }
   tmg_rc x;
-  x._from_idx = ifr;
-  x._to_idx = ito;
+  x._from_idx = from_idx;
+  x._to_idx = to_idx;
   x._shape._layer = layer;
   x._shape._tech_via = nullptr;
   x._shape._block_via = nullptr;
   x._width = layer->getWidth();  // trouble for nondefault
-  x._is_vertical = (_ptV[ifr]._y != _ptV[ito]._y);
+  x._is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
   int xlo, ylo, xhi, yhi;
   if (x._is_vertical) {
-    xlo = _ptV[ifr]._x;
+    xlo = _ptV[from_idx]._x;
     xhi = xlo;
-    std::tie(ylo, yhi) = std::minmax(_ptV[ifr]._y, _ptV[ito]._y);
+    std::tie(ylo, yhi) = std::minmax(_ptV[from_idx]._y, _ptV[to_idx]._y);
   } else {
-    ylo = _ptV[ifr]._y;
+    ylo = _ptV[from_idx]._y;
     yhi = ylo;
-    std::tie(xlo, xhi) = std::minmax(_ptV[ifr]._x, _ptV[ito]._x);
+    std::tie(xlo, xhi) = std::minmax(_ptV[from_idx]._x, _ptV[to_idx]._x);
   }
   const int hw = x._width / 2;
   x._default_ext = hw;
@@ -1652,7 +1653,7 @@ int tmg_conn::addPoint(const int ipt, const tmg_rc* rc)
   return wire_id;
 }
 
-int tmg_conn::addPoint(const int ifr, const int ipt, const tmg_rc* rc)
+int tmg_conn::addPoint(const int from_idx, const int ipt, const tmg_rc* rc)
 {
   int wire_id;
   const tmg_rcpt* p = &_ptV[ipt];

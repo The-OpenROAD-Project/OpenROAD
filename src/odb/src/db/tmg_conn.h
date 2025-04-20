@@ -126,8 +126,8 @@ class tmg_conn
   void addRc(const dbShape& s, int from_idx, int to_idx);
   void addRc(int k,
              const tmg_rc_sh& s,
-             int ifr,
-             int ito,
+             int from_idx,
+             int to_idx,
              int xmin,
              int ymin,
              int xmax,
@@ -151,9 +151,9 @@ class tmg_conn
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
   int getExtension(int ipt, const tmg_rc* rc);
   int addPoint(int ipt, const tmg_rc* rc);
-  int addPoint(int ifr, int ipt, const tmg_rc* rc);
+  int addPoint(int from_idx, int ipt, const tmg_rc* rc);
   int addPointIfExt(int ipt, const tmg_rc* rc);
-  tmg_rc* addRcPatch(int ifr, int ito);
+  tmg_rc* addRcPatch(int from_idx, int to_idx);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 
