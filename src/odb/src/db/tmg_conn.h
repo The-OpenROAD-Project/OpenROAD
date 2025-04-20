@@ -194,6 +194,15 @@ class tmg_conn
   friend class tmg_conn_graph;
 };
 
+// This stores shapes by level through addShape.  Once all the shapes
+// have been added then searchStart/Next can be used for querying.
+// Internally a simple tree of space bisections is generated for
+// efficiency.
+//
+// The code uses an odd convention:
+// is_via = 0 ==> wire
+//        = 1 ==> via
+//        = 2 ==> pin
 class tmg_conn_search
 {
  public:

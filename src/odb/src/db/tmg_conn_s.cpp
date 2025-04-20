@@ -152,9 +152,6 @@ void tmg_conn_search::Impl::searchStart(const int level,
   _search_via = is_via;
 }
 
-// _search_via = 0 ==> wire
-//             = 1 ==> via
-//             = 2 ==> pin
 bool tmg_conn_search::Impl::searchNext(int* id)
 {
   *id = -1;
