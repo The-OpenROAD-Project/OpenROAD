@@ -23,7 +23,7 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
-#include "sta/PathRef.hh"
+#include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
@@ -593,11 +593,12 @@ float Blif::getRequiredTime(sta::Pin* term, bool is_rise)
 float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
 {
   auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
-  auto pathRef = open_sta_->vertexWorstArrivalPath(vert, sta::MinMax::max());
-  if (pathRef.isNull())
+  auto path = open_sta_->vertexWorstArrivalPath(vert, sta::MinMax::max());
+  if (path == nullptr) {
     return 0;
+  }
 
-  auto ap = pathRef.pathAnalysisPt(open_sta_);
+  auto ap = path->pathAnalysisPt(open_sta_);
   auto arr = open_sta_->vertexArrival(
       vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), ap);
   if (sta::delayInf(arr)) {

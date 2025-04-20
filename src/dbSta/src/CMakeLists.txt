@@ -58,8 +58,6 @@ swig_lib(NAME          dbSta
 target_sources(dbSta
   PRIVATE
     MakeDbSta.cc
-    heatMap.cpp
-    PathRenderer.cc
 )
 
 # sta warnings
@@ -84,7 +82,6 @@ target_link_libraries(dbSta
   PRIVATE
     OpenSTA
     odb
-    gui
     utl_lib
     dbSta_lib
 )

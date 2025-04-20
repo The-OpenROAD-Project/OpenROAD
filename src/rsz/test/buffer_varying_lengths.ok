@@ -8,8 +8,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0037] Found 118 long wires.
 [INFO RSZ-0039] Resized 186 instances.
 [INFO RSZ-0038] Inserted 161 buffers in 118 nets.
-worst slack -0.279
-tns -30.987
+worst slack max -0.279
+tns max -30.987
 [INFO RSZ-0094] Found 200 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 200 out of 200 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -21,6 +21,6 @@ tns -30.987
 [INFO RSZ-0041] Resized 1523 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
-worst slack -0.279
-tns -28.362
+worst slack max -0.279
+tns max -28.362
 No differences found.

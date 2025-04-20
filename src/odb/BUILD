@@ -79,17 +79,17 @@ tcl_wrap_cc(
     srcs = glob([
         "include/odb/*.h",
     ]) + [
+        ":swig_imports",
         "//:src/Design.i",
         "//:src/Exception.i",
-        ":swig_imports"
     ],
     module = "odbtcl",
     namespace_prefix = "odb",
     root_swig_src = "src/swig/common/odb.i",
     swig_includes = [
         "include",
-        "src/swig/tcl",
         "src/swig/common",
+        "src/swig/tcl",
     ],
     swig_options = [
         # These values are derived from the CMakeList.txt and represent the "rules" this swig file
@@ -108,4 +108,3 @@ tcl_encode(
     char_array_name = "odbtcl_tcl_inits",
     namespace = "odb",
 )
-

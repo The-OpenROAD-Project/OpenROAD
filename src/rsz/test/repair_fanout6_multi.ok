@@ -12,7 +12,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0039] Resized 8509 instances.
 [INFO RSZ-0038] Inserted 508 buffers in 1 nets.
-worst slack -26.82
+worst slack max -26.82
 max fanout
 
 Pin                                   Limit Fanout  Slack
@@ -30,4 +30,4 @@ fanout1/X                                20     20      0 (MET)
 [INFO RSZ-0045] Inserted 23 buffers, 1 to split loads.
 [INFO RSZ-0041] Resized 582 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -0.69
+worst slack max -0.69
