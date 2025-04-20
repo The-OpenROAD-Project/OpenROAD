@@ -298,9 +298,7 @@ void tmg_conn_search::Impl::sort()
 {
   _sorted = true;
   for (int j = 0; j < _root_for_level.size(); j++) {
-    if (_root_for_level[j]->num_shapes > sort_threshold) {
-      sort_level(_root_for_level[j]);
-    }
+    sort_level(_root_for_level[j]);
   }
 }
 
