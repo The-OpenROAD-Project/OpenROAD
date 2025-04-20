@@ -169,8 +169,7 @@ class tmg_conn
   std::vector<tmg_rcpt> _ptV;
   std::vector<tmg_rcterm> _termV;
   std::vector<tmg_rcterm*> _tstackV;
-  tmg_rcshort* _shortV;
-  int _shortN;
+  std::vector<tmg_rcshort> _shortV;
   dbNet* _net;
   bool _hasSWire;
   bool _preserveSWire;
@@ -189,7 +188,6 @@ class tmg_conn
   int _csN;
   tmg_rcpt* _first_for_clear;
 
-  int _shortNmax;
   int _last_id;
   int _firstSegmentAfterVia;
   utl::Logger* logger_;

@@ -383,7 +383,7 @@ void tmg_conn::removeShortLoops()
   if (!_graph) {
     _graph = new tmg_conn_graph();
   }
-  _graph->init(_ptV.size(), _shortN);
+  _graph->init(_ptV.size(), _shortV.size());
   tcg_pt* pgV = _graph->_ptV;
 
   // setup paths
@@ -398,8 +398,8 @@ void tmg_conn::removeShortLoops()
   npath++;
 
   // remove shorts to same path
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -408,8 +408,8 @@ void tmg_conn::removeShortLoops()
     }
   }
 
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }

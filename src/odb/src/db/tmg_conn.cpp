@@ -61,8 +61,7 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _tstackV.reserve(1024);
   _csVV.reserve(1024);
   _csNV.reserve(1024);
-  _shortNmax = 1024;
-  _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
+  _shortV.reserve(1024);
   _search = nullptr;
   _graph = nullptr;
   _cut_end_extMin = 1;
@@ -206,16 +205,13 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
   x._first_pt = nullptr;
 }
 
-void tmg_conn::addShort(int i0, int i1)
+void tmg_conn::addShort(const int i0, const int i1)
 {
-  if (_shortN == _shortNmax) {
-    _shortNmax *= 2;
-    _shortV = (tmg_rcshort*) realloc(_shortV, _shortNmax * sizeof(tmg_rcshort));
-  }
-  tmg_rcshort* x = _shortV + _shortN++;
-  x->_i0 = i0;
-  x->_i1 = i1;
-  x->_skip = false;
+  _shortV.emplace_back();
+  tmg_rcshort& x = _shortV.back();
+  x._i0 = i0;
+  x._i1 = i1;
+  x._skip = false;
   if (_ptV[i0]._fre) {
     _ptV[i0]._fre = false;
   } else {
@@ -237,7 +233,7 @@ void tmg_conn::loadNet(dbNet* net)
   _tstackV.clear();
   _csVV.clear();
   _csNV.clear();
-  _shortN = 0;
+  _shortV.clear();
   _first_for_clear = nullptr;
 
   for (dbITerm* iterm : net->getITerms()) {
@@ -466,7 +462,7 @@ void tmg_conn::splitTtop()
 
 void tmg_conn::setSring()
 {
-  for (int ii = 0; ii < _shortN; ii++) {
+  for (int ii = 0; ii < _shortV.size(); ii++) {
     if (_shortV[ii]._skip) {
       continue;
     }
@@ -908,7 +904,7 @@ void tmg_conn::findConnections()
   // make terms of shorted points consistent
   for (int it = 0; it < 5; it++) {
     int cnt = 0;
-    for (int j = 0; j < _shortN; j++) {
+    for (int j = 0; j < _shortV.size(); j++) {
       if (_shortV[j]._skip) {
         continue;
       }
