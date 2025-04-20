@@ -23,8 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractPathRenderer.h"
-#include "AbstractPowerDensityDataSource.h"
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
@@ -262,17 +260,6 @@ void dbSta::registerStaState(dbStaState* state)
 void dbSta::unregisterStaState(dbStaState* state)
 {
   sta_states_.erase(state);
-}
-
-void dbSta::setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer)
-{
-  path_renderer_ = std::move(path_renderer);
-}
-
-void dbSta::setPowerDensityDataSource(
-    std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source)
-{
-  power_density_data_source_ = std::move(power_density_data_source);
 }
 
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
@@ -1132,14 +1119,6 @@ void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
-}
-
-////////////////////////////////////////////////////////////////
-
-// Highlight path in the gui.
-void dbSta::highlight(Path* path)
-{
-  path_renderer_->highlight(path);
 }
 
 ////////////////////////////////////////////////////////////////
