@@ -109,9 +109,9 @@ void tmg_conn_search::Impl::clear()
 {
   _shapes.clear();
   _levels.clear();
-  for (int j = 0; j < _root_for_level.size(); j++) {
-    _root_for_level[j] = &_levels.emplace_back();
-    _root_for_level[j]->reset();
+  for (tcs_level*& level : _root_for_level) {
+    level = &_levels.emplace_back();
+    level->reset();
   }
   _sorted = false;
 }
@@ -260,10 +260,10 @@ void tmg_conn_search::Impl::sort_level(tcs_level* bin)
     return;
   }
   tcs_level* left = &_levels.emplace_back();
-  tcs_level_init(left, bin);
+  tcs_level_init(left, bin);  // NOLINT(readability-suspicious-call-argument)
 
   tcs_level* right = &_levels.emplace_back();
-  tcs_level_init(right, bin);
+  tcs_level_init(right, bin);  // NOLINT(readability-suspicious-call-argument)
 
   tcs_shape* shape = bin->shape_list;
   tcs_level_init(bin, bin->parent, left, right);
@@ -301,8 +301,8 @@ void tmg_conn_search::Impl::sort_level(tcs_level* bin)
 void tmg_conn_search::Impl::sort()
 {
   _sorted = true;
-  for (int j = 0; j < _root_for_level.size(); j++) {
-    sort_level(_root_for_level[j]);
+  for (tcs_level* level : _root_for_level) {
+    sort_level(level);
   }
 }
 

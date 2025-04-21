@@ -21,7 +21,7 @@ tmg_conn_graph::tmg_conn_graph()
   _eNmax = 1024;
   _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
   _path_vis = (int*) malloc(_ptNmax * sizeof(int));
-  _eV = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
+  _eV = (tcg_edge*) malloc(2UL * _ptNmax * sizeof(tcg_edge));
   _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
 }
 

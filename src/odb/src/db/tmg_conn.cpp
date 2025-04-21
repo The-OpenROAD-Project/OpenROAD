@@ -449,12 +449,12 @@ void tmg_conn::splitTtop()
 
 void tmg_conn::setSring()
 {
-  for (int ii = 0; ii < _shortV.size(); ii++) {
-    if (_shortV[ii]._skip) {
+  for (const tmg_rcshort& rcshort : _shortV) {
+    if (rcshort._skip) {
       continue;
     }
-    tmg_rcpt* pfr = &_ptV[_shortV[ii]._i0];
-    tmg_rcpt* pto = &_ptV[_shortV[ii]._i1];
+    tmg_rcpt* pfr = &_ptV[rcshort._i0];
+    tmg_rcpt* pto = &_ptV[rcshort._i1];
     if (pfr == pto) {
       continue;
     }
@@ -488,12 +488,11 @@ void tmg_conn::setSring()
 void tmg_conn::detachTilePins()
 {
   _slicedTilePinCnt = 0;
-  for (int j = 0; j < _termV.size(); j++) {
-    tmg_rcterm* tx = &_termV[j];
-    if (tx->_iterm) {
+  for (const tmg_rcterm& term : _termV) {
+    if (term._iterm) {
       continue;
     }
-    dbBTerm* bterm = tx->_bterm;
+    dbBTerm* bterm = term._bterm;
     dbShape pin;
     if (!bterm->getFirstPin(pin) || pin.isVia()) {
       continue;
@@ -502,7 +501,7 @@ void tmg_conn::detachTilePins()
     const int rtlb = pin.getTechLayer()->getRoutingLevel();
     bool sliceDone = false;
     for (int k = 0; !sliceDone && k < _termV.size(); k++) {
-      tx = &_termV[k];
+      tmg_rcterm* tx = &_termV[k];
       if (tx->_bterm) {
         continue;
       }
@@ -891,12 +890,12 @@ void tmg_conn::findConnections()
   // make terms of shorted points consistent
   for (int it = 0; it < 5; it++) {
     int cnt = 0;
-    for (int j = 0; j < _shortV.size(); j++) {
-      if (_shortV[j]._skip) {
+    for (const tmg_rcshort& rcshort : _shortV) {
+      if (rcshort._skip) {
         continue;
       }
-      const int i0 = _shortV[j]._i0;
-      const int i1 = _shortV[j]._i1;
+      const int i0 = rcshort._i0;
+      const int i1 = rcshort._i1;
       if (_ptV[i0]._tindex < 0 && _ptV[i1]._tindex >= 0) {
         _ptV[i0]._tindex = _ptV[i1]._tindex;
         cnt++;
@@ -1305,13 +1304,12 @@ int tmg_conn::getStartNode()
   dbITerm* it_drv;
   dbBTerm* bt_drv;
   tmg_getDriveTerm(_net, &it_drv, &bt_drv);
-  for (int j = 0; j < _termV.size(); j++) {
-    tmg_rcterm* x = &_termV[j];
-    if (x->_iterm == it_drv && x->_bterm == bt_drv) {
-      if (!x->_pt) {
+  for (const tmg_rcterm& x : _termV) {
+    if (x._iterm == it_drv && x._bterm == bt_drv) {
+      if (!x._pt) {
         return 0;
       }
-      return (x->_pt - _ptV.data());
+      return (x._pt - _ptV.data());
     }
   }
   return 0;
@@ -1353,13 +1351,12 @@ void tmg_conn::analyzeNet(dbNet* net)
 
 bool tmg_conn::checkConnected()
 {
-  for (int j = 0; j < _termV.size(); j++) {
-    const tmg_rcterm* x = &_termV[j];
-    if (x->_pt == nullptr) {
+  for (const tmg_rcterm& x : _termV) {
+    if (x._pt == nullptr) {
       return false;
     }
   }
-  if (_termV.size() == 0) {
+  if (_termV.empty()) {
     return true;
   }
   _tstackV.clear();
@@ -1429,12 +1426,11 @@ bool tmg_conn::checkConnected()
     }
   }
   bool con = true;
-  for (int j = 0; j < _termV.size(); j++) {
-    tmg_rcterm* x = &_termV[j];
-    if (!x->_first_pt) {
+  for (tmg_rcterm& x : _termV) {
+    if (!x._first_pt) {
       con = false;
     }
-    x->_first_pt = nullptr;  // cleanup
+    x._first_pt = nullptr;  // cleanup
   }
   return con;  // all terms connected, may be floating pieces of wire
 }
@@ -1454,19 +1450,18 @@ void tmg_conn::treeReorder(const bool no_convert)
       _newWire = dbWire::create(_net);
     }
     _encoder.begin(_newWire);
-    for (int j = 0; j < _ptV.size(); j++) {
-      _ptV[j]._dbwire_id = -1;
+    for (tmg_rcpt& pt : _ptV) {
+      pt._dbwire_id = -1;
     }
   }
-  for (int j = 0; j < _termV.size(); j++) {
-    tmg_rcterm* x = &_termV[j];
-    x->_first_pt = nullptr;
-    if (x->_pt == nullptr) {
+  for (tmg_rcterm& x : _termV) {
+    x._first_pt = nullptr;
+    if (x._pt == nullptr) {
       _connected = false;
     }
   }
 
-  if (_termV.size() == 0) {
+  if (_termV.empty()) {
     return;
   }
 
