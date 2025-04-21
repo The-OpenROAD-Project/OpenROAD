@@ -3241,8 +3241,8 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
       = origin + getPinOffset(lowest_grid_pin, target_direction);
 
   auto closest_pos = std::lower_bound(lowest_grid_positions.begin(),
-                                 lowest_grid_positions.end(),
-                                 lowest_pin_center_pos);
+                                      lowest_grid_positions.end(),
+                                      lowest_pin_center_pos);
 
   int starting_position_index
       = std::distance(lowest_grid_positions.begin(), closest_pos);

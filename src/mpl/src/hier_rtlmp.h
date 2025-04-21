@@ -355,7 +355,8 @@ class Snapper
   };
   // ordered by TrackGrid layer number
   using LayerDataList = std::vector<LayerData>;
-  using TrackGridToPinListMap = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
+  using TrackGridToPinListMap
+      = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
 
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
