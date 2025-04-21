@@ -43,7 +43,7 @@
 #include "util/journal.h"
 #include "utl/Logger.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -120,7 +120,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   const char* obj_str
       = (obj_ == DetailedMis::Hpwl) ? "wirelength" : "displacement";
   mgrPtr_->getLogger()->info(
-      DPO, 300, "Set matching objective is {:s}.", obj_str);
+      DPL, 300, "Set matching objective is {:s}.", obj_str);
 
   // If using displacement objective, then it isn't required to use colors.
   if (obj_ == DetailedMis::Disp) {
@@ -140,7 +140,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // of the number of passes.
   collectMovableCells();  // Movable cells.
   if (candidates_.empty()) {
-    mgrPtr_->getLogger()->info(DPO, 202, "No movable cells found");
+    mgrPtr_->getLogger()->info(DPL, 202, "No movable cells found");
     return;
   }
   colorCells();  // Color the cells.
@@ -150,7 +150,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     const double curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
 
     mgrPtr_->getLogger()->info(
-        DPO, 301, "Pass {:3d} of matching; objective is {:.6e}.", p, curr_obj);
+        DPL, 301, "Pass {:3d} of matching; objective is {:.6e}.", p, curr_obj);
 
     // Run the algo here...
     place();
@@ -183,7 +183,7 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     curr_obj = curr_disp;
   }
   mgrPtr_->getLogger()->info(
-      DPO,
+      DPL,
       302,
       "End of matching; objective is {:.6e}, improvement is {:.2f} percent.",
       curr_obj,

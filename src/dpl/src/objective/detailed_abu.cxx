@@ -30,7 +30,7 @@
 
 namespace dpl {
 
-using utl::DPO;
+using utl::DPL;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines.
@@ -370,7 +370,7 @@ double DetailedABU::calculateABU(bool print)
         / (double) (ABU2_WGT + ABU5_WGT + ABU10_WGT + ABU20_WGT);
 
   if (print) {
-    mgrPtr_->getLogger()->info(DPO,
+    mgrPtr_->getLogger()->info(DPL,
                                317,
                                "ABU: Target {:.2f}, "
                                "ABU_2,5,10,20: "

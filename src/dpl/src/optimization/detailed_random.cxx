@@ -31,7 +31,7 @@
 #include "objective/detailed_hpwl.h"
 #include "objective/detailed_objective.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -154,7 +154,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   for (auto generator : generators_) {
     generator->init(mgrPtr_);
 
-    mgrPtr_->getLogger()->info(DPO,
+    mgrPtr_->getLogger()->info(DPL,
                                324,
                                "Random improver is using {:s} generator.",
                                generator->getName().c_str());
@@ -204,7 +204,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
 
   for (auto objective : objectives_) {
-    mgrPtr_->getLogger()->info(DPO,
+    mgrPtr_->getLogger()->info(DPL,
                                325,
                                "Random improver is using {:s} objective.",
                                objective->getName().c_str());
@@ -227,7 +227,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     }
 
     mgrPtr_->getLogger()->info(
-        DPO, 326, "Random improver cost string is {:s}.", costStr.c_str());
+        DPL, 326, "Random improver cost string is {:s}.", costStr.c_str());
 
     expr_.clear();
     for (std::string::iterator it = costStr.begin(); it != costStr.end();
@@ -265,7 +265,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     mgrPtr_->resortSegments();  // Needed?
     double change = go();
     mgrPtr_->getLogger()->info(
-        DPO,
+        DPL,
         327,
         "Pass {:3d} of random improver; improvement in cost is {:.2f} percent.",
         p,
@@ -284,7 +284,7 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 
   double imp = (((iCost - fCost) / iCost) * 100.);
   mgrPtr_->getLogger()->info(
-      DPO, 328, "End of random improver; improvement is {:.6f} percent.", imp);
+      DPL, 328, "End of random improver; improvement is {:.6f} percent.", imp);
 
   // Cleanup.
   for (auto generator : generators_) {
@@ -353,14 +353,14 @@ double DetailedRandom::go()
 {
   if (generators_.empty()) {
     mgrPtr_->getLogger()->info(
-        DPO, 329, "Random improver requires at least one generator.");
+        DPL, 329, "Random improver requires at least one generator.");
     return 0.0;
   }
 
   // Collect candidate cells.
   collectCandidates();
   if (candidates_.empty()) {
-    mgrPtr_->getLogger()->info(DPO, 203, "No movable cells found");
+    mgrPtr_->getLogger()->info(DPL, 203, "No movable cells found");
     return 0.0;
   }
 
@@ -389,7 +389,7 @@ double DetailedRandom::go()
 
   // Test.
   if (eval(currCost_, expr_) < 0.0) {
-    mgrPtr_->getLogger()->info(DPO,
+    mgrPtr_->getLogger()->info(DPL,
                                330,
                                "Test objective function failed, possibly due "
                                "to a badly formed cost function.");
@@ -449,7 +449,7 @@ double DetailedRandom::go()
     }
   }
   for (size_t i = 0; i < gen_count.size(); i++) {
-    mgrPtr_->getLogger()->info(DPO,
+    mgrPtr_->getLogger()->info(DPL,
                                332,
                                "End of pass, Generator {:s} called {:d} times.",
                                generators_[i]->getName().c_str(),
@@ -464,7 +464,7 @@ double DetailedRandom::go()
     nextCost_[i] = scratch;  // Temporary.
     bool error = (std::fabs(scratch - currCost_[i]) > 1.0e-3);
     mgrPtr_->getLogger()->info(
-        DPO,
+        DPL,
         333,
         "End of pass, Objective {:s}, Initial cost {:.6e}, Scratch cost "
         "{:.6e}, Incremental cost {:.6e}, Mismatch? {:c}",
@@ -483,7 +483,7 @@ double DetailedRandom::go()
   }
   const double nextTotalCost = eval(nextCost_, expr_);
   mgrPtr_->getLogger()->info(
-      DPO, 338, "End of pass, Total cost is {:.6e}.", nextTotalCost);
+      DPL, 338, "End of pass, Total cost is {:.6e}.", nextTotalCost);
 
   return ((initTotalCost - currTotalCost) / initTotalCost);
 }
@@ -537,7 +537,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
       = mgr_->getReverseCellToSegs(ndi->getId());
   if (segs_i.size() != 1) {
     mgr_->getLogger()->error(
-        DPO, 385, "Only working with single height cells currently.");
+        DPL, 385, "Only working with single height cells currently.");
   }
 
   // For the window size.  This should be parameterized.
@@ -619,7 +619,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
 void RandomGenerator::stats()
 {
   mgr_->getLogger()->info(
-      DPO,
+      DPL,
       335,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
@@ -790,7 +790,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 void DisplacementGenerator::stats()
 {
   mgr_->getLogger()->info(
-      DPO,
+      DPL,
       337,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",

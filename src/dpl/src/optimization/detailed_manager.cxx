@@ -26,7 +26,7 @@
 #include "util/utility.h"
 #include "utl/Logger.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -84,7 +84,7 @@ void DetailedMgr::shuffle(std::vector<Node*>& nodes)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::setSeed(const int seed)
 {
-  logger_->info(DPO, 401, "Setting random seed to {:d}.", seed);
+  logger_->info(DPL, 401, "Setting random seed to {:d}.", seed);
   rng_->seed(seed);
 }
 
@@ -102,7 +102,7 @@ void DetailedMgr::setMaxDisplacement(const int x, const int y)
   }
   maxDispY_ = std::min(maxDispY_, limit);
 
-  logger_->info(DPO,
+  logger_->info(DPL,
                 402,
                 "Setting maximum displacement {:d} {:d} to "
                 "{:d} {:d} units.",
@@ -122,7 +122,7 @@ void DetailedMgr::setDisallowOneSiteGaps(const bool disallowOneSiteGaps)
 void DetailedMgr::internalError(const std::string& msg)
 {
   logger_->error(
-      DPO, 400, "Detailed improvement internal error: {:s}.", msg.c_str());
+      DPL, 400, "Detailed improvement internal error: {:s}.", msg.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -237,7 +237,7 @@ void DetailedMgr::findSegments()
   // segment ends line up with sites and that segments don't extend off
   // the chip.
   auto core = grid_->getCore();
-  logger_->info(DPO,
+  logger_->info(DPL,
                 322,
                 "Image ({:d}, {:d}) - ({:d}, {:d})",
                 arch_->getMinX().v + core.xMin(),
@@ -876,7 +876,7 @@ void DetailedMgr::assignCellsToSegments(
     paintInGrid(nd);
   }
   // TODO: remove conversion back to double and update ok
-  logger_->info(DPO,
+  logger_->info(DPL,
                 310,
                 "Assigned {:d} cells into segments.  Movement in X-direction "
                 "is {:f}, movement in Y-direction is {:f}.",
@@ -1036,7 +1036,7 @@ void DetailedMgr::collectSingleHeightCells()
 
     singleHeightCells_.push_back(nd);
   }
-  logger_->info(DPO,
+  logger_->info(DPL,
                 318,
                 "Collected {:d} single height cells.",
                 singleHeightCells_.size());
@@ -1080,7 +1080,7 @@ void DetailedMgr::collectMultiHeightCells()
     if (multiHeightCells_[i].empty()) {
       continue;
     }
-    logger_->info(DPO,
+    logger_->info(DPL,
                   319,
                   "Collected {:d} multi-height cells spanning {:d} rows.",
                   multiHeightCells_[i].size(),
@@ -1107,7 +1107,7 @@ void DetailedMgr::collectFixedCells()
     }
   }
 
-  logger_->info(DPO, 320, "Collected {:d} fixed cells.", fixedCells_.size());
+  logger_->info(DPL, 320, "Collected {:d} fixed cells.", fixedCells_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1136,7 +1136,7 @@ void DetailedMgr::collectWideCells()
       }
     }
   }
-  logger_->info(DPO, 321, "Collected {:d} wide cells.", wideCells_.size());
+  logger_->info(DPL, 321, "Collected {:d} wide cells.", wideCells_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1191,7 +1191,7 @@ int DetailedMgr::checkOverlapInSegments()
     }
   }
 
-  logger_->info(DPO, 311, "Found {:d} overlaps between adjacent cells.", err_n);
+  logger_->info(DPL, 311, "Found {:d} overlaps between adjacent cells.", err_n);
   return err_n;
 }
 
@@ -1248,7 +1248,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   }
 
   logger_->info(
-      DPO,
+      DPL,
       312,
       "Found {:d} edge spacing violations and {:d} padding violations.",
       err_n,
@@ -1308,7 +1308,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
                           nd->getBottom(),
                           nd->getTop())) {
               if (nd->isTerminal() || nd->isFixed()) {
-                logger_->warn(DPO,
+                logger_->warn(DPL,
                               339,
                               "One-site gap violation detected with a "
                               "Fixed/Terminal cell {}",
@@ -1318,7 +1318,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
               }
               if (arch_->isMultiHeightCell(nd)) {
                 // TODO: Can be done
-                logger_->warn(DPO,
+                logger_->warn(DPL,
                               340,
                               "One-site gap violation detected with a "
                               "multi-height cell {}",
@@ -1425,7 +1425,7 @@ int DetailedMgr::checkRegionAssignment()
     }
   }
 
-  logger_->info(DPO, 313, "Found {:d} cells in wrong regions.", err_n);
+  logger_->info(DPL, 313, "Found {:d} cells in wrong regions.", err_n);
 
   return err_n;
 }
@@ -1483,7 +1483,7 @@ int DetailedMgr::checkSiteAlignment()
       }
     }
   }
-  logger_->info(DPO, 314, "Found {:d} site alignment problems.", err_n);
+  logger_->info(DPL, 314, "Found {:d} site alignment problems.", err_n);
   return err_n;
 }
 
@@ -1514,7 +1514,7 @@ int DetailedMgr::checkRowAlignment()
       ++err_n;
     }
   }
-  logger_->info(DPO, 315, "Found {:d} row alignment problems.", err_n);
+  logger_->info(DPL, 315, "Found {:d} row alignment problems.", err_n);
   return err_n;
 }
 

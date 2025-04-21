@@ -12,7 +12,7 @@
 
 namespace dpl {
 
-using utl::DPO;
+using utl::DPL;
 
 ////////////////////////////////////////////////////////////////
 void Opendp::improvePlacement(const int seed,

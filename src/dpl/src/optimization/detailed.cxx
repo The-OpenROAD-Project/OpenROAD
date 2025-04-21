@@ -26,7 +26,7 @@
 #include "optimization/detailed_reorder.h"
 #include "optimization/detailed_vertical.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -97,7 +97,7 @@ bool Detailed::improve(DetailedMgr& mgr)
                                 + ",]"[nodeId == oneSiteViolations[i].back()];
         }
         mgr_->getLogger()->warn(
-            DPO,
+            DPL,
             323,
             "One site gap violation in segment {:d} nodes: {}",
             i,
@@ -139,9 +139,9 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   } else if (strcmp(args[0].c_str(), "disallow_one_site_gaps") == 0) {
     command = "disallow_one_site_gaps";
   } else {
-    logger->error(DPO, 1, "Unknown algorithm {:s}.", args[0]);
+    logger->error(DPL, 341, "Unknown algorithm {:s}.", args[0]);
   }
-  logger->info(DPO, 303, "Running algorithm for {:s}.", command);
+  logger->info(DPL, 303, "Running algorithm for {:s}.", command);
 
   if (strcmp(args[0].c_str(), "mis") == 0) {
     DetailedMis mis(arch_, network_);

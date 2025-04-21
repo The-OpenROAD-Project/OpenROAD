@@ -17,7 +17,7 @@
 #include "util/utility.h"
 #include "utl/Logger.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -80,7 +80,7 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
-    mgrPtr_->getLogger()->info(DPO,
+    mgrPtr_->getLogger()->info(DPL,
                                304,
                                "Pass {:3d} of reordering; objective is {:.6e}.",
                                p,
@@ -96,7 +96,7 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
   const double curr_imp
       = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
   mgrPtr_->getLogger()->info(
-      DPO,
+      DPL,
       305,
       "End of reordering; objective is {:.6e}, improvement is {:.2f} percent.",
       (double) curr_hpwl,

@@ -130,11 +130,10 @@ class Opendp
   // Find a cluster of instances that are touching each other
   std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
   Padding* getPadding() { return padding_.get(); }
-  // TODO: START DPO code
   void improvePlacement(int seed,
                         int max_displacement_x,
                         int max_displacement_y);
-  // TODO: END DPO code
+
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,

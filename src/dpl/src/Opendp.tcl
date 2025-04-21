@@ -167,11 +167,11 @@ proc improve_placement { args } {
     keys {-random_seed -max_displacement} flags {-disallow_one_site_gaps}
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error DPO 2 "No design block found."
+    utl::error DPL 342 "No design block found."
   }
 
   if { [info exists flags(-disallow_one_site_gaps)] } {
-    utl::warn DPO 3 "-disallow_one_site_gaps is deprecated"
+    utl::warn DPL 343"-disallow_one_site_gaps is deprecated"
   }
   set seed 1
   if { [info exists keys(-random_seed)] } {
@@ -188,7 +188,7 @@ proc improve_placement { args } {
       sta::check_positive_integer "-max_displacement" $max_displacement_x
       sta::check_positive_integer "-max_displacement" $max_displacement_y
     } else {
-      sta::error DPO 31 "-max_displacement disp|{disp_x disp_y}"
+      sta::error DPL 344 "-max_displacement disp|{disp_x disp_y}"
     }
   } else {
     # use default displacement

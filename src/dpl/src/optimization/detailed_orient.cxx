@@ -17,7 +17,7 @@
 #include "util/utility.h"
 #include "utl/Logger.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -63,7 +63,7 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
     }
   }
 
-  mgrPtr_->getLogger()->info(DPO, 380, "Cell flipping.");
+  mgrPtr_->getLogger()->info(DPL, 380, "Cell flipping.");
   uint64_t hpwl_x, hpwl_y;
   int64_t init_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
@@ -72,13 +72,13 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   int errors = orientCells(changed);
   if (errors != 0) {
     mgrPtr_->getLogger()->warn(
-        DPO,
+        DPL,
         381,
         "Encountered {:d} issues when orienting cells for rows.",
         errors);
   }
   mgrPtr_->getLogger()->info(
-      DPO,
+      DPL,
       382,
       "Changed {:d} cell orientations for row compatibility.",
       changed);
@@ -86,13 +86,13 @@ void DetailedOrient::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // Optionally perform cell flipping.
   if (doFlip) {
     int nflips = flipCells();
-    mgrPtr_->getLogger()->info(DPO, 383, "Performed {:d} cell flips.", nflips);
+    mgrPtr_->getLogger()->info(DPL, 383, "Performed {:d} cell flips.", nflips);
   }
 
   int64_t curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   double curr_imp = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
   mgrPtr_->getLogger()->info(
-      DPO,
+      DPL,
       384,
       "End of flipping; objective is {:.6e}, improvement is {:.2f} percent.",
       (double) curr_hpwl,

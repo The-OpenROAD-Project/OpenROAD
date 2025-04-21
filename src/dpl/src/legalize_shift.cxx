@@ -21,7 +21,7 @@
 #include "optimization/detailed_manager.h"
 #include "utl/Logger.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -168,7 +168,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   if (isDisp) {
     mgr_->getLogger()->warn(
-        DPO, 200, "Unexpected displacement during legalization.");
+        DPL, 200, "Unexpected displacement during legalization.");
 
     retval = false;
   }
@@ -184,7 +184,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   // Good place to issue some sort of warning.
   if (err1 != 0 || err2 != 0 || err3 != 0 || err4 != 0 || err5 != 0) {
     mgr_->getLogger()->warn(
-        DPO, 201, "Placement check failure during legalization.");
+        DPL, 201, "Placement check failure during legalization.");
 
     retval = false;
   }

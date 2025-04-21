@@ -17,7 +17,7 @@
 #include "util/utility.h"
 #include "utl/Logger.h"
 
-using utl::DPO;
+using utl::DPL;
 
 namespace dpl {
 
@@ -95,7 +95,7 @@ void DetailedVerticalSwap::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
-    mgr_->getLogger()->info(DPO,
+    mgr_->getLogger()->info(DPL,
                             308,
                             "Pass {:3d} of vertical swaps; hpwl is {:.6e}.",
                             p,
@@ -108,7 +108,7 @@ void DetailedVerticalSwap::run(DetailedMgr* mgrPtr,
   }
   const double curr_imp
       = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
-  mgr_->getLogger()->info(DPO,
+  mgr_->getLogger()->info(DPL,
                           309,
                           "End of vertical swaps; objective is {:.6e}, "
                           "improvement is {:.2f} percent.",
@@ -378,7 +378,7 @@ bool DetailedVerticalSwap::generate(DetailedMgr* mgr,
 void DetailedVerticalSwap::stats()
 {
   mgr_->getLogger()->info(
-      DPO,
+      DPL,
       336,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",

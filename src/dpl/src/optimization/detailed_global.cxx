@@ -17,7 +17,7 @@
 
 namespace dpl {
 
-using utl::DPO;
+using utl::DPL;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
 
     curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
 
-    mgr_->getLogger()->info(DPO,
+    mgr_->getLogger()->info(DPL,
                             306,
                             "Pass {:3d} of global swaps; hpwl is {:.6e}.",
                             p,
@@ -105,7 +105,7 @@ void DetailedGlobalSwap::run(DetailedMgr* mgrPtr,
     }
   }
   double curr_imp = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
-  mgr_->getLogger()->info(DPO,
+  mgr_->getLogger()->info(DPL,
                           307,
                           "End of global swaps; objective is {:.6e}, "
                           "improvement is {:.2f} percent.",
@@ -389,7 +389,7 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
 void DetailedGlobalSwap::stats()
 {
   mgr_->getLogger()->info(
-      DPO,
+      DPL,
       334,
       "Generator {:s}, "
       "Cumulative attempts {:d}, swaps {:d}, moves {:5d} since last reset.",
