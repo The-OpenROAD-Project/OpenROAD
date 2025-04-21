@@ -1474,7 +1474,7 @@ void tmg_conn::treeReorder(const bool no_convert)
   _path_rule = _net_rule;
 
   int tstack0 = 0;
-  _tstackV.clear();;
+  _tstackV.clear();
   int jstart = getStartNode();
   tmg_rcterm* xstart = nullptr;
   if (_ptV[jstart]._tindex >= 0) {
