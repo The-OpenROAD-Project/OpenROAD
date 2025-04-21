@@ -56,6 +56,9 @@
 #include "utl/MakeLogger.h"
 #include "utl/ScopedTemporaryFile.h"
 
+// added by p2f
+#include "p2f/MakeP2f.hh"
+
 namespace sta {
 extern const char* openroad_swig_tcl_inits[];
 extern const char* upf_tcl_inits[];
@@ -115,6 +118,9 @@ OpenRoad::~OpenRoad()
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
+
+  // added by p2f
+  p2f::deleteP2f(p2f_);
   delete logger_;
   delete verilog_reader_;
 }
@@ -182,6 +188,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   stt_builder_ = makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
 
+  // added by p2f
+  p2f_ = p2f::makeP2f();
+
   // Init components.
   Openroad_swig_Init(tcl_interp);
   // Import TCL scripts.
@@ -216,6 +225,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initDistributed(this);
   initSteinerTreeBuilder(this);
   dft::initDft(this);
+
+  // added by p2f
+  p2f::initP2f(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
