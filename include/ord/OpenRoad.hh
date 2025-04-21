@@ -258,7 +258,7 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
-  p2f::P2f* p2f_ = nullptr; 
+  p2f::P2f* p2f_ = nullptr;
 
   int threads_ = 1;
 
