@@ -218,21 +218,6 @@ void Opendp::createArchitecture()
     // Orientation.  From the row.
     archRow->setOrient(row->getOrient());
   }
-  for (const auto& skip : skip_list) {
-    std::string skip_string = "[";
-    int i = 0;
-    for (const auto& skipped_site : skip.second) {
-      skip_string += skipped_site + ",]"[i == skip.second.size() - 1];
-      ++i;
-    }
-    logger_->warn(utl::DPO,
-                  108,
-                  "Skipping all the rows with sites {} as their height is {} "
-                  "and the single-height is {}.",
-                  skip_string,
-                  skip.first,
-                  min_row_height);
-  }
   // Get surrounding box.
   {
     DbuX xmin = std::numeric_limits<DbuX>::max();

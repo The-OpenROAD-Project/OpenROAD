@@ -5,10 +5,6 @@
 [INFO ODB-0131]     Created 1 components and 5 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 1 connections.
 Detailed placement improvement.
-Importing netlist into detailed improver.
-[INFO DPO-0100] Creating network with 1 cells, 1 terminals, 2 edges, 2 pins, and 1 blockages.
-[INFO DPO-0109] Network stats: inst 2, edges 2, pins 2
-[INFO DPO-0110] Number of regions is 1
 [INFO DPO-0401] Setting random seed to 1.
 [INFO DPO-0402] Setting maximum displacement 5 1 to 13600 2720 units.
 [INFO DPO-0320] Collected 1 fixed cells.
