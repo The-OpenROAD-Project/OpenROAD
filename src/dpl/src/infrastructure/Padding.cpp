@@ -31,6 +31,9 @@ bool Padding::havePadding() const
 
 bool Padding::isPaddedType(dbInst* inst) const
 {
+  if (inst == nullptr) {
+    return false;
+  }
   dbMasterType type = inst->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type.getValue()) {
