@@ -268,6 +268,7 @@ add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
 add_subdirectory(dft)
+add_subdirectory(p2f)
 add_subdirectory(mpl)
 add_subdirectory(par)
 
@@ -332,6 +333,7 @@ target_link_libraries(openroad
   dft
   mpl
   par
+  p2f
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -407,6 +409,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     pdn_py
     dft_py
     par_py
+    p2f_py
   )
 
 else()
