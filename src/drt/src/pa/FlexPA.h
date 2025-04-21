@@ -253,24 +253,27 @@ class FlexPA
   std::vector<gtl::polygon_90_set_data<frCoord>>
   mergePinShapes(T* pin, frInstTerm* inst_term, bool is_shrink = false);
 
+  void createAPsFromLayerToRectCoordsMap(
+      const LayerToRectCoordsMap& layer_rect_to_coords,
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      frInstTerm* inst_term,
+      const frAccessPointEnum lower_type,
+      const frAccessPointEnum upper_type);
+
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
    * @brief Generates all necessary access points from all pin_shapes (pin)
    *
    * @param aps vector of access points that will be filled
    * @param apset set of access points data (auxilary)
-   * @param pin pin object
    * @param inst_term instance terminal, owner of the access points
    * @param pin_shapes vector of pin shapes in every layer
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    */
-  template <typename T>
   void genAPsFromPinShapes(
       LayerToRectCoordsMap& layer_rect_to_coords,
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
-      T* pin,
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       frAccessPointEnum lower_type,
@@ -279,8 +282,6 @@ class FlexPA
   /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
    *
-   * @param aps vector of access points that will be filled
-   * @param apset set of access points data (auxilary)
    * @param inst_term instance terminal, owner of the access points
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
@@ -289,8 +290,6 @@ class FlexPA
    */
   void genAPsFromLayerShapes(
       LayerToRectCoordsMap& layer_rect_to_coords,
-      std::vector<std::unique_ptr<frAccessPoint>>& aps,
-      std::set<std::pair<Point, frLayerNum>>& apset,
       frInstTerm* inst_term,
       const gtl::polygon_90_set_data<frCoord>& layer_shapes,
       frLayerNum layer_num,
@@ -301,11 +300,7 @@ class FlexPA
    * @brief Generates all necessary access points from a rectangle shape (pin
    * fig)
    *
-   * @param aps vector of access points that will be filled
-   * @param apset set of access points data (auxilary)
    * @param layer_num layer in which the rectangle exists
-   * @param allow_planar if planar access is allowed
-   * @param allow_via if via access is allowed
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    * @param is_macro_cell_pin if the pin belongs to a macro
@@ -314,7 +309,7 @@ class FlexPA
                       frLayerNum layer_num,
                       std::map<frCoord, frAccessPointEnum>& x_coords,
                       std::map<frCoord, frAccessPointEnum>& y_coords,
-                      frAccessPointEnum& lower_type,
+                      frAccessPointEnum lower_type,
                       frAccessPointEnum upper_type,
                       bool is_macro_cell_pin);
 
@@ -616,10 +611,8 @@ class FlexPA
   /**
    * @brief Serially updates some of general pin stats
    */
-  template <typename T>
   void updatePinStats(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
-      T* pin,
       frInstTerm* inst_term);
 
   /**

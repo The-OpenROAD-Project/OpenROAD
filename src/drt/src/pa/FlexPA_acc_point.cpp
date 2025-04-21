@@ -353,7 +353,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             const frLayerNum layer_num,
                             std::map<frCoord, frAccessPointEnum>& x_coords,
                             std::map<frCoord, frAccessPointEnum>& y_coords,
-                            frAccessPointEnum& lower_type,
+                            const frAccessPointEnum lower_type,
                             const frAccessPointEnum upper_type,
                             const bool is_macro_cell_pin)
 {
@@ -423,7 +423,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                   offset);
     }
   }
-  if (!(is_macro_cell_pin && use_center_line)) {
+  if (!use_center_line) {
     for (const auto cost : frDirEnums) {
       if (lower_type >= cost) {
         genAPCosted(cost,
@@ -441,8 +441,10 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
     }
   }
 
-  if (is_macro_cell_pin && use_center_line && is_layer1_horz) {
-    lower_type = frAccessPointEnum::OnGrid;
+  if (use_center_line && is_layer1_horz) {
+    for (auto& [layer1_coord, cost] : layer1_coords) {
+      layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
+    }
   }
 }
 
@@ -464,8 +466,6 @@ bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
 
 void FlexPA::genAPsFromLayerShapes(
     LayerToRectCoordsMap& layer_rect_to_coords,
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    std::set<std::pair<Point, frLayerNum>>& apset,
     frInstTerm* inst_term,
     const gtl::polygon_90_set_data<frCoord>& layer_shapes,
     const frLayerNum layer_num,
@@ -479,7 +479,6 @@ void FlexPA::genAPsFromLayerShapes(
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
   for (auto& bbox_rect : maxrects) {
-    frAccessPointEnum this_lower_type = lower_type;
     std::map<frCoord, frAccessPointEnum> x_coords;
     std::map<frCoord, frAccessPointEnum> y_coords;
 
@@ -487,22 +486,12 @@ void FlexPA::genAPsFromLayerShapes(
                    layer_num,
                    x_coords,
                    y_coords,
-                   this_lower_type,
+                   lower_type,
                    upper_type,
                    is_macro_cell_pin);
 
     layer_rect_to_coords[layer_num].push_back(
         {bbox_rect, {x_coords, y_coords}});
-
-    createMultipleAccessPoints(inst_term,
-                               aps,
-                               apset,
-                               bbox_rect,
-                               layer_num,
-                               x_coords,
-                               y_coords,
-                               this_lower_type,
-                               upper_type);
   }
 }
 
@@ -512,12 +501,32 @@ void FlexPA::genAPsFromLayerShapes(
 // lower center  2, upper on-grid 0 = 2
 // lower center  2, upper center  2 = 4
 
-template <typename T>
-void FlexPA::genAPsFromPinShapes(
-    LayerToRectCoordsMap& layer_rect_to_coords,
+void FlexPA::createAPsFromLayerToRectCoordsMap(
+    const LayerToRectCoordsMap& layer_rect_to_coords,
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
-    T* pin,
+    frInstTerm* inst_term,
+    const frAccessPointEnum lower_type,
+    const frAccessPointEnum upper_type)
+{
+  for (const auto& [layer_num, rect_coords] : layer_rect_to_coords) {
+    for (const auto& [rect, coords] : rect_coords) {
+      const auto& [x_coords, y_coords] = coords;
+      createMultipleAccessPoints(inst_term,
+                                 aps,
+                                 apset,
+                                 rect,
+                                 layer_num,
+                                 x_coords,
+                                 y_coords,
+                                 lower_type,
+                                 upper_type);
+    }
+  }
+}
+
+void FlexPA::genAPsFromPinShapes(
+    LayerToRectCoordsMap& layer_rect_to_coords,
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     const frAccessPointEnum lower_type,
@@ -528,8 +537,6 @@ void FlexPA::genAPsFromPinShapes(
     if (!layer_shapes.empty()
         && getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
       genAPsFromLayerShapes(layer_rect_to_coords,
-                            aps,
-                            apset,
                             inst_term,
                             layer_shapes,
                             layer_num,
@@ -1088,18 +1095,15 @@ void FlexPA::filterMultipleAPAccesses(
   }
 }
 
-template <typename T>
 void FlexPA::updatePinStats(
     const std::vector<std::unique_ptr<frAccessPoint>>& new_aps,
-    T* pin,
     frInstTerm* inst_term)
 {
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
+  if (!inst_term) {
+    return;
   }
+  bool is_std_cell_pin = isStdCell(inst_term->getInst());
+  bool is_macro_cell_pin = isMacroCell(inst_term->getInst());
   for (auto& ap : new_aps) {
     if (ap->hasPlanarAccess()) {
       if (is_std_cell_pin) {
@@ -1194,37 +1198,16 @@ bool FlexPA::genPinAccessCostBounded(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  // logger_->report("[BNMFW] New Cost Profile");
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
 
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   LayerToRectCoordsMap layer_rect_to_coords;
-  genAPsFromPinShapes(layer_rect_to_coords,
-                      new_aps,
-                      apset,
-                      pin,
-                      inst_term,
-                      pin_shapes,
-                      lower_type,
-                      upper_type);
-  // for (const auto& [layer_num, rect_coords]: layer_rect_to_coords) {
-  //   logger_->report("[BNMFW] Layer={}", (int) layer_num);
-  //   for (const auto& [rect, coords]: rect_coords) {
-  //     const auto& [x_coords, y_coords] = coords;
-  //     logger_->report("[BNMFW] X coords:");
-  //     for (const auto& [coordinate, cost]: x_coords) {
-  //       logger_->report("[BNMFW] coord={} cost={}", (int) coordinate, (int)
-  //       cost);
-  //     }
-  //     logger_->report("[BNMFW] Y coords:");
-  //     for (const auto& [coordinate, cost]: y_coords) {
-  //       logger_->report("[BNMFW] coord={} cost={}", (int) coordinate, (int)
-  //       cost);
-  //     }
-  //   }
-  // }
+  genAPsFromPinShapes(
+      layer_rect_to_coords, inst_term, pin_shapes, lower_type, upper_type);
+  createAPsFromLayerToRectCoordsMap(
+      layer_rect_to_coords, new_aps, apset, inst_term, lower_type, upper_type);
   filterMultipleAPAccesses(
       new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
@@ -1262,9 +1245,7 @@ bool FlexPA::genPinAccessCostBounded(
   const int pin_access_idx
       = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
 
-  if (is_std_cell_pin || is_macro_cell_pin) {
-    updatePinStats(aps, pin, inst_term);
-  }
+  updatePinStats(aps, inst_term);
   // write to pa
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
@@ -1345,7 +1326,6 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 template <typename T>
 int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
-  // logger_->report("[BNMFW] New Pin");
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
@@ -1395,7 +1375,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // inst_term aps are written back here if not early stopped
   // IO term aps are are written back in genPinAccessCostBounded and always
   // early stopped
-  updatePinStats(aps, pin, inst_term);
+  updatePinStats(aps, inst_term);
   const int n_aps = aps.size();
   if (n_aps == 0) {
     if (inst_term && isStdCell(inst_term->getInst())) {
