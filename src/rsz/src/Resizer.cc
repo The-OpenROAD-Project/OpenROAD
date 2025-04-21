@@ -3666,8 +3666,15 @@ double Resizer::findMaxWireLength1()
 
     // buffer_cells_ is required to be non-empty.
     for (LibertyCell* buffer_cell : buffer_cells_) {
-      double buffer_length = findMaxWireLength(buffer_cell, corner);
+      const double buffer_length = findMaxWireLength(buffer_cell, corner);
       max_length = min(max_length.value_or(INF), buffer_length);
+      debugPrint(logger_,
+                 RSZ,
+                 "max_wire_length",
+                 1,
+                 "Buffer {} has max_wire_length {}",
+                 buffer_cell->name(),
+                 units_->distanceUnit()->asString(buffer_length));
     }
   }
 
