@@ -23,7 +23,6 @@
 #include "db_sta/dbSta.hh"
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
-// #include "dpo/MakeOptdp.h"
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
@@ -93,7 +92,6 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  // deleteOptdp(optdp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
@@ -160,7 +158,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
-  // optdp_ = makeOptdp();
   finale_ = makeFinale();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
@@ -196,7 +193,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initIoplacer(this);
   initReplace(this);
   initOpendp(this);
-  // initOptdp(this);
   initFinale(this);
   initGlobalRouter(this);
   initTritonCts(this);
