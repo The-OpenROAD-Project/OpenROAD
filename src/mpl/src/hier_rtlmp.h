@@ -354,15 +354,16 @@ class Snapper
     std::vector<odb::dbITerm*> pins;
   };
   // ordered by TrackGrid layer number
-  using SnapData = std::vector<LayerData>;
+  using LayerDataList = std::vector<LayerData>;
+  using TrackGridToPinListMap = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
 
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  int totalPinsAligned(const SnapData& snap_data,
+  int totalPinsAligned(const LayerDataList& layers_data_list,
                        const odb::dbTechLayerDir& direction);
 
-  SnapData computeSameDirectionPatternsData(
+  LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);
   odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
   void getTrackGridPattern(odb::dbTrackGrid* track_grid,
@@ -375,7 +376,7 @@ class Snapper
                          int position,
                          const odb::dbTechLayerDir& direction);
   void attemptSnapToExtraPatterns(int start_index,
-                                  const SnapData& snap_data,
+                                  const LayerDataList& layers_data_list,
                                   const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;

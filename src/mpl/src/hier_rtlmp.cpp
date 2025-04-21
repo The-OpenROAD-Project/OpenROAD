@@ -3220,13 +3220,13 @@ void Snapper::snapMacro()
 
 void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 {
-  SnapData snap_data = computeSameDirectionPatternsData(target_direction);
+  LayerDataList layers_data_list = computeLayerDataList(target_direction);
 
   int origin = target_direction == odb::dbTechLayerDir::VERTICAL
                    ? inst_->getOrigin().x()
                    : inst_->getOrigin().y();
 
-  if (snap_data.empty()) {
+  if (layers_data_list.empty()) {
     // There are no pins to align with the track-grid.
     alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
@@ -3234,13 +3234,13 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
   }
 
   const std::vector<int>& lowest_grid_positions
-      = snap_data[0].available_positions;
-  odb::dbITerm* lowest_grid_pin = snap_data[0].pins[0];
+      = layers_data_list[0].available_positions;
+  odb::dbITerm* lowest_grid_pin = layers_data_list[0].pins[0];
 
-  int lowest_pin_center_pos
+  const int lowest_pin_center_pos
       = origin + getPinOffset(lowest_grid_pin, target_direction);
 
-  auto closest_pos = lower_bound(lowest_grid_positions.begin(),
+  auto closest_pos = std::lower_bound(lowest_grid_positions.begin(),
                                  lowest_grid_positions.end(),
                                  lowest_pin_center_pos);
 
@@ -3256,7 +3256,7 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
                     target_direction);
 
   attemptSnapToExtraPatterns(
-      starting_position_index, snap_data, target_direction);
+      starting_position_index, layers_data_list, target_direction);
 }
 
 void Snapper::setOrigin(const int origin,
@@ -3269,10 +3269,10 @@ void Snapper::setOrigin(const int origin,
   }
 }
 
-Snapper::SnapData Snapper::computeSameDirectionPatternsData(
+Snapper::LayerDataList Snapper::computeLayerDataList(
     const odb::dbTechLayerDir& target_direction)
 {
-  std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>> data;
+  TrackGridToPinListMap track_grid_to_pin_list;
 
   odb::dbBlock* block = inst_->getBlock();
 
@@ -3294,36 +3294,36 @@ Snapper::SnapData Snapper::computeSameDirectionPatternsData(
             MPL, 39, "No track-grid found for layer {}", layer->getName());
       }
 
-      data[track_grid].push_back(iterm);
+      track_grid_to_pin_list[track_grid].push_back(iterm);
     }
   }
 
-  auto cmp_pins = [&](odb::dbITerm* pin1, odb::dbITerm* pin2) {
+  auto cmp_pins_center = [&](odb::dbITerm* pin1, odb::dbITerm* pin2) {
     return (target_direction == odb::dbTechLayerDir::VERTICAL
                 ? pin1->getBBox().xCenter() < pin2->getBBox().xCenter()
                 : pin1->getBBox().yCenter() < pin2->getBBox().yCenter());
   };
 
-  auto cmp_tracks = [](LayerData data1, LayerData data2) {
+  auto cmp_layer_number = [](LayerData data1, LayerData data2) {
     return (data1.track_grid->getTechLayer()->getNumber()
             < data2.track_grid->getTechLayer()->getNumber());
   };
 
-  SnapData snap_data;
-  for (auto& [track_grid, pins] : data) {
+  LayerDataList layers_data_list;
+  for (auto& [track_grid, pins] : track_grid_to_pin_list) {
     std::vector<int> positions;
     if (target_direction == odb::dbTechLayerDir::VERTICAL) {
       track_grid->getGridX(positions);
     } else {
       track_grid->getGridY(positions);
     }
-    std::sort(pins.begin(), pins.end(), cmp_pins);
-    snap_data.push_back(LayerData{track_grid, positions, pins});
+    std::sort(pins.begin(), pins.end(), cmp_pins_center);
+    layers_data_list.push_back(LayerData{track_grid, positions, pins});
   }
 
-  std::sort(snap_data.begin(), snap_data.end(), cmp_tracks);
+  std::sort(layers_data_list.begin(), layers_data_list.end(), cmp_layer_number);
 
-  return snap_data;
+  return layers_data_list;
 }
 
 odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin)
@@ -3392,19 +3392,19 @@ void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
 
 void Snapper::attemptSnapToExtraPatterns(
     const int start_index,
-    const SnapData& snap_data,
+    const LayerDataList& layers_data_list,
     const odb::dbTechLayerDir& target_direction)
 {
   const int total_attempts = 100;
-  const int total_pins = std::accumulate(snap_data.begin(),
-                                         snap_data.end(),
+  const int total_pins = std::accumulate(layers_data_list.begin(),
+                                         layers_data_list.end(),
                                          0,
                                          [](int total, const LayerData& data) {
                                            return total + data.pins.size();
                                          });
 
-  odb::dbITerm* snap_pin = snap_data[0].pins[0];
-  const std::vector<int>& positions = snap_data[0].available_positions;
+  odb::dbITerm* snap_pin = layers_data_list[0].pins[0];
+  const std::vector<int>& positions = layers_data_list[0].available_positions;
 
   int best_index = start_index;
   int best_snapped_pins = 0;
@@ -3416,12 +3416,12 @@ void Snapper::attemptSnapToExtraPatterns(
     int current_index = start_index + steps;
 
     if (current_index < 0
-        || current_index >= snap_data[0].available_positions.size()) {
+        || current_index >= layers_data_list[0].available_positions.size()) {
       continue;
     }
     snapPinToPosition(snap_pin, positions[current_index], target_direction);
 
-    int snapped_pins = totalPinsAligned(snap_data, target_direction);
+    int snapped_pins = totalPinsAligned(layers_data_list, target_direction);
 
     if (snapped_pins > best_snapped_pins) {
       best_snapped_pins = snapped_pins;
@@ -3435,12 +3435,12 @@ void Snapper::attemptSnapToExtraPatterns(
   snapPinToPosition(snap_pin, positions[best_index], target_direction);
 }
 
-int Snapper::totalPinsAligned(const SnapData& snap_data,
+int Snapper::totalPinsAligned(const LayerDataList& layers_data_list,
                               const odb::dbTechLayerDir& direction)
 {
   int pins_aligned = 0;
 
-  for (auto& data : snap_data) {
+  for (auto& data : layers_data_list) {
     std::vector<int> pin_centers(data.pins.size());
     for (auto& pin : data.pins) {
       pin_centers.push_back(direction == odb::dbTechLayerDir::VERTICAL
