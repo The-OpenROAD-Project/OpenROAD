@@ -1101,8 +1101,7 @@ void FlexPA::updatePinStats(
     is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
   for (auto& ap : new_aps) {
-    if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
-        || ap->hasAccess(frDirEnum::S) || ap->hasAccess(frDirEnum::N)) {
+    if (ap->hasPlanarAccess()) {
       if (is_std_cell_pin) {
 #pragma omp atomic
         std_cell_pin_valid_planar_ap_cnt_++;
@@ -1199,6 +1198,7 @@ bool FlexPA::genPinAccessCostBounded(
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
+
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   LayerToRectCoordsMap layer_rect_to_coords;
   genAPsFromPinShapes(layer_rect_to_coords,
@@ -1259,27 +1259,17 @@ bool FlexPA::genPinAccessCostBounded(
     return false;
   }
 
+  const int pin_access_idx
+      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
+
   if (is_std_cell_pin || is_macro_cell_pin) {
     updatePinStats(aps, pin, inst_term);
-    // write to pa
-    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
-    for (auto& ap : aps) {
-      pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-    }
-    return true;
   }
-
-  if (is_io_pin) {
-    // IO term pin always only have one access
-    for (auto& ap : aps) {
-      pin->getPinAccess(0)->addAccessPoint(std::move(ap));
-    }
-    return true;
+  // write to pa
+  for (auto& ap : aps) {
+    pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
   }
-
-  // weird edge case where pin is not from std_cell, macro or io, not sure it
-  // can even happen
-  return false;
+  return true;
 }
 
 template <typename T>
