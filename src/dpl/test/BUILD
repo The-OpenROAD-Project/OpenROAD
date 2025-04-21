@@ -70,6 +70,15 @@ COMPULSORY_TESTS = [
     "simple09",
     "simple10",
     "edge_spacing",
+    "aes-opt",
+    "blockage1-opt",
+    "gcd-opt",
+    "gcd_no_one_site_gaps-opt",
+    "ibex-opt",
+    "multi_height1-opt",
+    "edge_spacing-opt",
+    "regions1-opt",
+    "regions2-opt"
 ]
 
 # Disabled in CMakeLists.txt
@@ -116,6 +125,7 @@ filegroup(
         "Nangate45/fakeram45_64x96.lib",
         "Nangate45/work_around_yosys/cells.v",
         "Nangate45_data/Nangate45.lef",
+        "Nangate45_data/Nangate45-opt.lef",
         "Nangate45_data/fake_macros.lef",
         "aes_cipher_top_replace.def",
         "block.lef",
