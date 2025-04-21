@@ -18,10 +18,9 @@ void tmg_conn::checkConnOrdered()
   std::unordered_set<dbITerm*> iterms;
   std::unordered_set<dbBTerm*> bterms;
   _connected = true;
-  dbWire* wire = _net->getWire();
   dbWirePathItr pitr;
+  pitr.begin(_net->getWire());
   dbWirePath path;
-  pitr.begin(wire);
   bool first = true;
   while (pitr.getNextPath(path)) {
     if (!path.is_branch) {
@@ -54,13 +53,9 @@ void tmg_conn::checkConnOrdered()
     dbWirePathShape pathShape;
     while (pitr.getNextShape(pathShape)) {
       if (pathShape.iterm) {
-        if (iterms.find(pathShape.iterm) == iterms.end()) {
-          iterms.insert(pathShape.iterm);
-        }
+        iterms.insert(pathShape.iterm);
       } else if (pathShape.bterm) {
-        if (bterms.find(pathShape.bterm) == bterms.end()) {
-          bterms.insert(pathShape.bterm);
-        }
+        bterms.insert(pathShape.bterm);
       }
     }
   }

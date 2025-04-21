@@ -566,11 +566,11 @@ NETS 8 ;
     - ctrl.state.out\[1\] ( _412_ Q ) ( _290_ B2 ) ( _285_ A ) + USE SIGNAL
       + ROUTED met2 ( 170890 205530 ) ( * 209950 )
       NEW met1 ( 167670 207910 ) ( 170890 * )
-      NEW li1 ( 170890 205530 ) L1M1_PR
+      NEW li1 ( 170890 205530 ) L1M1_PR_MR
       NEW met1 ( 170890 205530 ) M1M2_PR
-      NEW li1 ( 170890 209950 ) L1M1_PR
+      NEW li1 ( 170890 209950 ) L1M1_PR_MR
       NEW met1 ( 170890 209950 ) M1M2_PR
-      NEW li1 ( 167670 207910 ) L1M1_PR
+      NEW li1 ( 167670 207910 ) L1M1_PR_MR
       NEW met1 ( 170890 207910 ) M1M2_PR ;
     - ctrl.state.out\[2\] ( _413_ Q ) ( _297_ A ) ( _293_ A ) ( _290_ A1 ) ( _284_ A ) ( _279_ A ) + USE SIGNAL
       + ROUTED met1 ( 158010 191590 ) ( * 192610 )
@@ -592,18 +592,18 @@ NETS 8 ;
       NEW met1 ( 158930 200430 ) ( 160310 * )
       NEW met1 ( 158010 213350 ) ( 158470 * )
       NEW met2 ( 158470 209950 ) ( * 213350 )
-      NEW li1 ( 158010 191590 ) L1M1_PR
-      NEW li1 ( 167210 194650 ) L1M1_PR
-      NEW li1 ( 160310 200090 ) L1M1_PR
+      NEW li1 ( 158010 191590 ) L1M1_PR_MR
+      NEW li1 ( 167210 194650 ) L1M1_PR_MR
+      NEW li1 ( 160310 200090 ) L1M1_PR_MR
       NEW met1 ( 165830 200090 ) M1M2_PR
       NEW met1 ( 165830 193630 ) M1M2_PR
-      NEW li1 ( 166290 207570 ) L1M1_PR
+      NEW li1 ( 166290 207570 ) L1M1_PR_MR
       NEW met1 ( 165830 207570 ) M1M2_PR
       NEW met1 ( 165370 200430 ) M1M2_PR
-      NEW li1 ( 158470 209950 ) L1M1_PR
+      NEW li1 ( 158470 209950 ) L1M1_PR_MR
       NEW met1 ( 158470 209950 ) M1M2_PR
       NEW met1 ( 158930 200430 ) M1M2_PR
-      NEW li1 ( 158010 213350 ) L1M1_PR
+      NEW li1 ( 158010 213350 ) L1M1_PR_MR
       NEW met1 ( 158470 213350 ) M1M2_PR ;
 END NETS
 END DESIGN

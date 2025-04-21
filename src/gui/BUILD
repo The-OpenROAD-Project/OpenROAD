@@ -39,4 +39,3 @@ tcl_encode(
     char_array_name = "gui_tcl_inits",
     namespace = "gui",
 )
-

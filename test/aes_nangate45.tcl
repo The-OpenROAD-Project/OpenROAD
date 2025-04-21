@@ -12,4 +12,4 @@ set core_area {10 12 1010 911.2}
 
 set cap_margin 20
 
-source -echo "flow.tcl"
+include -echo "flow.tcl"

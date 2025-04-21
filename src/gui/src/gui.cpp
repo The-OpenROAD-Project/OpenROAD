@@ -1287,7 +1287,7 @@ void Gui::unminimize()
   main_window->showNormal();
 }
 
-void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
+void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
   db_ = db;
   setLogger(logger);
@@ -1298,6 +1298,10 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
+
+  power_density_heat_map_
+      = std::make_unique<PowerDensityDataSource>(sta, logger);
+  power_density_heat_map_->registerHeatMap();
 }
 
 void Gui::selectHelp(const std::string& item)
@@ -1628,7 +1632,10 @@ extern "C" {
 extern int Gui_Init(Tcl_Interp* interp);
 }
 
-void initGui(Tcl_Interp* interp, odb::dbDatabase* db, utl::Logger* logger)
+void initGui(Tcl_Interp* interp,
+             odb::dbDatabase* db,
+             sta::dbSta* sta,
+             utl::Logger* logger)
 {
   // Define swig TCL commands.
   Gui_Init(interp);
@@ -1636,7 +1643,7 @@ void initGui(Tcl_Interp* interp, odb::dbDatabase* db, utl::Logger* logger)
 
   // ensure gui is made
   auto* gui = gui::Gui::get();
-  gui->init(db, logger);
+  gui->init(db, sta, logger);
 }
 
 }  // namespace ord
