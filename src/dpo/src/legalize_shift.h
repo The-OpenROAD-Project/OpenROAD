@@ -18,7 +18,6 @@ namespace dpo {
 class Architecture;
 class DetailedMgr;
 class Network;
-class RoutingParams;
 using dpl::Node;
 
 class ShiftLegalizer
@@ -40,7 +39,6 @@ class ShiftLegalizer
   DetailedMgr* mgr_ = nullptr;
   Architecture* arch_ = nullptr;
   Network* network_ = nullptr;
-  RoutingParams* rt_ = nullptr;
 
   // For clumping.
   std::vector<Clump> clumps_;

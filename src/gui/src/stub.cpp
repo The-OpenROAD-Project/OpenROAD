@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "ord/OpenRoad.hh"
 
 namespace gui {
 
@@ -33,14 +32,13 @@ class PlacementDensityDataSource
 {
 };
 
+class PowerDensityDataSource
+{
+};
+
 ////
 
-Gui::Gui()
-    : continue_after_close_(false),
-      logger_(nullptr),
-      db_(nullptr),
-      pin_density_heat_map_(nullptr),
-      placement_density_heat_map_(nullptr)
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
 }
 
@@ -168,10 +166,11 @@ int startGui(int& argc,
 
 namespace ord {
 
-class OpenRoad;
-void initGui(OpenRoad* openroad)
+void initGui(Tcl_Interp* interp,
+             odb::dbDatabase* db,
+             sta::dbSta* sta,
+             utl::Logger* logger)
 {
-  auto interp = openroad->tclInterp();
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
       "proc save_image { args } {"

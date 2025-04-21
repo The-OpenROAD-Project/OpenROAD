@@ -96,6 +96,34 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
   }
 }
 
+void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
+                                  const gtl::rectangle_data<frCoord>& rect,
+                                  const frViaDef* via_def,
+                                  const frLayerNum layer_num,
+                                  const bool is_curr_layer_horz)
+{
+  const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
+  const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
+  frVia via(via_def);
+  const Rect box = via.getLayer1BBox();
+  const auto via_width = box.dx();
+  const auto via_height = box.dy();
+  if (via_width > rect_width || via_height > rect_height) {
+    return;
+  }
+  const int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
+                                           : gtl::xh(rect) - box.xMax();
+  const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
+                                           : gtl::xl(rect) - box.xMin();
+  for (const int coord : {coord_top, coord_low}) {
+    if (coords.find(coord) == coords.end()) {
+      coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
+    } else {
+      coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
+    }
+  }
+}
+
 /**
  * @details This follows the Tao of PAO paper cost structure.
  * Enclosed Boundary APs satisfy via-in-pin requirement.
@@ -107,40 +135,17 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const frLayerNum layer_num,
                                    const bool is_curr_layer_horz)
 {
-  const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
-  const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
-  const int max_num_via_trial = 2;
   if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
     return;
   }
   // hardcode first two single vias
-  std::vector<const frViaDef*> via_defs;
+  const int max_num_via_trial = 2;
   int cnt = 0;
   for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    via_defs.push_back(via);
+    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
     cnt++;
     if (cnt >= max_num_via_trial) {
       break;
-    }
-  }
-  for (auto& via_def : via_defs) {
-    frVia via(via_def);
-    const Rect box = via.getLayer1BBox();
-    const auto via_width = box.dx();
-    const auto via_height = box.dy();
-    if (via_width > rect_width || via_height > rect_height) {
-      continue;
-    }
-    const int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
-                                             : gtl::xh(rect) - box.xMax();
-    const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
-                                             : gtl::xl(rect) - box.xMin();
-    for (const int coord : {coord_top, coord_low}) {
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
     }
   }
 }
@@ -709,7 +714,6 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   if (graphics_) {
     graphics_->setPlanarAP(ap, ps, design_rule_checker.getMarkers());
@@ -1019,7 +1023,6 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   const bool no_drv = design_rule_checker.getMarkers().empty();
 

@@ -16,7 +16,10 @@
 #include <utility>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "heatMapSetup.h"
+#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 namespace gui {
@@ -105,8 +108,6 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
 
 void HeatMapDataSource::redraw()
 {
-  ensureMap();
-
   if (issue_redraw_) {
     renderer_->redraw();
   }
@@ -398,7 +399,8 @@ void HeatMapDataSource::setupMap()
              utl::GUI,
              "HeatMap",
              1,
-             "Generating {}x{} map",
+             "{} - Generating {}x{} map",
+             name_,
              x_grid_size,
              y_grid_size);
   map_.resize(boost::extents[x_grid_size][y_grid_size]);
@@ -470,6 +472,13 @@ void HeatMapDataSource::setXYMapGrid(const std::vector<int>& x_grid,
 
 void HeatMapDataSource::destroyMap()
 {
+  if (destroy_map_) {
+    return;
+  }
+
+  debugPrint(
+      logger_, utl::GUI, "HeatMap", 1, "{} - destroy map requested", name_);
+
   destroy_map_ = true;
 
   redraw();
@@ -497,19 +506,19 @@ void HeatMapDataSource::ensureMap()
   std::unique_lock<std::mutex> lock(ensure_mutex_);
 
   if (destroy_map_) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Destroying map");
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Destroying map", name_);
     clearMap();
     destroy_map_ = false;
   }
 
   const bool build_map = map_[0][0] == nullptr;
   if (build_map) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Setting up map");
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Setting up map", name_);
     setupMap();
   }
 
   if (build_map || !isPopulated()) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Populating map");
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Populating map", name_);
 
     const bool update_cursor
         = gui::Gui::enabled()
@@ -524,7 +533,8 @@ void HeatMapDataSource::ensureMap()
     }
 
     if (isPopulated()) {
-      debugPrint(logger_, utl::GUI, "HeatMap", 1, "Correcting map scale");
+      debugPrint(
+          logger_, utl::GUI, "HeatMap", 1, "{} - Correcting map scale", name_);
       correctMapScale(map_);
     }
 
@@ -537,7 +547,8 @@ void HeatMapDataSource::ensureMap()
   }
 
   if (!colors_correct_ && isPopulated()) {
-    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Assigning map colors");
+    debugPrint(
+        logger_, utl::GUI, "HeatMap", 1, "{} - Assigning map colors", name_);
     assignMapColors();
   }
 }
@@ -1030,6 +1041,119 @@ void GlobalRoutingDataSource::populateXYGrid()
   gcell_ygrid.push_back(die_area.yMax());
 
   setXYMapGrid(gcell_xgrid, gcell_ygrid);
+}
+
+PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
+                                               utl::Logger* logger)
+    : gui::RealValueHeatMapDataSource(logger,
+                                      "W",
+                                      "Power Density",
+                                      "Power",
+                                      "PowerDensity"),
+      sta_(sta)
+{
+  setIssueRedraw(false);  // disable during initial setup
+  setLogScale(true);
+  setIssueRedraw(true);
+
+  addMultipleChoiceSetting(
+      "Corner",
+      "Corner:",
+      [this]() {
+        std::vector<std::string> corners;
+        for (auto* corner : *sta_->corners()) {
+          corners.emplace_back(corner->name());
+        }
+        return corners;
+      },
+      [this]() -> std::string { return corner_; },
+      [this](const std::string& value) { corner_ = value; });
+  addBooleanSetting(
+      "Internal",
+      "Internal power:",
+      [this]() { return include_internal_; },
+      [this](bool value) { include_internal_ = value; });
+  addBooleanSetting(
+      "Leakage",
+      "Leakage power:",
+      [this]() { return include_leakage_; },
+      [this](bool value) { include_leakage_ = value; });
+  addBooleanSetting(
+      "Switching",
+      "Switching power:",
+      [this]() { return include_switching_; },
+      [this](bool value) { include_switching_ = value; });
+
+  registerHeatMap();
+}
+
+bool PowerDensityDataSource::populateMap()
+{
+  if (getBlock() == nullptr || sta_ == nullptr) {
+    return false;
+  }
+
+  if (sta_->cmdNetwork() == nullptr) {
+    return false;
+  }
+
+  auto* network = sta_->getDbNetwork();
+
+  const bool include_all
+      = include_internal_ && include_leakage_ && include_switching_;
+  for (auto* inst : getBlock()->getInsts()) {
+    if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+
+    sta::PowerResult power = sta_->power(network->dbToSta(inst), getCorner());
+
+    float pwr = 0.0;
+    if (include_all) {
+      pwr = power.total();
+    } else {
+      if (include_internal_) {
+        pwr += power.internal();
+      }
+      if (include_leakage_) {
+        pwr += power.switching();
+      }
+      if (include_switching_) {
+        pwr += power.leakage();
+      }
+    }
+
+    odb::Rect inst_box = inst->getBBox()->getBox();
+
+    addToMap(inst_box, pwr);
+  }
+
+  return true;
+}
+
+void PowerDensityDataSource::combineMapData(bool base_has_value,
+                                            double& base,
+                                            const double new_data,
+                                            const double data_area,
+                                            const double intersection_area,
+                                            const double rect_area)
+{
+  base += (new_data / data_area) * intersection_area;
+}
+
+sta::Corner* PowerDensityDataSource::getCorner() const
+{
+  auto* corner = sta_->findCorner(corner_.c_str());
+  if (corner != nullptr) {
+    return corner;
+  }
+
+  auto corners = sta_->corners()->corners();
+  if (!corners.empty()) {
+    return corners[0];
+  }
+
+  return nullptr;
 }
 
 }  // namespace gui

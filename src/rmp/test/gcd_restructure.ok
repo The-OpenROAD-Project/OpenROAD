@@ -5,7 +5,7 @@
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 [WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
-worst slack 1.29
+worst slack max 1.29
 Design area 670 u^2 10% utilization.
 Removed 0 instances with constant outputs.
 Number of paths for restructure are 69

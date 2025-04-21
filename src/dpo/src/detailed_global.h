@@ -15,13 +15,12 @@ namespace dpo {
 class Architecture;
 class DetailedMgr;
 class Network;
-class RoutingParams;
 using dpl::Edge;
 
 class DetailedGlobalSwap : public DetailedGenerator
 {
  public:
-  DetailedGlobalSwap(Architecture* arch, Network* network, RoutingParams* rt);
+  DetailedGlobalSwap(Architecture* arch, Network* network);
   DetailedGlobalSwap();
 
   // Interfaces for scripting.
@@ -46,7 +45,6 @@ class DetailedGlobalSwap : public DetailedGenerator
   DetailedMgr* mgr_;
   Architecture* arch_;
   Network* network_;
-  RoutingParams* rt_;
 
   // Other.
   int skipNetsLargerThanThis_;
