@@ -172,7 +172,6 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
 }
 void tmg_conn::addITerm(dbITerm* iterm)
 {
-  _tstackV.emplace_back();
   _csVV.emplace_back();
   _csNV.emplace_back();
 
@@ -185,7 +184,6 @@ void tmg_conn::addITerm(dbITerm* iterm)
 
 void tmg_conn::addBTerm(dbBTerm* bterm)
 {
-  _tstackV.emplace_back();
   _csVV.emplace_back();
   _csNV.emplace_back();
 
@@ -220,7 +218,6 @@ void tmg_conn::loadNet(dbNet* net)
   _rcV.clear();
   _ptV.clear();
   _termV.clear();
-  _tstackV.clear();
   _csVV.clear();
   _csNV.clear();
   _shortV.clear();
@@ -1365,14 +1362,13 @@ bool tmg_conn::checkConnected()
   if (_termV.size() == 0) {
     return true;
   }
-  int tstackN = 0;
-  auto& tstackV = _tstackV;
+  _tstackV.clear();
   int jstart = getStartNode();
   tmg_rcterm* xstart = nullptr;
   if (_ptV[jstart]._tindex >= 0) {
     tmg_rcterm* x = &_termV[_ptV[jstart]._tindex];
     xstart = x;
-    tstackV[tstackN++] = x;
+    _tstackV.push_back(x);
   }
   dfsClear();
   if (!dfsStart(jstart)) {
@@ -1393,7 +1389,7 @@ bool tmg_conn::checkConnected()
           _ptV[jto]._t_alt = nullptr;
         } else if (x->_pt && x->_pt->_next_for_term) {
           // add potential short-from points to stack
-          tstackV[tstackN++] = x;
+          _tstackV.push_back(x);
         }
       }
       // the part of addToWire needed in no_convert case
@@ -1413,8 +1409,8 @@ bool tmg_conn::checkConnected()
     // finished physically-connected subtree,
     // find an unvisited short-from point
     tmg_rcpt* pt = nullptr;
-    while (tstack0 < tstackN && !pt) {
-      tmg_rcterm* x = tstackV[tstack0++];
+    while (tstack0 < _tstackV.size() && !pt) {
+      tmg_rcterm* x = _tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term) {
         if (!isVisited(pt - _ptV.data())) {
           break;
@@ -1478,14 +1474,13 @@ void tmg_conn::treeReorder(const bool no_convert)
   _path_rule = _net_rule;
 
   int tstack0 = 0;
-  int tstackN = 0;
-  auto& tstackV = _tstackV;
+  _tstackV.clear();;
   int jstart = getStartNode();
   tmg_rcterm* xstart = nullptr;
   if (_ptV[jstart]._tindex >= 0) {
     tmg_rcterm* x = &_termV[_ptV[jstart]._tindex];
     xstart = x;
-    tstackV[tstackN++] = x;
+    _tstackV.push_back(x);
   }
   dfsClear();
   if (!dfsStart(jstart)) {
@@ -1509,7 +1504,7 @@ void tmg_conn::treeReorder(const bool no_convert)
           _ptV[jto]._t_alt = nullptr;
         } else if (x->_pt && x->_pt->_next_for_term) {
           // add potential short-from points to stack
-          tstackV[tstackN++] = x;
+          _tstackV.push_back(x);
         }
       }
       if (!no_convert) {
@@ -1533,8 +1528,8 @@ void tmg_conn::treeReorder(const bool no_convert)
     // finished physically-connected subtree,
     // find an unvisited short-from point
     tmg_rcpt* pt = nullptr;
-    while (tstack0 < tstackN && !pt) {
-      x = tstackV[tstack0++];
+    while (tstack0 < _tstackV.size() && !pt) {
+      x = _tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term) {
         if (!isVisited(pt - _ptV.data())) {
           break;
@@ -1558,7 +1553,7 @@ void tmg_conn::treeReorder(const bool no_convert)
         // disconnected, start new path from another term
         _connected = false;
         _last_id = -1;
-        tstackV[tstackN++] = x;
+        _tstackV.push_back(x);
         pt = x->_pt;
       } else {
         jstart = getDisconnectedStart();
