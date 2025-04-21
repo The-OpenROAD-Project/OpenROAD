@@ -36,7 +36,7 @@ class DetailedSeg
   // Some identifiers...
   int segId_ = -1;
   int rowId_ = -1;
-  int regId_ = 0;
+  int regId_ = -1;
   // Span of segment...
   DbuX xmin_ = std::numeric_limits<DbuX>::max();
   DbuX xmax_ = std::numeric_limits<DbuX>::lowest();

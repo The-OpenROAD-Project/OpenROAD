@@ -268,28 +268,14 @@ void Opendp::createArchitecture()
 void Opendp::setUpPlacementGroups()
 {
   regions_rtree_.clear();
-  int xmin = arch_->getMinX().v;
-  int xmax = arch_->getMaxX().v;
-  int ymin = arch_->getMinY().v;
-  int ymax = arch_->getMaxY().v;
-
   dbBlock* block = db_->getChip()->getBlock();
   auto core = block->getCoreArea();
-  Group* rptr = nullptr;
   int count = 0;
-
-  // Default region.
-  rptr = arch_->createAndAddRegion();
-  rptr->setId(count++);
-
-  rptr->addRect({xmin, ymin, xmax, ymax});
-  rptr->setBoundary({xmin, ymin, xmax, ymax});
-
   auto db_groups = block->getGroups();
   for (auto db_group : db_groups) {
     dbRegion* region = db_group->getRegion();
     if (region) {
-      rptr = arch_->createAndAddRegion();
+      Group* rptr = arch_->createAndAddRegion();
       rptr->setId(count++);
       Rect bbox;
       bbox.mergeInit();

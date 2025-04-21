@@ -153,7 +153,7 @@ class Node
   Group* group_{nullptr};
   const Rect* region_{nullptr};  // group rect
   // // Regions.
-  int group_id_{0};
+  int group_id_{-1};
   // Pins.
   std::vector<Pin*> pins_;
 };

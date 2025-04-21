@@ -344,7 +344,7 @@ void DetailedMgr::findSegments()
 
   // Here, we need to slice up the segments to account for regions.
   std::vector<std::vector<std::pair<DbuX, DbuX>>> intervals;
-  for (int reg = 1; reg < arch_->getNumRegions(); reg++) {
+  for (int reg = 0; reg < arch_->getNumRegions(); reg++) {
     auto regPtr = arch_->getRegion(reg);
 
     findRegionIntervals(regPtr->getId(), intervals);
@@ -1661,7 +1661,7 @@ void DetailedMgr::findRegionIntervals(
   // Find intervals within each row that are spanned by the specified region.
   // We ignore the default region 0, since it is "everywhere".
 
-  if (regId < 1 || regId >= arch_->getRegions().size()
+  if (regId < 0 || regId >= arch_->getRegions().size()
       || arch_->getRegion(regId)->getId() != regId) {
     internalError("Improper region id");
   }
