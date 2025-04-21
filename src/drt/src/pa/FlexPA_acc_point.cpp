@@ -310,6 +310,7 @@ void FlexPA::createMultipleAccessPoints(
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   bool allow_via = true;
   bool allow_planar = true;
+  //  only VIA_ACCESS_LAYERNUM layer can have via access
   if (inst_term) {
     if (isStdCell(inst_term->getInst())) {
       if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
@@ -356,7 +357,7 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             const frAccessPointEnum upper_type,
                             const bool is_macro_cell_pin)
 {
-  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  frLayer* layer = getDesign()->getTech()->getLayer(layer_num);
   const auto min_width_layer1 = layer->getMinWidth();
   if (std::min(gtl::delta(rect, gtl::HORIZONTAL),
                gtl::delta(rect, gtl::VERTICAL))
@@ -522,22 +523,20 @@ void FlexPA::genAPsFromPinShapes(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  //  only VIA_ACCESS_LAYERNUM layer can have via access
-  frLayerNum layer_num = (int) pin_shapes.size() - 1;
-  for (auto it = pin_shapes.rbegin(); it != pin_shapes.rend(); it++) {
-    if (!it->empty()
-        && getDesign()->getTech()->getLayer(layer_num)->getType()
-               == dbTechLayerType::ROUTING) {
+  frLayerNum layer_num = 0;
+  for (const auto& layer_shapes : pin_shapes) {
+    if (!layer_shapes.empty()
+        && getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
       genAPsFromLayerShapes(layer_rect_to_coords,
                             aps,
                             apset,
                             inst_term,
-                            *it,
+                            layer_shapes,
                             layer_num,
                             lower_type,
                             upper_type);
     }
-    layer_num--;
+    layer_num++;
   }
 }
 
@@ -1316,7 +1315,7 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
       auto layer_num = obj->getLayerNum();
       auto layer = tech->getLayer(layer_num);
       dbTechLayerDir dir = layer->getDir();
-      if (layer->getType() != dbTechLayerType::ROUTING) {
+      if (!layer->isRoutable()) {
         continue;
       }
       Rect box = obj->getBBox();
