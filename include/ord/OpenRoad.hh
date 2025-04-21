@@ -116,7 +116,7 @@ class Dft;
 
 namespace p2f {
   class P2f;
-  }
+}
   
 namespace ord {
 
@@ -166,8 +166,7 @@ class OpenRoad
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
   dft::Dft* getDft() { return dft_; }
 
-  // added new p2f
-  p2f::P2f* getP2f() { return p2f_; }
+  p2f::P2f* getP2f() { return p2f_; }  // added new p2f
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -259,8 +258,7 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
-// added by p2f
-  p2f::P2f* p2f_ = nullptr;
+  p2f::P2f* p2f_ = nullptr; // added by p2f
 
   int threads_ = 1;
 
