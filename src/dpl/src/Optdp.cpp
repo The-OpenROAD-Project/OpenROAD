@@ -12,8 +12,6 @@
 
 namespace dpl {
 
-using utl::DPL;
-
 ////////////////////////////////////////////////////////////////
 void Opendp::improvePlacement(const int seed,
                               const int max_displacement_x,

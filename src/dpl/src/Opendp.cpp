@@ -257,9 +257,8 @@ void Opendp::setFixedGridCells()
 {
   for (auto& cell : network_->getNodes()) {
     if (cell->getType() == Node::CELL && cell->isFixed()) {
-      grid_->visitCellPixels(*cell.get(), true, [&](Pixel* pixel) {
-        setGridCell(*cell.get(), pixel);
-      });
+      grid_->visitCellPixels(
+          *cell, true, [&](Pixel* pixel) { setGridCell(*cell, pixel); });
     }
   }
 }

@@ -59,7 +59,7 @@ void Opendp::detailedPlacement()
   // y axis dummycell insertion
   groupInitPixels();
 
-  if (arch_->getRegions().size() > 0) {
+  if (!arch_->getRegions().empty()) {
     placeGroups();
   }
   place();

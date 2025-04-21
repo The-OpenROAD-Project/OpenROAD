@@ -52,7 +52,7 @@ void Opendp::checkPlacement(const bool verbose,
         continue;
       }
 
-      if (!checkInRows(*cell.get())) {
+      if (!checkInRows(*cell)) {
         in_rows_failures.push_back(cell.get());
       }
       if (!checkRegionPlacement(cell.get())) {
@@ -64,7 +64,7 @@ void Opendp::checkPlacement(const bool verbose,
       placed_failures.push_back(cell.get());
     }
     // Overlap check
-    if (checkOverlap(*cell.get())) {
+    if (checkOverlap(*cell)) {
       overlap_failures.push_back(cell.get());
     }
     // EdgeSpacing check
@@ -80,7 +80,7 @@ void Opendp::checkPlacement(const bool verbose,
   if (disallow_one_site_gaps_) {
     for (auto& cell : network_->getNodes()) {
       // One site gap check
-      if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell.get())) {
+      if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell)) {
         one_site_gap_failures.push_back(cell.get());
       }
     }
