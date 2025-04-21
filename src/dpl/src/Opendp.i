@@ -148,6 +148,15 @@ set_debug_cmd(float min_displacement,
   }
 }
 
+// DPO code
+void improve_placement_cmd(int seed,
+  int max_displacement_x,
+  int max_displacement_y)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->improvePlacement(seed, max_displacement_x, max_displacement_y);
+}
+
 } // namespace
 
 %} // inline

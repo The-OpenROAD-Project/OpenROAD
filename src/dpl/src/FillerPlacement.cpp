@@ -5,9 +5,10 @@
 #include <limits>
 #include <utility>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
-#include "dpl/Opendp.h"
+#include "infrastructure/network.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -50,7 +51,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
                              const char* prefix,
                              bool verbose)
 {
-  if (cells_.empty()) {
+  if (network_->getNumCells() == 0) {
     importDb();
   }
 
@@ -99,9 +100,13 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
 
 void Opendp::setGridCells()
 {
-  for (Node& cell : cells_) {
-    grid_->visitCellPixels(
-        cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    grid_->visitCellPixels(*cell.get(), false, [&](Pixel* pixel) {
+      setGridCell(*cell.get(), pixel);
+    });
   }
 }
 

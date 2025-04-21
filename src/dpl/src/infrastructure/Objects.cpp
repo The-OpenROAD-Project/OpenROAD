@@ -37,6 +37,14 @@ Rect Master::getBBox() const
 {
   return boundary_box_;
 }
+int Master::getBottomPowerType() const
+{
+  return bottom_pwr_;
+}
+int Master::getTopPowerType() const
+{
+  return top_pwr_;
+}
 void Master::setMultiRow(const bool in)
 {
   is_multi_row_ = in;
@@ -52,6 +60,14 @@ void Master::clearEdges()
 void Master::setBBox(const Rect box)
 {
   boundary_box_ = box;
+}
+void Master::setBottomPowerType(const int bottom_pwr)
+{
+  bottom_pwr_ = bottom_pwr;
+}
+void Master::setTopPowerType(const int top_pwr)
+{
+  top_pwr_ = top_pwr;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

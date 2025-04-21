@@ -21,6 +21,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -33,13 +34,11 @@ using utl::DPL;
 
 using odb::Rect;
 
-using utl::format_as;
-
 ////////////////////////////////////////////////////////////////
 
 bool Opendp::isMultiRow(const Node* cell) const
 {
-  return db_master_map_.at(cell->getDbInst()->getMaster()).isMultiRow();
+  return network_->getMaster(cell->getDbInst()->getMaster())->isMultiRow();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -59,6 +58,8 @@ void Opendp::init(dbDatabase* db, Logger* logger)
   padding_ = std::make_shared<Padding>();
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
+  network_ = std::make_unique<Network>();
+  arch_ = std::make_unique<Architecture>();
 }
 
 void Opendp::setPaddingGlobal(const int left, const int right)
@@ -125,15 +126,15 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
 void Opendp::updateDbInstLocations()
 {
-  for (Node& cell : cells_) {
-    if (!cell.isFixed() && cell.isStdCell()) {
-      dbInst* db_inst_ = cell.getDbInst();
+  for (auto& cell : network_->getNodes()) {
+    if (!cell->isFixed() && cell->isStdCell()) {
+      dbInst* db_inst_ = cell->getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
-      if (db_inst_->getOrient() != cell.getOrient()) {
-        db_inst_->setOrient(cell.getOrient());
+      if (db_inst_->getOrient() != cell->getOrient()) {
+        db_inst_->setOrient(cell->getOrient());
       }
-      const DbuX x = grid_->getCore().xMin() + cell.getLeft();
-      const DbuY y = grid_->getCore().yMin() + cell.getBottom();
+      const DbuX x = grid_->getCore().xMin() + cell->getLeft();
+      const DbuY y = grid_->getCore().yMin() + cell->getBottom();
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -182,16 +183,18 @@ void Opendp::findDisplacementStats()
   displacement_avg_ = 0;
   displacement_sum_ = 0;
   displacement_max_ = 0;
-
-  for (const Node& cell : cells_) {
-    const int displacement = disp(&cell);
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    const int displacement = disp(cell.get());
     displacement_sum_ += displacement;
     if (displacement > displacement_max_) {
       displacement_max_ = displacement;
     }
   }
-  if (!cells_.empty()) {
-    displacement_avg_ = displacement_sum_ / cells_.size();
+  if (network_->getNumCells() != 0) {
+    displacement_avg_ = displacement_sum_ / network_->getNumCells();
   } else {
     displacement_avg_ = 0.0;
   }
@@ -252,10 +255,11 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
 
 void Opendp::setFixedGridCells()
 {
-  for (Node& cell : cells_) {
-    if (cell.isFixed()) {
-      grid_->visitCellPixels(
-          cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() == Node::CELL && cell->isFixed()) {
+      grid_->visitCellPixels(*cell.get(), true, [&](Pixel* pixel) {
+        setGridCell(*cell.get(), pixel);
+      });
     }
   }
 }
@@ -264,7 +268,7 @@ void Opendp::setGridCell(Node& cell, Pixel* pixel)
 {
   pixel->cell = &cell;
   pixel->util = 1.0;
-  if ((&cell)->isBlock()) {
+  if (cell.isBlock()) {
     // Try the is_hopeless strategy to get off of a block
     pixel->is_hopeless = true;
   }
@@ -276,13 +280,13 @@ void Opendp::groupAssignCellRegions()
   const GridX row_site_count = grid_->getRowSiteCount();
   const GridY row_count = grid_->getRowCount();
 
-  for (Group& group : groups_) {
+  for (auto& group : arch_->getRegions()) {
     int64_t total_site_area = 0;
-    if (!group.getCells().empty()) {
+    if (!group->getCells().empty()) {
       for (GridX x{0}; x < row_site_count; x++) {
         for (GridY y{0}; y < row_count; y++) {
           const Pixel* pixel = grid_->gridPixel(x, y);
-          if (pixel->is_valid && pixel->group == &group) {
+          if (pixel->is_valid && pixel->group == group) {
             total_site_area += grid_->rowHeight(y).v * site_width;
           }
         }
@@ -290,19 +294,19 @@ void Opendp::groupAssignCellRegions()
     }
 
     double cell_area = 0;
-    for (Node* cell : group.getCells()) {
+    for (Node* cell : group->getCells()) {
       cell_area += cell->area();
 
-      for (const auto& rect : group.getRects()) {
+      for (const auto& rect : group->getRects()) {
         if (isInside(cell, rect)) {
           cell->setRegion(&rect);
         }
       }
       if (cell->getRegion() == nullptr) {
-        cell->setRegion(group.getRects().data());
+        cell->setRegion(group->getRects().data());
       }
     }
-    group.setUtil(total_site_area ? cell_area / total_site_area : 0.0);
+    group->setUtil(total_site_area ? cell_area / total_site_area : 0.0);
   }
 }
 
@@ -315,8 +319,8 @@ void Opendp::groupInitPixels2()
                      (x + 1).v * grid_->getSiteWidth().v,
                      grid_->gridYToDbu(y + 1).v);
       Pixel* pixel = grid_->gridPixel(x, y);
-      for (Group& group : groups_) {
-        for (const Rect& rect : group.getRects()) {
+      for (auto& group : arch_->getRegions()) {
+        for (const Rect& rect : group->getRects()) {
           if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
             pixel->util = 0.0;
             pixel->cell = dummy_cell_.get();
@@ -404,19 +408,22 @@ void Opendp::groupInitPixels()
       pixel->util = 0.0;
     }
   }
-  for (Group& group : groups_) {
-    if (group.getCells().empty()) {
-      logger_->warn(DPL, 42, "No cells found in group {}. ", group.getName());
+  for (auto& group : arch_->getRegions()) {
+    if (group->getCells().empty()) {
+      if (group->getId() != 0) {
+        logger_->warn(
+            DPL, 42, "No cells found in group {}. ", group->getName());
+      }
       continue;
     }
     const DbuX site_width = grid_->getSiteWidth();
-    for (const DbuRect rect : group.getRects()) {
+    for (const DbuRect rect : group->getRects()) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
                  1,
                  "Group {} region [x{} y{}] [x{} y{}]",
-                 group.getName(),
+                 group->getName(),
                  rect.xl,
                  rect.yl,
                  rect.xh,
@@ -440,7 +447,7 @@ void Opendp::groupInitPixels()
         }
       }
     }
-    for (const DbuRect rect : group.getRects()) {
+    for (const DbuRect rect : group->getRects()) {
       const GridRect grid_rect{grid_->gridWithin(rect)};
 
       for (GridY k{grid_rect.ylo}; k < grid_rect.yhi; k++) {
@@ -448,7 +455,7 @@ void Opendp::groupInitPixels()
           // Assign group to each pixel.
           Pixel* pixel = grid_->gridPixel(l, k);
           if (pixel->util == 1.0) {
-            pixel->group = &group;
+            pixel->group = group;
             pixel->is_valid = true;
             pixel->util = 1.0;
           } else if (pixel->util > 0.0 && pixel->util < 1.0) {

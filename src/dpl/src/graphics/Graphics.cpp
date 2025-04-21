@@ -6,6 +6,7 @@
 #include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/network.h"
 
 namespace dpl {
 
@@ -72,27 +73,27 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   odb::Rect core = block_->getCoreArea();
 
-  for (const auto& cell : dp_->cells_) {
-    if (!cell.isPlaced()) {
+  for (const auto& cell : dp_->network_->getNodes()) {
+    if (!cell->isPlaced()) {
       continue;
     }
     // Compare the squared distances to save calling sqrt
-    float min_length = min_displacement_ * dp_->grid_->gridHeight(&cell).v;
+    float min_length = min_displacement_ * dp_->grid_->gridHeight(cell.get()).v;
     min_length *= min_length;
-    DbuX lx{core.xMin() + cell.getLeft()};
-    DbuY ly{core.yMin() + cell.getBottom()};
+    DbuX lx{core.xMin() + cell->getLeft()};
+    DbuY ly{core.yMin() + cell->getBottom()};
 
-    auto color = cell.getDbInst() ? gui::Painter::gray : gui::Painter::red;
+    auto color = cell->getDbInst() ? gui::Painter::gray : gui::Painter::red;
     painter.setPen(color);
     painter.setBrush(color);
-    painter.drawRect(
-        Rect(lx.v, ly.v, lx.v + cell.getWidth().v, ly.v + cell.getHeight().v));
+    painter.drawRect(Rect(
+        lx.v, ly.v, lx.v + cell->getWidth().v, ly.v + cell->getHeight().v));
 
-    if (!cell.getDbInst()) {
+    if (!cell->getDbInst()) {
       continue;
     }
 
-    dbBox* bbox = cell.getDbInst()->getBBox();
+    dbBox* bbox = cell->getDbInst()->getBBox();
     Point initial_location(bbox->xMin(), bbox->yMin());
     Point final_location(lx.v, ly.v);
     float len = Point::squaredDistance(initial_location, final_location);

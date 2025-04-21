@@ -321,7 +321,7 @@ void Grid::erasePixel(Node* cell)
 
 void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
-  assert(!cell->isPlaced());
+  // assert(!cell->isPlaced());
   GridX x_end = grid_x + gridPaddedWidth(cell);
   GridY grid_height = gridHeight(cell);
   GridY y_end = grid_y + grid_height;

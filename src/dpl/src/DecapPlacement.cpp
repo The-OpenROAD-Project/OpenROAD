@@ -5,11 +5,12 @@
 #include <map>
 #include <vector>
 
+#include "dpl/Opendp.h"
 #include "infrastructure/DecapObjects.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
-#include "dpl/Opendp.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 
@@ -104,7 +105,7 @@ void Opendp::prepareDecapAndGaps()
 void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
 {
   // init dpl variables
-  if (cells_.empty()) {
+  if (network_->getNumCells() == 0) {
     importDb();
   }
 

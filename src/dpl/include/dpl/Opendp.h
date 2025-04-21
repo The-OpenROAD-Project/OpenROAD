@@ -130,7 +130,11 @@ class Opendp
   // Find a cluster of instances that are touching each other
   std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
   Padding* getPadding() { return padding_.get(); }
-
+  // TODO: START DPO code
+  void improvePlacement(int seed,
+                        int max_displacement_x,
+                        int max_displacement_y);
+  // TODO: END DPO code
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,
@@ -160,14 +164,11 @@ class Opendp
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
-  void makeMacros();
-  void makeCells();
-  static bool isPlacedType(dbMasterType type);
-  void makeGroups();
+  void createNetwork();
+  void createArchitecture();
+  void setUpPlacementGroups();
   bool isMultiRow(const Node* cell) const;
   void updateDbInstLocations();
-
-  void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
 
@@ -309,28 +310,10 @@ class Opendp
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
 
-  Architecture* arch_ = nullptr;  // Information about rows, etc.
-  Network* network_ = nullptr;    // The netlist, cells, etc.
-
+  std::unique_ptr<Architecture> arch_;  // Information about rows, etc.
+  std::unique_ptr<Network> network_;    // The netlist, cells, etc.
   std::shared_ptr<Padding> padding_;
   std::unique_ptr<PlacementDRC> drc_engine_;
-
-  std::vector<Node> cells_;
-  std::vector<Group> groups_;
-
-  std::map<const dbMaster*, Master> db_master_map_;
-  std::map<dbInst*, Node*> db_inst_map_;
-
-  // Some maps.
-  std::unordered_map<odb::dbInst*, Node*> instMap_;
-  std::unordered_map<odb::dbNet*, Edge*> netMap_;
-  std::unordered_map<odb::dbBTerm*, Node*> termMap_;
-
-  // For monitoring power alignment.
-  std::unordered_set<odb::dbTechLayer*> pwrLayers_;
-  std::unordered_set<odb::dbTechLayer*> gndLayers_;
-  std::unordered_map<odb::dbMaster*, std::pair<int, int>>
-      masterPwrs_;  // top,bot
 
   bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites

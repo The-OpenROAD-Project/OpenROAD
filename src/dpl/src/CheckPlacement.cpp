@@ -13,6 +13,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -39,33 +40,36 @@ void Opendp::checkPlacement(const bool verbose,
   initGrid();
   groupAssignCellRegions();
   const auto& row_coords = grid_->getRowCoordinates();
-  for (Node& cell : cells_) {
-    if (cell.isStdCell()) {
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    if (cell->isStdCell()) {
       // Site alignment check
-      if (cell.getLeft() % grid_->getSiteWidth() != 0
-          || row_coords.find(cell.getBottom().v) == row_coords.end()) {
-        site_align_failures.push_back(&cell);
+      if (cell->getLeft() % grid_->getSiteWidth() != 0
+          || row_coords.find(cell->getBottom().v) == row_coords.end()) {
+        site_align_failures.push_back(cell.get());
         continue;
       }
 
-      if (!checkInRows(cell)) {
-        in_rows_failures.push_back(&cell);
+      if (!checkInRows(*cell.get())) {
+        in_rows_failures.push_back(cell.get());
       }
-      if (!checkRegionPlacement(&cell)) {
-        region_placement_failures.push_back(&cell);
+      if (!checkRegionPlacement(cell.get())) {
+        region_placement_failures.push_back(cell.get());
       }
     }
     // Placed check
-    if (!isPlaced(&cell)) {
-      placed_failures.push_back(&cell);
+    if (!isPlaced(cell.get())) {
+      placed_failures.push_back(cell.get());
     }
     // Overlap check
-    if (checkOverlap(cell)) {
-      overlap_failures.push_back(&cell);
+    if (checkOverlap(*cell.get())) {
+      overlap_failures.push_back(cell.get());
     }
     // EdgeSpacing check
-    if (!drc_engine_->checkEdgeSpacing(&cell)) {
-      edge_spacing_failures.emplace_back(&cell);
+    if (!drc_engine_->checkEdgeSpacing(cell.get())) {
+      edge_spacing_failures.emplace_back(cell.get());
     }
   }
   // This loop is separate because it needs to be done after the overlap check
@@ -74,10 +78,10 @@ void Opendp::checkPlacement(const bool verbose,
   // Otherwise, this check will miss the pixels that could have resulted in
   // one-site gap violations as null
   if (disallow_one_site_gaps_) {
-    for (Node& cell : cells_) {
+    for (auto& cell : network_->getNodes()) {
       // One site gap check
-      if (checkOneSiteGaps(cell)) {
-        one_site_gap_failures.push_back(&cell);
+      if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell.get())) {
+        one_site_gap_failures.push_back(cell.get());
       }
     }
   }

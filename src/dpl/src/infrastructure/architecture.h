@@ -42,7 +42,7 @@ class Architecture
 
   int getCellHeightInRows(const Node* ndi) const;
 
-  int postProcess(Network* network);
+  void postProcess(Network* network);
   int find_closest_row(DbuY y);
 
   DbuX getMinX() const { return xmin_; }
@@ -73,6 +73,7 @@ class Architecture
                       DbuX& rightPadding) const;
   void flipCellPadding(const Node* ndi);
   int getCellSpacing(const Node* leftNode, const Node* rightNode) const;
+  void clear();
 
  private:
   // Boundary around rows.

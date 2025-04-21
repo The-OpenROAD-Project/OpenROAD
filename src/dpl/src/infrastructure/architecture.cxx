@@ -53,6 +53,26 @@ Architecture::~Architecture()
   regions_.clear();
 }
 
+void Architecture::clear()
+{
+  xmin_ = std::numeric_limits<DbuX>::max();
+  xmax_ = std::numeric_limits<DbuX>::lowest();
+  ymin_ = std::numeric_limits<DbuY>::max();
+  ymax_ = std::numeric_limits<DbuY>::lowest();
+  for (auto& row : rows_) {
+    delete row;
+  }
+  rows_.clear();
+
+  for (auto& region : regions_) {
+    delete region;
+  }
+  regions_.clear();
+  usePadding_ = false;
+  padding_ = nullptr;
+  site_width_ = DbuX{0};
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isSingleHeightCell(const Node* ndi) const
@@ -93,7 +113,7 @@ Group* Architecture::createAndAddRegion()
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::postProcess(Network* network)
+void Architecture::postProcess(Network* network)
 {
   // Sort the rows and assign ids.  Check for co-linear rows (sub-rows).
   // Right now, I am merging subrows back into single rows and adding
@@ -122,7 +142,6 @@ int Architecture::postProcess(Network* network)
   std::vector<Architecture::Row*> subrows;
   std::vector<Architecture::Row*> rows;
   std::vector<std::pair<DbuX, DbuX>> intervals;
-  int count = 0;
   for (int r = 0; r < rows_.size();) {
     subrows.clear();
     subrows.push_back(rows_[r++]);
@@ -187,31 +206,21 @@ int Architecture::postProcess(Network* network)
       const DbuX lx{xmin_};
       const DbuX rx{intervals.front().first};
       const DbuX width{rx - lx};
-      const Node* ndi = network->createAndAddFillerNode(lx, yb, width, height);
-      const std::string name = "FILLER_" + std::to_string(count);
-      network->setNodeName(ndi->getId(), name);
-      ++count;
+      network->addFillerNode(lx, yb, width, height);
     }
     for (size_t i = 1; i < intervals.size(); i++) {
       if (intervals[i].first > intervals[i - 1].second) {
         const DbuX lx{intervals[i - 1].second};
         const DbuX rx{intervals[i].first};
         const DbuX width{rx - lx};
-        const Node* ndi
-            = network->createAndAddFillerNode(lx, yb, width, height);
-        const std::string name = "FILLER_" + std::to_string(count);
-        network->setNodeName(ndi->getId(), name);
-        ++count;
+        network->addFillerNode(lx, yb, width, height);
       }
     }
     if (xmax_ > intervals.back().second) {
       const DbuX lx{intervals.back().second};
       const DbuX rx{xmax_};
       const DbuX width{rx - lx};
-      const Node* ndi = network->createAndAddFillerNode(lx, yb, width, height);
-      const std::string name = "FILLER_" + std::to_string(count);
-      network->setNodeName(ndi->getId(), name);
-      ++count;
+      network->addFillerNode(lx, yb, width, height);
     }
   }
   // Replace original rows with new rows.
@@ -222,7 +231,6 @@ int Architecture::postProcess(Network* network)
   for (int r = 0; r < rows_.size(); r++) {
     rows_[r]->setId(r);
   }
-  return count;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

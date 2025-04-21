@@ -23,6 +23,25 @@ add_library(dpl_lib
   src/DecapPlacement.cpp
   src/OptMirror.cpp
   src/PlacementDRC.cpp
+
+  src/Optdp.cpp
+  src/infrastructure/architecture.cxx
+  src/util/color.cxx
+  src/infrastructure/network.cxx
+  src/util/utility.cxx
+  src/legalize_shift.cxx
+  src/optimization/detailed.cxx
+  src/optimization/detailed_manager.cxx
+  src/optimization/detailed_mis.cxx
+  src/optimization/detailed_reorder.cxx
+  src/optimization/detailed_global.cxx
+  src/optimization/detailed_vertical.cxx
+  src/objective/detailed_displacement.cxx
+  src/objective/detailed_hpwl.cxx
+  src/objective/detailed_abu.cxx
+  src/optimization/detailed_random.cxx
+  src/optimization/detailed_orient.cxx
+  src/util/journal.cxx
 )
 
 target_link_libraries(dpl_lib
@@ -36,6 +55,8 @@ target_include_directories(dpl_lib
   PUBLIC
     include
     ${LEMON_INCLUDE_DIRS}
+  PRIVATE
+    src
 )
 
 target_sources(dpl
@@ -44,24 +65,6 @@ target_sources(dpl
     src/graphics/Graphics.cpp
     src/graphics/DplObserver.h
 
-    src/Optdp.cpp
-    src/infrastructure/architecture.cxx
-    src/util/color.cxx
-    src/infrastructure/network.cxx
-    src/util/utility.cxx
-    src/legalize_shift.cxx
-    src/optimization/detailed.cxx
-    src/optimization/detailed_manager.cxx
-    src/optimization/detailed_mis.cxx
-    src/optimization/detailed_reorder.cxx
-    src/optimization/detailed_global.cxx
-    src/optimization/detailed_vertical.cxx
-    src/objective/detailed_displacement.cxx
-    src/objective/detailed_hpwl.cxx
-    src/objective/detailed_abu.cxx
-    src/optimization/detailed_random.cxx
-    src/optimization/detailed_orient.cxx
-    src/util/journal.cxx
 )
 
 target_include_directories(dpl

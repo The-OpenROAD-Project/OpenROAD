@@ -33,15 +33,21 @@ class Master
   bool isMultiRow() const;
   const std::vector<MasterEdge>& getEdges() const;
   Rect getBBox() const;
+  int getBottomPowerType() const;
+  int getTopPowerType() const;
   void setMultiRow(bool in);
   void addEdge(const MasterEdge& edge);
   void clearEdges();
   void setBBox(Rect box);
+  void setBottomPowerType(int bottom_pwr);
+  void setTopPowerType(int top_pwr);
 
  private:
   Rect boundary_box_;
   bool is_multi_row_ = false;
   std::vector<MasterEdge> edges_;
+  int bottom_pwr_{0};
+  int top_pwr_{0};
 };
 
 class Pin;
