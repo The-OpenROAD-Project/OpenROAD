@@ -297,24 +297,37 @@ void FlexPA::createSingleAccessPoint(
 }
 
 void FlexPA::createMultipleAccessPoints(
+    frInstTerm* inst_term,
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& rect,
     const frLayerNum layer_num,
-    const bool allow_planar,
-    const bool allow_via,
-    const bool is_layer1_horz,
     const std::map<frCoord, frAccessPointEnum>& x_coords,
     const std::map<frCoord, frAccessPointEnum>& y_coords,
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
+  auto layer = getDesign()->getTech()->getLayer(layer_num);
+  bool allow_via = true;
+  bool allow_planar = true;
+  if (inst_term) {
+    if (isStdCell(inst_term->getInst())) {
+      if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+           && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
+          || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
+        allow_planar = false;
+      }
+    }
+  } else {
+    allow_planar = true;
+    allow_via = false;
+  }
   // build points;
   for (auto& [x_coord, cost_x] : x_coords) {
     for (auto& [y_coord, cost_y] : y_coords) {
       // lower full/half/center
-      auto& low_layer_type = is_layer1_horz ? cost_y : cost_x;
-      auto& up_layer_type = (!is_layer1_horz) ? cost_y : cost_x;
+      auto& low_layer_type = layer->isHorizontal() ? cost_y : cost_x;
+      auto& up_layer_type = layer->isHorizontal() ? cost_x : cost_y;
       if (low_layer_type == lower_type && up_layer_type == upper_type) {
         createSingleAccessPoint(aps,
                                 apset,
@@ -437,27 +450,13 @@ void FlexPA::genAPsFromLayerShapes(
     frInstTerm* inst_term,
     const gtl::polygon_90_set_data<frCoord>& layer_shapes,
     const frLayerNum layer_num,
-    bool allow_via,
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  bool allow_planar = true;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    if (isStdCell(inst_term->getInst())) {
-      if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
-           && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
-          || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
-        allow_planar = false;
-      }
-    }
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  } else {
-    // IO term is treated as the MacroCellPin as the top block
-    is_macro_cell_pin = true;
-    allow_planar = true;
-    allow_via = false;
-  }
+  // IO term is treated as the MacroCellPin as the top block
+  bool is_macro_cell_pin
+      = inst_term ? isMacroCell(inst_term->getInst()) : false;
+
   // lower layer is current layer
   // rightway on grid only forbid off track up via access on upper layer
   const auto upper_layer
@@ -471,8 +470,6 @@ void FlexPA::genAPsFromLayerShapes(
   }
   std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layer_shapes);
-  auto layer = getDesign()->getTech()->getLayer(layer_num);
-  const bool is_layer1_horz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
   for (auto& bbox_rect : maxrects) {
     frAccessPointEnum this_lower_type = lower_type;
     std::map<frCoord, frAccessPointEnum> x_coords;
@@ -489,13 +486,11 @@ void FlexPA::genAPsFromLayerShapes(
     layer_rect_to_coords[layer_num].push_back(
         {bbox_rect, {x_coords, y_coords}});
 
-    createMultipleAccessPoints(aps,
+    createMultipleAccessPoints(inst_term,
+                               aps,
                                apset,
                                bbox_rect,
                                layer_num,
-                               allow_planar,
-                               allow_via,
-                               is_layer1_horz,
                                x_coords,
                                y_coords,
                                this_lower_type,
@@ -521,7 +516,6 @@ void FlexPA::genAPsFromPinShapes(
     const frAccessPointEnum upper_type)
 {
   //  only VIA_ACCESS_LAYERNUM layer can have via access
-  const bool allow_via = true;
   frLayerNum layer_num = (int) pin_shapes.size() - 1;
   for (auto it = pin_shapes.rbegin(); it != pin_shapes.rend(); it++) {
     if (!it->empty()
@@ -533,7 +527,6 @@ void FlexPA::genAPsFromPinShapes(
                             inst_term,
                             *it,
                             layer_num,
-                            allow_via,
                             lower_type,
                             upper_type);
     }

@@ -284,7 +284,6 @@ class FlexPA
    * @param inst_term instance terminal, owner of the access points
    * @param layer_shapes pin shapes on that layer
    * @param layer_num layer in which the shapes exists
-   * @param allow_via if via access is allowed
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    */
@@ -295,7 +294,6 @@ class FlexPA
       frInstTerm* inst_term,
       const gtl::polygon_90_set_data<frCoord>& layer_shapes,
       frLayerNum layer_num,
-      bool allow_via,
       frAccessPointEnum lower_type,
       frAccessPointEnum upper_type);
 
@@ -387,25 +385,22 @@ class FlexPA
   /**
    * @brief Creates multiple access points from the coordinates
    *
+   * @param inst_term the instance terminal
    * @param aps Vector contaning the access points
    * @param apset Set containing access points data (auxilary)
    * @param rec Rect limiting where the point can be
    * @param layer_num access point layer
-   * @param allow_planar if the access point allows planar access
-   * @param allow_via if the access point allows via access
    * @param x_coords map of access point x coords
    * @param y_coords map of access point y coords
    * @param lower_type access cost of the lower layer
    * @param upper_type access cost of the upper layer
    */
   void createMultipleAccessPoints(
+      frInstTerm* inst_term,
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       const gtl::rectangle_data<frCoord>& rect,
       frLayerNum layer_num,
-      bool allow_planar,
-      bool allow_via,
-      bool is_layer1_horz,
       const std::map<frCoord, frAccessPointEnum>& x_coords,
       const std::map<frCoord, frAccessPointEnum>& y_coords,
       frAccessPointEnum lower_type,
