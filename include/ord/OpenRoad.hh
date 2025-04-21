@@ -115,7 +115,7 @@ class Dft;
 }
 
 namespace p2f {
-  class P2f;
+class P2f;
 }
   
 namespace ord {
@@ -258,7 +258,7 @@ class OpenRoad
   dst::Distributed* distributer_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
-  p2f::P2f* p2f_ = nullptr; // added by p2f
+  p2f::P2f* p2f_ = nullptr; 
 
   int threads_ = 1;
 
