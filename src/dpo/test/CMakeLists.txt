@@ -1,13 +1,13 @@
 or_integration_tests(
   "dpo"
   TESTS
-    aes
-    blockage1
-    gcd
-    gcd_no_one_site_gaps
-    ibex
-    multi_height1
-    edge_spacing
-    regions1
-    regions2
+    aes-opt
+    blockage1-opt
+    gcd-opt
+    gcd_no_one_site_gaps-opt
+    ibex-opt
+    multi_height1-opt
+    edge_spacing-opt
+    regions1-opt
+    regions2-opt
 )
