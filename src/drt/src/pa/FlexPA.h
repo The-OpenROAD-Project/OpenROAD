@@ -379,8 +379,10 @@ class FlexPA
                    frLayerNum base_layer_num,
                    frLayerNum layer_num,
                    const gtl::rectangle_data<frCoord>& rect,
-                   bool is_curr_layer_horz,
                    int offset = 0);
+
+  bool OnlyAllowOnGridAccess(const frLayerNum layer_num,
+                             const bool is_macro_cell_pin);
 
   /**
    * @brief Creates multiple access points from the coordinates
