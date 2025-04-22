@@ -944,7 +944,6 @@ class NesterovBase
   // fillerArea, whiteSpaceArea, movableArea
   // and totalFillerArea after changing gCell's size
   void updateAreas();
-  void accumulateArea(GCell* gCell);
 
   // update density sizes with changed dx and dy
   void updateDensitySize();
