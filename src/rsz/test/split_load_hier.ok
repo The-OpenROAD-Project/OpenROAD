@@ -33,8 +33,8 @@ original HPWL               5.0 u
 legalized HPWL            307.4 u
 delta HPWL                 6037 %
 
-worst slack -0.70
-tns -8.694
+worst slack max -0.70
+tns max -8.694
 [INFO RSZ-0094] Found 21 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 21 out of 21 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst

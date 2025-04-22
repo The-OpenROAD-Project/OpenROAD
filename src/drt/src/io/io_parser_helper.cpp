@@ -562,67 +562,80 @@ void io::Parser::initDefaultVias_GF14(const std::string& node)
           && node == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
         switch (layerNum) {
           case 3:  // VIA1
-            if (viaDef->getName() == "V1_0_15_0_25_VH_Vx") {
+            if (viaDef->getName() == "V1_0_15_0_25_VH_Vx"
+                || viaDef->getName() == "V1_VH_15_0_0_25_Vx") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 5:  // VIA2
-            if (viaDef->getName() == "V2_0_25_0_25_HV_Vx") {
+            if (viaDef->getName() == "V2_0_25_0_25_HV_Vx"
+                || viaDef->getName() == "V2_HV_0_25_25_0_Vx") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 7:  // VIA3
-            if (viaDef->getName() == "J3_0_25_4_40_VH_Jy") {
+            if (viaDef->getName() == "J3_0_25_4_40_VH_Jy"
+                || viaDef->getName() == "J3_VH_25_0_4_40_Jy") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 9:  // VIA4
-            if (viaDef->getName() == "A4_0_50_0_50_HV_Ax") {
+            if (viaDef->getName() == "A4_0_50_0_50_HV_Ax"
+                || viaDef->getName() == "A4_HV_0_50_50_0_Ax") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 11:  // VIA5
-            if (viaDef->getName() == "CK_23_28_0_26_VH_CK") {
+            if (viaDef->getName() == "CK_23_28_0_26_VH_CK"
+                || viaDef->getName() == "CK_VH_28_23_0_26_CK") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 13:  // VIA6
-            if (viaDef->getName() == "U1_0_26_0_26_HV_Ux") {
+            if (viaDef->getName() == "U1_0_26_0_26_HV_Ux"
+                || viaDef->getName() == "U1_HV_0_26_26_0_Ux") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 15:  // VIA7
-            if (viaDef->getName() == "U2_0_26_0_26_VH_Ux") {
+            if (viaDef->getName() == "U2_0_26_0_26_VH_Ux"
+                || viaDef->getName() == "U2_VH_26_0_0_26_Ux") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 17:  // VIA8
-            if (viaDef->getName() == "U3_0_26_0_26_HV_Ux") {
+            if (viaDef->getName() == "U3_0_26_0_26_HV_Ux"
+                || viaDef->getName() == "U3_HV_0_26_26_0_Ux") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 19:  // VIA9
-            if (viaDef->getName() == "KH_18_45_0_45_VH_KH") {
+            if (viaDef->getName() == "KH_18_45_0_45_VH_KH"
+                || viaDef->getName() == "KH_VH_45_18_0_45_KH") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 21:  // VIA10
-            if (viaDef->getName() == "N1_0_45_0_45_HV_Nx") {
+            if (viaDef->getName() == "N1_0_45_0_45_HV_Nx"
+                || viaDef->getName() == "N1_HV_0_45_45_0_Nx") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 23:  // VIA11
-            if (viaDef->getName() == "HG_18_72_18_72_VH_HG") {
+            if (viaDef->getName() == "HG_18_72_18_72_VH_HG"
+                || viaDef->getName() == "HG_VH_72_18_18_72_HG") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 25:  // VIA12
-            if (viaDef->getName() == "T1_18_72_18_72_HV_Tx") {
+            if (viaDef->getName() == "T1_18_72_18_72_HV_Tx"
+                || viaDef->getName() == "T1_HV_18_72_72_18_Tx") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;
           case 27:  // VIA13
-            if (viaDef->getName() == "VV_450_450_450_450_XX_VV") {
+            if (viaDef->getName() == "VV_450_450_450_450_XX_VV"
+                || viaDef->getName() == "VV_XX_450_450_450_450_VV") {
               getTech()->getLayer(layerNum)->setDefaultViaDef(viaDef);
             }
             break;

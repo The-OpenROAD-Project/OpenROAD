@@ -59,7 +59,7 @@ class RepairDesign : dbStaState
   void repairDesign(double max_wire_length,  // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
-                    double buffer_gain,
+                    bool initial_sizing,
                     bool verbose,
                     int& repaired_net_count,
                     int& slew_violations,
@@ -88,9 +88,7 @@ class RepairDesign : dbStaState
   bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
-  void performEarlySizingRound(float gate_gain,
-                               float buffer_gain,
-                               int& repaired_net_count);
+  void performEarlySizingRound(int& repaired_net_count);
 
   void checkDriverArcSlew(const Corner* corner,
                           const Instance* inst,
@@ -234,7 +232,6 @@ class RepairDesign : dbStaState
   int max_length_ = 0;
   double slew_margin_ = 0;
   double cap_margin_ = 0;
-  double buffer_gain_ = 0;
   const Corner* corner_ = nullptr;
 
   int resize_count_ = 0;

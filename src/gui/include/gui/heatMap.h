@@ -21,6 +21,11 @@ class dbBlock;
 class Rect;
 }  // namespace odb
 
+namespace sta {
+class dbSta;
+class Corner;
+}  // namespace sta
+
 namespace utl {
 class Logger;
 }  // namespace utl
@@ -320,6 +325,32 @@ class GlobalRoutingDataSource : public HeatMapDataSource
   static constexpr int default_grid_ = 10;
 
   std::pair<double, double> getReportableXYGrid() const;
+};
+
+class PowerDensityDataSource : public RealValueHeatMapDataSource
+{
+ public:
+  PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
+
+ protected:
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
+
+ private:
+  sta::dbSta* sta_;
+
+  bool include_internal_ = true;
+  bool include_leakage_ = true;
+  bool include_switching_ = true;
+
+  std::string corner_;
+
+  sta::Corner* getCorner() const;
 };
 
 }  // namespace gui
