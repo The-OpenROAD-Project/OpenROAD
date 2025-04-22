@@ -310,7 +310,7 @@ int64_t WireLengthEvaluator::hpwl() const
 
 int64_t WireLengthEvaluator::hpwl(dbNet* net) const
 {
-  if (net->getSigType().isSupply()) {
+  if (net->getSigType().isSupply() || net->isSpecial()) {
     return 0;
   }
 

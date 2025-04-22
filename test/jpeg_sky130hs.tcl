@@ -16,4 +16,4 @@ set cap_margin 20
 
 set global_place_density 0.6
 
-source -echo "flow.tcl"
+include -echo "flow.tcl"

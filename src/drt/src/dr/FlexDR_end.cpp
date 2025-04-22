@@ -60,11 +60,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // -------------------
     if (isInitDR()
         && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
-      if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
@@ -143,11 +139,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   } else if (begin.y() == end.y()) {
     if (isInitDR()
         && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
-      if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     // if cross routeBBox
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (

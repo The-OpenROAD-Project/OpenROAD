@@ -25,8 +25,8 @@ cc_library(
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
-        "src/prometheus/metrics_server.cpp",
         "src/decode.cpp",
+        "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
     ],
     hdrs = [
@@ -96,6 +96,6 @@ tcl_encode(
         "src/Utl.tcl",
     ],
     char_array_name = "utl_tcl_inits",
-    visibility = ["//visibility:public"],
     namespace = "utl",
+    visibility = ["//visibility:public"],
 )

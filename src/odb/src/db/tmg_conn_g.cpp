@@ -21,7 +21,7 @@ tmg_conn_graph::tmg_conn_graph()
   _eNmax = 1024;
   _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
   _path_vis = (int*) malloc(_ptNmax * sizeof(int));
-  _eV = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
+  _eV = (tcg_edge*) malloc(2UL * _ptNmax * sizeof(tcg_edge));
   _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
 }
 
@@ -381,25 +381,25 @@ void tmg_conn::relocateShorts()
 void tmg_conn::removeShortLoops()
 {
   if (!_graph) {
-    _graph = new tmg_conn_graph();
+    _graph = std::make_unique<tmg_conn_graph>();
   }
-  _graph->init(_ptV.size(), _shortN);
+  _graph->init(_ptV.size(), _shortV.size());
   tcg_pt* pgV = _graph->_ptV;
 
   // setup paths
   int npath = -1;
   for (size_t j = 0; j < _rcV.size(); j++) {
-    if (j == 0 || _rcV[j]._ifr != _rcV[j - 1]._ito) {
+    if (j == 0 || _rcV[j]._from_idx != _rcV[j - 1]._to_idx) {
       ++npath;
     }
-    pgV[_rcV[j]._ifr].ipath = npath;
-    pgV[_rcV[j]._ito].ipath = npath;
+    pgV[_rcV[j]._from_idx].ipath = npath;
+    pgV[_rcV[j]._to_idx].ipath = npath;
   }
   npath++;
 
   // remove shorts to same path
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -408,8 +408,8 @@ void tmg_conn::removeShortLoops()
     }
   }
 
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -527,7 +527,7 @@ void tmg_conn::removeWireLoops()
   }
   // add all path edges
   for (size_t j = 0; j < _rcV.size(); j++) {
-    _graph->addEdges(this, _rcV[j]._ifr, _rcV[j]._ito, j);
+    _graph->addEdges(this, _rcV[j]._from_idx, _rcV[j]._to_idx, j);
   }
 
   // remove loops that have shorts by removing

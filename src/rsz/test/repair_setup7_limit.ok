@@ -6,14 +6,16 @@
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 [INFO RSZ-0100] Cells with area > 2.0X current cell will not be considered for sizing
 [INFO RSZ-0101] Cells with leakage > 2.0X current cell will not be considered for sizing
-***********************************
+*******************************************
 Optimization config:
--limit_sizing_area:    2.0
--limit_sizing_leakage: 2.0
--keep_sizing_site:     false
--keep_sizing_vt:       false
-***********************************
-worst slack -1.95
+-limit_sizing_area:                 2.0
+-limit_sizing_leakage:              2.0
+-keep_sizing_site:                  false
+-keep_sizing_vt:                    false
+-set_early_sizing_cap_ratio:        unset
+-set_early_buffer_sizing_cap_ratio: unset
+*******************************************
+worst slack max -1.95
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -26,4 +28,4 @@ worst slack -1.95
 [INFO RSZ-0041] Resized 8 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack -0.93
+worst slack max -0.93

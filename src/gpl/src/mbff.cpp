@@ -35,8 +35,6 @@
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -2417,11 +2415,11 @@ void MBFF::ReadPaths()
   for (sta::PathEnd* path_end : path_ends) {
     sta::Path* path = path_end->path();
     sta::PathExpanded expanded(path, sta_);
-    const sta::PathRef* pathref_front = expanded.path(expanded.startIndex());
+    const sta::Path* pathref_front = expanded.path(expanded.startIndex());
     sta::Vertex* pathvertex_front = pathref_front->vertex(sta_);
     sta::Pin* pathpin_front = pathvertex_front->pin();
 
-    const sta::PathRef* pathref_back = expanded.path(expanded.size() - 1);
+    const sta::Path* pathref_back = expanded.path(expanded.size() - 1);
     sta::Vertex* pathvertex_back = pathref_back->vertex(sta_);
     sta::Pin* pathpin_back = pathvertex_back->pin();
 
