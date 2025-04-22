@@ -256,7 +256,7 @@ class ClusteringEngine
 
   bool isValidNet(odb::dbNet* net);
   std::map<odb::dbInst*, int> getMacroToStdCellPinCount(Cluster* cluster);
-  void splitMacrosBetweenPartitions(Cluster* parent, Cluster* new_cluster);
+  void splitMacrosBetweenPartitions(Cluster* parent, Cluster* partition);
 
   odb::dbBlock* block_;
   sta::dbNetwork* network_;
