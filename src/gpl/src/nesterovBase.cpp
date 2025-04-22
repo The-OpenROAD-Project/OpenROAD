@@ -248,7 +248,7 @@ bool GCell::isFiller() const
 
 bool GCell::isMacroInstance() const
 {
-  if (!isInstance() || insts_[0] == nullptr) {
+  if (insts_[0] == nullptr || !isInstance()) {
     return false;
   }
   return insts_[0]->isMacro();
@@ -256,7 +256,7 @@ bool GCell::isMacroInstance() const
 
 bool GCell::isStdInstance() const
 {
-  if (!isInstance() || insts_[0] == nullptr) {
+  if (insts_[0] == nullptr || !isInstance()) {
     return false;
   }
   return !insts_[0]->isMacro();
