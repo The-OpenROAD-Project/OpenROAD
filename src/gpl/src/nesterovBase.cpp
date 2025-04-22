@@ -1978,11 +1978,13 @@ void NesterovBase::updateDensitySize()
   }
 }
 
-void NesterovBase::accumulateArea(GCell* gCell) {
-  if (gCell == nullptr) return;
+void NesterovBase::accumulateArea(GCell* gCell)
+{
+  if (gCell == nullptr)
+    return;
 
-  const int64_t area =
-      static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
+  const int64_t area
+      = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
 
   if (gCell->isMacroInstance()) {
     macroInstsArea_ += area;
@@ -1999,9 +2001,9 @@ void NesterovBase::updateAreas()
   stdInstsArea_ = macroInstsArea_ = 0;
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
   reduction(+ : stdInstsArea_, macroInstsArea_)
-for (int i = 0; i < NB_gCells_.size(); ++i) {
-  accumulateArea(NB_gCells_[i]);
-}
+  for (int i = 0; i < NB_gCells_.size(); ++i) {
+    accumulateArea(NB_gCells_[i]);
+  }
 
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
