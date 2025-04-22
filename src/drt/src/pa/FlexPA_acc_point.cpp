@@ -252,27 +252,18 @@ void FlexPA::createSingleAccessPoint(
   ap->setAccess(frDirEnum::U, allow_via);
 
   ap->setAllowVia(allow_via);
-  ap->setType((frAccessPointEnum) lower_type, true);
-  ap->setType((frAccessPointEnum) upper_type, false);
-  if ((lower_type == frAccessPointEnum::NearbyGrid
-       || upper_type == frAccessPointEnum::NearbyGrid)) {
+  ap->setType(lower_type, true);
+  ap->setType(upper_type, false);
+  if (lower_type == frAccessPointEnum::NearbyGrid
+      || upper_type == frAccessPointEnum::NearbyGrid) {
     Point end;
-    const int half_width
+    const int hwidth
         = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth() / 2;
-    if (fpt.x() < gtl::xl(maxrect) + half_width) {
-      end.setX(gtl::xl(maxrect) + half_width);
-    } else if (fpt.x() > gtl::xh(maxrect) - half_width) {
-      end.setX(gtl::xh(maxrect) - half_width);
-    } else {
-      end.setX(fpt.x());
-    }
-    if (fpt.y() < gtl::yl(maxrect) + half_width) {
-      end.setY(gtl::yl(maxrect) + half_width);
-    } else if (fpt.y() > gtl::yh(maxrect) - half_width) {
-      end.setY(gtl::yh(maxrect) - half_width);
-    } else {
-      end.setY(fpt.y());
-    }
+
+    end.setX(std::clamp(
+        fpt.x(), gtl::xl(maxrect) + hwidth, gtl::xh(maxrect) - hwidth));
+    end.setY(std::clamp(
+        fpt.y(), gtl::yl(maxrect) + hwidth, gtl::yh(maxrect) - hwidth));
 
     Point e = fpt;
     if (fpt.x() != end.x()) {
@@ -280,7 +271,7 @@ void FlexPA::createSingleAccessPoint(
     } else if (fpt.y() != end.y()) {
       e.setY(end.y());
     }
-    if (!(e == fpt)) {
+    if (e != fpt) {
       frPathSeg ps;
       ps.setPoints_safe(fpt, e);
       if (ps.getBeginPoint() == end) {
@@ -1215,9 +1206,13 @@ bool FlexPA::genPinAccessCostBounded(
   const bool is_io_pin = (inst_term == nullptr);
 
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
+  std::vector<std::unique_ptr<frAccessPoint>> common_aps;
   LayerToRectCoordsMap layer_rect_to_coords;
   genAccessCoordsFromPinShapes(
       layer_rect_to_coords, inst_term, pin_shapes, lower_type, upper_type);
+  // createAPsFromLayerToRectCoordsMap(
+  //     layer_rect_to_coords, common_aps, apset, inst_term, lower_type,
+  //     upper_type);
   createAPsFromLayerToRectCoordsMap(
       layer_rect_to_coords, new_aps, apset, inst_term, lower_type, upper_type);
   filterMultipleAPAccesses(
