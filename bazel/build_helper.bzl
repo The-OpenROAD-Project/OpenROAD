@@ -283,7 +283,11 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/rsz/src/*.h",
     #OpenDP
     "src/dpl/src/*.cpp",
+    "src/dpl/src/*.cxx",
     "src/dpl/src/*.h",
+    "src/dpl/src/**/*.h",
+    "src/dpl/src/**/*.cpp",
+    "src/dpl/src/**/*.cxx",
     #finale
     "src/fin/src/*.cpp",
     "src/fin/src/*.h",
