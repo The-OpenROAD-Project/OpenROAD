@@ -1176,29 +1176,27 @@ void SoftMacro::setShapes(const IntervalList& width_intervals, float area)
       || cluster_->getClusterType() == HardMacroCluster) {
     return;
   }
-  area_ = area;
+
   width_intervals_.clear();
   height_intervals_.clear();
-  // sort width list based
-  height_intervals_ = width_intervals;
 
-  // As, at this point, the list of height intervals is actually a
-  // list of width intervals, we can use the isMinWidthSmaller
-  // utility to do the sorting.
-  std::sort(
-      height_intervals_.begin(), height_intervals_.end(), isMinWidthSmaller);
+  // Copy & sort the width intervals list.
+  IntervalList old_width_intervals = width_intervals;
+  std::sort(old_width_intervals.begin(),
+            old_width_intervals.end(),
+            isMinWidthSmaller);
 
-  for (auto& height_interval : height_intervals_) {
+  // Merge the overlapping intervals.
+  for (auto& old_width_interval : old_width_intervals) {
     if (width_intervals_.empty()
-        || height_interval.max > width_intervals_.back().max) {
-      width_intervals_.push_back(height_interval);
-    } else if (height_interval.min > width_intervals_.back().max) {
-      width_intervals_.back().max = height_interval.min;
+        || old_width_interval.min > width_intervals_.back().max) {
+      width_intervals_.push_back(old_width_interval);
+    } else if (old_width_interval.max > width_intervals_.back().max) {
+      width_intervals_.back().max = old_width_interval.max;
     }
   }
 
-  height_intervals_.clear();
-
+  // Set height intervals based on the new width intervals.
   for (auto& width_interval : width_intervals_) {
     height_intervals_.emplace_back(area / width_interval.max /* min */,
                                    area / width_interval.min /* max */);
@@ -1206,6 +1204,7 @@ void SoftMacro::setShapes(const IntervalList& width_intervals, float area)
 
   width_ = width_intervals_.front().min;
   height_ = height_intervals_.front().max;
+  area_ = area;
 }
 
 float SoftMacro::getArea() const
