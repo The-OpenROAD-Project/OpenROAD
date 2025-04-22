@@ -1992,13 +1992,12 @@ void NesterovBase::updateAreas()
       continue;
     }
 
-    const int64_t area
-        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
-
     if (gCell->isMacroInstance()) {
-      macroInstsArea_ += area;
+      macroInstsArea_ += static_cast<int64_t>(gCell->dx())
+                         * static_cast<int64_t>(gCell->dy());
     } else if (gCell->isStdInstance()) {
-      stdInstsArea_ += area;
+      stdInstsArea_ += static_cast<int64_t>(gCell->dx())
+                       * static_cast<int64_t>(gCell->dy());
     }
   }
 
