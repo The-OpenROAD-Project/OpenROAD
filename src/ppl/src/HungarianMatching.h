@@ -72,7 +72,7 @@ class HungarianMatching
   bool groupHasMirroredPin(const std::vector<int>& group);
   int getMirroredPinCost(IOPin& io_pin, const odb::Point& position);
   Edge getMirroredEdge(const Edge& edge);
-  std::vector<int8_t> getTieBreakRank(const std::vector<int>& costs);
+  std::vector<uint8_t> getTieBreakRank(const std::vector<int>& costs);
 };
 
 }  // namespace ppl
