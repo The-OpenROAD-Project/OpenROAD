@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 15 components and 84 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 30 connections.
 [INFO ODB-0133]     Created 5 nets and 25 connections.
-worst slack 1.198
+worst slack max 1.198
 Iteration |   Area    |  Resized |   WNS    | Endpt
 ---------------------------------------------------
         0 |     +0.0% |        0 |    1.198 | r2/D
@@ -12,4 +12,4 @@ Iteration |   Area    |  Resized |   WNS    | Endpt
 ---------------------------------------------------
 [INFO RSZ-0141] Resized 2 instances.
 Repair timing output passed/skipped equivalence test
-worst slack 0.616
+worst slack max 0.616

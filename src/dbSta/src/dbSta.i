@@ -55,14 +55,6 @@ find_logic_constants()
   sta->findLogicConstants();
 }
 
-void
-highlight_path_cmd(PathRef *path)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbSta *sta = openroad->getSta();
-  sta->highlight(path);
-}
-
 std::vector<odb::dbNet*>
 find_all_clk_nets()
 {

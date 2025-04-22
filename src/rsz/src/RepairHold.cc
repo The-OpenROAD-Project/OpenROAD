@@ -19,8 +19,6 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -362,23 +360,29 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  PathRef end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  if (!end_path.isNull()) {
+  Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  if (end_path) {
     debugPrint(logger_,
                RSZ,
                "repair_hold",
                3,
                "repair end {} hold_slack={} setup_slack={}",
                end_vertex->name(network_),
-               delayAsString(end_path.slack(sta_), sta_),
+               delayAsString(end_path->slack(sta_), sta_),
                delayAsString(sta_->vertexSlack(end_vertex, max_), sta_));
-    PathExpanded expanded(&end_path, sta_);
+    PathExpanded expanded(end_path, sta_);
     sta::SearchPredNonLatch2 pred(sta_);
     const int path_length = expanded.size();
     if (path_length > 1) {
+      sta::VertexSeq path_vertices;
+      // Inserting bufferes invalidates the paths so copy out the vertices
+      // in the path.
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        const PathRef* path = expanded.path(i);
-        Vertex* path_vertex = path->vertex(sta_);
+        path_vertices.push_back(expanded.path(i)->vertex(sta_));
+      }
+      // Stop one short of the end so we can get the load.
+      for (int i = 0; i < path_vertices.size() - 1; i++) {
+        Vertex* path_vertex = path_vertices[i];
         Pin* path_pin = path_vertex->pin();
         // explicitly force getting the flat net.
         odb::dbNet* db_path_net
@@ -450,7 +454,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                            > buffer_delays[rise_index_]
                     && (slacks[fall_index_][max_index_] - setup_margin)
                            > buffer_delays[fall_index_])) {
-              Vertex* path_load = expanded.path(i + 1)->vertex(sta_);
+              Vertex* path_load = path_vertices[i + 1];
               Point path_load_loc = db_network_->location(path_load->pin());
               Point drvr_loc = db_network_->location(path_vertex->pin());
               Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,

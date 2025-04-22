@@ -2,51 +2,6 @@
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
 namespace eval sta {
-define_cmd_args "highlight_path" {[-min|-max] pin ^|r|rise|v|f|fall}
-
-proc highlight_path { args } {
-  parse_key_args "highlight_path" args keys {} \
-    flags {-max -min} 0
-
-  if { [ord::get_db_block] == "NULL" } {
-    sta_error "No design block found."
-  }
-
-  if { [info exists flags(-min)] && [info exists flags(-max)] } {
-    sta_error "-min and -max cannot both be specified."
-  } elseif { [info exists flags(-min)] } {
-    set min_max "min"
-  } elseif { [info exists flags(-max)] } {
-    set min_max "max"
-  } else {
-    # Default to max path.
-    set min_max "max"
-  }
-  if { [llength $args] == 0 } {
-    highlight_path_cmd "NULL"
-  } else {
-    check_argc_eq2 "highlight_path" $args
-
-    set pin_arg [lindex $args 0]
-    set tr [parse_rise_fall_arg [lindex $args 1]]
-
-    set pin [get_port_pin_error "pin" $pin_arg]
-    if { [$pin is_hierarchical] } {
-      sta_error "pin '$pin_arg' is hierarchical."
-    } else {
-      foreach vertex [$pin vertices] {
-        if { $vertex != "NULL" } {
-          set worst_path [vertex_worst_arrival_path_rf $vertex $tr $min_max]
-          if { $worst_path != "NULL" } {
-            highlight_path_cmd $worst_path
-            delete_path_ref $worst_path
-          }
-        }
-      }
-    }
-  }
-}
-
 define_cmd_args "report_cell_usage" { \
   [-verbose] [module_inst] [-file file] [-stage stage]}
 
