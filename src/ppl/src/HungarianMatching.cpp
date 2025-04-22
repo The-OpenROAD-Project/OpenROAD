@@ -359,4 +359,16 @@ Edge HungarianMatching::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
+std::vector<int8_t> HungarianMatching::getTieBreakRank(const std::vector<int>& costs)
+{
+  std::vector<int8_t> rank(num_io_pins_);
+  int8_t ranking = 1;
+  for (int i : sortIndexes(costs, costs)) {
+    rank[i] = ranking;
+    ranking++;
+  }
+
+  return rank;
+}
+
 }  // namespace ppl
