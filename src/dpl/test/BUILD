@@ -130,6 +130,7 @@ filegroup(
         "aes_cipher_top_replace.def",
         "block.lef",
         "block2.lef",
+        "edge_spacing.lef",
         "extra.lef",
         "fill3.lef",
         "gcd_nangate45.tcl",
