@@ -100,7 +100,6 @@ void FlexPA::genAccessCoordCentered(
 void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                                   const gtl::rectangle_data<frCoord>& rect,
                                   const frViaDef* via_def,
-                                  const frLayerNum layer_num,
                                   const bool is_curr_layer_horz)
 {
   const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
@@ -144,7 +143,7 @@ void FlexPA::genAccessCoordEnclosedBoundary(
   const int max_num_via_trial = 2;
   int cnt = 0;
   for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+    genViaEnclosedCoords(coords, rect, via, is_curr_layer_horz);
     cnt++;
     if (cnt >= max_num_via_trial) {
       break;
@@ -1189,6 +1188,59 @@ bool FlexPA::EnoughAccessPoints(
   }
 
   return (enough_sparse_acc_points && enough_far_from_edge_points);
+}
+
+void FlexPA::createViaSpecificAccessPoints(
+    frInstTerm* inst_term,
+    std::set<std::pair<Point, frLayerNum>>& apset,
+    std::vector<std::unique_ptr<frAccessPoint>>& common_aps,
+    LayerToRectCoordsMap& common_layer_rect_to_coords,
+    const frViaDef* via_def)
+{
+  for (const auto& [layer_num, rect_coords] : common_layer_rect_to_coords) {
+    frLayer* layer = getDesign()->getTech()->getLayer(layer_num);
+
+    for (const auto& [rect, coords] : rect_coords) {
+      const auto& [common_x_coords, common_y_coords] = coords;
+
+      std::map<frCoord, frAccessPointEnum> via_x_coords;
+      std::map<frCoord, frAccessPointEnum> via_y_coords;
+
+      genViaEnclosedCoords(via_x_coords, rect, via_def, layer->isHorizontal());
+      genViaEnclosedCoords(via_y_coords, rect, via_def, !layer->isHorizontal());
+
+      std::vector<std::unique_ptr<frAccessPoint>> common_x_via_y_aps;
+      createMultipleAccessPoints(inst_term,
+                                 common_x_via_y_aps,
+                                 apset,
+                                 rect,
+                                 layer_num,
+                                 common_x_coords,
+                                 via_y_coords,
+                                 frAccessPointEnum::EncOpt,
+                                 frAccessPointEnum::EncOpt);
+      std::vector<std::unique_ptr<frAccessPoint>> common_y_via_x_aps;
+      createMultipleAccessPoints(inst_term,
+                                 common_y_via_x_aps,
+                                 apset,
+                                 rect,
+                                 layer_num,
+                                 via_x_coords,
+                                 common_y_coords,
+                                 frAccessPointEnum::EncOpt,
+                                 frAccessPointEnum::EncOpt);
+      std::vector<std::unique_ptr<frAccessPoint>> full_via_aps;
+      createMultipleAccessPoints(inst_term,
+                                 full_via_aps,
+                                 apset,
+                                 rect,
+                                 layer_num,
+                                 via_x_coords,
+                                 via_y_coords,
+                                 frAccessPointEnum::EncOpt,
+                                 frAccessPointEnum::EncOpt);
+    }
+  }
 }
 
 template <typename T>
