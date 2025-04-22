@@ -104,7 +104,6 @@ struct Violation
   int routing_level;
   std::vector<odb::dbITerm*> gates;
   int diode_count;
-  double excess_ratio;
 };
 
 using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
