@@ -257,8 +257,8 @@ class FlexPA
    *
    * @returns True if only allow onGrid access
    */
-  bool UpperLayerOnlyAllowOnGridAccess(const frLayerNum layer_num,
-                                       const bool is_macro_cell_pin);
+  bool UpperLayerOnlyAllowOnGridAccess(frLayerNum layer_num,
+                                       bool is_macro_cell_pin);
 
   /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
