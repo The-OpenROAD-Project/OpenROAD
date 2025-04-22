@@ -1987,12 +1987,17 @@ void NesterovBase::updateAreas()
 #pragma omp parallel for reduction(+ : stdInstsArea_, macroInstsArea_) \
     num_threads(nbc_->getNumThreads())
   for (int i = 0; i < NB_gCells_.size(); ++i) {
-    if (NB_gCells_[i]->isMacroInstance()) {
-      macroInstsArea_ += static_cast<int64_t>(NB_gCells_[i]->dx())
-                         * static_cast<int64_t>(NB_gCells_[i]->dy());
-    } else if (NB_gCells_[i]->isStdInstance()) {
-      stdInstsArea_ += static_cast<int64_t>(NB_gCells_[i]->dx())
-                       * static_cast<int64_t>(NB_gCells_[i]->dy());
+    GCell* gCell = NB_gCells_[i];
+    if (gCell == nullptr) {
+      continue;
+    }
+
+    if (gCell != nullptr && gCell->isMacroInstance()) {
+      macroInstsArea_ += static_cast<int64_t>(gCell->dx())
+                         * static_cast<int64_t>(gCell->dy());
+    } else if (gCell != nullptr && gCell->isStdInstance()) {
+      stdInstsArea_ += static_cast<int64_t>(gCell->dx())
+                       * static_cast<int64_t>(gCell->dy());
     }
   }
 
