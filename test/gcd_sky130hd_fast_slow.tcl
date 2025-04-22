@@ -17,4 +17,4 @@ set hold_slack_limit 0.0
 
 define_corners fast slow
 set power_corner "fast"
-source -echo flow.tcl
+include -echo flow.tcl

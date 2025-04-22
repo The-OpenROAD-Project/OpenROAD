@@ -80,6 +80,7 @@ if (Qt5_FOUND AND BUILD_GUI)
       Qt5::Charts
       utl_lib
       Boost::boost
+      OpenSTA
   )
 
 messages(

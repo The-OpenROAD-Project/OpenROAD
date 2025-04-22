@@ -26,7 +26,6 @@
 #include "sta/Network.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
@@ -289,9 +288,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   logger_->report("Number of paths for restructure are {}", path_found);
   for (auto& end_point : *end_points) {
     if (!is_area_mode_) {
-      sta::PathRef path_ref
+      sta::Path* path
           = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
-      sta::Path* path = path_ref.path();
       sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
       logger_->report("Found path of depth {}", expanded.size() / 2);

@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-worst slack -0.16
+worst slack max -0.16
 [INFO RSZ-0094] Found 150 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 150 out of 150 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -1447,5 +1447,5 @@ worst slack -0.16
 [INFO RSZ-0043] Swapped pins on 2 instances.
 [INFO RSZ-0049] Cloned 9 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -0.15
+worst slack max -0.15
 No differences found.

@@ -91,8 +91,7 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def)
                          is_not_upper_align,
                          layer2_area,
                          layer1_area,
-                         is_not_lower_align,
-                         via_def->getName());
+                         is_not_lower_align);
 }
 
 void FlexPA::initTrackCoords()
