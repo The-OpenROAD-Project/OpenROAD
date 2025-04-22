@@ -329,8 +329,8 @@ void Opendp::groupInitPixels2()
                        "group",
                        1,
                        "Block pixel [({}, {}) on region boundary",
-                       x,
-                       y);
+                       x.v,
+                       y.v);
           }
         }
       }
@@ -423,10 +423,10 @@ void Opendp::groupInitPixels()
                  1,
                  "Group {} region [x{} y{}] [x{} y{}]",
                  group->getName(),
-                 rect.xl,
-                 rect.yl,
-                 rect.xh,
-                 rect.yh);
+                 rect.xl.v,
+                 rect.yl.v,
+                 rect.xh.v,
+                 rect.yh.v);
       const GridRect grid_rect{grid_->gridWithin(rect)};
 
       for (GridY k{grid_rect.ylo}; k < grid_rect.yhi; k++) {
