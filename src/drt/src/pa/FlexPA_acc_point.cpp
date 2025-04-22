@@ -36,7 +36,7 @@ using utl::ThreadException;
  * note that std::map.insert() will not override and entry.
  * it should prioritize OnGrid access points
  */
-void FlexPA::genAPOnTrack(
+void FlexPA::genAccessCoordOnTrack(
     std::map<frCoord, frAccessPointEnum>& coords,
     const std::map<frCoord, frAccessPointEnum>& track_coords,
     const frCoord low,
@@ -65,10 +65,11 @@ void FlexPA::genAPOnTrack(
  * If false it created and access points in the middle point between [low, high]
  */
 
-void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
-                           const frLayerNum layer_num,
-                           const frCoord low,
-                           const frCoord high)
+void FlexPA::genAccessCoordCentered(
+    std::map<frCoord, frAccessPointEnum>& coords,
+    const frLayerNum layer_num,
+    const frCoord low,
+    const frCoord high)
 {
   // if touching two tracks, then no center??
   int candidates_on_grid = 0;
@@ -130,10 +131,11 @@ void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
  * This is the worst access point adressed in the paper
  */
 
-void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
-                                   const gtl::rectangle_data<frCoord>& rect,
-                                   const frLayerNum layer_num,
-                                   const bool is_curr_layer_horz)
+void FlexPA::genAccessCoordEnclosedBoundary(
+    std::map<frCoord, frAccessPointEnum>& coords,
+    const gtl::rectangle_data<frCoord>& rect,
+    const frLayerNum layer_num,
+    const bool is_curr_layer_horz)
 {
   if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
     return;
@@ -150,7 +152,7 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
   }
 }
 
-void FlexPA::genAPCosted(
+void FlexPA::genAccessCoordCosted(
     const frAccessPointEnum cost,
     std::map<frCoord, frAccessPointEnum>& coords,
     const std::map<frCoord, frAccessPointEnum>& track_coords,
@@ -167,24 +169,26 @@ void FlexPA::genAPCosted(
 
   switch (cost) {
     case (frAccessPointEnum::OnGrid):
-      genAPOnTrack(coords, track_coords, rect_min + offset, rect_max - offset);
+      genAccessCoordOnTrack(
+          coords, track_coords, rect_min + offset, rect_max - offset);
       break;
 
       // frAccessPointEnum::Halfgrid not defined
 
     case (frAccessPointEnum::Center):
-      genAPCentered(
+      genAccessCoordCentered(
           coords, base_layer_num, rect_min + offset, rect_max - offset);
       break;
 
     case (frAccessPointEnum::EncOpt):
-      genAPEnclosedBoundary(coords, rect, base_layer_num, is_curr_layer_horz);
+      genAccessCoordEnclosedBoundary(
+          coords, rect, base_layer_num, is_curr_layer_horz);
       break;
 
     case (frAccessPointEnum::NearbyGrid):
-      genAPOnTrack(
+      genAccessCoordOnTrack(
           coords, track_coords, rect_min - min_width_layer, rect_min, true);
-      genAPOnTrack(
+      genAccessCoordOnTrack(
           coords, track_coords, rect_max, rect_max + min_width_layer, true);
       break;
 
@@ -354,13 +358,14 @@ void FlexPA::createMultipleAccessPoints(
  * @details Generates all necessary access points from a rectangle shape
  * In this case a rectangle is one of the pin shapes of the pin
  */
-void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
-                            const frLayerNum layer_num,
-                            std::map<frCoord, frAccessPointEnum>& x_coords,
-                            std::map<frCoord, frAccessPointEnum>& y_coords,
-                            const frAccessPointEnum lower_type,
-                            const frAccessPointEnum upper_type,
-                            const bool is_macro_cell_pin)
+void FlexPA::genAccessCoordsFromRect(
+    const gtl::rectangle_data<frCoord>& rect,
+    const frLayerNum layer_num,
+    std::map<frCoord, frAccessPointEnum>& x_coords,
+    std::map<frCoord, frAccessPointEnum>& y_coords,
+    const frAccessPointEnum lower_type,
+    const frAccessPointEnum upper_type,
+    const bool is_macro_cell_pin)
 {
   frLayer* layer = getDesign()->getTech()->getLayer(layer_num);
   const auto min_width_layer1 = layer->getMinWidth();
@@ -375,7 +380,8 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
   } else if (layer_num - 2 >= getDesign()->getTech()->getBottomLayerNum()) {
     second_layer_num = layer_num - 2;
   } else {
-    logger_->error(DRT, 68, "genAPsFromRect cannot find second_layer_num.");
+    logger_->error(
+        DRT, 68, "genAccessCoordsFromRect cannot find second_layer_num.");
   }
   auto& layer1_track_coords = track_coords_[layer_num];
   auto& layer2_track_coords = track_coords_[second_layer_num];
@@ -419,28 +425,29 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
       return;
     }
     if (upper_type >= cost) {
-      genAPCosted(cost,
-                  layer2_coords,
-                  layer2_track_coords,
-                  layer_num,
-                  second_layer_num,
-                  rect,
-                  offset);
+      genAccessCoordCosted(cost,
+                           layer2_coords,
+                           layer2_track_coords,
+                           layer_num,
+                           second_layer_num,
+                           rect,
+                           offset);
     }
   }
   if (!use_center_line) {
     for (const auto cost : frDirEnums) {
       if (lower_type >= cost) {
-        genAPCosted(cost,
-                    layer1_coords,
-                    layer1_track_coords,
-                    layer_num,
-                    layer_num,
-                    rect);
+        genAccessCoordCosted(cost,
+                             layer1_coords,
+                             layer1_track_coords,
+                             layer_num,
+                             layer_num,
+                             rect);
       }
     }
   } else {
-    genAPCentered(layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
+    genAccessCoordCentered(
+        layer1_coords, layer_num, layer1_rect_min, layer1_rect_max);
     for (auto& [layer1_coord, cost] : layer1_coords) {
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
     }
@@ -469,7 +476,7 @@ bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
   return false;
 }
 
-void FlexPA::genAPsFromLayerShapes(
+void FlexPA::genAccessCoordsFromLayerShapes(
     LayerToRectCoordsMap& layer_rect_to_coords,
     frInstTerm* inst_term,
     const gtl::polygon_90_set_data<frCoord>& layer_shapes,
@@ -487,13 +494,13 @@ void FlexPA::genAPsFromLayerShapes(
     std::map<frCoord, frAccessPointEnum> x_coords;
     std::map<frCoord, frAccessPointEnum> y_coords;
 
-    genAPsFromRect(bbox_rect,
-                   layer_num,
-                   x_coords,
-                   y_coords,
-                   lower_type,
-                   upper_type,
-                   is_macro_cell_pin);
+    genAccessCoordsFromRect(bbox_rect,
+                            layer_num,
+                            x_coords,
+                            y_coords,
+                            lower_type,
+                            upper_type,
+                            is_macro_cell_pin);
 
     layer_rect_to_coords[layer_num].push_back(
         {bbox_rect, {x_coords, y_coords}});
@@ -530,7 +537,7 @@ void FlexPA::createAPsFromLayerToRectCoordsMap(
   }
 }
 
-void FlexPA::genAPsFromPinShapes(
+void FlexPA::genAccessCoordsFromPinShapes(
     LayerToRectCoordsMap& layer_rect_to_coords,
     frInstTerm* inst_term,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
@@ -541,12 +548,12 @@ void FlexPA::genAPsFromPinShapes(
   for (const auto& layer_shapes : pin_shapes) {
     if (!layer_shapes.empty()
         && getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
-      genAPsFromLayerShapes(layer_rect_to_coords,
-                            inst_term,
-                            layer_shapes,
-                            layer_num,
-                            lower_type,
-                            upper_type);
+      genAccessCoordsFromLayerShapes(layer_rect_to_coords,
+                                     inst_term,
+                                     layer_shapes,
+                                     layer_num,
+                                     lower_type,
+                                     upper_type);
     }
     layer_num++;
   }
@@ -1209,7 +1216,7 @@ bool FlexPA::genPinAccessCostBounded(
 
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   LayerToRectCoordsMap layer_rect_to_coords;
-  genAPsFromPinShapes(
+  genAccessCoordsFromPinShapes(
       layer_rect_to_coords, inst_term, pin_shapes, lower_type, upper_type);
   createAPsFromLayerToRectCoordsMap(
       layer_rect_to_coords, new_aps, apset, inst_term, lower_type, upper_type);

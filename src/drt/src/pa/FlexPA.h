@@ -272,7 +272,7 @@ class FlexPA
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    */
-  void genAPsFromPinShapes(
+  void genAccessCoordsFromPinShapes(
       LayerToRectCoordsMap& layer_rect_to_coords,
       frInstTerm* inst_term,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
@@ -288,7 +288,7 @@ class FlexPA
    * @param lower_type lowest access type considered
    * @param upper_type highest access type considered
    */
-  void genAPsFromLayerShapes(
+  void genAccessCoordsFromLayerShapes(
       LayerToRectCoordsMap& layer_rect_to_coords,
       frInstTerm* inst_term,
       const gtl::polygon_90_set_data<frCoord>& layer_shapes,
@@ -305,13 +305,13 @@ class FlexPA
    * @param upper_type highest access type considered
    * @param is_macro_cell_pin if the pin belongs to a macro
    */
-  void genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
-                      frLayerNum layer_num,
-                      std::map<frCoord, frAccessPointEnum>& x_coords,
-                      std::map<frCoord, frAccessPointEnum>& y_coords,
-                      frAccessPointEnum lower_type,
-                      frAccessPointEnum upper_type,
-                      bool is_macro_cell_pin);
+  void genAccessCoordsFromRect(const gtl::rectangle_data<frCoord>& rect,
+                               frLayerNum layer_num,
+                               std::map<frCoord, frAccessPointEnum>& x_coords,
+                               std::map<frCoord, frAccessPointEnum>& y_coords,
+                               frAccessPointEnum lower_type,
+                               frAccessPointEnum upper_type,
+                               bool is_macro_cell_pin);
 
   /**
    * @brief Generates an OnGrid access point (on or half track)
@@ -323,11 +323,12 @@ class FlexPA
    * @param use_nearby_grid if the associated cost should be NearbyGrid or the
    * track cost
    */
-  void genAPOnTrack(std::map<frCoord, frAccessPointEnum>& coords,
-                    const std::map<frCoord, frAccessPointEnum>& track_coords,
-                    frCoord low,
-                    frCoord high,
-                    bool use_nearby_grid = false);
+  void genAccessCoordOnTrack(
+      std::map<frCoord, frAccessPointEnum>& coords,
+      const std::map<frCoord, frAccessPointEnum>& track_coords,
+      frCoord low,
+      frCoord high,
+      bool use_nearby_grid = false);
 
   /**
    * @brief If there are less than 3 OnGrid coords between low and high
@@ -338,10 +339,10 @@ class FlexPA
    * @param low lower range of coordinates considered
    * @param high higher range of coordinates considered
    */
-  void genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
-                     frLayerNum layer_num,
-                     frCoord low,
-                     frCoord high);
+  void genAccessCoordCentered(std::map<frCoord, frAccessPointEnum>& coords,
+                              frLayerNum layer_num,
+                              frCoord low,
+                              frCoord high);
 
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,
@@ -356,10 +357,11 @@ class FlexPA
    * @param rect pin rectangle to which via is bounded
    * @param layer_num number of the layer
    */
-  void genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
-                             const gtl::rectangle_data<frCoord>& rect,
-                             frLayerNum layer_num,
-                             bool is_curr_layer_horz);
+  void genAccessCoordEnclosedBoundary(
+      std::map<frCoord, frAccessPointEnum>& coords,
+      const gtl::rectangle_data<frCoord>& rect,
+      frLayerNum layer_num,
+      bool is_curr_layer_horz);
 
   /**
    * @brief Calls the other genAP functions according to the informed cost
@@ -374,13 +376,14 @@ class FlexPA
    * @param is_curr_layer_horz if the current layer is horizontal
    * @param offset TODO: not sure, something to do with macro cells
    */
-  void genAPCosted(frAccessPointEnum cost,
-                   std::map<frCoord, frAccessPointEnum>& coords,
-                   const std::map<frCoord, frAccessPointEnum>& track_coords,
-                   frLayerNum base_layer_num,
-                   frLayerNum layer_num,
-                   const gtl::rectangle_data<frCoord>& rect,
-                   int offset = 0);
+  void genAccessCoordCosted(
+      frAccessPointEnum cost,
+      std::map<frCoord, frAccessPointEnum>& coords,
+      const std::map<frCoord, frAccessPointEnum>& track_coords,
+      frLayerNum base_layer_num,
+      frLayerNum layer_num,
+      const gtl::rectangle_data<frCoord>& rect,
+      int offset = 0);
 
   bool OnlyAllowOnGridAccess(const frLayerNum layer_num,
                              const bool is_macro_cell_pin);
