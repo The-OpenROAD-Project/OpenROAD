@@ -248,18 +248,20 @@ bool GCell::isFiller() const
 
 bool GCell::isMacroInstance() const
 {
-  if (insts_[0] == nullptr || !isInstance()) {
+  if (!isInstance()) {
     return false;
   }
-  return insts_[0]->isMacro();
+  auto* inst = insts_.front();
+  return inst != nullptr && inst->isMacro();
 }
 
 bool GCell::isStdInstance() const
 {
-  if (insts_[0] == nullptr || !isInstance()) {
+  if (!isInstance()) {
     return false;
   }
-  return !insts_[0]->isMacro();
+  auto* inst = insts_.front();
+  return inst != nullptr && !inst->isMacro();
 }
 
 void GCell::print(utl::Logger* logger) const
