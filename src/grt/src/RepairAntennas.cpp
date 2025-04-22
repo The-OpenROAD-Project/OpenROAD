@@ -473,8 +473,13 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
                  db_net->getConstName(),
                  violation.diode_count);
       if (violation.diode_count > 0) {
+        int total_diode_count = 0;
+        const int diode_count_per_gate
+            = std::max(1, violation.diode_count / (int) violation.gates.size());
         for (odb::dbITerm* gate : violation.gates) {
-          for (int j = 0; j < (violation.diode_count / (int)violation.gates.size()); j++) {
+          for (int j = 0; (j < diode_count_per_gate)
+                          && (total_diode_count < violation.diode_count);
+               j++) {
             odb::dbTechLayer* violation_layer
                 = tech->findRoutingLayer(violation.routing_level);
             insertDiode(db_net,
@@ -484,6 +489,12 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
                         fixed_insts,
                         violation_layer);
             inserted_diodes = true;
+            total_diode_count++;
+          }
+
+          // Skip the rest of the gates if we already inserted enough diodes
+          if (total_diode_count >= violation.diode_count) {
+            break;
           }
         }
       } else

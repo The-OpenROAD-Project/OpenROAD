@@ -884,10 +884,11 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           gates_for_diode_insertion.push_back(gate);
           // save antenna violation
           if (violated) {
-            antenna_violations.push_back({layer->getRoutingLevel(),
-                                          gates_for_diode_insertion,
-                                          diode_count_per_gate * (int)gates_for_diode_insertion.size(),
-                                          excess_ratio});
+            antenna_violations.push_back(
+                {layer->getRoutingLevel(),
+                 gates_for_diode_insertion,
+                 diode_count_per_gate * (int) gates_for_diode_insertion.size(),
+                 excess_ratio});
           }
 
           bool car_violation = checkCAR(db_net,
@@ -916,9 +917,10 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
                 gates_for_diode_insertion.push_back(gate);
               }
             }
+            const int diode_count = (int) gates_for_diode_insertion.size();
             antenna_violations.push_back({layer->getRoutingLevel(),
                                           std::move(gates_for_diode_insertion),
-                                          1 * (int)gates_for_diode_insertion.size(),
+                                          diode_count,
                                           1.0});
           }
         }
