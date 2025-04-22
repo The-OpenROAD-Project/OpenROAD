@@ -10,6 +10,7 @@
  ,"RSZ::worst_slack_max" : "-0.2060136305315337"
  ,"RSZ::tns_max" : "-147.99042787491084"
  ,"RSZ::hold_buffer_count" : "201"
+ ,"grt__antenna_diodes_count": "0"
  ,"GRT::ANT::errors" : "0"
  ,"DRT::drv" : "0"
  ,"DRT::worst_slack_min" : "-0.0916106124567693"

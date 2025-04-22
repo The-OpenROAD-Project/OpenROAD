@@ -122,6 +122,7 @@ define_metric "RSZ::worst_slack_max" "slack" "max" 5 "%5.2f" ">" {$value  - $clo
 define_metric "RSZ::tns_max" "tns" "max" 5 "%5.1f" ">" {$value - $clock_period * .1 * $instance_count * .1}
 define_metric "RSZ::hold_buffer_count" "hold" "bufs" 4 "%4d" "<=" {int($value * 1.2)}
 
+define_metric "grt__antenna_diodes_count" "" "ANT" 3 "%3d" "<=" {$value}
 define_metric "GRT::ANT::errors" "" "ANT" 3 "%3d" "<=" {$value}
 
 define_metric "DRT::drv" "" "drv" 3 "%3d" "<=" {$value}
