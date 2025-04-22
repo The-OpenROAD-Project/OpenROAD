@@ -1986,16 +1986,18 @@ void NesterovBase::updateAreas()
   stdInstsArea_ = macroInstsArea_ = 0;
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : stdInstsArea_, macroInstsArea_)
-  for (auto it = NB_gCells_.begin(); it < NB_gCells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
-    if (gCell != nullptr) {
-      if (gCell->isMacroInstance()) {
-        macroInstsArea_ += static_cast<int64_t>(gCell->dx())
-                           * static_cast<int64_t>(gCell->dy());
-      } else if (gCell->isStdInstance()) {
-        stdInstsArea_ += static_cast<int64_t>(gCell->dx())
-                         * static_cast<int64_t>(gCell->dy());
-      }
+  for (int i = 0; i < NB_gCells_.size(); ++i) {
+    GCell* gCell = NB_gCells_[i];
+    if (gCell == nullptr)
+      continue;
+
+    const int64_t area
+        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
+
+    if (gCell->isMacroInstance()) {
+      macroInstsArea_ += area;
+    } else if (gCell->isStdInstance()) {
+      stdInstsArea_ += area;
     }
   }
 
