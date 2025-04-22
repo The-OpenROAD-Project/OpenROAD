@@ -2001,7 +2001,7 @@ void NesterovBase::updateAreas()
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-  reduction(+ : stdInstsArea_, macroInstsArea_)
+    reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto& NB_gCell : NB_gCells_) {
     accumulateArea(NB_gCell);
   }
