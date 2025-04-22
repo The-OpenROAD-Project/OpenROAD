@@ -471,10 +471,10 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
                  2,
                  "antenna {} insert {} diodes",
                  db_net->getConstName(),
-                 violation.diode_count_per_gate * violation.gates.size());
-      if (violation.diode_count_per_gate > 0) {
+                 violation.diode_count);
+      if (violation.diode_count > 0) {
         for (odb::dbITerm* gate : violation.gates) {
-          for (int j = 0; j < violation.diode_count_per_gate; j++) {
+          for (int j = 0; j < (violation.diode_count / (int)violation.gates.size()); j++) {
             odb::dbTechLayer* violation_layer
                 = tech->findRoutingLayer(violation.routing_level);
             insertDiode(db_net,

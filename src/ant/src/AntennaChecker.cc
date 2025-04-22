@@ -886,7 +886,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
           if (violated) {
             antenna_violations.push_back({layer->getRoutingLevel(),
                                           gates_for_diode_insertion,
-                                          diode_count_per_gate,
+                                          diode_count_per_gate * (int)gates_for_diode_insertion.size(),
                                           excess_ratio});
           }
 
@@ -918,7 +918,7 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
             }
             antenna_violations.push_back({layer->getRoutingLevel(),
                                           std::move(gates_for_diode_insertion),
-                                          1,
+                                          1 * (int)gates_for_diode_insertion.size(),
                                           1.0});
           }
         }

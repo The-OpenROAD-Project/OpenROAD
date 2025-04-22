@@ -103,7 +103,7 @@ struct Violation
 {
   int routing_level;
   std::vector<odb::dbITerm*> gates;
-  int diode_count_per_gate;
+  int diode_count;
   double excess_ratio;
 };
 
