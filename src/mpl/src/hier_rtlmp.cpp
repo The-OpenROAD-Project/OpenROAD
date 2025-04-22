@@ -3298,18 +3298,13 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
     }
   }
 
-  auto cmp_pins_center = [&](odb::dbITerm* pin1, odb::dbITerm* pin2) {
+  auto compare_pin_center = [&](odb::dbITerm* pin1, odb::dbITerm* pin2) {
     return (target_direction == odb::dbTechLayerDir::VERTICAL
                 ? pin1->getBBox().xCenter() < pin2->getBBox().xCenter()
                 : pin1->getBBox().yCenter() < pin2->getBBox().yCenter());
   };
 
-  auto cmp_layer_number = [](LayerData data1, LayerData data2) {
-    return (data1.track_grid->getTechLayer()->getNumber()
-            < data2.track_grid->getTechLayer()->getNumber());
-  };
-
-  LayerDataList layers_data_list;
+  LayerDataList layers_data;
   for (auto& [track_grid, pins] : track_grid_to_pin_list) {
     std::vector<int> positions;
     if (target_direction == odb::dbTechLayerDir::VERTICAL) {
@@ -3317,13 +3312,17 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
     } else {
       track_grid->getGridY(positions);
     }
-    std::sort(pins.begin(), pins.end(), cmp_pins_center);
-    layers_data_list.push_back(LayerData{track_grid, positions, pins});
+    std::sort(pins.begin(), pins.end(), compare_pin_center);
+    layers_data.push_back(LayerData{track_grid, positions, pins});
   }
 
-  std::sort(layers_data_list.begin(), layers_data_list.end(), cmp_layer_number);
+  auto compare_layer_number = [](LayerData data1, LayerData data2) {
+    return (data1.track_grid->getTechLayer()->getNumber()
+            < data2.track_grid->getTechLayer()->getNumber());
+  };
+  std::sort(layers_data.begin(), layers_data.end(), compare_layer_number);
 
-  return layers_data_list;
+  return layers_data;
 }
 
 odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin)
