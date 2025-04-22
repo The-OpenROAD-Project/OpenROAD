@@ -32,14 +32,13 @@ class PlacementDensityDataSource
 {
 };
 
+class PowerDensityDataSource
+{
+};
+
 ////
 
-Gui::Gui()
-    : continue_after_close_(false),
-      logger_(nullptr),
-      db_(nullptr),
-      pin_density_heat_map_(nullptr),
-      placement_density_heat_map_(nullptr)
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
 }
 
@@ -167,7 +166,10 @@ int startGui(int& argc,
 
 namespace ord {
 
-void initGui(Tcl_Interp* interp, odb::dbDatabase* db, utl::Logger* logger)
+void initGui(Tcl_Interp* interp,
+             odb::dbDatabase* db,
+             sta::dbSta* sta,
+             utl::Logger* logger)
 {
   // Tcl requires this to be a writable string
   std::string cmd_save_image(

@@ -28,8 +28,8 @@ using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
 using sta::Net;
+using sta::Path;
 using sta::PathExpanded;
-using sta::PathRef;
 using sta::Pin;
 using sta::Slack;
 using sta::StaState;
@@ -51,11 +51,11 @@ class RecoverPower : public sta::dbStaState
 
  private:
   void init();
-  Vertex* recoverPower(const PathRef& path, Slack path_slack);
+  Vertex* recoverPower(const Path* path, Slack path_slack);
   bool meetsSizeCriteria(const LibertyCell* cell,
                          const LibertyCell* candidate,
                          bool match_size);
-  bool downsizeDrvr(const PathRef* drvr_path,
+  bool downsizeDrvr(const Path* drvr_path,
                     int drvr_index,
                     PathExpanded* expanded,
                     bool only_same_size_swap,

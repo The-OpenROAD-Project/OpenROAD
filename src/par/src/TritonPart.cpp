@@ -45,7 +45,6 @@
 #include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
@@ -1601,8 +1600,7 @@ void TritonPart::BuildTimingPaths()
     sta::PathExpanded expand(path, sta_);
     expand.path(expand.size() - 1);
     for (size_t i = 0; i < expand.size(); i++) {
-      // PathRef is reference to a path vertex
-      const sta::PathRef* ref = expand.path(i);
+      const sta::Path* ref = expand.path(i);
       sta::Pin* pin = ref->vertex(sta_)->pin();
       // Nets connect pins at a level of the hierarchy
       auto net = network_->net(pin);  // sta::Net*
