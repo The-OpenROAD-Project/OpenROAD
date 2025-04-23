@@ -23,6 +23,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -156,6 +157,7 @@ class DisplayControls : public QDockWidget,
   void setControlByPath(const std::string& path,
                         bool is_visible,
                         Qt::CheckState value);
+  void setControlByPath(const std::string& path, const QColor& color);
   bool checkControlByPath(const std::string& path, bool is_visible);
 
   void registerRenderer(Renderer* renderer);
@@ -477,6 +479,10 @@ class DisplayControls : public QDockWidget,
   bool isModelRowSelectable(const ModelRow* row) const;
 
   void checkLiberty(bool assume_loaded = false);
+
+  std::tuple<QColor*, Qt::BrushStyle*, bool> lookupColor(
+      QStandardItem* item,
+      const QModelIndex* index = nullptr);
 
   QTreeView* view_;
   DisplayControlModel* model_;

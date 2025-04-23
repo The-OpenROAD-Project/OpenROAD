@@ -995,6 +995,48 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
   }
 }
 
+std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
+    QStandardItem* item,
+    const QModelIndex* index)
+{
+  if (item == misc_.background.swatch) {
+    return {&background_color_, nullptr, false};
+  } else if (item == blockages_.blockages.swatch) {
+    return {&placement_blockage_color_, &placement_blockage_pattern_, false};
+  } else if (item == misc_.regions.swatch) {
+    return {&region_color_, &region_pattern_, false};
+  } else if (item == instance_shapes_.names.swatch) {
+    return {&instance_name_color_, nullptr, false};
+  } else if (item == instance_shapes_.iterm_labels.swatch) {
+    return {&iterm_label_color_, nullptr, false};
+  } else if (item == rulers_.swatch) {
+    return {&ruler_color_, nullptr, false};
+  } else {
+    QVariant tech_layer_data = item->data(user_data_item_idx_);
+    if (!tech_layer_data.isValid()) {
+      return {nullptr, nullptr, false};
+    }
+    auto tech_layer = tech_layer_data.value<dbTechLayer*>();
+    auto site = tech_layer_data.value<odb::dbSite*>();
+    if (tech_layer != nullptr) {
+      QColor* item_color = &layer_color_[tech_layer];
+      Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
+      if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+        if (index && index->row() != 0) {
+          // ensure if a via is the first layer, it can still be modified
+          return {item_color, item_pattern, false};
+        }
+      } else {
+        return {item_color, item_pattern, true};
+      }
+    } else if (site != nullptr) {
+      return {&site_color_[site], nullptr, false};
+    }
+  }
+
+  return {nullptr, nullptr, false};
+}
+
 void DisplayControls::displayItemDblClicked(const QModelIndex& index)
 {
   if (index.column() == 0) {
@@ -1013,43 +1055,10 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     Qt::BrushStyle* item_pattern = nullptr;
     bool has_sibling = false;
 
-    // check if placement
-    if (color_item == misc_.background.swatch) {
-      item_color = &background_color_;
-    } else if (color_item == blockages_.blockages.swatch) {
-      item_color = &placement_blockage_color_;
-      item_pattern = &placement_blockage_pattern_;
-    } else if (color_item == misc_.regions.swatch) {
-      item_color = &region_color_;
-      item_pattern = &region_pattern_;
-    } else if (color_item == instance_shapes_.names.swatch) {
-      item_color = &instance_name_color_;
-    } else if (color_item == instance_shapes_.iterm_labels.swatch) {
-      item_color = &iterm_label_color_;
-    } else if (color_item == rulers_.swatch) {
-      item_color = &ruler_color_;
-    } else {
-      QVariant tech_layer_data = color_item->data(user_data_item_idx_);
-      if (!tech_layer_data.isValid()) {
-        return;
-      }
-      auto tech_layer = tech_layer_data.value<dbTechLayer*>();
-      auto site = tech_layer_data.value<odb::dbSite*>();
-      if (tech_layer != nullptr) {
-        item_color = &layer_color_[tech_layer];
-        item_pattern = &layer_pattern_[tech_layer];
-        if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-          if (index.row() != 0) {
-            // ensure if a via is the first layer, it can still be modified
-            return;
-          }
-        } else {
-          has_sibling = true;
-        }
-      } else if (site != nullptr) {
-        item_color = &site_color_[site];
-      }
-    }
+    const auto lookup = lookupColor(color_item, &index);
+    item_color = std::get<0>(lookup);
+    item_pattern = std::get<1>(lookup);
+    has_sibling = std::get<2>(lookup);
 
     if (item_color == nullptr) {
       return;
@@ -1104,6 +1113,31 @@ void DisplayControls::setControlByPath(const std::string& path,
     for (auto* item : items) {
       item->setCheckState(value);
     }
+  }
+}
+
+// path is separated by "/", so setting Standard Cells, would be
+// Instances/StdCells
+void DisplayControls::setControlByPath(const std::string& path,
+                                       const QColor& color)
+{
+  std::vector<QStandardItem*> items;
+  findControlsInItems(path, Swatch, items);
+
+  if (items.empty()) {
+    logger_->error(utl::GUI, 40, "Unable to find {} display control", path);
+  } else {
+    for (auto* item : items) {
+      const auto& [item_color, item_style, sibling] = lookupColor(item);
+      if (sibling || item_color == nullptr) {
+        continue;
+      }
+      *item_color = color;
+      item->setIcon(makeSwatchIcon(color));
+    }
+  }
+  if (!items.empty()) {
+    emit colorChanged();
   }
 }
 
@@ -2033,8 +2067,11 @@ void DisplayControls::buildRestoreTclCommands(std::vector<std::string>& cmds,
     if (item->hasChildren()) {
       buildRestoreTclCommands(cmds, item, name + "/");
     } else {
-      bool visible = parent->child(r, Visible)->checkState() == Qt::Checked;
-      cmds.push_back(fmt::format(FMT_RUNTIME(visible_restore), name, visible));
+      auto* visible = parent->child(r, Visible);
+      if (visible) {
+        bool vis = visible->checkState() == Qt::Checked;
+        cmds.push_back(fmt::format(FMT_RUNTIME(visible_restore), name, vis));
+      }
       auto* selectable = parent->child(r, Selectable);
       if (selectable != nullptr) {
         bool select = selectable->checkState() == Qt::Checked;
