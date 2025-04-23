@@ -53,6 +53,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
 {
   if (network_->getNumCells() == 0) {
     importDb();
+    adjustNodesOrient();
   }
 
   auto filler_masters_by_implant = splitByImplant(filler_masters);
