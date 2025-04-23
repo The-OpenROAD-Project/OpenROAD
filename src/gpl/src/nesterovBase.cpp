@@ -2016,24 +2016,15 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
-  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : stdInstsArea_, macroInstsArea_)
-  // log_->report("start NB updateareas!");
-  // log_->report("NB_gCells size():{}", NB_gCells_.size());
   for (auto it = NB_gCells_.begin(); it < NB_gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
-    // log_->reportLiteral(fmt::format("iterating, handle index {}!",
-    // it->getIndex())); log_->reportLiteral(fmt::format(", is NBC:{} ",
-    // it->isNesterovBaseCommon())); gCell->print(log_);
     if (!gCell) {
       log_->report("gCell is nullptr inside NBC updateAreas()!");
       continue;
     }
-    // log_->report("{}", gCell->insts()[0]->dbInst());
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
                          * static_cast<int64_t>(gCell->dy());
@@ -2975,16 +2966,15 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 
       // analogous to updatePrevGradient()
       updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
+    } else {
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "warning: updateGCellState, db_inst not found in "
+                 "db_inst_index_map_ for instance: {}",
+                 db_inst->getName());
     }
-    // else {
-    //   debugPrint(
-    //       log_,
-    //       GPL,
-    //       "callbacks",
-    //       1,
-    //       "warning: updateGCellState, db_inst not found in db_inst_index_map_
-    //       " "for instance: {}", db_inst->getName());
-    // }
   }
   new_instances.clear();
 }
@@ -2993,7 +2983,12 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
                                size_t stor_index,
                                RouteBase* rb)
 {
-  // log_->report("NesterovBase: creatGCell {}", db_inst->getName());
+  debugPrint(log_,
+             GPL,
+             "callbacks",
+             1,
+             "NesterovBase: creatGCell {}",
+             db_inst->getName());
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
     new_instances.push_back(db_inst);
@@ -3035,6 +3030,7 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
 
 size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 {
+  debugPrint(log_, GPL, "callbacks", 2, "NBC createGCell");
   Instance gpl_inst(db_inst,
                     pbc_->padLeft() * pbc_->siteSizeX(),
                     pbc_->padRight() * pbc_->siteSizeX(),
@@ -3058,7 +3054,7 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
 
 void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
 {
-  // log_->report("NBC createGNet");
+  debugPrint(log_, GPL, "callbacks", 2, "NBC createGNet");
   Net gpl_net(db_net, skip_io_mode);
   pb_nets_stor_.push_back(gpl_net);
   GNet gnet(&pb_nets_stor_.back());
@@ -3070,7 +3066,7 @@ void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
 
 void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 {
-  // log_->report("NBC createITerm");
+  debugPrint(log_, GPL, "callbacks", 2, "NBC createITerm");
   Pin gpl_pin(iTerm);
   pb_pins_stor_.push_back(gpl_pin);
   GPin gpin(&pb_pins_stor_.back());
@@ -3084,21 +3080,11 @@ void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 //  maintaining consistency in NBC::gcellStor_ and NB::gCells_
 void NesterovBase::destroyGCell(odb::dbInst* db_inst)
 {
-  // log_->report("NesterovBase::destroyGCel");
+  debugPrint(log_, GPL, "callbacks", 2, "NesterovBase::destroyGCel");
   auto db_it = db_inst_to_NB_index_map_.find(db_inst);
   if (db_it != db_inst_to_NB_index_map_.end()) {
     size_t last_index = NB_gCells_.size() - 1;
     size_t gcell_index = db_it->second;
-
-    // log_->report("gcell(index):{}({}), last(index):{}({})",
-    //   gCells_[gcell_index]->insts()[0]->dbInst()->getName(), gcell_index,
-    //   gCells_[last_index]->print(), last_index);
-
-    // log_->report("NB_gCells_.size():{}", NB_gCells_.size());
-    // log_->reportLiteral(fmt::format("NB gcell(index):{}, ", gcell_index));
-    // NB_gCells_[gcell_index]->print(log_);
-    // log_->reportLiteral(fmt::format("NB last(index):{}, ", last_index));
-    // NB_gCells_[last_index]->print(log_);
 
     GCellHandle& handle = NB_gCells_[gcell_index];
     // should be impossible to be a filler here
@@ -3108,7 +3094,6 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
       std::swap(NB_gCells_[gcell_index], NB_gCells_[last_index]);
     }
     swapAndPopParallelVectors(gcell_index, last_index);
-    // log_->report("swap and pop parallel done!");
     NB_gCells_.pop_back();
     db_inst_to_NB_index_map_.erase(db_it);
 
@@ -3118,13 +3103,9 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
             = NB_gCells_[gcell_index]->insts()[0]->dbInst();
         db_inst_to_NB_index_map_.erase(swapped_inst);
         db_inst_to_NB_index_map_[swapped_inst] = gcell_index;
-
-        // log_->reportLiteral(fmt::format("new(index):{}", gcell_index));
-        // NB_gCells_[gcell_index]->print(log_);
       }
     } else {
       db_inst_to_NB_index_map_.erase(db_inst);
-      // log_->report("removed last element!");
     }
 
     if (!is_filler) {
@@ -3135,17 +3116,29 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
         if (it != db_inst_to_NB_index_map_.end()) {
           NB_gCells_[it->second].updateIndex(replacer.second);
         } else {
-          log_->report("warn replacer dbInst {} not found in NB map!",
-                       replacer.first->getName());
+          debugPrint(log_,
+                     GPL,
+                     "callbacks",
+                     1,
+                     "warn replacer dbInst {} not found in NB map!",
+                     replacer.first->getName());
         }
       }
     } else {
-      log_->report("warning: trying to destroy filler gcell!");
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "warning: trying to destroy filler gcell!");
       destroyFillerGCell(handle.getIndex());
     }
 
   } else {
-    log_->report(
+    debugPrint(
+        log_,
+        GPL,
+        "callbacks",
+        1,
         "warning: db_inst not found in db_inst_index_map_ for instance: {}",
         db_inst->getName());
   }
@@ -3156,19 +3149,15 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyGCell(
 {
   auto it = db_inst_to_NBC_index_map_.find(db_inst);
   if (it == db_inst_to_NBC_index_map_.end()) {
-    log_->report("error: db_inst not found in db_inst_to_NBC_index_map_");
+    log_->error(GPL,
+                307,
+                "db_inst not found in db_inst_to_NBC_index_map_ when trying to "
+                "destroy GCell on NBC");
     return {};
   }
 
   size_t index_remove = it->second;
   size_t last_index = gCellStor_.size() - 1;
-
-  // log_->report("\nNesterovBaseCommon::destroyGCell");
-  // log_->report("before destroy gCellStor_.size(): {}", gCellStor_.size());
-  // log_->report("destroying {} in NBC",
-  // gCellStor_[index_remove].insts()[0]->dbInst()->getName());
-  // log_->report("last index {} in NBC",
-  // gCellStor_[last_index].insts()[0]->dbInst()->getName());
 
   db_inst_to_NBC_index_map_.erase(it);
 
@@ -3184,12 +3173,6 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyGCell(
   }
 
   gCellStor_.pop_back();
-
-  // log_->report("after destroy gCellStor_.size(): {}", gCellStor_.size());
-  // if (replacement.first) {
-  //   log_->report("replacement as {} in NBC", replacement.first->getName());
-  // }
-
   return replacement;
 }
 
@@ -3211,25 +3194,25 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
 
 void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
 {
-  // log_->report("NesterovBaseCommon::destroyGNet");
+  debugPrint(log_, GPL, "callbacks", 2, "NesterovBaseCommon::destroyGNet");
   auto db_it = db_net_to_NBC_index_map_.find(db_net);
   if (db_it == db_net_to_NBC_index_map_.end()) {
-    log_->report(
-        "error: db_net not found in db_net_to_NBC_index_map_ for net: {}",
-        db_net->getName());
+    log_->error(GPL,
+                308,
+                "db_net not found in db_net_to_NBC_index_map_ for net: {}",
+                db_net->getName());
     return;
   }
 
   size_t index_remove = db_it->second;
   size_t last_index = gNetStor_.size() - 1;
 
-  // log_->report("destroying net {} at index {}", db_net->getName(),
-  // index_remove);
-
   if (index_remove > last_index) {
-    log_->report("error: index {} out of bounds for gNetStor_ (max: {})",
-                 index_remove,
-                 last_index);
+    log_->error(GPL,
+                309,
+                "index {} out of bounds for gNetStor_ (max: {})",
+                index_remove,
+                last_index);
     return;
   }
 
@@ -3243,25 +3226,22 @@ void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
 
   gNetStor_.pop_back();
   db_net_to_NBC_index_map_.erase(db_it);
-
-  // log_->report("after destroy gNetStor_.size(): {}", gNetStor_.size());
 }
 
 void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
 {
-  // log_->report("NesterovBaseCommon::destroyITerm");
+  debugPrint(log_, GPL, "callbacks", 2, "NesterovBaseCommon::destroyITerm");
   auto db_it = db_iterm_to_NBC_index_map_.find(db_iterm);
   if (db_it != db_iterm_to_NBC_index_map_.end()) {
-    // log_->report("before destroy gPinStor_.size():{}", gPinStor_.size());
     size_t last_index = gPinStor_.size() - 1;
     size_t index_remove = db_it->second;
 
-    // log_->report("destroying {} in NBC",
-    // gPinStor_[index_remove].pin()->dbITerm()->getName());
     if (index_remove > last_index) {
-      log_->report("error: index {} out of bounds for gPinStor_ (max:{})",
-                   index_remove,
-                   last_index);
+      log_->error(GPL,
+                  310,
+                  "index {} out of bounds for gPinStor_ (max:{})",
+                  index_remove,
+                  last_index);
       return;
     }
     if (index_remove != last_index) {
@@ -3272,10 +3252,11 @@ void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
     gPinStor_.pop_back();
     db_iterm_to_NBC_index_map_.erase(db_it);
 
-    // log_->report("after destroy gPinStor_.size():{}", gPinStor_.size());
   } else {
-    log_->report("error: db_iterm not found in db_iterm_map_ for iterm: {}",
-                 db_iterm->getMTerm()->getName());
+    log_->error(GPL,
+                311,
+                "db_iterm not found in db_iterm_map_ for iterm: {}",
+                db_iterm->getMTerm()->getName());
   }
 }
 
@@ -3284,24 +3265,23 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
                               size_t last_index)
 {
   if (vec.empty()) {
-    log_->report("Warn Attempted to pop from empty vector.");
+    debugPrint(
+        log_, GPL, "callbacks", 1, "Warn Attempted to pop from empty vector.");
     return;
   }
 
   if (remove_index >= vec.size()) {
-    log_->report("Error: remove_index {} out of bounds for vector size {}.",
-                 remove_index,
-                 vec.size());
-    // log_->report("vec.size():{},remove_index:{},last_index:{}",vec.size(),remove_index,last_index);
-    // log_->error(GPL,944,"Error: remove_index {} out of bounds for vector size
-    // {}.",
-    //             remove_index, vec.size());
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "remove_index {} out of bounds for vector size {}.",
+               remove_index,
+               vec.size());
     return;
   }
 
   if (remove_index != last_index) {
-    // log_->report(
-    //     "Swapping index {} with last_index {}", remove_index, last_index);
     std::swap(vec[remove_index], vec[last_index]);
   }
   vec.pop_back();
@@ -3310,11 +3290,14 @@ void NesterovBase::swapAndPop(std::vector<FloatPoint>& vec,
 void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
                                              size_t last_index)
 {
-  // log_->report(
-  //     "Swapping and popping parallel vectors with remove_index {} and "
-  //     "last_index {}",
-  //     remove_index,
-  //     last_index);
+  debugPrint(log_,
+             GPL,
+             "callbacks",
+             3,
+             "Swapping and popping parallel vectors with remove_index {} and "
+             "last_index {}",
+             remove_index,
+             last_index);
   swapAndPop(curSLPCoordi_, remove_index, last_index);
   swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
   swapAndPop(curSLPDensityGrads_, remove_index, last_index);
