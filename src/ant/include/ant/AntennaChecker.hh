@@ -114,6 +114,8 @@ using Violations = std::vector<Violation>;
 using GateToViolationLayers
     = std::map<odb::dbITerm*, std::set<odb::dbTechLayer*>>;
 
+using GateDiodes = std::map<odb::dbITerm*, int>;
+
 class AntennaChecker
 {
  public:
@@ -174,10 +176,15 @@ class AntennaChecker
   int checkGates(odb::dbNet* db_net,
                  bool verbose,
                  bool save_report,
-                 odb::dbMTerm* diode_mterm,
                  float ratio_margin,
-                 GateToLayerToNodeInfo& gate_info,
-                 Violations& antenna_violations);
+                 GateToLayerToNodeInfo& gate_info);
+  GateDiodes determineParPsrDiodes(
+      GateToViolationLayers& gates_with_violations,
+      odb::dbNet* db_net,
+      odb::dbMTerm* diode_mterm,
+      float ratio_margin,
+      GateToLayerToNodeInfo& gate_info,
+      Violations& antenna_violations); 
   void calculateViaPar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   void calculateWirePar(odb::dbTechLayer* tech_layer, NodeInfo& info);
   bool checkPAR(odb::dbNet* db_net,
