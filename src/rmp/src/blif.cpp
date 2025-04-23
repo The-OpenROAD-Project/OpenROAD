@@ -95,7 +95,8 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
     std::string currentGate
         = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
-    std::string currentConnections = "", currentClock = "";
+    std::string currentConnections;
+    std::string currentClock;
     std::set<std::string> currentClocks;
 
     auto iterms = inst->getITerms();
@@ -518,7 +519,8 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     for (auto&& connection : connections) {
       auto equalSignPos = connection.find("=");
 
-      std::string mtermName = "", netName = "";
+      std::string mtermName;
+      std::string netName;
 
       if (equalSignPos == std::string::npos && masterType == GateType::Mlatch) {
         // Identified clock net!
