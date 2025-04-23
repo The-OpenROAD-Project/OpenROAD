@@ -1001,37 +1001,41 @@ std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
 {
   if (item == misc_.background.swatch) {
     return {&background_color_, nullptr, false};
-  } else if (item == blockages_.blockages.swatch) {
+  }
+  if (item == blockages_.blockages.swatch) {
     return {&placement_blockage_color_, &placement_blockage_pattern_, false};
-  } else if (item == misc_.regions.swatch) {
+  }
+  if (item == misc_.regions.swatch) {
     return {&region_color_, &region_pattern_, false};
-  } else if (item == instance_shapes_.names.swatch) {
+  }
+  if (item == instance_shapes_.names.swatch) {
     return {&instance_name_color_, nullptr, false};
-  } else if (item == instance_shapes_.iterm_labels.swatch) {
+  }
+  if (item == instance_shapes_.iterm_labels.swatch) {
     return {&iterm_label_color_, nullptr, false};
-  } else if (item == rulers_.swatch) {
+  }
+  if (item == rulers_.swatch) {
     return {&ruler_color_, nullptr, false};
-  } else {
-    QVariant tech_layer_data = item->data(user_data_item_idx_);
-    if (!tech_layer_data.isValid()) {
-      return {nullptr, nullptr, false};
-    }
-    auto tech_layer = tech_layer_data.value<dbTechLayer*>();
-    auto site = tech_layer_data.value<odb::dbSite*>();
-    if (tech_layer != nullptr) {
-      QColor* item_color = &layer_color_[tech_layer];
-      Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
-      if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-        if (index && index->row() != 0) {
-          // ensure if a via is the first layer, it can still be modified
-          return {item_color, item_pattern, false};
-        }
-      } else {
-        return {item_color, item_pattern, true};
+  }
+  QVariant tech_layer_data = item->data(user_data_item_idx_);
+  if (!tech_layer_data.isValid()) {
+    return {nullptr, nullptr, false};
+  }
+  auto tech_layer = tech_layer_data.value<dbTechLayer*>();
+  auto site = tech_layer_data.value<odb::dbSite*>();
+  if (tech_layer != nullptr) {
+    QColor* item_color = &layer_color_[tech_layer];
+    Qt::BrushStyle* item_pattern = &layer_pattern_[tech_layer];
+    if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+      if (index && index->row() != 0) {
+        // ensure if a via is the first layer, it can still be modified
+        return {item_color, item_pattern, false};
       }
-    } else if (site != nullptr) {
-      return {&site_color_[site], nullptr, false};
+    } else {
+      return {item_color, item_pattern, true};
     }
+  } else if (site != nullptr) {
+    return {&site_color_[site], nullptr, false};
   }
 
   return {nullptr, nullptr, false};
