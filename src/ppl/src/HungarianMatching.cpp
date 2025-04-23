@@ -225,31 +225,32 @@ void HungarianMatching::createMatrixForGroups()
     }
 
     hungarian_matrix_.resize(group_slots_);
-    int slot_index = 0;
-    for (int i : valid_starting_slots_) {
-      int groupIndex = 0;
-      const Point& slot_pos = slots_[i].pos;
-
-      hungarian_matrix_[slot_index].resize(num_pin_groups_,
-                                           std::numeric_limits<int>::max());
-      for (const auto& [pins, order] : pin_groups_) {
+    int groupIndex = 0;
+    for (const auto& [pins, order] : pin_groups_) {
+      int slot_index = 0;
+      for (int i : valid_starting_slots_) {
         int group_hpwl = 0;
         for (const int io_idx : pins) {
+          const Point& slot_pos = slots_[i].pos;
+
+          hungarian_matrix_[slot_index].resize(num_pin_groups_,
+                                               std::numeric_limits<int>::max());
           IOPin& io_pin = netlist_->getIoPin(io_idx);
           int pin_hpwl = netlist_->computeIONetHPWL(io_idx, slot_pos);
           if (pin_hpwl == hungarian_fail_) {
             group_hpwl = hungarian_fail_;
             break;
           }
-          group_hpwl += pin_hpwl + getMirroredPinCost(io_pin, slot_pos);
+          const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
+          group_hpwl += pin_hpwl + mirrored_cost;
         }
         if (pins.size() > group_slot_capacity[slot_index]) {
           group_hpwl = std::numeric_limits<int>::max();
         }
         hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
-        groupIndex++;
+        slot_index++;
       }
-      slot_index++;
+      groupIndex++;
     }
 
     if (hungarian_matrix_.empty()) {
