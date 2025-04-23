@@ -1639,14 +1639,13 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     NB_gCells_.emplace_back(GCellHandle(this, i));
   }
 
-<<<<<<< HEAD
   debugPrint(log_,
              GPL,
              "FillerInit",
              1,
              format_label_int,
              "FillerInit:NumGCells:",
-             gCells_.size());
+             NB_gCells_.size());
   debugPrint(log_,
              GPL,
              "FillerInit",
@@ -1661,13 +1660,6 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
              format_label_int,
              "FillerInit:NumGPins:",
              nbc_->gPins().size());
-=======
-  log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", NB_gCells_.size());
-  log_->info(
-      GPL, 32, "{:20} {:10}", "FillerInit:NumGNets:", nbc_->gNets().size());
-  log_->info(
-      GPL, 33, "{:20} {:10}", "FillerInit:NumGPins:", nbc_->gPins().size());
->>>>>>> 498328d96c (gpl: enable instaces removal during execution using callbacks)
 
   // initialize bin grid structure
   // send param into binGrid structure
