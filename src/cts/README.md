@@ -91,6 +91,16 @@ clock_tree_synthesis
 | `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default value is `1.0`, meaning all needed delay buffers are inserted.  A value of 0.5 means only half of necessary delay buffers are inserted.  A value of 0.0 means no insertion of delay buffers. |
 | `-library` | This option specifies the name of library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
 
+#### Instance Name Prefixes
+
+`clock_tree_synthesis` uses the following prefixes for the instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| clkbuf_regs | Splitting registers from macros |
+| clkload | Dummy loads to help balance the clock tree |
+| delaybuf | Delay buffers to help balance the tree |
+
 ### Report CTS
 
 This command is used to extract the following metrics after a successful `clock_tree_synthesis` run. 
