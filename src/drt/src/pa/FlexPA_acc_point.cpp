@@ -1188,7 +1188,7 @@ bool FlexPA::EnoughAccessPoints(
   const bool is_io_pin = (inst_term == nullptr);
 
   if (is_io_pin) {
-    return (aps.size() > 0);
+    return (!aps.empty());
   }
 
   if (!reqs.sparse_points) {
@@ -1390,7 +1390,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   }
 
   if (inst_term) {
-    std::string unmet_requirements = "";
+    std::string unmet_requirements;
     if (!reqs.far_from_edge) {
       unmet_requirements
           += "\n\tAt least "
