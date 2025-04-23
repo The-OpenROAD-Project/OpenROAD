@@ -419,21 +419,24 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
-  dbSet<dbModBTerm> modbterms = module->getModBTerms();
-  dbSet<dbModBTerm>::iterator modbterm_itr;
-  for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
-    modbterm_itr = dbModBTerm::destroy(modbterm_itr);
-  }
-
+  // remove mod nets before the ports, so on restore order ok
   dbSet<dbModNet> modnets = module->getModNets();
   dbSet<dbModNet>::iterator modnet_itr;
   for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
+  dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  dbSet<dbModBTerm>::iterator modbterm_itr;
+  for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    modbterm_itr = dbModBTerm::destroy(modbterm_itr);
+  }
+
   dbProperty::destroyProperties(_module);
 
-  // Assure that dbModule is restored first
+  // Journal the deletion of the dbModule after its ports
+  // and properties deleted, so that on restore we have
+  // dbModule to hang objects on.
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
