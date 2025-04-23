@@ -1074,15 +1074,11 @@ template <typename T>
 void FlexPA::filterMultipleAPAccesses(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
     T* pin,
     frInstTerm* inst_term,
     const bool& is_std_cell_pin)
 {
-  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
-      pin_shapes.size());
-  for (int i = 0; i < (int) pin_shapes.size(); i++) {
-    pin_shapes[i].get_polygons(layer_polys[i]);
-  }
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
@@ -1214,7 +1210,8 @@ template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
-    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
     T* pin,
     frInstTerm* inst_term,
     const frAccessPointEnum lower_type,
@@ -1228,7 +1225,7 @@ bool FlexPA::genPinAccessCostBounded(
   genAPsFromPinShapes(
       new_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
   filterMultipleAPAccesses(
-      new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+      new_aps, pin_shapes, layer_polys, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
     std_cell_pin_gen_ap_cnt_ += new_aps.size();
@@ -1373,6 +1370,12 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
+  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
+      pin_shapes.size());
+  for (int i = 0; i < (int) pin_shapes.size(); i++) {
+    pin_shapes[i].get_polygons(layer_polys[i]);
+  }
+
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
                      frAccessPointEnum::Center,
@@ -1387,8 +1390,14 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, pin, inst_term, lower, upper)) {
+      if (genPinAccessCostBounded(aps,
+                                  apset,
+                                  pin_shapes,
+                                  layer_polys,
+                                  pin,
+                                  inst_term,
+                                  lower,
+                                  upper)) {
         return aps.size();
       }
     }

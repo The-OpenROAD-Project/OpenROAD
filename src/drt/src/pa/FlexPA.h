@@ -205,7 +205,9 @@ class FlexPA
   bool genPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
@@ -431,6 +433,7 @@ class FlexPA
    *
    * @param aps vector of access points of the pin
    * @param pin_shapes vector of pin shapes of the pin
+   * @param layer_polys another representation of pin shapes
    * @param pin the pin
    * @param inst_term terminal
    * @param is_std_cell_pin if the pin if from a standard cell
@@ -439,6 +442,8 @@ class FlexPA
   void filterMultipleAPAccesses(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term,
       const bool& is_std_cell_pin);
