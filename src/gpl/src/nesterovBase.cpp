@@ -262,7 +262,7 @@ bool GCell::isStdInstance() const
   return !insts_[0]->isMacro();
 }
 
-// void GCell::print(utl::Logger* logger, bool print_only_name = true) const
+void GCell::print(utl::Logger* logger, bool print_only_name = true) const
 {
   if (!insts_.empty()) {
     logger->report("print gcell:{}", insts_[0]->dbInst()->getName());
