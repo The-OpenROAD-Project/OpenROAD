@@ -251,8 +251,7 @@ bool GCell::isMacroInstance() const
   if (!isInstance()) {
     return false;
   }
-  auto* inst = insts_.front();
-  return inst != nullptr && inst->isMacro();
+  return insts_[0]->isMacro();
 }
 
 bool GCell::isStdInstance() const
@@ -260,8 +259,7 @@ bool GCell::isStdInstance() const
   if (!isInstance()) {
     return false;
   }
-  auto* inst = insts_.front();
-  return inst != nullptr && !inst->isMacro();
+  return !insts_[0]->isMacro();
 }
 
 void GCell::print(utl::Logger* logger) const
@@ -1982,12 +1980,9 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
-  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-#pragma omp parallel for reduction(+ : stdInstsArea_, macroInstsArea_) \
-    num_threads(nbc_->getNumThreads())
   for (GCell* gcell : NB_gCells_) {
     if (gcell == nullptr) {
       continue;
