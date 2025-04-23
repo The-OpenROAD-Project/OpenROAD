@@ -47,41 +47,31 @@ void HungarianMatching::findAssignment()
 void HungarianMatching::createMatrix()
 {
   hungarian_matrix_.resize(non_blocked_slots_);
-  int slot_index = 0;
-  for (int i = begin_slot_; i <= end_slot_; ++i) {
-    int pinIndex = 0;
-    const Point& slot_pos = slots_[i].pos;
-    if (slots_[i].blocked) {
-      continue;
-    }
-    hungarian_matrix_[slot_index].resize(num_io_pins_,
-                                         std::numeric_limits<int>::max());
-    std::vector<int> larger_costs;
-    bool has_mirrored = false;
-    for (int idx : pin_indices_) {
-      IOPin& io_pin = netlist_->getIoPin(idx);
-      if (!io_pin.isInGroup()) {
+  int pin_index = 0;
+
+  for (int idx : pin_indices_) {
+    IOPin& io_pin = netlist_->getIoPin(idx);
+    if (!io_pin.isInGroup()) {
+      int slot_index = 0;
+      for (int i = begin_slot_; i <= end_slot_; ++i) {
+        const Point& slot_pos = slots_[i].pos;
+        if (slots_[i].blocked) {
+          continue;
+        }
+        hungarian_matrix_[slot_index].resize(num_io_pins_,
+                                             std::numeric_limits<int>::max());
+        std::vector<int> larger_costs;
+        bool has_mirrored = false;
         const int io_net_hpwl = netlist_->computeIONetHPWL(idx, slot_pos);
         const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
         const int hpwl = io_net_hpwl + mirrored_cost;
         larger_costs.push_back(std::max(io_net_hpwl, mirrored_cost));
-        hungarian_matrix_[slot_index][pinIndex] = hpwl;
-        pinIndex++;
+        hungarian_matrix_[slot_index][pin_index] = hpwl;
         has_mirrored = has_mirrored || mirrored_cost != 0;
+        slot_index++;
       }
+      pin_index++;
     }
-
-    if (has_mirrored) {
-      std::vector<uint8_t> rank = getTieBreakRank(larger_costs);
-      for (int idx = 0; idx < pinIndex; idx++) {
-        const int hpwl = hungarian_matrix_[slot_index][idx];
-        if ((hpwl >> 24) != 0) {
-          logger_->critical(utl::PPL, 210, "Cost for pin exceeds 24 bits.");
-        }
-        hungarian_matrix_[slot_index][idx] = (hpwl << 8) | rank[idx];
-      }
-    }
-    slot_index++;
   }
 }
 
