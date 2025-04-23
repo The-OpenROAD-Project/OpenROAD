@@ -2,3 +2,5 @@ build/
 debug/
 src/sta/build/
 src/sta/debug/
+# reenable when CI can handle it
+#test/orfs/
