@@ -3,239 +3,33 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "architecture.h"
 #include "dpl/Coordinates.h"
-#include "dpl/Grid.h"
+#include "dpl/Objects.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+namespace dpl {
+class Master;
+class Pin;
+class Grid;
+class Edge;
+}  // namespace dpl
+
 namespace dpo {
 
-class Pin;
-
-const int EDGETYPE_DEFAULT = 0;
 using dpl::DbuX;
 using dpl::DbuY;
-using dpl::GridNode;
+using dpl::Edge;
 using dpl::GridX;
 using dpl::GridY;
+using dpl::Master;
+using dpl::Pin;
 using odb::dbOrientType;
-
-class MasterEdge
-{
- public:
-  MasterEdge(unsigned int type, const odb::Rect& box)
-      : edge_type_idx_(type), bbox_(box)
-  {
-  }
-  unsigned int getEdgeType() const { return edge_type_idx_; }
-  const odb::Rect& getBBox() const { return bbox_; }
-
- private:
-  unsigned int edge_type_idx_;
-  odb::Rect bbox_;
-};
-
-class Master
-{
- public:
-  Master() = default;
-  odb::Rect boundary_box_;
-  std::vector<MasterEdge> edges_;
-};
-
-class Node : public GridNode
-{
- public:
-  enum Type
-  {
-    UNKNOWN,
-    CELL,
-    TERMINAL,
-    MACROCELL,
-    FILLER
-  };
-
-  enum Fixity
-  {
-    NOT_FIXED,
-    FIXED_X,
-    FIXED_Y,
-    FIXED_XY,
-  };
-
-  Node();
-  bool isPlaced() const override { return false; }
-  bool isHybrid() const override { return false; }
-  DbuX xMin() const override { return left_; }
-  DbuY yMin() const override { return DbuY(bottom_); }
-  DbuX dx() const override { return DbuX(w_); }
-  DbuY dy() const override { return DbuY(h_); }
-  odb::dbInst* getDbInst() const override { return db_inst_; }
-  DbuX siteWidth() const override { return DbuX(0); }
-
-  int getArea() const { return w_.v * h_.v; }
-  DbuY getBottom() const { return bottom_; }
-  int getBottomPower() const { return powerBot_; }
-  int getTopPower() const { return powerTop_; }
-  dbOrientType getCurrOrient() const { return currentOrient_; }
-  Fixity getFixed() const { return fixed_; }
-  DbuY getHeight() const { return h_; }
-  int getId() const { return id_; }
-  DbuX getLeft() const { return left_; }
-  DbuY getOrigBottom() const { return origBottom_; }
-  DbuX getOrigLeft() const { return origLeft_; }
-  int getRegionId() const { return regionId_; }
-  DbuX getRight() const { return left_.v + DbuX(w_); }
-  DbuY getTop() const { return bottom_ + h_; }
-  Type getType() const { return type_; }
-  DbuX getWidth() const { return w_; }
-  Master* getMaster() const { return master_; }
-
-  void setBottom(DbuY bottom) { bottom_ = bottom; }
-  void setBottomPower(int bot) { powerBot_ = bot; }
-  void setTopPower(int top) { powerTop_ = top; }
-  void setCurrOrient(const dbOrientType& orient) { currentOrient_ = orient; }
-  void setFixed(Fixity fixed) { fixed_ = fixed; }
-  void setHeight(DbuY h) { h_ = h; }
-  void setId(int id) { id_ = id; }
-  void setLeft(DbuX left) { left_ = left; }
-  void setOrigBottom(DbuY bottom) { origBottom_ = bottom; }
-  void setOrigLeft(DbuX left) { origLeft_ = left; }
-  void setRegionId(int id) { regionId_ = id; }
-  void setType(Type type) { type_ = type; }
-  void setWidth(DbuX w) { w_ = w; }
-  void setMaster(Master* in) { master_ = in; }
-  void setDbInst(odb::dbInst* inst) { db_inst_ = inst; }
-
-  bool adjustCurrOrient(const dbOrientType& newOrient);
-
-  bool isTerminal() const { return (type_ == TERMINAL); }
-  bool isFiller() const { return (type_ == FILLER); }
-  bool isFixed() const override { return (fixed_ != NOT_FIXED); }
-
-  void addLeftEdgeType(int etl) { etls_.emplace_back(etl); }
-  void addRigthEdgeType(int etr) { etrs_.emplace_back(etr); }
-  const std::vector<int>& getLeftEdgeTypes() const { return etls_; }
-  const std::vector<int>& getRightEdgeTypes() const { return etrs_; }
-  void swapEdgeTypes() { std::swap(etls_, etrs_); }
-
-  int getNumPins() const { return (int) pins_.size(); }
-  const std::vector<Pin*>& getPins() const { return pins_; }
-
- private:
-  // Id.
-  int id_ = 0;
-  // Current position; bottom corner.
-  DbuX left_{0};
-  DbuY bottom_{0};
-  // Original position.
-  DbuX origLeft_{0};
-  DbuY origBottom_{0};
-  // Width and height.
-  DbuX w_{0};
-  DbuY h_{0};
-  // Type.
-  Type type_ = UNKNOWN;
-  // Fixed or not fixed.
-  Fixity fixed_ = NOT_FIXED;
-  // For edge types and spacing tables.
-  std::vector<int> etls_, etrs_;
-  // For power.
-  int powerTop_ = Architecture::Row::Power_UNK;
-  int powerBot_ = Architecture::Row::Power_UNK;
-  // Regions.
-  int regionId_ = 0;
-  // Orientations.
-  dbOrientType currentOrient_;
-  // Pins.
-  std::vector<Pin*> pins_;
-  // Master and edges
-  Master* master_{nullptr};
-
-  // dbInst
-  odb::dbInst* db_inst_{nullptr};
-
-  friend class Network;
-};
-
-class Edge
-{
- public:
-  int getId() const { return id_; }
-  void setId(int id) { id_ = id; }
-
-  void setNdr(int ndr) { ndr_ = ndr; }
-  int getNdr() const { return ndr_; }
-
-  int getNumPins() const { return (int) pins_.size(); }
-  const std::vector<Pin*>& getPins() const { return pins_; }
-
- private:
-  // Id.
-  int id_ = 0;
-  // Refer to routing rule stored elsewhere.
-  int ndr_ = 0;
-  // Pins.
-  std::vector<Pin*> pins_;
-
-  friend class Network;
-};
-
-class Pin
-{
- public:
-  enum Direction
-  {
-    Dir_IN,
-    Dir_OUT,
-    Dir_INOUT,
-    Dir_UNKNOWN
-  };
-
-  Pin();
-
-  void setDirection(int dir) { dir_ = dir; }
-  int getDirection() const { return dir_; }
-
-  Node* getNode() const { return node_; }
-  Edge* getEdge() const { return edge_; }
-
-  void setOffsetX(double offsetX) { offsetX_ = offsetX; }
-  double getOffsetX() const { return offsetX_; }
-
-  void setOffsetY(double offsetY) { offsetY_ = offsetY; }
-  double getOffsetY() const { return offsetY_; }
-
-  void setPinLayer(int layer) { pinLayer_ = layer; }
-  int getPinLayer() const { return pinLayer_; }
-
-  void setPinWidth(double width) { pinWidth_ = width; }
-  double getPinWidth() const { return pinWidth_; }
-
-  void setPinHeight(double height) { pinHeight_ = height; }
-  double getPinHeight() const { return pinHeight_; }
-
- private:
-  // Pin width and height.
-  double pinWidth_ = 0;
-  double pinHeight_ = 0;
-  // Direction.
-  int dir_ = Dir_INOUT;
-  // Layer.
-  int pinLayer_ = 0;
-  // Node and edge for pin.
-  Node* node_ = nullptr;
-  Edge* edge_ = nullptr;
-  // Offsets from cell center.
-  double offsetX_ = 0;
-  double offsetY_ = 0;
-
-  friend class Network;
-};
 
 class Network
 {

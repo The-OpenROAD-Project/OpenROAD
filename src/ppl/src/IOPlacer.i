@@ -118,14 +118,6 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_top_layer_constraint(PinSet *pin_list,
-                         int x1, int y1,
-                         int x2, int y2)
-{
-  getIOPlacer()->addTopLayerConstraint(pin_list, odb::Rect(x1, y1, x2, y2));
-}
-
-void
 set_hor_length(int length)
 {
   getIOPlacer()->getParameters()->setHorizontalLength(length);
@@ -218,21 +210,6 @@ set_min_distance_in_tracks(bool in_tracks)
 void set_pin_placement_file(const char* file_name)
 {
   getIOPlacer()->getParameters()->setPinPlacementFile(file_name);
-}
-
-void
-create_pin_shape_pattern(odb::dbTechLayer* layer, int x_step, int y_step,
-                         const odb::Rect& region,
-                         int pin_width, int pin_height, int keepout)
-{
-  getIOPlacer()->addTopLayerPinPattern(layer, x_step, y_step, region,
-                                       pin_width, pin_height, keepout);
-}
-
-odb::dbTechLayer*
-get_top_layer()
-{
-  return getIOPlacer()->getTopLayer();
 }
 
 void

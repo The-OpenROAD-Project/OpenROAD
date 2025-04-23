@@ -7,6 +7,8 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
+#include <functional>
+#include <memory>
 
 #include "utl/Logger.h"
 

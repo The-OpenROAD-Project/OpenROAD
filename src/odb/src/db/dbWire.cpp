@@ -4,6 +4,7 @@
 #include "dbWire.h"
 
 #include <algorithm>
+#include <optional>
 #include <vector>
 
 #include "dbBlock.h"

@@ -91,8 +91,8 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
     final |       0 |      10 |            0 |   +36.6% |   0.009 |   0.000 | r2/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 10 hold buffers.
-worst slack 0.01
-worst slack 1.88
+worst slack min 0.01
+worst slack max 1.88
 Net in2
  Pin capacitance: 0.70-0.78
  Wire capacitance: 5.22

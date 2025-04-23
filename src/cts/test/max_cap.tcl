@@ -4,7 +4,8 @@ read_lef sky130hs/sky130hs.tlef
 read_lef sky130hs/sky130hs_std_cell.lef
 read_liberty sky130hs/sky130hs_tt.lib
 
-set def_file "max_cap.def"
+set def_file [make_result_file mac_cap.def]
+
 # used to generate def
 source ../../rsz/test/hi_fanout.tcl
 write_hi_fanout_def1 $def_file 20 \

@@ -43,6 +43,7 @@ add_library(utl_lib
   src/Progress.cpp
   src/CommandLineProgress.cpp
   src/timer.cpp
+    src/decode.cpp
   src/prometheus/metrics_server.cpp
 )
 
@@ -52,11 +53,13 @@ target_include_directories(utl_lib
   PRIVATE
     src
     ${Boost_INCLUDE_DIRS}
+    ${TCL_INCLUDE_PATH}
 )
 
 target_link_libraries(utl_lib
   PUBLIC
     spdlog::spdlog
+    ${TCL_LIBRARY}
 )
 
 target_sources(utl
@@ -81,8 +84,6 @@ target_compile_definitions(utl
 target_link_libraries(utl
   PUBLIC
     utl_lib
-  PRIVATE
-    OpenSTA
 )
 
 messages(

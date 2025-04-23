@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <boost/geometry.hpp>
 #include <iostream>
+#include <map>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "frProfileTask.h"

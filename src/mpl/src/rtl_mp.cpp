@@ -3,6 +3,7 @@
 
 #include "mpl/rtl_mp.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 

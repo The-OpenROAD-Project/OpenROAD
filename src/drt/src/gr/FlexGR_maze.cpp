@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "gr/FlexGR.h"
@@ -404,7 +410,7 @@ bool FlexGRWorker::routeNet(grNet* net)
     return true;
   }
 
-  std::set<grNode*, frBlockObjectComp> unConnPinGCellNodes;
+  frOrderedIdSet<grNode*> unConnPinGCellNodes;
   std::map<FlexMazeIdx, grNode*> mazeIdx2unConnPinGCellNode;
   std::map<FlexMazeIdx, grNode*> mazeIdx2endPointNode;
   routeNet_prep(net,
@@ -452,7 +458,7 @@ bool FlexGRWorker::routeNet(grNet* net)
 
 void FlexGRWorker::routeNet_prep(
     grNet* net,
-    std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
+    frOrderedIdSet<grNode*>& unConnPinGCellNodes,
     std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode,
     std::map<FlexMazeIdx, grNode*>& mazeIdx2endPointNode)
 {
@@ -527,7 +533,7 @@ void FlexGRWorker::routeNet_printNet(grNet* net)
 // current set subnet root to be src with the absence of reroot
 void FlexGRWorker::routeNet_setSrc(
     grNet* net,
-    std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
+    frOrderedIdSet<grNode*>& unConnPinGCellNodes,
     std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode,
     std::vector<FlexMazeIdx>& connComps,
     FlexMazeIdx& ccMazeIdx1,
@@ -624,7 +630,7 @@ grNode* FlexGRWorker::routeNet_getNextDst(
 grNode* FlexGRWorker::routeNet_postAstarUpdate(
     std::vector<FlexMazeIdx>& path,
     std::vector<FlexMazeIdx>& connComps,
-    std::set<grNode*, frBlockObjectComp>& unConnPinGCellNodes,
+    frOrderedIdSet<grNode*>& unConnPinGCellNodes,
     std::map<FlexMazeIdx, grNode*>& mazeIdx2unConnPinGCellNode)
 {
   std::set<FlexMazeIdx> localConnComps;

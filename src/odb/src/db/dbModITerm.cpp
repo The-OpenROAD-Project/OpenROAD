@@ -199,7 +199,9 @@ dbModBTerm* dbModITerm::getChildModBTerm() const
   return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_child_modbterm);
 }
 
-dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
+dbModITerm* dbModITerm::create(dbModInst* parentInstance,
+                               const char* name,
+                               dbModBTerm* modbterm)
 {
   _dbModInst* parent = (_dbModInst*) parentInstance;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
@@ -227,8 +229,18 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(name);
     block->_journal->pushParam(moditerm->getId());
+    if (modbterm) {
+      block->_journal->pushParam(modbterm->getId());
+    } else {
+      block->_journal->pushParam(0U);
+    }
     block->_journal->pushParam(parent->getId());
     block->_journal->endAction();
+  }
+
+  if (modbterm) {
+    ((dbModITerm*) moditerm)->setChildModBTerm(modbterm);
+    modbterm->setParentModITerm(((dbModITerm*) moditerm));
   }
 
   return (dbModITerm*) moditerm;
@@ -320,6 +332,7 @@ void dbModITerm::destroy(dbModITerm* val)
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(val->getName());
     block->_journal->pushParam(val->getId());
+    block->_journal->pushParam(_moditerm->_child_modbterm);
     block->_journal->pushParam(_moditerm->_parent);
     block->_journal->endAction();
   }

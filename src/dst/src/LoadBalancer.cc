@@ -5,6 +5,7 @@
 
 #include <boost/bind/bind.hpp>
 #include <boost/thread/thread.hpp>
+#include <limits>
 #include <vector>
 
 #include "utl/Logger.h"

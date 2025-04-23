@@ -5,6 +5,8 @@
 
 #include <tcl.h>
 
+#include <string>
+
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"

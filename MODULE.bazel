@@ -9,7 +9,17 @@ bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
+
+# The current rules_cc 0.1.1 hardcodes script locations to `#!/bin/bash`
+# instead of using `#!/usr/bin/env bash`.
+# This is fixed by https://github.com/bazelbuild/rules_cc/pull/306 but
+# is not released yet. Use rules_cc from that commit.
 bazel_dep(name = "rules_cc", version = "0.1.1")
+git_override(
+    module_name = "rules_cc",
+    commit = "d74915024017250e46d95e91a3defc34174effe0",
+    remote = "https://github.com/bazelbuild/rules_cc",
+)
 
 # Not all boost libs are available at the latest version yet, so use a
 # slightly older one that has all we need.
@@ -37,6 +47,7 @@ bazel_dep(name = "boost.optional", version = BOOST_VERSION)
 bazel_dep(name = "boost.phoenix", version = BOOST_VERSION)
 bazel_dep(name = "boost.polygon", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.property_tree", version = BOOST_VERSION + ".bcr.2")
+bazel_dep(name = "boost.regex", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
 bazel_dep(name = "boost.thread", version = BOOST_VERSION)
@@ -44,6 +55,7 @@ bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.2")
 bazel_dep(name = "or-tools", version = "9.12")
 bazel_dep(name = "spdlog", version = "1.15.1")
+bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
 bazel_dep(name = "googletest", version = "1.16.0", dev_dependency = True)
@@ -63,4 +75,26 @@ llvm.toolchain(
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
+# FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains("@llvm_toolchain//:all")
+
+bazel_dep(
+    name = "rules_python",
+    version = "1.2.0",
+    # reduce namespace collisions by prefixing with openroad
+    repo_name = "openroad_rules_python",
+)
+
+python = use_extension("@openroad_rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    python_version = "3.13",
+)
+
+pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "openroad-pip",
+    python_version = "3.13",
+    requirements_lock = "//bazel:requirements_lock_3_13.txt",
+)
+use_repo(pip, "openroad-pip")

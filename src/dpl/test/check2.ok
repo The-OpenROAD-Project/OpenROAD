@@ -2,6 +2,6 @@
 [INFO ODB-0128] Design: ten_cells
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
 [WARNING DPL-0005] Overlap check failed (1).
- _284_ overlaps _285_
+ _284_ (NOR2_X1) overlaps _285_ (NOR2_X1)
 [ERROR DPL-0033] detailed placement checks failed.
 DPL-0033

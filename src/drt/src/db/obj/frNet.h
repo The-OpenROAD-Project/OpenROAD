@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "db/grObj/grShape.h"

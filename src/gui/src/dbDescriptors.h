@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
@@ -185,12 +186,12 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
   void findSourcesAndSinksInGraph(odb::dbNet* net,
                                   const odb::dbObject* sink,
                                   odb::dbWireGraph* graph,
-                                  NodeList& source_nodes,
-                                  NodeList& sink_nodes) const;
+                                  std::set<NodeList>& source_nodes,
+                                  std::set<NodeList>& sink_nodes) const;
   void findSourcesAndSinks(odb::dbNet* net,
                            const odb::dbObject* sink,
-                           std::vector<GraphTarget>& sources,
-                           std::vector<GraphTarget>& sinks) const;
+                           std::vector<std::set<GraphTarget>>& sources,
+                           std::vector<std::set<GraphTarget>>& sinks) const;
   void findPath(NodeMap& graph,
                 const Node* source,
                 const Node* sink,

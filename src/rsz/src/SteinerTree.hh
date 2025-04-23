@@ -16,8 +16,6 @@ const int SteinerNull = -1;
 
 namespace rsz {
 
-using std::vector;
-
 using utl::Logger;
 
 using odb::Point;
@@ -99,7 +97,7 @@ class SteinerTree
                      const std::vector<SteinerPt>& adj1,
                      const std::vector<SteinerPt>& adj2,
                      const std::vector<SteinerPt>& adj3);
-  int distance(SteinerPt& from, SteinerPt& to) const;
+  int distance(SteinerPt from, SteinerPt to) const;
 
   // "Accessors" for SteinerPts.
   const char* name(SteinerPt pt, const Network* network);

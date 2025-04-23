@@ -8,13 +8,15 @@
 
 #include <string>
 #include <vector>
-
+namespace dpl {
+class Node;
+}
 namespace dpo {
 
 class Architecture;
 class DetailedMgr;
 class Network;
-class Node;
+using dpl::Node;
 
 class DetailedOrient
 {

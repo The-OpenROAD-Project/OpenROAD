@@ -44,30 +44,29 @@ class tmg_rc_sh
 
 struct tmg_rc
 {
-  int _ifr;  // index to _ptV
-  int _ito;
+  int _from_idx;  // index to _ptV
+  int _to_idx;
   tmg_rc_sh _shape;
-  int _vert;
+  bool _is_vertical;
   int _width;
   int _default_ext;
 };
 
 struct tmg_rcpt
 {
-  tmg_rcpt();
-  int _x;  // nominal point
-  int _y;
-  dbTechLayer* _layer;
-  int _tindex;  // index to _termV
-  tmg_rcpt* _next_for_term;
-  tmg_rcpt* _t_alt;
-  tmg_rcpt* _next_for_clear;
-  tmg_rcpt* _sring;
-  int _dbwire_id;
-  uint _fre : 1;
-  uint _jct : 1;
-  uint _pinpt : 1;
-  uint _c2pinpt : 1;
+  int _x{0};  // nominal point
+  int _y{0};
+  dbTechLayer* _layer{nullptr};
+  int _tindex{-1};  // index to _termV
+  tmg_rcpt* _next_for_term{nullptr};
+  tmg_rcpt* _t_alt{nullptr};
+  tmg_rcpt* _next_for_clear{nullptr};
+  tmg_rcpt* _sring{nullptr};
+  int _dbwire_id{-1};
+  bool _fre{false};
+  bool _jct{false};
+  bool _pinpt{false};
+  bool _c2pinpt{false};
 };
 
 struct tmg_rcterm
@@ -123,12 +122,12 @@ class tmg_conn
   void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
-  tmg_rcpt* allocPt();
-  void addRc(const dbShape& s, int ifr, int ito);
+  tmg_rcpt* allocPt(int x, int y, dbTechLayer* layer);
+  void addRc(const dbShape& s, int from_idx, int to_idx);
   void addRc(int k,
              const tmg_rc_sh& s,
-             int ifr,
-             int ito,
+             int from_idx,
+             int to_idx,
              int xmin,
              int ymin,
              int xmax,
@@ -152,9 +151,9 @@ class tmg_conn
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
   int getExtension(int ipt, const tmg_rc* rc);
   int addPoint(int ipt, const tmg_rc* rc);
-  int addPoint(int ifr, int ipt, const tmg_rc* rc);
+  int addPoint(int from_idx, int ipt, const tmg_rc* rc);
   int addPointIfExt(int ipt, const tmg_rc* rc);
-  tmg_rc* addRcPatch(int ifr, int ito);
+  tmg_rc* addRcPatch(int from_idx, int to_idx);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 
@@ -164,15 +163,13 @@ class tmg_conn
   int _stbtx2[200];
   int _stbty2[200];
   dbBTerm* _slicedTileBTerm[200];
-  tmg_conn_search* _search;
-  tmg_conn_graph* _graph;
+  std::unique_ptr<tmg_conn_search> _search;
+  std::unique_ptr<tmg_conn_graph> _graph;
   std::vector<tmg_rc> _rcV;
   std::vector<tmg_rcpt> _ptV;
-  tmg_rcterm* _termV;
-  tmg_rcterm** _tstackV;
-  int _termN;
-  tmg_rcshort* _shortV;
-  int _shortN;
+  std::vector<tmg_rcterm> _termV;
+  std::vector<tmg_rcterm*> _tstackV;
+  std::vector<tmg_rcshort> _shortV;
   dbNet* _net;
   bool _hasSWire;
   bool _preserveSWire;
@@ -187,26 +184,33 @@ class tmg_conn
   int _need_short_wire_id;
   std::vector<std::array<tmg_connect_shape, 32>> _csVV;
   std::array<tmg_connect_shape, 32>* _csV;
-  int* _csNV;
+  std::vector<int> _csNV;
   int _csN;
   tmg_rcpt* _first_for_clear;
 
-  int _termNmax;
-  int _shortNmax;
   int _last_id;
   int _firstSegmentAfterVia;
   utl::Logger* logger_;
   friend class tmg_conn_graph;
 };
 
+// This stores shapes by level through addShape.  Once all the shapes
+// have been added then searchStart/Next can be used for querying.
+// Internally a simple tree of space bisections is generated for
+// efficiency.
+//
+// The code uses an odd convention:
+// is_via = 0 ==> wire
+//        = 1 ==> via
+//        = 2 ==> pin
 class tmg_conn_search
 {
  public:
   tmg_conn_search();
   ~tmg_conn_search();
   void clear();
-  void addShape(int lev, const Rect& bounds, int isVia, int id);
-  void searchStart(int lev, const Rect& bounds, int isVia);
+  void addShape(int level, const Rect& bounds, int is_via, int id);
+  void searchStart(int level, const Rect& bounds, int is_via);
   bool searchNext(int* id);
 
  private:

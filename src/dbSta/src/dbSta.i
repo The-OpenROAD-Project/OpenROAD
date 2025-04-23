@@ -55,14 +55,6 @@ find_logic_constants()
   sta->findLogicConstants();
 }
 
-void
-highlight_path_cmd(PathRef *path)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbSta *sta = openroad->getSta();
-  sta->highlight(path);
-}
-
 std::vector<odb::dbNet*>
 find_all_clk_nets()
 {
@@ -186,6 +178,16 @@ report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
   sta->reportTimingHistogram(num_bins, min_max);
+}
+
+void
+report_logic_depth_histogram_cmd(int num_bins, bool exclude_buffers,
+                         bool exclude_inverters)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta->reportLogicDepthHistogram(num_bins, exclude_buffers, exclude_inverters);
 }
 
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog

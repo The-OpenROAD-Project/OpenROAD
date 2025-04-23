@@ -25,9 +25,8 @@ namespace sta {
 class dbSta;
 class dbNetwork;
 class dbStaReport;
+class dbStaHistogram;
 class dbStaCbk;
-class AbstractPathRenderer;
-class AbstractPowerDensityDataSource;
 class PatternMatch;
 class TestCell;
 
@@ -122,10 +121,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                 odb::dbDatabase* db,
                 utl::Logger* logger);
 
-  void setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer);
-  void setPowerDensityDataSource(std::unique_ptr<AbstractPowerDensityDataSource>
-                                     power_density_data_source);
-
   // Creates a dbSta instance for the given dbBlock using the same context as
   // this dbSta instance (e.g. TCL interpreter, units, etc.)
   std::unique_ptr<dbSta> makeBlockSta(odb::dbBlock* block);
@@ -155,9 +150,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void registerStaState(dbStaState* state);
   void unregisterStaState(dbStaState* state);
 
-  // Highlight path in the gui.
-  void highlight(PathRef* path);
-
   std::string getInstanceTypeText(InstType type) const;
   InstType getInstanceType(odb::dbInst* inst);
   void reportCellUsage(odb::dbModule* module,
@@ -166,6 +158,11 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                        const char* stage_name);
 
   void reportTimingHistogram(int num_bins, const MinMax* min_max) const;
+
+  // Create a logic depth histogram report.
+  void reportLogicDepthHistogram(int num_bins,
+                                 bool exclude_buffers,
+                                 bool exclude_inverters) const;
 
   BufferUse getBufferUse(sta::LibertyCell* buffer);
 
@@ -198,9 +195,6 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   std::set<dbStaState*> sta_states_;
 
   std::unique_ptr<BufferUseAnalyser> buffer_use_analyser_;
-
-  std::unique_ptr<AbstractPathRenderer> path_renderer_;
-  std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
 };
 
 // Utilities for TestCell

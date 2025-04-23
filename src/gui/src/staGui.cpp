@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <limits>
 #include <string>

@@ -5,6 +5,7 @@
 
 #include <cctype>
 #include <cstring>
+#include <optional>
 #include <string>
 
 #include "odb/dbId.h"

@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <fstream>
+#include <map>
+#include <set>
 #include <string>
+#include <vector>
 
 // Generator Code Begin Cpp
 #include "dbBlock.h"
@@ -233,16 +237,6 @@ void dbModInst::destroy(dbModInst* modinst)
 
   _dbModule* _master = (_dbModule*) modinst->getMaster();
 
-  if (_block->_journal) {
-    _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
-    _block->_journal->pushParam(dbModInstObj);
-    _block->_journal->pushParam(modinst->getName());
-    _block->_journal->pushParam(modinst->getId());
-    _block->_journal->pushParam(_module->getId());
-    _block->_journal->pushParam(_master->getId());
-    _block->_journal->endAction();
-  }
-
   _master->_mod_inst = dbId<_dbModInst>();  // clear
 
   // Note that we only destroy the module instance, not the module
@@ -252,6 +246,8 @@ void dbModInst::destroy(dbModInst* modinst)
   dbSet<dbModITerm>::iterator moditerm_itr;
   for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
     dbModITerm* moditerm = *moditerm_itr;
+    // pins disconnected before deletion, so we restore pin before
+    // trying to connect on journalling restore of modInst.
     moditerm->disconnect();
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
@@ -279,6 +275,18 @@ void dbModInst::destroy(dbModInst* modinst)
   }
 
   dbProperty::destroyProperties(_modinst);
+
+  // Assure that dbModInst obj is restored first by being journalled last.
+  if (_block->_journal) {
+    _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
+    _block->_journal->pushParam(dbModInstObj);
+    _block->_journal->pushParam(modinst->getName());
+    _block->_journal->pushParam(modinst->getId());
+    _block->_journal->pushParam(_module->getId());
+    _block->_journal->pushParam(_master->getId());
+    _block->_journal->endAction();
+  }
+
   _dbModule* _parent = (_dbModule*) (modinst->getParent());
   _parent->_modinst_hash.erase(modinst->getName());
   _block->_modinst_tbl->destroy(_modinst);
@@ -390,13 +398,25 @@ void dbModInst::RemoveUnusedPortsAndPins()
   moditerms = getModITerms();
   modbterms = module->getModBTerms();
   for (auto mod_iterm : kill_set) {
+    dbModNet* moditerm_m_net = mod_iterm->getModNet();
     dbModBTerm* mod_bterm = module->findModBTerm(mod_iterm->getName());
     dbModNet* modbterm_m_net = mod_bterm->getModNet();
-    mod_bterm->disconnect();
-    dbModBTerm::destroy(mod_bterm);
-    dbModNet* moditerm_m_net = mod_iterm->getModNet();
-    mod_iterm->disconnect();
 
+    // Do the destruction in order for benefit of journaller
+    // so we always have a dbModBTerm..
+    // first destroy net, then dbModIterm, then dbModbterm.
+    mod_iterm->disconnect();
+    mod_bterm->disconnect();
+
+    // First destroy the net
+    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
+        && moditerm_m_net->getITerms().size() == 0
+        && moditerm_m_net->getModITerms().size() == 0
+        && moditerm_m_net->getModBTerms().size() == 0) {
+      dbModNet::destroy(moditerm_m_net);
+    }
+
+    // Now destroy the iterm
     dbModITerm::destroy(mod_iterm);
     if (modbterm_m_net && modbterm_m_net->getBTerms().size() == 0
         && modbterm_m_net->getITerms().size() == 0
@@ -404,12 +424,8 @@ void dbModInst::RemoveUnusedPortsAndPins()
         && modbterm_m_net->getModBTerms().size() == 0) {
       dbModNet::destroy(modbterm_m_net);
     }
-    if (moditerm_m_net && moditerm_m_net->getBTerms().size() == 0
-        && moditerm_m_net->getITerms().size() == 0
-        && moditerm_m_net->getModITerms().size() == 0
-        && moditerm_m_net->getModBTerms().size() == 0) {
-      dbModNet::destroy(moditerm_m_net);
-    }
+    // Finally the bterm
+    dbModBTerm::destroy(mod_bterm);
   }
 }
 
