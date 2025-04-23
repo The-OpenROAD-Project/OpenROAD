@@ -246,7 +246,8 @@ void dbModInst::destroy(dbModInst* modinst)
   dbSet<dbModITerm>::iterator moditerm_itr;
   for (moditerm_itr = moditerms.begin(); moditerm_itr != moditerms.end();) {
     dbModITerm* moditerm = *moditerm_itr;
-    // pins disconnected before deletion
+    // pins disconnected before deletion, so we restore pin before
+    // trying to connect on journalling restore of modInst.
     moditerm->disconnect();
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
@@ -275,7 +276,7 @@ void dbModInst::destroy(dbModInst* modinst)
 
   dbProperty::destroyProperties(_modinst);
 
-  // Assure that dbModule is restored first, journalled last.
+  // Assure that dbModInst obj is restored first by being journalled last.
   if (_block->_journal) {
     _block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     _block->_journal->pushParam(dbModInstObj);
