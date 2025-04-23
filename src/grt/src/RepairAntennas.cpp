@@ -469,10 +469,22 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
                  GRT,
                  "repair_antennas",
                  2,
-                 "antenna {} insert {} diodes",
+                 "antenna {} insert {} diodes, distribute among {} gates",
                  db_net->getConstName(),
-                 violation.diode_count);
+                 violation.diode_count,
+                 violation.gates.size());
       if (violation.diode_count > 0) {
+        if (violation.gates.empty()) {
+          logger_->warn(GRT,
+                        303,
+                        "No gates found for net {} but wanted to add {} "
+                        "diodes. Unable to repair "
+                        "antenna violations.",
+                        db_net->getConstName(),
+                        violation.diode_count);
+          continue;
+        }
+
         int total_diode_count = 0;
         const int diode_count_per_gate
             = std::max(1, violation.diode_count / (int) violation.gates.size());
