@@ -47,17 +47,13 @@ class SACoreHardMacro;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
-struct LayerParameters
+struct PatternParameters
 {
+  odb::dbITerm* iterm;
   int offset = 0;
   int pitch = 0;
-  int pin_width = 0;
   int pin_offset = 0;
-  int lower_left_to_first_pin = 0;
 };
-
-using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
-using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -340,13 +336,6 @@ class Pusher
   std::vector<HardMacro*> hard_macros_;
 };
 
-struct SameDirectionLayersData
-{
-  LayersWithPinsMap layer_to_pin;
-  LayerParametersMap layer_to_params;
-  odb::dbTechLayer* snap_layer = nullptr;
-};
-
 class Snapper
 {
  public:
@@ -357,31 +346,39 @@ class Snapper
   void snapMacro();
 
  private:
+  struct LayerData
+  {
+    odb::dbTrackGrid* track_grid;
+    std::vector<int> available_positions;
+    // ordered by pin centers
+    std::vector<odb::dbITerm*> pins;
+  };
+  // ordered by TrackGrid layer number
+  using LayerDataList = std::vector<LayerData>;
+  using TrackGridToPinListMap
+      = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
+
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
-                                   const LayerParameters& layer_params,
-                                   const odb::dbTechLayerDir& target_direction);
+  int totalPinsAligned(const LayerDataList& layers_data_list,
+                       const odb::dbTechLayerDir& direction);
 
-  SameDirectionLayersData computeSameDirectionLayersData(
+  LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);
-  LayerParameters computeLayerParameters(
-      odb::dbTechLayer* layer,
-      odb::dbITerm* pin,
-      const odb::dbTechLayerDir& target_direction);
-  void getTrackGrid(odb::dbTrackGrid* track_grid,
-                    int& origin,
-                    int& step,
-                    const odb::dbTechLayerDir& target_direction);
-  int getPinWidth(odb::dbITerm* pin,
-                  const odb::dbTechLayerDir& target_direction);
-  int getPinToLowerLeftDistance(odb::dbITerm* pin,
-                                const odb::dbTechLayerDir& target_direction);
-  void attemptSnapToExtraLayers(int origin,
-                                const SameDirectionLayersData& layers_data,
-                                const LayerParameters& snap_layer_params,
-                                const odb::dbTechLayerDir& target_direction);
+  odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
+  void getTrackGridPattern(odb::dbTrackGrid* track_grid,
+                           int pattern_idx,
+                           int& origin,
+                           int& step,
+                           const odb::dbTechLayerDir& target_direction);
+  int getPinOffset(odb::dbITerm* pin, const odb::dbTechLayerDir& direction);
+  void snapPinToPosition(odb::dbITerm* pin,
+                         int position,
+                         const odb::dbTechLayerDir& direction);
+  void attemptSnapToExtraPatterns(int start_index,
+                                  const LayerDataList& layers_data_list,
+                                  const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
