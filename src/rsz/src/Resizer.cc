@@ -2041,6 +2041,8 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           fanout_violations,
                                           length_violations,
                                           repaired_net_count);
+  fullyRebuffer(nullptr);
+  ensureLevelDrvrVertices();
 
   findResizeSlacks1();
   if (run_journal_restore)

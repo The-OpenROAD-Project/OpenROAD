@@ -1672,7 +1672,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
   Instance* parent = parent_in;
   switch (choice->type()) {
     case BufferedNetType::buffer: {
-      std::string buffer_name = resizer_->makeUniqueInstName("rebuffer");
+      std::string buffer_name = resizer_->makeUniqueInstName("place");
 
       // HFix: make net in hierarchy
       std::string net_name = resizer_->makeUniqueNetName();
