@@ -807,174 +807,239 @@ int AntennaChecker::checkGates(odb::dbNet* db_net,
     net_to_report_.at(db_net) = net_report;
   }
 
-  // Find all violations
-  std::map<NodeInfo*, std::map<odb::dbTechLayer*, int>>
-      violation_to_layer_to_diode_count;
+  // Stores the layer where the violation occurs
+  // Neede for the diode and jumper insertion
+  std::map<NodeInfo*, odb::dbTechLayer*> violation_to_layer;
 
-  std::map<NodeInfo*, std::map<odb::dbTechLayer*, std::vector<odb::dbITerm*>>>
-      violation_to_layer_to_gates;
+  // Pass 0: Find all violations, get their layers
+  // TODO: This should not be required, the arguments to this function should be
+  // changed or atleast reworked
+  for (const auto& [gate, violation_layers] : gates_with_violations) {
+    // Loop over all layers where the gate has a violation
+    for (odb::dbTechLayer* layer : violation_layers) {
+      // Get the violation info for the gate and layer
+      NodeInfo* violation_info = &gate_info[gate][layer];
 
-  // TODO: Handle CAR and CSR violations
-  if (pin_violation_count > 0) {
-    // Loop over all gates that have a violation
-    for (const auto& [gate, violation_layers] : gates_with_violations) {
-      // gate : Gate with violation
-      // violation_layers : Layers where the gate has a violation
+      if (violation_to_layer.find(violation_info) != violation_to_layer.end()) {
+        // Violation info already exists, skip
+        logger_->warn(ANT,
+                      303,
+                      "Duplicate violation info found for net {} on layer {}",
+                      db_net->getConstName(),
+                      layer->getConstName());
+        continue;
+      }
 
-      // Loop over all layers where the gate has a violation
-      for (odb::dbTechLayer* layer : violation_layers) {
-        // Get the violation info for the gate and layer
-        {
-          // Get the violation info for this gate and layer
-          NodeInfo violation_info = gate_info[gate][layer];
+      // Add the violation info to the map
+      violation_to_layer[violation_info] = layer;
+    }
+  }
 
-          // How many diodes have we added for this violation?
-          int total_diode_count = 0;
+  // Pass 1: Loop over all violations, determine the diode count
 
-          // Do we have previously added diodes for this violation?
-          if (violation_to_layer_to_diode_count.find(&violation_info)
-              != violation_to_layer_to_diode_count.end()) {
-            // Loop over all layers to find the diode count
-            // TODO: Do we only do this if the gate is in the layer?
-            // Only add the count if gate is inside iterms
-            for (const auto& [layer, count] :
-                 violation_to_layer_to_diode_count[&violation_info]) {
-              // if(violation_to_layer_to_gates[&violation_info][layer].find(gate)
-              //!= violation_to_layer_to_gates[&violation_info][layer].end()) {
-              total_diode_count += count;
-              //}
-            }
-          }
+  // How many diodes have we added to the gate
+  std::map<odb::dbITerm*, int> gate_to_diode_count;
 
-          // Checkpoint the diffusion area
-          const double original_diff_area = violation_info.iterm_diff_area;
+  if (diode_mterm) {
+    // Diffusion are of the diode
+    const double diode_diff_area = diffArea(diode_mterm);
 
-          // Diode diffusion area
-          const double diode_diff_area
-              = diode_mterm ? diffArea(diode_mterm) : 0.0;
+    for (auto& [original_violation_info, layer] : violation_to_layer) {
+      // If no gates in this violation, skip
+      if (original_violation_info->iterms.empty()) {
+        logger_->warn(ANT,
+                      304,
+                      "No gates found in violation info for net {} on layer {}",
+                      db_net->getConstName(),
+                      layer->getConstName());
 
-          // Add the diode diffusion area
-          violation_info.iterm_diff_area += total_diode_count * diode_diff_area;
+        continue;
+      }
 
-          // Check if the violation is still present
-          bool par_violation = checkPAR(db_net,
-                                        layer,
-                                        violation_info,
-                                        ratio_margin,
-                                        false,
-                                        false,
-                                        net_report);
-          bool psr_violation = checkPSR(db_net,
-                                        layer,
-                                        violation_info,
-                                        ratio_margin,
-                                        false,
-                                        false,
-                                        net_report);
+      // Step 1: Get the diode count for this violation
+      int diode_count = 0;
 
-          bool violated = par_violation || psr_violation;
-
-          // How many new diodes have we added for this violation?
-          int additional_diode_count = 0;
-
-          if (violated && diode_mterm) {
-            // We still have a violation, but can only fix it if we have a diode
-
-            // Loop until we no longer have a violation or we exceed the maximum
-            // number of diodes
-            while (par_violation || psr_violation) {
-              // Add the diode diffusion area
-              violation_info.iterm_diff_area += diode_diff_area;
-              additional_diode_count++;
-
-              // Recalculate the wire parameters
-              calculateWirePar(layer, violation_info);
-
-              // Check for violations again
-              par_violation = checkPAR(db_net,
-                                       layer,
-                                       violation_info,
-                                       ratio_margin,
-                                       false,
-                                       false,
-                                       net_report);
-              psr_violation = checkPSR(db_net,
-                                       layer,
-                                       violation_info,
-                                       ratio_margin,
-                                       false,
-                                       false,
-                                       net_report);
-
-              // Check if we have exceeded the maximum number of diodes
-              if (additional_diode_count >= 100) {
-                debugPrint(logger_,
-                           ANT,
-                           "check_gates",
-                           1,
-                           "Net {} requires more than {} diodes per gate to "
-                           "repair violations.",
-                           db_net->getConstName(),
-                           additional_diode_count);
-                break;
-              }
-            }
-          }
-
-          // Update the required diode count for this violation
-          if (violation_to_layer_to_diode_count.find(&violation_info)
-              == violation_to_layer_to_diode_count.end()) {
-            // Violation is not in the map
-            violation_to_layer_to_diode_count[&violation_info][layer]
-                = additional_diode_count;
-            violation_to_layer_to_gates[&violation_info][layer]
-                = violation_info.iterms;
-          } else {
-            // Check if the layer is already in the map
-            if (violation_to_layer_to_diode_count[&violation_info].find(layer)
-                == violation_to_layer_to_diode_count[&violation_info].end()) {
-              // Layer is not in the map, add it
-              violation_to_layer_to_diode_count[&violation_info][layer]
-                  = additional_diode_count;
-            } else {
-              // Layer is already in the map, update the count
-              // TODO: Does this even make sense? Can we have multiple
-              // violations on the same layer? Then we would need to change
-              // this Only add to the layer where gate is inside iterms
-              violation_to_layer_to_diode_count[&violation_info][layer]
-                  += additional_diode_count;
-            }
-          }
-
-          // Reset the diffusion area to the original value
-          violation_info.iterm_diff_area = original_diff_area;
+      // Check all gates inside the violation for their diode count
+      // This prevents us from adding unecessary diodes
+      for (const auto& gate : original_violation_info->iterms) {
+        if (gate_to_diode_count.find(gate) != gate_to_diode_count.end()) {
+          diode_count += gate_to_diode_count[gate];
         }
       }
-    }
-  }
 
-  {
-    int num_violation = 1;
-    for (const auto& [violation, layer_to_diode_count] :
-         violation_to_layer_to_diode_count) {
-      for (const auto& [layer, diode_count] : layer_to_diode_count) {
-        antenna_violations.push_back(
-            {layer->getRoutingLevel(),
-             violation_to_layer_to_gates[violation][layer],
-             diode_count});
-        debugPrint(
-            logger_,
-            ANT,
-            "check_gates",
-            1,
-            "  {} diodes needed to fix violation #{} on layer {} on net {}",
-            diode_count,
-            num_violation++,
-            layer->getConstName(),
-            db_net->getConstName());
+      // Make a copy of the original violation_info, as we modify the diffusion
+      // area
+      NodeInfo violation_info = *original_violation_info;
+
+      // Add the diode diffusion area
+      violation_info.iterm_diff_area += diode_count * diode_diff_area;
+
+      debugPrint(logger_,
+                 ANT,
+                 "check_gates",
+                 1,
+                 "  {} diodes already added to fix violation on layer {} "
+                 "on net {}",
+                 diode_count,
+                 layer->getConstName(),
+                 db_net->getConstName());
+
+      // Step 2: Check if there is a violation
+      bool violated = checkRatioViolations(db_net,
+                                           layer,
+                                           violation_info,
+                                           ratio_margin,
+                                           false,
+                                           false,
+                                           net_report);
+
+      // How many new diodes do we need to add for this violation?
+      int additional_diode_count = 0;
+      {
+        // Step 3: Loop until we no longer have a violation or we exceed the
+        // maximum
+        // TODO: We should be able to calculate the number of diodes needed
+        while (violated) {
+          // Add the diode diffusion area
+          violation_info.iterm_diff_area += diode_diff_area;
+          additional_diode_count++;
+
+          debugPrint(logger_,
+                     ANT,
+                     "check_gates",
+                     1,
+                     "  checking with {} additional diodes to fix "
+                     "on net {}",
+                     additional_diode_count,
+                     db_net->getConstName());
+
+          // Recalculate the wire parameters
+          calculateWirePar(layer, violation_info);
+
+          // Check for violations again
+          violated = checkRatioViolations(db_net,
+                                          layer,
+                                          violation_info,
+                                          ratio_margin,
+                                          false,
+                                          false,
+                                          net_report);
+
+          // Check if we have exceeded the maximum number of diodes
+          if (additional_diode_count >= 100) {
+            logger_->warn(ANT,
+                          305,
+                          "Net {} requires more than {} diodes per gate to "
+                          "repair violations.",
+                          db_net->getConstName(),
+                          additional_diode_count);
+            break;
+          }
+        }
+      }
+      {
+        // Step 4: Distribute the diode count to all gates inside the violation
+        // TOOD: This should also check the diodes already added to the gate,
+        // such that the number of diodes for all gates is averaged out
+        const int additional_diode_count_per_gate = std::max(
+            1, additional_diode_count / (int) violation_info.iterms.size());
+
+        debugPrint(logger_,
+                   ANT,
+                   "check_gates",
+                   1,
+                   "  {} additional diodes needed to fix violation on layer {} "
+                   "on net {}",
+                   additional_diode_count,
+                   layer->getConstName(),
+                   db_net->getConstName());
+
+        int diodes_added = 0;
+        for (const auto& gate : violation_info.iterms) {
+          // How many diodes can we add to this gate?
+          int diodes_increment
+              = std::min(additional_diode_count_per_gate,
+                         additional_diode_count - diodes_added);
+
+          // If we have already added diodes to this gate, stop
+          if (diodes_increment <= 0) {
+            break;
+          }
+
+          // Increment the diode count
+          diodes_added += diodes_increment;
+
+          if (gate_to_diode_count.find(gate) != gate_to_diode_count.end()) {
+            // Gate is already in the map, update the count
+            gate_to_diode_count[gate] += diodes_increment;
+          } else {
+            // New gate, add it to the map
+            gate_to_diode_count[gate] = diodes_increment;
+          }
+        }
+
+        assert(diodes_added == additional_diode_count);
       }
     }
   }
+
+  // Pass 2: Distribute the diode count of the gates to the violations
+  // Greedily assign diodes to the violation
+  for (const auto& [violation_info, layer] : violation_to_layer) {
+    // Get the diode count for this violation
+    int diode_count = 0;
+
+    // Check all gates inside the violation for their diode count
+    for (const auto& gate : violation_info->iterms) {
+      if (gate_to_diode_count.find(gate) != gate_to_diode_count.end()) {
+        // Gate is in the map, update the count
+        diode_count += gate_to_diode_count[gate];
+
+        // Mark the diodes as already added
+        gate_to_diode_count[gate] = 0;
+      }
+    }
+
+    // Add the violation to the list
+    std::vector<odb::dbITerm*> gates;
+    for (const auto& gate : violation_info->iterms) {
+      gates.push_back(gate);
+    }
+    if (diode_count > 0) {
+      // Make sure that we have at least one gate
+      assert(!gates.empty());
+    }
+    antenna_violations.push_back(
+        {layer->getRoutingLevel(), std::move(gates), diode_count});
+
+    // Print the violation info
+    debugPrint(logger_,
+               ANT,
+               "check_gates",
+               1,
+               "  {} diodes needed to fix violation #{} on layer {} on net {}",
+               diode_count,
+               antenna_violations.size(),
+               layer->getConstName(),
+               db_net->getConstName());
+  }
+
+  // Make sure that all diodes have been added to violations
+  bool missed_diodes = false;
+  for (const auto& [gate, diode_count] : gate_to_diode_count) {
+    if (diode_count > 0) {
+      logger_->warn(ANT,
+                    306,
+                    "Gate {} has {} diodes that were not added to a violation.",
+                    gate->getInst()->getConstName(),
+                    diode_count);
+      missed_diodes = true;
+    }
+  }
+  assert(!missed_diodes);
+
+  // Make sure that all violations have been added to the list
+  assert(antenna_violations.size() == violation_to_layer.size());
 
   return pin_violation_count;
 }
