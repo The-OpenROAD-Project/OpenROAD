@@ -21,6 +21,7 @@ class Options
 {
  public:
   virtual ~Options() {}
+  virtual QColor background() = 0;
   virtual QColor color(const odb::dbTechLayer* layer) = 0;
   virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
   virtual QColor placementBlockageColor() = 0;

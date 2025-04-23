@@ -489,6 +489,7 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   region_color_ = QColor(0x70, 0x70, 0x70, 0x70);  // semi-transparent mid-gray
   region_pattern_ = Qt::SolidPattern;
+  background_color_ = Qt::black;
   makeLeafItem(misc_.scale_bar, "Scale bar", misc, Qt::Checked);
   makeLeafItem(misc_.access_points, "Access points", misc, Qt::Unchecked);
   makeLeafItem(
@@ -499,6 +500,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(
+      misc_.background, "Background", misc, {}, false, background_color_);
   toggleParent(misc_group_);
 
   checkLiberty();
@@ -523,6 +526,8 @@ DisplayControls::DisplayControls(QWidget* parent)
           this,
           &DisplayControls::itemContextMenu);
 
+  connect(
+      this, &DisplayControls::colorChanged, this, &DisplayControls::changed);
   // register renderers
   if (gui::Gui::get() != nullptr) {
     for (auto renderer : gui::Gui::get()->renderers()) {
@@ -604,7 +609,9 @@ void DisplayControls::writeSettingsForRow(QSettings* settings,
                           name->child(r, Selectable));
     }
   } else {
-    settings->setValue("visible", asBool(visible));
+    if (visible != nullptr) {
+      settings->setValue("visible", asBool(visible));
+    }
     if (selectable != nullptr) {
       settings->setValue("selectable", asBool(selectable));
     }
@@ -643,7 +650,9 @@ void DisplayControls::readSettingsForRow(QSettings* settings,
                          name->child(r, Selectable));
     }
   } else {
-    visible->setCheckState(getChecked(settings, "visible", visible));
+    if (visible != nullptr) {
+      visible->setCheckState(getChecked(settings, "visible", visible));
+    }
     if (selectable != nullptr) {
       selectable->setCheckState(getChecked(settings, "selectable", selectable));
     }
@@ -680,6 +689,7 @@ void DisplayControls::readSettings(QSettings* settings)
 
   settings->beginGroup("other");
   settings->beginGroup("color");
+  getColor(misc_.background, background_color_, "background");
   getColor(
       blockages_.blockages, placement_blockage_color_, "blockages_placement");
   getColor(rulers_, ruler_color_, "ruler");
@@ -753,6 +763,7 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   settings->beginGroup("other");
   settings->beginGroup("color");
+  settings->setValue("background", background_color_);
   settings->setValue("blockages_placement", placement_blockage_color_);
   settings->setValue("ruler", ruler_color_);
   settings->setValue("instance_name", instance_name_color_);
@@ -876,7 +887,9 @@ void DisplayControls::toggleParent(const QStandardItem* parent,
 
 void DisplayControls::toggleParent(ModelRow& row)
 {
-  toggleParent(row.name, row.visible, Visible);
+  if (row.visible != nullptr) {
+    toggleParent(row.name, row.visible, Visible);
+  }
   if (row.selectable != nullptr) {
     toggleParent(row.name, row.selectable, Selectable);
   }
@@ -1001,7 +1014,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
     bool has_sibling = false;
 
     // check if placement
-    if (color_item == blockages_.blockages.swatch) {
+    if (color_item == misc_.background.swatch) {
+      item_color = &background_color_;
+    } else if (color_item == blockages_.blockages.swatch) {
       item_color = &placement_blockage_color_;
       item_pattern = &placement_blockage_pattern_;
     } else if (color_item == misc_.regions.swatch) {
@@ -1065,7 +1080,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
         *item_pattern = display_dialog->getSelectedPattern();
       }
       view_->repaint();
-      emit changed();
+      emit colorChanged();
     }
   }
 }
@@ -1291,7 +1306,7 @@ QStandardItem* DisplayControls::makeParentItem(ModelRow& row,
 void DisplayControls::makeLeafItem(ModelRow& row,
                                    const QString& text,
                                    QStandardItem* parent,
-                                   Qt::CheckState checked,
+                                   std::optional<Qt::CheckState> checked,
                                    bool add_selectable,
                                    const QColor& color,
                                    const QVariant& user_data)
@@ -1309,16 +1324,18 @@ void DisplayControls::makeLeafItem(ModelRow& row,
     row.swatch->setData(user_data, user_data_item_idx_);
   }
 
-  row.visible = new QStandardItem("");
-  row.visible->setCheckable(true);
-  row.visible->setEditable(false);
-  row.visible->setCheckState(checked);
+  if (checked.has_value()) {
+    row.visible = new QStandardItem("");
+    row.visible->setCheckable(true);
+    row.visible->setEditable(false);
+    row.visible->setCheckState(checked.value());
+  }
 
   if (add_selectable) {
     row.selectable = new QStandardItem("");
     row.selectable->setCheckable(true);
     row.selectable->setEditable(false);
-    row.selectable->setCheckState(checked);
+    row.selectable->setCheckState(checked.value_or(Qt::Unchecked));
   }
 
   parent->appendRow({row.name, row.swatch, row.visible, row.selectable});
@@ -1352,6 +1369,11 @@ QIcon DisplayControls::makeSwatchIcon(const QColor& color)
   swatch.fill(color);
 
   return QIcon(swatch);
+}
+
+QColor DisplayControls::background()
+{
+  return background_color_;
 }
 
 QColor DisplayControls::color(const dbTechLayer* layer)
