@@ -1412,7 +1412,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
     }
     if (!reqs.sparse_points) {
       unmet_requirements += "\n\tAt least " + std::to_string(1)
-                            + " access point farm from inst edge";
+                            + " access point far from inst edge";
     }
     logger_->warn(DRT,
                   88,
