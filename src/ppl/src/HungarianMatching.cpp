@@ -225,9 +225,11 @@ void HungarianMatching::createMatrixForGroups()
     }
 
     hungarian_matrix_.resize(group_slots_);
-    int groupIndex = 0;
+    int group_index = 0;
     for (const auto& [pins, order] : pin_groups_) {
       int slot_index = 0;
+      bool is_mirrored = false;
+      std::vector<int> larger_costs(valid_starting_slots_.size(), 0);
       for (int i : valid_starting_slots_) {
         int group_hpwl = 0;
         for (const int io_idx : pins) {
@@ -243,14 +245,27 @@ void HungarianMatching::createMatrixForGroups()
           }
           const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
           group_hpwl += pin_hpwl + mirrored_cost;
+          larger_costs[slot_index] += std::max(pin_hpwl, mirrored_cost);
+          is_mirrored = is_mirrored || mirrored_cost != 0;
         }
         if (pins.size() > group_slot_capacity[slot_index]) {
           group_hpwl = std::numeric_limits<int>::max();
         }
-        hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
+        hungarian_matrix_[slot_index][group_index] = group_hpwl;
         slot_index++;
       }
-      groupIndex++;
+
+      if (is_mirrored) {
+        std::vector<uint8_t> rank = getTieBreakRank(larger_costs);
+        for (int idx = 0; idx < slot_index; idx++) {
+          const int hpwl = hungarian_matrix_[idx][group_index];
+          if ((hpwl >> 24) != 0) {
+            logger_->critical(utl::PPL, 211, "Cost for pin exceeds 24 bits.");
+          }
+          hungarian_matrix_[idx][group_index] = (hpwl << 8) | rank[idx];
+        }
+      }
+      group_index++;
     }
 
     if (hungarian_matrix_.empty()) {
@@ -380,7 +395,7 @@ Edge HungarianMatching::getMirroredEdge(const Edge& edge)
 std::vector<uint8_t> HungarianMatching::getTieBreakRank(
     const std::vector<int>& costs)
 {
-  std::vector<uint8_t> rank(non_blocked_slots_);
+  std::vector<uint8_t> rank(costs.size());
   uint8_t ranking = 1;
   for (int i : sortIndexes(costs, costs)) {
     rank[i] = ranking;
