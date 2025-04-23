@@ -166,6 +166,7 @@ class Opendp
   void createNetwork();
   void createArchitecture();
   void setUpPlacementGroups();
+  void adjustNodesOrient();
   bool isMultiRow(const Node* cell) const;
   void updateDbInstLocations();
 

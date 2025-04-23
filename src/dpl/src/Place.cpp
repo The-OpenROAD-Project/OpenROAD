@@ -1033,6 +1033,7 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
 void Opendp::initMacrosAndGrid()
 {
   importDb();
+  adjustNodesOrient();
   initGrid();
   setFixedGridCells();
 }

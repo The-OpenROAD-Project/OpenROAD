@@ -152,14 +152,6 @@ void Opendp::createNetwork()
       network_->createAndAddBlockage(box);
     }
   }
-  // Adjust orientation back
-  for (auto& node : network_->getNodes()) {
-    if (node->getType() != Node::CELL) {
-      continue;
-    }
-    auto inst = node->getDbInst();
-    node->adjustCurrOrient(inst->getOrient());
-  }
 }
 ////////////////////////////////////////////////////////////////
 void Opendp::createArchitecture()
@@ -306,6 +298,16 @@ void Opendp::setUpPlacementGroups()
         }
       }
     }
+  }
+}
+void Opendp::adjustNodesOrient()
+{
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() != Node::CELL) {
+      continue;
+    }
+    auto inst = node->getDbInst();
+    node->adjustCurrOrient(inst->getOrient());
   }
 }
 }  // namespace dpl

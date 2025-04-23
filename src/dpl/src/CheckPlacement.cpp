@@ -28,6 +28,7 @@ void Opendp::checkPlacement(const bool verbose,
                             const std::string& report_file_name)
 {
   importDb();
+  adjustNodesOrient();
 
   std::vector<Node*> placed_failures;
   std::vector<Node*> in_rows_failures;

@@ -87,6 +87,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const std::string& report_file_name)
 {
   importDb();
+  adjustNodesOrient();
 
   if (have_fillers_) {
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");

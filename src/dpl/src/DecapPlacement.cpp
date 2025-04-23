@@ -107,6 +107,7 @@ void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
   // init dpl variables
   if (network_->getNumCells() == 0) {
     importDb();
+    adjustNodesOrient();
   }
 
   double total_cap = 0.0;

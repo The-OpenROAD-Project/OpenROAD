@@ -29,6 +29,8 @@ void Opendp::improvePlacement(const int seed,
 
   // Get needed information from DB.
   importDb();
+  // TODO: adjustNodesOrient() but it's currently causing an unrelated CI
+  // failure
   initGrid();
 
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
