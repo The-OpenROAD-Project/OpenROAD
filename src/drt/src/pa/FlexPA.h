@@ -548,6 +548,15 @@ class FlexPA
       frInstTerm* inst_term,
       bool deep_search = false);
 
+  template <typename T>
+  bool validateAPForVia(
+      frAccessPoint* ap,
+      const frViaDef* via_def,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
+      const gtl::polygon_90_set_data<frCoord>& polyset,
+      T* pin,
+      frInstTerm* inst_term);
+
   /**
    * @brief Checks if a Via has at least one valid planar access
    *

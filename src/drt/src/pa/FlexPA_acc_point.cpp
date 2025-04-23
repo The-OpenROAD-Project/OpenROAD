@@ -798,6 +798,49 @@ void FlexPA::filterViaAccess(
     return;
   }
 
+  const int max_num_via_trial = 2;
+  // use std:pair to ensure deterministic behavior
+  std::vector<std::pair<int, const frViaDef*>> via_defs;
+  getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
+
+  if (via_defs.empty()) {  // no via map entry
+    // hardcode first two single vias
+    for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
+      via_defs.emplace_back(via_defs.size(), via_def);
+      if (via_defs.size() >= max_num_via_trial && !deep_search) {
+        break;
+      }
+    }
+  }
+
+  ap->setAccess(frDirEnum::U, false);
+  int valid_via_defs = 0;
+  for (auto& [idx, via_def] : via_defs) {
+    if (validateAPForVia(ap, via_def, layer_polys, polyset, pin, inst_term)) {
+      valid_via_defs++;
+      if (valid_via_defs >= max_num_via_trial) {
+        return;
+      }
+    }
+  }
+}
+
+template <typename T>
+bool FlexPA::validateAPForVia(
+    frAccessPoint* ap,
+    const frViaDef* via_def,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
+    const gtl::polygon_90_set_data<frCoord>& polyset,
+    T* pin,
+    frInstTerm* inst_term)
+{
+  if (!ap->isViaAllowed()) {
+    return false;
+  }
+
+  const Point begin_point = ap->getPoint();
+  const auto layer_num = ap->getLayerNum();
+
   bool via_in_pin = false;
   const auto lower_type = ap->getType(true);
   const auto upper_type = ap->getType(false);
@@ -822,77 +865,55 @@ void FlexPA::filterViaAccess(
       is_side_bound = true;
     }
   }
-  const int max_num_via_trial = 2;
-  // use std:pair to ensure deterministic behavior
-  std::vector<std::pair<int, const frViaDef*>> via_defs;
-  getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
-  if (via_defs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-      via_defs.emplace_back(via_defs.size(), via_def);
-      if (via_defs.size() >= max_num_via_trial && !deep_search) {
-        break;
-      }
+  auto via = std::make_unique<frVia>(via_def);
+  via->setOrigin(begin_point);
+  const Rect box = via->getLayer1BBox();
+  if (inst_term) {
+    if (!boundary_bbox.contains(box)) {
+      return false;
+    }
+    Rect layer2_boundary_box = via->getLayer2BBox();
+    if (!boundary_bbox.contains(layer2_boundary_box)) {
+      return false;
     }
   }
 
-  std::set<std::tuple<frCoord, int, const frViaDef*>> valid_via_defs;
-  for (auto& [idx, via_def] : via_defs) {
-    auto via = std::make_unique<frVia>(via_def);
-    via->setOrigin(begin_point);
-    const Rect box = via->getLayer1BBox();
-    if (inst_term) {
-      if (!boundary_bbox.contains(box)) {
-        continue;
-      }
-      Rect layer2_boundary_box = via->getLayer2BBox();
-      if (!boundary_bbox.contains(layer2_boundary_box)) {
-        continue;
-      }
+  frCoord max_ext = 0;
+  const gtl::rectangle_data<frCoord> viarect(
+      box.xMin(), box.yMin(), box.xMax(), box.yMax());
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator&=;
+  gtl::polygon_90_set_data<frCoord> intersection;
+  intersection += viarect;
+  intersection &= polyset;
+  // via ranking criteria: max extension distance beyond pin shape
+  std::vector<gtl::rectangle_data<frCoord>> int_rects;
+  intersection.get_rectangles(int_rects, gtl::orientation_2d_enum::HORIZONTAL);
+  for (const auto& r : int_rects) {
+    max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
+    max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
+  }
+  if (!is_side_bound) {
+    if (int_rects.size() > 1) {
+      int_rects.clear();
+      intersection.get_rectangles(int_rects,
+                                  gtl::orientation_2d_enum::VERTICAL);
     }
-
-    frCoord max_ext = 0;
-    const gtl::rectangle_data<frCoord> viarect(
-        box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    using boost::polygon::operators::operator+=;
-    using boost::polygon::operators::operator&=;
-    gtl::polygon_90_set_data<frCoord> intersection;
-    intersection += viarect;
-    intersection &= polyset;
-    // via ranking criteria: max extension distance beyond pin shape
-    std::vector<gtl::rectangle_data<frCoord>> int_rects;
-    intersection.get_rectangles(int_rects,
-                                gtl::orientation_2d_enum::HORIZONTAL);
     for (const auto& r : int_rects) {
-      max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
-      max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
-    }
-    if (!is_side_bound) {
-      if (int_rects.size() > 1) {
-        int_rects.clear();
-        intersection.get_rectangles(int_rects,
-                                    gtl::orientation_2d_enum::VERTICAL);
-      }
-      for (const auto& r : int_rects) {
-        max_ext = std::max(max_ext, box.yMax() - gtl::yh(r));
-        max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
-      }
-    }
-    if (via_in_pin && max_ext) {
-      continue;
-    }
-    if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
-      valid_via_defs.insert({max_ext, idx, via_def});
-      if (valid_via_defs.size() >= max_num_via_trial) {
-        break;
-      }
+      max_ext = std::max(max_ext, box.yMax() - gtl::yh(r));
+      max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
     }
   }
-  ap->setAccess(frDirEnum::U, !valid_via_defs.empty());
-  for (auto& [ext, idx, via_def] : valid_via_defs) {
-    ap->addViaDef(via_def);
+  if (via_in_pin && max_ext) {
+    return false;
   }
+  if (!checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
+    return false;
+  }
+  ap->setAccess(frDirEnum::U);
+  ap->addViaDef(via_def);
+  return true;
 }
 
 template <typename T>
