@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("//:bazel/tcl_encode_or.bzl", "tcl_encode")
-load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -10,7 +10,7 @@ package(
 )
 
 # TODO: the prometheus target should be broken out, and possibly logger.
-# However, there are cyclic dependencies currently between all thse, which
+# However, there are cyclic dependencies currently between all these, which
 # need to be taken care of first
 cc_library(
     name = "utl",
