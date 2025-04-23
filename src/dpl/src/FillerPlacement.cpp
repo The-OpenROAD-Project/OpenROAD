@@ -166,10 +166,9 @@ void Opendp::placeRowFillers(GridY row,
 
     GridX gap = k - j;
     dbMasterSeq& fillers = gapFillers(implant, gap, filler_masters_by_implant);
-    const Rect core = grid_->getCore();
     if (fillers.empty()) {
-      DbuX x{core.xMin() + gridToDbu(j, site_width)};
-      DbuY y{core.yMin() + grid_->gridYToDbu(row)};
+      DbuX x{core_.xMin() + gridToDbu(j, site_width)};
+      DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
       logger_->error(
           DPL,
           2,
@@ -190,8 +189,8 @@ void Opendp::placeRowFillers(GridY row,
                                       master,
                                       inst_name.c_str(),
                                       /* physical_only */ true);
-        DbuX x{core.xMin() + gridToDbu(k, site_width)};
-        DbuY y{core.yMin() + grid_->gridYToDbu(row)};
+        DbuX x{core_.xMin() + gridToDbu(k, site_width)};
+        DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
         inst->setOrient(orient);
         inst->setLocation(x.v, y.v);
         inst->setPlacementStatus(dbPlacementStatus::PLACED);

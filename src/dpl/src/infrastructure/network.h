@@ -106,12 +106,17 @@ class Network
 
   void clear();
 
+  // setting and getting core area
+  void setCore(const odb::Rect& core) { core_ = core; }
+  const odb::Rect& getCore() const { return core_; }
+
  private:
   Pin* addPin(odb::dbITerm* term);
   Pin* addPin(odb::dbBTerm* term);
   void connect(Pin* pin, Node* node);
   void connect(Pin* pin, Edge* edge);
 
+  odb::Rect core_;  // Core area of the design.
   std::vector<std::unique_ptr<Master>> masters_;
   std::vector<std::unique_ptr<Node>> nodes_;  // The nodes in the netlist...
   std::vector<std::unique_ptr<Edge>> edges_;  // The edges in the netlist...

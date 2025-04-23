@@ -300,9 +300,7 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(),
-       sorted_cells.end(),
-       CellPlaceOrderLess(grid_->getCore()));
+  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(core_));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -339,9 +337,7 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(),
-         group_cells.end(),
-         CellPlaceOrderLess(grid_->getCore()));
+    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(core_));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -926,8 +922,8 @@ DbuPt Opendp::legalPt(const Node* cell, const DbuPt& pt) const
   const GridX grid_x{divRound(core_x.v, site_width.v)};
   const DbuX legal_x{gridToDbu(grid_x, site_width)};
   // Align to row
-  const DbuY core_y = std::clamp(
-      pt.y, DbuY{0}, DbuY{grid_->getCore().yMax()} - cell->getHeight());
+  const DbuY core_y
+      = std::clamp(pt.y, DbuY{0}, DbuY{core_.yMax()} - cell->getHeight());
   const GridY grid_y = grid_->gridRoundY(core_y);
   DbuY legal_y = grid_->gridYToDbu(grid_y);
 
@@ -1111,20 +1107,19 @@ void Opendp::legalCellPos(dbInst* db_inst)
   // Transform position on real position
   setGridPaddedLoc(&cell, legal_grid_pt.x, legal_grid_pt.y);
   // Set position of cell on db
-  const Rect core = grid_->getCore();
-  db_inst->setLocation(core.xMin() + cell.getLeft().v,
-                       core.yMin() + cell.getBottom().v);
+  db_inst->setLocation(core_.xMin() + cell.getLeft().v,
+                       core_.yMin() + cell.getBottom().v);
 }
 
 DbuPt Opendp::initialLocation(const Node* cell, const bool padded) const
 {
   DbuPt loc;
   cell->getDbInst()->getLocation(loc.x.v, loc.y.v);
-  loc.x -= grid_->getCore().xMin();
+  loc.x -= core_.xMin();
   if (padded) {
     loc.x -= gridToDbu(padding_->padLeft(cell), grid_->getSiteWidth());
   }
-  loc.y -= grid_->getCore().yMin();
+  loc.y -= core_.yMin();
   return loc;
 }
 

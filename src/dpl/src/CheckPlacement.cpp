@@ -125,16 +125,15 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
                             odb::dbMarkerCategory* category,
                             const std::string& violation_type) const
 {
-  const Rect core = grid_->getCore();
   for (auto failure : failures) {
     odb::dbMarker* marker = odb::dbMarker::create(category);
     if (!marker) {
       break;
     }
-    int xMin = (failure->getLeft() + core.xMin()).v;
-    int yMin = (failure->getBottom() + core.yMin()).v;
-    int xMax = (failure->getLeft() + failure->getWidth() + core.xMin()).v;
-    int yMax = (failure->getBottom() + failure->getHeight() + core.yMin()).v;
+    int xMin = (failure->getLeft() + core_.xMin()).v;
+    int yMin = (failure->getBottom() + core_.yMin()).v;
+    int xMax = (failure->getLeft() + failure->getWidth() + core_.xMin()).v;
+    int yMax = (failure->getBottom() + failure->getHeight() + core_.yMin()).v;
 
     if (violation_type == "overlap") {
       const Node* o_cell = checkOverlap(*failure);
@@ -156,10 +155,10 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
       odb::Rect overlap_rect;
       o_rect.intersection(f_rect, overlap_rect);
 
-      xMin = overlap_rect.xMin() + core.xMin();
-      yMin = overlap_rect.yMin() + core.yMin();
-      xMax = overlap_rect.xMax() + core.xMin();
-      yMax = overlap_rect.yMax() + core.yMin();
+      xMin = overlap_rect.xMin() + core_.xMin();
+      yMin = overlap_rect.yMin() + core_.yMin();
+      xMax = overlap_rect.xMax() + core_.xMin();
+      yMax = overlap_rect.yMax() + core_.yMin();
 
       marker->addSource(o_cell->getDbInst());
     }

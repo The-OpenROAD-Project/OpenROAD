@@ -308,6 +308,7 @@ class Opendp
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
+  odb::Rect core_;
 
   std::unique_ptr<Architecture> arch_;  // Information about rows, etc.
   std::unique_ptr<Network> network_;    // The netlist, cells, etc.

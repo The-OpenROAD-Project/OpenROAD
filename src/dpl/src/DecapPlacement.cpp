@@ -205,9 +205,8 @@ void Opendp::insertDecapInPos(dbMaster* master,
                                 master,
                                 inst_name.c_str(),
                                 /* physical_only */ true);
-  const Rect core = grid_->getCore();
-  const GridX grid_x = grid_->gridX(pos_x - core.xMin());
-  const GridY grid_y = grid_->gridSnapDownY(pos_y - core.yMin());
+  const GridX grid_x = grid_->gridX(pos_x - core_.xMin());
+  const GridY grid_y = grid_->gridSnapDownY(pos_y - core_.yMin());
   const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
   const dbOrientType orient = pixel->sites.at(master->getSite());
   inst->setOrient(orient);
@@ -238,10 +237,9 @@ void Opendp::findGapsInRow(GridY row, DbuY row_height)
              && grid_->gridPixel(k, row)->is_valid) {
         k++;
       }
-      const Rect core = grid_->getCore();
       // Save gap information (pos in dbu)
-      DbuX gap_x{core.xMin() + gridToDbu(j, site_width)};
-      DbuY gap_y{core.yMin() + gridToDbu(row, row_height)};
+      DbuX gap_x{core_.xMin() + gridToDbu(j, site_width)};
+      DbuY gap_y{core_.yMin() + gridToDbu(row, row_height)};
       DbuX gap_width{gridToDbu(k, site_width) - gridToDbu(j, site_width)};
       gaps_[gap_y].emplace_back(new GapInfo(gap_x, gap_width, row_height));
 

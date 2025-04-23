@@ -339,7 +339,6 @@ void Network::addNode(odb::dbInst* inst)
   setNodeName(ndi.getId(), inst->getName().c_str());
   ndi.setDbInst(inst);
   ndi.setType(Node::CELL);
-  ndi.setDbInst(inst);
   auto master = getMaster(inst->getMaster());
   ndi.setMaster(master);
   ndi.setFixed(inst->isFixed());
@@ -348,9 +347,8 @@ void Network::addNode(odb::dbInst* inst)
   ndi.setOrient(odb::dbOrientType::R0);
   ndi.setHeight(DbuY{(int) inst->getMaster()->getHeight()});
   ndi.setWidth(DbuX{(int) inst->getMaster()->getWidth()});
-  auto core = inst->getBlock()->getCoreArea();
-  ndi.setOrigLeft(DbuX{inst->getBBox()->xMin() - core.xMin()});
-  ndi.setOrigBottom(DbuY{inst->getBBox()->yMin() - core.yMin()});
+  ndi.setOrigLeft(DbuX{inst->getBBox()->xMin() - core_.xMin()});
+  ndi.setOrigBottom(DbuY{inst->getBBox()->yMin() - core_.yMin()});
   ndi.setLeft(ndi.getOrigLeft());
   ndi.setBottom(ndi.getOrigBottom());
   ndi.setBottomPower(master->getBottomPowerType());
@@ -380,9 +378,8 @@ void Network::addNode(odb::dbBTerm* bterm)
 
   ndi.setHeight(hh);
   ndi.setWidth(ww);
-  auto core = bterm->getBlock()->getCoreArea();
-  ndi.setOrigLeft(DbuX{bterm->getBBox().xMin() - core.xMin()});
-  ndi.setOrigBottom(DbuY{bterm->getBBox().yMin() - core.yMin()});
+  ndi.setOrigLeft(DbuX{bterm->getBBox().xMin() - core_.xMin()});
+  ndi.setOrigBottom(DbuY{bterm->getBBox().yMin() - core_.yMin()});
   ndi.setLeft(ndi.getOrigLeft());
   ndi.setBottom(ndi.getOrigBottom());
 

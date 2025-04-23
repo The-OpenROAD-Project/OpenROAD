@@ -133,8 +133,8 @@ void Opendp::updateDbInstLocations()
       if (db_inst_->getOrient() != cell->getOrient()) {
         db_inst_->setOrient(cell->getOrient());
       }
-      const DbuX x = grid_->getCore().xMin() + cell->getLeft();
-      const DbuY y = grid_->getCore().yMin() + cell->getBottom();
+      const DbuX x = core_.xMin() + cell->getLeft();
+      const DbuY y = core_.yMin() + cell->getBottom();
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -340,13 +340,12 @@ void Opendp::groupInitPixels2()
 
 dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
 {
-  const Rect core = grid_->getCore();
   const Rect inst_rect = inst->getBBox()->getBox();
   DbuX x_dbu = left ? DbuX{inst_rect.xMin() - 1} : DbuX{inst_rect.xMax() + 1};
-  x_dbu -= core.xMin();
+  x_dbu -= core_.xMin();
   GridX x = grid_->gridX(x_dbu);
 
-  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core.yMin()});
+  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core_.yMin()});
 
   Pixel* pixel = grid_->gridPixel(x, y);
 
