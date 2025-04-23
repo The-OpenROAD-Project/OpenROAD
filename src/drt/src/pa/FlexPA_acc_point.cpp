@@ -1417,7 +1417,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
     logger_->warn(DRT,
                   88,
                   "Exhaustive access point generation for {} ({}) did not meet "
-                  "the requirements: {}",
+                  "the requirements:{}",
                   inst_term->getName(),
                   inst_term->getInst()->getMaster()->getName(),
                   unmet_requirements);

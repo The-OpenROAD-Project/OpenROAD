@@ -38,12 +38,18 @@
 [INFO DRT-0033] met4 shape region query size = 435.
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] met5 shape region query size = 0.
-[WARNING DRT-0088] Exhaustive access point generation for _331_/D (sky130_fd_sc_hs__nor4_2) is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for _343_/B1 (sky130_fd_sc_hs__a21oi_1) is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for _362_/B1 (sky130_fd_sc_hs__a21oi_1) is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for _412_/A (sky130_fd_sc_hs__nor3_1) is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for _485_/A (sky130_fd_sc_hs__nor3_1) is unsatisfactory.
-[WARNING DRT-0088] Exhaustive access point generation for _497_/A (sky130_fd_sc_hs__and3_1) is unsatisfactory.
+[WARNING DRT-0088] Exhaustive access point generation for _331_/D (sky130_fd_sc_hs__nor4_2) did not meet the requirements:
+	At least 1 access point farm from inst edge
+[WARNING DRT-0088] Exhaustive access point generation for _343_/B1 (sky130_fd_sc_hs__a21oi_1) did not meet the requirements:
+	At least 3 sparse access points
+[WARNING DRT-0088] Exhaustive access point generation for _362_/B1 (sky130_fd_sc_hs__a21oi_1) did not meet the requirements:
+	At least 3 sparse access points
+[WARNING DRT-0088] Exhaustive access point generation for _412_/A (sky130_fd_sc_hs__nor3_1) did not meet the requirements:
+	At least 3 sparse access points
+[WARNING DRT-0088] Exhaustive access point generation for _485_/A (sky130_fd_sc_hs__nor3_1) did not meet the requirements:
+	At least 3 sparse access points
+[WARNING DRT-0088] Exhaustive access point generation for _497_/A (sky130_fd_sc_hs__and3_1) did not meet the requirements:
+	At least 1 access point farm from inst edge
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 50%
