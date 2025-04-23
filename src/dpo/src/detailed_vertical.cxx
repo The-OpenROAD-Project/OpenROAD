@@ -3,7 +3,9 @@
 
 #include "detailed_vertical.h"
 
+#include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <cmath>
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -22,14 +24,11 @@ namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DetailedVerticalSwap::DetailedVerticalSwap(Architecture* arch,
-                                           Network* network,
-                                           RoutingParams* rt)
+DetailedVerticalSwap::DetailedVerticalSwap(Architecture* arch, Network* network)
     : DetailedGenerator("vertical swap"),
       mgr_(nullptr),
       arch_(arch),
       network_(network),
-      rt_(rt),
       skipNetsLargerThanThis_(100),
       traversal_(0),
       attempts_(0),
@@ -41,7 +40,7 @@ DetailedVerticalSwap::DetailedVerticalSwap(Architecture* arch,
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedVerticalSwap::DetailedVerticalSwap()
-    : DetailedVerticalSwap(nullptr, nullptr, nullptr)
+    : DetailedVerticalSwap(nullptr, nullptr)
 {
 }
 
@@ -70,7 +69,6 @@ void DetailedVerticalSwap::run(DetailedMgr* mgrPtr,
   mgr_ = mgrPtr;
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
-  rt_ = mgr_->getRoutingParams();
 
   int passes = 1;
   double tol = 0.01;
@@ -467,7 +465,6 @@ void DetailedVerticalSwap::init(DetailedMgr* mgr)
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   traversal_ = 0;
   edgeMask_.resize(network_->getNumEdges());
@@ -484,7 +481,6 @@ bool DetailedVerticalSwap::generate(DetailedMgr* mgr,
   mgr_ = mgr;
   arch_ = mgr->getArchitecture();
   network_ = mgr->getNetwork();
-  rt_ = mgr->getRoutingParams();
 
   Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 

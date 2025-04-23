@@ -5,12 +5,15 @@
 
 #include <odb/db.h>
 
+#include <algorithm>
 #include <boost/format.hpp>
 #include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -28,7 +31,6 @@
 #include "dpl/PlacementDRC.h"
 #include "legalize_shift.h"
 #include "network.h"
-#include "router.h"
 #include "symmetry.h"
 
 namespace dpo {
@@ -87,7 +89,7 @@ void Optdp::improvePlacement(const int seed,
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
   // A manager to track cells.
-  dpo::DetailedMgr mgr(arch_, network_, routeinfo_, grid_, drc_engine_);
+  dpo::DetailedMgr mgr(arch_, network_, grid_, drc_engine_);
   mgr.setLogger(logger_);
   // Various settings.
   mgr.setSeed(seed);
@@ -139,7 +141,6 @@ void Optdp::improvePlacement(const int seed,
   // Cleanup.
   delete network_;
   delete arch_;
-  delete routeinfo_;
   delete drc_engine_;
 
   const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
@@ -161,7 +162,6 @@ void Optdp::import()
 
   network_ = new Network;
   arch_ = new Architecture;
-  routeinfo_ = new RoutingParams;
   grid_ = new Grid;
 
   // createLayerMap(); // Does nothing right now.

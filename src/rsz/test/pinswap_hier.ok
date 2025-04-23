@@ -49,7 +49,7 @@ original HPWL               1.3 u
 legalized HPWL              7.4 u
 delta HPWL                  470 %
 
-worst slack -0.04
+worst slack max -0.04
 [INFO RSZ-0058] Using max wire length 693um.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------

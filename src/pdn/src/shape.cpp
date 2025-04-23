@@ -3,7 +3,11 @@
 
 #include "shape.h"
 
+#include <algorithm>
 #include <boost/polygon/polygon.hpp>
+#include <functional>
+#include <memory>
+#include <set>
 #include <vector>
 
 #include "grid.h"

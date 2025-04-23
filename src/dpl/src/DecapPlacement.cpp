@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <map>
 #include <vector>
 
 #include "DecapObjects.h"

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <set>
+#include <unordered_map>
+
 #include "AbstractGrouteRenderer.h"
 #include "grt/GlobalRouter.h"
 #include "gui/gui.h"

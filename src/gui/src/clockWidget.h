@@ -15,6 +15,7 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolTip>
+#include <memory>
 #include <optional>
 #include <string>
 #include <variant>

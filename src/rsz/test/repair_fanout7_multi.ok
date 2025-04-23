@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 153 components and 917 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 306 connections.
 [INFO ODB-0133]     Created 155 nets and 459 connections.
-worst slack -23.63
+worst slack max -23.63
 [INFO RSZ-0094] Found 150 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 150 out of 150 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
@@ -377,4 +377,4 @@ worst slack -23.63
 [INFO RSZ-0049] Cloned 7 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack -3.01
+worst slack max -3.01

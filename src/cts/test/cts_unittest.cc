@@ -4,6 +4,9 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
+#include <utility>
+#include <vector>
+
 #include "gtest/gtest.h"
 #include "src/cts/src/Clock.h"
 #include "src/cts/src/Clustering.h"

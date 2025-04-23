@@ -4,6 +4,9 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "rcx/extModelGen.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"

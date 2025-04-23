@@ -5,7 +5,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <memory>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "AbstractFastRouteRenderer.h"

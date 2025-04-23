@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <boost/operators.hpp>
 #include <cmath>
 #include <functional>

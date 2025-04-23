@@ -9,7 +9,11 @@
 
 #include "legalize_shift.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
+#include <limits>
+#include <utility>
 #include <vector>
 
 #include "architecture.h"
@@ -55,7 +59,6 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   arch_ = mgr_->getArchitecture();
   network_ = mgr_->getNetwork();
-  rt_ = mgr_->getRoutingParams();
 
   // Categorize the cells and create the different segments.
   mgr.collectFixedCells();

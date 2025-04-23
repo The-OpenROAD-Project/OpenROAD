@@ -8,8 +8,14 @@ swig_lib(NAME          odbtcl
          I_FILE        ../common/odb.i
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include
                        ${PROJECT_SOURCE_DIR}/src/swig/tcl
+         SCRIPTS       odb.tcl
 )
 
+target_sources(odbtcl
+  PRIVATE
+    MakeOdb.cpp
+)
+  
 target_include_directories(odbtcl
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include/odb

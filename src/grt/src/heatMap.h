@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "AbstractRoutingCongestionDataSource.h"
 #include "gui/heatMap.h"
 

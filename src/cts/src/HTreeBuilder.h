@@ -4,8 +4,11 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 #include <limits>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "CtsObserver.h"

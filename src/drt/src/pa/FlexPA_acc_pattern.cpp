@@ -3,11 +3,19 @@
 
 #include <omp.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
@@ -339,7 +347,6 @@ bool FlexPA::genPatternsGC(
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   const bool no_drv = design_rule_checker.getMarkers().empty();
   if (owners) {

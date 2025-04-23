@@ -3,8 +3,12 @@
 
 #include "initialPlace.h"
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
+#include <memory>
 #include <utility>
+#include <vector>
 
 #include "placerBase.h"
 #include "solver.h"

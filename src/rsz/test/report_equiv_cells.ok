@@ -55,6 +55,8 @@ sky130_fd_sc_hd__clkdlybuf4s50_2           11.261  3.00 4.36e-12  3.69   EL
 [INFO RSZ-0103] Cell sizing restriction based on leakage has been removed.
 [INFO RSZ-0105] Cell sizing restriction based on site has been removed.
 [INFO RSZ-0107] Cell sizing restriction based on VT type has been removed.
+[INFO RSZ-0146] Capacitance ratio for early cell sizing has been unset.
+[INFO RSZ-0148] Capacitance ratio for early buffer sizing has been unset.
 The following 20 cells are equivalent to sky130_fd_sc_hd__buf_1 with matching cell_footprint:
 =============================================================================
           Cell                              Area   Area Leakage  Leakage  VT

@@ -3,21 +3,21 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
-#include "geom.h"
-#include "db.h"
-#include "dbShape.h"
-#include "dbViaParams.h"
-#include "dbWireCodec.h"
-#include "dbBlockCallBackObj.h"
-#include "dbIterator.h"
-#include "dbTransform.h"
-#include "dbWireGraph.h"
-#include "dbMap.h"
-#include "dbSet.h"
-#include "dbTypes.h"
-#include "geom.h"
-#include "wOrder.h"
-#include "util.h"
+#include "odb/geom.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
+#include "odb/dbViaParams.h"
+#include "odb/dbWireCodec.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbIterator.h"
+#include "odb/dbTransform.h"
+#include "odb/dbWireGraph.h"
+#include "odb/dbMap.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/wOrder.h"
+#include "odb/util.h"
 
 using namespace odb;
 %}
@@ -75,4 +75,11 @@ using namespace odb;
 %include "odb/wOrder.h"
 
 std::string generateMacroPlacementString(odb::dbBlock* block);
-
+void set_bterm_top_layer_grid(odb::dbBlock* block,
+                              odb::dbTechLayer* layer,
+                              int x_step,
+                              int y_step,
+                              odb::Rect region,
+                              int width,
+                              int height,
+                              int keepout);

@@ -3,10 +3,16 @@
 
 #include "straps.h"
 
+#include <algorithm>
 #include <boost/geometry.hpp>
 #include <boost/polygon/polygon.hpp>
+#include <functional>
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "connect.h"
@@ -1930,10 +1936,12 @@ void RepairChannelStraps::cutShapes(
       region.merge(shape->getRect());
     }
   }
-  if (isHorizontal()) {
-    setStrapStartEnd(region.xMin(), region.xMax());
-  } else {
-    setStrapStartEnd(region.yMin(), region.yMax());
+  if (!region.isInverted()) {
+    if (isHorizontal()) {
+      setStrapStartEnd(region.xMin(), region.xMax());
+    } else {
+      setStrapStartEnd(region.yMin(), region.yMax());
+    }
   }
 }
 

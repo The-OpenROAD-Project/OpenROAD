@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
+
 #include "SteinerTree.hh"
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"

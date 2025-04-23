@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("//:bazel/tcl_encode.bzl", "tcl_encode")
-load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -10,7 +10,7 @@ package(
 )
 
 # TODO: the prometheus target should be broken out, and possibly logger.
-# However, there are cyclic dependencies currently between all thse, which
+# However, there are cyclic dependencies currently between all these, which
 # need to be taken care of first
 cc_library(
     name = "utl",
@@ -25,6 +25,7 @@ cc_library(
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
+        "src/decode.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
     ],
@@ -36,6 +37,7 @@ cc_library(
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
         "include/utl/algorithms.h",
+        "include/utl/decode.h",
         "include/utl/deleter.h",
         "include/utl/exception.h",
         "include/utl/prometheus/atomic_floating.h",
@@ -94,5 +96,6 @@ tcl_encode(
         "src/Utl.tcl",
     ],
     char_array_name = "utl_tcl_inits",
+    namespace = "utl",
     visibility = ["//visibility:public"],
 )

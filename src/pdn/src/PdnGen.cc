@@ -4,7 +4,9 @@
 #include "pdn/PdnGen.hh"
 
 #include <map>
+#include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "connect.h"

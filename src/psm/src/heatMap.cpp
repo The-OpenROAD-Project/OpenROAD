@@ -3,6 +3,9 @@
 
 #include "heatMap.h"
 
+#include <algorithm>
+#include <limits>
+#include <map>
 #include <string>
 #include <vector>
 

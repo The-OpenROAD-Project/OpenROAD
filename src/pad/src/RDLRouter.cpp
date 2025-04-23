@@ -9,10 +9,14 @@
 #include <boost/graph/lookup_edge.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <list>
+#include <map>
+#include <memory>
 #include <queue>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "RDLGui.h"

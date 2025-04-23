@@ -3,6 +3,8 @@
 
 #include "PreChecks.hh"
 
+#include <algorithm>
+
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"

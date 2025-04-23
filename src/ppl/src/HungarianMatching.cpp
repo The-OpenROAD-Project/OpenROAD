@@ -3,7 +3,9 @@
 
 #include "HungarianMatching.h"
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <vector>
 
 #include "utl/Logger.h"

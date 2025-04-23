@@ -47,6 +47,7 @@ bazel_dep(name = "boost.optional", version = BOOST_VERSION)
 bazel_dep(name = "boost.phoenix", version = BOOST_VERSION)
 bazel_dep(name = "boost.polygon", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.property_tree", version = BOOST_VERSION + ".bcr.2")
+bazel_dep(name = "boost.regex", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
 bazel_dep(name = "boost.thread", version = BOOST_VERSION)
@@ -76,3 +77,24 @@ use_repo(llvm, "llvm_toolchain")
 
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains("@llvm_toolchain//:all")
+
+bazel_dep(
+    name = "rules_python",
+    version = "1.2.0",
+    # reduce namespace collisions by prefixing with openroad
+    repo_name = "openroad_rules_python",
+)
+
+python = use_extension("@openroad_rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    python_version = "3.13",
+)
+
+pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "openroad-pip",
+    python_version = "3.13",
+    requirements_lock = "//bazel:requirements_lock_3_13.txt",
+)
+use_repo(pip, "openroad-pip")
