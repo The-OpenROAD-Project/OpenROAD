@@ -1,0 +1,93 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0227] LEF file: sky130_temp_sensor/HEADER.lef, created 1 library cells
+[INFO ODB-0227] LEF file: sky130_temp_sensor/SLC.lef, created 1 library cells
+[INFO ODB-0128] Design: tempsenseInst
+[INFO ODB-0130]     Created 35 pins.
+[INFO ODB-0131]     Created 393 components and 1287 component-terminals.
+[INFO ODB-0133]     Created 155 nets and 491 connections.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Rings:
+  Core offset:
+    Left: 4.0000
+    Bottom: 4.0000
+    Right: 4.0000
+    Top: 4.0000
+  Layer: met4
+    Width: 5.0000
+    Spacing: 2.0000
+  Layer: met5
+    Width: 5.0000
+    Spacing: 2.0000
+Straps:
+  Type: Followpin
+    Layer: met1
+    Width: 0.4800
+    Spacing: 0.0000
+    Pitch: 5.4400
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: met4
+    Width: 1.6000
+    Spacing: 23.4000
+    Pitch: 50.0000
+    Offset: 13.5700
+    Snap to grid: false
+  Type: Strap
+    Layer: met5
+    Width: 1.6000
+    Spacing: 12.0000
+    Pitch: 27.2000
+    Offset: 13.6000
+    Snap to grid: false
+Connect:
+  Connect layers met1 -> met4
+  Connect layers met4 -> met5
+Voltage domain: TemperatureAnalog
+  Floorplan region: TEMP_ANALOG
+  Power net: VIN
+  Ground net: VSS
+Grid name: TempSensor
+Type: Core
+Rings:
+  Core offset:
+    Left: 3.5000
+    Bottom: 3.5000
+    Right: 3.5000
+    Top: 3.5000
+  Layer: met4
+    Width: 5.0000
+    Spacing: 2.0000
+  Layer: met5
+    Width: 5.0000
+    Spacing: 2.0000
+Straps:
+  Type: Followpin
+    Layer: met1
+    Width: 0.4800
+    Spacing: 0.0000
+    Pitch: 5.4400
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: met4
+    Width: 1.6000
+    Spacing: 1.6000
+    Pitch: 50.0000
+    Offset: 13.5700
+    Snap to grid: false
+  Type: Strap
+    Layer: met5
+    Width: 1.6000
+    Spacing: 1.6000
+    Pitch: 27.2000
+    Offset: 13.6000
+    Snap to grid: false
+Connect:
+  Connect layers met1 -> met4
+  Connect layers met4 -> met5
