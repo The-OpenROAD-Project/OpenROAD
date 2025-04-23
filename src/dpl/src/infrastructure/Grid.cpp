@@ -286,6 +286,11 @@ void Grid::visitCellBoundaryPixels(
   }
 }
 
+void Grid::paintPixel(Node* cell)
+{
+  paintPixel(cell, gridPaddedX(cell), gridSnapDownY(cell));
+}
+
 void Grid::erasePixel(Node* cell)
 {
   if (!(cell->isFixed() || !cell->isPlaced())) {

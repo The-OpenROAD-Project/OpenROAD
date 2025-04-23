@@ -24,25 +24,26 @@ void paintInGrid(Grid* grid, Node* node)
 }
 
 };  // namespace
-void Journal::undo(const JournalAction& action, const bool positions_only) const
+void Journal::undo(const JournalAction* action, const bool positions_only) const
 {
-  auto node = action.getNode();
-  switch (action.getType()) {
-    case JournalAction::MOVE_CELL:
+  switch (action->typeId()) {
+    case JournalActionTypeEnum::MOVE_CELL: {
+      auto move_action = static_cast<const MoveCellAction*>(action);
+      auto node = move_action->getNode();
       if (!positions_only) {
         grid_->erasePixel(node);
-        for (auto seg : action.getNewSegs()) {
+        for (auto seg : move_action->getNewSegs()) {
           if (seg < 0) {
             continue;
           }
           mgr_->removeCellFromSegment(node, seg);
         }
       }
-      node->setLeft(DbuX{action.getOrigLeft()});
-      node->setBottom(action.getOrigBottom());
+      node->setLeft(DbuX{move_action->getOrigLeft()});
+      node->setBottom(move_action->getOrigBottom());
       if (!positions_only) {
         paintInGrid(grid_, node);
-        for (auto seg : action.getOrigSegs()) {
+        for (auto seg : move_action->getOrigSegs()) {
           if (seg < 0) {
             continue;
           }
@@ -50,34 +51,39 @@ void Journal::undo(const JournalAction& action, const bool positions_only) const
         }
       }
       break;
+    }
   }
 }
 ////////////////////////////////////////////////////////////////////////////////
-void Journal::redo(const JournalAction& action, const bool positions_only) const
+void Journal::redo(const JournalAction* action, const bool positions_only) const
 {
-  auto node = action.getNode();
-  switch (action.getType()) {
-    case JournalAction::MOVE_CELL:
+  switch (action->typeId()) {
+    case JournalActionTypeEnum::MOVE_CELL: {
+      auto move_action = static_cast<const MoveCellAction*>(action);
+      auto node = move_action->getNode();
       if (!positions_only) {
         grid_->erasePixel(node);
-        for (auto seg : action.getOrigSegs()) {
+        for (auto seg : move_action->getOrigSegs()) {
           if (seg < 0) {
             continue;
           }
           mgr_->removeCellFromSegment(node, seg);
         }
       }
-      node->setLeft(DbuX{action.getNewLeft()});
-      node->setBottom(action.getNewBottom());
+      node->setLeft(DbuX{move_action->getNewLeft()});
+      node->setBottom(move_action->getNewBottom());
       if (!positions_only) {
         paintInGrid(grid_, node);
-        for (auto seg : action.getNewSegs()) {
+        for (auto seg : move_action->getNewSegs()) {
           if (seg < 0) {
             continue;
           }
           mgr_->addCellToSegment(node, seg);
         }
       }
+      break;
+    }
+    default:
       break;
   }
 }

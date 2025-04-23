@@ -128,8 +128,15 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 void Opendp::updateDbInstLocations()
 {
   for (auto& cell : network_->getNodes()) {
-    if (!cell->isFixed() && cell->isStdCell()) {
+    if (cell->isStdCell() && cell->getDbInst() != nullptr) {
       dbInst* db_inst_ = cell->getDbInst();
+      if (db_inst_->getUserFlag1()) {
+        odb::dbInst::destroy(db_inst_);
+        continue;
+      }
+      if (cell->isFixed()) {
+        continue;
+      }
       // Only move the instance if necessary to avoid triggering callbacks.
       if (db_inst_->getOrient() != cell->getOrient()) {
         db_inst_->setOrient(cell->getOrient());

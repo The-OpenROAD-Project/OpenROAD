@@ -676,8 +676,7 @@ void DetailedMis::solveMatch()
           mgrPtr_->addCellToSegment(ndi, segId);
         }
         {
-          JournalAction action;
-          action.setType(JournalAction::MOVE_CELL);
+          MoveCellAction action;
           action.setNode(ndi);
           action.setOrigLocation(pos[i].first, pos[i].second);
           action.setNewLocation(pos[j].first, pos[j].second);

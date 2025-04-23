@@ -33,6 +33,16 @@ Node* Network::getNode(odb::dbBTerm* term)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+Edge* Network::getEdge(odb::dbNet* net) const
+{
+  auto it = net_to_edge_idx_.find(net);
+  if (it == net_to_edge_idx_.end()) {
+    return nullptr;
+  }
+  return edges_[it->second].get();
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Master* Network::getMaster(odb::dbMaster* db_master)
 {
   auto it = master_to_idx_.find(db_master);
@@ -265,6 +275,7 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   const int id = masters_.size();
   masters_.emplace_back(std::move(umaster));
   master_to_idx_[db_master] = id;
+  master->setDbMaster(db_master);
   Rect bbox;
   db_master->getPlacementBoundary(bbox);
   master->setBBox(bbox);
@@ -336,7 +347,6 @@ void Network::addNode(odb::dbInst* inst)
   Node ndi;
   const int id = nodes_.size();
   ndi.setId(id);
-  setNodeName(ndi.getId(), inst->getName().c_str());
   ndi.setDbInst(inst);
   ndi.setType(Node::CELL);
   auto master = getMaster(inst->getMaster());
@@ -366,8 +376,7 @@ void Network::addNode(odb::dbBTerm* bterm)
   Node ndi;
   const int id = nodes_.size();
   ndi.setId(id);
-  setNodeName(ndi.getId(), bterm->getName().c_str());
-
+  ndi.setBTerm(bterm);
   // Fill in data.
   ndi.setType(Node::TERMINAL);
   ndi.setFixed(true);
@@ -413,7 +422,7 @@ void Network::addFillerNode(const DbuX left,
   ndi.setBottom(bottom);
   ndi.setLeft(left);
   nodes_.emplace_back(std::make_unique<Node>(ndi));
-  setNodeName(id, "FILLER_" + std::to_string(filler_cnt_++));
+  // setNodeName(id, "FILLER_" + std::to_string(filler_cnt_++));
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -425,7 +434,6 @@ void Network::clear()
   pins_.clear();
   blockages_.clear();
   edgeNames_.clear();
-  nodeNames_.clear();
   inst_to_node_idx_.clear();
   term_to_node_idx_.clear();
   master_to_idx_.clear();
