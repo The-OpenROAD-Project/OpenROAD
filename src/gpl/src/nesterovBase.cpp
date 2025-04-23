@@ -262,7 +262,7 @@ bool GCell::isStdInstance() const
   return !insts_[0]->isMacro();
 }
 
-void GCell::print(utl::Logger* logger, bool print_only_name = true) const
+// void GCell::print(utl::Logger* logger, bool print_only_name = true) const
 {
   if (!insts_.empty()) {
     logger->report("print gcell:{}", insts_[0]->dbInst()->getName());
@@ -3128,7 +3128,7 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
         db_inst_to_NB_index_map_[swapped_inst] = gcell_index;
 
         // log_->reportLiteral(fmt::format("new(index):{}", gcell_index));
-        NB_gCells_[gcell_index]->print(log_);
+        // NB_gCells_[gcell_index]->print(log_);
       }
     } else {
       db_inst_to_NB_index_map_.erase(db_inst);
