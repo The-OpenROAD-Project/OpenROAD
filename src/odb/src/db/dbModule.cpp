@@ -431,6 +431,9 @@ void dbModule::destroy(dbModule* module)
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
+  dbProperty::destroyProperties(_module);
+
+  // Assure that dbModule is restored first
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
@@ -439,7 +442,6 @@ void dbModule::destroy(dbModule* module)
     block->_journal->endAction();
   }
 
-  dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);
 }
