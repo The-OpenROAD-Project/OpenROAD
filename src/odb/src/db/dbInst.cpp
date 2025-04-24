@@ -1395,24 +1395,15 @@ void dbInst::destroy(dbInst* inst_)
       cb->inDbITermDestroy((dbITerm*) _iterm);
     }
 
-    dbModule* module = inst_->getModule();
-    if (module) {
-      ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
-    }
-
     dbProperty::destroyProperties(_iterm);
     block->_iterm_tbl->destroy(_iterm);
     inst->_iterms.pop_back();
   }
 
-  //    Move this part after inDbInstDestroy
-  //    ----------------------------------------
-  //    _dbMaster * master = (_dbMaster *) inst_->getMaster();
-  //    _dbInstHdr * inst_hdr = block->_inst_hdr_hash.find(master->_id);
-  //    inst_hdr->_inst_cnt--;
-  //
-  //    if ( inst_hdr->_inst_cnt == 0 )
-  //        dbInstHdr::destroy( (dbInstHdr *) inst_hdr );
+  dbModule* module = inst_->getModule();
+  if (module) {
+    ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
+  }
 
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
@@ -1443,7 +1434,6 @@ void dbInst::destroy(dbInst* inst_)
     region->removeInst(inst_);
   }
 
-  dbModule* module = inst_->getModule();
   if (module) {
     ((_dbModule*) module)->removeInst(inst_);
   }
