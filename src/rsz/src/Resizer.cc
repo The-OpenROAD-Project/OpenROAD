@@ -23,6 +23,7 @@
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
 #include "ResizerObserver.hh"
+#include "SizeMove.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -160,6 +161,8 @@ void Resizer::init(Logger* logger,
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
 
   db_network_->addObserver(this);
+
+  size_move = new SizeMove(this);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -232,7 +235,7 @@ void Resizer::initBlock()
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
-                   && core_.yMax() == 0);
+                   && core_.yMax() == 0) ;
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
 
   // Apply sizing restrictions
@@ -2315,6 +2318,8 @@ bool Resizer::replaceCell(Instance* inst,
   return false;
 }
 
+
+
 bool Resizer::hasMultipleOutputs(const Instance* inst)
 {
   int output_count = 0;
@@ -2369,12 +2374,14 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           repaired_net_count);
 
   findResizeSlacks1();
-  if (run_journal_restore)
-    journalRestore(resize_count_,
+  if (run_journal_restore) {
+    int resize_count = size_move->count();
+    journalRestore(resize_count,
                    inserted_buffer_count_,
                    cloned_gate_count_,
                    swap_pin_count_,
                    removed_buffer_count_);
+    }
 }
 
 void Resizer::findResizeSlacks1()
@@ -4212,6 +4219,7 @@ void Resizer::journalBegin()
     db_cbk_->removeOwner();
     setCallBackRegistered(false);
   }
+  size_move->clear();
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -4230,6 +4238,7 @@ void Resizer::journalEnd()
   }
   incrementalParasiticsEnd();
   odb::dbDatabase::endEco(block_);
+  size_move->clear();
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
@@ -4271,6 +4280,7 @@ void Resizer::journalInstReplaceCellBefore(Instance* inst)
     all_sized_inst_set_.insert(inst);
   }
 }
+
 
 void Resizer::journalMakeBuffer(Instance* buffer)
 {
@@ -4642,12 +4652,15 @@ void Resizer::journalRestore(int& resize_count,
              RSZ,
              "journal",
              1,
-             "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
+             "Undid {} sizing {} oldsizing {} buffering {} cloning {} swaps {} buf removal",
+             size_move->count(),
              resized_inst_map_.size(),
              inserted_buffers_.size(),
              cloned_gates_.size(),
              swapped_pins_.size(),
              removed_buffer_map_.size());
+  //resize_count -= size_move->count();
+  size_move->clear();
   resize_count -= resized_inst_map_.size();
   resized_inst_map_.clear();
   inserted_buffer_count -= inserted_buffers_.size();
@@ -4672,13 +4685,14 @@ void Resizer::journalBeginTest()
 
 void Resizer::journalRestoreTest()
 {
-  int resize_count_old = resize_count_;
+  int resize_count_old = size_move->count();
+  int resize_count = size_move->count();
   int inserted_buffer_count_old = inserted_buffer_count_;
   int cloned_gate_count_old = cloned_gate_count_;
   int swap_pin_count_old = swap_pin_count_;
   int removed_buffer_count_old = removed_buffer_count_;
 
-  journalRestore(resize_count_,
+  journalRestore(resize_count,
                  inserted_buffer_count_,
                  cloned_gate_count_,
                  swap_pin_count_,
@@ -4687,7 +4701,7 @@ void Resizer::journalRestoreTest()
   logger_->report(
       "journalRestoreTest restored {} sizing, {} buffering, {} "
       "cloning, {} pin swaps, {} buffer removal",
-      resize_count_old - resize_count_,
+      resize_count_old - size_move->count(),
       inserted_buffer_count_old - inserted_buffer_count_,
       cloned_gate_count_old - cloned_gate_count_,
       swap_pin_count_old - swap_pin_count_,

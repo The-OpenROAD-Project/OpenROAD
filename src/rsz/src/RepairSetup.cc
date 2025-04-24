@@ -11,6 +11,8 @@
 #include <sstream>
 #include <string>
 
+#include "SizeMove.hh"
+
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -577,7 +579,8 @@ bool RepairSetup::repairPath(Path* path,
         }
       }
 
-      if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
+      if (resizer_->size_move->doMove(drvr_path, drvr_index, &expanded)) {
+        resize_count_++;
         changed++;
         continue;
       }

@@ -109,6 +109,8 @@ class RepairSetup;
 class RepairHold;
 class ResizerObserver;
 
+class SizeMove;
+
 class NetHash
 {
  public:
@@ -752,7 +754,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
   InstanceSet resized_multi_output_insts_;
   int unique_net_index_ = 1;
   int unique_inst_index_ = 1;
-  int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
@@ -820,6 +821,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   std::shared_ptr<ResizerObserver> graphics_;
 
+  // Optimization moves
+  // Will eventually be replaced with a getter method and some "recipes"
+  SizeMove* size_move = nullptr;
+
   friend class BufferedNet;
   friend class GateCloner;
   friend class PreChecks;
@@ -828,6 +833,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class RepairSetup;
   friend class RepairHold;
   friend class SteinerTree;
+  friend class BaseMove;
+  friend class SizeMove;
 };
 
 }  // namespace rsz

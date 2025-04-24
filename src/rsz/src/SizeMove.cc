@@ -1,0 +1,247 @@
+#include "SizeMove.hh"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <string>
+
+#include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/Path.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Units.hh"
+#include "sta/VerilogWriter.hh"
+#include "utl/Logger.h"
+
+namespace rsz {
+
+using std::max;
+using std::pair;
+using std::string;
+using std::vector;
+using utl::RSZ;
+
+using sta::Edge;
+using sta::fuzzyEqual;
+using sta::fuzzyGreater;
+using sta::fuzzyGreaterEqual;
+using sta::fuzzyLess;
+using sta::GraphDelayCalc;
+using sta::InstancePinIterator;
+using sta::NetConnectedPinIterator;
+using sta::PathExpanded;
+using sta::Slew;
+using sta::VertexOutEdgeIterator;
+using sta::INF;
+
+
+void
+SizeMove::init()
+{
+    all_sized_inst_set_ = InstanceSet(db_network_);
+}
+
+bool 
+SizeMove::doMove(const Path* drvr_path,
+                 const int drvr_index,
+                 PathExpanded* expanded)
+{
+  Pin* drvr_pin = drvr_path->pin(this);
+  Instance* drvr = network_->instance(drvr_pin);
+  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+  const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  const int in_index = drvr_index - 1;
+  const Path* in_path = expanded->path(in_index);
+  Pin* in_pin = in_path->pin(sta_);
+  LibertyPort* in_port = network_->libertyPort(in_pin);
+  
+  if (!resizer_->dontTouch(drvr) || resizer_->cloned_inst_set_.find(drvr) != resizer_->cloned_inst_set_.end()) {
+    float prev_drive;
+    if (drvr_index >= 2) {
+      const int prev_drvr_index = drvr_index - 2;
+      const Path* prev_drvr_path = expanded->path(prev_drvr_index);
+      Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+      prev_drive = 0.0;
+      LibertyPort* prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+      if (prev_drvr_port) {
+        prev_drive = prev_drvr_port->driveResistance();
+      }
+    } else {
+      prev_drive = 0.0;
+    }
+    
+    LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+    LibertyCell* upsize = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
+    
+    if (upsize) {
+      debugPrint(logger_, RSZ, "repair_setup", 3, "new resize {} {} -> {}", network_->pathName(drvr_pin), drvr_port->libertyCell()->name(), upsize->name());
+      if (!resizer_->dontTouch(drvr) && resizer_->replaceCell(drvr, upsize, true)) {
+        count_++;
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+void 
+SizeMove::undoMove(int num) 
+{
+    // Implement the logic to unapply the move using OpenROAD rsz module
+}
+
+double
+SizeMove::deltaSlack() 
+{
+    return -INF; // Placeholder for no slack
+}
+
+double
+SizeMove::deltaPower() {
+    return INF; // Placeholder for no power
+}
+
+double
+SizeMove::deltaArea() {
+    return INF; // Placeholder for no rea
+}
+
+LibertyCell* 
+SizeMove::upsizeCell(LibertyPort* in_port,
+                     LibertyPort* drvr_port,
+                     const float load_cap,
+                     const float prev_drive,
+                     const DcalcAnalysisPt* dcalc_ap)
+{
+  const int lib_ap = dcalc_ap->libertyIndex();
+  LibertyCell* cell = drvr_port->libertyCell();
+  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  if (!swappable_cells.empty()) {
+    const char* in_port_name = in_port->name();
+    const char* drvr_port_name = drvr_port->name();
+    sort(swappable_cells,
+         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
+           LibertyPort* port1
+               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           LibertyPort* port2
+               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+           const float drive1 = port1->driveResistance();
+           const float drive2 = port2->driveResistance();
+           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           return drive1 > drive2
+                  || ((drive1 == drive2 && intrinsic1 < intrinsic2)
+                      || (intrinsic1 == intrinsic2
+                          && port1->capacitance() < port2->capacitance()));
+         });
+    const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
+    const float delay
+        = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
+          + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+
+    for (LibertyCell* swappable : swappable_cells) {
+      LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
+      LibertyPort* swappable_drvr
+          = swappable_corner->findLibertyPort(drvr_port_name);
+      LibertyPort* swappable_input
+          = swappable_corner->findLibertyPort(in_port_name);
+      const float swappable_drive = swappable_drvr->driveResistance();
+      // Include delay of previous driver into swappable gate.
+      const float swappable_delay
+          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+            + prev_drive * swappable_input->capacitance();
+      if (!resizer_->dontUse(swappable) && swappable_drive < drive
+          && swappable_delay < delay) {
+        return swappable;
+      }
+    }
+  }
+  return nullptr;
+};
+
+void
+SizeMove::clear()
+{
+    count_ = 0;
+    resized_inst_map_.clear();
+}
+
+// Replace LEF with LEF so ports stay aligned in instance.
+bool 
+SizeMove::replaceCell(Instance* inst,
+                      const LibertyCell* replacement,
+                      const bool journal)
+{
+  const char* replacement_name = replacement->name();
+  dbMaster* replacement_master = db_->findMaster(replacement_name);
+
+  if (replacement_master) {
+    dbInst* dinst = db_network_->staToDb(inst);
+    dbMaster* master = dinst->getMaster();
+    resizer_->designAreaIncr(-area(master));
+    Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
+    if (journal) {
+      journalMove(inst);
+    }
+    sta_->replaceCell(inst, replacement_cell1);
+    resizer_->designAreaIncr(area(replacement_master));
+
+    // Legalize the position of the instance in case it leaves the die
+    if (resizer_->getParasiticsSrc() == ParasiticsSrc::global_routing
+        || resizer_->getParasiticsSrc() == ParasiticsSrc::detailed_routing) {
+      opendp_->legalCellPos(db_network_->staToDb(inst));
+    }
+    if (resizer_->haveEstimatedParasitics()) {
+      InstancePinIterator* pin_iter = network_->pinIterator(inst);
+      while (pin_iter->hasNext()) {
+        const Pin* pin = pin_iter->next();
+        const Net* net = network_->net(pin);
+        odb::dbNet* db_net = nullptr;
+        odb::dbModNet* db_modnet = nullptr;
+        db_network_->staToDb(net, db_net, db_modnet);
+        // only work on dbnets
+        resizer_->invalidateParasitics(pin, db_network_->dbToSta(db_net));
+        //        invalidateParasitics(pin, net);
+      }
+      delete pin_iter;
+    }
+    return true;
+  }
+  return false;
+}
+
+void 
+SizeMove::journalMove(Instance* inst)
+{
+  LibertyCell* lib_cell = network_->libertyCell(inst);
+  debugPrint(logger_,
+             RSZ,
+             "journal",
+             1,
+             "journal replace {} ({})",
+             network_->pathName(inst),
+             lib_cell->name());
+  // Do not clobber an existing checkpoint cell.
+  if (!resized_inst_map_.hasKey(inst)) {
+    resized_inst_map_[inst] = lib_cell;
+    all_sized_inst_set_.insert(inst);
+  }
+}
+
+// namespace rsz
+}
+
