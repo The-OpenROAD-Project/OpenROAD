@@ -23,6 +23,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/util.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -80,6 +81,16 @@ void Opendp::setPadding(dbMaster* master, const int left, const int right)
 void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 {
   debug_observer_ = std::move(observer);
+}
+
+void Opendp::setJournal(std::unique_ptr<Journal>& journal)
+{
+  journal_ = std::move(journal);
+}
+
+Journal* Opendp::getJournal() const
+{
+  return journal_.get();
 }
 
 void Opendp::detailedPlacement(const int max_displacement_x,

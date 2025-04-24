@@ -18,8 +18,8 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/dbTransform.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
-
 // #define ODP_DEBUG
 
 namespace dpl {
@@ -1185,15 +1185,30 @@ void Opendp::setGridPaddedLoc(Node* cell, const GridX x, const GridY y)
 }
 void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
 {
+  DbuX original_x = cell->getLeft();
+  DbuY original_y = cell->getBottom();
   grid_->paintPixel(cell, x, y);
   setGridPaddedLoc(cell, x, y);
   cell->setPlaced(true);
   cell->setOrient(grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite()));
+  if (journal_) {
+    MoveCellAction action;
+    action.setNode(cell);
+    action.setOrigLocation(cell->getLeft(), cell->getBottom());
+    action.setNewLocation(cell->getLeft(), cell->getBottom());
+    journal_->addAction(action);
+  }
 }
 
 void Opendp::unplaceCell(Node* cell)
 {
+  if (journal_) {
+    UnplaceCellAction action;
+    action.setNode(cell);
+    action.setWasHold(cell->isHold());
+    journal_->addAction(action);
+  }
   grid_->erasePixel(cell);
   cell->setPlaced(false);
   cell->setHold(false);
