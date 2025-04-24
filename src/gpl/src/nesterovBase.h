@@ -777,7 +777,7 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
-  const std::vector<GCell*>& nbcGCells() const { return NBC_gCells_; }
+  const std::vector<GCell*>& gCells() const { return NBC_gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -827,12 +827,12 @@ class NesterovBaseCommon
   GCell* getGCellByIndex(size_t i);
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
-  size_t createGCell(odb::dbInst* db_inst);
-  void createGNet(odb::dbNet* net, bool skip_io_mode);
-  void createITerm(odb::dbITerm* iTerm);
-  void destroyGCell(size_t);
-  void destroyGNet(odb::dbNet*);
-  void destroyITerm(odb::dbITerm*);
+  size_t createCbkGCell(odb::dbInst* db_inst);
+  void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
+  void createCbkITerm(odb::dbITerm* iTerm);
+  void destroyCbkGCell(size_t);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
@@ -903,7 +903,7 @@ class NesterovBase
 
   GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
 
-  const std::vector<GCellHandle>& nbGCells() const { return NB_gCells_; }
+  const std::vector<GCellHandle>& gCells() const { return NB_gCells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1062,8 +1062,8 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
-  void createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
-  void destroyGCell(odb::dbInst* db_inst);
+  void createCbkGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
+  void destroyCbkGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
   // Resets all pointers to storages of gcells, gpins, and gnets.

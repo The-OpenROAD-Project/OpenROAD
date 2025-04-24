@@ -1393,7 +1393,7 @@ void NesterovBaseCommon::updateDbGCells()
   }
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = nbcGCells().begin(); it < nbcGCells().end(); ++it) {
+  for (auto it = gCells().begin(); it < gCells().end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isInstance()) {
       for (Instance* inst : gCell->insts()) {
@@ -2857,8 +2857,8 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   gcell->setSize(bbox->getDX(), bbox->getDY());
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-  int64_t areaChange = newCellArea - prevCellArea;
-  delta_area_ += areaChange;
+  int64_t area_change = newCellArea - prevCellArea;
+  delta_area_ += area_change;
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -2942,7 +2942,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
   new_instances.clear();
 }
 
-void NesterovBase::createGCell(odb::dbInst* db_inst,
+void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
                                size_t stor_index,
                                RouteBase* rb)
 {
@@ -2982,7 +2982,7 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
   }
 }
 
-size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
+size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
   Instance gpl_inst(db_inst,
                     pbc_->padLeft() * pbc_->siteSizeX(),
@@ -2994,18 +2994,17 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();
-  // We know there is exactly one inst in the gcell we just created
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_map_[db_inst] = gCellStor_.size() - 1;
 
-  int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
+  int64_t area_change = static_cast<int64_t>(gcell_ptr->dx())
                        * static_cast<int64_t>(gcell_ptr->dy());
-  delta_area_ += areaChange;
+  delta_area_ += area_change;
   new_gcells_count_++;
   return gCellStor_.size() - 1;
 }
 
-void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
+void NesterovBaseCommon::createCbkGNet(odb::dbNet* db_net, bool skip_io_mode)
 {
   Net gpl_net(db_net, skip_io_mode);
   pb_nets_stor_.push_back(gpl_net);
@@ -3016,7 +3015,7 @@ void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
   db_net_map_[db_net] = gNetStor_.size() - 1;
 }
 
-void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
+void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 {
   Pin gpl_pin(iTerm);
   pb_pins_stor_.push_back(gpl_pin);
@@ -3029,7 +3028,7 @@ void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 
 // assuming fixpointers will be called later
 //  maintaining consistency in NBC::gcellStor_ and NB::gCells_
-void NesterovBase::destroyGCell(odb::dbInst* db_inst)
+void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 {
   auto db_it = db_inst_index_map_.find(db_inst);
   if (db_it != db_inst_index_map_.end()) {
@@ -3038,7 +3037,7 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
 
     GCellHandle& handle = NB_gCells_[gcell_index];
     if (handle.isNesterovBaseCommon()) {
-      nbc_->destroyGCell(handle.getIndex());
+      nbc_->destroyCbkGCell(handle.getIndex());
     } else {
       destroyFillerGCell(handle.getIndex());
     }
@@ -3052,7 +3051,7 @@ void NesterovBase::destroyGCell(odb::dbInst* db_inst)
   }
 }
 
-void NesterovBaseCommon::destroyGCell(size_t index_remove)
+void NesterovBaseCommon::destroyCbkGCell(size_t index_remove)
 {
   size_t last_index = gCellStor_.size() - 1;
   if (index_remove > last_index) {
@@ -3078,11 +3077,11 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
   fillerStor_.pop_back();
 }
 
-void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
+void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 {
 }
 
-void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
+void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
 {
   auto db_it = db_iterm_map_.find(db_iterm);
   if (db_it != db_iterm_map_.end()) {
