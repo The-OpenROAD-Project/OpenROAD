@@ -39,8 +39,12 @@ void Journal::undo(const JournalAction* action, const bool positions_only) const
           mgr_->removeCellFromSegment(node, seg);
         }
       }
-      node->setLeft(DbuX{move_action->getOrigLeft()});
+      node->setLeft(move_action->getOrigLeft());
       node->setBottom(move_action->getOrigBottom());
+      if (!move_action->wasPlaced()) {
+        node->setPlaced(false);
+        return;
+      }
       if (!positions_only) {
         paintInGrid(grid_, node);
         for (auto seg : move_action->getOrigSegs()) {
@@ -87,7 +91,7 @@ void Journal::redo(const JournalAction* action, const bool positions_only) const
           mgr_->removeCellFromSegment(node, seg);
         }
       }
-      node->setLeft(DbuX{move_action->getNewLeft()});
+      node->setLeft(move_action->getNewLeft());
       node->setBottom(move_action->getNewBottom());
       if (!positions_only) {
         paintInGrid(grid_, node);

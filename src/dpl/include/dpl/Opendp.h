@@ -199,7 +199,7 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
-  void shiftMove(Node* cell);
+  bool shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
   int distChange(const Node* cell, DbuX x, DbuY y) const;

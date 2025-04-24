@@ -352,7 +352,7 @@ void Network::addNode(odb::dbInst* inst)
   auto master = getMaster(inst->getMaster());
   ndi.setMaster(master);
   ndi.setFixed(inst->isFixed());
-  ndi.setPlaced(inst->isFixed());
+  ndi.setPlaced(inst->isPlaced());
 
   ndi.setOrient(odb::dbOrientType::R0);
   ndi.setHeight(DbuY{(int) inst->getMaster()->getHeight()});

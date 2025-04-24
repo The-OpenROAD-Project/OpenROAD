@@ -293,40 +293,37 @@ void Grid::paintPixel(Node* cell)
 
 void Grid::erasePixel(Node* cell)
 {
-  if (!(cell->isFixed() || !cell->isPlaced())) {
-    const auto grid_rect = gridCoveringPadded(cell);
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Checking cell {} isHybrid {}",
-               cell->getDbInst()->getName(),
-               cell->isHybrid());
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Checking cell {} in rows. Y start {} y end {}",
-               cell->getDbInst()->getName(),
-               grid_rect.ylo,
-               grid_rect.yhi);
+  const auto grid_rect = gridCoveringPadded(cell);
+  debugPrint(logger_,
+             DPL,
+             "hybrid",
+             1,
+             "Checking cell {} isHybrid {}",
+             cell->getDbInst()->getName(),
+             cell->isHybrid());
+  debugPrint(logger_,
+             DPL,
+             "hybrid",
+             1,
+             "Checking cell {} in rows. Y start {} y end {}",
+             cell->getDbInst()->getName(),
+             grid_rect.ylo,
+             grid_rect.yhi);
 
-    for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
-      for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
-        Pixel* pixel = gridPixel(x, y);
-        if (pixel == nullptr || pixel->cell != cell) {
-          continue;
-        }
-        pixel->cell = nullptr;
-        pixel->util = 0;
+  for (GridX x = grid_rect.xlo; x < grid_rect.xhi; x++) {
+    for (GridY y = grid_rect.ylo; y < grid_rect.yhi; y++) {
+      Pixel* pixel = gridPixel(x, y);
+      if (pixel == nullptr || pixel->cell != cell) {
+        continue;
       }
+      pixel->cell = nullptr;
+      pixel->util = 0;
     }
   }
 }
 
 void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
 {
-  // assert(!cell->isPlaced());
   GridX x_end = grid_x + gridPaddedWidth(cell);
   GridY grid_height = gridHeight(cell);
   GridY y_end = grid_y + grid_height;

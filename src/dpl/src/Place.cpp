@@ -574,7 +574,7 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
   return false;
 }
 
-void Opendp::shiftMove(Node* cell)
+bool Opendp::shiftMove(Node* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, true);
   // magic number alert
@@ -612,6 +612,7 @@ void Opendp::shiftMove(Node* cell)
       placement_failures_.push_back(cell);
     }
   }
+  return placement_failures_.empty();
 }
 
 bool Opendp::swapCells(Node* cell1, Node* cell2)
@@ -1203,6 +1204,9 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
 
 void Opendp::unplaceCell(Node* cell)
 {
+  if (cell->isFixed() || !cell->isPlaced()) {
+    return;
+  }
   if (journal_) {
     UnplaceCellAction action;
     action.setNode(cell);

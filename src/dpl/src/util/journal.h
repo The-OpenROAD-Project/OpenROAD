@@ -41,6 +41,7 @@ class MoveCellAction : public JournalAction
   void setOrigSegs(const std::vector<int>& segs) { orig_segs_ = segs; }
   void setNewSegs(const std::vector<int>& segs) { new_segs_ = segs; }
   void setNode(Node* node) { node_ = node; }
+  void setWasPlaced(bool was_placed) { was_placed_ = was_placed; }
   // getters
   Node* getNode() const { return node_; }
   DbuX getOrigLeft() const { return orig_x_; }
@@ -49,6 +50,7 @@ class MoveCellAction : public JournalAction
   DbuY getNewBottom() const { return new_y_; }
   const std::vector<int>& getOrigSegs() const { return orig_segs_; }
   const std::vector<int>& getNewSegs() const { return new_segs_; }
+  bool wasPlaced() const { return was_placed_; }
   JournalActionTypeEnum typeId() const override
   {
     return JournalActionTypeEnum::MOVE_CELL;
@@ -62,6 +64,7 @@ class MoveCellAction : public JournalAction
   DbuY new_y_{0};
   std::vector<int> orig_segs_;
   std::vector<int> new_segs_;
+  bool was_placed_{true};
 };
 class UnplaceCellAction : public JournalAction
 {
