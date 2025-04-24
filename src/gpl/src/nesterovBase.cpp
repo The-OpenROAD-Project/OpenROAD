@@ -1098,7 +1098,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
-      db_inst_to_NBC_index_map_[inst->dbInst()] = i;
+      db_inst_to_nbc_index_map_[inst->dbInst()] = i;
     }
   }
 
@@ -1109,7 +1109,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
     if (gPin.pin()->isITerm()) {
-      db_iterm_to_NBC_index_map_[gPin.pin()->dbITerm()] = i;
+      db_iterm_to_index_map_[gPin.pin()->dbITerm()] = i;
     }
   }
 
@@ -1119,7 +1119,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     GNet& gNet = gNetStor_[i];
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
-    db_net_to_NBC_index_map_[gNet.net()->dbNet()] = i;
+    db_net_to_index_map_[gNet.net()->dbNet()] = i;
   }
 
   // gCellStor_'s pins_ fill
@@ -1476,7 +1476,7 @@ void NesterovBaseCommon::fixPointers()
 {
   nbc_gcells_.clear();
   gCellMap_.clear();
-  db_inst_to_NBC_index_map_.clear();
+  db_inst_to_nbc_index_map_.clear();
   nbc_gcells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
@@ -1486,32 +1486,32 @@ void NesterovBaseCommon::fixPointers()
     nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
-      db_inst_to_NBC_index_map_[inst->dbInst()] = i;
+      db_inst_to_nbc_index_map_[inst->dbInst()] = i;
     }
   }
 
   gPins_.clear();
   gPinMap_.clear();
-  db_iterm_to_NBC_index_map_.clear();
+  db_iterm_to_index_map_.clear();
   gPins_.reserve(gPinStor_.size());
   for (size_t i = 0; i < gPinStor_.size(); ++i) {
     GPin& gPin = gPinStor_[i];
     gPins_.push_back(&gPin);
     gPinMap_[gPin.pin()] = &gPin;
     if (gPin.pin()->isITerm()) {
-      db_iterm_to_NBC_index_map_[gPin.pin()->dbITerm()] = i;
+      db_iterm_to_index_map_[gPin.pin()->dbITerm()] = i;
     }
   }
 
   gNets_.clear();
   gNetMap_.clear();
-  db_net_to_NBC_index_map_.clear();
+  db_net_to_index_map_.clear();
   gNets_.reserve(gNetStor_.size());
   for (size_t i = 0; i < gNetStor_.size(); ++i) {
     GNet& gNet = gNetStor_[i];
     gNets_.push_back(&gNet);
     gNetMap_[gNet.net()] = &gNet;
-    db_net_to_NBC_index_map_[gNet.net()->dbNet()] = i;
+    db_net_to_index_map_[gNet.net()->dbNet()] = i;
   }
 
   for (auto& gCell : gCellStor_) {
@@ -1522,8 +1522,8 @@ void NesterovBaseCommon::fixPointers()
     for (Instance* inst : gCell.insts()) {
       for (odb::dbITerm* iterm : inst->dbInst()->getITerms()) {
         if (isValidSigType(iterm->getSigType())) {
-          auto it = db_iterm_to_NBC_index_map_.find(iterm);
-          if (it != db_iterm_to_NBC_index_map_.end()) {
+          auto it = db_iterm_to_index_map_.find(iterm);
+          if (it != db_iterm_to_index_map_.end()) {
             size_t gpin_index = it->second;
             gCell.addGPin(&gPinStor_[gpin_index]);
           } else {
@@ -1544,14 +1544,14 @@ void NesterovBaseCommon::fixPointers()
     auto iterm = gPin.pin()->dbITerm();
     if (iterm != nullptr) {
       if (isValidSigType(iterm->getSigType())) {
-        auto inst_it = db_inst_to_NBC_index_map_.find(iterm->getInst());
-        auto net_it = db_net_to_NBC_index_map_.find(iterm->getNet());
+        auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
+        auto net_it = db_net_to_index_map_.find(iterm->getNet());
 
-        if (inst_it != db_inst_to_NBC_index_map_.end()) {
+        if (inst_it != db_inst_to_nbc_index_map_.end()) {
           gPin.setGCell(&gCellStor_[inst_it->second]);
         }
 
-        if (net_it != db_net_to_NBC_index_map_.end()) {
+        if (net_it != db_net_to_index_map_.end()) {
           gPin.setGNet(&gNetStor_[net_it->second]);
         } else {
           debugPrint(
@@ -1578,8 +1578,8 @@ void NesterovBaseCommon::fixPointers()
     gNet.clearGPins();
     for (odb::dbITerm* iterm : gNet.net()->dbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
-        auto it = db_iterm_to_NBC_index_map_.find(iterm);
-        if (it != db_iterm_to_NBC_index_map_.end()) {
+        auto it = db_iterm_to_index_map_.find(iterm);
+        if (it != db_iterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
         }
@@ -1631,7 +1631,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     gCell->updateLocations();
     nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
     size_t gcells_index = nb_gcells_.size() - 1;
-    db_inst_to_NB_index_map_[pb_inst->dbInst()] = gcells_index;
+    db_inst_to_nb_index_map_[pb_inst->dbInst()] = gcells_index;
   }
 
   // add filler cells to gCells_
@@ -2869,7 +2869,7 @@ bool NesterovBase::revertToSnapshot()
 void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
 {
   GCell* gcell
-      = getGCellByIndex(db_inst_to_NBC_index_map_.find(db_inst)->second);
+      = getGCellByIndex(db_inst_to_nbc_index_map_.find(db_inst)->second);
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setAllLocations(
       bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
@@ -2878,7 +2878,7 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 {
   GCell* gcell
-      = getGCellByIndex(db_inst_to_NBC_index_map_.find(db_inst)->second);
+      = getGCellByIndex(db_inst_to_nbc_index_map_.find(db_inst)->second);
   if (!gcell->contains(db_inst)) {
     debugPrint(log_,
                GPL,
@@ -2902,8 +2902,8 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 {
   for (auto& db_inst : new_instances) {
-    auto db_it = db_inst_to_NB_index_map_.find(db_inst);
-    if (db_it != db_inst_to_NB_index_map_.end()) {
+    auto db_it = db_inst_to_nb_index_map_.find(db_inst);
+    if (db_it != db_inst_to_nb_index_map_.end()) {
       size_t gcells_index = db_it->second;
       GCellHandle& handle = nb_gcells_[gcells_index];
       GCell* gcell = handle;
@@ -2994,7 +2994,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
     new_instances.push_back(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
     size_t gcells_index = nb_gcells_.size() - 1;
-    db_inst_to_NB_index_map_[db_inst] = gcells_index;
+    db_inst_to_nb_index_map_[db_inst] = gcells_index;
 
     curSLPCoordi_.emplace_back();
     curSLPWireLengthGrads_.emplace_back();
@@ -3042,7 +3042,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
-  db_inst_to_NBC_index_map_[db_inst] = gCellStor_.size() - 1;
+  db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;
 
   int64_t area_change = static_cast<int64_t>(gcell_ptr->dx())
                         * static_cast<int64_t>(gcell_ptr->dy());
@@ -3060,7 +3060,7 @@ void NesterovBaseCommon::createCbkGNet(odb::dbNet* db_net, bool skip_io_mode)
   gNetStor_.push_back(gnet);
   GNet* gnet_ptr = &gNetStor_.back();
   gNetMap_[gnet_ptr->net()] = gnet_ptr;
-  db_net_to_NBC_index_map_[db_net] = gNetStor_.size() - 1;
+  db_net_to_index_map_[db_net] = gNetStor_.size() - 1;
 }
 
 void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
@@ -3072,7 +3072,7 @@ void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
   gPinStor_.push_back(gpin);
   GPin* gpin_ptr = &gPinStor_.back();
   gPinMap_[gpin_ptr->pin()] = gpin_ptr;
-  db_iterm_to_NBC_index_map_[iTerm] = gPinStor_.size() - 1;
+  db_iterm_to_index_map_[iTerm] = gPinStor_.size() - 1;
 }
 
 // assuming fixpointers will be called later
@@ -3080,13 +3080,13 @@ void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NesterovBase::destroyGCel");
-  auto db_it = db_inst_to_NB_index_map_.find(db_inst);
-  if (db_it != db_inst_to_NB_index_map_.end()) {
+  auto db_it = db_inst_to_nb_index_map_.find(db_inst);
+  if (db_it != db_inst_to_nb_index_map_.end()) {
     size_t last_index = nb_gcells_.size() - 1;
     size_t gcell_index = db_it->second;
 
     GCellHandle& handle = nb_gcells_[gcell_index];
-    // should be impossible to be a filler here
+    // TODO delete fillers
     bool is_filler = handle->isFiller();
 
     if (gcell_index != last_index) {
@@ -3094,25 +3094,25 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     }
     swapAndPopParallelVectors(gcell_index, last_index);
     nb_gcells_.pop_back();
-    db_inst_to_NB_index_map_.erase(db_it);
+    db_inst_to_nb_index_map_.erase(db_it);
 
     if (gcell_index != last_index) {
       if (!nb_gcells_[gcell_index]->isFiller()) {
         odb::dbInst* swapped_inst
             = nb_gcells_[gcell_index]->insts()[0]->dbInst();
-        db_inst_to_NB_index_map_.erase(swapped_inst);
-        db_inst_to_NB_index_map_[swapped_inst] = gcell_index;
+        db_inst_to_nb_index_map_.erase(swapped_inst);
+        db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
       }
     } else {
-      db_inst_to_NB_index_map_.erase(db_inst);
+      db_inst_to_nb_index_map_.erase(db_inst);
     }
 
     if (!is_filler) {
       std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
 
       if (replacer.first != nullptr) {
-        auto it = db_inst_to_NB_index_map_.find(replacer.first);
-        if (it != db_inst_to_NB_index_map_.end()) {
+        auto it = db_inst_to_nb_index_map_.find(replacer.first);
+        if (it != db_inst_to_nb_index_map_.end()) {
           nb_gcells_[it->second].updateIndex(replacer.second);
         } else {
           debugPrint(log_,
@@ -3146,8 +3146,8 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
     odb::dbInst* db_inst)
 {
-  auto it = db_inst_to_NBC_index_map_.find(db_inst);
-  if (it == db_inst_to_NBC_index_map_.end()) {
+  auto it = db_inst_to_nbc_index_map_.find(db_inst);
+  if (it == db_inst_to_nbc_index_map_.end()) {
     log_->error(GPL,
                 307,
                 "db_inst not found in db_inst_to_NBC_index_map_ when trying to "
@@ -3158,7 +3158,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   size_t index_remove = it->second;
   size_t last_index = gCellStor_.size() - 1;
 
-  db_inst_to_NBC_index_map_.erase(it);
+  db_inst_to_nbc_index_map_.erase(it);
 
   std::pair<odb::dbInst*, size_t> replacement{};
 
@@ -3166,7 +3166,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
     std::swap(gCellStor_[index_remove], gCellStor_[last_index]);
 
     odb::dbInst* swapped_inst = gCellStor_[index_remove].insts()[0]->dbInst();
-    db_inst_to_NBC_index_map_[swapped_inst] = index_remove;
+    db_inst_to_nbc_index_map_[swapped_inst] = index_remove;
 
     replacement = {swapped_inst, index_remove};
   }
@@ -3194,8 +3194,8 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NesterovBaseCommon::destroyGNet");
-  auto db_it = db_net_to_NBC_index_map_.find(db_net);
-  if (db_it == db_net_to_NBC_index_map_.end()) {
+  auto db_it = db_net_to_index_map_.find(db_net);
+  if (db_it == db_net_to_index_map_.end()) {
     log_->error(GPL,
                 308,
                 "db_net not found in db_net_to_NBC_index_map_ for net: {}",
@@ -3220,19 +3220,19 @@ void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 
     // Update index map for the swapped net
     odb::dbNet* swapped_net = gNetStor_[index_remove].nets()[0]->dbNet();
-    db_net_to_NBC_index_map_[swapped_net] = index_remove;
+    db_net_to_index_map_[swapped_net] = index_remove;
   }
 
   gNetStor_.pop_back();
-  db_net_to_NBC_index_map_.erase(db_it);
+  db_net_to_index_map_.erase(db_it);
 }
 
 void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
 
 {
   debugPrint(log_, GPL, "callbacks", 2, "NesterovBaseCommon::destroyITerm");
-  auto db_it = db_iterm_to_NBC_index_map_.find(db_iterm);
-  if (db_it != db_iterm_to_NBC_index_map_.end()) {
+  auto db_it = db_iterm_to_index_map_.find(db_iterm);
+  if (db_it != db_iterm_to_index_map_.end()) {
     size_t last_index = gPinStor_.size() - 1;
     size_t index_remove = db_it->second;
 
@@ -3247,10 +3247,10 @@ void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
     if (index_remove != last_index) {
       std::swap(gPinStor_[index_remove], gPinStor_[last_index]);
       odb::dbITerm* swapped_iterm = gPinStor_[index_remove].pin()->dbITerm();
-      db_iterm_to_NBC_index_map_[swapped_iterm] = index_remove;
+      db_iterm_to_index_map_[swapped_iterm] = index_remove;
     }
     gPinStor_.pop_back();
-    db_iterm_to_NBC_index_map_.erase(db_it);
+    db_iterm_to_index_map_.erase(db_it);
 
   } else {
     log_->error(GPL,

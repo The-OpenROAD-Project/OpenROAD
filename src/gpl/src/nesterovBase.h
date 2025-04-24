@@ -873,9 +873,9 @@ class NesterovBaseCommon
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_NBC_index_map_;
-  std::unordered_map<odb::dbNet*, size_t> db_net_to_NBC_index_map_;
-  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_NBC_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
+  std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
+  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -1098,7 +1098,7 @@ class NesterovBase
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_NB_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
 
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
