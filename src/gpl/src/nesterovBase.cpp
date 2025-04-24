@@ -902,12 +902,13 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
                     + static_cast<float>(bin.nonPlaceArea()))
                    / scaledBinArea);
 
-    sumOverflowArea_ += std::max(0.0f,
-                                 static_cast<float>(bin.instPlacedArea())
-                                     + static_cast<float>(bin.nonPlaceArea())
-                                     - scaledBinArea);
+    const float overflowArea = std::max(
+        0.0f,
+        static_cast<float>(bin.instPlacedArea())
+            + static_cast<float>(bin.nonPlaceArea()) - scaledBinArea);
+    sumOverflowArea_ += overflowArea;  // NOLINT
 
-    auto overflowAreaUnscaled = std::max(
+    const float overflowAreaUnscaled = std::max(
         0.0f,
         static_cast<float>(bin.instPlacedAreaUnscaled())
             + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
