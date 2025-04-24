@@ -1186,8 +1186,9 @@ void Opendp::setGridPaddedLoc(Node* cell, const GridX x, const GridY y)
 }
 void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
 {
-  DbuX original_x = cell->getLeft();
-  DbuY original_y = cell->getBottom();
+  const DbuX original_x = cell->getLeft();
+  const DbuY original_y = cell->getBottom();
+  const bool was_placed = cell->isPlaced();
   grid_->paintPixel(cell, x, y);
   setGridPaddedLoc(cell, x, y);
   cell->setPlaced(true);
@@ -1196,6 +1197,7 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   if (journal_) {
     MoveCellAction action;
     action.setNode(cell);
+    action.setWasPlaced(was_placed);
     action.setOrigLocation(original_x, original_y);
     action.setNewLocation(cell->getLeft(), cell->getBottom());
     journal_->addAction(action);
