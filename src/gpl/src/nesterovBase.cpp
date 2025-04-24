@@ -1980,20 +1980,17 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
-  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto it = NB_gCells_.begin(); it < NB_gCells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
-                         * static_cast<int64_t>(gCell->dy());  // NOLINT
+                         * static_cast<int64_t>(gCell->dy());
     } else if (gCell->isStdInstance()) {
       stdInstsArea_ += static_cast<int64_t>(gCell->dx())
-                       * static_cast<int64_t>(gCell->dy());  // NOLINT
+                       * static_cast<int64_t>(gCell->dy());
     }
   }
 
