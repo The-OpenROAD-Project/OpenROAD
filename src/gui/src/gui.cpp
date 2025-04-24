@@ -583,6 +583,13 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
   main_window->getDRCViewer()->selectCategory(markers);
 }
 
+void Gui::setDisplayControlsColor(const std::string& name,
+                                  const Painter::Color& color)
+{
+  const QColor qcolor(color.r, color.g, color.b, color.a);
+  main_window->getControls()->setControlByPath(name, qcolor);
+}
+
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
   main_window->getControls()->setControlByPath(
