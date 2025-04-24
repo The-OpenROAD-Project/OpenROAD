@@ -13,6 +13,7 @@ orfs_flow(
         "PLACE_DENSITY": "0.35",
     },
     sources = {
+        "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":constraint.sdc"],
     },
     verilog_files = ["gcd.v"],
