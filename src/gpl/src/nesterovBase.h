@@ -777,9 +777,9 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
-  const std::vector<GCell*>& gCells() const { return NBC_gCells_; }
-  const std::vector<GNet*>& gNets() const { return gNets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
+  const std::vector<GNet*>& getGNets() const { return gNets_; }
+  const std::vector<GPin*>& getGPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
@@ -863,7 +863,7 @@ class NesterovBaseCommon
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
 
-  std::vector<GCell*> NBC_gCells_;
+  std::vector<GCell*> nbc_gcells_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -903,7 +903,7 @@ class NesterovBase
 
   GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
 
-  const std::vector<GCellHandle>& gCells() const { return NB_gCells_; }
+  const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1092,7 +1092,7 @@ class NesterovBase
 
   std::vector<GCell> fillerStor_;
 
-  std::vector<GCellHandle> NB_gCells_;
+  std::vector<GCellHandle> nb_gcells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
