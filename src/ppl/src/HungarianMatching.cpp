@@ -397,7 +397,7 @@ std::vector<uint8_t> HungarianMatching::getTieBreakRank(
 {
   std::vector<uint8_t> rank(costs.size());
   uint8_t ranking = 1;
-  for (int i : sortIndexes(costs, costs)) {
+  for (int i : sortIndexes(costs, costs, costs)) {
     rank[i] = ranking;
     ranking++;
   }
