@@ -62,7 +62,6 @@ using std::string;
   X(tap)                                 \
   X(cts)                                 \
   X(drt)                                 \
-  X(dpo)                                 \
   X(fin)                                 \
   X(par)                                 \
   X(rcx)                                 \

@@ -28,7 +28,7 @@ class Graphics;
 // to placement.
 //
 // SoftMacro:
-//   - Generate shape curves of std cell or mixed clusters;
+//   - Generate tilings of mixed clusters;
 //   - Cluster Placement.
 //
 // HardMacro:

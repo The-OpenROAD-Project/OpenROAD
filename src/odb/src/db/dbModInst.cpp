@@ -269,10 +269,6 @@ void dbModInst::destroy(dbModInst* modinst)
     prev = c;
     cur = c->_module_next;
   }
-  // unlink from parent end
-  if (_modinst->_group) {
-    modinst->getGroup()->removeModInst(modinst);
-  }
 
   dbProperty::destroyProperties(_modinst);
 
@@ -284,7 +280,13 @@ void dbModInst::destroy(dbModInst* modinst)
     _block->_journal->pushParam(modinst->getId());
     _block->_journal->pushParam(_module->getId());
     _block->_journal->pushParam(_master->getId());
+    _block->_journal->pushParam(_modinst->_group);
     _block->_journal->endAction();
+  }
+
+  // unlink from parent end
+  if (_modinst->_group) {
+    modinst->getGroup()->removeModInst(modinst);
   }
 
   _dbModule* _parent = (_dbModule*) (modinst->getParent());
