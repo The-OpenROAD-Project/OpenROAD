@@ -439,14 +439,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
 
       for (auto& nb : nbVec_) {
-        nb_gcells_before_td += nb->gCells().size();
+        nb_gcells_before_td += nb->getGCells().size();
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
       nbVec_[0]->setTrueReprintIterHeader();
 
       for (auto& nb : nbVec_) {
-        nb_gcells_after_td += nb->gCells().size();
+        nb_gcells_after_td += nb->getGCells().size();
       }
 
       nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
@@ -774,18 +774,18 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 
 void NesterovPlace::createGCell(odb::dbInst* db_inst)
 {
-  auto gcell_index = nbc_->createGCell(db_inst);
+  auto gcell_index = nbc_->createCbkGCell(db_inst);
   for (auto& nesterov : nbVec_) {
     // TODO: manage regions, not every NB should create a
     // gcell.
-    nesterov->createGCell(db_inst, gcell_index, rb_.get());
+    nesterov->createCbkGCell(db_inst, gcell_index, rb_.get());
   }
 }
 
-void NesterovPlace::destroyGCell(odb::dbInst* db_inst)
+void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 {
   for (auto& nesterov : nbVec_) {
-    nesterov->destroyGCell(db_inst);
+    nesterov->destroyCbkGCell(db_inst);
   }
 }
 
@@ -795,28 +795,28 @@ void NesterovPlace::createGNet(odb::dbNet* db_net)
   if (!isValidSigType(netType)) {
     return;
   }
-  nbc_->createGNet(db_net, pbc_->skipIoMode());
+  nbc_->createCbkGNet(db_net, pbc_->skipIoMode());
 }
 
-void NesterovPlace::destroyGNet(odb::dbNet* db_net)
+void NesterovPlace::destroyCbkGNet(odb::dbNet* db_net)
 {
-  nbc_->destroyGNet(db_net);
+  nbc_->destroyCbkGNet(db_net);
 }
 
-void NesterovPlace::createITerm(odb::dbITerm* iterm)
-{
-  if (!isValidSigType(iterm->getSigType())) {
-    return;
-  }
-  nbc_->createITerm(iterm);
-}
-
-void NesterovPlace::destroyITerm(odb::dbITerm* iterm)
+void NesterovPlace::createCbkITerm(odb::dbITerm* iterm)
 {
   if (!isValidSigType(iterm->getSigType())) {
     return;
   }
-  nbc_->destroyITerm(iterm);
+  nbc_->createCbkITerm(iterm);
+}
+
+void NesterovPlace::destroyCbkITerm(odb::dbITerm* iterm)
+{
+  if (!isValidSigType(iterm->getSigType())) {
+    return;
+  }
+  nbc_->destroyCbkITerm(iterm);
 }
 
 void NesterovPlace::resizeGCell(odb::dbInst* db_inst)
@@ -851,17 +851,17 @@ void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)
 {
-  nesterov_place_->destroyGCell(db_inst);
+  nesterov_place_->destroyCbkGCell(db_inst);
 }
 
 void nesterovDbCbk::inDbITermCreate(odb::dbITerm* iterm)
 {
-  nesterov_place_->createITerm(iterm);
+  nesterov_place_->createCbkITerm(iterm);
 }
 
 void nesterovDbCbk::inDbITermDestroy(odb::dbITerm* iterm)
 {
-  nesterov_place_->destroyITerm(iterm);
+  nesterov_place_->destroyCbkITerm(iterm);
 }
 
 void nesterovDbCbk::inDbNetCreate(odb::dbNet* db_net)
