@@ -91,6 +91,38 @@ proc set_layer_rc { args } {
   }
 }
 
+sta::define_cmd_args "report_layer_rc" {[-corner corner]}
+proc report_layer_rc { args } {
+  sta::parse_key_args "report_layer_rc" args \
+    keys {-corner} \
+    flags {}
+  set corner [sta::parse_corner_or_all keys]
+  set tech [ord::get_db_tech]
+  set no_routing_layers [$tech getRoutingLayerCount]
+  ord::ensure_units_initialized
+  set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
+  set cap_unit "[sta::unit_scaled_suffix "capacitance"]/[sta::unit_scaled_suffix "distance"]"
+  set res_convert [expr [sta::resistance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+  set cap_convert [expr [sta::capacitance_sta_ui 1.0] / [sta::distance_sta_ui 1.0]]
+
+  puts "   Layer   | Unit Resistance | Unit Capacitance "
+  puts [format "           | %15s | %16s" [format "(%s)" $res_unit] [format "(%s)" $cap_unit]]
+  puts "------------------------------------------------"
+  for { set i 1 } { $i <= $no_routing_layers } { incr i } {
+    set layer [$tech findRoutingLayer $i]
+    if { $corner == "NULL" } {
+      lassign [rsz::dblayer_wire_rc $layer] layer_wire_res layer_wire_cap
+    } else {
+      set layer_wire_res [rsz::layer_resistance $layer $corner]
+      set layer_wire_cap [rsz::layer_capacitance $layer $corner]
+    }
+    set res_ui [expr $layer_wire_res * $res_convert]
+    set cap_ui [expr $layer_wire_cap * $cap_convert]
+    puts [format "%10s | %15.2e | %16.2e" [$layer getName] $res_ui $cap_ui]
+  }
+  puts "------------------------------------------------"
+}
+
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layers layers]\
                                       [-layer layer]\
