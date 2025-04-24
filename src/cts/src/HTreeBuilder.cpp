@@ -1191,8 +1191,9 @@ void HTreeBuilder::run()
     } else {
       logger_->info(CTS,
                     29,
-                    " Sinks will be clustered in groups of up to {} and with "
+                    " {} sinks will be clustered in groups of up to {} and with "
                     "maximum cluster diameter of {:.1f} um.",
+                    type_ == TreeType::MacroTree ? "Macro " : "Register",
                     clusterSize,
                     clusterDiameter);
     }
