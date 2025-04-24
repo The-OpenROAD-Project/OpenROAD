@@ -1980,21 +1980,20 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
+  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-  for (GCell* gcell : NB_gCells_) {
-    if (gcell == nullptr) {
-      continue;
-    }
-
-    const int64_t area
-        = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-
-    if (gcell != nullptr && gcell->isMacroInstance()) {
-      macroInstsArea_ += area;
-    } else if (gcell != nullptr && gcell->isStdInstance()) {
-      stdInstsArea_ += area;
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+    reduction(+ : stdInstsArea_, macroInstsArea_)
+  for (auto it = NB_gCells_.begin(); it < NB_gCells_.end(); ++it) {
+    auto& gCell = *it;  // old-style loop for old OpenMP
+    if (gCell->isMacroInstance()) {
+      macroInstsArea_ += static_cast<int64_t>(gCell->dx())
+                         * static_cast<int64_t>(gCell->dy());  // NOLINT
+    } else if (gCell->isStdInstance()) {
+      stdInstsArea_ += static_cast<int64_t>(gCell->dx())
+                       * static_cast<int64_t>(gCell->dy());  // NOLINT
     }
   }
 
@@ -2943,8 +2942,8 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 }
 
 void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
-                               size_t stor_index,
-                               RouteBase* rb)
+                                  size_t stor_index,
+                                  RouteBase* rb)
 {
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
@@ -2998,7 +2997,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   db_inst_map_[db_inst] = gCellStor_.size() - 1;
 
   int64_t area_change = static_cast<int64_t>(gcell_ptr->dx())
-                       * static_cast<int64_t>(gcell_ptr->dy());
+                        * static_cast<int64_t>(gcell_ptr->dy());
   delta_area_ += area_change;
   new_gcells_count_++;
   return gCellStor_.size() - 1;
