@@ -173,24 +173,33 @@ _installCommonDev() {
     fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Eigen3_ROOT=$(realpath $eigenPrefix) "
 
-    kokkosfftPrefix=${PREFIX:-"/usr/local"}
-    if [[ ! -d ${kokkosfftPrefix}/include/kokkos ]]; then
-        cd "${baseDir}"
-        git clone --recurse-submodules https://github.com/kokkos/kokkos-fft
-        cd kokkos-fft
-        git checkout ${kokkosfftVersion}
-        git submodule update --recursive
-        ARGS_KOKKOSFFT=" -DCMAKE_BUILD_TYPE=Release -DKokkos_ENABLE_OPENMP=ON -DKokkosFFT_ENABLE_INTERNAL_KOKKOS=ON"
-        if [[ -n $(which nvidia-smi) ]]; then
-            # Older version of g++ is needed for compatibility with NVCC
-            ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=g++-10"
+
+    if [[ ${gpl2} == "yes" ]]; then
+        kokkosfftPrefix=${PREFIX:-"/usr/local"}
+        if [[ ! -d ${kokkosfftPrefix}/include/kokkos ||
+            ( ! -n "$(grep -e "^#define\s\+KOKKOS_ENABLE_CUDA\s*$" ${kokkosfftPrefix}/include/kokkos/KokkosCore_config.h)" && ${gpuDeps} == 'nvidia' )
+        ]]; then
+            cd "${baseDir}"
+            git clone --recurse-submodules https://github.com/kokkos/kokkos-fft
+            cd kokkos-fft
+            git checkout ${kokkosfftVersion}
+            git submodule update --recursive
+            ARGS_KOKKOSFFT=" -DCMAKE_BUILD_TYPE=Release -DKokkos_ENABLE_OPENMP=ON -DKokkosFFT_ENABLE_INTERNAL_KOKKOS=ON"
+            if [[ ${gpuDeps} == "nvidia" && -n "$(lspci -vnnn 2>/dev/null | grep -i vga.*nvidia*)" ]]; then
+                if [[ -z "$(which g++-10)" ]]; then
+                    export PATH=$(pwd)/tpls/kokkos/bin:$PATH
+                    ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=nvcc_wrapper "
+                else
+                    ARGS_KOKKOSFFT+=" -DKokkos_ENABLE_CUDA=ON -DCMAKE_CXX_COMPILER=g++-10 "
+                fi
+            fi
+            ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${kokkosfftPrefix}" ${ARGS_KOKKOSFFT} -B build
+            ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
+        else
+            echo "KokkosFFT already installed."
         fi
-        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${kokkosfftPrefix}" ${ARGS_KOKKOSFFT} -B build
-        ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
-    else
-        echo "KokkosFFT already installed."
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D Kokkos_ROOT=$(realpath $kokkosfftPrefix) "
     fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D Kokkos_ROOT=$(realpath $kokkosfftPrefix) "
 
     # cudd
     cuddPrefix=${PREFIX:-"/usr/local"}
@@ -415,7 +424,7 @@ _installUbuntuPackages() {
         packages+=("libpython3.8")
     fi
 
-    if [[ -n $(which nvidia-smi) ]]; then
+    if [[ ${gpuDeps} == "nvidia" && -n "$(lspci -vnnn 2>/dev/null | grep -i vga.*nvidia*)" ]]; then
         packages+=("nvidia-cuda-dev" "nvidia-cuda-toolkit" "g++-10")
     fi
 
@@ -608,7 +617,7 @@ _installDebianCleanUp() {
 _installDebianPackages() {
     export DEBIAN_FRONTEND="noninteractive"
     apt-get -y update
-    apt-get -y install --no-install-recommends tzdata pciutils
+    apt-get -y install --no-install-recommends tzdata pciutils lsb-release
     if [[ $1 == rodete ]]; then
         tclver=8.6
     else
@@ -649,8 +658,17 @@ _installDebianPackages() {
         wget \
         zlib1g-dev
 
-    if [[ -n $(lspci -vnnn | grep -i vga.*nvidia*) ]]; then
-        apt-get -y install --no-install-recommends nvidia-cuda-dev nvidia-cuda-toolkit g++-10
+    if [[ ${gpuDeps} == "nvidia" ]]; then
+        RELEASE_CODENAME=$(lsb_release -c | awk '{print $2}')
+
+        NEW_LINES="deb http://deb.debian.org/debian/ $RELEASE_CODENAME main contrib non-free
+        deb-src http://deb.debian.org/debian/ $RELEASE_CODENAME main contrib non-free"
+
+        if ! grep -q "$NEW_LINES" /etc/apt/sources.list; then
+            echo "$NEW_LINES" | tee -a /etc/apt/sources.list > /dev/null
+        fi
+        apt-get update
+        apt-get -y install --no-install-recommends libcu++-dev nvidia-cuda-toolkit
     fi
 
 
@@ -784,6 +802,8 @@ isLocal="false"
 equivalenceDeps="no"
 CI="no"
 saveDepsPrefixes=""
+gpuDeps="no"
+gpl2="no"
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -813,12 +833,32 @@ while [ "$#" -gt 0 ]; do
             ;;
         -common)
             if [[ "${option}" != "none" ]]; then
-                echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
+                echo "WARNING: previous argument -${option} will be overwritten with -common."  >&2
             fi
             option="common"
             ;;
         -eqy)
             equivalenceDeps="yes"
+            ;;
+        -gpu)
+            shift 1
+            case "${1}" in
+                nvidia)
+                    gpuDeps="nvidia"
+                    ;;
+                amd)
+                    echo "AMD selected, but it's currently unsupported."
+                    echo "Consider using the 'nvidia' option or remove the -gpu flag."
+                    exit 1
+                    ;;
+                *)
+                    echo "Invalid GPU option. Please use 'nvidia' or 'amd'."
+                    exit 1
+                    ;;
+            esac
+            ;;
+        -use_gpl2)
+            gpl2="yes"
             ;;
         -ci)
             CI="yes"
@@ -937,6 +977,10 @@ case "${os}" in
             echo "ERROR: Unsupported ${rhelVersion} version. Only '9' is supported."
             exit 1
         fi
+        if [[ ${gpuDeps} == 'nvidia' ]]; then
+            echo "ERROR: GPU backends are not supported on RHEL."
+            exit 1
+        fi
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
@@ -954,6 +998,10 @@ case "${os}" in
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
         fi
+        if [[ ${gpuDeps} == 'nvidia' ]]; then
+            echo "ERROR: GPU backends are not supported on Darwin."
+            exit 1
+        fi
         _installDarwin
         cat <<EOF
 
@@ -965,6 +1013,10 @@ EOF
     "openSUSE Leap" )
         if [[ ${CI} == "yes" ]]; then
             echo "WARNING: Installing CI dependencies is only supported on Ubuntu 22.04" >&2
+        fi
+        if [[ ${gpuDeps} == 'nvidia' ]]; then
+            echo "ERROR: GPU backends are not supported on OpenSUSE."
+            exit 1
         fi
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
