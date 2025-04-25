@@ -214,6 +214,11 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
+  template <typename Macro>
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::vector<Macro>& macros);
+
   // For debugging
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
