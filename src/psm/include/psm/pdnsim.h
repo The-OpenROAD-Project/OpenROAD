@@ -8,8 +8,8 @@
 #include <optional>
 #include <string>
 
-#include "dpl/Opendp.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbCompare.h"
 
 namespace odb {
 class dbDatabase;
@@ -27,6 +27,9 @@ class Logger;
 }
 namespace rsz {
 class Resizer;
+}
+namespace dpl {
+class Opendp;
 }
 
 namespace psm {
