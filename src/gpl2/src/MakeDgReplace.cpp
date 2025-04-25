@@ -40,28 +40,25 @@
 
 #include "gpl2/DgReplace.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
-
-namespace sta {
-extern const char* gpl2_tcl_inits[];
-}
+#include "utl/decode.h"
 
 extern "C" {
 extern int Gpl2_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace gpl2 {
+extern const char* gpl2_tcl_inits[];
 
 gpl2::DgReplace* makeDgReplace()
 {
   return new gpl2::DgReplace();
 }
 
-void initDgReplace(OpenRoad* openroad)
+void initDgReplace(ord::OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Gpl2_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::gpl2_tcl_inits);
+  utl::evalTclInit(tcl_interp, gpl2::gpl2_tcl_inits);
   openroad->getDgReplace()->init(openroad->getDbNetwork(),
                                  openroad->getDb(),
                                  openroad->getResizer(),
@@ -74,4 +71,4 @@ void deleteDgReplace(gpl2::DgReplace* replace)
   delete replace;
 }
 
-}  // namespace ord
+}  // namespace gpl2
