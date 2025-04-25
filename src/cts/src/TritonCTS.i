@@ -3,6 +3,7 @@
 
 %{
 #include <cstdint>
+#include <iostream>
 
 #include "cts/TritonCTS.h"
 #include "CtsOptions.h"
@@ -68,6 +69,12 @@ void
 set_root_buffer(const char* buffer)
 {
   getTritonCts()->setRootBuffer(buffer);
+}
+
+void
+set_buffer_list_prefix(const char* prefix)
+{
+  getTritonCts()->getParms()->setBufferListPrefix(prefix);
 }
 
 void

@@ -44,6 +44,7 @@ Perform clock tree synthesis.
 clock_tree_synthesis 
     [-wire_unit wire_unit]
     [-buf_list <list_of_buffers>]
+    [-buf_list_prefix prefix]\
     [-root_buf root_buf]
     [-clk_nets <list_of_clk_nets>]
     [-tree_buf <buf>]
@@ -71,6 +72,7 @@ clock_tree_synthesis
 | Switch Name | Description |
 | ----- | ----- |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
+| `-buf_list_prefix` | Prefix that will be used to infer the clock buffer list (e.g. `CLKBUF`). If no buffer are found using this prefix it will proceed with the normal buffer list inferring. Should not be used with `-buf_list` |
 | `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
 | `-distance_between_buffers` | Distance (in microns) between buffers that `cts` should use when creating the tree. When using this parameter, the clock tree algorithm is simplified and only uses a fraction of the segments from the LUT. |

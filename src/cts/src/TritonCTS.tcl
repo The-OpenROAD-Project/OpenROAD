@@ -38,6 +38,7 @@ proc configure_cts_characterization { args } {
 
 sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-buf_list buflist] \
+                                             [-buf_list_prefix prefix]\
                                              [-root_buf buf] \
                                              [-clk_nets nets] \
                                              [-tree_buf buf] \
@@ -63,8 +64,8 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
-    keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size \
-          -num_static_layers -sink_clustering_buffer \
+    keys {-root_buf -buf_list -wire_unit -clk_nets -buf_list_prefix\
+          -sink_clustering_size -num_static_layers -sink_clustering_buffer \
           -distance_between_buffers -branching_point_buffers_distance \
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
@@ -128,6 +129,14 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-clustering_unbalance_ratio)] } {
     set unbalance $keys(-clustering_unbalance_ratio)
     cts::set_clustering_unbalance_ratio $unbalance
+  }
+
+  if { [info exists keys(-buf_list_prefix)] } {
+    set prefix $keys(-buf_list_prefix)
+    if { [info exists keys(-buf_list)] } {
+      utl::warn CTS 129 "-buf_list_prefix will not be used, as -buf_list was already declared"
+    }
+    cts::set_buffer_list_prefix ".*${prefix}.*"
   }
 
   if { [info exists keys(-buf_list)] } {
