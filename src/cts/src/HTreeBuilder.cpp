@@ -1189,13 +1189,14 @@ void HTreeBuilder::run()
       logger_->info(
           CTS, 90, " Sinks will be clustered based on buffer max cap.");
     } else {
-      logger_->info(CTS,
-                    29,
-                    " {} sinks will be clustered in groups of up to {} and with "
-                    "maximum cluster diameter of {:.1f} um.",
-                    type_ == TreeType::MacroTree ? "Macro " : "Register",
-                    clusterSize,
-                    clusterDiameter);
+      logger_->info(
+          CTS,
+          29,
+          " {} sinks will be clustered in groups of up to {} and with "
+          "maximum cluster diameter of {:.1f} um.",
+          type_ == TreeType::MacroTree ? "Macro " : "Register",
+          clusterSize,
+          clusterDiameter);
     }
   }
   logger_->info(
