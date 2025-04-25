@@ -3333,8 +3333,9 @@ void NesterovBaseCommon::printGCells()
 void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
 {
   std::ofstream out(filename);
-  if (!out.is_open())
+  if (!out.is_open()) {
     return;
+  }
 
   out << "gCellStor_.size(): " << gCellStor_.size() << "\n";
   out.close();  // reuse printToFile which appends
