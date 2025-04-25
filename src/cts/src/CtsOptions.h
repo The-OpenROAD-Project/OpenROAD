@@ -43,6 +43,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   std::string getClockNets() const { return clockNets_; }
   void setRootBuffer(const std::string& buffer) { rootBuffer_ = buffer; }
   std::string getRootBuffer() const { return rootBuffer_; }
+  void setBufferListPrefix(const std::string& prefix) { bufferListPrefix_ = prefix; }
+  std::string getBufferListPrefix() const { return bufferListPrefix_; }
   void setBufferList(const std::vector<std::string>& buffers)
   {
     bufferList_ = buffers;
@@ -249,6 +251,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   std::string sinkBuffer_ = "";
   std::string treeBuffer_ = "";
   std::string metricFile_ = "";
+  std::string bufferListPrefix_ = "";
   int dbUnits_ = -1;
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
