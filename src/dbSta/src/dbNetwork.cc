@@ -3818,6 +3818,7 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
                                        dbNet* new_flat_net,
                                        dbNet* orig_flat_net)
 {
+
   //
   // make all the pins on the mod net point to the new flat net
   //
@@ -3844,9 +3845,11 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   // reassociate the flat nets at this level. Get the fanout of the
   // new_flat net and mark as being associated with modnet.
   //
+
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(new_flat_net), visitordb, visited_dbnets);
+
 }
 
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
@@ -3940,7 +3943,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
         // TODO: uncomment error: 2030, once all cases pass.
-        /*
+
         logger_->error(
             ORD,
             2030,
@@ -3951,7 +3954,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),
             db_network_->name(search_net_));
-        */
+
       }
     }
     dbnet_ = candidate_flat_net;
