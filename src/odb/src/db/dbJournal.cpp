@@ -2049,11 +2049,19 @@ void dbJournal::undo_connectObject()
       uint mnet_id;
       _log.pop(net_id);   // the db net
       _log.pop(mnet_id);  // the modnet
-      (void) (net_id);
-      (void) (mnet_id);
-      // disconnects everything: modnet and dbnet
-      iterm->disconnect();
-
+      //
+      // we signal which net to disconnect
+      // by the id, if non zero. if zero
+      // do not disconnect. For example if we are just
+      // disconnecting the dbNet then in the journalling for
+      // the caller we set the mnet_id to zero.
+      //
+      if (net_id != 0) {
+        iterm->disconnectDbNet();
+      }
+      if (mnet_id != 0) {
+        iterm->disconnectModNet();
+      }
       break;
     }
 
@@ -2090,13 +2098,13 @@ void dbJournal::undo_disconnectObject()
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
-      uint net_id;
+      uint net_id = 0U;
       _log.pop(net_id);
       if (net_id != 0) {
         dbNet* net = dbNet::getNet(_block, net_id);
         iterm->connect(net);
       }
-      uint mnet_id;
+      uint mnet_id = 0U;
       _log.pop(mnet_id);
       if (mnet_id != 0) {
         dbModNet* mod_net = dbModNet::getModNet(_block, mnet_id);
