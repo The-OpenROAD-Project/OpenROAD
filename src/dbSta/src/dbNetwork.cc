@@ -1663,7 +1663,7 @@ bool dbNetwork::isPower(const Net* net) const
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::POWER);
   // TODO: make this work for modnets
-  /*
+
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1677,7 +1677,6 @@ bool dbNetwork::isPower(const Net* net) const
     }
   }
   return false;
-  */
 }
 
 bool dbNetwork::isGround(const Net* net) const
@@ -1686,7 +1685,7 @@ bool dbNetwork::isGround(const Net* net) const
   return (dnet->getSigType() == dbSigType::GROUND);
 
   // TODO: make this work for modnets
-  /*
+
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1700,7 +1699,6 @@ bool dbNetwork::isGround(const Net* net) const
     }
   }
   return false;
-  */
 }
 
 NetPinIterator* dbNetwork::pinIterator(const Net* net) const
@@ -3818,7 +3816,6 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
                                        dbNet* new_flat_net,
                                        dbNet* orig_flat_net)
 {
-
   //
   // make all the pins on the mod net point to the new flat net
   //
@@ -3849,7 +3846,6 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(new_flat_net), visitordb, visited_dbnets);
-
 }
 
 void dbNetwork::replaceHierModule(dbModInst* mod_inst, dbModule* module)
@@ -3954,7 +3950,6 @@ void PinModDbNetConnection::operator()(const Pin* pin)
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),
             db_network_->name(search_net_));
-
       }
     }
     dbnet_ = candidate_flat_net;
