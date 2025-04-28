@@ -1351,10 +1351,10 @@ EndcapCellOptions Tapcell::correctEndcapOptions(
   const bool tapcell_cmd = options.tapcell_cmd;
   set_single_master(bopts.left_edge,
                     odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE,
-                    tapcell_cmd ? "endcap_master" : "left_edge/endcap");
+                    tapcell_cmd ? "endcap_master" : "left_edge/-endcap");
   set_single_master(bopts.right_edge,
                     odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE,
-                    tapcell_cmd ? "endcap_master" : "right_edge/endcap");
+                    tapcell_cmd ? "endcap_master" : "right_edge/-endcap");
   set_multiple_master(bopts.top_edge, odb::dbMasterType::ENDCAP_LEF58_TOPEDGE);
   set_multiple_master(bopts.bottom_edge,
                       odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
