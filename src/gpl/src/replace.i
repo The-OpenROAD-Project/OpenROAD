@@ -301,7 +301,8 @@ set_debug_cmd(int pause_iterations,
               bool initial,
               const char* inst_name,
               int start_iter,
-              bool update_db)
+              bool update_db,
+              bool generate_images)
 {
   Replace* replace = getReplace();
   odb::dbInst* inst = nullptr;
@@ -310,7 +311,7 @@ set_debug_cmd(int pause_iterations,
     inst = block->findInst(inst_name);
   }
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst, start_iter, update_db);
+                    initial, inst, start_iter, update_db, generate_images);
 }
 
 %} // inline

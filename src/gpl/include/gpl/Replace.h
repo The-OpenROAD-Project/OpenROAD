@@ -115,7 +115,8 @@ class Replace
                 bool initial,
                 odb::dbInst* inst,
                 int start_iter,
-                bool update_db);
+                bool update_db,
+                bool generate_images);
 
  private:
   bool initNesterovPlace(int threads);
@@ -193,6 +194,7 @@ class Replace
   odb::dbInst* gui_debug_inst_ = nullptr;
   int gui_debug_start_iter_ = 0;
   bool gui_debug_update_db_every_iteration = false;
+  bool gui_debug_generate_images = false;
 };
 
 inline constexpr const char* format_label_int = "{:27} {:10}";

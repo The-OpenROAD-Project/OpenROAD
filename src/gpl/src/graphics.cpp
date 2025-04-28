@@ -532,7 +532,7 @@ void Graphics::scaleAndAnnotateImage(const std::string& input_path,
   label,
   output_path);
 
-  std::system(cmd.c_str());
+  int ret = std::system(cmd.c_str());
   std::filesystem::remove(input_path);
 }
 

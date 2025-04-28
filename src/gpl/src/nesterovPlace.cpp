@@ -418,7 +418,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
 
    
-    if (graphics_ && iter % 10 == 0) {
+    if (graphics_ && npVars_.debug_generate_images && iter % 10 == 0) {
       std::string raw = fmt::format("{}/full_{:05d}.png", gif_frames_dir, iter);
       std::string scaled = fmt::format("{}/iter_{:05d}.png", gif_frames_dir, iter);      
       std::string label = fmt::format("Iter {} | R: {} | T: {}",
@@ -432,7 +432,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     //If a timing-driven iteration previously happened, save image.
-    if (timing_driven_ && graphics_) {
+    if (graphics_ && npVars_.debug_generate_images && timing_driven_) {
       std::string raw = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
       std::string special = fmt::format("{}/timing_iter_{:05d}.png", special_modes_dir, iter);
       std::string label = fmt::format("Iter {} | R: {} | T: {}",
@@ -708,7 +708,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       nbVec_[0]->setTrueReprintIterHeader();
       ++routabilityDrivenCount;
 
-    if (graphics_) {
+    if (graphics_ && npVars_.debug_generate_images) {
       std::string density_img = fmt::format("{}/rout_density_{:05d}.png", special_modes_dir, iter);
       std::string rudy_img = fmt::format("{}/rout_rudy_{:05d}.png", special_modes_dir, iter);
       std::string special = fmt::format("{}/rout_iter_{:05d}.png", special_modes_dir, iter);
@@ -762,7 +762,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numConverge == nbVec_.size()) {
-      if(graphics_) {
+      if(graphics_ && npVars_.debug_generate_images) {
         std::string gifCmd = fmt::format("convert -delay 15 -loop 0 {}/iter_*.png {}/placement.gif", 
           reports_dir + "/gif_frames", reports_dir);
         std::system(gifCmd.c_str());
@@ -778,7 +778,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_) {
+  if (graphics_ && npVars_.debug_generate_images) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
   }
