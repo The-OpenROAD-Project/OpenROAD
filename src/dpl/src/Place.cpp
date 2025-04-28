@@ -1041,6 +1041,7 @@ void Opendp::initMacrosAndGrid()
 
 void Opendp::convertDbToCell(dbInst* db_inst, Node& cell)
 {
+  cell.setType(Node::CELL);
   cell.setDbInst(db_inst);
   Rect bbox = getBbox(db_inst);
   cell.setWidth(DbuX{bbox.dx()});
