@@ -128,6 +128,24 @@ report_net_parasitic(Net *net)
   }
 }
 
+float
+sum_parasitic_network_resist(Net *net)
+{
+  Resizer *resizer = getResizer();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    float ret = 0.0;
+    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
+      ret += resizer->parasitics()->value(resist);
+    }
+    return ret;
+  } else {
+    return 0.0f;
+  }
+}
+
 void
 set_layer_rc_cmd(odb::dbTechLayer *layer,
                  const Corner *corner,
