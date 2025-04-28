@@ -486,10 +486,9 @@ class SoftMacro
   void setX(float x);
   void setY(float y);
   void setLocation(const std::pair<float, float>& location);
-  void setWidth(float width);      // only for StdCellCluster and MixedCluster
-  void setHeight(float height);    // only for StdCellCluster and MixedCluster
-  void shrinkArea(float percent);  // only for StdCellCluster
-  void setArea(float area);        // only for StdCellCluster and MixedCluster
+  void setWidth(float width);    // only for StdCellCluster and MixedCluster
+  void setHeight(float height);  // only for StdCellCluster and MixedCluster
+  void setArea(float area);      // only for StdCellCluster and MixedCluster
   void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
   void setShapes(const TilingList& tilings, bool force = false);

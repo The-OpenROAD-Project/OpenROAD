@@ -124,8 +124,6 @@ class SimulatedAnnealingCore
   void exchangeMacros();
   void generateRandomIndices(int& index1, int& index2);
 
-  virtual void shrink() = 0;  // Shrink the size of macros
-
   // utilities
   static float calAverage(std::vector<float>& value_list);
 
@@ -158,10 +156,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-
-  // shrink_factor for dynamic weight
-  const float shrink_factor_ = 0.8;
-  const float shrink_freq_ = 0.1;
 
   // seed for reproduciabilty
   std::mt19937 generator_;
