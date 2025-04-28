@@ -22,6 +22,7 @@ or_integration_tests(
     read_verilog8
     read_verilog9
     read_verilog10
+    read_verilog10_no_prop
     read_verilog11
     readdb_hier
     report_cell_usage
@@ -31,6 +32,7 @@ or_integration_tests(
     report_cell_usage_physical_only
     report_json1
     report_timing_histogram
+    report_logic_depth_histogram
     sdc_get1
     sdc_names1
     sdc_names2

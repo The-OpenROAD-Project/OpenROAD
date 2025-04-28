@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "rcx/extprocess.h"
 
@@ -55,7 +26,7 @@ void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos)
 }
 void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
 {
-  if (pos && !((v == NULL) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0)))
     return;
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
@@ -92,7 +63,7 @@ void extConductor::printString(FILE* fp,
                                char* v,
                                bool pos)
 {
-  if (pos && !((v == NULL) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0)))
     return;
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
@@ -325,7 +296,7 @@ void extDielectric::printString(FILE* fp,
                                 char* v,
                                 bool pos)
 {
-  if (pos && !((v == NULL) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0)))
     return;
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
@@ -449,7 +420,7 @@ void extMasterConductor::printDielBox(FILE* fp,
   double thickness = _hiLeft[2] - _loLeft[2];
   if (thickness == 0.0)
     return;
-  if (width_name != NULL) {
+  if (width_name != nullptr) {
     double height = _loLeft[2];
 
     fprintf(fp,
@@ -491,7 +462,7 @@ void extMasterConductor::printDielBox3D(FILE* fp,
 {
   // non conformal
 
-  if (width_name != NULL) {
+  if (width_name != nullptr) {
     //                double height= _loLeft[2];
     double thickness = _hiLeft[2] - _loLeft[2];
 
@@ -831,7 +802,7 @@ void extProcess::writeProcessAndGround(FILE* wfp,
   writeParam(wfp, thicknessName, thickness);
 
   // CX,CY bug : writeFullProcess(wfp, X, width, widthName);
-  writeFullProcess(wfp, X, width, NULL);
+  writeFullProcess(wfp, X, width, nullptr);
 
   double y1 = 0.0;
   writeWindow(wfp, widthName, y1, thicknessName);
@@ -871,7 +842,7 @@ void extProcess::writeProcessAndGround3D(FILE* wfp,
   writeParam(wfp, lengthName, length);
 
   // CX,CY bug : writeFullProcess(wfp, X, width, widthName);
-  writeFullProcess3D(wfp, x, width, length, NULL);
+  writeFullProcess3D(wfp, x, width, length, nullptr);
 
   double y1 = 0.0;
   writeWindow3D(wfp, widthName, y1, thicknessName, lengthName);
@@ -977,7 +948,7 @@ double extProcess::writeProcessAndGroundPlanes(FILE* wfp,
   }
   fprintf(wfp, "\n# Process Stack -- Dielectric Heights\n");
   double height = writeProcessHeights(
-      wfp, 0, width, length, NULL, height_base, height_ceiling);
+      wfp, 0, width, length, nullptr, height_base, height_ceiling);
   if (overMet <= 0)
     height_ceiling = height;
 
@@ -1576,7 +1547,7 @@ extMasterConductor::extMasterConductor(uint dielId,
 FILE* extProcess::openFile(const char* filename, const char* permissions)
 {
   FILE* fp = fopen(filename, permissions);
-  if (fp == NULL) {
+  if (fp == nullptr) {
     logger_->error(RCX,
                    159,
                    "Can't open file {} with permissions <{}>",
@@ -1750,7 +1721,7 @@ Ath__array1D<double>* extProcess::getDataRateTable(uint met)
 }
 void extProcess::readDataRateTable(Ath__parser* parser, const char* keyword)
 {
-  if ((keyword != NULL) && (strcmp(keyword, parser->get(0)) != 0))
+  if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0))
     return;
 
   if (parser->getWordCnt() < 1)
@@ -1790,7 +1761,7 @@ extVariation* extProcess::getVariation(uint met)
 {
   extConductor* m = getConductor(met);
 
-  extVariation* v = NULL;
+  extVariation* v = nullptr;
   if (m->_var_table_index > 0)
     v = _varTable->get(m->_var_table_index);
 
@@ -1860,13 +1831,13 @@ Ath__array1D<double>* extVariation::getDataRateTable()
 }
 Ath__array1D<double>* extVariation::getPTable()
 {
-  if (_p == NULL)
-    return NULL;
+  if (_p == nullptr)
+    return nullptr;
   return _p->_p;
 }
 double extVariation::getP(double w)
 {
-  if (_p == NULL)
+  if (_p == nullptr)
     return 0;
   return interpolate(w, _p->_width, _p->_p);
 }
@@ -1892,15 +1863,15 @@ void extProcess::writeProcess(const char* filename)
 Ath__array1D<double>* extVarTable::readDoubleArray(Ath__parser* parser,
                                                    const char* keyword)
 {
-  if ((keyword != NULL) && (strcmp(keyword, parser->get(0)) != 0))
-    return NULL;
+  if ((keyword != nullptr) && (strcmp(keyword, parser->get(0)) != 0))
+    return nullptr;
 
   if (parser->getWordCnt() < 1)
-    return NULL;
+    return nullptr;
 
   Ath__array1D<double>* A = new Ath__array1D<double>(parser->getWordCnt());
   uint start = 0;
-  if (keyword != NULL)
+  if (keyword != nullptr)
     start = 1;
   parser->getDoubleArray(A, start);
   return A;
@@ -1910,10 +1881,10 @@ void extVarTable::printOneLine(FILE* fp,
                                const char* header,
                                const char* trail)
 {
-  if (A == NULL)
+  if (A == nullptr)
     return;
 
-  if (header != NULL)
+  if (header != nullptr)
     fprintf(fp, "%s ", header);
 
   for (uint ii = 0; ii < A->getCnt(); ii++)
@@ -1971,10 +1942,10 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
     }
     if (strcmp("}", parser->get(0)) == 0)
       break;
-    if (_space != NULL) {
-      _vTable[ii++] = readDoubleArray(parser, NULL);
+    if (_space != nullptr) {
+      _vTable[ii++] = readDoubleArray(parser, nullptr);
       if (debug > 0)
-        printOneLine(stdout, _vTable[ii - 1], NULL, "\n");
+        printOneLine(stdout, _vTable[ii - 1], nullptr, "\n");
     } else {
       ii++;
       for (int jj = 0; jj < parser->getWordCnt(); jj++)
@@ -1982,13 +1953,13 @@ int extVarTable::readWidthSpacing2D(Ath__parser* parser,
     }
   }
   if (debug > 0) {
-    if (_density != NULL) {
+    if (_density != nullptr) {
       for (uint jj = 0; jj < _density->getCnt(); jj++)
-        printOneLine(stdout, _vTable[jj], NULL, "\n");
+        printOneLine(stdout, _vTable[jj], nullptr, "\n");
     }
   }
 
-  if (_space != NULL)
+  if (_space != nullptr)
     _rowCnt = ii;
   else
     _rowCnt = _density->getCnt();
@@ -1999,9 +1970,9 @@ void extVarTable::printTable(FILE* fp, const char* valKey)
 {
   printOneLine(fp, _width, "Width", "\n");
 
-  if (_space != NULL)
+  if (_space != nullptr)
     printOneLine(fp, _space, "Spacing", "\n");
-  else if (_density != NULL)
+  else if (_density != nullptr)
     printOneLine(fp, _space, "Deff", "\n");
   else {
     printOneLine(fp, _p, "P", "\n");
@@ -2011,7 +1982,7 @@ void extVarTable::printTable(FILE* fp, const char* valKey)
   fprintf(fp, "%s\n", valKey);
 
   for (uint ii = 0; ii < _rowCnt; ii++)
-    printOneLine(fp, _vTable[ii], NULL, "\n");
+    printOneLine(fp, _vTable[ii], nullptr, "\n");
 }
 void extVariation::printVariation(FILE* fp, uint n)
 {
@@ -2024,7 +1995,7 @@ void extVariation::printVariation(FILE* fp, uint n)
   _hiWidthR->printTable(fp, "hi_rWidth_eff");
   _loWidthR->printTable(fp, "lo_rWidth_delta");
   _thicknessR->printTable(fp, "r_thickness_eff");
-  if (_p != NULL)
+  if (_p != nullptr)
     _p->printTable(fp, "P");
 
   fprintf(fp, "}\n");
@@ -2040,7 +2011,7 @@ extVarTable* extVariation::readVarTable(Ath__parser* parser,
     //		fprintf(stdout, "Cannot read VarTable section: <%s>", key3);
     logger_->warn(RCX, 155, "Can't read VarTable section: <{}>", key3);
     delete V;
-    return NULL;
+    return nullptr;
   }
 
   return V;
@@ -2147,49 +2118,49 @@ extProcess::extProcess(uint condCnt, uint dielCnt, Logger* logger)
 {
   logger_ = logger;
   _condTable = new Ath__array1D<extConductor*>(condCnt);
-  _condTable->add(NULL);
+  _condTable->add(nullptr);
   _maxMinFlag = false;
   _dielTable = new Ath__array1D<extDielectric*>(dielCnt);
-  _dielTable->add(NULL);
+  _dielTable->add(nullptr);
   _masterConductorTable = new Ath__array1D<extMasterConductor*>(condCnt);
-  _masterConductorTable->add(NULL);
+  _masterConductorTable->add(nullptr);
   _masterDielectricTable = new Ath__array1D<extMasterConductor*>(dielCnt);
-  _masterDielectricTable->add(NULL);
+  _masterDielectricTable->add(nullptr);
 
   _varTable = new Ath__array1D<extVariation*>(condCnt);
-  _varTable->add(NULL);
-  _dataRateTable = NULL;
+  _varTable->add(nullptr);
+  _dataRateTable = nullptr;
   _thickVarFlag = false;
 }
 extVarTable::extVarTable(uint rowCnt)
 {
   _rowCnt = rowCnt;
   _vTable = new Ath__array1D<double>*[rowCnt];
-  _density = NULL;
-  _space = NULL;
-  _width = NULL;
-  _p = NULL;
+  _density = nullptr;
+  _space = nullptr;
+  _width = nullptr;
+  _p = nullptr;
 }
 extVarTable::~extVarTable()
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
-    if (_vTable[ii] != NULL)
+    if (_vTable[ii] != nullptr)
       delete _vTable[ii];
   }
   delete[] _vTable;
 
-  if (_density != NULL)
+  if (_density != nullptr)
     delete _density;
-  if (_space != NULL)
+  if (_space != nullptr)
     delete _space;
-  if (_width != NULL)
+  if (_width != nullptr)
     delete _width;
-  if (_p != NULL)
+  if (_p != nullptr)
     delete _p;
-  _p = NULL;
-  _density = NULL;
-  _space = NULL;
-  _width = NULL;
+  _p = nullptr;
+  _density = nullptr;
+  _space = nullptr;
+  _width = nullptr;
 }
 
 }  // namespace rcx

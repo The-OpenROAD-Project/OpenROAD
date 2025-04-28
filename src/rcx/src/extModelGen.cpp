@@ -1,37 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, IC BENCH, Dimitris Fotakis
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "rcx/extModelGen.h"
+
+#include <string>
+#include <vector>
 
 #include "parse.h"
 
@@ -75,7 +48,7 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
   }
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
-  FILE* outFP = NULL;
+  FILE* outFP = nullptr;
 
   bool binary = false;
   uint fileCnt = spef_file_list.size();
@@ -85,10 +58,10 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     std::string str = *it;
     const char* filename = str.c_str();
     readSPEF((char*) filename,
-             NULL,
+             nullptr,
              /*force*/ true,
              false,
-             NULL,
+             nullptr,
              false,
              false,
              false,
@@ -97,16 +70,16 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
              1.0,
              false,
              false,
-             NULL,
+             nullptr,
              false,
              -1,
              0.0,
              0.0,
-             NULL,
-             NULL,
-             NULL,
-             NULL,
-             NULL,
+             nullptr,
+             nullptr,
+             nullptr,
+             nullptr,
+             nullptr,
              -1,
              0,
              false,
@@ -125,7 +98,7 @@ uint extMain::GenExtModel(std::list<std::string> spef_file_list,
     // if (cnt == 1)
     //    out = "2.model";
     extRulesModel->ReadRCDB(_block, widthCnt, diagOption, out);
-    if (outFP == NULL)
+    if (outFP == nullptr)
       outFP = extRulesModel->InitWriteRules(
           out_file, corner_list, comment, binary, fileCnt);
 
@@ -214,12 +187,12 @@ void extModelGen::writeRules(FILE* fp, bool binary, uint mIndex, int corner)
                              fp,
                              binary);
 
-    if (rcTable->_capDiagUnder[ii] != NULL) {
+    if (rcTable->_capDiagUnder[ii] != nullptr) {
       if (diagModel == 1)
         cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
       if (diagModel == 2)
         cnt += rcTable->_capDiagUnder[ii]->writeRulesDiagUnder2(fp, binary);
-    } else if ((m > 0) && (rcTable0->_capDiagUnder[ii] != NULL)) {
+    } else if ((m > 0) && (rcTable0->_capDiagUnder[ii] != nullptr)) {
       if (diagModel == 1)
         cnt += rcTable0->_capDiagUnder[ii]->writeRulesDiagUnder(fp, binary);
       if (diagModel == 2)
@@ -273,10 +246,10 @@ uint extRCModel::writeRulesPattern(uint ou,
                                    bool binary)
 {
   uint cnt = 0;
-  extDistWidthRCTable* table = NULL;
-  if (table_m != NULL)
+  extDistWidthRCTable* table = nullptr;
+  if (table_m != nullptr)
     table = table_m;
-  else if ((modelIndex > 0) && (table_0 != NULL))
+  else if ((modelIndex > 0) && (table_0 != nullptr))
     table = table_0;
   else if (modelIndex == 0) {
     fprintf(stdout,
@@ -466,7 +439,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
   int layerCnt = getLayerCnt();
   bool diag = getDiagFlag();
 
-  //	FILE *fp= openFile("./", name, NULL, "w");
+  //	FILE *fp= openFile("./", name, nullptr, "w");
   FILE* fp = fopen(name, "w");
 
   fprintf(fp, "Extraction Rules for rcx\n\n");
@@ -492,7 +465,7 @@ FILE* extModelGen::InitWriteRules(const char* name,
   }
   fprintf(fp, "\n");
 
-  if (comment != NULL && strlen(comment) > 0)
+  if (comment != nullptr && strlen(comment) > 0)
     fprintf(fp, "\nCOMMENT : %s \n\n", comment);
 
   return fp;
@@ -511,7 +484,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
   extMetRCTable* rcModel = initCapTables(layerCnt, widthCnt);
 
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
-  extMeasure m(NULL);
+  extMeasure m(nullptr);
   m._diagModel = 1;
   uint openWireNumber = 1;
 
@@ -604,7 +577,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
       m._underMet = overMet;
       m._overUnder = true;
       m._over = false;
-    } else if (strstr(overUnderToken, "o") != NULL) {
+    } else if (strstr(overUnderToken, "o") != nullptr) {
       met = w->getInt(0, 1);
       overMet = w->getInt(1, 1);
       if (p->getFirstChar() == 'R') {
@@ -615,7 +588,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
       m._underMet = overMet;
       m._overUnder = false;
       m._over = true;
-    } else if (strstr(overUnderToken, "uu") != NULL) {
+    } else if (strstr(overUnderToken, "uu") != nullptr) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
       diag = true;
@@ -624,7 +597,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
       m._underMet = -1;
       m._overUnder = false;
       m._over = false;
-    } else if (strstr(overUnderToken, "u") != NULL) {
+    } else if (strstr(overUnderToken, "u") != nullptr) {
       met = w->getInt(0, 1);
       underMet = w->getInt(1, 1);
 
@@ -703,7 +676,7 @@ uint extModelGen::ReadRCDB(dbBlock* block,
           wLen,
           netName);
     }
-    if (strstr(netName, "cntxM") != NULL)
+    if (strstr(netName, "cntxM") != nullptr)
       continue;
 
     extDistRC* rc = rcPool->alloc();
@@ -825,7 +798,7 @@ std::list<std::string> extModelGen::GetCornerNames(const char* filename,
 /*
 AFILE extModelGen::InitWriteRules_old(AFILE *fp, bool binary, uint modelIndex)
 {
-//	FILE *fp= openFile("./", name, NULL, "w");
+//	FILE *fp= openFile("./", name, nullptr, "w");
 #ifndef _WIN32
         //AFILE *fp= ATH__fopen(name, "w", AF_ENCRYPT);
         AFILE *fp= ATH__fopen(name, "w");

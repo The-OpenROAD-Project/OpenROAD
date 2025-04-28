@@ -1,33 +1,14 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * Copyright (c) 2024, Precision Innovations Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <omp.h>
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "AbstractPAGraphics.h"
 #include "FlexPA.h"
@@ -115,6 +96,34 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
   }
 }
 
+void FlexPA::genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
+                                  const gtl::rectangle_data<frCoord>& rect,
+                                  const frViaDef* via_def,
+                                  const frLayerNum layer_num,
+                                  const bool is_curr_layer_horz)
+{
+  const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
+  const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
+  frVia via(via_def);
+  const Rect box = via.getLayer1BBox();
+  const auto via_width = box.dx();
+  const auto via_height = box.dy();
+  if (via_width > rect_width || via_height > rect_height) {
+    return;
+  }
+  const int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
+                                           : gtl::xh(rect) - box.xMax();
+  const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
+                                           : gtl::xl(rect) - box.xMin();
+  for (const int coord : {coord_top, coord_low}) {
+    if (coords.find(coord) == coords.end()) {
+      coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
+    } else {
+      coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
+    }
+  }
+}
+
 /**
  * @details This follows the Tao of PAO paper cost structure.
  * Enclosed Boundary APs satisfy via-in-pin requirement.
@@ -126,40 +135,17 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
                                    const frLayerNum layer_num,
                                    const bool is_curr_layer_horz)
 {
-  const auto rect_width = gtl::delta(rect, gtl::HORIZONTAL);
-  const auto rect_height = gtl::delta(rect, gtl::VERTICAL);
-  const int max_num_via_trial = 2;
   if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
     return;
   }
   // hardcode first two single vias
-  std::vector<const frViaDef*> via_defs;
+  const int max_num_via_trial = 2;
   int cnt = 0;
   for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    via_defs.push_back(via);
+    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
     cnt++;
     if (cnt >= max_num_via_trial) {
       break;
-    }
-  }
-  for (auto& via_def : via_defs) {
-    frVia via(via_def);
-    const Rect box = via.getLayer1BBox();
-    const auto via_width = box.dx();
-    const auto via_height = box.dy();
-    if (via_width > rect_width || via_height > rect_height) {
-      continue;
-    }
-    const int coord_top = is_curr_layer_horz ? gtl::yh(rect) - box.yMax()
-                                             : gtl::xh(rect) - box.xMax();
-    const int coord_low = is_curr_layer_horz ? gtl::yl(rect) - box.yMin()
-                                             : gtl::xl(rect) - box.xMin();
-    for (const int coord : {coord_top, coord_low}) {
-      if (coords.find(coord) == coords.end()) {
-        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
-      } else {
-        coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
-      }
     }
   }
 }
@@ -728,7 +714,6 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   if (graphics_) {
     graphics_->setPlanarAP(ap, ps, design_rule_checker.getMarkers());
@@ -1038,7 +1023,6 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   }
   design_rule_checker.initPA1();
   design_rule_checker.main();
-  design_rule_checker.end();
 
   const bool no_drv = design_rule_checker.getMarkers().empty();
 
@@ -1110,7 +1094,7 @@ void FlexPA::filterMultipleAPAccesses(
 
 template <typename T>
 void FlexPA::updatePinStats(
-    const std::vector<std::unique_ptr<frAccessPoint>>& tmp_aps,
+    const std::vector<std::unique_ptr<frAccessPoint>>& new_aps,
     T* pin,
     frInstTerm* inst_term)
 {
@@ -1120,7 +1104,7 @@ void FlexPA::updatePinStats(
     is_std_cell_pin = isStdCell(inst_term->getInst());
     is_macro_cell_pin = isMacroCell(inst_term->getInst());
   }
-  for (auto& ap : tmp_aps) {
+  for (auto& ap : new_aps) {
     if (ap->hasAccess(frDirEnum::W) || ap->hasAccess(frDirEnum::E)
         || ap->hasAccess(frDirEnum::S) || ap->hasAccess(frDirEnum::N)) {
       if (is_std_cell_pin) {
@@ -1145,6 +1129,66 @@ void FlexPA::updatePinStats(
   }
 }
 
+bool FlexPA::EnoughAccessPoints(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    frInstTerm* inst_term)
+{
+  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
+  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
+  const bool is_io_pin = (inst_term == nullptr);
+  bool enough_sparse_acc_points = false;
+  bool enough_far_from_edge_points = false;
+
+  if (is_io_pin) {
+    return (aps.size() > 0);
+  }
+
+  /* This is a Max Clique problem, each ap is a node, draw an edge between two
+   aps if they are far away as to not intersect. n_sparse_access_points,
+   ideally, is the Max Clique of this graph. the current implementation gives a
+   very rough approximation, it works, but I think it can be improved.
+   */
+  int n_sparse_access_points = (int) aps.size();
+  for (int i = 0; i < (int) aps.size(); i++) {
+    const int colision_dist
+        = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
+    Rect ap_colision_box;
+    Rect(aps[i]->getPoint(), aps[i]->getPoint())
+        .bloat(colision_dist, ap_colision_box);
+    for (int j = i + 1; j < (int) aps.size(); j++) {
+      if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
+          && ap_colision_box.intersects(aps[j]->getPoint())) {
+        n_sparse_access_points--;
+        break;
+      }
+    }
+  }
+
+  if (is_std_cell_pin
+      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
+    enough_sparse_acc_points = true;
+  }
+  if (is_macro_cell_pin
+      && n_sparse_access_points
+             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
+    enough_sparse_acc_points = true;
+  }
+
+  Rect cell_box = inst_term->getInst()->getBBox();
+  for (auto& ap : aps) {
+    const int colision_dist
+        = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
+    Rect ap_colision_box;
+    Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
+    if (cell_box.contains(ap_colision_box)) {
+      enough_far_from_edge_points = true;
+      break;
+    }
+  }
+
+  return (enough_sparse_acc_points && enough_far_from_edge_points);
+}
+
 template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -1155,87 +1199,67 @@ bool FlexPA::genPinAccessCostBounded(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  }
+  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
+  ;
+  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
   const bool is_io_pin = (inst_term == nullptr);
-  std::vector<std::unique_ptr<frAccessPoint>> tmp_aps;
+  std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   genAPsFromPinShapes(
-      tmp_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
+      new_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
   filterMultipleAPAccesses(
-      tmp_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+      new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
-    std_cell_pin_gen_ap_cnt_ += tmp_aps.size();
+    std_cell_pin_gen_ap_cnt_ += new_aps.size();
   }
   if (is_macro_cell_pin) {
 #pragma omp atomic
-    macro_cell_pin_gen_ap_cnt_ += tmp_aps.size();
+    macro_cell_pin_gen_ap_cnt_ += new_aps.size();
   }
   if (graphics_) {
-    graphics_->setAPs(tmp_aps, lower_type, upper_type);
+    graphics_->setAPs(new_aps, lower_type, upper_type);
   }
-  for (auto& ap : tmp_aps) {
+  for (auto& ap : new_aps) {
+    if (!ap->hasAccess()) {
+      continue;
+    }
     // for stdcell, add (i) planar access if layer_num != VIA_ACCESS_LAYERNUM,
     // and (ii) access if exist access for macro, allow pure planar ap
     if (is_std_cell_pin) {
-      const auto layer_num = ap->getLayerNum();
-      if ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-           && ap->hasAccess(frDirEnum::U))
-          || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
-              && ap->hasAccess())) {
+      const bool ap_in_via_acc_layer
+          = (ap->getLayerNum() == router_cfg_->VIA_ACCESS_LAYERNUM);
+      if (!ap_in_via_acc_layer || ap->hasAccess(frDirEnum::U)) {
         aps.push_back(std::move(ap));
       }
-    } else if ((is_macro_cell_pin || is_io_pin) && ap->hasAccess()) {
+    } else if (is_macro_cell_pin || is_io_pin) {
       aps.push_back(std::move(ap));
     }
   }
-  int n_sparse_access_points = (int) aps.size();
-  Rect tbx;
-  for (int i = 0; i < (int) aps.size();
-       i++) {  // not perfect but will do the job
-    int r = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
-    tbx.init(
-        aps[i]->x() - r, aps[i]->y() - r, aps[i]->x() + r, aps[i]->y() + r);
-    for (int j = i + 1; j < (int) aps.size(); j++) {
-      if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
-          && tbx.intersects(aps[j]->getPoint())) {
-        n_sparse_access_points--;
-        break;
-      }
-    }
+
+  if (!EnoughAccessPoints(aps, inst_term)) {
+    return false;
   }
-  if (is_std_cell_pin
-      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
+
+  if (is_std_cell_pin || is_macro_cell_pin) {
     updatePinStats(aps, pin, inst_term);
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
     return true;
   }
-  if (is_macro_cell_pin
-      && n_sparse_access_points
-             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    updatePinStats(aps, pin, inst_term);
-    // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
-    for (auto& ap : aps) {
-      pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-    }
-    return true;
-  }
-  if (is_io_pin && (int) aps.size() > 0) {
+
+  if (is_io_pin) {
     // IO term pin always only have one access
     for (auto& ap : aps) {
       pin->getPinAccess(0)->addAccessPoint(std::move(ap));
     }
     return true;
   }
+
+  // weird edge case where pin is not from std_cell, macro or io, not sure it
+  // can even happen
   return false;
 }
 
@@ -1316,15 +1340,9 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
   std::set<std::pair<Point, frLayerNum>> apset;
-  bool is_std_cell_pin = false;
-  bool is_macro_cell_pin = false;
-  if (inst_term) {
-    is_std_cell_pin = isStdCell(inst_term->getInst());
-    is_macro_cell_pin = isMacroCell(inst_term->getInst());
-  }
 
   if (graphics_) {
-    std::set<frInst*, frBlockObjectComp>* inst_class = nullptr;
+    frOrderedIdSet<frInst*>* inst_class = nullptr;
     if (inst_term) {
       inst_class = unique_insts_.getClass(inst_term->getInst());
     }
@@ -1355,16 +1373,25 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
     }
   }
 
+  if (inst_term) {
+    logger_->warn(
+        DRT,
+        88,
+        "Exhaustive access point generation for {} ({}) is unsatisfactory.",
+        inst_term->getName(),
+        inst_term->getInst()->getMaster()->getName());
+  }
+
   // inst_term aps are written back here if not early stopped
   // IO term aps are are written back in genPinAccessCostBounded and always
   // early stopped
   updatePinStats(aps, pin, inst_term);
   const int n_aps = aps.size();
   if (n_aps == 0) {
-    if (is_std_cell_pin) {
+    if (inst_term && isStdCell(inst_term->getInst())) {
       std_cell_pin_no_ap_cnt_++;
     }
-    if (is_macro_cell_pin) {
+    if (inst_term && isMacroCell(inst_term->getInst())) {
       macro_cell_pin_no_ap_cnt_++;
     }
   } else {
@@ -1372,7 +1399,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
       logger_->error(DRT, 254, "inst_term can not be nullptr");
     }
     // write to pa
-    const int pin_access_idx = unique_insts_.getPAIndex(inst_term->getInst());
+    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
     for (auto& ap : aps) {
       pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
     }
@@ -1380,10 +1407,10 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   return n_aps;
 }
 
-void FlexPA::genInstAccessPoints(frInst* inst)
+void FlexPA::genInstAccessPoints(frInst* unique_inst)
 {
   ProfileTask profile("PA:uniqueInstance");
-  for (auto& inst_term : inst->getInstTerms()) {
+  for (auto& inst_term : unique_inst->getInstTerms()) {
     // only do for normal and clock terms
     if (isSkipInstTerm(inst_term.get())) {
       continue;
@@ -1395,9 +1422,10 @@ void FlexPA::genInstAccessPoints(frInst* inst)
     if (!n_aps) {
       logger_->error(DRT,
                      73,
-                     "No access point for {}/{}.",
+                     "No access point for {}/{} ({}).",
                      inst_term->getInst()->getName(),
-                     inst_term->getTerm()->getName());
+                     inst_term->getTerm()->getName(),
+                     inst_term->getInst()->getMaster()->getName());
     }
   }
 }
@@ -1412,21 +1440,19 @@ void FlexPA::genAllAccessPoints()
 
   const std::vector<frInst*>& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int) unique.size(); i++) {  // NOLINT
+  for (frInst* unique_inst : unique) {  // NOLINT
     try {
-      frInst* inst = unique[i];
-
       // only do for core and block cells
-      if (!isStdCell(inst) && !isMacroCell(inst)) {
+      if (!isStdCell(unique_inst) && !isMacroCell(unique_inst)) {
         continue;
       }
 
-      genInstAccessPoints(inst);
+      genInstAccessPoints(unique_inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
       }
 
-      int inst_terms_cnt = static_cast<int>(inst->getInstTerms().size());
+      int inst_terms_cnt = static_cast<int>(unique_inst->getInstTerms().size());
 #pragma omp critical
       for (int j = 0; j < inst_terms_cnt; j++) {
         pin_count++;
@@ -1479,12 +1505,13 @@ void FlexPA::genAllAccessPoints()
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUnique();
-  for (auto& inst : unique) {
+  for (frInst* inst : unique) {
     const dbTransform xform = inst->getTransform();
     const Point offset(xform.getOffset());
     dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
-    const auto pin_access_idx = unique_insts_.getPAIndex(inst);
+    const auto pin_access_idx = inst->getPinAccessIdx();
+    ;
     for (auto& inst_term : inst->getInstTerms()) {
       // if (isSkipInstTerm(inst_term.get())) {
       //   continue;

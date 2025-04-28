@@ -1,33 +1,10 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <algorithm>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -46,6 +23,11 @@ class Parser;
 class frLayer
 {
  public:
+  using EnclosureConstraints = std::vector<frLef58EnclosureConstraint*>;
+  using Width2EnclosureConstraints = std::map<frCoord, EnclosureConstraints>;
+  using CutClass2Width2EnclosureConstraints
+      = std::vector<Width2EnclosureConstraints>;
+
   // setters
   void setDbLayer(odb::dbTechLayer* dbLayer) { db_layer_ = dbLayer; }
   void setFakeCut(bool fakeCutIn) { fakeCut_ = fakeCutIn; }
@@ -80,15 +62,18 @@ class frLayer
   frLayerNum getLayerNum() const { return layerNum_; }
   void getName(frString& nameIn) const
   {
-    nameIn = (fakeCut_)           ? "FR_VIA"
-             : (fakeMasterslice_) ? "FR_MASTERSLICE"
-                                  : db_layer_->getName();
+    if (fakeCut_) {
+      nameIn = "FR_VIA";
+    } else {
+      nameIn = (fakeMasterslice_) ? "FR_MASTERSLICE" : db_layer_->getName();
+    }
   }
   frString getName() const
   {
-    return (fakeCut_)           ? "Fr_VIA"
-           : (fakeMasterslice_) ? "FR_MASTERSLICE"
-                                : db_layer_->getName();
+    if (fakeCut_) {
+      return "Fr_VIA";
+    }
+    return (fakeMasterslice_) ? "FR_MASTERSLICE" : db_layer_->getName();
   }
   frUInt4 getPitch() const
   {
@@ -138,7 +123,10 @@ class frLayer
     return secondaryViaDefs_.at(idx);
   }
   bool hasVia2ViaMinStepViol() { return hasMinStepViol_; }
-  std::set<const frViaDef*> getViaDefs() const { return viaDefs_; }
+  std::set<const frViaDef*, frViaDefComp> getViaDefs() const
+  {
+    return viaDefs_;
+  }
   dbTechLayerType getType() const
   {
     if (fakeCut_) {
@@ -751,11 +739,9 @@ class frLayer
   void addLef58EnclosureConstraint(frLef58EnclosureConstraint* con)
   {
     auto addToLef58EncConstraints
-        = [](std::vector<
-                 std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>&
-                 lef58EncConstraints,
+        = [](CutClass2Width2EnclosureConstraints& lef58EncConstraints,
              frLef58EnclosureConstraint* con) {
-            int cutClassIdx = con->getCutClassIdx();
+            const int cutClassIdx = con->getCutClassIdx();
             if (lef58EncConstraints.size() <= cutClassIdx) {
               lef58EncConstraints.resize(cutClassIdx + 1);
             }
@@ -777,31 +763,39 @@ class frLayer
                                    bool above,
                                    bool eol = false) const
   {
-    auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
-                                             : aboveLef58EncConstraints_)
-                                      : (eol ? belowLef58EncEolConstraints_
-                                             : belowLef58EncConstraints_);
-    if (cutClassIdx < 0 || lef58EncConstraints.size() <= cutClassIdx) {
+    CutClass2Width2EnclosureConstraints enclosure_constraints;
+    if (above) {
+      enclosure_constraints
+          = eol ? aboveLef58EncEolConstraints_ : aboveLef58EncConstraints_;
+    } else {
+      enclosure_constraints
+          = eol ? belowLef58EncEolConstraints_ : belowLef58EncConstraints_;
+    }
+    if (cutClassIdx < 0 || enclosure_constraints.size() <= cutClassIdx) {
       return false;
     }
-    return !lef58EncConstraints.at(cutClassIdx).empty();
+    return !enclosure_constraints.at(cutClassIdx).empty();
   }
 
-  std::vector<frLef58EnclosureConstraint*> getLef58EnclosureConstraints(
-      int cutClassIdx,
-      frCoord width,
-      bool above,
-      bool eol = false) const
+  frLayer::EnclosureConstraints getLef58EnclosureConstraints(int cutClassIdx,
+                                                             frCoord width,
+                                                             bool above,
+                                                             bool eol
+                                                             = false) const
   {
     // initialize with empty vector
-    std::vector<frLef58EnclosureConstraint*> result;
+    EnclosureConstraints result;
     // check class and size match first
     if (hasLef58EnclosureConstraint(cutClassIdx, above, eol)) {
-      auto& lef58EncConstraints = above ? (eol ? aboveLef58EncEolConstraints_
-                                               : aboveLef58EncConstraints_)
-                                        : (eol ? belowLef58EncEolConstraints_
-                                               : belowLef58EncConstraints_);
-      const auto& mmap = lef58EncConstraints.at(cutClassIdx);
+      CutClass2Width2EnclosureConstraints enclosure_constraints;
+      if (above) {
+        enclosure_constraints
+            = eol ? aboveLef58EncEolConstraints_ : aboveLef58EncConstraints_;
+      } else {
+        enclosure_constraints
+            = eol ? belowLef58EncEolConstraints_ : belowLef58EncConstraints_;
+      }
+      const auto& mmap = enclosure_constraints.at(cutClassIdx);
       auto it = mmap.upper_bound(width);
       if (it != mmap.begin()) {
         it--;
@@ -861,7 +855,7 @@ class frLayer
   std::vector<const frViaDef*> secondaryViaDefs_;
   bool hasMinStepViol_{false};
   bool unidirectional_{false};
-  std::set<const frViaDef*> viaDefs_;
+  std::set<const frViaDef*, frViaDefComp> viaDefs_;
   std::vector<frLef58CutClass*> cutClasses_;
   std::map<std::string, int> name2CutClassIdxMap_;
   frCollection<frConstraint*> constraints_;
@@ -929,14 +923,11 @@ class frLayer
   std::vector<frLef58TwoWiresForbiddenSpcConstraint*>
       twForbiddenSpcConstraints_;
   std::vector<frLef58ForbiddenSpcConstraint*> forbiddenSpcConstraints_;
-  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
-      aboveLef58EncConstraints_;
-  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
-      belowLef58EncConstraints_;
-  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
-      aboveLef58EncEolConstraints_;
-  std::vector<std::map<frCoord, std::vector<frLef58EnclosureConstraint*>>>
-      belowLef58EncEolConstraints_;
+
+  CutClass2Width2EnclosureConstraints aboveLef58EncConstraints_;
+  CutClass2Width2EnclosureConstraints belowLef58EncConstraints_;
+  CutClass2Width2EnclosureConstraints aboveLef58EncEolConstraints_;
+  CutClass2Width2EnclosureConstraints belowLef58EncEolConstraints_;
   // vector of maxspacing constraints
   std::vector<frLef58MaxSpacingConstraint*> maxSpacingConstraints_;
 

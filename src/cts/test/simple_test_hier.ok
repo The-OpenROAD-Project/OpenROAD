@@ -5,25 +5,25 @@
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [WARNING GPL-0001] clk toplevel port is not placed!
        Replace will regard clk is placed in (0, 0)
-[INFO GPL-0006] NumInstances:                16
-[INFO GPL-0007] NumPlaceInstances:           16
-[INFO GPL-0008] NumFixedInstances:            0
-[INFO GPL-0009] NumDummyInstances:            0
-[INFO GPL-0010] NumNets:                      1
-[INFO GPL-0011] NumPins:                     17
-[INFO GPL-0012] DieBBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
-[INFO GPL-0013] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0016] CoreArea:             47872.020 um^2
-[INFO GPL-0017] NonPlaceInstsArea:        0.000 um^2
-[INFO GPL-0018] PlaceInstsArea:          72.352 um^2
-[INFO GPL-0019] Util:                     0.151 %
-[INFO GPL-0020] StdInstsArea:            72.352 um^2
-[INFO GPL-0021] MacroInstsArea:           0.000 um^2
-[InitialPlace]  Iter: 1 CG residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 2 CG residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 3 CG residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 4 CG residual: 0.00000012 HPWL: 9260
-[InitialPlace]  Iter: 5 CG residual: 0.00000012 HPWL: 9260
+[INFO GPL-0006] Number of instances:                16
+[INFO GPL-0007] Movable instances:                  16
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                      1
+[INFO GPL-0011] Number of pins:                     17
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:         72.352 um^2
+[INFO GPL-0019] Utilization:                     0.151 %
+[INFO GPL-0020] Standard cells area:            72.352 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000012 HPWL: 9260
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000012 HPWL: 9260
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 9260
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 9260
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 9260
 Placement Analysis
 ---------------------------------
 total displacement        128.5 u
@@ -42,8 +42,7 @@ delta HPWL                    0 %
 [INFO CTS-0010]  Clock net "clk" has 16 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 0 placement blockages have been identified.
-[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
+[INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 16.
 [INFO CTS-0030]  Number of static layers: 0.
@@ -69,7 +68,7 @@ delta HPWL                    0 %
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 17
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 23.08 um
+[INFO CTS-0101]  Average sink wire length 22.90 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Leaf load cells 1
 No differences found.

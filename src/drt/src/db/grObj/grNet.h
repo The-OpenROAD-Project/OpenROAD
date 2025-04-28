@@ -1,34 +1,10 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "db/grObj/grBlockObject.h"
@@ -74,13 +50,11 @@ class grNet : public grBlockObject
   {
     return pinGCellNodePairs;
   }
-  const std::map<grNode*, std::vector<grNode*>, frBlockObjectComp>&
-  getGCell2PinNodes() const
+  const frOrderedIdMap<grNode*, std::vector<grNode*>>& getGCell2PinNodes() const
   {
     return gcell2PinNodes;
   }
-  std::map<grNode*, std::vector<grNode*>, frBlockObjectComp>&
-  getGCell2PinNodes()
+  frOrderedIdMap<grNode*, std::vector<grNode*>>& getGCell2PinNodes()
   {
     return gcell2PinNodes;
   }
@@ -94,14 +68,11 @@ class grNet : public grBlockObject
   {
     return pinNodePairs;
   }
-  const std::map<grNode*, frNode*, frBlockObjectComp>& getGR2FrPinNode() const
+  const frOrderedIdMap<grNode*, frNode*>& getGR2FrPinNode() const
   {
     return gr2FrPinNode;
   }
-  std::map<grNode*, frNode*, frBlockObjectComp>& getGR2FrPinNode()
-  {
-    return gr2FrPinNode;
-  }
+  frOrderedIdMap<grNode*, frNode*>& getGR2FrPinNode() { return gr2FrPinNode; }
   bool isModified() const { return modified; }
   int getNumOverConGCells() const { return numOverConGCells; }
   int getNumPinsIn() const { return numPinsIn; }
@@ -147,7 +118,7 @@ class grNet : public grBlockObject
     pinGCellNodePairs = in;
   }
   void setGCell2PinNodes(
-      const std::map<grNode*, std::vector<grNode*>, frBlockObjectComp>& in)
+      const frOrderedIdMap<grNode*, std::vector<grNode*>>& in)
   {
     gcell2PinNodes = in;
   }
@@ -156,7 +127,7 @@ class grNet : public grBlockObject
   {
     pinNodePairs = in;
   }
-  void setGR2FrPinNode(const std::map<grNode*, frNode*, frBlockObjectComp>& in)
+  void setGR2FrPinNode(const frOrderedIdMap<grNode*, frNode*>& in)
   {
     gr2FrPinNode = in;
   }
@@ -215,11 +186,11 @@ class grNet : public grBlockObject
 
   // pair of <pinNode, gcellNode> with first (0th) element always being root
   std::vector<std::pair<grNode*, grNode*>> pinGCellNodePairs;
-  std::map<grNode*, std::vector<grNode*>, frBlockObjectComp> gcell2PinNodes;
+  frOrderedIdMap<grNode*, std::vector<grNode*>> gcell2PinNodes;
   // unique, first (0th) element always being root
   std::vector<grNode*> pinGCellNodes;
   std::vector<std::pair<frNode*, grNode*>> pinNodePairs;
-  std::map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
+  frOrderedIdMap<grNode*, frNode*> gr2FrPinNode;
   // std::set<frBlockObject*>                 fNetTerms;
   std::list<std::unique_ptr<grNode>> nodes;
   grNode* root{nullptr};

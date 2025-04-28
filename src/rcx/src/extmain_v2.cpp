@@ -1,37 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <sys/resource.h>
 #include <unistd.h>
+
+#include <algorithm>
+#include <vector>
 
 #include "rcx/extModelGen.h"
 #include "rcx/extRCap.h"
@@ -126,7 +100,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
     infoBeforeCouplingExt();
 
     Rect maxRect = _block->getDieArea();
-    couplingFlow_v2(maxRect, _couplingFlag, NULL);
+    couplingFlow_v2(maxRect, _couplingFlag, nullptr);
     // Print out stats on db Ojects created during extraction
     couplingExtEnd_v2();
   }
@@ -304,7 +278,7 @@ bool extMain::SetCornersAndReadModels_v2(const char* rulesFileName)
 
     extRCModel* m = createCornerMap(rulesFileName);
 
-    if (!ReadModels_v2(rulesFileName, m, 0, NULL))
+    if (!ReadModels_v2(rulesFileName, m, 0, nullptr))
       return false;
   }
   _currentModel = getRCmodel(0);
@@ -854,7 +828,7 @@ double extMain::getViaRes_v2(dbNet* net, dbTechVia* tvia)
     for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
       extMetRCTable* rcTable = _metRCTable.get(ii);
       extViaModel* viaModel = rcTable->getViaModel((char*) viaName);
-      if (viaModel != NULL) {
+      if (viaModel != nullptr) {
         _tmpResTable[ii] = viaModel->_res;
         viaModelFound = true;
       }
@@ -938,11 +912,11 @@ void extMain::getShapeRC_v2(dbNet* net,
 {
   if (s.isVia()) {
     dbTechVia* tvia = s.getTechVia();
-    if (tvia != NULL) {
+    if (tvia != nullptr) {
       getViaRes_v2(net, tvia);
     } else {
       dbVia* bvia = s.getVia();
-      if (bvia != NULL)
+      if (bvia != nullptr)
         getDbViaRes_v2(net, s);
     }
   } else {

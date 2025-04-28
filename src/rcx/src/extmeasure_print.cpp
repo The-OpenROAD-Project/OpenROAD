@@ -1,35 +1,5 @@
-
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbUtil.h"
 #include "rcx/extMeasureRC.h"
@@ -67,7 +37,7 @@ void extMeasureRC::PrintCrossSeg(FILE* fp,
                                  int metUnder,
                                  const char* prefix)
 {
-  if (fp == NULL)
+  if (fp == nullptr)
     return;
   char buf[200];
   GetOUname(buf, met, metOver, metUnder);
@@ -89,7 +59,7 @@ void extMeasureRC::PrintOUSeg(FILE* fp,
                               int up_dist,
                               int down_dist)
 {
-  if (fp == NULL)
+  if (fp == nullptr)
     return;
   char buf[200];
   GetOUname(buf, met, metOver, metUnder);
@@ -114,7 +84,7 @@ void extMeasureRC::PrintCrossOvelaps(Wire* w,
                                      int metOver,
                                      int metUnder)
 {
-  if (_segFP != NULL && segTable->getCnt() > 0) {
+  if (_segFP != nullptr && segTable->getCnt() > 0) {
     fprintf(_segFP, "%s %dL cnt %d \n", prefix, totLen, segTable->getCnt());
     PrintCrossSeg(_segFP, x1, len, w->getLevel(), -1, -1, "\t");
     for (uint ii = 0; ii < segTable->getCnt(); ii++) {
@@ -134,7 +104,7 @@ void extMeasureRC::PrintOverlapSeg(FILE* fp,
                                    int tgt_met,
                                    const char* prefix)
 {
-  if (fp != NULL)
+  if (fp != nullptr)
     fprintf(fp,
             "%s%7.3f %7.3f  %dL\n",
             prefix,
@@ -149,7 +119,7 @@ void extMeasureRC::PrintOvelaps(extSegment* w,
                                 Ath__array1D<extSegment*>* segTable,
                                 const char* ou)
 {
-  if (_segFP != NULL && segTable->getCnt() > 0) {
+  if (_segFP != nullptr && segTable->getCnt() > 0) {
     fprintf(_segFP,
             "\n%7.3f %7.3f  %dL M%d%sM%d cnt=%d\n",
             GetDBcoords(w->_xy),
@@ -175,7 +145,7 @@ void extMeasureRC::PrintCrossOvelapsOU(Wire* w,
                                        int metOver,
                                        int metUnder)
 {
-  if (_segFP != NULL && segTable->getCnt() > 0) {
+  if (_segFP != nullptr && segTable->getCnt() > 0) {
     for (uint ii = 0; ii < segTable->getCnt(); ii++) {
       extSegment* s = segTable->get(ii);
       if (s->_metOver == metOver && s->_metUnder == metUnder)
@@ -258,11 +228,11 @@ bool extMeasureRC::PrintCurrentCoords(FILE* fp, const char* msg, uint rseg)
 }
 FILE* extMeasureRC::OpenDebugFile()
 {
-  if (_debugFP == NULL && _netId > 0) {
+  if (_debugFP == nullptr && _netId > 0) {
     char buff[100];
     sprintf(buff, "%d.rc", _netId);
     _debugFP = fopen(buff, "w");
-    if (_debugFP == NULL) {
+    if (_debugFP == nullptr) {
       // warning(0, "Cannot Open file %s with permissions w", buff);
       exit(0);
     }
@@ -499,7 +469,7 @@ void extMeasureRC::segInfo(FILE* fp, const char* msg, uint netId, int rsegId)
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
   uint shapeId = rseg->getTargetCapNode()->getShapeId();
   const char* wire
-      = rseg != NULL
+      = rseg != nullptr
                 && extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())
                        > 0
             ? "Via "
@@ -613,7 +583,7 @@ void extMeasureRC::DebugPrintNetids(FILE* fp,
   const char* src = rsegId == _rsegSrcId ? "SRC" : "DST";
   dbRSeg* rseg = dbRSeg::getRSeg(_block, rsegId);
   uint shapeId = rseg->getTargetCapNode()->getShapeId();
-  // DELETE const char* wire = rseg != NULL &&
+  // DELETE const char* wire = rseg != nullptr &&
   // extMain::getShapeProperty_rc(rseg->getNet(), rseg->getId())> 0 ? "Via " :
   // "Wire";
   dbNet* net = rseg->getNet();

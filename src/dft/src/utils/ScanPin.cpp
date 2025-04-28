@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
 #include "ScanPin.hh"
+
+#include <string_view>
 
 namespace dft {
 

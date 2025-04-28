@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbModule.h"
@@ -45,7 +16,10 @@
 #include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cstddef>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbModNet.h"
@@ -445,14 +419,31 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
-  for (auto modbterm : module->getModBTerms()) {
-    block->_modbterm_tbl->destroy((_dbModBTerm*) modbterm);
+  dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  dbSet<dbModBTerm>::iterator modbterm_itr;
+  for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    dbModBTerm* modbterm = *modbterm_itr;
+    // as a side effect this will journal the disconnection
+    // so it can be undone.
+    modbterm->disconnect();
+    modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
 
-  for (auto modnet : module->getModNets()) {
-    block->_modnet_tbl->destroy((_dbModNet*) modnet);
+  // destroy the modnets last. At this point we expect them
+  // to be totally disconnected (we have disconnected them
+  // from any dbModules, dbModInst and dbITerm/dbBTerm.
+  //
+  dbSet<dbModNet> modnets = module->getModNets();
+  dbSet<dbModNet>::iterator modnet_itr;
+  for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
+    modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
+  dbProperty::destroyProperties(_module);
+
+  // Journal the deletion of the dbModule after its ports
+  // and properties deleted, so that on restore we have
+  // dbModule to hang objects on.
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
@@ -461,7 +452,6 @@ void dbModule::destroy(dbModule* module)
     block->_journal->endAction();
   }
 
-  dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);
 }
@@ -608,11 +598,7 @@ void dbModule::copyModulePorts(dbModule* old_module,
                                modBTMap& mod_bt_map)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
-  dbSet<dbModBTerm> old_ports = old_module->getModBTerms();
-  dbSet<dbModBTerm>::iterator port_iter;
-  for (port_iter = old_ports.begin(); port_iter != old_ports.end();
-       ++port_iter) {
-    dbModBTerm* old_port = *port_iter;
+  for (dbModBTerm* old_port : old_module->getModBTerms()) {
     dbModBTerm* new_port = nullptr;
     if (mod_bt_map.count(old_port) > 0) {
       new_port = mod_bt_map[old_port];
@@ -729,24 +715,20 @@ void dbModule::copyModuleInsts(dbModule* old_module,
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   // Add insts to new module
-  dbSet<dbInst> old_insts = old_module->getInsts();
-  dbSet<dbInst>::iterator inst_iter;
-  for (inst_iter = old_insts.begin(); inst_iter != old_insts.end();
-       ++inst_iter) {
-    dbInst* old_inst = *inst_iter;
+  for (dbInst* old_inst : old_module->getInsts()) {
     // Change unique instance name from old_inst/leaf to new_inst/leaf
+    std::string new_inst_name;
+    if (new_mod_inst) {
+      new_inst_name = new_mod_inst->getName();
+      new_inst_name += '/';
+    }
     std::string old_inst_name = old_inst->getName();
     // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
     size_t first_idx = old_inst_name.find_first_of('/');
-    std::string new_inst_name;
-    if (first_idx != std::string::npos) {
-      new_inst_name = std::string(new_mod_inst->getName()) + '/'
-                      + old_inst_name.substr(first_idx + 1);
-    } else {
-      // old module was not instantiated so there is no hier divider
-      new_inst_name
-          = std::string(new_mod_inst->getName()) + '/' + old_inst_name;
-    }
+    new_inst_name += (first_idx != std::string::npos)
+                         ? std::move(old_inst_name).substr(first_idx + 1)
+                         : std::move(old_inst_name);
+
     dbInst* new_inst = dbInst::create(new_module->getOwner(),
                                       old_inst->getMaster(),
                                       new_inst_name.c_str(),
@@ -787,17 +769,18 @@ void dbModule::copyModuleInsts(dbModule* old_module,
       dbNet* old_net = old_iterm->getNet();
       if (old_net) {
         // Create a local net only if it connects to iterms inside this module
-        std::string net_name = old_net->getName();
-        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
-        size_t first_idx = net_name.find_first_of('/');
         std::string new_net_name;
-        if (first_idx != std::string::npos) {
-          new_net_name = std::string(new_mod_inst->getName()) + '/'
-                         + net_name.substr(first_idx + 1);
-        } else {
-          // old module was not instantiated so there is no hier divider
-          new_net_name = std::string(new_mod_inst->getName()) + '/' + net_name;
+        if (new_mod_inst) {
+          new_net_name = new_mod_inst->getName();
+          new_net_name += '/';
         }
+        std::string old_net_name = old_net->getName();
+        // TODO: use proper hierarchy limiter from _dbBlock->_hier_delimiter
+        size_t first_idx = old_net_name.find_first_of('/');
+        new_net_name += (first_idx != std::string::npos)
+                            ? std::move(old_net_name).substr(first_idx + 1)
+                            : std::move(old_net_name);
+
         dbNet* new_net = new_module->getOwner()->findNet(new_net_name.c_str());
         if (new_net) {
           new_iterm->connect(new_net);
@@ -843,10 +826,7 @@ void dbModule::copyModuleModNets(dbModule* old_module,
              mod_bt_map.size(),
              it_map.size());
   // Make boundary port connections.
-  dbSet<dbModNet> old_nets = old_module->getModNets();
-  dbSet<dbModNet>::iterator net_iter;
-  for (net_iter = old_nets.begin(); net_iter != old_nets.end(); ++net_iter) {
-    dbModNet* old_net = *net_iter;
+  for (dbModNet* old_net : old_module->getModNets()) {
     dbModNet* new_net = dbModNet::create(new_module, old_net->getName());
     if (new_net) {
       debugPrint(logger,
@@ -863,10 +843,7 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     }
 
     // Connect dbModBTerms to new mod net
-    dbSet<dbModBTerm> mbterms = old_net->getModBTerms();
-    dbSet<dbModBTerm>::iterator mb_iter;
-    for (mb_iter = mbterms.begin(); mb_iter != mbterms.end(); ++mb_iter) {
-      dbModBTerm* old_mbterm = *mb_iter;
+    for (dbModBTerm* old_mbterm : old_net->getModBTerms()) {
       dbModBTerm* new_mbterm = nullptr;
       if (mod_bt_map.count(old_mbterm) > 0) {
         new_mbterm = mod_bt_map[old_mbterm];
@@ -893,10 +870,14 @@ void dbModule::copyModuleModNets(dbModule* old_module,
     }
 
     // Connect iterms to new mod net
-    dbSet<dbITerm> iterms = old_net->getITerms();
-    dbSet<dbITerm>::iterator it_iter;
-    for (it_iter = iterms.begin(); it_iter != iterms.end(); ++it_iter) {
-      dbITerm* old_iterm = *it_iter;
+    debugPrint(logger,
+               utl::ODB,
+               "replace_design",
+               1,
+               "  old net {} has {} iterms",
+               old_net->getName(),
+               old_net->getITerms().size());
+    for (dbITerm* old_iterm : old_net->getITerms()) {
       dbITerm* new_iterm = nullptr;
       if (it_map.count(old_iterm) > 0) {
         new_iterm = it_map[old_iterm];
@@ -931,37 +912,77 @@ void dbModule::copyModuleBoundaryIO(dbModule* old_module,
   // dbModBTerm is the port seen from inside the dbModule ("child")
   // dbModITerm is the port seen from outside from the dbModInst ("parent")
   dbSet<dbModITerm> mod_iterms = new_mod_inst->getModITerms();
-  dbSet<dbModITerm>::iterator iterm_iter;
-  for (iterm_iter = mod_iterms.begin(); iterm_iter != mod_iterms.end();
-       ++iterm_iter) {
-    dbModITerm* old_mod_iterm = *iterm_iter;
+  std::string msg = fmt::format(
+      "copyModuleBoundaryIO for new mod inst {} with {} mod iterms",
+      new_mod_inst->getName(),
+      mod_iterms.size());
+  debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+  for (dbModITerm* new_mod_iterm : mod_iterms) {
     // Connect outside dbModITerm to inside dbModBTerm
     dbModBTerm* new_mod_bterm
-        = new_module->findModBTerm(old_mod_iterm->getName());
+        = new_module->findModBTerm(new_mod_iterm->getName());
     if (new_mod_bterm) {
-      old_mod_iterm->setChildModBTerm(new_mod_bterm);
-      new_mod_bterm->setParentModITerm(old_mod_iterm);
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "Created parent/chlld port connection");
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "  parent mod iterm is {}, child mod bterm is {}",
-                 old_mod_iterm->getName(),
-                 new_mod_bterm->getName());
+      new_mod_iterm->setChildModBTerm(new_mod_bterm);
+      new_mod_bterm->setParentModITerm(new_mod_iterm);
+      msg = "Created parent/child port connection";
+      debugPrint(logger, utl::ODB, "replace_design", 1, msg);
+      msg = fmt::format("  parent mod iterm: {}, child mod bterm: {}",
+                        new_mod_iterm->getName(),
+                        new_mod_bterm->getName());
+      debugPrint(logger, utl::ODB, "replace_design", 1, msg);
     } else {
-      logger->error(utl::ODB,
-                    463,
-                    "Parent/child port connection cannot be created for parent "
-                    "mod iterm {} because child mod bterm {} does not exist",
-                    old_mod_iterm->getName(),
-                    old_mod_iterm->getName());
+      msg = fmt::format(
+          "Parent/child port connection cannot be created for parent "
+          "mod iterm {} because child mod bterm does not exist",
+          new_mod_iterm->getName());
+      logger->error(utl::ODB, 463, msg);
     }
   }
+}
+
+// Copy contents of module from current top block to a child block
+// such that the module can be deleted from the caller.
+// This is used after a module is swapped for a new module.
+// The old module shouldn't be deleted because this may be needed later.
+// Saving it to a child block serves two purposes:
+// 1. It is saved for future module swap
+// 2. Optimization avoids iterating any unused instances of the old module
+// Return true if copy is successful.
+bool dbModule::copyToChildBlock(dbModule* module)
+{
+  utl::Logger* logger = module->getImpl()->getLogger();
+
+  debugPrint(logger,
+             utl::ODB,
+             "replace_design",
+             1,
+             ">>> Copying old module to a child block <<<");
+
+  // Create a new child block under top block.
+  // This block contains only one module
+  dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
+  std::string block_name = module->getName();
+  // TODO: strip out instance name from block name
+  dbTech* tech = top_block->getTech();
+  dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
+  child_block->setDefUnits(tech->getLefUnits());
+  child_block->setBusDelimiters('[', ']');
+  dbModule* new_module = child_block->getTopModule();
+  if (!new_module) {
+    logger->error(utl::ODB,
+                  476,
+                  "Top module {} could not be found under child block {}",
+                  block_name,
+                  block_name);
+    return false;
+  }
+
+  modBTMap mod_bt_map;
+  copyModulePorts(module, new_module, mod_bt_map);
+  ITMap it_map;
+  copyModuleInsts(module, new_module, nullptr, it_map);
+  copyModuleModNets(module, new_module, mod_bt_map, it_map);
+  return true;
 }
 
 // User Code End dbModulePublicMethods

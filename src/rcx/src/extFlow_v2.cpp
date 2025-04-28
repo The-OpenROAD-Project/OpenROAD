@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, IC BENCH, Dimitris Fotakis
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <map>
 #include <vector>
@@ -264,9 +235,9 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
     mrc->printProgress(totalWiresExtracted, totWireCnt, tmpCnt);
     getPeakMemory("End CouplingFlow Dir:", dir);
   }
-  if (_geomSeq != NULL) {
+  if (_geomSeq != nullptr) {
     delete _geomSeq;
-    _geomSeq = NULL;
+    _geomSeq = nullptr;
   }
   // delete wire tables  used during diagonal coupling in v1 modeling
   removeDgContextArray();
@@ -383,9 +354,9 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
         break;
     }
   }
-  if (_geomSeq != NULL) {
+  if (_geomSeq != nullptr) {
     delete _geomSeq;
-    _geomSeq = NULL;
+    _geomSeq = nullptr;
   }
   // delete wire tables  used during diagonal coupling in v1 modeling
   removeDgContextArray();
@@ -564,8 +535,8 @@ extDistRC* extMeasureRC::getDiagUnderCC(extMetRCTable* rcModel,
                                         uint dist,
                                         uint overMet)
 {
-  if (rcModel->_capDiagUnder[_met] == NULL)
-    return NULL;
+  if (rcModel->_capDiagUnder[_met] == nullptr)
+    return nullptr;
 
   uint n = getUnderIndex(overMet);
   extDistRC* rc = rcModel->_capDiagUnder[_met]->getRC(n, _width, dist);
@@ -596,7 +567,7 @@ void extMeasure::OverSubRC(dbRSeg * rseg1,
     if (lenOverSub < 0)
       lenOverSub = 0;
 
-    bool rvia1 = rseg1 != NULL && isVia(rseg1->getId());
+    bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
 
     if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
       return;
@@ -605,7 +576,7 @@ void extMeasure::OverSubRC(dbRSeg * rseg1,
     _underMet = 0;
     for (uint jj = 0; jj < _metRCTable.getCnt(); jj++) {
       extDistRC* rc = _metRCTable.get(jj)->getOverFringeRC(this);
-      if (rc == NULL)
+      if (rc == nullptr)
         continue;
       double cap = 0;
       if (lenOverSub > 0) {
@@ -1296,12 +1267,12 @@ uint extRCModel::readRules_v2(Ath__parser* parser,
   Ath__array1D<double>* wTable
       = readHeaderAndWidth(parser, met, ouKey, wKey, bin, false);
 
-  if (wTable == NULL)
+  if (wTable == nullptr)
     return 0;
 
   uint widthCnt = wTable->getCnt();
 
-  extDistWidthRCTable* dummy = NULL;
+  extDistWidthRCTable* dummy = nullptr;
   if (ignore)
     dummy = new extDistWidthRCTable(
         true, met, _layerCnt, widthCnt, _OUREVERSEORDER);
@@ -1388,7 +1359,7 @@ uint extRCModel::readRules_v2(Ath__parser* parser,
   if (ignore)
     delete dummy;
 
-  if (wTable != NULL)
+  if (wTable != nullptr)
     delete wTable;
 
   return cnt;
@@ -1454,7 +1425,7 @@ uint extRCModel::calcMinMaxRC(dbTech* tech, const char* out_file)
       int underMet = met - 1;
       int overMet = met + 1;
 
-      extDistRC* rcMax = NULL;
+      extDistRC* rcMax = nullptr;
       if (met == _layerCnt - 1) {  // over
         overMet = 0;
         rcMax = corner_model->_capOver[met]->getFringeRC(underMet, width);
@@ -1503,7 +1474,7 @@ void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
                                  Ath__array1D<uint>* tmpInstIdTable,
                                  const uint dir)
 {
-  if (instTable == NULL)
+  if (instTable == nullptr)
     return;
 
   const bool rotatedGs = getRotatedFlag();
@@ -1514,7 +1485,7 @@ void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
     const uint instId = instTable->get(ii);
     dbInst* inst = dbInst::getInst(_block, instId);
 
-    if (tmpInstIdTable != NULL) {
+    if (tmpInstIdTable != nullptr) {
       if (inst->getUserFlag1())
         continue;
 
@@ -1525,7 +1496,7 @@ void extMain::addInstsGeometries(const Ath__array1D<uint>* instTable,
     addItermShapesOnPlanes(inst, rotatedGs, !dir);
     addObsShapesOnPlanes(inst, rotatedGs, !dir);
   }
-  if (tmpInstIdTable != NULL) {
+  if (tmpInstIdTable != nullptr) {
     for (uint jj = 0; jj < tmpInstIdTable->getCnt(); jj++) {
       const uint instId = instTable->get(jj);
       dbInst::getInst(_block, instId)->clearUserFlag1();

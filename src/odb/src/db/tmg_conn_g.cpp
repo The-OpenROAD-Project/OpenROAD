@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "tmg_conn_g.h"
 
@@ -50,7 +21,7 @@ tmg_conn_graph::tmg_conn_graph()
   _eNmax = 1024;
   _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
   _path_vis = (int*) malloc(_ptNmax * sizeof(int));
-  _eV = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
+  _eV = (tcg_edge*) malloc(2UL * _ptNmax * sizeof(tcg_edge));
   _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
 }
 
@@ -410,25 +381,25 @@ void tmg_conn::relocateShorts()
 void tmg_conn::removeShortLoops()
 {
   if (!_graph) {
-    _graph = new tmg_conn_graph();
+    _graph = std::make_unique<tmg_conn_graph>();
   }
-  _graph->init(_ptV.size(), _shortN);
+  _graph->init(_ptV.size(), _shortV.size());
   tcg_pt* pgV = _graph->_ptV;
 
   // setup paths
   int npath = -1;
   for (size_t j = 0; j < _rcV.size(); j++) {
-    if (j == 0 || _rcV[j]._ifr != _rcV[j - 1]._ito) {
+    if (j == 0 || _rcV[j]._from_idx != _rcV[j - 1]._to_idx) {
       ++npath;
     }
-    pgV[_rcV[j]._ifr].ipath = npath;
-    pgV[_rcV[j]._ito].ipath = npath;
+    pgV[_rcV[j]._from_idx].ipath = npath;
+    pgV[_rcV[j]._to_idx].ipath = npath;
   }
   npath++;
 
   // remove shorts to same path
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -437,8 +408,8 @@ void tmg_conn::removeShortLoops()
     }
   }
 
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -556,7 +527,7 @@ void tmg_conn::removeWireLoops()
   }
   // add all path edges
   for (size_t j = 0; j < _rcV.size(); j++) {
-    _graph->addEdges(this, _rcV[j]._ifr, _rcV[j]._ito, j);
+    _graph->addEdges(this, _rcV[j]._from_idx, _rcV[j]._to_idx, j);
   }
 
   // remove loops that have shorts by removing

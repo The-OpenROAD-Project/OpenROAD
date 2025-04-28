@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
 %include "../../../../Exception.i"
 
 %typemap(out) odb::dbOrientType, dbOrientType {
@@ -1702,5 +1705,24 @@
 		$1 = 1;
 	} else {
 		$1 = 0;
+	}
+}
+%typemap(in) const odb::Direction2D&, const Direction2D& {
+	char *str = Tcl_GetStringFromObj($input, 0);
+        // Typecasts are needed as swig messes up and uses a non-const ptr
+        // even though it then casts it to const
+	if (strcasecmp(str, "west") == 0 || strcasecmp(str, "left") == 0) {
+          $1 = (Direction2D*) &odb::west;
+	} else if (strcasecmp(str, "east") == 0
+                   || strcasecmp(str, "right") == 0) {
+          $1 = (Direction2D*) &odb::east;
+	} else if (strcasecmp(str, "south") == 0
+                   || strcasecmp(str, "bottom") == 0) {
+          $1 = (Direction2D*) &odb::south;
+	} else if (strcasecmp(str, "north") == 0
+                   || strcasecmp(str, "top") == 0) {
+          $1 = (Direction2D*) &odb::north;
+        } else {
+                SWIG_exception(SWIG_ValueError, "Unknown direction2d");
 	}
 }

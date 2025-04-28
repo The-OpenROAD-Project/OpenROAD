@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbModITerm.h"
@@ -228,7 +199,9 @@ dbModBTerm* dbModITerm::getChildModBTerm() const
   return (dbModBTerm*) par->_modbterm_tbl->getPtr(obj->_child_modbterm);
 }
 
-dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
+dbModITerm* dbModITerm::create(dbModInst* parentInstance,
+                               const char* name,
+                               dbModBTerm* modbterm)
 {
   _dbModInst* parent = (_dbModInst*) parentInstance;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
@@ -256,8 +229,18 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(name);
     block->_journal->pushParam(moditerm->getId());
+    if (modbterm) {
+      block->_journal->pushParam(modbterm->getId());
+    } else {
+      block->_journal->pushParam(0U);
+    }
     block->_journal->pushParam(parent->getId());
     block->_journal->endAction();
+  }
+
+  if (modbterm) {
+    ((dbModITerm*) moditerm)->setChildModBTerm(modbterm);
+    modbterm->setParentModITerm(((dbModITerm*) moditerm));
   }
 
   return (dbModITerm*) moditerm;
@@ -329,6 +312,7 @@ void dbModITerm::disconnect()
   if (next_moditerm) {
     next_moditerm->_prev_net_moditerm = _moditerm->_prev_net_moditerm;
   }
+  _moditerm->_mod_net = 0;
 }
 
 dbModITerm* dbModITerm::getModITerm(dbBlock* block, uint dbid)
@@ -348,6 +332,7 @@ void dbModITerm::destroy(dbModITerm* val)
     block->_journal->pushParam(dbModITermObj);
     block->_journal->pushParam(val->getName());
     block->_journal->pushParam(val->getId());
+    block->_journal->pushParam(_moditerm->_child_modbterm);
     block->_journal->pushParam(_moditerm->_parent);
     block->_journal->endAction();
   }
@@ -371,6 +356,15 @@ void dbModITerm::destroy(dbModITerm* val)
   _moditerm->_next_entry = 0;
   mod_inst->_moditerm_hash.erase(val->getName());
   block->_moditerm_tbl->destroy(_moditerm);
+}
+
+dbSet<dbModITerm>::iterator dbModITerm::destroy(
+    dbSet<dbModITerm>::iterator& itr)
+{
+  dbModITerm* moditerm = *itr;
+  dbSet<dbModITerm>::iterator next = ++itr;
+  destroy(moditerm);
+  return next;
 }
 
 // User Code End dbModITermPublicMethods

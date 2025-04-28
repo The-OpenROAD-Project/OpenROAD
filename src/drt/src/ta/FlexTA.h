@@ -1,35 +1,11 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frVia.h"
@@ -83,7 +59,7 @@ class FlexTAWorkerRegionQuery
   void remove(taPinFig* fig);
   void query(const Rect& box,
              frLayerNum layerNum,
-             std::set<taPin*, frBlockObjectComp>& result) const;
+             frOrderedIdSet<taPin*>& result) const;
 
   void addCost(const Rect& box,
                frLayerNum layerNum,
@@ -268,44 +244,42 @@ class FlexTAWorker
                              frCoord& pinCoord);
   void initCosts();
   void sortIroutes();
+  bool outOfDieVia(frLayerNum layer_num,
+                   const Point& pt,
+                   const Rect& die_box) const;
 
   // quick drc
   frSquaredDistance box2boxDistSquare(const Rect& box1,
                                       const Rect& box2,
                                       frCoord& dx,
                                       frCoord& dy);
-  void addCost(taPinFig* fig,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
-  void subCost(taPinFig* fig,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+  void addCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
+  void subCost(taPinFig* fig, frOrderedIdSet<taPin*>* pinS = nullptr);
   void modCost(taPinFig* fig,
                bool isAddCost,
-               std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+               frOrderedIdSet<taPin*>* pinS = nullptr);
   void modMinSpacingCostPlanar(const Rect& box,
                                frLayerNum lNum,
                                taPinFig* fig,
                                bool isAddCost,
-                               std::set<taPin*, frBlockObjectComp>* pinS
-                               = nullptr);
+                               frOrderedIdSet<taPin*>* pinS = nullptr);
   void modMinSpacingCostVia(const Rect& box,
                             frLayerNum lNum,
                             taPinFig* fig,
                             bool isAddCost,
                             bool isUpperVia,
                             bool isCurrPs,
-                            std::set<taPin*, frBlockObjectComp>* pinS
-                            = nullptr);
+                            frOrderedIdSet<taPin*>* pinS = nullptr);
   void modCutSpacingCost(const Rect& box,
                          frLayerNum lNum,
                          taPinFig* fig,
                          bool isAddCost,
-                         std::set<taPin*, frBlockObjectComp>* pinS = nullptr);
+                         frOrderedIdSet<taPin*>* pinS = nullptr);
 
   // initTA
   void assign();
   void assignIroute(taPin* iroute);
-  void assignIroute_init(taPin* iroute,
-                         std::set<taPin*, frBlockObjectComp>* pinS);
+  void assignIroute_init(taPin* iroute, frOrderedIdSet<taPin*>* pinS);
   void assignIroute_availTracks(taPin* iroute,
                                 frLayerNum& lNum,
                                 int& idx1,
@@ -333,8 +307,8 @@ class FlexTAWorker
                                          frLayerNum lNum);
   void assignIroute_updateIroute(taPin* iroute,
                                  frCoord bestTrackLoc,
-                                 std::set<taPin*, frBlockObjectComp>* pinS);
-  void assignIroute_updateOthers(std::set<taPin*, frBlockObjectComp>& pinS);
+                                 frOrderedIdSet<taPin*>* pinS);
+  void assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS);
 
   // end
   void end();

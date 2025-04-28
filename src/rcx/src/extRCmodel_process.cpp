@@ -1,35 +1,5 @@
-
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "grids.h"
 #include "rcx/extRCap.h"
@@ -66,7 +36,7 @@ uint extRCModel::measureWithVar(extMeasure* measure)
 
   //	extMasterConductor* m= _process->getMasterConductor(met);
   if (top_ext != 0.0 || bot_ext != 0.0) {
-    xvar = NULL;
+    xvar = nullptr;
     measure->_metExtFlag = true;
   }
 
@@ -122,14 +92,14 @@ uint extRCModel::measureWithVar(extMeasure* measure)
         if (r == 0.0) {
           //					top_width= w;
           //					top_widthR= w;
-          if (xvar != NULL) {
+          if (xvar != nullptr) {
             double a = xvar->getP(w);
             if (a != 0.0)
               ro = a;
           }
           res = measureResistance(
               measure, ro, top_widthR, bot_widthR, thicknessR);
-        } else if (xvar != NULL && !_maxMinFlag) {
+        } else if (xvar != nullptr && !_maxMinFlag) {
           uint ss;
           if (measure->_diag)
             ss = 5;
@@ -190,7 +160,7 @@ uint extRCModel::measureWithVar(extMeasure* measure)
                           bot_width,
                           thickness,
                           measure->_wireCnt,
-                          NULL,
+                          nullptr,
                           res * 0.5);
 
         //				measure->setTargetParams(w, s, 0.0, t,
@@ -217,7 +187,7 @@ uint extRCModel::linesOver(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -269,7 +239,7 @@ uint extRCModel::linesDiagUnder(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -340,7 +310,7 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
 
   //        extMasterConductor* m= _process->getMasterConductor(met);
   if (top_ext != 0.0 || bot_ext != 0.0) {
-    xvar = NULL;
+    xvar = nullptr;
     measure->_metExtFlag = true;
   }
 
@@ -398,14 +368,14 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
               //                                        		top_width=
               //                                        w;
               //                                        top_widthR= w;
-              if (xvar != NULL) {
+              if (xvar != nullptr) {
                 double a = xvar->getP(w);
                 if (a != 0.0)
                   ro = a;
               }
               res = measureResistance(
                   measure, ro, top_widthR, bot_widthR, thicknessR);
-            } else if (xvar != NULL && !_maxMinFlag) {
+            } else if (xvar != nullptr && !_maxMinFlag) {
               uint ss;
               //							if
               //(sIndex < scnt-1)
@@ -456,7 +426,7 @@ uint extRCModel::measureDiagWithVar(extMeasure* measure)
                               bot_width,
                               thickness,
                               measure->_wireCnt,
-                              NULL,
+                              nullptr,
                               res * 0.5);
 
             cnt++;
@@ -477,7 +447,7 @@ uint extRCModel::linesUnder(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -548,7 +518,7 @@ uint extRCModel::linesOverUnder(uint wireCnt,
   openCapLogFile();
   uint cnt = 0;
 
-  extMeasure measure(NULL);
+  extMeasure measure(nullptr);
   measure._wireCnt = wireCnt;
   measure._3dFlag = true;
   measure._len = _len;
@@ -759,7 +729,7 @@ double extRCModel::writeWirePatterns(FILE* fp,
                                      double& max_x)
 {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
-  extMasterConductor* mOver = NULL;
+  extMasterConductor* mOver = nullptr;
   if (_diagModel > 0)
     mOver = _process->getMasterConductor(measure->_overMet);
 
@@ -865,7 +835,7 @@ double extRCModel::writeWirePatterns_w3(FILE* fp,
                                         double& max_x)
 {
   extMasterConductor* m = _process->getMasterConductor(measure->_met);
-  extMasterConductor* mOver = NULL;
+  extMasterConductor* mOver = nullptr;
   if (_diagModel > 0)
     mOver = _process->getMasterConductor(measure->_overMet);
 
@@ -1041,7 +1011,7 @@ bool extRCModel::measurePatternVar_3D(extMeasure* m,
 
   FILE* wfp = mkPatternFile();
 
-  if (wfp == NULL)
+  if (wfp == nullptr)
     return false;  // should be an exception!! and return!
 
   double maxHeight

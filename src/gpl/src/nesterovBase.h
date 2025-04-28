@@ -1,41 +1,13 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -568,16 +540,13 @@ class Bin
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
 
-  const int64_t binArea() const;
-  const int64_t nonPlaceArea() const { return nonPlaceArea_; }
-  const int64_t instPlacedArea() const { return instPlacedArea_; }
-  const int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  const int64_t instPlacedAreaUnscaled() const
-  {
-    return instPlacedAreaUnscaled_;
-  }
+  int64_t binArea() const;
+  int64_t nonPlaceArea() const { return nonPlaceArea_; }
+  int64_t instPlacedArea() const { return instPlacedArea_; }
+  int64_t nonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
+  int64_t instPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
-  const int64_t fillerArea() const { return fillerArea_; }
+  int64_t fillerArea() const { return fillerArea_; }
 
  private:
   // index
@@ -808,9 +777,9 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
-  const std::vector<GNet*>& gNets() const { return gNets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
+  const std::vector<GNet*>& getGNets() const { return gNets_; }
+  const std::vector<GPin*>& getGPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
@@ -858,12 +827,12 @@ class NesterovBaseCommon
   GCell* getGCellByIndex(size_t i);
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
-  size_t createGCell(odb::dbInst* db_inst);
-  void createGNet(odb::dbNet* net, bool skip_io_mode);
-  void createITerm(odb::dbITerm* iTerm);
-  void destroyGCell(size_t);
-  void destroyGNet(odb::dbNet*);
-  void destroyITerm(odb::dbITerm*);
+  size_t createCbkGCell(odb::dbInst* db_inst);
+  void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
+  void createCbkITerm(odb::dbITerm* iTerm);
+  void destroyCbkGCell(size_t);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
@@ -894,7 +863,7 @@ class NesterovBaseCommon
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
 
-  std::vector<GCell*> gCells_;
+  std::vector<GCell*> nbc_gcells_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -915,6 +884,7 @@ class NesterovBaseCommon
   int num_threads_;
   int64_t delta_area_;
   uint new_gcells_count_;
+  bool reprint_iter_header;
   nesterovDbCbk* db_cbk_{nullptr};
 };
 
@@ -933,7 +903,7 @@ class NesterovBase
 
   GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
 
-  const std::vector<GCellHandle>& gCells() const { return gCells_; }
+  const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1067,6 +1037,7 @@ class NesterovBase
                       const std::vector<FloatPoint>& curSLPSumGrads_);
 
   void updateNextIter(int iter);
+  void setTrueReprintIterHeader() { reprint_iter_header = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
   void cutFillerCoordinates();
 
@@ -1091,8 +1062,8 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
-  void createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
-  void destroyGCell(odb::dbInst* db_inst);
+  void createCbkGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
+  void destroyCbkGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
   // Resets all pointers to storages of gcells, gpins, and gnets.
@@ -1121,7 +1092,7 @@ class NesterovBase
 
   std::vector<GCell> fillerStor_;
 
-  std::vector<GCellHandle> gCells_;
+  std::vector<GCellHandle> nb_gcells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
@@ -1183,11 +1154,9 @@ class NesterovBase
 
   // half-parameter-wire-length
   int64_t prevHpwl_ = 0;
+  int64_t prevReportedHpwl_ = 0;
 
-  float isDiverged_ = false;
-
-  std::string divergeMsg_;
-  int divergeCode_ = 0;
+  bool isDiverged_ = false;
 
   NesterovPlaceVars* npVars_;
 
@@ -1197,6 +1166,7 @@ class NesterovBase
   float hpwlWithMinSumOverflow_ = 1e30;
   int iter_ = 0;
   bool isConverged_ = false;
+  bool reprint_iter_header;
 
   // Snapshot data for routability, parallel vectors
   std::vector<FloatPoint> snapshotCoordi_;

@@ -13,7 +13,7 @@
 [INFO CTS-0011]  Clock net "clk_regs" for registers has 2250 sinks.
 [INFO CTS-0008] TritonCTS found 2 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
-[INFO CTS-0200] 225 placement blockages have been identified.
+[INFO CTS-0201] 225 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 225.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
@@ -52,7 +52,7 @@
 [INFO CTS-0034]     Segment length (rounded): 42.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 225.
-[INFO CTS-0200] 225 placement blockages have been identified.
+[INFO CTS-0201] 225 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
 [INFO CTS-0028]  Total number of sinks: 2250.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
@@ -120,11 +120,11 @@
 [INFO RSZ-0048] Inserted 109 buffers in 50 nets.
 Placement Analysis
 ---------------------------------
-total displacement       4698.2 u
+total displacement       4696.0 u
 average displacement        1.5 u
 max displacement          153.5 u
 original HPWL          182314.0 u
-legalized HPWL         183132.9 u
+legalized HPWL         183152.1 u
 delta HPWL                    0 %
 
 Clock clk

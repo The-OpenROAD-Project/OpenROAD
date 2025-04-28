@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -50,8 +18,6 @@ namespace rsz {
 
 class Resizer;
 enum class ParasiticsSrc;
-
-using std::vector;
 
 using sta::Corner;
 using sta::dbNetwork;
@@ -77,7 +43,7 @@ class LoadRegion
 
   PinSeq pins_;
   Rect bbox_;  // dbu
-  vector<LoadRegion> regions_;
+  std::vector<LoadRegion> regions_;
 };
 
 class RepairDesign : dbStaState
@@ -93,7 +59,7 @@ class RepairDesign : dbStaState
   void repairDesign(double max_wire_length,  // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
-                    double buffer_gain,
+                    bool initial_sizing,
                     bool verbose,
                     int& repaired_net_count,
                     int& slew_violations,
@@ -119,8 +85,18 @@ class RepairDesign : dbStaState
   void init();
 
   bool getCin(const Pin* drvr_pin, float& cin);
+  bool getLargestSizeCin(const Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(Net* net, const Pin* drvr_pin, int max_fanout);
+  void performEarlySizingRound(int& repaired_net_count);
+
+  void checkDriverArcSlew(const Corner* corner,
+                          const Instance* inst,
+                          const TimingArc* arc,
+                          float load_cap,
+                          float limit,
+                          float& violation);
+  bool repairDriverSlew(const Corner* corner, const Pin* drvr_pin);
 
   void repairNet(Net* net,
                  const Pin* drvr_pin,
@@ -135,29 +111,11 @@ class RepairDesign : dbStaState
                  int& cap_violations,
                  int& fanout_violations,
                  int& length_violations);
-  bool needRepairSlew(const Pin* drvr_pin,
-                      int& slew_violations,
-                      float& max_cap,
-                      const Corner*& corner);
   bool needRepairCap(const Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
                      const Corner*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
-  bool needRepair(const Pin* drvr_pin,
-                  const Corner*& corner,
-                  int max_length,
-                  int wire_length,
-                  bool check_cap,
-                  bool check_slew,
-                  float& max_cap,
-                  int& slew_violations,
-                  int& cap_violations,
-                  int& length_violations);
-  bool checkLimits(const Pin* drvr_pin,
-                   bool check_slew,
-                   bool check_cap,
-                   bool check_fanout);
   void checkSlew(const Pin* drvr_pin,
                  // Return values.
                  Slew& slew,
@@ -274,7 +232,6 @@ class RepairDesign : dbStaState
   int max_length_ = 0;
   double slew_margin_ = 0;
   double cap_margin_ = 0;
-  double buffer_gain_ = 0;
   const Corner* corner_ = nullptr;
 
   int resize_count_ = 0;

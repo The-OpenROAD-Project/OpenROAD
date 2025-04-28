@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "chartsWidget.h"
 
@@ -40,6 +11,9 @@
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "gui_utils.h"
@@ -235,21 +209,38 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
   int unconstrained_count = 0;
   sta::Unit* time_unit = sta_->units()->timeUnit();
 
+  auto network = sta_->getDbNetwork();
   for (StaPins::iterator pin_iter = end_points.begin();
        pin_iter != end_points.end();) {
-    float slack = stagui_->getPinSlack(*pin_iter);
+    const sta::Pin* pin = *pin_iter;
 
-    if (slack != sta::INF) {
+    float slack = stagui_->getPinSlack(pin);
+
+    if (slack != sta::INF && slack != -sta::INF) {
       slack = time_unit->staToUser(slack);
       data.min = std::min(slack, data.min);
       data.max = std::max(slack, data.max);
 
       ++pin_iter;
     } else {
-      auto network = sta_->getDbNetwork();
-      // Don't count dangling outputs (eg clk loads)
-      if (!network->direction(*pin_iter)->isOutput()
-          || network->net(*pin_iter)) {
+      const bool is_input = network->direction(pin)->isAnyInput();
+      auto net = network->isTopLevelPort(pin) ? network->net(network->term(pin))
+                                              : network->net(pin);
+      bool has_connections = false;
+      if (net != nullptr) {
+        std::unique_ptr<sta::NetPinIterator> pin_itr(network->pinIterator(net));
+        while (pin_itr->hasNext()) {
+          auto next_pin = pin_itr->next();
+
+          if (next_pin != pin) {
+            has_connections = true;
+            break;
+          }
+        }
+      }
+
+      // Only consider input endpoints and nets with more than 1 connection
+      if (is_input || has_connections) {
         unconstrained_count++;
       }
       pin_iter = end_points.erase(pin_iter);
@@ -449,7 +440,7 @@ void HistogramView::setBucketInterval()
   const float exact_interval
       = (max_slack_ - min_slack_) / default_number_of_buckets_;
 
-  int snap_interval = computeSnapBucketInterval(exact_interval);
+  const float snap_interval = computeSnapBucketInterval(exact_interval);
 
   // We compute a new number of buckets based on the snap interval.
   const int new_number_of_buckets
@@ -469,7 +460,7 @@ void HistogramView::setBucketInterval()
   }
 }
 
-int HistogramView::computeNumberofBuckets(const int bucket_interval,
+int HistogramView::computeNumberofBuckets(const float bucket_interval,
                                           const float max_slack,
                                           const float min_slack)
 {
@@ -499,14 +490,14 @@ float HistogramView::computeSnapBucketDecimalInterval(float minimum_interval)
   return std::ceil(integer_part) / std::pow(10, power_count);
 }
 
-int HistogramView::computeSnapBucketInterval(float exact_interval)
+float HistogramView::computeSnapBucketInterval(float exact_interval)
 {
   if (exact_interval < 10) {
     return std::ceil(exact_interval);
   }
 
-  int snap_interval = 0;
-  int digits = computeNumberOfDigits(static_cast<int>(exact_interval));
+  float snap_interval = 0;
+  const int digits = computeNumberOfDigits(exact_interval);
 
   while (snap_interval < exact_interval) {
     snap_interval += 5 * std::pow(10, digits - 2);
@@ -515,7 +506,7 @@ int HistogramView::computeSnapBucketInterval(float exact_interval)
   return snap_interval;
 }
 
-int HistogramView::computeNumberOfDigits(int value)
+int HistogramView::computeNumberOfDigits(float value)
 {
   return static_cast<int>(std::log10(value)) + 1;
 }

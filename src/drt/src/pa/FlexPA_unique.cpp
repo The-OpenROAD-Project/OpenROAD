@@ -1,32 +1,12 @@
-/*
- * Copyright (c) 2023, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "FlexPA_unique.h"
 
+#include <algorithm>
+#include <limits>
+#include <memory>
+#include <set>
 #include <vector>
 
 #include "distributed/frArchive.h"
@@ -132,14 +112,8 @@ bool UniqueInsts::isNDRInst(frInst& inst)
   return false;
 }
 
-void UniqueInsts::addUniqueInst(frInst* inst)
+UniqueInsts::InstSet& UniqueInsts::computeUniqueClass(frInst* inst)
 {
-  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
-    unique_to_idx_[inst] = unique_.size();
-    unique_.push_back(inst);
-    inst_to_unique_[inst] = inst;
-    inst_to_class_[inst] = nullptr;
-  }
   const Point origin = inst->getOrigin();
   const Rect boundary_bbox = inst->getBoundaryBBox();
   const dbOrientType orient = inst->getOrient();
@@ -167,17 +141,36 @@ void UniqueInsts::addUniqueInst(frInst* inst)
   }
 
   // Fills data structure that relate a instance to its unique instance
-  UniqueInsts::InstSet& unique_family
-      = master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
-  if (unique_family.empty()) {
+  return master_orient_trackoffset_to_insts_[inst->getMaster()][orient][offset];
+}
+
+bool UniqueInsts::addInst(frInst* inst)
+{
+  if (!router_cfg_->AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
+    unique_to_idx_[inst] = unique_.size();
+    unique_.push_back(inst);
+    inst_to_unique_[inst] = inst;
+    inst_to_class_[inst] = nullptr;
+  }
+
+  UniqueInsts::InstSet& unique_class = computeUniqueClass(inst);
+  inst_to_class_[inst] = &unique_class;
+
+  frInst* unique_inst = nullptr;
+  bool new_unique_class = unique_class.empty();
+  if (new_unique_class) {
     int i = unique_.size();
     unique_.push_back(inst);
     unique_to_idx_[inst] = i;
+    unique_inst = inst;
+  } else {
+    // guarantees everyone on the class has the same unique_inst (the first
+    // that came)
+    unique_inst = inst_to_unique_[*unique_class.begin()];
   }
-  unique_family.insert(inst);
-  frInst* unique_inst = *(unique_family.begin());
+  unique_class.insert(inst);
   inst_to_unique_[inst] = unique_inst;
-  inst_to_class_[inst] = &unique_family;
+  return new_unique_class;
 }
 
 // must init all unique, including filler, macro, etc. to ensure frInst
@@ -189,7 +182,7 @@ void UniqueInsts::computeUnique()
 
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_) {
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
+    target_frinsts.insert(design_->getTopBlock()->findInst(inst));
   }
 
   for (auto& inst : design_->getTopBlock()->getInsts()) {
@@ -197,7 +190,7 @@ void UniqueInsts::computeUnique()
         && target_frinsts.find(inst.get()) == target_frinsts.end()) {
       continue;
     }
-    addUniqueInst(inst.get());
+    addInst(inst.get());
   }
 }
 
@@ -233,33 +226,31 @@ void UniqueInsts::checkFigsOnGrid(const frMPin* pin)
   }
 }
 
-void UniqueInsts::genPinAccess()
+void UniqueInsts::initUniqueInstPinAccess(frInst* unique_inst)
 {
-  for (auto& inst : unique_) {
-    for (auto& inst_term : inst->getInstTerms()) {
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        if (unique_to_pa_idx_.find(inst) == unique_to_pa_idx_.end()) {
-          unique_to_pa_idx_[inst] = pin->getNumPinAccess();
-        } else if (unique_to_pa_idx_[inst] != pin->getNumPinAccess()) {
-          logger_->error(DRT, 69, "genPinAccess error.");
-        }
-        checkFigsOnGrid(pin.get());
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
-      }
+  for (auto& inst_term : unique_inst->getInstTerms()) {
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      unique_inst->setPinAccessIdx(pin->getNumPinAccess());
+      checkFigsOnGrid(pin.get());
+      pin->addPinAccess(std::make_unique<frPinAccess>());
     }
-    inst->setPinAccessIdx(unique_to_pa_idx_[inst]);
   }
-  for (auto& [inst, unique_inst] : inst_to_unique_) {
+  for (frInst* inst : *inst_to_class_[unique_inst]) {
     inst->setPinAccessIdx(unique_inst->getPinAccessIdx());
+  }
+}
+
+void UniqueInsts::initPinAccess()
+{
+  for (frInst* unique_inst : unique_) {
+    initUniqueInstPinAccess(unique_inst);
   }
 
   // IO terms
   if (target_insts_.empty()) {
     for (auto& term : getDesign()->getTopBlock()->getTerms()) {
       for (auto& pin : term->getPins()) {
-        auto pa = std::make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
+        pin->addPinAccess(std::make_unique<frPinAccess>());
       }
     }
   }
@@ -268,7 +259,7 @@ void UniqueInsts::genPinAccess()
 void UniqueInsts::init()
 {
   computeUnique();
-  genPinAccess();
+  initPinAccess();
 }
 
 void UniqueInsts::report() const
@@ -277,7 +268,7 @@ void UniqueInsts::report() const
   logger_->report("#unique  instances     = {}", unique_.size());
 }
 
-std::set<frInst*, frBlockObjectComp>* UniqueInsts::getClass(frInst* inst) const
+UniqueInsts::InstSet* UniqueInsts::getClass(frInst* inst) const
 {
   return inst_to_class_.at(inst);
 }
@@ -287,15 +278,54 @@ bool UniqueInsts::hasUnique(frInst* inst) const
   return inst_to_unique_.find(inst) != inst_to_unique_.end();
 }
 
+// deleteInst has to be called both when an instance is deleted and might
+// be needed when moved
+frInst* UniqueInsts::deleteInst(frInst* inst)
+{
+  UniqueInsts::InstSet& unique_class = *inst_to_class_[inst];
+  frInst* class_head = inst_to_unique_[inst];
+  if (unique_class.size() == 1) {
+    auto it = std::find(unique_.begin(), unique_.end(), inst);
+    if (it == unique_.end()) {
+      logger_->error(DRT,
+                     25,
+                     "{} not found on unique insts, although being the only "
+                     "one of its unique class");
+    }
+
+    // readjusts unique_to_idx_ to compensate for posterior unique deletion
+    for (int i = unique_to_idx_[inst]; i < unique_.size(); i++) {
+      auto unique_inst = unique_[i];
+      unique_to_idx_[unique_inst]--;
+    }
+    unique_.erase(it);
+    unique_to_idx_.erase(inst);
+    class_head = nullptr;
+
+  } else if (inst == inst_to_unique_[inst]) {
+    // the inst does not belong to the class anymore, but is the reference
+    // unique_inst, so the reference has to be another inst
+    auto class_begin = inst_to_class_[inst]->begin();
+    // new class head
+    class_head = *class_begin != inst ? *class_begin : *(++class_begin);
+    unique_[unique_to_idx_[inst]] = class_head;
+    for (frInst* other_inst : unique_class) {
+      inst_to_unique_[other_inst] = class_head;
+    }
+    unique_to_idx_[class_head] = unique_to_idx_[inst];
+    unique_to_idx_.erase(inst);
+  }
+  inst_to_class_[inst]->erase(inst);
+  inst_to_class_.erase(inst);
+  inst_to_unique_.erase(inst);
+  inst->deletePinAccessIdx();
+  return class_head;
+}
+
 int UniqueInsts::getIndex(frInst* inst)
 {
   frInst* unique_inst = inst_to_unique_[inst];
   return unique_to_idx_[unique_inst];
-}
-
-int UniqueInsts::getPAIndex(frInst* inst) const
-{
-  return unique_to_pa_idx_.at(inst);
 }
 
 const std::vector<frInst*>& UniqueInsts::getUnique() const
@@ -306,6 +336,11 @@ const std::vector<frInst*>& UniqueInsts::getUnique() const
 frInst* UniqueInsts::getUnique(int idx) const
 {
   return unique_[idx];
+}
+
+frInst* UniqueInsts::getUnique(frInst* inst) const
+{
+  return inst_to_unique_.at(inst);
 }
 
 }  // namespace drt

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
 #include "dbModBTerm.h"
@@ -301,7 +272,6 @@ dbModBTerm* dbModBTerm::create(dbModule* parentModule, const char* name)
   if (ret) {
     return ret;
   }
-
   _dbModule* module = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
@@ -363,6 +333,13 @@ void dbModBTerm::connect(dbModNet* net)
   _modnet->_modbterms = getId();      // set new head
 
   if (_block->_journal) {
+    debugPrint(_modbterm->getImpl()->getLogger(),
+               utl::ODB,
+               "DB_ECO",
+               1,
+               "ECO: connect modBterm {} to modnet {}",
+               getId(),
+               net->getId());
     _block->_journal->beginAction(dbJournal::CONNECT_OBJECT);
     _block->_journal->pushParam(dbModBTermObj);
     _block->_journal->pushParam(getId());
@@ -410,6 +387,7 @@ void dbModBTerm::disconnect()
   //
   _modbterm->_next_net_modbterm = 0;
   _modbterm->_prev_net_modbterm = 0;
+  _modbterm->_modnet = 0;
 }
 
 bool dbModBTerm::isBusPort() const
@@ -448,8 +426,6 @@ void dbModBTerm::destroy(dbModBTerm* val)
   _dbModule* module = block->_module_tbl->getPtr(_modbterm->_parent);
 
   if (block->_journal) {
-    //    printf("LOG delete dbModBTerm %s %d\n",
-    //	   val -> getName(), val -> getId());
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModBTermObj);
     block->_journal->pushParam(val->getName());
@@ -477,6 +453,15 @@ void dbModBTerm::destroy(dbModBTerm* val)
 
   module->_modbterm_hash.erase(val->getName());
   block->_modbterm_tbl->destroy(_modbterm);
+}
+
+dbSet<dbModBTerm>::iterator dbModBTerm::destroy(
+    dbSet<dbModBTerm>::iterator& itr)
+{
+  dbModBTerm* modbterm = *itr;
+  dbSet<dbModBTerm>::iterator next = ++itr;
+  destroy(modbterm);
+  return next;
 }
 
 // User Code End dbModBTermPublicMethods

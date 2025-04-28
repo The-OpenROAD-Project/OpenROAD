@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
 #include "ord/OpenRoad.hh"
@@ -333,25 +301,111 @@ void clear_highlights(int highlight_group = 0)
   gui->clearHighlights(highlight_group);
 }
 
-void set_display_controls(const char* name, const char* display_type, bool value)
+void set_display_controls(const char* name, const char* display_type, const char* value)
 {
   if (!check_gui("set_display_controls")) {
     return;
   }
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
   
   std::string disp_type = display_type;
+  std::string str_value = value;
   // make lower case
   std::transform(disp_type.begin(), 
                  disp_type.end(), 
                  disp_type.begin(), 
                  [](char c) { return std::tolower(c); });
   if (disp_type == "visible") {
-    gui->setDisplayControlsVisible(name, value);
+    bool bval = str_value == "true" || str_value == "1";
+    gui->setDisplayControlsVisible(name, bval);
   } else if (disp_type == "selectable") {
-    gui->setDisplayControlsSelectable(name, value);
+    bool bval = str_value == "true" || str_value == "1";
+    gui->setDisplayControlsSelectable(name, bval);
+  } else if (disp_type == "color") {
+    gui::Painter::Color color = gui::Painter::black;
+    if (str_value.empty()) {
+      logger->error(GUI, 41, "Color is required");
+    }
+    if (str_value[0] == '#' && (str_value.size() == 7 || str_value.size() == 9)) {
+      uint hex_color = 0;
+      for (int i = 1; i < str_value.size(); i++) {
+        const char c = std::tolower(str_value[i]);
+        hex_color *= 16;
+        if (c >= '0' && c <= '9') {
+          hex_color += c - '0';
+        } else if (c >= 'a' && c <= 'f') {
+          hex_color += c - 'a' + 10;
+        } else {
+          logger->error(GUI, 43, "Unable to decode color: {}", str_value);
+        }
+      }
+      if (str_value.size() == 7) {
+        hex_color *= 256;
+        hex_color += 255;
+      }
+      color.r = (hex_color & 0xff000000) >> 24;
+      color.g = (hex_color & 0x00ff0000) >> 16;
+      color.b = (hex_color & 0x0000ff00) >> 8;
+      color.a = hex_color & 0x000000ff;
+    } else if (str_value == "black") {
+      color = gui::Painter::black;
+    } else if (str_value == "white") {
+      color = gui::Painter::white;
+    } else if (str_value == "dark_gray") {
+      color = gui::Painter::dark_gray;
+    } else if (str_value == "gray") {
+      color = gui::Painter::gray;
+    } else if (str_value == "light_gray") {
+      color = gui::Painter::light_gray;
+    } else if (str_value == "red") {
+      color = gui::Painter::red;
+    } else if (str_value == "green") {
+      color = gui::Painter::green;
+    } else if (str_value == "blue") {
+      color = gui::Painter::blue;
+    } else if (str_value == "cyan") {
+      color = gui::Painter::cyan;
+    } else if (str_value == "magenta") {
+      color = gui::Painter::magenta;
+    } else if (str_value == "yellow") {
+      color = gui::Painter::yellow;
+    } else if (str_value == "dark_red") {
+      color = gui::Painter::dark_red;
+    } else if (str_value == "dark_green") {
+      color = gui::Painter::dark_green;
+    } else if (str_value == "dark_blue") {
+      color = gui::Painter::dark_blue;
+    } else if (str_value == "dark_cyan") {
+      color = gui::Painter::dark_cyan;
+    } else if (str_value == "dark_magenta") {
+      color = gui::Painter::dark_magenta;
+    } else if (str_value == "dark_yellow") {
+      color = gui::Painter::dark_yellow;
+    } else if (str_value == "orange") {
+      color = gui::Painter::orange;
+    } else if (str_value == "purple") {
+      color = gui::Painter::purple;
+    } else if (str_value == "lime") {
+      color = gui::Painter::lime;
+    } else if (str_value == "teal") {
+      color = gui::Painter::teal;
+    } else if (str_value == "pink") {
+      color = gui::Painter::pink;
+    } else if (str_value == "brown") {
+      color = gui::Painter::brown;
+    } else if (str_value == "indigo") {
+      color = gui::Painter::indigo;
+    } else if (str_value == "turquoise") {
+      color = gui::Painter::turquoise;
+    } else if (str_value == "transparent") {
+      color = gui::Painter::transparent;
+    } else {
+      logger->error(GUI, 42, "Color not recognized: {}", str_value);
+    }
+
+    gui->setDisplayControlsColor(name, color);
   } else {
-    auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 7, "Unknown display control type: {}", display_type);
   }
 }

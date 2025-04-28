@@ -1,18 +1,18 @@
 name: Lint Python
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Run black (public repo)
-        if: "!github.event.repository.private"
+        uses: actions/checkout@v4
+      - name: Run black
         uses: psf/black@stable
-      - name: Run black (private repo)
-        uses: psf/black@stable
-        if: github.event.repository.private
-        with:
-          version: "24.8.0"

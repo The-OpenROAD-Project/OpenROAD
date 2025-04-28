@@ -1,35 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2018-2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include "nesterovBase.h"
 
@@ -37,10 +7,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <iostream>
+#include <memory>
 #include <random>
+#include <string>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "fft.h"
 #include "nesterovPlace.h"
@@ -548,7 +522,7 @@ Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
   targetDensity_ = targetDensity;
 }
 
-const int64_t Bin::binArea() const
+int64_t Bin::binArea() const
 {
   return static_cast<int64_t>(dx()) * static_cast<int64_t>(dy());
 }
@@ -742,22 +716,23 @@ void BinGrid::initBins()
   }
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL, 23, "{:20} {:10.3f}", "TargetDensity:", targetDensity_);
+  log_->info(
+      GPL, 23, format_label_float, "Placement target density:", targetDensity_);
   log_->info(GPL,
              24,
-             "{:20} {:10.3f} um^2",
-             "AvrgPlaceInstArea:",
+             format_label_um2,
+             "Movable insts average area:",
              block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             "{:20} {:10.3f} um^2",
-             "IdealBinArea:",
+             format_label_um2,
+             "Ideal bin area:",
              block->dbuAreaToMicrons(idealBinArea));
-  log_->info(GPL, 26, "{:20} {:10}", "IdealBinCnt:", idealBinCnt);
+  log_->info(GPL, 26, format_label_int, "Ideal bin count:", idealBinCnt);
   log_->info(GPL,
              27,
-             "{:20} {:10.3f} um^2",
-             "TotalBinArea:",
+             format_label_um2,
+             "Total bin area:",
              block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
@@ -788,15 +763,16 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 28, "{:8} {:8} {:6}", "BinCnt:", binCntX_, binCntY_);
+  log_->info(
+      GPL, 28, "{:21} {:7d} , {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
 
   binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
   binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
 
   log_->info(GPL,
              29,
-             "{:8} ( {:6.3f} {:6.3f} )",
-             "BinSize:",
+             "{:21} {:7.3f} * {:6.3f} um",
+             "Bin size (W * H):",
              block->dbuToMicrons(binSizeX_),
              block->dbuToMicrons(binSizeY_));
 
@@ -815,7 +791,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, "{:8} {}", "NumBins:", bins_.size());
+  log_->info(GPL, 30, format_label_int, "Number of bins:", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -926,12 +902,13 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
                     + static_cast<float>(bin.nonPlaceArea()))
                    / scaledBinArea);
 
-    sumOverflowArea_ += std::max(0.0f,
-                                 static_cast<float>(bin.instPlacedArea())
-                                     + static_cast<float>(bin.nonPlaceArea())
-                                     - scaledBinArea);
+    const float overflowArea = std::max(
+        0.0f,
+        static_cast<float>(bin.instPlacedArea())
+            + static_cast<float>(bin.nonPlaceArea()) - scaledBinArea);
+    sumOverflowArea_ += overflowArea;  // NOLINT
 
-    auto overflowAreaUnscaled = std::max(
+    const float overflowAreaUnscaled = std::max(
         0.0f,
         static_cast<float>(bin.instPlacedAreaUnscaled())
             + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
@@ -1079,13 +1056,13 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCell ptr init
-  gCells_.reserve(gCellStor_.size());
+  nbc_gcells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
     if (!gCell.isInstance()) {
       continue;
     }
-    gCells_.push_back(&gCell);
+    nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
       db_inst_map_[inst->dbInst()] = i;
@@ -1417,7 +1394,7 @@ void NesterovBaseCommon::updateDbGCells()
   }
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gCells().begin(); it < gCells().end(); ++it) {
+  for (auto it = getGCells().begin(); it < getGCells().end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isInstance()) {
       for (Instance* inst : gCell->insts()) {
@@ -1464,16 +1441,16 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
 //
 void NesterovBaseCommon::fixPointers()
 {
-  gCells_.clear();
+  nbc_gcells_.clear();
   gCellMap_.clear();
   db_inst_map_.clear();
-  gCells_.reserve(gCellStor_.size());
+  nbc_gcells_.reserve(gCellStor_.size());
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
     GCell& gCell = gCellStor_[i];
     if (!gCell.isInstance()) {
       continue;
     }
-    gCells_.push_back(&gCell);
+    nbc_gcells_.push_back(&gCell);
     for (Instance* inst : gCell.insts()) {
       gCellMap_[inst] = &gCell;
       db_inst_map_[inst->dbInst()] = i;
@@ -1602,7 +1579,7 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
   // update gFillerCells
   initFillerGCells();
 
-  gCells_.reserve(pb_->insts().size() + fillerStor_.size());
+  nb_gcells_.reserve(pb_->insts().size() + fillerStor_.size());
 
   // add place instances
   for (auto& pb_inst : pb_->placeInsts()) {
@@ -1619,19 +1596,35 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
       inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
     }
     gCell->updateLocations();
-    gCells_.emplace_back(GCellHandle(nbc_.get(), nbc_->getGCellIndex(gCell)));
+    nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
   }
 
   // add filler cells to gCells_
   for (size_t i = 0; i < fillerStor_.size(); ++i) {
-    gCells_.emplace_back(GCellHandle(this, i));
+    nb_gcells_.emplace_back(this, i);
   }
 
-  log_->info(GPL, 31, "{:20} {:9}", "FillerInit:NumGCells:", gCells_.size());
-  log_->info(
-      GPL, 32, "{:20} {:10}", "FillerInit:NumGNets:", nbc_->gNets().size());
-  log_->info(
-      GPL, 33, "{:20} {:10}", "FillerInit:NumGPins:", nbc_->gPins().size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             format_label_int,
+             "FillerInit:NumGCells:",
+             nb_gcells_.size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             format_label_int,
+             "FillerInit:NumGNets:",
+             nbc_->getGNets().size());
+  debugPrint(log_,
+             GPL,
+             "FillerInit",
+             1,
+             format_label_int,
+             "FillerInit:NumGPins:",
+             nbc_->getGPins().size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1707,7 +1700,7 @@ void NesterovBase::initFillerGCells()
   int64_t coreArea = pb_->die().coreArea();
   whiteSpaceArea_ = coreArea - static_cast<int64_t>(pb_->nonPlaceInstsArea());
 
-  // if(pb_->group() == NULL) {
+  // if(pb_->group() == nullptr) {
   //   // nonPlaceInstsArea should not have density downscaling!!!
   //   whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
   // } else {
@@ -1737,15 +1730,15 @@ void NesterovBase::initFillerGCells()
   totalFillerArea_ = movableArea_ - nesterovInstanceArea;
   uniformTargetDensity_ = static_cast<float>(nesterovInstanceArea)
                           / static_cast<float>(whiteSpaceArea_);
+  uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
 
   if (totalFillerArea_ < 0) {
-    uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
     log_->error(GPL,
                 302,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
+                "Consider increasing the target density or re-floorplanning "
+                "with a larger core area.\n"
                 "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }
@@ -1834,7 +1827,7 @@ void NesterovBase::updateGCellCenterLocation(
 {
   for (auto& coordi : coordis) {
     int idx = &coordi - &coordis[0];
-    gCells_[idx]->setCenterLocation(coordi.x, coordi.y);
+    nb_gcells_[idx]->setCenterLocation(coordi.x, coordi.y);
   }
 }
 
@@ -1843,9 +1836,9 @@ void NesterovBase::updateGCellDensityCenterLocation(
 {
   for (auto& coordi : coordis) {
     int idx = &coordi - &coordis[0];
-    gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
+    nb_gcells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
   }
-  bg_.updateBinsGCellDensityArea(gCells_);
+  bg_.updateBinsGCellDensityArea(nb_gcells_);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -1959,7 +1952,7 @@ void NesterovBase::updateDensitySize()
 {
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
+  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     float scaleX = 0, scaleY = 0;
     float densitySizeX = 0, densitySizeY = 0;
@@ -1988,13 +1981,10 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
-  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : stdInstsArea_, macroInstsArea_)
-  for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
+  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
@@ -2016,10 +2006,10 @@ void NesterovBase::updateAreas()
   if (totalFillerArea_ < 0) {
     log_->error(GPL,
                 303,
-                "Use a higher -density or "
-                "re-floorplan with a larger core area.\n"
+                "Consider increasing the target density or re-floorplanning "
+                "with a larger core area.\n"
                 "Given target density: {:.2f}\n"
-                "Suggested target density: {:.2f}",
+                "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
   }
@@ -2146,7 +2136,7 @@ void NesterovBase::updateDensityForceBin()
 void NesterovBase::initDensity1()
 {
   assert(omp_get_thread_num() == 0);
-  const int gCellSize = gCells_.size();
+  const int gCellSize = nb_gcells_.size();
   curSLPCoordi_.resize(gCellSize, FloatPoint());
   curSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
   curSLPDensityGrads_.resize(gCellSize, FloatPoint());
@@ -2168,10 +2158,10 @@ void NesterovBase::initDensity1()
   initCoordi_.resize(gCellSize, FloatPoint());
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
+  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     GCell* gCell = *it;  // old-style loop for old OpenMP
     updateDensityCoordiLayoutInside(gCell);
-    int idx = it - gCells_.begin();
+    int idx = it - nb_gcells_.begin();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
 
@@ -2279,8 +2269,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   // revisiting this in the future to restore determinism.
   // #pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
   // wireLengthGradSum_, densityGradSum_, gradSum)
-  for (size_t i = 0; i < gCells_.size(); i++) {
-    GCell* gCell = gCells_.at(i);
+  for (size_t i = 0; i < nb_gcells_.size(); i++) {
+    GCell* gCell = nb_gcells_.at(i);
     wireLengthGrads[i]
         = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
     densityGrads[i] = getDensityGradient(gCell);
@@ -2391,11 +2381,11 @@ void NesterovBase::updateSingleGradient(
     float wlCoeffX,
     float wlCoeffY)
 {
-  if (gCellIndex >= gCells_.size()) {
+  if (gCellIndex >= nb_gcells_.size()) {
     return;
   }
 
-  GCell* gCell = gCells_.at(gCellIndex);
+  GCell* gCell = nb_gcells_.at(gCellIndex);
 
   wireLengthGrads[gCellIndex]
       = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
@@ -2435,8 +2425,8 @@ void NesterovBase::updateInitialPrevSLPCoordi()
 {
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < gCells_.size(); i++) {
-    GCell* curGCell = gCells_[i];
+  for (size_t i = 0; i < nb_gcells_.size(); i++) {
+    GCell* curGCell = nb_gcells_[i];
 
     float prevCoordiX
         = curSLPCoordi_[i].x
@@ -2505,8 +2495,8 @@ void NesterovBase::updateNextIter(const int iter)
 
   // Prevent locked instances from moving
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t k = 0; k < gCells_.size(); ++k) {
-    if (gCells_[k]->isInstance() && gCells_[k]->isLocked()) {
+  for (size_t k = 0; k < nb_gcells_.size(); ++k) {
+    if (nb_gcells_[k]->isInstance() && nb_gcells_[k]->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
       nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
       nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
@@ -2534,9 +2524,59 @@ void NesterovBase::updateNextIter(const int iter)
                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 
   sumOverflow_ = overflowArea() / overflowDenominator;
-
   sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
 
+  int64_t hpwl = nbc_->getHpwl();
+  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
+                             / npVars_->referenceHpwl);
+
+  float percentageChange = 0.0;
+  if (iter == 0 || (iter + 1) % 10 == 0) {
+    if (prevReportedHpwl_ != 0) {
+      percentageChange = (static_cast<double>(hpwl - prevReportedHpwl_)
+                          / static_cast<double>(prevReportedHpwl_))
+                         * 100.0;
+    }
+    prevReportedHpwl_ = hpwl;
+
+    std::string group;
+    if (pb_->group()) {
+      group = fmt::format(" ({})", pb_->group()->getName());
+    }
+
+    if ((iter == 0 || reprint_iter_header) && !pb_->group()) {
+      if (iter == 0) {
+        log_->info(GPL, 31, "HPWL: Half-Perimeter Wirelength");
+      }
+
+      const std::string nesterov_header
+          = fmt::format("{:>9} | {:>8} | {:>13} | {:>8} | {:>9} | {:>5}",
+                        "Iteration",
+                        "Overflow",
+                        "HPWL (um)",
+                        "HPWL(%)",
+                        "Penalty",
+                        "Group");
+
+      log_->report(nesterov_header);
+      log_->report(
+          "---------------------------------------------------------------");
+
+      reprint_iter_header = false;
+    }
+
+    log_->report("{:9d} | {:8.4f} | {:13.6e} | {:+7.2f}% | {:9.2e} | {:>5}",
+                 iter + 1,
+                 sumOverflowUnscaled_,
+                 static_cast<double>(hpwl),
+                 percentageChange,
+                 densityPenalty_,
+                 group);
+  }
+
+  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
+  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
   debugPrint(log_,
              GPL,
              "updateNextIter",
@@ -2547,30 +2587,8 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sumOverflowUnscaled_);
 
-  int64_t hpwl = nbc_->getHpwl();
-
-  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
-  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
-
-  float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
-                             / npVars_->referenceHpwl);
-
   prevHpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
-
-  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
-
-  if (iter == 0 || (iter + 1) % 10 == 0) {
-    std::string group;
-    if (pb_->group()) {
-      group = fmt::format(" ({})", pb_->group()->getName());
-    }
-    log_->report("[NesterovSolve] Iter: {:4d} overflow: {:.3f} HPWL: {}{}",
-                 iter + 1,
-                 sumOverflowUnscaled_,
-                 prevHpwl_,
-                 group);
-  }
 
   if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
     minSumOverflow_ = sumOverflowUnscaled_;
@@ -2591,8 +2609,6 @@ bool NesterovBase::nesterovUpdateStepLength()
 
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
-    divergeMsg_ = "RePlAce diverged at newStepLength.";
-    divergeCode_ = 305;
     return false;
   }
 
@@ -2617,7 +2633,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   }
 
   // fill in nextCoordinates with given stepLength_
-  for (size_t k = 0; k < gCells_.size(); k++) {
+  for (size_t k = 0; k < nb_gcells_.size(); k++) {
     FloatPoint nextCoordi(
         curSLPCoordi_[k].x + stepLength_ * curSLPSumGrads_[k].x,
         curSLPCoordi_[k].y + stepLength_ * curSLPSumGrads_[k].y);
@@ -2626,7 +2642,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
         nextCoordi.x + coeff * (nextCoordi.x - curCoordi_[k].x),
         nextCoordi.y + coeff * (nextCoordi.y - curCoordi_[k].y));
 
-    GCell* curGCell = gCells_[k];
+    GCell* curGCell = nb_gcells_[k];
 
     nextCoordi_[k]
         = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextCoordi.x),
@@ -2699,17 +2715,73 @@ bool NesterovBase::checkConvergence()
   }
   if (sumOverflowUnscaled_ <= npVars_->targetOverflow) {
     if (pb_->group()) {
-      log_->report(
-          "[NesterovSolve] PowerDomain {} finished with Overflow: {:.6f}",
-          pb_->group()->getName(),
-          sumOverflowUnscaled_);
+      log_->info(GPL,
+                 1000,
+                 "PowerDomain {} finished with Overflow: {:.6f}",
+                 pb_->group()->getName(),
+                 sumOverflowUnscaled_);
     } else {
-      log_->report("[NesterovSolve] Finished with Overflow: {:.6f}",
-                   sumOverflowUnscaled_);
+      log_->info(
+          GPL, 1001, "Finished with Overflow: {:.6f}", sumOverflowUnscaled_);
+    }
+
+    dbBlock* block = pb_->db()->getChip()->getBlock();
+    log_->info(GPL,
+               1002,
+               format_label_float,
+               "Placed Cell Area",
+               block->dbuAreaToMicrons(nesterovInstsArea()));
+
+    log_->info(GPL,
+               1003,
+               format_label_float,
+               "Available Free Area",
+               block->dbuAreaToMicrons(whiteSpaceArea_));
+
+    log_->info(GPL,
+               1004,
+               "Minimum Feasible Density        {:.4f} (cell_area / free_area)",
+               uniformTargetDensity_);
+
+    // The target density should not fall below the uniform density,
+    // which is the lower bound: instance_area / whitespace_area.
+    // Values below this lead to negative filler area (physically invalid).
+    //
+    // While the theoretical upper bound is 1.0 (fully using all whitespace),
+    // a practical way to define the target density may be based on desired
+    // whitespace usage: instance_area / (whitespace_area * usage).
+    log_->info(GPL, 1006, "  Suggested Target Densities:");
+    log_->info(
+        GPL,
+        1007,
+        "    - For 90% usage of free space: {:.4f}",
+        static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.90));
+
+    log_->info(
+        GPL,
+        1008,
+        "    - For 80% usage of free space: {:.4f}",
+        static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.80));
+
+    if (static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.50)
+        >= 1.0) {
+      log_->info(
+          GPL,
+          1009,
+          "    - For 50% usage of free space: {:.4f}",
+          static_cast<double>(nesterovInstsArea()) / (whiteSpaceArea_ * 0.50));
+    }
+
+    if (uniformTargetDensity_ > 0.95f) {
+      log_->warn(GPL,
+                 1015,
+                 "High uniform density (>{:.2f}) may cause congestion or "
+                 "legalization issues.",
+                 uniformTargetDensity_);
     }
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-    for (auto it = gCells_.begin(); it < gCells_.end(); ++it) {
+    for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
       auto& gCell = *it;  // old-style loop for old OpenMP
       if (!gCell->isInstance()) {
         continue;
@@ -2729,9 +2801,6 @@ bool NesterovBase::checkDivergence()
   if (sumOverflowUnscaled_ < 0.2f
       && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
       && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
-    divergeMsg_ = "RePlAce divergence detected. ";
-    divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
-    divergeCode_ = 307;
     isDiverged_ = true;
   }
 
@@ -2754,8 +2823,6 @@ bool NesterovBase::revertToSnapshot()
   updateDensityForceBin();
 
   isDiverged_ = false;
-  divergeCode_ = 0;
-  divergeMsg_ = "";
 
   return true;
 }
@@ -2787,8 +2854,8 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   gcell->setSize(bbox->getDX(), bbox->getDY());
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
-  int64_t areaChange = newCellArea - prevCellArea;
-  delta_area_ += areaChange;
+  int64_t area_change = newCellArea - prevCellArea;
+  delta_area_ += area_change;
 }
 
 void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
@@ -2797,7 +2864,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
     auto db_it = db_inst_index_map_.find(db_inst);
     if (db_it != db_inst_index_map_.end()) {
       size_t gcells_index = db_it->second;
-      GCellHandle& handle = gCells_[gcells_index];
+      GCellHandle& handle = nb_gcells_[gcells_index];
       GCell* gcell = handle;
 
       for (auto& gpin : gcell->gPins()) {
@@ -2839,7 +2906,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
       updateSingleCurGradient(gcells_index, wlCoeffX, wlCoeffY);
 
       // analogous to NesterovBase::updateInitialPrevSLPCoordi()
-      GCell* curGCell = gCells_[gcells_index];
+      GCell* curGCell = nb_gcells_[gcells_index];
       float prevCoordiX = curSLPCoordi_[gcells_index].x
                           - npVars_->initialPrevCoordiUpdateCoef
                                 * curSLPSumGrads_[gcells_index].x;
@@ -2853,7 +2920,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 
       // analogous to
       // NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
-      gCells_[gcells_index]->setDensityCenterLocation(
+      nb_gcells_[gcells_index]->setDensityCenterLocation(
           prevSLPCoordi_[gcells_index].x, prevSLPCoordi_[gcells_index].y);
 
       // analogous to updatePrevGradient()
@@ -2872,15 +2939,15 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
   new_instances.clear();
 }
 
-void NesterovBase::createGCell(odb::dbInst* db_inst,
-                               size_t stor_index,
-                               RouteBase* rb)
+void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
+                                  size_t stor_index,
+                                  RouteBase* rb)
 {
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
     new_instances.push_back(db_inst);
-    gCells_.emplace_back(GCellHandle(nbc_.get(), stor_index));
-    size_t gcells_index = gCells_.size() - 1;
+    nb_gcells_.emplace_back(nbc_.get(), stor_index);
+    size_t gcells_index = nb_gcells_.size() - 1;
     db_inst_index_map_[db_inst] = gcells_index;
 
     curSLPCoordi_.emplace_back();
@@ -2912,7 +2979,7 @@ void NesterovBase::createGCell(odb::dbInst* db_inst,
   }
 }
 
-size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
+size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
   Instance gpl_inst(db_inst,
                     pbc_->padLeft() * pbc_->siteSizeX(),
@@ -2924,18 +2991,17 @@ size_t NesterovBaseCommon::createGCell(odb::dbInst* db_inst)
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
   GCell* gcell_ptr = &gCellStor_.back();
-  // We know there is exactly one inst in the gcell we just created
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_map_[db_inst] = gCellStor_.size() - 1;
 
-  int64_t areaChange = static_cast<int64_t>(gcell_ptr->dx())
-                       * static_cast<int64_t>(gcell_ptr->dy());
-  delta_area_ += areaChange;
+  int64_t area_change = static_cast<int64_t>(gcell_ptr->dx())
+                        * static_cast<int64_t>(gcell_ptr->dy());
+  delta_area_ += area_change;
   new_gcells_count_++;
   return gCellStor_.size() - 1;
 }
 
-void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
+void NesterovBaseCommon::createCbkGNet(odb::dbNet* db_net, bool skip_io_mode)
 {
   Net gpl_net(db_net, skip_io_mode);
   pb_nets_stor_.push_back(gpl_net);
@@ -2946,7 +3012,7 @@ void NesterovBaseCommon::createGNet(odb::dbNet* db_net, bool skip_io_mode)
   db_net_map_[db_net] = gNetStor_.size() - 1;
 }
 
-void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
+void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 {
   Pin gpl_pin(iTerm);
   pb_pins_stor_.push_back(gpl_pin);
@@ -2959,30 +3025,30 @@ void NesterovBaseCommon::createITerm(odb::dbITerm* iTerm)
 
 // assuming fixpointers will be called later
 //  maintaining consistency in NBC::gcellStor_ and NB::gCells_
-void NesterovBase::destroyGCell(odb::dbInst* db_inst)
+void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 {
   auto db_it = db_inst_index_map_.find(db_inst);
   if (db_it != db_inst_index_map_.end()) {
-    size_t last_index = gCells_.size() - 1;
+    size_t last_index = nb_gcells_.size() - 1;
     size_t gcell_index = db_it->second;
 
-    GCellHandle& handle = gCells_[gcell_index];
+    GCellHandle& handle = nb_gcells_[gcell_index];
     if (handle.isNesterovBaseCommon()) {
-      nbc_->destroyGCell(handle.getIndex());
+      nbc_->destroyCbkGCell(handle.getIndex());
     } else {
       destroyFillerGCell(handle.getIndex());
     }
 
     if (gcell_index != last_index) {
-      std::swap(gCells_[gcell_index], gCells_[last_index]);
+      std::swap(nb_gcells_[gcell_index], nb_gcells_[last_index]);
     }
     swapAndPopParallelVectors(gcell_index, last_index);
-    gCells_.pop_back();
+    nb_gcells_.pop_back();
     db_inst_index_map_.erase(db_it);
   }
 }
 
-void NesterovBaseCommon::destroyGCell(size_t index_remove)
+void NesterovBaseCommon::destroyCbkGCell(size_t index_remove)
 {
   size_t last_index = gCellStor_.size() - 1;
   if (index_remove > last_index) {
@@ -3008,11 +3074,11 @@ void NesterovBase::destroyFillerGCell(size_t index_remove)
   fillerStor_.pop_back();
 }
 
-void NesterovBaseCommon::destroyGNet(odb::dbNet* db_net)
+void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 {
 }
 
-void NesterovBaseCommon::destroyITerm(odb::dbITerm* db_iterm)
+void NesterovBaseCommon::destroyCbkITerm(odb::dbITerm* db_iterm)
 {
   auto db_it = db_iterm_map_.find(db_iterm);
   if (db_it != db_iterm_map_.end()) {

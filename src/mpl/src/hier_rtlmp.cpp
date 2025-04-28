@@ -1,43 +1,20 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
 #include "hier_rtlmp.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <queue>
+#include <set>
+#include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -350,21 +327,13 @@ void HierRTLMP::setRootShapes()
 
   const float root_area = tree_->floorplan_shape.getArea();
   const float root_width = tree_->floorplan_shape.getWidth();
-  const std::vector<std::pair<float, float>> root_width_list
-      = {std::pair<float, float>(root_width, root_width)};
+  const IntervalList root_width_intervals = {Interval(root_width, root_width)};
 
-  root_soft_macro->setShapes(root_width_list, root_area);
+  root_soft_macro->setShapes(root_width_intervals, root_area);
   root_soft_macro->setWidth(root_width);  // This will set height automatically
   root_soft_macro->setX(tree_->floorplan_shape.xMin());
   root_soft_macro->setY(tree_->floorplan_shape.yMin());
   tree_->root->setSoftMacro(std::move(root_soft_macro));
-}
-
-// Compare two intervals according to the product
-static bool comparePairProduct(const std::pair<float, float>& p1,
-                               const std::pair<float, float>& p2)
-{
-  return p1.first * p1.second < p2.first * p2.second;
 }
 
 // Determine the macro tilings within each cluster in a bottom-up manner.
@@ -435,7 +404,15 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getNumMacro() > 0) {
       SoftMacro macro = SoftMacro(cluster.get());
-      macro.setShapes(cluster->getMacroTilings(), true);  // force_flag = true
+      if (macro.isMacroCluster()) {
+        macro.setShapes(cluster->getTilings(), true /* force */);
+      } else { /* Mixed */
+        const TilingList& tilings = cluster->getTilings();
+        IntervalList width_intervals = computeWidthIntervals(tilings);
+        // Note that we can use the area of any tiling.
+        macro.setShapes(width_intervals, tilings.front().area());
+      }
+
       macros.push_back(macro);
     }
   }
@@ -444,17 +421,13 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   if (macros.size() == 1) {
     for (auto& cluster : parent->getChildren()) {
       if (cluster->getNumMacro() > 0) {
-        parent->setMacroTilings(cluster->getMacroTilings());
+        parent->setTilings(cluster->getTilings());
         return;
       }
     }
   }
 
-  debugPrint(
-      logger_, MPL, "coarse_shaping", 1, "Running SA to calculate tiling...");
-
-  // call simulated annealing to determine tilings
-  std::set<std::pair<float, float>> macro_tilings;  // <width, height>
+  TilingSet tilings_set;
   // the probability of all actions should be summed to 1.0.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
@@ -527,8 +500,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
@@ -587,41 +559,43 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
   }
-  std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
-                                               macro_tilings.end());
-  std::sort(tilings.begin(), tilings.end(), comparePairProduct);
-  for (auto& shape : tilings) {
+
+  TilingList tilings_list(tilings_set.begin(), tilings_set.end());
+  std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
+
+  for (auto& tiling : tilings_list) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
                2,
                "width: {}, height: {}, aspect_ratio: {}, min_ar: {}",
-               shape.first,
-               shape.second,
-               shape.second / shape.first,
+               tiling.width(),
+               tiling.height(),
+               tiling.aspectRatio(),
                min_ar_);
   }
+
   // we do not want very strange tilings if we have choices
-  std::vector<std::pair<float, float>> new_tilings;
-  for (auto& tiling : tilings) {
-    if (tiling.second / tiling.first >= min_ar_
-        && tiling.second / tiling.first <= 1.0 / min_ar_) {
-      new_tilings.push_back(tiling);
+  TilingList new_tilings_list;
+  for (auto& tiling : tilings_list) {
+    if (tiling.aspectRatio() >= min_ar_
+        && tiling.aspectRatio() <= 1.0 / min_ar_) {
+      new_tilings_list.push_back(tiling);
     }
   }
-  // if there are valid tilings
-  if (!new_tilings.empty()) {
-    tilings = std::move(new_tilings);
+
+  if (!new_tilings_list.empty()) {
+    tilings_list = std::move(new_tilings_list);
   }
-  // update parent
-  parent->setMacroTilings(tilings);
-  if (tilings.empty()) {
+
+  parent->setTilings(tilings_list);
+
+  if (tilings_list.empty()) {
     logger_->error(MPL,
                    3,
                    "There are no valid tilings for mixed cluster: {}",
@@ -629,13 +603,26 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   } else {
     std::string line
         = "The macro tiling for mixed cluster " + parent->getName() + "  ";
-    for (auto& shape : tilings) {
-      line += " < " + std::to_string(shape.first) + " , ";
-      line += std::to_string(shape.second) + " >  ";
+    for (auto& tiling : tilings_list) {
+      line += " < " + std::to_string(tiling.width()) + " , ";
+      line += std::to_string(tiling.height()) + " >  ";
     }
     line += "\n";
     debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
+}
+
+IntervalList HierRTLMP::computeWidthIntervals(const TilingList& tilings)
+{
+  IntervalList width_intervals;
+  width_intervals.reserve(tilings.size());
+  for (const Tiling& tiling : tilings) {
+    width_intervals.emplace_back(tiling.width(), tiling.width());
+  }
+
+  std::sort(width_intervals.begin(), width_intervals.end(), isMinWidthSmaller);
+
+  return width_intervals;
 }
 
 void HierRTLMP::calculateMacroTilings(Cluster* cluster)
@@ -645,16 +632,15 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  std::set<std::pair<float, float>> macro_tilings;  // <width, height>
+  TilingSet tilings_set;
 
   if (hard_macros.size() == 1) {
     float width = hard_macros[0]->getWidth();
     float height = hard_macros[0]->getHeight();
 
-    std::vector<std::pair<float, float>> tilings;
-
+    TilingList tilings;
     tilings.emplace_back(width, height);
-    cluster->setMacroTilings(tilings);
+    cluster->setTilings(tilings);
 
     debugPrint(logger_,
                MPL,
@@ -753,8 +739,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
@@ -808,39 +793,39 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_batch) {
       if (sa->isValid(outline)) {
-        macro_tilings.insert(
-            std::pair<float, float>(sa->getWidth(), sa->getHeight()));
+        tilings_set.insert({sa->getWidth(), sa->getHeight()});
       }
     }
     remaining_runs -= run_thread;
   }
 
-  // sort the tilings based on area
-  std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
-                                               macro_tilings.end());
-  std::sort(tilings.begin(), tilings.end(), comparePairProduct);
-  for (auto& shape : tilings) {
+  TilingList tilings_list(tilings_set.begin(), tilings_set.end());
+  std::sort(tilings_list.begin(), tilings_list.end(), isAreaSmaller);
+
+  for (auto& tiling : tilings_list) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
                2,
                "width: {}, height: {}",
-               shape.first,
-               shape.second);
+               tiling.width(),
+               tiling.height());
   }
+
   // we only keep the minimum area tiling since all the macros has the same size
   // later this can be relaxed.  But this may cause problems because the
   // minimizing the wirelength may leave holes near the boundary
-  std::vector<std::pair<float, float>> new_tilings;
-  for (auto& tiling : tilings) {
-    if (tiling.first * tiling.second <= tilings[0].first * tilings[0].second) {
-      new_tilings.push_back(tiling);
+  TilingList new_tilings_list;
+  float first_tiling_area = tilings_list.front().area();
+  for (auto& tiling : tilings_list) {
+    if (tiling.area() <= first_tiling_area) {
+      new_tilings_list.push_back(tiling);
     }
   }
-  tilings = std::move(new_tilings);
-  // update parent
-  cluster->setMacroTilings(tilings);
-  if (tilings.empty()) {
+  tilings_list = std::move(new_tilings_list);
+  cluster->setTilings(tilings_list);
+
+  if (tilings_list.empty()) {
     logger_->error(MPL,
                    4,
                    "No valid tilings for hard macro cluster: {}",
@@ -848,9 +833,9 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
-  for (auto& shape : tilings) {
-    line += " < " + std::to_string(shape.first) + " , ";
-    line += std::to_string(shape.second) + " >  ";
+  for (auto& tiling : tilings_list) {
+    line += " < " + std::to_string(tiling.width()) + " , ";
+    line += std::to_string(tiling.height()) + " >  ";
   }
   line += "\n";
   debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
@@ -859,7 +844,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 // Used only for arrays of interconnected macros.
 void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 {
-  std::vector<std::pair<float, float>> tight_packing_tilings;
+  TilingList tight_packing_tilings;
 
   int divider = 1;
   int columns = 0, rows = 0;
@@ -879,7 +864,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
     ++divider;
   }
 
-  macro_array->setMacroTilings(tight_packing_tilings);
+  macro_array->setTilings(tight_packing_tilings);
 }
 
 void HierRTLMP::createPinAccessBlockages()
@@ -1591,26 +1576,6 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   if (best_sa == nullptr) {
-    debugPrint(logger_,
-               MPL,
-               "hierarchical_macro_placement",
-               1,
-               "SA Summary for cluster {}",
-               parent->getName());
-
-    for (auto i = 0; i < sa_containers.size(); i++) {
-      debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "sa_id: {}, target_util: {}, target_dead_space: {}",
-                 i,
-                 target_util_list[i],
-                 target_dead_space_list[i]);
-
-      sa_containers[i]->printResults();
-    }
-
     placeChildrenUsingMinimumTargetUtil(parent);
   } else {
     if (best_sa->centralizationWasReverted()) {
@@ -2112,39 +2077,51 @@ void HierRTLMP::createFixedTerminals(
   parents.push(parent);
 
   while (!parents.empty()) {
-    auto frontwave = parents.front();
+    Cluster* frontwave = parents.front();
     parents.pop();
 
     Cluster* grandparent = frontwave->getParent();
     for (auto& cluster : grandparent->getChildren()) {
       if (cluster->getId() != frontwave->getId()) {
-        soft_macro_id_map[cluster->getName()]
-            = static_cast<int>(soft_macros.size());
-
-        const float center_x = cluster->getX() + cluster->getWidth() / 2.0;
-        const float center_y = cluster->getY() + cluster->getHeight() / 2.0;
-        Point location = {center_x - outline.xMin(), center_y - outline.yMin()};
-
-        // The information of whether or not a cluster is a group of
-        // unplaced IO pins is needed inside the SA Core, so if a fixed
-        // terminal corresponds to a cluster of unplaced IO pins it needs
-        // to contain that cluster data.
-        Cluster* fixed_terminal_cluster
-            = cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr;
-
-        // Note that a fixed terminal is just a point.
-        soft_macros.emplace_back(location,
-                                 cluster->getName(),
-                                 0.0f /* width */,
-                                 0.0f /* height */,
-                                 fixed_terminal_cluster);
+        const int id = static_cast<int>(soft_macros.size());
+        soft_macro_id_map[cluster->getName()] = id;
+        createFixedTerminal(cluster.get(), outline, soft_macros);
       }
     }
 
-    if (frontwave->getParent()->getParent() != nullptr) {
+    if (frontwave->getParent()->getParent()) {
       parents.push(frontwave->getParent());
     }
   }
+}
+
+template <typename Macro>
+void HierRTLMP::createFixedTerminal(Cluster* cluster,
+                                    const Rect& outline,
+                                    std::vector<Macro>& macros)
+{
+  // A conventional fixed terminal is just a point without
+  // the cluster data.
+  Point location = cluster->getCenter();
+  float width = 0.0f;
+  float height = 0.0f;
+  Cluster* terminal_cluster = nullptr;
+
+  if (cluster->isClusterOfUnplacedIOPins()) {
+    // Clusters of unplaced IOs are not treated as conventional
+    // fixed terminals. As they correspond to regions, we need
+    // both their actual shape and their cluster data inside SA.
+    location = {cluster->getX(), cluster->getY()};
+    width = cluster->getWidth();
+    height = cluster->getHeight();
+    terminal_cluster = cluster;
+  }
+
+  location.first -= outline.xMin();
+  location.second -= outline.yMin();
+
+  macros.emplace_back(
+      location, cluster->getName(), width, height, terminal_cluster);
 }
 
 // Determine the shape of each cluster based on target utilization
@@ -2186,14 +2163,15 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
     if (cluster->getClusterType() == StdCellCluster) {
       std_cell_cluster_area += cluster->getStdCellArea();
     } else if (cluster->getClusterType() == HardMacroCluster) {
-      std::vector<std::pair<float, float>> shapes;
-      for (auto& shape : cluster->getMacroTilings()) {
-        if (shape.first < outline_width * (1 + conversion_tolerance_)
-            && shape.second < outline_height * (1 + conversion_tolerance_)) {
-          shapes.push_back(shape);
+      TilingList valid_tilings;
+      for (auto& tiling : cluster->getTilings()) {
+        if (tiling.width() < outline_width * (1 + conversion_tolerance_)
+            && tiling.height() < outline_height * (1 + conversion_tolerance_)) {
+          valid_tilings.push_back(tiling);
         }
       }
-      if (shapes.empty()) {
+
+      if (valid_tilings.empty()) {
         logger_->error(MPL,
                        7,
                        "Not enough space in cluster: {} for "
@@ -2201,18 +2179,20 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                        parent->getName(),
                        cluster->getName());
       }
-      macro_cluster_area += shapes[0].first * shapes[0].second;
-      cluster->setMacroTilings(shapes);
+
+      macro_cluster_area += valid_tilings.front().area();
+      cluster->setTilings(valid_tilings);
     } else {  // mixed cluster
       std_cell_mixed_cluster_area += cluster->getStdCellArea();
-      std::vector<std::pair<float, float>> shapes;
-      for (auto& shape : cluster->getMacroTilings()) {
-        if (shape.first < outline_width * (1 + conversion_tolerance_)
-            && shape.second < outline_height * (1 + conversion_tolerance_)) {
-          shapes.push_back(shape);
+      TilingList valid_tilings;
+      for (auto& tiling : cluster->getTilings()) {
+        if (tiling.width() < outline_width * (1 + conversion_tolerance_)
+            && tiling.height() < outline_height * (1 + conversion_tolerance_)) {
+          valid_tilings.push_back(tiling);
         }
       }
-      if (shapes.empty()) {
+
+      if (valid_tilings.empty()) {
         logger_->error(MPL,
                        8,
                        "Not enough space in cluster: {} for "
@@ -2220,8 +2200,9 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                        parent->getName(),
                        cluster->getName());
       }
-      macro_mixed_cluster_area += shapes[0].first * shapes[0].second;
-      cluster->setMacroTilings(shapes);
+
+      macro_mixed_cluster_area += valid_tilings.front().area();
+      cluster->setTilings(valid_tilings);
     }  // end for cluster type
   }
 
@@ -2279,38 +2260,36 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
         area = cluster->getArea() / std_cell_util;
         width = std::sqrt(area / min_ar_);
       }
-      std::vector<std::pair<float, float>> width_list;
-      width_list.emplace_back(width, area / width);
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_list, area);
+      IntervalList width_intervals
+          = {Interval(area / width /* min */, width /* max */)};
+      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_intervals,
+                                                              area);
     } else if (cluster->getClusterType() == HardMacroCluster) {
       macros[soft_macro_id_map[cluster->getName()]].setShapes(
-          cluster->getMacroTilings());
+          cluster->getTilings());
       debugPrint(logger_,
                  MPL,
                  "fine_shaping",
                  2,
                  "hard_macro_cluster : {}",
                  cluster->getName());
-      for (auto& shape : cluster->getMacroTilings()) {
+      for (auto& tiling : cluster->getTilings()) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
                    2,
                    "    ( {} , {} ) ",
-                   shape.first,
-                   shape.second);
+                   tiling.width(),
+                   tiling.height());
       }
     } else {  // Mixed cluster
-      const std::vector<std::pair<float, float>> tilings
-          = cluster->getMacroTilings();
-      std::vector<std::pair<float, float>> width_list;
-      // use the largest area
-      float area = tilings[tilings.size() - 1].first
-                   * tilings[tilings.size() - 1].second;
+      const TilingList& tilings = cluster->getTilings();
+      IntervalList width_intervals;
+      float area = tilings.back().area();
       area += cluster->getStdCellArea() / target_util;
-      for (auto& shape : tilings) {
-        if (shape.first * shape.second <= area) {
-          width_list.emplace_back(shape.first, area / shape.second);
+      for (auto& tiling : tilings) {
+        if (tiling.area() <= area) {
+          width_intervals.emplace_back(tiling.width(), area / tiling.height());
         }
       }
 
@@ -2321,17 +2300,19 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
                  "name:  {} area: {}",
                  cluster->getName(),
                  area);
+
       debugPrint(logger_, MPL, "fine_shaping", 2, "width_list :  ");
-      for (auto& width : width_list) {
+      for (auto& width_interval : width_intervals) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
                    2,
                    " [  {} {}  ] ",
-                   width.first,
-                   width.second);
+                   width_interval.min,
+                   width_interval.max);
       }
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_list, area);
+      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_intervals,
+                                                              area);
     }
   }
 
@@ -2592,6 +2573,7 @@ void HierRTLMP::computeFencesAndGuides(
   }
 }
 
+// Create terminals for macro placement (Hard) annealing.
 void HierRTLMP::createFixedTerminals(const Rect& outline,
                                      const UniqueClusterVector& macro_clusters,
                                      std::map<int, int>& cluster_to_macro,
@@ -2609,22 +2591,12 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
     if (cluster_to_macro.find(cluster_id) != cluster_to_macro.end()) {
       continue;
     }
-    auto& temp_cluster = tree_->maps.id_to_cluster[cluster_id];
 
-    // model other cluster as a fixed macro with zero size
-    cluster_to_macro[cluster_id] = sa_macros.size();
-    sa_macros.emplace_back(
-        std::pair<float, float>(
-            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
-                - outline.xMin(),
-            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
-                - outline.yMin()),
-        temp_cluster->getName(),
-        // The information of whether or not a cluster is a group of
-        // unplaced IO pins is needed inside the SA Core, so if a fixed
-        // terminal corresponds to a cluster of unplaced IO pins it needs
-        // to contain that cluster data.
-        temp_cluster->isClusterOfUnplacedIOPins() ? temp_cluster : nullptr);
+    Cluster* temp_cluster = tree_->maps.id_to_cluster[cluster_id];
+    const int terminal_id = static_cast<int>(sa_macros.size());
+
+    cluster_to_macro[cluster_id] = terminal_id;
+    createFixedTerminal(temp_cluster, outline, sa_macros);
   }
 }
 
@@ -2675,189 +2647,6 @@ void HierRTLMP::updateChildrenRealLocation(Cluster* parent,
   for (auto& child : parent->getChildren()) {
     child->setX(child->getX() + offset_x);
     child->setY(child->getY() + offset_y);
-  }
-}
-
-// force-directed placement to generate guides for macros
-// Attractive force and Repulsive force should be normalied separately
-// Because their values can vary a lot.
-void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
-                            const std::vector<BundledNet>& nets,
-                            float outline_width,
-                            float outline_height,
-                            const std::string& file_name)
-{
-  // following the ideas of Circuit Training
-  logger_->report(
-      "*****************************************************************");
-  logger_->report("Start force-directed placement");
-  const float ar = outline_height / outline_width;
-  const std::vector<int> num_steps{1000, 1000, 1000, 1000};
-  const std::vector<float> attract_factors{1.0, 100.0, 1.0, 1.0};
-  const std::vector<float> repel_factors{1.0, 1.0, 100.0, 10.0};
-  const float io_factor = 1000.0;
-  const float max_size = std::max(outline_width, outline_height);
-  std::mt19937 rand_gen(random_seed_);
-  std::uniform_real_distribution<float> distribution(0.0, 1.0);
-
-  auto calcAttractiveForce = [&](float attract_factor) {
-    for (auto& net : nets) {
-      const int& src = net.terminals.first;
-      const int& sink = net.terminals.second;
-      // float k = net.weight * attract_factor;
-      float k = net.weight;
-      if (blocks[src].fixed_flag == true || blocks[sink].fixed_flag == true
-          || blocks[src].getWidth() < 1.0 || blocks[src].getHeight() < 1.0
-          || blocks[sink].getWidth() < 1.0 || blocks[sink].getHeight() < 1.0) {
-        k = k * io_factor;
-      }
-      const float x_dist
-          = (blocks[src].getX() - blocks[sink].getX()) / max_size;
-      const float y_dist
-          = (blocks[src].getY() - blocks[sink].getY()) / max_size;
-      const float dist = std::sqrt(x_dist * x_dist + y_dist * y_dist);
-      const float f_x = k * x_dist * dist;
-      const float f_y = k * y_dist * dist;
-      blocks[src].addAttractiveForce(-1.0 * f_x, -1.0 * f_y);
-      blocks[sink].addAttractiveForce(f_x, f_y);
-    }
-  };
-
-  auto calcRepulsiveForce = [&](float repulsive_factor) {
-    std::vector<int> macros(blocks.size());
-    std::iota(macros.begin(), macros.end(), 0);
-    std::sort(macros.begin(), macros.end(), [&](int src, int target) {
-      return blocks[src].lx < blocks[target].lx;
-    });
-    // traverse all the macros
-    auto iter = macros.begin();
-    while (iter != macros.end()) {
-      int src = *iter;
-      for (auto iter_loop = ++iter; iter_loop != macros.end(); iter_loop++) {
-        int target = *iter_loop;
-        if (blocks[src].ux <= blocks[target].lx) {
-          break;
-        }
-        if (blocks[src].ly >= blocks[target].uy
-            || blocks[src].uy <= blocks[target].ly) {
-          continue;
-        }
-        // ignore the overlap between clusters and IO ports
-        if (blocks[src].getWidth() < 1.0 || blocks[src].getHeight() < 1.0
-            || blocks[target].getWidth() < 1.0
-            || blocks[target].getHeight() < 1.0) {
-          continue;
-        }
-        if (blocks[src].fixed_flag == true
-            || blocks[target].fixed_flag == true) {
-          continue;
-        }
-        // apply the force from src to target
-        if (src > target) {
-          std::swap(src, target);
-        }
-        // check the overlap
-        const float x_min_dist
-            = (blocks[src].getWidth() + blocks[target].getWidth()) / 2.0;
-        const float y_min_dist
-            = (blocks[src].getHeight() + blocks[target].getHeight()) / 2.0;
-        const float x_overlap
-            = std::abs(blocks[src].getX() - blocks[target].getX()) - x_min_dist;
-        const float y_overlap
-            = std::abs(blocks[src].getY() - blocks[target].getY()) - y_min_dist;
-        if (x_overlap <= 0.0 && y_overlap <= 0.0) {
-          float x_dist
-              = (blocks[src].getX() - blocks[target].getX()) / x_min_dist;
-          float y_dist
-              = (blocks[src].getY() - blocks[target].getY()) / y_min_dist;
-          float dist = std::sqrt(x_dist * x_dist + y_dist * y_dist);
-          const float min_dist = 0.01;
-          if (dist <= min_dist) {
-            x_dist = std::sqrt(min_dist);
-            y_dist = std::sqrt(min_dist);
-            dist = min_dist;
-          }
-          // const float f_x = repulsive_factor * x_dist / (dist * dist);
-          // const float f_y = repulsive_factor * y_dist / (dist * dist);
-          const float f_x = x_dist / (dist * dist);
-          const float f_y = y_dist / (dist * dist);
-          blocks[src].addRepulsiveForce(f_x, f_y);
-          blocks[target].addRepulsiveForce(-1.0 * f_x, -1.0 * f_y);
-        }
-      }
-    }
-  };
-
-  auto MoveBlock =
-      [&](float attract_factor, float repulsive_factor, float max_move_dist) {
-        for (auto& block : blocks) {
-          block.resetForce();
-        }
-        if (attract_factor > 0) {
-          calcAttractiveForce(attract_factor);
-        }
-        if (repulsive_factor > 0) {
-          calcRepulsiveForce(repulsive_factor);
-        }
-        // normalization
-        float max_f_a = 0.0;
-        float max_f_r = 0.0;
-        float max_f = 0.0;
-        for (auto& block : blocks) {
-          max_f_a = std::max(
-              max_f_a,
-              std::sqrt(block.f_x_a * block.f_x_a + block.f_y_a * block.f_y_a));
-          max_f_r = std::max(
-              max_f_r,
-              std::sqrt(block.f_x_r * block.f_x_r + block.f_y_r * block.f_y_r));
-        }
-        max_f_a = std::max(max_f_a, 1.0f);
-        max_f_r = std::max(max_f_r, 1.0f);
-        // Move node
-        // The move will be cancelled if the block will be pushed out of the
-        // boundary
-        for (auto& block : blocks) {
-          const float f_x = attract_factor * block.f_x_a / max_f_a
-                            + repulsive_factor * block.f_x_r / max_f_r;
-          const float f_y = attract_factor * block.f_y_a / max_f_a
-                            + repulsive_factor * block.f_y_r / max_f_r;
-          block.setForce(f_x, f_y);
-          max_f = std::max(
-              max_f, std::sqrt(block.f_x * block.f_x + block.f_y * block.f_y));
-        }
-        max_f = std::max(max_f, 1.0f);
-        for (auto& block : blocks) {
-          const float x_dist
-              = block.f_x / max_f * max_move_dist
-                + (distribution(rand_gen) - 0.5) * 0.1 * max_move_dist;
-          const float y_dist
-              = block.f_y / max_f * max_move_dist
-                + (distribution(rand_gen) - 0.5) * 0.1 * max_move_dist;
-          block.move(x_dist, y_dist, 0.0f, 0.0f, outline_width, outline_height);
-        }
-      };
-
-  // initialize all the macros
-  for (auto& block : blocks) {
-    block.makeSquare(ar);
-    block.setLoc(outline_width * distribution(rand_gen),
-                 outline_height * distribution(rand_gen),
-                 0.0f,
-                 0.0f,
-                 outline_width,
-                 outline_height);
-  }
-
-  // Iteratively place the blocks
-  for (auto i = 0; i < num_steps.size(); i++) {
-    // const float max_move_dist = max_size / num_steps[i];
-    const float attract_factor = attract_factors[i];
-    const float repulsive_factor = repel_factors[i];
-    for (auto j = 0; j < num_steps[i]; j++) {
-      MoveBlock(attract_factor,
-                repulsive_factor,
-                max_size / (1 + std::floor(j / 100)));
-    }
   }
 }
 
@@ -3563,41 +3352,43 @@ void Snapper::snapMacro()
 
 void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 {
-  SameDirectionLayersData layers_data
-      = computeSameDirectionLayersData(target_direction);
+  LayerDataList layers_data_list = computeLayerDataList(target_direction);
 
   int origin = target_direction == odb::dbTechLayerDir::VERTICAL
                    ? inst_->getOrigin().x()
                    : inst_->getOrigin().y();
 
-  if (!layers_data.snap_layer) {
+  if (layers_data_list.empty()) {
     // There are no pins to align with the track-grid.
     alignWithManufacturingGrid(origin);
     setOrigin(origin, target_direction);
     return;
   }
 
-  odb::dbITerm* snap_pin = layers_data.layer_to_pin.at(layers_data.snap_layer);
-  const LayerParameters& snap_layer_params
-      = layers_data.layer_to_params.at(layers_data.snap_layer);
+  const std::vector<int>& lowest_grid_positions
+      = layers_data_list[0].available_positions;
+  odb::dbITerm* lowest_grid_pin = layers_data_list[0].pins[0];
 
-  if (!pinsAreAlignedWithTrackGrid(
-          snap_pin, snap_layer_params, target_direction)) {
-    // The idea here is to first align the origin of the macro with
-    // the track-grid taking into account that the grid has a certain
-    // offset with regards to (0,0) and, then, compensate the offset
-    // of the pins themselves so that the lines of the grid cross
-    // their center.
-    origin = std::round(origin / static_cast<double>(snap_layer_params.pitch))
-                 * snap_layer_params.pitch
-             + snap_layer_params.offset - snap_layer_params.pin_offset;
+  const int lowest_pin_center_pos
+      = origin + getPinOffset(lowest_grid_pin, target_direction);
 
-    alignWithManufacturingGrid(origin);
-    setOrigin(origin, target_direction);
+  auto closest_pos = std::lower_bound(lowest_grid_positions.begin(),
+                                      lowest_grid_positions.end(),
+                                      lowest_pin_center_pos);
+
+  int starting_position_index
+      = std::distance(lowest_grid_positions.begin(), closest_pos);
+  // If no position is found, use the last available
+  if (starting_position_index == lowest_grid_positions.size()) {
+    starting_position_index -= 1;
   }
 
-  attemptSnapToExtraLayers(
-      origin, layers_data, snap_layer_params, target_direction);
+  snapPinToPosition(lowest_grid_pin,
+                    lowest_grid_positions[starting_position_index],
+                    target_direction);
+
+  attemptSnapToExtraPatterns(
+      starting_position_index, layers_data_list, target_direction);
 }
 
 void Snapper::setOrigin(const int origin,
@@ -3610,10 +3401,12 @@ void Snapper::setOrigin(const int origin,
   }
 }
 
-SameDirectionLayersData Snapper::computeSameDirectionLayersData(
+Snapper::LayerDataList Snapper::computeLayerDataList(
     const odb::dbTechLayerDir& target_direction)
 {
-  SameDirectionLayersData data;
+  TrackGridToPinListMap track_grid_to_pin_list;
+
+  odb::dbBlock* block = inst_->getBlock();
 
   for (odb::dbITerm* iterm : inst_->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
@@ -3621,172 +3414,184 @@ SameDirectionLayersData Snapper::computeSameDirectionLayersData(
     }
 
     for (odb::dbMPin* mpin : iterm->getMTerm()->getMPins()) {
-      for (odb::dbBox* box : mpin->getGeometry()) {
-        odb::dbTechLayer* layer = box->getTechLayer();
-        if (layer->getDirection() == target_direction) {
-          if (data.layer_to_pin.find(layer) != data.layer_to_pin.end()) {
-            continue;
-          }
+      odb::dbTechLayer* layer = getPinLayer(mpin);
 
-          if (data.layer_to_pin.empty()) {
-            data.snap_layer = layer;
-          }
-
-          data.layer_to_pin[layer] = iterm;
-          data.layer_to_params[layer]
-              = computeLayerParameters(layer, iterm, target_direction);
-        }
+      if (layer->getDirection() != target_direction) {
+        continue;
       }
+
+      odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
+      if (track_grid == nullptr) {
+        logger_->error(
+            MPL, 39, "No track-grid found for layer {}", layer->getName());
+      }
+
+      track_grid_to_pin_list[track_grid].push_back(iterm);
     }
   }
 
-  return data;
+  auto compare_pin_center = [&](odb::dbITerm* pin1, odb::dbITerm* pin2) {
+    return (target_direction == odb::dbTechLayerDir::VERTICAL
+                ? pin1->getBBox().xCenter() < pin2->getBBox().xCenter()
+                : pin1->getBBox().yCenter() < pin2->getBBox().yCenter());
+  };
+
+  LayerDataList layers_data;
+  for (auto& [track_grid, pins] : track_grid_to_pin_list) {
+    std::vector<int> positions;
+    if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+      track_grid->getGridX(positions);
+    } else {
+      track_grid->getGridY(positions);
+    }
+    std::sort(pins.begin(), pins.end(), compare_pin_center);
+    layers_data.push_back(LayerData{track_grid, positions, pins});
+  }
+
+  auto compare_layer_number = [](LayerData data1, LayerData data2) {
+    return (data1.track_grid->getTechLayer()->getNumber()
+            < data2.track_grid->getTechLayer()->getNumber());
+  };
+  std::sort(layers_data.begin(), layers_data.end(), compare_layer_number);
+
+  return layers_data;
 }
 
-LayerParameters Snapper::computeLayerParameters(
-    odb::dbTechLayer* layer,
-    odb::dbITerm* pin,
-    const odb::dbTechLayerDir& target_direction)
+odb::dbTechLayer* Snapper::getPinLayer(odb::dbMPin* pin)
 {
-  LayerParameters params;
-
-  odb::dbBlock* block = inst_->getBlock();
-  odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
-
-  if (track_grid) {
-    getTrackGrid(track_grid, params.offset, params.pitch, target_direction);
-  } else {
-    logger_->error(
-        MPL, 39, "No track-grid found for layer {}", layer->getName());
-  }
-
-  params.pin_width = getPinWidth(pin, target_direction);
-  params.lower_left_to_first_pin
-      = getPinToLowerLeftDistance(pin, target_direction);
-
-  // The distance between the pins and the lower-left corner
-  // of the master of a macro instance may not be a multiple
-  // of the track-grid, in these cases, we need to compensate
-  // a small offset.
-  int mterm_offset = 0;
-  if (params.pitch != 0) {
-    mterm_offset = params.lower_left_to_first_pin
-                   - std::floor(params.lower_left_to_first_pin / params.pitch)
-                         * params.pitch;
-  }
-  params.pin_offset = params.pin_width / 2 + mterm_offset;
-
-  const odb::dbOrientType& orientation = inst_->getOrient();
-  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    if (orientation == odb::dbOrientType::MY
-        || orientation == odb::dbOrientType::R180) {
-      params.pin_offset = -params.pin_offset;
-    }
-  } else if (orientation == odb::dbOrientType::MX
-             || orientation == odb::dbOrientType::R180) {
-    params.pin_offset = -params.pin_offset;
-  }
-  return params;
+  return (*pin->getGeometry().begin())->getTechLayer();
 }
 
-int Snapper::getPinWidth(odb::dbITerm* pin,
-                         const odb::dbTechLayerDir& target_direction)
+int Snapper::getPinOffset(odb::dbITerm* pin,
+                          const odb::dbTechLayerDir& direction)
 {
   int pin_width = 0;
-  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+  if (direction == odb::dbTechLayerDir::VERTICAL) {
     pin_width = pin->getBBox().dx();
   } else {
     pin_width = pin->getBBox().dy();
   }
-  return pin_width;
-}
 
-void Snapper::getTrackGrid(odb::dbTrackGrid* track_grid,
-                           int& origin,
-                           int& step,
-                           const odb::dbTechLayerDir& target_direction)
-{
-  // TODO: handle multiple patterns
-  int count;
-  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    track_grid->getGridPatternX(0, origin, count, step);
-  } else {
-    track_grid->getGridPatternY(0, origin, count, step);
-  }
-}
-
-int Snapper::getPinToLowerLeftDistance(
-    odb::dbITerm* pin,
-    const odb::dbTechLayerDir& target_direction)
-{
   int pin_to_origin = 0;
-
   odb::dbMTerm* mterm = pin->getMTerm();
-  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+  if (direction == odb::dbTechLayerDir::VERTICAL) {
     pin_to_origin = mterm->getBBox().xMin();
   } else {
     pin_to_origin = mterm->getBBox().yMin();
   }
 
-  return pin_to_origin;
+  int pin_offset = pin_to_origin + (pin_width / 2);
+
+  const odb::dbOrientType& orientation = inst_->getOrient();
+  if (direction == odb::dbTechLayerDir::VERTICAL) {
+    if (orientation == odb::dbOrientType::MY
+        || orientation == odb::dbOrientType::R180) {
+      pin_offset = -pin_offset;
+    }
+  } else {
+    if (orientation == odb::dbOrientType::MX
+        || orientation == odb::dbOrientType::R180) {
+      pin_offset = -pin_offset;
+    }
+  }
+
+  return pin_offset;
 }
 
-void Snapper::attemptSnapToExtraLayers(
-    const int origin,
-    const SameDirectionLayersData& layers_data,
-    const LayerParameters& snap_layer_params,
+void Snapper::snapPinToPosition(odb::dbITerm* pin,
+                                int position,
+                                const odb::dbTechLayerDir& direction)
+{
+  int origin = position - getPinOffset(pin, direction);
+  alignWithManufacturingGrid(origin);
+  setOrigin(origin, direction);
+}
+
+void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
+                                  int pattern_idx,
+                                  int& origin,
+                                  int& step,
+                                  const odb::dbTechLayerDir& target_direction)
+{
+  int count;
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    track_grid->getGridPatternX(pattern_idx, origin, count, step);
+  } else {
+    track_grid->getGridPatternY(pattern_idx, origin, count, step);
+  }
+}
+
+void Snapper::attemptSnapToExtraPatterns(
+    const int start_index,
+    const LayerDataList& layers_data_list,
     const odb::dbTechLayerDir& target_direction)
 {
-  // Calculate LCM from the layers pitches to define the search
-  // range
-  int lcm = 1;
-  for (const auto& [layer, params] : layers_data.layer_to_params) {
-    lcm = std::lcm(lcm, params.pitch);
-  }
-  const int pitch = snap_layer_params.pitch;
-  const int total_attempts = lcm / snap_layer_params.pitch;
+  const int total_attempts = 100;
+  const int total_pins = std::accumulate(layers_data_list.begin(),
+                                         layers_data_list.end(),
+                                         0,
+                                         [](int total, const LayerData& data) {
+                                           return total + data.pins.size();
+                                         });
 
-  const int total_layers = static_cast<int>(layers_data.layer_to_pin.size());
+  odb::dbITerm* snap_pin = layers_data_list[0].pins[0];
+  const std::vector<int>& positions = layers_data_list[0].available_positions;
 
-  int best_origin = origin;
-  int best_snapped_layers = 1;
+  int best_index = start_index;
+  int best_snapped_pins = 0;
 
   for (int i = 0; i <= total_attempts; i++) {
     // Alternates steps from positive to negative incrementally
     int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
 
-    setOrigin(origin + (pitch * steps), target_direction);
-    int snapped_layers = 0;
-    for (const auto& [layer, pin] : layers_data.layer_to_pin) {
-      if (pinsAreAlignedWithTrackGrid(
-              pin, layers_data.layer_to_params.at(layer), target_direction)) {
-        ++snapped_layers;
-      }
+    int current_index = start_index + steps;
+
+    if (current_index < 0
+        || current_index >= layers_data_list[0].available_positions.size()) {
+      continue;
     }
+    snapPinToPosition(snap_pin, positions[current_index], target_direction);
 
-    if (snapped_layers > best_snapped_layers) {
-      best_snapped_layers = snapped_layers;
-      best_origin = origin + (pitch * steps);
+    int snapped_pins = totalPinsAligned(layers_data_list, target_direction);
 
-      // Stop search if all layers are snapped
-      if (total_layers == best_snapped_layers) {
+    if (snapped_pins > best_snapped_pins) {
+      best_snapped_pins = snapped_pins;
+      best_index = current_index;
+      if (best_snapped_pins == total_pins) {
         break;
       }
     }
   }
 
-  setOrigin(best_origin, target_direction);
+  snapPinToPosition(snap_pin, positions[best_index], target_direction);
 }
 
-bool Snapper::pinsAreAlignedWithTrackGrid(
-    odb::dbITerm* pin,
-    const LayerParameters& layer_params,
-    const odb::dbTechLayerDir& target_direction)
+int Snapper::totalPinsAligned(const LayerDataList& layers_data_list,
+                              const odb::dbTechLayerDir& direction)
 {
-  int pin_center = target_direction == odb::dbTechLayerDir::VERTICAL
-                       ? pin->getBBox().xCenter()
-                       : pin->getBBox().yCenter();
-  return (pin_center - layer_params.offset) % layer_params.pitch == 0;
+  int pins_aligned = 0;
+
+  for (auto& data : layers_data_list) {
+    std::vector<int> pin_centers(data.pins.size());
+    for (auto& pin : data.pins) {
+      pin_centers.push_back(direction == odb::dbTechLayerDir::VERTICAL
+                                ? pin->getBBox().xCenter()
+                                : pin->getBBox().yCenter());
+    }
+
+    int i = 0, j = 0;
+    while (i < pin_centers.size() && j < data.available_positions.size()) {
+      if (pin_centers[i] == data.available_positions[j]) {
+        pins_aligned++;
+        i++;
+      } else if (pin_centers[i] < data.available_positions[j]) {
+        i++;
+      } else {
+        j++;
+      }
+    }
+  }
+  return pins_aligned;
 }
 
 void Snapper::alignWithManufacturingGrid(int& origin)

@@ -140,7 +140,7 @@ global_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [79, 64, 49, 29, 21, 15] |
-| `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
+| `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `5`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 | `-keep_resize_below_overflow` | When the overflow is below the set value, timing-driven iterations will retain the resizer changes instead of reverting them. The default value is 0.3. Allowed values are floats `[0, 1]`. |
 
@@ -177,7 +177,7 @@ placement_cluster
 
 ### Debug Mode
 
-The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
+The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example on ORFS `flow/scripts/global_place.tcl` script.
 
 ```tcl
 global_placement_debug
@@ -204,6 +204,8 @@ global_placement_debug
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
 This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
+
+Debug mode requires the GUI. With ORFS, one way to arrange for showing the GUI when running the global placement step is by using `make global_place_issue` and then editing the created run-me.sh file to include the `-gui` flag when calling openroad.
 
 ## Useful Developer Commands
 

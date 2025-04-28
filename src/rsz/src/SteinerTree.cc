@@ -1,40 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "SteinerTree.hh"
 
+#include <cmath>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -70,8 +40,7 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
   /*
     Handle hierarchy. Make sure all traversal on dbNets.
    */
-  odb::dbNet* db_net;
-  db_net = db_network_->flatNet(drvr_pin);
+  odb::dbNet* db_net = db_network_->flatNet(drvr_pin);
 
   Net* net
       = network_->isTopLevelPort(drvr_pin)
@@ -93,7 +62,8 @@ SteinerTree* Resizer::makeSteinerTree(const Pin* drvr_pin)
   int pin_count = pinlocs.size();
   bool is_placed = true;
   if (pin_count >= 2) {
-    vector<int> x, y;  // Two separate vectors of coordinates needed by flute.
+    std::vector<int> x;  // Two separate vectors of coordinates needed by flute.
+    std::vector<int> y;
     int drvr_idx = 0;  // The "driver_pin" or the root of the Steiner tree.
     for (int i = 0; i < pin_count; i++) {
       const PinLoc& pinloc = pinlocs[i];
@@ -140,8 +110,19 @@ static void connectedPins(const Net* net,
   NetConnectedPinIterator* pin_iter = network->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
-    Point loc = db_network->location(pin);
-    pins.push_back({pin, loc});
+    odb::dbITerm* iterm;
+    odb::dbBTerm* bterm;
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+    //
+    // only accumuate the flat pins (in hierarchical mode we may
+    // hit moditerms/modbterms).
+    //
+    if (iterm || bterm) {
+      Point loc = db_network->location(pin);
+      pins.push_back({pin, loc});
+    }
   }
   delete pin_iter;
 }
@@ -152,12 +133,12 @@ void SteinerTree::setTree(const stt::Tree& tree, const dbNetwork* network)
 
   // Find driver steiner point.
   drvr_steiner_pt_ = null_pt;
-  Point drvr_loc = network->location(drvr_pin_);
-  int drvr_x = drvr_loc.getX();
-  int drvr_y = drvr_loc.getY();
-  int branch_count = tree_.branchCount();
+  const Point drvr_loc = network->location(drvr_pin_);
+  const int drvr_x = drvr_loc.getX();
+  const int drvr_y = drvr_loc.getY();
+  const int branch_count = tree_.branchCount();
   for (int i = 0; i < branch_count; i++) {
-    stt::Branch& pt1 = tree_.branch[i];
+    const stt::Branch& pt1 = tree_.branch[i];
     if (pt1.x == drvr_x && pt1.y == drvr_y) {
       drvr_steiner_pt_ = i;
       break;
@@ -172,12 +153,12 @@ SteinerTree::SteinerTree(const Pin* drvr_pin, Resizer* resizer)
 
 void SteinerTree::createSteinerPtToPinMap()
 {
-  unsigned int pin_count = pinlocs_.size();
+  const unsigned int pin_count = pinlocs_.size();
 
   point_pin_array_.resize(pin_count);
   for (unsigned int i = 0; i < pin_count; i++) {
-    stt::Branch& branch_pt = tree_.branch[i];
-    odb::Point pt(branch_pt.x, branch_pt.y);
+    const stt::Branch& branch_pt = tree_.branch[i];
+    const odb::Point pt(branch_pt.x, branch_pt.y);
     auto pin = loc_pin_map_[pt].back();
     point_pin_array_[i] = pin;
   }
@@ -191,8 +172,7 @@ int SteinerTree::branchCount() const
 
 void SteinerTree::locAddPin(const Point& loc, const Pin* pin)
 {
-  PinSeq& pins = loc_pin_map_[loc];
-  pins.push_back(pin);
+  loc_pin_map_[loc].push_back(pin);
 }
 
 void SteinerTree::branch(int index,
@@ -215,12 +195,12 @@ void SteinerTree::branch(int index,
 
 void SteinerTree::report(Logger* logger, const Network* network)
 {
-  int branch_count = branchCount();
+  const int branch_count = branchCount();
   for (int i = 0; i < branch_count; i++) {
-    stt::Branch& pt1 = tree_.branch[i];
-    int j = pt1.n;
-    stt::Branch& pt2 = tree_.branch[j];
-    int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
+    const stt::Branch& pt1 = tree_.branch[i];
+    const int j = pt1.n;
+    const stt::Branch& pt2 = tree_.branch[j];
+    const int wire_length = abs(pt1.x - pt2.x) + abs(pt1.y - pt2.y);
     logger->report(" {}{} ({} {}) - {} wire_length = {}",
                    name(i, network),
                    i == drvr_steiner_pt_ ? " drvr" : "",
@@ -231,7 +211,7 @@ void SteinerTree::report(Logger* logger, const Network* network)
   }
 }
 
-const char* SteinerTree::name(SteinerPt pt, const Network* network)
+const char* SteinerTree::name(const SteinerPt pt, const Network* network)
 {
   if (pt == null_pt) {
     return "NULL";
@@ -252,7 +232,7 @@ const char* SteinerTree::name(SteinerPt pt, const Network* network)
   return stringPrintTmp("S%d", pt);
 }
 
-const PinSeq* SteinerTree::pins(SteinerPt pt) const
+const PinSeq* SteinerTree::pins(const SteinerPt pt) const
 {
   if (pt < tree_.deg) {
     auto loc_pins = loc_pin_map_.find(location(pt));
@@ -268,15 +248,15 @@ SteinerPt SteinerTree::drvrPt() const
   return drvr_steiner_pt_;
 }
 
-Point SteinerTree::location(SteinerPt pt) const
+Point SteinerTree::location(const SteinerPt pt) const
 {
-  stt::Branch branch_pt = tree_.branch[pt];
+  const stt::Branch branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
 }
 
 SteinerPt SteinerTree::top() const
 {
-  SteinerPt driver = drvrPt();
+  const SteinerPt driver = drvrPt();
   SteinerPt top = left(driver);
   if (top == SteinerNull) {
     top = right(driver);
@@ -284,7 +264,7 @@ SteinerPt SteinerTree::top() const
   return top;
 }
 
-SteinerPt SteinerTree::left(SteinerPt pt) const
+SteinerPt SteinerTree::left(const SteinerPt pt) const
 {
   if (pt >= (int) left_.size()) {
     return SteinerNull;
@@ -292,7 +272,7 @@ SteinerPt SteinerTree::left(SteinerPt pt) const
   return left_[pt];
 }
 
-SteinerPt SteinerTree::right(SteinerPt pt) const
+SteinerPt SteinerTree::right(const SteinerPt pt) const
 {
   if (pt >= (int) right_.size()) {
     return SteinerNull;
@@ -300,7 +280,7 @@ SteinerPt SteinerTree::right(SteinerPt pt) const
   return right_[pt];
 }
 
-void SteinerTree::validatePoint(SteinerPt pt) const
+void SteinerTree::validatePoint(const SteinerPt pt) const
 {
   if (pt < 0 || pt >= branchCount()) {
     logger_->error(
@@ -314,15 +294,15 @@ void SteinerTree::validatePoint(SteinerPt pt) const
 
 void SteinerTree::populateSides()
 {
-  int branch_count = branchCount();
+  const int branch_count = branchCount();
   left_.resize(branch_count, SteinerNull);
   right_.resize(branch_count, SteinerNull);
   std::vector<SteinerPt> adj1(branch_count, SteinerNull);
   std::vector<SteinerPt> adj2(branch_count, SteinerNull);
   std::vector<SteinerPt> adj3(branch_count, SteinerNull);
   for (int i = 0; i < branch_count; i++) {
-    stt::Branch& branch_pt = tree_.branch[i];
-    SteinerPt j = branch_pt.n;
+    const stt::Branch& branch_pt = tree_.branch[i];
+    const SteinerPt j = branch_pt.n;
     if (j != i) {
       if (adj1[i] == SteinerNull) {
         adj1[i] = j;
@@ -342,8 +322,8 @@ void SteinerTree::populateSides()
     }
   }
 
-  SteinerPt root = drvrPt();
-  SteinerPt root_adj = adj1[root];
+  const SteinerPt root = drvrPt();
+  const SteinerPt root_adj = adj1[root];
   left_[root] = root_adj;
   populateSides(root, root_adj, adj1, adj2, adj3);
 }
@@ -386,19 +366,18 @@ void SteinerTree::populateSides(const SteinerPt from,
   }
 }
 
-int SteinerTree::distance(SteinerPt& from, SteinerPt& to) const
+int SteinerTree::distance(const SteinerPt from, const SteinerPt to) const
 {
-  int find_left, find_right;
   if (from == SteinerNull || to == SteinerNull) {
     return -1;
   }
   if (from == to) {
     return 0;
   }
-  Point from_pt = location(from);
-  Point to_pt = location(to);
-  SteinerPt left_from = left(from);
-  SteinerPt right_from = right(from);
+  const Point from_pt = location(from);
+  const Point to_pt = location(to);
+  const SteinerPt left_from = left(from);
+  const SteinerPt right_from = right(from);
   if (left_from == to || right_from == to) {
     return abs(from_pt.x() - to_pt.x()) + abs(from_pt.y() - to_pt.y());
   }
@@ -406,13 +385,13 @@ int SteinerTree::distance(SteinerPt& from, SteinerPt& to) const
     return -1;
   }
 
-  find_left = distance(left_from, to);
+  const int find_left = distance(left_from, to);
   if (find_left >= 0) {
     return find_left + abs(from_pt.x() - to_pt.x())
            + abs(from_pt.y() - to_pt.y());
   }
 
-  find_right = distance(right_from, to);
+  const int find_right = distance(right_from, to);
   if (find_right >= 0) {
     return find_right + abs(from_pt.x() - to_pt.x())
            + abs(from_pt.y() - to_pt.y());
@@ -420,7 +399,7 @@ int SteinerTree::distance(SteinerPt& from, SteinerPt& to) const
   return -1;
 }
 
-const Pin* SteinerTree::pin(SteinerPt pt) const
+const Pin* SteinerTree::pin(const SteinerPt pt) const
 {
   validatePoint(pt);
   if (pt < (int) pinlocs_.size()) {

@@ -1,44 +1,16 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2024, Precision Innovations Inc.
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <map>
 #include <vector>
 
-#include "DecapObjects.h"
-#include "Objects.h"
-#include "Padding.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/DecapObjects.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
 
@@ -59,11 +31,11 @@ void Opendp::addDecapMaster(dbMaster* decap_master, double decap_cap)
 }
 
 // Return list of decap indices to fill gap
-vector<int> Opendp::findDecapCellIndices(const DbuX& gap_width,
-                                         const double& current,
-                                         const double& target)
+std::vector<int> Opendp::findDecapCellIndices(const DbuX& gap_width,
+                                              const double& current,
+                                              const double& target)
 {
-  vector<int> id_masters;
+  std::vector<int> id_masters;
   double cap_acum = 0.0;
   int width_acum = 0;
   const DbuX site_width = grid_->getSiteWidth();
@@ -133,8 +105,9 @@ void Opendp::prepareDecapAndGaps()
 void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
 {
   // init dpl variables
-  if (cells_.empty()) {
+  if (network_->getNumCells() == 0) {
     importDb();
+    adjustNodesOrient();
   }
 
   double total_cap = 0.0;
@@ -190,7 +163,7 @@ void Opendp::insertDecapCells(const double target, IRDropByPoint& psm_ir_drops)
                 total_cap);
 }
 
-void Opendp::insertDecapInRow(const vector<GapInfo*>& gaps,
+void Opendp::insertDecapInRow(const std::vector<GapInfo*>& gaps,
                               const DbuY gap_y,
                               const DbuX irdrop_x,
                               const DbuY irdrop_y,
@@ -228,14 +201,13 @@ void Opendp::insertDecapInPos(dbMaster* master,
                               const DbuY& pos_y)
 {
   // insert decap inst
-  string inst_name = "DECAP_" + to_string(decap_count_);
+  std::string inst_name = "DECAP_" + to_string(decap_count_);
   dbInst* inst = dbInst::create(block_,
                                 master,
                                 inst_name.c_str(),
                                 /* physical_only */ true);
-  const Rect core = grid_->getCore();
-  const GridX grid_x = grid_->gridX(pos_x - core.xMin());
-  const GridY grid_y = grid_->gridSnapDownY(pos_y - core.yMin());
+  const GridX grid_x = grid_->gridX(pos_x - core_.xMin());
+  const GridY grid_y = grid_->gridSnapDownY(pos_y - core_.yMin());
   const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
   const dbOrientType orient = pixel->sites.at(master->getSite());
   inst->setOrient(orient);
@@ -266,10 +238,9 @@ void Opendp::findGapsInRow(GridY row, DbuY row_height)
              && grid_->gridPixel(k, row)->is_valid) {
         k++;
       }
-      const Rect core = grid_->getCore();
       // Save gap information (pos in dbu)
-      DbuX gap_x{core.xMin() + gridToDbu(j, site_width)};
-      DbuY gap_y{core.yMin() + gridToDbu(row, row_height)};
+      DbuX gap_x{core_.xMin() + gridToDbu(j, site_width)};
+      DbuY gap_y{core_.yMin() + gridToDbu(row, row_height)};
       DbuX gap_width{gridToDbu(k, site_width) - gridToDbu(j, site_width)};
       gaps_[gap_y].emplace_back(new GapInfo(gap_x, gap_width, row_height));
 

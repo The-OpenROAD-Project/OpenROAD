@@ -1,32 +1,11 @@
-/*
- * Copyright (c) 2023, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <map>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "frDesign.h"
@@ -46,7 +25,7 @@ namespace drt {
 class UniqueInsts
 {
  public:
-  using InstSet = std::set<frInst*, frBlockObjectComp>;
+  using InstSet = frOrderedIdSet<frInst*>;
   // if target_insts is non-empty then analysis is limited to
   // those instances.
   UniqueInsts(frDesign* design,
@@ -61,22 +40,50 @@ class UniqueInsts
 
   // Get's the index corresponding to the inst's unique instance
   int getIndex(frInst* inst);
-  // Get's the pin access index corresponding to the inst
-  int getPAIndex(frInst* inst) const;
 
   // Gets the instances in the equivalence set of the given inst
   InstSet* getClass(frInst* inst) const;
 
   const std::vector<frInst*>& getUnique() const;
   frInst* getUnique(int idx) const;
+  frInst* getUnique(frInst* inst) const;
   bool hasUnique(frInst* inst) const;
+
+  /**
+   * @brief Computes the unique class of an inst.
+   *
+   * @param inst inst to have its unique class computed
+   *
+   * @returns the unique class.
+   */
+  UniqueInsts::InstSet& computeUniqueClass(frInst* inst);
+
+  /**
+   * @brief Adds the instance to the unique instances structures,
+   * inserting new data if it is actually a new unique instance.
+   *
+   * @param inst instance to be added.
+   *
+   * @returns True if the instance is the first of its unique class.
+   */
+  bool addInst(frInst* inst);
+
+  /**
+   * @brief deletes an inst from the unique insts structures
+   *
+   * @param inst instance to be deleted
+   *
+   * @returns the unique inst that represents the unique class. If the class was
+   * deleted returns nullptr
+   */
+  frInst* deleteInst(frInst* inst);
 
   void report() const;
   void setDesign(frDesign* design) { design_ = design; }
 
  private:
   using LayerRange = std::pair<frLayerNum, frLayerNum>;
-  using MasterLayerRange = std::map<frMaster*, LayerRange, frBlockObjectComp>;
+  using MasterLayerRange = frOrderedIdMap<frMaster*, LayerRange>;
 
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
@@ -106,10 +113,11 @@ class UniqueInsts
   void applyPatternsFile(const char* file_path);
 
   /**
-   * @brief Initializes pin access structures
-   * Fills unique_to_pa_idx_adds pin access unique points to pins
+   * @brief Initializes pin access idx of all instances
    */
-  void genPinAccess();
+  void initPinAccess();
+
+  void initUniqueInstPinAccess(frInst* unique_inst);
 
   /**
    * @brief Creates a map from Master instance to LayerRanges.
@@ -117,12 +125,6 @@ class UniqueInsts
    * LayerRange represents the lower and upper layer of a Master instance.
    */
   void initMasterToPinLayerRange();
-
-  /**
-   * @brief Adds the instance to the unique instances structures,
-   * inserting new data if it is actually a new unique instance.
-   */
-  void addUniqueInst(frInst* inst);
 
   /**
    * @brief Computes all unique instances data structures.
@@ -150,17 +152,15 @@ class UniqueInsts
   // All the unique instances
   std::vector<frInst*> unique_;
   // Maps all instances to their representative unique instance
-  std::map<frInst*, frInst*, frBlockObjectComp> inst_to_unique_;
+  frOrderedIdMap<frInst*, frInst*> inst_to_unique_;
   // Maps all instances to the set of instances with the same unique inst
   std::unordered_map<frInst*, InstSet*> inst_to_class_;
-  // Maps a unique instance to its pin access index
-  std::map<frInst*, int, frBlockObjectComp> unique_to_pa_idx_;
   // Maps a unique instance to its index in unique_
-  std::map<frInst*, int, frBlockObjectComp> unique_to_idx_;
+  frOrderedIdMap<frInst*, int> unique_to_idx_;
   // master orient track-offset to instances
-  std::map<frMaster*,
-           std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>,
-           frBlockObjectComp>
+  frOrderedIdMap<
+      frMaster*,
+      std::map<dbOrientType, std::map<std::vector<frCoord>, InstSet>>>
       master_orient_trackoffset_to_insts_;
   std::vector<frTrackPattern*> pref_track_patterns_;
   MasterLayerRange master_to_pin_layer_range_;

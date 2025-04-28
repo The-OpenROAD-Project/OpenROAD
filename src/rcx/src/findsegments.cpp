@@ -1,35 +1,5 @@
-
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2024, IC BENCH, Dimitris Fotakis
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "dbUtil.h"
 #include "rcx/extMeasureRC.h"
@@ -100,13 +70,13 @@ uint extMeasureRC::FindSegments(bool lookUp,
                                 Wire* w2_next,
                                 Ath__array1D<extSegment*>* segTable)
 {
-  if (w2_next == NULL)
+  if (w2_next == nullptr)
     return 0;
 
   int dist = GetDistance(w1, w2_next);
   if (dist > maxDist) {
     extSegment* s = _seqmentPool->alloc();
-    s->set(dir, w1, xy1, len1, NULL, NULL);
+    s->set(dir, w1, xy1, len1, nullptr, nullptr);
 
     segTable->add(s);
     return 0;
@@ -118,18 +88,19 @@ uint extMeasureRC::FindSegments(bool lookUp,
     return 0;
   }
 
-  Wire* prev = NULL;
+  Wire* prev = nullptr;
   Wire* w2 = w2_next;
-  for (; w2 != NULL; w2 = w2->getNext()) {
+  for (; w2 != nullptr; w2 = w2->getNext()) {
     if (OverlapOnly(xy1, len1, w2->getXY(), w2->getLen()))
       break;
 
-    if (prev != NULL && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))
+    if (prev != nullptr
+        && Enclosed(xy1, xy1 + len1, prev->getXY(), w2->getXY()))
       return 0;
 
     prev = w2;
   }
-  if (w2 == NULL) {
+  if (w2 == nullptr) {
     Wire* next_up_down = lookUp ? w2_next->getUpNext() : w2_next->getDownNext();
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
@@ -143,18 +114,18 @@ uint extMeasureRC::FindSegments(bool lookUp,
     if (dx2 >= 0) {  // covered Right
 
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, xy1, len1, NULL, NULL);
+      s->set(dir, w1, xy1, len1, nullptr, nullptr);
 
       segTable->add(s);
       s->setUpDown(lookUp, w2);
     } else {  // not covered right
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, xy1, xy2 - xy1, NULL, NULL);
+      s->set(dir, w1, xy1, xy2 - xy1, nullptr, nullptr);
       s->setUpDown(lookUp, w2);
       segTable->add(s);
 
       Wire* next = w2->getNext();
-      if (next != NULL
+      if (next != nullptr
           && next->getXY() <= w1->getXY() + w1->getLen()) {  // overlap
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       } else {
@@ -168,17 +139,17 @@ uint extMeasureRC::FindSegments(bool lookUp,
         lookUp, dir, maxDist, w1, xy1, dx1, next, segTable);  // white space
     if (dx2 >= 0) {                                           // covered Right
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), NULL, NULL);
+      s->set(dir, w1, w2->getXY(), xy1 + len1 - w2->getXY(), nullptr, nullptr);
       segTable->add(s);
       s->setUpDown(lookUp, w2);
     } else {  // not covered right
       extSegment* s = _seqmentPool->alloc();
-      s->set(dir, w1, w2->getXY(), w2->getLen(), NULL, NULL);
+      s->set(dir, w1, w2->getXY(), w2->getLen(), nullptr, nullptr);
       segTable->add(s);
       s->setUpDown(lookUp, w2);
 
       Wire* next = w2->getNext();
-      if (next != NULL
+      if (next != nullptr
           && next->getXY() <= w1->getXY() + w1->getLen()) {  // overlap
         FindSegments(lookUp, dir, maxDist, w1, xy2, -dx2, next, segTable);
       } else {

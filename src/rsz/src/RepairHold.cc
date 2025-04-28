@@ -1,40 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "RepairHold.hh"
 
+#include <algorithm>
+#include <string>
 #include <vector>
 
 #include "RepairDesign.hh"
@@ -49,8 +19,6 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -392,28 +360,36 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  PathRef end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  if (!end_path.isNull()) {
+  Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  if (end_path) {
     debugPrint(logger_,
                RSZ,
                "repair_hold",
                3,
                "repair end {} hold_slack={} setup_slack={}",
                end_vertex->name(network_),
-               delayAsString(end_path.slack(sta_), sta_),
+               delayAsString(end_path->slack(sta_), sta_),
                delayAsString(sta_->vertexSlack(end_vertex, max_), sta_));
-    PathExpanded expanded(&end_path, sta_);
+    PathExpanded expanded(end_path, sta_);
     sta::SearchPredNonLatch2 pred(sta_);
     const int path_length = expanded.size();
     if (path_length > 1) {
+      sta::VertexSeq path_vertices;
+      // Inserting bufferes invalidates the paths so copy out the vertices
+      // in the path.
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        const PathRef* path = expanded.path(i);
-        Vertex* path_vertex = path->vertex(sta_);
+        path_vertices.push_back(expanded.path(i)->vertex(sta_));
+      }
+      // Stop one short of the end so we can get the load.
+      for (int i = 0; i < path_vertices.size() - 1; i++) {
+        Vertex* path_vertex = path_vertices[i];
         Pin* path_pin = path_vertex->pin();
-        Net* path_net = network_->isTopLevelPort(path_pin)
-                            ? network_->net(network_->term(path_pin))
-                            : network_->net(path_pin);
-        dbNet* db_path_net = db_network_->staToDb(path_net);
+        // explicitly force getting the flat net.
+        odb::dbNet* db_path_net
+            = network_->isTopLevelPort(path_pin)
+                  ? db_network_->flatNet(network_->term(path_pin))
+                  : db_network_->flatNet(const_cast<Pin*>(path_pin));
+
         if (path_vertex->isDriver(network_) && !resizer_->dontTouch(path_pin)
             && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
@@ -478,7 +454,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                            > buffer_delays[rise_index_]
                     && (slacks[fall_index_][max_index_] - setup_margin)
                            > buffer_delays[fall_index_])) {
-              Vertex* path_load = expanded.path(i + 1)->vertex(sta_);
+              Vertex* path_load = path_vertices[i + 1];
               Point path_load_loc = db_network_->location(path_load->pin());
               Point drvr_loc = db_network_->location(path_vertex->pin());
               Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,
@@ -561,10 +537,9 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // we will put the new buffer in that parent
     parent = db_network_->getOwningInstanceParent(drvr_pin);
     // exception case: drvr pin is a top level, fix the db_drvr_net to be
-    // the lower level net
+    // the lower level net. Explictly get the "flat" net.
     if (network_->isTopLevelPort(drvr_pin)) {
-      db_drvr_net
-          = db_network_->staToDb(db_network_->net(db_network_->term(drvr_pin)));
+      db_drvr_net = db_network_->flatNet(db_network_->term(drvr_pin));
     }
   } else {
     // original flat code (which handles exception case at top level &
@@ -575,7 +550,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
             : db_network_->net(drvr_pin));
     parent = db_network_->topInstance();
   }
-
   Net *in_net = nullptr, *out_net = nullptr;
 
   if (loads_have_out_port) {
@@ -596,6 +570,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     out_net = db_network_->makeNet(net_name.c_str(), parent);
   }
 
+  dbNet* in_net_db = db_network_->staToDb(in_net);
+
   // Disconnect the original drvr pin from everything (hierarchical nets
   // and flat nets).
   odb::dbITerm* drvr_pin_iterm;
@@ -611,6 +587,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     // disconnect the iterm from both the modnet and the dbnet
     // note we will rewire the drvr_pin to connect to the new buffer later.
     drvr_pin_iterm->disconnect();
+    drvr_pin_iterm->connect(in_net_db);
   }
   if (drvr_pin_moditerm) {
     drvr_pin_moditerm->disconnect();
@@ -620,8 +597,6 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
   }
 
   resizer_->parasiticsInvalid(in_net);
-
-  Net* buf_in_net = in_net;
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -638,16 +613,8 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       logger_, RSZ, "repair_hold", 3, " insert {}", network_->name(buffer));
 
   // wire in the buffer
-  sta_->connectPin(buffer, input, buf_in_net);
+  sta_->connectPin(buffer, input, in_net);
   sta_->connectPin(buffer, output, out_net);
-
-  // Fix up the original driver pin (which we totally disconnected before)
-  // patch in the buf_in_net driver to be driven by the original drvr_pin_iterm
-
-  // First the dbnet.
-  if (drvr_pin_iterm) {
-    drvr_pin_iterm->connect(db_network_->staToDb(buf_in_net));
-  }
 
   // Now patch in the output of the new buffer to the original hierarchical
   // net,if any, from the original driver
@@ -679,10 +646,10 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
     if (resizer_->dontTouch(load_pin)) {
       continue;
     }
-
-    Net* load_net = network_->isTopLevelPort(load_pin)
-                        ? network_->net(network_->term(load_pin))
-                        : network_->net(load_pin);
+    dbNet* db_load_net = network_->isTopLevelPort(load_pin)
+                             ? db_network_->flatNet(network_->term(load_pin))
+                             : db_network_->flatNet(load_pin);
+    Net* load_net = db_network_->dbToSta(db_load_net);
 
     if (load_net != out_net) {
       Instance* load = db_network_->instance(load_pin);
@@ -708,6 +675,7 @@ void RepairHold::makeHoldDelay(Vertex* drvr,
       }
     }
   }
+
   Pin* buffer_out_pin = network_->findPin(buffer, output);
   Vertex* buffer_out_vertex = graph_->pinDrvrVertex(buffer_out_pin);
   resizer_->updateParasitics();

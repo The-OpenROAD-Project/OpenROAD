@@ -18,6 +18,8 @@ or_integration_tests(
     boundary_push1
     boundary_push2
     boundary_push3
+    centralization1
+    clocked_macro
 )
 
 # Skipped

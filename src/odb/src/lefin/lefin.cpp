@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "odb/lefin.h"
 
@@ -73,9 +44,9 @@ lefinReader::lefinReader(dbDatabase* db,
       _create_tech(false),
       _create_lib(false),
       _skip_obstructions(false),
-      _left_bus_delimeter('['),
-      _right_bus_delimeter(']'),
-      _hier_delimeter(0),
+      _left_bus_delimiter('['),
+      _right_bus_delimiter(']'),
+      _hier_delimiter(0),
       _layer_cnt(0),
       _master_cnt(0),
       _via_cnt(0),
@@ -98,9 +69,9 @@ void lefinReader::init()
   _master = nullptr;
   _create_tech = false;
   _create_lib = false;
-  _left_bus_delimeter = '[';
-  _right_bus_delimeter = ']';
-  _hier_delimeter = 0;
+  _left_bus_delimiter = '[';
+  _right_bus_delimiter = ']';
+  _hier_delimiter = 0;
   _layer_cnt = 0;
   _master_cnt = 0;
   _via_cnt = 0;
@@ -133,10 +104,11 @@ dbSite* lefinReader::findSite(const char* name)
 
 void lefinReader::createLibrary()
 {
-  _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimeter);
+  _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimiter);
   _lib->setLefUnits(_lef_units);
-  if (_left_bus_delimeter)
-    _lib->setBusDelimeters(_left_bus_delimeter, _right_bus_delimeter);
+  if (_left_bus_delimiter) {
+    _lib->setBusDelimiters(_left_bus_delimiter, _right_bus_delimiter);
+  }
 }
 
 static void create_path_box(dbObject* obj,
@@ -529,11 +501,11 @@ int lefinReader::busBitChars(const char* busBit)
   if (busBit[0] == '\0' || busBit[1] == '\0')
     _logger->error(utl::ODB, 179, "invalid BUSBITCHARS ({})\n", busBit);
 
-  _left_bus_delimeter = busBit[0];
-  _right_bus_delimeter = busBit[1];
+  _left_bus_delimiter = busBit[0];
+  _right_bus_delimiter = busBit[1];
 
   if (_lib) {
-    _lib->setBusDelimeters(_left_bus_delimeter, _right_bus_delimeter);
+    _lib->setBusDelimiters(_left_bus_delimiter, _right_bus_delimiter);
   }
 
   return PARSE_OK;
@@ -551,7 +523,7 @@ void lefinReader::clearance(const char* name)
 
 void lefinReader::divider(const char* div)
 {
-  _hier_delimeter = div[0];
+  _hier_delimiter = div[0];
 }
 
 void lefinReader::noWireExt(const char* name)
@@ -2307,6 +2279,8 @@ dbTech* lefinReader::createTech(const char* name, const char* lef_file)
         utl::ODB, 288, "LEF data from {} is discarded due to errors", lef_file);
   }
 
+  _db->triggerPostReadLef(_tech, nullptr);
+
   return _tech;
 }
 
@@ -2341,6 +2315,7 @@ dbLib* lefinReader::createLib(dbTech* tech,
         utl::ODB, 292, "LEF data from {} is discarded due to errors", lef_file);
   }
 
+  _db->triggerPostReadLef(_tech, _lib);
   return _lib;
 }
 
@@ -2382,6 +2357,8 @@ dbLib* lefinReader::createTechAndLib(const char* tech_name,
 
   if (rules.orderReversed())
     rules.reverse();
+
+  _db->triggerPostReadLef(_tech, _lib);
 
   return _lib;
 }
