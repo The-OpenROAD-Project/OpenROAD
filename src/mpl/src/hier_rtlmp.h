@@ -122,6 +122,12 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
+  struct PinAccessDepthLimits
+  {
+    float vertical{0.0f};
+    float horizontal{0.0f};
+  };
+
   using SoftSAVector = std::vector<std::unique_ptr<SACoreSoftMacro>>;
   using HardSAVector = std::vector<std::unique_ptr<SACoreHardMacro>>;
 
@@ -143,6 +149,7 @@ class HierRTLMP
   IntervalList computeWidthIntervals(const TilingList& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void createPinAccessBlockages();
+  void computePinAccessDepthLimits();
   bool treeHasOnlyUnconstrainedIOs();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
   void createPinAccessBlockage(const Rect& micron_region, float depth);
@@ -222,7 +229,7 @@ class HierRTLMP
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
   odb::Rect getRect(Boundary boundary);
-  bool isHorizontal(Boundary boundary);
+  bool isVertical(Boundary boundary);
   std::vector<odb::Rect> subtractOverlapRegion(const odb::Rect& base,
                                                const odb::Rect& overlay);
 
@@ -284,6 +291,8 @@ class HierRTLMP
   std::vector<Rect> placement_blockages_;
   std::vector<Rect> macro_blockages_;
   std::vector<Rect> io_blockages_;
+
+  PinAccessDepthLimits pin_access_depth_limits_;
 
   // Cache needed for orientation improvement.
   std::vector<odb::Rect> available_regions_for_pins_;

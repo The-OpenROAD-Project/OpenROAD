@@ -911,11 +911,22 @@ void HierRTLMP::createPinAccessBlockages()
     return;
   }
 
+  computePinAccessDepthLimits();
+
   if (!available_regions_for_pins_.empty()) {
     createBlockagesForAvailableRegions();
   } else {
     createBlockagesForConstraintRegions();
   }
+}
+
+void HierRTLMP::computePinAccessDepthLimits()
+{
+  const Rect die = dbuToMicrons(block_->getDieArea());
+  constexpr float max_depth_percentage = 0.20;
+
+  pin_access_depth_limits_.horizontal = max_depth_percentage * die.getWidth();
+  pin_access_depth_limits_.vertical = max_depth_percentage * die.getHeight();
 }
 
 bool HierRTLMP::treeHasOnlyUnconstrainedIOs()
@@ -1051,6 +1062,17 @@ void HierRTLMP::createPinAccessBlockage(const Rect& micron_region,
   Rect blockage = micron_region;
   Boundary region_boundary = getRegionBoundary(micronsToDbu(micron_region));
 
+  float blockage_depth;
+  if (isVertical(region_boundary)) {
+    blockage_depth = depth > pin_access_depth_limits_.horizontal
+    ? pin_access_depth_limits_.horizontal
+    : depth;
+  } else {
+    blockage_depth = depth > pin_access_depth_limits_.vertical
+    ? pin_access_depth_limits_.vertical
+    : depth;
+  }
+
   debugPrint(
       logger_,
       MPL,
@@ -1059,23 +1081,23 @@ void HierRTLMP::createPinAccessBlockage(const Rect& micron_region,
       "Creating pin access blockage in {} -> Region shape = {} , Depth = {}",
       toString(region_boundary),
       micronsToDbu(micron_region),
-      depth);
+      blockage_depth);
 
   switch (region_boundary) {
     case L: {
-      blockage.setXMax(blockage.xMin() + depth);
+      blockage.setXMax(blockage.xMin() + blockage_depth);
       break;
     }
     case R: {
-      blockage.setXMin(blockage.xMax() - depth);
+      blockage.setXMin(blockage.xMax() - blockage_depth);
       break;
     }
     case B: {
-      blockage.setYMax(blockage.yMin() + depth);
+      blockage.setYMax(blockage.yMin() + blockage_depth);
       break;
     }
     case T: {
-      blockage.setYMin(blockage.yMax() - depth);
+      blockage.setYMin(blockage.yMax() - blockage_depth);
       break;
     }
     case NONE: {
@@ -2946,7 +2968,7 @@ std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
   odb::Rect a = base;
   odb::Rect b = base;
 
-  if (isHorizontal(base_boundary)) {
+  if (isVertical(base_boundary)) {
     a.set_yhi(overlay.yMin());
     b.set_ylo(overlay.yMax());
   } else {
@@ -2965,7 +2987,7 @@ std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
   return result;
 }
 
-bool HierRTLMP::isHorizontal(Boundary boundary)
+bool HierRTLMP::isVertical(Boundary boundary)
 {
   return boundary == L || boundary == R;
 }
