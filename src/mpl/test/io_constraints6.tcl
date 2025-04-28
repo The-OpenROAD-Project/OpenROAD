@@ -9,10 +9,8 @@ read_liberty Nangate45/Nangate45_fast.lib
 
 read_def testcases/io_constraints6.def
 
-# Run random PPL to incorporate the -exclude constraints into ODB
-place_pins -annealing -random -hor_layers metal5 -ver_layer metal6 \
-           -exclude right:40-125 \
-           -exclude top:10-150
+exclude_io_pin_region -region bottom:* -region left:* \
+                      -region top:40-150 -region right:40-125
 
 set_thread_count 0
 rtl_macro_placer -report_directory results/io_constraints6 -halo_width 4.0

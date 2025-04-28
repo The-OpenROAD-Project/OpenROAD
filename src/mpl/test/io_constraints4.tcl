@@ -1,7 +1,7 @@
 # Test if pin access blockages are generated correctly for a case
 # with pins with different constraint regions. The region on the left
-# edge has more pins and should have a larger blockage. The macro should,
-# then, be placed closer to the right edge.
+# edge has more pins and should have a larger blockage.
+# The macro should be placed closer to the right edge.
 source "helpers.tcl"
 
 # We're not interested in the connections, so don't include the lib.
@@ -16,9 +16,6 @@ read_def "./testcases/io_constraints1.def" -floorplan_initialize
 
 set_io_pin_constraint -pin_names {io_1 io_2} -region left:70-90
 set_io_pin_constraint -pin_names {io_3} -region right:70-90
-
-# Run random PPL to incorporate the constraints into ODB
-place_pins -annealing -random -hor_layers metal5 -ver_layer metal6
 
 set_thread_count 0
 rtl_macro_placer -report_directory results/io_constraints4 -halo_width 4.0

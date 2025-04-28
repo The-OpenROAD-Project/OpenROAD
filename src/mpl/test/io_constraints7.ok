@@ -1,18 +1,9 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: testcases/macro_only.lef, created 9 library cells
 [INFO ODB-0128] Design: io_constraints1
-[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 401 components and 2402 component-terminals.
-[INFO ODB-0133]     Created 2 nets and 2 connections.
-[INFO PPL-0048] Restrict pins [ io_1 io_2 ] to region 70.00u-90.00u at the LEFT edge.
-[INFO PPL-0048] Restrict pins [ io_3 ] to region 70.00u-90.00u at the RIGHT edge.
-Found 1 macro blocks.
-Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of available slots 966
-[INFO PPL-0002] Number of I/O             3
-[INFO PPL-0003] Number of I/O w/sink      2
-[INFO PPL-0004] Number of I/O w/o sink    1
-[INFO PPL-0012] I/O nets HPWL: 181.38 um.
+[INFO ODB-0133]     Created 1 nets and 1 connections.
 Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
 	Number of std cell instances: 400
 	Area of std cell instances: 1808.79
