@@ -469,15 +469,16 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
 
   if (network_->isTopLevelPort(drvr_pin)) {
     net = network_->net(network_->term(drvr_pin));
-    db_network_->staToDb(net, db_net, db_modnet);
+    db_net = db_network_->flatNet(network_->term(drvr_pin));
+    db_modnet = nullptr;
 
     LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
     // Should use sdc external driver here.
     LibertyPort* input;
     buffer_cell->bufferPorts(input, drvr_port_);
   } else {
-    db_network_->net(drvr_pin, db_net, db_modnet);
-
+    db_net = db_network_->flatNet(drvr_pin);
+    db_modnet = db_network_->hierNet(drvr_pin);
     net = network_->net(drvr_pin);
     drvr_port_ = network_->libertyPort(drvr_pin);
   }
@@ -835,12 +836,13 @@ float RepairSetup::bufferInputCapacitance(LibertyCell* buffer_cell,
   return corner_input->capacitance();
 }
 
-int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
-                                 Net* net,  // output of buffer.
-                                 const int level,
-                                 Instance* parent_in,
-                                 odb::dbITerm* mod_net_drvr,
-                                 odb::dbModNet* mod_net_in)
+int RepairSetup::rebufferTopDown(
+    const BufferedNetPtr& choice,
+    Net* net,  // output of buffer, always a flat net
+    const int level,
+    Instance* parent_in,
+    odb::dbITerm* mod_net_drvr,
+    odb::dbModNet* mod_net_in)
 {
   // HFix, pass in the parent
   Instance* parent = parent_in;
@@ -874,6 +876,10 @@ int RepairSetup::rebufferTopDown(const BufferedNetPtr& choice,
       odb::dbNet* db_ip_net = nullptr;
       odb::dbModNet* db_ip_modnet = nullptr;
       db_network_->staToDb(net, db_ip_net, db_ip_modnet);
+      if (!db_ip_net) {
+        printf("Illegal input net\n");
+        assert(0);
+      }
 
       //      sta_->connectPin(buffer, input, net);  //rebuffer
       sta_->connectPin(
