@@ -1065,12 +1065,12 @@ void HierRTLMP::createPinAccessBlockage(const Rect& micron_region,
   float blockage_depth;
   if (isVertical(region_boundary)) {
     blockage_depth = depth > pin_access_depth_limits_.horizontal
-    ? pin_access_depth_limits_.horizontal
-    : depth;
+                         ? pin_access_depth_limits_.horizontal
+                         : depth;
   } else {
     blockage_depth = depth > pin_access_depth_limits_.vertical
-    ? pin_access_depth_limits_.vertical
-    : depth;
+                         ? pin_access_depth_limits_.vertical
+                         : depth;
   }
 
   debugPrint(
@@ -3049,11 +3049,10 @@ Pusher::Pusher(utl::Logger* logger,
 void Pusher::setIOBlockages(const std::vector<Rect>& io_blockages)
 {
   for (const Rect& blockage : io_blockages) {
-    io_blockages_.emplace_back(
-        odb::Rect(block_->micronsToDbu(blockage.xMin()),
-                  block_->micronsToDbu(blockage.yMin()),
-                  block_->micronsToDbu(blockage.xMax()),
-                  block_->micronsToDbu(blockage.yMax())));
+    io_blockages_.emplace_back(block_->micronsToDbu(blockage.xMin()),
+                               block_->micronsToDbu(blockage.yMin()),
+                               block_->micronsToDbu(blockage.xMax()),
+                               block_->micronsToDbu(blockage.yMax()));
   }
 }
 
