@@ -136,7 +136,7 @@ class Opendp
                         int max_displacement_y);
   // Journalling
   Journal* getJournal() const;
-  void setJournal(std::unique_ptr<Journal>& journal);
+  void setJournal(Journal* journal);
 
  private:
   using bgPoint
@@ -319,7 +319,7 @@ class Opendp
   std::unique_ptr<Network> network_;    // The netlist, cells, etc.
   std::shared_ptr<Padding> padding_;
   std::unique_ptr<PlacementDRC> drc_engine_;
-  std::unique_ptr<Journal> journal_;
+  Journal* journal_ = nullptr;
 
   bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites

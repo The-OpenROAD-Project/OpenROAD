@@ -83,14 +83,14 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
   debug_observer_ = std::move(observer);
 }
 
-void Opendp::setJournal(std::unique_ptr<Journal>& journal)
+void Opendp::setJournal(Journal* journal)
 {
-  journal_ = std::move(journal);
+  journal_ = journal;
 }
 
 Journal* Opendp::getJournal() const
 {
-  return journal_.get();
+  return journal_;
 }
 
 void Opendp::detailedPlacement(const int max_displacement_x,
