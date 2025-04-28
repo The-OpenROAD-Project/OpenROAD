@@ -1103,38 +1103,6 @@ void SoftMacro::setHeight(float height)
   }
 }
 
-void SoftMacro::shrinkArea(float percent)
-{
-  if (percent < 0.0) {
-    percent = 0.0;
-  }
-
-  if (percent > 1.0) {
-    percent = 1.0;
-  }
-
-  if (area_ == 0.0 || width_intervals_.size() != height_intervals_.size()
-      || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getClusterType() != StdCellCluster
-      || cluster_->isIOCluster()) {
-    return;
-  }
-
-  for (Interval& width_interval : width_intervals_) {
-    width_interval.min *= percent;
-    width_interval.max *= percent;
-  }
-
-  for (Interval& height_interval : height_intervals_) {
-    height_interval.max *= percent;
-    height_interval.min *= percent;
-  }
-
-  width_ = width_ * percent;
-  height_ = height_ * percent;
-  area_ = width_ * height_;
-}
-
 void SoftMacro::setArea(float area)
 {
   if (area_ == 0.0 || width_intervals_.size() != height_intervals_.size()
