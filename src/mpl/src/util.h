@@ -6,9 +6,8 @@
 #include <string>
 #include <utility>
 
-#include "shapes.h"
-
 #include "odb/geom.h"
+#include "shapes.h"
 
 namespace mpl {
 

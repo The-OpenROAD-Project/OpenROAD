@@ -2100,20 +2100,14 @@ void HierRTLMP::createFixedTerminal(Cluster* cluster,
                                     const Rect& outline,
                                     std::vector<Macro>& macros)
 {
-  // A conventional fixed terminal is just a point without
-  // the cluster data.
   Point location = cluster->getCenter();
   float width = 0.0f;
   float height = 0.0f;
   Cluster* terminal_cluster = nullptr;
 
-  if (cluster->isClusterOfUnplacedIOPins()) {
-    // Clusters of unplaced IOs are not treated as conventional
-    // fixed terminals. As they correspond to regions, we need
-    // both their actual shape and their cluster data inside SA.
-    location = {cluster->getX(), cluster->getY()};
-    width = cluster->getWidth();
-    height = cluster->getHeight();
+  if (cluster->isClusterOfUnconstrainedIOPins()) {
+    // The cluster data is needed so that the annealer
+    // can identify the cluster of unconstrained IOs.
     terminal_cluster = cluster;
   }
 
@@ -3320,14 +3314,13 @@ bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box)
   for (const odb::Rect& io_blockage : io_blockages_) {
     if (cluster_box.overlaps(io_blockage)) {
       debugPrint(logger_,
-          MPL,
-          "boundary_push",
-          1,
-          "\tFound overlap with IO blockage {}. Push will be reverted.",
-          io_blockage);
+                 MPL,
+                 "boundary_push",
+                 1,
+                 "\tFound overlap with IO blockage {}. Push will be reverted.",
+                 io_blockage);
       return true;
     }
-
   }
 
   return false;
