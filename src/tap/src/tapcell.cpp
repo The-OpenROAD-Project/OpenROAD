@@ -1400,10 +1400,16 @@ odb::dbMaster* Tapcell::getMasterByType(const odb::dbMasterType& type) const
   const std::set<odb::dbMaster*> masters = findMasterByType(type);
 
   if (masters.size() > 1) {
+    std::string masters_names;
+    for (odb::dbMaster* master : masters) {
+      masters_names += " " + master->getName();
+    }
     logger_->error(utl::TAP,
                    104,
-                   "Unable to find a single master for {}",
-                   type.getString());
+                   "Unable to find a single master for {}. Choose one between "
+                   "the following cells:{}.",
+                   type.getString(),
+                   masters_names);
   }
   if (masters.empty()) {
     return nullptr;
