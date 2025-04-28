@@ -91,11 +91,17 @@ class Journal
   void addAction(const MoveCellAction& action)
   {
     affected_nodes_.insert(action.getNode());
+    for (auto pin : action.getNode()->getPins()) {
+      affected_edges_.insert(pin->getEdge());
+    }
     actions_.push_back(std::make_unique<MoveCellAction>(action));
   }
   void addAction(const UnplaceCellAction& action)
   {
     affected_nodes_.insert(action.getNode());
+    for (auto pin : action.getNode()->getPins()) {
+      affected_edges_.insert(pin->getEdge());
+    }
     actions_.push_back(std::make_unique<UnplaceCellAction>(action));
   }
   // getters
@@ -103,6 +109,7 @@ class Journal
   bool isEmpty() const { return actions_.empty(); }
   size_t size() const { return actions_.size(); }
   const std::set<Node*>& getAffectedNodes() const { return affected_nodes_; }
+  const std::set<Edge*>& getAffectedEdges() const { return affected_edges_; }
   const std::vector<std::unique_ptr<JournalAction>>& getActions() const
   {
     return actions_;
@@ -119,6 +126,7 @@ class Journal
   DetailedMgr* mgr_{nullptr};
   std::vector<std::unique_ptr<JournalAction>> actions_;
   std::set<Node*> affected_nodes_;
+  std::set<Edge*> affected_edges_;
 };
 
 }  // namespace dpl

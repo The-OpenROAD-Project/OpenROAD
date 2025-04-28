@@ -11,6 +11,7 @@ void Journal::clearJournal()
 {
   actions_.clear();
   affected_nodes_.clear();
+  affected_edges_.clear();
 }
 namespace {
 void paintInGrid(Grid* grid, Node* node)
