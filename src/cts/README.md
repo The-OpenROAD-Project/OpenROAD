@@ -53,6 +53,8 @@ clock_tree_synthesis
     [-clustering_unbalance_ratio]
     [-sink_clustering_size cluster_size]
     [-sink_clustering_max_diameter max_diameter]
+    [-macro_clustering_size cluster_size]
+    [-macro_clustering_max_diameter max_diameter]
     [-sink_clustering_enable]
     [-balance_levels]
     [-sink_clustering_levels levels]
@@ -78,8 +80,10 @@ clock_tree_synthesis
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-macro_clustering_size` | Specifies the maximum number of sinks per cluster for the macro tree. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-macro_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the macro tree. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |

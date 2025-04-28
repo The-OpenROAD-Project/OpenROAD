@@ -419,16 +419,24 @@ void dbModule::destroy(dbModule* module)
     inst_itr = dbInst::destroy(inst_itr);
   }
 
+  dbSet<dbModBTerm> modbterms = module->getModBTerms();
+  dbSet<dbModBTerm>::iterator modbterm_itr;
+  for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    dbModBTerm* modbterm = *modbterm_itr;
+    // as a side effect this will journal the disconnection
+    // so it can be undone.
+    modbterm->disconnect();
+    modbterm_itr = dbModBTerm::destroy(modbterm_itr);
+  }
+
+  // destroy the modnets last. At this point we expect them
+  // to be totally disconnected (we have disconnected them
+  // from any dbModules, dbModInst and dbITerm/dbBTerm.
+  //
   dbSet<dbModNet> modnets = module->getModNets();
   dbSet<dbModNet>::iterator modnet_itr;
   for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
     modnet_itr = dbModNet::destroy(modnet_itr);
-  }
-
-  dbSet<dbModBTerm> modbterms = module->getModBTerms();
-  dbSet<dbModBTerm>::iterator modbterm_itr;
-  for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
-    modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
 
   dbProperty::destroyProperties(_module);

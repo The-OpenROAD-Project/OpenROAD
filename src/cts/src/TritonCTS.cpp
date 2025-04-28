@@ -1187,6 +1187,7 @@ bool TritonCTS::separateMacroRegSinks(
       }
     }
   }
+
   return true;
 }
 

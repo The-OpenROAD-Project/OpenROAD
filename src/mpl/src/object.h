@@ -219,6 +219,7 @@ class Cluster
   void setY(float y);
   std::pair<float, float> getLocation() const;
   Rect getBBox() const;
+  Point getCenter() const;
 
   // Hierarchy Support
   void setParent(Cluster* parent);
@@ -326,9 +327,11 @@ class HardMacro
  public:
   // Create a macro with specified size
   // Model fixed terminals
-  HardMacro(std::pair<float, float> loc,
+  HardMacro(std::pair<float, float> location,
             const std::string& name,
-            Cluster* cluster = nullptr);
+            float width,
+            float height,
+            Cluster* cluster);
 
   // In this case, we model the pin position at the center of the macro
   HardMacro(float width, float height, const std::string& name);
@@ -344,6 +347,7 @@ class HardMacro
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
   bool isClusterOfUnplacedIOPins() const;
+  Rect getBBox() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -467,12 +471,11 @@ class SoftMacro
   // Create a SoftMacro representing the blockage
   SoftMacro(float width, float height, const std::string& name);
 
-  // Create a SoftMacro representing the IO cluster
-  SoftMacro(const std::pair<float, float>& pos,
+  SoftMacro(const std::pair<float, float>& location,
             const std::string& name,
-            float width = 0.0,
-            float height = 0.0,
-            Cluster* cluster = nullptr);
+            float width,
+            float height,
+            Cluster* cluster);
 
   // create a SoftMacro from a cluster
   SoftMacro(Cluster* cluster);
@@ -483,10 +486,9 @@ class SoftMacro
   void setX(float x);
   void setY(float y);
   void setLocation(const std::pair<float, float>& location);
-  void setWidth(float width);      // only for StdCellCluster and MixedCluster
-  void setHeight(float height);    // only for StdCellCluster and MixedCluster
-  void shrinkArea(float percent);  // only for StdCellCluster
-  void setArea(float area);        // only for StdCellCluster and MixedCluster
+  void setWidth(float width);    // only for StdCellCluster and MixedCluster
+  void setHeight(float height);  // only for StdCellCluster and MixedCluster
+  void setArea(float area);      // only for StdCellCluster and MixedCluster
   void resizeRandomly(std::uniform_real_distribution<float>& distribution,
                       std::mt19937& generator);
   void setShapes(const TilingList& tilings, bool force = false);

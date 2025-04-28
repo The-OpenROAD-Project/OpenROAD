@@ -98,6 +98,7 @@ class SimulatedAnnealingCore
   void fastSA();
 
   void initSequencePair();
+  void setDieArea(const Rect& die_area);
   void setBlockedBoundariesForIOs();
   void updateBestValidResult();
   void useBestValidResult();
@@ -107,7 +108,7 @@ class SimulatedAnnealingCore
   void calOutlinePenalty();
   void calWirelength();
   void addBoundaryDistToWirelength(const T& macro,
-                                   const T& io,
+                                   const T& unplaced_ios,
                                    float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
@@ -123,8 +124,6 @@ class SimulatedAnnealingCore
   void exchangeMacros();
   void generateRandomIndices(int& index1, int& index2);
 
-  virtual void shrink() = 0;  // Shrink the size of macros
-
   // utilities
   static float calAverage(std::vector<float>& value_list);
 
@@ -134,11 +133,8 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  /////////////////////////////////////////////
-  // private member variables
-  /////////////////////////////////////////////
-  // boundary constraints
   Rect outline_;
+  Rect die_area_;  // Offset to the current outline.
 
   // Boundaries blocked for IO pins
   std::set<Boundary> blocked_boundaries_;
@@ -160,10 +156,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-
-  // shrink_factor for dynamic weight
-  const float shrink_factor_ = 0.8;
-  const float shrink_freq_ = 0.1;
 
   // seed for reproduciabilty
   std::mt19937 generator_;
