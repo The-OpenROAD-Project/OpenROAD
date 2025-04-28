@@ -23,7 +23,6 @@
 #include "db_sta/dbSta.hh"
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
-#include "dpo/MakeOptdp.h"
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
@@ -95,7 +94,6 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deleteOptdp(optdp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
@@ -163,7 +161,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
-  optdp_ = makeOptdp();
   finale_ = makeFinale();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
@@ -200,7 +197,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initIoplacer(this);
   initReplace(this);
   initOpendp(this);
-  initOptdp(this);
   initFinale(this);
   initGlobalRouter(this);
   initTritonCts(this);
@@ -470,11 +466,17 @@ void OpenRoad::readVerilog(const char* filename)
   verilog_reader_->read(filename);
 }
 
-void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
+void OpenRoad::linkDesign(const char* design_name,
+                          bool hierarchy,
+                          bool omit_filename_prop)
 
 {
-  bool success
-      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  bool success = dbLinkDesign(design_name,
+                              verilog_network_,
+                              db_,
+                              logger_,
+                              hierarchy,
+                              omit_filename_prop);
 
   if (success) {
     delete verilog_reader_;

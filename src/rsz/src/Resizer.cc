@@ -3666,8 +3666,15 @@ double Resizer::findMaxWireLength1()
 
     // buffer_cells_ is required to be non-empty.
     for (LibertyCell* buffer_cell : buffer_cells_) {
-      double buffer_length = findMaxWireLength(buffer_cell, corner);
+      const double buffer_length = findMaxWireLength(buffer_cell, corner);
       max_length = min(max_length.value_or(INF), buffer_length);
+      debugPrint(logger_,
+                 RSZ,
+                 "max_wire_length",
+                 1,
+                 "Buffer {} has max_wire_length {}",
+                 buffer_cell->name(),
+                 units_->distanceUnit()->asString(buffer_length));
     }
   }
 
@@ -3704,34 +3711,34 @@ double Resizer::findMaxWireLength(LibertyPort* drvr_port, const Corner* corner)
       = dbBlock::create(block_, "wire_delay", block_->getTech(), '/');
   std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
 
-  double drvr_r = drvr_port->driveResistance();
-  // wire_length1 lower bound
-  // wire_length2 upper bound
-  double wire_length1 = 0.0;
+  const double drvr_r = drvr_port->driveResistance();
+  // wire_length_low - lower bound
+  // wire_length_high - upper bound
+  double wire_length_low = 0.0;
   // Initial guess with wire resistance same as driver resistance.
-  double wire_length2 = drvr_r / wireSignalResistance(corner);
-  double tol = .01;  // 1%
-  double diff1 = splitWireDelayDiff(wire_length2, cell, sta);
+  double wire_length_high = drvr_r / wireSignalResistance(corner);
+  const double tol = .01;  // 1%
+  double diff_ub = splitWireDelayDiff(wire_length_high, cell, sta);
   // binary search for diff = 0.
-  while (abs(wire_length1 - wire_length2)
-         > max(wire_length1, wire_length2) * tol) {
-    if (diff1 < 0.0) {
-      wire_length1 = wire_length2;
-      wire_length2 *= 2;
-      diff1 = splitWireDelayDiff(wire_length2, cell, sta);
-    } else {
-      double wire_length3 = (wire_length1 + wire_length2) / 2.0;
-      double diff2 = splitWireDelayDiff(wire_length3, cell, sta);
-      if (diff2 < 0.0) {
-        wire_length1 = wire_length3;
+  while (abs(wire_length_low - wire_length_high)
+         > max(wire_length_low, wire_length_high) * tol) {
+    if (diff_ub < 0.0) {  // unbuffered < 2 * buffered
+      wire_length_low = wire_length_high;
+      wire_length_high *= 2;
+      diff_ub = splitWireDelayDiff(wire_length_high, cell, sta);
+    } else {  // unbuffered > 2 * buffered
+      const double wire_length_mid = (wire_length_low + wire_length_high) / 2.0;
+      const double diff_mid = splitWireDelayDiff(wire_length_mid, cell, sta);
+      if (diff_mid < 0.0) {
+        wire_length_low = wire_length_mid;
       } else {
-        wire_length2 = wire_length3;
-        diff1 = diff2;
+        wire_length_high = wire_length_mid;
+        diff_ub = diff_mid;
       }
     }
   }
   dbBlock::destroy(block);
-  return wire_length1;
+  return wire_length_low;
 }
 
 // objective function
@@ -3843,7 +3850,7 @@ void Resizer::cellWireDelay(LibertyPort* drvr_port,
     parasitics->deleteParasitics(net, dcalc_ap->parasiticAnalysisPt());
   }
 
-  // Cleanup the turds.
+  // Cleanup the temporaries.
   sta->deleteInstance(drvr);
   sta->deleteInstance(load);
   sta->deleteNet(net);
