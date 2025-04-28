@@ -3,7 +3,13 @@
 
 #include "graphics.h"
 
+#include <cmath>
+#include <limits>
+#include <map>
+#include <optional>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "object.h"
@@ -607,14 +613,12 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     return;
   }
 
-  Cluster* io_cluster = io.getCluster();
-
   const int x1 = block_->micronsToDbu(macro.getPinX());
   const int y1 = block_->micronsToDbu(macro.getPinY());
   odb::Point from(x1, y1);
 
   odb::Point to;
-  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+  Boundary constraint_boundary = io.getCluster()->getConstraintBoundary();
 
   if (constraint_boundary == Boundary::L
       || constraint_boundary == Boundary::R) {
@@ -629,12 +633,14 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     to.setX(x2);
     to.setY(y2);
   } else {
-    // For NONE, the shape of the io cluster is the die area.
-    const Rect die = io_cluster->getBBox();
+    // We need to use the bbox of the SoftMacro to get the necessary
+    // offset compensation (the cluster bbox is the bbox w.r.t. to the
+    // actual die area).
+    const Rect offset_die = io.getBBox();
     Boundary closest_unblocked_boundary
-        = getClosestUnblockedBoundary(macro, die);
+        = getClosestUnblockedBoundary(macro, offset_die);
 
-    to = getClosestBoundaryPoint(macro, die, closest_unblocked_boundary);
+    to = getClosestBoundaryPoint(macro, offset_die, closest_unblocked_boundary);
   }
 
   addOutlineOffsetToLine(from, to);
@@ -665,19 +671,15 @@ odb::Point Graphics::getClosestBoundaryPoint(const T& macro,
   if (closest_boundary == Boundary::L) {
     to.setX(block_->micronsToDbu(die.xMin()));
     to.setY(block_->micronsToDbu(macro.getPinY()));
-    to.addX(-outline_.xMin());
   } else if (closest_boundary == Boundary::R) {
     to.setX(block_->micronsToDbu(die.xMax()));
     to.setY(block_->micronsToDbu(macro.getPinY()));
-    to.addX(-outline_.xMin());
   } else if (closest_boundary == Boundary::B) {
     to.setX(block_->micronsToDbu(macro.getPinX()));
     to.setY(block_->micronsToDbu(die.yMin()));
-    to.addY(-outline_.yMin());
   } else {  // Top
     to.setX(block_->micronsToDbu(macro.getPinX()));
     to.setY(block_->micronsToDbu(die.yMax()));
-    to.addY(-outline_.yMin());
   }
 
   return to;

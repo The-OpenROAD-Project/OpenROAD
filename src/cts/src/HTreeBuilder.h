@@ -4,8 +4,11 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 #include <limits>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "CtsObserver.h"
@@ -369,6 +372,7 @@ class HTreeBuilder : public TreeBuilder
   unsigned minLengthSinkRegion_ = 0;
   unsigned clockTreeMaxDepth_ = 0;
   static constexpr int min_clustering_sinks_ = 200;
+  static constexpr int min_clustering_macro_sinks_ = 10;
   std::vector<unsigned> clusterDiameters_ = {50, 100, 200};
   std::vector<unsigned> clusterSizes_ = {10, 20, 30};
 };

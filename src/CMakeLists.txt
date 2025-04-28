@@ -193,16 +193,15 @@ endif()
 
 ################################################################
 
-swig_lib(NAME      openroad_swig
+swig_lib(NAME      ord
          NAMESPACE ord
          I_FILE    OpenRoad.i
          SCRIPTS   ${OPENSTA_HOME}/tcl/Util.tcl
                    OpenRoad.tcl
                    Metrics.tcl
-                   ${ODB_HOME}/src/db/odb.tcl
 )
 
-target_link_libraries(openroad_swig
+target_link_libraries(ord
   PRIVATE
     dbSta
     odb
@@ -252,7 +251,6 @@ add_subdirectory(rsz)
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
-add_subdirectory(dpo)
 add_subdirectory(fin)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -305,10 +303,9 @@ target_include_directories(openroad
 target_link_libraries(openroad
   ifp
   pad
-  openroad_swig
+  ord
   gpl
   dpl
-  dpo
   fin
   rsz
   ppl
@@ -372,14 +369,14 @@ if (Python3_FOUND AND BUILD_PYTHON)
   message(STATUS "Python3 enabled")
   target_compile_definitions(openroad PRIVATE ENABLE_PYTHON3)
 
-  swig_lib(NAME      openroad_swig_py
+  swig_lib(NAME      ord_py
            NAMESPACE ord
            LANGUAGE  python
            I_FILE    OpenRoad-py.i
-           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/openroad_swig_py.py
+           SCRIPTS   ${CMAKE_CURRENT_BINARY_DIR}/ord_py.py
   )
 
-  target_link_libraries(openroad_swig_py
+  target_link_libraries(ord_py
     PRIVATE
       dbSta
       odb
@@ -387,7 +384,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       ifp
   )
   target_link_libraries(openroad
-    openroad_swig_py
+    ord_py
     odb_py
     ifp_py
     utl_py
@@ -399,7 +396,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     tap_py
     cts_py
     drt_py
-    dpo_py
     fin_py
     rcx_py
     rmp_py

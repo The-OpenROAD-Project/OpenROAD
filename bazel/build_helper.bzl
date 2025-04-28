@@ -3,6 +3,16 @@
 
 """Source Tracking for OpenROAD"""
 
+# This file should go away eventually. It hides crucial information
+# for developers and tools.
+#
+# Right now, there is a lot of duplicate use of the same dependencies
+# and sources in the toplevel BUILD file, this is why these
+# variables exist.
+#
+# Once this is a well-defined bazel project, there is no need for
+# variables anymore.
+
 OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #Root OpenRoad
     ":openroad_swig",
@@ -14,8 +24,9 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":init_floorplan_swig",
     ":init_floorplan_tcl",
     #OpenDB
-    ":opendb_tcl",
-    ":opendb_tcl_common",
+    "//src/odb:tcl",
+    "//src/odb:swig",
+    #UPF
     ":upf_swig",
     ":upf_tcl",
     #DbSTA
@@ -75,9 +86,6 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #Distributed
     ":dst_swig",
     ":dst_tcl",
-    #Dpo
-    ":dpo_swig",
-    ":dpo_tcl",
     #Pad
     ":pad_swig",
     ":pad_tcl",
@@ -86,51 +94,12 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":dft_tcl",
 ]
 
-OPENROAD_BINARY_SRCS = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
-    #Root OpenRoad
-    "src/Main.cc",
-    "src/OpenRoad.cc",
-]
-
-OPENROAD_COPTS = [
-    "-fexceptions",
-    "-ffp-contract=off",  # Needed for floating point stability.
-    "-Wno-error",
-    "-Wall",
-    "-Wextra",
-    "-pedantic",
-    "-Wno-cast-qual",  # typically from TCL swigging
-    "-Wno-missing-braces",  # typically from TCL swigging
-    "-Wredundant-decls",
-    "-Wformat-security",
-    "-Wno-sign-compare",
-    "-Wno-unused-parameter",
-]
-
-OPENROAD_DEFINES = [
-    "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
-    "BUILD_TYPE=\\\"release\\\"",
-    "GPU=false",
-    "BUILD_PYTHON=false",
-    "ABC_NAMESPACE=abc",
-    "TCLRL_VERSION_STR=",
-]
-
-OPENROAD_BINARY_DEPS = [
-    ":opendb_lib",
-    ":openroad_version",
-    ":opensta_lib",
-    "@tk_tcl//:tcl",
-]
-
 OPENROAD_LIBRARY_HDRS_INCLUDE = [
     #Root OpenRoad
     "include/ord/*.h",
     "include/ord/*.hh",
     #InitFp
     "src/ifp/include/ifp/*.hh",
-    #GUI
-    "src/gui/include/gui/*.h",
     #STA
     "src/sta/include/sta/*.hh",
     #DbSTA
@@ -179,8 +148,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     "src/rmp/include/rmp/*.h",
     #Distributed
     "src/dst/include/dst/*.h",
-    #Dpo
-    "src/dpo/include/dpo/*.h",
     #pad
     "src/pad/include/pad/*.h",
     #dft
@@ -190,6 +157,8 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     "src/upf/src/*.h",
 ]
 
+# Once we properly include headers relative to project-root,
+# this will not be needed anymore.
 OPENROAD_LIBRARY_INCLUDES = [
     #Root OpenRoad
     "include",
@@ -269,9 +238,6 @@ OPENROAD_LIBRARY_INCLUDES = [
     #Distributed
     "src/dst/include",
     "src/dst/include/dst",
-    #Dpo
-    "src/dpo/include",
-    "src/dpo/include/dpo",
     #pad
     "src/pad/include",
     #utl
@@ -287,34 +253,6 @@ OPENROAD_LIBRARY_INCLUDES = [
     "src/dft/src/stitch",
     #upf
     "src/upf/include",
-]
-
-OPENROAD_LIBRARY_DEPS = [
-    ":munkres",
-    ":opendb_lib",
-    ":openroad_version",
-    ":opensta_lib",
-    "@or-tools//ortools/base:base",
-    "@or-tools//ortools/linear_solver:linear_solver",
-    "@or-tools//ortools/linear_solver:linear_solver_cc_proto",
-    "@or-tools//ortools/sat:cp_model",
-    "@edu_berkeley_abc//:abc-lib",
-    "@boost.asio",
-    "@boost.geometry",
-    "@boost.graph",
-    "@boost.heap",
-    "@boost.icl",
-    "@boost.json",
-    "@boost.multi_array",
-    "@boost.polygon",
-    "@boost.property_tree",
-    "@boost.stacktrace",
-    "@boost.thread",
-    "@eigen",
-    "@com_github_quantamhd_lemon//:lemon",
-    "@org_llvm_openmp//:openmp",
-    "@spdlog",
-    "@tk_tcl//:tcl",
 ]
 
 OPENROAD_LIBRARY_SRCS_EXCLUDE = [
@@ -345,7 +283,11 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/rsz/src/*.h",
     #OpenDP
     "src/dpl/src/*.cpp",
+    "src/dpl/src/*.cxx",
     "src/dpl/src/*.h",
+    "src/dpl/src/**/*.h",
+    "src/dpl/src/**/*.cpp",
+    "src/dpl/src/**/*.cxx",
     #finale
     "src/fin/src/*.cpp",
     "src/fin/src/*.h",
@@ -399,10 +341,6 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     #Distributed
     "src/dst/src/*.cc",
     "src/dst/src/*.h",
-    #Dpo
-    "src/dpo/src/*.cpp",
-    "src/dpo/src/*.cxx",
-    "src/dpo/src/*.h",
     #pad
     "src/pad/src/*.cpp",
     "src/pad/src/*.h",

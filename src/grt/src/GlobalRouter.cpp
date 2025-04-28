@@ -9,8 +9,12 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <istream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
 #include <set>
 #include <sstream>
@@ -154,7 +158,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
 
-  std::vector<Net*> nets = findNets();
+  std::vector<Net*> nets = findNets(true);
   checkPinPlacement();
   initNetlist(nets);
 
@@ -528,6 +532,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
+  loadGuidesFromDB();
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
   return builder.routeLayerLengths(db_net);
@@ -2033,7 +2038,7 @@ void GlobalRouter::initGridAndNets()
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
-  std::vector<Net*> nets = findNets();
+  std::vector<Net*> nets = findNets(false);
   initNetlist(nets);
 }
 
@@ -3457,9 +3462,11 @@ static bool nameLess(const Net* a, const Net* b)
   return a->getName() < b->getName();
 }
 
-std::vector<Net*> GlobalRouter::findNets()
+std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 {
-  initClockNets();
+  if (init_clock_nets) {
+    initClockNets();
+  }
 
   std::vector<odb::dbNet*> db_nets;
   if (nets_to_route_.empty()) {

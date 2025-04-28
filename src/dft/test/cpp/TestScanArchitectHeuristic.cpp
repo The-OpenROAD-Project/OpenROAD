@@ -1,5 +1,8 @@
+#include <memory>
 #include <sstream>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "ClockDomain.hh"

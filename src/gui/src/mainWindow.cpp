@@ -16,6 +16,7 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QWidgetAction>
+#include <cmath>
 #include <iomanip>
 #include <map>
 #include <sstream>
@@ -149,6 +150,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &LayoutTabs::executionPaused);
   connect(
       controls_, &DisplayControls::changed, viewers_, &LayoutTabs::fullRepaint);
+  connect(controls_,
+          &DisplayControls::colorChanged,
+          viewers_,
+          &LayoutTabs::updateBackgroundColors);
   connect(controls_,
           &DisplayControls::changed,
           hierarchy_widget_,

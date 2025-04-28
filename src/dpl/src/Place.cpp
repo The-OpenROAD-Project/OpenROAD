@@ -6,15 +6,17 @@
 #include <cstdlib>
 #include <limits>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
-#include "DplObserver.h"
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
+#include "PlacementDRC.h"
 #include "dpl/Opendp.h"
-#include "dpl/Padding.h"
-#include "dpl/PlacementDRC.h"
+#include "graphics/DplObserver.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/dbTransform.h"
 #include "utl/Logger.h"
 
@@ -57,7 +59,7 @@ void Opendp::detailedPlacement()
   // y axis dummycell insertion
   groupInitPixels();
 
-  if (!groups_.empty()) {
+  if (!arch_->getRegions().empty()) {
     placeGroups();
   }
   place();
@@ -78,11 +80,11 @@ void Opendp::placeGroups()
 
   // naive placement method ( multi -> single )
   placeGroups2();
-  for (Group& group : groups_) {
+  for (auto& group : arch_->getRegions()) {
     // magic number alert
     for (int pass = 0; pass < 3; pass++) {
-      int refine_count = groupRefine(&group);
-      int anneal_count = anneal(&group);
+      int refine_count = groupRefine(group);
+      int anneal_count = anneal(group);
       // magic number alert
       if (refine_count < 10 || anneal_count < 100) {
         break;
@@ -93,21 +95,24 @@ void Opendp::placeGroups()
 
 void Opendp::prePlace()
 {
-  for (Node& cell : cells_) {
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
     const Rect* group_rect = nullptr;
-    if (!cell.inGroup() && !cell.isPlaced()) {
-      for (Group& group : groups_) {
-        for (const Rect& rect : group.getRects()) {
-          if (checkOverlap(&cell, rect)) {
+    if (!cell->inGroup() && !cell->isPlaced()) {
+      for (auto& group : arch_->getRegions()) {
+        for (const Rect& rect : group->getRects()) {
+          if (checkOverlap(cell.get(), rect)) {
             group_rect = &rect;
           }
         }
       }
       if (group_rect) {
-        const DbuPt nearest = nearestPt(&cell, *group_rect);
-        const GridPt legal = legalGridPt(&cell, nearest);
-        if (mapMove(&cell, legal)) {
-          cell.setHold(true);
+        const DbuPt nearest = nearestPt(cell.get(), *group_rect);
+        const GridPt legal = legalGridPt(cell.get(), nearest);
+        if (mapMove(cell.get(), legal)) {
+          cell->setHold(true);
         }
       }
     }
@@ -173,13 +178,13 @@ DbuPt Opendp::nearestPt(const Node* cell, const DbuRect& rect) const
 
 void Opendp::prePlaceGroups()
 {
-  for (Group& group : groups_) {
-    for (Node* cell : group.getCells()) {
+  for (auto& group : arch_->getRegions()) {
+    for (Node* cell : group->getCells()) {
       if (!cell->isFixed() && !cell->isPlaced()) {
         int dist = numeric_limits<int>::max();
         bool in_group = false;
         const Rect* nearest_rect = nullptr;
-        for (const Rect& rect : group.getRects()) {
+        for (const Rect& rect : group->getRects()) {
           if (isInside(cell, rect)) {
             in_group = true;
           }
@@ -279,22 +284,23 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 void Opendp::place()
 {
   vector<Node*> sorted_cells;
-  sorted_cells.reserve(cells_.size());
+  sorted_cells.reserve(network_->getNumCells());
 
-  for (Node& cell : cells_) {
-    if (!(cell.isFixed() || cell.inGroup() || cell.isPlaced())) {
-      sorted_cells.push_back(&cell);
-      if (!grid_->cellFitsInCore(&cell)) {
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    if (!(cell->isFixed() || cell->inGroup() || cell->isPlaced())) {
+      sorted_cells.push_back(cell.get());
+      if (!grid_->cellFitsInCore(cell.get())) {
         logger_->error(DPL,
                        15,
                        "instance {} does not fit inside the ROW core area.",
-                       cell.name());
+                       cell->name());
       }
     }
   }
-  sort(sorted_cells.begin(),
-       sorted_cells.end(),
-       CellPlaceOrderLess(grid_->getCore()));
+  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(core_));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -323,17 +329,15 @@ void Opendp::place()
 
 void Opendp::placeGroups2()
 {
-  for (Group& group : groups_) {
+  for (auto& group : arch_->getRegions()) {
     vector<Node*> group_cells;
-    group_cells.reserve(cells_.size());
-    for (Node* cell : group.getCells()) {
+    group_cells.reserve(network_->getNumCells());
+    for (Node* cell : group->getCells()) {
       if (!cell->isFixed() && !cell->isPlaced()) {
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(),
-         group_cells.end(),
-         CellPlaceOrderLess(grid_->getCore()));
+    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(core_));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -366,16 +370,16 @@ void Opendp::placeGroups2()
 
     if (!single_pass || !multi_pass) {
       // Erase group cells
-      for (Node* cell : group.getCells()) {
+      for (Node* cell : group->getCells()) {
         unplaceCell(cell);
       }
 
       // Determine brick placement by utilization.
       // magic number alert
-      if (group.getUtil() > 0.95) {
-        brickPlace1(&group);
+      if (group->getUtil() > 0.95) {
+        brickPlace1(group);
       } else {
-        brickPlace2(&group);
+        brickPlace2(group);
       }
     }
   }
@@ -503,11 +507,14 @@ int Opendp::anneal(Group* group)
 int Opendp::refine()
 {
   vector<Node*> sorted;
-  sorted.reserve(cells_.size());
+  sorted.reserve(network_->getNumCells());
 
-  for (Node& cell : cells_) {
-    if (!(cell.isFixed() || cell.isHold() || cell.inGroup())) {
-      sorted.push_back(&cell);
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    if (!(cell->isFixed() || cell->isHold() || cell->inGroup())) {
+      sorted.push_back(cell.get());
     }
   }
   sort(sorted.begin(), sorted.end(), [&](Node* cell1, Node* cell2) {
@@ -915,8 +922,8 @@ DbuPt Opendp::legalPt(const Node* cell, const DbuPt& pt) const
   const GridX grid_x{divRound(core_x.v, site_width.v)};
   const DbuX legal_x{gridToDbu(grid_x, site_width)};
   // Align to row
-  const DbuY core_y = std::clamp(
-      pt.y, DbuY{0}, DbuY{grid_->getCore().yMax()} - cell->getHeight());
+  const DbuY core_y
+      = std::clamp(pt.y, DbuY{0}, DbuY{core_.yMax()} - cell->getHeight());
   const GridY grid_y = grid_->gridRoundY(core_y);
   DbuY legal_y = grid_->gridYToDbu(grid_y);
 
@@ -1026,6 +1033,7 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
 void Opendp::initMacrosAndGrid()
 {
   importDb();
+  adjustNodesOrient();
   initGrid();
   setFixedGridCells();
 }
@@ -1100,20 +1108,19 @@ void Opendp::legalCellPos(dbInst* db_inst)
   // Transform position on real position
   setGridPaddedLoc(&cell, legal_grid_pt.x, legal_grid_pt.y);
   // Set position of cell on db
-  const Rect core = grid_->getCore();
-  db_inst->setLocation(core.xMin() + cell.getLeft().v,
-                       core.yMin() + cell.getBottom().v);
+  db_inst->setLocation(core_.xMin() + cell.getLeft().v,
+                       core_.yMin() + cell.getBottom().v);
 }
 
 DbuPt Opendp::initialLocation(const Node* cell, const bool padded) const
 {
   DbuPt loc;
   cell->getDbInst()->getLocation(loc.x.v, loc.y.v);
-  loc.x -= grid_->getCore().xMin();
+  loc.x -= core_.xMin();
   if (padded) {
     loc.x -= gridToDbu(padding_->padLeft(cell), grid_->getSiteWidth());
   }
-  loc.y -= grid_->getCore().yMin();
+  loc.y -= core_.yMin();
   return loc;
 }
 

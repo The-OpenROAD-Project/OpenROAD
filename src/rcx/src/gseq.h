@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <vector>
+
 #include "odb/array1.h"
 #include "odb/odb.h"
 #include "odb/util.h"

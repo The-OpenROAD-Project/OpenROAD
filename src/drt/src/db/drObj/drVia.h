@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 
 #include "db/drObj/drRef.h"
 #include "db/tech/frViaDef.h"

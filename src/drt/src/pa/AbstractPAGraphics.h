@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "FlexPA.h"
@@ -19,12 +20,12 @@ class AbstractPAGraphics
 
   virtual void startPin(frBPin* pin,
                         frInstTerm* inst_term,
-                        std::set<frInst*, frBlockObjectComp>* inst_class)
+                        frOrderedIdSet<frInst*>* inst_class)
       = 0;
 
   virtual void startPin(frMPin* pin,
                         frInstTerm* inst_term,
-                        std::set<frInst*, frBlockObjectComp>* inst_class)
+                        frOrderedIdSet<frInst*>* inst_class)
       = 0;
 
   virtual void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,

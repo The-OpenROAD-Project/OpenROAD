@@ -6,12 +6,12 @@
 #include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace ant {
 // Tcl files encoded into strings.
 extern const char* ant_tcl_inits[];
-}  // namespace sta
+}  // namespace ant
 
 extern "C" {
 extern int Ant_Init(Tcl_Interp* interp);
@@ -34,7 +34,7 @@ void initAntennaChecker(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
 
   Ant_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::ant_tcl_inits);
+  utl::evalTclInit(tcl_interp, ant::ant_tcl_inits);
   openroad->getAntennaChecker()->init(
       openroad->getDb(), openroad->getGlobalRouter(), openroad->getLogger());
 }

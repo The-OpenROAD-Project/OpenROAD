@@ -3,6 +3,7 @@
 
 #include "layoutTabs.h"
 
+#include <functional>
 #include <utility>
 #include <vector>
 
@@ -42,6 +43,22 @@ LayoutTabs::LayoutTabs(Options* options,
   connect(this, &QTabWidget::currentChanged, this, &LayoutTabs::tabChange);
 }
 
+void LayoutTabs::updateBackgroundColors()
+{
+  for (LayoutViewer* viewer : viewers_) {
+    updateBackgroundColor(viewer);
+    viewer->fullRepaint();
+  }
+}
+
+void LayoutTabs::updateBackgroundColor(LayoutViewer* viewer)
+{
+  QPalette palette;
+  palette.setColor(QPalette::Window, options_->background());
+  viewer->setPalette(palette);
+  viewer->setAutoFillBackground(true);
+}
+
 void LayoutTabs::blockLoaded(odb::dbBlock* block)
 {
   // Check if we already have a tab for this block
@@ -79,12 +96,7 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
   const auto name = fmt::format("{} ({})", block->getName(), tech->getName());
   addTab(scroll, name.c_str());
 
-  // This has to be done after addTab.  For unexplained reasons it
-  // doesn't work for all users if done in LayoutViewer::LayoutViewer.
-  QPalette palette;
-  palette.setColor(QPalette::Window, LayoutViewer::background());
-  viewer->setPalette(palette);
-  viewer->setAutoFillBackground(true);
+  updateBackgroundColor(viewer);
 
   // forward signals from the viewer upward
   connect(viewer, &LayoutViewer::location, this, &LayoutTabs::location);

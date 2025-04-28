@@ -17,7 +17,9 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstddef>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "dbModNet.h"
@@ -420,15 +422,28 @@ void dbModule::destroy(dbModule* module)
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
   dbSet<dbModBTerm>::iterator modbterm_itr;
   for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    dbModBTerm* modbterm = *modbterm_itr;
+    // as a side effect this will journal the disconnection
+    // so it can be undone.
+    modbterm->disconnect();
     modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
 
+  // destroy the modnets last. At this point we expect them
+  // to be totally disconnected (we have disconnected them
+  // from any dbModules, dbModInst and dbITerm/dbBTerm.
+  //
   dbSet<dbModNet> modnets = module->getModNets();
   dbSet<dbModNet>::iterator modnet_itr;
   for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
+  dbProperty::destroyProperties(_module);
+
+  // Journal the deletion of the dbModule after its ports
+  // and properties deleted, so that on restore we have
+  // dbModule to hang objects on.
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
@@ -437,7 +452,6 @@ void dbModule::destroy(dbModule* module)
     block->_journal->endAction();
   }
 
-  dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);
 }

@@ -9,20 +9,21 @@ proc read_verilog { filename } {
   ord::read_verilog_cmd [file nativename $filename]
 }
 
-sta::define_cmd_args "link_design" {[-hier] top_cell_name}
+sta::define_cmd_args "link_design" {[-hier] [-omit_filename_prop] top_cell_name}
 
 proc link_design { args } {
   sta::parse_key_args "link_design" args keys {} \
-    flags {-hier}
+    flags {-hier -omit_filename_prop}
 
   set hierarchy [info exists flags(-hier)]
+  set omit_filename_prop [info exists flags(-omit_filename_prop)]
   sta::check_argc_eq1 "link_design" $args
   set top_cell_name [lindex $args 0]
 
   if { ![ord::db_has_tech] } {
     utl::error ORD 2010 "no technology has been read."
   }
-  ord::link_design_db_cmd $top_cell_name $hierarchy
+  ord::link_design_db_cmd $top_cell_name $hierarchy $omit_filename_prop
 }
 
 sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\

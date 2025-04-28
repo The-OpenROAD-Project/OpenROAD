@@ -10,14 +10,11 @@
 #include "spdlog/fmt/fmt.h"
 #include "sta/Delay.hh"
 #include "sta/Network.hh"
-#include "sta/PathRef.hh"
+#include "sta/Path.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
-
-using std::array;
-using std::string;
 
 using utl::Logger;
 
@@ -28,7 +25,7 @@ using sta::DcalcAnalysisPt;
 using sta::Delay;
 using sta::LibertyCell;
 using sta::Network;
-using sta::PathRef;
+using sta::Path;
 using sta::Pin;
 using sta::Required;
 using sta::RiseFall;
@@ -41,7 +38,7 @@ class RepairSetup;
 
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using Requireds = array<Required, RiseFall::index_count>;
+using Requireds = std::array<Required, RiseFall::index_count>;
 
 enum class BufferedNetType
 {
@@ -83,7 +80,7 @@ class BufferedNet
               const BufferedNetPtr& ref,
               const Corner* corner,
               const Resizer* resizer);
-  string to_string(const Resizer* resizer) const;
+  std::string to_string(const Resizer* resizer) const;
   void reportTree(const Resizer* resizer) const;
   void reportTree(int level, const Resizer* resizer) const;
   BufferedNetType type() const { return type_; }
@@ -122,11 +119,12 @@ class BufferedNet
   int maxLoadWireLength() const;
 
   // Rebuffer
-  const PathRef& arrivalPath() const { return arrival_path_; }
-  const PathRef& requiredPath() const { return required_path_; }
-  Delay slack(const StaState* sta) const;
-  void setRequiredPath(const PathRef& path_ref);
-  void setArrivalPath(const PathRef& path_ref);
+  Required required() const;
+  const Path* arrivalPath() const { return arrival_path_; }
+  const Path* requiredPath() const { return required_path_; }
+  void setArrivalPath(const Path* path);
+  void setRequiredPath(const Path* path);
+  Delay slack() const;
 
   Delay requiredDelay() const { return required_delay_; }
   void setRequiredDelay(Delay delay);
@@ -148,30 +146,31 @@ class BufferedNet
   BufferedNetType type_;
   Point location_;
   // only used by load type
-  const Pin* load_pin_;
+  const Pin* load_pin_{nullptr};
   // only used by buffer type
-  LibertyCell* buffer_cell_;
+  LibertyCell* buffer_cell_{nullptr};
   // only used by wire type
-  int layer_;
+  int layer_{null_layer};
   // only used by buffer, wire, and junc types
   BufferedNetPtr ref_;
   // only used by junc type
   BufferedNetPtr ref2_;
 
   // Capacitance looking downstream from here.
-  float cap_;
-  float fanout_;
-  float max_load_slew_;
+  float cap_{0.0};
+  float fanout_{1};
+  float max_load_slew_{sta::INF};
 
   // Rebuffer annotations
-  // PathRef for worst required path at load.
-  PathRef required_path_;
+  // Path for worst required path at load.
+  const Path* required_path_{nullptr};
   // PathRef for the corresponding arrival at driver pin.
-  PathRef arrival_path_;
+  const Path* arrival_path_{nullptr};
+
   // Max delay from here to the loads.
-  Delay required_delay_;
+  Delay required_delay_{0.0};
   // Area of buffers on the buffer tree looking dowsmtrem from here.
-  float area_;
+  float area_{0};
 
   // Computed delay of the buffer/wire
   Delay delay_ = 0;

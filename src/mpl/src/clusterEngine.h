@@ -3,7 +3,11 @@
 
 #pragma once
 
+#include <map>
+#include <memory>
 #include <queue>
+#include <set>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -93,6 +97,7 @@ struct PhysicalHierarchy
   float macro_with_halo_area{0.0f};
   Rect global_fence;
   Rect floorplan_shape;
+  Rect die_area;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
@@ -152,6 +157,7 @@ class ClusteringEngine
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void setDieArea();
   void setFloorplanShape();
   void searchForFixedInstsInsideFloorplanShape();
   float computeMacroWithHaloArea(

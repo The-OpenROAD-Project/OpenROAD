@@ -3,6 +3,8 @@
 
 #include "techlayer.h"
 
+#include <algorithm>
+#include <cmath>
 #include <limits>
 #include <optional>
 #include <string>

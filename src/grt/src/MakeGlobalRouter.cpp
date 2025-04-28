@@ -3,17 +3,19 @@
 
 #include "grt/MakeGlobalRouter.h"
 
+#include <memory>
+
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
 #include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "utl/decode.h"
 
-namespace sta {
+namespace grt {
 // Tcl files encoded into strings.
 extern const char* grt_tcl_inits[];
-}  // namespace sta
+}  // namespace grt
 
 extern "C" {
 extern int Grt_Init(Tcl_Interp* interp);
@@ -36,7 +38,7 @@ void initGlobalRouter(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::grt_tcl_inits);
+  utl::evalTclInit(tcl_interp, grt::grt_tcl_inits);
   openroad->getGlobalRouter()->init(
       openroad->getLogger(),
       openroad->getSteinerTreeBuilder(),

@@ -4,6 +4,7 @@
 #include "via_repair.h"
 
 #include <boost/polygon/polygon.hpp>
+#include <map>
 #include <set>
 #include <vector>
 

@@ -7,6 +7,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -71,10 +72,10 @@ NesterovPlace::~NesterovPlace()
 void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
-  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
-  auto densityGradSum_ = nb->getDensityGradSum();
+  float wireLengthGradSum = nb->getWireLengthGradSum();
+  float densityGradSum = nb->getDensityGradSum();
 
-  if (wireLengthGradSum_ == 0
+  if (wireLengthGradSum == 0
       && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
@@ -97,23 +98,16 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
     return;
   }
 
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
-      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    isDiverged_ = true;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
 void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
-  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
-  auto densityGradSum_ = nb->getDensityGradSum();
+  float wireLengthGradSum = nb->getWireLengthGradSum();
+  float densityGradSum = nb->getDensityGradSum();
 
-  if (wireLengthGradSum_ == 0
+  if (wireLengthGradSum == 0
       && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
@@ -136,24 +130,17 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
     return;
   }
 
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
-      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    isDiverged_ = true;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
 void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
 
-  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
-  auto densityGradSum_ = nb->getDensityGradSum();
+  float wireLengthGradSum = nb->getWireLengthGradSum();
+  float densityGradSum = nb->getDensityGradSum();
 
-  if (wireLengthGradSum_ == 0
+  if (wireLengthGradSum == 0
       && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
@@ -175,15 +162,7 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
     updateNextGradient(nb);
     return;
   }
-
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
-      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
-    isDiverged_ = true;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  checkInvalidValues(wireLengthGradSum, densityGradSum);
 }
 
 void NesterovPlace::init()
@@ -275,7 +254,7 @@ void NesterovPlace::reset()
   baseWireLengthCoef_ = 0;
   wireLengthCoefX_ = wireLengthCoefY_ = 0;
   prevHpwl_ = 0;
-  isDiverged_ = false;
+  num_region_diverged_ = 0;
   is_routability_need_ = true;
 
   divergeMsg_ = "";
@@ -289,7 +268,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function,
   // replace must be skipped.
-  if (isDiverged_) {
+  if (num_region_diverged_ > 0) {
     log_->error(GPL, divergeCode_, divergeMsg_);
     return 0;
   }
@@ -339,29 +318,27 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
-      int numDiverge = 0;
+      num_region_diverged_ = 0;
       for (auto& nb : nbVec_) {
         updateNextGradient(nb);
-        numDiverge += nb->isDiverged();
+        num_region_diverged_ += nb->isDiverged();
       }
 
       // NaN or inf is detected in WireLength/Density Coef
-      if (numDiverge > 0 || isDiverged_) {
-        isDiverged_ = true;
+      if (num_region_diverged_ > 0) {
         divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
         divergeCode_ = 306;
         break;
       }
 
       int stepLengthLimitOK = 0;
-      numDiverge = 0;
+      num_region_diverged_ = 0;
       for (auto& nb : nbVec_) {
         stepLengthLimitOK += nb->nesterovUpdateStepLength();
-        numDiverge += nb->isDiverged();
+        num_region_diverged_ += nb->isDiverged();
       }
 
-      if (numDiverge > 0) {
-        isDiverged_ = true;
+      if (num_region_diverged_ > 0) {
         divergeMsg_ = "RePlAce diverged at newStepLength.";
         divergeCode_ = 305;
         break;
@@ -387,7 +364,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                  "Backtracking limit reached so a small step will be taken");
     }
 
-    if (isDiverged_) {
+    if (num_region_diverged_ > 0) {
       break;
     }
 
@@ -442,7 +419,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       log_->info(GPL,
                  101,
-                 "   Iter: {}, overflow: {:.3f}, keep rsz at: {}, HPWL: {}",
+                 "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
+                 "HPWL: {}",
                  iter + 1,
                  average_overflow_,
                  npVars_.keepResizeBelowOverflow,
@@ -461,13 +439,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       int nbc_total_gcells_before_td = nbc_->getNewGcellsCount();
 
       for (auto& nb : nbVec_) {
-        nb_gcells_before_td += nb->gCells().size();
+        nb_gcells_before_td += nb->getGCells().size();
       }
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+      nbVec_[0]->setTrueReprintIterHeader();
 
       for (auto& nb : nbVec_) {
-        nb_gcells_after_td += nb->gCells().size();
+        nb_gcells_after_td += nb->getGCells().size();
       }
 
       nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
@@ -562,7 +541,18 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
-    if (!npVars_.disableRevertIfDiverge) {
+    // diverge detection on
+    // large max_phi_cof value + large design
+    //
+    // 1) happen overflow < 20%
+    // 2) Hpwl is growing
+
+    num_region_diverged_ = 0;
+    for (auto& nb : nbVec_) {
+      num_region_diverged_ += nb->checkDivergence();
+    }
+
+    if (!npVars_.disableRevertIfDiverge && num_region_diverged_ == 0) {
       if (is_min_hpwl_) {
         diverge_snapshot_WlCoefX = wireLengthCoefX_;
         diverge_snapshot_WlCoefY = wireLengthCoefY_;
@@ -572,19 +562,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         is_diverge_snapshot_saved = true;
       }
     }
-    // diverge detection on
-    // large max_phi_cof value + large design
-    //
-    // 1) happen overflow < 20%
-    // 2) Hpwl is growing
 
-    int numDiverge = 0;
-    for (auto& nb : nbVec_) {
-      numDiverge += nb->checkDivergence();
-    }
-
-    if (numDiverge > 0) {
-      log_->report("Divergence occured in {} regions.", numDiverge);
+    if (num_region_diverged_ > 0) {
+      log_->report("Divergence occured in {} regions.", num_region_diverged_);
 
       // TODO: this divergence treatment uses the non-deterministic aspect of
       // routability inflation to try one more time if a divergence is detected.
@@ -632,9 +612,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
         for (auto& nb : nbVec_) {
           nb->revertToSnapshot();
         }
-        isDiverged_ = false;
+        num_region_diverged_ = 0;
         break;
       } else {
+        divergeMsg_
+            = "RePlAce divergence detected: "
+              "Current overflow is low and increasing relative to minimum,"
+              "and the HPWL has significantly worsened. "
+              "Consider re-running with a smaller max_phi_cof value.";
+        divergeCode_ = 307;
         break;
       }
     }
@@ -656,6 +642,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // check routability using RUDY or GR
     if (npVars_.routability_driven_mode && is_routability_need_
         && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
+      nbVec_[0]->setTrueReprintIterHeader();
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
@@ -677,7 +664,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nb->revertToSnapshot();
           nb->resetMinSumOverflow();
         }
-        log_->info(GPL, 89, "Routability: revert back to snapshot");
+        log_->info(
+            GPL, 89, "Routability end iteration: revert back to snapshot");
       }
     }
 
@@ -695,7 +683,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // db should be updated.
   updateDb();
 
-  if (isDiverged_) {
+  if (num_region_diverged_ > 0) {
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
@@ -763,6 +751,22 @@ void NesterovPlace::updateDb()
   nbc_->updateDbGCells();
 }
 
+// divergence detection on
+// Wirelength / density gradient calculation
+void NesterovPlace::checkInvalidValues(float wireLengthGradSum,
+                                       float densityGradSum)
+{
+  if (std::isnan(wireLengthGradSum) || std::isnan(densityGradSum)
+      || std::isinf(wireLengthGradSum) || std::isinf(densityGradSum)) {
+    divergeMsg_
+        = "RePlAce diverged at wire/density gradient Sum. An internal value is "
+          "NaN or Inf.";
+    divergeCode_ = 306;
+    num_region_diverged_ = 1;
+    return;
+  }
+}
+
 nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
     : nesterov_place_(nesterov_place)
 {
@@ -770,18 +774,18 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 
 void NesterovPlace::createGCell(odb::dbInst* db_inst)
 {
-  auto gcell_index = nbc_->createGCell(db_inst);
+  auto gcell_index = nbc_->createCbkGCell(db_inst);
   for (auto& nesterov : nbVec_) {
     // TODO: manage regions, not every NB should create a
     // gcell.
-    nesterov->createGCell(db_inst, gcell_index, rb_.get());
+    nesterov->createCbkGCell(db_inst, gcell_index, rb_.get());
   }
 }
 
-void NesterovPlace::destroyGCell(odb::dbInst* db_inst)
+void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 {
   for (auto& nesterov : nbVec_) {
-    nesterov->destroyGCell(db_inst);
+    nesterov->destroyCbkGCell(db_inst);
   }
 }
 
@@ -791,28 +795,28 @@ void NesterovPlace::createGNet(odb::dbNet* db_net)
   if (!isValidSigType(netType)) {
     return;
   }
-  nbc_->createGNet(db_net, pbc_->skipIoMode());
+  nbc_->createCbkGNet(db_net, pbc_->skipIoMode());
 }
 
-void NesterovPlace::destroyGNet(odb::dbNet* db_net)
+void NesterovPlace::destroyCbkGNet(odb::dbNet* db_net)
 {
-  nbc_->destroyGNet(db_net);
+  nbc_->destroyCbkGNet(db_net);
 }
 
-void NesterovPlace::createITerm(odb::dbITerm* iterm)
-{
-  if (!isValidSigType(iterm->getSigType())) {
-    return;
-  }
-  nbc_->createITerm(iterm);
-}
-
-void NesterovPlace::destroyITerm(odb::dbITerm* iterm)
+void NesterovPlace::createCbkITerm(odb::dbITerm* iterm)
 {
   if (!isValidSigType(iterm->getSigType())) {
     return;
   }
-  nbc_->destroyITerm(iterm);
+  nbc_->createCbkITerm(iterm);
+}
+
+void NesterovPlace::destroyCbkITerm(odb::dbITerm* iterm)
+{
+  if (!isValidSigType(iterm->getSigType())) {
+    return;
+  }
+  nbc_->destroyCbkITerm(iterm);
 }
 
 void NesterovPlace::resizeGCell(odb::dbInst* db_inst)
@@ -847,17 +851,17 @@ void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)
 {
-  nesterov_place_->destroyGCell(db_inst);
+  nesterov_place_->destroyCbkGCell(db_inst);
 }
 
 void nesterovDbCbk::inDbITermCreate(odb::dbITerm* iterm)
 {
-  nesterov_place_->createITerm(iterm);
+  nesterov_place_->createCbkITerm(iterm);
 }
 
 void nesterovDbCbk::inDbITermDestroy(odb::dbITerm* iterm)
 {
-  nesterov_place_->destroyITerm(iterm);
+  nesterov_place_->destroyCbkITerm(iterm);
 }
 
 void nesterovDbCbk::inDbNetCreate(odb::dbNet* db_net)

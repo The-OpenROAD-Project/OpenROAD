@@ -23,14 +23,14 @@
 #include "db_sta/dbSta.hh"
 #include "dft/MakeDft.hh"
 #include "dpl/MakeOpendp.h"
-#include "dpo/MakeOptdp.h"
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
 #include "gpl/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
-#include "ifp//MakeInitFloorplan.hh"
+#include "ifp/MakeInitFloorplan.hh"
 #include "mpl/MakeMacroPlacer.h"
+#include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -46,26 +46,24 @@
 #include "rcx/MakeOpenRCX.h"
 #include "rmp/MakeRestructure.h"
 #include "rsz/MakeResizer.hh"
-#include "sta/StaMain.hh"
 #include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "triton_route/MakeTritonRoute.h"
+#include "upf/MakeUpf.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/decode.h"
 
-namespace sta {
-extern const char* openroad_swig_tcl_inits[];
-extern const char* upf_tcl_inits[];
-}  // namespace sta
+namespace ord {
+extern const char* ord_tcl_inits[];
+}  // namespace ord
 
 // Swig uses C linkage for init functions.
 extern "C" {
-extern int Openroad_swig_Init(Tcl_Interp* interp);
-extern int Odbtcl_Init(Tcl_Interp* interp);
-extern int Upf_Init(Tcl_Interp* interp);
+extern int Ord_Init(Tcl_Interp* interp);
 }
 
 namespace ord {
@@ -75,8 +73,6 @@ using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbTech;
-
-using sta::evalTclInit;
 
 using utl::ORD;
 
@@ -96,7 +92,6 @@ OpenRoad::~OpenRoad()
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
-  deleteOptdp(optdp_);
   deleteGlobalRouter(global_router_);
   deleteRestructure(restructure_);
   deleteTritonCts(tritonCts_);
@@ -163,7 +158,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   ioPlacer_ = makeIoplacer();
   resizer_ = makeResizer();
   opendp_ = makeOpendp();
-  optdp_ = makeOptdp();
   finale_ = makeFinale();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
@@ -183,15 +177,15 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft_ = dft::makeDft();
 
   // Init components.
-  Openroad_swig_Init(tcl_interp);
+  Ord_Init(tcl_interp);
   // Import TCL scripts.
-  evalTclInit(tcl_interp, sta::openroad_swig_tcl_inits);
+  utl::evalTclInit(tcl_interp, ord::ord_tcl_inits);
 
   initLogger(logger_, tcl_interp);
-  initGui(this);  // first so we can register our sink with the logger
-  Odbtcl_Init(tcl_interp);
-  Upf_Init(tcl_interp);
-  evalTclInit(tcl_interp, sta::upf_tcl_inits);
+  // GUI first so we can register our sink with the logger
+  initGui(tcl_interp, db_, sta_, logger_);
+  initOdb(tcl_interp);
+  initUpf(this);
   initInitFloorplan(this);
   initDbSta(this);
   initResizer(this);
@@ -199,7 +193,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initIoplacer(this);
   initReplace(this);
   initOpendp(this);
-  initOptdp(this);
   initFinale(this);
   initGlobalRouter(this);
   initTritonCts(this);
@@ -468,11 +461,17 @@ void OpenRoad::readVerilog(const char* filename)
   verilog_reader_->read(filename);
 }
 
-void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
+void OpenRoad::linkDesign(const char* design_name,
+                          bool hierarchy,
+                          bool omit_filename_prop)
 
 {
-  bool success
-      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  bool success = dbLinkDesign(design_name,
+                              verilog_network_,
+                              db_,
+                              logger_,
+                              hierarchy,
+                              omit_filename_prop);
 
   if (success) {
     delete verilog_reader_;

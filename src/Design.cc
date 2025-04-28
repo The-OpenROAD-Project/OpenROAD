@@ -5,6 +5,8 @@
 
 #include <tcl.h>
 
+#include <string>
+
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -269,11 +271,6 @@ cts::TritonCTS* Design::getTritonCts()
 drt::TritonRoute* Design::getTritonRoute()
 {
   return getOpenRoad()->getTritonRoute();
-}
-
-dpo::Optdp* Design::getOptdp()
-{
-  return getOpenRoad()->getOptdp();
 }
 
 fin::Finale* Design::getFinale()

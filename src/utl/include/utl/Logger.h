@@ -8,11 +8,13 @@
 #include <cstdlib>
 #include <iomanip>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <stack>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "spdlog/details/os.h"
@@ -38,7 +40,6 @@ class Progress;
   X(CTS)                \
   X(DFT)                \
   X(DPL)                \
-  X(DPO)                \
   X(DRT)                \
   X(DST)                \
   X(FIN)                \

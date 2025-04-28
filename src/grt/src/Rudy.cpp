@@ -3,6 +3,9 @@
 
 #include "grt/Rudy.h"
 
+#include <algorithm>
+#include <utility>
+
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/dbShape.h"

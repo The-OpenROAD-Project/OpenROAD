@@ -177,7 +177,7 @@ placement_cluster
 
 ### Debug Mode
 
-The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example in the `global_place.tcl` script.
+The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example on ORFS `flow/scripts/global_place.tcl` script.
 
 ```tcl
 global_placement_debug
@@ -204,6 +204,8 @@ global_placement_debug
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
 This command configures the debugger to pause every 100 iterations, with layout updates occurring every iteration. It enables initial placement stage visualization, bin drawing, and specifically highlights instance 614.
+
+Debug mode requires the GUI. With ORFS, one way to arrange for showing the GUI when running the global placement step is by using `make global_place_issue` and then editing the created run-me.sh file to include the `-gui` flag when calling openroad.
 
 ## Useful Developer Commands
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frShape.h"
@@ -113,6 +114,7 @@ class frViaDef
     return true;
   }
   bool operator!=(const frViaDef& in) const { return !(*this == in); }
+  bool operator<(const frViaDef& rhs) const { return id_ < rhs.id_; }
   // getters
   void getName(std::string& nameIn) const { nameIn = name_; }
   std::string getName() const { return name_; }
@@ -213,5 +215,12 @@ class frViaDef
   Rect layer1ShapeBox_;
   Rect layer2ShapeBox_;
   Rect cutShapeBox_;
+};
+struct frViaDefComp
+{
+  bool operator()(const frViaDef* lhs, const frViaDef* rhs) const
+  {
+    return *lhs < *rhs;
+  }
 };
 }  // namespace drt

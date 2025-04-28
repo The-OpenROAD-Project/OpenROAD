@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+// clang-format off
 %{
 
 #include "ord/OpenRoad.hh"
-#include "Graphics.h"
-#include "DplObserver.h"
+#include "graphics/Graphics.h"
+#include "graphics/DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
@@ -145,6 +146,14 @@ set_debug_cmd(float min_displacement,
           opendp, min_displacement, debug_instance);
       opendp->setDebug(graphics);
   }
+}
+
+void improve_placement_cmd(int seed,
+  int max_displacement_x,
+  int max_displacement_y)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->improvePlacement(seed, max_displacement_x, max_displacement_y);
 }
 
 } // namespace

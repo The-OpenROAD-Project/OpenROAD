@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "frRTree.h"
@@ -73,10 +75,9 @@ void FlexTAWorkerRegionQuery::remove(taPinFig* fig)
   }
 }
 
-void FlexTAWorkerRegionQuery::query(
-    const Rect& box,
-    const frLayerNum layerNum,
-    std::set<taPin*, frBlockObjectComp>& result) const
+void FlexTAWorkerRegionQuery::query(const Rect& box,
+                                    const frLayerNum layerNum,
+                                    frOrderedIdSet<taPin*>& result) const
 {
   std::vector<rq_box_value_t<taPinFig*>> temp;
   auto& tree = impl_->shapes_.at(layerNum);

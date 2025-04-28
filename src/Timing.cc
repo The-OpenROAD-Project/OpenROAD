@@ -5,6 +5,9 @@
 
 #include <tcl.h>
 
+#include <algorithm>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -67,7 +70,7 @@ bool Timing::isEndpoint(sta::Pin* sta_pin)
   return false;
 }
 
-float Timing::slewAllCorners(sta::Vertex* vertex, sta::MinMax* minmax)
+float Timing::slewAllCorners(sta::Vertex* vertex, const sta::MinMax* minmax)
 {
   auto sta = getSta();
   bool max = (minmax == sta::MinMax::max());
@@ -291,7 +294,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
 
   std::set<odb::dbMTerm*> outputs;
   for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
-    sta::TimingRole* role = arc_set->role();
+    const sta::TimingRole* role = arc_set->role();
     if (role->isTimingCheck() || role->isAsyncTimingCheck()
         || role->isNonSeqTimingCheck() || role->isDataCheck()) {
       continue;
@@ -305,7 +308,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
   return {outputs.begin(), outputs.end()};
 }
 
-sta::MinMax* Timing::getMinMax(MinMax type)
+const sta::MinMax* Timing::getMinMax(MinMax type)
 {
   return type == Max ? sta::MinMax::max() : sta::MinMax::min();
 }

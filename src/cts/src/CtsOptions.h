@@ -6,9 +6,11 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "CtsObserver.h"
@@ -190,6 +192,24 @@ class CtsOptions : public odb::dbBlockCallBackObj
   {
     sinkClusteringLevels_ = levels;
   }
+
+  double getMacroMaxDiameter() const { return macroMaxDiameter_; }
+  void setMacroMaxDiameter(double distance)
+  {
+    macroMaxDiameter_ = distance;
+    macroMaxDiameterSet_ = true;
+  }
+  bool isMacroMaxDiameterSet() const { return macroMaxDiameterSet_; }
+  unsigned getMacroSinkClusteringSize() const { return macroSinkClustersSize_; }
+  void setMacroClusteringSize(unsigned size)
+  {
+    macroSinkClustersSize_ = size;
+    macroSinkClustersSizeSet_ = true;
+  }
+  bool isMacroSinkClusteringSizeSet() const
+  {
+    return macroSinkClustersSizeSet_;
+  }
   unsigned getNumStaticLayers() const { return numStaticLayers_; }
   void setBalanceLevels(bool balance) { balanceLevels_ = balance; }
   bool getBalanceLevels() const { return balanceLevels_; }
@@ -280,6 +300,10 @@ class CtsOptions : public odb::dbBlockCallBackObj
   bool maxDiameterSet_ = false;
   unsigned sinkClustersSize_ = 20;
   bool sinkClustersSizeSet_ = false;
+  double macroMaxDiameter_ = 50;
+  bool macroMaxDiameterSet_ = false;
+  unsigned macroSinkClustersSize_ = 4;
+  bool macroSinkClustersSizeSet_ = true;
   bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;

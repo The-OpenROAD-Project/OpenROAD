@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <exception>
 #include <mutex>
 
 namespace utl {

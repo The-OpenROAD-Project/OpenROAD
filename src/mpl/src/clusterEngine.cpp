@@ -3,7 +3,13 @@
 
 #include "clusterEngine.h"
 
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -81,6 +87,7 @@ void ClusteringEngine::init()
     return;
   }
 
+  setDieArea();
   setFloorplanShape();
   searchForFixedInstsInsideFloorplanShape();
 
@@ -98,6 +105,19 @@ void ClusteringEngine::init()
   }
 
   reportDesignData();
+}
+
+// Note: The die area's dimensions will be used inside
+// SA Core when computing the wirelength in a situation in which
+// the target cluster is a cluster of unplaced IOs.
+void ClusteringEngine::setDieArea()
+{
+  const odb::Rect& die = block_->getDieArea();
+
+  tree_->die_area = Rect(block_->dbuToMicrons(die.xMin()),
+                         block_->dbuToMicrons(die.yMin()),
+                         block_->dbuToMicrons(die.xMax()),
+                         block_->dbuToMicrons(die.yMax()));
 }
 
 float ClusteringEngine::computeMacroWithHaloArea(
@@ -676,7 +696,8 @@ void ClusteringEngine::computeMacroPinVertices(VerticesMaps& vertices_maps)
 {
   for (auto& [macro, hard_macro] : tree_->maps.inst_to_hard) {
     for (odb::dbITerm* pin : macro->getITerms()) {
-      if (pin->getSigType() != odb::dbSigType::SIGNAL) {
+      if (pin->getSigType() != odb::dbSigType::SIGNAL
+          && pin->getSigType() != odb::dbSigType::CLOCK) {
         continue;
       }
 
