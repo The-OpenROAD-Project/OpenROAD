@@ -635,6 +635,8 @@ class Gui
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+  void setDisplayControlsColor(const std::string& name,
+                               const Painter::Color& color);
   // Get the visibility/selectability for a control in the 'Display Control'
   // panel.
   bool checkDisplayControlsVisible(const std::string& name);

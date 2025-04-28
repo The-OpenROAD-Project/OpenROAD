@@ -70,11 +70,11 @@ class NesterovPlace
 
   void createGCell(odb::dbInst*);
   void createGNet(odb::dbNet*);
-  void createITerm(odb::dbITerm*);
+  void createCbkITerm(odb::dbITerm*);
 
-  void destroyGCell(odb::dbInst*);
-  void destroyGNet(odb::dbNet*);
-  void destroyITerm(odb::dbITerm*);
+  void destroyCbkGCell(odb::dbInst*);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
 
  private:
   std::shared_ptr<PlacerBaseCommon> pbc_;

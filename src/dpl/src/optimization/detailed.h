@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
+#pragma once
+
+////////////////////////////////////////////////////////////////////////////////
+// Includes.
+////////////////////////////////////////////////////////////////////////////////
+#include <string>
+#include <vector>
+
+#include "infrastructure/architecture.h"
+#include "infrastructure/network.h"
+
+namespace dpl {
+
+////////////////////////////////////////////////////////////////////////////////
+// Forward declarations.
+////////////////////////////////////////////////////////////////////////////////
+class DetailedMgr;
+
+////////////////////////////////////////////////////////////////////////////////
+// Classes.
+////////////////////////////////////////////////////////////////////////////////
+struct DetailedParams
+{
+  std::string script_;
+  double targetUt_ = 1.0;
+};
+
+class Detailed
+{
+ public:
+  explicit Detailed(DetailedParams& params) : params_(params) {}
+
+  bool improve(DetailedMgr& mgr);
+
+ private:
+  void doDetailedCommand(std::vector<std::string>& args);
+
+  DetailedParams& params_;
+  DetailedMgr* mgr_ = nullptr;
+
+  Architecture* arch_ = nullptr;
+  Network* network_ = nullptr;
+};
+
+}  // namespace dpl

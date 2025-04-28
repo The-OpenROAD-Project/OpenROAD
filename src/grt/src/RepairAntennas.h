@@ -192,7 +192,8 @@ class RepairAntennas
                    int site_width,
                    r_tree& fixed_insts,
                    odb::dbTechLayer* violation_layer);
-  void getFixedInstances(r_tree& fixed_insts);
+  void getFixedInstances(r_tree& fixed_insts, int& fixed_inst_count);
+  void getPlacementBlockages(r_tree& fixed_insts, int& fixed_inst_count);
   void setDiodesAndGatesPlacementStatus(
       odb::dbPlacementStatus placement_status);
   void setInstsPlacementStatus(std::vector<odb::dbInst*>& insts_to_restore);
