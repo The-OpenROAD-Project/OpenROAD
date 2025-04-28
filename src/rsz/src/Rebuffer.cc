@@ -876,10 +876,6 @@ int RepairSetup::rebufferTopDown(
       odb::dbNet* db_ip_net = nullptr;
       odb::dbModNet* db_ip_modnet = nullptr;
       db_network_->staToDb(net, db_ip_net, db_ip_modnet);
-      if (!db_ip_net) {
-        printf("Illegal input net\n");
-        assert(0);
-      }
 
       //      sta_->connectPin(buffer, input, net);  //rebuffer
       sta_->connectPin(
