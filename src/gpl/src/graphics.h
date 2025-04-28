@@ -7,7 +7,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-// #include <filesystem>
 
 #include "gui/gui.h"
 #include "gui/heatMap.h"

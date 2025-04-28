@@ -304,31 +304,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   std::string gif_output = reports_dir + "/placement.gif";
   
   
-  if (fs::exists(reports_dir)) {
-    for (const auto& entry : fs::directory_iterator(reports_dir)) {
-      if (entry.path().filename() != "special_modes") {
+  auto clean_directory = [](const fs::path& dir, const std::string& exclude = "") {
+    if (!fs::exists(dir)) {
+      fs::create_directories(dir);
+      return;
+    }
+    for (const auto& entry : fs::directory_iterator(dir)) {
+      if (exclude.empty() || entry.path().filename() != exclude) {
         fs::remove_all(entry.path());
       }
     }
-  } else {
-    fs::create_directories(reports_dir);
-  }
+  };
   
-  if (fs::exists(special_modes_dir)) {
-    for (const auto& entry : fs::directory_iterator(special_modes_dir)) {
-      fs::remove_all(entry.path());
-    }
-  } else {
-    fs::create_directories(special_modes_dir);
-  }
-
-  if (fs::exists(gif_frames_dir)) {
-    for (const auto& entry : fs::directory_iterator(gif_frames_dir)) {
-      fs::remove_all(entry.path());
-    }
-  } else {
-    fs::create_directories(gif_frames_dir);
-  }
+  clean_directory(reports_dir, "special_modes");
+  clean_directory(special_modes_dir);
+  clean_directory(gif_frames_dir);
   
 
   int routabilityDrivenCount = 0;
@@ -428,8 +418,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
 
    
-    // if (graphics_ && iter % 10 == 0) {
-    if (iter % 10 == 0) {
+    if (graphics_ && iter % 10 == 0) {
       std::string raw = fmt::format("{}/full_{:05d}.png", gif_frames_dir, iter);
       std::string scaled = fmt::format("{}/iter_{:05d}.png", gif_frames_dir, iter);      
       std::string label = fmt::format("Iter {} | R: {} | T: {}",
@@ -443,8 +432,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     //If a timing-driven iteration previously happened, save image.
-    // if (timing_driven_ && graphics_) {
-    if (timing_driven_) {
+    if (timing_driven_ && graphics_) {
       std::string raw = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
       std::string special = fmt::format("{}/timing_iter_{:05d}.png", special_modes_dir, iter);
       std::string label = fmt::format("Iter {} | R: {} | T: {}",
@@ -720,8 +708,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       nbVec_[0]->setTrueReprintIterHeader();
       ++routabilityDrivenCount;
 
-    // if (graphics_) 
-    {
+    if (graphics_) {
       std::string density_img = fmt::format("{}/rout_density_{:05d}.png", special_modes_dir, iter);
       std::string rudy_img = fmt::format("{}/rout_rudy_{:05d}.png", special_modes_dir, iter);
       std::string special = fmt::format("{}/rout_iter_{:05d}.png", special_modes_dir, iter);
@@ -738,11 +725,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       
       std::string rudy_tmp = rudy_img + ".tmp.png";
       graphics_->scaleAndAnnotateImage(rudy_img, rudy_tmp, label, "white");
-      std::filesystem::rename(rudy_tmp, rudy_img);
-                                      
-
-      
-      
+      std::filesystem::rename(rudy_tmp, rudy_img); 
     }
       
 
@@ -779,8 +762,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numConverge == nbVec_.size()) {
-      // if(graphics_) 
-      {
+      if(graphics_) {
         std::string gifCmd = fmt::format("convert -delay 15 -loop 0 {}/iter_*.png {}/placement.gif", 
           reports_dir + "/gif_frames", reports_dir);
         std::system(gifCmd.c_str());
