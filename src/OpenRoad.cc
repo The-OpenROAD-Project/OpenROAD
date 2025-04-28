@@ -461,11 +461,17 @@ void OpenRoad::readVerilog(const char* filename)
   verilog_reader_->read(filename);
 }
 
-void OpenRoad::linkDesign(const char* design_name, bool hierarchy)
+void OpenRoad::linkDesign(const char* design_name,
+                          bool hierarchy,
+                          bool omit_filename_prop)
 
 {
-  bool success
-      = dbLinkDesign(design_name, verilog_network_, db_, logger_, hierarchy);
+  bool success = dbLinkDesign(design_name,
+                              verilog_network_,
+                              db_,
+                              logger_,
+                              hierarchy,
+                              omit_filename_prop);
 
   if (success) {
     delete verilog_reader_;

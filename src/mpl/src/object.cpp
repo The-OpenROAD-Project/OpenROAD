@@ -460,6 +460,11 @@ Rect Cluster::getBBox() const
   return soft_macro_->getBBox();
 }
 
+Point Cluster::getCenter() const
+{
+  return {getX() + getWidth() / 2.0, getY() + getHeight() / 2.0};
+}
+
 // Hierarchy Support
 void Cluster::setParent(Cluster* parent)
 {
@@ -721,17 +726,19 @@ void Cluster::addVirtualConnection(int src, int target)
 
 ///////////////////////////////////////////////////////////////////////
 // HardMacro
-HardMacro::HardMacro(std::pair<float, float> loc,
+HardMacro::HardMacro(std::pair<float, float> location,
                      const std::string& name,
+                     float width,
+                     float height,
                      Cluster* cluster)
 {
-  width_ = 0.0;
-  height_ = 0.0;
+  width_ = width;
+  height_ = height;
   name_ = name;
   pin_x_ = 0.0;
   pin_y_ = 0.0;
-  x_ = loc.first;
-  y_ = loc.second;
+  x_ = location.first;
+  y_ = location.second;
   cluster_ = cluster;
 }
 
@@ -804,6 +811,11 @@ bool HardMacro::isClusterOfUnplacedIOPins() const
   }
 
   return cluster_->isClusterOfUnplacedIOPins();
+}
+
+Rect HardMacro::getBBox() const
+{
+  return Rect(x_, y_, x_ + width_, y_ + height_);
 }
 
 // Get Physical Information
@@ -944,19 +956,25 @@ SoftMacro::SoftMacro(float width, float height, const std::string& name)
   cluster_ = nullptr;
 }
 
-// Create a SoftMacro representing the IO cluster or fixed terminals
-SoftMacro::SoftMacro(const std::pair<float, float>& pos,
+// Create a SoftMacro representing a cluster of unplaced IOs or fixed terminals
+SoftMacro::SoftMacro(const std::pair<float, float>& location,
                      const std::string& name,
                      float width,
                      float height,
                      Cluster* cluster)
 {
   name_ = name;
-  x_ = pos.first;
-  y_ = pos.second;
+  x_ = location.first;
+  y_ = location.second;
   width_ = width;
   height_ = height;
-  area_ = 0.0;  // width_ * height_ = 0.0 for this case
+
+  // Even though clusters of unplaced IOs have shapes, i.e., are not
+  // just points, their area should be zero, because we use the area
+  // to check whether or not a SoftMacro if a fixed terminal or cluster
+  // of unplaced IOs inside SA. Ideally we should check the fixed flag.
+  area_ = 0.0f;
+
   cluster_ = cluster;
   fixed_ = true;
 }
