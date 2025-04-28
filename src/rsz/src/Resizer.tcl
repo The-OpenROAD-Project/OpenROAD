@@ -131,6 +131,25 @@ proc report_layer_rc { args } {
     puts [format "%10s | %15.2e | %16.2e" [$layer getName] $res_ui $cap_ui]
   }
   puts "------------------------------------------------"
+
+  set res_unit "[sta::unit_scaled_suffix "resistance"]"
+  set res_convert [sta::resistance_sta_ui 1.0]
+  puts ""
+  puts "   Layer   | Via Resistance "
+  puts [format "           | %14s " [format "(%s)" $res_unit]]
+  puts "----------------------------"
+  # ignore the last routing layer (no via layer above it)
+  for { set i 1 } { $i < $no_routing_layers } { incr i } {
+    set layer [[$tech findRoutingLayer $i] getUpperLayer]
+    if { $corner == "NULL" } {
+      set layer_via_res [$layer getResistance]
+    } else {
+      set layer_via_res [rsz::layer_resistance $layer $corner]
+    }
+    set res_ui [expr $layer_via_res * $res_convert]
+    puts [format "%10s | %14.2e " [$layer getName] $res_ui]
+  }
+  puts "----------------------------"
 }
 
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\

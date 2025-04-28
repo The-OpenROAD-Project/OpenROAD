@@ -19,6 +19,20 @@ Corner: ff
     metal9 |        3.78e-05 |         9.06e-02
    metal10 |        3.78e-05 |         6.64e-02
 ------------------------------------------------
+
+   Layer   | Via Resistance 
+           |         (kohm) 
+----------------------------
+      via1 |       0.00e+00 
+      via2 |       0.00e+00 
+      via3 |       0.00e+00 
+      via4 |       0.00e+00 
+      via5 |       0.00e+00 
+      via6 |       0.00e+00 
+      via7 |       0.00e+00 
+      via8 |       0.00e+00 
+      via9 |       0.00e+00 
+----------------------------
 Corner: ss
    Layer   | Unit Resistance | Unit Capacitance 
            |       (kohm/um) |          (fF/um)
@@ -34,6 +48,20 @@ Corner: ss
     metal9 |        3.78e-05 |         9.06e-02
    metal10 |        3.78e-05 |         6.64e-02
 ------------------------------------------------
+
+   Layer   | Via Resistance 
+           |         (kohm) 
+----------------------------
+      via1 |       0.00e+00 
+      via2 |       0.00e+00 
+      via3 |       0.00e+00 
+      via4 |       0.00e+00 
+      via5 |       0.00e+00 
+      via6 |       0.00e+00 
+      via7 |       0.00e+00 
+      via8 |       0.00e+00 
+      via9 |       0.00e+00 
+----------------------------
 Net r1q
  Pin capacitance: 0.92-0.92
  Wire capacitance: 9.76-9.76
