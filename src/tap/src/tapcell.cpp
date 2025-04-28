@@ -1309,7 +1309,7 @@ EndcapCellOptions Tapcell::correctEndcapOptions(
 
   auto set_single_master = [this](odb::dbMaster*& master,
                                   const odb::dbMasterType& type,
-                                  const std::string option_name) {
+                                  const std::string& option_name) {
     if (master == nullptr) {
       master = getMasterByType(type, option_name);
     }
