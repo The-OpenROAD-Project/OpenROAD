@@ -259,7 +259,7 @@ class ClusteringEngine
   Metrics* design_metrics_{nullptr};
   PhysicalHierarchy* tree_{nullptr};
 
-  // Only for clusters of unplaced IOs.
+  // Cache the shapes/constraint regions in dbu to avoid comparison problems.
   std::map<Cluster*, odb::Rect> unplaced_ios_to_region_;
 
   int level_{0};  // Current level
