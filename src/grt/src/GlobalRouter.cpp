@@ -510,7 +510,7 @@ void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
   for (auto& [db_net, route] : routes_) {
     if (!route.empty()) {
       Net* net = getNet(db_net);
-      builder.estimateParasitcs(db_net, net->getPins(), route, spef_writer);
+      builder.estimateParasitics(db_net, net->getPins(), route, spef_writer);
     }
   }
 }
@@ -526,7 +526,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
   GRoute& route = iter->second;
   if (!route.empty()) {
     Net* net = getNet(db_net);
-    builder.estimateParasitcs(db_net, net->getPins(), route);
+    builder.estimateParasitics(db_net, net->getPins(), route);
   }
 }
 

@@ -49,10 +49,10 @@ MakeWireParasitics::MakeWireParasitics(utl::Logger* logger,
 {
 }
 
-void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
-                                           std::vector<Pin>& pins,
-                                           GRoute& route,
-                                           sta::SpefWriter* spef_writer)
+void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
+                                            std::vector<Pin>& pins,
+                                            GRoute& route,
+                                            sta::SpefWriter* spef_writer)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
@@ -93,7 +93,7 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   parasitics_->deleteParasiticNetworks(sta_net);
 }
 
-void MakeWireParasitics::estimateParasitcs(odb::dbNet* net, GRoute& route)
+void MakeWireParasitics::estimateParasitics(odb::dbNet* net, GRoute& route)
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
