@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+namespace eval rsz {
+proc get_db_tech_checked { } {
+  set tech [ord::get_db_tech]
+  if { $tech == "NULL" } {
+    utl::error RSZ 210 "No technology loaded."
+  }
+  return $tech
+}
+}
+
 # Units are from OpenSTA (ie Liberty file or set_cmd_units).
 sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-via via_layer]\
@@ -17,7 +27,7 @@ proc set_layer_rc { args } {
   }
 
   set corners [sta::parse_corner_or_all keys]
-  set tech [ord::get_db_tech]
+  set tech [rsz::get_db_tech_checked]
   if { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
     set layer [$tech findLayer $layer_name]
@@ -97,7 +107,7 @@ proc report_layer_rc { args } {
     keys {-corner} \
     flags {}
   set corner [sta::parse_corner_or_all keys]
-  set tech [ord::get_db_tech]
+  set tech [rsz::get_db_tech_checked]
   set no_routing_layers [$tech getRoutingLayerCount]
   ord::ensure_units_initialized
   set res_unit "[sta::unit_scaled_suffix "resistance"]/[sta::unit_scaled_suffix "distance"]"
@@ -170,7 +180,7 @@ proc set_wire_rc { args } {
     set layers $keys(-layers)
 
     foreach layer_name $layers {
-      set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+      set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
       if { $tec_layer == "NULL" } {
         utl::error RSZ 2 "layer $layer_name not found."
       }
@@ -211,7 +221,7 @@ proc set_wire_rc { args } {
     set v_wire_cap [expr $total_v_wire_cap / $v_layers]
   } elseif { [info exists keys(-layer)] } {
     set layer_name $keys(-layer)
-    set tec_layer [[ord::get_db_tech] findLayer $layer_name]
+    set tec_layer [[rsz::get_db_tech_checked] findLayer $layer_name]
     if { $tec_layer == "NULL" } {
       utl::error RSZ 15 "layer $tec_layer not found."
     }
