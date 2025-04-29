@@ -2022,7 +2022,6 @@ void NesterovBase::updateAreas()
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (!gCell) {
-      log_->report("gCell is nullptr inside NBC updateAreas()!");
       continue;
     }
     if (gCell->isMacroInstance()) {
@@ -2868,8 +2867,18 @@ bool NesterovBase::revertToSnapshot()
 
 void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
 {
-  GCell* gcell
-      = getGCellByIndex(db_inst_to_nbc_index_map_.find(db_inst)->second);
+  auto it = db_inst_to_nbc_index_map_.find(db_inst);
+  if (it == db_inst_to_nbc_index_map_.end()) {
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warning: db_inst {} not found in db_inst_to_nbc_index_map_",
+               db_inst->getName());
+    return;
+  }
+
+  GCell* gcell = getGCellByIndex(it->second);
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setAllLocations(
       bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
@@ -2877,8 +2886,18 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
 
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
 {
-  GCell* gcell
-      = getGCellByIndex(db_inst_to_nbc_index_map_.find(db_inst)->second);
+  auto it = db_inst_to_nbc_index_map_.find(db_inst);
+  if (it == db_inst_to_nbc_index_map_.end()) {
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warning: db_inst {} not found in db_inst_to_nbc_index_map_",
+               db_inst->getName());
+    return;
+  }
+
+  GCell* gcell = getGCellByIndex(it->second);
   if (!gcell->contains(db_inst)) {
     debugPrint(log_,
                GPL,
@@ -3097,17 +3116,13 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     db_inst_to_nb_index_map_.erase(db_it);
 
     if (gcell_index != last_index) {
-      if (!nb_gcells_[gcell_index]->isFiller()) {
+      if (!is_filler) {
         odb::dbInst* swapped_inst
             = nb_gcells_[gcell_index]->insts()[0]->dbInst();
         db_inst_to_nb_index_map_.erase(swapped_inst);
         db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
       }
-    } else {
-      db_inst_to_nb_index_map_.erase(db_inst);
-    }
 
-    if (!is_filler) {
       std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
 
       if (replacer.first != nullptr) {
