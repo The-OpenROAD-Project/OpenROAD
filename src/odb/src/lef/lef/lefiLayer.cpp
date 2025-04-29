@@ -6400,11 +6400,10 @@ void lefiLayer::parseLayerEnclosure(int index)
 
 void lefiLayer::deleteMinimumCut(int32_t idxToDelete)
 {
-  // This structure will ensure a lot of cache misses 
+  // This structure will ensure a lot of cache misses
   // but whatever...
   int32_t idx;
-  for (idx = idxToDelete; idx < numMinimumcut_ - 1; idx++)
-  {
+  for (idx = idxToDelete; idx < numMinimumcut_ - 1; idx++) {
     minimumcut_[idx] = minimumcut_[idx + 1];
     minimumcutWidth_[idx] = minimumcutWidth_[idx + 1];
     hasMinimumcutWithin_[idx] = hasMinimumcutWithin_[idx + 1];
@@ -6448,7 +6447,7 @@ void lefiLayer::reallocMinimumCut(size_t prevCount, size_t count)
   hc = (int*) lefMalloc(sizeof(int) * count);
   nl = (double*) lefMalloc(sizeof(double) * count);
   nd = (double*) lefMalloc(sizeof(double) * count);
-  
+
   // Don't copy values outside of arrays boundaries
   if (prevCount > count)
     prevCount = count;
