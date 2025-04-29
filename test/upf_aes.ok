@@ -273,29 +273,29 @@ Detailed placement improvement.
 [INFO DPL-0301] Pass   1 of matching; objective is 1.958089e+09.
 [INFO DPL-0302] End of matching; objective is 1.953107e+09, improvement is 0.25 percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.931766e+09.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.927178e+09.
-[INFO DPL-0307] End of global swaps; objective is 1.927178e+09, improvement is 1.33 percent.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.931460e+09.
+[INFO DPL-0306] Pass   2 of global swaps; hpwl is 1.926833e+09.
+[INFO DPL-0307] End of global swaps; objective is 1.926833e+09, improvement is 1.35 percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.922506e+09.
-[INFO DPL-0309] End of vertical swaps; objective is 1.922506e+09, improvement is 0.24 percent.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.921907e+09.
+[INFO DPL-0309] End of vertical swaps; objective is 1.921907e+09, improvement is 0.26 percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 1.909621e+09.
-[INFO DPL-0305] End of reordering; objective is 1.909621e+09, improvement is 0.67 percent.
+[INFO DPL-0304] Pass   1 of reordering; objective is 1.909073e+09.
+[INFO DPL-0305] End of reordering; objective is 1.909073e+09, improvement is 0.67 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using displacement generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator displacement called 1027700 times.
-[INFO DPL-0335] Generator displacement, Cumulative attempts 1027700, swaps 704160, moves 264438 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.905957e+09, Scratch cost 1.894861e+09, Incremental cost 1.894176e+09, Mismatch? Y
-[INFO DPL-0338] End of pass, Total cost is 1.894861e+09.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.62 percent.
-[INFO DPL-0328] End of random improver; improvement is 0.582199 percent.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 1027700, swaps 701830, moves 266393 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.905409e+09, Scratch cost 1.894413e+09, Incremental cost 1.894413e+09, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 1.894413e+09.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 0.58 percent.
+[INFO DPL-0328] End of random improver; improvement is 0.577125 percent.
 [INFO DPL-0380] Cell flipping.
 [INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 16660 cell flips.
-[INFO DPL-0384] End of flipping; objective is 1.874827e+09, improvement is 1.25 percent.
+[INFO DPL-0383] Performed 16579 cell flips.
+[INFO DPL-0384] End of flipping; objective is 1.874517e+09, improvement is 1.24 percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -304,7 +304,7 @@ Detailed placement improvement.
 Detailed Improvement Results
 ------------------------------------------
 Original HPWL          1957974.4 u
-Final HPWL             1874450.5 u
+Final HPWL             1874351.1 u
 Delta HPWL                  -4.3 %
 
 No differences found.
