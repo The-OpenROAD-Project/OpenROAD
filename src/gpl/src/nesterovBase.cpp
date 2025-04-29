@@ -3190,7 +3190,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   return replacement;
 }
 
-//TODO to be implemented.
+// TODO to be implemented.
 void NesterovBase::destroyFillerGCell(size_t index_remove)
 {
   log_->report("Warning, deleting filler gcell!");
