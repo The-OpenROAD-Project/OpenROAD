@@ -171,7 +171,7 @@ class ClusteringEngine
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
-  Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm);
+  Cluster* findIOClusterWithSameConstraint(odb::dbBTerm* bterm) const;
   void createClusterOfUnplacedIOs(odb::dbBTerm* bterm);
   void createIOPadClusters();
   void createIOPadCluster(odb::dbInst* pad, odb::dbBTerm* bterm);

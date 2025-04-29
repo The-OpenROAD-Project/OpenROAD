@@ -374,7 +374,8 @@ void ClusteringEngine::createIOClusters()
   }
 }
 
-Cluster* ClusteringEngine::findIOClusterWithSameConstraint(odb::dbBTerm* bterm)
+Cluster* ClusteringEngine::findIOClusterWithSameConstraint(
+    odb::dbBTerm* bterm) const
 {
   const auto& bterm_constraint = bterm->getConstraintRegion();
   if (!bterm_constraint) {
