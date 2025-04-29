@@ -152,7 +152,7 @@ class ClusteringEngine
                                std::set<odb::dbMaster*>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
-  int getNumberOfIOs(Cluster* target);
+  int getNumberOfIOs(Cluster* target) const;
 
   static bool isIgnoredInst(odb::dbInst* inst);
 

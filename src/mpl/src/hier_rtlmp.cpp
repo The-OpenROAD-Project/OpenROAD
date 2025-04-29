@@ -936,7 +936,7 @@ void HierRTLMP::computePinAccessDepthLimits()
   pin_access_depth_limits_.vertical = max_depth_percentage * die.getHeight();
 }
 
-bool HierRTLMP::treeHasOnlyUnconstrainedIOs()
+bool HierRTLMP::treeHasOnlyUnconstrainedIOs() const
 {
   std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
   for (Cluster* io_cluster : io_clusters) {
@@ -997,7 +997,7 @@ void HierRTLMP::createBlockagesForConstraintRegions()
 }
 
 BoundaryToRegionsMap HierRTLMP::getBoundaryToBlockedRegionsMap(
-    const std::vector<odb::Rect>& blocked_regions_for_pins)
+    const std::vector<odb::Rect>& blocked_regions_for_pins) const
 {
   BoundaryToRegionsMap boundary_to_blocked_regions;
   std::queue<odb::Rect> blocked_regions;
@@ -1024,7 +1024,7 @@ BoundaryToRegionsMap HierRTLMP::getBoundaryToBlockedRegionsMap(
 }
 
 std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
-    BoundaryToRegionsMap& boundary_to_blocked_regions)
+    BoundaryToRegionsMap& boundary_to_blocked_regions) const
 {
   std::vector<odb::Rect> available_regions;
 
@@ -1119,7 +1119,7 @@ void HierRTLMP::createPinAccessBlockage(const Rect& micron_region,
   io_blockages_.push_back(blockage);
 }
 
-Boundary HierRTLMP::getRegionBoundary(const odb::Rect& constraint_region)
+Boundary HierRTLMP::getRegionBoundary(const odb::Rect& constraint_region) const
 {
   const odb::Rect& die = block_->getDieArea();
   Boundary constraint_boundary = NONE;
@@ -1139,7 +1139,7 @@ Boundary HierRTLMP::getRegionBoundary(const odb::Rect& constraint_region)
   return constraint_boundary;
 }
 
-std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins()
+std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins() const
 {
   std::vector<Cluster*> clusters_of_unplaced_io_pins;
   for (const auto& child : tree_->root->getChildren()) {
@@ -1154,7 +1154,7 @@ std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins()
 // 1) Amount of std cell area in the design.
 // 2) Extension of IO span.
 // 3) Macro dominance quadratic factor.
-float HierRTLMP::computePinAccessBaseDepth(const float io_span)
+float HierRTLMP::computePinAccessBaseDepth(const float io_span) const
 {
   float std_cell_area = 0.0;
   for (auto& cluster : tree_->root->getChildren()) {
@@ -2962,7 +2962,7 @@ Rect HierRTLMP::dbuToMicrons(const odb::Rect& dbu_rect)
 //   |                  |
 std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
     const odb::Rect& base,
-    const odb::Rect& overlay)
+    const odb::Rect& overlay) const
 {
   Boundary base_boundary = getRegionBoundary(base);
 
@@ -2994,12 +2994,12 @@ std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
   return result;
 }
 
-bool HierRTLMP::isVertical(Boundary boundary)
+bool HierRTLMP::isVertical(Boundary boundary) const
 {
   return boundary == L || boundary == R;
 }
 
-odb::Rect HierRTLMP::getRect(Boundary boundary)
+odb::Rect HierRTLMP::getRect(Boundary boundary) const
 {
   odb::Rect boundary_rect = block_->getDieArea();
 
@@ -3337,7 +3337,7 @@ bool Pusher::overlapsWithHardMacro(
   return false;
 }
 
-bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box)
+bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box) const
 {
   for (const odb::Rect& io_blockage : io_blockages_) {
     if (cluster_box.overlaps(io_blockage)) {

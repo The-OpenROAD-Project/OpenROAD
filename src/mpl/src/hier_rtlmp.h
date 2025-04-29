@@ -150,18 +150,18 @@ class HierRTLMP
   void setTightPackingTilings(Cluster* macro_array);
   void searchForAvailableRegionsForPins();
   BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
-      const std::vector<odb::Rect>& blocked_regions_for_pins);
+      const std::vector<odb::Rect>& blocked_regions_for_pins) const;
   std::vector<odb::Rect> computeAvailableRegions(
-      BoundaryToRegionsMap& boundary_to_blocked_regions);
+      BoundaryToRegionsMap& boundary_to_blocked_regions) const;
   void createPinAccessBlockages();
   void computePinAccessDepthLimits();
-  bool treeHasOnlyUnconstrainedIOs();
-  std::vector<Cluster*> getClustersOfUnplacedIOPins();
+  bool treeHasOnlyUnconstrainedIOs() const;
+  std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
   void createPinAccessBlockage(const Rect& micron_region, float depth);
-  float computePinAccessBaseDepth(float io_span);
+  float computePinAccessBaseDepth(float io_span) const;
   void createBlockagesForAvailableRegions();
   void createBlockagesForConstraintRegions();
-  Boundary getRegionBoundary(const odb::Rect& constraint_region);
+  Boundary getRegionBoundary(const odb::Rect& constraint_region) const;
   void setPlacementBlockages();
 
   // Fine Shaping
@@ -229,10 +229,10 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
-  odb::Rect getRect(Boundary boundary);
-  bool isVertical(Boundary boundary);
+  odb::Rect getRect(Boundary boundary) const;
+  bool isVertical(Boundary boundary) const;
   std::vector<odb::Rect> subtractOverlapRegion(const odb::Rect& base,
-                                               const odb::Rect& overlay);
+                                               const odb::Rect& overlay) const;
 
   // For debugging
   template <typename SACore>
@@ -347,7 +347,7 @@ class Pusher
   bool overlapsWithHardMacro(
       const odb::Rect& cluster_box,
       const std::vector<HardMacro*>& cluster_hard_macros);
-  bool overlapsWithIOBlockage(const odb::Rect& cluster_box);
+  bool overlapsWithIOBlockage(const odb::Rect& cluster_box) const;
 
   utl::Logger* logger_;
 

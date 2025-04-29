@@ -359,8 +359,7 @@ void ClusteringEngine::createIOClusters()
     return;
   }
 
-  odb::dbSet<odb::dbBTerm> bterms = block_->getBTerms();
-  if (bterms.empty()) {
+  if (block_->getBTerms().empty()) {
     logger_->warn(MPL, 26, "Design has no IO pins!");
     tree_->has_io_clusters = false;
   }
@@ -2183,16 +2182,14 @@ void ClusteringEngine::clearTempMacroClusterMapping(
   }
 }
 
-int ClusteringEngine::getNumberOfIOs(Cluster* target)
+int ClusteringEngine::getNumberOfIOs(Cluster* target) const
 {
   int number_of_ios = 0;
-
-  for (const auto [pin, io_cluster_id] : tree_->maps.bterm_to_cluster_id) {
+  for (const auto& [pin, io_cluster_id] : tree_->maps.bterm_to_cluster_id) {
     if (io_cluster_id == target->getId()) {
       ++number_of_ios;
     }
   }
-
   return number_of_ios;
 }
 
