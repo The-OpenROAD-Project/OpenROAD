@@ -347,9 +347,6 @@ TEST_F(TestSnapper, MultiOriginPattern)
 // unalignable
 TEST_F(TestSnapper, SingleLayerWithUnalignablePin)
 {
-  std::string expected_warning
-      = "[WARNING MPL-0002] Pin macro/pin2 from layer H1 is not aligned to a "
-        "track\n";
   db_->getTech()->setManufacturingGrid(1);
 
   const int track_pitch = 36;
@@ -405,6 +402,9 @@ TEST_F(TestSnapper, SingleLayerWithUnalignablePin)
   snapper_->snapMacro();
   std::string snap_warning = testing::internal::GetCapturedStdout();
 
+  std::string expected_warning
+      = "[WARNING MPL-0002] Couldn't align pin macro/pin2 from layer H1 to the "
+        "track-grid.\n";
   // Snapped to manufacturing grid
   EXPECT_EQ(macro->getOrigin().x(), 1500);
   // 1523 (origin) + 25 (pin center) equals 1548 which is
