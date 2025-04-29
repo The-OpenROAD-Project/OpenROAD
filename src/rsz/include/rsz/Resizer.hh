@@ -109,7 +109,11 @@ class RepairSetup;
 class RepairHold;
 class ResizerObserver;
 
+class CloneMove;
+class BufferMove;
+class SplitLoadMove;
 class SizeMove;
+class SwapPinsMove;
 
 class NetHash
 {
@@ -138,19 +142,6 @@ struct ParasiticsCapacitance
 {
   double h_cap;
   double v_cap;
-};
-
-struct BufferData
-{
-  // Need to use strings because object pointers may not be persistent after
-  // buffer removal
-  // (driver instance name, port name)
-  std::pair<std::string, std::string> driver_pin;
-  // vector of (load instance name, port name)
-  std::vector<std::pair<std::string, std::string>> load_pins;
-  LibertyCell* lib_cell;
-  Instance* parent;
-  Point location;
 };
 
 class OdbCallBack;
@@ -670,23 +661,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // during repair timing.
   void journalBegin();
   void journalEnd();
-  void journalRestore(int& resize_count,
-                      int& inserted_buffer_count,
-                      int& cloned_gate_count,
-                      int& swap_pin_count,
-                      int& removed_buffer_count);
-  void journalUndoGateCloning(int& cloned_gate_count);
-  void journalSwapPins(Instance* inst, LibertyPort* port1, LibertyPort* port2);
-  void journalInstReplaceCellBefore(Instance* inst);
+  void journalRestore();
   void journalMakeBuffer(Instance* buffer);
-  Instance* journalCloneInstance(LibertyCell* cell,
-                                 const char* name,
-                                 Instance* original_inst,
-                                 Instance* parent,
-                                 const Point& loc);
-  void journalRemoveBuffer(Instance* buffer);
-  void journalRestoreBuffers(int& removed_buffer_count);
-  bool canRestoreBuffer(const BufferData& data);
+
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet& ends);
@@ -770,21 +747,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   Map<const Net*, Slack> net_slack_map_;
   NetSeq worst_slack_nets_;
 
-  // Journal to roll back changes (OpenDB not up to the task).
-  Map<Instance*, LibertyCell*> resized_inst_map_;
-  InstanceSeq inserted_buffers_;
-  InstanceSet inserted_buffer_set_;
-  Map<Instance*, LibertyPortTuple> swapped_pins_;
-  std::stack<InstanceTuple> cloned_gates_;
-  std::unordered_set<Instance*> cloned_inst_set_;
-  std::unordered_map<std::string, BufferData> removed_buffer_map_;
   std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
-  // Need to track all changes for buffer removal
-  InstanceSet all_sized_inst_set_;
   InstanceSet all_inserted_buffer_set_;
-  InstanceSet all_swapped_pin_inst_set_;
-  InstanceSet all_cloned_inst_set_;
 
   dpl::Opendp* opendp_ = nullptr;
 
@@ -823,7 +788,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   // Optimization moves
   // Will eventually be replaced with a getter method and some "recipes"
+  CloneMove* clone_move = nullptr;
+  SplitLoadMove* split_load_move = nullptr;
+  //BufferMove* buffer_move = nullptr;
   SizeMove* size_move = nullptr;
+  SwapPinsMove* swap_pins_move = nullptr;
 
   friend class BufferedNet;
   friend class GateCloner;
@@ -834,7 +803,11 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class RepairHold;
   friend class SteinerTree;
   friend class BaseMove;
+  friend class BufferMove;
   friend class SizeMove;
+  friend class SplitLoadMove;
+  friend class CloneMove;
+  friend class SwapPinsMove;
 };
 
 }  // namespace rsz

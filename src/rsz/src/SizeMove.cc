@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025-2025, The OpenROAD Authors
+
 #include "SizeMove.hh"
 
 #include <algorithm>
@@ -7,6 +10,8 @@
 #include <optional>
 #include <sstream>
 #include <string>
+
+#include "CloneMove.hh"
 
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -48,11 +53,6 @@ using sta::VertexOutEdgeIterator;
 using sta::INF;
 
 
-void
-SizeMove::init()
-{
-    all_sized_inst_set_ = InstanceSet(db_network_);
-}
 
 bool 
 SizeMove::doMove(const Path* drvr_path,
@@ -68,7 +68,7 @@ SizeMove::doMove(const Path* drvr_path,
   Pin* in_pin = in_path->pin(sta_);
   LibertyPort* in_port = network_->libertyPort(in_pin);
   
-  if (!resizer_->dontTouch(drvr) || resizer_->cloned_inst_set_.find(drvr) != resizer_->cloned_inst_set_.end()) {
+  if (!resizer_->dontTouch(drvr) || resizer_->clone_move->count(drvr) != 0) {
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
@@ -89,35 +89,12 @@ SizeMove::doMove(const Path* drvr_path,
     if (upsize) {
       debugPrint(logger_, RSZ, "repair_setup", 3, "new resize {} {} -> {}", network_->pathName(drvr_pin), drvr_port->libertyCell()->name(), upsize->name());
       if (!resizer_->dontTouch(drvr) && resizer_->replaceCell(drvr, upsize, true)) {
-        count_++;
         return true;
       }
     }
   }
   
   return false;
-}
-
-void 
-SizeMove::undoMove(int num) 
-{
-    // Implement the logic to unapply the move using OpenROAD rsz module
-}
-
-double
-SizeMove::deltaSlack() 
-{
-    return -INF; // Placeholder for no slack
-}
-
-double
-SizeMove::deltaPower() {
-    return INF; // Placeholder for no power
-}
-
-double
-SizeMove::deltaArea() {
-    return INF; // Placeholder for no rea
 }
 
 LibertyCell* 
@@ -173,12 +150,6 @@ SizeMove::upsizeCell(LibertyPort* in_port,
   return nullptr;
 };
 
-void
-SizeMove::clear()
-{
-    count_ = 0;
-    resized_inst_map_.clear();
-}
 
 // Replace LEF with LEF so ports stay aligned in instance.
 bool 
@@ -235,11 +206,7 @@ SizeMove::journalMove(Instance* inst)
              "journal replace {} ({})",
              network_->pathName(inst),
              lib_cell->name());
-  // Do not clobber an existing checkpoint cell.
-  if (!resized_inst_map_.hasKey(inst)) {
-    resized_inst_map_[inst] = lib_cell;
-    all_sized_inst_set_.insert(inst);
-  }
+  all_inst_set_.insert(inst);
 }
 
 // namespace rsz

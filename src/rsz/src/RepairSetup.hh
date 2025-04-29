@@ -122,21 +122,6 @@ class RepairSetup : public sta::dbStaState
                   bool skip_buffer_removal,
                   float setup_slack_margin);
   void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
-  bool simulateExpr(
-      sta::FuncExpr* expr,
-      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
-      size_t table_index);
-  std::vector<bool> simulateExpr(
-      sta::FuncExpr* expr,
-      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
-  bool isPortEqiv(sta::FuncExpr* expr,
-                  const LibertyCell* cell,
-                  const LibertyPort* port_a,
-                  const LibertyPort* port_b);
-  void equivCellPins(const LibertyCell* cell,
-                     LibertyPort* input_port,
-                     sta::LibertyPortSet& ports);
-  bool swapPins(const Path* drvr_path, int drvr_index, PathExpanded* expanded);
   bool removeDrvr(const Path* drvr_path,
                   LibertyCell* drvr_cell,
                   int drvr_index,
@@ -154,22 +139,10 @@ class RepairSetup : public sta::dbStaState
   bool upsizeDrvr(const Path* drvr_path,
                   int drvr_index,
                   PathExpanded* expanded);
-  Point computeCloneGateLocation(
-      const Pin* drvr_pin,
-      const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
-  bool cloneDriver(const Path* drvr_path,
-                   int drvr_index,
-                   Slack drvr_slack,
-                   PathExpanded* expanded);
   void splitLoads(const Path* drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
                   PathExpanded* expanded);
-  LibertyCell* upsizeCell(LibertyPort* in_port,
-                          LibertyPort* drvr_port,
-                          float load_cap,
-                          float prev_drive,
-                          const DcalcAnalysisPt* dcalc_ap);
   int fanout(Vertex* vertex);
   bool hasTopLevelOutputPort(Net* net);
 
@@ -232,9 +205,6 @@ class RepairSetup : public sta::dbStaState
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
-  // Map to block pins from being swapped more than twice for the
-  // same instance.
-  std::unordered_set<const sta::Instance*> swap_pin_inst_set_;
 
   // For rebuffering
   Path* arrival_paths_[RiseFall::index_count];

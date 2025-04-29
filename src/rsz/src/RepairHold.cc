@@ -482,11 +482,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                   || (!allow_setup_violations
                       && fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
-                resizer_->journalRestore(resize_count_,
-                                         inserted_buffer_count_,
-                                         cloned_gate_count_,
-                                         swap_pin_count_,
-                                         removed_buffer_count_);
+                resizer_->journalRestore();
               } else {
                 resizer_->journalEnd();
               }

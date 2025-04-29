@@ -13,6 +13,7 @@ swig_lib(NAME      rsz
 add_library(rsz_lib
     BaseMove.cc
     BufferedNet.cc
+    CloneMove.cc
     PreChecks.cc      
     RecoverPower.cc    
     RepairDesign.cc
@@ -21,6 +22,8 @@ add_library(rsz_lib
     Rebuffer.cc
     SteinerTree.cc
     SizeMove.cc
+    SplitLoadMove.cc
+    SwapPinsMove.cc
     EstimateWireParasitics.cc
     Resizer.cc
     OdbCallBack.cc

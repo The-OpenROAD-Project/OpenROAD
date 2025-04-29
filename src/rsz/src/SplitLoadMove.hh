@@ -29,28 +29,18 @@
 
 namespace rsz {
 
-using sta::Pin;
-//using sta::dbStaState;
-
-class SizeMove : public BaseMove
+class SplitLoadMove : public BaseMove
 {
 
 public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-               const int drvr_index,
-               PathExpanded* expanded) override;
+                const int drvr_index,
+                const Slack drvr_slack,
+                PathExpanded* expanded) override;
 
 private:
-    LibertyCell* upsizeCell(LibertyPort* in_port,
-                         LibertyPort* drvr_port,
-                         const float load_cap,
-                         const float prev_drive,
-                         const DcalcAnalysisPt* dcalc_ap);
-    bool replaceCell(Instance* inst,
-                     const LibertyCell* replacement,
-                     const bool journal);
     void journalMove(Instance* inst);
 
 

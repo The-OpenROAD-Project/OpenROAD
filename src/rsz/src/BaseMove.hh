@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025-2025, The OpenROAD Authors
+
+#pragma once
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -11,9 +16,13 @@
 #include "dpl/Opendp.h"
 #include "sta/FuncExpr.hh"
 #include "sta/MinMax.hh"
+#include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Path.hh"
+#include "sta/PortDirection.hh"
+#include "sta/StaMain.hh"
 #include "sta/StaState.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 
@@ -21,13 +30,19 @@ namespace rsz {
 
 class Resizer; 
 
+using std::max;
+
 using dpl::Opendp;
 
 using odb::dbMaster;
 using odb::Point;
 
+using utl::RSZ;
 using utl::Logger;
 
+using sta::ArcDcalcResult;
+using sta::ArcDelayCalc;
+using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbDatabase;
@@ -35,6 +50,9 @@ using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
 using sta::Instance;
+using sta::InstanceSet;
+using sta::INF;
+using sta::LoadPinIndexMap;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::MinMax;
@@ -48,15 +66,17 @@ using sta::Slack;
 using sta::Slew;
 using sta::StaState;
 using sta::TimingArc;
+using sta::TimingArcSet;
+using sta::TimingRole;
 using sta::Vertex;
 
+using InputSlews = std::array<Slew, RiseFall::index_count>;
+using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
 class BaseMove : public sta::dbStaState {
     public:
         BaseMove(Resizer* resizer);
         virtual ~BaseMove() = default;
-
-        virtual void init() = 0;
 
         virtual bool doMove(const Path* drvr_path,
                            const int drvr_index,
@@ -71,16 +91,13 @@ class BaseMove : public sta::dbStaState {
         }
 
         // Analysis functions
-        virtual double deltaSlack() = 0;
-        virtual double deltaPower() = 0;
-        virtual double deltaArea() = 0;
+        //virtual double deltaSlack() = 0;
+        //virtual double deltaPower() = 0;
+        //virtual double deltaArea() = 0;
 
-        // Journaling functions
-        virtual void undoMove(int num=0) = 0;
-        // Each move may take different parameters so don't make it a virtual
-        //virtual void journalMove() = 0;
-        virtual void clear() = 0;
-        int count() const { return count_; }
+        void clear();
+        int count(Instance* inst) { return all_inst_set_.count(inst);}
+        int count() const { return all_inst_set_.size(); }
 
     protected:
        Resizer* resizer_;
@@ -92,11 +109,52 @@ class BaseMove : public sta::dbStaState {
        int dbu_ = 0; 
        dpl::Opendp* opendp_ = nullptr;
 
-       int count_ = 0;
+       // Need to track these so we don't optimize the optimzations.
+       // This can result in long run-time.
+       InstanceSet all_inst_set_;
+
+       // Use actual input slews for accurate delay/slew estimation
+       sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
+       TgtSlews tgt_slews_;
 
        double area(Cell* cell);
        double area(dbMaster* master);
        double dbuToMeters(int dist) const;
+
+
+      void gateDelays(const LibertyPort* drvr_port,
+                      float load_cap,
+                      const DcalcAnalysisPt* dcalc_ap,
+                      // Return values.
+                      ArcDelay delays[RiseFall::index_count],
+                      Slew slews[RiseFall::index_count]);
+      void gateDelays(const LibertyPort* drvr_port,
+                      float load_cap,
+                      const Slew in_slews[RiseFall::index_count],
+                      const DcalcAnalysisPt* dcalc_ap,
+                      // Return values.
+                      ArcDelay delays[RiseFall::index_count],
+                      Slew out_slews[RiseFall::index_count]);
+      ArcDelay gateDelay(const LibertyPort* drvr_port,
+                         float load_cap,
+                         const DcalcAnalysisPt* dcalc_ap);
+      ArcDelay gateDelay(const LibertyPort* drvr_port,
+                         const RiseFall* rf,
+                         float load_cap,
+                         const DcalcAnalysisPt* dcalc_ap);
+
+      bool isPortEqiv(sta::FuncExpr* expr,
+                      const LibertyCell* cell,
+                      const LibertyPort* port_a,
+                      const LibertyPort* port_b);
+
+      bool simulateExpr(
+          sta::FuncExpr* expr,
+          sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
+          size_t table_index);
+      std::vector<bool> simulateExpr(
+          sta::FuncExpr* expr,
+          sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
 
 };
 
