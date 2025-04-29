@@ -107,7 +107,7 @@ void Network::addEdge(odb::dbNet* net)
   ////////////////////////
   net_to_edge_idx_[net] = id;
   // Name of edge.
-  setEdgeName(id, net->getName().c_str());
+  setEdgeName(id, net->getName());
 
   for (auto iterm : net->getITerms()) {
     if (!iterm->getInst()->getMaster()->isCoreAutoPlaceable()) {
@@ -422,7 +422,6 @@ void Network::addFillerNode(const DbuX left,
   ndi.setBottom(bottom);
   ndi.setLeft(left);
   nodes_.emplace_back(std::make_unique<Node>(ndi));
-  // setNodeName(id, "FILLER_" + std::to_string(filler_cnt_++));
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -440,7 +439,6 @@ void Network::clear()
   net_to_edge_idx_.clear();
   cells_cnt_ = 0;
   terminals_cnt_ = 0;
-  filler_cnt_ = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
