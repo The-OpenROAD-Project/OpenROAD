@@ -138,6 +138,7 @@
     options.left_edge = left_edge;
     options.right_edge = right_edge;
     options.prefix = prefix;
+    options.tapcell_cmd = false;
 
     getTapcell()->placeEndcaps(options);
   }
