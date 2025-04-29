@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 #include "nesterovBase.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -111,7 +111,7 @@ class NesterovPlace
 
   // observability metrics
   utl::Gauge<double>* hpwl_gauge_;
-  //saving images with debug mode
+  // saving images with debug mode
   bool routability_driven_ = false;
   bool timing_driven_ = false;
 

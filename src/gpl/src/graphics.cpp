@@ -518,18 +518,18 @@ void Graphics::saveGuiImage(const std::string& filename)
 }
 
 void Graphics::scaleAndAnnotateImage(const std::string& input_path,
-  const std::string& output_path,
-  const std::string& label,
-  const std::string& fill_color)
+                                     const std::string& output_path,
+                                     const std::string& label,
+                                     const std::string& fill_color)
 {
   std::string cmd = fmt::format(
-  "convert {} -resize 50% -colors 64 -strip -quality 85 "
-  "-gravity SouthEast -pointsize 20 -fill {} "
-  "-annotate +5+5 '{}' PNG8:{}",
-  input_path,
-  fill_color,
-  label,
-  output_path);
+      "convert {} -resize 50% -colors 64 -strip -quality 85 "
+      "-gravity SouthEast -pointsize 20 -fill {} "
+      "-annotate +5+5 '{}' PNG8:{}",
+      input_path,
+      fill_color,
+      label,
+      output_path);
 
   int ret = std::system(cmd.c_str());
   if (ret != 0) {
@@ -538,12 +538,13 @@ void Graphics::scaleAndAnnotateImage(const std::string& input_path,
   std::filesystem::remove(input_path);
 }
 
-
 void Graphics::saveGuiImageWithHeatmaps(const std::string& density_filename,
-  const std::string& rudy_filename) {
+                                        const std::string& rudy_filename)
+{
   if (!gui::Gui::enabled()) {
     logger_->report("GUI is not active. Cannot save images '{}', '{}'.",
-    density_filename, rudy_filename);
+                    density_filename,
+                    rudy_filename);
     return;
   }
 
@@ -556,7 +557,8 @@ void Graphics::saveGuiImageWithHeatmaps(const std::string& density_filename,
   // Estimated Congestion (RUDY)
   gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)", true);
   gui->saveImage(rudy_filename.c_str());
-  gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)", false);
+  gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)",
+                                 false);
 }
 
 }  // namespace gpl

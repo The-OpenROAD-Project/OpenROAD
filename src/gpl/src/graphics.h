@@ -82,13 +82,15 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
-  
+
   void saveGuiImage(const std::string& filename);
-  void saveGuiImageWithHeatmaps(const std::string& density_filename, const std::string& rudy_filename);
+  void saveGuiImageWithHeatmaps(const std::string& density_filename,
+                                const std::string& rudy_filename);
   void scaleAndAnnotateImage(const std::string& input_path,
-    const std::string& output_path,
-    const std::string& label,
-    const std::string& fill_color = "white");
+                             const std::string& output_path,
+                             const std::string& label,
+                             const std::string& fill_color = "white");
+
  private:
   enum HeatMapType
   {
