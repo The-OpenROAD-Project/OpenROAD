@@ -3193,18 +3193,17 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
 // TODO to be implemented.
 void NesterovBase::destroyFillerGCell(size_t index_remove)
 {
-  log_->report("Warning, deleting filler gcell!");
-  size_t last_index = fillerStor_.size() - 1;
-  if (index_remove > last_index) {
-    log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
-                 index_remove,
-                 last_index);
-    return;
-  }
-  if (index_remove != last_index) {
-    std::swap(fillerStor_[index_remove], fillerStor_[last_index]);
-  }
-  fillerStor_.pop_back();
+  // size_t last_index = fillerStor_.size() - 1;
+  // if (index_remove > last_index) {
+  //   log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
+  //                index_remove,
+  //                last_index);
+  //   return;
+  // }
+  // if (index_remove != last_index) {
+  //   std::swap(fillerStor_[index_remove], fillerStor_[last_index]);
+  // }
+  // fillerStor_.pop_back();
 }
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
