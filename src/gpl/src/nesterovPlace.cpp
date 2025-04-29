@@ -297,12 +297,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   namespace fs = std::filesystem;
+
   const char* reports_dir_env = std::getenv("REPORTS_DIR");
   std::string reports_dir = reports_dir_env ? reports_dir_env : "reports";
-  std::string gif_frames_dir = reports_dir + "/gif_frames";
-  std::string special_modes_dir = reports_dir + "/special_modes";
-  std::string gif_output = reports_dir + "/placement.gif";
-  
+  std::string gif_frames_dir = reports_dir + "/gpl_gif_frames";
+  std::string special_modes_dir = reports_dir + "/gpl_special_modes";
+  std::string gif_output = reports_dir + "/gpl.gif";
   
   auto clean_directory = [](const fs::path& dir, const std::string& exclude = "") {
     if (!fs::exists(dir)) {
@@ -316,10 +316,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
   };
   
-  clean_directory(reports_dir, "special_modes");
-  clean_directory(special_modes_dir);
-  clean_directory(gif_frames_dir);
-  
+  if (graphics_ && npVars_.debug_generate_images) {
+    clean_directory(special_modes_dir);
+    clean_directory(gif_frames_dir);
+    fs::path placement_dif_file = fs::path(reports_dir) / "gpl.gif";
+    if (fs::exists(placement_dif_file)) {
+      fs::remove(placement_dif_file);
+    }
+  }
 
   int routabilityDrivenCount = 0;
   int timingDrivenCount = 0;
@@ -765,7 +769,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       if(graphics_ && npVars_.debug_generate_images) {
         std::string gifCmd = fmt::format("convert -delay 15 -loop 0 {}/iter_*.png {}/placement.gif", 
           reports_dir + "/gif_frames", reports_dir);
-        std::system(gifCmd.c_str());
+          int ret = std::system(gifCmd.c_str());
+          if (ret != 0) {
+            log_->report("GIF generation command failed with exit code {}", ret);
+          }
       }
       break;
     }

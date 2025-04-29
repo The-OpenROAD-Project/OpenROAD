@@ -510,11 +510,10 @@ bool Graphics::guiActive()
 
 void Graphics::saveGuiImage(const std::string& filename)
 {
-  logger_->report("saveGuiImage()");
   if (gui::Gui::enabled()) {
     gui::Gui::get()->saveImage(filename.c_str());
   } else {
-    logger_->warn(utl::GPL, 999, "GUI is not active. Cannot save '{}'.", filename);
+    logger_->report("GUI is not active. Cannot save '{}'.", filename);
   }
 }
 
@@ -533,16 +532,17 @@ void Graphics::scaleAndAnnotateImage(const std::string& input_path,
   output_path);
 
   int ret = std::system(cmd.c_str());
+  if (ret != 0) {
+    logger_->report("Image annotation command failed with exit code {}", ret);
+  }
   std::filesystem::remove(input_path);
 }
 
 
 void Graphics::saveGuiImageWithHeatmaps(const std::string& density_filename,
   const std::string& rudy_filename) {
-  logger_->report("saveGuiImageWithHeatmaps()");
   if (!gui::Gui::enabled()) {
-    logger_->warn(utl::GPL, 998,
-    "GUI is not active. Cannot save images '{}', '{}'.",
+    logger_->report("GUI is not active. Cannot save images '{}', '{}'.",
     density_filename, rudy_filename);
     return;
   }
