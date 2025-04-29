@@ -465,6 +465,7 @@ class lefiLayer
   void addMinenclosedarea(double area);                            // 5.5
   void addMinenclosedareaWidth(double width);                      // 5.5
   void addMinimumcut(int cuts, double width);                      // 5.5
+  void checkMinimumcut();
   void addMinimumcutWithin(double cutDistance);                    // 5.7
   void addMinimumcutConnect(const char* direction);                // 5.5
   void addMinimumcutLengDis(double length, double distance);       // 5.5
@@ -817,7 +818,12 @@ class lefiLayer
 
   void parseLayerType(int index);        // 5.8
   void parseLayerEnclosure(int index);   // 5.8
-  void parseLayerWidthTable(int indxe);  // 5.8
+  void parseLayerWidthTable(int index);  // 5.8
+
+  void deleteMinimumCut(int32_t idxToDelete);
+  void logBadMinimumCut(int32_t idx, double comparedMinwidth);
+  void reallocMinimumCut(size_t prevCount, size_t count);
+  void freeMinimumCut();
 
  protected:
   char* name_{nullptr};

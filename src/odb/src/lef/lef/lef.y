@@ -735,6 +735,7 @@ end_layer: K_END {lefData->lefDumbMode = 1; lefData->lefNoNum = 1; } T_STRING
           }
         }
       }
+      lefData->lefrLayer.checkMinimumcut();
     }
 
 layer_options:

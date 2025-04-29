@@ -1972,6 +1972,47 @@ void lefiLayer::addMinimumcut(int mincut, double width)
   numMinimumcut_ += 1;
 }
 
+void lefiLayer::checkMinimumcut()
+{
+  double comparedMinwidth;
+  double mincutWidth;
+  uint32_t numBadMincut = 0;
+
+  for (int32_t idx = 0; idx < numMinimumcut_; idx++) {
+    mincutWidth = minimumcutWidth_[idx];
+    comparedMinwidth = hasMinwidth() ? minwidth_ : width_;
+
+    if (mincutWidth >= comparedMinwidth)
+      continue;
+
+    // --- Ignore bad MINIMUMCUT --- //
+    logBadMinimumCut(idx, comparedMinwidth);
+    deleteMinimumCut(idx--);
+    numMinimumcut_--;
+    numBadMincut++;
+  }
+
+  // Reduce memory footprint if necessary
+  if (numBadMincut == 0)
+    return;
+
+  if (numMinimumcut_ == 0) {
+    freeMinimumCut();
+    minimumcutWidth_ = nullptr;
+    hasMinimumcutWithin_ = nullptr;
+    minimumcutWithin_ = nullptr;
+    hasMinimumcutConnection_ = nullptr;
+    minimumcutConnection_ = nullptr;
+    hasMinimumcutNumCuts_ = nullptr;
+    minimumcutLength_ = nullptr;
+    minimumcutDistance_ = nullptr;
+
+    return;
+  }
+
+  reallocMinimumCut(numMinimumcut_, numMinimumcut_);
+}
+
 // 5.7
 void lefiLayer::addMinimumcutWithin(double cutDistance)
 {
@@ -6355,6 +6396,99 @@ void lefiLayer::parseLayerEnclosure(int index)
 
   free(wrkingStr);
   return;
+}
+
+void lefiLayer::deleteMinimumCut(int32_t idxToDelete)
+{
+  // This structure will ensure a lot of cache misses 
+  // but whatever...
+  int32_t idx;
+  for (idx = idxToDelete; idx < numMinimumcut_ - 1; idx++)
+  {
+    minimumcut_[idx] = minimumcut_[idx + 1];
+    minimumcutWidth_[idx] = minimumcutWidth_[idx + 1];
+    hasMinimumcutWithin_[idx] = hasMinimumcutWithin_[idx + 1];
+    minimumcutWithin_[idx] = minimumcutWithin_[idx + 1];
+    hasMinimumcutConnection_[idx] = hasMinimumcutConnection_[idx + 1];
+    minimumcutConnection_[idx] = minimumcutConnection_[idx + 1];
+    hasMinimumcutNumCuts_[idx] = hasMinimumcutNumCuts_[idx + 1];
+    minimumcutLength_[idx] = minimumcutLength_[idx + 1];
+    minimumcutDistance_[idx] = minimumcutDistance_[idx + 1];
+  }
+}
+
+void lefiLayer::logBadMinimumCut(int32_t idx, double comparedMinwidth)
+{
+  std::string msg
+      = "Ignoring layer " + std::string(name_) + " MINIMUMCUT rule with WIDTH ("
+        + std::to_string(minimumcutWidth_[idx]) + ") <= the layer's MINWIDTH ("
+        + std::to_string(comparedMinwidth) + ").";
+
+  lefWarning(2504, msg.c_str());
+}
+
+void lefiLayer::reallocMinimumCut(size_t prevCount, size_t count)
+{
+  int* nc;
+  double* nw;
+  int* hcd;
+  double* ncd;
+  int* hm;
+  char** nud;
+  int* hc;
+  double* nl;
+  double* nd;
+
+  nc = (int*) lefMalloc(sizeof(int) * count);
+  nw = (double*) lefMalloc(sizeof(double) * count);
+  hcd = (int*) lefMalloc(sizeof(int) * count);
+  ncd = (double*) lefMalloc(sizeof(double) * count);
+  hm = (int*) lefMalloc(sizeof(int) * count);
+  nud = (char**) lefMalloc(sizeof(char*) * count);
+  hc = (int*) lefMalloc(sizeof(int) * count);
+  nl = (double*) lefMalloc(sizeof(double) * count);
+  nd = (double*) lefMalloc(sizeof(double) * count);
+  
+  // Don't copy values outside of arrays boundaries
+  if (prevCount > count)
+    prevCount = count;
+
+  for (int32_t idx = 0; idx < prevCount; idx++) {
+    nc[idx] = minimumcut_[idx];
+    nw[idx] = minimumcutWidth_[idx];
+    hcd[idx] = hasMinimumcutWithin_[idx];
+    ncd[idx] = minimumcutWithin_[idx];
+    hm[idx] = hasMinimumcutConnection_[idx];
+    nud[idx] = minimumcutConnection_[idx];
+    hc[idx] = hasMinimumcutNumCuts_[idx];
+    nl[idx] = minimumcutLength_[idx];
+    nd[idx] = minimumcutDistance_[idx];
+  }
+
+  freeMinimumCut();
+
+  minimumcut_ = nc;
+  minimumcutWidth_ = nw;
+  hasMinimumcutWithin_ = hcd;
+  minimumcutWithin_ = ncd;
+  hasMinimumcutConnection_ = hm;
+  minimumcutConnection_ = nud;
+  hasMinimumcutNumCuts_ = hc;
+  minimumcutLength_ = nl;
+  minimumcutDistance_ = nd;
+}
+
+void lefiLayer::freeMinimumCut()
+{
+  lefFree(minimumcut_);
+  lefFree(minimumcutWidth_);
+  lefFree(hasMinimumcutWithin_);
+  lefFree(minimumcutWithin_);
+  lefFree(hasMinimumcutConnection_);
+  lefFree(minimumcutConnection_);
+  lefFree(hasMinimumcutNumCuts_);
+  lefFree(minimumcutLength_);
+  lefFree(minimumcutDistance_);
 }
 
 // 5.7
