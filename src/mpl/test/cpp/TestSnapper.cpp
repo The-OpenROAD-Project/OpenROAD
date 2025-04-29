@@ -415,7 +415,7 @@ TEST_F(TestSnapper, SingleLayerWithUnalignablePin)
 
 // Snaps a macro using one horizontal layer, aligning one pin while the other is
 // unalignable and the layer is RightWayOnlyGrid, which should throw an
-// expection if a pin is unaligned
+// exception if a pin is unaligned
 TEST_F(TestSnapper, SingleLayerWithUnalignablePinThrowsException)
 {
   db_->getTech()->setManufacturingGrid(1);

@@ -3451,13 +3451,13 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
           if (data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
             logger_->error(MPL,
                            5,
-                           "Pin {} from layer {} is not aligned to a track",
+                           "Couldn't align pin {} from the RightWayOnGridOnly layer {} with the track-grid.",
                            data.pins[i]->getName(),
                            data.track_grid->getTechLayer()->getName());
           } else {
             logger_->warn(MPL,
                           2,
-                          "Pin {} from layer {} is not aligned to a track",
+                          "Couldn't align pin {} from layer {} to the track-grid.",
                           data.pins[i]->getName(),
                           data.track_grid->getTechLayer()->getName());
           }
