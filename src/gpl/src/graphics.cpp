@@ -531,7 +531,7 @@ void Graphics::scaleAndAnnotateImage(const std::string& input_path,
       label,
       output_path);
 
-  int ret = std::system(cmd.c_str());
+  int ret = std::system(cmd);
   if (ret != 0) {
     logger_->report("Image annotation command failed with exit code {}", ret);
   }
@@ -551,12 +551,12 @@ void Graphics::saveGuiImageWithHeatmaps(const std::string& density_filename,
   gui::Gui* gui = gui::Gui::get();
   // Placement Density
   gui->setDisplayControlsVisible("Heat Maps/Placement Density", true);
-  gui->saveImage(density_filename.c_str());
+  gui->saveImage(density_filename);
   gui->setDisplayControlsVisible("Heat Maps/Placement Density", false);
 
   // Estimated Congestion (RUDY)
   gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)", true);
-  gui->saveImage(rudy_filename.c_str());
+  gui->saveImage(rudy_filename);
   gui->setDisplayControlsVisible("Heat Maps/Estimated Congestion (RUDY)",
                                  false);
 }
