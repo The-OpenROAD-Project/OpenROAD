@@ -8056,6 +8056,7 @@ class dbModInst : public dbObject
                            dbModule* masterModule,
                            const char* name);
 
+  // This destroys this modinst but does not destroy the master dbModule.
   static void destroy(dbModInst* modinst);
 
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);

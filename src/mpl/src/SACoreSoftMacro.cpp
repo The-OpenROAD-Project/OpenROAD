@@ -800,13 +800,6 @@ void SACoreSoftMacro::resizeOneCluster()
   }
 }
 
-void SACoreSoftMacro::shrink()
-{
-  for (auto& macro_id : pos_seq_) {
-    macros_[macro_id].shrinkArea(shrink_factor_);
-  }
-}
-
 void SACoreSoftMacro::printResults() const
 {
   reportCoreWeights();
