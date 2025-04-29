@@ -188,16 +188,16 @@ int64_t Node::area() const
   dbMaster* master = getDbInst()->getMaster();
   return int64_t(master->getWidth()) * master->getHeight();
 }
-const char* Node::name() const
+std::string Node::name() const
 {
   if (type_ == CELL) {
-    return getDbInst()->getConstName();
+    return getDbInst()->getName();
   }
   if (type_ == TERMINAL) {
-    return getBTerm()->getConstName();
+    return getBTerm()->getName();
   }
   if (type_ == FILLER) {
-    return fmt::format("FILLER_{}", id_).c_str();
+    return fmt::format("FILLER_{}", id_);
   }
   return "";
 }

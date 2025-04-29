@@ -19,7 +19,6 @@ class dbSite;
 }  // namespace odb
 namespace dpl {
 
-using odb::dbBox;
 using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbMaster;
@@ -101,7 +100,7 @@ class Node
   bool isHybrid() const;
   bool isHybridParent() const;
   int64_t area() const;
-  const char* name() const;
+  std::string name() const;
   int getBottomPower() const;
   int getTopPower() const;
   Type getType() const;
