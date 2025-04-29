@@ -3167,7 +3167,6 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
                 307,
                 "db_inst not found in db_inst_to_NBC_index_map_ when trying to "
                 "destroy GCell on NBC");
-    return {};
   }
 
   size_t index_remove = it->second;
@@ -3175,7 +3174,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
 
   db_inst_to_nbc_index_map_.erase(it);
 
-  std::pair<odb::dbInst*, size_t> replacement{};
+  std::pair<odb::dbInst*, size_t> replacement;
 
   if (index_remove != last_index) {
     std::swap(gCellStor_[index_remove], gCellStor_[last_index]);
