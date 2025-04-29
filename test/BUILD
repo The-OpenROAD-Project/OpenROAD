@@ -2,12 +2,19 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("//test:regression.bzl", "regression_test")
+load("//test:toolify.bzl", "toolify")
 
 exports_files(
     [
         "bazel_test.sh",
         "regression_test.sh",
     ],
+    visibility = ["//visibility:public"],
+)
+
+toolify(
+    name = "openroad",
+    bin = "//:openroad",
     visibility = ["//visibility:public"],
 )
 

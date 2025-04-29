@@ -39,7 +39,7 @@ def regression_test(
             srcs = ["//test:bazel_test.sh"],
             args = [],
             data = [
-                "//:openroad",
+                "//test:openroad",
                 "//test:regression_resources",
                 "//test:regression_test.sh",
             ] + test_files + _pop(kwargs, "data", []),
@@ -47,7 +47,7 @@ def regression_test(
                 "TEST_NAME_BAZEL": name,
                 "TEST_FILE": "$(location {test_file})".format(test_file = test_file),
                 "TEST_FILES_BAZEL": " ".join(["$(location {file})".format(file = file) for file in test_files]),
-                "OPENROAD_EXE": "$(location //:openroad)",
+                "OPENROAD_EXE": "$(location //test:openroad)",
                 "REGRESSION_TEST": "$(location //test:regression_test.sh)",
             },
             **kwargs
