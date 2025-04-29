@@ -317,6 +317,7 @@ void HierRTLMP::runCoarseShaping()
 
   calculateChildrenTilings(tree_->root.get());
 
+  searchForAvailableRegionsForPins();
   createPinAccessBlockages();
   setPlacementBlockages();
 }
@@ -867,40 +868,46 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   macro_array->setTilings(tight_packing_tilings);
 }
 
+void HierRTLMP::searchForAvailableRegionsForPins()
+{
+  if (!treeHasOnlyUnconstrainedIOs()) {
+    return;
+  }
+
+  const std::vector<odb::Rect>& blocked_regions_for_pins
+      = block_->getBlockedRegionsForPins();
+
+  BoundaryToRegionsMap boundary_to_blocked_regions
+      = getBoundaryToBlockedRegionsMap(blocked_regions_for_pins);
+  available_regions_for_pins_
+      = computeAvailableRegions(boundary_to_blocked_regions);
+
+  if (graphics_) {
+    graphics_->setBlockedRegionsForPins(blocked_regions_for_pins);
+    graphics_->setAvailableRegionsForPins(available_regions_for_pins_);
+  }
+
+  for (const odb::Rect& dbu_available_region : available_regions_for_pins_) {
+    // Store regions in micron inside the tree to be used inside SA.
+    tree_->available_regions_for_pins.push_back(
+        dbuToMicrons(dbu_available_region));
+  }
+}
+
 void HierRTLMP::createPinAccessBlockages()
 {
   if (!tree_->maps.pad_to_bterm.empty()) {
     return;
   }
 
-  if (treeHasOnlyUnconstrainedIOs()) {
-    const std::vector<odb::Rect>& blocked_regions_for_pins
-        = block_->getBlockedRegionsForPins();
-
-    if (blocked_regions_for_pins.empty()) {
-      // If there are no constraints at all, we give freedom to SA so it
-      // doesn't have to deal with pin access blockages across the entire
-      // extension of all edges of the die area. This should help SA not
-      // relying on extreme utilizations to converge for designs such as
-      // sky130hd/uW.
-      return;
-    }
-
-    BoundaryToRegionsMap boundary_to_blocked_regions
-        = getBoundaryToBlockedRegionsMap(blocked_regions_for_pins);
-    available_regions_for_pins_
-        = computeAvailableRegions(boundary_to_blocked_regions);
-
-    if (graphics_) {
-      graphics_->setBlockedRegionsForPins(blocked_regions_for_pins);
-      graphics_->setAvailableRegionsForPins(available_regions_for_pins_);
-    }
-
-    for (const odb::Rect& dbu_available_region : available_regions_for_pins_) {
-      // Store regions in micron inside the tree to be used inside SA.
-      tree_->available_regions_for_pins.push_back(
-          dbuToMicrons(dbu_available_region));
-    }
+  if (treeHasOnlyUnconstrainedIOs()
+      && block_->getBlockedRegionsForPins().empty()) {
+    // If there are no constraints at all, we give freedom to SA so it
+    // doesn't have to deal with pin access blockages across the entire
+    // extension of all edges of the die area. This should help SA not
+    // relying on extreme utilizations to converge for designs such as
+    // sky130hd/uW.
+    return;
   }
 
   const Metrics* top_module_metrics

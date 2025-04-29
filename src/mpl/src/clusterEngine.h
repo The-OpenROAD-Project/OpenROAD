@@ -262,6 +262,9 @@ class ClusteringEngine
   // Cache the shapes/constraint regions in dbu to avoid comparison problems.
   std::map<Cluster*, odb::Rect> unplaced_ios_to_region_;
 
+  // Keep this pointer to avoid searching for it when creating IO clusters.
+  Cluster* cluster_of_unconstrained_io_pins_{nullptr};
+
   int level_{0};  // Current level
   int id_{0};     // Current "highest" id
 

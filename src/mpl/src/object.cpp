@@ -233,8 +233,12 @@ std::string Cluster::getClusterTypeString() const
 {
   std::string cluster_type;
 
+  if (is_cluster_of_unconstrained_io_pins_) {
+    return "Unconstrained IOs";
+  }
+
   if (is_cluster_of_unplaced_io_pins_) {
-    return "Unplaced IO Pins";
+    return "Unplaced IOs";
   }
 
   if (is_io_pad_cluster_) {
@@ -300,11 +304,14 @@ void Cluster::copyInstances(const Cluster& cluster)
   }
 }
 
-void Cluster::setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
-                                           const float width,
-                                           const float height)
+void Cluster::setAsClusterOfUnplacedIOPins(
+    const std::pair<float, float>& pos,
+    const float width,
+    const float height,
+    const bool is_cluster_of_unconstrained_io_pins)
 {
   is_cluster_of_unplaced_io_pins_ = true;
+  is_cluster_of_unconstrained_io_pins_ = is_cluster_of_unconstrained_io_pins;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
@@ -319,11 +326,6 @@ void Cluster::setAsIOPadCluster(const std::pair<float, float>& pos,
 bool Cluster::isIOCluster() const
 {
   return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_;
-}
-
-void Cluster::setAsClusterOfUnconstrainedIOPins()
-{
-  is_cluster_of_unconstrained_io_pins_ = true;
 }
 
 bool Cluster::isClusterOfUnconstrainedIOPins() const

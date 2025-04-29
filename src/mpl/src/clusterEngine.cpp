@@ -377,8 +377,13 @@ void ClusteringEngine::createIOClusters()
 
 Cluster* ClusteringEngine::findIOClusterWithSameConstraint(odb::dbBTerm* bterm)
 {
+  const auto& bterm_constraint = bterm->getConstraintRegion();
+  if (!bterm_constraint) {
+    return cluster_of_unconstrained_io_pins_;
+  }
+
   for (const auto& [cluster, cluster_constraint] : unplaced_ios_to_region_) {
-    if (bterm->getConstraintRegion() == cluster_constraint) {
+    if (bterm_constraint == cluster_constraint) {
       return cluster;
     }
   }
@@ -388,28 +393,29 @@ Cluster* ClusteringEngine::findIOClusterWithSameConstraint(odb::dbBTerm* bterm)
 
 void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
 {
-  auto cluster = std::make_unique<Cluster>(id_, "", logger_);
+  auto cluster
+      = std::make_unique<Cluster>(id_, "ios_" + std::to_string(id_), logger_);
   cluster->setParent(tree_->root.get());
 
+  bool is_cluster_of_unconstrained_io_pins = false;
   odb::Rect constraint_shape;
   const std::optional<odb::Rect>& bterm_constraint
       = bterm->getConstraintRegion();
   if (bterm_constraint) {
     constraint_shape = *bterm_constraint;
-    cluster->setName("ios_" + std::to_string(id_));
+    unplaced_ios_to_region_[cluster.get()] = constraint_shape;
   } else {
     constraint_shape = block_->getDieArea();
-    cluster->setName("unconstrained_ios");
-    cluster->setAsClusterOfUnconstrainedIOPins();
+    is_cluster_of_unconstrained_io_pins = true;
+    cluster_of_unconstrained_io_pins_ = cluster.get();
   }
 
   cluster->setAsClusterOfUnplacedIOPins(
       {block_->dbuToMicrons(constraint_shape.xMin()),
        block_->dbuToMicrons(constraint_shape.yMin())},
       block_->dbuToMicrons(constraint_shape.dx()),
-      block_->dbuToMicrons(constraint_shape.dy()));
-
-  unplaced_ios_to_region_[cluster.get()] = constraint_shape;
+      block_->dbuToMicrons(constraint_shape.dy()),
+      is_cluster_of_unconstrained_io_pins);
 
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();

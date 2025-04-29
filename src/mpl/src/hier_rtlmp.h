@@ -148,16 +148,17 @@ class HierRTLMP
   void calculateMacroTilings(Cluster* cluster);
   IntervalList computeWidthIntervals(const TilingList& tilings);
   void setTightPackingTilings(Cluster* macro_array);
+  void searchForAvailableRegionsForPins();
+  BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
+      const std::vector<odb::Rect>& blocked_regions_for_pins);
+  std::vector<odb::Rect> computeAvailableRegions(
+      BoundaryToRegionsMap& boundary_to_blocked_regions);
   void createPinAccessBlockages();
   void computePinAccessDepthLimits();
   bool treeHasOnlyUnconstrainedIOs();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
   void createPinAccessBlockage(const Rect& micron_region, float depth);
   float computePinAccessBaseDepth(float io_span);
-  BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
-      const std::vector<odb::Rect>& blocked_regions_for_pins);
-  std::vector<odb::Rect> computeAvailableRegions(
-      BoundaryToRegionsMap& boundary_to_blocked_regions);
   void createBlockagesForAvailableRegions();
   void createBlockagesForConstraintRegions();
   Boundary getRegionBoundary(const odb::Rect& constraint_region);

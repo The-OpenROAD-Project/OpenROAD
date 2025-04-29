@@ -179,16 +179,12 @@ class Cluster
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
   bool isIOCluster() const;
-
-  // The cluster of unplaced IOs with unconstrained pins.
-  void setAsClusterOfUnconstrainedIOPins();
   bool isClusterOfUnconstrainedIOPins() const;
-
   bool isClusterOfUnplacedIOPins() const;
   void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
                                     float width,
-                                    float height);
-
+                                    float height,
+                                    bool is_cluster_of_unconstrained_io_pins);
   bool isIOPadCluster() const { return is_io_pad_cluster_; }
   void setAsIOPadCluster(const std::pair<float, float>& pos,
                          float width,
