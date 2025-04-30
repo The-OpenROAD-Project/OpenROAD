@@ -1932,39 +1932,51 @@ void HierRTLMP::createFixedTerminals(
   parents.push(parent);
 
   while (!parents.empty()) {
-    auto frontwave = parents.front();
+    Cluster* frontwave = parents.front();
     parents.pop();
 
     Cluster* grandparent = frontwave->getParent();
     for (auto& cluster : grandparent->getChildren()) {
       if (cluster->getId() != frontwave->getId()) {
-        soft_macro_id_map[cluster->getName()]
-            = static_cast<int>(soft_macros.size());
-
-        const float center_x = cluster->getX() + cluster->getWidth() / 2.0;
-        const float center_y = cluster->getY() + cluster->getHeight() / 2.0;
-        Point location = {center_x - outline.xMin(), center_y - outline.yMin()};
-
-        // The information of whether or not a cluster is a group of
-        // unplaced IO pins is needed inside the SA Core, so if a fixed
-        // terminal corresponds to a cluster of unplaced IO pins it needs
-        // to contain that cluster data.
-        Cluster* fixed_terminal_cluster
-            = cluster->isClusterOfUnplacedIOPins() ? cluster.get() : nullptr;
-
-        // Note that a fixed terminal is just a point.
-        soft_macros.emplace_back(location,
-                                 cluster->getName(),
-                                 0.0f /* width */,
-                                 0.0f /* height */,
-                                 fixed_terminal_cluster);
+        const int id = static_cast<int>(soft_macros.size());
+        soft_macro_id_map[cluster->getName()] = id;
+        createFixedTerminal(cluster.get(), outline, soft_macros);
       }
     }
 
-    if (frontwave->getParent()->getParent() != nullptr) {
+    if (frontwave->getParent()->getParent()) {
       parents.push(frontwave->getParent());
     }
   }
+}
+
+template <typename Macro>
+void HierRTLMP::createFixedTerminal(Cluster* cluster,
+                                    const Rect& outline,
+                                    std::vector<Macro>& macros)
+{
+  // A conventional fixed terminal is just a point without
+  // the cluster data.
+  Point location = cluster->getCenter();
+  float width = 0.0f;
+  float height = 0.0f;
+  Cluster* terminal_cluster = nullptr;
+
+  if (cluster->isClusterOfUnplacedIOPins()) {
+    // Clusters of unplaced IOs are not treated as conventional
+    // fixed terminals. As they correspond to regions, we need
+    // both their actual shape and their cluster data inside SA.
+    location = {cluster->getX(), cluster->getY()};
+    width = cluster->getWidth();
+    height = cluster->getHeight();
+    terminal_cluster = cluster;
+  }
+
+  location.first -= outline.xMin();
+  location.second -= outline.yMin();
+
+  macros.emplace_back(
+      location, cluster->getName(), width, height, terminal_cluster);
 }
 
 // Determine the shape of each cluster based on target utilization
@@ -2416,6 +2428,7 @@ void HierRTLMP::computeFencesAndGuides(
   }
 }
 
+// Create terminals for macro placement (Hard) annealing.
 void HierRTLMP::createFixedTerminals(const Rect& outline,
                                      const UniqueClusterVector& macro_clusters,
                                      std::map<int, int>& cluster_to_macro,
@@ -2433,22 +2446,12 @@ void HierRTLMP::createFixedTerminals(const Rect& outline,
     if (cluster_to_macro.find(cluster_id) != cluster_to_macro.end()) {
       continue;
     }
-    auto& temp_cluster = tree_->maps.id_to_cluster[cluster_id];
 
-    // model other cluster as a fixed macro with zero size
-    cluster_to_macro[cluster_id] = sa_macros.size();
-    sa_macros.emplace_back(
-        std::pair<float, float>(
-            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
-                - outline.xMin(),
-            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
-                - outline.yMin()),
-        temp_cluster->getName(),
-        // The information of whether or not a cluster is a group of
-        // unplaced IO pins is needed inside the SA Core, so if a fixed
-        // terminal corresponds to a cluster of unplaced IO pins it needs
-        // to contain that cluster data.
-        temp_cluster->isClusterOfUnplacedIOPins() ? temp_cluster : nullptr);
+    Cluster* temp_cluster = tree_->maps.id_to_cluster[cluster_id];
+    const int terminal_id = static_cast<int>(sa_macros.size());
+
+    cluster_to_macro[cluster_id] = terminal_id;
+    createFixedTerminal(temp_cluster, outline, sa_macros);
   }
 }
 
@@ -3297,7 +3300,7 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
       track_grid->getGridY(positions);
     }
     std::sort(pins.begin(), pins.end(), compare_pin_center);
-    layers_data.push_back(LayerData{track_grid, positions, pins});
+    layers_data.push_back(LayerData{track_grid, std::move(positions), pins});
   }
 
   auto compare_layer_number = [](LayerData data1, LayerData data2) {
