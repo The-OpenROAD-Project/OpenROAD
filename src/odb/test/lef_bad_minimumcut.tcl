@@ -1,0 +1,1 @@
+read_lef "data/lef_bad_minimumcut.lef"

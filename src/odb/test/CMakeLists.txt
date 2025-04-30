@@ -24,6 +24,7 @@ or_integration_tests(
     gcd_def_access
     gcd_pdn_def_access
     import_package
+    lef_bad_minimumcut
     lef_data_access
     lef_mask
     multi_tech

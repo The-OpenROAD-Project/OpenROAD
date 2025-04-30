@@ -1,0 +1,5 @@
+[WARNING ODB-0220] WARNING (LEFPARS-2504): Ignoring layer metal2 MINIMUMCUT rule with WIDTH (0.060000) <= the layer's MINWIDTH (0.070000). See file data/lef_bad_minimumcut.lef at line 31.
+
+[WARNING ODB-0220] WARNING (LEFPARS-2504): Ignoring layer metal3 MINIMUMCUT rule with WIDTH (0.040000) <= the layer's MINWIDTH (0.070000). See file data/lef_bad_minimumcut.lef at line 45.
+
+[INFO ODB-0227] LEF file: data/lef_bad_minimumcut.lef, created 5 layers
