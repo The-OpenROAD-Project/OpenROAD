@@ -12,6 +12,8 @@ namespace utl {
 
 class Logger;
 
+// This class can be instantiated with DataType=<int|float> (as implemented in
+// histogram.cpp)
 template <typename DataType>
 class Histogram
 {
