@@ -394,6 +394,10 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
 
 void HistogramView::populateBins()
 {
+  if (!histogram_->hasData()) {
+    return;
+  }
+
   // determine interval
   const float bin_interval = computeBucketInterval();
   const float bin_min
