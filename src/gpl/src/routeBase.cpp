@@ -674,10 +674,13 @@ std::pair<bool, bool> RouteBase::routability()
   int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
                            + nbVec_[0]->totalFillerArea();
 
+  nbVec_[0]->cutFillerCells(nbVec_[0]->totalFillerArea() - inflatedAreaDelta_);
+
+
   // newly set Density
-  nbVec_[0]->setTargetDensity(
-      static_cast<float>(totalGCellArea)
-      / static_cast<float>(nbVec_[0]->whiteSpaceArea()));
+  // nbVec_[0]->setTargetDensity(
+  //     static_cast<float>(totalGCellArea)
+  //     / static_cast<float>(nbVec_[0]->whiteSpaceArea()));
 
   //
   // max density detection or,

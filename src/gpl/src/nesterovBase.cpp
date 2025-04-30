@@ -88,7 +88,7 @@ void GCell::lock()
   }
 }
 
-std::string GCell::name() const
+std::string GCell::getName() const
 {
   if (insts_.empty()) {
     return "fill";
@@ -518,7 +518,7 @@ void GPin::print(utl::Logger* log) const
   }
   if (gCell_) {
     if (gCell_->isInstance()) {
-      log->report("GCell*: {}", gCell_->name());
+      log->report("GCell*: {}", gCell_->getName());
     } else {
       log->report("GCell of gpin is filler!");
     }
@@ -1246,7 +1246,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MinX updated: {} {:g}",
-                     gPin->gCell()->name(),
+                     gPin->gCell()->getName(),
                      gPin->minExpSumX());
         }
       }
@@ -1262,7 +1262,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MaxX updated: {} {:g}",
-                     gPin->gCell()->name(),
+                     gPin->gCell()->getName(),
                      gPin->maxExpSumX());
         }
       }
@@ -1278,7 +1278,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MinY updated: {} {:g}",
-                     gPin->gCell()->name(),
+                     gPin->gCell()->getName(),
                      gPin->minExpSumY());
         }
       }
@@ -1294,7 +1294,7 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
                      "wlUpdateWA",
                      1,
                      "MaxY updated: {} {:g}",
-                     gPin->gCell()->name(),
+                     gPin->gCell()->getName(),
                      gPin->maxExpSumY());
         }
       }
@@ -1334,7 +1334,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
                "getGradientWA",
                1,
                "{}, gradient: {:g} {:g}",
-               gCell->name(),
+               gCell->getName(),
                gradientPair.x,
                gradientPair.y);
   }
@@ -1858,22 +1858,20 @@ NesterovBase::~NesterovBase() = default;
 
 // gcell update
 void NesterovBase::updateGCellCenterLocation(
-    const std::vector<FloatPoint>& coordis)
+  const std::vector<FloatPoint>& coordis)
 {
-  for (auto& coordi : coordis) {
-    int idx = &coordi - &coordis[0];
-    nb_gcells_[idx]->setCenterLocation(coordi.x, coordi.y);
+  for (int idx = 0; idx < coordis.size(); ++idx) {
+    nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
 }
 
 void NesterovBase::updateGCellDensityCenterLocation(
-    const std::vector<FloatPoint>& coordis)
+  const std::vector<FloatPoint>& coordis)
 {
-  for (auto& coordi : coordis) {
-    int idx = &coordi - &coordis[0];
-    nb_gcells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
-  }
-  bg_.updateBinsGCellDensityArea(nb_gcells_);
+for (int idx = 0; idx < coordis.size(); ++idx) {
+  nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
+}
+bg_.updateBinsGCellDensityArea(nb_gcells_);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -2904,7 +2902,7 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
                "callbacks",
                1,
                "warning: gcell {} found in db_inst_map_ as {}",
-               gcell->name(),
+               gcell->getName(),
                db_inst->getName());
   }
 
@@ -3031,7 +3029,8 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
     nextCoordi_.emplace_back();
     initCoordi_.emplace_back();
     // check if snapshot has been saved already.
-    if (curSLPCoordi_.size() == snapshotCoordi_.size() + 1) {
+    if (curSLPCoordi_.size() == snapshotCoordi_.size() + 1) 
+    {
       snapshotCoordi_.emplace_back();
       snapshotSLPCoordi_.emplace_back();
       snapshotSLPSumGrads_.emplace_back();
@@ -3144,7 +3143,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
                  "callbacks",
                  1,
                  "warning: trying to destroy filler gcell!");
-      destroyFillerGCell(handle.getIndex());
+      destroyFillerGCell(handle.getStorageIndex());
     }
 
   } else {
@@ -3189,21 +3188,56 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   return replacement;
 }
 
-// TODO to be implemented.
-void NesterovBase::destroyFillerGCell(size_t index_remove)
-{
-  // size_t last_index = fillerStor_.size() - 1;
-  // if (index_remove > last_index) {
-  //   log_->report("error: index {} out of bounds for fillerStor_ (max:{})",
-  //                index_remove,
-  //                last_index);
-  //   return;
-  // }
-  // if (index_remove != last_index) {
-  //   std::swap(fillerStor_[index_remove], fillerStor_[last_index]);
-  // }
-  // fillerStor_.pop_back();
+void NesterovBase::cutFillerCells(int64_t targetFillerArea) {
+  log_->report("totalFillerArea_: {}", totalFillerArea_);
+  log_->report("targetFillerArea: {}", targetFillerArea);
+  log_->report("number of fillers before removal: {}", fillerStor_.size());
+  int removed_count = 0;
+  while (totalFillerArea_ > targetFillerArea && !fillerStor_.empty()) {
+    // TODO which filler to remove? closest to area change? how to do that?
+    for(int i = 0; i < nb_gcells_.size(); ++i) {
+      if(nb_gcells_[i]->isFiller()){
+        destroyFillerGCell(i);
+        break;
+      }
+    }
+    
+    totalFillerArea_ -= fillerCellArea();
+    ++removed_count;
+  }
+  log_->report("Filler cells removed to compansate for inflation: {}",removed_count);
+  log_->report("number of fillers after removal: {}", fillerStor_.size());
 }
+
+void NesterovBase::destroyFillerGCell(size_t nb_index_remove) {
+  size_t stor_last_index = fillerStor_.size() - 1;
+  GCellHandle& gcell_remove = nb_gcells_[nb_index_remove];
+  size_t stor_index_remove = gcell_remove.getStorageIndex();
+  if(!gcell_remove->isFiller()){
+    debugPrint(log_, GPL, "callbacks", 1,"trying to destroy filler, but gcell ({})is not filler!",
+      gcell_remove->getName());
+    return;
+  }
+  if (stor_index_remove > stor_last_index) {
+    debugPrint(log_, GPL, "callbacks", 1,"destroy filler: index {} out of bounds for fillerStor_ (max:{})",
+                 stor_index_remove, stor_last_index);
+    return;
+  }  
+
+  if (stor_index_remove != stor_last_index) {
+    std::swap(fillerStor_[stor_index_remove], fillerStor_[stor_last_index]);
+  }  
+  fillerStor_.pop_back();
+
+  size_t nb_last_index = nb_gcells_.size() - 1;
+  if (nb_index_remove != nb_last_index) {
+    std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);
+    nb_gcells_[nb_index_remove].updateIndex(stor_index_remove);
+  }
+  swapAndPopParallelVectors(nb_index_remove, nb_last_index);
+  nb_gcells_.pop_back();
+}
+
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
 {
@@ -3328,7 +3362,8 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
   // Avoid modifying this if snapshot has not been saved yet.
-  if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
+  // if (curSLPCoordi_.size() == snapshotCoordi_.size()) 
+  {
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);

@@ -57,7 +57,7 @@ class GCell
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
-  std::string name() const;
+  std::string getName() const;
 
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
@@ -1206,10 +1206,10 @@ class biNormalParameters
 class GCellHandle
 {
  public:
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), index_(idx)
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), storage_index_(idx)
   {
   }
-  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), index_(idx) {}
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx) {}
 
   // Non-const versions
   GCell* operator->() { return &getGCell(); }
@@ -1226,8 +1226,8 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  void updateIndex(size_t new_index) { index_ = new_index; }
-  size_t getIndex() const { return index_; }
+  void updateIndex(size_t new_index) { storage_index_ = new_index; }
+  size_t getStorageIndex() const { return storage_index_; }
 
  private:
   using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
@@ -1235,13 +1235,13 @@ class GCellHandle
   GCell& getGCell() const
   {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
-      return std::get<NesterovBaseCommon*>(storage_)->getGCell(index_);
+      return std::get<NesterovBaseCommon*>(storage_)->getGCell(storage_index_);
     }
-    return std::get<NesterovBase*>(storage_)->getFillerGCell(index_);
+    return std::get<NesterovBase*>(storage_)->getFillerGCell(storage_index_);
   }
 
   StorageVariant storage_;
-  size_t index_;
+  size_t storage_index_;
 };
 
 inline bool isValidSigType(const odb::dbSigType& db_type)

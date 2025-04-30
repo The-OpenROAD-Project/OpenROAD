@@ -306,7 +306,7 @@ Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger) : Pin()
   updateCoordi(bTerm, logger);
 }
 
-std::string Pin::name() const
+std::string Pin::getName() const
 {
   if (!term_) {
     return "DUMMY";
