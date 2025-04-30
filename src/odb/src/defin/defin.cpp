@@ -63,11 +63,6 @@ void defin::namesAreDBIDs()
   _reader->namesAreDBIDs();
 }
 
-void defin::setAssemblyMode()
-{
-  _reader->setAssemblyMode();
-}
-
 void defin::useBlockName(const char* name)
 {
   _reader->useBlockName(name);

@@ -285,11 +285,6 @@ void definReader::namesAreDBIDs()
   _snetR->namesAreDBIDs();
 }
 
-void definReader::setAssemblyMode()
-{
-  _netR->setAssemblyMode();
-}
-
 void definReader::useBlockName(const char* name)
 {
   _block_name = name;

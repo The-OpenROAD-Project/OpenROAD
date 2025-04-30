@@ -46,7 +46,6 @@ class defin
   void skipFillWires();
   void continueOnErrors();
   void namesAreDBIDs();
-  void setAssemblyMode();
   void useBlockName(const char* name);
 
   /// Create a new chip

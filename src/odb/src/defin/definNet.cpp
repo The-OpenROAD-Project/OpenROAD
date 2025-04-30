@@ -43,7 +43,6 @@ definNet::definNet()
   _skip_wires = false;
   _replace_wires = false;
   _names_are_ids = false;
-  _assembly_mode = false;
 }
 
 definNet::~definNet()
@@ -98,12 +97,10 @@ void definNet::begin(const char* name)
       _logger->warn(utl::ODB, 96, "net {} does not exist", name);
       ++_errors;
     } else {
-      if (!_assembly_mode) {
-        dbWire* wire = _cur_net->getWire();
+      dbWire* wire = _cur_net->getWire();
 
-        if (wire) {
-          dbWire::destroy(wire);
-        }
+      if (wire) {
+        dbWire::destroy(wire);
       }
     }
 
@@ -320,15 +317,7 @@ void definNet::wire(dbWireType type)
   }
 
   if (_wire == nullptr) {
-    if (!_assembly_mode) {
-      _wire = dbWire::create(_cur_net);
-    } else {
-      _wire = _cur_net->getWire();
-
-      if (_wire == nullptr) {
-        _wire = dbWire::create(_cur_net);
-      }
-    }
+    _wire = dbWire::create(_cur_net);
     _wire_encoder.begin(_wire);
   }
 
@@ -690,14 +679,10 @@ void definNet::end()
   }
 
   if (_wire) {
-    if (_assembly_mode) {
-      _wire_encoder.clear();
-    } else {
-      _wire_encoder.end();
+    _wire_encoder.end();
 
-      if (_replace_wires) {
-        _cur_net->setWireAltered(true);
-      }
+    if (_replace_wires) {
+      _cur_net->setWireAltered(true);
     }
   }
   _cur_net = nullptr;
