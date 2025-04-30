@@ -331,6 +331,7 @@ void definNet::wire(dbWireType type)
         _wire = dbWire::create(_cur_net);
       }
     }
+    assert(_wire != nullptr);
     _wire_encoder.begin(_wire);
   }
 
