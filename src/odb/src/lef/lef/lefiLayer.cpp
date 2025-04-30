@@ -1982,8 +1982,9 @@ void lefiLayer::checkMinimumcut()
     mincutWidth = minimumcutWidth_[idx];
     comparedMinwidth = hasMinwidth() ? minwidth_ : width_;
 
-    if (mincutWidth >= comparedMinwidth)
+    if (mincutWidth >= comparedMinwidth) {
       continue;
+    }
 
     // --- Ignore bad MINIMUMCUT --- //
     logBadMinimumCut(idx, comparedMinwidth);
@@ -1993,8 +1994,9 @@ void lefiLayer::checkMinimumcut()
   }
 
   // Reduce memory footprint if necessary
-  if (numBadMincut == 0)
+  if (numBadMincut == 0) {
     return;
+  }
 
   if (numMinimumcut_ == 0) {
     freeMinimumCut();
@@ -6449,8 +6451,9 @@ void lefiLayer::reallocMinimumCut(size_t prevCount, size_t count)
   nd = (double*) lefMalloc(sizeof(double) * count);
 
   // Don't copy values outside of arrays boundaries
-  if (prevCount > count)
+  if (prevCount > count) {
     prevCount = count;
+  }
 
   for (int32_t idx = 0; idx < prevCount; idx++) {
     nc[idx] = minimumcut_[idx];
