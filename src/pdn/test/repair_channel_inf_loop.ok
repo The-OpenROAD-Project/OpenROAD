@@ -1,3 +1,7 @@
+[WARNING ODB-0220] WARNING (LEFPARS-2504): Ignoring layer M2 MINIMUMCUT rule with WIDTH (0.300000) <= the layer's MINWIDTH (0.375000). See file repair_channel_inf_loop/tech_macro.lef at line 62.
+
+[WARNING ODB-0220] WARNING (LEFPARS-2504): Ignoring layer M4 MINIMUMCUT rule with WIDTH (0.375000) <= the layer's MINWIDTH (1.880000). See file repair_channel_inf_loop/tech_macro.lef at line 119.
+
 [INFO ODB-0227] LEF file: repair_channel_inf_loop/tech_macro.lef, created 7 layers, 3 vias, 1 library cells
 [INFO ODB-0127] Reading DEF file: repair_channel_inf_loop/floorplan.def
 [INFO ODB-0128] Design: test
