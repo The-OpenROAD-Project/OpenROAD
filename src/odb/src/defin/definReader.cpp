@@ -279,12 +279,6 @@ void definReader::replaceWires()
   _snetR->replaceWires();
 }
 
-void definReader::namesAreDBIDs()
-{
-  _netR->namesAreDBIDs();
-  _snetR->namesAreDBIDs();
-}
-
 void definReader::useBlockName(const char* name)
 {
   _block_name = name;

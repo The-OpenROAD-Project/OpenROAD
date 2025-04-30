@@ -25,7 +25,6 @@ class definNet : public definBase
   bool _skip_signal_connections;
   bool _skip_wires;
   bool _replace_wires;
-  bool _names_are_ids;
   dbNet* _cur_net;
   dbTechLayer* _cur_layer;
   dbWireEncoder _wire_encoder;
@@ -90,7 +89,6 @@ class definNet : public definBase
   void skipWires() { _skip_wires = true; }
   void skipConnections() { _skip_signal_connections = true; }
   void replaceWires() { _replace_wires = true; }
-  void namesAreDBIDs() { _names_are_ids = true; }
 };
 
 }  // namespace odb

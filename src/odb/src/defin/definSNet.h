@@ -23,7 +23,6 @@ class definSNet : public definBase
   bool _skip_block_wires;
   bool _skip_fill_wires;
   bool _replace_wires;
-  bool _names_are_ids;
   dbNet* _cur_net;
   dbTechLayer* _cur_layer;
   dbSWire* _swire;
@@ -90,7 +89,6 @@ class definSNet : public definBase
   void skipBlockWires() { _skip_block_wires = true; }
   void skipFillWires() { _skip_fill_wires = true; }
   void replaceWires() { _replace_wires = true; }
-  void namesAreDBIDs() { _names_are_ids = true; }
 };
 
 }  // namespace odb

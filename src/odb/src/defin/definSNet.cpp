@@ -46,7 +46,6 @@ definSNet::definSNet()
   _skip_block_wires = false;
   _skip_fill_wires = false;
   _replace_wires = false;
-  _names_are_ids = false;
 }
 
 definSNet::~definSNet()
@@ -85,17 +84,7 @@ void definSNet::begin(const char* name)
 
     _cur_net->setSpecial();
   } else {
-    if (_names_are_ids == false) {
-      _cur_net = _block->findNet(name);
-    } else {
-      uint netid = get_net_dbid(name);
-
-      if (netid) {
-        _cur_net = dbNet::getNet(_block, netid);
-      } else {
-        _cur_net = nullptr;
-      }
-    }
+    _cur_net = _block->findNet(name);
 
     if (_cur_net == nullptr) {
       _logger->warn(utl::ODB, 156, "special net {} does not exist", name);

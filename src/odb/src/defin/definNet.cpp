@@ -42,7 +42,6 @@ definNet::definNet()
   _skip_signal_connections = false;
   _skip_wires = false;
   _replace_wires = false;
-  _names_are_ids = false;
 }
 
 definNet::~definNet()
@@ -83,15 +82,7 @@ void definNet::begin(const char* name)
 
     _non_default_rule = nullptr;
   } else {
-    if (_names_are_ids == false) {
-      _cur_net = _block->findNet(name);
-    } else {
-      uint netid = get_net_dbid(name);
-
-      if (netid) {
-        _cur_net = dbNet::getNet(_block, netid);
-      }
-    }
+    _cur_net = _block->findNet(name);
 
     if (_cur_net == nullptr) {
       _logger->warn(utl::ODB, 96, "net {} does not exist", name);

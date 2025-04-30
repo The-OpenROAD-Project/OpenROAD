@@ -58,11 +58,6 @@ void defin::continueOnErrors()
   _reader->continueOnErrors();
 }
 
-void defin::namesAreDBIDs()
-{
-  _reader->namesAreDBIDs();
-}
-
 void defin::useBlockName(const char* name)
 {
   _reader->useBlockName(name);

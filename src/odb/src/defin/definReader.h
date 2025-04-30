@@ -240,7 +240,6 @@ class definReader : public definBase
   void skipFillWires();
   void continueOnErrors();
   void useBlockName(const char* name);
-  void namesAreDBIDs();
   void error(std::string_view msg);
 
   dbChip* createChip(std::vector<dbLib*>& search_libs,
