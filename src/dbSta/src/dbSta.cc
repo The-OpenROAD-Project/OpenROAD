@@ -152,32 +152,6 @@ class dbStaReport : public sta::ReportTcl
   Logger* logger_ = nullptr;
 };
 
-// Helper class for histogram reporting.
-class dbSlackHistogram : public utl::Histogram<float>
-{
- public:
-  dbSlackHistogram(Sta* sta, dbNetwork* network, Logger* logger);
-
-  void populate(const MinMax* min_max);
-
- private:
-  Sta* sta_;
-  dbNetwork* network_;
-};
-
-// Helper class for histogram reporting.
-class dbLogicDepthHistogram : public utl::Histogram<int>
-{
- public:
-  dbLogicDepthHistogram(Sta* sta, dbNetwork* network, Logger* logger);
-
-  void populate(bool exclude_buffers, bool exclude_inverters);
-
- private:
-  Sta* sta_;
-  dbNetwork* network_;
-};
-
 class dbStaCbk : public dbBlockCallBackObj
 {
  public:
@@ -677,35 +651,27 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-dbSlackHistogram::dbSlackHistogram(Sta* sta, dbNetwork* network, Logger* logger)
-    : Histogram<float>(logger), sta_(sta), network_(network)
+void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
 {
-}
-
-void dbSlackHistogram::populate(const MinMax* min_max)
-{
-  clearData();
+  utl::Histogram<float> histogram(logger_);
 
   sta::Unit* time_unit = sta_->units()->timeUnit();
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     float slack = sta_->vertexSlack(vertex, min_max);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
-      addData(time_unit->staToUser(slack));
+      histogram.addData(time_unit->staToUser(slack));
     }
   }
+
+  histogram.generateBins(num_bins);
+  histogram.report(/*precision=*/3);
 }
 
-dbLogicDepthHistogram::dbLogicDepthHistogram(Sta* sta,
-                                             dbNetwork* network,
-                                             Logger* logger)
-    : Histogram<int>(logger), sta_(sta), network_(network)
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
 {
-}
-
-void dbLogicDepthHistogram::populate(bool exclude_buffers,
-                                     bool exclude_inverters)
-{
-  clearData();
+  utl::Histogram<int> histogram(logger_);
 
   sta_->worstSlack(MinMax::max());  // Update timing.
   for (sta::Vertex* vertex : *sta_->endpoints()) {
@@ -715,10 +681,10 @@ void dbLogicDepthHistogram::populate(bool exclude_buffers,
     while (path) {
       Pin* pin = path->vertex(sta_)->pin();
       Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
-      dbInst* inst = network_->staToDb(sta_inst);
+      dbInst* inst = db_network_->staToDb(sta_inst);
       if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
         prev_inst = inst;
-        LibertyCell* lib_cell = network_->libertyCell(inst);
+        LibertyCell* lib_cell = db_network_->libertyCell(inst);
         if (lib_cell && (!exclude_buffers || !lib_cell->isBuffer())
             && (!exclude_inverters || !lib_cell->isInverter())) {
           path_length++;
@@ -726,24 +692,9 @@ void dbLogicDepthHistogram::populate(bool exclude_buffers,
       }
       path = path->prevPath();
     }
-    addData(path_length);
+    histogram.addData(path_length);
   }
-}
 
-void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
-{
-  dbSlackHistogram histogram(sta_, db_network_, logger_);
-  histogram.populate(min_max);
-  histogram.generateBins(num_bins);
-  histogram.report(/*precision=*/3);
-}
-
-void dbSta::reportLogicDepthHistogram(int num_bins,
-                                      bool exclude_buffers,
-                                      bool exclude_inverters) const
-{
-  dbLogicDepthHistogram histogram(sta_, db_network_, logger_);
-  histogram.populate(exclude_buffers, exclude_inverters);
   histogram.generateBins(num_bins);
   histogram.report();
 }
