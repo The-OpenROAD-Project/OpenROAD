@@ -160,7 +160,8 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
-  InstanceSet all_inserted_buffer_set_;
+  all_inserted_buffer_set_ = InstanceSet(db_network_);
+
   //buffer_move = new BufferMove(this);
   clone_move = new CloneMove(this);
   size_move = new SizeMove(this);
@@ -4061,6 +4062,13 @@ void Resizer::journalBegin()
     setCallBackRegistered(false);
   }
 
+  inserted_buffers_.clear();
+  size_move->restoreMoves();
+  clone_move->restoreMoves();
+  split_load_move->restoreMoves();
+  swap_pins_move->restoreMoves();
+  removed_buffers_.clear();
+
 }
 
 void Resizer::journalEnd()
@@ -4073,6 +4081,12 @@ void Resizer::journalEnd()
   incrementalParasiticsEnd();
   odb::dbDatabase::endEco(block_);
 
+  inserted_buffers_.clear();
+  size_move->commitMoves();
+  clone_move->commitMoves();
+  split_load_move->commitMoves();
+  swap_pins_move->commitMoves();
+  removed_buffers_.clear();
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -4083,6 +4097,7 @@ void Resizer::journalMakeBuffer(Instance* buffer)
              1,
              "journal make_buffer {}",
              network_->pathName(buffer));
+  inserted_buffers_.emplace_back(buffer);
   all_inserted_buffer_set_.insert(buffer);
 }
 
@@ -4140,16 +4155,21 @@ void Resizer::journalRestore()
              "journal",
              1,
              "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
-             size_move->count(),
+             size_move->pendingMoves(),
              inserted_buffer_count_,
-             clone_move->count(),
-             swap_pins_move->count(),
+             clone_move->pendingMoves(),
+             swap_pins_move->pendingMoves(),
              removed_buffer_count_);
-  size_move->clear();
-  //buffer_move->clear();
-  clone_move->clear();
-  swap_pins_move->clear();
-  removed_buffer_count_=0;
+
+  size_move->restoreMoves();
+  inserted_buffer_count_ -= inserted_buffers_.size();
+  inserted_buffers_.clear();
+  clone_move->restoreMoves();
+  split_load_move->restoreMoves();
+  swap_pins_move->restoreMoves();
+  removed_buffer_count_ -= removed_buffers_.size();
+  removed_buffers_.clear();
+
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
@@ -4162,10 +4182,10 @@ void Resizer::journalBeginTest()
 
 void Resizer::journalRestoreTest()
 {
-  int resize_count_old = size_move->count();
+  int resize_count_old = size_move->countMoves();
   int inserted_buffer_count_old = inserted_buffer_count_;
-  int cloned_gate_count_old = clone_move->count();
-  int swap_pin_count_old = swap_pins_move->count();
+  int cloned_gate_count_old = clone_move->countMoves();
+  int swap_pin_count_old = swap_pins_move->countMoves();
   int removed_buffer_count_old = removed_buffer_count_;
 
   journalRestore();
@@ -4173,10 +4193,10 @@ void Resizer::journalRestoreTest()
   logger_->report(
       "journalRestoreTest restored {} sizing, {} buffering, {} "
       "cloning, {} pin swaps, {} buffer removal",
-      resize_count_old - size_move->count(),
+      resize_count_old - size_move->countMoves(),
       inserted_buffer_count_old - inserted_buffer_count_,
-      cloned_gate_count_old - clone_move->count(),
-      swap_pin_count_old - swap_pins_move->count(),
+      cloned_gate_count_old - clone_move->countMoves(),
+      swap_pin_count_old - swap_pins_move->countMoves(),
       removed_buffer_count_old - removed_buffer_count_);
 }
 

@@ -68,7 +68,7 @@ SizeMove::doMove(const Path* drvr_path,
   Pin* in_pin = in_path->pin(sta_);
   LibertyPort* in_port = network_->libertyPort(in_pin);
   
-  if (!resizer_->dontTouch(drvr) || resizer_->clone_move->count(drvr) != 0) {
+  if (!resizer_->dontTouch(drvr) || resizer_->clone_move->countMoves(drvr) != 0) {
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
@@ -87,8 +87,16 @@ SizeMove::doMove(const Path* drvr_path,
     LibertyCell* upsize = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
     
     if (upsize) {
-      debugPrint(logger_, RSZ, "repair_setup", 3, "new resize {} {} -> {}", network_->pathName(drvr_pin), drvr_port->libertyCell()->name(), upsize->name());
-      if (!resizer_->dontTouch(drvr) && resizer_->replaceCell(drvr, upsize, true)) {
+      if (!resizer_->dontTouch(drvr) && replaceCell(drvr, upsize)) {
+        debugPrint(logger_, 
+                   RSZ, 
+                   "moves", 
+                   1, 
+                   "size_move {} {} -> {}", 
+                   network_->pathName(drvr_pin), 
+                   drvr_port->libertyCell()->name(), 
+                   upsize->name());
+        addMove(drvr);
         return true;
       }
     }
@@ -154,8 +162,7 @@ SizeMove::upsizeCell(LibertyPort* in_port,
 // Replace LEF with LEF so ports stay aligned in instance.
 bool 
 SizeMove::replaceCell(Instance* inst,
-                      const LibertyCell* replacement,
-                      const bool journal)
+                      const LibertyCell* replacement)
 {
   const char* replacement_name = replacement->name();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
@@ -165,9 +172,6 @@ SizeMove::replaceCell(Instance* inst,
     dbMaster* master = dinst->getMaster();
     resizer_->designAreaIncr(-area(master));
     Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
-    if (journal) {
-      journalMove(inst);
-    }
     sta_->replaceCell(inst, replacement_cell1);
     resizer_->designAreaIncr(area(replacement_master));
 
@@ -190,23 +194,10 @@ SizeMove::replaceCell(Instance* inst,
       }
       delete pin_iter;
     }
+
     return true;
   }
   return false;
-}
-
-void 
-SizeMove::journalMove(Instance* inst)
-{
-  LibertyCell* lib_cell = network_->libertyCell(inst);
-  debugPrint(logger_,
-             RSZ,
-             "journal",
-             1,
-             "journal replace {} ({})",
-             network_->pathName(inst),
-             lib_cell->name());
-  all_inst_set_.insert(inst);
 }
 
 // namespace rsz

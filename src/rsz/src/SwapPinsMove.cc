@@ -53,19 +53,18 @@ using sta::INF;
 
 
 void 
-SwapPinsMove::journalMove(Instance* inst,
-                      LibertyPort* port1,
-                      LibertyPort* port2)
+SwapPinsMove::debugMove(Instance* inst,
+                        LibertyPort* port1,
+                        LibertyPort* port2)
 {
   debugPrint(logger_,
              RSZ,
-             "journal",
+             "moves",
              1,
-             "journal swap pins {} ({}->{})",
+             "swap_pins_move {} ({}->{})",
              network_->pathName(inst),
              port1->name(),
              port2->name());
-  all_inst_set_.insert(inst);
 }
 
 bool 
@@ -107,8 +106,8 @@ SwapPinsMove::doMove(const Path* drvr_path,
 
     // Check if we have already dealt with this instance
     // and prevent any further swaps.
-    if (all_inst_set_.count(drvr) == 0) {
-      all_inst_set_.insert(drvr);
+    if (countMoves(drvr) == 0) {
+      addMove(drvr);
     } else {
       return false;
     }
@@ -130,14 +129,14 @@ SwapPinsMove::doMove(const Path* drvr_path,
       if (!sta::LibertyPort::equiv(swap_port, input_port)) {
         debugPrint(logger_,
                    RSZ,
-                   "repair_setup",
+                   "moves",
                    3,
-                   "Swap {} ({}) {} {}",
+                   "considering swap {} ({}) {} {}",
                    network_->name(drvr),
                    cell->name(),
                    input_port->name(),
                    swap_port->name());
-        swapPins(drvr, input_port, swap_port, true);
+        swapPins(drvr, input_port, swap_port);
         return true;
       }
     }
@@ -148,13 +147,9 @@ SwapPinsMove::doMove(const Path* drvr_path,
 void 
 SwapPinsMove::swapPins(Instance* inst,
                        LibertyPort* port1,
-                       LibertyPort* port2,
-                       bool journal)
+                       LibertyPort* port2)
 {
-  // Add support for undo.
-  if (journal) {
-    journalMove(inst, port1, port2);
-  }
+  debugMove(inst, port1, port2);
 
   Pin *found_pin1, *found_pin2;
   Net *net1, *net2;

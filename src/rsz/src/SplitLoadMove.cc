@@ -65,7 +65,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
-             "repair_setup",
+             "moves",
              3,
              "split loads {} -> {}",
              network_->pathName(drvr_pin),
@@ -86,7 +86,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       const Slack slack_margin = fanout_slack - drvr_slack;
       debugPrint(logger_,
                  RSZ,
-                 "repair_setup",
+                 "moves",
                  4,
                  " fanin {} slack_margin = {}",
                  network_->pathName(fanout_vertex->pin()),
@@ -121,7 +121,13 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   // H-Fix make the buffer in the parent of the driver pin
   Instance* buffer = resizer_->makeBuffer(
       buffer_cell, buffer_name.c_str(), parent, drvr_loc);
-  all_inst_set_.insert(buffer);
+  debugPrint(logger_,
+         RSZ,
+         "moves",
+         1,
+         "split_load_move make_buffer {}",
+         network_->pathName(buffer));
+  addMove(buffer);
 
   // H-fix make the out net in the driver parent
   std::string out_net_name = resizer_->makeUniqueNetName();

@@ -90,14 +90,27 @@ class BaseMove : public sta::dbStaState {
             return doMove(drvr_path, drvr_index, expanded);
         }
 
+        void init();
+
         // Analysis functions
         //virtual double deltaSlack() = 0;
         //virtual double deltaPower() = 0;
-        //virtual double deltaArea() = 0;
+        //virtual douele deltaArea() = 0;
 
-        void clear();
-        int count(Instance* inst) { return all_inst_set_.count(inst);}
-        int count() const { return all_inst_set_.size(); }
+        // Accept the pending optimizations
+        void commitMoves();
+        // Abandon the pending optimizations
+        void restoreMoves();
+        // Total pending optimizations (since last checkpoint)
+        int pendingMoves() const;
+        // Total optimizations 
+        int committedMoves() const;
+        // Whether this optimization is pending
+        int countMoves(Instance* inst) const;
+        // Total accepted and pending optimizations 
+        int countMoves() const;
+        // Add a new pending optimization
+        void addMove(Instance* inst);
 
     protected:
        Resizer* resizer_;
@@ -111,7 +124,11 @@ class BaseMove : public sta::dbStaState {
 
        // Need to track these so we don't optimize the optimzations.
        // This can result in long run-time.
+       // These are all of the optimized insts of this type .
+       // Some may not have been accepted, but this replicates the prior behavior.
        InstanceSet all_inst_set_;
+       int count_ = 0;
+       int all_count_ = 0;
 
        // Use actual input slews for accurate delay/slew estimation
        sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;

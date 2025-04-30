@@ -41,7 +41,6 @@ public:
                 PathExpanded* expanded) override;
 
 private:
-    void journalMove(Instance* inst);
 
 
 };

@@ -53,7 +53,6 @@ private:
                      Slack drvr_slack,
                      PathExpanded* expanded);
 
-    void journalMove(Instance* inst);
 
 
 };

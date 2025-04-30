@@ -48,8 +48,7 @@ public:
 private:
     void swapPins(Instance* inst,
                   LibertyPort* port1,
-                  LibertyPort* port2,
-                  bool journal);
+                  LibertyPort* port2);
     void equivCellPins(const LibertyCell* cell,
                        LibertyPort* input_port,
                        sta::LibertyPortSet& ports);
@@ -61,9 +60,9 @@ private:
                               LibertyPort** swap_port);
     void resetInputSlews();
 
-    void journalMove(Instance* inst,
-                    LibertyPort* port1,
-                    LibertyPort* port2);
+    void debugMove(Instance* inst,
+                   LibertyPort* port1,
+                   LibertyPort* port2);
 
     Map<Instance*, LibertyPortTuple> swapped_pins_;
     InstanceSet all_swapped_pin_inst_set_;

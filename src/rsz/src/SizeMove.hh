@@ -49,9 +49,7 @@ private:
                          const float prev_drive,
                          const DcalcAnalysisPt* dcalc_ap);
     bool replaceCell(Instance* inst,
-                     const LibertyCell* replacement,
-                     const bool journal);
-    void journalMove(Instance* inst);
+                     const LibertyCell* replacement);
 
 
 };

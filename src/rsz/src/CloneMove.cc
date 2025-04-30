@@ -85,7 +85,7 @@ bool CloneMove::doMove(const Path* drvr_path,
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
-             "repair_setup",
+             "moves",
              3,
              "clone driver {} -> {}",
              network_->pathName(drvr_pin),
@@ -104,7 +104,7 @@ bool CloneMove::doMove(const Path* drvr_path,
     const Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_,
                RSZ,
-               "repair_setup",
+               "moves",
                4,
                " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
@@ -147,17 +147,17 @@ bool CloneMove::doMove(const Path* drvr_path,
 
   Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
   Instance* clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(), parent, drvr_loc);
-  all_inst_set_.insert(clone_inst);
 
   debugPrint(logger_,
              RSZ,
-             "repair_setup",
+             "moves",
              3,
-             "clone {} ({}) -> {} ({})",
+             "clone_move {} ({}) -> {} ({})",
              network_->pathName(drvr_pin),
              original_cell->name(),
              network_->pathName(clone_inst),
              clone_cell->name());
+  addMove(clone_inst);
 
   // Hierarchy fix, make out_net in parent.
 

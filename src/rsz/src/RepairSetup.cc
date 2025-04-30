@@ -63,6 +63,7 @@ void RepairSetup::init()
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
+
   initial_design_area_ = resizer_->computeDesignArea();
 }
 
@@ -81,11 +82,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   init();
   constexpr int digits = 3;
   max_repairs_per_pass_ = max_repairs_per_pass;
-  resize_count_ = 0;
   inserted_buffer_count_ = 0;
-  split_load_buffer_count_ = 0;
-  cloned_gate_count_ = 0;
-  swap_pin_count_ = 0;
   removed_buffer_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
@@ -373,34 +370,39 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   printProgress(opto_iteration, true, true, false, num_viols);
 
+  int size_moves_ = resizer_->size_move->countMoves();
+  int swap_pins_moves_ = resizer_->swap_pins_move->countMoves();
+  int clone_moves_ = resizer_->clone_move->countMoves();
+  int split_load_moves_ = resizer_->split_load_move->countMoves();
+
   if (removed_buffer_count_ > 0) {
     repaired = true;
     logger_->info(RSZ, 59, "Removed {} buffers.", removed_buffer_count_);
   }
-  if (inserted_buffer_count_ > 0 && resizer_->split_load_move->count() == 0) {
+  if (inserted_buffer_count_ > 0 && split_load_moves_ == 0) {
     repaired = true;
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
-  } else if (inserted_buffer_count_ > 0 && resizer_->split_load_move->count() > 0) {
+  } else if (inserted_buffer_count_ > 0 && split_load_moves_ > 0) {
     repaired = true;
     logger_->info(RSZ,
                   45,
                   "Inserted {} buffers, {} to split loads.",
                   inserted_buffer_count_,
-                  split_load_buffer_count_);
+                  split_load_moves_);
   }
   logger_->metric("design__instance__count__setup_buffer",
                   inserted_buffer_count_);
-  if (resizer_->size_move->count() > 0) {
+  if (size_moves_ > 0) {
     repaired = true;
-    logger_->info(RSZ, 41, "Resized {} instances.", resizer_->size_move->count());
+    logger_->info(RSZ, 41, "Resized {} instances.", size_moves_);
   }
-  if (resizer_->swap_pins_move->count() > 0) {
+  if (swap_pins_moves_ > 0) {
     repaired = true;
-    logger_->info(RSZ, 43, "Swapped pins on {} instances.", resizer_->swap_pins_move->count());
+    logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pins_moves_);
   }
-  if (resizer_->clone_move->count() > 0) {
+  if (clone_moves_ > 0) {
     repaired = true;
-    logger_->info(RSZ, 49, "Cloned {} instances.", resizer_->clone_move->count());
+    logger_->info(RSZ, 49, "Cloned {} instances.", clone_moves_);
   }
   const Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
@@ -419,10 +421,6 @@ void RepairSetup::repairSetup(const Pin* end_pin)
 {
   init();
   max_repairs_per_pass_ = 1;
-  inserted_buffer_count_ = 0;
-  swap_pin_count_ = 0;
-  cloned_gate_count_ = 0;
-  removed_buffer_count_ = 0;
 
   Vertex* vertex = graph_->pinLoadVertex(end_pin);
   const Slack slack = sta_->vertexSlack(vertex, max_);
@@ -439,11 +437,11 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
   }
-  if (resizer_->size_move->count() > 0) {
-    logger_->info(RSZ, 31, "Resized {} instances.", resizer_->size_move->count());
+  if (resizer_->size_move->countMoves() > 0) {
+    logger_->info(RSZ, 31, "Resized {} instances.", resizer_->size_move->countMoves());
   }
-  if (swap_pin_count_ > 0) {
-    logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pin_count_);
+  if (resizer_->swap_pins_move->countMoves() > 0) {
+    logger_->info(RSZ, 44, "Swapped pins on {} instances.", resizer_->swap_pins_move->countMoves());
   }
 }
 
@@ -574,7 +572,6 @@ bool RepairSetup::repairPath(Path* path,
       if (!skip_pin_swap) {
         if (resizer_->swap_pins_move->doMove(drvr_path, drvr_index, &expanded)) {
           changed++;
-          swap_pin_count_++;
           continue;
         }
       }
@@ -615,8 +612,6 @@ bool RepairSetup::repairPath(Path* path,
         if (fanout > split_load_min_fanout_ && !tristate_drvr
             && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
           resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded);
-          // This is both split loads and inserted buffers for now
-          inserted_buffer_count_++;
           changed++;
           continue;
         }
@@ -672,15 +667,15 @@ bool RepairSetup::removeDrvr(const Path* drvr_path,
     // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
     // cloning because such removal may lead to an inifinte loop or long runtime
     std::string reason;
-    if (resizer_->swap_pins_move->count(drvr)) {
+    if (resizer_->swap_pins_move->countMoves(drvr)) {
       reason = "its pins have been swapped";
-    } else if (resizer_->clone_move->count(drvr)) {
+    } else if (resizer_->clone_move->countMoves(drvr)) {
       reason = "it has been cloned";
-    } else if (resizer_->split_load_move->count(drvr)) {
+    } else if (resizer_->split_load_move->countMoves(drvr)) {
       reason = "it was from split load buffering";
     } else if (resizer_->all_inserted_buffer_set_.count(drvr)) {
       reason = "it was from rebuffering";
-    } else if (resizer_->size_move->count(drvr)) {
+    } else if (resizer_->size_move->countMoves(drvr)) {
       reason = "it has been resized";
     }
     if (!reason.empty()) {
@@ -1043,10 +1038,10 @@ void RepairSetup::printProgress(const int iteration,
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
         removed_buffer_count_,
-        resizer_->size_move->count(),
-        inserted_buffer_count_ + split_load_buffer_count_ + rebuffer_net_count_,
-        cloned_gate_count_,
-        swap_pin_count_,
+        resizer_->size_move->countMoves(),
+        inserted_buffer_count_ + resizer_->split_load_move->countMoves() + rebuffer_net_count_,
+        resizer_->clone_move->countMoves(),
+        resizer_->swap_pins_move->countMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),

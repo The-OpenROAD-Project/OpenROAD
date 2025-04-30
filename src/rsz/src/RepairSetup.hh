@@ -197,12 +197,8 @@ class RepairSetup : public sta::dbStaState
   float min_viol_ = 0.0;
   float max_viol_ = 0.0;
   int max_repairs_per_pass_ = 1;
-  int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
-  int split_load_buffer_count_ = 0;
   int rebuffer_net_count_ = 0;
-  int cloned_gate_count_ = 0;
-  int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
 

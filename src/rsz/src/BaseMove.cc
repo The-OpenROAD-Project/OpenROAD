@@ -21,14 +21,64 @@ BaseMove::BaseMove(Resizer* resizer)
    dbu_ = resizer_->dbu_;
    opendp_ = resizer_->opendp_;
 
+   count_ = 0;
+   all_count_ = 0;
    all_inst_set_ = InstanceSet(db_network_);
 
 }
 
 void
-BaseMove::clear()
+BaseMove::commitMoves()
 {
+    all_count_ += count_;
+}
+
+void
+BaseMove::init()
+{
+    count_ = 0;
+    all_count_ = 0;
     all_inst_set_.clear();
+}
+
+void
+BaseMove::restoreMoves()
+{
+    count_ = 0;
+} 
+
+int
+BaseMove::countMoves(Instance *inst) const 
+{ 
+    return all_inst_set_.count(inst);
+}
+
+int
+BaseMove::pendingMoves() const 
+{ 
+    return count_;
+} 
+
+int
+BaseMove::committedMoves() const 
+{ 
+    return all_count_;
+} 
+
+int
+BaseMove::countMoves() const 
+{ 
+    return all_count_ + count_;
+} 
+
+void
+BaseMove::addMove(Instance *inst)
+{ 
+    // Add it as a candidate move, not accepted yet
+    count_++;
+    // Add it to all moves, even though it wasn't accepted.
+    // This is the behavior to match the current resizer.
+    all_inst_set_.insert(inst); 
 }
 
 double 
