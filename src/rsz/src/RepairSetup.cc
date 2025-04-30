@@ -588,8 +588,8 @@ bool RepairSetup::repairPath(Path* path,
         if (rebuffer_count > 0) {
           debugPrint(logger_,
                      RSZ,
-                     "repair_setup",
-                     3,
+                     "moves",
+                     1,
                      "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),
                      rebuffer_count);
@@ -611,7 +611,8 @@ bool RepairSetup::repairPath(Path* path,
         // Don't split loads on low fanout nets.
         if (fanout > split_load_min_fanout_ && !tristate_drvr
             && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
-          resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded);
+          resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded); 
+          inserted_buffer_count_++;
           changed++;
           continue;
         }
@@ -1039,6 +1040,7 @@ void RepairSetup::printProgress(const int iteration,
         itr_field,
         removed_buffer_count_,
         resizer_->size_move->countMoves(),
+        // This actually double counts the split load buffers
         inserted_buffer_count_ + resizer_->split_load_move->countMoves() + rebuffer_net_count_,
         resizer_->clone_move->countMoves(),
         resizer_->swap_pins_move->countMoves(),

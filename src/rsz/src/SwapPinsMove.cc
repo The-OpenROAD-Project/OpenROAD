@@ -52,20 +52,6 @@ using sta::VertexOutEdgeIterator;
 using sta::INF;
 
 
-void 
-SwapPinsMove::debugMove(Instance* inst,
-                        LibertyPort* port1,
-                        LibertyPort* port2)
-{
-  debugPrint(logger_,
-             RSZ,
-             "moves",
-             1,
-             "swap_pins_move {} ({}->{})",
-             network_->pathName(inst),
-             port1->name(),
-             port2->name());
-}
 
 bool 
 SwapPinsMove::doMove(const Path* drvr_path,
@@ -106,9 +92,7 @@ SwapPinsMove::doMove(const Path* drvr_path,
 
     // Check if we have already dealt with this instance
     // and prevent any further swaps.
-    if (countMoves(drvr) == 0) {
-      addMove(drvr);
-    } else {
+    if (countMoves(drvr) > 0) {
       return false;
     }
 
@@ -130,13 +114,14 @@ SwapPinsMove::doMove(const Path* drvr_path,
         debugPrint(logger_,
                    RSZ,
                    "moves",
-                   3,
-                   "considering swap {} ({}) {} {}",
+                   1,
+                   "swap_pins {} ({}) {}<->{}",
                    network_->name(drvr),
                    cell->name(),
                    input_port->name(),
                    swap_port->name());
         swapPins(drvr, input_port, swap_port);
+        addMove(drvr);
         return true;
       }
     }
@@ -149,8 +134,6 @@ SwapPinsMove::swapPins(Instance* inst,
                        LibertyPort* port1,
                        LibertyPort* port2)
 {
-  debugMove(inst, port1, port2);
-
   Pin *found_pin1, *found_pin2;
   Net *net1, *net2;
 

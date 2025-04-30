@@ -43,6 +43,8 @@ public:
                const int drvr_index,
                PathExpanded* expanded) override;
 
+    const char * name() const override { return "SwapPinsMove"; }
+
     void reportSwappablePins();
 
 private:
@@ -60,9 +62,6 @@ private:
                               LibertyPort** swap_port);
     void resetInputSlews();
 
-    void debugMove(Instance* inst,
-                   LibertyPort* port1,
-                   LibertyPort* port2);
 
     Map<Instance*, LibertyPortTuple> swapped_pins_;
     InstanceSet all_swapped_pin_inst_set_;

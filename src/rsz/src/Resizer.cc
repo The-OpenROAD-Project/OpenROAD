@@ -4163,6 +4163,7 @@ void Resizer::journalRestore()
 
   size_move->restoreMoves();
   inserted_buffer_count_ -= inserted_buffers_.size();
+  inserted_buffer_count_ -= split_load_move->pendingMoves();
   inserted_buffers_.clear();
   clone_move->restoreMoves();
   split_load_move->restoreMoves();

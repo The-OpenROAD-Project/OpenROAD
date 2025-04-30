@@ -1,3 +1,5 @@
+set_debug_level RSZ moves 1
+set_debug_level RSZ journal 1
 # repair_design max_fanout
 source "helpers.tcl"
 source "hi_fanout.tcl"

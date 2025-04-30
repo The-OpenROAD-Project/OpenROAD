@@ -40,6 +40,8 @@ public:
                 const Slack drvr_slack,
                 PathExpanded* expanded) override;
 
+    const char * name() const override { return "SplitLoadMove"; }
+
 private:
 
 

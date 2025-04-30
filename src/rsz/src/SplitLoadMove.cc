@@ -119,8 +119,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // H-Fix make the buffer in the parent of the driver pin
-  Instance* buffer = resizer_->makeBuffer(
-      buffer_cell, buffer_name.c_str(), parent, drvr_loc);
+  Instance* buffer = makeBuffer(buffer_cell, buffer_name.c_str(), parent, drvr_loc);
   debugPrint(logger_,
          RSZ,
          "moves",

@@ -32,6 +32,11 @@ class Resizer;
 
 using std::max;
 
+using odb::dbInst;
+using odb::dbMaster;
+using odb::dbPlacementStatus;
+using odb::dbSet;
+
 using dpl::Opendp;
 
 using odb::dbMaster;
@@ -78,6 +83,8 @@ class BaseMove : public sta::dbStaState {
         BaseMove(Resizer* resizer);
         virtual ~BaseMove() = default;
 
+        virtual const char * name() const { return "BaseMove"; }
+
         virtual bool doMove(const Path* drvr_path,
                            const int drvr_index,
                            PathExpanded* expanded) { 
@@ -103,14 +110,16 @@ class BaseMove : public sta::dbStaState {
         void restoreMoves();
         // Total pending optimizations (since last checkpoint)
         int pendingMoves() const;
+        // Whether this optimization is pending
+        int pendingMoves(Instance* inst) const;
         // Total optimizations 
         int committedMoves() const;
-        // Whether this optimization is pending
+        // Whether this optimization is committed or pending
         int countMoves(Instance* inst) const;
         // Total accepted and pending optimizations 
         int countMoves() const;
         // Add a new pending optimization
-        void addMove(Instance* inst);
+        void addMove(Instance* inst, bool add_count=true);
 
     protected:
        Resizer* resizer_;
@@ -127,7 +136,9 @@ class BaseMove : public sta::dbStaState {
        // These are all of the optimized insts of this type .
        // Some may not have been accepted, but this replicates the prior behavior.
        InstanceSet all_inst_set_;
-       int count_ = 0;
+       // This is just the set of the pending moves.
+       InstanceSet pending_inst_set_;
+       int pending_count_ = 0;
        int all_count_ = 0;
 
        // Use actual input slews for accurate delay/slew estimation
@@ -172,6 +183,10 @@ class BaseMove : public sta::dbStaState {
       std::vector<bool> simulateExpr(
           sta::FuncExpr* expr,
           sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
+      Instance* makeBuffer(LibertyCell* cell,
+                           const char* name,
+                           Instance* parent,
+                           const Point& loc);
 
 };
 

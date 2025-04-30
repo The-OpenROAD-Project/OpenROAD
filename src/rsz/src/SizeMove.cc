@@ -68,7 +68,9 @@ SizeMove::doMove(const Path* drvr_path,
   Pin* in_pin = in_path->pin(sta_);
   LibertyPort* in_port = network_->libertyPort(in_pin);
   
-  if (!resizer_->dontTouch(drvr) || resizer_->clone_move->countMoves(drvr) != 0) {
+  // We always size the cloned gates for some reason, but it would be good if we also
+  // down-sized here instead since we might want smaller original.
+  if (!resizer_->dontTouch(drvr) || resizer_->clone_move->pendingMoves(drvr) > 0) {
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;

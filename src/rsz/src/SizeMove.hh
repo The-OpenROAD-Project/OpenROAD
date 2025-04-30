@@ -42,6 +42,8 @@ public:
                const int drvr_index,
                PathExpanded* expanded) override;
 
+    const char * name() const override { return "SizeMove"; }
+
 private:
     LibertyCell* upsizeCell(LibertyPort* in_port,
                          LibertyPort* drvr_port,

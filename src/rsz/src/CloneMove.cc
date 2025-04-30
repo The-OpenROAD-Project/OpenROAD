@@ -151,13 +151,15 @@ bool CloneMove::doMove(const Path* drvr_path,
   debugPrint(logger_,
              RSZ,
              "moves",
-             3,
+             1,
              "clone_move {} ({}) -> {} ({})",
              network_->pathName(drvr_pin),
              original_cell->name(),
              network_->pathName(clone_inst),
              clone_cell->name());
   addMove(clone_inst);
+  // We add the driver instance to the pending move set, but don't count it as a move.
+  addMove(drvr_inst, false);
 
   // Hierarchy fix, make out_net in parent.
 

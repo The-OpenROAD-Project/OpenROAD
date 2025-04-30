@@ -21,30 +21,35 @@ BaseMove::BaseMove(Resizer* resizer)
    dbu_ = resizer_->dbu_;
    opendp_ = resizer_->opendp_;
 
-   count_ = 0;
    all_count_ = 0;
    all_inst_set_ = InstanceSet(db_network_);
+   pending_count_ = 0;
+   pending_inst_set_ = InstanceSet(db_network_);
 
 }
 
 void
 BaseMove::commitMoves()
 {
-    all_count_ += count_;
+    all_count_ += pending_count_;
+    pending_count_ = 0;
+    pending_inst_set_.clear();
 }
 
 void
 BaseMove::init()
 {
-    count_ = 0;
+    pending_count_ = 0;
     all_count_ = 0;
+    pending_inst_set_.clear();
     all_inst_set_.clear();
 }
 
 void
 BaseMove::restoreMoves()
 {
-    count_ = 0;
+    pending_count_ = 0;
+    pending_inst_set_.clear();
 } 
 
 int
@@ -54,9 +59,15 @@ BaseMove::countMoves(Instance *inst) const
 }
 
 int
+BaseMove::pendingMoves(Instance *inst) const 
+{ 
+    return pending_inst_set_.count(inst);
+}
+
+int
 BaseMove::pendingMoves() const 
 { 
-    return count_;
+    return pending_count_;
 } 
 
 int
@@ -68,17 +79,30 @@ BaseMove::committedMoves() const
 int
 BaseMove::countMoves() const 
 { 
-    return all_count_ + count_;
+  debugPrint(logger_,
+             RSZ,
+             "moves",
+             1,
+             "counts {} all_count_ {} pending_count_ {}",
+             name(),
+             all_count_,
+             pending_count_);
+    return all_count_ + pending_count_;
 } 
 
 void
-BaseMove::addMove(Instance *inst)
+BaseMove::addMove(Instance *inst, bool add_count)
 { 
     // Add it as a candidate move, not accepted yet
-    count_++;
+    // This conditional is for the cloned gates where we only count the clone
+    // but we also add the main gate to the pending set.
+    if (add_count) 
+        pending_count_++;
     // Add it to all moves, even though it wasn't accepted.
     // This is the behavior to match the current resizer.
     all_inst_set_.insert(inst); 
+    // Also add it to the pending moves
+    pending_inst_set_.insert(inst);
 }
 
 double 
@@ -311,6 +335,17 @@ std::vector<bool> BaseMove::simulateExpr(
 
   return result;
 }
+
+////////////////////////////////////////////////////////////////
+Instance* BaseMove::makeBuffer(LibertyCell* cell,
+                              const char* name,
+                              Instance* parent,
+                              const Point& loc)
+{
+  Instance* inst = resizer_->makeInstance(cell, name, parent, loc);
+  return inst;
+}
+
 
 
 ////////////////////////////////////////////////////////////////

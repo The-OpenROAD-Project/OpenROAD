@@ -44,6 +44,8 @@ public:
                 const Slack drvr_slack,
                 PathExpanded* expanded) override;
 
+    const char * name() const override { return "CloneMove"; }
+
 private:
     Point computeCloneGateLocation(const Pin* drvr_pin,
                                    const std::vector<std::pair<Vertex*, Slack>>& fanout_slacks);
