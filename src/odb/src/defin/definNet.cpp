@@ -41,7 +41,6 @@ definNet::definNet()
   init();
   _skip_signal_connections = false;
   _skip_wires = false;
-  _replace_wires = false;
 }
 
 definNet::~definNet()
@@ -73,33 +72,14 @@ void definNet::begin(const char* name)
 {
   assert(_cur_net == nullptr);
 
-  if (_replace_wires == false) {
-    _cur_net = _block->findNet(name);
+  _cur_net = _block->findNet(name);
 
-    if (_cur_net == nullptr) {
-      _cur_net = dbNet::create(_block, name);
-    }
-
-    _non_default_rule = nullptr;
-  } else {
-    _cur_net = _block->findNet(name);
-
-    if (_cur_net == nullptr) {
-      _logger->warn(utl::ODB, 96, "net {} does not exist", name);
-      ++_errors;
-    } else {
-      dbWire* wire = _cur_net->getWire();
-
-      if (wire) {
-        dbWire::destroy(wire);
-      }
-    }
-
-    // As per Glenn, in replace mode, use the current non-default-rule.
-    // WRoute does not write the rule in the DEF.
-    // This may cause problems with other routers.
-    _non_default_rule = _cur_net->getNonDefaultRule();
+  if (_cur_net == nullptr) {
+    _cur_net = dbNet::create(_block, name);
   }
+
+  _non_default_rule = nullptr;
+
   if (_mode == defin::FLOORPLAN) {
     _update_cnt++;
   } else {
@@ -117,20 +97,18 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
 {
   assert(_cur_net == nullptr);
 
-  if (_replace_wires == false) {
-    char buf[BUFSIZ];
-    sprintf(buf, "__%d__mustjoin\n", _net_cnt);
+  char buf[BUFSIZ];
+  sprintf(buf, "__%d__mustjoin\n", _net_cnt);
 
-    _cur_net = _block->findNet(buf);
+  _cur_net = _block->findNet(buf);
 
-    if (_cur_net == nullptr) {
-      _logger->warn(utl::ODB, 98, "duplicate must-join net found ({})", buf);
-      ++_errors;
-    }
-
-    _cur_net = dbNet::create(_block, buf);
-    connection(iname, tname);
+  if (_cur_net == nullptr) {
+    _logger->warn(utl::ODB, 98, "duplicate must-join net found ({})", buf);
+    ++_errors;
   }
+
+  _cur_net = dbNet::create(_block, buf);
+  connection(iname, tname);
 
   _net_cnt++;
   _wire = nullptr;
@@ -144,7 +122,7 @@ void definNet::connection(const char* iname, const char* tname)
     return;
   }
 
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -206,59 +184,20 @@ void definNet::nonDefaultRule(const char* rule)
     return;
   }
 
-  if (_replace_wires == true) {
-    // As per Glenn, in "replace" mode, ignore the
-    // non default rule, because wroute does not write it (even if it exists).
-    // Issue an error, if the rules do not match.
-    dbTechNonDefaultRule* net_rule = _cur_net->getNonDefaultRule();
-    dbTechNonDefaultRule* def_rule = findNonDefaultRule(rule);
+  _non_default_rule = findNonDefaultRule(rule);
 
-    if (def_rule == nullptr) {
-      _logger->warn(utl::ODB,
-                    136,
-                    "error: undefined NONDEFAULTRULE ({}) referenced",
-                    rule);
-      ++_errors;
-    }
-
-    else if (net_rule != def_rule) {
-      std::string net_name = _cur_net->getName();
-      const char* net_rule_name = "(nullptr)";
-      std::string n;
-
-      if (net_rule != nullptr) {
-        n = net_rule->getName();
-        net_rule_name = n.c_str();
-      }
-
-      _logger->warn(
-          utl::ODB,
-          102,
-          "error: NONDEFAULTRULE ({}) of net ({}) does not match DEF rule "
-          "({}).",
-          net_name.c_str(),
-          net_rule_name,
-          rule);
-      ++_errors;
-    }
+  if (_non_default_rule == nullptr) {
+    _logger->warn(
+        utl::ODB, 103, "error: undefined NONDEFAULTRULE ({}) referenced", rule);
+    ++_errors;
   } else {
-    _non_default_rule = findNonDefaultRule(rule);
-
-    if (_non_default_rule == nullptr) {
-      _logger->warn(utl::ODB,
-                    103,
-                    "error: undefined NONDEFAULTRULE ({}) referenced",
-                    rule);
-      ++_errors;
-    } else {
-      _cur_net->setNonDefaultRule(_non_default_rule);
-    }
+    _cur_net->setNonDefaultRule(_non_default_rule);
   }
 }
 
 void definNet::use(dbSigType type)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -267,7 +206,7 @@ void definNet::use(dbSigType type)
 
 void definNet::source(dbSourceType source)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -276,7 +215,7 @@ void definNet::source(dbSourceType source)
 
 void definNet::weight(int weight)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -285,7 +224,7 @@ void definNet::weight(int weight)
 
 void definNet::fixedbump()
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -294,7 +233,7 @@ void definNet::fixedbump()
 
 void definNet::xtalk(int value)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -608,7 +547,7 @@ void definNet::wireEnd()
 
 void definNet::property(const char* name, const char* value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -622,7 +561,7 @@ void definNet::property(const char* name, const char* value)
 
 void definNet::property(const char* name, int value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -636,7 +575,7 @@ void definNet::property(const char* name, int value)
 
 void definNet::property(const char* name, double value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -655,26 +594,20 @@ void definNet::end()
     return;
   }
 
-  if (!_replace_wires) {
-    dbSet<dbITerm> iterms = _cur_net->getITerms();
+  dbSet<dbITerm> iterms = _cur_net->getITerms();
 
-    if (iterms.reversible() && iterms.orderReversed()) {
-      iterms.reverse();
-    }
+  if (iterms.reversible() && iterms.orderReversed()) {
+    iterms.reverse();
+  }
 
-    dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
+  dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
 
-    if (!props.empty() && props.orderReversed()) {
-      props.reverse();
-    }
+  if (!props.empty() && props.orderReversed()) {
+    props.reverse();
   }
 
   if (_wire) {
     _wire_encoder.end();
-
-    if (_replace_wires) {
-      _cur_net->setWireAltered(true);
-    }
   }
   _cur_net = nullptr;
 }

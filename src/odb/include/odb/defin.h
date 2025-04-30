@@ -58,9 +58,6 @@ class defin
                        std::vector<dbLib*>& search_libs,
                        const char* def_file,
                        odb::dbTech* tech);
-
-  /// Replace the wires of this block.
-  bool replaceWires(dbBlock* block, const char* def_file);
 };
 
 }  // namespace odb

@@ -80,10 +80,4 @@ dbBlock* defin::createBlock(dbBlock* parent,
   return _reader->createBlock(parent, libs, def_file, tech);
 }
 
-bool defin::replaceWires(dbBlock* block, const char* def_file)
-{
-  std::lock_guard<std::mutex> lock(_def_mutex);
-  return _reader->replaceWires(block, def_file);
-}
-
 }  // namespace odb

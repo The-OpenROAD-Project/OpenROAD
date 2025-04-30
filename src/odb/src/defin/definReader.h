@@ -73,8 +73,6 @@ class definReader : public definBase
   void setLogger(utl::Logger* logger);
 
   bool createBlock(const char* file);
-  bool replaceWires(const char* file);
-  void replaceWires();
   int errors();
 
   // Parser callbacks
@@ -249,7 +247,6 @@ class definReader : public definBase
                        std::vector<dbLib*>& search_libs,
                        const char* def_file,
                        dbTech* tech);
-  bool replaceWires(dbBlock* block, const char* def_file);
 };
 
 }  // namespace odb

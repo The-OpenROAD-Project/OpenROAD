@@ -273,12 +273,6 @@ void definReader::continueOnErrors()
   _continue_on_errors = true;
 }
 
-void definReader::replaceWires()
-{
-  _netR->replaceWires();
-  _snetR->replaceWires();
-}
-
 void definReader::useBlockName(const char* name)
 {
   _block_name = name;
@@ -2008,33 +2002,6 @@ dbBlock* definReader::createBlock(dbBlock* parent,
   return _block;
 }
 
-bool definReader::replaceWires(dbBlock* block, const char* def_file)
-{
-  init();
-  setBlock(block);
-  setTech(_db->getTech());
-
-  _logger->info(utl::ODB, 143, "Reading DEF file: {}", def_file);
-
-  if (!replaceWires(def_file)) {
-    // dbBlock::destroy(_block);
-    _logger->warn(utl::ODB, 144, "Error: Failed to read DEF file");
-    return false;
-  }
-
-  if (_snetR->_snet_cnt) {
-    _logger->info(
-        utl::ODB, 145, "    Processed {} special nets.", _snetR->_snet_cnt);
-  }
-
-  if (_netR->_net_cnt) {
-    _logger->info(utl::ODB, 146, "    Processed {} nets.", _netR->_net_cnt);
-  }
-
-  _logger->info(utl::ODB, 147, "Finished DEF file: {}", def_file);
-  return errors() == 0;
-}
-
 static inline bool hasSuffix(const std::string& str, const std::string& suffix)
 {
   return str.size() >= suffix.size()
@@ -2137,42 +2104,6 @@ bool definReader::createBlock(const char* file)
 
   return true;
   // 1220 return errors() == 0;
-}
-
-bool definReader::replaceWires(const char* file)
-{
-  FILE* f = fopen(file, "r");
-
-  if (f == nullptr) {
-    _logger->warn(utl::ODB, 150, "error: Cannot open DEF file {}", file);
-    return false;
-  }
-
-  replaceWires();
-
-  DefParser::defrInit();
-  DefParser::defrReset();
-
-  DefParser::defrInitSession();
-
-  defrSetNetCbk(netCallback);
-  defrSetSNetCbk(specialNetCallback);
-
-  DefParser::defrSetAddPathToNet();
-
-  int res = DefParser::defrRead(
-      f, file, (DefParser::defiUserData) this, /* case sensitive */ 1);
-  if (res != 0) {
-    if (!_continue_on_errors) {
-      _logger->error(utl::ODB, 422, "DEF parser returns an error!");
-    } else {
-      _logger->warn(utl::ODB, 151, "DEF parser returns an error!");
-    }
-  }
-
-  DefParser::defrClear();
-
-  return true;
 }
 
 }  // namespace odb
