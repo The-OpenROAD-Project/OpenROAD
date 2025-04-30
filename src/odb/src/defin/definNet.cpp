@@ -53,7 +53,6 @@ definNet::~definNet()
 void definNet::init()
 {
   definBase::init();
-  _found_new_routing = false;
   _net_cnt = 0;
   _update_cnt = 0;
   _net_iterm_cnt = 0;
@@ -121,7 +120,6 @@ void definNet::begin(const char* name)
 
   _wire = nullptr;
   _rule_for_path = nullptr;
-  _found_new_routing = false;
   if (_net_cnt != 0 && _net_cnt % 100000 == 0) {
     _logger->info(utl::ODB, 97, "\t\tCreated {} Nets", _net_cnt);
   }
@@ -692,7 +690,7 @@ void definNet::end()
   }
 
   if (_wire) {
-    if (_assembly_mode && !_found_new_routing) {
+    if (_assembly_mode) {
       _wire_encoder.clear();
     } else {
       _wire_encoder.end();

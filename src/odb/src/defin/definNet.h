@@ -27,7 +27,6 @@ class definNet : public definBase
   bool _replace_wires;
   bool _names_are_ids;
   bool _assembly_mode;
-  bool _found_new_routing;
   dbNet* _cur_net;
   dbTechLayer* _cur_layer;
   dbWireEncoder _wire_encoder;
