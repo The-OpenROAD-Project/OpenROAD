@@ -51,7 +51,7 @@ class Histogram
   const std::vector<int>& getBins() const { return bins_; }
   void clearData() { data_.clear(); }
   bool hasData() const { return !data_.empty(); }
-  const std::vector<DataType> getData() const { return data_; }
+  const std::vector<DataType>& getData() const { return data_; }
 
   Logger* getLogger() const { return logger_; }
 
