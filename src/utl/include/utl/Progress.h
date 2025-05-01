@@ -26,7 +26,7 @@ class Progress
     Progress* progress = nullptr;
     Logger* logger = nullptr;
 
-    struct sigaction orig_sigaction;
+    sighandler_t org_signal_handler;
 
     std::queue<std::time_t> interrupts;
     constexpr static int max_idle_interrupts = 2;
