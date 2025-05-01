@@ -226,7 +226,7 @@ def getParallelTests(String image) {
 node {
 
     def isDefaultBranch = (env.BRANCH_NAME == 'master') 
-    def daysToKeep = (isDefaultBranch ? '20' : '-1');
+    def daysToKeep = '20';
     def numToKeep = (isDefaultBranch ? '-1' : '10');
 
     properties([
