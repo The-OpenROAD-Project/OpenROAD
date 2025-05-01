@@ -673,8 +673,10 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
             // input port with LEF USE as "CLOCK"
             selected_buffers.emplace_back(buffer);
             // clang-format off
-            debugPrint(logger_, CTS, "buffering", 1, "{} has port {} with LEF USE as CLOCK",
-                      buffer->name());
+            debugPrint(logger_, CTS, "buffering", 1,
+                       "{} has input port {} with LEF USE as CLOCK",
+                       buffer->name(),
+                       mterm->getName());
             // clang-format on
           }
         }
