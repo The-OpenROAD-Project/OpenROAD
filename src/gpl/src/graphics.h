@@ -90,6 +90,7 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
                              const std::string& output_path,
                              const std::string& label,
                              const std::string& fill_color = "white");
+  gui::Gui* getGuiObjectFromGraphics() { return gui::Gui::get(); }
 
  private:
   enum HeatMapType

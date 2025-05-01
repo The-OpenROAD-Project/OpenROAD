@@ -430,7 +430,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                       timingDrivenCount);
 
       graphics_->saveGuiImage(raw);
-
       graphics_->scaleAndAnnotateImage(raw, scaled, label);
     }
 
@@ -445,8 +444,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                       routabilityDrivenCount,
                                       timingDrivenCount);
 
+      graphics_->getGuiObjectFromGraphics()->select(
+          "Inst", "", "Description", "Timing Repair Buffer", true, -1);
       graphics_->saveGuiImage(raw);
       graphics_->scaleAndAnnotateImage(raw, special, label, "yellow");
+      graphics_->getGuiObjectFromGraphics()->clearSelections();
       timing_driven_ = false;
     }
 

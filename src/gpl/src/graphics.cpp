@@ -531,7 +531,7 @@ void Graphics::scaleAndAnnotateImage(const std::string& input_path,
       label,
       output_path);
 
-  int ret = std::system(cmd);
+  int ret = std::system(cmd.c_str());
   if (ret != 0) {
     logger_->report("Image annotation command failed with exit code {}", ret);
   }
