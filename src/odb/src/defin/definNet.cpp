@@ -76,6 +76,11 @@ void definNet::begin(const char* name)
 
   if (_cur_net == nullptr) {
     _cur_net = dbNet::create(_block, name);
+  } else if (!_skip_wires) {
+    dbWire* wire = _cur_net->getWire();
+    if (wire) {
+      dbWire::destroy(wire);
+    }
   }
 
   _non_default_rule = nullptr;
