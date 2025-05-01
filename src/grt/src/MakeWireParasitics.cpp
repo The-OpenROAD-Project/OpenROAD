@@ -491,46 +491,30 @@ float MakeWireParasitics::getNetSlack(odb::dbNet* net)
 std::vector<int> MakeWireParasitics::routeLayerLengths(odb::dbNet* db_net) const
 {
   NetRouteMap& routes = grouter_->getRoutes();
-  std::vector<int> layer_lengths(grouter_->getMaxRoutingLayer() + 1);
+
+  // dbu wirelength for wires, via count for vias
+  std::vector<int> layer_lengths(tech_->getLayerCount());
+
   if (!db_net->getSigType().isSupply()) {
     GRoute& route = routes[db_net];
     std::set<RoutePt> route_pts;
     for (GSegment& segment : route) {
       if (segment.isVia()) {
-        route_pts.insert(
-            RoutePt(segment.init_x, segment.init_y, segment.init_layer));
-        route_pts.insert(
-            RoutePt(segment.final_x, segment.final_y, segment.final_layer));
+        auto& s = segment;
+        // Mimic makeRouteParasitics
+        int min_layer = min(s.init_layer, s.final_layer);
+        odb::dbTechLayer* cut_layer
+            = tech_->findRoutingLayer(min_layer)->getUpperLayer();
+        layer_lengths[cut_layer->getNumber()] += 1;
+        route_pts.insert(RoutePt(s.init_x, s.init_y, s.init_layer));
+        route_pts.insert(RoutePt(s.final_x, s.final_y, s.final_layer));
       } else {
         int layer = segment.init_layer;
-        layer_lengths[layer] += segment.length();
+        layer_lengths[tech_->findRoutingLayer(layer)->getNumber()]
+            += segment.length();
         route_pts.insert(RoutePt(segment.init_x, segment.init_y, layer));
         route_pts.insert(RoutePt(segment.final_x, segment.final_y, layer));
       }
-    }
-    // Mimic MakeWireParasitics::makeParasiticsToPin functionality.
-    Net* net = grouter_->getNet(db_net);
-    for (Pin& pin : net->getPins()) {
-      int layer = pin.getConnectionLayer() + 1;
-      odb::Point grid_pt = pin.getOnGridPosition();
-      odb::Point pt = pin.getPosition();
-
-      std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
-      bool has_access_points
-          = grouter_->findPinAccessPointPositions(pin, ap_positions);
-      if (has_access_points) {
-        auto ap_position = ap_positions.front();
-        pt = ap_position.first;
-        grid_pt = ap_position.second;
-      }
-
-      RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
-      auto pt_itr = route_pts.find(grid_route);
-      if (pt_itr == route_pts.end())
-        layer--;
-      int wire_length_dbu
-          = abs(pt.getX() - grid_pt.getX()) + abs(pt.getY() - grid_pt.getY());
-      layer_lengths[layer] += wire_length_dbu;
     }
   }
   return layer_lengths;
