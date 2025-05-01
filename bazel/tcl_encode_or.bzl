@@ -13,6 +13,7 @@ def _tcl_encode_or_impl(ctx):
     output_file = ctx.actions.declare_file(outfile_name)
 
     args = ctx.actions.args()
+    args.add(ctx.executable._encode_script)
     args.add_all("--inputs", ctx.files.srcs)
     args.add("--output", output_file)
     args.add("--varname", ctx.attr.char_array_name)
@@ -22,8 +23,8 @@ def _tcl_encode_or_impl(ctx):
         outputs = [output_file],
         inputs = ctx.files.srcs,
         arguments = [args],
-        #tools = [ctx.executable._tclsh, ctx.file._encode_script],
-        executable = ctx.executable._encode_script,
+        tools = [ctx.executable._encode_script],
+        executable = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter,
     )
     return [DefaultInfo(files = depset([output_file]))]
 
@@ -53,4 +54,5 @@ tcl_encode = rule(
             cfg = "exec",
         ),
     },
+    toolchains = ["@rules_python//python:toolchain_type"],
 )
