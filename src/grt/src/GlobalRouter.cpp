@@ -657,10 +657,10 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
     destroyNetWire(net);
-    std::string pins_not_covered;
+    std::vector<std::string> dump;
     // compare new positions with last positions & add on vector
     if (pinPositionsChanged(net)
-        && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
+        && (!net->isMergedNet() || !netIsCovered(db_net, dump))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       routes_[db_net].clear();
       db_net->clearGuides();
@@ -689,7 +689,7 @@ void GlobalRouter::shrinkNetRoute(odb::dbNet* db_net)
     return;
   }
 
-  std::string dump;
+  std::vector<std::string> dump;
   if (!netIsCovered(db_net, dump)) {
     logger_->error(
         GRT, 266, "Net {} does not cover all its pins.", net->getName());
@@ -2599,12 +2599,16 @@ void GlobalRouter::readSegments(const char* file_name)
       logger_->error(
           GRT, 262, "Net {} has disconnected segments.", db_net->getName());
     }
-    std::string pins_not_covered;
+    std::vector<std::string> pins_not_covered;
     if (!netIsCovered(db_net, pins_not_covered)) {
+      std::string pin_names;
+      for (const std::string& pin_name : pins_not_covered) {
+        pin_names += pin_name + " ";
+      }
       logger_->error(GRT,
                      263,
                      "Pin(s) {}not covered in net {}.",
-                     pins_not_covered,
+                     pin_names,
                      db_net->getName());
     }
   }
@@ -2614,7 +2618,7 @@ void GlobalRouter::readSegments(const char* file_name)
 }
 
 bool GlobalRouter::netIsCovered(odb::dbNet* db_net,
-                                std::string& pins_not_covered)
+                                std::vector<std::string>& pins_not_covered)
 {
   bool net_is_covered = true;
   Net* net = db_net_map_[db_net];
@@ -2628,7 +2632,7 @@ bool GlobalRouter::netIsCovered(odb::dbNet* db_net,
       }
     }
     if (!pin_is_covered) {
-      pins_not_covered += pin.getName() + " ";
+      pins_not_covered.push_back(pin.getName());
       net_is_covered = false;
     }
   }
