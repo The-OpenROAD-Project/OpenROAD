@@ -45,8 +45,6 @@ class defin
   void skipBlockWires();
   void skipFillWires();
   void continueOnErrors();
-  void namesAreDBIDs();
-  void setAssemblyMode();
   void useBlockName(const char* name);
 
   /// Create a new chip
@@ -59,9 +57,6 @@ class defin
                        std::vector<dbLib*>& search_libs,
                        const char* def_file,
                        odb::dbTech* tech);
-
-  /// Replace the wires of this block.
-  bool replaceWires(dbBlock* block, const char* def_file);
 };
 
 }  // namespace odb

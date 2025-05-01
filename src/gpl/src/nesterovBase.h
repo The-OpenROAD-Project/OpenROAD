@@ -110,7 +110,8 @@ class GCell
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
 
-  void print(utl::Logger* logger) const;
+  void print(utl::Logger* logger, bool print_only_name) const;
+  void printToFile(const std::string& filename, bool print_only_name) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -830,7 +831,7 @@ class NesterovBaseCommon
   size_t createCbkGCell(odb::dbInst* db_inst);
   void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
   void createCbkITerm(odb::dbITerm* iTerm);
-  void destroyCbkGCell(size_t);
+  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
   void destroyCbkGNet(odb::dbNet*);
   void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
@@ -845,6 +846,7 @@ class NesterovBaseCommon
   }
 
   void printGCells();
+  void printGCellsToFile(const std::string& filename);
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -871,9 +873,9 @@ class NesterovBaseCommon
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_map_;
-  std::unordered_map<odb::dbNet*, size_t> db_net_map_;
-  std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
+  std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
+  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -1096,7 +1098,7 @@ class NesterovBase
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
 
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
@@ -1224,6 +1226,7 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
+  void updateIndex(size_t new_index) { index_ = new_index; }
   size_t getIndex() const { return index_; }
 
  private:
