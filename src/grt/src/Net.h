@@ -37,6 +37,7 @@ class Net
   {
     return parent_segment_indices_;
   }
+  Pin& getPinByName(const std::string& pin_name);
   std::vector<std::vector<SegmentIndex>> buildSegmentsGraph();
   bool isLocal();
   void destroyPins();

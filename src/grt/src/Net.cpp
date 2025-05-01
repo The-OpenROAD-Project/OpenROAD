@@ -54,6 +54,16 @@ void Net::addPin(Pin& pin)
   pins_.push_back(pin);
 }
 
+Pin& Net::getPinByName(const std::string& pin_name)
+{
+  std::vector<Pin>::iterator it
+      = std::find_if(pins_.begin(), pins_.end(), [&](const Pin& p) {
+          return p.getName() == pin_name;
+        });
+
+  return *it;
+}
+
 std::vector<std::vector<SegmentIndex>> Net::buildSegmentsGraph()
 {
   std::vector<std::vector<SegmentIndex>> graph(parent_segment_indices_.size(),
