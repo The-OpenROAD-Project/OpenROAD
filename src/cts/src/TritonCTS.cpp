@@ -647,7 +647,8 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 {
   sta::Vector<sta::LibertyCell*> selected_buffers;
 
-  // first, look for buffers with "is_clock_cell: true" cell attribute
+  // first, look for buffers with "is_clock_cell: true" cell attribute, or
+  // buffers with an input port that has LEF USE as "CLOCK"
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -657,11 +658,26 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     }
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
+        // "is_clock_cell: true"
         selected_buffers.emplace_back(buffer);
         // clang-format off
         debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
                    buffer->name());
         // clang-format on
+      } else {
+        odb::dbMaster* master = db_->findMaster(buffer->name());
+        for (odb::dbMTerm* mterm : master->getMTerms()) {
+          if (mterm->getIoType() == odb::dbIoType::INPUT
+              && mterm->getSigType() == odb::dbSigType::CLOCK
+              && isClockCellCandidate(buffer)) {
+            // input port with LEF USE as "CLOCK"
+            selected_buffers.emplace_back(buffer);
+            // clang-format off
+            debugPrint(logger_, CTS, "buffering", 1, "{} has port {} with LEF USE as CLOCK",
+                      buffer->name());
+            // clang-format on
+          }
+        }
       }
     }
   }
