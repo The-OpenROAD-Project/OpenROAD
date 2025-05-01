@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
 #include "sta/Network.hh"
 #include "sta/Corner.hh"
 #include "rsz/Resizer.hh"
@@ -114,6 +115,18 @@ using rsz::ParasiticsSrc;
 %inline %{
 
 namespace rsz {
+
+void
+report_net_parasitic(Net *net)
+{
+  Resizer *resizer = getResizer();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    resizer->parasitics()->report(parasitic);
+  }
+}
 
 void
 set_layer_rc_cmd(odb::dbTechLayer *layer,
