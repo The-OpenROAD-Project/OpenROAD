@@ -37,33 +37,31 @@ class definPinProps;
 
 class definReader : public definBase
 {
-  dbDatabase* _db;
-  dbBlock* parent_{nullptr};  // For Hierarchal implementation if exits
-  std::unique_ptr<definBlockage> _blockageR;
-  std::unique_ptr<definComponentMaskShift> _componentMaskShift;
-  std::unique_ptr<definComponent> _componentR;
-  std::unique_ptr<definFill> _fillR;
-  std::unique_ptr<definGCell> _gcellR;
-  std::unique_ptr<definNet> _netR;
-  std::unique_ptr<definPin> _pinR;
-  std::unique_ptr<definRow> _rowR;
-  std::unique_ptr<definSNet> _snetR;
-  std::unique_ptr<definTracks> _tracksR;
-  std::unique_ptr<definVia> _viaR;
-  std::unique_ptr<definRegion> _regionR;
-  std::unique_ptr<definGroup> _groupR;
-  std::unique_ptr<definNonDefaultRule> _non_default_ruleR;
-  std::unique_ptr<definPropDefs> _prop_defsR;
-  std::unique_ptr<definPinProps> _pin_propsR;
-  std::vector<definBase*> _interfaces;
-  bool _update{false};
-  bool _continue_on_errors{false};
-  std::string _block_name;
-  std::string version_;
-  char hier_delimiter_{0};
-  char left_bus_delimiter_{0};
-  char right_bus_delimiter_{0};
+ public:
+  definReader(dbDatabase* db,
+              utl::Logger* logger,
+              defin::MODE mode = defin::DEFAULT);
+  ~definReader() override;
 
+  void skipConnections();
+  void skipWires();
+  void skipSpecialWires();
+  void skipShields();
+  void skipBlockWires();
+  void skipFillWires();
+  void continueOnErrors();
+  void useBlockName(const char* name);
+  void error(std::string_view msg);
+
+  dbChip* createChip(std::vector<dbLib*>& search_libs,
+                     const char* def_file,
+                     dbTech* tech);
+  dbBlock* createBlock(dbBlock* parent,
+                       std::vector<dbLib*>& search_libs,
+                       const char* def_file,
+                       dbTech* tech);
+
+ private:
   void init() override;
   void setLibs(std::vector<dbLib*>& lib_names);
 
@@ -225,29 +223,32 @@ class definReader : public definBase
   static void contextWarningLogFunctionCallback(DefParser::defiUserData data,
                                                 const char* msg);
 
- public:
-  definReader(dbDatabase* db,
-              utl::Logger* logger,
-              defin::MODE mode = defin::DEFAULT);
-  ~definReader() override;
-
-  void skipConnections();
-  void skipWires();
-  void skipSpecialWires();
-  void skipShields();
-  void skipBlockWires();
-  void skipFillWires();
-  void continueOnErrors();
-  void useBlockName(const char* name);
-  void error(std::string_view msg);
-
-  dbChip* createChip(std::vector<dbLib*>& search_libs,
-                     const char* def_file,
-                     dbTech* tech);
-  dbBlock* createBlock(dbBlock* parent,
-                       std::vector<dbLib*>& search_libs,
-                       const char* def_file,
-                       dbTech* tech);
+  dbDatabase* _db;
+  dbBlock* parent_{nullptr};  // For Hierarchal implementation if exits
+  std::unique_ptr<definBlockage> _blockageR;
+  std::unique_ptr<definComponentMaskShift> _componentMaskShift;
+  std::unique_ptr<definComponent> _componentR;
+  std::unique_ptr<definFill> _fillR;
+  std::unique_ptr<definGCell> _gcellR;
+  std::unique_ptr<definNet> _netR;
+  std::unique_ptr<definPin> _pinR;
+  std::unique_ptr<definRow> _rowR;
+  std::unique_ptr<definSNet> _snetR;
+  std::unique_ptr<definTracks> _tracksR;
+  std::unique_ptr<definVia> _viaR;
+  std::unique_ptr<definRegion> _regionR;
+  std::unique_ptr<definGroup> _groupR;
+  std::unique_ptr<definNonDefaultRule> _non_default_ruleR;
+  std::unique_ptr<definPropDefs> _prop_defsR;
+  std::unique_ptr<definPinProps> _pin_propsR;
+  std::vector<definBase*> _interfaces;
+  bool _update{false};
+  bool _continue_on_errors{false};
+  std::string _block_name;
+  std::string version_;
+  char hier_delimiter_{0};
+  char left_bus_delimiter_{0};
+  char right_bus_delimiter_{0};
 };
 
 }  // namespace odb
