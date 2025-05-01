@@ -161,7 +161,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void saveGuides();
   void writeSegments(const char* file_name);
   void readSegments(const char* file_name);
-  bool netIsCovered(odb::dbNet* db_net, std::string& pins_not_covered);
+  bool netIsCovered(odb::dbNet* db_net,
+                    std::vector<std::string>& pins_not_covered);
   bool segmentIsLine(const GSegment& segment);
   bool segmentCoversPin(const GSegment& segment, const Pin& pin);
   AdjacencyList buildNetGraph(odb::dbNet* net);
@@ -342,6 +343,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                                               odb::Point& pos_on_grid);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
+  void computePinPositionOnGrid(Pin& pin);
   void findFastRoutePins(Net* net,
                          std::vector<RoutePt>& pins_on_grid,
                          int& root_idx);
@@ -467,6 +469,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool is_congested_{false};
   // TODO: remove this flag after support incremental updates on DRT PA
   bool skip_drt_aps_{false};
+  bool guides_from_db_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

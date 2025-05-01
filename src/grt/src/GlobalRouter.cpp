@@ -2176,7 +2176,6 @@ void GlobalRouter::loadGuidesFromDB()
   if (!routes_.empty()) {
     return;
   }
-  skip_drt_aps_ = true;
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
@@ -2199,6 +2198,7 @@ void GlobalRouter::loadGuidesFromDB()
     updateDbCongestion();
   }
   heatmap_->update();
+  guides_from_db_ = true;
 }
 
 void GlobalRouter::updateVias()
