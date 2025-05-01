@@ -379,19 +379,19 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     repaired = true;
     logger_->info(RSZ, 59, "Removed {} buffers.", removed_buffer_count_);
   }
-  if (inserted_buffer_count_ > 0 && split_load_moves_ == 0) {
+  if (inserted_buffer_count_ > 0 || split_load_moves_ > 0) {
     repaired = true;
-    logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
-  } else if (inserted_buffer_count_ > 0 && split_load_moves_ > 0) {
-    repaired = true;
-    logger_->info(RSZ,
-                  45,
-                  "Inserted {} buffers, {} to split loads.",
-                  inserted_buffer_count_,
-                  split_load_moves_);
+    if (split_load_moves_ == 0) 
+        logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+    else
+        logger_->info(RSZ,
+                      45,
+                      "Inserted {} buffers, {} to split loads.",
+                      inserted_buffer_count_+ split_load_moves_,
+                      split_load_moves_);
   }
   logger_->metric("design__instance__count__setup_buffer",
-                  inserted_buffer_count_);
+                  inserted_buffer_count_ + split_load_moves_);
   if (size_moves_ > 0) {
     repaired = true;
     logger_->info(RSZ, 41, "Resized {} instances.", size_moves_);
@@ -434,14 +434,17 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   if (removed_buffer_count_ > 0) {
     logger_->info(RSZ, 61, "Removed {} buffers.", removed_buffer_count_);
   }
-  if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
+  int split_load_moves_ = resizer_->split_load_move->countMoves();
+  if (inserted_buffer_count_ + split_load_moves_ > 0) {
+    logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_ + split_load_moves_);
   }
-  if (resizer_->size_move->countMoves() > 0) {
-    logger_->info(RSZ, 31, "Resized {} instances.", resizer_->size_move->countMoves());
+  int size_moves_ = resizer_->size_move->countMoves();
+  if (size_moves_ > 0) {
+    logger_->info(RSZ, 31, "Resized {} instances.", size_moves_);
   }
-  if (resizer_->swap_pins_move->countMoves() > 0) {
-    logger_->info(RSZ, 44, "Swapped pins on {} instances.", resizer_->swap_pins_move->countMoves());
+  int swap_pins_moves_ = resizer_->swap_pins_move->countMoves();
+  if (swap_pins_moves_ > 0) {
+    logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pins_moves_);
   }
 }
 
@@ -551,7 +554,6 @@ bool RepairSetup::repairPath(Path* path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout,
                  drvr_index);
-
       if (!skip_buffer_removal) {
         if (removeDrvr(drvr_path,
                        drvr_cell,
@@ -588,6 +590,14 @@ bool RepairSetup::repairPath(Path* path,
         if (rebuffer_count > 0) {
           debugPrint(logger_,
                      RSZ,
+                     "repair_setup",
+                     3,
+                     "rebuffer {} inserted {}",
+                     network_->pathName(drvr_pin),
+                     rebuffer_count);
+
+          debugPrint(logger_,
+                     RSZ,
                      "moves",
                      1,
                      "rebuffer {} inserted {}",
@@ -602,6 +612,10 @@ bool RepairSetup::repairPath(Path* path,
       // Gate cloning
       if (!skip_gate_cloning && fanout > split_load_min_fanout_
           && !tristate_drvr && !resizer_->dontTouch(net)
+          // We can probably relax this with the new ECO code
+          && resizer_->inserted_buffer_set_.count(db_network_->instance(drvr_pin))==0
+          // We can probably relax this with the new ECO code
+          && resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))==0
           && resizer_->clone_move->doMove(drvr_path, drvr_index, path_slack, &expanded)) {
         changed++;
         continue;
@@ -612,7 +626,6 @@ bool RepairSetup::repairPath(Path* path,
         if (fanout > split_load_min_fanout_ && !tristate_drvr
             && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
           resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded); 
-          inserted_buffer_count_++;
           changed++;
           continue;
         }

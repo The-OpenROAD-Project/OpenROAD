@@ -89,7 +89,16 @@ SizeMove::doMove(const Path* drvr_path,
     LibertyCell* upsize = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
     
     if (upsize) {
+      debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             3,
+             "resize {} {} -> {}",
+             network_->pathName(drvr_pin),
+             drvr_port->libertyCell()->name(),
+             upsize->name());
       if (!resizer_->dontTouch(drvr) && replaceCell(drvr, upsize)) {
+
         debugPrint(logger_, 
                    RSZ, 
                    "moves", 

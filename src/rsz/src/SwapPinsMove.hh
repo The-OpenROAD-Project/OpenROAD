@@ -54,6 +54,8 @@ private:
     void equivCellPins(const LibertyCell* cell,
                        LibertyPort* input_port,
                        sta::LibertyPortSet& ports);
+    void annotateInputSlews(Instance* inst,
+                            const DcalcAnalysisPt* dcalc_ap);
     void findSwapPinCandidate(LibertyPort* input_port,
                               LibertyPort* drvr_port,
                               const sta::LibertyPortSet& equiv_ports,

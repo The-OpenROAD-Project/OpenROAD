@@ -106,11 +106,21 @@ SwapPinsMove::doMove(const Path* drvr_path,
     ports = equiv_pin_map_[input_port];
     if (!ports.empty()) {
       // Pass slews at input pins for more accurate delay/slew estimation
-      resizer_->annotateInputSlews(drvr, dcalc_ap);
+      annotateInputSlews(drvr, dcalc_ap);
       findSwapPinCandidate(input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
-      resizer_->resetInputSlews();
+      resetInputSlews();
 
       if (!sta::LibertyPort::equiv(swap_port, input_port)) {
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   3,
+                   "Swap {} ({}) {} {}",
+                   network_->name(drvr),
+                   cell->name(),
+                   input_port->name(),
+                   swap_port->name());
+
         debugPrint(logger_,
                    RSZ,
                    "moves",
@@ -372,6 +382,29 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
         && port_delays[port] < base_delay) {
       *swap_port = port;
       base_delay = port_delays[port];
+    }
+  }
+}
+
+void SwapPinsMove::annotateInputSlews(Instance* inst,
+                                      const DcalcAnalysisPt* dcalc_ap)
+{
+  input_slew_map_.clear();
+  std::unique_ptr<InstancePinIterator> inst_pin_iter{
+      network_->pinIterator(inst)};
+  while (inst_pin_iter->hasNext()) {
+    Pin* pin = inst_pin_iter->next();
+    if (network_->direction(pin)->isInput()) {
+      LibertyPort* port = network_->libertyPort(pin);
+      if (port) {
+        Vertex* vertex = graph_->pinDrvrVertex(pin);
+        InputSlews slews;
+        slews[RiseFall::rise()->index()]
+            = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+        slews[RiseFall::fall()->index()]
+            = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+        input_slew_map_.emplace(port, slews);
+      }
     }
   }
 }

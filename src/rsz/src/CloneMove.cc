@@ -90,6 +90,14 @@ bool CloneMove::doMove(const Path* drvr_path,
              "clone driver {} -> {}",
              network_->pathName(drvr_pin),
              network_->pathName(load_pin));
+  debugPrint(logger_,
+         RSZ,
+         "repair_setup",
+         3,
+         "clone driver {} -> {}",
+         network_->pathName(drvr_pin),
+         network_->pathName(load_pin));
+
 
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const RiseFall* rf = drvr_path->transition(sta_);
@@ -160,6 +168,17 @@ bool CloneMove::doMove(const Path* drvr_path,
   addMove(clone_inst);
   // We add the driver instance to the pending move set, but don't count it as a move.
   addMove(drvr_inst, false);
+
+  debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             3,
+             "clone {} ({}) -> {} ({})",
+             network_->pathName(drvr_pin),
+             original_cell->name(),
+             network_->pathName(clone_inst),
+             clone_cell->name());
+
 
   // Hierarchy fix, make out_net in parent.
 

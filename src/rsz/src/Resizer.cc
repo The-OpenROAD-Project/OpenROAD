@@ -160,7 +160,9 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
+  inserted_buffer_set_ = InstanceSet(db_network_);
   all_inserted_buffer_set_ = InstanceSet(db_network_);
+  removed_buffer_set_ = InstanceSet(db_network_);
 
   //buffer_move = new BufferMove(this);
   clone_move = new CloneMove(this);
@@ -4062,12 +4064,12 @@ void Resizer::journalBegin()
     setCallBackRegistered(false);
   }
 
-  inserted_buffers_.clear();
+  inserted_buffer_set_.clear();
   size_move->restoreMoves();
   clone_move->restoreMoves();
   split_load_move->restoreMoves();
   swap_pins_move->restoreMoves();
-  removed_buffers_.clear();
+  removed_buffer_set_.clear();
 
 }
 
@@ -4081,12 +4083,12 @@ void Resizer::journalEnd()
   incrementalParasiticsEnd();
   odb::dbDatabase::endEco(block_);
 
-  inserted_buffers_.clear();
+  inserted_buffer_set_.clear();
   size_move->commitMoves();
   clone_move->commitMoves();
   split_load_move->commitMoves();
   swap_pins_move->commitMoves();
-  removed_buffers_.clear();
+  removed_buffer_set_.clear();
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -4097,7 +4099,7 @@ void Resizer::journalMakeBuffer(Instance* buffer)
              1,
              "journal make_buffer {}",
              network_->pathName(buffer));
-  inserted_buffers_.emplace_back(buffer);
+  inserted_buffer_set_.insert(buffer);
   all_inserted_buffer_set_.insert(buffer);
 }
 
@@ -4162,14 +4164,14 @@ void Resizer::journalRestore()
              removed_buffer_count_);
 
   size_move->restoreMoves();
-  inserted_buffer_count_ -= inserted_buffers_.size();
+  inserted_buffer_count_ -= inserted_buffer_set_.size();
   inserted_buffer_count_ -= split_load_move->pendingMoves();
-  inserted_buffers_.clear();
+  inserted_buffer_set_.clear();
   clone_move->restoreMoves();
   split_load_move->restoreMoves();
   swap_pins_move->restoreMoves();
-  removed_buffer_count_ -= removed_buffers_.size();
-  removed_buffers_.clear();
+  removed_buffer_count_ -= removed_buffer_set_.size();
+  removed_buffer_set_.clear();
 
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");

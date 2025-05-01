@@ -65,6 +65,14 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
+             "repair_setup",
+             3,
+             "split loads {} -> {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(load_pin));
+
+  debugPrint(logger_,
+             RSZ,
              "moves",
              3,
              "split loads {} -> {}",

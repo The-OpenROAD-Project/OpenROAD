@@ -749,9 +749,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   std::unordered_map<LibertyCell*, std::optional<float>> cell_leakage_cache_;
 
-  InstanceSeq inserted_buffers_;
+  InstanceSet inserted_buffer_set_;
   InstanceSet all_inserted_buffer_set_;
-  InstanceSeq removed_buffers_;
+  InstanceSet removed_buffer_set_;
 
   dpl::Opendp* opendp_ = nullptr;
 
