@@ -504,6 +504,30 @@ void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
   // Make separate parasitics for each corner.
   sta_->setParasiticAnalysisPts(true);
 
+  // Ensure that every pin is covered by a guide when estimating parasitcs from
+  // guides loaded from odb.
+  // TODO: remove it once incremental pin access is available.
+  if (guides_from_db_) {
+    const bool restore_skip_aps = skip_drt_aps_;
+    for (auto& [db_net, route] : routes_) {
+      Net* net = db_net_map_[db_net];
+      std::vector<std::string> pins_not_covered;
+      // If the net is not covered, try to change the pin position on grid,
+      // using the internal calculation instead of DRT access points. This is
+      // necessary because incremental GRT can generate guides for some pins
+      // using its internal calculation for pin position on grid, but when
+      // estimating parasitics, these pins already have APs in ODB.
+      if (!netIsCovered(db_net, pins_not_covered)) {
+        for (const std::string& pin_name : pins_not_covered) {
+          Pin& pin = net->getPinByName(pin_name);
+          skip_drt_aps_ = true;
+          computePinPositionOnGrid(pin);
+        }
+      }
+    }
+    skip_drt_aps_ = restore_skip_aps;
+  }
+
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
 
