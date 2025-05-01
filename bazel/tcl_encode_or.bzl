@@ -13,21 +13,21 @@ def _tcl_encode_or_impl(ctx):
     output_file = ctx.actions.declare_file(outfile_name)
 
     args = ctx.actions.args()
-    args.add_all('--inputs', ctx.files.srcs)
-    args.add('--output', output_file)
-    args.add('--varname', ctx.attr.char_array_name)
-    args.add('--namespace', ctx.attr.namespace)
+    args.add(ctx.executable._encode_script)
+    args.add_all("--inputs", ctx.files.srcs)
+    args.add("--output", output_file)
+    args.add("--varname", ctx.attr.char_array_name)
+    args.add("--namespace", ctx.attr.namespace)
 
     ctx.actions.run(
         outputs = [output_file],
         inputs = ctx.files.srcs,
         arguments = [args],
-        #tools = [ctx.executable._tclsh, ctx.file._encode_script],
-        executable = ctx.file._encode_script,
+        tools = [ctx.executable._encode_script],
+        executable = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter,
     )
     return [DefaultInfo(files = depset([output_file]))]
 
-    
 tcl_encode = rule(
     implementation = _tcl_encode_or_impl,
     attrs = {
@@ -48,8 +48,11 @@ tcl_encode = rule(
             doc = "Files to be wrapped.",
         ),
         "_encode_script": attr.label(
-            default = "//:etc/file_to_string.py",
-            allow_single_file = True,
+            default = "//etc:file_to_string",
+            executable = True,
+            allow_files = True,
+            cfg = "exec",
         ),
     },
+    toolchains = ["@rules_python//python:toolchain_type"],
 )

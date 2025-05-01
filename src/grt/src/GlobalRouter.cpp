@@ -534,6 +534,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
+  loadGuidesFromDB();
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
   return builder.routeLayerLengths(db_net);

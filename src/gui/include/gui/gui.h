@@ -25,6 +25,10 @@
 
 struct Tcl_Interp;
 
+namespace sta {
+class dbSta;
+}
+
 namespace utl {
 class Logger;
 }  // namespace utl
@@ -33,6 +37,7 @@ namespace gui {
 class HeatMapDataSource;
 class PinDensityDataSource;
 class PlacementDensityDataSource;
+class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -630,6 +635,8 @@ class Gui
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
   void setDisplayControlsSelectable(const std::string& name, bool value);
+  void setDisplayControlsColor(const std::string& name,
+                               const Painter::Color& color);
   // Get the visibility/selectability for a control in the 'Display Control'
   // panel.
   bool checkDisplayControlsVisible(const std::string& name);
@@ -779,7 +786,7 @@ class Gui
   static bool enabled();
 
   // initialize the GUI
-  void init(odb::dbDatabase* db, utl::Logger* logger);
+  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
  private:
   Gui();
@@ -837,6 +844,7 @@ class Gui
 
   std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
+  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
 
   static Gui* singleton_;
 

@@ -56,26 +56,13 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   type_ = BufferedNetType::load;
   location_ = location;
   load_pin_ = load_pin;
-  buffer_cell_ = nullptr;
-  layer_ = null_layer;
-  ref_ = nullptr;
-  ref2_ = nullptr;
 
   LibertyPort* load_port = resizer->network()->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
     fanout_ = resizer->portFanoutLoad(load_port);
     max_load_slew_ = resizer->maxInputSlew(load_port, corner);
-  } else {
-    cap_ = 0.0;
-    fanout_ = 1;
-    max_load_slew_ = INF;
   }
-
-  required_path_.init();
-  required_delay_ = 0.0;
-
-  area_ = 0;
 }
 
 // junc
@@ -91,8 +78,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   }
   type_ = BufferedNetType::junction;
   location_ = location;
-  load_pin_ = nullptr;
-  buffer_cell_ = nullptr;
   layer_ = null_layer;
   ref_ = ref;
   ref2_ = ref2;
@@ -100,9 +85,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   cap_ = ref->cap() + ref2->cap();
   fanout_ = ref->fanout() + ref2->fanout();
   max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
-
-  required_path_.init();
-  required_delay_ = 0.0;
 
   area_ = ref->area() + ref2->area();
 }
@@ -121,20 +103,14 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   }
   type_ = BufferedNetType::wire;
   location_ = location;
-  load_pin_ = nullptr;
-  buffer_cell_ = nullptr;
   layer_ = layer;
   ref_ = ref;
-  ref2_ = nullptr;
 
   double wire_res, wire_cap;
   wireRC(corner, resizer, wire_res, wire_cap);
   cap_ = ref->cap() + resizer->dbuToMeters(length()) * wire_cap;
   fanout_ = ref->fanout();
   max_load_slew_ = ref->maxLoadSlew();
-
-  required_path_.init();
-  required_delay_ = 0.0;
 
   area_ = ref->area();
 }
@@ -153,20 +129,15 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   }
   type_ = BufferedNetType::buffer;
   location_ = location;
-  load_pin_ = nullptr;
   buffer_cell_ = buffer_cell;
   layer_ = null_layer;
   ref_ = ref;
-  ref2_ = nullptr;
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   cap_ = resizer->portCapacitance(input, corner);
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
-
-  required_path_.init();
-  required_delay_ = 0.0;
 
   area_ = ref->area() + 1;
 }
@@ -210,13 +181,13 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
                          x,
                          y,
                          cap,
-                         delayAsString(slack(resizer), resizer));
+                         delayAsString(slack(), resizer));
     case BufferedNetType::wire:
       return fmt::format("wire ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(slack(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
     case BufferedNetType::buffer:
       return fmt::format("buffer ({}, {}) {} cap {} slack {} buffers {}",
@@ -224,14 +195,14 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
                          y,
                          buffer_cell_->name(),
                          cap,
-                         delayAsString(slack(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
     case BufferedNetType::junction:
       return fmt::format("junction ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(slack(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
   }
   // suppress gcc warning
@@ -258,23 +229,31 @@ void BufferedNet::setMaxLoadSlew(float max_slew)
   max_load_slew_ = max_slew;
 }
 
-void BufferedNet::setRequiredPath(const PathRef& path_ref)
+void BufferedNet::setRequiredPath(const Path* path)
 {
-  required_path_ = path_ref;
+  required_path_ = path;
 }
 
-void BufferedNet::setArrivalPath(const PathRef& path_ref)
+void BufferedNet::setArrivalPath(const Path* path)
 {
-  arrival_path_ = path_ref;
+  arrival_path_ = path;
 }
 
-Required BufferedNet::slack(const StaState* sta) const
+Required BufferedNet::required() const
 {
-  if (required_path_.isNull()) {
-    return INF;
+  if (required_path_) {
+    return required_path_->required() - required_delay_;
   }
-  return required_path_.required(sta) - required_delay_
-         - arrival_path_.arrival(sta);
+  return INF;
+}
+
+Required BufferedNet::slack() const
+{
+  if (required_path_) {
+    return required_path_->required() - required_delay_
+           - arrival_path_->arrival();
+  }
+  return INF;
 }
 
 void BufferedNet::setRequiredDelay(Delay delay)
@@ -332,10 +311,10 @@ void BufferedNet::wireRC(const Corner* corner,
     resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   }
   if (layer_ == BufferedNet::null_layer) {
-    double dx
+    const double dx
         = resizer->dbuToMeters(std::abs(location_.x() - ref_->location().x()))
           / resizer->dbuToMeters(length());
-    double dy
+    const double dy
         = resizer->dbuToMeters(std::abs(location_.y() - ref_->location().y()))
           / resizer->dbuToMeters(length());
     res = dx * resizer->wireSignalHResistance(corner)
@@ -429,7 +408,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     }
   }
   // Steiner pt.
-  for (int adj : adjacents[to]) {
+  for (const int adj : adjacents[to]) {
     if (adj != from) {
       BufferedNetPtr bnet1 = makeBufferedNetFromTree(tree,
                                                      to,
@@ -470,16 +449,16 @@ static BufferedNetPtr makeBufferedNetFromTree(
 BufferedNetPtr Resizer::makeBufferedNetSteiner(const Pin* drvr_pin,
                                                const Corner* corner)
 {
-  BufferedNetPtr bnet = nullptr;
+  BufferedNetPtr bnet;
   SteinerTree* tree = makeSteinerTree(drvr_pin);
   if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt();
+    const SteinerPt drvr_pt = tree->drvrPt();
     if (drvr_pt != SteinerTree::null_pt) {
-      int branch_count = tree->branchCount();
+      const int branch_count = tree->branchCount();
       SteinerPtAdjacents adjacents(branch_count);
       for (int i = 0; i < branch_count; i++) {
-        stt::Branch& branch_pt = tree->branch(i);
-        SteinerPt j = branch_pt.n;
+        const stt::Branch& branch_pt = tree->branch(i);
+        const SteinerPt j = branch_pt.n;
         if (j != i) {
           adjacents[i].push_back(j);
           adjacents[j].push_back(i);

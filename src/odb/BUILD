@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
-load("//:bazel/tcl_encode_or.bzl", "tcl_encode")
-load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -79,17 +79,17 @@ tcl_wrap_cc(
     srcs = glob([
         "include/odb/*.h",
     ]) + [
+        ":swig_imports",
         "//:src/Design.i",
         "//:src/Exception.i",
-        ":swig_imports"
     ],
     module = "odbtcl",
     namespace_prefix = "odb",
     root_swig_src = "src/swig/common/odb.i",
     swig_includes = [
         "include",
-        "src/swig/tcl",
         "src/swig/common",
+        "src/swig/tcl",
     ],
     swig_options = [
         # These values are derived from the CMakeList.txt and represent the "rules" this swig file
@@ -108,4 +108,3 @@ tcl_encode(
     char_array_name = "odbtcl_tcl_inits",
     namespace = "odb",
 )
-

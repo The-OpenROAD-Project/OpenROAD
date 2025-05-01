@@ -1187,6 +1187,7 @@ bool TritonCTS::separateMacroRegSinks(
       }
     }
   }
+
   return true;
 }
 
@@ -2142,7 +2143,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
     const sta::Clock* clock = path->clock(openSta_);
     if (clock) {
       sta::PathExpanded expand(path, openSta_);
-      const sta::PathRef* start = expand.startPath();
+      const sta::Path* start = expand.startPath();
 
       odb::dbNet* pathStartNet = nullptr;
 
@@ -2158,7 +2159,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
         pathStartNet = port->getNet();
       }
       if (pathStartNet == topNet) {
-        clkPathArrival = path->arrival(openSta_);
+        clkPathArrival = path->arrival();
         return clkPathArrival;
       }
     }

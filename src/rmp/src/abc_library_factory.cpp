@@ -211,7 +211,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
       output_pin->max_out_slew = time_unit->staToUser(max_output_slew);
     }
 
-    output_pin->func_text = strdup(cell_port->function()->asString());
+    output_pin->func_text = strdup(cell_port->function()->to_string().c_str());
 
     // Get list of input ports
     abc::Vec_Ptr_t* input_names_abc = abc::Vec_PtrAlloc(input_names.size());

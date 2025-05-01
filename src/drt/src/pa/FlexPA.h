@@ -33,9 +33,9 @@ class access;
 
 namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower, via name
-using ViaRawPriorityTuple = std::
-    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>;
+// lowerArea, not align lower
+using ViaRawPriorityTuple
+    = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
 
 struct frInstLocationComp
 {
@@ -328,6 +328,12 @@ class FlexPA
                      frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
+
+  void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
+                            const gtl::rectangle_data<frCoord>& rect,
+                            const frViaDef* via_def,
+                            frLayerNum layer_num,
+                            bool is_curr_layer_horz);
 
   /**
    * @brief Generates an Enclosed Boundary access point

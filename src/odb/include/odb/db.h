@@ -2331,7 +2331,7 @@ class dbNet : public dbObject
   void clearSpecial();
 
   ///
-  /// Returns true if this dbNet have its pins connected by abutment
+  /// Returns true if this dbNet has its pins connected by abutment
   ///
   bool isConnectedByAbutment();
 
@@ -8056,6 +8056,7 @@ class dbModInst : public dbObject
                            dbModule* masterModule,
                            const char* name);
 
+  // This destroys this modinst but does not destroy the master dbModule.
   static void destroy(dbModInst* modinst);
 
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);

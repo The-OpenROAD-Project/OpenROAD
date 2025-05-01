@@ -110,7 +110,8 @@ class GCell
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
 
-  void print(utl::Logger* logger) const;
+  void print(utl::Logger* logger, bool print_only_name) const;
+  void printToFile(const std::string& filename, bool print_only_name) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -777,9 +778,9 @@ class NesterovBaseCommon
                      int num_threads,
                      const Clusters& clusters);
 
-  const std::vector<GCell*>& gCells() const { return gCells_; }
-  const std::vector<GNet*>& gNets() const { return gNets_; }
-  const std::vector<GPin*>& gPins() const { return gPins_; }
+  const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
+  const std::vector<GNet*>& getGNets() const { return gNets_; }
+  const std::vector<GPin*>& getGPins() const { return gPins_; }
 
   //
   // placerBase To NesterovBase functions
@@ -827,12 +828,12 @@ class NesterovBaseCommon
   GCell* getGCellByIndex(size_t i);
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
-  size_t createGCell(odb::dbInst* db_inst);
-  void createGNet(odb::dbNet* net, bool skip_io_mode);
-  void createITerm(odb::dbITerm* iTerm);
-  void destroyGCell(size_t);
-  void destroyGNet(odb::dbNet*);
-  void destroyITerm(odb::dbITerm*);
+  size_t createCbkGCell(odb::dbInst* db_inst);
+  void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
+  void createCbkITerm(odb::dbITerm* iTerm);
+  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
@@ -845,6 +846,7 @@ class NesterovBaseCommon
   }
 
   void printGCells();
+  void printGCellsToFile(const std::string& filename);
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks
@@ -863,7 +865,7 @@ class NesterovBaseCommon
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
 
-  std::vector<GCell*> gCells_;
+  std::vector<GCell*> nbc_gcells_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -871,9 +873,9 @@ class NesterovBaseCommon
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_map_;
-  std::unordered_map<odb::dbNet*, size_t> db_net_map_;
-  std::unordered_map<odb::dbITerm*, size_t> db_iterm_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
+  std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
+  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -903,7 +905,7 @@ class NesterovBase
 
   GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
 
-  const std::vector<GCellHandle>& gCells() const { return gCells_; }
+  const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
@@ -1062,8 +1064,8 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
-  void createGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
-  void destroyGCell(odb::dbInst* db_inst);
+  void createCbkGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
+  void destroyCbkGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
   // Resets all pointers to storages of gcells, gpins, and gnets.
@@ -1092,11 +1094,11 @@ class NesterovBase
 
   std::vector<GCell> fillerStor_;
 
-  std::vector<GCellHandle> gCells_;
+  std::vector<GCellHandle> nb_gcells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_index_map_;
+  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
 
   // used to update gcell states after fixPointers() is called
   std::vector<odb::dbInst*> new_instances;
@@ -1224,6 +1226,7 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
+  void updateIndex(size_t new_index) { index_ = new_index; }
   size_t getIndex() const { return index_; }
 
  private:

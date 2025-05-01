@@ -86,9 +86,6 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     #Distributed
     ":dst_swig",
     ":dst_tcl",
-    #Dpo
-    ":dpo_swig",
-    ":dpo_tcl",
     #Pad
     ":pad_swig",
     ":pad_tcl",
@@ -151,8 +148,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     "src/rmp/include/rmp/*.h",
     #Distributed
     "src/dst/include/dst/*.h",
-    #Dpo
-    "src/dpo/include/dpo/*.h",
     #pad
     "src/pad/include/pad/*.h",
     #dft
@@ -243,9 +238,6 @@ OPENROAD_LIBRARY_INCLUDES = [
     #Distributed
     "src/dst/include",
     "src/dst/include/dst",
-    #Dpo
-    "src/dpo/include",
-    "src/dpo/include/dpo",
     #pad
     "src/pad/include",
     #utl
@@ -291,7 +283,11 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/rsz/src/*.h",
     #OpenDP
     "src/dpl/src/*.cpp",
+    "src/dpl/src/*.cxx",
     "src/dpl/src/*.h",
+    "src/dpl/src/**/*.h",
+    "src/dpl/src/**/*.cpp",
+    "src/dpl/src/**/*.cxx",
     #finale
     "src/fin/src/*.cpp",
     "src/fin/src/*.h",
@@ -345,10 +341,6 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     #Distributed
     "src/dst/src/*.cc",
     "src/dst/src/*.h",
-    #Dpo
-    "src/dpo/src/*.cpp",
-    "src/dpo/src/*.cxx",
-    "src/dpo/src/*.h",
     #pad
     "src/pad/src/*.cpp",
     "src/pad/src/*.h",

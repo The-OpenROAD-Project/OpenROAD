@@ -60,7 +60,7 @@ static void add_limit(Descriptor::Properties& props,
     float limit;
     func(port, elem, limit, exists);
     if (exists) {
-      std::string elem_str = elem->asString();
+      std::string elem_str = elem->to_string();
       capitalize(elem_str);
       props.push_back({fmt::format("{} {}", elem_str, label),
                        Descriptor::convertUnits(limit) + suffix});
@@ -413,10 +413,10 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
 
   props.push_back({"Direction", port->direction()->name()});
   if (auto function = port->function()) {
-    props.push_back({"Function", function->asString()});
+    props.push_back({"Function", function->to_string()});
   }
   if (auto function = port->tristateEnable()) {
-    props.push_back({"Tristate Enable", function->asString()});
+    props.push_back({"Tristate Enable", function->to_string()});
   }
   add_if_true(props, "Is Clock", port->isClock());
   add_if_true(props, "Is Clock Gate Clock", port->isClockGateClock());

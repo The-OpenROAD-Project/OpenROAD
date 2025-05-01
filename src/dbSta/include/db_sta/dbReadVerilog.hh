@@ -63,6 +63,7 @@ bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
                   dbDatabase* db,
                   utl::Logger* logger,
-                  bool hierarchy);
+                  bool hierarchy,
+                  bool omit_filename_prop = false);
 
 }  // namespace ord

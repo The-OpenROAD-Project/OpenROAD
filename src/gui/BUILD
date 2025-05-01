@@ -4,8 +4,8 @@
 # This file only currently supports the gui disabled.  More work
 # is needed to handle Qt and build a working gui.
 
-load("//:bazel/tcl_encode_or.bzl", "tcl_encode")
-load("//:bazel/tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -39,4 +39,3 @@ tcl_encode(
     char_array_name = "gui_tcl_inits",
     namespace = "gui",
 )
-

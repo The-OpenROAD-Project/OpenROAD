@@ -4,7 +4,7 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 15 components and 68 component-terminals.
 [INFO ODB-0133]     Created 13 nets and 29 connections.
-worst slack -3.24
+worst slack min -3.24
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
@@ -13,7 +13,7 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 6 hold buffers.
 Repair timing output passed/skipped equivalence test
-worst slack 0.21
+worst slack min 0.21
 Placement Analysis
 ---------------------------------
 total displacement          8.7 u
@@ -23,4 +23,4 @@ original HPWL            6886.7 u
 legalized HPWL           6887.7 u
 delta HPWL                    0 %
 
-worst slack 0.22
+worst slack min 0.22
