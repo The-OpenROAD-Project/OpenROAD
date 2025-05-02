@@ -11,6 +11,11 @@
 #include "odb/lefin.h"
 #include "utl/Logger.h"
 
+// TODO: not needed after fully switching to bazel
+#ifndef DATA_PREFIX
+#define DATA_PREFIX ""
+#endif
+
 namespace odb {
 class Nangate45TestFixture : public ::testing::Test
 {
@@ -26,7 +31,8 @@ class Nangate45TestFixture : public ::testing::Test
     odb::lefin lef_reader(
         db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
     lib_ = OdbUniquePtr<odb::dbLib>(
-        lef_reader.createTechAndLib("ng45", "ng45", "Nangate45/Nangate45.lef"),
+        lef_reader.createTechAndLib(
+            "ng45", "ng45", DATA_PREFIX "Nangate45/Nangate45.lef"),
         &odb::dbLib::destroy);
   }
 
