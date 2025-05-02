@@ -170,6 +170,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
+    visibility = ["//src/odb/test/cpp:__subpackages__"],
 )
 
 [
