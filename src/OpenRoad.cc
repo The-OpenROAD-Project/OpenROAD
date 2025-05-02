@@ -54,6 +54,7 @@
 #include "upf/MakeUpf.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
+#include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/decode.h"
 
@@ -139,18 +140,22 @@ void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 
 void initOpenRoad(Tcl_Interp* interp,
                   const char* log_filename,
-                  const char* metrics_filename)
+                  const char* metrics_filename,
+                  const bool batch_mode)
 {
-  OpenRoad::openRoad()->init(interp, log_filename, metrics_filename);
+  OpenRoad::openRoad()->init(
+      interp, log_filename, metrics_filename, batch_mode);
 }
 
 void OpenRoad::init(Tcl_Interp* tcl_interp,
                     const char* log_filename,
-                    const char* metrics_filename)
+                    const char* metrics_filename,
+                    const bool batch_mode)
 {
   tcl_interp_ = tcl_interp;
 
   // Make components.
+  utl::Progress::setBatchMode(batch_mode);
   logger_ = makeLogger(log_filename, metrics_filename);
   db_->setLogger(logger_);
   sta_ = makeDbSta();
