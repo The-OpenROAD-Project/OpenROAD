@@ -699,7 +699,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
       if (cap < lowCap || cap > highCap) {
         it = buffers.erase(it);
         // clang-format off
-        debugPrint(logger_, CTS, "buffering", 1, "  removing {}", buf);
+        debugPrint(logger_, CTS, "buffering", 1, "  removing {} outside of low/high max cap", buf);
         // clang-format on
       } else {
         ++it;
@@ -720,9 +720,13 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
     float prev = getMaxCapLimit(*it);
     ++it;
     while (it != buffers.end()) {
-      float curr = getMaxCapLimit(*it);
+      std::string buf = *it;
+      float curr = getMaxCapLimit(buf);
       if (std::abs(prev - curr) / curr < 0.1) {
         it = buffers.erase(it);
+        // clang-format off
+        debugPrint(logger_, CTS, "buffering", 1, "  removing {} within 10% of prev neighbor's max cap", buf);
+        // clang-format on
       } else {
         ++it;
         prev = curr;
