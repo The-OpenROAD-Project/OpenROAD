@@ -329,6 +329,10 @@ void Grid::paintPixel(Node* cell, GridX grid_x, GridY grid_y)
   for (GridX x{grid_x}; x < x_end; x++) {
     for (GridY y{grid_y}; y < y_end; y++) {
       Pixel* pixel = gridPixel(x, y);
+      if (pixel == nullptr) {
+        // This can happen if cell padding is larger than the grid.
+        continue;
+      }
       pixel->cell = cell;
       pixel->util = 1.0;
     }
