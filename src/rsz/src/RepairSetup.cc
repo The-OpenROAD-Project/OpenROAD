@@ -85,6 +85,20 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   max_repairs_per_pass_ = max_repairs_per_pass;
   resizer_->buffer_moved_into_core_ = false;
 
+  move_sequence.clear();
+  if (!skip_buffer_removal) 
+    move_sequence.push_back(resizer_->unbuffer_move);
+  // Always  have sizing
+  move_sequence.push_back(resizer_->size_move);
+  if (!skip_pin_swap) 
+    move_sequence.push_back(resizer_->swap_pins_move);
+  if (!skip_buffering) 
+    move_sequence.push_back(resizer_->buffer_move);
+  if (!skip_gate_cloning) 
+    move_sequence.push_back(resizer_->clone_move);
+  if (!skip_buffering) 
+    move_sequence.push_back(resizer_->split_load_move);
+
   // Sort failing endpoints by slack.
   const VertexSet* endpoints = sta_->endpoints();
   vector<pair<Vertex*, Slack>> violating_ends;
@@ -246,10 +260,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
       const bool changed = repairPath(end_path,
                                       end_slack,
-                                      skip_pin_swap,
-                                      skip_gate_cloning,
-                                      skip_buffering,
-                                      skip_buffer_removal,
                                       setup_slack_margin);
       if (!changed) {
         if (pass != 1) {
@@ -427,7 +437,16 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   const Slack slack = sta_->vertexSlack(vertex, max_);
   Path* path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairPath(path, slack, false, false, false, false, 0.0);
+  move_sequence.clear();
+  move_sequence = {
+      resizer_->unbuffer_move,
+      resizer_->size_move,
+      resizer_->swap_pins_move,
+      resizer_->buffer_move,
+      resizer_->clone_move,
+      resizer_->split_load_move
+  };
+  repairPath(path, slack, 0.0);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -486,10 +505,6 @@ int RepairSetup::fanout(Vertex* vertex)
  */
 bool RepairSetup::repairPath(Path* path,
                              const Slack path_slack,
-                             const bool skip_pin_swap,
-                             const bool skip_gate_cloning,
-                             const bool skip_buffering,
-                             const bool skip_buffer_removal,
                              const float setup_slack_margin)
 {
   PathExpanded expanded(path, sta_);
@@ -571,45 +586,19 @@ bool RepairSetup::repairPath(Path* path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout,
                  drvr_index);
-      if (!skip_buffer_removal
-          && resizer_->unbuffer_move->doMove(drvr_path,
-                                             drvr_index,
-                                             &expanded,
-                                             setup_slack_margin)) {
-        // Only allow one unbuffer move per pass to
-        // prevent the use-after-free error of multiple buffer removals.
-        changed += repairs_per_pass;
-        continue;
-      }
 
-      if (resizer_->size_move->doMove(drvr_path, drvr_index, &expanded)) {
-        changed++;
-        continue;
-      }
-
-      // Pin swapping
-      if (!skip_pin_swap
-          && resizer_->swap_pins_move->doMove(drvr_path, drvr_index, &expanded)) {
-        changed++;
-        continue;
-      }
-
-      if (!skip_buffering
-          && resizer_->buffer_move->doMove(drvr_path, drvr_index, &expanded)) {
-        changed++;
-        continue;
-      }
-
-      if (!skip_gate_cloning 
-          && resizer_->clone_move->doMove(drvr_path, drvr_index, path_slack, &expanded)) {
-        changed++;
-        continue;
-      }
-
-      if (!skip_buffering
-          && resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded)) {
-        changed++;
-        continue;
+      for(int i = 0; i < move_sequence.size(); i++) {
+        if (move_sequence[i]->doMove(drvr_path, drvr_index, path_slack, &expanded, setup_slack_margin)) {
+            if (move_sequence[i]==resizer_->unbuffer_move) {
+              // Only allow one unbuffer move per pass to
+              // prevent the use-after-free error of multiple buffer removals.
+              changed += repairs_per_pass;
+            } else {
+              changed++;
+            }
+            // Move on to the next gate
+            break;
+        }
       }
     }
   }
@@ -816,10 +805,6 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
 
       const bool changed = repairPath(end_path,
                                       end_slack,
-                                      true /* skip_pin_swap */,
-                                      true /* skip_gate_cloning */,
-                                      true /* skip_buffering */,
-                                      true /* skip_buffer_removal */,
                                       params.setup_slack_margin);
 
       if (!changed) {

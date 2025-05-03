@@ -12,10 +12,13 @@
 
 namespace rsz {
 
+
 bool 
 SizeMove::doMove(const Path* drvr_path,
-                 const int drvr_index,
-                 PathExpanded* expanded)
+                 int drvr_index,
+                 const Slack drvr_slack,
+                 PathExpanded* expanded,
+                 float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   Instance* drvr = network_->instance(drvr_pin);

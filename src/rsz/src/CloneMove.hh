@@ -16,9 +16,10 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-                int drvr_index,
+                const int drvr_index,
                 Slack drvr_slack,
-                PathExpanded* expanded) override;
+                PathExpanded* expanded,
+                float setup_slack_margin) override;
 
     const char * name() const override { return "CloneMove"; }
 

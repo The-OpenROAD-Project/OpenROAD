@@ -4,6 +4,8 @@
 #pragma once
 #include <boost/functional/hash.hpp>
 #include <unordered_set>
+#include <vector>
+
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -20,6 +22,7 @@ namespace rsz {
 
 class Resizer;
 class RemoveBuffer;
+class BaseMove;
 
 using odb::Point;
 using utl::Logger;
@@ -87,10 +90,6 @@ class RepairSetup : public sta::dbStaState
   void init();
   bool repairPath(Path* path,
                   Slack path_slack,
-                  bool skip_pin_swap,
-                  bool skip_gate_cloning,
-                  bool skip_buffering,
-                  bool skip_buffer_removal,
                   float setup_slack_margin);
 
   int rebuffer(const Pin* drvr_pin);
@@ -142,13 +141,10 @@ class RepairSetup : public sta::dbStaState
   float min_viol_ = 0.0;
   float max_viol_ = 0.0;
   int max_repairs_per_pass_ = 1;
-  int inserted_buffer_count_ = 0;
-  int rebuffer_net_count_ = 0;
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
 
-  // For rebuffering
-  Path* arrival_paths_[RiseFall::index_count];
+  std::vector<BaseMove* > move_sequence;  
 
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();

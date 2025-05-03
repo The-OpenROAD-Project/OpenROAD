@@ -10,7 +10,6 @@
 
 #include "BufferedNet.hh"
 #include "BufferMove.hh"
-//#include "RepairSetup.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -155,7 +154,7 @@ static const RiseFallBoth* commonTransition(const RiseFallBoth* a,
   return RiseFallBoth::riseFall();
 }
 
-void RepairSetup::annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex)
+void BufferMove::annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex)
 {
   using BnetType = BufferedNetType;
   using BnetPtr = BufferedNetPtr;
@@ -677,7 +676,7 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
   return inserted_buffer_count;
 }
 
-Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet)
+Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet)
 {
   return slackAtDriverPin(bnet, -1);
 }

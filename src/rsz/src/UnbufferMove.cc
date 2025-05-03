@@ -21,10 +21,12 @@ namespace rsz {
 // 2) it doesn't create new max fanout violations
 // 3) it doesn't create new max cap violations
 // 4) it doesn't worsen slack
-bool UnbufferMove::doMove(const Path* drvr_path,
-                          const int drvr_index,
-                          PathExpanded* expanded,
-                          const float setup_slack_margin)
+bool 
+UnbufferMove::doMove(const Path* drvr_path,
+                     int drvr_index,
+                     const Slack drvr_slack,
+                     PathExpanded* expanded,
+                     float setup_slack_margin)
 {
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Pin* drvr_pin = drvr_vertex->pin();

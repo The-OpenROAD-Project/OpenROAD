@@ -11,9 +11,12 @@
 
 namespace rsz {
 
-bool BufferMove::doMove(const Path* drvr_path,
-                        const int drvr_index,
-                        PathExpanded* expanded)
+bool 
+BufferMove::doMove(const Path* drvr_path,
+                   int drvr_index,
+                   const Slack drvr_slack,
+                   PathExpanded* expanded,
+                   float setup_slack_margin)
 {
     Vertex* drvr_vertex = drvr_path->vertex(sta_);
     const Pin* drvr_pin = drvr_vertex->pin();

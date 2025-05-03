@@ -20,8 +20,10 @@ namespace rsz {
 
 bool 
 SwapPinsMove::doMove(const Path* drvr_path,
-                     const int drvr_index,
-                     PathExpanded* expanded)
+                     int drvr_index,
+                     const Slack drvr_slack,
+                     PathExpanded* expanded,
+                     float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   // Skip if there is no liberty model or this is a single-input cell

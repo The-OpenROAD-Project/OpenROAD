@@ -18,8 +18,10 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-                        int drvr_index,
-                        PathExpanded* expanded) override;
+                const int drvr_index,
+                Slack drvr_slack,
+                PathExpanded* expanded,
+                float setup_slack_margin) override;
 
     const char * name() const override { return "BufferMove"; }
 
@@ -58,6 +60,9 @@ private:
     std::tuple<const Path*, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
     Slack slackAtDriverPin(const BufferedNetPtr& bnet);
     Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
+
+    // For rebuffering
+    Path* arrival_paths_[RiseFall::index_count];
 
 
 };

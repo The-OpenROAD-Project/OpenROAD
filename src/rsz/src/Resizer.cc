@@ -168,6 +168,7 @@ void Resizer::init(Logger* logger,
   split_load_move = new SplitLoadMove(this);
   swap_pins_move = new SwapPinsMove(this);
   unbuffer_move = new UnbufferMove(this);
+
 }
 
 ////////////////////////////////////////////////////////////////

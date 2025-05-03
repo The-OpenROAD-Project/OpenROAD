@@ -5,9 +5,6 @@
 
 namespace rsz {
 
-using sta::Pin;
-//using sta::dbStaState;
-
 class SwapPinsMove : public BaseMove
 {
 
@@ -15,8 +12,10 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-               int drvr_index,
-               PathExpanded* expanded) override;
+                const int drvr_index,
+                Slack drvr_slack,
+                PathExpanded* expanded,
+                float setup_slack_margin) override;
 
     const char * name() const override { return "SwapPinsMove"; }
 

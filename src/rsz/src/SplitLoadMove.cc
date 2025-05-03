@@ -12,10 +12,12 @@
 namespace rsz {
 
 
-bool SplitLoadMove::doMove(const Path* drvr_path,
-                           const int drvr_index,
-                           const Slack drvr_slack,
-                           PathExpanded* expanded)
+bool 
+SplitLoadMove::doMove(const Path* drvr_path,
+                      int drvr_index,
+                      const Slack drvr_slack,
+                      PathExpanded* expanded,
+                      float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
