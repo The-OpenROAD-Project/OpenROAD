@@ -14,45 +14,8 @@
 #include <utility>
 
 #include "BaseMove.hh"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
 
 namespace rsz {
-
-using std::max;
-using std::pair;
-using std::string;
-using std::vector;
-using utl::RSZ;
-
-using sta::Edge;
-using sta::fuzzyEqual;
-using sta::fuzzyGreater;
-using sta::fuzzyGreaterEqual;
-using sta::fuzzyLess;
-using sta::GraphDelayCalc;
-using sta::InstancePinIterator;
-using sta::NetConnectedPinIterator;
-using sta::PathExpanded;
-using sta::Slew;
-using sta::TimingArcSet;
-using sta::VertexOutEdgeIterator;
-using sta::INF;
-
 
 
 bool 

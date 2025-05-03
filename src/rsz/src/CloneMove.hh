@@ -6,13 +6,8 @@
 #include <utility>
 
 #include "BaseMove.hh"
-#include "rsz/Resizer.hh"
-#include "sta/ExceptionPath.hh"
 
 namespace rsz {
-
-using sta::Pin;
-//using sta::dbStaState;
 
 class CloneMove : public BaseMove
 {

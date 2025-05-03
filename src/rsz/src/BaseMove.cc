@@ -3,103 +3,7 @@
 
 #include "BaseMove.hh"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-
-#include "dpl/Opendp.h"
-
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
-
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Corner.hh"
-#include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/MinMax.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Path.hh"
-#include "sta/PortDirection.hh"
-#include "sta/StaState.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
-#include "sta/Transition.hh"
-#include "sta/UnorderedMap.hh"
-#include "utl/Logger.h"
-
-
 namespace rsz {
-
-class Resizer; 
-
-using std::max;
-
-using odb::dbInst;
-using odb::dbMaster;
-using odb::dbPlacementStatus;
-using odb::dbSet;
-
-using dpl::Opendp;
-
-using odb::dbMaster;
-using odb::Point;
-
-using utl::RSZ;
-using utl::Logger;
-
-using sta::ArcDcalcResult;
-using sta::ArcDelayCalc;
-using sta::ArcDelay;
-using sta::Cell;
-using sta::Corner;
-using sta::dbDatabase;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::DcalcAnalysisPt;
-using sta::Edge;
-using sta::fuzzyGreater;
-using sta::GraphDelayCalc;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::InstanceSet;
-using sta::INF;
-using sta::LoadPinIndexMap;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::NetConnectedPinIterator;
-using sta::MinMax;
-using sta::Net;
-using sta::Network;
-using sta::PathExpanded;
-using sta::Path;
-using sta::Pin;
-using sta::RiseFall;
-using sta::Slack;
-using sta::Slew;
-using sta::StaState;
-using sta::TimingArc;
-using sta::TimingArcSet;
-using sta::TimingRole;
-using sta::Vertex;
-using sta::VertexOutEdgeIterator;
-
-using InputSlews = std::array<Slew, RiseFall::index_count>;
-using TgtSlews = std::array<Slew, RiseFall::index_count>;
-
 
 BaseMove::BaseMove(Resizer* resizer)
 {
@@ -316,6 +220,7 @@ ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
   gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
   return delays[rf->index()];
 }
+
 
 ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
                             const float load_cap,

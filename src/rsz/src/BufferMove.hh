@@ -7,24 +7,9 @@
 #include <tuple>
 
 #include "BaseMove.hh"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/DelayFloat.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
 
 namespace rsz {
 
-class BufferedNet;
-enum class BufferedNetType;
-
-using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using BufferedNetSeq = std::vector<BufferedNetPtr>;
-
-using sta::Net;
-using sta::Path;
-using sta::Pin;
 
 class BufferMove : public BaseMove
 {

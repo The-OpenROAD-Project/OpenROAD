@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "rsz/Resizer.hh"
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
@@ -18,15 +20,19 @@
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/MinMax.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Path.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
@@ -37,9 +43,10 @@
 
 namespace rsz {
 
-class Resizer; 
-
 using std::max;
+using std::pair;
+using std::string;
+using std::vector;
 
 using odb::dbInst;
 using odb::dbMaster;
@@ -60,6 +67,7 @@ using sta::ArcDelay;
 using sta::Cell;
 using sta::Corner;
 using sta::dbDatabase;
+using sta::dbITerm;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
@@ -79,8 +87,10 @@ using sta::Net;
 using sta::Network;
 using sta::PathExpanded;
 using sta::Path;
+using sta::PortDirection;
 using sta::Pin;
 using sta::RiseFall;
+using sta::Sdc;
 using sta::Slack;
 using sta::Slew;
 using sta::StaState;
@@ -90,6 +100,8 @@ using sta::TimingRole;
 using sta::Vertex;
 using sta::VertexOutEdgeIterator;
 
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
+using BufferedNetSeq = std::vector<BufferedNetPtr>;
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
 
