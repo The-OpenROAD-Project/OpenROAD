@@ -187,7 +187,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   const odb::Rect row_bb = row->getBBox();
 
   std::set<odb::dbInst*> row_insts(
-      fixed_instances.qbegin(boost::geometry::index::covered_by(row_bb)),
+      fixed_instances.qbegin(boost::geometry::index::overlaps(row_bb)),
       fixed_instances.qend());
 
   const int llx = row_bb.xMin();
