@@ -24,7 +24,7 @@ class Ext
 {
  public:
   Ext();
-  ~Ext() = default;
+  ~Ext();
 
   void init(odb::dbDatabase* db,
             Logger* logger,
