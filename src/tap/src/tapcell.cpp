@@ -187,8 +187,17 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   const odb::Rect row_bb = row->getBBox();
 
   std::set<odb::dbInst*> row_insts(
-      fixed_instances.qbegin(boost::geometry::index::overlaps(row_bb)),
+      fixed_instances.qbegin(boost::geometry::index::intersects(row_bb)),
       fixed_instances.qend());
+  // remove instances that are only touching the row.
+  for (auto it = row_insts.begin(); it != row_insts.end();) {
+    const odb::Rect inst_bb = (*it)->getBBox()->getBox();
+    if (!row_bb.overlaps(inst_bb)) {
+      it = row_insts.erase(it);
+    } else {
+      ++it;
+    }
+  }
 
   const int llx = row_bb.xMin();
   const int urx = row_bb.xMax();
