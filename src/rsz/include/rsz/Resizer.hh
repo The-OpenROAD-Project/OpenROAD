@@ -20,6 +20,10 @@ class GlobalRouter;
 class IncrementalGRoute;
 }  // namespace grt
 
+namespace rcx {
+class Ext;
+}  // namespace rcx
+
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -45,6 +49,8 @@ using stt::SteinerTreeBuilder;
 
 using grt::GlobalRouter;
 using grt::IncrementalGRoute;
+
+using rcx::Ext;
 
 using sta::ArcDelay;
 using sta::Cell;
@@ -164,6 +170,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
             SteinerTreeBuilder* stt_builder,
             GlobalRouter* global_router,
             dpl::Opendp* opendp,
+            rcx::Ext* openrcx,
             std::unique_ptr<AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer* layer,
                   const Corner* corner,
@@ -210,9 +217,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
   double wireClkCapacitance(const Corner* corner) const;
   double wireClkHCapacitance(const Corner* corner) const;
   double wireClkVCapacitance(const Corner* corner) const;
-  void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
-                          std::map<Corner*, std::ostream*>& spef_streams_);
+                          std::map<Corner*, std::ostream*>& spef_streams_,
+                          const char* ext_model_path);
   void estimateWireParasitics(SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const Net* net, SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const Pin* drvr_pin,
@@ -597,7 +604,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   void incrementalParasiticsBegin();
   void incrementalParasiticsEnd();
-  void ensureParasitics();
   void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin* drvr_pin);
   void ensureWireParasitic(const Pin* drvr_pin, const Net* net);
@@ -717,6 +723,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   SteinerTreeBuilder* stt_builder_ = nullptr;
   GlobalRouter* global_router_ = nullptr;
   IncrementalGRoute* incr_groute_ = nullptr;
+  Ext* openrcx_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
