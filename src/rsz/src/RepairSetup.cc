@@ -11,11 +11,12 @@
 #include <sstream>
 #include <string>
 
-//#include "BufferMove.hh"
+#include "BufferMove.hh"
 #include "CloneMove.hh"
 #include "SizeMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
+#include "UnbufferMove.hh"
 
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -82,8 +83,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   init();
   constexpr int digits = 3;
   max_repairs_per_pass_ = max_repairs_per_pass;
-  inserted_buffer_count_ = 0;
-  removed_buffer_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
@@ -370,28 +369,30 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   printProgress(opto_iteration, true, true, false, num_viols);
 
-  int size_moves_ = resizer_->size_move->countMoves();
-  int swap_pins_moves_ = resizer_->swap_pins_move->countMoves();
-  int clone_moves_ = resizer_->clone_move->countMoves();
-  int split_load_moves_ = resizer_->split_load_move->countMoves();
+  int buffer_moves_ = resizer_->buffer_move->committedMoves();
+  int size_moves_ = resizer_->size_move->committedMoves();
+  int swap_pins_moves_ = resizer_->swap_pins_move->committedMoves();
+  int clone_moves_ = resizer_->clone_move->committedMoves();
+  int split_load_moves_ = resizer_->split_load_move->committedMoves();
+  int unbuffer_moves_ = resizer_->unbuffer_move->committedMoves();
 
-  if (removed_buffer_count_ > 0) {
+  if (unbuffer_moves_ > 0) {
     repaired = true;
-    logger_->info(RSZ, 59, "Removed {} buffers.", removed_buffer_count_);
+    logger_->info(RSZ, 59, "Removed {} buffers.", unbuffer_moves_);
   }
-  if (inserted_buffer_count_ > 0 || split_load_moves_ > 0) {
+  if (buffer_moves_ > 0 || split_load_moves_ > 0) {
     repaired = true;
     if (split_load_moves_ == 0) 
-        logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+        logger_->info(RSZ, 40, "Inserted {} buffers.", buffer_moves_);
     else
         logger_->info(RSZ,
                       45,
                       "Inserted {} buffers, {} to split loads.",
-                      inserted_buffer_count_+ split_load_moves_,
+                      buffer_moves_ + split_load_moves_,
                       split_load_moves_);
   }
   logger_->metric("design__instance__count__setup_buffer",
-                  inserted_buffer_count_ + split_load_moves_);
+                  buffer_moves_ + split_load_moves_);
   if (size_moves_ > 0) {
     repaired = true;
     logger_->info(RSZ, 41, "Resized {} instances.", size_moves_);
@@ -431,12 +432,14 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (removed_buffer_count_ > 0) {
-    logger_->info(RSZ, 61, "Removed {} buffers.", removed_buffer_count_);
+  int unbuffer_moves_ = resizer_->unbuffer_move->committedMoves();
+  if (unbuffer_moves_ > 0) {
+    logger_->info(RSZ, 61, "Removed {} buffers.", unbuffer_moves_);
   }
+  int buffer_moves_ = resizer_->buffer_move->committedMoves();
   int split_load_moves_ = resizer_->split_load_move->countMoves();
-  if (inserted_buffer_count_ + split_load_moves_ > 0) {
-    logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_ + split_load_moves_);
+  if (buffer_moves_ + split_load_moves_ > 0) {
+    logger_->info(RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
   }
   int size_moves_ = resizer_->size_move->countMoves();
   if (size_moves_ > 0) {
@@ -447,6 +450,21 @@ void RepairSetup::repairSetup(const Pin* end_pin)
     logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pins_moves_);
   }
 }
+
+int RepairSetup::fanout(Vertex* vertex)
+{
+  int fanout = 0;
+  VertexOutEdgeIterator edge_iter(vertex, graph_);
+  while (edge_iter.hasNext()) {
+    Edge* edge = edge_iter.next();
+    // Disregard output->output timing arcs
+    if (edge->isWire()) {
+      fanout++;
+    }
+  }
+  return fanout;
+}
+
 
 /* This is the main routine for repairing setup violations. We have
  - remove driver (step 1)
@@ -554,15 +572,16 @@ bool RepairSetup::repairPath(Path* path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout,
                  drvr_index);
-      if (!skip_buffer_removal) {
-        if (removeDrvr(drvr_path,
-                       drvr_cell,
-                       drvr_index,
-                       &expanded,
-                       setup_slack_margin)) {
-          changed++;
-          continue;
-        }
+      if (!skip_buffer_removal
+          && resizer_->unbuffer_move->doMove(drvr_path,
+                                             drvr_cell,
+                                             drvr_index,
+                                             &expanded,
+                                             setup_slack_margin)) {
+        // Only allow one unbuffer move per pass to
+        // prevent the use-after-free error of multiple buffer removals.
+        changed += repairs_per_pass;
+        continue;
       }
 
       if (resizer_->size_move->doMove(drvr_path, drvr_index, &expanded)) {
@@ -571,11 +590,10 @@ bool RepairSetup::repairPath(Path* path,
       }
 
       // Pin swapping
-      if (!skip_pin_swap) {
-        if (resizer_->swap_pins_move->doMove(drvr_path, drvr_index, &expanded)) {
-          changed++;
-          continue;
-        }
+      if (!skip_pin_swap
+          && resizer_->swap_pins_move->doMove(drvr_path, drvr_index, &expanded)) {
+        changed++;
+        continue;
       }
 
       // For tristate nets all we can do is resize the driver.
@@ -585,35 +603,18 @@ bool RepairSetup::repairPath(Path* path,
           && fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_ && !tristate_drvr
-          && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
-        const int rebuffer_count = rebuffer(drvr_pin);
-        if (rebuffer_count > 0) {
-          debugPrint(logger_,
-                     RSZ,
-                     "repair_setup",
-                     3,
-                     "rebuffer {} inserted {}",
-                     network_->pathName(drvr_pin),
-                     rebuffer_count);
-
-          debugPrint(logger_,
-                     RSZ,
-                     "moves",
-                     1,
-                     "rebuffer {} inserted {}",
-                     network_->pathName(drvr_pin),
-                     rebuffer_count);
-          inserted_buffer_count_ += rebuffer_count;
-          changed++;
-          continue;
-        }
+          && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()
+          && resizer_->buffer_move->doMove(drvr_path, drvr_index, &expanded)) {
+        changed++;
+        continue;
       }
 
       // Gate cloning
-      if (!skip_gate_cloning && fanout > split_load_min_fanout_
+      if (!skip_gate_cloning 
+          && fanout > split_load_min_fanout_
           && !tristate_drvr && !resizer_->dontTouch(net)
           // We can probably relax this with the new ECO code
-          && resizer_->inserted_buffer_set_.count(db_network_->instance(drvr_pin))==0
+          && resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin))==0
           // We can probably relax this with the new ECO code
           && resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))==0
           && resizer_->clone_move->doMove(drvr_path, drvr_index, path_slack, &expanded)) {
@@ -621,394 +622,17 @@ bool RepairSetup::repairPath(Path* path,
         continue;
       }
 
-      if (!skip_buffering) {
-        // Don't split loads on low fanout nets.
-        if (fanout > split_load_min_fanout_ && !tristate_drvr
-            && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
-          resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded); 
-          changed++;
-          continue;
-        }
+      if (!skip_buffering
+         // Don't split loads on low fanout nets.
+         && fanout > split_load_min_fanout_ && !tristate_drvr
+         && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
+        resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded); 
+        changed++;
+        continue;
       }
     }
-    for (auto inst : buf_to_remove_) {
-      resizer_->removeBuffer(inst, /* recordJournal */ true);
-    }
-    buf_to_remove_.clear();
   }
   return changed > 0;
-}
-
-void RepairSetup::debugCheckMultipleBuffers(Path* path, PathExpanded* expanded)
-{
-  if (expanded->size() > 1) {
-    const int path_length = expanded->size();
-    const int start_index = expanded->startIndex();
-    for (int i = start_index; i < path_length; i++) {
-      const Path* path = expanded->path(i);
-      const Pin* path_pin = path->pin(sta_);
-      if (i > 0 && network_->isDriver(path_pin)
-          && !network_->isTopLevelPort(path_pin)) {
-        const TimingArc* prev_arc = path->prevArc(sta_);
-        printf("repair_setup %s: %s ---> %s \n",
-               prev_arc->from()->libertyCell()->name(),
-               prev_arc->from()->name(),
-               prev_arc->to()->name());
-      }
-    }
-  }
-  printf("done\n");
-}
-
-
-// Remove driver if
-// 1) it is a buffer without attributes like dont-touch
-// 2) it doesn't create new max fanout violations
-// 3) it doesn't create new max cap violations
-// 4) it doesn't worsen slack
-bool RepairSetup::removeDrvr(const Path* drvr_path,
-                             LibertyCell* drvr_cell,
-                             const int drvr_index,
-                             PathExpanded* expanded,
-                             const float setup_slack_margin)
-{
-  // TODO:
-  // 1. add max slew check
-  if (drvr_cell && drvr_cell->isBuffer()) {
-    Pin* drvr_pin = drvr_path->pin(this);
-    Instance* drvr = network_->instance(drvr_pin);
-
-    // Don't remove buffers from previous sizing, pin swapping, rebuffering, or
-    // cloning because such removal may lead to an inifinte loop or long runtime
-    std::string reason;
-    if (resizer_->swap_pins_move->countMoves(drvr)) {
-      reason = "its pins have been swapped";
-    } else if (resizer_->clone_move->countMoves(drvr)) {
-      reason = "it has been cloned";
-    } else if (resizer_->split_load_move->countMoves(drvr)) {
-      reason = "it was from split load buffering";
-    } else if (resizer_->all_inserted_buffer_set_.count(drvr)) {
-      reason = "it was from rebuffering";
-    } else if (resizer_->size_move->countMoves(drvr)) {
-      reason = "it has been resized";
-    }
-    if (!reason.empty()) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 4,
-                 "buffer {} is not removed because {}",
-                 db_network_->name(drvr),
-                 reason);
-      return false;
-    }
-
-    // Don't remove buffer if new max fanout violations are created
-    Vertex* drvr_vertex = drvr_path->vertex(sta_);
-    const Path* prev_drvr_path = expanded->path(drvr_index - 2);
-    Vertex* prev_drvr_vertex = prev_drvr_path->vertex(sta_);
-    Pin* prev_drvr_pin = prev_drvr_vertex->pin();
-    float curr_fanout, max_fanout, fanout_slack;
-    sta_->checkFanout(
-        prev_drvr_pin, max_, curr_fanout, max_fanout, fanout_slack);
-    float new_fanout = curr_fanout + fanout(drvr_vertex) - 1;
-    if (max_fanout > 0.0) {
-      // Honor max fanout when the constraint exists
-      if (new_fanout > max_fanout) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "buffer {} is not removed because of max fanout limit "
-                   "of {} at {}",
-                   db_network_->name(drvr),
-                   max_fanout,
-                   network_->pathName(prev_drvr_pin));
-        return false;
-      }
-    } else {
-      // No max fanout exists, but don't exceed default fanout limit
-      if (new_fanout > buffer_removal_max_fanout_) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   2,
-                   "buffer {} is not removed because of default fanout "
-                   "limit of {} at "
-                   "{}",
-                   db_network_->name(drvr),
-                   buffer_removal_max_fanout_,
-                   network_->pathName(prev_drvr_pin));
-        return false;
-      }
-    }
-
-    // Watch out for new max cap violations
-    float cap, max_cap, cap_slack;
-    const Corner* corner;
-    const RiseFall* tr;
-    sta_->checkCapacitance(prev_drvr_pin,
-                           nullptr /* corner */,
-                           max_,
-                           // return values
-                           corner,
-                           tr,
-                           cap,
-                           max_cap,
-                           cap_slack);
-    if (max_cap > 0.0 && corner) {
-      const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
-      GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-      float drvr_cap = dcalc->loadCap(drvr_pin, dcalc_ap);
-      LibertyPort *buffer_input_port, *buffer_output_port;
-      drvr_cell->bufferPorts(buffer_input_port, buffer_output_port);
-      float new_cap = cap + drvr_cap
-                      - resizer_->portCapacitance(buffer_input_port, corner);
-      if (new_cap > max_cap) {
-        debugPrint(
-            logger_,
-            RSZ,
-            "repair_setup",
-            2,
-            "buffer {} is not removed because of max cap limit of {} at {}",
-            db_network_->name(drvr),
-            max_cap,
-            network_->pathName(prev_drvr_pin));
-        return false;
-      }
-    }
-
-    const Path* drvr_input_path = expanded->path(drvr_index - 1);
-    Vertex* drvr_input_vertex = drvr_input_path->vertex(sta_);
-    SlackEstimatorParams params(setup_slack_margin, corner);
-    params.driver_pin = drvr_pin;
-    params.prev_driver_pin = prev_drvr_pin;
-    params.driver_input_pin = drvr_input_vertex->pin();
-    params.driver = drvr;
-    params.driver_path = drvr_path;
-    params.prev_driver_path = prev_drvr_path;
-    params.driver_cell = drvr_cell;
-    if (!estimatedSlackOK(params)) {
-      return false;
-    }
-
-    if (resizer_->canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
-      buf_to_remove_.push_back(drvr);
-      removed_buffer_count_++;
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// Estimate slack impact from driver removal.
-// Delay improvement from removed driver should be greater than
-// delay degradation from prev driver for driver input pin path.
-// Side input paths should absorb delay and slew degradation from prev driver.
-// Delay degradation for side input paths comes from two sources:
-// 1) delay degradation at prev driver due to increased load cap
-// 2) delay degradation at side out pin due to degraded slew from prev driver
-// Acceptance criteria are as follows:
-// For direct fanout paths (fanout paths of drvr_pin), accept buffer removal
-// if slack improves (may still be violating)
-// For side fanout paths (fanout paths of side_out_pin*), accept buffer removal
-// if slack doesn't become violating (no new violations)
-//
-//               input_net                             output_net
-//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
-//               |
-//               ------>  (side_input_pin1  side_out_pin1) ----->
-//               |
-//               ------>  (side_input_pin2  side_out_pin2) ----->
-//
-bool RepairSetup::estimatedSlackOK(const SlackEstimatorParams& params)
-{
-  if (params.corner == nullptr) {
-    // can't do any estimation without a corner
-    return false;
-  }
-
-  // Prep for delay calc
-  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  const DcalcAnalysisPt* dcalc_ap = params.corner->findDcalcAnalysisPt(max_);
-  LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
-  if (prev_drvr_port == nullptr) {
-    return false;
-  }
-  LibertyPort *buffer_input_port, *buffer_output_port;
-  params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
-
-  // Compute delay degradation at prev driver due to increased load cap
-  resizer_->annotateInputSlews(network_->instance(params.prev_driver_pin),
-                               dcalc_ap);
-  ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
-  Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
-  float old_cap = dcalc->loadCap(params.prev_driver_pin, dcalc_ap);
-  resizer_->gateDelays(prev_drvr_port, old_cap, dcalc_ap, old_delay, old_slew);
-  float new_cap = old_cap + dcalc->loadCap(params.driver_pin, dcalc_ap)
-                  - resizer_->portCapacitance(buffer_input_port, params.corner);
-  resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
-  float delay_degrad
-      = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
-  float delay_imp
-      = resizer_->bufferDelay(params.driver_cell,
-                              params.driver_path->transition(sta_),
-                              dcalc->loadCap(params.driver_pin, dcalc_ap),
-                              dcalc_ap);
-  resizer_->resetInputSlews();
-
-  // Check if degraded delay & slew can be absorbed by driver pin fanouts
-  Net* output_net = network_->net(params.driver_pin);
-  NetConnectedPinIterator* pin_iter
-      = network_->connectedPinIterator(output_net);
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (pin == params.driver_pin) {
-      continue;
-    }
-    float old_slack = sta_->pinSlack(pin, max_);
-    float new_slack = old_slack - delay_degrad + delay_imp;
-    if (fuzzyGreater(old_slack, new_slack)) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because new output pin slack {} is worse than old slack {}",
-                 db_network_->name(params.driver), db_network_->name(pin),
-                 new_slack, old_slack);
-      // clang-format on
-      return false;
-    }
-
-    // Check if output pin of direct fanout instance can absorb delay and slew
-    // degradation
-    if (!estimateInputSlewImpact(network_->instance(pin),
-                                 dcalc_ap,
-                                 old_slew,
-                                 new_slew,
-                                 delay_degrad - delay_imp,
-                                 params,
-                                 /* accept if slack improves */ true)) {
-      return false;
-    }
-  }
-
-  // Check side fanout paths.  Side fanout paths get no delay benefit from
-  // buffer removal.
-  Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = network_->connectedPinIterator(input_net);
-  while (pin_iter->hasNext()) {
-    const Pin* side_input_pin = pin_iter->next();
-    if (side_input_pin == params.prev_driver_pin
-        || side_input_pin == params.driver_input_pin) {
-      continue;
-    }
-    float old_slack = sta_->pinSlack(side_input_pin, max_);
-    float new_slack = old_slack - delay_degrad - params.setup_slack_margin;
-    if (new_slack < 0) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because side input pin {} will have a violating slack of {}:"
-                 " old slack={}, slack margin={}, delay_degrad={}",
-                 db_network_->name(params.driver),
-                 db_network_->name(side_input_pin), new_slack, old_slack,
-                 params.setup_slack_margin, delay_degrad);
-      // clang-format on
-      return false;
-    }
-
-    // Consider secondary degradation at side out pin from degraded input
-    // slew.
-    if (!estimateInputSlewImpact(network_->instance(side_input_pin),
-                                 dcalc_ap,
-                                 old_slew,
-                                 new_slew,
-                                 delay_degrad,
-                                 params,
-                                 /* accept only if no new viol */ false)) {
-      return false;
-    }
-  }  // for each pin of input_net
-
-  // clang-format off
-  debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} can be removed because"
-             " direct fanouts and side fanouts can absorb delay/slew degradation",
-             db_network_->name(params.driver));
-  // clang-format on
-  return true;
-}  // namespace rsz
-
-// Estimate impact from degraded input slew for this instance.
-// Include all output pins for multi-outut gate (MOG) cells.
-bool RepairSetup::estimateInputSlewImpact(
-    Instance* instance,
-    const DcalcAnalysisPt* dcalc_ap,
-    Slew old_in_slew[RiseFall::index_count],
-    Slew new_in_slew[RiseFall::index_count],
-    // delay adjustment from prev stage
-    float delay_adjust,
-    SlackEstimatorParams params,
-    bool accept_if_slack_improves)
-{
-  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  InstancePinIterator* pin_iter = network_->pinIterator(instance);
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (!network_->direction(pin)->isOutput()) {
-      continue;
-    }
-    LibertyPort* port = network_->libertyPort(pin);
-    if (port == nullptr) {
-      // reject the transform if we can't estimate
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
-                 "because pin {} has no liberty port",
-                 db_network_->name(params.driver), db_network_->name(pin));
-      // clang-format on
-      return false;
-    }
-    float load_cap = dcalc->loadCap(pin, dcalc_ap);
-    ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
-    Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
-    resizer_->gateDelays(
-        port, load_cap, old_in_slew, dcalc_ap, old_delay, old_slew);
-    resizer_->gateDelays(
-        port, load_cap, new_in_slew, dcalc_ap, new_delay, new_slew);
-    float delay_diff = max(
-        new_delay[RiseFall::riseIndex()] - old_delay[RiseFall::riseIndex()],
-        new_delay[RiseFall::fallIndex()] - old_delay[RiseFall::fallIndex()]);
-
-    float old_slack = sta_->pinSlack(pin, max_) - params.setup_slack_margin;
-    float new_slack
-        = old_slack - delay_diff - delay_adjust - params.setup_slack_margin;
-    if ((accept_if_slack_improves && fuzzyGreater(old_slack, new_slack))
-        || (!accept_if_slack_improves && new_slack < 0)) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
-                 "because pin {} will have a violating or worse slack of {}",
-                 db_network_->name(params.driver), db_network_->name(pin),
-                 new_slack);
-      // clang-format on
-      return false;
-    }
-  }
-
-  return true;
-}
-
-
-int RepairSetup::fanout(Vertex* vertex)
-{
-  int fanout = 0;
-  VertexOutEdgeIterator edge_iter(vertex, graph_);
-  while (edge_iter.hasNext()) {
-    Edge* edge = edge_iter.next();
-    // Disregard output->output timing arcs
-    if (edge->isWire()) {
-      fanout++;
-    }
-  }
-  return fanout;
 }
 
 
@@ -1047,16 +671,17 @@ void RepairSetup::printProgress(const int iteration,
     const double design_area = resizer_->computeDesignArea();
     const double area_growth = design_area - initial_design_area_;
 
+    // This actually prints both committed and pending moves, so the moves could
+    // could go down if a pass is restrored by the journal.
     logger_->report(
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
-        removed_buffer_count_,
-        resizer_->size_move->countMoves(),
-        // This actually double counts the split load buffers
-        inserted_buffer_count_ + resizer_->split_load_move->countMoves() + rebuffer_net_count_,
-        resizer_->clone_move->countMoves(),
-        resizer_->swap_pins_move->countMoves(),
+        resizer_->unbuffer_move->committedMoves(),
+        resizer_->size_move->committedMoves(),
+        resizer_->buffer_move->committedMoves() + resizer_->split_load_move->committedMoves(), 
+        resizer_->clone_move->committedMoves(),
+        resizer_->swap_pins_move->committedMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),

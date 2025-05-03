@@ -45,34 +45,6 @@ using sta::StaState;
 using sta::TimingArc;
 using sta::Vertex;
 
-class BufferedNet;
-enum class BufferedNetType;
-using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using BufferedNetSeq = std::vector<BufferedNetPtr>;
-struct SlackEstimatorParams
-{
-  Pin* driver_pin;
-  Pin* prev_driver_pin;
-  Pin* driver_input_pin;
-  Instance* driver;
-  const Path* driver_path;
-  const Path* prev_driver_path;
-  LibertyCell* driver_cell;
-  const float setup_slack_margin;
-  const Corner* corner;
-
-  SlackEstimatorParams(const float margin, const Corner* corner)
-      : setup_slack_margin(margin), corner(corner)
-  {
-    driver_pin = nullptr;
-    prev_driver_pin = nullptr;
-    driver_input_pin = nullptr;
-    driver = nullptr;
-    driver_path = nullptr;
-    prev_driver_path = nullptr;
-    driver_cell = nullptr;
-  }
-};
 struct OptoParams
 {
   int iteration;
@@ -110,7 +82,6 @@ class RepairSetup : public sta::dbStaState
   void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
-  void rebufferNet(const Pin* drvr_pin);
 
  private:
   void init();
@@ -121,30 +92,6 @@ class RepairSetup : public sta::dbStaState
                   bool skip_buffering,
                   bool skip_buffer_removal,
                   float setup_slack_margin);
-  void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
-  bool removeDrvr(const Path* drvr_path,
-                  LibertyCell* drvr_cell,
-                  int drvr_index,
-                  PathExpanded* expanded,
-                  float setup_slack_margin);
-  bool estimatedSlackOK(const SlackEstimatorParams& params);
-  bool estimateInputSlewImpact(Instance* instance,
-                               const DcalcAnalysisPt* dcalc_ap,
-                               Slew old_in_slew[RiseFall::index_count],
-                               Slew new_in_slew[RiseFall::index_count],
-                               // delay adjustment from prev stage
-                               float delay_adjust,
-                               SlackEstimatorParams params,
-                               bool accept_if_slack_improves);
-  bool upsizeDrvr(const Path* drvr_path,
-                  int drvr_index,
-                  PathExpanded* expanded);
-  void splitLoads(const Path* drvr_path,
-                  int drvr_index,
-                  Slack drvr_slack,
-                  PathExpanded* expanded);
-  int fanout(Vertex* vertex);
-  bool hasTopLevelOutputPort(Net* net);
 
   int rebuffer(const Pin* drvr_pin);
 
@@ -185,13 +132,11 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
+  int fanout(Vertex* vertex);
 
-  std::vector<Instance*> buf_to_remove_;
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
-  const Corner* corner_ = nullptr;
-  LibertyPort* drvr_port_ = nullptr;
 
   bool fallback_ = false;
   float min_viol_ = 0.0;
@@ -216,7 +161,6 @@ class RepairSetup : public sta::dbStaState
   static constexpr int print_interval_ = 10;
   static constexpr int opto_small_interval_ = 100;
   static constexpr int opto_large_interval_ = 1000;
-  static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
   static constexpr int max_last_gasp_passes_ = 10;

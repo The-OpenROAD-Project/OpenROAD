@@ -114,6 +114,7 @@ class BufferMove;
 class SplitLoadMove;
 class SizeMove;
 class SwapPinsMove;
+class UnbufferMove;
 
 class NetHash
 {
@@ -238,7 +239,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
-  void removeBuffers(InstanceSeq insts, bool recordJournal = false);
+  void removeBuffers(InstanceSeq insts);
   void unbufferNet(Net* net);
   void bufferInputs();
   void bufferOutputs();
@@ -792,9 +793,10 @@ class Resizer : public dbStaState, public dbNetworkObserver
   // Will eventually be replaced with a getter method and some "recipes"
   CloneMove* clone_move = nullptr;
   SplitLoadMove* split_load_move = nullptr;
-  //BufferMove* buffer_move = nullptr;
+  BufferMove* buffer_move = nullptr;
   SizeMove* size_move = nullptr;
   SwapPinsMove* swap_pins_move = nullptr;
+  UnbufferMove* unbuffer_move= nullptr;
 
   friend class BufferedNet;
   friend class GateCloner;
@@ -810,6 +812,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class SplitLoadMove;
   friend class CloneMove;
   friend class SwapPinsMove;
+  friend class UnbufferMove;
 };
 
 }  // namespace rsz

@@ -167,7 +167,7 @@ bool CloneMove::doMove(const Path* drvr_path,
              clone_cell->name());
   addMove(clone_inst);
   // We add the driver instance to the pending move set, but don't count it as a move.
-  addMove(drvr_inst, false);
+  addMove(drvr_inst, 0);
 
   debugPrint(logger_,
              RSZ,

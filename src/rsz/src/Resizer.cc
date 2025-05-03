@@ -18,6 +18,7 @@
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
+#include "BufferMove.hh"
 #include "CloneMove.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
@@ -27,6 +28,7 @@
 #include "SizeMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
+#include "UnbufferMove.hh"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -162,13 +164,13 @@ void Resizer::init(Logger* logger,
 
   inserted_buffer_set_ = InstanceSet(db_network_);
   all_inserted_buffer_set_ = InstanceSet(db_network_);
-  removed_buffer_set_ = InstanceSet(db_network_);
 
-  //buffer_move = new BufferMove(this);
+  buffer_move = new BufferMove(this);
   clone_move = new CloneMove(this);
   size_move = new SizeMove(this);
   split_load_move = new SplitLoadMove(this);
   swap_pins_move = new SwapPinsMove(this);
+  unbuffer_move = new UnbufferMove(this);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -336,21 +338,18 @@ void Resizer::init()
 }
 
 // remove all buffers if no buffers are specified
-void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
+void Resizer::removeBuffers(sta::InstanceSeq insts)
 {
   initBlock();
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
 
-  int remove_count = 0;
   if (insts.empty()) {
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (removeBufferIfPossible(
-              buffer, /* honor dont touch */ true, recordJournal)) {
-        remove_count++;
+      if (unbuffer_move->removeBufferIfPossible(buffer, /* honor dont touch */ true)) {
       }
     }
   } else {
@@ -358,9 +357,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (removeBufferIfPossible(
-              buffer, /* don't honor dont touch */ false, recordJournal)) {
-        remove_count++;
+      if (unbuffer_move->removeBufferIfPossible(buffer, /* don't honor dont touch */ false)) {
       } else {
         logger_->warn(
             RSZ,
@@ -371,8 +368,9 @@ void Resizer::removeBuffers(sta::InstanceSeq insts, bool recordJournal)
       }
     }
   }
+  unbuffer_move->commitMoves();
   level_drvr_vertices_valid_ = false;
-  logger_->info(RSZ, 26, "Removed {} buffers.", remove_count);
+  logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move->countMoves());
 }
 
 void Resizer::unbufferNet(Net* net)
@@ -410,223 +408,6 @@ void Resizer::unbufferNet(Net* net)
   removeBuffers(insts);
 }
 
-bool Resizer::bufferBetweenPorts(Instance* buffer)
-{
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
-  LibertyPort *in_port, *out_port;
-  lib_cell->bufferPorts(in_port, out_port);
-  Pin* in_pin = db_network_->findPin(buffer, in_port);
-  Pin* out_pin = db_network_->findPin(buffer, out_port);
-  Net* in_net = db_network_->net(in_pin);
-  Net* out_net = db_network_->net(out_pin);
-  return hasPort(in_net) && hasPort(out_net);
-}
-
-bool Resizer::removeBufferIfPossible(Instance* buffer,
-                                     bool honorDontTouchFixed,
-                                     bool recordJournal)
-{
-  if (canRemoveBuffer(buffer, honorDontTouchFixed)) {
-    removeBuffer(buffer, recordJournal);
-    return true;
-  }
-  return false;
-}
-
-// There are two buffer removal modes: auto and manual:
-// 1) auto mode: this happens during setup fixing, power recovery, buffer
-// removal
-//      Dont-touch, fixed cell and boundary buffer constraints are honored
-// 2) manual mode: this happens during manual buffer removal during ECO
-//      This ignores dont-touch and fixed cell (boundary buffer constraints are
-//      still honored)
-bool Resizer::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
-{
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
-  if (!lib_cell || !lib_cell->isBuffer()) {
-    return false;
-  }
-  // Do not remove buffers connected to input/output ports
-  // because verilog netlists use the net name for the port.
-  if (bufferBetweenPorts(buffer)) {
-    return false;
-  }
-  // Don't remove buffers connected to modnets on both input and output
-  // These buffers occupy as special place in hierarchy and cannot
-  // be removed without destroying the hierarchy.
-  // This is the hierarchical equivalent of "bufferBetweenPorts" above
-
-  Pin* buffer_ip_pin;
-  Pin* buffer_op_pin;
-  getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
-  if (db_network_->hierNet(buffer_ip_pin)
-      && db_network_->hierNet(buffer_op_pin)) {
-    return false;
-  }
-
-  //
-  // Don't remove buffers with (1) an input pin connected to a hierarchical
-  // net (1) an output pin not connected to a hierarchical net.
-  // These are required to remain visible.
-  //
-  if (db_network_->hierNet(buffer_ip_pin)
-      && !db_network_->hierNet(buffer_op_pin)) {
-    return false;
-  }
-
-  // We only allow case when we can  get buffer driver
-  // and wire in the hierarchical net. This is when there is
-  // a dbModNet on the buffer output AND the buffer and the thing
-  // driving the instance are in the same module.
-
-  odb::dbModNet* op_hierarchical_net = db_network_->hierNet(buffer_op_pin);
-  if (op_hierarchical_net) {
-    Pin* ignore_driver_pin = nullptr;
-    dbNet* buffer_ip_flat_net = db_network_->flatNet(buffer_ip_pin);
-    odb::dbModule* driving_module = db_network_->getNetDriverParentModule(
-        db_network_->dbToSta(buffer_ip_flat_net), ignore_driver_pin, true);
-    (void) ignore_driver_pin;
-    // buffer is a dbInst.
-    dbInst* buffer_inst = db_network_->staToDb(buffer);
-    odb::dbModule* buffer_owning_module = buffer_inst->getModule();
-    if (driving_module != buffer_owning_module) {
-      return false;
-    }
-  }
-
-  dbInst* db_inst = db_network_->staToDb(buffer);
-  if (db_inst->isDoNotTouch()) {
-    if (honorDontTouchFixed) {
-      return false;
-    }
-    //  remove instance dont touch
-    db_inst->setDoNotTouch(false);
-  }
-  if (db_inst->isFixed()) {
-    if (honorDontTouchFixed) {
-      return false;
-    }
-    // change FIXED to PLACED just in case
-    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-  }
-  LibertyPort *in_port, *out_port;
-  lib_cell->bufferPorts(in_port, out_port);
-  Pin* in_pin = db_network_->findPin(buffer, in_port);
-  Pin* out_pin = db_network_->findPin(buffer, out_port);
-  Net* in_net = db_network_->net(in_pin);
-  Net* out_net = db_network_->net(out_pin);
-  dbNet* in_db_net = db_network_->staToDb(in_net);
-  dbNet* out_db_net = db_network_->staToDb(out_net);
-  // honor net dont-touch on input net or output net
-  if ((in_db_net && in_db_net->isDoNotTouch())
-      || (out_db_net && out_db_net->isDoNotTouch())) {
-    if (honorDontTouchFixed) {
-      return false;
-    }
-    // remove net dont touch for manual ECO
-    if (in_db_net) {
-      in_db_net->setDoNotTouch(false);
-    }
-    if (out_db_net) {
-      out_db_net->setDoNotTouch(false);
-    }
-  }
-  bool out_net_ports = hasPort(out_net);
-  Net *survivor, *removed;
-  if (out_net_ports) {
-    if (hasPort(in_net)) {
-      return false;
-    }
-    survivor = out_net;
-    removed = in_net;
-  } else {
-    // default or out_net_ports
-    // Default to in_net surviving so drivers (cached in dbNetwork)
-    // do not change.
-    survivor = in_net;
-    removed = out_net;
-  }
-
-  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && (!removed || !sdc_->isConstrained(removed))
-      && !sdc_->isConstrained(buffer)) {
-    odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-    odb::dbNet* db_removed = db_network_->staToDb(removed);
-    return !db_removed || db_survivor->canMergeNet(db_removed);
-  }
-  return false;
-}
-
-void Resizer::removeBuffer(Instance* buffer, bool recordJournal)
-{
-  LibertyCell* lib_cell = network_->libertyCell(buffer);
-  LibertyPort *in_port, *out_port;
-  lib_cell->bufferPorts(in_port, out_port);
-
-  Pin* in_pin = db_network_->findPin(buffer, in_port);
-  Pin* out_pin = db_network_->findPin(buffer, out_port);
-
-  // Hierarchical net handling
-  odb::dbModNet* op_modnet = db_network_->hierNet(out_pin);
-
-  odb::dbNet* in_db_net = db_network_->flatNet(in_pin);
-  odb::dbNet* out_db_net = db_network_->flatNet(out_pin);
-  if (in_db_net == nullptr || out_db_net == nullptr) {
-    return;
-  }
-  // in_net and out_net are flat nets.
-  Net* in_net = db_network_->dbToSta(in_db_net);
-  Net* out_net = db_network_->dbToSta(out_db_net);
-
-  bool out_net_ports = hasPort(out_net);
-  Net *survivor, *removed;
-  if (out_net_ports) {
-    survivor = out_net;
-    removed = in_net;
-  } else {
-    // default or out_net_ports
-    // Default to in_net surviving so drivers (cached in dbNetwork)
-    // do not change.
-    survivor = in_net;
-    removed = out_net;
-  }
-  debugPrint(
-      logger_, RSZ, "remove_buffer", 1, "remove {}", db_network_->name(buffer));
-
-  odb::dbNet* db_survivor = db_network_->staToDb(survivor);
-  odb::dbNet* db_removed = db_network_->staToDb(removed);
-  if (db_removed) {
-    db_survivor->mergeNet(db_removed);
-  }
-  sta_->disconnectPin(in_pin);
-  sta_->disconnectPin(out_pin);
-  sta_->deleteInstance(buffer);
-  if (removed) {
-    sta_->deleteNet(removed);
-  }
-
-  // Hierarchical case supported:
-  // moving an output hierarchical net to the input pin driver.
-  // During canBufferRemove check (see above) we require that the
-  // input pin driver is in the same module scope as the output hierarchical
-  // driver
-  //
-  if (op_modnet) {
-    debugPrint(logger_,
-               RSZ,
-               "remove_buffer",
-               1,
-               "Handling hierarchical net {}",
-               op_modnet->getName());
-    Pin* driver_pin = nullptr;
-    db_network_->getNetDriverParentModule(in_net, driver_pin, true);
-    db_network_->connectPin(driver_pin, db_network_->dbToSta(op_modnet));
-  }
-
-  parasitics_invalid_.erase(removed);
-  parasiticsInvalid(survivor);
-  updateParasitics();
-}
 
 void Resizer::ensureLevelDrvrVertices()
 {
@@ -1334,16 +1115,6 @@ void Resizer::bufferOutput(const Pin* top_pin, LibertyCell* buffer_cell)
 }
 
 ////////////////////////////////////////////////////////////////
-
-bool Resizer::hasPort(const Net* net)
-{
-  if (!net) {
-    return false;
-  }
-
-  dbNet* db_net = db_network_->staToDb(net);
-  return !db_net->getBTerms().empty();
-}
 
 float Resizer::driveResistance(const Pin* drvr_pin)
 {
@@ -3974,7 +3745,7 @@ void Resizer::repairSetup(const Pin* end_pin)
 void Resizer::rebufferNet(const Pin* drvr_pin)
 {
   resizePreamble();
-  repair_setup_->rebufferNet(drvr_pin);
+  buffer_move->rebufferNet(drvr_pin);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4069,7 +3840,7 @@ void Resizer::journalBegin()
   clone_move->restoreMoves();
   split_load_move->restoreMoves();
   swap_pins_move->restoreMoves();
-  removed_buffer_set_.clear();
+  unbuffer_move->restoreMoves();
 
 }
 
@@ -4088,7 +3859,7 @@ void Resizer::journalEnd()
   clone_move->commitMoves();
   split_load_move->commitMoves();
   swap_pins_move->commitMoves();
-  removed_buffer_set_.clear();
+  unbuffer_move->commitMoves();
 }
 
 void Resizer::journalMakeBuffer(Instance* buffer)
@@ -4161,7 +3932,7 @@ void Resizer::journalRestore()
              inserted_buffer_count_,
              clone_move->pendingMoves(),
              swap_pins_move->pendingMoves(),
-             removed_buffer_count_);
+             unbuffer_move->pendingMoves());
 
   size_move->restoreMoves();
   inserted_buffer_count_ -= inserted_buffer_set_.size();
@@ -4170,8 +3941,7 @@ void Resizer::journalRestore()
   clone_move->restoreMoves();
   split_load_move->restoreMoves();
   swap_pins_move->restoreMoves();
-  removed_buffer_count_ -= removed_buffer_set_.size();
-  removed_buffer_set_.clear();
+  unbuffer_move->restoreMoves();
 
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
@@ -4189,7 +3959,7 @@ void Resizer::journalRestoreTest()
   int inserted_buffer_count_old = inserted_buffer_count_;
   int cloned_gate_count_old = clone_move->countMoves();
   int swap_pin_count_old = swap_pins_move->countMoves();
-  int removed_buffer_count_old = removed_buffer_count_;
+  int removed_buffer_count_old = unbuffer_move->countMoves();
 
   journalRestore();
 
