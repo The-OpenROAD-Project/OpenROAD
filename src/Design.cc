@@ -273,11 +273,6 @@ drt::TritonRoute* Design::getTritonRoute()
   return getOpenRoad()->getTritonRoute();
 }
 
-dpo::Optdp* Design::getOptdp()
-{
-  return getOpenRoad()->getOptdp();
-}
-
 fin::Finale* Design::getFinale()
 {
   return getOpenRoad()->getFinale();

@@ -445,15 +445,6 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "dpo_tcl",
-    srcs = [
-        "src/dpo/src/Optdp.tcl",
-    ],
-    char_array_name = "dpo_tcl_inits",
-    namespace = "dpo",
-)
-
-tcl_encode(
     name = "upf_tcl",
     srcs = [
         "src/upf/src/upf.tcl",
@@ -802,20 +793,6 @@ tcl_wrap_cc(
     root_swig_src = "src/stt/src/SteinerTreeBuilder.i",
     swig_includes = [
         "src/stt/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "dpo_swig",
-    srcs = [
-        "src/dpo/src/Optdp.i",
-        ":error_swig",
-    ],
-    module = "dpo",
-    namespace_prefix = "dpo",
-    root_swig_src = "src/dpo/src/Optdp.i",
-    swig_includes = [
-        "src/dpo/src",
     ],
 )
 

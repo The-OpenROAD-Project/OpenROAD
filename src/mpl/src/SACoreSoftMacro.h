@@ -78,8 +78,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // actions used
   void resizeOneCluster();
 
-  void shrink() override;
-
   // A utility function for FillDeadSpace.
   // It's used for calculate the start point and end point for a segment in a
   // grid
