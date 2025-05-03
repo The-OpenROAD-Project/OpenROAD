@@ -5,10 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
-#include <memory>
-#include <optional>
-#include <sstream>
+#include <cstdio>
 #include <string>
 
 #include "CloneMove.hh"
@@ -17,21 +14,13 @@
 #include "SwapPinsMove.hh"
 
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
-#include "sta/Parasitics.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/Path.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Units.hh"
-#include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
