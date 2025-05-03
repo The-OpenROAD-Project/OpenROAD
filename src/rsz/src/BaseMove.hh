@@ -139,15 +139,17 @@ class BaseMove : public sta::dbStaState {
 
         virtual bool doMove(const Path* drvr_path,
                            const int drvr_index,
-                           PathExpanded* expanded) { 
-            return doMove(drvr_path, drvr_index, 0.0, expanded); 
-        }
+                           PathExpanded* expanded) { return false; }
+        // CloneMove takes a driver slack
+        virtual bool doMove(const Path* drvr_path,
+                            int drvr_index,
+                            Slack drvr_slack,
+                            PathExpanded* expanded) { return false; }
+        // Unbuffer can take a slack...
         virtual bool doMove(const Path* drvr_path,
                            const int drvr_index,
-                           const Slack drvr_slack,
-                           PathExpanded* expanded) {
-            return doMove(drvr_path, drvr_index, expanded);
-        }
+                           PathExpanded* expanded,
+                           float setup_slack_margin) { return false; }
 
         void init();
 

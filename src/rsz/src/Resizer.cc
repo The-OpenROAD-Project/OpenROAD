@@ -162,9 +162,6 @@ void Resizer::init(Logger* logger,
 
   db_network_->addObserver(this);
 
-  inserted_buffer_set_ = InstanceSet(db_network_);
-  all_inserted_buffer_set_ = InstanceSet(db_network_);
-
   buffer_move = new BufferMove(this);
   clone_move = new CloneMove(this);
   size_move = new SizeMove(this);
@@ -3835,7 +3832,7 @@ void Resizer::journalBegin()
     setCallBackRegistered(false);
   }
 
-  inserted_buffer_set_.clear();
+  buffer_move->restoreMoves();
   size_move->restoreMoves();
   clone_move->restoreMoves();
   split_load_move->restoreMoves();
@@ -3854,7 +3851,7 @@ void Resizer::journalEnd()
   incrementalParasiticsEnd();
   odb::dbDatabase::endEco(block_);
 
-  inserted_buffer_set_.clear();
+  buffer_move->commitMoves();
   size_move->commitMoves();
   clone_move->commitMoves();
   split_load_move->commitMoves();
@@ -3870,8 +3867,6 @@ void Resizer::journalMakeBuffer(Instance* buffer)
              1,
              "journal make_buffer {}",
              network_->pathName(buffer));
-  inserted_buffer_set_.insert(buffer);
-  all_inserted_buffer_set_.insert(buffer);
 }
 
 // This restores previously saved checkpoint by
@@ -3935,9 +3930,7 @@ void Resizer::journalRestore()
              unbuffer_move->pendingMoves());
 
   size_move->restoreMoves();
-  inserted_buffer_count_ -= inserted_buffer_set_.size();
-  inserted_buffer_count_ -= split_load_move->pendingMoves();
-  inserted_buffer_set_.clear();
+  buffer_move->restoreMoves();
   clone_move->restoreMoves();
   split_load_move->restoreMoves();
   swap_pins_move->restoreMoves();
@@ -3956,7 +3949,7 @@ void Resizer::journalBeginTest()
 void Resizer::journalRestoreTest()
 {
   int resize_count_old = size_move->countMoves();
-  int inserted_buffer_count_old = inserted_buffer_count_;
+  int inserted_buffer_count_old = buffer_move->countMoves();
   int cloned_gate_count_old = clone_move->countMoves();
   int swap_pin_count_old = swap_pins_move->countMoves();
   int removed_buffer_count_old = unbuffer_move->countMoves();
@@ -3967,10 +3960,10 @@ void Resizer::journalRestoreTest()
       "journalRestoreTest restored {} sizing, {} buffering, {} "
       "cloning, {} pin swaps, {} buffer removal",
       resize_count_old - size_move->countMoves(),
-      inserted_buffer_count_old - inserted_buffer_count_,
+      inserted_buffer_count_old - buffer_move->countMoves(),
       cloned_gate_count_old - clone_move->countMoves(),
       swap_pin_count_old - swap_pins_move->countMoves(),
-      removed_buffer_count_old - removed_buffer_count_);
+      removed_buffer_count_old - unbuffer_move->countMoves());
 }
 
 

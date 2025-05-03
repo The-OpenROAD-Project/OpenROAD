@@ -8,6 +8,7 @@
 #include <string>
 
 #include "BaseMove.hh"
+#include "BufferMove.hh"
 #include "CloneMove.hh"
 #include "SizeMove.hh"
 #include "SplitLoadMove.hh"
@@ -21,11 +22,15 @@ namespace rsz {
 // 3) it doesn't create new max cap violations
 // 4) it doesn't worsen slack
 bool UnbufferMove::doMove(const Path* drvr_path,
-                          LibertyCell* drvr_cell,
                           const int drvr_index,
                           PathExpanded* expanded,
                           const float setup_slack_margin)
 {
+  Vertex* drvr_vertex = drvr_path->vertex(sta_);
+  const Pin* drvr_pin = drvr_vertex->pin();
+  LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+  LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
+
   // TODO:
   // 1. add max slew check
   if (drvr_cell && drvr_cell->isBuffer()) {
@@ -41,7 +46,7 @@ bool UnbufferMove::doMove(const Path* drvr_path,
       reason = "it has been cloned";
     } else if (resizer_->split_load_move->countMoves(drvr)) {
       reason = "it was from split load buffering";
-    } else if (resizer_->all_inserted_buffer_set_.count(drvr)) {
+    } else if (resizer_->buffer_move->countMoves(drvr)) {
       reason = "it was from rebuffering";
     } else if (resizer_->size_move->countMoves(drvr)) {
       reason = "it has been resized";

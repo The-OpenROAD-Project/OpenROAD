@@ -18,10 +18,25 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
                            PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
-
+  Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Path* load_path = expanded->path(drvr_index + 1);
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
+
+  const int fanout = this->fanout(drvr_vertex);
+  // Don't split loads on low fanout nets.
+  if (fanout <= split_load_min_fanout_)
+    return false;
+  const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
+  if (tristate_drvr)
+    return false;
+  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+  if (resizer_->dontTouch(net))
+    return false;
+  dbNet* db_net = db_network_->staToDb(net);
+  if (db_net->isConnectedByAbutment())
+    return false;
+
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
@@ -39,7 +54,6 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
              network_->pathName(drvr_pin),
              network_->pathName(load_pin));
 
-  Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.

@@ -18,10 +18,9 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-                LibertyCell* drvr_cell,
                 int drvr_index,
                 PathExpanded* expanded,
-                float setup_slack_margin);
+                float setup_slack_margin) override;
 
     const char * name() const override { return "UnbufferMove"; }
 

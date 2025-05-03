@@ -7,6 +7,9 @@
 #include <cmath>
 #include <string>
 
+#include "BufferMove.hh"
+#include "SplitLoadMove.hh"
+
 namespace rsz {
 
 
@@ -37,9 +40,27 @@ bool CloneMove::doMove(const Path* drvr_path,
                        PathExpanded* expanded)
 {
   Pin* drvr_pin = drvr_path->pin(this);
+  Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Path* load_path = expanded->path(drvr_index + 1);
   Vertex* load_vertex = load_path->vertex(sta_);
   Pin* load_pin = load_vertex->pin();
+
+  const int fanout = this->fanout(drvr_vertex);
+  if (fanout <= split_load_min_fanout_)
+    return false;
+  const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
+  if (tristate_drvr)
+    return false;
+  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+  if (resizer_->dontTouch(net))
+    return false;
+  // We can probably relax this with the new ECO code
+  if (resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin))>0)
+    return false;   
+  // We can probably relax this with the new ECO code
+  if (resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))>0)
+    return false;
+
   // Divide and conquer.
   debugPrint(logger_,
              RSZ,
@@ -57,7 +78,6 @@ bool CloneMove::doMove(const Path* drvr_path,
          network_->pathName(load_pin));
 
 
-  Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.

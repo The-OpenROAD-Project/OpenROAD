@@ -49,7 +49,6 @@ private:
                            const Point& wire_end,
                            int wire_layer,
                            int level);
-    int fanout(Vertex* vertex);
     void addBuffers(BufferedNetSeq& Z1,
                     int level,
                     bool area_oriented = false,

@@ -559,7 +559,6 @@ bool RepairSetup::repairPath(Path* path,
       const Path* drvr_path = expanded.path(drvr_index);
       Vertex* drvr_vertex = drvr_path->vertex(sta_);
       const Pin* drvr_pin = drvr_vertex->pin();
-      const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
       LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
       LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       const int fanout = this->fanout(drvr_vertex);
@@ -574,7 +573,6 @@ bool RepairSetup::repairPath(Path* path,
                  drvr_index);
       if (!skip_buffer_removal
           && resizer_->unbuffer_move->doMove(drvr_path,
-                                             drvr_cell,
                                              drvr_index,
                                              &expanded,
                                              setup_slack_margin)) {
@@ -596,37 +594,20 @@ bool RepairSetup::repairPath(Path* path,
         continue;
       }
 
-      // For tristate nets all we can do is resize the driver.
-      const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-      dbNet* db_net = db_network_->staToDb(net);
       if (!skip_buffering
-          && fanout > 1
-          // Rebuffer blows up on large fanout nets.
-          && fanout < rebuffer_max_fanout_ && !tristate_drvr
-          && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()
           && resizer_->buffer_move->doMove(drvr_path, drvr_index, &expanded)) {
         changed++;
         continue;
       }
 
-      // Gate cloning
       if (!skip_gate_cloning 
-          && fanout > split_load_min_fanout_
-          && !tristate_drvr && !resizer_->dontTouch(net)
-          // We can probably relax this with the new ECO code
-          && resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin))==0
-          // We can probably relax this with the new ECO code
-          && resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))==0
           && resizer_->clone_move->doMove(drvr_path, drvr_index, path_slack, &expanded)) {
         changed++;
         continue;
       }
 
       if (!skip_buffering
-         // Don't split loads on low fanout nets.
-         && fanout > split_load_min_fanout_ && !tristate_drvr
-         && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
-        resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded); 
+          && resizer_->split_load_move->doMove(drvr_path, drvr_index, path_slack, &expanded)) {
         changed++;
         continue;
       }
