@@ -3,6 +3,11 @@
 
 #pragma once
 
+#include <tcl.h>
+
+#include "odb/db.h"
+#include "utl/Logger.h"
+
 namespace sta {
 class dbSta;
 }
@@ -11,14 +16,31 @@ namespace rsz {
 class Resizer;
 }
 
-namespace ord {
+namespace stt {
+class SteinerTreeBuilder;
+}
 
-class OpenRoad;
+namespace grt {
+class GlobalRouter;
+}
+
+namespace dpl {
+class Opendp;
+}
+
+namespace ord {
 
 rsz::Resizer* makeResizer();
 
 void deleteResizer(rsz::Resizer* resizer);
 
-void initResizer(OpenRoad* openroad);
+void initResizer(rsz::Resizer* resizer,
+                 Tcl_Interp* tcl_interp,
+                 utl::Logger* logger,
+                 odb::dbDatabase* db,
+                 sta::dbSta* sta,
+                 stt::SteinerTreeBuilder* stt_builder,
+                 grt::GlobalRouter* global_router,
+                 dpl::Opendp* dp);
 
 }  // namespace ord

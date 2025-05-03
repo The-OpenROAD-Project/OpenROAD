@@ -3,16 +3,43 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace psm {
 class PDNSim;
 }
 
+namespace utl {
+class Logger;
+}
+
+namespace odb {
+class dbDatabase;
+}
+
+namespace sta {
+class dbSta;
+}
+
+namespace rsz {
+class Resizer;
+}
+
+namespace dpl {
+class Opendp;
+}
+
 namespace ord {
-class OpenRoad;
 
 psm::PDNSim* makePDNSim();
 
-void initPDNSim(OpenRoad* openroad);
+void initPDNSim(psm::PDNSim* pdnsim,
+                utl::Logger* logger,
+                odb::dbDatabase* db,
+                sta::dbSta* sta,
+                rsz::Resizer* resizer,
+                dpl::Opendp* opendp,
+                Tcl_Interp* tcl_interp);
 
 void deletePDNSim(psm::PDNSim* pdnsim);
 

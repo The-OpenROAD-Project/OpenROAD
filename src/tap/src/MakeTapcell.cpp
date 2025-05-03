@@ -3,7 +3,6 @@
 
 #include "tap/MakeTapcell.h"
 
-#include "ord/OpenRoad.hh"
 #include "tap/tapcell.h"
 #include "utl/decode.h"
 
@@ -28,13 +27,15 @@ void deleteTapcell(tap::Tapcell* tapcell)
   delete tapcell;
 }
 
-void initTapcell(OpenRoad* openroad)
+void initTapcell(tap::Tapcell* tapcell,
+                 odb::dbDatabase* db,
+                 utl::Logger* logger,
+                 Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Tap_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, tap::tap_tcl_inits);
-  openroad->getTapcell()->init(openroad->getDb(), openroad->getLogger());
+  tapcell->init(db, logger);
 }
 
 }  // namespace ord

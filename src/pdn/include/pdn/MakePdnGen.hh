@@ -3,17 +3,26 @@
 
 #pragma once
 
-namespace ord {
-class OpenRoad;
-}
+#include <tcl.h>
 
 namespace pdn {
 class PdnGen;
 }
 
+namespace odb {
+class dbDatabase;
+}
+
+namespace utl {
+class Logger;
+}
+
 namespace ord {
 
-void initPdnGen(OpenRoad* openroad);
+void initPdnGen(pdn::PdnGen* pdngen,
+                odb::dbDatabase* db,
+                utl::Logger* logger,
+                Tcl_Interp* tcl_interp);
 
 pdn::PdnGen* makePdnGen();
 

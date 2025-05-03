@@ -6,7 +6,6 @@
 #include <tcl.h>
 
 #include "dpl/Opendp.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 namespace dpl {
@@ -30,14 +29,16 @@ void deleteOpendp(dpl::Opendp* opendp)
   delete opendp;
 }
 
-void initOpendp(OpenRoad* openroad)
+void initOpendp(dpl::Opendp* dpl,
+                odb::dbDatabase* db,
+                utl::Logger* logger,
+                Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Dpl_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, dpl::dpl_tcl_inits);
-  openroad->getOpendp()->init(openroad->getDb(), openroad->getLogger());
+  dpl->init(db, logger);
 }
 
 }  // namespace ord

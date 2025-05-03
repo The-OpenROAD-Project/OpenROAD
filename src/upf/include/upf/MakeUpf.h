@@ -3,12 +3,10 @@
 
 #pragma once
 
-namespace ord {
-class OpenRoad;
-}
+struct Tcl_Interp;
 
 namespace ord {
 
-void initUpf(OpenRoad* openroad);
+void initUpf(Tcl_Interp* tcl_interp);
 
 }  // namespace ord

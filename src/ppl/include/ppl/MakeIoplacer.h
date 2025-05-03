@@ -3,17 +3,28 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace ppl {
 class IOPlacer;
 }
 
-namespace ord {
+namespace odb {
+class dbDatabase;
+}
 
-class OpenRoad;
+namespace utl {
+class Logger;
+}
+
+namespace ord {
 
 ppl::IOPlacer* makeIoplacer();
 
-void initIoplacer(OpenRoad* openroad);
+void initIoplacer(ppl::IOPlacer* placer,
+                  odb::dbDatabase* db,
+                  utl::Logger* logger,
+                  Tcl_Interp* tcl_interp);
 
 void deleteIoplacer(ppl::IOPlacer* ioplacer);
 

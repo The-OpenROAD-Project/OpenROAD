@@ -3,18 +3,31 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace ant {
 class AntennaChecker;
+class GlobalRouteSource;
+}  // namespace ant
+
+namespace odb {
+class dbDatabase;
+}
+
+namespace utl {
+class Logger;
 }
 
 namespace ord {
-
-class OpenRoad;
 
 ant::AntennaChecker* makeAntennaChecker();
 
 void deleteAntennaChecker(ant::AntennaChecker* antennachecker);
 
-void initAntennaChecker(OpenRoad* openroad);
+void initAntennaChecker(ant::AntennaChecker* antenna_checker,
+                        odb::dbDatabase* db,
+                        ant::GlobalRouteSource* global_route_source,
+                        utl::Logger* logger,
+                        Tcl_Interp* tcl_interp);
 
 }  // namespace ord

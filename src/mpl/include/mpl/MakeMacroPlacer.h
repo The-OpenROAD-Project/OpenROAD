@@ -3,17 +3,43 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace mpl {
 class MacroPlacer;
 }
 
-namespace ord {
+namespace sta {
+class dbNetwork;
+}
 
-class OpenRoad;
+namespace odb {
+class dbDatabase;
+}
+
+namespace sta {
+class dbSta;
+}
+
+namespace utl {
+class Logger;
+}
+
+namespace par {
+class PartitionMgr;
+}
+
+namespace ord {
 
 mpl::MacroPlacer* makeMacroPlacer();
 
-void initMacroPlacer(OpenRoad* openroad);
+void initMacroPlacer(mpl::MacroPlacer* macro_placer,
+                     sta::dbNetwork* network,
+                     odb::dbDatabase* db,
+                     sta::dbSta* sta,
+                     utl::Logger* logger,
+                     par::PartitionMgr* tritonpart,
+                     Tcl_Interp* tcl_interp);
 
 void deleteMacroPlacer(mpl::MacroPlacer* macro_placer);
 

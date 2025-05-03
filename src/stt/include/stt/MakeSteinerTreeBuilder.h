@@ -3,17 +3,28 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace stt {
 class SteinerTreeBuilder;
 }
 
-namespace ord {
+namespace odb {
+class dbDatabase;
+}
 
-class OpenRoad;
+namespace utl {
+class Logger;
+}
+
+namespace ord {
 
 stt::SteinerTreeBuilder* makeSteinerTreeBuilder();
 
-void initSteinerTreeBuilder(OpenRoad* openroad);
+void initSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder,
+                            odb::dbDatabase* db,
+                            utl::Logger* logger,
+                            Tcl_Interp* tcl_interp);
 
 void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder);
 

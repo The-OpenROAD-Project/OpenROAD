@@ -6,7 +6,6 @@
 #include <tcl.h>
 
 #include "mpl/rtl_mp.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 namespace mpl {
@@ -24,16 +23,17 @@ mpl::MacroPlacer* makeMacroPlacer()
   return new mpl::MacroPlacer;
 }
 
-void initMacroPlacer(OpenRoad* openroad)
+void initMacroPlacer(mpl::MacroPlacer* macro_placer,
+                     sta::dbNetwork* network,
+                     odb::dbDatabase* db,
+                     sta::dbSta* sta,
+                     utl::Logger* logger,
+                     par::PartitionMgr* tritonpart,
+                     Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Mpl_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, mpl::mpl_tcl_inits);
-  openroad->getMacroPlacer()->init(openroad->getDbNetwork(),
-                                   openroad->getDb(),
-                                   openroad->getSta(),
-                                   openroad->getLogger(),
-                                   openroad->getPartitionMgr());
+  macro_placer->init(network, db, sta, logger, tritonpart);
 }
 
 void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)

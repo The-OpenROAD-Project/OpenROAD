@@ -6,7 +6,6 @@
 #include <tcl.h>
 
 #include "dst/Distributed.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 namespace dst {
@@ -30,13 +29,14 @@ void deleteDistributed(dst::Distributed* dstr)
   delete dstr;
 }
 
-void initDistributed(OpenRoad* openroad)
+void initDistributed(dst::Distributed* distributer,
+                     utl::Logger* logger,
+                     Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
-  auto tcl_interp = openroad->tclInterp();
   Dst_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, dst::dst_tcl_inits);
-  openroad->getDistributed()->init(openroad->getLogger());
+  distributer->init(logger);
 }
 
 }  // namespace ord

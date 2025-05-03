@@ -3,18 +3,39 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace drt {
 class TritonRoute;
 }
 
-namespace ord {
+namespace odb {
+class dbDatabase;
+}
 
-class OpenRoad;
+namespace utl {
+class Logger;
+}
+
+namespace dst {
+class Distributed;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
+}
+
+namespace ord {
 
 drt::TritonRoute* makeTritonRoute();
 
 void deleteTritonRoute(drt::TritonRoute* router);
 
-void initTritonRoute(OpenRoad* openroad);
+void initTritonRoute(drt::TritonRoute* router,
+                     odb::dbDatabase* db,
+                     utl::Logger* logger,
+                     dst::Distributed* dist,
+                     stt::SteinerTreeBuilder* stt_builder,
+                     Tcl_Interp* tcl_interp);
 
 }  // namespace ord

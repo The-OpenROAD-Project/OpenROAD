@@ -3,7 +3,6 @@
 
 #include "ppl/MakeIoplacer.h"
 
-#include "ord/OpenRoad.hh"
 #include "ppl/IOPlacer.h"
 #include "utl/decode.h"
 
@@ -28,14 +27,16 @@ void deleteIoplacer(ppl::IOPlacer* ioplacer)
   delete ioplacer;
 }
 
-void initIoplacer(OpenRoad* openroad)
+void initIoplacer(ppl::IOPlacer* placer,
+                  odb::dbDatabase* db,
+                  utl::Logger* logger,
+                  Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Ppl_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, ppl::ppl_tcl_inits);
 
-  openroad->getIOPlacer()->init(openroad->getDb(), openroad->getLogger());
+  placer->init(db, logger);
 }
 
 }  // namespace ord

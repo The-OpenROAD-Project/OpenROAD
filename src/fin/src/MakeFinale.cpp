@@ -6,7 +6,6 @@
 #include <tcl.h>
 
 #include "fin/Finale.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 namespace fin {
@@ -30,14 +29,16 @@ void deleteFinale(fin::Finale* finale)
   delete finale;
 }
 
-void initFinale(OpenRoad* openroad)
+void initFinale(fin::Finale* finale,
+                odb::dbDatabase* db,
+                utl::Logger* logger,
+                Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Fin_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, fin::fin_tcl_inits);
-  openroad->getFinale()->init(openroad->getDb(), openroad->getLogger());
+  finale->init(db, logger);
 }
 
 }  // namespace ord

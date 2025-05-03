@@ -7,12 +7,23 @@ namespace sta {
 class dbSta;
 }
 
-namespace ord {
+namespace utl {
+class Logger;
+}
 
-class OpenRoad;
+namespace odb {
+class dbDatabase;
+}
+
+struct Tcl_Interp;
+
+namespace ord {
 
 sta::dbSta* makeDbSta();
 void deleteDbSta(sta::dbSta* sta);
-void initDbSta(OpenRoad* openroad);
+void initDbSta(sta::dbSta* sta,
+               utl::Logger* logger,
+               Tcl_Interp* tcl_interp,
+               odb::dbDatabase* db);
 
 }  // namespace ord

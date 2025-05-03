@@ -7,7 +7,6 @@
 
 #include "domain.h"
 #include "grid.h"
-#include "ord/OpenRoad.hh"
 #include "pdn/PdnGen.hh"
 #include "power_cells.h"
 #include "renderer.h"
@@ -23,15 +22,17 @@ extern int Pdn_Init(Tcl_Interp* interp);
 
 namespace ord {
 
-void initPdnGen(OpenRoad* openroad)
+void initPdnGen(pdn::PdnGen* pdngen,
+                odb::dbDatabase* db,
+                utl::Logger* logger,
+                Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* interp = openroad->tclInterp();
   // Define swig TCL commands.
-  pdn::Pdn_Init(interp);
+  pdn::Pdn_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  utl::evalTclInit(interp, pdn::pdn_tcl_inits);
+  utl::evalTclInit(tcl_interp, pdn::pdn_tcl_inits);
 
-  openroad->getPdnGen()->init(openroad->getDb(), openroad->getLogger());
+  pdngen->init(db, logger);
 }
 
 pdn::PdnGen* makePdnGen()

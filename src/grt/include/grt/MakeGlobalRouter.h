@@ -3,17 +3,53 @@
 
 #pragma once
 
+#include <tcl.h>
+
 namespace grt {
 class GlobalRouter;
 }
 
-namespace ord {
+namespace odb {
+class dbDatabase;
+}
 
-class OpenRoad;
+namespace sta {
+class dbSta;
+}
+
+namespace rsz {
+class Resizer;
+}
+
+namespace ant {
+class AntennaChecker;
+}
+
+namespace dpl {
+class Opendp;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
+}
+
+namespace utl {
+class Logger;
+}
+
+namespace ord {
 
 grt::GlobalRouter* makeGlobalRouter();
 
-void initGlobalRouter(OpenRoad* openroad);
+void initGlobalRouter(grt::GlobalRouter* grt,
+                      odb::dbDatabase* db,
+                      sta::dbSta* sta,
+                      rsz::Resizer* resizer,
+                      ant::AntennaChecker* antenna_checker,
+                      dpl::Opendp* dpl,
+                      stt::SteinerTreeBuilder* stt_builder,
+                      utl::Logger* logger,
+                      Tcl_Interp* tcl_interp);
 
 void deleteGlobalRouter(grt::GlobalRouter* global_router);
 
