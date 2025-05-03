@@ -29,6 +29,7 @@
 #include "FastRoute.h"
 #include "Grid.h"
 #include "MakeWireParasitics.h"
+#include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
 #include "db_sta/SpefWriter.hh"
@@ -4768,18 +4769,7 @@ std::vector<PinGridLocation> GlobalRouter::getPinGridPositions(
   return pin_locs;
 }
 
-PinGridLocation::PinGridLocation(odb::dbITerm* iterm,
-                                 odb::dbBTerm* bterm,
-                                 odb::Point pt)
-    : iterm_(iterm), bterm_(bterm), pt_(pt)
-{
-}
-
 ////////////////////////////////////////////////////////////////
-
-RoutePt::RoutePt(int x, int y, int layer) : x_(x), y_(y), layer_(layer)
-{
-}
 
 bool operator<(const RoutePt& p1, const RoutePt& p2)
 {
