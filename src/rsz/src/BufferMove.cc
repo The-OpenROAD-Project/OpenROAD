@@ -97,5 +97,5 @@ void BufferMove::debugCheckMultipleBuffers(Path* path, PathExpanded* expanded)
 
 
 
-}
+}  // namespace rsz
 

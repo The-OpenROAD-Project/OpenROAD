@@ -19,9 +19,9 @@ public:
 
     bool doMove(const Path* drvr_path,
                 LibertyCell* drvr_cell,
-                const int drvr_index,
+                int drvr_index,
                 PathExpanded* expanded,
-                const float setup_slack_margin);
+                float setup_slack_margin);
 
     const char * name() const override { return "UnbufferMove"; }
 
@@ -37,6 +37,6 @@ private:
 
 };
 
-}
+}  // namespace rsz
 
 

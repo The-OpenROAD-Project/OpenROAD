@@ -21,7 +21,7 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-               const int drvr_index,
+               int drvr_index,
                PathExpanded* expanded) override;
 
     const char * name() const override { return "SwapPinsMove"; }
@@ -53,6 +53,6 @@ private:
 
 };
 
-}
+}  // namespace rsz
 
 

@@ -240,4 +240,4 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   return(true);
 }
 
-}
+}  // namespace rsz

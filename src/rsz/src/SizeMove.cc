@@ -203,5 +203,5 @@ SizeMove::replaceCell(Instance* inst,
 }
 
 // namespace rsz
-}
+}  // namespace rsz
 

@@ -15,8 +15,8 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-                const int drvr_index,
-                const Slack drvr_slack,
+                int drvr_index,
+                Slack drvr_slack,
                 PathExpanded* expanded) override;
 
     const char * name() const override { return "SplitLoadMove"; }
@@ -26,6 +26,6 @@ private:
 
 };
 
-}
+}  // namespace rsz
 
 

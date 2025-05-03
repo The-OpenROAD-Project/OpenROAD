@@ -121,7 +121,7 @@ struct SlackEstimatorParams
 class BaseMove : public sta::dbStaState {
     public:
         BaseMove(Resizer* resizer);
-        virtual ~BaseMove() = default;
+        ~BaseMove() override = default;
 
         virtual const char * name() const { return "BaseMove"; }
 
@@ -254,5 +254,5 @@ class BaseMove : public sta::dbStaState {
 
 };
 
-}
+}  // namespace rsz
 

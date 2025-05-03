@@ -19,7 +19,7 @@ public:
     using BaseMove::BaseMove;
 
     bool doMove(const Path* drvr_path,
-               const int drvr_index,
+               int drvr_index,
                PathExpanded* expanded) override;
 
     const char * name() const override { return "SizeMove"; }
@@ -27,8 +27,8 @@ public:
 private:
     LibertyCell* upsizeCell(LibertyPort* in_port,
                          LibertyPort* drvr_port,
-                         const float load_cap,
-                         const float prev_drive,
+                         float load_cap,
+                         float prev_drive,
                          const DcalcAnalysisPt* dcalc_ap);
     bool replaceCell(Instance* inst,
                      const LibertyCell* replacement);
@@ -36,6 +36,6 @@ private:
 
 };
 
-}
+}  // namespace rsz
 
 

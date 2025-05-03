@@ -32,8 +32,8 @@ class BufferMove : public BaseMove
 public:
     using BaseMove::BaseMove;
 
-    virtual bool doMove(const Path* drvr_path,
-                        const int drvr_index,
+    bool doMove(const Path* drvr_path,
+                        int drvr_index,
                         PathExpanded* expanded) override;
 
     const char * name() const override { return "BufferMove"; }
@@ -78,6 +78,6 @@ private:
 
 };
 
-}
+}  // namespace rsz
 
 

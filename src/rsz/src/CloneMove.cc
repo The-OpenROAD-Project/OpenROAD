@@ -266,4 +266,4 @@ bool CloneMove::doMove(const Path* drvr_path,
   return true;
 }
 
-}
+}  // namespace rsz

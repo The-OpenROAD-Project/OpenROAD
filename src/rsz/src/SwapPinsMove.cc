@@ -417,4 +417,4 @@ void SwapPinsMove::resetInputSlews()
 }
 
 
-}
+}  // namespace rsz
