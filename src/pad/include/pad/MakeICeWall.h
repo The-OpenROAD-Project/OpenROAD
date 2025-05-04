@@ -15,7 +15,7 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace pad {
 
 void initICeWall(pad::ICeWall* icewall,
                  odb::dbDatabase* db,
@@ -26,4 +26,4 @@ pad::ICeWall* makeICeWall();
 
 void deleteICeWall(pad::ICeWall* icewall);
 
-}  // namespace ord
+}  // namespace pad

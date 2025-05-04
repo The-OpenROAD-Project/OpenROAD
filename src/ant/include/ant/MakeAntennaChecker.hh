@@ -5,11 +5,6 @@
 
 #include <tcl.h>
 
-namespace ant {
-class AntennaChecker;
-class GlobalRouteSource;
-}  // namespace ant
-
 namespace odb {
 class dbDatabase;
 }
@@ -18,9 +13,12 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace ant {
 
-ant::AntennaChecker* makeAntennaChecker();
+class AntennaChecker;
+class GlobalRouteSource;
+
+AntennaChecker* makeAntennaChecker();
 
 void deleteAntennaChecker(ant::AntennaChecker* antennachecker);
 
@@ -30,4 +28,4 @@ void initAntennaChecker(ant::AntennaChecker* antenna_checker,
                         utl::Logger* logger,
                         Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace ant

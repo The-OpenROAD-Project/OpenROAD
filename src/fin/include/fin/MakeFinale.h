@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace fin {
-class Finale;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace fin {
+
+class Finale;
 
 fin::Finale* makeFinale();
 void initFinale(fin::Finale* finale,
@@ -26,4 +24,4 @@ void initFinale(fin::Finale* finale,
                 Tcl_Interp* tcl_interp);
 void deleteFinale(fin::Finale* finale);
 
-}  // namespace ord
+}  // namespace fin

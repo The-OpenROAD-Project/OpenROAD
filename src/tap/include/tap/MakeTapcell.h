@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace tap {
-class Tapcell;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,8 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace tap {
+class Tapcell;
 
 tap::Tapcell* makeTapcell();
 
@@ -28,4 +25,4 @@ void initTapcell(tap::Tapcell* tapcell,
                  utl::Logger* logger,
                  Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace tap

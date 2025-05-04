@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace grt {
-class GlobalRouter;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -37,7 +33,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace grt {
+
+class GlobalRouter;
 
 grt::GlobalRouter* makeGlobalRouter();
 
@@ -53,4 +51,4 @@ void initGlobalRouter(grt::GlobalRouter* grt,
 
 void deleteGlobalRouter(grt::GlobalRouter* global_router);
 
-}  // namespace ord
+}  // namespace grt

@@ -7,16 +7,14 @@
 #include "grt/GlobalRouter.h"
 #include "utl/decode.h"
 
-namespace ant {
-// Tcl files encoded into strings.
-extern const char* ant_tcl_inits[];
-}  // namespace ant
-
 extern "C" {
 extern int Ant_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace ant {
+
+// Tcl files encoded into strings.
+extern const char* ant_tcl_inits[];
 
 ant::AntennaChecker* makeAntennaChecker()
 {
@@ -39,4 +37,4 @@ void initAntennaChecker(ant::AntennaChecker* antenna_checker,
   antenna_checker->init(db, global_route_source, logger);
 }
 
-}  // namespace ord
+}  // namespace ant

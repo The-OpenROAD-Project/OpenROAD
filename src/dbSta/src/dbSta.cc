@@ -48,17 +48,12 @@
 
 ////////////////////////////////////////////////////////////////
 
-namespace ord {
-
-using sta::dbSta;
+namespace sta {
 
 dbSta* makeDbSta()
 {
   return new dbSta;
 }
-}  // namespace ord
-
-namespace sta {
 
 namespace {
 // Holds the usage information of a specific cell which includes (i) name of

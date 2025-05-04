@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace par {
-class PartitionMgr;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -25,7 +21,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace par {
+
+class PartitionMgr;
 
 par::PartitionMgr* makePartitionMgr();
 
@@ -38,4 +36,4 @@ void initPartitionMgr(par::PartitionMgr* partitioner,
 
 void deletePartitionMgr(par::PartitionMgr* partitionmgr);
 
-}  // namespace ord
+}  // namespace par

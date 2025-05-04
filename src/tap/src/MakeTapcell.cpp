@@ -6,16 +6,13 @@
 #include "tap/tapcell.h"
 #include "utl/decode.h"
 
-namespace tap {
-// Tcl files encoded into strings.
-extern const char* tap_tcl_inits[];
-}  // namespace tap
-
 extern "C" {
 extern int Tap_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace tap {
+// Tcl files encoded into strings.
+extern const char* tap_tcl_inits[];
 
 tap::Tapcell* makeTapcell()
 {
@@ -38,4 +35,4 @@ void initTapcell(tap::Tapcell* tapcell,
   tapcell->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace tap

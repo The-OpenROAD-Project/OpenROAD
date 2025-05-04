@@ -8,16 +8,14 @@
 #include "dpl/Opendp.h"
 #include "utl/decode.h"
 
-namespace dpl {
-// Tcl files encoded into strings.
-extern const char* dpl_tcl_inits[];
-}  // namespace dpl
-
 extern "C" {
 extern int Dpl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace dpl {
+
+// Tcl files encoded into strings.
+extern const char* dpl_tcl_inits[];
 
 dpl::Opendp* makeOpendp()
 {
@@ -41,4 +39,4 @@ void initOpendp(dpl::Opendp* dpl,
   dpl->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace dpl

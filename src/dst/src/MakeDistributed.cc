@@ -8,16 +8,14 @@
 #include "dst/Distributed.h"
 #include "utl/decode.h"
 
-namespace dst {
-// Tcl files encoded into strings.
-extern const char* dst_tcl_inits[];
-}  // namespace dst
-
 extern "C" {
 extern int Dst_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace dst {
+
+// Tcl files encoded into strings.
+extern const char* dst_tcl_inits[];
 
 dst::Distributed* makeDistributed()
 {
@@ -39,4 +37,4 @@ void initDistributed(dst::Distributed* distributer,
   distributer->init(logger);
 }
 
-}  // namespace ord
+}  // namespace dst

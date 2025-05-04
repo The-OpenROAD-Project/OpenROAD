@@ -157,29 +157,29 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
 
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
-  logger_ = makeLogger(log_filename, metrics_filename);
+  logger_ = utl::makeLogger(log_filename, metrics_filename);
   db_->setLogger(logger_);
-  sta_ = makeDbSta();
+  sta_ = sta::makeDbSta();
   verilog_network_ = makeDbVerilogNetwork();
-  ioPlacer_ = makeIoplacer();
-  resizer_ = makeResizer();
-  opendp_ = makeOpendp();
-  finale_ = makeFinale();
-  global_router_ = makeGlobalRouter();
-  restructure_ = makeRestructure();
-  tritonCts_ = makeTritonCts();
-  tapcell_ = makeTapcell();
-  macro_placer_ = makeMacroPlacer();
-  extractor_ = makeOpenRCX();
-  detailed_router_ = makeTritonRoute();
-  replace_ = makeReplace();
-  pdnsim_ = makePDNSim();
-  antenna_checker_ = makeAntennaChecker();
-  partitionMgr_ = makePartitionMgr();
-  pdngen_ = makePdnGen();
-  icewall_ = makeICeWall();
-  distributer_ = makeDistributed();
-  stt_builder_ = makeSteinerTreeBuilder();
+  ioPlacer_ = ppl::makeIoplacer();
+  resizer_ = rsz::makeResizer();
+  opendp_ = dpl::makeOpendp();
+  finale_ = fin::makeFinale();
+  global_router_ = grt::makeGlobalRouter();
+  restructure_ = rmp::makeRestructure();
+  tritonCts_ = cts::makeTritonCts();
+  tapcell_ = tap::makeTapcell();
+  macro_placer_ = mpl::makeMacroPlacer();
+  extractor_ = rcx::makeOpenRCX();
+  detailed_router_ = drt::makeTritonRoute();
+  replace_ = gpl::makeReplace();
+  pdnsim_ = psm::makePDNSim();
+  antenna_checker_ = ant::makeAntennaChecker();
+  partitionMgr_ = par::makePartitionMgr();
+  pdngen_ = pdn::makePdnGen();
+  icewall_ = pad::makeICeWall();
+  distributer_ = dst::makeDistributed();
+  stt_builder_ = stt::makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
 
   // Init components.
@@ -189,10 +189,10 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
 
   initLogger(logger_, tcl_interp);
   // GUI first so we can register our sink with the logger
-  initGui(tcl_interp, db_, sta_, logger_);
-  initOdb(tcl_interp);
-  initUpf(tcl_interp);
-  initInitFloorplan(tcl_interp);
+  gui::initGui(tcl_interp, db_, sta_, logger_);
+  odb::initOdb(tcl_interp);
+  upf::initUpf(tcl_interp);
+  ifp::initInitFloorplan(tcl_interp);
   initDbSta(sta_, logger_, tcl_interp, db_);
   initResizer(resizer_,
               tcl_interp,

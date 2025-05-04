@@ -23,9 +23,7 @@ Ext::Ext()
   _ext = new extMain();
 }
 
-void Ext::init(odb::dbDatabase* db,
-               Logger* logger,
-               const char* spef_version)
+void Ext::init(odb::dbDatabase* db, Logger* logger, const char* spef_version)
 {
   _db = db;
   logger_ = logger;

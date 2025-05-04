@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace drt {
-class TritonRoute;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -25,7 +21,9 @@ namespace stt {
 class SteinerTreeBuilder;
 }
 
-namespace ord {
+namespace drt {
+
+class TritonRoute;
 
 drt::TritonRoute* makeTritonRoute();
 
@@ -38,4 +36,4 @@ void initTritonRoute(drt::TritonRoute* router,
                      stt::SteinerTreeBuilder* stt_builder,
                      Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace drt

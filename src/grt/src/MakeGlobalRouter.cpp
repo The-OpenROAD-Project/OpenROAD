@@ -11,16 +11,14 @@
 #include "heatMapRudy.h"
 #include "utl/decode.h"
 
-namespace grt {
-// Tcl files encoded into strings.
-extern const char* grt_tcl_inits[];
-}  // namespace grt
-
 extern "C" {
 extern int Grt_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace grt {
+
+// Tcl files encoded into strings.
+extern const char* grt_tcl_inits[];
 
 grt::GlobalRouter* makeGlobalRouter()
 {
@@ -56,4 +54,4 @@ void initGlobalRouter(grt::GlobalRouter* grt,
             std::make_unique<grt::RUDYDataSource>(logger, grt, db));
 }
 
-}  // namespace ord
+}  // namespace grt

@@ -3,9 +3,7 @@
 
 #pragma once
 
-namespace sta {
-class dbSta;
-}
+#include <tcl.h>
 
 namespace utl {
 class Logger;
@@ -15,9 +13,9 @@ namespace odb {
 class dbDatabase;
 }
 
-struct Tcl_Interp;
+namespace sta {
 
-namespace ord {
+class dbSta;
 
 sta::dbSta* makeDbSta();
 void deleteDbSta(sta::dbSta* sta);
@@ -26,4 +24,4 @@ void initDbSta(sta::dbSta* sta,
                Tcl_Interp* tcl_interp,
                odb::dbDatabase* db);
 
-}  // namespace ord
+}  // namespace sta

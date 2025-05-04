@@ -13,10 +13,8 @@ extern int Pad_Init(Tcl_Interp* interp);
 }
 
 namespace pad {
-extern const char* pad_tcl_inits[];
-}  // namespace pad
 
-namespace ord {
+extern const char* pad_tcl_inits[];
 
 pad::ICeWall* makeICeWall()
 {
@@ -41,4 +39,4 @@ void initICeWall(pad::ICeWall* icewall,
   icewall->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace pad

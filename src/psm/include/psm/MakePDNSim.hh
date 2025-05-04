@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace psm {
-class PDNSim;
-}
-
 namespace utl {
 class Logger;
 }
@@ -29,7 +25,9 @@ namespace dpl {
 class Opendp;
 }
 
-namespace ord {
+namespace psm {
+
+class PDNSim;
 
 psm::PDNSim* makePDNSim();
 
@@ -43,4 +41,4 @@ void initPDNSim(psm::PDNSim* pdnsim,
 
 void deletePDNSim(psm::PDNSim* pdnsim);
 
-}  // namespace ord
+}  // namespace psm

@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace ppl {
-class IOPlacer;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace ppl {
+
+class IOPlacer;
 
 ppl::IOPlacer* makeIoplacer();
 
@@ -28,4 +26,4 @@ void initIoplacer(ppl::IOPlacer* placer,
 
 void deleteIoplacer(ppl::IOPlacer* ioplacer);
 
-}  // namespace ord
+}  // namespace ppl

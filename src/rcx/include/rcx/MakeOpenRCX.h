@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace rcx {
-class Ext;
-}  // namespace rcx
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace rcx {
+
+class Ext;
 
 rcx::Ext* makeOpenRCX();
 
@@ -29,4 +27,4 @@ void initOpenRCX(rcx::Ext* extractor,
                  const char* spef_version,
                  Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace rcx

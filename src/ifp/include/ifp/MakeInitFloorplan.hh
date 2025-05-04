@@ -5,9 +5,9 @@
 
 #include <tcl.h>
 
-namespace ord {
+namespace ifp {
 
 // No constructor or destructor required.
 void initInitFloorplan(Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace ifp

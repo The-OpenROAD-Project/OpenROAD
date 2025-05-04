@@ -1631,10 +1631,6 @@ std::string Descriptor::Property::toString(const std::any& value)
 // Tcl files encoded into strings.
 extern const char* gui_tcl_inits[];
 
-}  // namespace gui
-
-namespace ord {
-
 extern "C" {
 extern int Gui_Init(Tcl_Interp* interp);
 }
@@ -1653,4 +1649,4 @@ void initGui(Tcl_Interp* interp,
   gui->init(db, sta, logger);
 }
 
-}  // namespace ord
+}  // namespace gui

@@ -8,15 +8,13 @@
 #include "psm/pdnsim.h"
 #include "utl/decode.h"
 
-namespace psm {
-extern const char* psm_tcl_inits[];
-}
-
 extern "C" {
 extern int Psm_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace psm {
+
+extern const char* psm_tcl_inits[];
 
 psm::PDNSim* makePDNSim()
 {
@@ -41,4 +39,4 @@ void deletePDNSim(psm::PDNSim* pdnsim)
   delete pdnsim;
 }
 
-}  // namespace ord
+}  // namespace psm

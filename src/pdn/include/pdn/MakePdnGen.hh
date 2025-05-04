@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace pdn {
-class PdnGen;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace pdn {
+
+class PdnGen;
 
 void initPdnGen(pdn::PdnGen* pdngen,
                 odb::dbDatabase* db,
@@ -28,4 +26,4 @@ pdn::PdnGen* makePdnGen();
 
 void deletePdnGen(pdn::PdnGen* pdngen);
 
-}  // namespace ord
+}  // namespace pdn

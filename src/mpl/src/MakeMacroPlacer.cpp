@@ -8,15 +8,13 @@
 #include "mpl/rtl_mp.h"
 #include "utl/decode.h"
 
-namespace mpl {
-extern const char* mpl_tcl_inits[];
-}
-
 extern "C" {
 extern int Mpl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace mpl {
+
+extern const char* mpl_tcl_inits[];
 
 mpl::MacroPlacer* makeMacroPlacer()
 {
@@ -41,4 +39,4 @@ void deleteMacroPlacer(mpl::MacroPlacer* macro_placer)
   delete macro_placer;
 }
 
-}  // namespace ord
+}  // namespace mpl

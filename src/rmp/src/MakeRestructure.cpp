@@ -7,15 +7,13 @@
 #include "rmp/Restructure.h"
 #include "utl/decode.h"
 
-namespace rmp {
-extern const char* rmp_tcl_inits[];
-}
-
 extern "C" {
 extern int Rmp_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace rmp {
+
+extern const char* rmp_tcl_inits[];
 
 rmp::Restructure* makeRestructure()
 {
@@ -40,4 +38,4 @@ void deleteRestructure(rmp::Restructure* restructure)
   delete restructure;
 }
 
-}  // namespace ord
+}  // namespace rmp

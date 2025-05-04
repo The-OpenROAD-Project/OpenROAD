@@ -13,16 +13,14 @@
 #include "triton_route/TritonRoute.h"
 #include "utl/decode.h"
 
-namespace drt {
-// Tcl files encoded into strings.
-extern const char* drt_tcl_inits[];
-}  // namespace drt
-
 extern "C" {
 extern int Drt_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace drt {
+
+// Tcl files encoded into strings.
+extern const char* drt_tcl_inits[];
 
 drt::TritonRoute* makeTritonRoute()
 {
@@ -51,4 +49,4 @@ void initTritonRoute(drt::TritonRoute* router,
   router->init(db, logger, dist, stt_builder, std::move(graphics_factory));
 }
 
-}  // namespace ord
+}  // namespace drt

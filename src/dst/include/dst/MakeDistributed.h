@@ -5,15 +5,13 @@
 
 #include <tcl.h>
 
-namespace dst {
-class Distributed;
-}
-
 namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace dst {
+
+class Distributed;
 
 dst::Distributed* makeDistributed();
 
@@ -23,4 +21,4 @@ void initDistributed(dst::Distributed* distributer,
                      utl::Logger* logger,
                      Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace dst

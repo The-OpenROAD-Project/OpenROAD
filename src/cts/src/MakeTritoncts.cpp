@@ -8,16 +8,13 @@
 #include "odb/db.h"
 #include "utl/decode.h"
 
-namespace cts {
-// Tcl files encoded into strings.
-extern const char* cts_tcl_inits[];
-}  // namespace cts
-
 extern "C" {
 extern int Cts_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace cts {
+
+extern const char* cts_tcl_inits[];
 
 cts::TritonCTS* makeTritonCts()
 {
@@ -44,4 +41,4 @@ void deleteTritonCts(cts::TritonCTS* tritoncts)
   delete tritoncts;
 }
 
-}  // namespace ord
+}  // namespace cts

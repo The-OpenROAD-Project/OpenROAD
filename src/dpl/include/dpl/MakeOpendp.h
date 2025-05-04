@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace dpl {
-class Opendp;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace dpl {
+
+class Opendp;
 
 dpl::Opendp* makeOpendp();
 void initOpendp(dpl::Opendp* dpl,
@@ -26,4 +24,4 @@ void initOpendp(dpl::Opendp* dpl,
                 Tcl_Interp* tcl_interp);
 void deleteOpendp(dpl::Opendp* opendp);
 
-}  // namespace ord
+}  // namespace dpl

@@ -17,9 +17,6 @@ extern int Rsz_Init(Tcl_Interp* interp);
 
 namespace rsz {
 extern const char* rsz_tcl_inits[];
-}
-
-namespace ord {
 
 rsz::Resizer* makeResizer()
 {
@@ -57,4 +54,4 @@ void initResizer(rsz::Resizer* resizer,
   utl::evalTclInit(tcl_interp, rsz::rsz_tcl_inits);
 }
 
-}  // namespace ord
+}  // namespace rsz

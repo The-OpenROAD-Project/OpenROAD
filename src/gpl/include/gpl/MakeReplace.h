@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace gpl {
-class Replace;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -25,7 +21,9 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace gpl {
+
+class Replace;
 
 gpl::Replace* makeReplace();
 
@@ -39,4 +37,4 @@ void initReplace(gpl::Replace* replace,
 
 void deleteReplace(gpl::Replace* replace);
 
-}  // namespace ord
+}  // namespace gpl

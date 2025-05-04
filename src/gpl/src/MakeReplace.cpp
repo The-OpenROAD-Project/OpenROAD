@@ -8,15 +8,13 @@
 #include "gpl/Replace.h"
 #include "utl/decode.h"
 
-namespace gpl {
-extern const char* gpl_tcl_inits[];
-}
-
 extern "C" {
 extern int Gpl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace gpl {
+
+extern const char* gpl_tcl_inits[];
 
 gpl::Replace* makeReplace()
 {
@@ -41,4 +39,4 @@ void deleteReplace(gpl::Replace* replace)
   delete replace;
 }
 
-}  // namespace ord
+}  // namespace gpl

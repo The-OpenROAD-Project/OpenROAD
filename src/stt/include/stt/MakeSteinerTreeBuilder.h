@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace stt {
-class SteinerTreeBuilder;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -17,7 +13,8 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace stt {
+class SteinerTreeBuilder;
 
 stt::SteinerTreeBuilder* makeSteinerTreeBuilder();
 
@@ -28,4 +25,4 @@ void initSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder,
 
 void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder);
 
-}  // namespace ord
+}  // namespace stt

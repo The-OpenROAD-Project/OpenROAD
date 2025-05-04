@@ -7,25 +7,20 @@
 
 #include "utl/decode.h"
 
-namespace sta {
-
 extern "C" {
 extern int Ifp_Init(Tcl_Interp* interp);
 }
-}  // namespace sta
 
 namespace ifp {
-extern const char* ifp_tcl_inits[];
-}
 
-namespace ord {
+extern const char* ifp_tcl_inits[];
 
 void initInitFloorplan(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
-  sta::Ifp_Init(tcl_interp);
+  Ifp_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, ifp::ifp_tcl_inits);
 }
 
-}  // namespace ord
+}  // namespace ifp

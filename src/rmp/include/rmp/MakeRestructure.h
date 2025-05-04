@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace rmp {
-class Restructure;
-}
-
 namespace utl {
 class Logger;
 }
@@ -25,7 +21,9 @@ namespace rsz {
 class Resizer;
 }
 
-namespace ord {
+namespace rmp {
+
+class Restructure;
 
 rmp::Restructure* makeRestructure();
 
@@ -38,4 +36,4 @@ void initRestructure(rmp::Restructure* restructure,
 
 void deleteRestructure(rmp::Restructure* restructure);
 
-}  // namespace ord
+}  // namespace rmp

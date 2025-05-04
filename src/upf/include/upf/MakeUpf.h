@@ -5,8 +5,8 @@
 
 struct Tcl_Interp;
 
-namespace ord {
+namespace upf {
 
 void initUpf(Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace upf

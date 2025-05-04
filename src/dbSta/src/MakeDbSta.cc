@@ -17,10 +17,8 @@ extern int Dbsta_Init(Tcl_Interp* interp);
 }
 
 namespace sta {
-extern const char* dbSta_tcl_inits[];
-}
 
-namespace ord {
+extern const char* dbSta_tcl_inits[];
 
 void deleteDbSta(sta::dbSta* sta)
 {
@@ -44,4 +42,4 @@ void initDbSta(sta::dbSta* sta,
   utl::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
 }
 
-}  // namespace ord
+}  // namespace sta

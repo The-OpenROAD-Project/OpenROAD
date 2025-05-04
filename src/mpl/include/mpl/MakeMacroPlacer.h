@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace mpl {
-class MacroPlacer;
-}
-
 namespace sta {
 class dbNetwork;
 }
@@ -29,7 +25,9 @@ namespace par {
 class PartitionMgr;
 }
 
-namespace ord {
+namespace mpl {
+
+class MacroPlacer;
 
 mpl::MacroPlacer* makeMacroPlacer();
 
@@ -43,4 +41,4 @@ void initMacroPlacer(mpl::MacroPlacer* macro_placer,
 
 void deleteMacroPlacer(mpl::MacroPlacer* macro_placer);
 
-}  // namespace ord
+}  // namespace mpl

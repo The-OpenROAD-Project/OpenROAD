@@ -6,16 +6,14 @@
 #include "ppl/IOPlacer.h"
 #include "utl/decode.h"
 
-namespace ppl {
-// Tcl files encoded into strings.
-extern const char* ppl_tcl_inits[];
-}  // namespace ppl
-
 extern "C" {
 extern int Ppl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace ppl {
+
+// Tcl files encoded into strings.
+extern const char* ppl_tcl_inits[];
 
 ppl::IOPlacer* makeIoplacer()
 {
@@ -39,4 +37,4 @@ void initIoplacer(ppl::IOPlacer* placer,
   placer->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace ppl

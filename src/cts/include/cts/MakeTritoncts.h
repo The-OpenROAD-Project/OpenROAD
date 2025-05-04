@@ -5,10 +5,6 @@
 
 #include <tcl.h>
 
-namespace cts {
-class TritonCTS;
-}
-
 namespace odb {
 class dbDatabase;
 }
@@ -33,7 +29,8 @@ namespace utl {
 class Logger;
 }
 
-namespace ord {
+namespace cts {
+class TritonCTS;
 
 cts::TritonCTS* makeTritonCts();
 
@@ -48,4 +45,4 @@ void initTritonCts(cts::TritonCTS* cts,
 
 void deleteTritonCts(cts::TritonCTS* tritoncts);
 
-}  // namespace ord
+}  // namespace cts

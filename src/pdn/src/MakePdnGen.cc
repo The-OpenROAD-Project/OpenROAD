@@ -12,15 +12,13 @@
 #include "renderer.h"
 #include "utl/decode.h"
 
-namespace pdn {
-extern const char* pdn_tcl_inits[];
-
 extern "C" {
 extern int Pdn_Init(Tcl_Interp* interp);
 }
-}  // namespace pdn
 
-namespace ord {
+namespace pdn {
+
+extern const char* pdn_tcl_inits[];
 
 void initPdnGen(pdn::PdnGen* pdngen,
                 odb::dbDatabase* db,
@@ -28,7 +26,7 @@ void initPdnGen(pdn::PdnGen* pdngen,
                 Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
-  pdn::Pdn_Init(tcl_interp);
+  Pdn_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   utl::evalTclInit(tcl_interp, pdn::pdn_tcl_inits);
 
@@ -45,4 +43,4 @@ void deletePdnGen(pdn::PdnGen* pdngen)
   delete pdngen;
 }
 
-}  // namespace ord
+}  // namespace pdn

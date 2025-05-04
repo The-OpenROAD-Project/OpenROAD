@@ -8,16 +8,14 @@
 #include "fin/Finale.h"
 #include "utl/decode.h"
 
-namespace fin {
-// Tcl files encoded into strings.
-extern const char* fin_tcl_inits[];
-}  // namespace fin
-
 extern "C" {
 extern int Fin_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace fin {
+
+// Tcl files encoded into strings.
+extern const char* fin_tcl_inits[];
 
 fin::Finale* makeFinale()
 {
@@ -41,4 +39,4 @@ void initFinale(fin::Finale* finale,
   finale->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace fin

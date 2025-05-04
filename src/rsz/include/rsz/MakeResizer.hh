@@ -12,10 +12,6 @@ namespace sta {
 class dbSta;
 }
 
-namespace rsz {
-class Resizer;
-}
-
 namespace stt {
 class SteinerTreeBuilder;
 }
@@ -28,7 +24,9 @@ namespace dpl {
 class Opendp;
 }
 
-namespace ord {
+namespace rsz {
+
+class Resizer;
 
 rsz::Resizer* makeResizer();
 
@@ -43,4 +41,4 @@ void initResizer(rsz::Resizer* resizer,
                  grt::GlobalRouter* global_router,
                  dpl::Opendp* dp);
 
-}  // namespace ord
+}  // namespace rsz

@@ -6,16 +6,13 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/decode.h"
 
-namespace stt {
-// Tcl files encoded into strings.
-extern const char* stt_tcl_inits[];
-}  // namespace stt
-
 extern "C" {
 extern int Stt_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace stt {
+// Tcl files encoded into strings.
+extern const char* stt_tcl_inits[];
 
 stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
 {
@@ -38,4 +35,4 @@ void initSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder,
   stt_builder->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace stt

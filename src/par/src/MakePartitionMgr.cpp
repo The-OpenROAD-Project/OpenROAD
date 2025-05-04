@@ -6,16 +6,14 @@
 #include "par/PartitionMgr.h"
 #include "utl/decode.h"
 
-namespace par {
-// Tcl files encoded into strings.
-extern const char* par_tcl_inits[];
-}  // namespace par
-
 extern "C" {
 extern int Par_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace par {
+
+// Tcl files encoded into strings.
+extern const char* par_tcl_inits[];
 
 par::PartitionMgr* makePartitionMgr()
 {
@@ -39,4 +37,4 @@ void deletePartitionMgr(par::PartitionMgr* partitionmgr)
 {
   delete partitionmgr;
 }
-}  // namespace ord
+}  // namespace par
