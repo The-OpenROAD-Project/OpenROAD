@@ -23,6 +23,11 @@ Ext::Ext()
   _ext = new extMain();
 }
 
+Ext::~Ext()
+{
+  delete _ext;
+}
+
 void Ext::init(odb::dbDatabase* db, Logger* logger, const char* spef_version)
 {
   _db = db;
