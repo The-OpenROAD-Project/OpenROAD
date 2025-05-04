@@ -50,6 +50,11 @@ build:profile --copt -fno-omit-frame-pointer
 # TODO: document
 build --incompatible_strict_action_env
 
+# Faster builds by pruning the dependency graph. OpenROAD
+# forbids the `#include FOO` pattern in the code, which
+# is the case that will never be supported with this feature.
+build --experimental_unsupported_and_brittle_include_scanning
+
 # TODO: setup a new cache for OpenROAD
 # Read only remote cache, updated by OpenROAD team members and CI.
 #build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts

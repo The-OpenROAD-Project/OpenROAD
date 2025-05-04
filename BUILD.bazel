@@ -155,34 +155,6 @@ cc_library(
     deps = OPENROAD_LIBRARY_DEPS,
 )
 
-cc_library(
-    name = "openroad_lib",
-    srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + glob(
-        include = OPENROAD_LIBRARY_SRCS_INCLUDE,
-        allow_empty = True,
-        exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
-    ) + [
-        "src/OpenRoad.cc",
-        "src/stt/src/flt/etc/POST9.cpp",
-        "src/stt/src/flt/etc/POWV9.cpp",
-    ],
-    hdrs = glob(
-        include = OPENROAD_LIBRARY_HDRS_INCLUDE,
-        exclude = [
-            "src/utl/include/utl/Logger.h",
-            "src/utl/include/utl/CFileUtils.h",
-        ],
-    ),
-    copts = OPENROAD_COPTS,
-    defines = OPENROAD_DEFINES + [
-        "BUILD_GUI=false",
-    ],
-    features = ["-use_header_modules"],
-    includes = OPENROAD_LIBRARY_INCLUDES,
-    visibility = ["//visibility:public"],
-    deps = OPENROAD_LIBRARY_DEPS,
-)
-
 genrule(
     name = "post9",
     srcs = [
