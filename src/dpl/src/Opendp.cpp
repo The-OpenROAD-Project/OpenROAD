@@ -3,13 +3,8 @@
 
 #include "dpl/Opendp.h"
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <cfloat>
 #include <cmath>
-#include <iostream>
-#include <limits>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
