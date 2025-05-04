@@ -27,10 +27,6 @@ class ParasiticAnalysisPt;
 class Units;
 }  // namespace sta
 
-namespace ord {
-class OpenRoad;
-}
-
 namespace utl {
 class Logger;
 }

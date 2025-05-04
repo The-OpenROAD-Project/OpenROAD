@@ -15,13 +15,13 @@ class dbDatabase;
 }
 
 namespace sta {
+class dbSta;
 class NetworkReader;
-}
+}  // namespace sta
 
 namespace ord {
 
 class dbVerilogNetwork;
-class OpenRoad;
 
 using odb::dbDatabase;
 
@@ -48,9 +48,9 @@ class dbVerilogNetwork : public ConcreteNetwork
 
 dbVerilogNetwork* makeDbVerilogNetwork();
 
-void initDbVerilogNetwork(OpenRoad* openroad);
+void initDbVerilogNetwork(dbVerilogNetwork* network, sta::dbSta* sta);
 
-void setDbNetworkLinkFunc(ord::OpenRoad* openroad,
+void setDbNetworkLinkFunc(dbVerilogNetwork* network,
                           VerilogReader* verilog_reader);
 
 void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network);
