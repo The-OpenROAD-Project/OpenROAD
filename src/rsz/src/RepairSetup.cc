@@ -59,6 +59,7 @@ RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
 }
 
+
 void RepairSetup::init()
 {
   logger_ = resizer_->logger_;
@@ -66,6 +67,7 @@ void RepairSetup::init()
   db_network_ = resizer_->db_network_;
 
   initial_design_area_ = resizer_->computeDesignArea();
+
 }
 
 bool RepairSetup::repairSetup(const float setup_slack_margin,
@@ -588,6 +590,14 @@ bool RepairSetup::repairPath(Path* path,
                  drvr_index);
 
       for(int i = 0; i < move_sequence.size(); i++) {
+        debugPrint(logger_,
+                     RSZ,
+                     "moves",
+                     2,
+                     "Considering {} for {}",
+                     move_sequence[i]->name(),
+                     network_->pathName(drvr_pin));
+
         if (move_sequence[i]->doMove(drvr_path, drvr_index, path_slack, &expanded, setup_slack_margin)) {
             if (move_sequence[i]==resizer_->unbuffer_move) {
               // Only allow one unbuffer move per pass to
@@ -598,6 +608,17 @@ bool RepairSetup::repairPath(Path* path,
             }
             // Move on to the next gate
             break;
+        } else {
+            // If the move was not successful, then we need to
+            // check if we can do the next move in the sequence.
+            // This is a bit of a hack, but it works for now.
+            debugPrint(logger_,
+                         RSZ,
+                         "moves",
+                         2,
+                         "Move {} failed for {}",
+                         move_sequence[i]->name(),
+                         network_->pathName(drvr_pin));
         }
       }
     }
@@ -647,11 +668,11 @@ void RepairSetup::printProgress(const int iteration,
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
-        resizer_->unbuffer_move->committedMoves(),
-        resizer_->size_move->committedMoves(),
-        resizer_->buffer_move->committedMoves() + resizer_->split_load_move->committedMoves(), 
-        resizer_->clone_move->committedMoves(),
-        resizer_->swap_pins_move->committedMoves(),
+        resizer_->unbuffer_move->countMoves(),
+        resizer_->size_move->countMoves(),
+        resizer_->buffer_move->countMoves() + resizer_->split_load_move->countMoves(), 
+        resizer_->clone_move->countMoves(),
+        resizer_->swap_pins_move->countMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),
