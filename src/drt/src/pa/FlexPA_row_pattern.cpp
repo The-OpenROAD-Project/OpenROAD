@@ -145,7 +145,6 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
             result;
         std::unique_ptr<PinAccessJobDescription> uDesc
             = std::make_unique<PinAccessJobDescription>();
-        uDesc->setPath(path);
         uDesc->setType(PinAccessJobDescription::INST_ROWS);
         msg.setJobDescription(std::move(uDesc));
         const bool ok
