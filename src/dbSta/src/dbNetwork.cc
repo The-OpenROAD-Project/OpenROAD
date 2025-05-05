@@ -4003,8 +4003,8 @@ to at this level of hierarchy.
 class ModNetForPin : public PinVisitor
 {
  public:
-  ModNetForPin(dbNetwork* nwk, dbModule* scope)
-      : db_network_(nwk), scope_(scope)
+  ModNetForPin(dbNetwork* nwk)
+      : db_network_(nwk)
   {
   }
 
@@ -4013,7 +4013,6 @@ class ModNetForPin : public PinVisitor
 
  private:
   dbNetwork* db_network_;
-  dbModule* scope_;
   dbModNet* modnet_{nullptr};
 };
 
@@ -4043,13 +4042,9 @@ dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
 {
   // get all modnets associated with pin at this level
   dbNet* flat_net = flatNet(drvr_pin);
-  // get the scope of the driving pin at this level.
-  Pin* ignore;
-  dbModule* scope = getNetDriverParentModule(dbToSta(flat_net), ignore, false);
-  (void) ignore;
   // got through all the pins reachable from this flat_net at this level
   // of hierarchy and return any modnet.
-  ModNetForPin mdfp_visitor(this, scope);
+  ModNetForPin mdfp_visitor(this);
   NetSet visited_nets(this);
   visitConnectedPins(dbToSta(flat_net), mdfp_visitor, visited_nets);
   return mdfp_visitor.modnet();
