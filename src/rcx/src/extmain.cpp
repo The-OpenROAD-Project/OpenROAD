@@ -109,6 +109,10 @@ extMain::extMain()
 }
 extMain::~extMain()
 {
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
+
   delete _modelTable;
 }
 
