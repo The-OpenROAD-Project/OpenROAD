@@ -1297,19 +1297,7 @@ bool FlexPA::genPinAccessCostBounded(
     }
   }
 
-  if (!EnoughAccessPoints(aps, inst_term)) {
-    return false;
-  }
-
-  const int pin_access_idx
-      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
-
-  updatePinStats(aps, inst_term);
-  // write to pa
-  for (auto& ap : aps) {
-    pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-  }
-  return true;
+  return EnoughAccessPoints(aps, inst_term);
 }
 
 template <typename T>
@@ -1401,6 +1389,8 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
+  bool enough_access_points = false;
+
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
                      frAccessPointEnum::Center,
@@ -1415,14 +1405,15 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, pin, inst_term, lower, upper)) {
-        return aps.size();
+      if (enough_access_points) {
+        break;
       }
+      enough_access_points = genPinAccessCostBounded(
+          aps, apset, pin_shapes, pin, inst_term, lower, upper);
     }
   }
 
-  if (inst_term) {
+  if (!enough_access_points && inst_term) {
     logger_->warn(
         DRT,
         88,
@@ -1431,29 +1422,23 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         inst_term->getInst()->getMaster()->getName());
   }
 
-  // inst_term aps are written back here if not early stopped
-  // IO term aps are are written back in genPinAccessCostBounded and always
-  // early stopped
   updatePinStats(aps, inst_term);
-  const int n_aps = aps.size();
-  if (n_aps == 0) {
+  if (aps.empty()) {
     if (inst_term && isStdCell(inst_term->getInst())) {
       std_cell_pin_no_ap_cnt_++;
     }
     if (inst_term && isMacroCell(inst_term->getInst())) {
       macro_cell_pin_no_ap_cnt_++;
     }
-  } else {
-    if (inst_term == nullptr) {
-      logger_->error(DRT, 254, "inst_term can not be nullptr");
-    }
-    // write to pa
-    const int pin_access_idx = inst_term->getInst()->getPinAccessIdx();
-    for (auto& ap : aps) {
-      pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
-    }
+    return 0;
   }
-  return n_aps;
+  // write to pa
+  const int pin_access_idx
+      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
+  for (auto& ap : aps) {
+    pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
+  }
+  return aps.size();
 }
 
 void FlexPA::genInstAccessPoints(frInst* unique_inst)
