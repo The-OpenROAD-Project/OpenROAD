@@ -388,7 +388,7 @@ proc global_placement_debug { args } {
   set generate_images [info exists flags(-generate_images)]
 
   gpl::set_debug_cmd $pause $update $draw_bins $initial \
-  $inst $start_iter $update_db $generate_images
+    $inst $start_iter $update_db $generate_images
 }
 
 
