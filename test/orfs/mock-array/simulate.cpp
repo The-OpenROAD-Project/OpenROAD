@@ -1,5 +1,5 @@
 // NOLINTNEXTLINE
-#include <verilated_vcd_c.h>
+#include "verilated_vcd_c.h"
 
 #include <print>
 #include <string_view>
