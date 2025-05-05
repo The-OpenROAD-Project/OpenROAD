@@ -127,6 +127,7 @@ cc_library(
         "@boost.iterator",
         "@boost.polygon",
         "@org_llvm_openmp//:openmp",
+        "@tk_tcl//:tcl",
     ],
 )
 

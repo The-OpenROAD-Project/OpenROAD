@@ -63,6 +63,7 @@ cc_library(
         "//src/utl",
         "@boost.heap",
         "@com_github_quantamhd_lemon//:lemon",
+        "@tk_tcl//:tcl",
     ],
 )
 

@@ -30,6 +30,7 @@ cc_library(
         "//:ord",
         "//src/grt:types",
         "//src/utl",
+        "@tk_tcl//:tcl",
     ],
 )
 

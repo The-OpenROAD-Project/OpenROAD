@@ -53,6 +53,7 @@ cc_library(
         "@boost.polygon",
         "@boost.unordered",
         "@com_github_quantamhd_lemon//:lemon",
+        "@tk_tcl//:tcl",
     ],
 )
 
