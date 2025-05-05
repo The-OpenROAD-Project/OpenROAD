@@ -1198,16 +1198,12 @@ bool FlexPA::EnoughAccessPoints(
   const bool is_io_pin = (inst_term == nullptr);
 
   if (is_io_pin) {
-    return (!aps.empty());
+    return !aps.empty();
   }
 
-  if (!reqs.sparse_points) {
-    reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
-  }
+  reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
 
-  if (!reqs.far_from_edge) {
-    reqs.far_from_edge = EnoughPointsFarFromEdge(aps, inst_term);
-  }
+  reqs.far_from_edge = EnoughPointsFarFromEdge(aps, inst_term);
 
   return (reqs.sparse_points && reqs.far_from_edge);
 }
