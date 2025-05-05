@@ -53,7 +53,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/stt",
         "src",
     ],
     deps = [
