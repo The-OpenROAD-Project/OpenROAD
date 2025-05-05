@@ -16,40 +16,68 @@ namespace odb {
 class tmg_rc_sh
 {
  public:
-  Rect _rect;
-  dbTechLayer* _layer;
-  dbTechVia* _tech_via;
-  dbVia* _block_via;
-  dbTechNonDefaultRule* _rule;
-  Rect _via_lower_rect;
-  Rect _via_upper_rect;
+  tmg_rc_sh(Rect rect,
+            dbTechLayer* layer,
+            dbTechVia* tech_via,
+            dbVia* block_via,
+            dbTechNonDefaultRule* rule = nullptr)
+      : _rect(rect),
+        _layer(layer),
+        _tech_via(tech_via),
+        _block_via(block_via),
+        _rule(rule)
+  {
+  }
 
- public:
   const Rect& rect() const { return _rect; }
   int xMin() const { return _rect.xMin(); }
   int xMax() const { return _rect.xMax(); }
   int yMin() const { return _rect.yMin(); }
   int yMax() const { return _rect.yMax(); }
+  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
+  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+
   bool isVia() const { return (_tech_via || _block_via); }
   dbTechVia* getTechVia() const { return _tech_via; }
   dbVia* getVia() const { return _block_via; }
   dbTechLayer* getTechLayer() const { return _layer; }
-  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
-  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+  dbTechNonDefaultRule* getRule() const { return _rule; }
+
   void setXmin(int x) { _rect.set_xlo(x); }
   void setXmax(int x) { _rect.set_xhi(x); }
   void setYmin(int y) { _rect.set_ylo(y); }
   void setYmax(int y) { _rect.set_yhi(y); }
+
+ private:
+  Rect _rect;
+  dbTechLayer* _layer{nullptr};
+  dbTechVia* _tech_via{nullptr};
+  dbVia* _block_via{nullptr};
+  dbTechNonDefaultRule* _rule{nullptr};
 };
 
 struct tmg_rc
 {
-  int _from_idx;  // index to _ptV
+  tmg_rc(const int from_idx,
+         const int to_idx,
+         const tmg_rc_sh& shape,
+         const bool is_vertical,
+         const int width,
+         const int default_ext)
+      : _from_idx(from_idx),
+        _to_idx(to_idx),
+        _shape(shape),
+        _is_vertical(is_vertical),
+        _width(width),
+        _default_ext(default_ext)
+  {
+  }
+  const int _from_idx;  // index to _ptV
   int _to_idx;
   tmg_rc_sh _shape;
-  bool _is_vertical;
-  int _width;
-  int _default_ext;
+  const bool _is_vertical;
+  const int _width;
+  const int _default_ext;
 };
 
 struct tmg_rcpt
@@ -84,7 +112,30 @@ struct tmg_rcshort
   bool _skip;
 };
 
-class tmg_conn_search;
+// This stores shapes by level through addShape.  Once all the shapes
+// have been added then searchStart/Next can be used for querying.
+// Internally a simple tree of space bisections is generated for
+// efficiency.
+//
+// The code uses an odd convention:
+// is_via = 0 ==> wire
+//        = 1 ==> via
+//        = 2 ==> pin
+class tmg_conn_search
+{
+ public:
+  tmg_conn_search();
+  ~tmg_conn_search();
+  void clear();
+  void addShape(int level, const Rect& bounds, int is_via, int id);
+  void searchStart(int level, const Rect& bounds, int is_via);
+  bool searchNext(int* id);
+
+ private:
+  class Impl;
+  std::unique_ptr<Impl> impl_;
+};
+
 class tmg_conn_graph;
 struct tmg_connect_shape
 {
@@ -123,7 +174,10 @@ class tmg_conn
   bool checkConnected();
   void checkVisited();
   tmg_rcpt* allocPt(int x, int y, dbTechLayer* layer);
-  void addRc(const dbShape& s, int from_idx, int to_idx);
+  void addRc(const dbShape& s,
+             int from_idx,
+             int to_idx,
+             dbTechNonDefaultRule* rule = nullptr);
   void addRc(int k,
              const tmg_rc_sh& s,
              int from_idx,
@@ -192,30 +246,6 @@ class tmg_conn
   int _firstSegmentAfterVia;
   utl::Logger* logger_;
   friend class tmg_conn_graph;
-};
-
-// This stores shapes by level through addShape.  Once all the shapes
-// have been added then searchStart/Next can be used for querying.
-// Internally a simple tree of space bisections is generated for
-// efficiency.
-//
-// The code uses an odd convention:
-// is_via = 0 ==> wire
-//        = 1 ==> via
-//        = 2 ==> pin
-class tmg_conn_search
-{
- public:
-  tmg_conn_search();
-  ~tmg_conn_search();
-  void clear();
-  void addShape(int level, const Rect& bounds, int is_via, int id);
-  void searchStart(int level, const Rect& bounds, int is_via);
-  bool searchNext(int* id);
-
- private:
-  class Impl;
-  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace odb

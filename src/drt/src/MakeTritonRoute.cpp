@@ -8,22 +8,19 @@
 
 #include "GraphicsFactory.h"
 #include "dr/FlexDR_graphics.h"
-#include "ord/OpenRoad.hh"
 #include "pa/FlexPA_graphics.h"
 #include "ta/FlexTA_graphics.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/decode.h"
 
-namespace drt {
-// Tcl files encoded into strings.
-extern const char* drt_tcl_inits[];
-}  // namespace drt
-
 extern "C" {
 extern int Drt_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace drt {
+
+// Tcl files encoded into strings.
+extern const char* drt_tcl_inits[];
 
 drt::TritonRoute* makeTritonRoute()
 {
@@ -35,22 +32,21 @@ void deleteTritonRoute(drt::TritonRoute* router)
   delete router;
 }
 
-void initTritonRoute(OpenRoad* openroad)
+void initTritonRoute(drt::TritonRoute* router,
+                     odb::dbDatabase* db,
+                     utl::Logger* logger,
+                     dst::Distributed* dist,
+                     stt::SteinerTreeBuilder* stt_builder,
+                     Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
-  auto tcl_interp = openroad->tclInterp();
   Drt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, drt::drt_tcl_inits);
 
-  drt::TritonRoute* router = openroad->getTritonRoute();
   std::unique_ptr<drt::AbstractGraphicsFactory> graphics_factory
       = std::make_unique<drt::GraphicsFactory>();
 
-  router->init(openroad->getDb(),
-               openroad->getLogger(),
-               openroad->getDistributed(),
-               openroad->getSteinerTreeBuilder(),
-               std::move(graphics_factory));
+  router->init(db, logger, dist, stt_builder, std::move(graphics_factory));
 }
 
-}  // namespace ord
+}  // namespace drt

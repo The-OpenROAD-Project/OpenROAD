@@ -25,7 +25,7 @@ Tech::Tech(Tcl_Interp* interp,
   if (!interp) {
     interp = Tcl_CreateInterp();
     Tcl_Init(interp);
-    app_->init(interp, log_filename, metrics_filename);
+    app_->init(interp, log_filename, metrics_filename, false);
   }
 }
 

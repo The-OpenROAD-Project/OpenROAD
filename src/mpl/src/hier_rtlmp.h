@@ -138,8 +138,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
-  std::vector<std::pair<float, float>> computeWidthCurves(
-      const std::vector<std::pair<float, float>>& tilings);
+  IntervalList computeWidthIntervals(const TilingList& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
@@ -215,6 +214,11 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
+  template <typename Macro>
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::vector<Macro>& macros);
+
   // For debugging
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
@@ -256,8 +260,7 @@ class HierRTLMP
   // For cluster and macro placement.
   SACoreWeights placement_core_weights_;
 
-  // For generation of shape curves for Mixed / Std Cell clusters
-  // and generation of tilings for Macro clusters.
+  // For generation of the coarse shape (tiling) of clusters with macros.
   const SACoreWeights shaping_core_weights_{1.0f /* area */,
                                             1000.0f /* outline */,
                                             0.0f /* wirelength */,
@@ -361,8 +364,11 @@ class Snapper
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  int totalPinsAligned(const LayerDataList& layers_data_list,
-                       const odb::dbTechLayerDir& direction);
+  int totalAlignedPins(const LayerDataList& layers_data_list,
+                       const odb::dbTechLayerDir& direction,
+                       bool report_unaligned_pins = false);
+  void reportUnalignedPins(const LayerDataList& layers_data_list,
+                           const odb::dbTechLayerDir& direction);
 
   LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);

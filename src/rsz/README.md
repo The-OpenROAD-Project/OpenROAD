@@ -209,6 +209,15 @@ buffer_ports
 | `-inputs`, `-outputs` | Insert a buffer between the input and load, output and load respectively. The default behavior is `-inputs` and `-outputs` set if neither is specified. |
 | `-max_utilization` | Defines the percentage of core area used. |
 
+#### Instance Name Prefixes
+
+`buffer_ports` uses the following prefixes for the buffer instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| input | Buffering primary inputs |
+| output | Buffering primary outputs |
+
 ### Remove Buffers
 
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This
@@ -266,6 +275,19 @@ repair_design
 | `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
+
+#### Instance Name Prefixes
+
+`repair_design` uses the following prefixes for the buffer instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| fanout | Fixing max fanout |
+| gain | Gain based buffering |
+| load_slew | Fixing max transition violations |
+| max_cap | Fixing max capacitance |
+| max_length | Fixing max length |
+| wire | Repairs load slew, length, and max capacitance violations in net wire segment |
 
 ### Repair Tie Fanout
 
@@ -347,6 +369,17 @@ repair_timing
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that
 this option be used with global routing based parasitics. 
+
+#### Instance Name Prefixes
+
+`repair_timing` uses the following prefixes for the buffer and gate instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| clone | Gate cloning |
+| hold | Hold fixing |
+| rebuffer | Buffering for setup fixing |
+| split | Split off non-critical loads behind a buffer to reduce load |
 
 ### Repair Clock Nets
 
