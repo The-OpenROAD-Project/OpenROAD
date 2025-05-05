@@ -3,18 +3,22 @@
 
 #pragma once
 
-namespace dst {
-class Distributed;
+#include <tcl.h>
+
+namespace utl {
+class Logger;
 }
 
-namespace ord {
+namespace dst {
 
-class OpenRoad;
+class Distributed;
 
 dst::Distributed* makeDistributed();
 
 void deleteDistributed(dst::Distributed* dstr);
 
-void initDistributed(OpenRoad* openroad);
+void initDistributed(dst::Distributed* distributer,
+                     utl::Logger* logger,
+                     Tcl_Interp* tcl_interp);
 
-}  // namespace ord
+}  // namespace dst

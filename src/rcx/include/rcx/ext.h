@@ -26,10 +26,7 @@ class Ext
   Ext();
   ~Ext();
 
-  void init(odb::dbDatabase* db,
-            Logger* logger,
-            const char* spef_version,
-            const std::function<void()>& rcx_init);
+  void init(odb::dbDatabase* db, Logger* logger, const char* spef_version);
   void setLogger(Logger* logger);
 
   void bench_wires_gen(const PatternOptions& opt);

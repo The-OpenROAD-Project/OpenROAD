@@ -3,16 +3,27 @@
 
 #pragma once
 
+#include <tcl.h>
+
 #include "pad/ICeWall.h"
 
-namespace ord {
+namespace odb {
+class dbDatabase;
+}
 
-class OpenRoad;
+namespace utl {
+class Logger;
+}
 
-void initICeWall(OpenRoad* openroad);
+namespace pad {
+
+void initICeWall(pad::ICeWall* icewall,
+                 odb::dbDatabase* db,
+                 utl::Logger* logger,
+                 Tcl_Interp* tcl_interp);
 
 pad::ICeWall* makeICeWall();
 
 void deleteICeWall(pad::ICeWall* icewall);
 
-}  // namespace ord
+}  // namespace pad
