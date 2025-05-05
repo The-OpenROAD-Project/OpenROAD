@@ -439,7 +439,7 @@ class FlexPA
    * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
-  void filterMultipleAPAccesses(
+  void filterMultipleAViaAccess(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
@@ -447,25 +447,6 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term,
       const bool& is_std_cell_pin);
-
-  /**
-   * @brief Filters the accesses of a single access point
-   *
-   * @param ap access point
-   * @param polyset polys auxilary set (same information as polys)
-   * @param polys a vector of pin shapes on all layers of the current pin
-   * @param pin access pin
-   * @param inst_term terminal
-   * @param deep_search TODO: not sure
-   */
-  template <typename T>
-  void filterSingleAPAccesses(
-      frAccessPoint* ap,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      T* pin,
-      frInstTerm* inst_term,
-      bool deep_search = false);
 
   /**
    * @brief Filters access in a given planar direction.

@@ -1071,24 +1071,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
 }
 
 template <typename T>
-void FlexPA::filterSingleAPAccesses(
-    frAccessPoint* ap,
-    const gtl::polygon_90_set_data<frCoord>& polyset,
-    const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-    T* pin,
-    frInstTerm* inst_term,
-    bool deep_search)
-{
-  if (!deep_search) {
-    for (const frDirEnum dir : frDirEnumPlanar) {
-      filterPlanarAccess(ap, polys, dir, pin, inst_term);
-    }
-  }
-  filterViaAccess(ap, polys, polyset, pin, inst_term, deep_search);
-}
-
-template <typename T>
-void FlexPA::filterMultipleAPAccesses(
+void FlexPA::filterMultipleAViaAccess(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
@@ -1097,32 +1080,61 @@ void FlexPA::filterMultipleAPAccesses(
     const bool& is_std_cell_pin)
 {
   bool has_access = false;
+  const int max_num_via_trial = 2;
+
   for (auto& ap : aps) {
-    const auto layer_num = ap->getLayerNum();
-    validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
-    filterViaAccess(ap.get(),
-                    layer_polys[layer_num],
-                    pin_shapes[layer_num],
-                    pin,
-                    inst_term);
-    if (is_std_cell_pin) {
-      has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-                      && ap->hasAccess(frDirEnum::U))
-                     || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
-                         && ap->hasAccess()));
-    } else {
-      has_access |= ap->hasAccess();
+    if (!ap->isViaAllowed()) {
+      continue;
     }
-  }
-  if (!has_access) {
-    for (auto& ap : aps) {
-      const auto layer_num = ap->getLayerNum();
-      filterViaAccess(ap.get(),
-                      layer_polys[layer_num],
-                      pin_shapes[layer_num],
-                      pin,
-                      inst_term,
-                      true);
+
+    int valid_via_defs = 0;
+    bool deep_search = false;
+    const Point begin_point = ap->getPoint();
+    const auto layer_num = ap->getLayerNum();
+    // use std:pair to ensure deterministic behavior
+    std::vector<std::pair<int, const frViaDef*>> via_defs;
+    getViasFromMetalWidthMap(
+        begin_point, layer_num, pin_shapes[layer_num], via_defs);
+
+    if (via_defs.empty()) {  // no via map entry
+      // hardcode first two single vias
+      for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
+        via_defs.emplace_back(via_defs.size(), via_def);
+      }
+    }
+
+    int via_trial = 0;
+    for (auto& [idx, via_def] : via_defs) {
+      via_trial++;
+      if (!validateAPForVia(ap.get(),
+                            via_def,
+                            layer_polys[layer_num],
+                            pin_shapes[layer_num],
+                            pin,
+                            inst_term)) {
+        continue;
+      }
+      valid_via_defs++;
+
+      if (is_std_cell_pin) {
+        has_access |= layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
+                      && ap->hasAccess(frDirEnum::U);
+        has_access
+            |= layer_num != router_cfg_->VIA_ACCESS_LAYERNUM && ap->hasAccess();
+      } else {
+        has_access |= ap->hasAccess();
+      }
+
+      if (!has_access) {
+        continue;
+      }
+
+      if (valid_via_defs > 0 && via_trial <= max_num_via_trial) {
+        break;
+      }
+      if (valid_via_defs >= max_num_via_trial) {
+        break;
+      }
     }
   }
 }
@@ -1242,7 +1254,13 @@ bool FlexPA::genPinAccessCostBounded(
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   genAPsFromPinShapes(
       new_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
-  filterMultipleAPAccesses(
+
+  for (auto& ap : new_aps) {
+    ap->setAccess(frDirEnum::U, false);
+    validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
+  }
+
+  filterMultipleAViaAccess(
       new_aps, pin_shapes, layer_polys, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
