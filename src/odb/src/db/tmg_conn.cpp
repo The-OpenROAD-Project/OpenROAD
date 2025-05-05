@@ -322,6 +322,7 @@ void tmg_conn::splitBySj(const int j,
                          const int sjxMax,
                          const int sjyMax)
 {
+  tmg_rc_sh* sj = &(_rcV[j]._shape);
   const int isVia = sj->isVia() ? 1 : 0;
   _search->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   int klast = -1;
@@ -334,7 +335,7 @@ void tmg_conn::splitBySj(const int j,
         || _rcV[j]._from_idx == _rcV[k]._to_idx) {
       continue;
     }
-    tmg_rc_sh* sj = &(_rcV[j]._shape);
+    sj = &(_rcV[j]._shape);
     if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
