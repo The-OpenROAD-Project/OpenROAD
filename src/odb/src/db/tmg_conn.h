@@ -110,7 +110,6 @@ class tmg_conn
  private:
   void splitTtop();
   void splitBySj(int j,
-                 const tmg_rc_sh* sj,
                  int rt,
                  int sjxMin,
                  int sjyMin,
