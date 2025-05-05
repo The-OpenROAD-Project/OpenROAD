@@ -4003,10 +4003,7 @@ to at this level of hierarchy.
 class ModNetForPin : public PinVisitor
 {
  public:
-  ModNetForPin(dbNetwork* nwk)
-      : db_network_(nwk)
-  {
-  }
+  ModNetForPin(dbNetwork* nwk) : db_network_(nwk) {}
 
   void operator()(const Pin* pin) override;
   dbModNet* modnet() const { return modnet_; }
