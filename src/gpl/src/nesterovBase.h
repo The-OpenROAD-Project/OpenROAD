@@ -676,8 +676,8 @@ class BinGrid
 
   int binCntX() const;
   int binCntY() const;
-  int binSizeX() const;
-  int binSizeY() const;
+  double binSizeX() const;
+  double binSizeY() const;
 
   int64_t overflowArea() const;
   int64_t overflowAreaUnscaled() const;
@@ -704,8 +704,8 @@ class BinGrid
   int uy_ = 0;
   int binCntX_ = 0;
   int binCntY_ = 0;
-  int binSizeX_ = 0;
-  int binSizeY_ = 0;
+  double binSizeX_ = 0;
+  double binSizeY_ = 0;
   float targetDensity_ = 0;
   int64_t sumOverflowArea_ = 0;
   int64_t sumOverflowAreaUnscaled_ = 0;
@@ -924,8 +924,8 @@ class NesterovBase
 
   int binCntX() const;
   int binCntY() const;
-  int binSizeX() const;
-  int binSizeY() const;
+  double binSizeX() const;
+  double binSizeY() const;
   int64_t overflowArea() const;
   int64_t overflowAreaUnscaled() const;
 
