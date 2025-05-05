@@ -450,7 +450,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                       routabilityDrivenCount,
                                       timingDrivenCount);
 
-      // TODO: this throws an error from gui if we do not have any buffer inserted by rsz. Check number of buffers inserted here?
+      // TODO: this throws an error from gui if we do not have any buffer
+      // inserted by rsz. Check number of buffers inserted here?
       graphics_->getGuiObjectFromGraphics()->select(
           "Inst", "", "Description", "Timing Repair Buffer", true, -1);
       graphics_->saveGuiImage(raw);
