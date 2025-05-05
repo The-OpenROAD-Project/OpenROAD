@@ -90,31 +90,34 @@ void tmg_conn::addRc(const dbShape& s,
                      const int to_idx,
                      dbTechNonDefaultRule* rule)
 {
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape = {{s.xMin(), s.yMin(), s.xMax(), s.yMax()},
-              s.getTechLayer(),
-              s.getTechVia(),
-              s.getVia(),
-              rule};
-  if (x._shape.getTechVia() || x._shape.getVia()) {
-    x._is_vertical = false;
-    x._width = 0;
+  bool is_vertical;
+  int width;
+  if (s.getTechVia() || s.getVia()) {
+    is_vertical = false;
+    width = 0;
   } else if (_ptV[from_idx]._x != _ptV[to_idx]._x) {
-    x._is_vertical = false;
-    x._width = s.yMax() - s.yMin();
+    is_vertical = false;
+    width = s.yMax() - s.yMin();
   } else if (_ptV[from_idx]._y != _ptV[to_idx]._y) {
-    x._is_vertical = true;
-    x._width = s.xMax() - s.xMin();
+    is_vertical = true;
+    width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
-    x._is_vertical = false;
-    x._width = s.xMax() - s.xMin();
+    is_vertical = false;
+    width = s.xMax() - s.xMin();
   } else {
-    x._is_vertical = false;
-    x._width = 0;
+    is_vertical = false;
+    width = 0;
   }
-  x._default_ext = x._width / 2;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{s.xMin(), s.yMin(), s.xMax(), s.yMax()},
+            s.getTechLayer(),
+            s.getTechVia(),
+            s.getVia(),
+            rule},
+           is_vertical,
+           width,
+           width / 2);
   _rcV.push_back(x);
 }
 
@@ -127,17 +130,17 @@ void tmg_conn::addRc(const int k,
                      const int xmax,
                      const int ymax)
 {
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape = {{xmin, ymin, xmax, ymax},
-              s.getTechLayer(),
-              s.getTechVia(),
-              s.getVia(),
-              s.getRule()};
-  x._is_vertical = _rcV[k]._is_vertical;
-  x._width = _rcV[k]._width;
-  x._default_ext = x._width / 2;
+  const int width = _rcV[k]._width;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{xmin, ymin, xmax, ymax},
+            s.getTechLayer(),
+            s.getTechVia(),
+            s.getVia(),
+            s.getRule()},
+           _rcV[k]._is_vertical,
+           width,
+           width / 2);
   _rcV.push_back(x);
 }
 
@@ -149,13 +152,9 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
           && _ptV[from_idx]._y != _ptV[to_idx]._y)) {
     return nullptr;
   }
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._width = layer->getWidth();  // trouble for nondefault
-  x._is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
+  const bool is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
   int xlo, ylo, xhi, yhi;
-  if (x._is_vertical) {
+  if (is_vertical) {
     xlo = _ptV[from_idx]._x;
     xhi = xlo;
     std::tie(ylo, yhi) = std::minmax(_ptV[from_idx]._y, _ptV[to_idx]._y);
@@ -164,10 +163,14 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
     yhi = ylo;
     std::tie(xlo, xhi) = std::minmax(_ptV[from_idx]._x, _ptV[to_idx]._x);
   }
-  const int hw = x._width / 2;
-  x._default_ext = hw;
-  x._shape
-      = {{xlo - hw, ylo - hw, xhi + hw, yhi + hw}, layer, nullptr, nullptr};
+  const int width = layer->getWidth();  // trouble for nondefault
+  const int hw = width / 2;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{xlo - hw, ylo - hw, xhi + hw, yhi + hw}, layer, nullptr, nullptr},
+           is_vertical,
+           width,
+           hw);
   _rcV.push_back(x);
   return &_rcV.back();
 }
@@ -338,7 +341,7 @@ void tmg_conn::splitBySj(const int j,
     if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
-    tmg_rc_sh* sk = &(_rcV[k]._shape);
+    const tmg_rc_sh* sk = &(_rcV[k]._shape);
     if (sk->isVia()) {
       continue;
     }

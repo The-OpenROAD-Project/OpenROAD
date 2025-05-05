@@ -16,7 +16,6 @@ namespace odb {
 class tmg_rc_sh
 {
  public:
-  tmg_rc_sh() = default;
   tmg_rc_sh(Rect rect,
             dbTechLayer* layer,
             dbTechVia* tech_via,
@@ -59,12 +58,26 @@ class tmg_rc_sh
 
 struct tmg_rc
 {
-  int _from_idx;  // index to _ptV
+  tmg_rc(const int from_idx,
+         const int to_idx,
+         const tmg_rc_sh& shape,
+         const bool is_vertical,
+         const int width,
+         const int default_ext)
+      : _from_idx(from_idx),
+        _to_idx(to_idx),
+        _shape(shape),
+        _is_vertical(is_vertical),
+        _width(width),
+        _default_ext(default_ext)
+  {
+  }
+  const int _from_idx;  // index to _ptV
   int _to_idx;
   tmg_rc_sh _shape;
-  bool _is_vertical;
-  int _width;
-  int _default_ext;
+  const bool _is_vertical;
+  const int _width;
+  const int _default_ext;
 };
 
 struct tmg_rcpt
