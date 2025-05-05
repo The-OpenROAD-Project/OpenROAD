@@ -157,6 +157,10 @@ extDistRCTable::extDistRCTable(uint distCnt)
 
 extDistRCTable::~extDistRCTable()
 {
+  while (_measureTable->notEmpty()) {
+    delete _measureTable->pop();
+  }
+
   delete _measureTable;
   delete _computeTable;
 }
