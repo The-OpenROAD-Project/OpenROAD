@@ -1829,7 +1829,7 @@ void NesterovBase::initFillerGCells()
   debugPrint(
       log_, GPL, "FillerInit", 1, "TotalFillerArea {}", totalFillerArea_);
   debugPrint(log_, GPL, "FillerInit", 1, "NumFillerCells {}", fillerCnt);
-  debugPrint(log_, GPL, "FillerInit", 1, "FillerCellArea {}", fillerCellArea());
+  debugPrint(log_, GPL, "FillerInit", 1, "FillerCellArea {}", getFillerCellArea());
   debugPrint(
       log_, GPL, "FillerInit", 1, "FillerCellSize {} {}", fillerDx_, fillerDy_);
 
@@ -1933,7 +1933,7 @@ int NesterovBase::fillerCnt() const
   return static_cast<int>(gCellFillers_.size());
 }
 
-int64_t NesterovBase::fillerCellArea() const
+int64_t NesterovBase::getFillerCellArea() const
 {
   return static_cast<int64_t>(fillerDx_) * static_cast<int64_t>(fillerDy_);
 }
@@ -1948,7 +1948,7 @@ int64_t NesterovBase::movableArea() const
   return movableArea_;
 }
 
-int64_t NesterovBase::totalFillerArea() const
+int64_t NesterovBase::getTotalFillerArea() const
 {
   return totalFillerArea_;
 }
@@ -2040,7 +2040,7 @@ void NesterovBase::updateAreas()
                           / static_cast<float>(whiteSpaceArea_);
 
   if (totalFillerArea_ < 0) {
-    log_->error(GPL,
+    log_->warn(GPL,
                 303,
                 "Consider increasing the target density or re-floorplanning "
                 "with a larger core area.\n"
@@ -2048,6 +2048,8 @@ void NesterovBase::updateAreas()
                 "Suggested target density: {:.2f} (uniform density)",
                 targetDensity_,
                 uniformTargetDensity_);
+      log_->report("totalFillerArea_:{}", totalFillerArea_);
+      totalFillerArea_ = 0;
   }
 }
 
@@ -3188,26 +3190,48 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   return replacement;
 }
 
-void NesterovBase::cutFillerCells(int64_t targetFillerArea) {
+void NesterovBase::cutFillerCells(int64_t inflationArea) {
   log_->report("totalFillerArea_: {}", totalFillerArea_);
-  log_->report("targetFillerArea: {}", targetFillerArea);
+  log_->report("inflationArea: {}", inflationArea);
   log_->report("number of fillers before removal: {}", fillerStor_.size());
+
+  int64_t availableFillerArea = totalFillerArea_;
   int removed_count = 0;
-  while (totalFillerArea_ > targetFillerArea && !fillerStor_.empty()) {
-    // TODO which filler to remove? closest to area change? how to do that?
-    for(int i = 0; i < nb_gcells_.size(); ++i) {
-      if(nb_gcells_[i]->isFiller()){
+
+  // Remove as many fillers as possible
+  while (availableFillerArea > 0 && inflationArea > 0 && !fillerStor_.empty()) {
+    for (int i = 0; i < nb_gcells_.size(); ++i) {
+      if (nb_gcells_[i]->isFiller()) {
         destroyFillerGCell(i);
+        availableFillerArea -= getFillerCellArea();
+        inflationArea -= getFillerCellArea();
+        ++removed_count;
         break;
       }
     }
-    
-    totalFillerArea_ -= fillerCellArea();
-    ++removed_count;
   }
-  log_->report("Filler cells removed to compansate for inflation: {}",removed_count);
+
+  totalFillerArea_ = availableFillerArea;
+
+  log_->report("Filler cells removed to compensate for inflation: {}", removed_count);
   log_->report("number of fillers after removal: {}", fillerStor_.size());
+
+  if (getFillerCellArea() * fillerStor_.size() != totalFillerArea_) {
+    log_->warn(GPL, 312,
+               "Unexpected filler area! The value {}, and {}, should match.",
+               getFillerCellArea() * fillerStor_.size(), totalFillerArea_);
+  }
+
+  // If inflation still remains, adjust density
+  if (inflationArea > 0) {
+    log_->report("No more fillers to remove, compensate area modification with more density.");
+    int64_t totalGCellArea = nesterovInstsArea() + totalFillerArea_ + inflationArea;
+    setTargetDensity(static_cast<float>(totalGCellArea) /
+                     static_cast<float>(whiteSpaceArea()));
+  }
 }
+
+
 
 void NesterovBase::destroyFillerGCell(size_t nb_index_remove) {
   size_t stor_last_index = fillerStor_.size() - 1;

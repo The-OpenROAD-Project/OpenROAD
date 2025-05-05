@@ -470,7 +470,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           nesterov->setTargetDensity(
               static_cast<float>(nbc_->getDeltaArea()
                                  + nesterov->nesterovInstsArea()
-                                 + nesterov->totalFillerArea())
+                                 + nesterov->getTotalFillerArea())
               / static_cast<float>(nesterov->whiteSpaceArea()));
 
           float rsz_delta_area_microns

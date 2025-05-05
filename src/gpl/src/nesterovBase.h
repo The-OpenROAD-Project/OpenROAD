@@ -937,10 +937,10 @@ class NesterovBase
   int fillerDx() const;
   int fillerDy() const;
   int fillerCnt() const;
-  int64_t fillerCellArea() const;
+  int64_t getFillerCellArea() const;
   int64_t whiteSpaceArea() const;
   int64_t movableArea() const;
-  int64_t totalFillerArea() const;
+  int64_t getTotalFillerArea() const;
 
   // update
   // fillerArea, whiteSpaceArea, movableArea

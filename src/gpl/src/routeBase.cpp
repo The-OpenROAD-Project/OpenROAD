@@ -649,7 +649,7 @@ std::pair<bool, bool> RouteBase::routability()
   if (inflatedAreaDelta_ > targetInflationDeltaAreaRatio
                                * (nbVec_[0]->whiteSpaceArea()
                                   - (nbVec_[0]->nesterovInstsArea()
-                                     + nbVec_[0]->totalFillerArea()))) {
+                                     + nbVec_[0]->getTotalFillerArea()))) {
     // TODO dynamic inflation procedure?
   }
 
@@ -672,9 +672,9 @@ std::pair<bool, bool> RouteBase::routability()
              nbVec_[0]->targetDensity());
 
   int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-                           + nbVec_[0]->totalFillerArea();
+                           + nbVec_[0]->getTotalFillerArea();
 
-  nbVec_[0]->cutFillerCells(nbVec_[0]->totalFillerArea() - inflatedAreaDelta_);
+  nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
 
 
   // newly set Density
@@ -729,9 +729,9 @@ std::pair<bool, bool> RouteBase::routability()
 
   double prev_white_space_area = nbVec_[0]->whiteSpaceArea();
   double prev_movable_area = nbVec_[0]->movableArea();
-  double prev_total_filler_area = nbVec_[0]->totalFillerArea();
+  double prev_total_filler_area = nbVec_[0]->getTotalFillerArea();
   double prev_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea();
+      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
   double prev_expected_gcells_area
       = inflatedAreaDelta_ + prev_total_gcells_area;
 
@@ -749,7 +749,7 @@ std::pair<bool, bool> RouteBase::routability()
   nbVec_[0]->updateAreas();
 
   double new_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea();
+      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
   double new_expected_gcells_area = inflatedAreaDelta_ + new_total_gcells_area;
 
   auto percentDiff = [](double old_value, double new_value) -> double {
@@ -777,8 +777,8 @@ std::pair<bool, bool> RouteBase::routability()
              60,
              format_label_um2_with_delta,
              "Total filler area:",
-             block->dbuAreaToMicrons(nbVec_[0]->totalFillerArea()),
-             percentDiff(prev_total_filler_area, nbVec_[0]->totalFillerArea()));
+             block->dbuAreaToMicrons(nbVec_[0]->getTotalFillerArea()),
+             percentDiff(prev_total_filler_area, nbVec_[0]->getTotalFillerArea()));
 
   log_->info(GPL,
              61,
