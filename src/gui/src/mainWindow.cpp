@@ -151,6 +151,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(
       controls_, &DisplayControls::changed, viewers_, &LayoutTabs::fullRepaint);
   connect(controls_,
+          &DisplayControls::colorChanged,
+          viewers_,
+          &LayoutTabs::updateBackgroundColors);
+  connect(controls_,
           &DisplayControls::changed,
           hierarchy_widget_,
           &BrowserWidget::displayControlsUpdated);

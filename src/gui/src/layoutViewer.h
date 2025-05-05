@@ -254,8 +254,6 @@ class LayoutViewer : public QWidget
   void commandFinishedExecuting();
   void executionPaused();
 
-  static QColor background() { return Qt::black; }
-
  private slots:
   void setBlock(odb::dbBlock* block);
   void updatePixmap(const QImage& image, const QRect& bounds);

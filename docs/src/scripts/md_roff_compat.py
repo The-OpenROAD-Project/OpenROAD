@@ -52,7 +52,6 @@ tools = [
     "dbSta",
     "dft",
     "dpl",
-    "dpo",
     "drt",
     "dst",
     "fin",

@@ -73,6 +73,16 @@ or_integration_tests(
     simple09
     simple10
     edge_spacing
+    # optimization
+    aes-opt
+    blockage1-opt
+    gcd-opt
+    gcd_no_one_site_gaps-opt
+    ibex-opt
+    multi_height1-opt
+    edge_spacing-opt
+    regions1-opt
+    regions2-opt
 )
 
 # Skipped

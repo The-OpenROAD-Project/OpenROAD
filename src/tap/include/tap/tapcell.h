@@ -78,6 +78,7 @@ struct EndcapCellOptions
   odb::dbMaster* right_edge = nullptr;
 
   std::string prefix = "PHY_";
+  bool tapcell_cmd = false;
 };
 
 class Tapcell
@@ -219,7 +220,8 @@ class Tapcell
 
   EndcapCellOptions correctEndcapOptions(const Options& options) const;
 
-  odb::dbMaster* getMasterByType(const odb::dbMasterType& type) const;
+  odb::dbMaster* getMasterByType(const odb::dbMasterType& type,
+                                 const std::string& option_name) const;
   std::set<odb::dbMaster*> findMasterByType(
       const odb::dbMasterType& type) const;
   odb::dbBlock* getBlock() const;

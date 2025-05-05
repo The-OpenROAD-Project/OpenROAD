@@ -34,12 +34,15 @@ bazel_dep(name = "boost.asio", version = BOOST_VERSION)
 bazel_dep(name = "boost.beast", version = BOOST_VERSION + ".bcr.1")
 bazel_dep(name = "boost.bind", version = BOOST_VERSION)
 bazel_dep(name = "boost.config", version = BOOST_VERSION)
+bazel_dep(name = "boost.container_hash", version = BOOST_VERSION)
 bazel_dep(name = "boost.core", version = BOOST_VERSION)
+bazel_dep(name = "boost.format", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.fusion", version = BOOST_VERSION)
 bazel_dep(name = "boost.geometry", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.graph", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.heap", version = BOOST_VERSION)
 bazel_dep(name = "boost.icl", version = BOOST_VERSION)
+bazel_dep(name = "boost.iterator", version = BOOST_VERSION)
 bazel_dep(name = "boost.json", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.lambda", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.multi_array", version = BOOST_VERSION + ".bcr.2")
@@ -47,10 +50,14 @@ bazel_dep(name = "boost.optional", version = BOOST_VERSION)
 bazel_dep(name = "boost.phoenix", version = BOOST_VERSION)
 bazel_dep(name = "boost.polygon", version = BOOST_VERSION + ".bcr.2")
 bazel_dep(name = "boost.property_tree", version = BOOST_VERSION + ".bcr.2")
+bazel_dep(name = "boost.random", version = BOOST_VERSION + ".bcr.1")
 bazel_dep(name = "boost.regex", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
 bazel_dep(name = "boost.thread", version = BOOST_VERSION)
+bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
+bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
+bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.2")
 bazel_dep(name = "or-tools", version = "9.12")
@@ -98,3 +105,25 @@ pip.parse(
     requirements_lock = "//bazel:requirements_lock_3_13.txt",
 )
 use_repo(pip, "openroad-pip")
+
+bazel_dep(name = "bazel-orfs")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+git_override(
+    module_name = "bazel-orfs",
+    commit = "126765508161956f8f82ae169084da0235230637",
+    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+)
+
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+orfs.default(
+    # Official image https://hub.docker.com/r/openroad/orfs/tags
+    image = "docker.io/openroad/orfs:v3.0-2883-ge22e4fc7",
+    # Use OpenROAD of this repo instead of from the docker image
+    openroad = "//:openroad",
+    sha256 = "6ad0b1b7fbf290f33f0050ead4da181c83c6e8a9337b65f5f9cff65d67788424",
+)
+use_repo(orfs, "com_github_nixos_patchelf_download")
+use_repo(orfs, "docker_orfs")

@@ -25,7 +25,6 @@ namespace sta {
 class dbSta;
 class dbNetwork;
 class dbStaReport;
-class dbStaHistogram;
 class dbStaCbk;
 class PatternMatch;
 class TestCell;
