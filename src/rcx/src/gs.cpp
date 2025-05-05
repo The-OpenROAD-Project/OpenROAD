@@ -64,7 +64,7 @@ gs::~gs()
 void gs::freeMem()
 {
   if (init_ & ALLOCATED) {
-    for (auto & pm: pldata_) {
+    for (auto& pm : pldata_) {
       free(pm.plane);
     }
     pldata_.clear();
