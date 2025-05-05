@@ -298,8 +298,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   namespace fs = std::filesystem;
 
-  const char* reports_dir_env = std::getenv("REPORTS_DIR");
-  std::string reports_dir = reports_dir_env ? reports_dir_env : "reports";
+  std::string reports_dir;
+  if (npVars_.debug_images_path == "REPORTS_DIR") {
+    const char* reports_dir_env = std::getenv("REPORTS_DIR");
+    reports_dir = reports_dir_env ? reports_dir_env : "reports";
+  } else {
+    reports_dir = npVars_.debug_images_path;
+  }
+
   std::string gif_frames_dir = reports_dir + "/gpl_gif_frames";
   std::string special_modes_dir = reports_dir + "/gpl_special_modes";
   std::string gif_output = reports_dir + "/placement.gif";
@@ -444,6 +450,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                                       routabilityDrivenCount,
                                       timingDrivenCount);
 
+      // TODO: this throws an error from gui if we do not have any buffer inserted by rsz. Check number of buffers inserted here?
       graphics_->getGuiObjectFromGraphics()->select(
           "Inst", "", "Description", "Timing Repair Buffer", true, -1);
       graphics_->saveGuiImage(raw);

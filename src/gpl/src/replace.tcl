@@ -352,8 +352,8 @@ proc cluster_flops { args } {
 
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
-    keys {-pause -update -inst -start_iter} \
-    flags {-draw_bins -initial -update_db -generate_images} ;# checker off
+    keys {-pause -update -inst -start_iter -images_path} \
+    flags {-draw_bins -initial -update_db -generate_images} ;
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 117 "No design block found."
@@ -387,8 +387,13 @@ proc global_placement_debug { args } {
   set update_db [info exists flags(-update_db)]
   set generate_images [info exists flags(-generate_images)]
 
+  set images_path ""
+  if { [info exists keys(-images_path)] } {
+    set images_path $keys(-images_path)
+  }
+
   gpl::set_debug_cmd $pause $update $draw_bins $initial \
-    $inst $start_iter $update_db $generate_images
+    $inst $start_iter $update_db $generate_images $images_path
 }
 
 
