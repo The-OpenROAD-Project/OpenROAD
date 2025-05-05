@@ -2363,7 +2363,6 @@ void extMeasure::allocOUpool()
 
 extMeasure::~extMeasure()
 {
-  return;
   for (auto& ii : _rc) {
     delete ii;
   }
