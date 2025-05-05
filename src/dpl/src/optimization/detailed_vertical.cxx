@@ -4,7 +4,6 @@
 #include "detailed_vertical.h"
 
 #include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
 #include <string>

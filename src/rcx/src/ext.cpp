@@ -23,18 +23,17 @@ Ext::Ext()
   _ext = new extMain();
 }
 
-void Ext::init(odb::dbDatabase* db,
-               Logger* logger,
-               const char* spef_version,
-               const std::function<void()>& rcx_init)
+Ext::~Ext()
+{
+  delete _ext;
+}
+
+void Ext::init(odb::dbDatabase* db, Logger* logger, const char* spef_version)
 {
   _db = db;
   logger_ = logger;
   spef_version_ = spef_version;
   _ext->init(db, logger);
-
-  // Define swig TCL commands.
-  rcx_init();
 }
 
 void Ext::setLogger(Logger* logger)

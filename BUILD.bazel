@@ -12,8 +12,8 @@ load(
     "OPENROAD_LIBRARY_SRCS_EXCLUDE",
     "OPENROAD_LIBRARY_SRCS_INCLUDE",
 )
-load("//bazel:tcl_encode_sta.bzl", "tcl_encode_sta")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_encode_sta.bzl", "tcl_encode_sta")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
@@ -50,12 +50,21 @@ config_setting(
 # TODO: once project is properly decomposed, we don't
 # need these blanked dependencies in multiple places anymore.
 OPENROAD_LIBRARY_DEPS = [
-    "//src/utl",
     ":munkres",
-    "//src/odb",
-    "//src/gui",
     ":openroad_version",
     ":opensta_lib",
+    ":ord",
+    "//src/ant",
+    "//src/ant:make-antenna-checker",
+    "//src/cts",
+    "//src/dbSta",
+    "//src/dpl",
+    "//src/grt",
+    "//src/gui",
+    "//src/odb",
+    "//src/rsz",
+    "//src/stt",
+    "//src/utl",
     "@boost.asio",
     "@boost.geometry",
     "@boost.graph",
@@ -123,6 +132,7 @@ cc_binary(
         ":openroad_version",
         ":opensta_lib",
         "//src/odb",
+        "//src/rsz",
         "//src/utl",
         "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
@@ -135,17 +145,8 @@ cc_library(
         include = OPENROAD_LIBRARY_SRCS_INCLUDE,
         allow_empty = True,
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
-    ) + [
-        "src/stt/src/flt/etc/POST9.cpp",
-        "src/stt/src/flt/etc/POWV9.cpp",
-    ],
-    hdrs = glob(
-        include = OPENROAD_LIBRARY_HDRS_INCLUDE,
-        exclude = [
-            "src/utl/include/utl/Logger.h",
-            "src/utl/include/utl/CFileUtils.h",
-        ],
     ),
+    hdrs = glob(OPENROAD_LIBRARY_HDRS_INCLUDE),
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + [
         "BUILD_GUI=false",
@@ -163,8 +164,6 @@ cc_library(
         exclude = OPENROAD_LIBRARY_SRCS_EXCLUDE,
     ) + [
         "src/OpenRoad.cc",
-        "src/stt/src/flt/etc/POST9.cpp",
-        "src/stt/src/flt/etc/POWV9.cpp",
     ],
     hdrs = glob(
         include = OPENROAD_LIBRARY_HDRS_INCLUDE,
@@ -183,28 +182,21 @@ cc_library(
     deps = OPENROAD_LIBRARY_DEPS,
 )
 
-genrule(
-    name = "post9",
-    srcs = [
-        "src/stt/src/flt/etc/POST9.dat",
+cc_library(
+    name = "ord",
+    hdrs = [
+        "include/ord/Design.h",
+        "include/ord/InitOpenRoad.hh",
+        "include/ord/OpenRoad.hh",
+        "include/ord/Tech.h",
+        "include/ord/Timing.h",
+        "include/ord/Version.hh",
     ],
-    outs = ["src/stt/src/flt/etc/POST9.cpp"],
-    cmd = "$(execpath //etc:file_to_string) --inputs $(location src/stt/src/flt/etc/POST9.dat) --output \"$@\" --varname post9 --namespace stt::flt",
-    tools = [
-        "//etc:file_to_string",
+    includes = [
+        "include",
+        "include/ord",
     ],
-)
-
-genrule(
-    name = "powv9",
-    srcs = [
-        "src/stt/src/flt/etc/POWV9.dat",
-    ],
-    outs = ["src/stt/src/flt/etc/POWV9.cpp"],
-    cmd = "$(execpath //etc:file_to_string) --inputs $(location src/stt/src/flt/etc/POWV9.dat) --output \"$@\" --varname powv9 --namespace stt::flt",
-    tools = [
-        "//etc:file_to_string",
-    ],
+    visibility = ["//:__subpackages__"],
 )
 
 cc_library(
@@ -225,9 +217,6 @@ cc_library(
     name = "openroad_version",
     hdrs = [
         ":OpenRoadVersion",
-    ],
-    includes = [
-        "include/ord",
     ],
 )
 
@@ -253,17 +242,6 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "db_sta_tcl",
-    srcs = [
-        "src/dbSta/src/dbReadVerilog.tcl",
-        "src/dbSta/src/dbSta.tcl",
-        ":tcl_scripts",
-    ],
-    char_array_name = "dbSta_tcl_inits",
-    namespace = "sta",
-)
-
-tcl_encode(
     name = "ioplacer_tcl",
     srcs = [
         "src/ppl/src/IOPlacer.tcl",
@@ -273,48 +251,12 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "resizer_tcl",
-    srcs = [
-        "src/rsz/src/Resizer.tcl",
-    ],
-    char_array_name = "rsz_tcl_inits",
-    namespace = "rsz",
-)
-
-tcl_encode(
-    name = "opendp_tcl",
-    srcs = [
-        "src/dpl/src/Opendp.tcl",
-    ],
-    char_array_name = "dpl_tcl_inits",
-    namespace = "dpl",
-)
-
-tcl_encode(
     name = "finale_tcl",
     srcs = [
         "src/fin/src/finale.tcl",
     ],
     char_array_name = "fin_tcl_inits",
     namespace = "fin",
-)
-
-tcl_encode(
-    name = "ant_tcl",
-    srcs = [
-        "src/ant/src/AntennaChecker.tcl",
-    ],
-    char_array_name = "ant_tcl_inits",
-    namespace = "ant",
-)
-
-tcl_encode(
-    name = "fastroute_tcl",
-    srcs = [
-        "src/grt/src/GlobalRouter.tcl",
-    ],
-    char_array_name = "grt_tcl_inits",
-    namespace = "grt",
 )
 
 tcl_encode(
@@ -333,15 +275,6 @@ tcl_encode(
     ],
     char_array_name = "gpl_tcl_inits",
     namespace = "gpl",
-)
-
-tcl_encode(
-    name = "triton_cts_tcl",
-    srcs = [
-        "src/cts/src/TritonCTS.tcl",
-    ],
-    char_array_name = "cts_tcl_inits",
-    namespace = "cts",
 )
 
 tcl_encode(
@@ -436,15 +369,6 @@ tcl_encode(
 )
 
 tcl_encode(
-    name = "stt_tcl",
-    srcs = [
-        "src/stt/src/SteinerTreeBuilder.tcl",
-    ],
-    char_array_name = "stt_tcl_inits",
-    namespace = "stt",
-)
-
-tcl_encode(
     name = "upf_tcl",
     srcs = [
         "src/upf/src/upf.tcl",
@@ -495,26 +419,6 @@ tcl_wrap_cc(
 )
 
 tcl_wrap_cc(
-    name = "dbsta_swig",
-    srcs = [
-        "src/dbSta/src/dbSta.i",
-        ":error_swig",
-        ":sta_swig_files",
-    ],
-    module = "dbSta",
-    namespace_prefix = "sta",
-    root_swig_src = "src/dbSta/src/dbSta.i",
-    swig_includes = [
-        "src/dbSta/src",
-        "src/odb/src/swig/common",
-        "src/sta",
-    ],
-    deps = [
-        "//src/odb:swig",
-    ],
-)
-
-tcl_wrap_cc(
     name = "ioplacer_swig",
     srcs = [
         "src/ppl/src/IOPlacer.i",
@@ -525,36 +429,6 @@ tcl_wrap_cc(
     root_swig_src = "src/ppl/src/IOPlacer.i",
     swig_includes = [
         "src/ppl/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "resizer_swig",
-    srcs = [
-        "src/rsz/src/Resizer.i",
-        ":error_swig",
-        ":sta_swig_files",
-    ],
-    module = "rsz",
-    namespace_prefix = "rsz",
-    root_swig_src = "src/rsz/src/Resizer.i",
-    swig_includes = [
-        "src/rsz/src",
-        "src/sta",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "opendp_swig",
-    srcs = [
-        "src/dpl/src/Opendp.i",
-        ":error_swig",
-    ],
-    module = "dpl",
-    namespace_prefix = "dpl",
-    root_swig_src = "src/dpl/src/Opendp.i",
-    swig_includes = [
-        "src/dpl/src",
     ],
 )
 
@@ -573,34 +447,6 @@ tcl_wrap_cc(
 )
 
 tcl_wrap_cc(
-    name = "ant_swig",
-    srcs = [
-        "src/ant/src/AntennaChecker.i",
-        ":error_swig",
-    ],
-    module = "ant",
-    namespace_prefix = "ant",
-    root_swig_src = "src/ant/src/AntennaChecker.i",
-    swig_includes = [
-        "src/ant/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "fastroute_swig",
-    srcs = [
-        "src/grt/src/GlobalRouter.i",
-        ":error_swig",
-    ],
-    module = "grt",
-    namespace_prefix = "grt",
-    root_swig_src = "src/grt/src/GlobalRouter.i",
-    swig_includes = [
-        "src/grt/src",
-    ],
-)
-
-tcl_wrap_cc(
     name = "replace_swig",
     srcs = [
         "src/gpl/src/replace.i",
@@ -614,20 +460,6 @@ tcl_wrap_cc(
         "src/gpl/src",
         "src/odb/src/swig/common",
         "src/odb/src/swig/tcl",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "triton_cts_swig",
-    srcs = [
-        "src/cts/src/TritonCTS.i",
-        ":error_swig",
-    ],
-    module = "cts",
-    namespace_prefix = "cts",
-    root_swig_src = "src/cts/src/TritonCTS.i",
-    swig_includes = [
-        "src/cts/src",
     ],
 )
 
@@ -779,20 +611,6 @@ tcl_wrap_cc(
     root_swig_src = "src/rmp/src/rmp.i",
     swig_includes = [
         "src/rmp/src",
-    ],
-)
-
-tcl_wrap_cc(
-    name = "stt_swig",
-    srcs = [
-        "src/stt/src/SteinerTreeBuilder.i",
-        ":error_swig",
-    ],
-    module = "stt",
-    namespace_prefix = "stt",
-    root_swig_src = "src/stt/src/SteinerTreeBuilder.i",
-    swig_includes = [
-        "src/stt/src",
     ],
 )
 

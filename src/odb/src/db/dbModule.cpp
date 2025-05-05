@@ -548,7 +548,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
     return module;
   }
 
-  std::map<std::string, int>& name_id_map
+  std::unordered_map<std::string, int>& name_id_map
       = ((_dbBlock*) block)->_module_name_id_map;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
@@ -729,11 +729,11 @@ void dbModule::copyModuleInsts(dbModule* old_module,
                          ? std::move(old_inst_name).substr(first_idx + 1)
                          : std::move(old_inst_name);
 
-    dbInst* new_inst = dbInst::create(new_module->getOwner(),
-                                      old_inst->getMaster(),
-                                      new_inst_name.c_str(),
-                                      /* phyical only */ false,
-                                      new_module);
+    dbInst* new_inst = dbInst::makeUniqueDbInst(new_module->getOwner(),
+                                                old_inst->getMaster(),
+                                                new_inst_name.c_str(),
+                                                /* phyical only */ false,
+                                                new_module);
     if (new_inst) {
       debugPrint(logger,
                  utl::ODB,
