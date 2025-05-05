@@ -477,7 +477,7 @@ class FlexPA
    * @param inst_term terminal
    */
   template <typename T>
-  void filterPlanarAccess(
+  bool filterPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
@@ -553,12 +553,44 @@ class FlexPA
       frInstTerm* inst_term,
       bool deep_search = false);
 
+  /**
+   * @brief checks if a via can be used to access the access point, modifies the
+   * ap to use it if it can.
+   *
+   * @param ap Access point
+   * @param via_def Via Def
+   * @param layer_polys A vector of polygons organized by layer
+   * @param polyset Another representation of the polygons
+   * @param pin Pin
+   * @param inst_term the instance terminal object
+   *
+   * @returns True if the via usage was valid.
+   */
   template <typename T>
   bool validateAPForVia(
       frAccessPoint* ap,
       const frViaDef* via_def,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
+      T* pin,
+      frInstTerm* inst_term);
+
+  /**
+   * @brief checks if an access point can have planar access, alters the point
+   * to allow it and returns true if planar access is valid.
+   *
+   * @param ap Access point
+   * @param layer_polys A vector of polygons organized by layer
+   * @param pin Pin
+   * @param inst_term the instance terminal object
+   *
+   * @returns True if the point can have planar access.
+   */
+  template <typename T>
+  bool validateAPForPlanarAccess(
+      frAccessPoint* ap,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term);
 

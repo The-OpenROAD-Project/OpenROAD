@@ -614,7 +614,7 @@ bool FlexPA::isPointOutsideShapes(
 }
 
 template <typename T>
-void FlexPA::filterPlanarAccess(
+bool FlexPA::filterPlanarAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir,
@@ -624,7 +624,7 @@ void FlexPA::filterPlanarAccess(
   const Point begin_point = ap->getPoint();
   // skip viaonly access
   if (!ap->hasAccess(dir)) {
-    return;
+    return false;
   }
   const bool is_block
       = inst_term
@@ -635,7 +635,7 @@ void FlexPA::filterPlanarAccess(
   // skip if two width within shape for standard cell
   if (!is_outside) {
     ap->setAccess(dir, false);
-    return;
+    return false;
   }
   // TODO: EDIT HERE Wrongdirection segments
   frLayer* layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
@@ -666,6 +666,8 @@ void FlexPA::filterPlanarAccess(
   const bool no_drv
       = isPlanarViolationFree(ap, pin, ps.get(), inst_term, begin_point, layer);
   ap->setAccess(dir, no_drv);
+
+  return no_drv;
 }
 
 template <typename T>
@@ -917,6 +919,21 @@ bool FlexPA::validateAPForVia(
 }
 
 template <typename T>
+bool FlexPA::validateAPForPlanarAccess(
+    frAccessPoint* ap,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
+    T* pin,
+    frInstTerm* inst_term)
+{
+  bool allow_planar_access = false;
+  for (const frDirEnum dir : frDirEnumPlanar) {
+    allow_planar_access |= filterPlanarAccess(
+        ap, layer_polys[ap->getLayerNum()], dir, pin, inst_term);
+  }
+  return allow_planar_access;
+}
+
+template <typename T>
 bool FlexPA::checkViaPlanarAccess(
     frAccessPoint* ap,
     frVia* via,
@@ -1082,11 +1099,12 @@ void FlexPA::filterMultipleAPAccesses(
   bool has_access = false;
   for (auto& ap : aps) {
     const auto layer_num = ap->getLayerNum();
-    filterSingleAPAccesses(ap.get(),
-                           pin_shapes[layer_num],
-                           layer_polys[layer_num],
-                           pin,
-                           inst_term);
+    validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
+    filterViaAccess(ap.get(),
+                    layer_polys[layer_num],
+                    pin_shapes[layer_num],
+                    pin,
+                    inst_term);
     if (is_std_cell_pin) {
       has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
                       && ap->hasAccess(frDirEnum::U))
@@ -1099,12 +1117,12 @@ void FlexPA::filterMultipleAPAccesses(
   if (!has_access) {
     for (auto& ap : aps) {
       const auto layer_num = ap->getLayerNum();
-      filterSingleAPAccesses(ap.get(),
-                             pin_shapes[layer_num],
-                             layer_polys[layer_num],
-                             pin,
-                             inst_term,
-                             true);
+      filterViaAccess(ap.get(),
+                      layer_polys[layer_num],
+                      pin_shapes[layer_num],
+                      pin,
+                      inst_term,
+                      true);
     }
   }
 }
