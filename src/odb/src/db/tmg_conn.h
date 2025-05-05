@@ -99,7 +99,30 @@ struct tmg_rcshort
   bool _skip;
 };
 
-class tmg_conn_search;
+// This stores shapes by level through addShape.  Once all the shapes
+// have been added then searchStart/Next can be used for querying.
+// Internally a simple tree of space bisections is generated for
+// efficiency.
+//
+// The code uses an odd convention:
+// is_via = 0 ==> wire
+//        = 1 ==> via
+//        = 2 ==> pin
+class tmg_conn_search
+{
+ public:
+  tmg_conn_search();
+  ~tmg_conn_search();
+  void clear();
+  void addShape(int level, const Rect& bounds, int is_via, int id);
+  void searchStart(int level, const Rect& bounds, int is_via);
+  bool searchNext(int* id);
+
+ private:
+  class Impl;
+  std::unique_ptr<Impl> impl_;
+};
+
 class tmg_conn_graph;
 struct tmg_connect_shape
 {
@@ -210,30 +233,6 @@ class tmg_conn
   int _firstSegmentAfterVia;
   utl::Logger* logger_;
   friend class tmg_conn_graph;
-};
-
-// This stores shapes by level through addShape.  Once all the shapes
-// have been added then searchStart/Next can be used for querying.
-// Internally a simple tree of space bisections is generated for
-// efficiency.
-//
-// The code uses an odd convention:
-// is_via = 0 ==> wire
-//        = 1 ==> via
-//        = 2 ==> pin
-class tmg_conn_search
-{
- public:
-  tmg_conn_search();
-  ~tmg_conn_search();
-  void clear();
-  void addShape(int level, const Rect& bounds, int is_via, int id);
-  void searchStart(int level, const Rect& bounds, int is_via);
-  bool searchNext(int* id);
-
- private:
-  class Impl;
-  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace odb
