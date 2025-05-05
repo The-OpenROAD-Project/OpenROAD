@@ -425,7 +425,7 @@ void dbInst::setOrigin(int x, int y)
 
   for (auto iterm_idx : inst->_iterms) {
     dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
-    iterm->destroyAccessPoints();
+    iterm->clearPrefAccessPoints();
   }
 
   block->_flags._valid_bbox = 0;
@@ -518,7 +518,7 @@ void dbInst::setOrient(dbOrientType orient)
 
   for (auto iterm_idx : inst->_iterms) {
     dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
-    iterm->destroyAccessPoints();
+    iterm->clearPrefAccessPoints();
   }
 
   block->_flags._valid_bbox = 0;
@@ -1155,7 +1155,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   for (auto iterm_idx : inst->_iterms) {
     dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
-    iterm->destroyAccessPoints();
+    iterm->clearPrefAccessPoints();
   }
 
   // remove reference to inst_hdr

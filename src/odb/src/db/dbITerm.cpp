@@ -813,13 +813,12 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
   return aps;
 }
 
-void dbITerm::destroyAccessPoints()
+void dbITerm::clearPrefAccessPoints()
 {
-  for (auto& [mpin, aps] : getAccessPoints()) {
-    for (dbAccessPoint* ap : aps) {
-      dbAccessPoint::destroy(ap);
-    }
-  }
+  _dbITerm* iterm = (_dbITerm*) this;
+  // Clear aps_ map instead of destroying dbAccessPoint object to prevent
+  // destroying APs of other iterms.
+  iterm->aps_.clear();
 }
 
 std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const

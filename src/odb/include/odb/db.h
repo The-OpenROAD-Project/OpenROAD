@@ -3537,7 +3537,7 @@ class dbITerm : public dbObject
   ///
   /// Destroys all access points of each pin.
   ///
-  void destroyAccessPoints();
+  void clearPrefAccessPoints();
 
   ///
   /// Translate a database-id back to a pointer.
