@@ -101,7 +101,7 @@ cc_library(
 )
 
 tcl_encode(
-    name = "opendp_tcl",
+    name = "tcl",
     srcs = [
         "src/Opendp.tcl",
     ],
@@ -110,7 +110,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "opendp_swig",
+    name = "swig",
     srcs = [
         "src/Opendp.i",
         "//:error_swig",

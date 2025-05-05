@@ -58,7 +58,7 @@ cc_library(
 )
 
 tcl_encode(
-    name = "triton_cts_tcl",
+    name = "tcl",
     srcs = [
         "src/TritonCTS.tcl",
     ],
@@ -67,7 +67,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "triton_cts_swig",
+    name = "swig",
     srcs = [
         "src/TritonCTS.i",
         "//:error_swig",
