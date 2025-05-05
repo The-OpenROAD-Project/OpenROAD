@@ -195,12 +195,11 @@ class GlobalRouter : public ant::GlobalRouteSource
   void addDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
-  bool haveRoutes() override;
+  bool haveRoutes();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
   void makeNetWires() override;
-  void destroyNetWires() override;
 
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();

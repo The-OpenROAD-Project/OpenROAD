@@ -470,16 +470,6 @@ void GlobalRouter::makeNetWires()
   repair_antennas_->makeNetWires(routes_, nets_to_repair, getMaxRoutingLayer());
 }
 
-void GlobalRouter::destroyNetWires()
-{
-  std::vector<odb::dbNet*> nets_to_repair;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    nets_to_repair.push_back(db_net);
-  }
-
-  repair_antennas_->destroyNetWires(nets_to_repair);
-}
-
 NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
                                       int min_routing_layer,
                                       int max_routing_layer)
