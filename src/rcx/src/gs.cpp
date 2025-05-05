@@ -64,11 +64,8 @@ gs::~gs()
 void gs::freeMem()
 {
   if (init_ & ALLOCATED) {
-    for (int i = 0; i < pldata_.size(); i++) {
-      pixmap* pm = pldata_[i].plane;
-      if (pm != nullptr) {
-        free(pm);
-      }
+    for (auto & pm: pldata_) {
+      free(pm.plane);
     }
     pldata_.clear();
     init_ = (init_ & ~ALLOCATED);
