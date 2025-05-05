@@ -16,30 +16,45 @@ namespace odb {
 class tmg_rc_sh
 {
  public:
-  Rect _rect;
-  dbTechLayer* _layer;
-  dbTechVia* _tech_via;
-  dbVia* _block_via;
-  dbTechNonDefaultRule* _rule;
-  Rect _via_lower_rect;
-  Rect _via_upper_rect;
+  tmg_rc_sh() = default;
+  tmg_rc_sh(Rect rect,
+            dbTechLayer* layer,
+            dbTechVia* tech_via,
+            dbVia* block_via,
+            dbTechNonDefaultRule* rule = nullptr)
+      : _rect(rect),
+        _layer(layer),
+        _tech_via(tech_via),
+        _block_via(block_via),
+        _rule(rule)
+  {
+  }
 
- public:
   const Rect& rect() const { return _rect; }
   int xMin() const { return _rect.xMin(); }
   int xMax() const { return _rect.xMax(); }
   int yMin() const { return _rect.yMin(); }
   int yMax() const { return _rect.yMax(); }
+  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
+  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+
   bool isVia() const { return (_tech_via || _block_via); }
   dbTechVia* getTechVia() const { return _tech_via; }
   dbVia* getVia() const { return _block_via; }
   dbTechLayer* getTechLayer() const { return _layer; }
-  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
-  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+  dbTechNonDefaultRule* getRule() const { return _rule; }
+
   void setXmin(int x) { _rect.set_xlo(x); }
   void setXmax(int x) { _rect.set_xhi(x); }
   void setYmin(int y) { _rect.set_ylo(y); }
   void setYmax(int y) { _rect.set_yhi(y); }
+
+ private:
+  Rect _rect;
+  dbTechLayer* _layer{nullptr};
+  dbTechVia* _tech_via{nullptr};
+  dbVia* _block_via{nullptr};
+  dbTechNonDefaultRule* _rule{nullptr};
 };
 
 struct tmg_rc
@@ -123,7 +138,10 @@ class tmg_conn
   bool checkConnected();
   void checkVisited();
   tmg_rcpt* allocPt(int x, int y, dbTechLayer* layer);
-  void addRc(const dbShape& s, int from_idx, int to_idx);
+  void addRc(const dbShape& s,
+             int from_idx,
+             int to_idx,
+             dbTechNonDefaultRule* rule = nullptr);
   void addRc(int k,
              const tmg_rc_sh& s,
              int from_idx,
