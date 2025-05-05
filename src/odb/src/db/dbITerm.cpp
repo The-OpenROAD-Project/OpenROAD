@@ -813,6 +813,15 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
   return aps;
 }
 
+void dbITerm::destroyAccessPoints()
+{
+  for (auto& [mpin, aps] : getAccessPoints()) {
+    for (dbAccessPoint* ap : aps) {
+      dbAccessPoint::destroy(ap);
+    }
+  }
+}
+
 std::vector<std::pair<dbTechLayer*, Rect>> dbITerm::getGeometries() const
 {
   const dbTransform transform = getInst()->getTransform();

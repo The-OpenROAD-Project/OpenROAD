@@ -3535,6 +3535,11 @@ class dbITerm : public dbObject
   std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
 
   ///
+  /// Destroys all access points of each pin.
+  ///
+  void destroyAccessPoints();
+
+  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbITerm* getITerm(dbBlock* block, uint oid);
