@@ -64,6 +64,12 @@ gs::~gs()
 void gs::freeMem()
 {
   if (init_ & ALLOCATED) {
+    for (int i = 0; i < pldata_.size(); i++) {
+      pixmap* pm = pldata_[i].plane;
+      if (pm != nullptr) {
+        free(pm);
+      }
+    }
     pldata_.clear();
     init_ = (init_ & ~ALLOCATED);
   }
@@ -143,6 +149,10 @@ void gs::setSize(const int plane,
             "Error: not enough memory available trying to allocate plane %d\n",
             plane);
     exit(-1);
+  }
+
+  if (plc.plane != nullptr) {
+    free(plc.plane);
   }
 
   plc.plane = pm;
