@@ -1,10 +1,13 @@
+// NOLINTNEXTLINE
 #include <verilated_vcd_c.h>
 
 #include <print>
 #include <string_view>
 #include <vector>
 
+// NOLINTNEXTLINE
 #include "VMockArray.h"
+// NOLINTNEXTLINE
 #include "verilated.h"
 
 std::vector<std::string_view> arguments(int argc, char* argv[])
@@ -55,12 +58,12 @@ int main(int argc, char** argv)
   vcd->open(args.front().data());
 
   int tick = 0;
-  for (int j = 0; j < sizeof(inputs) / sizeof(*inputs); j++) {
+  for (auto input : inputs) {
     for (int i = 0; i < 5; i++) {
       if (Verilated::gotFinish()) {
         goto done;
       }
-      *inputs[j] = tick ^ ((tick / 2) % 2 ? 0 : 0xffffffffffffffffUL);
+      *input = tick ^ ((tick / 2) % 2 ? 0 : 0xffffffffffffffffUL);
       if (tick == 9) {
         top->reset = 0;
       }
