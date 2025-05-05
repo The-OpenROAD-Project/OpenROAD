@@ -3633,4 +3633,14 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["module_name_id_map"].add(_module_name_id_map);
 }
 
+void dbBlock::destroyNetWires()
+{
+  for (dbNet* db_net : getNets()) {
+    dbWire* wire = db_net->getWire();
+    if (wire) {
+      dbWire::destroy(wire);
+    }
+  }
+}
+
 }  // namespace odb

@@ -1194,6 +1194,11 @@ class dbBlock : public dbObject
   dbSet<dbNet> getNets();
 
   ///
+  /// Destroy wires of nets
+  ///
+  void destroyNetWires();
+
+  ///
   /// Get the capNodes of this block
   ///
   dbSet<dbCapNode> getCapNodes();
