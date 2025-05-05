@@ -38,7 +38,8 @@ template <class T>
 class SimulatedAnnealingCore
 {
  public:
-  SimulatedAnnealingCore(PhysicalHierarchy* tree,
+  SimulatedAnnealingCore(odb::dbBlock* block,
+                         PhysicalHierarchy* tree,
                          const Rect& outline,
                          const std::vector<T>& macros,
                          const SACoreWeights& weights,
@@ -97,7 +98,7 @@ class SimulatedAnnealingCore
 
   void fastSA();
 
-  void setAvailableRegionForPins(const std::vector<mpl::Rect>& regions);
+  void setAvailableRegionForPins(const std::vector<odb::Rect>& regions);
   void initSequencePair();
   void setDieArea(const Rect& die_area);
   void updateBestValidResult();
@@ -109,7 +110,6 @@ class SimulatedAnnealingCore
   void calWirelength();
   void addClosestAvailableRegionDistToWL(const T& macro, float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
-  float computeDistance(const Point& a, const Point& b) const;
   void calGuidancePenalty();
   void calFencePenalty();
 
@@ -132,10 +132,12 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
+  odb::dbBlock* block_;
+
   Rect outline_;
   Rect die_area_;  // Offset to the current outline.
 
-  std::vector<Rect> available_regions_for_pins_;
+  std::vector<AvailableRegionForPins> available_regions_for_pins_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;

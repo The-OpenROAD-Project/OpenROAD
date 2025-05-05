@@ -591,12 +591,8 @@ void Graphics::drawDistToClosestAvailableRegion(gui::Painter& painter,
   from.addX(outline_.xMin());
   from.addY(outline_.yMin());
 
-  // Differently from what happens inside the SA core - where all
-  // computations are made using the origin of the current outline as
-  // reference - here we search for the center of the closest region
-  // using the die area origin as reference. I.e., we offset the macro
-  // location instead of offsetting the regions as we do inside SA.
-  odb::Point to = findCenterOfClosestRegion(from, available_regions_for_pins_);
+  odb::Point to;
+  computeDistToNearestRegion(from, available_regions_for_pins_, &to);
 
   painter.drawLine(from, to);
   painter.drawString(
@@ -715,7 +711,10 @@ void Graphics::setBlockedRegionsForPins(
 void Graphics::setAvailableRegionsForPins(
     const std::vector<odb::Rect>& available_regions_for_pins)
 {
-  available_regions_for_pins_ = available_regions_for_pins;
+  for (const odb::Rect& region : available_regions_for_pins) {
+    available_regions_for_pins_.emplace_back(
+        rectToLine(block_, region, logger_), getBoundary(block_, region));
+  }
 }
 
 void Graphics::eraseDrawing()

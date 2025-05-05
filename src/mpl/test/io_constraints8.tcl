@@ -1,4 +1,4 @@
-# Test if we available regions create based on the blocked regions for pins
+# Test if the available regions created based on the blocked regions for pins
 # are correctly generated when there are no constraints at all. Connections
 # are needed so we trigger the closest available region distance computation
 # inside the annealer.

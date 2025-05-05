@@ -109,7 +109,7 @@ class Graphics : public gui::Renderer, public MplObserver
   int target_cluster_id_{-1};
   std::vector<std::vector<odb::Rect>> outlines_;
   std::vector<odb::Rect> blocked_regions_for_pins_;
-  std::vector<odb::Rect> available_regions_for_pins_;
+  std::vector<AvailableRegionForPins> available_regions_for_pins_;
 
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.

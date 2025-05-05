@@ -22,7 +22,8 @@ namespace mpl {
 using std::string;
 
 template <class T>
-SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
+SimulatedAnnealingCore<T>::SimulatedAnnealingCore(odb::dbBlock* block,
+                                                  PhysicalHierarchy* tree,
                                                   const Rect& outline,
                                                   const std::vector<T>& macros,
                                                   const SACoreWeights& weights,
@@ -37,7 +38,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
                                                   unsigned seed,
                                                   MplObserver* graphics,
                                                   utl::Logger* logger)
-    : outline_(outline), graphics_(graphics)
+    : block_(block), outline_(outline), graphics_(graphics)
 {
   core_weights_ = weights;
 
@@ -73,13 +74,18 @@ void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
 
 template <class T>
 void SimulatedAnnealingCore<T>::setAvailableRegionForPins(
-    const std::vector<mpl::Rect>& regions)
+    const std::vector<odb::Rect>& regions)
 {
-  for (const Rect& region : regions) {
-    Rect offset_region = region;
-    offset_region.moveHor(-outline_.xMin());
-    offset_region.moveVer(-outline_.yMin());
-    available_regions_for_pins_.push_back(offset_region);
+  const float x_offset = -(block_->micronsToDbu(outline_.xMin()));
+  const float y_offset = -(block_->micronsToDbu(outline_.xMin()));
+
+  available_regions_for_pins_.reserve(regions.size());
+  for (const odb::Rect& region : regions) {
+    odb::Line region_line = rectToLine(block_, region, logger_);
+    region_line.addX(x_offset);
+    region_line.addX(y_offset);
+    available_regions_for_pins_.emplace_back(region_line,
+                                             getBoundary(block_, region));
   }
 }
 
@@ -317,17 +323,12 @@ void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
         "There's no available region for the unconstrained pins!");
   }
 
-  float dist_to_closest_available_region = std::numeric_limits<float>::max();
-  for (const Rect& region : available_regions_for_pins_) {
-    const float dist_to_available_region
-        = computeDistance(/* from */ {macro.getPinX(), macro.getPinY()},
-                          /*  to  */ {region.xCenter(), region.yCenter()});
-    if (dist_to_available_region < dist_to_closest_available_region) {
-      dist_to_closest_available_region = dist_to_available_region;
-    }
-  }
+  const odb::Point macro_location(block_->micronsToDbu(macro.getPinX()),
+                                  block_->micronsToDbu(macro.getPinY()));
+  const double nearest_distance = computeDistToNearestRegion(
+      macro_location, available_regions_for_pins_, nullptr);
 
-  wirelength_ += net_weight * dist_to_closest_available_region;
+  wirelength_ += net_weight * block_->dbuToMicrons(nearest_distance);
 }
 
 // We consider the macro outside the outline based on the location of
@@ -337,15 +338,6 @@ bool SimulatedAnnealingCore<T>::isOutsideTheOutline(const T& macro) const
 {
   return macro.getPinX() > outline_.getWidth()
          || macro.getPinY() > outline_.getHeight();
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::computeDistance(const Point& a,
-                                                 const Point& b) const
-{
-  const float dx = std::abs(a.first - b.first);
-  const float dy = std::abs(a.second - b.second);
-  return std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
 }
 
 template <class T>

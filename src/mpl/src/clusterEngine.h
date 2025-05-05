@@ -88,7 +88,7 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  std::vector<Rect> available_regions_for_pins;
+  std::vector<odb::Rect> available_regions_for_pins;
 
   float halo_width{0.0f};
   float halo_height{0.0f};

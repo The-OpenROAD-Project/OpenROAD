@@ -31,8 +31,10 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
                                  int num_perturb_per_step,
                                  unsigned seed,
                                  MplObserver* graphics,
-                                 utl::Logger* logger)
-    : SimulatedAnnealingCore<HardMacro>(tree,
+                                 utl::Logger* logger,
+                                 odb::dbBlock* block)
+    : SimulatedAnnealingCore<HardMacro>(block,
+                                        tree,
                                         outline,
                                         macros,
                                         core_weights,
