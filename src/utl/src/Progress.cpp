@@ -11,7 +11,10 @@
 
 namespace utl {
 
+bool Progress::batch_mode_{false};
+
 static Progress::ProgressHalt* signal_halt = nullptr;
+
 static void controlC_handler(int sig)
 {
   if (signal_halt == nullptr) {
@@ -58,16 +61,20 @@ Progress::Progress(Logger* logger) : logger_(logger)
   prev_signal_halt_ = signal_halt;
   signal_halt = &signal_halt_;
 
-  struct sigaction act;
-  act.sa_handler = controlC_handler;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = 0;
-  sigaction(SIGINT, &act, &signal_halt_.orig_sigaction);
+  if (!batch_mode_) {
+    struct sigaction act;
+    act.sa_handler = controlC_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(SIGINT, &act, &signal_halt_.orig_sigaction);
+  }
 }
 
 Progress::~Progress()
 {
-  sigaction(SIGINT, &signal_halt_.orig_sigaction, nullptr);
+  if (!batch_mode_) {
+    sigaction(SIGINT, &signal_halt_.orig_sigaction, nullptr);
+  }
   signal_halt = prev_signal_halt_;
 }
 

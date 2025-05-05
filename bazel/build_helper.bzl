@@ -30,32 +30,32 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":upf_swig",
     ":upf_tcl",
     #DbSTA
-    ":db_sta_tcl",
-    ":dbsta_swig",
+    "//src/dbSta:db_sta_tcl",
+    "//src/dbSta:dbsta_swig",
     #ioPlacer
     ":ioplacer_tcl",
     ":ioplacer_swig",
     #Resizer
-    ":resizer_swig",
-    ":resizer_tcl",
+    "//src/rsz:resizer_swig",
+    "//src/rsz:resizer_tcl",
     #OpenDP
-    ":opendp_swig",
-    ":opendp_tcl",
+    "//src/dpl:opendp_swig",
+    "//src/dpl:opendp_tcl",
     #finale
     ":finale_swig",
     ":finale_tcl",
     #antenna_checker
-    ":ant_swig",
-    ":ant_tcl",
+    "//src/ant:ant_swig",
+    "//src/ant:ant_tcl",
     #FastRoute
-    ":fastroute_swig",
-    ":fastroute_tcl",
+    "//src/grt:fastroute_swig",
+    "//src/grt:fastroute_tcl",
     #Replace
     ":replace_swig",
     ":replace_tcl",
     #TritonCTS
-    ":triton_cts_tcl",
-    ":triton_cts_swig",
+    "//src/cts:triton_cts_tcl",
+    "//src/cts:triton_cts_swig",
     #Tapcell
     ":tapcell_swig",
     ":tapcell_tcl",
@@ -81,8 +81,8 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
     ":rmp_swig",
     ":rmp_tcl",
     #STT
-    ":stt_swig",
-    ":stt_tcl",
+    "//src/stt:stt_swig",
+    "//src/stt:stt_tcl",
     #Distributed
     ":dst_swig",
     ":dst_tcl",
@@ -95,35 +95,18 @@ OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
 ]
 
 OPENROAD_LIBRARY_HDRS_INCLUDE = [
-    #Root OpenRoad
-    "include/ord/*.h",
-    "include/ord/*.hh",
     #InitFp
     "src/ifp/include/ifp/*.hh",
     #STA
     "src/sta/include/sta/*.hh",
-    #DbSTA
-    "src/dbSta/include/db_sta/*.hh",
     #ioPlacer
     "src/ppl/include/ppl/*.h",
-    #Resizer
-    "src/rsz/include/rsz/*.hh",
-    #OpenDP
-    "src/dpl/include/dpl/*.h",
     #finale
     "src/fin/include/fin/*.h",
     #TritonMP
     "src/mpl/include/mpl/*.h",
-    #antenna_checker
-    "src/ant/include/ant/*.hh",
-    "src/ant/src/*.hh",
-    #FastRoute
-    "src/grt/src/fastroute/include/*.h",
-    "src/grt/include/grt/*.h",
     #Replace
     "src/gpl/include/gpl/*.h",
-    #TritonCTS
-    "src/cts/include/cts/*.h",
     #Tapcell
     "src/tap/include/tap/*.h",
     #OpenRCX
@@ -139,8 +122,6 @@ OPENROAD_LIBRARY_HDRS_INCLUDE = [
     "src/par/include/par/*.h",
     #PDNGen
     "src/pdn/include/pdn/*.hh",
-    #STT
-    "src/stt/include/stt/*.h",
     #MPL
     "src/mpl/include/mpl/*.h",
     #RMP
@@ -167,10 +148,8 @@ OPENROAD_LIBRARY_INCLUDES = [
     #OpenDBTCL
     "src/odb/src/swig/common",
     #STA
+    "src/sta",
     "src/sta/include/sta",
-    #DbSTA
-    "src/dbSta/include",
-    "src/dbSta/include/db_sta",
     #GUI
     "src/gui/include",
     #InitFp
@@ -183,30 +162,17 @@ OPENROAD_LIBRARY_INCLUDES = [
     "src/rsz/include",
     "src/rsz/include/rsz",
     "src/rsz/src",
-    #OpenDP
-    "src/dpl/src",
-    "src/dpl/include",
-    "src/dpl/include/dpl",
     #finale
     "src/fin/include",
     "src/fin/include/fin",
     #TritonMP
     "src/mpl/include",
     "src/mpl/include/mpl",
-    #antenna_checker
-    "src/ant/include",
-    "src/ant/include/ant",
-    #FastRoute
-    "src/grt/src/fastroute/include",
-    "src/grt/include/grt",
-    "src/grt/include",
-    "src/grt/src",
     #Replace
     "src/gpl/include/gpl",
     "src/gpl/include",
     #TritonCTS
     "src/cts/src",
-    "src/cts/include",
     #Tapcell
     "src/tap/include/tap",
     "src/tap/include",
@@ -231,10 +197,6 @@ OPENROAD_LIBRARY_INCLUDES = [
     "src/mpl/src",
     #RMP
     "src/rmp/include",
-    #STT
-    "src/stt/include",
-    "src/stt/include/stt",
-    "src/stt/src",
     #Distributed
     "src/dst/include",
     "src/dst/include/dst",
@@ -269,44 +231,18 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/utl/src/*.h",
     #InitFp
     "src/ifp/src/*.cc",
-    #DbSTA
-    "src/dbSta/src/*.cc",
-    "src/dbSta/src/*.cpp",
-    "src/dbSta/src/*.hh",
-    "src/dbSta/src/*.h",
     #ioPlacer
     "src/ppl/src/*.cpp",
     "src/ppl/src/*.h",
-    #Resizer
-    "src/rsz/src/*.cc",
-    "src/rsz/src/*.hh",
-    "src/rsz/src/*.h",
-    #OpenDP
-    "src/dpl/src/*.cpp",
-    "src/dpl/src/*.cxx",
-    "src/dpl/src/*.h",
-    "src/dpl/src/**/*.h",
-    "src/dpl/src/**/*.cpp",
-    "src/dpl/src/**/*.cxx",
     #finale
     "src/fin/src/*.cpp",
     "src/fin/src/*.h",
     #TritionMP
     "src/mpl/src/*.cpp",
     "src/mpl/src/*.h",
-    #antenna_checker
-    "src/ant/src/*.cc",
-    #FastRoute
-    "src/grt/src/fastroute/src/*.cpp",
-    "src/grt/src/fastroute/src/*.h",
-    "src/grt/src/*.h",
-    "src/grt/src/*.cpp",
     #Replace
     "src/gpl/src/*.cpp",
     "src/gpl/src/*.h",
-    #TritonCTS
-    "src/cts/src/*.h",
-    "src/cts/src/*.cpp",
     #Tapcell
     "src/tap/src/*.cpp",
     #OpenRCX
@@ -327,12 +263,6 @@ OPENROAD_LIBRARY_SRCS_INCLUDE = [
     "src/pdn/src/*.cc",
     "src/pdn/src/*.cpp",
     "src/pdn/src/*.h",
-    #STT
-    "src/stt/src/*.cpp",
-    "src/stt/src/*.h",
-    "src/stt/src/pdr/src/*.h",
-    "src/stt/src/pdr/src/*.cpp",
-    "src/stt/src/flt/*.cpp",
     #mpl
     "src/mpl/src/*.cpp",
     "src/mpl/src/*.h",

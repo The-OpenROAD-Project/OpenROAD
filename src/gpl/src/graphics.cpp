@@ -492,6 +492,33 @@ bool Graphics::populateMap()
   return true;
 }
 
+void Graphics::populateXYGrid()
+{
+  BinGrid& grid = nbVec_[0]->getBinGrid();
+  std::vector<Bin>& bin = grid.bins();
+  int x_grid = grid.binCntX();
+  int y_grid = grid.binCntY();
+
+  std::vector<int> x_grid_set, y_grid_set;
+  x_grid_set.reserve(x_grid + 1);
+  y_grid_set.reserve(y_grid + 1);
+
+  x_grid_set.push_back(bin[0].lx());
+  y_grid_set.push_back(bin[0].ly());
+
+  for (int x = 0; x < x_grid && x < static_cast<int>(bin.size()); x++) {
+    x_grid_set.push_back(bin[x].ux());
+  }
+
+  for (int y = 0; y < y_grid; y++) {
+    size_t index = static_cast<size_t>(y) * static_cast<size_t>(x_grid);
+    if (index < bin.size()) {
+      y_grid_set.push_back(bin[index].uy());
+    }
+  }
+  setXYMapGrid(x_grid_set, y_grid_set);
+}
+
 void Graphics::combineMapData(bool base_has_value,
                               double& base,
                               const double new_data,

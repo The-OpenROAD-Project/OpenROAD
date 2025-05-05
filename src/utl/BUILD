@@ -28,6 +28,7 @@ cc_library(
         "src/decode.cpp",
         "src/prometheus/metrics_server.cpp",
         "src/timer.cpp",
+        "src/histogram.cpp",
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
@@ -62,6 +63,7 @@ cc_library(
         "include/utl/scope.h",
         "include/utl/timer.h",
         "include/utl/validation.h",
+        "include/utl/histogram.h",
     ],
     includes = ["include"],
     deps = [

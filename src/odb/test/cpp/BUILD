@@ -44,4 +44,23 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestPolygonalFloorplan",
+    srcs = ["TestPolygonalFloorplan.cc",
+            "nangate45_test_fixture.h"],
+    defines = [
+        'DATA_PREFIX=\\"src/odb/test/\\"',  # TODO: not needed after no cmake
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//src/odb",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # TODO: more to come.

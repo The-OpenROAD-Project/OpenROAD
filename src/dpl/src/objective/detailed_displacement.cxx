@@ -3,14 +3,8 @@
 
 #include "detailed_displacement.h"
 
-#include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cmath>
 #include <cstddef>
-#include <iostream>
-#include <stack>
-#include <utility>
-#include <vector>
 
 #include "optimization/detailed_manager.h"
 #include "optimization/detailed_orient.h"

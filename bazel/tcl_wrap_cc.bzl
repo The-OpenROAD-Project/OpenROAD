@@ -9,7 +9,14 @@ cc_library or cc_binary rules. See below for expected usage.
 cc_library(srcs=[":tcl_foo"])
 tcl_wrap_cc(name = "tcl_foo", srcs=["exception.i"],...)
 """
-TclSwigInfo = provider("TclSwigInfo for taking dependencies on other swig info rules", fields = ["transitive_srcs", "includes", "swig_options"])
+TclSwigInfo = provider(
+    "TclSwigInfo for taking dependencies on other swig info rules",
+    fields = [
+        "transitive_srcs",
+        "includes",
+        "swig_options",
+    ],
+)
 
 def _get_transative_srcs(srcs, deps):
     return depset(
