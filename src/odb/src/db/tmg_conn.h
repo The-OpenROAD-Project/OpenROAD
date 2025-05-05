@@ -109,12 +109,7 @@ class tmg_conn
 
  private:
   void splitTtop();
-  void splitBySj(int j,
-                 int rt,
-                 int sjxMin,
-                 int sjyMin,
-                 int sjxMax,
-                 int sjyMax);
+  void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
   void findConnections();
   void removeShortLoops();
   void removeWireLoops();
