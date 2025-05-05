@@ -129,6 +129,7 @@ class AntennaChecker
 
  private:
   bool haveRoutedNets();
+  bool haveGuides();
   double getPwlFactor(odb::dbTechLayerAntennaRule::pwl_pair pwl_info,
                       double ref_val,
                       double def);

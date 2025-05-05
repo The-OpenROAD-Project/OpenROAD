@@ -9,8 +9,6 @@ class GlobalRouteSource
  public:
   virtual ~GlobalRouteSource() = default;
 
-  virtual bool haveRoutes() = 0;
   virtual void makeNetWires() = 0;
-  virtual void destroyNetWires() = 0;
 };
 }  // namespace ant

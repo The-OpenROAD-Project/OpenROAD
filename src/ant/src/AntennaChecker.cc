@@ -1067,6 +1067,16 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
   return antenna_violations;
 }
 
+bool AntennaChecker::haveGuides()
+{
+  // check placement and congestion of the nets?
+  int guides_num = 0;
+  for (odb::dbNet* net : block_->getNets()) {
+    guides_num += net->getGuides().size();
+  }
+  return guides_num > 0;
+}
+
 int AntennaChecker::checkAntennas(odb::dbNet* net,
                                   const int num_threads,
                                   bool verbose)
@@ -1085,7 +1095,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   bool drt_routes = haveRoutedNets();
   bool grt_routes = false;
   if (!drt_routes) {
-    grt_routes = global_route_source_->haveRoutes();
+    grt_routes = haveGuides();
   }
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
@@ -1151,7 +1161,7 @@ int AntennaChecker::checkAntennas(odb::dbNet* net,
   }
 
   if (use_grt_routes) {
-    global_route_source_->destroyNetWires();
+    block_->destroyNetWires();
   }
 
   net_violation_count_ = net_violation_count;
