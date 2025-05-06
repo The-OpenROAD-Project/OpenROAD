@@ -64,7 +64,7 @@ cc_library(
 )
 
 tcl_encode(
-    name = "resizer_tcl",
+    name = "tcl",
     srcs = [
         "src/Resizer.tcl",
     ],
@@ -73,7 +73,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "resizer_swig",
+    name = "swig",
     srcs = [
         "src/Resizer.i",
         "//:error_swig",

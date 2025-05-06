@@ -16,14 +16,14 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 
-class dbTablePage : public dbObjectPage
+class dbTablePage final : public dbObjectPage
 {
  public:
   char _objects[1];
 };
 
 template <class T>
-class dbTable : public dbObjectTable, public dbIterator
+class dbTable final : public dbObjectTable, public dbIterator
 {
  public:
   dbTable(_dbDatabase* db,

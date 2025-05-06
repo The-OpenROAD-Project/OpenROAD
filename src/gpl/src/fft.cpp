@@ -14,7 +14,7 @@
 
 namespace gpl {
 
-FFT::FFT(int binCntX, int binCntY, int binSizeX, int binSizeY)
+FFT::FFT(int binCntX, int binCntY, float binSizeX, float binSizeY)
     : binCntX_(binCntX),
       binCntY_(binCntY),
       binSizeX_(binSizeX),
