@@ -1,13 +1,10 @@
-#include <print> // NOLINT
-#include <string_view> // NOLINT
-#include <vector> // NOLINT
+#include <print>
+#include <string_view>
+#include <vector>
 
-#include "verilated_vcd_c.h" // NOLINT
-
-// NOLINTNEXTLINE
 #include "VMockArray.h"
-// NOLINTNEXTLINE
 #include "verilated.h"
+#include "verilated_vcd_c.h"
 
 std::vector<std::string_view> arguments(int argc, char* argv[])
 {
