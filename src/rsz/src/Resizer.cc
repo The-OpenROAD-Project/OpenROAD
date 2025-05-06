@@ -2245,22 +2245,32 @@ void Resizer::swapPins(Instance* inst,
 
     // disconnect everything connected to found_pin1
     sta_->disconnectPin(found_pin1);
+    db_network_->connectPin(
+        found_pin1, (Net*) flat_net_pin2, (Net*) mod_net_pin2);
     //  sta_->connectPin(inst, port1, net2);
+
+    /*
     if (flat_net_pin2) {
       iterm_pin1->connect(flat_net_pin2);
     }
     if (mod_net_pin2) {
       iterm_pin1->connect(mod_net_pin2);
     }
-
+    */
     sta_->disconnectPin(found_pin2);
+
     // sta_->connectPin(inst, port2, net1);
+
+    /*
     if (flat_net_pin1) {
       iterm_pin2->connect(flat_net_pin1);
     }
     if (mod_net_pin1) {
       iterm_pin2->connect(mod_net_pin1);
     }
+    */
+    db_network_->connectPin(
+        found_pin2, (Net*) flat_net_pin1, (Net*) mod_net_pin1);
 
     // Invalidate the parasitics on these two nets.
     if (haveEstimatedParasitics()) {

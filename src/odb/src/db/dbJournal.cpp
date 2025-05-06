@@ -1681,7 +1681,16 @@ void dbJournal::undo_createObject()
       _log.pop(master_id);
       _log.pop(name);
       _log.pop(inst_id);
+
       dbInst* inst = dbInst::getInst(_block, inst_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create instance {} at id {}",
+                 name,
+                 inst_id);
+
       dbInst::destroy(inst);
       break;
     }
@@ -1880,6 +1889,14 @@ void dbJournal::undo_deleteObject()
         auto region = dbRegion::getRegion(_block, region_id);
         region->addInst(inst);
       }
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbInst {} {}",
+                 name.c_str(),
+                 master_id);
+
       break;
     }
     case dbNetObj: {
@@ -2114,7 +2131,7 @@ void dbJournal::undo_disconnectObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: disconnect dbITerm {} {} {}",
+                 "UNDO ECO: *disconnect dbITerm {} {} {}",
                  iterm->getName(),
                  net_id,
                  mnet_id);
