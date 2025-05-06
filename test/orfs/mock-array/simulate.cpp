@@ -2,8 +2,7 @@
 #include <string_view>
 #include <vector>
 
-// NOLINTNEXTLINE
-#include "verilated_vcd_c.h"
+#include "verilated_vcd_c.h" // NOLINT
 
 // NOLINTNEXTLINE
 #include "VMockArray.h"
