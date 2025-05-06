@@ -2131,7 +2131,7 @@ void dbJournal::undo_disconnectObject()
                  utl::ODB,
                  "DB_ECO",
                  3,
-                 "UNDO ECO: *disconnect dbITerm {} {} {}",
+                 "UNDO ECO: disconnect dbITerm {} {} {}",
                  iterm->getName(),
                  net_id,
                  mnet_id);
