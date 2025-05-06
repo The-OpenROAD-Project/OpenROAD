@@ -2225,14 +2225,12 @@ void Resizer::swapPins(Instance* inst,
       net1 = net;
       flat_net_pin1 = db_network_->flatNet(found_pin1);
       mod_net_pin1 = db_network_->hierNet(found_pin1);
-      iterm_pin1 = db_network_->flatPin(found_pin1);
     }
     if (std::strcmp(port->name(), port2->name()) == 0) {
       found_pin2 = pin;
       net2 = net;
       flat_net_pin2 = db_network_->flatNet(found_pin2);
       mod_net_pin2 = db_network_->hierNet(found_pin2);
-      iterm_pin2 = db_network_->flatPin(found_pin2);
     }
   }
 
