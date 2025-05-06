@@ -127,3 +127,13 @@ orfs.default(
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "opensta",
+    build_file = "//bazel:opensta.BUILD",
+    sha256 = "174623fa9259ea722c41b621e2f11531b487cfe2aca8478bf7638f9801bd11ac",
+    strip_prefix = "oss-cad-suite",
+    urls = ["https://github.com/The-OpenROAD-Project/OpenSTA/archive/ce98bde188e7b330c86b913d9def696c950a4130.zip"],
+)
