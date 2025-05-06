@@ -47,7 +47,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/ant",
     ],
     deps = [
         ":types",

@@ -29,7 +29,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/db_sta",
     ],
     deps = [
         "//:opensta_lib",

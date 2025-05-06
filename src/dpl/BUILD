@@ -80,7 +80,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/dpl",
         "src",
     ],
     deps = [
