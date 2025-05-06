@@ -1,6 +1,6 @@
-#include <print>
-#include <string_view>
-#include <vector>
+#include <print> // NOLINT
+#include <string_view> // NOLINT
+#include <vector> // NOLINT
 
 #include "verilated_vcd_c.h" // NOLINT
 
