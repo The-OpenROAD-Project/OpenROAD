@@ -47,7 +47,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/ant",
     ],
     deps = [
         ":types",
@@ -63,7 +62,7 @@ cc_library(
 )
 
 tcl_encode(
-    name = "ant_tcl",
+    name = "tcl",
     srcs = [
         "src/AntennaChecker.tcl",
     ],
@@ -72,7 +71,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "ant_swig",
+    name = "swig",
     srcs = [
         "src/AntennaChecker.i",
         "//:error_swig",
