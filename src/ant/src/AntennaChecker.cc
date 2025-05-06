@@ -1067,14 +1067,42 @@ Violations AntennaChecker::getAntennaViolations(odb::dbNet* net,
   return antenna_violations;
 }
 
+bool AntennaChecker::designIsPlaced()
+{
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->getFirstPinPlacementStatus() == odb::dbPlacementStatus::NONE) {
+      return false;
+    }
+  }
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (!inst->isPlaced()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 bool AntennaChecker::haveGuides()
 {
-  // check placement and congestion of the nets?
-  int guides_num = 0;
-  for (odb::dbNet* net : block_->getNets()) {
-    guides_num += net->getGuides().size();
+  if (!designIsPlaced()) {
+    return false;
   }
-  return guides_num > 0;
+
+  for (odb::dbNet* net : block_->getNets()) {
+    if (!net->isSpecial() && net->getGuides().empty()) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 int AntennaChecker::checkAntennas(odb::dbNet* net,
