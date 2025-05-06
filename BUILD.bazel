@@ -937,6 +937,7 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":opensta_lib",
+        "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],
 )

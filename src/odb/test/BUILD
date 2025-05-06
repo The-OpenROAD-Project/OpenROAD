@@ -177,7 +177,7 @@ filegroup(
 [
     filegroup(
         name = test_name + "_resources",
-        data = [
+        srcs = [
             ":regression_resources",
             "//src/odb/test/data/sky130hd:lef-test-data",
         ] + glob(
