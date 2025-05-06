@@ -953,11 +953,10 @@ bool HierRTLMP::treeHasOnlyUnconstrainedIOs() const
 
 void HierRTLMP::createBlockagesForAvailableRegions()
 {
-  int64_t io_span = 0;
+  double io_span = 0.0;
   for (const BoundaryRegion& region : tree_->available_regions_for_pins) {
-    // TO DO: Use square distance.
-    io_span
-        += odb::Point::manhattanDistance(region.line.pt0(), region.line.pt1());
+    io_span += std::sqrt(
+        odb::Point::squaredDistance(region.line.pt0(), region.line.pt1()));
   }
 
   const float depth = computePinAccessBaseDepth(block_->dbuToMicrons(io_span));
@@ -2754,20 +2753,20 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         auto constraint_region = bterm->getConstraintRegion();
+        odb::Point closest_point;
         if (constraint_region) {
-          int x = constraint_region->xCenter();
-          int y = constraint_region->yCenter();
-          odb::Rect region_rect(x, y, x, y);
-          net_box.merge(region_rect);
+          BoundaryRegion constraint(
+              rectToLine(block_, *constraint_region, logger_),
+              getBoundary(block_, *constraint_region));
+          computeDistToNearestRegion(
+              macro_pin->getBBox().center(), {constraint}, &closest_point);
         } else {
-          odb::Point nearest_region_point;
-          computeDistToNearestRegion(macro->getBBox()->getBox().center(),
+          computeDistToNearestRegion(macro_pin->getBBox().center(),
                                      tree_->available_regions_for_pins,
-                                     &nearest_region_point);
-
-          odb::Rect center_rect(nearest_region_point, nearest_region_point);
-          net_box.merge(center_rect);
+                                     &closest_point);
         }
+        odb::Rect point_rect(closest_point, closest_point);
+        net_box.merge(point_rect);
       }
 
       wirelength += block_->dbuToMicrons(net_box.dx() + net_box.dy());
