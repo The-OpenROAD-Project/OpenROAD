@@ -3208,6 +3208,16 @@ bool dbBlock::designIsRouted(bool verbose)
   return design_is_routed;
 }
 
+void dbBlock::destroyNetWires()
+{
+  for (dbNet* db_net : getNets()) {
+    dbWire* wire = db_net->getWire();
+    if (!db_net->isSpecial() && wire) {
+      dbWire::destroy(wire);
+    }
+  }
+}
+
 int dbBlock::globalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
@@ -3631,16 +3641,6 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children_["cc_val"].add(*_cc_val_tbl);
 
   info.children_["module_name_id_map"].add(_module_name_id_map);
-}
-
-void dbBlock::destroyNetWires()
-{
-  for (dbNet* db_net : getNets()) {
-    dbWire* wire = db_net->getWire();
-    if (wire) {
-      dbWire::destroy(wire);
-    }
-  }
 }
 
 }  // namespace odb

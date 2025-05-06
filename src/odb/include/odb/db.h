@@ -1194,11 +1194,6 @@ class dbBlock : public dbObject
   dbSet<dbNet> getNets();
 
   ///
-  /// Destroy wires of nets
-  ///
-  void destroyNetWires();
-
-  ///
   /// Get the capNodes of this block
   ///
   dbSet<dbCapNode> getCapNodes();
@@ -1592,6 +1587,11 @@ class dbBlock : public dbObject
   /// check if signal, clock and special nets are routed
   ///
   bool designIsRouted(bool verbose);
+
+  ///
+  /// Destroy wires of nets
+  ///
+  void destroyNetWires();
 
   ///
   /// clear
