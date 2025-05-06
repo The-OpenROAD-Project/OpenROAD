@@ -19,41 +19,6 @@ namespace mpl {
 using utl::MPL;
 
 ///////////////////////////////////////////////////////////////////////
-// Basic utility functions
-
-std::string toString(const Boundary& pin_access)
-{
-  switch (pin_access) {
-    case L:
-      return std::string("L");
-    case T:
-      return std::string("T");
-    case R:
-      return std::string("R");
-    case B:
-      return std::string("B");
-    default:
-      return std::string("NONE");
-  }
-}
-
-Boundary opposite(const Boundary& pin_access)
-{
-  switch (pin_access) {
-    case L:
-      return R;
-    case T:
-      return B;
-    case R:
-      return L;
-    case B:
-      return T;
-    default:
-      return NONE;
-  }
-}
-
-///////////////////////////////////////////////////////////////////////
 // Metrics Class
 Metrics::Metrics(unsigned int num_std_cell,
                  unsigned int num_macro,

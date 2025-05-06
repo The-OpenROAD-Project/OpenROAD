@@ -6,10 +6,56 @@
 #include <string>
 #include <utility>
 
+#include "odb/db.h"
 #include "odb/geom.h"
 #include "shapes.h"
 
 namespace mpl {
+struct BoundaryRegion;
+
+using BoundaryRegionList = std::vector<BoundaryRegion>;
+
+// One of the edges of the die area.
+enum Boundary
+{
+  NONE,
+  B,
+  L,
+  T,
+  R
+};
+
+inline std::string toString(const Boundary& pin_access)
+{
+  switch (pin_access) {
+    case L:
+      return std::string("L");
+    case T:
+      return std::string("T");
+    case R:
+      return std::string("R");
+    case B:
+      return std::string("B");
+    default:
+      return std::string("NONE");
+  }
+}
+
+inline Boundary opposite(const Boundary& pin_access)
+{
+  switch (pin_access) {
+    case L:
+      return R;
+    case T:
+      return B;
+    case R:
+      return L;
+    case B:
+      return T;
+    default:
+      return NONE;
+  }
+}
 
 struct SACoreWeights
 {
@@ -36,10 +82,12 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-// Used inside the annealer and during the orientation improvement step.
-struct AvailableRegionForPins
+// Object to help handling the available regions for pins inside MPL.
+// Note that the blocked regions are still handled as odb:Rect's which
+// is how they're stored in ODB.
+struct BoundaryRegion
 {
-  AvailableRegionForPins(const odb::Line& line, const Boundary boundary)
+  BoundaryRegion(const odb::Line& line, const Boundary boundary)
       : line(line), boundary(boundary)
   {
   }
@@ -85,6 +133,11 @@ inline Boundary getBoundary(odb::dbBlock* block, const odb::Rect& region)
   return boundary;
 }
 
+inline odb::Rect lineToRect(const odb::Line line)
+{
+  return odb::Rect(line.pt0(), line.pt1());
+}
+
 inline odb::Line rectToLine(odb::dbBlock* block,
                             const odb::Rect& rect,
                             utl::Logger* logger)
@@ -118,9 +171,8 @@ inline odb::Line rectToLine(odb::dbBlock* block,
   return line;
 }
 
-inline odb::Point computeNearestPointInRegion(
-    const AvailableRegionForPins& region,
-    const odb::Point& target)
+inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
+                                              const odb::Point& target)
 {
   if (region.boundary == L || region.boundary == R) {
     if (target.y() >= region.line.pt1().y()) {
@@ -146,11 +198,11 @@ inline odb::Point computeNearestPointInRegion(
 // of the nearest region.
 inline double computeDistToNearestRegion(
     const odb::Point& macro_location,
-    const std::vector<AvailableRegionForPins>& regions,
+    const std::vector<BoundaryRegion>& regions,
     odb::Point* closest_point)
 {
   double smallest_distance = std::numeric_limits<double>::max();
-  for (const AvailableRegionForPins& region : regions) {
+  for (const BoundaryRegion& region : regions) {
     odb::Point closest_point_in_region
         = computeNearestPointInRegion(region, macro_location);
     const double dist_to_closest_point_in_region = std::sqrt(

@@ -98,7 +98,7 @@ class SimulatedAnnealingCore
 
   void fastSA();
 
-  void setAvailableRegionForPins(const std::vector<odb::Rect>& regions);
+  void setAvailableRegionForPins(const BoundaryRegionList& regions);
   void initSequencePair();
   void setDieArea(const Rect& die_area);
   void updateBestValidResult();
@@ -137,7 +137,7 @@ class SimulatedAnnealingCore
   Rect outline_;
   Rect die_area_;  // Offset to the current outline.
 
-  std::vector<AvailableRegionForPins> available_regions_for_pins_;
+  BoundaryRegionList available_regions_for_pins_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;

@@ -883,12 +883,12 @@ void HierRTLMP::searchForAvailableRegionsForPins()
 
   BoundaryToRegionsMap boundary_to_blocked_regions
       = getBoundaryToBlockedRegionsMap(blocked_regions_for_pins);
-  tree_->available_regions_for_pins
+  std::vector<odb::Rect> available_regions
       = computeAvailableRegions(boundary_to_blocked_regions);
 
-  available_regions_for_pins_.reserve(tree_->available_regions_for_pins.size());
-  for (const odb::Rect& region : tree_->available_regions_for_pins) {
-    available_regions_for_pins_.emplace_back(
+  tree_->available_regions_for_pins.reserve(available_regions.size());
+  for (const odb::Rect& region : available_regions) {
+    tree_->available_regions_for_pins.emplace_back(
         rectToLine(block_, region, logger_), getBoundary(block_, region));
   }
 
@@ -954,13 +954,14 @@ bool HierRTLMP::treeHasOnlyUnconstrainedIOs() const
 void HierRTLMP::createBlockagesForAvailableRegions()
 {
   int64_t io_span = 0;
-  for (const odb::Rect& region : tree_->available_regions_for_pins) {
-    io_span += region.margin() / 2;
+  for (const BoundaryRegion& region : tree_->available_regions_for_pins) {
+    io_span
+        += odb::Point::manhattanDistance(region.line.pt0(), region.line.pt1());
   }
 
   const float depth = computePinAccessBaseDepth(block_->dbuToMicrons(io_span));
 
-  for (const odb::Rect& region : tree_->available_regions_for_pins) {
+  for (const BoundaryRegion region : tree_->available_regions_for_pins) {
     createPinAccessBlockage(region, depth);
   }
 }
@@ -996,9 +997,11 @@ void HierRTLMP::createBlockagesForConstraintRegions()
     const float io_density_factor = cluster_number_of_ios / total_ios;
     const float depth = base_depth * io_density_factor;
 
-    odb::Rect blockage_region
+    const odb::Rect region_rect
         = micronsToDbu(cluster_of_unplaced_ios->getBBox());
-    createPinAccessBlockage(blockage_region, depth);
+    const odb::Line region_line = rectToLine(block_, region_rect, logger_);
+    const BoundaryRegion region(region_line, getBoundary(block_, region_rect));
+    createPinAccessBlockage(region, depth);
   }
 }
 
@@ -1069,13 +1072,11 @@ std::vector<odb::Rect> HierRTLMP::computeAvailableRegions(
   return available_regions;
 }
 
-void HierRTLMP::createPinAccessBlockage(const odb::Rect& region,
+void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
                                         const float depth)
 {
-  Boundary region_boundary = getBoundary(block_, region);
-
   float blockage_depth;
-  if (isVertical(region_boundary)) {
+  if (isVertical(region.boundary)) {
     blockage_depth = depth > pin_access_depth_limits_.horizontal
                          ? pin_access_depth_limits_.horizontal
                          : depth;
@@ -1085,18 +1086,19 @@ void HierRTLMP::createPinAccessBlockage(const odb::Rect& region,
                          : depth;
   }
 
-  debugPrint(
-      logger_,
-      MPL,
-      "coarse_shaping",
-      1,
-      "Creating pin access blockage in {} -> Region shape = {} , Depth = {}",
-      toString(region_boundary),
-      region,
-      blockage_depth);
+  debugPrint(logger_,
+             MPL,
+             "coarse_shaping",
+             1,
+             "Creating pin access blockage in {} -> Region line = ({}) ({}) , "
+             "Depth = {}",
+             toString(region.boundary),
+             region.line.pt0(),
+             region.line.pt1(),
+             blockage_depth);
 
-  Rect blockage = dbuToMicrons(region);
-  switch (region_boundary) {
+  Rect blockage = dbuToMicrons(lineToRect(region.line));
+  switch (region.boundary) {
     case L: {
       blockage.setXMax(blockage.xMin() + blockage_depth);
       break;
@@ -2753,7 +2755,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
         } else {
           odb::Point nearest_region_point;
           computeDistToNearestRegion(macro->getBBox()->getBox().center(),
-                                     available_regions_for_pins_,
+                                     tree_->available_regions_for_pins,
                                      &nearest_region_point);
 
           odb::Rect center_rect(nearest_region_point, nearest_region_point);

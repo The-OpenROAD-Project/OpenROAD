@@ -708,13 +708,9 @@ void Graphics::setBlockedRegionsForPins(
   blocked_regions_for_pins_ = blocked_regions_for_pins;
 }
 
-void Graphics::setAvailableRegionsForPins(
-    const std::vector<odb::Rect>& available_regions_for_pins)
+void Graphics::setAvailableRegionsForPins(const BoundaryRegionList& regions)
 {
-  for (const odb::Rect& region : available_regions_for_pins) {
-    available_regions_for_pins_.emplace_back(
-        rectToLine(block_, region, logger_), getBoundary(block_, region));
-  }
+  available_regions_for_pins_ = regions;
 }
 
 void Graphics::eraseDrawing()

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "object.h"
+#include "util.h"
 
 namespace par {
 class PartitionMgr;
@@ -88,7 +89,7 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  std::vector<odb::Rect> available_regions_for_pins;
+  BoundaryRegionList available_regions_for_pins;
 
   float halo_width{0.0f};
   float halo_height{0.0f};

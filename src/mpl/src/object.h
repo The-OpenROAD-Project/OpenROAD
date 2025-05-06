@@ -18,6 +18,7 @@
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
 #include "shapes.h"
+#include "util.h"
 
 namespace odb {
 class Rect;
@@ -73,24 +74,6 @@ using Point = std::pair<float, float>;
 // (fixed position, preferred locations, and others) are on macros.  This means
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
-
-// Define the position of pin access blockage
-// It can be {bottom, left, top, right} boundary of the cluster
-// Each pin access blockage is modeled by a movable hard macro
-// along the corresponding { B, L, T, R } boundary
-// The size of the hard macro blockage is determined the by the
-// size of that cluster
-enum Boundary
-{
-  NONE,
-  B,
-  L,
-  T,
-  R
-};
-
-std::string toString(const Boundary& pin_access);
-Boundary opposite(const Boundary& pin_access);
 
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it

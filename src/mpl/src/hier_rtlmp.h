@@ -157,7 +157,7 @@ class HierRTLMP
   void computePinAccessDepthLimits();
   bool treeHasOnlyUnconstrainedIOs() const;
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
-  void createPinAccessBlockage(const odb::Rect& region, float depth);
+  void createPinAccessBlockage(const BoundaryRegion& region, float depth);
   float computePinAccessBaseDepth(double io_span) const;
   void createBlockagesForAvailableRegions();
   void createBlockagesForConstraintRegions();
@@ -294,9 +294,6 @@ class HierRTLMP
   std::vector<Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;
-
-  // Cache needed for orientation improvement.
-  std::vector<AvailableRegionForPins> available_regions_for_pins_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;

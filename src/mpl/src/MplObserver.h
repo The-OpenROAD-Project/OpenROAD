@@ -58,10 +58,7 @@ class MplObserver
       const std::vector<odb::Rect>& blocked_regions_for_pins)
   {
   }
-  virtual void setAvailableRegionsForPins(
-      const std::vector<odb::Rect>& available_regions_for_pins)
-  {
-  }
+  virtual void setAvailableRegionsForPins(const BoundaryRegionList& regions) {}
 
   virtual void setAreaPenalty(const PenaltyData& penalty) {}
   virtual void setBoundaryPenalty(const PenaltyData& penalty) {}

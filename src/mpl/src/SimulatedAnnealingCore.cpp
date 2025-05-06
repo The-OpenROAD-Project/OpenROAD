@@ -74,18 +74,13 @@ void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
 
 template <class T>
 void SimulatedAnnealingCore<T>::setAvailableRegionForPins(
-    const std::vector<odb::Rect>& regions)
+    const BoundaryRegionList& regions)
 {
-  const float x_offset = -(block_->micronsToDbu(outline_.xMin()));
-  const float y_offset = -(block_->micronsToDbu(outline_.xMin()));
+  available_regions_for_pins_ = regions;
 
-  available_regions_for_pins_.reserve(regions.size());
-  for (const odb::Rect& region : regions) {
-    odb::Line region_line = rectToLine(block_, region, logger_);
-    region_line.addX(x_offset);
-    region_line.addX(y_offset);
-    available_regions_for_pins_.emplace_back(region_line,
-                                             getBoundary(block_, region));
+  for (BoundaryRegion& region : available_regions_for_pins_) {
+    region.line.addX(-block_->micronsToDbu(outline_.xMin()));
+    region.line.addY(-block_->micronsToDbu(outline_.xMin()));
   }
 }
 
