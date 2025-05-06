@@ -2238,13 +2238,14 @@ void Resizer::swapPins(Instance* inst,
     // Swap the ports and nets
     // Support for hierarchy, swap modnets as well as dbnets
 
-    // disconnect everything connected to found_pin1
-    sta_->disconnectPin(found_pin1);
     // Simultaneously connect both flat and hier net so
     // they are reassociated.
+
+    // disconnect everything connected to found_pin1
+    sta_->disconnectPin(found_pin1);
     db_network_->connectPin(
         found_pin1, (Net*) flat_net_pin2, (Net*) mod_net_pin2);
-
+    // disconnect everything connected to found_pin2
     sta_->disconnectPin(found_pin2);
     db_network_->connectPin(
         found_pin2, (Net*) flat_net_pin1, (Net*) mod_net_pin1);
