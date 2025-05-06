@@ -1,9 +1,9 @@
-// NOLINTNEXTLINE
-#include "verilated_vcd_c.h"
-
 #include <print>
 #include <string_view>
 #include <vector>
+
+// NOLINTNEXTLINE
+#include "verilated_vcd_c.h"
 
 // NOLINTNEXTLINE
 #include "VMockArray.h"
