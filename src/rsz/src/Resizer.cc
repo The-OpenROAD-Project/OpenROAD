@@ -2243,9 +2243,10 @@ void Resizer::swapPins(Instance* inst,
 
     // disconnect everything connected to found_pin1
     sta_->disconnectPin(found_pin1);
+    // new api call which keeps association
     db_network_->connectPin(
         found_pin1, (Net*) flat_net_pin2, (Net*) mod_net_pin2);
-    // disconnect everything connected to found_pin2
+
     sta_->disconnectPin(found_pin2);
     db_network_->connectPin(
         found_pin2, (Net*) flat_net_pin1, (Net*) mod_net_pin1);
