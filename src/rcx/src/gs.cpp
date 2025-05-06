@@ -148,9 +148,7 @@ void gs::setSize(const int plane,
     exit(-1);
   }
 
-  if (plc.plane != nullptr) {
-    free(plc.plane);
-  }
+  free(plc.plane);
 
   plc.plane = pm;
 }
