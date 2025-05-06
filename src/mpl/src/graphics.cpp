@@ -559,8 +559,8 @@ void Graphics::drawBundledNets(gui::Painter& painter,
     const T& source = macros[bundled_net.terminals.first];
     const T& target = macros[bundled_net.terminals.second];
 
-    if (target.isClusterOfUnconstrainedIOPins()) {
-      drawDistToClosestAvailableRegion(painter, source, target);
+    if (target.isClusterOfUnplacedIOPins()) {
+      drawDistToRegion(painter, source, target);
       continue;
     }
 
@@ -578,9 +578,9 @@ void Graphics::drawBundledNets(gui::Painter& painter,
 }
 
 template <typename T>
-void Graphics::drawDistToClosestAvailableRegion(gui::Painter& painter,
-                                                const T& macro,
-                                                const T& io)
+void Graphics::drawDistToRegion(gui::Painter& painter,
+                                const T& macro,
+                                const T& io)
 {
   if (isOutsideTheOutline(macro)) {
     return;
@@ -592,7 +592,12 @@ void Graphics::drawDistToClosestAvailableRegion(gui::Painter& painter,
   from.addY(outline_.yMin());
 
   odb::Point to;
-  computeDistToNearestRegion(from, available_regions_for_pins_, &to);
+  if (io.getCluster()->isClusterOfUnconstrainedIOPins()) {
+    computeDistToNearestRegion(from, available_regions_for_pins_, &to);
+  } else {
+    computeDistToNearestRegion(
+        from, {io_cluster_to_constraint_.at(io.getCluster())}, &to);
+  }
 
   painter.drawLine(from, to);
   painter.drawString(
@@ -700,6 +705,12 @@ void Graphics::setGuides(const std::map<int, Rect>& guides)
 void Graphics::setFences(const std::map<int, Rect>& fences)
 {
   fences_ = fences;
+}
+
+void Graphics::setIOConstraintsMap(
+    const ClusterToBoundaryRegionMap& io_cluster_to_constraint)
+{
+  io_cluster_to_constraint_ = io_cluster_to_constraint;
 }
 
 void Graphics::setBlockedRegionsForPins(

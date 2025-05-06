@@ -108,7 +108,9 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
-  void addClosestAvailableRegionDistToWL(const T& macro, float net_weight);
+  void computeWLForClusterOfUnplacedIOPins(const T& macro,
+                                           const T& unplaced_ios,
+                                           float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
@@ -138,6 +140,7 @@ class SimulatedAnnealingCore
   Rect die_area_;  // Offset to the current outline.
 
   BoundaryRegionList available_regions_for_pins_;
+  ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
   // Number of macros that will actually be part of the sequence pair
   int macros_to_place_ = 0;

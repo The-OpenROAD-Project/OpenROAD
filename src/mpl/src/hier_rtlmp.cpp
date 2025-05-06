@@ -259,7 +259,7 @@ void HierRTLMP::init()
 void HierRTLMP::runMultilevelAutoclustering()
 {
   clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_);
+      block_, network_, logger_, tritonpart_, graphics_.get());
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
@@ -955,6 +955,7 @@ void HierRTLMP::createBlockagesForAvailableRegions()
 {
   int64_t io_span = 0;
   for (const BoundaryRegion& region : tree_->available_regions_for_pins) {
+    // TO DO: Use square distance.
     io_span
         += odb::Point::manhattanDistance(region.line.pt0(), region.line.pt1());
   }
@@ -2119,14 +2120,20 @@ void HierRTLMP::createFixedTerminal(Cluster* cluster,
                                     const Rect& outline,
                                     std::vector<Macro>& macros)
 {
+  // A conventional fixed terminal is just a point without
+  // the cluster data.
   Point location = cluster->getCenter();
   float width = 0.0f;
   float height = 0.0f;
   Cluster* terminal_cluster = nullptr;
 
-  if (cluster->isClusterOfUnconstrainedIOPins()) {
-    // The cluster data is needed so that the annealer
-    // can identify the cluster of unconstrained IOs.
+  if (cluster->isClusterOfUnplacedIOPins()) {
+    // Clusters of unplaced IOs are not treated as conventional
+    // fixed terminals. As they correspond to regions, we need
+    // both their actual shape and their cluster data inside SA.
+    location = {cluster->getX(), cluster->getY()};
+    width = cluster->getWidth();
+    height = cluster->getHeight();
     terminal_cluster = cluster;
   }
 

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 #include <utility>
 
@@ -12,7 +13,9 @@
 
 namespace mpl {
 struct BoundaryRegion;
+class Cluster;
 
+using ClusterToBoundaryRegionMap = std::map<Cluster*, BoundaryRegion>;
 using BoundaryRegionList = std::vector<BoundaryRegion>;
 
 // One of the edges of the die area.
@@ -87,6 +90,7 @@ struct PenaltyData
 // is how they're stored in ODB.
 struct BoundaryRegion
 {
+  BoundaryRegion() = default;
   BoundaryRegion(const odb::Line& line, const Boundary boundary)
       : line(line), boundary(boundary)
   {
@@ -194,19 +198,19 @@ inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
   return odb::Point(target.x(), region.line.pt0().y());
 }
 
-// The distance in DBU from the macro bundled pin to the nearest point
-// of the nearest region.
+// The distance in DBU from the source to the nearest point of the nearest
+// region.
 inline double computeDistToNearestRegion(
-    const odb::Point& macro_location,
+    const odb::Point& source,
     const std::vector<BoundaryRegion>& regions,
     odb::Point* closest_point)
 {
   double smallest_distance = std::numeric_limits<double>::max();
   for (const BoundaryRegion& region : regions) {
     odb::Point closest_point_in_region
-        = computeNearestPointInRegion(region, macro_location);
+        = computeNearestPointInRegion(region, source);
     const double dist_to_closest_point_in_region = std::sqrt(
-        odb::Point::squaredDistance(macro_location, closest_point_in_region));
+        odb::Point::squaredDistance(source, closest_point_in_region));
     if (dist_to_closest_point_in_region < smallest_distance) {
       smallest_distance = dist_to_closest_point_in_region;
       if (closest_point) {

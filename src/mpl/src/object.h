@@ -323,6 +323,8 @@ class HardMacro
   bool operator==(const HardMacro& macro) const;
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
+  Cluster* getCluster() const { return cluster_; }
+  bool isClusterOfUnplacedIOPins() const;
   bool isClusterOfUnconstrainedIOPins() const;
 
   // Get Physical Information
@@ -489,6 +491,7 @@ class SoftMacro
   bool isMacroCluster() const;
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
+  bool isClusterOfUnplacedIOPins() const;
   bool isClusterOfUnconstrainedIOPins() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);

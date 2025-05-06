@@ -61,6 +61,8 @@ class Graphics : public gui::Renderer, public MplObserver
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, Rect>& guides) override;
   void setFences(const std::map<int, Rect>& fences) override;
+  void setIOConstraintsMap(
+      const ClusterToBoundaryRegionMap& io_cluster_to_constraint) override;
   void setBlockedRegionsForPins(
       const std::vector<odb::Rect>& blocked_regions_for_pins) override;
   void setAvailableRegionsForPins(const BoundaryRegionList& regions) override;
@@ -81,9 +83,7 @@ class Graphics : public gui::Renderer, public MplObserver
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   template <typename T>
-  void drawDistToClosestAvailableRegion(gui::Painter& painter,
-                                        const T& macro,
-                                        const T& io);
+  void drawDistToRegion(gui::Painter& painter, const T& macro, const T& io);
   template <typename T>
   bool isOutsideTheOutline(const T& macro) const;
   void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
@@ -109,6 +109,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::vector<std::vector<odb::Rect>> outlines_;
   std::vector<odb::Rect> blocked_regions_for_pins_;
   BoundaryRegionList available_regions_for_pins_;
+  ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.

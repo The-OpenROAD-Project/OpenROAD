@@ -62,6 +62,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(odb::dbBlock* block,
 
   setDieArea(tree->die_area);
   setAvailableRegionForPins(tree->available_regions_for_pins);
+
+  io_cluster_to_constraint_ = tree->io_cluster_to_constraint;
 }
 
 template <class T>
@@ -274,8 +276,8 @@ void SimulatedAnnealingCore<T>::calWirelength()
     T& source = macros_[net.terminals.first];
     T& target = macros_[net.terminals.second];
 
-    if (target.isClusterOfUnconstrainedIOPins()) {
-      addClosestAvailableRegionDistToWL(source, net.weight);
+    if (target.isClusterOfUnplacedIOPins()) {
+      computeWLForClusterOfUnplacedIOPins(source, target, net.weight);
       continue;
     }
 
@@ -299,8 +301,9 @@ void SimulatedAnnealingCore<T>::calWirelength()
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
+void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     const T& macro,
+    const T& unplaced_ios,
     const float net_weight)
 {
   // To generate maximum cost.
@@ -311,19 +314,29 @@ void SimulatedAnnealingCore<T>::addClosestAvailableRegionDistToWL(
     return;
   }
 
-  if (available_regions_for_pins_.empty()) {
-    logger_->critical(
-        utl::MPL,
-        47,
-        "There's no available region for the unconstrained pins!");
-  }
-
   const odb::Point macro_location(block_->micronsToDbu(macro.getPinX()),
                                   block_->micronsToDbu(macro.getPinY()));
-  const double nearest_distance = computeDistToNearestRegion(
-      macro_location, available_regions_for_pins_, nullptr);
+  double smallest_distance;
+  if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
+    if (available_regions_for_pins_.empty()) {
+      logger_->critical(
+          utl::MPL,
+          47,
+          "There's no available region for the unconstrained pins!");
+    }
 
-  wirelength_ += net_weight * block_->dbuToMicrons(nearest_distance);
+    smallest_distance = computeDistToNearestRegion(
+        macro_location, available_regions_for_pins_, nullptr);
+  } else {
+    // This will always have a single element. We do this so can
+    // we can use the same method as the unconstrained pins case.
+    BoundaryRegionList constraint
+        = {io_cluster_to_constraint_.at(unplaced_ios.getCluster())};
+    smallest_distance
+        = computeDistToNearestRegion(macro_location, constraint, nullptr);
+  }
+
+  wirelength_ += net_weight * block_->dbuToMicrons(smallest_distance);
 }
 
 // We consider the macro outside the outline based on the location of

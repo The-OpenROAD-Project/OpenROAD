@@ -54,6 +54,10 @@ class MplObserver
   virtual void setOutline(const odb::Rect& outline) {}
   virtual void setGuides(const std::map<int, Rect>& guides) {}
   virtual void setFences(const std::map<int, Rect>& fences) {}
+  virtual void setIOConstraintsMap(
+      const ClusterToBoundaryRegionMap& io_cluster_to_constraint)
+  {
+  }
   virtual void setBlockedRegionsForPins(
       const std::vector<odb::Rect>& blocked_regions_for_pins)
   {

@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "MplObserver.h"
 #include "db_sta/dbNetwork.hh"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
@@ -22,11 +23,13 @@ using utl::MPL;
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
                                    sta::dbNetwork* network,
                                    utl::Logger* logger,
-                                   par::PartitionMgr* triton_part)
+                                   par::PartitionMgr* triton_part,
+                                   MplObserver* graphics)
     : block_(block),
       network_(network),
       logger_(logger),
-      triton_part_(triton_part)
+      triton_part_(triton_part),
+      graphics_(graphics)
 {
 }
 
@@ -372,6 +375,10 @@ void ClusteringEngine::createIOClusters()
       createClusterOfUnplacedIOs(bterm);
     }
   }
+
+  if (graphics_) {
+    graphics_->setIOConstraintsMap(tree_->io_cluster_to_constraint);
+  }
 }
 
 Cluster* ClusteringEngine::findIOClusterWithSameConstraint(
@@ -416,6 +423,13 @@ void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
       block_->dbuToMicrons(constraint_shape.dx()),
       block_->dbuToMicrons(constraint_shape.dy()),
       is_cluster_of_unconstrained_io_pins);
+
+  if (!is_cluster_of_unconstrained_io_pins) {
+    BoundaryRegion constraint_region(
+        rectToLine(block_, constraint_shape, logger_),
+        getBoundary(block_, constraint_shape));
+    tree_->io_cluster_to_constraint[cluster.get()] = constraint_region;
+  }
 
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();

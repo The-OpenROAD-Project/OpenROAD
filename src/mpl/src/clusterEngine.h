@@ -27,6 +27,7 @@ class dbNetwork;
 }
 
 namespace mpl {
+class MplObserver;
 
 using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
@@ -90,6 +91,7 @@ struct PhysicalHierarchy
   PhysicalHierarchyMaps maps;
 
   BoundaryRegionList available_regions_for_pins;
+  ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
   float halo_width{0.0f};
   float halo_height{0.0f};
@@ -131,7 +133,8 @@ class ClusteringEngine
   ClusteringEngine(odb::dbBlock* block,
                    sta::dbNetwork* network,
                    utl::Logger* logger,
-                   par::PartitionMgr* triton_part);
+                   par::PartitionMgr* triton_part,
+                   MplObserver* graphics);
 
   void run();
 
@@ -256,6 +259,7 @@ class ClusteringEngine
   sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
+  MplObserver* graphics_;
 
   Metrics* design_metrics_{nullptr};
   PhysicalHierarchy* tree_{nullptr};
