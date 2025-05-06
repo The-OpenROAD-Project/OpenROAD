@@ -3759,7 +3759,6 @@ void ModDbNetAssociation::operator()(const Pin* pin)
   }
 
   if (db_network_->isDriver(pin)) {
-    dbModNet* orig_mod_net = db_network_->hierNet(pin);
     return;
   }
 
