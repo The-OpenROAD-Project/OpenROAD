@@ -350,12 +350,7 @@ void dbModInst::RemoveUnusedPortsAndPins()
   // traverse in modbterm order so we can skip over
   // any unused pins in a bus.
 
-  static int debug;
   for (dbModBTerm* mod_bterm : modbterms) {
-    //    printf("D%d Looking at candidate modbterm %s\n", debug,mod_bterm ->
-    //    getName());
-    debug++;
-
     dbModNet* mod_net = nullptr;
 
     // Avoid removing unused ports from a bus
@@ -381,19 +376,6 @@ void dbModInst::RemoveUnusedPortsAndPins()
       dbSet<dbModITerm> dest_mod_iterms = mod_net->getModITerms();
       dbSet<dbBTerm> dest_bterms = mod_net->getBTerms();
       dbSet<dbITerm> dest_iterms = mod_net->getITerms();
-      /*
-      printf("D %d Mod_bterm %s net %s has %d moditerms %d bterms %d iterms
-      (moditerm called:%s/%s)\n", debug, mod_bterm -> getName(), mod_net ->
-      getName(), dest_mod_iterms.size(), dest_bterms.size(), dest_iterms.size(),
-             mod_iterm -> getParent() -> getName(),
-             mod_iterm -> getName());
-      if (debug == 73){
-        for (auto iterm: dest_iterms){
-          printf("\n Iterm %s\n", iterm -> getName().c_str());
-        }
-        printf("\n");
-      }
-      */
       if (dest_mod_iterms.size() == 0 && dest_bterms.size() == 0
           && dest_iterms.size() == 0) {
         kill_set.insert(mod_iterm);

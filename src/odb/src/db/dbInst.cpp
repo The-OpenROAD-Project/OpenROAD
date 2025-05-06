@@ -1222,20 +1222,15 @@ dbInst* dbInst::create(dbBlock* block_,
                        dbModule* parent_module)
 {
   _dbBlock* block = (_dbBlock*) block_;
+  if (block->_inst_hash.hasMember(name_)) {
+    return nullptr;
+  }
+
   _dbMaster* master = (_dbMaster*) master_;
   _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master->_id);
-
   if (inst_hdr == nullptr) {
     inst_hdr
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
-  }
-
-  if (block->_inst_hash.hasMember(name_)) {
-    block->getImpl()->getLogger()->error(
-        utl::ODB,
-        385,
-        "Attempt to create instance with duplicate name: {}",
-        name_);
   }
 
   _dbInst* inst = block->_inst_tbl->create();
@@ -1350,6 +1345,35 @@ dbInst* dbInst::create(dbBlock* top_block,
   master->setFrozen();
   auto inst = dbInst::create(top_block, master, name);
   inst->bindBlock(child_block);
+
+  return inst;
+}
+
+dbInst* dbInst::makeUniqueDbInst(dbBlock* block,
+                                 dbMaster* master,
+                                 const char* name,
+                                 bool physical_only,
+                                 dbModule* target_module)
+{
+  dbInst* inst
+      = dbInst::create(block, master, name, physical_only, target_module);
+  if (inst) {
+    return inst;
+  }
+
+  std::unordered_map<std::string, int>& name_id_map
+      = ((_dbBlock*) block)->_inst_name_id_map;
+  std::string inst_base_name(name);
+  do {
+    std::string full_name = inst_base_name;
+    int& id = name_id_map[inst_base_name];
+    if (id > 0) {
+      full_name += "_" + std::to_string(id);
+    }
+    ++id;
+    inst = dbInst::create(
+        block, master, full_name.c_str(), physical_only, target_module);
+  } while (inst == nullptr);
 
   return inst;
 }

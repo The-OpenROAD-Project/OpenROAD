@@ -128,7 +128,8 @@ class OpenRoad
   static void setOpenRoad(OpenRoad* app, bool reinit_ok = false);
   void init(Tcl_Interp* tcl_interp,
             const char* log_filename,
-            const char* metrics_filename);
+            const char* metrics_filename,
+            bool batch_mode);
 
   Tcl_Interp* tclInterp() { return tcl_interp_; }
   utl::Logger* getLogger() { return logger_; }

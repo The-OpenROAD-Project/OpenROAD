@@ -2006,7 +2006,7 @@ bool RepairDesign::makeRepeater(
   };
 
   // Debug routines, left in
-
+  /*
   auto reportLoadPins = [&]() {
     static int debug;
     debug++;
@@ -2130,7 +2130,7 @@ bool RepairDesign::makeRepeater(
     }
     printf("--- Buffer connections\n");
   };
-
+  */
   //--- helper subfunctions
 
   LibertyPort *buffer_input_port, *buffer_output_port;

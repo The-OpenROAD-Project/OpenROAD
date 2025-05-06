@@ -741,9 +741,6 @@ void SimulatedAnnealingCore<T>::fastSA()
   // as it is too expensive
   notch_weight_ = 0.0;
 
-  int num_restart = 1;
-  const int max_num_restart = 2;
-
   if (isValid()) {
     updateBestValidResult();
   }
@@ -776,20 +773,6 @@ void SimulatedAnnealingCore<T>::fastSA()
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-
-    if (best_valid_result_.macro_id_to_width.empty()
-        && (num_restart <= max_num_restart)
-        && (step == std::floor(max_num_step_ / max_num_restart)
-            && (outline_penalty_ > 0.0))) {
-      shrink();
-      packFloorplan();
-      calPenalty();
-      pre_cost = calNormCost();
-      num_restart++;
-      step = 1;
-      num_perturb_per_step_ *= 2;
-      temperature = init_temperature_;
-    }
 
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;

@@ -137,8 +137,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.1930 |  1.027700e+05 |   +0.00% |  4.39e-14 |      
-[INFO GPL-1001] Finished with Overflow: 0.192992
+        1 |   0.1929 |  1.027780e+05 |   +0.00% |  4.39e-14 |      
+[INFO GPL-1001] Finished with Overflow: 0.192909
 [INFO GPL-1002] Placed Cell Area               59.8500
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)
@@ -258,8 +258,8 @@ Corner: slow
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        1 |   0.1876 |  8.809400e+04 |   +0.00% |  3.98e-14 |      
-[INFO GPL-1001] Finished with Overflow: 0.187637
+        1 |   0.1876 |  8.809500e+04 |   +0.00% |  3.98e-14 |      
+[INFO GPL-1001] Finished with Overflow: 0.187566
 [INFO GPL-1002] Placed Cell Area               60.3820
 [INFO GPL-1003] Available Free Area         47872.0200
 [INFO GPL-1004] Minimum Feasible Density        0.0100 (cell_area / free_area)

@@ -2331,7 +2331,7 @@ class dbNet : public dbObject
   void clearSpecial();
 
   ///
-  /// Returns true if this dbNet have its pins connected by abutment
+  /// Returns true if this dbNet has its pins connected by abutment
   ///
   bool isConnectedByAbutment();
 
@@ -3271,9 +3271,13 @@ class dbInst : public dbObject
                         const char* name,
                         dbRegion* region,
                         bool physical_only = false,
-                        dbModule* parent_module = nullptr
+                        dbModule* parent_module = nullptr);
 
-  );
+  static dbInst* makeUniqueDbInst(dbBlock* block,
+                                  dbMaster* master,
+                                  const char* name,
+                                  bool physical_only,
+                                  dbModule* target_module);
 
   ///
   /// Create a new instance of child_block in top_block.
