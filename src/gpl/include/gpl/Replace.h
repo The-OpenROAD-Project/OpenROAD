@@ -159,7 +159,7 @@ class Replace
   float routabilityMaxDensity_ = 0.99;
   float routabilityTargetRcMetric_ = 1.01;
   float routabilityInflationRatioCoef_ = 3;
-  float routabilityMaxInflationRatio_ = 6;
+  float routabilityMaxInflationRatio_ = 4;
 
   // routability RC metric coefficients
   float routabilityRcK1_ = 1.0;
