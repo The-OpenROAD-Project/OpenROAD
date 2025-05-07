@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include <algorithm>
-#include <boost/format.hpp>
-#include <boost/tokenizer.hpp>
 #include <cmath>
-#include <iostream>
-#include <stack>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "util/utility.h"
 #include "utl/Logger.h"

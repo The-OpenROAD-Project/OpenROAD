@@ -5,19 +5,16 @@
 
 #include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
-
-namespace ant {
-// Tcl files encoded into strings.
-extern const char* ant_tcl_inits[];
-}  // namespace ant
 
 extern "C" {
 extern int Ant_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace ant {
+
+// Tcl files encoded into strings.
+extern const char* ant_tcl_inits[];
 
 ant::AntennaChecker* makeAntennaChecker()
 {
@@ -29,14 +26,15 @@ void deleteAntennaChecker(ant::AntennaChecker* antenna_checker)
   delete antenna_checker;
 }
 
-void initAntennaChecker(OpenRoad* openroad)
+void initAntennaChecker(ant::AntennaChecker* antenna_checker,
+                        odb::dbDatabase* db,
+                        ant::GlobalRouteSource* global_route_source,
+                        utl::Logger* logger,
+                        Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
-
   Ant_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, ant::ant_tcl_inits);
-  openroad->getAntennaChecker()->init(
-      openroad->getDb(), openroad->getGlobalRouter(), openroad->getLogger());
+  antenna_checker->init(db, global_route_source, logger);
 }
 
-}  // namespace ord
+}  // namespace ant
