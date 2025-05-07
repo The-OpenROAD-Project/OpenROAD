@@ -158,7 +158,7 @@ extDistRCTable::extDistRCTable(uint distCnt)
 extDistRCTable::~extDistRCTable()
 {
   delete _measureTable;
-  delete _computeTable;
+  // delete _computeTable;
 }
 
 uint extDistRCTable::mapExtrapolate(uint loDist,

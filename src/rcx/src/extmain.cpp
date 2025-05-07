@@ -109,6 +109,7 @@ extMain::extMain()
 }
 extMain::~extMain()
 {
+  _modelTable->resetCnt(0, true);
   delete _modelTable;
 }
 

@@ -32,9 +32,7 @@ class Ath__array1D
   }
   ~Ath__array1D()
   {
-    if (array_ != nullptr) {
-      ::free(array_);
-    }
+    ::free(array_);
   }
   int add(T t)
   {
@@ -136,8 +134,14 @@ class Ath__array1D
   }
   int getSize() const { return size_; }
   void resetIterator(int v = 0) { iter_cnt_ = v; }
-  void resetCnt(int v = 0)
+  void resetCnt(int v = 0, bool del = false)
   {
+    if (del) {
+      for (int i = v; i < current_; i++) {
+        delete array_[i];
+        array_[i] = nullptr;
+      }
+    }
     current_ = v;
     iter_cnt_ = v;
   }
