@@ -165,7 +165,9 @@ extDistRCTable::~extDistRCTable()
   delete _computeTable;
 
   for (int i = 0; i < 16; i++) {
-    delete _measureTableR[i];
+    if (_measureTableR[i] != _measureTable) {
+      delete _measureTableR[i];
+    }
   }
 }
 
