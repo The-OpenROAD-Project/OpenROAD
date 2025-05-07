@@ -1,0 +1,34 @@
+module reg1 (clk);
+ input clk;
+
+ wire r1q;
+ wire u1z;
+ wire net3;
+ wire net1;
+
+ DFF_X1 r1 (.CK(clk),
+    .Q(r1q));
+ BUF_X2 u1 (.A(r1q),
+    .Z(u1z));
+ BUF_X16 rebuffer3 (.A(net1),
+    .Z(net3));
+ DFF_X1 r2 (.D(u1z),
+    .CK(clk));
+ DFF_X1 r3 (.D(r1q),
+    .CK(clk));
+ DFF_X1 r4 (.D(net1),
+    .CK(clk));
+ DFF_X1 r5 (.D(net1),
+    .CK(clk));
+ DFF_X1 r6 (.D(net3),
+    .CK(clk));
+ DFF_X1 r7 (.D(net3),
+    .CK(clk));
+ DFF_X1 r8 (.D(net3));
+ DFF_X1 r9 (.D(net3));
+ DFF_X1 r10 (.D(net3));
+ DFF_X1 r11 (.D(net3));
+ DFF_X1 r12 (.D(net3));
+ BUF_X4 rebuffer1 (.A(r1q),
+    .Z(net1));
+endmodule
