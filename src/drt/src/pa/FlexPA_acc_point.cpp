@@ -447,10 +447,9 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
     }
   }
 
+  frAccessPointEnum this_lower_type = lower_type;
   if (use_center_line && is_layer1_horz) {
-    for (auto& [layer1_coord, cost] : layer1_coords) {
-      layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
-    }
+    this_lower_type = frAccessPointEnum::OnGrid;
   }
 
   createMultipleAccessPoints(inst_term,
@@ -460,12 +459,12 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
                              layer_num,
                              x_coords,
                              y_coords,
-                             lower_type,
+                             this_lower_type,
                              upper_type);
 }
 
 bool FlexPA::isUpperLayerOnGridOnly(const frLayerNum layer_num,
-                                             const bool is_macro_cell_pin)
+                                    const bool is_macro_cell_pin)
 {
   // lower layer is current layer
   // rightway on grid only forbid off track up via access on upper layer
