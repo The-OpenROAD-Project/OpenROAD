@@ -117,6 +117,7 @@ cc_binary(
     srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
         "src/Main.cc",
         "src/OpenRoad.cc",
+        "//bazel:runfiles",
     ] + select({
         ":platform_cli": [],
     }),
@@ -912,6 +913,7 @@ cc_binary(
         "src/sta/app/Main.cc",
         ":StaApp",
         ":StaTclInitVar",
+        "//bazel:runfiles",
     ],
     copts = [
         "-fexceptions",
@@ -937,6 +939,7 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":opensta_lib",
+        "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],
 )

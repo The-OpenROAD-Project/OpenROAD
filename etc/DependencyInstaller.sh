@@ -314,6 +314,10 @@ _installOrTools() {
         if [[ $osVersion == rodete ]]; then
             osVersion=11
         fi
+        if [[ $os == ubuntu && $osVersion == 25.04 ]]; then
+            # FIXME make do with or-tools for 24.04 until an official release for 25.04 is available
+            osVersion=24.04
+        fi
         orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         if command -v brew &> /dev/null; then
@@ -358,7 +362,6 @@ _installUbuntuPackages() {
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
-        libtcl \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
@@ -372,7 +375,15 @@ _installUbuntuPackages() {
 
     packages=()
     # Chose Python version
-    if _versionCompare $1 -ge 24.04; then
+    if _versionCompare $1 -ge 25.04; then
+        packages+=("libtcl8.6")
+    else
+        packages+=("libtcl")
+    fi
+    # Chose Python version
+    if _versionCompare $1 -ge 25.04; then
+        packages+=("libpython3.13")
+    elif _versionCompare $1 -ge 24.04; then
         packages+=("libpython3.12")
     elif _versionCompare $1 -ge 22.10; then
         packages+=("libpython3.11")
@@ -861,9 +872,11 @@ case "${os}" in
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
             # set version for non LTS
-            if _versionCompare ${ubuntuVersion} -gt 24.04; then
+            if _versionCompare ${ubuntuVersion} -ge 25.04; then
+                ubuntuVersion=25.04
+            elif _versionCompare ${ubuntuVersion} -ge 24.04; then
                 ubuntuVersion=24.04
-            elif _versionCompare ${ubuntuVersion} -gt 22.04; then
+            elif _versionCompare ${ubuntuVersion} -ge 22.04; then
                 ubuntuVersion=22.04
             else
                 ubuntuVersion=20.04

@@ -5,10 +5,24 @@ module(
     name = "openroad",
 )
 
+bazel_dep(name = "chisel", version = "7.0.0")
+single_version_override(
+    module_name = "chisel",
+    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
+    version = "7.0.0",
+)
+
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
+bazel_dep(name = "rules_jvm_external", version = "6.4")
+bazel_dep(name = "rules_scala")
+git_override(
+    module_name = "rules_scala",
+    commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
+    remote = "https://github.com/bazelbuild/rules_scala",
+)
 
 # The current rules_cc 0.1.1 hardcodes script locations to `#!/bin/bash`
 # instead of using `#!/usr/bin/env bash`.
@@ -19,6 +33,25 @@ git_override(
     module_name = "rules_cc",
     commit = "d74915024017250e46d95e91a3defc34174effe0",
     remote = "https://github.com/bazelbuild/rules_cc",
+)
+
+bazel_dep(name = "rules_verilator", version = "5.034")
+single_version_override(
+    module_name = "rules_verilator",
+    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
+    version = "5.034",
+)
+
+single_version_override(
+    module_name = "verilator",
+    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
+    version = "5.034.ar.1",
+)
+
+single_version_override(
+    module_name = "systemc",
+    registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
+    version = "3.0.1",
 )
 
 # Not all boost libs are available at the latest version yet, so use a
@@ -59,7 +92,7 @@ bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
 bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0")
-bazel_dep(name = "eigen", version = "3.4.0.bcr.2")
+bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "or-tools", version = "9.12")
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
@@ -83,7 +116,10 @@ use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
-register_toolchains("@llvm_toolchain//:all")
+register_toolchains(
+    "@llvm_toolchain//:all",
+    "@rules_verilator//verilator:verilator_toolchain",
+)
 
 bazel_dep(
     name = "rules_python",
@@ -127,3 +163,38 @@ orfs.default(
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
+
+SCALA_VERSION = "2.13.16"
+
+SCALA_VERSION_SHORT = SCALA_VERSION.rpartition(".")[0]
+
+scala_config = use_extension(
+    "@rules_scala//scala/extensions:config.bzl",
+    "scala_config",
+)
+scala_config.settings(
+    scala_version = SCALA_VERSION,
+)
+use_repo(scala_config, "rules_scala_config")
+
+scala_deps = use_extension(
+    "@rules_scala//scala/extensions:deps.bzl",
+    "scala_deps",
+)
+scala_deps.settings(
+    fetch_sources = True,
+)
+scala_deps.scala()
+scala_deps.scalatest()
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "circt",
+    build_file_content = """
+exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
+""",
+    sha256 = "b1b57d1b76ceba2bb37229dab53839d5db6d61394149708c71f6265565991ce6",
+    strip_prefix = "firtool-1.108.0",
+    url = "https://github.com/llvm/circt/releases/download/firtool-1.108.0/firrtl-bin-linux-x64.tar.gz",
+)
