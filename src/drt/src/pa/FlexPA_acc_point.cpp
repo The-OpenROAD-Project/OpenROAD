@@ -464,7 +464,7 @@ void FlexPA::genAPsFromRect(frInstTerm* inst_term,
                              upper_type);
 }
 
-bool FlexPA::UpperLayerOnlyAllowOnGridAccess(const frLayerNum layer_num,
+bool FlexPA::isUpperLayerOnGridOnly(const frLayerNum layer_num,
                                              const bool is_macro_cell_pin)
 {
   // lower layer is current layer
@@ -495,7 +495,7 @@ void FlexPA::genAPsFromLayerShapes(
   // IO term is treated as the MacroCellPin as the top block
   bool is_macro_cell_pin = inst_term ? isMacroCell(inst_term->getInst()) : true;
 
-  if (UpperLayerOnlyAllowOnGridAccess(layer_num, is_macro_cell_pin)
+  if (isUpperLayerOnGridOnly(layer_num, is_macro_cell_pin)
       && upper_type != frAccessPointEnum::OnGrid) {
     return;
   }
