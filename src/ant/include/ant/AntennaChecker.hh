@@ -8,7 +8,6 @@
 #include <queue>
 #include <set>
 
-#include "ant/GlobalRouteSource.hh"
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
 #include "utl/Logger.h"
@@ -113,7 +112,6 @@ class AntennaChecker
   ~AntennaChecker();
 
   void init(odb::dbDatabase* db,
-            ant::GlobalRouteSource* global_route_source,
             utl::Logger* logger);
 
   // net nullptr -> check all nets
@@ -203,7 +201,6 @@ class AntennaChecker
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
-  ant::GlobalRouteSource* global_route_source_{nullptr};
   utl::Logger* logger_{nullptr};
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_{0};

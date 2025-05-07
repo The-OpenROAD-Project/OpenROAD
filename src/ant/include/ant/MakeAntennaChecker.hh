@@ -16,7 +16,6 @@ class Logger;
 namespace ant {
 
 class AntennaChecker;
-class GlobalRouteSource;
 
 AntennaChecker* makeAntennaChecker();
 
@@ -24,7 +23,6 @@ void deleteAntennaChecker(ant::AntennaChecker* antennachecker);
 
 void initAntennaChecker(ant::AntennaChecker* antenna_checker,
                         odb::dbDatabase* db,
-                        ant::GlobalRouteSource* global_route_source,
                         utl::Logger* logger,
                         Tcl_Interp* tcl_interp);
 

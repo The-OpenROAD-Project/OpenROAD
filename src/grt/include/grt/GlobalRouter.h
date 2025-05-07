@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "GRoute.h"
-#include "ant/GlobalRouteSource.hh"
 #include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -100,11 +99,11 @@ using Guides = std::vector<std::pair<int, odb::Rect>>;
 using LayerId = int;
 using TileSet = std::set<std::pair<int, int>>;
 
-class GlobalRouter : public ant::GlobalRouteSource
+class GlobalRouter
 {
  public:
   GlobalRouter();
-  ~GlobalRouter() override;
+  ~GlobalRouter();
 
   void init(utl::Logger* logger,
             stt::SteinerTreeBuilder* stt_builder,
@@ -199,7 +198,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
-  void makeNetWires() override;
+  void makeNetWires();
 
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();

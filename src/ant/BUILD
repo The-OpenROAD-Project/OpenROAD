@@ -9,13 +9,6 @@ package(
     features = ["layering_check"],
 )
 
-# Broken out due to cyclic dependency between grt and ant
-cc_library(
-    name = "types",
-    hdrs = ["include/ant/GlobalRouteSource.hh"],
-    includes = ["include"],
-)
-
 cc_library(
     name = "make-antenna-checker",
     srcs = [

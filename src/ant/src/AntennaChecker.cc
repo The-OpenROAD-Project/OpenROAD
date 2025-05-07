@@ -62,12 +62,9 @@ extern int Ant_Init(Tcl_Interp* interp);
 AntennaChecker::AntennaChecker() = default;
 AntennaChecker::~AntennaChecker() = default;
 
-void AntennaChecker::init(odb::dbDatabase* db,
-                          GlobalRouteSource* global_route_source,
-                          utl::Logger* logger)
+void AntennaChecker::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   db_ = db;
-  global_route_source_ = global_route_source;
   logger_ = logger;
 }
 
