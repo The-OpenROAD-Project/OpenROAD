@@ -76,6 +76,10 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
     stream >> obj.is_jumper_;
   }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream >> obj.connected_iterms_;
+    stream >> obj.connected_bterms_;
+  }
   return stream;
 }
 
@@ -95,6 +99,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
     stream << obj.is_jumper_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream << obj.connected_iterms_;
+    stream << obj.connected_bterms_;
   }
   return stream;
 }
