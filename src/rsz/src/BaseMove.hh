@@ -247,15 +247,9 @@ class BaseMove : public sta::dbStaState {
       void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
       int fanout(Vertex* vertex);
 
-      static constexpr int decreasing_slack_max_passes_ = 50;
       static constexpr int rebuffer_max_fanout_ = 20;
       static constexpr int split_load_min_fanout_ = 8;
-      static constexpr int print_interval_ = 10;
-      static constexpr int opto_small_interval_ = 100;
-      static constexpr int opto_large_interval_ = 1000;
       static constexpr int buffer_removal_max_fanout_ = 10;
-      static constexpr float inc_fix_rate_threshold_ = 0.0001;  // default fix rate threshold = 0.01%
-      static constexpr int max_last_gasp_passes_ = 10;
       static constexpr float rebuffer_relaxation_factor_ = 0.03;
 
 };

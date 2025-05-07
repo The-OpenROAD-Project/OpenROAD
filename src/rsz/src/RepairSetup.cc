@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 
+#include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
 #include "SizeMove.hh"
@@ -75,6 +76,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const int max_passes,
                               const int max_repairs_per_pass,
                               const bool verbose,
+                              std::vector<MoveType> sequence,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
                               const bool skip_buffering,
@@ -87,19 +89,54 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   max_repairs_per_pass_ = max_repairs_per_pass;
   resizer_->buffer_moved_into_core_ = false;
 
-  move_sequence.clear();
-  if (!skip_buffer_removal) 
-    move_sequence.push_back(resizer_->unbuffer_move);
-  // Always  have sizing
-  move_sequence.push_back(resizer_->size_move);
-  if (!skip_pin_swap) 
-    move_sequence.push_back(resizer_->swap_pins_move);
-  if (!skip_buffering) 
-    move_sequence.push_back(resizer_->buffer_move);
-  if (!skip_gate_cloning) 
-    move_sequence.push_back(resizer_->clone_move);
-  if (!skip_buffering) 
-    move_sequence.push_back(resizer_->split_load_move);
+  if (sequence.size() > 0) {
+      move_sequence.clear();
+      for( MoveType move : sequence) {
+        switch (move) {
+          case MoveType::BUFFER:
+            move_sequence.push_back(resizer_->buffer_move);
+            break;
+          case MoveType::UNBUFFER:
+            move_sequence.push_back(resizer_->unbuffer_move);
+            break;
+          case MoveType::SWAP:
+            move_sequence.push_back(resizer_->swap_pins_move);
+            break;
+          case MoveType::SIZE:
+            move_sequence.push_back(resizer_->size_move);
+            break;
+          case MoveType::CLONE:
+            move_sequence.push_back(resizer_->clone_move);
+            break;
+          case MoveType::SPLIT:
+            move_sequence.push_back(resizer_->split_load_move);
+            break;
+        }
+      }
+
+  } 
+  else {
+      move_sequence.clear();
+      if (!skip_buffer_removal) 
+        move_sequence.push_back(resizer_->unbuffer_move);
+      // Always  have sizing
+      move_sequence.push_back(resizer_->size_move);
+      if (!skip_pin_swap) 
+        move_sequence.push_back(resizer_->swap_pins_move);
+      if (!skip_buffering) 
+        move_sequence.push_back(resizer_->buffer_move);
+      if (!skip_gate_cloning) 
+        move_sequence.push_back(resizer_->clone_move);
+      if (!skip_buffering) 
+        move_sequence.push_back(resizer_->split_load_move);
+  }
+
+
+  string repair_moves = "Repair move sequence: ";
+  for (auto move : move_sequence) {
+    repair_moves += move->name() + string(" ");
+  }
+  logger_->info(RSZ, 100, repair_moves);
 
   // Sort failing endpoints by slack.
   const VertexSet* endpoints = sta_->endpoints();

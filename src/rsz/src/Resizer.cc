@@ -3703,6 +3703,7 @@ bool Resizer::repairSetup(double setup_margin,
                           int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
+                          std::vector<MoveType> sequence,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_buffering,
@@ -3721,6 +3722,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     max_passes,
                                     max_repairs_per_pass,
                                     verbose,
+                                    sequence,
                                     skip_pin_swap,
                                     skip_gate_cloning,
                                     skip_buffering,
@@ -4287,6 +4289,31 @@ void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
 {
   repair_design_->setDebugGraphics(graphics);
   graphics_ = std::move(graphics);
+}
+
+MoveType 
+Resizer::parseMove(const std::string& s) {
+  std::string lower = s;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  if (lower == "buffer") return rsz::MoveType::BUFFER;
+  if (lower == "unbuffer") return rsz::MoveType::UNBUFFER;
+  if (lower == "swap") return rsz::MoveType::SWAP;
+  if (lower == "size") return rsz::MoveType::SIZE;
+  if (lower == "clone") return rsz::MoveType::CLONE;
+  if (lower == "split") return rsz::MoveType::SPLIT;
+  throw std::invalid_argument("Invalid move type: " + s);
+}
+
+
+std::vector<rsz::MoveType> 
+Resizer::parseMoveSequence(const std::string& sequence) {
+  std::vector<rsz::MoveType> result;
+  std::stringstream ss(sequence);
+  std::string item;
+  while (std::getline(ss, item, ',')) {
+    result.push_back(parseMove(item));
+  }
+  return result;
 }
 
 }  // namespace rsz

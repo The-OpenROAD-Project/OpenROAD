@@ -6,6 +6,7 @@
 #include <array>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -145,6 +146,16 @@ struct ParasiticsCapacitance
   double v_cap;
 };
 
+enum class MoveType
+{
+  BUFFER,
+  UNBUFFER,
+  SWAP,
+  SIZE,
+  CLONE,
+  SPLIT
+};
+
 class OdbCallBack;
 
 class Resizer : public dbStaState, public dbNetworkObserver
@@ -264,6 +275,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    int max_repairs_per_pass,
                    bool match_cell_footprint,
                    bool verbose,
+                   std::vector<MoveType> sequence,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_buffering,
@@ -413,6 +425,9 @@ class Resizer : public dbStaState, public dbNetworkObserver
                              bool match_cell_footprint,
                              bool report_all_cells);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
+
+  static MoveType parseMove(const std::string& s);
+  static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
 
  protected:
   void init();
