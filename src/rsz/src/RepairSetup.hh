@@ -6,14 +6,13 @@
 #include <unordered_set>
 #include <vector>
 
-
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "rsz/Resizer.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/MinMax.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
-#include "rsz/Resizer.hh"
 
 namespace sta {
 class PathExpanded;
@@ -90,9 +89,7 @@ class RepairSetup : public sta::dbStaState
 
  private:
   void init();
-  bool repairPath(Path* path,
-                  Slack path_slack,
-                  float setup_slack_margin);
+  bool repairPath(Path* path, Slack path_slack, float setup_slack_margin);
 
   void printProgress(int iteration,
                      bool force,
@@ -119,7 +116,7 @@ class RepairSetup : public sta::dbStaState
   int removed_buffer_count_ = 0;
   double initial_design_area_ = 0;
 
-  std::vector<BaseMove* > move_sequence;  
+  std::vector<BaseMove*> move_sequence;
 
   const MinMax* min_ = MinMax::min();
   const MinMax* max_ = MinMax::max();

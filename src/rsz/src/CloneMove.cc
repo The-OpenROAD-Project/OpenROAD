@@ -12,7 +12,6 @@
 
 namespace rsz {
 
-
 Point CloneMove::computeCloneGateLocation(
     const Pin* drvr_pin,
     const vector<pair<Vertex*, Slack>>& fanout_slacks)
@@ -34,12 +33,11 @@ Point CloneMove::computeCloneGateLocation(
   return {centroid_x / count, centroid_y / count};
 }
 
-bool 
-CloneMove::doMove(const Path* drvr_path,
-                  int drvr_index,
-                  const Slack drvr_slack,
-                  PathExpanded* expanded,
-                  float setup_slack_margin)
+bool CloneMove::doMove(const Path* drvr_path,
+                       int drvr_index,
+                       const Slack drvr_slack,
+                       PathExpanded* expanded,
+                       float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
@@ -57,10 +55,11 @@ CloneMove::doMove(const Path* drvr_path,
   if (resizer_->dontTouch(net))
     return false;
   // We can probably relax this with the new ECO code
-  if (resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin))>0)
-    return false;   
+  if (resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin)) > 0)
+    return false;
   // We can probably relax this with the new ECO code
-  if (resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))>0)
+  if (resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))
+      > 0)
     return false;
 
   // Divide and conquer.
@@ -72,13 +71,12 @@ CloneMove::doMove(const Path* drvr_path,
              network_->pathName(drvr_pin),
              network_->pathName(load_pin));
   debugPrint(logger_,
-         RSZ,
-         "repair_setup",
-         3,
-         "clone driver {} -> {}",
-         network_->pathName(drvr_pin),
-         network_->pathName(load_pin));
-
+             RSZ,
+             "repair_setup",
+             3,
+             "clone driver {} -> {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(load_pin));
 
   const RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
@@ -88,7 +86,8 @@ CloneMove::doMove(const Path* drvr_path,
   while (edge_iter.hasNext()) {
     Edge* edge = edge_iter.next();
     Vertex* fanout_vertex = edge->to(graph_);
-    const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
+    const Slack fanout_slack
+        = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
     const Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_,
                RSZ,
@@ -134,7 +133,8 @@ CloneMove::doMove(const Path* drvr_path,
   }
 
   Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
-  Instance* clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(), parent, drvr_loc);
+  Instance* clone_inst = resizer_->makeInstance(
+      clone_cell, buffer_name.c_str(), parent, drvr_loc);
 
   debugPrint(logger_,
              RSZ,
@@ -146,7 +146,8 @@ CloneMove::doMove(const Path* drvr_path,
              network_->pathName(clone_inst),
              clone_cell->name());
   addMove(clone_inst);
-  // We add the driver instance to the pending move set, but don't count it as a move.
+  // We add the driver instance to the pending move set, but don't count it as a
+  // move.
   addMove(drvr_inst, 0);
 
   debugPrint(logger_,
@@ -158,7 +159,6 @@ CloneMove::doMove(const Path* drvr_path,
              original_cell->name(),
              network_->pathName(clone_inst),
              clone_cell->name());
-
 
   // Hierarchy fix, make out_net in parent.
 

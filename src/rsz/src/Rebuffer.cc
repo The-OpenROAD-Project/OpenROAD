@@ -8,8 +8,8 @@
 #include <unordered_map>
 #include <utility>
 
-#include "BufferedNet.hh"
 #include "BufferMove.hh"
+#include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -299,7 +299,6 @@ BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
 
   return best_option;
 }
-
 
 // Recover area on a rebuffering choice without regressing timing
 BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
@@ -717,8 +716,8 @@ std::tuple<Delay, Delay> BufferMove::drvrPinTiming(const BufferedNetPtr& bnet)
 }
 
 Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet,
-                                    // Only used for debug print.
-                                    const int index)
+                                   // Only used for debug print.
+                                   const int index)
 {
   const Delay slack = bnet->slack() + std::get<1>(drvrPinTiming(bnet));
   if (index >= 0) {
@@ -762,9 +761,9 @@ bool BufferMove::hasTopLevelOutputPort(Net* net)
 }
 
 BufferedNetPtr BufferMove::addWire(const BufferedNetPtr& p,
-                                    const Point& wire_end,
-                                    const int wire_layer,
-                                    const int level)
+                                   const Point& wire_end,
+                                   const int wire_layer,
+                                   const int level)
 {
   BufferedNetPtr z = make_shared<BufferedNet>(
       BufferedNetType::wire, wire_end, wire_layer, p, corner_, resizer_);
@@ -795,8 +794,8 @@ BufferedNetPtr BufferMove::addWire(const BufferedNetPtr& p,
 }
 
 Delay BufferMove::bufferDelay(LibertyCell* cell,
-                               const RiseFallBoth* rf,
-                               float load_cap)
+                              const RiseFallBoth* rf,
+                              float load_cap)
 {
   Delay delay = 0;
 
@@ -921,7 +920,7 @@ void BufferMove::addBuffers(
 }
 
 float BufferMove::bufferInputCapacitance(LibertyCell* buffer_cell,
-                                          const DcalcAnalysisPt* dcalc_ap)
+                                         const DcalcAnalysisPt* dcalc_ap)
 {
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);

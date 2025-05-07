@@ -9,16 +9,13 @@
 #include "BaseMove.hh"
 #include "CloneMove.hh"
 
-
 namespace rsz {
 
-
-bool 
-SizeMove::doMove(const Path* drvr_path,
-                 int drvr_index,
-                 const Slack drvr_slack,
-                 PathExpanded* expanded,
-                 float setup_slack_margin)
+bool SizeMove::doMove(const Path* drvr_path,
+                      int drvr_index,
+                      const Slack drvr_slack,
+                      PathExpanded* expanded,
+                      float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   Instance* drvr = network_->instance(drvr_pin);
@@ -28,10 +25,11 @@ SizeMove::doMove(const Path* drvr_path,
   const Path* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
   LibertyPort* in_port = network_->libertyPort(in_pin);
-  
-  // We always size the cloned gates for some reason, but it would be good if we also
-  // down-sized here instead since we might want smaller original.
-  if (!resizer_->dontTouch(drvr) || resizer_->clone_move->pendingMoves(drvr) > 0) {
+
+  // We always size the cloned gates for some reason, but it would be good if we
+  // also down-sized here instead since we might want smaller original.
+  if (!resizer_->dontTouch(drvr)
+      || resizer_->clone_move->pendingMoves(drvr) > 0) {
     float prev_drive;
     if (drvr_index >= 2) {
       const int prev_drvr_index = drvr_index - 2;
@@ -45,44 +43,43 @@ SizeMove::doMove(const Path* drvr_path,
     } else {
       prev_drive = 0.0;
     }
-    
+
     LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    LibertyCell* upsize = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
-    
+    LibertyCell* upsize
+        = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
+
     if (upsize) {
       debugPrint(logger_,
-             RSZ,
-             "repair_setup",
-             3,
-             "resize {} {} -> {}",
-             network_->pathName(drvr_pin),
-             drvr_port->libertyCell()->name(),
-             upsize->name());
+                 RSZ,
+                 "repair_setup",
+                 3,
+                 "resize {} {} -> {}",
+                 network_->pathName(drvr_pin),
+                 drvr_port->libertyCell()->name(),
+                 upsize->name());
       if (!resizer_->dontTouch(drvr) && replaceCell(drvr, upsize)) {
-
-        debugPrint(logger_, 
-                   RSZ, 
-                   "moves", 
-                   1, 
-                   "size_move {} {} -> {}", 
-                   network_->pathName(drvr_pin), 
-                   drvr_port->libertyCell()->name(), 
+        debugPrint(logger_,
+                   RSZ,
+                   "moves",
+                   1,
+                   "size_move {} {} -> {}",
+                   network_->pathName(drvr_pin),
+                   drvr_port->libertyCell()->name(),
                    upsize->name());
         addMove(drvr);
         return true;
       }
     }
   }
-  
+
   return false;
 }
 
-LibertyCell* 
-SizeMove::upsizeCell(LibertyPort* in_port,
-                     LibertyPort* drvr_port,
-                     const float load_cap,
-                     const float prev_drive,
-                     const DcalcAnalysisPt* dcalc_ap)
+LibertyCell* SizeMove::upsizeCell(LibertyPort* in_port,
+                                  LibertyPort* drvr_port,
+                                  const float load_cap,
+                                  const float prev_drive,
+                                  const DcalcAnalysisPt* dcalc_ap)
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell* cell = drvr_port->libertyCell();
@@ -130,11 +127,8 @@ SizeMove::upsizeCell(LibertyPort* in_port,
   return nullptr;
 };
 
-
 // Replace LEF with LEF so ports stay aligned in instance.
-bool 
-SizeMove::replaceCell(Instance* inst,
-                      const LibertyCell* replacement)
+bool SizeMove::replaceCell(Instance* inst, const LibertyCell* replacement)
 {
   const char* replacement_name = replacement->name();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
@@ -174,4 +168,3 @@ SizeMove::replaceCell(Instance* inst,
 
 // namespace rsz
 }  // namespace rsz
-

@@ -11,51 +11,50 @@
 
 namespace rsz {
 
-bool 
-BufferMove::doMove(const Path* drvr_path,
-                   int drvr_index,
-                   const Slack drvr_slack,
-                   PathExpanded* expanded,
-                   float setup_slack_margin)
+bool BufferMove::doMove(const Path* drvr_path,
+                        int drvr_index,
+                        const Slack drvr_slack,
+                        PathExpanded* expanded,
+                        float setup_slack_margin)
 {
-    Vertex* drvr_vertex = drvr_path->vertex(sta_);
-    const Pin* drvr_pin = drvr_vertex->pin();
-    Instance* drvr_inst = network_->instance(drvr_pin);
+  Vertex* drvr_vertex = drvr_path->vertex(sta_);
+  const Pin* drvr_pin = drvr_vertex->pin();
+  Instance* drvr_inst = network_->instance(drvr_pin);
 
-    const int fanout = this->fanout(drvr_vertex);
-    if (fanout <= 1)
-        return false;
-    // Rebuffer blows up on large fanout nets.
-    if (fanout >= rebuffer_max_fanout_)
-        return false;
-    const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-    if (tristate_drvr)
-        return false;
-    const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-    if (resizer_->dontTouch(net))
-        return false;
-    dbNet* db_net = db_network_->staToDb(net);
-    if (db_net->isConnectedByAbutment())
-        return false;
+  const int fanout = this->fanout(drvr_vertex);
+  if (fanout <= 1)
+    return false;
+  // Rebuffer blows up on large fanout nets.
+  if (fanout >= rebuffer_max_fanout_)
+    return false;
+  const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
+  if (tristate_drvr)
+    return false;
+  const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
+  if (resizer_->dontTouch(net))
+    return false;
+  dbNet* db_net = db_network_->staToDb(net);
+  if (db_net->isConnectedByAbutment())
+    return false;
 
-    const int rebuffer_count = rebuffer(drvr_pin);
-    if (rebuffer_count > 0) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 3,
-                 "rebuffer {} inserted {}",
-                 network_->pathName(drvr_pin),
-                 rebuffer_count);
-      debugPrint(logger_,
-                 RSZ,
-                 "moves",
-                 1,
-                 "rebuffer {} inserted {}",
-                 network_->pathName(drvr_pin),
-                 rebuffer_count);
-      addMove(drvr_inst, rebuffer_count);
-    }
+  const int rebuffer_count = rebuffer(drvr_pin);
+  if (rebuffer_count > 0) {
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               3,
+               "rebuffer {} inserted {}",
+               network_->pathName(drvr_pin),
+               rebuffer_count);
+    debugPrint(logger_,
+               RSZ,
+               "moves",
+               1,
+               "rebuffer {} inserted {}",
+               network_->pathName(drvr_pin),
+               rebuffer_count);
+    addMove(drvr_inst, rebuffer_count);
+  }
   return rebuffer_count > 0;
 }
 
@@ -80,7 +79,4 @@ void BufferMove::debugCheckMultipleBuffers(Path* path, PathExpanded* expanded)
   printf("done\n");
 }
 
-
-
 }  // namespace rsz
-

@@ -21,12 +21,11 @@ namespace rsz {
 // 2) it doesn't create new max fanout violations
 // 3) it doesn't create new max cap violations
 // 4) it doesn't worsen slack
-bool 
-UnbufferMove::doMove(const Path* drvr_path,
-                     int drvr_index,
-                     const Slack drvr_slack,
-                     PathExpanded* expanded,
-                     float setup_slack_margin)
+bool UnbufferMove::doMove(const Path* drvr_path,
+                          int drvr_index,
+                          const Slack drvr_slack,
+                          PathExpanded* expanded,
+                          float setup_slack_margin)
 {
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Pin* drvr_pin = drvr_vertex->pin();
@@ -70,7 +69,8 @@ UnbufferMove::doMove(const Path* drvr_path,
     Vertex* prev_drvr_vertex = prev_drvr_path->vertex(sta_);
     Pin* prev_drvr_pin = prev_drvr_vertex->pin();
     float curr_fanout, max_fanout, fanout_slack;
-    sta_->checkFanout( prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, fanout_slack);
+    sta_->checkFanout(
+        prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, fanout_slack);
     float new_fanout = curr_fanout + fanout(drvr_vertex) - 1;
     if (max_fanout > 0.0) {
       // Honor max fanout when the constraint exists
@@ -117,7 +117,8 @@ UnbufferMove::doMove(const Path* drvr_path,
                            max_cap,
                            cap_slack);
     if (max_cap > 0.0 && corner) {
-      const DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(resizer_->max_);
+      const DcalcAnalysisPt* dcalc_ap
+          = corner->findDcalcAnalysisPt(resizer_->max_);
       GraphDelayCalc* dcalc = sta_->graphDelayCalc();
       float drvr_cap = dcalc->loadCap(drvr_pin, dcalc_ap);
       LibertyPort *buffer_input_port, *buffer_output_port;
@@ -309,12 +310,8 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
-  debugPrint(logger_,
-             RSZ,
-             "moves",
-             1,
-             "unbuffer_move {}",
-             network_->pathName(buffer));
+  debugPrint(
+      logger_, RSZ, "moves", 1, "unbuffer_move {}", network_->pathName(buffer));
   addMove(buffer);
 
   LibertyCell* lib_cell = network_->libertyCell(buffer);
@@ -385,7 +382,5 @@ void UnbufferMove::removeBuffer(Instance* buffer)
   resizer_->parasiticsInvalid(survivor);
   resizer_->updateParasitics();
 }
-
-
 
 }  // namespace rsz

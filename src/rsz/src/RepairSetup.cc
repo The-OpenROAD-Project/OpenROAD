@@ -18,7 +18,6 @@
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
-
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
@@ -60,7 +59,6 @@ RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
 }
 
-
 void RepairSetup::init()
 {
   logger_ = resizer_->logger_;
@@ -68,7 +66,6 @@ void RepairSetup::init()
   db_network_ = resizer_->db_network_;
 
   initial_design_area_ = resizer_->computeDesignArea();
-
 }
 
 bool RepairSetup::repairSetup(const float setup_slack_margin,
@@ -90,47 +87,45 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   resizer_->buffer_moved_into_core_ = false;
 
   if (sequence.size() > 0) {
-      move_sequence.clear();
-      for( MoveType move : sequence) {
-        switch (move) {
-          case MoveType::BUFFER:
-            move_sequence.push_back(resizer_->buffer_move);
-            break;
-          case MoveType::UNBUFFER:
-            move_sequence.push_back(resizer_->unbuffer_move);
-            break;
-          case MoveType::SWAP:
-            move_sequence.push_back(resizer_->swap_pins_move);
-            break;
-          case MoveType::SIZE:
-            move_sequence.push_back(resizer_->size_move);
-            break;
-          case MoveType::CLONE:
-            move_sequence.push_back(resizer_->clone_move);
-            break;
-          case MoveType::SPLIT:
-            move_sequence.push_back(resizer_->split_load_move);
-            break;
-        }
+    move_sequence.clear();
+    for (MoveType move : sequence) {
+      switch (move) {
+        case MoveType::BUFFER:
+          move_sequence.push_back(resizer_->buffer_move);
+          break;
+        case MoveType::UNBUFFER:
+          move_sequence.push_back(resizer_->unbuffer_move);
+          break;
+        case MoveType::SWAP:
+          move_sequence.push_back(resizer_->swap_pins_move);
+          break;
+        case MoveType::SIZE:
+          move_sequence.push_back(resizer_->size_move);
+          break;
+        case MoveType::CLONE:
+          move_sequence.push_back(resizer_->clone_move);
+          break;
+        case MoveType::SPLIT:
+          move_sequence.push_back(resizer_->split_load_move);
+          break;
       }
+    }
 
-  } 
-  else {
-      move_sequence.clear();
-      if (!skip_buffer_removal) 
-        move_sequence.push_back(resizer_->unbuffer_move);
-      // Always  have sizing
-      move_sequence.push_back(resizer_->size_move);
-      if (!skip_pin_swap) 
-        move_sequence.push_back(resizer_->swap_pins_move);
-      if (!skip_buffering) 
-        move_sequence.push_back(resizer_->buffer_move);
-      if (!skip_gate_cloning) 
-        move_sequence.push_back(resizer_->clone_move);
-      if (!skip_buffering) 
-        move_sequence.push_back(resizer_->split_load_move);
+  } else {
+    move_sequence.clear();
+    if (!skip_buffer_removal)
+      move_sequence.push_back(resizer_->unbuffer_move);
+    // Always  have sizing
+    move_sequence.push_back(resizer_->size_move);
+    if (!skip_pin_swap)
+      move_sequence.push_back(resizer_->swap_pins_move);
+    if (!skip_buffering)
+      move_sequence.push_back(resizer_->buffer_move);
+    if (!skip_gate_cloning)
+      move_sequence.push_back(resizer_->clone_move);
+    if (!skip_buffering)
+      move_sequence.push_back(resizer_->split_load_move);
   }
-
 
   string repair_moves = "Repair move sequence: ";
   for (auto move : move_sequence) {
@@ -297,9 +292,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
-      const bool changed = repairPath(end_path,
-                                      end_slack,
-                                      setup_slack_margin);
+      const bool changed = repairPath(end_path, end_slack, setup_slack_margin);
       if (!changed) {
         if (pass != 1) {
           debugPrint(logger_,
@@ -431,14 +424,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   if (buffer_moves_ > 0 || split_load_moves_ > 0) {
     repaired = true;
-    if (split_load_moves_ == 0) 
-        logger_->info(RSZ, 40, "Inserted {} buffers.", buffer_moves_);
+    if (split_load_moves_ == 0)
+      logger_->info(RSZ, 40, "Inserted {} buffers.", buffer_moves_);
     else
-        logger_->info(RSZ,
-                      45,
-                      "Inserted {} buffers, {} to split loads.",
-                      buffer_moves_ + split_load_moves_,
-                      split_load_moves_);
+      logger_->info(RSZ,
+                    45,
+                    "Inserted {} buffers, {} to split loads.",
+                    buffer_moves_ + split_load_moves_,
+                    split_load_moves_);
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves_ + split_load_moves_);
@@ -477,14 +470,12 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   Path* path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
   move_sequence.clear();
-  move_sequence = {
-      resizer_->unbuffer_move,
-      resizer_->size_move,
-      resizer_->swap_pins_move,
-      resizer_->buffer_move,
-      resizer_->clone_move,
-      resizer_->split_load_move
-  };
+  move_sequence = {resizer_->unbuffer_move,
+                   resizer_->size_move,
+                   resizer_->swap_pins_move,
+                   resizer_->buffer_move,
+                   resizer_->clone_move,
+                   resizer_->split_load_move};
   repairPath(path, slack, 0.0);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
@@ -497,7 +488,8 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   int buffer_moves_ = resizer_->buffer_move->committedMoves();
   int split_load_moves_ = resizer_->split_load_move->countMoves();
   if (buffer_moves_ + split_load_moves_ > 0) {
-    logger_->info(RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
+    logger_->info(
+        RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
   }
   int size_moves_ = resizer_->size_move->countMoves();
   if (size_moves_ > 0) {
@@ -522,7 +514,6 @@ int RepairSetup::fanout(Vertex* vertex)
   }
   return fanout;
 }
-
 
 /* This is the main routine for repairing setup violations. We have
  - remove driver (step 1)
@@ -626,43 +617,46 @@ bool RepairSetup::repairPath(Path* path,
                  fanout,
                  drvr_index);
 
-      for(int i = 0; i < move_sequence.size(); i++) {
+      for (int i = 0; i < move_sequence.size(); i++) {
         debugPrint(logger_,
+                   RSZ,
+                   "moves",
+                   2,
+                   "Considering {} for {}",
+                   move_sequence[i]->name(),
+                   network_->pathName(drvr_pin));
+
+        if (move_sequence[i]->doMove(drvr_path,
+                                     drvr_index,
+                                     path_slack,
+                                     &expanded,
+                                     setup_slack_margin)) {
+          if (move_sequence[i] == resizer_->unbuffer_move) {
+            // Only allow one unbuffer move per pass to
+            // prevent the use-after-free error of multiple buffer removals.
+            changed += repairs_per_pass;
+          } else {
+            changed++;
+          }
+          // Move on to the next gate
+          break;
+        } else {
+          // If the move was not successful, then we need to
+          // check if we can do the next move in the sequence.
+          // This is a bit of a hack, but it works for now.
+          debugPrint(logger_,
                      RSZ,
                      "moves",
                      2,
-                     "Considering {} for {}",
+                     "Move {} failed for {}",
                      move_sequence[i]->name(),
                      network_->pathName(drvr_pin));
-
-        if (move_sequence[i]->doMove(drvr_path, drvr_index, path_slack, &expanded, setup_slack_margin)) {
-            if (move_sequence[i]==resizer_->unbuffer_move) {
-              // Only allow one unbuffer move per pass to
-              // prevent the use-after-free error of multiple buffer removals.
-              changed += repairs_per_pass;
-            } else {
-              changed++;
-            }
-            // Move on to the next gate
-            break;
-        } else {
-            // If the move was not successful, then we need to
-            // check if we can do the next move in the sequence.
-            // This is a bit of a hack, but it works for now.
-            debugPrint(logger_,
-                         RSZ,
-                         "moves",
-                         2,
-                         "Move {} failed for {}",
-                         move_sequence[i]->name(),
-                         network_->pathName(drvr_pin));
         }
       }
     }
   }
   return changed > 0;
 }
-
 
 void RepairSetup::printProgress(const int iteration,
                                 const bool force,
@@ -707,7 +701,8 @@ void RepairSetup::printProgress(const int iteration,
         itr_field,
         resizer_->unbuffer_move->countMoves(),
         resizer_->size_move->countMoves(),
-        resizer_->buffer_move->countMoves() + resizer_->split_load_move->countMoves(), 
+        resizer_->buffer_move->countMoves()
+            + resizer_->split_load_move->countMoves(),
         resizer_->clone_move->countMoves(),
         resizer_->swap_pins_move->countMoves(),
         area_growth / initial_design_area_ * 1e2,
@@ -861,9 +856,8 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params, int& num_viols)
       }
       Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
-      const bool changed = repairPath(end_path,
-                                      end_slack,
-                                      params.setup_slack_margin);
+      const bool changed
+          = repairPath(end_path, end_slack, params.setup_slack_margin);
 
       if (!changed) {
         if (pass != 1) {

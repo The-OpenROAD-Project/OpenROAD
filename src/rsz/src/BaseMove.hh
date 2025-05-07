@@ -9,14 +9,13 @@
 #include <cstddef>
 #include <vector>
 
-#include "rsz/Resizer.hh"
-
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -25,12 +24,12 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/MinMax.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/StaState.hh"
@@ -39,7 +38,6 @@
 #include "sta/Transition.hh"
 #include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
-
 
 namespace rsz {
 
@@ -58,12 +56,12 @@ using dpl::Opendp;
 using odb::dbMaster;
 using odb::Point;
 
-using utl::RSZ;
 using utl::Logger;
+using utl::RSZ;
 
 using sta::ArcDcalcResult;
-using sta::ArcDelayCalc;
 using sta::ArcDelay;
+using sta::ArcDelayCalc;
 using sta::Cell;
 using sta::Corner;
 using sta::dbDatabase;
@@ -74,21 +72,21 @@ using sta::DcalcAnalysisPt;
 using sta::Edge;
 using sta::fuzzyGreater;
 using sta::GraphDelayCalc;
+using sta::INF;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::InstanceSet;
-using sta::INF;
-using sta::LoadPinIndexMap;
 using sta::LibertyCell;
 using sta::LibertyPort;
-using sta::NetConnectedPinIterator;
+using sta::LoadPinIndexMap;
 using sta::MinMax;
 using sta::Net;
+using sta::NetConnectedPinIterator;
 using sta::Network;
-using sta::PathExpanded;
 using sta::Path;
-using sta::PortDirection;
+using sta::PathExpanded;
 using sta::Pin;
+using sta::PortDirection;
 using sta::RiseFall;
 using sta::RiseFallBoth;
 using sta::Sdc;
@@ -131,129 +129,130 @@ struct SlackEstimatorParams
   }
 };
 
-class BaseMove : public sta::dbStaState {
-    public:
-        BaseMove(Resizer* resizer);
-        ~BaseMove() override = default;
+class BaseMove : public sta::dbStaState
+{
+ public:
+  BaseMove(Resizer* resizer);
+  ~BaseMove() override = default;
 
-        virtual bool doMove(const Path* drvr_path,
-                           const int drvr_index,
-                           Slack drvr_slack,
-                           PathExpanded* expanded,
-                           float setup_slack_margin) { return false; }
+  virtual bool doMove(const Path* drvr_path,
+                      const int drvr_index,
+                      Slack drvr_slack,
+                      PathExpanded* expanded,
+                      float setup_slack_margin)
+  {
+    return false;
+  }
 
-        virtual const char * name() const { return "BaseMove"; }
+  virtual const char* name() const { return "BaseMove"; }
 
-        void init();
+  void init();
 
-        // Analysis functions
-        //virtual double deltaSlack() = 0;
-        //virtual double deltaPower() = 0;
-        //virtual douele deltaArea() = 0;
+  // Analysis functions
+  // virtual double deltaSlack() = 0;
+  // virtual double deltaPower() = 0;
+  // virtual douele deltaArea() = 0;
 
-        // Accept the pending optimizations
-        void commitMoves();
-        // Abandon the pending optimizations
-        void restoreMoves();
-        // Total pending optimizations (since last checkpoint)
-        int pendingMoves() const;
-        // Whether this optimization is pending
-        int pendingMoves(Instance* inst) const;
-        // Total optimizations 
-        int committedMoves() const;
-        // Whether this optimization is committed or pending
-        int countMoves(Instance* inst) const;
-        // Total accepted and pending optimizations 
-        int countMoves() const;
-        // Add a new pending optimization
-        void addMove(Instance* inst, int count=1);
+  // Accept the pending optimizations
+  void commitMoves();
+  // Abandon the pending optimizations
+  void restoreMoves();
+  // Total pending optimizations (since last checkpoint)
+  int pendingMoves() const;
+  // Whether this optimization is pending
+  int pendingMoves(Instance* inst) const;
+  // Total optimizations
+  int committedMoves() const;
+  // Whether this optimization is committed or pending
+  int countMoves(Instance* inst) const;
+  // Total accepted and pending optimizations
+  int countMoves() const;
+  // Add a new pending optimization
+  void addMove(Instance* inst, int count = 1);
 
-    protected:
-       Resizer* resizer_;
-       Logger* logger_;
-       Network* network_;
-       dbNetwork* db_network_;
-       dbSta* sta_;
-       dbDatabase* db_ = nullptr;
-       int dbu_ = 0; 
-       dpl::Opendp* opendp_ = nullptr;
-       const Corner* corner_ = nullptr;
+ protected:
+  Resizer* resizer_;
+  Logger* logger_;
+  Network* network_;
+  dbNetwork* db_network_;
+  dbSta* sta_;
+  dbDatabase* db_ = nullptr;
+  int dbu_ = 0;
+  dpl::Opendp* opendp_ = nullptr;
+  const Corner* corner_ = nullptr;
 
-       // Need to track these so we don't optimize the optimzations.
-       // This can result in long run-time.
-       // These are all of the optimized insts of this type .
-       // Some may not have been accepted, but this replicates the prior behavior.
-       InstanceSet all_inst_set_;
-       // This is just the set of the pending moves.
-       InstanceSet pending_inst_set_;
-       int pending_count_ = 0;
-       int all_count_ = 0;
+  // Need to track these so we don't optimize the optimzations.
+  // This can result in long run-time.
+  // These are all of the optimized insts of this type .
+  // Some may not have been accepted, but this replicates the prior behavior.
+  InstanceSet all_inst_set_;
+  // This is just the set of the pending moves.
+  InstanceSet pending_inst_set_;
+  int pending_count_ = 0;
+  int all_count_ = 0;
 
-       // Use actual input slews for accurate delay/slew estimation
-       sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
-       TgtSlews tgt_slews_;
+  // Use actual input slews for accurate delay/slew estimation
+  sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;
+  TgtSlews tgt_slews_;
 
-       double area(Cell* cell);
-       double area(dbMaster* master);
-       double dbuToMeters(int dist) const;
+  double area(Cell* cell);
+  double area(dbMaster* master);
+  double dbuToMeters(int dist) const;
 
+  void gateDelays(const LibertyPort* drvr_port,
+                  float load_cap,
+                  const DcalcAnalysisPt* dcalc_ap,
+                  // Return values.
+                  ArcDelay delays[RiseFall::index_count],
+                  Slew slews[RiseFall::index_count]);
+  void gateDelays(const LibertyPort* drvr_port,
+                  float load_cap,
+                  const Slew in_slews[RiseFall::index_count],
+                  const DcalcAnalysisPt* dcalc_ap,
+                  // Return values.
+                  ArcDelay delays[RiseFall::index_count],
+                  Slew out_slews[RiseFall::index_count]);
+  ArcDelay gateDelay(const LibertyPort* drvr_port,
+                     float load_cap,
+                     const DcalcAnalysisPt* dcalc_ap);
+  ArcDelay gateDelay(const LibertyPort* drvr_port,
+                     const RiseFall* rf,
+                     float load_cap,
+                     const DcalcAnalysisPt* dcalc_ap);
 
-      void gateDelays(const LibertyPort* drvr_port,
-                      float load_cap,
-                      const DcalcAnalysisPt* dcalc_ap,
-                      // Return values.
-                      ArcDelay delays[RiseFall::index_count],
-                      Slew slews[RiseFall::index_count]);
-      void gateDelays(const LibertyPort* drvr_port,
-                      float load_cap,
-                      const Slew in_slews[RiseFall::index_count],
-                      const DcalcAnalysisPt* dcalc_ap,
-                      // Return values.
-                      ArcDelay delays[RiseFall::index_count],
-                      Slew out_slews[RiseFall::index_count]);
-      ArcDelay gateDelay(const LibertyPort* drvr_port,
-                         float load_cap,
-                         const DcalcAnalysisPt* dcalc_ap);
-      ArcDelay gateDelay(const LibertyPort* drvr_port,
-                         const RiseFall* rf,
-                         float load_cap,
-                         const DcalcAnalysisPt* dcalc_ap);
+  bool isPortEqiv(sta::FuncExpr* expr,
+                  const LibertyCell* cell,
+                  const LibertyPort* port_a,
+                  const LibertyPort* port_b);
 
-      bool isPortEqiv(sta::FuncExpr* expr,
-                      const LibertyCell* cell,
-                      const LibertyPort* port_a,
-                      const LibertyPort* port_b);
+  bool simulateExpr(
+      sta::FuncExpr* expr,
+      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
+      size_t table_index);
+  std::vector<bool> simulateExpr(
+      sta::FuncExpr* expr,
+      sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
+  Instance* makeBuffer(LibertyCell* cell,
+                       const char* name,
+                       Instance* parent,
+                       const Point& loc);
+  bool estimatedSlackOK(const SlackEstimatorParams& params);
+  bool estimateInputSlewImpact(Instance* instance,
+                               const DcalcAnalysisPt* dcalc_ap,
+                               Slew old_in_slew[RiseFall::index_count],
+                               Slew new_in_slew[RiseFall::index_count],
+                               // delay adjustment from prev stage
+                               float delay_adjust,
+                               SlackEstimatorParams params,
+                               bool accept_if_slack_improves);
+  bool hasPort(const Net* net);
+  void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
+  int fanout(Vertex* vertex);
 
-      bool simulateExpr(
-          sta::FuncExpr* expr,
-          sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
-          size_t table_index);
-      std::vector<bool> simulateExpr(
-          sta::FuncExpr* expr,
-          sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus);
-      Instance* makeBuffer(LibertyCell* cell,
-                           const char* name,
-                           Instance* parent,
-                           const Point& loc);
-      bool estimatedSlackOK(const SlackEstimatorParams& params);
-      bool estimateInputSlewImpact(Instance* instance,
-                                   const DcalcAnalysisPt* dcalc_ap,
-                                   Slew old_in_slew[RiseFall::index_count],
-                                   Slew new_in_slew[RiseFall::index_count],
-                                   // delay adjustment from prev stage
-                                   float delay_adjust,
-                                   SlackEstimatorParams params,
-                                   bool accept_if_slack_improves);
-      bool hasPort(const Net* net);
-      void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
-      int fanout(Vertex* vertex);
-
-      static constexpr int rebuffer_max_fanout_ = 20;
-      static constexpr int split_load_min_fanout_ = 8;
-      static constexpr int buffer_removal_max_fanout_ = 10;
-      static constexpr float rebuffer_relaxation_factor_ = 0.03;
-
+  static constexpr int rebuffer_max_fanout_ = 20;
+  static constexpr int split_load_min_fanout_ = 8;
+  static constexpr int buffer_removal_max_fanout_ = 10;
+  static constexpr float rebuffer_relaxation_factor_ = 0.03;
 };
 
 }  // namespace rsz
-

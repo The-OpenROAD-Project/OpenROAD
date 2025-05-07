@@ -17,13 +17,11 @@
 
 namespace rsz {
 
-
-bool 
-SwapPinsMove::doMove(const Path* drvr_path,
-                     int drvr_index,
-                     const Slack drvr_slack,
-                     PathExpanded* expanded,
-                     float setup_slack_margin)
+bool SwapPinsMove::doMove(const Path* drvr_path,
+                          int drvr_index,
+                          const Slack drvr_slack,
+                          PathExpanded* expanded,
+                          float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   // Skip if there is no liberty model or this is a single-input cell
@@ -74,7 +72,8 @@ SwapPinsMove::doMove(const Path* drvr_path,
     if (!ports.empty()) {
       // Pass slews at input pins for more accurate delay/slew estimation
       annotateInputSlews(drvr, dcalc_ap);
-      findSwapPinCandidate(input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
+      findSwapPinCandidate(
+          input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
       resetInputSlews();
 
       if (!sta::LibertyPort::equiv(swap_port, input_port)) {
@@ -106,10 +105,9 @@ SwapPinsMove::doMove(const Path* drvr_path,
   return false;
 }
 
-void 
-SwapPinsMove::swapPins(Instance* inst,
-                       LibertyPort* port1,
-                       LibertyPort* port2)
+void SwapPinsMove::swapPins(Instance* inst,
+                            LibertyPort* port1,
+                            LibertyPort* port2)
 {
   Pin *found_pin1, *found_pin2;
   Net *net1, *net2;
@@ -174,10 +172,12 @@ SwapPinsMove::swapPins(Instance* inst,
 
     // Invalidate the parasitics on these two nets.
     if (resizer_->haveEstimatedParasitics()) {
-      resizer_->invalidateParasitics(found_pin2,
-                                     db_network_->dbToSta(flat_net_pin1));  // net1);
-      resizer_->invalidateParasitics(found_pin1,
-                                     db_network_->dbToSta(flat_net_pin2));  // net2);
+      resizer_->invalidateParasitics(
+          found_pin2,
+          db_network_->dbToSta(flat_net_pin1));  // net1);
+      resizer_->invalidateParasitics(
+          found_pin1,
+          db_network_->dbToSta(flat_net_pin2));  // net2);
     }
   }
 }
@@ -187,8 +187,8 @@ SwapPinsMove::swapPins(Instance* inst,
 // whole library). Or just generate it when the cell is being created
 // (depending on agreement).
 void SwapPinsMove::equivCellPins(const LibertyCell* cell,
-                                LibertyPort* input_port,
-                                sta::LibertyPortSet& ports)
+                                 LibertyPort* input_port,
+                                 sta::LibertyPortSet& ports)
 {
   if (cell->hasSequentials() || cell->isIsolationCell()) {
     ports.clear();
@@ -287,11 +287,11 @@ void SwapPinsMove::reportSwappablePins()
 // for our violating path. Current implementation does not handle the case
 // where 2 paths go through the same gate (we could end up swapping pins twice)
 void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
-                                   LibertyPort* drvr_port,
-                                   const sta::LibertyPortSet& equiv_ports,
-                                   float load_cap,
-                                   const DcalcAnalysisPt* dcalc_ap,
-                                   LibertyPort** swap_port)
+                                        LibertyPort* drvr_port,
+                                        const sta::LibertyPortSet& equiv_ports,
+                                        float load_cap,
+                                        const DcalcAnalysisPt* dcalc_ap,
+                                        LibertyPort** swap_port)
 {
   LibertyCell* cell = drvr_port->libertyCell();
   std::map<LibertyPort*, ArcDelay> port_delays;
@@ -380,6 +380,5 @@ void SwapPinsMove::resetInputSlews()
 {
   input_slew_map_.clear();
 }
-
 
 }  // namespace rsz

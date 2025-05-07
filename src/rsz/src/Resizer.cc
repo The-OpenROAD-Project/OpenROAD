@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "AbstractSteinerRenderer.h"
-#include "BufferedNet.hh"
 #include "BufferMove.hh"
+#include "BufferedNet.hh"
 #include "CloneMove.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
@@ -168,7 +168,6 @@ void Resizer::init(Logger* logger,
   split_load_move = new SplitLoadMove(this);
   swap_pins_move = new SwapPinsMove(this);
   unbuffer_move = new UnbufferMove(this);
-
 }
 
 ////////////////////////////////////////////////////////////////
@@ -241,7 +240,7 @@ void Resizer::initBlock()
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
   core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
-                   && core_.yMax() == 0) ;
+                   && core_.yMax() == 0);
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
 
   // Apply sizing restrictions
@@ -347,7 +346,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     // remove all the buffers
     for (dbInst* db_inst : block_->getInsts()) {
       Instance* buffer = db_network_->dbToSta(db_inst);
-      if (unbuffer_move->removeBufferIfPossible(buffer, /* honor dont touch */ true)) {
+      if (unbuffer_move->removeBufferIfPossible(buffer,
+                                                /* honor dont touch */ true)) {
       }
     }
   } else {
@@ -355,7 +355,8 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
     InstanceSeq::Iterator inst_iter(insts);
     while (inst_iter.hasNext()) {
       Instance* buffer = const_cast<Instance*>(inst_iter.next());
-      if (unbuffer_move->removeBufferIfPossible(buffer, /* don't honor dont touch */ false)) {
+      if (unbuffer_move->removeBufferIfPossible(
+              buffer, /* don't honor dont touch */ false)) {
       } else {
         logger_->warn(
             RSZ,
@@ -405,7 +406,6 @@ void Resizer::unbufferNet(Net* net)
 
   removeBuffers(insts);
 }
-
 
 void Resizer::ensureLevelDrvrVertices()
 {
@@ -1966,7 +1966,6 @@ void Resizer::eraseParasitics(const Net* net)
   parasitics_invalid_.erase(net);
 }
 
-
 // Replace LEF with LEF so ports stay aligned in instance.
 bool Resizer::replaceCell(Instance* inst,
                           const LibertyCell* replacement,
@@ -2006,8 +2005,6 @@ bool Resizer::replaceCell(Instance* inst,
   }
   return false;
 }
-
-
 
 bool Resizer::hasMultipleOutputs(const Instance* inst)
 {
@@ -2063,8 +2060,8 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           repaired_net_count);
 
   findResizeSlacks1();
-  if (run_journal_restore) 
-      journalRestore();
+  if (run_journal_restore)
+    journalRestore();
 }
 
 void Resizer::findResizeSlacks1()
@@ -3841,7 +3838,6 @@ void Resizer::journalBegin()
   split_load_move->restoreMoves();
   swap_pins_move->restoreMoves();
   unbuffer_move->restoreMoves();
-
 }
 
 void Resizer::journalEnd()
@@ -3939,7 +3935,6 @@ void Resizer::journalRestore()
   swap_pins_move->restoreMoves();
   unbuffer_move->restoreMoves();
 
-
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
 
@@ -3968,8 +3963,6 @@ void Resizer::journalRestoreTest()
       swap_pin_count_old - swap_pins_move->countMoves(),
       removed_buffer_count_old - unbuffer_move->countMoves());
 }
-
-
 
 void Resizer::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
 {
@@ -4291,22 +4284,28 @@ void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
   graphics_ = std::move(graphics);
 }
 
-MoveType 
-Resizer::parseMove(const std::string& s) {
+MoveType Resizer::parseMove(const std::string& s)
+{
   std::string lower = s;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if (lower == "buffer") return rsz::MoveType::BUFFER;
-  if (lower == "unbuffer") return rsz::MoveType::UNBUFFER;
-  if (lower == "swap") return rsz::MoveType::SWAP;
-  if (lower == "size") return rsz::MoveType::SIZE;
-  if (lower == "clone") return rsz::MoveType::CLONE;
-  if (lower == "split") return rsz::MoveType::SPLIT;
+  if (lower == "buffer")
+    return rsz::MoveType::BUFFER;
+  if (lower == "unbuffer")
+    return rsz::MoveType::UNBUFFER;
+  if (lower == "swap")
+    return rsz::MoveType::SWAP;
+  if (lower == "size")
+    return rsz::MoveType::SIZE;
+  if (lower == "clone")
+    return rsz::MoveType::CLONE;
+  if (lower == "split")
+    return rsz::MoveType::SPLIT;
   throw std::invalid_argument("Invalid move type: " + s);
 }
 
-
-std::vector<rsz::MoveType> 
-Resizer::parseMoveSequence(const std::string& sequence) {
+std::vector<rsz::MoveType> Resizer::parseMoveSequence(
+    const std::string& sequence)
+{
   std::vector<rsz::MoveType> result;
   std::stringstream ss(sequence);
   std::string item;

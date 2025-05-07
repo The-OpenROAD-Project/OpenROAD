@@ -3,76 +3,68 @@
 
 #include <cmath>
 #include <memory>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 #include "BaseMove.hh"
 
 namespace rsz {
 
-
 class BufferMove : public BaseMove
 {
+ public:
+  using BaseMove::BaseMove;
 
-public:
-    using BaseMove::BaseMove;
+  bool doMove(const Path* drvr_path,
+              const int drvr_index,
+              Slack drvr_slack,
+              PathExpanded* expanded,
+              float setup_slack_margin) override;
 
-    bool doMove(const Path* drvr_path,
-                const int drvr_index,
-                Slack drvr_slack,
-                PathExpanded* expanded,
-                float setup_slack_margin) override;
+  const char* name() const override { return "BufferMove"; }
 
-    const char * name() const override { return "BufferMove"; }
+  void rebufferNet(const Pin* drvr_pin);
 
-    void rebufferNet(const Pin* drvr_pin);
+ private:
+  int rebuffer_net_count_ = 0;
+  LibertyPort* drvr_port_ = nullptr;
 
-private:
-    int rebuffer_net_count_ = 0;
-    LibertyPort* drvr_port_ = nullptr;
+  int rebuffer(const Pin* drvr_pin);
 
-    int rebuffer(const Pin* drvr_pin);
+  void annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex);
+  BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
+  BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
+                             sta::Delay slack_target,
+                             float alpha);
 
-    void annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex);
-    BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
-    BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
-                               sta::Delay slack_target,
-                               float alpha);
+  void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
+  bool hasTopLevelOutputPort(Net* net);
 
-    void debugCheckMultipleBuffers(Path* path, PathExpanded* expanded);
-    bool hasTopLevelOutputPort(Net* net);
+  int rebufferTopDown(const BufferedNetPtr& choice,
+                      Net* net,
+                      int level,
+                      Instance* parent,
+                      odb::dbITerm* mod_net_drvr,
+                      odb::dbModNet* mod_net);
+  BufferedNetPtr addWire(const BufferedNetPtr& p,
+                         const Point& wire_end,
+                         int wire_layer,
+                         int level);
+  void addBuffers(BufferedNetSeq& Z1,
+                  int level,
+                  bool area_oriented = false,
+                  sta::Delay threshold = 0);
+  float bufferInputCapacitance(LibertyCell* buffer_cell,
+                               const DcalcAnalysisPt* dcalc_ap);
+  Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
+  std::tuple<sta::Delay, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
+  Slack slackAtDriverPin(const BufferedNetPtr& bnet);
+  Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
 
-    int rebufferTopDown(const BufferedNetPtr& choice,
-                        Net* net,
-                        int level,
-                        Instance* parent,
-                        odb::dbITerm* mod_net_drvr,
-                        odb::dbModNet* mod_net);
-    BufferedNetPtr addWire(const BufferedNetPtr& p,
-                           const Point& wire_end,
-                           int wire_layer,
-                           int level);
-    void addBuffers(BufferedNetSeq& Z1,
-                    int level,
-                    bool area_oriented = false,
-                    sta::Delay threshold = 0);
-    float bufferInputCapacitance(LibertyCell* buffer_cell,
-                                 const DcalcAnalysisPt* dcalc_ap);
-    Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
-    std::tuple<sta::Delay, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
-    Slack slackAtDriverPin(const BufferedNetPtr& bnet);
-    Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
+  Delay requiredDelay(const BufferedNetPtr& bnet);
 
-    Delay requiredDelay(const BufferedNetPtr& bnet);
-
-
-
-    // For rebuffering
-    Path* arrival_paths_[RiseFall::index_count];
-
-
+  // For rebuffering
+  Path* arrival_paths_[RiseFall::index_count];
 };
 
 }  // namespace rsz
-
-

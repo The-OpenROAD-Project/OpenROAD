@@ -9,30 +9,25 @@ using sta::Pin;
 
 class UnbufferMove : public BaseMove
 {
+ public:
+  using BaseMove::BaseMove;
 
-public:
-    using BaseMove::BaseMove;
+  bool doMove(const Path* drvr_path,
+              const int drvr_index,
+              Slack drvr_slack,
+              PathExpanded* expanded,
+              float setup_slack_margin) override;
 
-    bool doMove(const Path* drvr_path,
-                const int drvr_index,
-                Slack drvr_slack,
-                PathExpanded* expanded,
-                float setup_slack_margin) override;
+  const char* name() const override { return "UnbufferMove"; }
 
-    const char * name() const override { return "UnbufferMove"; }
+  bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
 
-    bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
+ private:
+  void removeBuffer(Instance* buffer);
+  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
+  bool bufferBetweenPorts(Instance* buffer);
 
-private:
-
-    void removeBuffer(Instance* buffer);
-    bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed);
-    bool bufferBetweenPorts(Instance* buffer);
-
-    static constexpr int buffer_removal_max_fanout_ = 10;
-
+  static constexpr int buffer_removal_max_fanout_ = 10;
 };
 
 }  // namespace rsz
-
-

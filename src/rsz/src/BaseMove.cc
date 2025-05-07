@@ -7,74 +7,65 @@ namespace rsz {
 
 BaseMove::BaseMove(Resizer* resizer)
 {
-   resizer_ = resizer;
-   logger_ = resizer_->logger_;
-   network_ = resizer_->network_;
-   db_ = resizer_->db_;
-   db_network_ = resizer_->db_network_;
-   dbStaState::init(resizer_->sta_);
-   sta_ = resizer_->sta_;
-   dbu_ = resizer_->dbu_;
-   opendp_ = resizer_->opendp_;
+  resizer_ = resizer;
+  logger_ = resizer_->logger_;
+  network_ = resizer_->network_;
+  db_ = resizer_->db_;
+  db_network_ = resizer_->db_network_;
+  dbStaState::init(resizer_->sta_);
+  sta_ = resizer_->sta_;
+  dbu_ = resizer_->dbu_;
+  opendp_ = resizer_->opendp_;
 
-   all_count_ = 0;
-   all_inst_set_ = InstanceSet(db_network_);
-   pending_count_ = 0;
-   pending_inst_set_ = InstanceSet(db_network_);
-
+  all_count_ = 0;
+  all_inst_set_ = InstanceSet(db_network_);
+  pending_count_ = 0;
+  pending_inst_set_ = InstanceSet(db_network_);
 }
 
-void
-BaseMove::commitMoves()
+void BaseMove::commitMoves()
 {
-    all_count_ += pending_count_;
-    pending_count_ = 0;
-    pending_inst_set_.clear();
+  all_count_ += pending_count_;
+  pending_count_ = 0;
+  pending_inst_set_.clear();
 }
 
-void
-BaseMove::init()
+void BaseMove::init()
 {
-    pending_count_ = 0;
-    all_count_ = 0;
-    pending_inst_set_.clear();
-    all_inst_set_.clear();
+  pending_count_ = 0;
+  all_count_ = 0;
+  pending_inst_set_.clear();
+  all_inst_set_.clear();
 }
 
-void
-BaseMove::restoreMoves()
+void BaseMove::restoreMoves()
 {
-    pending_count_ = 0;
-    pending_inst_set_.clear();
-} 
-
-int
-BaseMove::countMoves(Instance *inst) const 
-{ 
-    return all_inst_set_.count(inst);
+  pending_count_ = 0;
+  pending_inst_set_.clear();
 }
 
-int
-BaseMove::pendingMoves(Instance *inst) const 
-{ 
-    return pending_inst_set_.count(inst);
+int BaseMove::countMoves(Instance* inst) const
+{
+  return all_inst_set_.count(inst);
 }
 
-int
-BaseMove::pendingMoves() const 
-{ 
-    return pending_count_;
-} 
+int BaseMove::pendingMoves(Instance* inst) const
+{
+  return pending_inst_set_.count(inst);
+}
 
-int
-BaseMove::committedMoves() const 
-{ 
-    return all_count_;
-} 
+int BaseMove::pendingMoves() const
+{
+  return pending_count_;
+}
 
-int
-BaseMove::countMoves() const 
-{ 
+int BaseMove::committedMoves() const
+{
+  return all_count_;
+}
+
+int BaseMove::countMoves() const
+{
   debugPrint(logger_,
              RSZ,
              "moves",
@@ -83,33 +74,30 @@ BaseMove::countMoves() const
              name(),
              all_count_,
              pending_count_);
-    return all_count_ + pending_count_;
-} 
-
-void
-BaseMove::addMove(Instance *inst, int count)
-{ 
-    // Add it as a candidate move, not accepted yet
-    // This count is for the cloned gates where we only count the clone
-    // but we also add the main gate to the pending set.
-    // This count is also used when we add more than 1 buffer during rebuffer.
-    // Default is to add 1 to the pending count.
-    pending_count_ += count;
-    // Add it to all moves, even though it wasn't accepted.
-    // This is the behavior to match the current resizer.
-    all_inst_set_.insert(inst); 
-    // Also add it to the pending moves
-    pending_inst_set_.insert(inst);
+  return all_count_ + pending_count_;
 }
 
-double 
-BaseMove::area(Cell* cell) 
-{ 
-    return area(db_network_->staToDb(cell)); 
+void BaseMove::addMove(Instance* inst, int count)
+{
+  // Add it as a candidate move, not accepted yet
+  // This count is for the cloned gates where we only count the clone
+  // but we also add the main gate to the pending set.
+  // This count is also used when we add more than 1 buffer during rebuffer.
+  // Default is to add 1 to the pending count.
+  pending_count_ += count;
+  // Add it to all moves, even though it wasn't accepted.
+  // This is the behavior to match the current resizer.
+  all_inst_set_.insert(inst);
+  // Also add it to the pending moves
+  pending_inst_set_.insert(inst);
 }
 
-double 
-BaseMove::area(dbMaster* master)
+double BaseMove::area(Cell* cell)
+{
+  return area(db_network_->staToDb(cell));
+}
+
+double BaseMove::area(dbMaster* master)
 {
   if (!master->isCoreAutoPlaceable()) {
     return 0;
@@ -117,8 +105,7 @@ BaseMove::area(dbMaster* master)
   return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
 }
 
-double 
-BaseMove::dbuToMeters(int dist) const
+double BaseMove::dbuToMeters(int dist) const
 {
   return dist / (dbu_ * 1e+6);
 }
@@ -126,11 +113,11 @@ BaseMove::dbuToMeters(int dist) const
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
 void BaseMove::gateDelays(const LibertyPort* drvr_port,
-                         const float load_cap,
-                         const DcalcAnalysisPt* dcalc_ap,
-                         // Return values.
-                         ArcDelay delays[RiseFall::index_count],
-                         Slew slews[RiseFall::index_count])
+                          const float load_cap,
+                          const DcalcAnalysisPt* dcalc_ap,
+                          // Return values.
+                          ArcDelay delays[RiseFall::index_count],
+                          Slew slews[RiseFall::index_count])
 {
   for (int rf_index : RiseFall::rangeIndex()) {
     delays[rf_index] = -INF;
@@ -174,12 +161,12 @@ void BaseMove::gateDelays(const LibertyPort* drvr_port,
 // Rise/fall delays across all timing arcs into drvr_port.
 // Takes input slews and load cap
 void BaseMove::gateDelays(const LibertyPort* drvr_port,
-                         const float load_cap,
-                         const Slew in_slews[RiseFall::index_count],
-                         const DcalcAnalysisPt* dcalc_ap,
-                         // Return values.
-                         ArcDelay delays[RiseFall::index_count],
-                         Slew out_slews[RiseFall::index_count])
+                          const float load_cap,
+                          const Slew in_slews[RiseFall::index_count],
+                          const DcalcAnalysisPt* dcalc_ap,
+                          // Return values.
+                          ArcDelay delays[RiseFall::index_count],
+                          Slew out_slews[RiseFall::index_count])
 {
   for (int rf_index : RiseFall::rangeIndex()) {
     delays[rf_index] = -INF;
@@ -211,9 +198,9 @@ void BaseMove::gateDelays(const LibertyPort* drvr_port,
 }
 
 ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
-                            const RiseFall* rf,
-                            const float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap)
+                             const RiseFall* rf,
+                             const float load_cap,
+                             const DcalcAnalysisPt* dcalc_ap)
 {
   ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -221,10 +208,9 @@ ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
   return delays[rf->index()];
 }
 
-
 ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
-                            const float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap)
+                             const float load_cap,
+                             const DcalcAnalysisPt* dcalc_ap)
 {
   ArcDelay delays[RiseFall::index_count];
   Slew slews[RiseFall::index_count];
@@ -232,11 +218,10 @@ ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
   return max(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
 }
 
-bool 
-BaseMove::isPortEqiv(sta::FuncExpr* expr,
-                     const LibertyCell* cell,
-                     const LibertyPort* port_a,
-                     const LibertyPort* port_b)
+bool BaseMove::isPortEqiv(sta::FuncExpr* expr,
+                          const LibertyCell* cell,
+                          const LibertyPort* port_a,
+                          const LibertyPort* port_b)
 {
   if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
     return false;
@@ -336,14 +321,13 @@ std::vector<bool> BaseMove::simulateExpr(
 
 ////////////////////////////////////////////////////////////////
 Instance* BaseMove::makeBuffer(LibertyCell* cell,
-                              const char* name,
-                              Instance* parent,
-                              const Point& loc)
+                               const char* name,
+                               Instance* parent,
+                               const Point& loc)
 {
   Instance* inst = resizer_->makeInstance(cell, name, parent, loc);
   return inst;
 }
-
 
 // Estimate slack impact from driver removal.
 // Delay improvement from removed driver should be greater than
@@ -374,7 +358,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 
   // Prep for delay calc
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  const DcalcAnalysisPt* dcalc_ap = params.corner->findDcalcAnalysisPt(resizer_->max_);
+  const DcalcAnalysisPt* dcalc_ap
+      = params.corner->findDcalcAnalysisPt(resizer_->max_);
   LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
   if (prev_drvr_port == nullptr) {
     return false;
@@ -479,19 +464,18 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
              db_network_->name(params.driver));
   // clang-format on
   return true;
-} 
+}
 
 // Estimate impact from degraded input slew for this instance.
 // Include all output pins for multi-outut gate (MOG) cells.
-bool BaseMove::estimateInputSlewImpact(
-    Instance* instance,
-    const DcalcAnalysisPt* dcalc_ap,
-    Slew old_in_slew[RiseFall::index_count],
-    Slew new_in_slew[RiseFall::index_count],
-    // delay adjustment from prev stage
-    float delay_adjust,
-    SlackEstimatorParams params,
-    bool accept_if_slack_improves)
+bool BaseMove::estimateInputSlewImpact(Instance* instance,
+                                       const DcalcAnalysisPt* dcalc_ap,
+                                       Slew old_in_slew[RiseFall::index_count],
+                                       Slew new_in_slew[RiseFall::index_count],
+                                       // delay adjustment from prev stage
+                                       float delay_adjust,
+                                       SlackEstimatorParams params,
+                                       bool accept_if_slack_improves)
 {
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
   InstancePinIterator* pin_iter = network_->pinIterator(instance);
@@ -521,7 +505,8 @@ bool BaseMove::estimateInputSlewImpact(
         new_delay[RiseFall::riseIndex()] - old_delay[RiseFall::riseIndex()],
         new_delay[RiseFall::fallIndex()] - old_delay[RiseFall::fallIndex()]);
 
-    float old_slack = sta_->pinSlack(pin, resizer_->max_) - params.setup_slack_margin;
+    float old_slack
+        = sta_->pinSlack(pin, resizer_->max_) - params.setup_slack_margin;
     float new_slack
         = old_slack - delay_diff - delay_adjust - params.setup_slack_margin;
     if ((accept_if_slack_improves && fuzzyGreater(old_slack, new_slack))
@@ -538,7 +523,6 @@ bool BaseMove::estimateInputSlewImpact(
 
   return true;
 }
-
 
 bool BaseMove::hasPort(const Net* net)
 {
@@ -582,8 +566,6 @@ int BaseMove::fanout(Vertex* vertex)
   return fanout;
 }
 
-
 ////////////////////////////////////////////////////////////////
 // namespace rsz
 }  // namespace rsz
-

@@ -11,13 +11,11 @@
 
 namespace rsz {
 
-
-bool 
-SplitLoadMove::doMove(const Path* drvr_path,
-                      int drvr_index,
-                      const Slack drvr_slack,
-                      PathExpanded* expanded,
-                      float setup_slack_margin)
+bool SplitLoadMove::doMove(const Path* drvr_path,
+                           int drvr_index,
+                           const Slack drvr_slack,
+                           PathExpanded* expanded,
+                           float setup_slack_margin)
 {
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
@@ -66,7 +64,8 @@ SplitLoadMove::doMove(const Path* drvr_path,
     // Watch out for problematic asap7 output->output timing arcs.
     if (edge->isWire()) {
       Vertex* fanout_vertex = edge->to(graph_);
-      const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
+      const Slack fanout_slack
+          = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
       const Slack slack_margin = fanout_slack - drvr_slack;
       debugPrint(logger_,
                  RSZ,
@@ -103,13 +102,14 @@ SplitLoadMove::doMove(const Path* drvr_path,
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // H-Fix make the buffer in the parent of the driver pin
-  Instance* buffer = makeBuffer(buffer_cell, buffer_name.c_str(), parent, drvr_loc);
+  Instance* buffer
+      = makeBuffer(buffer_cell, buffer_name.c_str(), parent, drvr_loc);
   debugPrint(logger_,
-         RSZ,
-         "moves",
-         1,
-         "split_load_move make_buffer {}",
-         network_->pathName(buffer));
+             RSZ,
+             "moves",
+             1,
+             "split_load_move make_buffer {}",
+             network_->pathName(buffer));
   addMove(buffer);
 
   // H-fix make the out net in the driver parent
@@ -223,7 +223,7 @@ SplitLoadMove::doMove(const Path* drvr_path,
   resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
   resizer_->parasiticsInvalid(out_net);
 
-  return(true);
+  return (true);
 }
 
 }  // namespace rsz
