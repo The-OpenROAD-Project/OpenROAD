@@ -3,20 +3,16 @@
 
 #include "stt/MakeSteinerTreeBuilder.h"
 
-#include "ord/OpenRoad.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/decode.h"
-
-namespace stt {
-// Tcl files encoded into strings.
-extern const char* stt_tcl_inits[];
-}  // namespace stt
 
 extern "C" {
 extern int Stt_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace stt {
+// Tcl files encoded into strings.
+extern const char* stt_tcl_inits[];
 
 stt::SteinerTreeBuilder* makeSteinerTreeBuilder()
 {
@@ -28,14 +24,15 @@ void deleteSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder)
   delete stt_builder;
 }
 
-void initSteinerTreeBuilder(OpenRoad* openroad)
+void initSteinerTreeBuilder(stt::SteinerTreeBuilder* stt_builder,
+                            odb::dbDatabase* db,
+                            utl::Logger* logger,
+                            Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Stt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, stt::stt_tcl_inits);
-  openroad->getSteinerTreeBuilder()->init(openroad->getDb(),
-                                          openroad->getLogger());
+  stt_builder->init(db, logger);
 }
 
-}  // namespace ord
+}  // namespace stt

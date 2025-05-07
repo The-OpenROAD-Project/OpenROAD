@@ -32,6 +32,8 @@
 
 #include <fstream>
 #include <string>
+#include <type_traits>
+#include <variant>
 
 #include "env.h"
 #include "gmock/gmock.h"
