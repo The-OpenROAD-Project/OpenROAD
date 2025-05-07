@@ -184,6 +184,7 @@ _installCommonDev() {
     else
         echo "Cudd already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D cudd_ROOT=$(realpath $cuddPrefix) "
 
     # CUSP
     cuspPrefix=${PREFIX:-"/usr/local/include"}
@@ -195,6 +196,7 @@ _installCommonDev() {
     else
         echo "CUSP already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D cusp_ROOT=$(realpath $cuspPrefix) "
 
     # lemon
     lemonPrefix=${PREFIX:-"/usr/local"}
