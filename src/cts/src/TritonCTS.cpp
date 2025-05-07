@@ -659,10 +659,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
         // "is_clock_cell: true"
         selected_buffers.emplace_back(buffer);
-        // clang-format off
-        debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
+        debugPrint(logger_,
+                   CTS,
+                   "buffering",
+                   1,
+                   "{} has clock cell attribute",
                    buffer->name());
-        // clang-format on
       }
     }
   }
@@ -686,19 +688,20 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
               && isClockCellCandidate(buffer)) {
             // input port with LEF USE as "CLOCK"
             selected_buffers.emplace_back(buffer);
-            // clang-format off
-            debugPrint(logger_, CTS, "buffering", 1,
-                        "{} has input port {} with LEF USE as CLOCK",
-                        buffer->name(),
-                        mterm->getName());
-            // clang-format on
+            debugPrint(logger_,
+                       CTS,
+                       "buffering",
+                       1,
+                       "{} has input port {} with LEF USE as CLOCK",
+                       buffer->name(),
+                       mterm->getName());
           }
         }
       }
     }
     delete lib_iter;
   }
-  
+
   // third, look for all buffers with name CLKBUF or clkbuf
   if (selected_buffers.empty()) {
     sta::PatternMatch patternClkBuf(".*CLKBUF.*",
@@ -715,9 +718,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternClkBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          debugPrint(logger_, CTS, "buffering", 1,
-            "{} found by 'CLKBUF' pattern match",
-            buffer->name());
+          debugPrint(logger_,
+                     CTS,
+                     "buffering",
+                     1,
+                     "{} found by 'CLKBUF' pattern match",
+                     buffer->name());
           selected_buffers.emplace_back(buffer);
         }
       }
@@ -741,9 +747,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          debugPrint(logger_, CTS, "buffering", 1,
-            "{} found by 'BUF' pattern match",
-            buffer->name());
+          debugPrint(logger_,
+                     CTS,
+                     "buffering",
+                     1,
+                     "{} found by 'BUF' pattern match",
+                     buffer->name());
           selected_buffers.emplace_back(buffer);
         }
       }
@@ -753,8 +762,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   // abandon attributes & name patterns, just look for all buffers
   if (selected_buffers.empty()) {
-    debugPrint(logger_, CTS, "buffering", 1,
-      "No buffers with clock atributes or name patterns found, using all buffers");
+    debugPrint(logger_,
+               CTS,
+               "buffering",
+               1,
+               "No buffers with clock atributes or name patterns found, using "
+               "all buffers");
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
