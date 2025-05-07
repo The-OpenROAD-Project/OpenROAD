@@ -258,8 +258,8 @@ class FlexPA
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
       frInstTerm* inst_term,
-      const frAccessPointEnum lower_type,
-      const frAccessPointEnum upper_type);
+      frAccessPointEnum lower_type,
+      frAccessPointEnum upper_type);
 
   // type 0 -- on-grid; 1 -- half-grid; 2 -- center; 3 -- via-enc-opt
   /**
@@ -396,8 +396,8 @@ class FlexPA
       const gtl::rectangle_data<frCoord>& rect,
       int offset = 0);
 
-  bool OnlyAllowOnGridAccess(const frLayerNum layer_num,
-                             const bool is_macro_cell_pin);
+  bool OnlyAllowOnGridAccess(frLayerNum layer_num,
+                             bool is_macro_cell_pin);
 
   /**
    * @brief Creates multiple access points from the coordinates
