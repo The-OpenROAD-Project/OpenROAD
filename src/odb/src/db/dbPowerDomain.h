@@ -43,6 +43,8 @@ class _dbPowerDomain : public _dbObject
   Rect _area;
   dbVector<dbId<_dbLevelShifter>> _levelshifters;
   float _voltage;
+  dbVector<std::string> _primarysupply;
+  dbVector<std::string> _availablesupply;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);

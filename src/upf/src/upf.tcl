@@ -24,27 +24,27 @@ proc write_upf { args } {
 #
 # - elements: list of module paths that belong to this domain OR '.' for top domain
 # - name: domain name
-sta::define_cmd_args "create_power_domain" { [-elements elements] name }
-proc create_power_domain { args } {
-  upf::check_block_exists
+# sta::define_cmd_args "create_power_domain" { [-elements elements] name }
+# proc create_power_domain { args } {
+#   upf::check_block_exists
 
-  sta::parse_key_args "create_power_domain" args \
-    keys {-elements} flags {}
+#   sta::parse_key_args "create_power_domain" args \
+#     keys {-elements} flags {}
 
-  sta::check_argc_eq1 "create_power_domain" $args
+#   sta::check_argc_eq1 "create_power_domain" $args
 
-  set domain_name [lindex $args 0]
-  set elements {}
+#   set domain_name [lindex $args 0]
+#   set elements {}
 
-  if { [info exists keys(-elements)] } {
-    set elements $keys(-elements)
-  }
+#   if { [info exists keys(-elements)] } {
+#     set elements $keys(-elements)
+#   }
 
-  upf::create_power_domain_cmd $domain_name
-  foreach {el} $elements {
-    upf::update_power_domain_cmd $domain_name $el
-  }
-}
+#   upf::create_power_domain_cmd $domain_name
+#   foreach {el} $elements {
+#     upf::update_power_domain_cmd $domain_name $el
+#   }
+# }
 
 # Create a logic port to be used within defined domains
 #

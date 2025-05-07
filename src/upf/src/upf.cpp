@@ -19,17 +19,17 @@
 
 namespace upf {
 
-bool create_power_domain(utl::Logger* logger,
-                         odb::dbBlock* block,
-                         const std::string& name)
-{
-  if (odb::dbPowerDomain::create(block, name.c_str()) == nullptr) {
-    logger->warn(utl::UPF, 1, "Creation of {} power domain failed", name);
-    return false;
-  }
+// bool create_power_domain(utl::Logger* logger,
+//                          odb::dbBlock* block,
+//                          const std::string& name)
+// {
+//   if (odb::dbPowerDomain::create(block, name.c_str()) == nullptr) {
+//     logger->warn(utl::UPF, 1, "Creation of {} power domain failed", name);
+//     return false;
+//   }
 
-  return true;
-}
+//   return true;
+// }
 
 bool update_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,

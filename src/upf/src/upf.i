@@ -17,11 +17,11 @@
 
 
 %inline %{
-  void create_power_domain_cmd(const char* name)
-  {
-    odb::dbDatabase* db = getOpenRoad()->getDb();
-    create_power_domain(getOpenRoad()->getLogger(), db->getChip()->getBlock(), name); 
-  }
+  // void create_power_domain_cmd(const char* name)
+  // {
+  //   odb::dbDatabase* db = getOpenRoad()->getDb();
+  //   create_power_domain(getOpenRoad()->getLogger(), db->getChip()->getBlock(), name); 
+  // }
 
   void update_power_domain_cmd(const char* name, const char* element)
   {

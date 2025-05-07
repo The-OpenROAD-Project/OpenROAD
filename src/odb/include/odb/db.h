@@ -8289,6 +8289,10 @@ class dbPowerDomain : public dbObject
   void setArea(const Rect& area);
   bool getArea(Rect& area);
 
+  // p2f custom
+  void addPrimarysupply(const std::string& primary_supply);
+  void addAvailablesupply(const std::string& available_supply);
+
   // User Code End dbPowerDomain
 };
 

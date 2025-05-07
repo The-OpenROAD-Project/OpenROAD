@@ -78,6 +78,8 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._top;
   stream >> obj._parent;
   stream >> obj._area;
+  stream >> obj._primarysupply;
+  stream >> obj._availablesupply;
   // User Code Begin >>
   if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
     stream >> obj._levelshifters;
@@ -101,6 +103,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   stream << obj._top;
   stream << obj._parent;
   stream << obj._area;
+  stream << obj._primarysupply;
+  stream << obj._availablesupply;
   // User Code Begin <<
   stream << obj._levelshifters;
   stream << obj._voltage;
@@ -213,6 +217,22 @@ void dbPowerDomain::destroy(dbPowerDomain* pd)
 {
   // TODO
 }
+
+
+
+void dbPowerDomain::addPrimarysupply(const std::string& primary_supply)
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  obj->_primarysupply.push_back(primary_supply);
+}
+
+void dbPowerDomain::addAvailablesupply(const std::string& available_supply)
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  obj->_availablesupply.push_back(available_supply);
+}
+
+
 
 void dbPowerDomain::addElement(const std::string& element)
 {

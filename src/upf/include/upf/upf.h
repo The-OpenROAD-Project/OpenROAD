@@ -14,9 +14,9 @@ class dbNetwork;
 
 namespace upf {
 
-bool create_power_domain(utl::Logger* logger,
-                         odb::dbBlock* block,
-                         const std::string& name);
+// bool create_power_domain(utl::Logger* logger,
+//                          odb::dbBlock* block,
+//                          const std::string& name);
 
 bool update_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,

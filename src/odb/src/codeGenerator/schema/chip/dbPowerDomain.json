@@ -63,6 +63,16 @@
       "type": "float",
       "default": "0",
       "flags":["no-serial"]
+    },
+    {
+      "name": "_primarysupply",
+      "type": "dbVector<std::string>",
+      "flags": ["no-get","no-set"]
+    },
+    {
+      "name":"_availablesupply",
+      "type":"dbVector<std::string>",
+      "flags":["no-set","no-get"]
     }
   ],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],

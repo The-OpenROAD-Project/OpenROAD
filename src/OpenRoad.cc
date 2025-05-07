@@ -58,6 +58,7 @@
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/decode.h"
+#include "./p2f/include/p2f/MakeP2f.hh"
 
 namespace ord {
 extern const char* ord_tcl_inits[];
@@ -112,6 +113,9 @@ OpenRoad::~OpenRoad()
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
+  // p2f custom
+  p2f::deleteP2f(p2f_);
+
   delete logger_;
   delete verilog_reader_;
 }
@@ -182,6 +186,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   stt_builder_ = stt::makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
 
+  // p2f custom 
+  p2f_ = p2f::makeP2f();
   // Init components.
   Ord_Init(tcl_interp);
   // Import TCL scripts.
@@ -248,6 +254,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   initSteinerTreeBuilder(stt_builder_, db_, logger_, tcl_interp);
   dft::initDft(dft_, db_, sta_, logger_, tcl_interp);
 
+  // p2f custom
+  p2f::initP2f(this);
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
