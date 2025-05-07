@@ -1602,6 +1602,7 @@ class extCorner
 {
  public:
   extCorner();
+  ~extCorner();
 
   char* _name;
   int _model;

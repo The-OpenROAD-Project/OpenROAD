@@ -1125,6 +1125,11 @@ extCorner::extCorner()
   _gndFactor = 1.0;
 }
 
+extCorner::~extCorner()
+{
+  free(_name);
+}
+
 void extMain::getExtractedCorners()
 {
   if (_prevControl == nullptr) {
