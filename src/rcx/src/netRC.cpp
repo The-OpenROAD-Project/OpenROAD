@@ -2014,7 +2014,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
 
   */
-  _modelTable->resetCnt(0, true);
+  while (_modelTable->notEmpty()) {
+    _modelTable->pop();
+  }
   if (_batchScaleExt) {
     genScaledExt();
   }

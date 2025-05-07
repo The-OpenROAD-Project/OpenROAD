@@ -131,14 +131,8 @@ class Ath__array1D
   }
   int getSize() const { return size_; }
   void resetIterator(int v = 0) { iter_cnt_ = v; }
-  void resetCnt(int v = 0, bool del = false)
+  void resetCnt(int v = 0)
   {
-    if (del) {
-      for (int i = v; i < current_; i++) {
-        delete array_[i];
-        array_[i] = nullptr;
-      }
-    }
     current_ = v;
     iter_cnt_ = v;
   }

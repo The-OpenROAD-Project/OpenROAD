@@ -109,7 +109,9 @@ extMain::extMain()
 }
 extMain::~extMain()
 {
-  _modelTable->resetCnt(0, true);
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
   delete _modelTable;
 }
 
