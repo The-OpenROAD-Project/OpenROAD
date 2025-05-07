@@ -920,16 +920,6 @@ void RepairSetup::addBuffers(
   }
 }
 
-float RepairSetup::bufferInputCapacitance(LibertyCell* buffer_cell,
-                                          const DcalcAnalysisPt* dcalc_ap)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  const int lib_ap = dcalc_ap->libertyIndex();
-  const LibertyPort* corner_input = input->cornerPort(lib_ap);
-  return corner_input->capacitance();
-}
-
 int RepairSetup::rebufferTopDown(
     const BufferedNetPtr& choice,
     Net* net,  // output of buffer, always a flat net
