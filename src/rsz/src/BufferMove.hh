@@ -33,6 +33,7 @@ private:
 
     int rebuffer(const Pin* drvr_pin);
 
+    void annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex);
     BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
     BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
                                sta::Delay slack_target,
@@ -57,9 +58,14 @@ private:
                     sta::Delay threshold = 0);
     float bufferInputCapacitance(LibertyCell* buffer_cell,
                                  const DcalcAnalysisPt* dcalc_ap);
-    std::tuple<const Path*, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
+    Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
+    std::tuple<sta::Delay, sta::Delay> drvrPinTiming(const BufferedNetPtr& bnet);
     Slack slackAtDriverPin(const BufferedNetPtr& bnet);
     Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
+
+    Delay requiredDelay(const BufferedNetPtr& bnet);
+
+
 
     // For rebuffering
     Path* arrival_paths_[RiseFall::index_count];

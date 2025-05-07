@@ -90,6 +90,7 @@ using sta::Path;
 using sta::PortDirection;
 using sta::Pin;
 using sta::RiseFall;
+using sta::RiseFallBoth;
 using sta::Sdc;
 using sta::Slack;
 using sta::Slew;

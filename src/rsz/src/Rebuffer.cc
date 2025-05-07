@@ -253,15 +253,6 @@ BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
           }
 
           case BufferedNetType::load: {
-            const Pin* load_pin = bnet->loadPin();
-            Vertex* vertex = graph_->pinLoadVertex(load_pin);
-            Path* req_path = sta_->vertexWorstSlackPath(vertex, resizer_->max_);
-            Path* arrival_path = nullptr;
-            if (req_path) {
-              arrival_path = req_path->prevPath();
-            }
-            bnet->setArrivalPath(arrival_path);
-            bnet->setRequiredPath(req_path);
             debugPrint(logger_,
                        RSZ,
                        "rebuffer",
@@ -308,6 +299,7 @@ BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
 
   return best_option;
 }
+
 
 // Recover area on a rebuffering choice without regressing timing
 BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
@@ -548,11 +540,6 @@ Delay BufferMove::requiredDelay(const BufferedNetPtr& bnet)
   return worst_load_slack - bnet->slack();
 }
 
-Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet)
-{
-  return slackAtDriverPin(bnet, -1);
-}
-
 // Return inserted buffer count.
 int BufferMove::rebuffer(const Pin* drvr_pin)
 {
@@ -683,7 +670,7 @@ Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet)
 
 // Returns: driver pin gate delay; slack correction to account for changed
 // driver pin load
-std::tuple<const Path*, Delay> BufferMove::drvrPinTiming(const BufferedNetPtr& bnet)
+std::tuple<Delay, Delay> BufferMove::drvrPinTiming(const BufferedNetPtr& bnet)
 {
   if (bnet->slackTransition() == nullptr) {
     return {0, 0};

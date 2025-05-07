@@ -94,33 +94,6 @@ class RepairSetup : public sta::dbStaState
                   Slack path_slack,
                   float setup_slack_margin);
 
-  int rebuffer(const Pin* drvr_pin);
-
-  void annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex);
-  BufferedNetPtr rebufferForTiming(const BufferedNetPtr& bnet);
-  BufferedNetPtr recoverArea(const BufferedNetPtr& bnet,
-                             Delay slack_target,
-                             float alpha);
-
-  int rebufferTopDown(const BufferedNetPtr& choice,
-                      Net* net,
-                      int level,
-                      Instance* parent,
-                      odb::dbITerm* mod_net_drvr,
-                      odb::dbModNet* mod_net);
-  BufferedNetPtr addWire(const BufferedNetPtr& p,
-                         const Point& wire_end,
-                         int wire_layer,
-                         int level);
-  void addBuffers(BufferedNetSeq& Z1,
-                  int level,
-                  bool area_oriented = false,
-                  Delay threshold = 0);
-  Delay bufferDelay(LibertyCell* cell, const RiseFallBoth* rf, float load_cap);
-  std::tuple<Delay, Delay> drvrPinTiming(const BufferedNetPtr& bnet);
-  Slack slackAtDriverPin(const BufferedNetPtr& bnet);
-  Slack slackAtDriverPin(const BufferedNetPtr& bnet, int index);
-
   void printProgress(int iteration,
                      bool force,
                      bool end,
