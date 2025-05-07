@@ -471,7 +471,7 @@ class dbDatabase : public dbObject
   /// as knowing when the data is fully loaded into odb.
   ///
   void triggerPostReadLef(dbTech* tech, dbLib* library);
-  void triggerPostReadDef(dbBlock* block);
+  void triggerPostReadDef(dbBlock* block, bool floorplan);
   void triggerPostReadDb();
 
   ///
