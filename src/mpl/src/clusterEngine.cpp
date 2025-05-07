@@ -389,8 +389,9 @@ Cluster* ClusteringEngine::findIOClusterWithSameConstraint(
     return cluster_of_unconstrained_io_pins_;
   }
 
-  for (const auto& [cluster, cluster_constraint] : unplaced_ios_to_region_) {
-    if (bterm_constraint == cluster_constraint) {
+  for (const auto& [cluster, constraint_region] :
+       tree_->io_cluster_to_constraint) {
+    if (bterm_constraint == lineToRect(constraint_region.line)) {
       return cluster;
     }
   }
@@ -406,11 +407,13 @@ void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
 
   bool is_cluster_of_unconstrained_io_pins = false;
   odb::Rect constraint_shape;
-  const std::optional<odb::Rect>& bterm_constraint
-      = bterm->getConstraintRegion();
+  const auto& bterm_constraint = bterm->getConstraintRegion();
   if (bterm_constraint) {
     constraint_shape = *bterm_constraint;
-    unplaced_ios_to_region_[cluster.get()] = constraint_shape;
+    BoundaryRegion constraint_region(
+        rectToLine(block_, constraint_shape, logger_),
+        getBoundary(block_, constraint_shape));
+    tree_->io_cluster_to_constraint[cluster.get()] = constraint_region;
   } else {
     constraint_shape = block_->getDieArea();
     is_cluster_of_unconstrained_io_pins = true;
@@ -423,13 +426,6 @@ void ClusteringEngine::createClusterOfUnplacedIOs(odb::dbBTerm* bterm)
       block_->dbuToMicrons(constraint_shape.dx()),
       block_->dbuToMicrons(constraint_shape.dy()),
       is_cluster_of_unconstrained_io_pins);
-
-  if (!is_cluster_of_unconstrained_io_pins) {
-    BoundaryRegion constraint_region(
-        rectToLine(block_, constraint_shape, logger_),
-        getBoundary(block_, constraint_shape));
-    tree_->io_cluster_to_constraint[cluster.get()] = constraint_region;
-  }
 
   tree_->maps.bterm_to_cluster_id[bterm] = id_;
   tree_->maps.id_to_cluster[id_++] = cluster.get();

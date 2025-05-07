@@ -192,10 +192,6 @@ class HierRTLMP
                                   float offset_x,
                                   float offset_y);
   void mergeNets(std::vector<BundledNet>& nets);
-  template <typename Macro>
-  void createFixedTerminal(Cluster* cluster,
-                           const Rect& outline,
-                           std::vector<Macro>& macros);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
@@ -227,6 +223,11 @@ class HierRTLMP
   // Aux for conversion
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
+
+  template <typename Macro>
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::vector<Macro>& macros);
 
   odb::Rect getRect(Boundary boundary) const;
   bool isVertical(Boundary boundary) const;

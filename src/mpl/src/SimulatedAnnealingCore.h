@@ -38,8 +38,7 @@ template <class T>
 class SimulatedAnnealingCore
 {
  public:
-  SimulatedAnnealingCore(odb::dbBlock* block,
-                         PhysicalHierarchy* tree,
+  SimulatedAnnealingCore(PhysicalHierarchy* tree,
                          const Rect& outline,
                          const std::vector<T>& macros,
                          const SACoreWeights& weights,
@@ -53,7 +52,8 @@ class SimulatedAnnealingCore
                          int num_perturb_per_step,
                          unsigned seed,
                          MplObserver* graphics,
-                         utl::Logger* logger);
+                         utl::Logger* logger,
+                         odb::dbBlock* block);
 
   virtual ~SimulatedAnnealingCore() = default;
 
@@ -134,8 +134,6 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  odb::dbBlock* block_;
-
   Rect outline_;
   Rect die_area_;  // Offset to the current outline.
 
@@ -206,6 +204,7 @@ class SimulatedAnnealingCore
 
   utl::Logger* logger_ = nullptr;
   MplObserver* graphics_ = nullptr;
+  odb::dbBlock* block_;
 
   Result best_valid_result_;
 

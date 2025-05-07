@@ -264,9 +264,6 @@ class ClusteringEngine
   Metrics* design_metrics_{nullptr};
   PhysicalHierarchy* tree_{nullptr};
 
-  // Cache the shapes/constraint regions in dbu to avoid comparison problems.
-  std::map<Cluster*, odb::Rect> unplaced_ios_to_region_;
-
   // Keep this pointer to avoid searching for it when creating IO clusters.
   Cluster* cluster_of_unconstrained_io_pins_{nullptr};
 

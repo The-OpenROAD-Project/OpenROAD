@@ -258,7 +258,6 @@ class Cluster
   // all the macros in the cluster
   std::vector<HardMacro*> hard_macros_;
 
-  int io_pins_count_{0};
   bool is_cluster_of_unplaced_io_pins_{false};
   bool is_cluster_of_unconstrained_io_pins_{false};
   bool is_io_pad_cluster_{false};

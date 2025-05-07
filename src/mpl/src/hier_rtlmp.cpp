@@ -2752,20 +2752,20 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
       }
 
       for (odb::dbBTerm* bterm : net->getBTerms()) {
-        auto constraint_region = bterm->getConstraintRegion();
-        odb::Point closest_point;
+        const auto& constraint_region = bterm->getConstraintRegion();
+        odb::Point nearest_point;
         if (constraint_region) {
           BoundaryRegion constraint(
               rectToLine(block_, *constraint_region, logger_),
               getBoundary(block_, *constraint_region));
           computeDistToNearestRegion(
-              macro_pin->getBBox().center(), {constraint}, &closest_point);
+              macro_pin->getBBox().center(), {constraint}, &nearest_point);
         } else {
           computeDistToNearestRegion(macro_pin->getBBox().center(),
                                      tree_->available_regions_for_pins,
-                                     &closest_point);
+                                     &nearest_point);
         }
-        odb::Rect point_rect(closest_point, closest_point);
+        odb::Rect point_rect(nearest_point, nearest_point);
         net_box.merge(point_rect);
       }
 

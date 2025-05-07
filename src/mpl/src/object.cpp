@@ -782,8 +782,8 @@ bool HardMacro::operator==(const HardMacro& macro) const
   return (width_ == macro.width_) && (height_ == macro.height_);
 }
 
-// Used to identify if a fixed terminal correponds to a cluster of
-// unplaced IO pins when running HardMacro SA.
+// Cluster support to identify if a fixed terminal correponds
+// to a cluster of unplaced IO pins when running HardMacro SA.
 bool HardMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
@@ -1279,8 +1279,8 @@ bool SoftMacro::isMixedCluster() const
   return (cluster_->getClusterType() == MixedCluster);
 }
 
-// Used to identify if a fixed terminal correponds to a cluster of
-// unplaced IO pins when running SoftMacro SA.
+// Cluster support to identify if a fixed terminal correponds
+// to a cluster of unplaced IO pins when running SoftMacro SA.
 bool SoftMacro::isClusterOfUnplacedIOPins() const
 {
   if (!cluster_) {
@@ -1290,8 +1290,8 @@ bool SoftMacro::isClusterOfUnplacedIOPins() const
   return cluster_->isClusterOfUnplacedIOPins();
 }
 
-// Used to identify if a fixed terminal correponds to the cluster of
-// unconstrained IO pins when running SoftMacro SA.
+// Cluster support to identify if a fixed terminal correponds
+// to the cluster of unconstrained IO pins when running SoftMacro SA.
 bool SoftMacro::isClusterOfUnconstrainedIOPins() const
 {
   if (!cluster_) {

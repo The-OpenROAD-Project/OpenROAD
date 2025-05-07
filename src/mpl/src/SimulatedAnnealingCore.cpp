@@ -22,8 +22,7 @@ namespace mpl {
 using std::string;
 
 template <class T>
-SimulatedAnnealingCore<T>::SimulatedAnnealingCore(odb::dbBlock* block,
-                                                  PhysicalHierarchy* tree,
+SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
                                                   const Rect& outline,
                                                   const std::vector<T>& macros,
                                                   const SACoreWeights& weights,
@@ -37,8 +36,9 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(odb::dbBlock* block,
                                                   int num_perturb_per_step,
                                                   unsigned seed,
                                                   MplObserver* graphics,
-                                                  utl::Logger* logger)
-    : block_(block), outline_(outline), graphics_(graphics)
+                                                  utl::Logger* logger,
+                                                  odb::dbBlock* block)
+    : outline_(outline), graphics_(graphics), block_(block)
 {
   core_weights_ = weights;
 
@@ -328,12 +328,10 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     smallest_distance = computeDistToNearestRegion(
         macro_location, available_regions_for_pins_, nullptr);
   } else {
-    // This will always have a single element. We do this so can
-    // we can use the same method as the unconstrained pins case.
-    BoundaryRegionList constraint
-        = {io_cluster_to_constraint_.at(unplaced_ios.getCluster())};
+    Cluster* cluster = unplaced_ios.getCluster();
+    const BoundaryRegion& constraint = io_cluster_to_constraint_.at(cluster);
     smallest_distance
-        = computeDistToNearestRegion(macro_location, constraint, nullptr);
+        = computeDistToNearestRegion(macro_location, {constraint}, nullptr);
   }
 
   wirelength_ += net_weight * block_->dbuToMicrons(smallest_distance);

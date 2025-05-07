@@ -85,9 +85,7 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-// Object to help handling the available regions for pins inside MPL.
-// Note that the blocked regions are still handled as odb:Rect's which
-// is how they're stored in ODB.
+// Object to help handling available regions and constraint regions for pins.
 struct BoundaryRegion
 {
   BoundaryRegion() = default;
@@ -203,18 +201,18 @@ inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
 inline double computeDistToNearestRegion(
     const odb::Point& source,
     const std::vector<BoundaryRegion>& regions,
-    odb::Point* closest_point)
+    odb::Point* nearest_point)
 {
   double smallest_distance = std::numeric_limits<double>::max();
   for (const BoundaryRegion& region : regions) {
-    odb::Point closest_point_in_region
+    odb::Point nearest_point_in_region
         = computeNearestPointInRegion(region, source);
-    const double dist_to_closest_point_in_region = std::sqrt(
-        odb::Point::squaredDistance(source, closest_point_in_region));
-    if (dist_to_closest_point_in_region < smallest_distance) {
-      smallest_distance = dist_to_closest_point_in_region;
-      if (closest_point) {
-        *closest_point = closest_point_in_region;
+    const double dist_to_nearest_point = std::sqrt(
+        odb::Point::squaredDistance(source, nearest_point_in_region));
+    if (dist_to_nearest_point < smallest_distance) {
+      smallest_distance = dist_to_nearest_point;
+      if (nearest_point) {
+        *nearest_point = nearest_point_in_region;
       }
     }
   }
