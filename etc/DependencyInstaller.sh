@@ -57,10 +57,10 @@ _installCommonDev() {
     if [[ "${arch}" == "aarch64" ]]; then
         cmakeChecksum="6a6af752af4b1eae175e1dd0459ec850"
     else
-        cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+        cmakeChecksum="f4d3e86abf624d73ee8dae826bbd6121"
     fi
-    cmakeVersionBig=3.24
-    cmakeVersionSmall=${cmakeVersionBig}.2
+    cmakeVersionBig=3.31
+    cmakeVersionSmall=${cmakeVersionBig}.6
     pcreVersion=10.42
     pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
     swigVersion=4.1.0
