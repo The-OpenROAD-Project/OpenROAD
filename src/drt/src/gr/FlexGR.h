@@ -42,6 +42,9 @@
 #include "frDesign.h"
 #include "frRTree.h"
 #include "gr/FlexGRGridGraph.h"
+#include "gr/FlexGR_CUDA_object.h"
+
+
 namespace odb {
 class dbDatabase;
 class Rect;
@@ -84,6 +87,21 @@ enum Directions2D {
   DIR_SOUTH  = 2,
   DIR_LEFT  = 3,
   DIR_NONE  = 255
+};
+
+
+
+struct NetStruct {
+  grNet* net = nullptr;
+  int netId = -1;
+
+  std::vector<int> points; // Store all the steiner points in the net
+  std::vector<std::pair<int, int> > vSegments;
+  std::vector<std::pair<int, int> > hSegments;
+
+  NetStruct() = default;
+
+  NetStruct(grNet* _net) : net(_net) { }
 };
 
 
@@ -248,6 +266,7 @@ class FlexGR
                          double congThresh,
                          bool is2DRouting,
                          RipUpMode mode);
+                         
   void searchRepair(int iter,
                     int size,
                     int offset,
@@ -374,6 +393,36 @@ class FlexGR
 
   // For GPU-accelerated GGR-TR
   bool gpuFlag_ = true;
+
+  
+  int layerAssignChunkSize_ = 1000000;
+  void layerAssign_update();
+  void layerAssign_chunk(
+    std::vector<std::pair<int, frNet*> >& sortedNets,
+    int chunkStartIdx, int chunkEndIdx);
+   
+  void layerAssign_batchGeneration(
+    std::vector<std::pair<int, frNet*> >& sortedNets,
+    std::vector<std::vector<int> >& batchNets,
+    int chunkStartIdx, int chunkEndIdx);
+
+  void layerAssign_nodeLevelization(
+    std::vector<NodeStruct>& nodes,
+    frNode* currNode, 
+    int netId, int depth, int& maxDepth);
+
+  void layerAssign_node_compute_CUDA(
+    std::vector<unsigned>& bestLayerCosts,
+    std::vector<unsigned>& bestLayerCombs,
+    std::vector<int>& netBatchNodePtr,
+    std::vector<int>& netBatchMaxDepth,
+    std::vector<NodeStruct>& nodes);
+  
+
+  void updateNetAttribute(
+    std::vector<std::pair<int, frNet*> >& sortedNets,
+    int mode, frNet* net);
+    
   void searchRepair_update(
     int iter,
     int size,

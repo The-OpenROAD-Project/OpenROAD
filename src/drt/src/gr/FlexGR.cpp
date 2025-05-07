@@ -158,7 +158,15 @@ void FlexGR::main(odb::dbDatabase* db)
   std::chrono::duration<double> Maze2DRuntime = Maze2DRuntimeEnd - Maze2DRuntimeStart;
   logger_->report("2D Maze runtime: " + std::to_string(Maze2DRuntime.count()) + "s");
 
-  layerAssign();
+  gpuFlag_ = true;
+
+  if (gpuFlag_ == true) {
+    layerAssign_update();
+  } else {
+    layerAssign();
+  }
+
+  exit(1);
 
   gpuFlag_ = true;
 
@@ -1701,6 +1709,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       }
       node->setLoc(pt);
       node->setLayerNum(rpin->getAccessPoint()->getLayerNum());
+      node->setRPin(rpin);
     }
   }
 

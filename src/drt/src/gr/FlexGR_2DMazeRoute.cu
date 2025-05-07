@@ -193,13 +193,81 @@ float getCongCost(unsigned demand, unsigned supply)
 */
 
 
+
+/*
+__host__ __device__
+float fastExp(float exp)
+{
+  exp = 1.0f + exp / 1024.0f;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  return exp;
+}
+
+
 // Please DO NOT TOUCH the following function
 // The performance of the function is critical to the overall performance of the router.
 __host__ __device__
-double getCongCost(unsigned demand, unsigned supply)
+float getCongCost(unsigned demand, unsigned supply)
 {
-  return (demand * (4 / (1.0 + exp(static_cast<double>(supply) - demand))) / (supply + 1));
+  float cost = demand * (4 / (1.0 + fastExp(static_cast<float>(supply) - demand))) / (supply + 1);
+  
+  if (cost < 0.0) {
+    printf("Error: getCongCost() RAW returns non-positive value.\n");
+  }
+  
+  // Clamp the result within uint32_t limits
+  cost = std::min(std::max(cost, 0.0f), static_cast<float>(0x7FFFFFFF - 1));
+  
+  if (cost < 0.0) {
+    printf("Error: getCongCost() returns non-positive value.\n");
+  }
+
+  return cost;
+}*/
+
+
+__host__ __device__
+float fastExp(float x) {
+#ifdef __CUDA_ARCH__
+    // Device code: GPU-optimized intrinsic exponential
+    return __expf(x);
+#else
+    // Host code: standard library exponential
+    return expf(x);
+#endif
 }
+
+
+__host__ __device__
+float getCongCost(unsigned demand, unsigned supply)
+{
+  float cost = static_cast<float>(demand) * 
+               (4.0f / (1.0f + fastExp(static_cast<float>(supply) - static_cast<float>(demand)))) / 
+               (static_cast<float>(supply) + 1.0f);
+  
+  if (cost < 0.0f) {
+    printf("Error: getCongCost() RAW returns non-positive value.\n");
+  }
+
+  // Clamp result within int32 limits
+  cost = fminf(fmaxf(cost, 0.0f), static_cast<float>(0x7FFFFFFF - 1));
+
+  if (cost < 0.0f) {
+    printf("Error: getCongCost() returns non-positive value after clamp.\n");
+  }
+
+  return cost;
+}
+
 
 
 __host__ __device__
@@ -1430,7 +1498,9 @@ void runBiBellmanFord2D_v5__device(
 
       // Forward relaxation:
       // Skip if src_flag is set.
-      if (!nd.flags.src_flag) {
+      //if (!nd.flags.src_flag) {
+      // We do not need visit the visited nodes again
+      if (!nd.flags.src_flag && !nd.flags.forward_visited_flag) {
         uint32_t bestCost = nd.forward_g_cost_prev;
         int      bestD    = -1;
         for (int d = 0; d < 4; d++) {
@@ -1464,7 +1534,8 @@ void runBiBellmanFord2D_v5__device(
       // Backward relaxation:
       // newCost = min over neighbors of (neighbor.backward_cost + edgeWeight).
       // Skip if dst_flag is set.
-      if (!nd.flags.dst_flag) {
+      //if (!nd.flags.dst_flag) {
+      if (!nd.flags.dst_flag && !nd.flags.backward_visited_flag) {
         uint32_t bestCost = nd.backward_g_cost_prev;
         int      bestD    = -1;
         for (int d = 0; d < 4; d++) {
@@ -1678,6 +1749,14 @@ void runBiBellmanFord2D_v5__device(
         d_nodes[forwardCurId].golden_parent_y = ny;
         d_nodes[forwardCurId].flags.src_flag = 1;
         forwardCurId = locToIdx_2D(nx, ny, xDim);
+        
+        // check if loop occurs
+        if (d_nodes[forwardCurId].golden_parent_x == xy.x && d_nodes[forwardCurId].golden_parent_y == xy.y) {
+          printf("Warning: Forward traceback loop detected. forwardCurId = %d, x = %d, y = %d, netId = %d\n", 
+            forwardCurId, idxToLoc_2D(forwardCurId, xDim).x, idxToLoc_2D(forwardCurId, xDim).y, netId);
+          break;
+        }
+        
         forwardIteration++;
       }
       if (forwardIteration >= total) {
@@ -1700,13 +1779,37 @@ void runBiBellmanFord2D_v5__device(
             printf("Warning: Backward traceback out of bounds. netId = %d\n", netId);
             break;
           }          
+
+          // check if loop occurs
+          if (d_nodes[backwardCurId].golden_parent_x == nx && d_nodes[backwardCurId].golden_parent_y == ny) {
+            printf("Warning: Backward traceback loop detected. backwardCurId = %d, x = %d, y = %d, netId = %d nx = %d, ny = %d\n", 
+              backwardCurId, idxToLoc_2D(backwardCurId, xDim).x, idxToLoc_2D(backwardCurId, xDim).y, netId, nx, ny);
+            for (int localIdx = 0; localIdx < total; localIdx++) {
+              int local_x = localIdx % xDimTemp + LLX;
+              int local_y = localIdx / xDimTemp + LLY;
+              int idx = locToIdx_2D(local_x, local_y, xDim);
+              printf("node id = %d, x = %d, y = %d ", idx, local_x, local_y);
+              printNode2D(d_nodes[idx]);
+            }
+            break;
+          }
+      
           int nextId = locToIdx_2D(nx, ny, xDim); 
+          
+          // check if the parent of nextId has been set
+          if (d_nodes[nextId].golden_parent_x != -1 || d_nodes[nextId].golden_parent_y != -1) {
+            printf("Warning: Backward traceback invalid parent. backwardCurId = %d, x = %d, y = %d, netId = %d parent_x = %d, parent_y = %d\n", 
+              nextId, idxToLoc_2D(nextId, xDim).x, idxToLoc_2D(nextId, xDim).y, netId, d_nodes[nextId].golden_parent_x, d_nodes[nextId].golden_parent_y);
+            break;
+          }
+          
           d_nodes[nextId].flags.src_flag = 1;
           d_nodes[nextId].golden_parent_x = xy.x;
           d_nodes[nextId].golden_parent_y = xy.y;
-          backwardCurId = nextId;
+          backwardCurId = nextId;    
           backwardIteration++;
         }
+
         d_nodes[backwardCurId].flags.dst_flag = 0;
         if (backwardIteration >= total) {
           printf("backwardCurId = %d, x = %d, y = %d, netId = %d\n", backwardCurId, idxToLoc_2D(backwardCurId, xDim).x, idxToLoc_2D(backwardCurId, xDim).y, netId);

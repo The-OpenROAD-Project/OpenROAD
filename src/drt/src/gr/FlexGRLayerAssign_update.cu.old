@@ -1,0 +1,836 @@
+/* Authors: Zhiang Wang */
+/*
+ * Copyright (c) 2024, The Regents of the University of California
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the University nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+
+#include <iostream>
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include <thrust/device_vector.h>
+#include <thrust/functional.h>
+#include <thrust/host_vector.h>
+#include <thrust/transform_reduce.h>
+#include <string>
+#include <functional>
+
+#include "db/grObj/grShape.h"
+#include "db/grObj/grVia.h"
+#include "db/infra/frTime.h"
+#include "db/obj/frGuide.h"
+#include "odb/db.h"
+#include "utl/exception.h"
+#include "FlexGR_util.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "gr/FlexGR_util_update.h"
+#include "gr/FlexGRCMap.h"
+#include "gr/FlexGR_util_update.h"
+
+
+
+namespace drt {
+
+
+/*
+__device__
+int getIdx_device(int x, int y, int z, int x_dim, int y_dim, int z_dim)
+{
+  return x + y * x_dim + z * x_dim * y_dim;
+}
+
+__device__
+bool getBit_device(uint64_t* cmap, unsigned idx, unsigned pos)
+{
+  return (cmap[idx] >> pos) & 1;
+}
+
+__device__
+unsigned getBits_device(uint64_t* cmap, unsigned idx, unsigned pos, unsigned length)
+{
+  auto tmp = cmap[idx] & (((1ull << length) - 1) << pos);
+  return tmp >> pos;
+}
+
+
+__device__
+void setBits_device(uint64_t* cmap, unsigned idx, unsigned pos, unsigned length, unsigned val)
+{
+  cmap[idx] &= ~(((1ull << length) - 1) << pos);  // clear related bits to 0
+  cmap[idx] |= ((uint64_t) val & ((1ull << length) - 1))
+                << pos;  // only get last length bits of val
+}
+
+
+__device__
+void addToBits_device(uint64_t* cmap, unsigned idx, unsigned pos, unsigned length, unsigned val)
+{
+  auto tmp = getBits_device(cmap, idx, pos, length) + val;
+  tmp = (tmp > (1u << length)) ? (1u << length) : tmp;
+  setBits_device(cmap, idx, pos, length, tmp);
+}
+
+
+__device__
+unsigned getRawDemand_device(uint64_t* cmap,
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir)
+{
+  unsigned demand = 0;
+  auto idx = getIdx_device(x, y, z, xDim, yDim, zDim);
+  switch (dir) {
+    case frDirEnum::E:
+      demand = getBits_device(cmap, idx, 48, CMAPDEMANDSIZE);
+      break;
+    case frDirEnum::N:
+      demand = getBits_device(cmap, idx, 32, CMAPDEMANDSIZE);
+      break;
+    case frDirEnum::U:;
+      break;
+    default:;
+  }
+
+  return demand;
+}
+
+
+__device__
+unsigned getRawSupply_device(uint64_t* cmap, 
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir)
+{
+  unsigned supply = 0;
+  auto idx = getIdx_device(x, y, z, xDim, yDim, zDim);
+  switch (dir) {
+    case frDirEnum::E:
+      supply = getBits_device(cmap, idx, 24, CMAPSUPPLYSIZE);
+      break;
+    case frDirEnum::N:
+      supply = getBits_device(cmap, idx, 16, CMAPSUPPLYSIZE);
+      break;
+    case frDirEnum::U:;
+      break;
+    default:;
+  }
+
+  return supply << CMAPFRACSIZE;
+}
+
+
+__device__
+bool hasBlock_device(uint64_t* cmap, 
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir)
+{
+  bool sol = false;
+  auto idx = getIdx_device(x, y, z, xDim, yDim, zDim);
+  switch (dir) {
+    case frDirEnum::E:
+      sol = getBit_device(cmap, idx, 3);
+      break;
+    case frDirEnum::N:
+      sol = getBit_device(cmap, idx, 2);
+      break;
+    case frDirEnum::U:;
+      break;
+    default:;
+  }
+  
+  return sol;
+}
+
+__device__
+void addRawDemand_device(
+  uint64_t* cmap,
+  int xDim, int yDim, int zDim,
+  unsigned x, unsigned y, unsigned z, frDirEnum dir, unsigned delta = 1)
+{
+  int idx = getIdx_device(x, y, z, xDim, yDim, zDim);
+  switch (dir) {
+    case frDirEnum::E:
+      addToBits_device(cmap, idx, 48, CMAPDEMANDSIZE, delta);
+      break;
+    case frDirEnum::N:
+      addToBits_device(cmap, idx, 32, CMAPDEMANDSIZE, delta);
+      break;
+    case frDirEnum::U:
+      break;
+    default:;
+  }
+}
+*/
+
+
+// Convert the net-level to the node-level parallelization
+void layerAssign_node_levelization(
+  frDesign* design,
+  std::vector<std::tuple<frNet*, int, int> >& sortedNets, 
+  std::vector<std::vector<int> >& netBatch,
+  std::vector<int>& nodeCntPtrVec,
+  std::vector<int>& nodeLevel,
+  std::vector<int>& nodeParentIdx, 
+  std::vector<IntPair>& nodeLoc, 
+  std::vector<int>& nodeEdgeIdx, // store the connection between the nodes
+  std::vector<IntPair>& nodeEdgePtr, 
+  std::vector<int>& netBatchMaxDepth,
+  int maxNumNodes)
+{
+  nodeLevel.clear();
+  nodeParentIdx.clear();
+  nodeLoc.clear();
+  nodeEdgePtr.clear();
+  nodeEdgeIdx.clear();
+  netBatchMaxDepth.clear();
+
+  int totNumNodes = nodeCntPtrVec.back();
+  std::cout << "Total number of nodes: " << totNumNodes << std::endl;
+
+  nodeLevel.resize(totNumNodes, -1);
+  nodeParentIdx.resize(totNumNodes, -1);
+  nodeLoc.resize(totNumNodes);
+  nodeEdgePtr.resize(totNumNodes);
+  nodeEdgeIdx.reserve(totNumNodes * maxNumNodes);  
+  netBatchMaxDepth.resize(netBatch.size(), 0);
+
+  // Traverse the net in a pre-order DFS manner
+  std::function<void(frNode*, frNet*, int&, int, int)> traverse_net_dfs_lambda = 
+    [&](frNode* currNode, frNet* net, int& maxDepth, int baseIdx, int depth) {
+    int currNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), currNode->getIter()) + baseIdx;
+    nodeLevel[currNodeIdx] = depth;
+    //std::cout << "currNodeIdx = " << currNodeIdx << "  nodeLevel[currNodeIdx] = " << nodeLevel[currNodeIdx] << std::endl;
+    maxDepth = std::max(maxDepth, depth);
+    Point curLocIdx = design->getTopBlock()->getGCellIdx(currNode->getLoc());
+    nodeLoc[currNodeIdx] = {curLocIdx.x(), curLocIdx.y()};
+    nodeEdgePtr[currNodeIdx].start = nodeEdgeIdx.size();
+    for (auto child : currNode->getChildren()) {
+      int childNodeIdx = distance(net->getFirstNonRPinNode()->getIter(), child->getIter()) + baseIdx;
+      nodeParentIdx[childNodeIdx] = currNodeIdx;      
+      nodeEdgeIdx.push_back(childNodeIdx);
+    }
+    nodeEdgePtr[currNodeIdx].end = nodeEdgeIdx.size();
+
+    for (auto child : currNode->getChildren()) {
+      traverse_net_dfs_lambda(child, net, maxDepth, baseIdx, depth + 1);
+    }
+  };
+
+  int batchId = 0;
+  int depth = 0;
+  int baseIdx = 0;
+  // traverse the list in a DFS manner
+  for (auto& batch : netBatch) {
+    auto& maxDepth = netBatchMaxDepth[batchId++];
+    for (auto netId : batch) {
+      auto& [net, start, end] = sortedNets[netId];
+      depth = 0;
+      baseIdx = nodeCntPtrVec[netId];
+      traverse_net_dfs_lambda(net->getRootGCellNode(), net, maxDepth, baseIdx, depth);
+    }
+  }
+}
+
+
+// Define the kernel for the node level parallelization
+__global__
+void node_compute_update_kernel(
+  const int* d_netBatch,
+  const int* d_nodeCntPtr,
+  const int* d_nodeLevel,
+  const int* d_parentNode,
+  const IntPair* d_nodeLoc,
+  const int* d_nodeEdgeIdx,
+  const IntPair* d_nodeEdgePtr,  
+  const int* d_layerDir, // 0: horizontal, 1: vertical
+  uint64_t* d_cmap,
+  unsigned* d_bestLayerCosts,
+  unsigned* d_bestLayerCombs,
+  int* d_minPinLayerNumNodes,
+  int* d_maxPinLayerNumNodes,
+  int xDim,
+  int yDim,
+  int numLayers,
+  int maxNumNodes,
+  int batchStartIdx,
+  int batchEndIdx,
+  int depth,
+  unsigned VIACOST_DEVICE,
+  unsigned VIA_ACCESS_LAYERNUM_DEVICE,
+  unsigned BLOCKCOST_DEVICE,
+  unsigned MARKERCOST_DEVICE)
+{
+  int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
+  int netIdx = tIdx / maxNumNodes + batchStartIdx;
+  if (netIdx >= batchEndIdx) {
+    return;
+  }
+ 
+  int netId = d_netBatch[tIdx / maxNumNodes + batchStartIdx];
+  int nodeId  = tIdx % maxNumNodes + d_nodeCntPtr[netId];
+  if (nodeId >= d_nodeCntPtr[netId + 1]) {
+    return;
+  }
+
+  int nodeLevel = d_nodeLevel[nodeId];
+
+  //printf("tId %d, netId %d, nodeId %d, nodeLevel %d, depth %d, maxNumNodes %d\n", tIdx, netId, nodeId, nodeLevel, depth, maxNumNodes);
+
+  if (nodeLevel != depth) {
+    return;
+  }
+
+  int childStartIdx = d_nodeEdgePtr[nodeId].start;
+  int childEndIdx = d_nodeEdgePtr[nodeId].end;
+  int numChild = childEndIdx - childStartIdx;
+  int numComb = pow(numLayers, numChild);  
+
+  //printf("Node %d, Depth %d, Num Child %d, Num Comb %d\n", nodeId, nodeLevel, numChild, numComb);
+ 
+  // iterate over all combinations and get the combination with lowest overall cost  
+  for (int layerNum = 0; layerNum < numLayers; layerNum++) {
+    unsigned currLayerBestCost = UINT_MAX;
+    unsigned currLayerBestComb = 0;
+    
+    for (unsigned comb = 0; comb < numComb; comb++) {
+      int minPinLayerNum = d_minPinLayerNumNodes[nodeId];
+      int maxPinLayerNum = d_maxPinLayerNumNodes[nodeId];
+      unsigned currComb = comb; // current combination idx
+      unsigned downstreamCost = 0;
+      unsigned downstreamViaCost = 0;
+      int downstreamMinLayerNum = INT_MAX;
+      int downstreamMaxLayerNum = INT_MIN;
+
+      for (int childIdx = childStartIdx; childIdx < childEndIdx; childIdx++) {
+        int childNodeIdx = d_nodeEdgeIdx[childIdx];
+        int childLayerNum = currComb % numLayers;
+        downstreamMinLayerNum = min(downstreamMinLayerNum, childLayerNum);
+        downstreamMaxLayerNum = max(downstreamMaxLayerNum, childLayerNum);
+        currComb /= numLayers;
+        // add downstream cost
+        downstreamCost += d_bestLayerCosts[childNodeIdx * numLayers + childLayerNum];
+      }
+
+      // number of vias
+      // TODO: tune the via cost here
+      unsigned numVias = max(layerNum, max(maxPinLayerNum, downstreamMaxLayerNum))
+        - min(layerNum, min(minPinLayerNum, downstreamMinLayerNum));
+      downstreamViaCost = numVias * VIACOST_DEVICE;
+    
+      // get upstream edge congestion cost
+      unsigned congestionCost = 0;
+      if (layerNum <= (VIA_ACCESS_LAYERNUM_DEVICE / 2 - 1)) { // Pin layer routing
+        congestionCost += VIACOST_DEVICE * 8;
+      }
+
+      int parentIdx = d_parentNode[nodeId];
+      if (parentIdx != -1) {
+        IntPair curLoc = d_nodeLoc[nodeId];
+        IntPair parentLoc = d_nodeLoc[parentIdx];        
+        bool isLayerBlocked = false;
+        if (curLoc.end == parentLoc.end) { // horizontal segment
+          if (d_layerDir[layerNum] == 1) {
+            isLayerBlocked = true; // vertical direction
+          }
+
+          int yIdx = curLoc.end;
+          int xMin = min(curLoc.start, parentLoc.start);
+          int xMax = max(curLoc.start, parentLoc.start);
+          for (int xIdx = xMin; xIdx < xMax; xIdx++) {
+            auto supply = getRawSupply_device(d_cmap,
+              xDim, yDim, numLayers, xIdx, yIdx, layerNum, frDirEnum::E);
+            auto demand = getRawDemand_device(d_cmap, 
+              xDim, yDim, numLayers, xIdx, yIdx, layerNum, frDirEnum::E);
+            if (isLayerBlocked || hasBlock_device(d_cmap, 
+              xDim, yDim, numLayers, xIdx, yIdx, layerNum, frDirEnum::E)) {
+              congestionCost += BLOCKCOST_DEVICE * 100;
+            }
+            
+            // congestion cost 
+            if (demand > supply / 4) {
+              congestionCost += (demand * 100 / (supply + 1));
+              //printf("congestion cost %d, demand %d, supply %d\n",(demand * 10 ) / (supply + 1), demand, supply);  
+              if (demand >= supply) {
+                congestionCost += MARKERCOST_DEVICE * 8; // extra cost for overflow
+              }
+            }
+          }
+        } else if (curLoc.start == parentLoc.start) { // vertical segment
+          if (d_layerDir[layerNum] == 0) {
+            isLayerBlocked = true; // horizontal direction
+          }
+          
+          int xIdx = curLoc.start;
+          int yMin = min(curLoc.end, parentLoc.end);
+          int yMax = max(curLoc.end, parentLoc.end);
+          for (int yIdx = yMin; yIdx < yMax; yIdx++) {
+            auto supply = getRawSupply_device(d_cmap, 
+              xDim, yDim, numLayers, xIdx, yIdx, layerNum, frDirEnum::N);
+            auto demand = getRawDemand_device(d_cmap, 
+              xDim, yDim, numLayers, xIdx, yIdx, layerNum, frDirEnum::N);
+            // block cost
+            if (isLayerBlocked || hasBlock_device(d_cmap, 
+              xDim, yDim, numLayers, xIdx, yIdx, layerNum, frDirEnum::N)) {
+              congestionCost += BLOCKCOST_DEVICE * 100;
+            }
+            // congestion cost
+            if (demand > supply / 4) {
+              congestionCost += (demand * 100 / (supply + 1));
+              //printf("congestion cost %d, demand %d, supply %d\n",(demand * 10 ) / (supply + 1), demand, supply);  
+              
+              if (demand >= supply) {
+                congestionCost += MARKERCOST_DEVICE * 8; // extra cost for overflow
+              }
+            }
+          }
+        } else {
+          printf("current node and parent node are are not aligned collinearly\n");
+        } 
+      }
+
+      unsigned currLayerCost = downstreamCost + downstreamViaCost + congestionCost;
+      if (currLayerCost < currLayerBestCost) {
+        currLayerBestCost = currLayerCost;
+        currLayerBestComb = comb;
+      }
+    } // end of combination loop
+    
+    //printf("Node %d, Best Layer %d, Best Cost %d\n, Parent Node %d\n, Child Start %d, Child End %d\n",
+    //  nodeId, layerNum, currLayerBestCost, d_parentNode[nodeId], childStartIdx, childEndIdx);
+    d_bestLayerCosts[nodeId * numLayers + layerNum] = currLayerBestCost;
+    d_bestLayerCombs[nodeId * numLayers + layerNum] = currLayerBestComb;
+  } // end of layer loop     
+}
+
+
+
+// Perform node-level parallelization for the update of the GR layer assignment
+// Define the kernel for the node level parallelization
+__global__
+void node_commit_update_kernel(
+  const int* d_netBatch,
+  const int* d_nodeCntPtr,
+  const int* d_nodeLevel,
+  const int* d_parentNode,
+  const unsigned* d_bestLayerCombs,
+  const unsigned* d_bestLayerCosts,
+  const int* d_nodeEdgeIdx,
+  const IntPair* d_nodeEdgePtr,  
+  int* d_nodeLayer,
+  int numLayers,
+  int maxNumNodes,
+  int batchStartIdx,
+  int batchEndIdx,
+  int depth)
+{
+  int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
+  int netIdx = tIdx / maxNumNodes + batchStartIdx;
+  if (netIdx >= batchEndIdx) {
+    return;
+  }
+ 
+  int netId = d_netBatch[tIdx / maxNumNodes + batchStartIdx];
+  int nodeId  = tIdx % maxNumNodes + d_nodeCntPtr[netId];
+  if (nodeId >= d_nodeCntPtr[netId + 1]) {
+    return;
+  }
+
+  int nodeLevel = d_nodeLevel[nodeId];
+
+  if (nodeLevel != depth) {
+    return;
+  }
+
+  int parentIdx = d_parentNode[nodeId];   
+  if (parentIdx == -1) { // root node
+    frLayerNum minCostLayerNum = 0;
+    unsigned minCost = UINT_MAX;
+    for (frLayerNum layerNum = 0; layerNum < numLayers; layerNum++) {
+      if (d_bestLayerCosts[nodeId * numLayers + layerNum]  < minCost) {
+        minCostLayerNum = layerNum;
+        minCost = d_bestLayerCosts[nodeId * numLayers + layerNum];
+      }
+    }
+
+    d_nodeLayer[nodeId] = minCostLayerNum;
+  }  
+
+  // update the layer number for all the children
+  int childStartIdx = d_nodeEdgePtr[nodeId].start;
+  int childEndIdx = d_nodeEdgePtr[nodeId].end;
+  int currLayerNum = d_nodeLayer[nodeId];
+  int comb = d_bestLayerCombs[nodeId * numLayers + currLayerNum];
+
+  for (int childIdx = childStartIdx; childIdx < childEndIdx; childIdx++) {
+    int childNodeIdx = d_nodeEdgeIdx[childIdx];
+    d_nodeLayer[childNodeIdx] = comb % numLayers;
+    comb /= numLayers;
+  }
+}
+
+__global__
+// Update the congestion map
+void segment_commit_update_kernel(
+  const int* d_netBatch,
+  const int* d_nodeCntPtr,
+  const int* d_nodeLevel,
+  const int* d_parentNode,
+  const IntPair* d_nodeLoc,
+  const int* d_nodeLayer,
+  uint64_t* d_cmap,
+  int xDim,
+  int yDim,
+  int numLayers,
+  int maxNumNodes,
+  int batchStartIdx,
+  int batchEndIdx,
+  int depth)
+{
+  int tIdx = threadIdx.x + blockIdx.x * blockDim.x;
+  int netIdx = tIdx / maxNumNodes + batchStartIdx;
+  if (netIdx >= batchEndIdx) {
+    return;
+  }
+ 
+  int netId = d_netBatch[tIdx / maxNumNodes + batchStartIdx];
+  int nodeId  = tIdx % maxNumNodes + d_nodeCntPtr[netId];
+  if (nodeId >= d_nodeCntPtr[netId + 1]) {
+    return;
+  }
+
+  int nodeLevel = d_nodeLevel[nodeId];
+
+  if (nodeLevel != depth) {
+    return;
+  }
+
+  int parentIdx = d_parentNode[nodeId];   
+  if (parentIdx == -1) { // root node
+    return;
+  }
+
+  int currLayerNum = d_nodeLayer[nodeId];
+  IntPair curLoc = d_nodeLoc[nodeId];
+  IntPair parentLoc = d_nodeLoc[parentIdx];
+
+  int minX = min(curLoc.start, parentLoc.start);
+  int minY = min(curLoc.end, parentLoc.end);
+  int maxX = max(curLoc.start, parentLoc.start);
+  int maxY = max(curLoc.end, parentLoc.end);
+
+  //printf("Node %d, Depth %d, Parent Node %d, Layer %d, Loc (%d, %d), Parent Loc (%d, %d)\n",
+  //  nodeId, nodeLevel, parentIdx, currLayerNum, curLoc.start, curLoc.end, parentLoc.start, parentLoc.end);
+
+  if (minY == maxY) { // horizontal segment
+    for (int xIdx = minX; xIdx < minY; xIdx++) {
+      addRawDemand_device(d_cmap, xDim, yDim, numLayers, xIdx, minY, currLayerNum, frDirEnum::E);
+      addRawDemand_device(d_cmap, xDim, yDim, numLayers, xIdx + 1, minY, currLayerNum, frDirEnum::E);
+    }
+  } else if (minX == maxX) { // vertical segment
+    for (int yIdx = minY; yIdx < maxY; yIdx++) {
+      addRawDemand_device(d_cmap, xDim, yDim, numLayers, minX, yIdx, currLayerNum, frDirEnum::N);
+      addRawDemand_device(d_cmap, xDim, yDim, numLayers, minX, yIdx + 1, currLayerNum, frDirEnum::N);
+    }
+  } else {
+    printf("Error ! current node and parent node are are not aligned collinearly\n");
+  }
+}
+
+
+
+// Perform the node level parallelization for the update of the GR layer assignment
+void layerAssign_node_compute_CUDA(
+  frDesign* design,
+  std::vector<std::tuple<frNet*, int, int> >& sortedNets,
+  std::vector<std::vector<int> >& netBatch,
+  std::vector<int>& nodeCntPtrVec,
+  std::vector<unsigned>& bestLayerCosts,
+  std::vector<unsigned>& bestLayerCombs,
+  std::vector<int>& minPinLayerNumNodes,
+  std::vector<int>& maxPinLayerNumNodes,
+  // restore the final results
+  std::vector<int>& nodeLayerVec, // The computed layer assignment for each node
+  FlexGRCMap* cmap, // 3D Congestion map
+  int maxNumNodes,
+  Logger* logger)
+{
+  // Initialize the CUDA device
+  int deviceCount;
+  cudaGetDeviceCount(&deviceCount);
+  if (deviceCount == 0) {
+    logger->error(utl::DRT, 0, "No CUDA device found");
+  }
+  cudaSetDevice(0); // Use the.start device
+    
+  // Initialize the CUDA events
+  cudaEvent_t start, stop;
+  cudaEventCreate(&start);
+  cudaEventCreate(&stop);
+
+  // Initialize the CUDA memory
+  std::vector<int> netBatch_1D;
+  netBatch_1D.reserve(sortedNets.size());
+  std::vector<int> netBatchPtr;
+  netBatchPtr.reserve(netBatch.size());
+  for (auto& netVec : netBatch) {
+    netBatchPtr.push_back(netBatch_1D.size());
+    netBatch_1D.insert(netBatch_1D.end(), netVec.begin(), netVec.end());
+  }
+  netBatchPtr.push_back(netBatch_1D.size());
+    
+  
+  int xDim, yDim, zDim;
+  cmap->getDim(xDim, yDim, zDim);   
+  // Initialize the congestion map  
+  std::vector<uint64_t> congestion_map;
+  congestion_map.reserve(xDim * yDim * zDim);
+  for (int z = 0; z < zDim; z++) {
+    for (int y = 0; y < yDim; y++) {
+      for (int x = 0; x < xDim; x++) {
+        congestion_map.push_back(cmap->getBit(x, y, z));
+      }
+    }
+  }
+
+  std::vector<int> layerDir;
+  for (int layerNum = 0; layerNum < zDim; layerNum++) {
+    auto dir = design->getTech()->getLayer((layerNum + 1) * 2)->getDir();
+    if (dir == dbTechLayerDir::HORIZONTAL) {
+      layerDir.push_back(0);
+    } else {
+      layerDir.push_back(1);
+    }
+  }
+
+
+  // Convert the net-level to the node-level parallelization
+  std::vector<int> nodeLevel;
+  std::vector<int> nodeParentIdx;
+  std::vector<IntPair> nodeLoc;
+  std::vector<int> nodeEdgeIdx;
+  std::vector<IntPair> nodeEdgePtr;
+  std::vector<int> netBatchMaxDepth;   
+
+  layerAssign_node_levelization(
+    design, sortedNets, netBatch, nodeCntPtrVec,
+    nodeLevel, nodeParentIdx, nodeLoc, 
+    nodeEdgeIdx, nodeEdgePtr, netBatchMaxDepth, 
+    maxNumNodes);
+
+    
+  
+  nodeLayerVec.resize(nodeCntPtrVec.back(), -1);
+
+
+  unsigned VIACOST_DEVICE = VIACOST;
+  unsigned VIA_ACCESS_LAYERNUM_DEVICE = VIA_ACCESS_LAYERNUM;
+  unsigned BLOCKCOST_DEVICE = BLOCKCOST;
+  unsigned MARKERCOST_DEVICE = MARKERCOST;
+
+  
+  int* d_netBatch;
+  int* d_netBatchPtr;
+  unsigned* d_bestLayerCosts;
+  unsigned* d_bestLayerCombs;
+  int* d_minPinLayerNumNodes;
+  int* d_maxPinLayerNumNodes;
+  uint64_t* d_congestion_map;  
+  int* d_layerDir;
+  int* d_nodeCntPtr;
+  int* d_nodeLevel;
+  int* d_nodeParentIdx;
+  IntPair* d_nodeLoc;
+  int* d_nodeEdgeIdx;
+  IntPair* d_nodeEdgePtr;
+  int* d_netBatchMaxDepth;
+  int* d_nodeLayer;
+
+
+
+  cudaMalloc(&d_netBatch, netBatch_1D.size() * sizeof(int));
+  cudaMalloc(&d_netBatchPtr, netBatchPtr.size() * sizeof(int));
+  cudaMalloc(&d_bestLayerCosts, bestLayerCosts.size() * sizeof(unsigned));
+  cudaMalloc(&d_bestLayerCombs, bestLayerCombs.size() * sizeof(unsigned));
+  cudaMalloc(&d_minPinLayerNumNodes, minPinLayerNumNodes.size() * sizeof(int));
+  cudaMalloc(&d_maxPinLayerNumNodes, maxPinLayerNumNodes.size() * sizeof(int));
+  cudaMalloc(&d_congestion_map, congestion_map.size() * sizeof(uint64_t));
+  cudaMalloc(&d_layerDir, layerDir.size() * sizeof(int));
+  cudaMalloc(&d_nodeLevel, nodeLevel.size() * sizeof(int));
+  cudaMalloc(&d_nodeCntPtr, nodeCntPtrVec.size() * sizeof(int));
+  cudaMalloc(&d_nodeParentIdx, nodeParentIdx.size() * sizeof(int));
+  cudaMalloc(&d_nodeLoc, nodeLoc.size() * sizeof(IntPair));
+  cudaMalloc(&d_nodeEdgeIdx, nodeEdgeIdx.size() * sizeof(int));
+  cudaMalloc(&d_nodeEdgePtr, nodeEdgePtr.size() * sizeof(IntPair));
+  cudaMalloc(&d_netBatchMaxDepth, netBatchMaxDepth.size() * sizeof(int));
+  cudaMalloc(&d_nodeLayer, nodeLayerVec.size() * sizeof(int));
+  
+
+  cudaMemcpy(d_netBatch, netBatch_1D.data(), netBatch_1D.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBatchPtr, netBatchPtr.data(), netBatchPtr.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_bestLayerCosts, bestLayerCosts.data(), bestLayerCosts.size() * sizeof(unsigned), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_bestLayerCombs, bestLayerCombs.data(), bestLayerCombs.size() * sizeof(unsigned), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_minPinLayerNumNodes, minPinLayerNumNodes.data(), minPinLayerNumNodes.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_maxPinLayerNumNodes, maxPinLayerNumNodes.data(), maxPinLayerNumNodes.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_congestion_map, congestion_map.data(), congestion_map.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_layerDir, layerDir.data(), layerDir.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeLevel, nodeLevel.data(), nodeLevel.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeParentIdx, nodeParentIdx.data(), nodeParentIdx.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeCntPtr, nodeCntPtrVec.data(), nodeCntPtrVec.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeLoc, nodeLoc.data(), nodeLoc.size() * sizeof(IntPair), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeEdgeIdx, nodeEdgeIdx.data(), nodeEdgeIdx.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeEdgePtr, nodeEdgePtr.data(), nodeEdgePtr.size() * sizeof(IntPair), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_netBatchMaxDepth, netBatchMaxDepth.data(), netBatchMaxDepth.size() * sizeof(int), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_nodeLayer, nodeLayerVec.data(), nodeLayerVec.size() * sizeof(int), cudaMemcpyHostToDevice);
+
+
+  // Launch the kernel
+  int numBatch = netBatch.size();
+  int maxDepth = 0;
+
+  for (int batchId = 0; batchId < numBatch; batchId++) {
+    maxDepth = netBatchMaxDepth[batchId];
+    int startIdx = netBatchPtr[batchId];
+    int endIdx = netBatchPtr[batchId + 1];
+    int numNets = endIdx - startIdx;
+    int numNodes = numNets * maxNumNodes; // total number of threads needed
+    int numThreads = 256;
+    int numBlocks = (numNodes + numThreads - 1) / numThreads;
+    // node-level compute
+    for (int depth = maxDepth; depth >= 0; depth--) { 
+      node_compute_update_kernel<<<numBlocks, numThreads>>>(
+        d_netBatch, 
+        d_nodeCntPtr, d_nodeLevel, d_nodeParentIdx, d_nodeLoc,
+        d_nodeEdgeIdx, d_nodeEdgePtr, 
+        d_layerDir, d_congestion_map, 
+        d_bestLayerCosts, d_bestLayerCombs, d_minPinLayerNumNodes, d_maxPinLayerNumNodes, 
+        xDim, yDim, zDim, maxNumNodes, startIdx, endIdx, depth,
+        VIACOST_DEVICE, VIA_ACCESS_LAYERNUM_DEVICE,
+        BLOCKCOST_DEVICE, MARKERCOST_DEVICE);
+    }
+    
+    cudaError_t err = cudaGetLastError(); // Check for errors in kernel launch
+    if (err != cudaSuccess) {
+      std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
+    }
+    cudaDeviceSynchronize();  // Wait for the kernel to finish
+
+    // node-level commit (update the congestion) 
+    for (int depth = 0; depth <= maxDepth; depth++) {
+      node_commit_update_kernel<<<numBlocks, numThreads>>>(
+        d_netBatch, 
+        d_nodeCntPtr, d_nodeLevel, d_nodeParentIdx, 
+        d_bestLayerCombs, d_bestLayerCosts,
+        d_nodeEdgeIdx, d_nodeEdgePtr,
+        d_nodeLayer, zDim, maxNumNodes, startIdx, endIdx, depth);
+    }
+   
+    err = cudaGetLastError(); // Check for errors in kernel launch
+    if (err != cudaSuccess) {
+      std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
+    }
+
+    cudaDeviceSynchronize();  // Wait for the kernel to finish
+    
+    // sgement-level commit (update the congestion)
+    for (int depth = 0; depth <= maxDepth; depth++) {
+      segment_commit_update_kernel<<<numBlocks, numThreads>>>(
+        d_netBatch, 
+        d_nodeCntPtr, d_nodeLevel, d_nodeParentIdx, d_nodeLoc,
+        d_nodeLayer, d_congestion_map, xDim, yDim, zDim, maxNumNodes, startIdx, endIdx, depth);
+    }
+
+    err = cudaGetLastError(); // Check for errors in kernel launch
+    if (err != cudaSuccess) {
+      std::cerr << "CUDA Error: " << cudaGetErrorString(err) << std::endl;
+    }
+
+    cudaDeviceSynchronize();  // Wait for the kernel to finish
+
+    //cudaMemcpy(bestLayerCombs.data(), d_bestLayerCombs, bestLayerCombs.size() * sizeof(unsigned), cudaMemcpyDeviceToHost);
+    // update the congestion map
+    //auto& bits = cmap->getBits();
+    //cudaMemcpy(d_congestion_map, bits.data(), bits.size() * sizeof(uint64_t), cudaMemcpyHostToDevice);
+  }
+
+  // copy the d_bestLayerCosts and d_bestLayerCombs to the host
+  //cudaMemcpy(bestLayerCosts.data(), d_bestLayerCosts, bestLayerCosts.size() * sizeof(unsigned), cudaMemcpyDeviceToHost);
+  //cudaMemcpy(bestLayerCombs.data(), d_bestLayerCombs, bestLayerCombs.size() * sizeof(unsigned), cudaMemcpyDeviceToHost);
+
+  // copy the layer assignment to the host
+  cudaMemcpy(nodeLayerVec.data(), d_nodeLayer, nodeLayerVec.size() * sizeof(int), cudaMemcpyDeviceToHost);
+
+  int nodeIdx = 0;
+  for (auto layer : nodeLayerVec) {
+    if (layer == -1 || layer >= zDim) {
+      logger->error(DRT, 0, "Error: layer assignment failed  "
+                "(layerNum = {}  "
+                " for node = {}  )",
+                layer, nodeIdx);
+    }
+    nodeIdx++;
+  }
+
+  // remove the CUDA memory
+  cudaFree(d_netBatch);
+  cudaFree(d_netBatchPtr);
+  cudaFree(d_bestLayerCosts);
+  cudaFree(d_bestLayerCombs);
+  cudaFree(d_minPinLayerNumNodes);
+  cudaFree(d_maxPinLayerNumNodes);
+  cudaFree(d_congestion_map);
+  cudaFree(d_nodeLevel);
+  cudaFree(d_nodeEdgeIdx);
+  cudaFree(d_nodeEdgePtr);
+  cudaFree(d_netBatchMaxDepth);
+  cudaFree(d_nodeCntPtr);
+  cudaFree(d_nodeParentIdx);
+  cudaFree(d_nodeLoc);
+  cudaFree(d_layerDir);
+  cudaFree(d_nodeLayer);
+
+  // Destroy the CUDA events
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+} // namespace drt

@@ -32,20 +32,6 @@
 namespace drt {
 
 
-struct NetStruct {
-  grNet* net = nullptr;
-  int netId = -1;
-
-  std::vector<int> points; // Store all the steiner points in the net
-  std::vector<std::pair<int, int> > vSegments;
-  std::vector<std::pair<int, int> > hSegments;
-
-  NetStruct() = default;
-
-  NetStruct(grNet* _net) : net(_net) { }
-};
-
-
 
 void FlexGRWorker::batchGenerationRelax(
   std::vector<grNet*>& rerouteNets,
