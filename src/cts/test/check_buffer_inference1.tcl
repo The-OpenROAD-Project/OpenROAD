@@ -1,3 +1,6 @@
+# Testing buffer inferece based on liberty 
+# attribute "is_clock_cell : true"
+
 source "helpers.tcl"
 
 read_liberty ModNangate45/ModNangate45_typ.lib

@@ -1,3 +1,6 @@
+# Testing buffer inferece based on port 
+# LEF USE CLOCK
+
 source "helpers.tcl"
 
 read_liberty Nangate45/Nangate45_typ.lib

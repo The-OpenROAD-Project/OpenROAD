@@ -1,3 +1,5 @@
+# Testing buffer inferece based on name pattern match
+
 source "helpers.tcl"
 
 read_liberty Nangate45/Nangate45_typ.lib
