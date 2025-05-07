@@ -647,8 +647,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 {
   sta::Vector<sta::LibertyCell*> selected_buffers;
 
-  // first, look for buffers with "is_clock_cell: true" cell attribute, or
-  // buffers with an input port that has LEF USE as "CLOCK"
+  // first, look for buffers with "is_clock_cell: true" cell attribute
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -664,7 +663,22 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
         debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
                    buffer->name());
         // clang-format on
-      } else {
+      }
+    }
+  }
+  delete lib_iter;
+
+  // second, look for buffers with an input port that has
+  // LEF USE as "CLOCK"
+  if (selected_buffers.empty()) {
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
         odb::dbMaster* master = db_->findMaster(buffer->name());
         for (odb::dbMTerm* mterm : master->getMTerms()) {
           if (mterm->getIoType() == odb::dbIoType::INPUT
@@ -674,18 +688,18 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
             selected_buffers.emplace_back(buffer);
             // clang-format off
             debugPrint(logger_, CTS, "buffering", 1,
-                       "{} has input port {} with LEF USE as CLOCK",
-                       buffer->name(),
-                       mterm->getName());
+                        "{} has input port {} with LEF USE as CLOCK",
+                        buffer->name(),
+                        mterm->getName());
             // clang-format on
           }
         }
       }
     }
+    delete lib_iter;
   }
-  delete lib_iter;
-
-  // second, look for all buffers with name CLKBUF or clkbuf
+  
+  // third, look for all buffers with name CLKBUF or clkbuf
   if (selected_buffers.empty()) {
     sta::PatternMatch patternClkBuf(".*CLKBUF.*",
                                     /* is_regexp */ true,
@@ -701,6 +715,9 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternClkBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+          debugPrint(logger_, CTS, "buffering", 1,
+            "{} found by 'CLKBUF' pattern match",
+            buffer->name());
           selected_buffers.emplace_back(buffer);
         }
       }
@@ -708,7 +725,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     delete lib_iter;
   }
 
-  // third, look for all buffers with name BUF or buf
+  // fourth, look for all buffers with name BUF or buf
   if (selected_buffers.empty()) {
     sta::PatternMatch patternBuf(".*BUF.*",
                                  /* is_regexp */ true,
@@ -724,6 +741,9 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+          debugPrint(logger_, CTS, "buffering", 1,
+            "{} found by 'BUF' pattern match",
+            buffer->name());
           selected_buffers.emplace_back(buffer);
         }
       }
@@ -733,6 +753,8 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   // abandon attributes & name patterns, just look for all buffers
   if (selected_buffers.empty()) {
+    debugPrint(logger_, CTS, "buffering", 1,
+      "No buffers with clock atributes or name patterns found, using all buffers");
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
