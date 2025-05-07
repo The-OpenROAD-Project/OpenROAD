@@ -795,14 +795,15 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   for (sta::LibertyCell* buffer : selected_buffers) {
     buffers.emplace_back(buffer->name());
+    debugPrint(logger_,
+      CTS,
+      "buffering",
+      1,
+      "{} has been inferred as clock buffer",
+      buffer->name());
   }
 
   options_->setBufferListInferred(true);
-  if (logger_->debugCheck(utl::CTS, "buffering", 1)) {
-    for (const std::string& bufName : buffers) {
-      logger_->report("{} has been inferred as clock buffer", bufName);
-    }
-  }
 }
 
 std::string toLowerCase(std::string str)

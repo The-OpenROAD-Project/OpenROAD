@@ -6,9 +6,9 @@
 [DEBUG CTS-buffering] CLKBUF_X1 found by 'CLKBUF' pattern match
 [DEBUG CTS-buffering] CLKBUF_X2 found by 'CLKBUF' pattern match
 [DEBUG CTS-buffering] CLKBUF_X3 found by 'CLKBUF' pattern match
-CLKBUF_X1 has been inferred as clock buffer
-CLKBUF_X2 has been inferred as clock buffer
-CLKBUF_X3 has been inferred as clock buffer
+[DEBUG CTS-buffering] CLKBUF_X1 has been inferred as clock buffer
+[DEBUG CTS-buffering] CLKBUF_X2 has been inferred as clock buffer
+[DEBUG CTS-buffering] CLKBUF_X3 has been inferred as clock buffer
 [DEBUG CTS-buffering] CLKBUF_X1 has cap limit:6.0729997e-16 vs. total cap:0, derate:0.01
 [DEBUG CTS-buffering] CLKBUF_X2 has cap limit:1.2145999e-15 vs. total cap:0, derate:0.01
 [DEBUG CTS-buffering] CLKBUF_X3 has cap limit:1.81885e-15 vs. total cap:0, derate:0.01
