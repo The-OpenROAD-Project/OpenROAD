@@ -315,7 +315,7 @@ _installOrTools() {
             osVersion=11
         fi
         if [[ $os == ubuntu && $osVersion == 25.04 ]]; then
-            # FIXME make do with 24.04 for now until official release for 24.04 is available
+            # FIXME make do with or-tools for 24.04 until an official release for 25.04 is available
             osVersion=24.04
         fi
         orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
