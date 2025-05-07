@@ -11,6 +11,7 @@ single_version_override(
     registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
     version = "7.0.0",
 )
+
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_flex", version = "0.3.1")
@@ -40,11 +41,13 @@ single_version_override(
     registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
     version = "5.034",
 )
+
 single_version_override(
     module_name = "verilator",
     registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
     version = "5.034.ar.1",
 )
+
 single_version_override(
     module_name = "systemc",
     registry = "https://raw.githubusercontent.com/Pinata-Consulting/ascenium-registry/683f93e670a04f8d3d47316c42d197d8ac095a00/",
@@ -89,7 +92,7 @@ bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
 bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0")
-bazel_dep(name = "eigen", version = "3.4.0.bcr.2")
+bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "or-tools", version = "9.12")
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250331-43fcf6e")
