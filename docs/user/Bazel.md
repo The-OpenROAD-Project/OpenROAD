@@ -32,7 +32,7 @@ ignore the user configuration in `user.bazelrc`.
 Copy the snippet below into `user.bazelrc` and specify your username by modifying `# user: myname@openroad.tools`:
 
     # user: myname@openroad.tools
-    build --credential_helper=%workspace%/etc/cred_helper.py
+    build --credential_helper=*.googleapis.com=%workspace%/etc/cred_helper.py
 
 `cred_helper.py` will parse `user.bazelrc` and look for the username in the comment.
 
