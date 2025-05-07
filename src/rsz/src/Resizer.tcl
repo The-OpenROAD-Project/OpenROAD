@@ -564,8 +564,8 @@ proc repair_timing { args } {
     set hold_margin [rsz::parse_time_margin_arg "-hold_margin" keys]
   }
 
-  if { [info exists keys(-sequence)] } { 
-    set sequence $keys(-sequence) 
+  if { [info exists keys(-sequence)] } {
+    set sequence $keys(-sequence)
   } else {
     set sequence ""
   }
