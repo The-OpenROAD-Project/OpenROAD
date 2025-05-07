@@ -337,7 +337,7 @@ void FlexPA::createMultipleAccessPoints(
     for (auto& [y_coord, cost_y] : y_coords) {
       // lower full/half/center
       auto& low_layer_type = layer->isHorizontal() ? cost_y : cost_x;
-      auto& up_layer_type = layer->isHorizontal() ? cost_x : cost_y;
+      auto& up_layer_type = layer->isVertical() ? cost_y : cost_x;
       if (low_layer_type == lower_type && up_layer_type == upper_type) {
         createSingleAccessPoint(aps,
                                 apset,
@@ -452,16 +452,26 @@ void FlexPA::genAccessCoordsFromRect(
       layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
     }
   }
-
-  if (use_center_line && is_layer1_horz) {
-    for (auto& [layer1_coord, cost] : layer1_coords) {
-      layer1_coords[layer1_coord] = frAccessPointEnum::OnGrid;
-    }
-  }
 }
 
 bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
                                    const bool is_macro_cell_pin)
+{
+  // lower layer is current layer
+  // rightway on grid only forbid off track up via access on upper layer
+  const auto upper_layer
+      = (layer_num + 2 <= getDesign()->getTech()->getTopLayerNum())
+            ? getDesign()->getTech()->getLayer(layer_num + 2)
+            : nullptr;
+  if (!is_macro_cell_pin && upper_layer
+      && upper_layer->getLef58RightWayOnGridOnlyConstraint()) {
+    return true;
+  }
+  return false;
+}
+
+bool FlexPA::isUpperLayerOnGridOnly(const frLayerNum layer_num,
+                                    const bool is_macro_cell_pin)
 {
   // lower layer is current layer
   // rightway on grid only forbid off track up via access on upper layer
@@ -544,6 +554,7 @@ void FlexPA::genAccessCoordsFromPinShapes(
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type)
 {
+  //  only VIA_ACCESS_LAYERNUM layer can have via access
   frLayerNum layer_num = 0;
   for (const auto& layer_shapes : pin_shapes) {
     if (!layer_shapes.empty()
@@ -1254,10 +1265,10 @@ bool FlexPA::genPinAccessCostBounded(
     return false;
   }
 
+  updatePinStats(aps, inst_term);
+  // IO term pin always only have one access
   const int pin_access_idx
       = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
-
-  updatePinStats(aps, inst_term);
   // write to pa
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
@@ -1513,7 +1524,6 @@ void FlexPA::revertAccessPoints()
     dbTransform revertXform(Point(-offset.getX(), -offset.getY()));
 
     const auto pin_access_idx = inst->getPinAccessIdx();
-    ;
     for (auto& inst_term : inst->getInstTerms()) {
       // if (isSkipInstTerm(inst_term.get())) {
       //   continue;

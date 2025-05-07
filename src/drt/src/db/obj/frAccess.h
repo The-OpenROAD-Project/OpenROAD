@@ -72,7 +72,7 @@ class frAccessPoint : public frBlockObject
   }
   bool hasHorzAccess() const { return accesses_[0] || accesses_[2]; }
   bool hasVertAccess() const { return accesses_[1] || accesses_[3]; }
-  bool has3DAccess() const { return accesses_[4] || accesses_[5]; }
+  bool hasViaAccess() const { return accesses_[4] || accesses_[5]; }
   bool hasPlanarAccess() const { return hasVertAccess() || hasHorzAccess(); }
   const std::vector<bool>& getAccess() const { return accesses_; }
   bool hasViaDef(int numCut = 1, int idx = 0) const

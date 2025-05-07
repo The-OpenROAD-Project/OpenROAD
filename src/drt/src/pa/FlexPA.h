@@ -280,6 +280,17 @@ class FlexPA
       frAccessPointEnum upper_type);
 
   /**
+   * @brief Determines if the upper layer to the passed layer_num only allows
+   * for onGrid access points
+   *
+   * @param layer_num the layer number
+   * @param is_macro_cell_pin if the current pin belongs to a macro
+   *
+   * @returns True if only allow onGrid access
+   */
+  bool isUpperLayerOnGridOnly(frLayerNum layer_num, bool is_macro_cell_pin);
+
+  /**
    * @brief Generates all necessary access points from all layer_shapes (pin)
    *
    * @param inst_term instance terminal, owner of the access points
@@ -422,8 +433,6 @@ class FlexPA
    * @param x access point x coord
    * @param y access point y coord
    * @param layer_num access point layer
-   * @param allow_planar if the access point allows planar access
-   * @param allow_via if the access point allows via access
    * @param lower_type lowest access cost considered
    * @param upper_type highest access cost considered
    */
