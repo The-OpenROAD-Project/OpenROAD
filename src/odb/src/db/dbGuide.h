@@ -4,10 +4,13 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <vector>
+
 #include "dbCore.h"
 #include "odb/odb.h"
 
 // User Code Begin Includes
+#include "dbVector.h"
 #include "odb/geom.h"
 // User Code End Includes
 
@@ -17,6 +20,8 @@ class dbOStream;
 class _dbDatabase;
 class _dbNet;
 class _dbTechLayer;
+class _dbITerm;
+class _dbBTerm;
 
 class _dbGuide : public _dbObject
 {
@@ -33,6 +38,8 @@ class _dbGuide : public _dbObject
   dbId<_dbTechLayer> layer_;
   dbId<_dbTechLayer> via_layer_;
   dbId<_dbGuide> guide_next_;
+  std::vector<dbId<_dbITerm>> connected_iterms_;
+  std::vector<dbId<_dbBTerm>> connected_bterms_;
   bool is_congested_;
   bool is_jumper_;
 };

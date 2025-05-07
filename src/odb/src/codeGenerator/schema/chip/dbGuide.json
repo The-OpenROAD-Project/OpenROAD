@@ -37,6 +37,16 @@
         "parent":"dbBlock"
       },
       {
+        "name":"connected_iterms_",
+        "type":"std::vector<dbId<_dbITerm>>",
+        "flags":["no-set","no-get"]
+      },
+      {
+        "name":"connected_bterms_",
+        "type":"std::vector<dbId<_dbBTerm>>",
+        "flags":["no-set","no-get"]
+      },
+      {
       "name":"is_congested_",
       "type":"bool",
       "schema":"db_schema_db_guide_congested",

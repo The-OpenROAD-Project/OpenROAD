@@ -7649,6 +7649,14 @@ class dbGuide : public dbObject
 
   void setIsJumper(bool jumper);
 
+  void addConnectedITerm(dbITerm* iterm);
+
+  void addConnectedBTerm(dbBTerm* bterm);
+
+  std::vector<dbITerm*> getConnectedITerms();
+
+  std::vector<dbBTerm*> getConnectedBTerms();
+
   // User Code End dbGuide
 };
 
