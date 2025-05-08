@@ -12,6 +12,31 @@
 
 namespace rsz {
 
+ using std::pair;
+ using std::string;
+ using std::vector;
+
+ using odb::Point;
+
+ using utl::RSZ;
+
+ using sta::dbITerm;
+ using sta::Edge;
+ using sta::Instance;
+ using sta::InstancePinIterator;
+ using sta::LibertyCell;
+ using sta::LoadPinIndexMap;
+ using sta::Net;
+ using sta::NetConnectedPinIterator;
+ using sta::Path;
+ using sta::PathExpanded;
+ using sta::Pin;
+ using sta::RiseFall;
+ using sta::Slack;
+ using sta::Slew;
+ using sta::Vertex;
+ using sta::VertexOutEdgeIterator;
+
 Point CloneMove::computeCloneGateLocation(
     const Pin* drvr_pin,
     const vector<pair<Vertex*, Slack>>& fanout_slacks)
@@ -34,8 +59,8 @@ Point CloneMove::computeCloneGateLocation(
 }
 
 bool CloneMove::doMove(const Path* drvr_path,
-                       int drvr_index,
-                       const Slack drvr_slack,
+                       const int drvr_index,
+                       Slack drvr_slack,
                        PathExpanded* expanded,
                        float setup_slack_margin)
 {
@@ -46,21 +71,25 @@ bool CloneMove::doMove(const Path* drvr_path,
   Pin* load_pin = load_vertex->pin();
 
   const int fanout = this->fanout(drvr_vertex);
-  if (fanout <= split_load_min_fanout_)
+  if (fanout <= split_load_min_fanout_) {
     return false;
+    }
   const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-  if (tristate_drvr)
+  if (tristate_drvr) {
     return false;
+    }
   const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  if (resizer_->dontTouch(net))
+  if (resizer_->dontTouch(net)) {
     return false;
+    }
   // We can probably relax this with the new ECO code
-  if (resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin)) > 0)
+  if (resizer_->buffer_move->pendingMoves(db_network_->instance(drvr_pin)) > 0) {
     return false;
+    }
   // We can probably relax this with the new ECO code
-  if (resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin))
-      > 0)
+  if (resizer_->split_load_move->pendingMoves(db_network_->instance(drvr_pin)) > 0) {
     return false;
+}
 
   // Divide and conquer.
   debugPrint(logger_,

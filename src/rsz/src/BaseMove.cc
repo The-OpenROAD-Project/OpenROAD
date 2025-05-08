@@ -5,6 +5,45 @@
 
 namespace rsz {
 
+ using std::max;
+ using std::string;
+ using std::vector;
+
+ using odb::dbMaster;
+ 
+ using odb::dbMaster;
+ using odb::Point;
+
+ using utl::RSZ;
+
+ using sta::ArcDcalcResult;
+ using sta::ArcDelay;
+ using sta::Cell;
+ using sta::DcalcAnalysisPt;
+ using sta::Edge;
+ using sta::fuzzyGreater;
+ using sta::GraphDelayCalc;
+ using sta::INF;
+ using sta::Instance;
+ using sta::InstancePinIterator;
+ using sta::InstanceSet;
+ using sta::LibertyCell;
+ using sta::LibertyPort;
+ using sta::LoadPinIndexMap;
+ using sta::Net;
+ using sta::NetConnectedPinIterator;
+ using sta::Pin;
+ using sta::RiseFall;
+ using sta::Slack;
+ using sta::Slew;
+ using sta::TimingArc;
+ using sta::TimingArcSet;
+ using sta::Vertex;
+ using sta::VertexOutEdgeIterator;
+
+ using InputSlews = std::array<Slew, RiseFall::index_count>;
+ using TgtSlews = std::array<Slew, RiseFall::index_count>;
+
 BaseMove::BaseMove(Resizer* resizer)
 {
   resizer_ = resizer;
@@ -303,6 +342,7 @@ bool BaseMove::simulateExpr(
   }
 
   logger_->error(RSZ, 91, "unrecognized expr op from OpenSTA");
+  return false;
 }
 
 std::vector<bool> BaseMove::simulateExpr(

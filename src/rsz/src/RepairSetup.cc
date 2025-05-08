@@ -73,7 +73,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const int max_passes,
                               const int max_repairs_per_pass,
                               const bool verbose,
-                              std::vector<MoveType> sequence,
+                              const std::vector<MoveType> &sequence,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
                               const bool skip_buffering,
@@ -86,7 +86,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   max_repairs_per_pass_ = max_repairs_per_pass;
   resizer_->buffer_moved_into_core_ = false;
 
-  if (sequence.size() > 0) {
+  if (!sequence.empty()) {
     move_sequence.clear();
     for (MoveType move : sequence) {
       switch (move) {
@@ -113,18 +113,23 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   } else {
     move_sequence.clear();
-    if (!skip_buffer_removal)
+    if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move);
+        }
     // Always  have sizing
     move_sequence.push_back(resizer_->size_move);
-    if (!skip_pin_swap)
+    if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move);
-    if (!skip_buffering)
+        }
+    if (!skip_buffering) {
       move_sequence.push_back(resizer_->buffer_move);
-    if (!skip_gate_cloning)
+        }
+    if (!skip_gate_cloning) {
       move_sequence.push_back(resizer_->clone_move);
-    if (!skip_buffering)
+        }
+    if (!skip_buffering) {
       move_sequence.push_back(resizer_->split_load_move);
+        }
   }
 
   string repair_moves = "Repair move sequence: ";
@@ -424,14 +429,15 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   if (buffer_moves_ > 0 || split_load_moves_ > 0) {
     repaired = true;
-    if (split_load_moves_ == 0)
+    if (split_load_moves_ == 0) {
       logger_->info(RSZ, 40, "Inserted {} buffers.", buffer_moves_);
-    else
+        } else {
       logger_->info(RSZ,
                     45,
                     "Inserted {} buffers, {} to split loads.",
                     buffer_moves_ + split_load_moves_,
                     split_load_moves_);
+        }
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves_ + split_load_moves_);
@@ -617,21 +623,21 @@ bool RepairSetup::repairPath(Path* path,
                  fanout,
                  drvr_index);
 
-      for (int i = 0; i < move_sequence.size(); i++) {
+      for (BaseMove* move : move_sequence) {
         debugPrint(logger_,
                    RSZ,
                    "moves",
                    2,
                    "Considering {} for {}",
-                   move_sequence[i]->name(),
+                   move->name(),
                    network_->pathName(drvr_pin));
 
-        if (move_sequence[i]->doMove(drvr_path,
-                                     drvr_index,
-                                     path_slack,
-                                     &expanded,
-                                     setup_slack_margin)) {
-          if (move_sequence[i] == resizer_->unbuffer_move) {
+        if (move->doMove(drvr_path,
+                         drvr_index,
+                         path_slack,
+                         &expanded,
+                         setup_slack_margin)) {
+          if (move == resizer_->unbuffer_move) {
             // Only allow one unbuffer move per pass to
             // prevent the use-after-free error of multiple buffer removals.
             changed += repairs_per_pass;
@@ -640,18 +646,14 @@ bool RepairSetup::repairPath(Path* path,
           }
           // Move on to the next gate
           break;
-        } else {
-          // If the move was not successful, then we need to
-          // check if we can do the next move in the sequence.
-          // This is a bit of a hack, but it works for now.
-          debugPrint(logger_,
-                     RSZ,
-                     "moves",
-                     2,
-                     "Move {} failed for {}",
-                     move_sequence[i]->name(),
-                     network_->pathName(drvr_pin));
-        }
+        } 
+      debugPrint(logger_,
+                 RSZ,
+                 "moves",
+                 2,
+                 "Move {} failed for {}",
+                 move->name(),
+                 network_->pathName(drvr_pin));
       }
     }
   }

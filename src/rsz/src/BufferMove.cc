@@ -11,6 +11,24 @@
 
 namespace rsz {
 
+ using std::string;
+
+ using utl::RSZ;
+
+ using sta::ArcDelay;
+ using sta::Instance;
+ using sta::InstancePinIterator;
+ using sta::LoadPinIndexMap;
+ using sta::Net;
+ using sta::NetConnectedPinIterator;
+ using sta::Path;
+ using sta::PathExpanded;
+ using sta::Pin;
+ using sta::Slack;
+ using sta::Slew;
+ using sta::TimingArc;
+ using sta::Vertex;
+
 bool BufferMove::doMove(const Path* drvr_path,
                         int drvr_index,
                         const Slack drvr_slack,
@@ -22,20 +40,25 @@ bool BufferMove::doMove(const Path* drvr_path,
   Instance* drvr_inst = network_->instance(drvr_pin);
 
   const int fanout = this->fanout(drvr_vertex);
-  if (fanout <= 1)
+  if (fanout <= 1) {
     return false;
+    }
   // Rebuffer blows up on large fanout nets.
-  if (fanout >= rebuffer_max_fanout_)
+  if (fanout >= rebuffer_max_fanout_) {
     return false;
+    }
   const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-  if (tristate_drvr)
+  if (tristate_drvr) {
     return false;
+    }
   const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  if (resizer_->dontTouch(net))
+  if (resizer_->dontTouch(net)) {
     return false;
+    }
   dbNet* db_net = db_network_->staToDb(net);
-  if (db_net->isConnectedByAbutment())
+  if (db_net->isConnectedByAbutment()) {
     return false;
+    }
 
   const int rebuffer_count = rebuffer(drvr_pin);
   if (rebuffer_count > 0) {

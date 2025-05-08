@@ -11,6 +11,32 @@
 
 namespace rsz {
 
+ using std::pair;
+ using std::string;
+ using std::vector;
+
+ using odb::Point;
+
+ using utl::RSZ;
+
+ using sta::ArcDelay;
+ using sta::Edge;
+ using sta::Instance;
+ using sta::InstancePinIterator;
+ using sta::LibertyCell;
+ using sta::LibertyPort;
+ using sta::LoadPinIndexMap;
+ using sta::Net;
+ using sta::NetConnectedPinIterator;
+ using sta::Path;
+ using sta::PathExpanded;
+ using sta::Pin;
+ using sta::RiseFall;
+ using sta::Slack;
+ using sta::Slew;
+ using sta::Vertex;
+ using sta::VertexOutEdgeIterator;
+
 bool SplitLoadMove::doMove(const Path* drvr_path,
                            int drvr_index,
                            const Slack drvr_slack,
@@ -25,17 +51,21 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
 
   const int fanout = this->fanout(drvr_vertex);
   // Don't split loads on low fanout nets.
-  if (fanout <= split_load_min_fanout_)
+  if (fanout <= split_load_min_fanout_) {
     return false;
+    }
   const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
-  if (tristate_drvr)
+  if (tristate_drvr) {
     return false;
+    }
   const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-  if (resizer_->dontTouch(net))
+  if (resizer_->dontTouch(net)) {
     return false;
+    }
   dbNet* db_net = db_network_->staToDb(net);
-  if (db_net->isConnectedByAbutment())
+  if (db_net->isConnectedByAbutment()) {
     return false;
+    }
 
   // Divide and conquer.
   debugPrint(logger_,

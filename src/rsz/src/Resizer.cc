@@ -3700,7 +3700,7 @@ bool Resizer::repairSetup(double setup_margin,
                           int max_repairs_per_pass,
                           bool match_cell_footprint,
                           bool verbose,
-                          std::vector<MoveType> sequence,
+                          const std::vector<MoveType> sequence,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_buffering,
@@ -3719,7 +3719,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     max_passes,
                                     max_repairs_per_pass,
                                     verbose,
-                                    sequence,
+                                    std::move(sequence),
                                     skip_pin_swap,
                                     skip_gate_cloning,
                                     skip_buffering,
@@ -4288,18 +4288,24 @@ MoveType Resizer::parseMove(const std::string& s)
 {
   std::string lower = s;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-  if (lower == "buffer")
+  if (lower == "buffer") {
     return rsz::MoveType::BUFFER;
-  if (lower == "unbuffer")
+    }
+  if (lower == "unbuffer") {
     return rsz::MoveType::UNBUFFER;
-  if (lower == "swap")
+    }
+  if (lower == "swap") {
     return rsz::MoveType::SWAP;
-  if (lower == "size")
+    }
+  if (lower == "size") {
     return rsz::MoveType::SIZE;
-  if (lower == "clone")
+    }
+  if (lower == "clone") {
     return rsz::MoveType::CLONE;
-  if (lower == "split")
+    }
+  if (lower == "split") {
     return rsz::MoveType::SPLIT;
+    }
   throw std::invalid_argument("Invalid move type: " + s);
 }
 

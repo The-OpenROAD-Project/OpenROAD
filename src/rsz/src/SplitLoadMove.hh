@@ -8,6 +8,32 @@
 
 namespace rsz {
 
+ using std::pair;
+ using std::string;
+ using std::vector;
+
+ using odb::Point;
+
+ using utl::RSZ;
+
+ using sta::ArcDelay;
+ using sta::Edge;
+ using sta::Instance;
+ using sta::InstancePinIterator;
+ using sta::LibertyCell;
+ using sta::LibertyPort;
+ using sta::LoadPinIndexMap;
+ using sta::Net;
+ using sta::NetConnectedPinIterator;
+ using sta::Path;
+ using sta::PathExpanded;
+ using sta::Pin;
+ using sta::RiseFall;
+ using sta::Slack;
+ using sta::Slew;
+ using sta::Vertex;
+ using sta::VertexOutEdgeIterator;
+
 class SplitLoadMove : public BaseMove
 {
  public:

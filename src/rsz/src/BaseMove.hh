@@ -41,63 +41,40 @@
 
 namespace rsz {
 
-using std::max;
-using std::pair;
 using std::string;
 using std::vector;
 
-using odb::dbInst;
 using odb::dbMaster;
-using odb::dbPlacementStatus;
-using odb::dbSet;
-
-using dpl::Opendp;
 
 using odb::dbMaster;
 using odb::Point;
 
 using utl::Logger;
-using utl::RSZ;
 
-using sta::ArcDcalcResult;
 using sta::ArcDelay;
-using sta::ArcDelayCalc;
 using sta::Cell;
 using sta::Corner;
 using sta::dbDatabase;
-using sta::dbITerm;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::DcalcAnalysisPt;
-using sta::Edge;
-using sta::fuzzyGreater;
-using sta::GraphDelayCalc;
-using sta::INF;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::InstanceSet;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
-using sta::MinMax;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Network;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
-using sta::PortDirection;
 using sta::RiseFall;
-using sta::RiseFallBoth;
-using sta::Sdc;
 using sta::Slack;
 using sta::Slew;
-using sta::StaState;
 using sta::TimingArc;
-using sta::TimingArcSet;
-using sta::TimingRole;
 using sta::Vertex;
-using sta::VertexOutEdgeIterator;
 
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;

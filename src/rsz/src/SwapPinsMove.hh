@@ -4,6 +4,30 @@
 #include "BaseMove.hh"
 
 namespace rsz {
+ using std::string;
+
+ using utl::RSZ;
+
+ using sta::ArcDcalcResult;
+ using sta::ArcDelay;
+ using sta::DcalcAnalysisPt;
+ using sta::INF;
+ using sta::Instance;
+ using sta::InstancePinIterator;
+ using sta::LibertyCell;
+ using sta::LibertyPort;
+ using sta::LoadPinIndexMap;
+ using sta::Net;
+ using sta::NetConnectedPinIterator;
+ using sta::Path;
+ using sta::PathExpanded;
+ using sta::Pin;
+ using sta::RiseFall;
+ using sta::Slack;
+ using sta::Slew;
+ using sta::TimingArc;
+ using sta::TimingArcSet;
+ using sta::Vertex;
 
 class SwapPinsMove : public BaseMove
 {
