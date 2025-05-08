@@ -2487,6 +2487,35 @@ void GlobalRouter::saveGuides()
              net_with_jumpers);
 }
 
+RoutePointToPinsMap GlobalRouter::findRoutePtPins(Net* net)
+{
+  RoutePointToPinsMap route_pt_pins;
+  for (Pin& pin : net->getPins()) {
+    int conn_layer = pin.getConnectionLayer();
+    odb::Point grid_pt = pin.getOnGridPosition();
+    RoutePt route_pt(grid_pt.x(), grid_pt.y(), conn_layer);
+    route_pt_pins[route_pt].pins.push_back(&pin);
+  }
+  return route_pt_pins;
+}
+
+void GlobalRouter::addPinsConnectedToGuides(RoutePointToPinsMap& point_to_pins,
+                              const RoutePt& route_pt,
+                              odb::dbGuide* guide)
+{
+  auto itr = point_to_pins.find(route_pt);
+  if (itr != point_to_pins.end() && !itr->second.connected) {
+    itr->second.connected = true;
+    for (Pin* pin : itr->second.pins) {
+      if (pin->getITerm()) {
+        guide->addConnectedITerm(pin->getITerm());
+      } else if (pin->getBTerm()) {
+        guide->addConnectedBTerm(pin->getBTerm());
+      }
+    }
+  }
+}
+
 void GlobalRouter::writeSegments(const char* file_name)
 {
   std::ofstream segs_file;
