@@ -5,9 +5,10 @@
 #include <limits>
 #include <utility>
 
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/network.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -50,8 +51,9 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
                              const char* prefix,
                              bool verbose)
 {
-  if (cells_.empty()) {
+  if (network_->getNumCells() == 0) {
     importDb();
+    adjustNodesOrient();
   }
 
   auto filler_masters_by_implant = splitByImplant(filler_masters);
@@ -99,9 +101,12 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters,
 
 void Opendp::setGridCells()
 {
-  for (Node& cell : cells_) {
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
     grid_->visitCellPixels(
-        cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+        *cell, false, [&](Pixel* pixel) { setGridCell(*cell, pixel); });
   }
 }
 
@@ -162,10 +167,9 @@ void Opendp::placeRowFillers(GridY row,
 
     GridX gap = k - j;
     dbMasterSeq& fillers = gapFillers(implant, gap, filler_masters_by_implant);
-    const Rect core = grid_->getCore();
     if (fillers.empty()) {
-      DbuX x{core.xMin() + gridToDbu(j, site_width)};
-      DbuY y{core.yMin() + grid_->gridYToDbu(row)};
+      DbuX x{core_.xMin() + gridToDbu(j, site_width)};
+      DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
       logger_->error(
           DPL,
           2,
@@ -186,8 +190,8 @@ void Opendp::placeRowFillers(GridY row,
                                       master,
                                       inst_name.c_str(),
                                       /* physical_only */ true);
-        DbuX x{core.xMin() + gridToDbu(k, site_width)};
-        DbuY y{core.yMin() + grid_->gridYToDbu(row)};
+        DbuX x{core_.xMin() + gridToDbu(k, site_width)};
+        DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
         inst->setOrient(orient);
         inst->setLocation(x.v, y.v);
         inst->setPlacementStatus(dbPlacementStatus::PLACED);

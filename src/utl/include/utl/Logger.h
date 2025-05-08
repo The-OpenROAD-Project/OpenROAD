@@ -40,7 +40,6 @@ class Progress;
   X(CTS)                \
   X(DFT)                \
   X(DPL)                \
-  X(DPO)                \
   X(DRT)                \
   X(DST)                \
   X(FIN)                \

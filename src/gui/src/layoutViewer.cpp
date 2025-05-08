@@ -1733,10 +1733,15 @@ void LayoutViewer::updatePixmap(const QImage& image, const QRect& bounds)
 void LayoutViewer::drawLoadingIndicator(QPainter* painter, const QRect& bounds)
 {
   const QRect background = computeIndicatorBackground(painter, bounds);
+  const QColor background_color = options_->background();
 
-  painter->fillRect(background, Qt::black);  // to help visualize
+  painter->fillRect(background, background_color);  // to help visualize
 
-  painter->setPen(QPen(Qt::white, 2));
+  const QColor text_color(255 - background_color.red(),
+                          255 - background_color.green(),
+                          255 - background_color.blue());
+
+  painter->setPen(QPen(text_color, 2));
   painter->drawText(background.left(),
                     background.bottom(),
                     QString::fromStdString(loading_indicator_));
@@ -2096,7 +2101,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                       highlighted_,
                       rulers_,
                       render_ratio,
-                      background());
+                      options_->background());
   pixels_per_dbu_ = old_pixels_per_dbu;
 
   if (!img.save(save_filepath)) {

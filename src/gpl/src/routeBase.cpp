@@ -289,7 +289,7 @@ void RouteBase::init()
   tg_ = std::move(tg);
 
   tg_->setLogger(log_);
-  minRcCellSize_.resize(nbc_->gCells().size(), std::make_pair(0, 0));
+  minRcCellSize_.resize(nbc_->getGCells().size(), std::make_pair(0, 0));
 }
 
 void RouteBase::getRudyResult()
@@ -565,12 +565,12 @@ std::pair<bool, bool> RouteBase::routability()
     minRcViolatedCnt_ = 0;
 
     // save cell size info
-    for (auto& gCell : nbc_->gCells()) {
+    for (auto& gCell : nbc_->getGCells()) {
       if (!gCell->isStdInstance()) {
         continue;
       }
 
-      minRcCellSize_[&gCell - nbc_->gCells().data()]
+      minRcCellSize_[&gCell - nbc_->getGCells().data()]
           = std::make_pair(gCell->dx(), gCell->dy());
     }
   } else {
@@ -596,7 +596,7 @@ std::pair<bool, bool> RouteBase::routability()
   inflatedAreaDelta_ = 0;
 
   // run bloating and get inflatedAreaDelta_
-  for (auto& gCell : nbc_->gCells()) {
+  for (auto& gCell : nbc_->getGCells()) {
     // only care about "standard cell"
     if (!gCell->isStdInstance()) {
       continue;
@@ -809,12 +809,12 @@ std::pair<bool, bool> RouteBase::routability()
 void RouteBase::revertGCellSizeToMinRc()
 {
   // revert back the gcell sizes
-  for (auto& gCell : nbc_->gCells()) {
+  for (auto& gCell : nbc_->getGCells()) {
     if (!gCell->isStdInstance()) {
       continue;
     }
 
-    int idx = &gCell - nbc_->gCells().data();
+    int idx = &gCell - nbc_->getGCells().data();
 
     gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
   }

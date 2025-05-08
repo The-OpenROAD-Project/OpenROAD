@@ -150,7 +150,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
   }
 
   int weighted_net_count = 0;
-  for (auto& gNet : nbc_->gNets()) {
+  for (auto& gNet : nbc_->getGNets()) {
     // default weight
     gNet->setTimingWeight(1.0);
     if (gNet->gPins().size() > 1) {

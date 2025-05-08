@@ -3,18 +3,46 @@
 
 #pragma once
 
-namespace cts {
-class TritonCTS;
+#include <tcl.h>
+
+namespace odb {
+class dbDatabase;
 }
 
-namespace ord {
+namespace sta {
+class dbNetwork;
+}
 
-class OpenRoad;
+namespace sta {
+class dbSta;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
+}
+
+namespace rsz {
+class Resizer;
+}
+
+namespace utl {
+class Logger;
+}
+
+namespace cts {
+class TritonCTS;
 
 cts::TritonCTS* makeTritonCts();
 
-void initTritonCts(OpenRoad* openroad);
+void initTritonCts(cts::TritonCTS* cts,
+                   odb::dbDatabase* db,
+                   sta::dbNetwork* network,
+                   sta::dbSta* sta,
+                   stt::SteinerTreeBuilder* stt_builder,
+                   rsz::Resizer* resizer,
+                   utl::Logger* logger,
+                   Tcl_Interp* tcl_interp);
 
 void deleteTritonCts(cts::TritonCTS* tritoncts);
 
-}  // namespace ord
+}  // namespace cts

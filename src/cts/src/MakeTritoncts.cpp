@@ -6,37 +6,34 @@
 #include "CtsOptions.h"
 #include "cts/TritonCTS.h"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
-
-namespace cts {
-// Tcl files encoded into strings.
-extern const char* cts_tcl_inits[];
-}  // namespace cts
 
 extern "C" {
 extern int Cts_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace cts {
+
+extern const char* cts_tcl_inits[];
 
 cts::TritonCTS* makeTritonCts()
 {
   return new cts::TritonCTS();
 }
 
-void initTritonCts(OpenRoad* openroad)
+void initTritonCts(cts::TritonCTS* cts,
+                   odb::dbDatabase* db,
+                   sta::dbNetwork* network,
+                   sta::dbSta* sta,
+                   stt::SteinerTreeBuilder* stt_builder,
+                   rsz::Resizer* resizer,
+                   utl::Logger* logger,
+                   Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Cts_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, cts::cts_tcl_inits);
-  openroad->getTritonCts()->init(openroad->getLogger(),
-                                 openroad->getDb(),
-                                 openroad->getDbNetwork(),
-                                 openroad->getSta(),
-                                 openroad->getSteinerTreeBuilder(),
-                                 openroad->getResizer());
+  cts->init(logger, db, network, sta, stt_builder, resizer);
 }
 
 void deleteTritonCts(cts::TritonCTS* tritoncts)
@@ -44,4 +41,4 @@ void deleteTritonCts(cts::TritonCTS* tritoncts)
   delete tritoncts;
 }
 
-}  // namespace ord
+}  // namespace cts

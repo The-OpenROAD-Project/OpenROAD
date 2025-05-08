@@ -1,10 +1,10 @@
-#include "dpl/PlacementDRC.h"
+#include "PlacementDRC.h"
 
 #include <set>
 #include <string>
 
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 

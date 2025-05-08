@@ -224,6 +224,20 @@ def getParallelTests(String image) {
 }
 
 node {
+
+    def isDefaultBranch = (env.BRANCH_NAME == 'master') 
+    def daysToKeep = '20';
+    def numToKeep = (isDefaultBranch ? '-1' : '10');
+
+    properties([
+        buildDiscarder(logRotator(
+            daysToKeepStr:         daysToKeep,
+            artifactDaysToKeepStr: daysToKeep,
+
+            numToKeepStr:          numToKeep,
+            artifactNumToKeepStr:  numToKeep
+        ))
+    ]);
     stage('Checkout') {
         checkout scm;
     }

@@ -583,6 +583,13 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
   main_window->getDRCViewer()->selectCategory(markers);
 }
 
+void Gui::setDisplayControlsColor(const std::string& name,
+                                  const Painter::Color& color)
+{
+  const QColor qcolor(color.r, color.g, color.b, color.a);
+  main_window->getControls()->setControlByPath(name, qcolor);
+}
+
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
   main_window->getControls()->setControlByPath(
@@ -1624,10 +1631,6 @@ std::string Descriptor::Property::toString(const std::any& value)
 // Tcl files encoded into strings.
 extern const char* gui_tcl_inits[];
 
-}  // namespace gui
-
-namespace ord {
-
 extern "C" {
 extern int Gui_Init(Tcl_Interp* interp);
 }
@@ -1646,4 +1649,4 @@ void initGui(Tcl_Interp* interp,
   gui->init(db, sta, logger);
 }
 
-}  // namespace ord
+}  // namespace gui

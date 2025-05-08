@@ -1912,15 +1912,20 @@ void dbJournal::undo_deleteObject()
       uint obj_id;
       uint master_module_id;
       uint parent_module_id;
+      uint group_id;
       _log.pop(name);
       _log.pop(obj_id);
       _log.pop(parent_module_id);
       _log.pop(master_module_id);
+      _log.pop(group_id);
       dbModule* parent_module = dbModule::getModule(_block, parent_module_id);
       dbModule* master_module = dbModule::getModule(_block, master_module_id);
       auto mod_inst
           = dbModInst::create(parent_module, master_module, name.c_str());
-      (void) mod_inst;
+      if (group_id != 0) {
+        auto group = dbGroup::getGroup(_block, group_id);
+        group->addModInst(mod_inst);
+      }
       break;
     }
 

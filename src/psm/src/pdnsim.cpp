@@ -11,6 +11,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dpl/Opendp.h"
 #include "heatMap.h"
 #include "ir_network.h"
 #include "ir_solver.h"
@@ -257,6 +258,7 @@ void PDNSim::addDecapMaster(dbMaster* decap_master, double decap_cap)
 {
   opendp_->addDecapMaster(decap_master, decap_cap);
 }
+
 // Return the lowest layer of db_net route
 odb::dbTechLayer* PDNSim::getLowestLayer(odb::dbNet* db_net)
 {

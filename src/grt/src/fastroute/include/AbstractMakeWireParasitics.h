@@ -7,8 +7,10 @@
 
 #include "grt/GRoute.h"
 
+namespace odb {
+class dbNet;
+}
 namespace grt {
-
 class AbstractMakeWireParasitics
 {
  public:

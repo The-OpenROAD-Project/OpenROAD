@@ -53,6 +53,8 @@ clock_tree_synthesis
     [-clustering_unbalance_ratio]
     [-sink_clustering_size cluster_size]
     [-sink_clustering_max_diameter max_diameter]
+    [-macro_clustering_size cluster_size]
+    [-macro_clustering_max_diameter max_diameter]
     [-sink_clustering_enable]
     [-balance_levels]
     [-sink_clustering_levels levels]
@@ -64,6 +66,7 @@ clock_tree_synthesis
     [-dont_use_dummy_load]
     [-sink_buffer_max_cap_derate derate_value]
     [-delay_buffer_derate derate_value]
+    [-library liberty_library_name]
 ```
 
 #### Options
@@ -78,8 +81,10 @@ clock_tree_synthesis
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-macro_clustering_size` | Specifies the maximum number of sinks per cluster for the macro tree. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-macro_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the macro tree. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
@@ -89,7 +94,17 @@ clock_tree_synthesis
 | `-dont_use_dummy_load` | Don't apply dummy buffer or inverter cells at clock tree leaves to balance loads. The default values is `False`. |
 | `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
 | `-delay_buffer_derate` | This option balances latencies between macro cells and registers by inserting delay buffers.  The default value is `1.0`, meaning all needed delay buffers are inserted.  A value of 0.5 means only half of necessary delay buffers are inserted.  A value of 0.0 means no insertion of delay buffers. |
-| `-library` | This option specifies the name of library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
+| `-library` | This option specifies the name of Liberty library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
+
+#### Instance Name Prefixes
+
+`clock_tree_synthesis` uses the following prefixes for the instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| clkbuf_regs | Splitting registers from macros |
+| clkload | Dummy loads to help balance the clock tree |
+| delaybuf | Delay buffers to help balance the tree |
 
 ### Report CTS
 

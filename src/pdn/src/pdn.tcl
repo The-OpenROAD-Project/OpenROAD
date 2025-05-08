@@ -100,7 +100,7 @@ proc set_voltage_domain { args } {
     }
 
     if { [info exists keys(-name)] } {
-      set name [pdn::modify_voltage_domain_name $key(-name)]
+      set name [pdn::modify_voltage_domain_name $keys(-name)]
     } else {
       set name [$region getName]
     }

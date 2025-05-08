@@ -12,5 +12,6 @@ namespace ord {
 // Call this inside of Tcl_Main.
 void initOpenRoad(Tcl_Interp* interp,
                   const char* log_filename,
-                  const char* metrics_filename);
+                  const char* metrics_filename,
+                  bool batch_mode);
 }  // namespace ord

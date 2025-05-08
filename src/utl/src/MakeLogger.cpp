@@ -8,17 +8,12 @@
 #include "utl/Logger.h"
 #include "utl/decode.h"
 
-namespace utl {
-extern const char* utl_tcl_inits[];
-}
-
 extern "C" {
 extern int Utl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
-
-using utl::Logger;
+namespace utl {
+extern const char* utl_tcl_inits[];
 
 Logger* makeLogger(const char* log_filename, const char* metrics_filename)
 {
@@ -32,4 +27,4 @@ void initLogger(Logger* logger, Tcl_Interp* tcl_interp)
   utl::evalTclInit(tcl_interp, utl::utl_tcl_inits);
 }
 
-}  // namespace ord
+}  // namespace utl

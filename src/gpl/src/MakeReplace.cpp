@@ -6,34 +6,32 @@
 #include <tcl.h>
 
 #include "gpl/Replace.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
-
-namespace gpl {
-extern const char* gpl_tcl_inits[];
-}
 
 extern "C" {
 extern int Gpl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace gpl {
+
+extern const char* gpl_tcl_inits[];
 
 gpl::Replace* makeReplace()
 {
   return new gpl::Replace();
 }
 
-void initReplace(OpenRoad* openroad)
+void initReplace(gpl::Replace* replace,
+                 odb::dbDatabase* db,
+                 sta::dbSta* sta,
+                 rsz::Resizer* resizer,
+                 grt::GlobalRouter* global_route,
+                 utl::Logger* logger,
+                 Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Gpl_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, gpl::gpl_tcl_inits);
-  openroad->getReplace()->init(openroad->getDb(),
-                               openroad->getSta(),
-                               openroad->getResizer(),
-                               openroad->getGlobalRouter(),
-                               openroad->getLogger());
+  replace->init(db, sta, resizer, global_route, logger);
 }
 
 void deleteReplace(gpl::Replace* replace)
@@ -41,4 +39,4 @@ void deleteReplace(gpl::Replace* replace)
   delete replace;
 }
 
-}  // namespace ord
+}  // namespace gpl

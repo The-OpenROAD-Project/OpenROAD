@@ -8,11 +8,9 @@
 #include <vector>
 
 #include "AbstractMakeWireParasitics.h"
-#include "FastRoute.h"
-#include "Grid.h"
-#include "Net.h"
+#include "Pin.h"
 #include "db_sta/dbSta.hh"
-#include "grt/GlobalRouter.h"
+#include "grt/RoutePt.h"
 #include "sta/Clock.hh"
 #include "sta/Set.hh"
 
@@ -27,10 +25,6 @@ class ParasiticAnalysisPt;
 class Units;
 }  // namespace sta
 
-namespace ord {
-class OpenRoad;
-}
-
 namespace utl {
 class Logger;
 }
@@ -44,7 +38,7 @@ class Resizer;
 }
 
 namespace grt {
-
+class GlobalRouter;
 class MakeWireParasitics : public AbstractMakeWireParasitics
 {
  public:

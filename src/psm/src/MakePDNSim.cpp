@@ -5,35 +5,33 @@
 
 #include <tcl.h>
 
-#include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
 #include "utl/decode.h"
-
-namespace psm {
-extern const char* psm_tcl_inits[];
-}
 
 extern "C" {
 extern int Psm_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace psm {
+
+extern const char* psm_tcl_inits[];
 
 psm::PDNSim* makePDNSim()
 {
   return new psm::PDNSim();
 }
 
-void initPDNSim(OpenRoad* openroad)
+void initPDNSim(psm::PDNSim* pdnsim,
+                utl::Logger* logger,
+                odb::dbDatabase* db,
+                sta::dbSta* sta,
+                rsz::Resizer* resizer,
+                dpl::Opendp* opendp,
+                Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   Psm_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, psm::psm_tcl_inits);
-  openroad->getPDNSim()->init(openroad->getLogger(),
-                              openroad->getDb(),
-                              openroad->getSta(),
-                              openroad->getResizer(),
-                              openroad->getOpendp());
+  pdnsim->init(logger, db, sta, resizer, opendp);
 }
 
 void deletePDNSim(psm::PDNSim* pdnsim)
@@ -41,4 +39,4 @@ void deletePDNSim(psm::PDNSim* pdnsim)
   delete pdnsim;
 }
 
-}  // namespace ord
+}  // namespace psm

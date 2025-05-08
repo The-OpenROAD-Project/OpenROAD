@@ -18,6 +18,7 @@
 
 #include "gui/gui.h"
 #include "staGuiInterface.h"
+#include "utl/histogram.h"
 
 namespace sta {
 class Pin;
@@ -31,8 +32,6 @@ struct SlackHistogramData
 {
   StaPins constrained_pins;
   std::set<sta::Clock*> clocks;
-  float min = std::numeric_limits<float>::max();
-  float max = std::numeric_limits<float>::lowest();
 };
 
 struct Buckets
@@ -73,18 +72,16 @@ class HistogramView : public QChartView
   void contextMenuEvent(QContextMenuEvent* event) override;
 
  private:
-  void setBucketInterval();
+  float computeBucketInterval();
   float computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
-  int computeNumberofBuckets(float bucket_interval,
-                             float max_slack,
-                             float min_slack);
   int computeNumberOfDigits(float value);
 
+  void populateBins();
+  void populateBuckets(
+      const std::vector<std::vector<const sta::Pin*>>& pin_bins);
   void setVisualConfig();
 
-  void populateBuckets(const StaPins* end_points,
-                       const EndPointSlackMap* end_point_to_slack);
   std::pair<QBarSet*, QBarSet*> createBarSets();
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 
@@ -94,8 +91,6 @@ class HistogramView : public QChartView
   int computeYInterval(int largest_slack_count);
   int computeMaxYSnap(int largest_slack_count);
   int computeFirstDigit(int value, int digits);
-
-  void setLimits(const EndPointSlackMap& end_point_to_slack);
 
   utl::Logger* logger_;
   STAGuiInterface* sta_{nullptr};
@@ -107,16 +102,15 @@ class HistogramView : public QChartView
   QMenu* menu_;
 
   // Settings
-  float max_slack_;
-  float min_slack_;
-  float bucket_interval_;
   int precision_count_;  // Used to configure the x labels.
 
   // Data
   std::set<sta::Clock*> clocks_;
   Buckets buckets_;
+  std::unique_ptr<utl::Histogram<float>> histogram_;
 
   static constexpr int default_number_of_buckets_ = 15;
+  static constexpr int minimum_number_of_buckets_ = 8;
 };
 
 class ChartsWidget : public QDockWidget

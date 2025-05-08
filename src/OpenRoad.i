@@ -375,10 +375,12 @@ read_verilog_cmd(const char *filename)
 }
 
 void
-link_design_db_cmd(const char *design_name,bool hierarchy)
+link_design_db_cmd(const char *design_name,
+                   bool hierarchy,
+                   bool omit_filename_prop)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->linkDesign(design_name, hierarchy);
+  ord->linkDesign(design_name, hierarchy, omit_filename_prop);
 }
 
 void

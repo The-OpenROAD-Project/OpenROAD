@@ -54,4 +54,12 @@ debian/openroad
 obj-x86_64-linux-gnu/
 
 user.bazelrc
-bazel-*
+
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-OpenROAD
+
+projectview.bazelproject
+.bsp/
+.bazelbsp/

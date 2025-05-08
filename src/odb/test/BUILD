@@ -24,6 +24,7 @@ COMPULSORY_TESTS = [
     "bterm_hier_create",
     "check_routing_tracks",
     "create_sboxes",
+    "def_dup_net",
     "def_parser",
     "design_is_routed1",
     "design_is_routed2",
@@ -170,6 +171,7 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
+    visibility = ["//src/odb/test/cpp:__subpackages__"],
 )
 
 [

@@ -5,8 +5,8 @@
 
 #include <tcl.h>
 
-namespace ord {
+namespace odb {
 
 void initOdb(Tcl_Interp* interp);
 
-}  // namespace ord
+}  // namespace odb

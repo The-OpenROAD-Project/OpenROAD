@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>  // pair
 #include <vector>
 
@@ -37,6 +38,10 @@ using odb::Rect;
 class Node;
 class Group;
 class Master;
+class Edge;
+
+class Architecture;
+class Network;
 struct Pixel;
 
 class DplObserver;
@@ -124,6 +129,10 @@ class Opendp
 
   // Find a cluster of instances that are touching each other
   std::vector<dbInst*> getAdjacentInstancesCluster(dbInst* inst) const;
+  Padding* getPadding() { return padding_.get(); }
+  void improvePlacement(int seed,
+                        int max_displacement_x,
+                        int max_displacement_y);
 
  private:
   using bgPoint
@@ -154,14 +163,12 @@ class Opendp
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
-  void makeMacros();
-  void makeCells();
-  static bool isPlacedType(dbMasterType type);
-  void makeGroups();
+  void createNetwork();
+  void createArchitecture();
+  void setUpPlacementGroups();
+  void adjustNodesOrient();
   bool isMultiRow(const Node* cell) const;
   void updateDbInstLocations();
-
-  void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
 
@@ -302,14 +309,12 @@ class Opendp
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
+  odb::Rect core_;
+
+  std::unique_ptr<Architecture> arch_;  // Information about rows, etc.
+  std::unique_ptr<Network> network_;    // The netlist, cells, etc.
   std::shared_ptr<Padding> padding_;
   std::unique_ptr<PlacementDRC> drc_engine_;
-
-  std::vector<Node> cells_;
-  std::vector<Group> groups_;
-
-  std::map<const dbMaster*, Master> db_master_map_;
-  std::map<dbInst*, Node*> db_inst_map_;
 
   bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites

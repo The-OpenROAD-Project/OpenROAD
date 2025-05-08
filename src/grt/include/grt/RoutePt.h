@@ -9,10 +9,10 @@ class RoutePt
 {
  public:
   RoutePt() = default;
-  RoutePt(int x, int y, int layer);
-  int x() const { return x_; };
-  int y() const { return y_; };
-  int layer() const { return layer_; };
+  RoutePt(int x, int y, int layer) : x_(x), y_(y), layer_(layer) {}
+  int x() const { return x_; }
+  int y() const { return y_; }
+  int layer() const { return layer_; }
 
   friend bool operator<(const RoutePt& p1, const RoutePt& p2);
   friend bool operator==(const RoutePt& p1, const RoutePt& p2);

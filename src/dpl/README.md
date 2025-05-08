@@ -127,6 +127,16 @@ a weak attempt to reduce the total half-perimeter wirelength (HPWL).
 ```tcl
 optimize_mirroring
 ```
+### Improve Placement
+
+The `improve_placement` command optimizes a given placed design.
+
+```tcl
+improve_placement
+    [-random_seed seed]
+    [-max_displacement disp|{disp_x disp_y}]
+    [-disallow_one_site_gaps]
+```
 
 ## Useful Developer Commands
 

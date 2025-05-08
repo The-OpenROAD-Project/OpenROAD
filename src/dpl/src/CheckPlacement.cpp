@@ -8,11 +8,12 @@
 #include <string>
 #include <vector>
 
-#include "dpl/Grid.h"
-#include "dpl/Objects.h"
+#include "PlacementDRC.h"
 #include "dpl/Opendp.h"
-#include "dpl/Padding.h"
-#include "dpl/PlacementDRC.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "utl/Logger.h"
 namespace dpl {
 
@@ -27,6 +28,7 @@ void Opendp::checkPlacement(const bool verbose,
                             const std::string& report_file_name)
 {
   importDb();
+  adjustNodesOrient();
 
   std::vector<Node*> placed_failures;
   std::vector<Node*> in_rows_failures;
@@ -39,33 +41,36 @@ void Opendp::checkPlacement(const bool verbose,
   initGrid();
   groupAssignCellRegions();
   const auto& row_coords = grid_->getRowCoordinates();
-  for (Node& cell : cells_) {
-    if (cell.isStdCell()) {
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    if (cell->isStdCell()) {
       // Site alignment check
-      if (cell.getLeft() % grid_->getSiteWidth() != 0
-          || row_coords.find(cell.getBottom().v) == row_coords.end()) {
-        site_align_failures.push_back(&cell);
+      if (cell->getLeft() % grid_->getSiteWidth() != 0
+          || row_coords.find(cell->getBottom().v) == row_coords.end()) {
+        site_align_failures.push_back(cell.get());
         continue;
       }
 
-      if (!checkInRows(cell)) {
-        in_rows_failures.push_back(&cell);
+      if (!checkInRows(*cell)) {
+        in_rows_failures.push_back(cell.get());
       }
-      if (!checkRegionPlacement(&cell)) {
-        region_placement_failures.push_back(&cell);
+      if (!checkRegionPlacement(cell.get())) {
+        region_placement_failures.push_back(cell.get());
       }
     }
     // Placed check
-    if (!isPlaced(&cell)) {
-      placed_failures.push_back(&cell);
+    if (!isPlaced(cell.get())) {
+      placed_failures.push_back(cell.get());
     }
     // Overlap check
-    if (checkOverlap(cell)) {
-      overlap_failures.push_back(&cell);
+    if (checkOverlap(*cell)) {
+      overlap_failures.push_back(cell.get());
     }
     // EdgeSpacing check
-    if (!drc_engine_->checkEdgeSpacing(&cell)) {
-      edge_spacing_failures.emplace_back(&cell);
+    if (!drc_engine_->checkEdgeSpacing(cell.get())) {
+      edge_spacing_failures.emplace_back(cell.get());
     }
   }
   // This loop is separate because it needs to be done after the overlap check
@@ -74,10 +79,10 @@ void Opendp::checkPlacement(const bool verbose,
   // Otherwise, this check will miss the pixels that could have resulted in
   // one-site gap violations as null
   if (disallow_one_site_gaps_) {
-    for (Node& cell : cells_) {
+    for (auto& cell : network_->getNodes()) {
       // One site gap check
-      if (checkOneSiteGaps(cell)) {
-        one_site_gap_failures.push_back(&cell);
+      if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell)) {
+        one_site_gap_failures.push_back(cell.get());
       }
     }
   }
@@ -121,16 +126,15 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
                             odb::dbMarkerCategory* category,
                             const std::string& violation_type) const
 {
-  const Rect core = grid_->getCore();
   for (auto failure : failures) {
     odb::dbMarker* marker = odb::dbMarker::create(category);
     if (!marker) {
       break;
     }
-    int xMin = (failure->getLeft() + core.xMin()).v;
-    int yMin = (failure->getBottom() + core.yMin()).v;
-    int xMax = (failure->getLeft() + failure->getWidth() + core.xMin()).v;
-    int yMax = (failure->getBottom() + failure->getHeight() + core.yMin()).v;
+    int xMin = (failure->getLeft() + core_.xMin()).v;
+    int yMin = (failure->getBottom() + core_.yMin()).v;
+    int xMax = (failure->getLeft() + failure->getWidth() + core_.xMin()).v;
+    int yMax = (failure->getBottom() + failure->getHeight() + core_.yMin()).v;
 
     if (violation_type == "overlap") {
       const Node* o_cell = checkOverlap(*failure);
@@ -152,10 +156,10 @@ void Opendp::saveViolations(const std::vector<Node*>& failures,
       odb::Rect overlap_rect;
       o_rect.intersection(f_rect, overlap_rect);
 
-      xMin = overlap_rect.xMin() + core.xMin();
-      yMin = overlap_rect.yMin() + core.yMin();
-      xMax = overlap_rect.xMax() + core.xMin();
-      yMax = overlap_rect.yMax() + core.yMin();
+      xMin = overlap_rect.xMin() + core_.xMin();
+      yMin = overlap_rect.yMin() + core_.yMin();
+      xMax = overlap_rect.xMax() + core_.xMin();
+      yMax = overlap_rect.yMax() + core_.yMin();
 
       marker->addSource(o_cell->getDbInst());
     }

@@ -25,6 +25,7 @@
 // Resizer::makeBufferedNetGroute
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
+#include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
 #include "sta/Hash.hh"
 

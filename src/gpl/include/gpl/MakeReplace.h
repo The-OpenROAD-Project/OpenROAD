@@ -3,18 +3,38 @@
 
 #pragma once
 
-namespace gpl {
-class Replace;
+#include <tcl.h>
+
+namespace odb {
+class dbDatabase;
+}
+namespace sta {
+class dbSta;
+}
+namespace rsz {
+class Resizer;
+}
+namespace grt {
+class GlobalRouter;
+}
+namespace utl {
+class Logger;
 }
 
-namespace ord {
+namespace gpl {
 
-class OpenRoad;
+class Replace;
 
 gpl::Replace* makeReplace();
 
-void initReplace(OpenRoad* openroad);
+void initReplace(gpl::Replace* replace,
+                 odb::dbDatabase* db,
+                 sta::dbSta* sta,
+                 rsz::Resizer* resizer,
+                 grt::GlobalRouter* global_route,
+                 utl::Logger* logger,
+                 Tcl_Interp* tcl_interp);
 
 void deleteReplace(gpl::Replace* replace);
 
-}  // namespace ord
+}  // namespace gpl

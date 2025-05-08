@@ -4,35 +4,33 @@
 #include "rmp/MakeRestructure.h"
 
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "rmp/Restructure.h"
 #include "utl/decode.h"
-
-namespace rmp {
-extern const char* rmp_tcl_inits[];
-}
 
 extern "C" {
 extern int Rmp_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace rmp {
+
+extern const char* rmp_tcl_inits[];
 
 rmp::Restructure* makeRestructure()
 {
   return new rmp::Restructure();
 }
 
-void initRestructure(OpenRoad* openroad)
+void initRestructure(rmp::Restructure* restructure,
+                     utl::Logger* logger,
+                     sta::dbSta* sta,
+                     odb::dbDatabase* db,
+                     rsz::Resizer* resizer,
+                     Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Rmp_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, rmp::rmp_tcl_inits);
-  openroad->getRestructure()->init(openroad->getLogger(),
-                                   openroad->getSta(),
-                                   openroad->getDb(),
-                                   openroad->getResizer());
+  restructure->init(logger, sta, db, resizer);
 }
 
 void deleteRestructure(rmp::Restructure* restructure)
@@ -40,4 +38,4 @@ void deleteRestructure(rmp::Restructure* restructure)
   delete restructure;
 }
 
-}  // namespace ord
+}  // namespace rmp

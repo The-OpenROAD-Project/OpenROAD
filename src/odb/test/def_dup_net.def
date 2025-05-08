@@ -1,0 +1,15 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN segfault ;
+NETS 2 ;
+    - a
+        + ROUTED
+        metal2
+            ( 0 0 ) ( 0 0 ) ;
+    - a
+        + ROUTED
+        metal2
+            ( 0 0 ) ( 0 0 ) ;
+END NETS
+END DESIGN

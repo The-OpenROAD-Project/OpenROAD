@@ -14,12 +14,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
 #include "ord/OpenRoad.hh"
-  
+
 namespace ord {
 // Defined in OpenRoad.i
 rsz::Resizer *
 getResizer();
-utl::Logger* 
+utl::Logger*
 getLogger();
 void
 ensureLinked();
@@ -219,7 +219,7 @@ wire_clk_capacitance(const Corner *corner)
   return resizer->wireClkCapacitance(corner);
 }
 
-void 
+void
 estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
@@ -500,7 +500,7 @@ repair_net_cmd(Net *net,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairNet(net, max_length, slew_margin, cap_margin); 
+  resizer->repairNet(net, max_length, slew_margin, cap_margin);
 }
 
 bool

@@ -7,7 +7,7 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-namespace ord {
+namespace gui {
 
 // There is no make/delete GUI as it is created at startup and can't
 // be deleted.
@@ -17,4 +17,4 @@ void initGui(Tcl_Interp* interp,
              sta::dbSta* sta,
              utl::Logger* logger);
 
-}  // namespace ord
+}  // namespace gui

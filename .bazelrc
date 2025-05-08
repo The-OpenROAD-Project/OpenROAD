@@ -55,4 +55,4 @@ build --incompatible_strict_action_env
 #build --remote_cache=https://storage.googleapis.com/megaboom-bazel-artifacts
 #build --remote_cache_compression=true
 
-try-import %workspace$/user.bazelrc
+try-import %workspace%/user.bazelrc

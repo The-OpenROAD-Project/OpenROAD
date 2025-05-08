@@ -85,33 +85,39 @@ tmg_rcpt* tmg_conn::allocPt(int x, int y, dbTechLayer* layer)
   return pt;
 }
 
-void tmg_conn::addRc(const dbShape& s, const int from_idx, const int to_idx)
+void tmg_conn::addRc(const dbShape& s,
+                     const int from_idx,
+                     const int to_idx,
+                     dbTechNonDefaultRule* rule)
 {
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape._rect.reset(s.xMin(), s.yMin(), s.xMax(), s.yMax());
-  x._shape._layer = s.getTechLayer();
-  x._shape._tech_via = s.getTechVia();
-  x._shape._block_via = s.getVia();
-  x._shape._rule = nullptr;
-  if (x._shape._tech_via || x._shape._block_via) {
-    x._is_vertical = false;
-    x._width = 0;
+  bool is_vertical;
+  int width;
+  if (s.getTechVia() || s.getVia()) {
+    is_vertical = false;
+    width = 0;
   } else if (_ptV[from_idx]._x != _ptV[to_idx]._x) {
-    x._is_vertical = false;
-    x._width = s.yMax() - s.yMin();
+    is_vertical = false;
+    width = s.yMax() - s.yMin();
   } else if (_ptV[from_idx]._y != _ptV[to_idx]._y) {
-    x._is_vertical = true;
-    x._width = s.xMax() - s.xMin();
+    is_vertical = true;
+    width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
-    x._is_vertical = false;
-    x._width = s.xMax() - s.xMin();
+    is_vertical = false;
+    width = s.xMax() - s.xMin();
   } else {
-    x._is_vertical = false;
-    x._width = 0;
+    is_vertical = false;
+    width = 0;
   }
-  x._default_ext = x._width / 2;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{s.xMin(), s.yMin(), s.xMax(), s.yMax()},
+            s.getTechLayer(),
+            s.getTechVia(),
+            s.getVia(),
+            rule},
+           is_vertical,
+           width,
+           width / 2);
   _rcV.push_back(x);
 }
 
@@ -124,17 +130,17 @@ void tmg_conn::addRc(const int k,
                      const int xmax,
                      const int ymax)
 {
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape._rect.reset(xmin, ymin, xmax, ymax);
-  x._shape._layer = s._layer;
-  x._shape._tech_via = s._tech_via;
-  x._shape._block_via = s._block_via;
-  x._shape._rule = s._rule;
-  x._is_vertical = _rcV[k]._is_vertical;
-  x._width = _rcV[k]._width;
-  x._default_ext = x._width / 2;
+  const int width = _rcV[k]._width;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{xmin, ymin, xmax, ymax},
+            s.getTechLayer(),
+            s.getTechVia(),
+            s.getVia(),
+            s.getRule()},
+           _rcV[k]._is_vertical,
+           width,
+           width / 2);
   _rcV.push_back(x);
 }
 
@@ -146,16 +152,9 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
           && _ptV[from_idx]._y != _ptV[to_idx]._y)) {
     return nullptr;
   }
-  tmg_rc x;
-  x._from_idx = from_idx;
-  x._to_idx = to_idx;
-  x._shape._layer = layer;
-  x._shape._tech_via = nullptr;
-  x._shape._block_via = nullptr;
-  x._width = layer->getWidth();  // trouble for nondefault
-  x._is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
+  const bool is_vertical = (_ptV[from_idx]._y != _ptV[to_idx]._y);
   int xlo, ylo, xhi, yhi;
-  if (x._is_vertical) {
+  if (is_vertical) {
     xlo = _ptV[from_idx]._x;
     xhi = xlo;
     std::tie(ylo, yhi) = std::minmax(_ptV[from_idx]._y, _ptV[to_idx]._y);
@@ -164,12 +163,18 @@ tmg_rc* tmg_conn::addRcPatch(const int from_idx, const int to_idx)
     yhi = ylo;
     std::tie(xlo, xhi) = std::minmax(_ptV[from_idx]._x, _ptV[to_idx]._x);
   }
-  const int hw = x._width / 2;
-  x._default_ext = hw;
-  x._shape._rect.reset(xlo - hw, ylo - hw, xhi + hw, yhi + hw);
+  const int width = layer->getWidth();  // trouble for nondefault
+  const int hw = width / 2;
+  tmg_rc x(from_idx,
+           to_idx,
+           {{xlo - hw, ylo - hw, xhi + hw, yhi + hw}, layer, nullptr, nullptr},
+           is_vertical,
+           width,
+           hw);
   _rcV.push_back(x);
   return &_rcV.back();
 }
+
 void tmg_conn::addITerm(dbITerm* iterm)
 {
   _csVV.emplace_back();
@@ -287,7 +292,6 @@ void tmg_conn::loadSWire(dbNet* net)
 
       allocPt(x2, y2, layer2);
       addRc(shape, _ptV.size() - 2, _ptV.size() - 1);
-      _rcV.back()._shape._rule = nullptr;
     }
   }
 }
@@ -307,8 +311,7 @@ void tmg_conn::loadWire(dbWire* wire)
     dbWirePathShape pathShape;
     while (pitr.getNextShape(pathShape)) {
       allocPt(pathShape.point.getX(), pathShape.point.getY(), pathShape.layer);
-      addRc(pathShape.shape, _ptV.size() - 2, _ptV.size() - 1);
-      _rcV.back()._shape._rule = path.rule;
+      addRc(pathShape.shape, _ptV.size() - 2, _ptV.size() - 1, path.rule);
     }
   }
 
@@ -338,7 +341,7 @@ void tmg_conn::splitBySj(const int j,
     if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
-    tmg_rc_sh* sk = &(_rcV[k]._shape);
+    const tmg_rc_sh* sk = &(_rcV[k]._shape);
     if (sk->isVia()) {
       continue;
     }
@@ -1671,11 +1674,11 @@ void tmg_conn::addToWire(const int fr,
   tmg_rc* rc = (k >= 0) ? &_rcV[k] : nullptr;
   int fr_id = _ptV[fr]._dbwire_id;
   dbTechLayerRule* lyr_rule = nullptr;
-  if (rc->_shape._rule) {
-    lyr_rule = rc->_shape._rule->getLayerRule(_ptV[fr]._layer);
+  if (rc->_shape.getRule()) {
+    lyr_rule = rc->_shape.getRule()->getLayerRule(_ptV[fr]._layer);
   }
   if (fr_id < 0) {
-    _path_rule = rc->_shape._rule;
+    _path_rule = rc->_shape.getRule();
     _firstSegmentAfterVia = 0;
     if (_last_id >= 0) {
       // term feedthru
@@ -1710,7 +1713,7 @@ void tmg_conn::addToWire(const int fr,
       }
     }
   } else if (fr_id != _last_id) {
-    _path_rule = rc->_shape._rule;
+    _path_rule = rc->_shape.getRule();
     if (rc->_shape.isVia()) {
       if (_path_rule) {
         _encoder.newPath(fr_id, lyr_rule);
@@ -1745,10 +1748,10 @@ void tmg_conn::addToWire(const int fr,
         _encoder.addBTerm(x->_bterm);
       }
     }
-  } else if (_path_rule != rc->_shape._rule) {
+  } else if (_path_rule != rc->_shape.getRule()) {
     // make a branch, for taper
 
-    _path_rule = rc->_shape._rule;
+    _path_rule = rc->_shape.getRule();
     if (rc->_shape.isVia()) {
       if (_path_rule) {
         _encoder.newPath(fr_id, lyr_rule);

@@ -422,15 +422,28 @@ void dbModule::destroy(dbModule* module)
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
   dbSet<dbModBTerm>::iterator modbterm_itr;
   for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    dbModBTerm* modbterm = *modbterm_itr;
+    // as a side effect this will journal the disconnection
+    // so it can be undone.
+    modbterm->disconnect();
     modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
 
+  // destroy the modnets last. At this point we expect them
+  // to be totally disconnected (we have disconnected them
+  // from any dbModules, dbModInst and dbITerm/dbBTerm.
+  //
   dbSet<dbModNet> modnets = module->getModNets();
   dbSet<dbModNet>::iterator modnet_itr;
   for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
+  dbProperty::destroyProperties(_module);
+
+  // Journal the deletion of the dbModule after its ports
+  // and properties deleted, so that on restore we have
+  // dbModule to hang objects on.
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
@@ -439,7 +452,6 @@ void dbModule::destroy(dbModule* module)
     block->_journal->endAction();
   }
 
-  dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);
 }
@@ -536,7 +548,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
     return module;
   }
 
-  std::map<std::string, int>& name_id_map
+  std::unordered_map<std::string, int>& name_id_map
       = ((_dbBlock*) block)->_module_name_id_map;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
@@ -717,11 +729,11 @@ void dbModule::copyModuleInsts(dbModule* old_module,
                          ? std::move(old_inst_name).substr(first_idx + 1)
                          : std::move(old_inst_name);
 
-    dbInst* new_inst = dbInst::create(new_module->getOwner(),
-                                      old_inst->getMaster(),
-                                      new_inst_name.c_str(),
-                                      /* phyical only */ false,
-                                      new_module);
+    dbInst* new_inst = dbInst::makeUniqueDbInst(new_module->getOwner(),
+                                                old_inst->getMaster(),
+                                                new_inst_name.c_str(),
+                                                /* phyical only */ false,
+                                                new_module);
     if (new_inst) {
       debugPrint(logger,
                  utl::ODB,

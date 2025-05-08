@@ -18,6 +18,11 @@
 #include "odb/defin.h"
 #include "utl/Logger.h"
 
+// TODO: not needed after fully switching to bazel
+#ifndef DATA_PREFIX
+#define DATA_PREFIX ""
+#endif
+
 namespace odb {
 
 TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
@@ -27,8 +32,10 @@ TEST_F(Nangate45TestFixture, PolygonalFloorplanCreatesBlockagesInNegativeSpace)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(
-      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  dbChip* chip = def_parser.createChip(libs,
+                                       DATA_PREFIX
+                                       "data/nangate45_polygon_floorplan.def",
+                                       lib_->getTech());
   EXPECT_NE(chip, nullptr);
 
   // Assert
@@ -70,8 +77,10 @@ TEST_F(Nangate45TestFixture, SettingTheFloorplanTwiceClearsSystemBlockages)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(
-      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  dbChip* chip = def_parser.createChip(libs,
+                                       DATA_PREFIX
+                                       "data/nangate45_polygon_floorplan.def",
+                                       lib_->getTech());
   EXPECT_NE(chip, nullptr);
 
   odb::Polygon new_die_area({{0, 0},
@@ -120,8 +129,10 @@ TEST_F(Nangate45TestFixture, DeletingSystemBlockagesThrows)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(
-      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  dbChip* chip = def_parser.createChip(libs,
+                                       DATA_PREFIX
+                                       "data/nangate45_polygon_floorplan.def",
+                                       lib_->getTech());
   EXPECT_NE(chip, nullptr);
   dbBlock* block = chip->getBlock();
 
@@ -149,8 +160,10 @@ TEST_F(Nangate45TestFixture, DeletingSystemObstructionsThrows)
   std::vector<dbLib*> libs = {lib_.get()};
 
   // Act
-  dbChip* chip = def_parser.createChip(
-      libs, "data/nangate45_polygon_floorplan.def", lib_->getTech());
+  dbChip* chip = def_parser.createChip(libs,
+                                       DATA_PREFIX
+                                       "data/nangate45_polygon_floorplan.def",
+                                       lib_->getTech());
   EXPECT_NE(chip, nullptr);
   dbBlock* block = chip->getBlock();
   // Assert

@@ -278,6 +278,24 @@ bool UniqueInsts::hasUnique(frInst* inst) const
   return inst_to_unique_.find(inst) != inst_to_unique_.end();
 }
 
+void UniqueInsts::forceInstAsClassHead(frInst* target_inst)
+{
+  UniqueInsts::InstSet& unique_class = *inst_to_class_[target_inst];
+  UniqueInsts::InstSet temporary_set;
+  for (frInst* inst : unique_class) {
+    if (inst != target_inst) {
+      temporary_set.insert(inst);
+    }
+  }
+  for (frInst* inst : temporary_set) {
+    deleteInst(inst);
+  }
+  // target inst is now the only inst in the set, therefore its head
+  for (frInst* inst : temporary_set) {
+    addInst(inst);
+  }
+}
+
 // deleteInst has to be called both when an instance is deleted and might
 // be needed when moved
 frInst* UniqueInsts::deleteInst(frInst* inst)

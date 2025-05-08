@@ -7,16 +7,14 @@
 
 #include "utl/decode.h"
 
-namespace odb {
-// Tcl files encoded into strings.
-extern const char* odbtcl_tcl_inits[];
-}  // namespace odb
-
 extern "C" {
 extern int Odbtcl_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace odb {
+
+// Tcl files encoded into strings.
+extern const char* odbtcl_tcl_inits[];
 
 void initOdb(Tcl_Interp* interp)
 {
@@ -26,4 +24,4 @@ void initOdb(Tcl_Interp* interp)
   utl::evalTclInit(interp, odb::odbtcl_tcl_inits);
 }
 
-}  // namespace ord
+}  // namespace odb

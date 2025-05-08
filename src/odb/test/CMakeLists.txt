@@ -5,6 +5,7 @@ or_integration_tests(
     bterm_hier_create
     check_routing_tracks
     create_sboxes
+    def_dup_net
     def_parser
     design_is_routed1
     design_is_routed2

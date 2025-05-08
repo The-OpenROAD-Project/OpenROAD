@@ -40,7 +40,6 @@ target_link_libraries(psm
     rsz_lib
     Eigen3::Eigen
     gui
-    pad
     Boost::boost
 )
 
@@ -70,7 +69,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       odb
       psm
-      dpl_lib
   )
 
 endif()

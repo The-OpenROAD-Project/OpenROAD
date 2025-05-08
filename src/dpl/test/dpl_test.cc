@@ -1,5 +1,3 @@
-#include <unistd.h>
-
 #include <memory>
 
 #include "dpl/Opendp.h"

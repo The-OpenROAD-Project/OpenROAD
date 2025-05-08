@@ -739,8 +739,8 @@ gui::set_display_controls
 | Switch Name | Description |
 | ---- | ---- |
 | `name` |  is the name of the control. For example, for the power nets option this would be ``Signals/Power`` or could be ``Layers/*`` to set the option for all the layers. |
-| `display_type` | is either ``visible`` or ``selectable`` |
-| `value` |is either ``true`` or ``false`` |
+| `display_type` | is either ``visible``, ``selectable``, ``color`` |
+| `value` | is either ``true`` or ``false`` for ``visible`` or ``selectable`` or the name of the color |
 
 ### Check Display Controls
 

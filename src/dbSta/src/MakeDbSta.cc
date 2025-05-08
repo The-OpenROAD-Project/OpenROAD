@@ -10,7 +10,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 extern "C" {
@@ -18,12 +17,8 @@ extern int Dbsta_Init(Tcl_Interp* interp);
 }
 
 namespace sta {
+
 extern const char* dbSta_tcl_inits[];
-}
-
-namespace ord {
-
-using sta::dbSta;
 
 void deleteDbSta(sta::dbSta* sta)
 {
@@ -31,16 +26,15 @@ void deleteDbSta(sta::dbSta* sta)
   sta::Sta::setSta(nullptr);
 }
 
-void initDbSta(OpenRoad* openroad)
+void initDbSta(sta::dbSta* sta,
+               utl::Logger* logger,
+               Tcl_Interp* tcl_interp,
+               odb::dbDatabase* db)
 {
-  dbSta* sta = openroad->getSta();
   sta::initSta();
 
-  utl::Logger* logger = openroad->getLogger();
-  sta->initVars(openroad->tclInterp(), openroad->getDb(), logger);
+  sta->initVars(tcl_interp, db, logger);
   sta::Sta::setSta(sta);
-
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
 
   // Define swig TCL commands.
   Dbsta_Init(tcl_interp);
@@ -48,4 +42,4 @@ void initDbSta(OpenRoad* openroad)
   utl::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
 }
 
-}  // namespace ord
+}  // namespace sta

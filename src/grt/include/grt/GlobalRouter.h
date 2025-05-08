@@ -12,8 +12,8 @@
 #include <vector>
 
 #include "GRoute.h"
-#include "RoutePt.h"
-#include "ant/AntennaChecker.hh"
+#include "ant/GlobalRouteSource.hh"
+#include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -94,15 +94,6 @@ enum class NetType
   Signal,
   Antenna,
   All
-};
-
-struct PinGridLocation
-{
-  PinGridLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm, odb::Point pt);
-
-  odb::dbITerm* iterm_;
-  odb::dbBTerm* bterm_;
-  odb::Point pt_;
 };
 
 using Guides = std::vector<std::pair<int, odb::Rect>>;

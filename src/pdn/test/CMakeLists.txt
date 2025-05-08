@@ -102,6 +102,7 @@ or_integration_tests(
     region_non_rect
     region_secondary_nets
     region_temp_sensor
+    region_temp_sensor_different_region_name
     repair_channel_inf_loop
     repair_vias
     report

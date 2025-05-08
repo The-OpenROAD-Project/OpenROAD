@@ -15,6 +15,7 @@ add_library(mpl_lib
   src/SACoreHardMacro.cpp
   src/SACoreSoftMacro.cpp
   src/clusterEngine.cpp
+  src/shapes.cpp
 )
 
 target_include_directories(mpl_lib

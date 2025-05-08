@@ -3,18 +3,37 @@
 
 #pragma once
 
-namespace rmp {
-class Restructure;
+#include <tcl.h>
+
+namespace utl {
+class Logger;
 }
 
-namespace ord {
+namespace sta {
+class dbSta;
+}
 
-class OpenRoad;
+namespace odb {
+class dbDatabase;
+}
+
+namespace rsz {
+class Resizer;
+}
+
+namespace rmp {
+
+class Restructure;
 
 rmp::Restructure* makeRestructure();
 
-void initRestructure(OpenRoad* openroad);
+void initRestructure(rmp::Restructure* restructure,
+                     utl::Logger* logger,
+                     sta::dbSta* sta,
+                     odb::dbDatabase* db,
+                     rsz::Resizer* resizer,
+                     Tcl_Interp* tcl_interp);
 
 void deleteRestructure(rmp::Restructure* restructure);
 
-}  // namespace ord
+}  // namespace rmp

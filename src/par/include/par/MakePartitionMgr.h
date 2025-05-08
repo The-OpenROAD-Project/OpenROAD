@@ -3,18 +3,37 @@
 
 #pragma once
 
-namespace par {
-class PartitionMgr;
+#include <tcl.h>
+
+namespace odb {
+class dbDatabase;
 }
 
-namespace ord {
+namespace sta {
+class dbNetwork;
+}
 
-class OpenRoad;
+namespace sta {
+class dbSta;
+}
+
+namespace utl {
+class Logger;
+}
+
+namespace par {
+
+class PartitionMgr;
 
 par::PartitionMgr* makePartitionMgr();
 
-void initPartitionMgr(OpenRoad* openroad);
+void initPartitionMgr(par::PartitionMgr* partitioner,
+                      odb::dbDatabase* db,
+                      sta::dbNetwork* db_network,
+                      sta::dbSta* sta,
+                      utl::Logger* logger,
+                      Tcl_Interp* tcl_interp);
 
 void deletePartitionMgr(par::PartitionMgr* partitionmgr);
 
-}  // namespace ord
+}  // namespace par

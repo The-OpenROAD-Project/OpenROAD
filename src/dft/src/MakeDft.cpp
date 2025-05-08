@@ -6,7 +6,6 @@
 #include "DftConfig.hh"
 #include "ScanReplace.hh"
 #include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
 
 namespace dft {
@@ -21,13 +20,15 @@ dft::Dft* makeDft()
   return new dft::Dft();
 }
 
-void initDft(ord::OpenRoad* openroad)
+void initDft(dft::Dft* dft,
+             odb::dbDatabase* db,
+             sta::dbSta* sta,
+             utl::Logger* logger,
+             Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* interp = openroad->tclInterp();
-  Dft_Init(interp);
-  utl::evalTclInit(interp, dft::dft_tcl_inits);
-  openroad->getDft()->init(
-      openroad->getDb(), openroad->getSta(), openroad->getLogger());
+  Dft_Init(tcl_interp);
+  utl::evalTclInit(tcl_interp, dft::dft_tcl_inits);
+  dft->init(db, sta, logger);
 }
 
 void deleteDft(dft::Dft* dft)
