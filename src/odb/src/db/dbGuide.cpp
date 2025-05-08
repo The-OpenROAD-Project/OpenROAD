@@ -273,13 +273,13 @@ void dbGuide::setIsJumper(bool jumper)
 void dbGuide::addConnectedITerm(dbITerm* iterm)
 {
   _dbGuide* guide = (_dbGuide*) this;
-  guide->connected_iterms_.push_back(iterm->getId());
+  guide->connected_iterms_.emplace_back(iterm->getId());
 }
 
 void dbGuide::addConnectedBTerm(dbBTerm* bterm)
 {
   _dbGuide* guide = (_dbGuide*) this;
-  guide->connected_bterms_.push_back(bterm->getId());
+  guide->connected_bterms_.emplace_back(bterm->getId());
 }
 
 std::vector<dbITerm*> dbGuide::getConnectedITerms()
@@ -287,6 +287,7 @@ std::vector<dbITerm*> dbGuide::getConnectedITerms()
   _dbGuide* guide = (_dbGuide*) this;
   _dbBlock* block = (_dbBlock*) guide->getImpl()->getOwner();
   std::vector<dbITerm*> connected_iterms;
+  connected_iterms.reserve(guide->connected_iterms_.size());
   for (const auto& iterm_id : guide->connected_iterms_) {
     connected_iterms.push_back((dbITerm*) block->_iterm_tbl->getPtr(iterm_id));
   }
@@ -299,6 +300,7 @@ std::vector<dbBTerm*> dbGuide::getConnectedBTerms()
   _dbGuide* guide = (_dbGuide*) this;
   _dbBlock* block = (_dbBlock*) guide->getImpl()->getOwner();
   std::vector<dbBTerm*> connected_bterms;
+  connected_bterms.reserve(guide->connected_bterms_.size());
   for (const auto& bterm_id : guide->connected_bterms_) {
     connected_bterms.push_back((dbBTerm*) block->_bterm_tbl->getPtr(bterm_id));
   }
