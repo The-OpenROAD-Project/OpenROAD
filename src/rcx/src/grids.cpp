@@ -2356,7 +2356,7 @@ GridTable::~GridTable()
   delete _wirePool;
 
   for (uint ii = 0; ii < _rowCnt; ii++) {
-    for (uint jj = 0; jj < _rowCnt; jj++) {
+    for (uint jj = 0; jj < _colCnt; jj++) {
       delete _gridTable[ii][jj];
     }
     delete[] _gridTable[ii];
