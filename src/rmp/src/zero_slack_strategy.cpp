@@ -74,7 +74,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
         = cut.BuildMappedAbcNetwork(abc_library, network, logger);
 
-    DelayOptimizationStrategy strategy(sta);
+    DelayOptimizationStrategy strategy;
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
         = strategy.Optimize(mapped_abc_network.get(), abc_library, logger);
 

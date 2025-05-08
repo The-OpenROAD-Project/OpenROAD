@@ -90,6 +90,8 @@ class RepairSetup : public sta::dbStaState
  private:
   void init();
   bool repairPath(Path* path, Slack path_slack, float setup_slack_margin);
+  int fanout(Vertex* vertex);
+  bool hasTopLevelOutputPort(Net* net);
 
   void printProgress(int iteration,
                      bool force,
@@ -103,7 +105,6 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts);
   void repairSetupLastGasp(const OptoParams& params, int& num_viols);
-  int fanout(Vertex* vertex);
 
   Logger* logger_ = nullptr;
   dbNetwork* db_network_ = nullptr;

@@ -551,7 +551,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
-  DelayOptimizationStrategy strat(sta_.get());
+  DelayOptimizationStrategy strat;
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
       = strat.Optimize(mapped_abc_network.get(), abc_library, &logger_);
 

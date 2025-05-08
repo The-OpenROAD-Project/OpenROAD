@@ -173,11 +173,6 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
           resizer_->journalEnd();
           break;
         }
-        int resize_count = 100;
-        int inserted_buffer_count = 100;
-        int cloned_gate_count = 100;
-        int swap_pin_count = 100;
-        int removed_buffer_count = 100;
         resizer_->journalRestore();
         debugPrint(logger_,
                    RSZ,
