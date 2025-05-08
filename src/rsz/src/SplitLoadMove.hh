@@ -32,7 +32,6 @@ class SplitLoadMove : public BaseMove
 
   const char* name() const override { return "SplitLoadMove"; }
 
- private:
 };
 
 }  // namespace rsz
