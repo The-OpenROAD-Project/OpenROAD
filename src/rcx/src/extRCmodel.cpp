@@ -1496,12 +1496,24 @@ extMetRCTable::~extMetRCTable()
     delete _resOver[ii];
     delete _capOver[ii];
     delete _capOverUnder[ii];
+
+    for (uint jj = 0; jj < _wireCnt; jj++) {
+      delete _capOver_open[ii][jj];
+      delete _capUnder_open[ii][jj];
+      delete _capOverUnder_open[ii][jj];
+    }
+    delete[] _capOver_open[ii];
+    delete[] _capUnder_open[ii];
+    delete[] _capOverUnder_open[ii];
   }
   delete[] _resOver;
   delete[] _capOver;
   delete[] _capDiagUnder;
   delete[] _capUnder;
   delete[] _capOverUnder;
+  delete[] _capOver_open;
+  delete[] _capUnder_open;
+  delete[] _capOverUnder_open;
 }
 
 void extMetRCTable::allocDiagUnderTable(uint met,
