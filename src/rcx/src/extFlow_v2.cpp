@@ -684,6 +684,7 @@ bool extRCModel::spotModelsInRules(char* name,
                                    bool& overunder1,
                                    bool& via_res)
 {
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -764,6 +765,7 @@ bool extRCModel::readRules(char* name,
 
   diag = false;
   uint cnt = 0;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -1054,6 +1056,7 @@ bool extRCModel::readRules_v2(char* name,
 
   diag = false;
   uint cnt = 0;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
