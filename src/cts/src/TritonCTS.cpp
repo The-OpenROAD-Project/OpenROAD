@@ -796,11 +796,11 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
   for (sta::LibertyCell* buffer : selected_buffers) {
     buffers.emplace_back(buffer->name());
     debugPrint(logger_,
-      CTS,
-      "buffering",
-      1,
-      "{} has been inferred as clock buffer",
-      buffer->name());
+               CTS,
+               "buffering",
+               1,
+               "{} has been inferred as clock buffer",
+               buffer->name());
   }
 
   options_->setBufferListInferred(true);
