@@ -230,36 +230,14 @@ void BufferedNet::setMaxLoadSlew(float max_slew)
   max_load_slew_ = max_slew;
 }
 
-void BufferedNet::setRequiredPath(const Path* path)
+void BufferedNet::setSlackTransition(const sta::RiseFallBoth* transitions)
 {
-  required_path_ = path;
+  slack_transitions_ = transitions;
 }
 
-void BufferedNet::setArrivalPath(const Path* path)
+void BufferedNet::setSlack(Delay slack)
 {
-  arrival_path_ = path;
-}
-
-Required BufferedNet::required() const
-{
-  if (required_path_) {
-    return required_path_->required() - required_delay_;
-  }
-  return INF;
-}
-
-Required BufferedNet::slack() const
-{
-  if (required_path_) {
-    return required_path_->required() - required_delay_
-           - arrival_path_->arrival();
-  }
-  return INF;
-}
-
-void BufferedNet::setRequiredDelay(Delay delay)
-{
-  required_delay_ = delay;
+  slack_ = slack;
 }
 
 void BufferedNet::setDelay(Delay delay)

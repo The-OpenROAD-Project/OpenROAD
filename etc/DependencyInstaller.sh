@@ -57,10 +57,10 @@ _installCommonDev() {
     if [[ "${arch}" == "aarch64" ]]; then
         cmakeChecksum="6a6af752af4b1eae175e1dd0459ec850"
     else
-        cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
+        cmakeChecksum="f4d3e86abf624d73ee8dae826bbd6121"
     fi
-    cmakeVersionBig=3.24
-    cmakeVersionSmall=${cmakeVersionBig}.2
+    cmakeVersionBig=3.31
+    cmakeVersionSmall=${cmakeVersionBig}.6
     pcreVersion=10.42
     pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
     swigVersion=4.1.0
@@ -184,6 +184,7 @@ _installCommonDev() {
     else
         echo "Cudd already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D cudd_ROOT=$(realpath $cuddPrefix) "
 
     # CUSP
     cuspPrefix=${PREFIX:-"/usr/local/include"}
@@ -195,6 +196,7 @@ _installCommonDev() {
     else
         echo "CUSP already installed."
     fi
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D cusp_ROOT=$(realpath $cuspPrefix) "
 
     # lemon
     lemonPrefix=${PREFIX:-"/usr/local"}
@@ -314,6 +316,10 @@ _installOrTools() {
         if [[ $osVersion == rodete ]]; then
             osVersion=11
         fi
+        if [[ $os == ubuntu && $osVersion == 25.04 ]]; then
+            # FIXME make do with or-tools for 24.04 until an official release for 25.04 is available
+            osVersion=24.04
+        fi
         orToolsFile=or-tools_${arch}_${os}-${osVersion}_cpp_v${orToolsVersionSmall}.tar.gz
         eval wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
         if command -v brew &> /dev/null; then
@@ -358,7 +364,6 @@ _installUbuntuPackages() {
         libpcre2-dev \
         libpcre3-dev \
         libreadline-dev \
-        libtcl \
         pandoc \
         python3-dev \
         qt5-image-formats-plugins \
@@ -372,7 +377,15 @@ _installUbuntuPackages() {
 
     packages=()
     # Chose Python version
-    if _versionCompare $1 -ge 24.04; then
+    if _versionCompare $1 -ge 25.04; then
+        packages+=("libtcl8.6")
+    else
+        packages+=("libtcl")
+    fi
+    # Chose Python version
+    if _versionCompare $1 -ge 25.04; then
+        packages+=("libpython3.13")
+    elif _versionCompare $1 -ge 24.04; then
         packages+=("libpython3.12")
     elif _versionCompare $1 -ge 22.10; then
         packages+=("libpython3.11")
@@ -861,9 +874,11 @@ case "${os}" in
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
             # set version for non LTS
-            if _versionCompare ${ubuntuVersion} -gt 24.04; then
+            if _versionCompare ${ubuntuVersion} -ge 25.04; then
+                ubuntuVersion=25.04
+            elif _versionCompare ${ubuntuVersion} -ge 24.04; then
                 ubuntuVersion=24.04
-            elif _versionCompare ${ubuntuVersion} -gt 22.04; then
+            elif _versionCompare ${ubuntuVersion} -ge 22.04; then
                 ubuntuVersion=22.04
             else
                 ubuntuVersion=20.04

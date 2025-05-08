@@ -2211,6 +2211,7 @@ class extMain
 
   double getTotalNetCap(uint netId, uint cornerNum);
   void initContextArray();
+  void removeContextArray();
   void initDgContextArray();
   void removeDgContextArray();
 
@@ -2745,6 +2746,7 @@ class extMain
 
   Ath__array1D<int>** _ccContextArray = nullptr;
   Ath__array1D<int>** _ccMergedContextArray = nullptr;
+  uint _ccContextPlanes;
 
   uint _extRun = 0;
   odb::dbExtControl* _prevControl = nullptr;

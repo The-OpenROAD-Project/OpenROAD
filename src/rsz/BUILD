@@ -59,11 +59,12 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
+        "@tk_tcl//:tcl",
     ],
 )
 
 tcl_encode(
-    name = "resizer_tcl",
+    name = "tcl",
     srcs = [
         "src/Resizer.tcl",
     ],
@@ -72,7 +73,7 @@ tcl_encode(
 )
 
 tcl_wrap_cc(
-    name = "resizer_swig",
+    name = "swig",
     srcs = [
         "src/Resizer.i",
         "//:error_swig",
@@ -82,7 +83,7 @@ tcl_wrap_cc(
     namespace_prefix = "rsz",
     root_swig_src = "src/Resizer.i",
     swig_includes = [
-        "src",
         "../sta",
+        "src",
     ],
 )
