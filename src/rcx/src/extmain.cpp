@@ -110,7 +110,13 @@ extMain::extMain()
 extMain::~extMain()
 {
   _search.reset();
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
+
   delete _modelTable;
+  delete[] _tmpResTable;
+  delete[] _tmpSumResTable;
   removeDgContextArray();
   removeContextArray();
 }

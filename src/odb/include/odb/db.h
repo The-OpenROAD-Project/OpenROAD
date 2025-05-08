@@ -5658,7 +5658,7 @@ class dbMaster : public dbObject
   ///
   /// Set _sequential of this master.
   ///
-  void setSequential(uint v);
+  void setSequential(bool v);
 
   ///
   /// Returns _sequential this master
@@ -5766,6 +5766,11 @@ class dbMTerm : public dbObject
   /// Get the signal type of this master-terminal.
   ///
   dbSigType getSigType();
+
+  ///
+  /// Set the signal type of this master-terminal.
+  ///
+  void setSigType(dbSigType type);
 
   ///
   /// Get the IO direction of this master-terminal.
@@ -8112,7 +8117,7 @@ class dbModNet : public dbObject
   dbSet<dbModBTerm> getModBTerms();
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
-
+  unsigned connectionCount();
   const char* getName() const;
   void rename(const char* new_name);
   static dbModNet* getModNet(dbBlock* block, uint id);

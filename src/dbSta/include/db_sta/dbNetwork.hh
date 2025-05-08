@@ -175,6 +175,7 @@ class dbNetwork : public ConcreteNetwork
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
   void replaceHierModule(dbModInst* mod_inst, dbModule* module);
+  void removeUnusedPortsAndPinsOnModuleInstances();
 
   ////////////////////////////////////////////////////////////////
   //
