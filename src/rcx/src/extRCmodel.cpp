@@ -2162,6 +2162,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
 
 extRCModel::~extRCModel()
 {
+  free(_ruleFileName);
   delete _resOver;
   delete _capOver;
   delete _capUnder;
