@@ -31,7 +31,7 @@ namespace rsz {
 
 bool BufferMove::doMove(const Path* drvr_path,
                         int drvr_index,
-                        const Slack drvr_slack,
+                        Slack drvr_slack,
                         PathExpanded* expanded,
                         float setup_slack_margin)
 {

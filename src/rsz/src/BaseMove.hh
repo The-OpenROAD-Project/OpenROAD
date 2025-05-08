@@ -112,7 +112,7 @@ class BaseMove : public sta::dbStaState
   ~BaseMove() override = default;
 
   virtual bool doMove(const Path* drvr_path,
-                      const int drvr_index,
+                      int drvr_index,
                       Slack drvr_slack,
                       PathExpanded* expanded,
                       float setup_slack_margin)

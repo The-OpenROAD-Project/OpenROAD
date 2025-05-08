@@ -48,7 +48,7 @@ namespace rsz {
 // 4) it doesn't worsen slack
 bool UnbufferMove::doMove(const Path* drvr_path,
                           int drvr_index,
-                          const Slack drvr_slack,
+                          Slack drvr_slack,
                           PathExpanded* expanded,
                           float setup_slack_margin)
 {

@@ -30,7 +30,7 @@ class CloneMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(Path* drvr_path,
+  bool doMove(const Path* drvr_path,
               int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,
