@@ -449,6 +449,7 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     rc->readRC_res2(parser, dbFactor);
     table->add(rc);
     if (rc0 != nullptr && rc0->_coupling != rc->_coupling) {
+      delete _measureTable;
       _measureTable = table0;
       if (table0->getCnt() > 1) {
         interpolate(4, -1, rcPool);
