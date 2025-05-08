@@ -41,10 +41,12 @@ class tmg_conn_graph
   void addEdges(const tmg_conn* conn, int i0, int i1, int k);
   void clearVisited();
   void relocateShorts(tmg_conn* conn);
-  void getEdgeRefCoord(tmg_conn* conn, tcg_edge* pe, int& rx, int& ry);
-  bool isBadShort(tcg_edge* pe, tmg_conn* conn);
+  void getEdgeRefCoord(const tmg_conn* conn, tcg_edge* pe, int& rx, int& ry);
+  bool isBadShort(tcg_edge* pe, const tmg_conn* conn);
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
+  tcg_pt& pt(const int index) { return _ptV[index]; }
+  const tcg_pt& pt(const int index) const { return _ptV[index]; }
 
  public:
   tcg_pt* _ptV;
