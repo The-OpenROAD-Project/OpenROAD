@@ -68,17 +68,17 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
     stream >> obj.via_layer_;
   }
   stream >> obj.guide_next_;
-  stream >> obj.connected_iterms_;
-  stream >> obj.connected_bterms_;
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream >> obj.connected_iterms_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream >> obj.connected_bterms_;
+  }
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
     stream >> obj.is_congested_;
   }
   if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
     stream >> obj.is_jumper_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
-    stream >> obj.connected_iterms_;
-    stream >> obj.connected_bterms_;
   }
   return stream;
 }
@@ -92,17 +92,17 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
     stream << obj.via_layer_;
   }
   stream << obj.guide_next_;
-  stream << obj.connected_iterms_;
-  stream << obj.connected_bterms_;
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream << obj.connected_iterms_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream << obj.connected_bterms_;
+  }
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
     stream << obj.is_congested_;
   }
   if (obj.getDatabase()->isSchema(db_schema_has_jumpers)) {
     stream << obj.is_jumper_;
-  }
-  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
-    stream << obj.connected_iterms_;
-    stream << obj.connected_bterms_;
   }
   return stream;
 }
