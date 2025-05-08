@@ -71,7 +71,9 @@ class UnplaceCellAction : public JournalAction
 {
  public:
   UnplaceCellAction(Node* node, const bool was_hold)
-      : node_(node), was_hold_(was_hold) {};
+      : node_(node), was_hold_(was_hold)
+  {
+  }
   Node* getNode() const { return node_; }
   bool wasHold() const { return was_hold_; }
   JournalActionTypeEnum typeId() const override
