@@ -439,7 +439,7 @@ class FlexPA
    * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
-  void filterMultipleAViaAccess(
+  void filterMultipleViaAccess(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
       const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
@@ -509,30 +509,6 @@ class FlexPA
   bool isPointOutsideShapes(
       const Point& point,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
-
-  /**
-   * @brief Filters access through via on the access point
-   *
-   * @details Besides checking if the via can even exist, this will also check
-   * later if a planar access can be done on upper layer to reach the via.
-   * Access through only 1 of the cardinal directions is enough.
-   *
-   * @param ap access point
-   * @param layer_polys Pin Polygons on the layer (used for a check)
-   * @param polyset polys auxilary set (same information as polys)
-   * @param pin access pin
-   * @param inst_term instance terminal
-   * @param deep_search TODO: I understand one of its uses but not why "deep
-   * search"
-   */
-  template <typename T>
-  void filterViaAccess(
-      frAccessPoint* ap,
-      const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      T* pin,
-      frInstTerm* inst_term,
-      bool deep_search = false);
 
   /**
    * @brief checks if a via can be used to access the access point, modifies the

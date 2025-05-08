@@ -785,49 +785,6 @@ void FlexPA::getViasFromMetalWidthMap(
 }
 
 template <typename T>
-void FlexPA::filterViaAccess(
-    frAccessPoint* ap,
-    const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
-    const gtl::polygon_90_set_data<frCoord>& polyset,
-    T* pin,
-    frInstTerm* inst_term,
-    bool deep_search)
-{
-  const Point begin_point = ap->getPoint();
-  const auto layer_num = ap->getLayerNum();
-  // skip planar only access
-  if (!ap->isViaAllowed()) {
-    return;
-  }
-
-  const int max_num_via_trial = 2;
-  // use std:pair to ensure deterministic behavior
-  std::vector<std::pair<int, const frViaDef*>> via_defs;
-  getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
-
-  if (via_defs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-      via_defs.emplace_back(via_defs.size(), via_def);
-      if (via_defs.size() >= max_num_via_trial && !deep_search) {
-        break;
-      }
-    }
-  }
-
-  ap->setAccess(frDirEnum::U, false);
-  int valid_via_defs = 0;
-  for (auto& [idx, via_def] : via_defs) {
-    if (validateAPForVia(ap, via_def, layer_polys, polyset, pin, inst_term)) {
-      valid_via_defs++;
-      if (valid_via_defs >= max_num_via_trial) {
-        return;
-      }
-    }
-  }
-}
-
-template <typename T>
 bool FlexPA::validateAPForVia(
     frAccessPoint* ap,
     const frViaDef* via_def,
@@ -1071,7 +1028,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
 }
 
 template <typename T>
-void FlexPA::filterMultipleAViaAccess(
+void FlexPA::filterMultipleViaAccess(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
     const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
@@ -1088,7 +1045,6 @@ void FlexPA::filterMultipleAViaAccess(
     }
 
     int valid_via_defs = 0;
-    bool deep_search = false;
     const Point begin_point = ap->getPoint();
     const auto layer_num = ap->getLayerNum();
     // use std:pair to ensure deterministic behavior
@@ -1116,11 +1072,8 @@ void FlexPA::filterMultipleAViaAccess(
       }
       valid_via_defs++;
 
-      if (is_std_cell_pin) {
-        has_access |= layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-                      && ap->hasAccess(frDirEnum::U);
-        has_access
-            |= layer_num != router_cfg_->VIA_ACCESS_LAYERNUM && ap->hasAccess();
+      if (is_std_cell_pin && layer_num == router_cfg_->VIA_ACCESS_LAYERNUM) {
+        has_access |= ap->hasAccess(frDirEnum::U);
       } else {
         has_access |= ap->hasAccess();
       }
@@ -1132,6 +1085,7 @@ void FlexPA::filterMultipleAViaAccess(
       if (valid_via_defs > 0 && via_trial <= max_num_via_trial) {
         break;
       }
+
       if (valid_via_defs >= max_num_via_trial) {
         break;
       }
@@ -1260,7 +1214,7 @@ bool FlexPA::genPinAccessCostBounded(
     validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
   }
 
-  filterMultipleAViaAccess(
+  filterMultipleViaAccess(
       new_aps, pin_shapes, layer_polys, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
