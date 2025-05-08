@@ -120,7 +120,7 @@ class BaseMove : public sta::dbStaState
     return false;
   }
 
-  virtual const char* name() const { return "BaseMove"; }
+  virtual const char* name() = 0;
 
   void init();
 
