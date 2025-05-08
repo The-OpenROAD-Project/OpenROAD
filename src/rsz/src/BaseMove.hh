@@ -73,7 +73,6 @@ using sta::Pin;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
-using sta::TimingArc;
 using sta::Vertex;
 
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;

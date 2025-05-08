@@ -12,8 +12,6 @@ namespace rsz {
 
  using std::string;
 
- using utl::RSZ;
-
  using sta::ArcDelay;
  using sta::Instance;
  using sta::InstancePinIterator;
@@ -26,7 +24,6 @@ namespace rsz {
  using sta::RiseFallBoth;
  using sta::Slack;
  using sta::Slew;
- using sta::TimingArc;
  using sta::Vertex;
 
 class BufferMove : public BaseMove
@@ -34,8 +31,8 @@ class BufferMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
-              const int drvr_index,
+  bool doMove(Path* drvr_path,
+              int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,
               float setup_slack_margin) override;

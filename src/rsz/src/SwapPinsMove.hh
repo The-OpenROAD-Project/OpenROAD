@@ -6,36 +6,26 @@
 namespace rsz {
  using std::string;
 
- using utl::RSZ;
-
- using sta::ArcDcalcResult;
  using sta::ArcDelay;
  using sta::DcalcAnalysisPt;
- using sta::INF;
  using sta::Instance;
  using sta::InstancePinIterator;
  using sta::LibertyCell;
  using sta::LibertyPort;
  using sta::LoadPinIndexMap;
- using sta::Net;
  using sta::NetConnectedPinIterator;
  using sta::Path;
  using sta::PathExpanded;
- using sta::Pin;
- using sta::RiseFall;
  using sta::Slack;
  using sta::Slew;
- using sta::TimingArc;
- using sta::TimingArcSet;
- using sta::Vertex;
 
 class SwapPinsMove : public BaseMove
 {
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
-              const int drvr_index,
+  bool doMove(Path* drvr_path,
+              int drvr_index,
               Slack drvr_slack,
               PathExpanded* expanded,
               float setup_slack_margin) override;
