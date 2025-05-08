@@ -85,13 +85,13 @@ struct SlackEstimatorParams
   SlackEstimatorParams(const float margin, const Corner* corner)
       : setup_slack_margin(margin), corner(corner)
   {
-    driver_pin = nullptr;
-    prev_driver_pin = nullptr;
-    driver_input_pin = nullptr;
-    driver = nullptr;
-    driver_path = nullptr;
-    prev_driver_path = nullptr;
-    driver_cell = nullptr;
+    driver_pin{nullptr};
+    prev_driver_pin{nullptr};
+    driver_input_pin{nullptr};
+    driver{nullptr};
+    driver_path{nullptr};
+    prev_driver_path{nullptr};
+    driver_cell{nullptr};
   }
 
   Pin* driver_pin;
