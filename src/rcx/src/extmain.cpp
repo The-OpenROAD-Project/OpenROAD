@@ -110,6 +110,8 @@ extMain::extMain()
 extMain::~extMain()
 {
   delete _modelTable;
+  delete[] _tmpResTable;
+  delete[] _tmpSumResTable;
   removeDgContextArray();
   removeContextArray();
 }
