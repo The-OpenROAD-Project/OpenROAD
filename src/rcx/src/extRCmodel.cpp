@@ -2175,14 +2175,12 @@ extRCModel::~extRCModel()
   delete[] _solverFileName;
   delete[] _wireFileName;
 
-  if (_modelCnt > 0) {
-    for (uint ii = 0; ii < _modelCnt; ii++) {
-      delete _modelTable[ii];
-    }
-
-    delete[] _modelTable;
-    delete _dataRateTable;
+  for (uint ii = 0; ii < _modelCnt; ii++) {
+    delete _modelTable[ii];
   }
+
+  delete[] _modelTable;
+  delete _dataRateTable;
 }
 
 void extRCModel::setExtMain(extMain* x)
