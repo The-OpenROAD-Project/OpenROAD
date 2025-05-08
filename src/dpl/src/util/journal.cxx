@@ -119,9 +119,8 @@ void Journal::redo(const JournalAction* action, const bool positions_only) const
 ////////////////////////////////////////////////////////////////////////////////
 void Journal::redo(bool positions_only) const
 {
-  for (auto it = actions_.begin(); it != actions_.end(); ++it) {
-    auto action = (*it).get();
-    redo(action, positions_only);
+  for (const auto& action : actions_) {
+    redo(action.get(), positions_only);
   }
 }
 ////////////////////////////////////////////////////////////////////////////////
