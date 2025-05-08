@@ -8117,7 +8117,7 @@ class dbModNet : public dbObject
   dbSet<dbModBTerm> getModBTerms();
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
-
+  unsigned connectionCount();
   const char* getName() const;
   void rename(const char* new_name);
   static dbModNet* getModNet(dbBlock* block, uint id);
