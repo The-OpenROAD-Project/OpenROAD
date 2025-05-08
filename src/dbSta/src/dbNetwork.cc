@@ -1986,6 +1986,18 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
       if (lib_port) {
         cport->setLibertyPort(lib_port);
         lib_port->setExtPort(mterm);
+
+        if (lib_port->isClock() && mterm->getSigType() != dbSigType::CLOCK) {
+          debugPrint(logger_,
+                     utl::ORD,
+                     "dbNetwork",
+                     1,
+                     "Updating LEF pin {}/{} from {} to CLOCK from Liberty",
+                     mterm->getMaster()->getName(),
+                     mterm->getName(),
+                     mterm->getSigType().getString());
+          mterm->setSigType(dbSigType::CLOCK);
+        }
       } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name)) {
         logger_->warn(ORD,
                       2001,

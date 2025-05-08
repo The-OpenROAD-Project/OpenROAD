@@ -471,7 +471,7 @@ class dbDatabase : public dbObject
   /// as knowing when the data is fully loaded into odb.
   ///
   void triggerPostReadLef(dbTech* tech, dbLib* library);
-  void triggerPostReadDef(dbBlock* block);
+  void triggerPostReadDef(dbBlock* block, bool floorplan);
   void triggerPostReadDb();
 
   ///
@@ -3535,6 +3535,11 @@ class dbITerm : public dbObject
   std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
 
   ///
+  /// Destroys all access points of each pin.
+  ///
+  void clearPrefAccessPoints();
+
+  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbITerm* getITerm(dbBlock* block, uint oid);
@@ -5653,7 +5658,7 @@ class dbMaster : public dbObject
   ///
   /// Set _sequential of this master.
   ///
-  void setSequential(uint v);
+  void setSequential(bool v);
 
   ///
   /// Returns _sequential this master
@@ -5761,6 +5766,11 @@ class dbMTerm : public dbObject
   /// Get the signal type of this master-terminal.
   ///
   dbSigType getSigType();
+
+  ///
+  /// Set the signal type of this master-terminal.
+  ///
+  void setSigType(dbSigType type);
 
   ///
   /// Get the IO direction of this master-terminal.

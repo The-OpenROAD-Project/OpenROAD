@@ -319,13 +319,13 @@ void tmg_conn::loadWire(dbWire* wire)
 }
 
 void tmg_conn::splitBySj(const int j,
-                         const tmg_rc_sh* sj,
                          const int rt,
                          const int sjxMin,
                          const int sjyMin,
                          const int sjxMax,
                          const int sjyMax)
 {
+  tmg_rc_sh* sj = &(_rcV[j]._shape);
   const int isVia = sj->isVia() ? 1 : 0;
   _search->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   int klast = -1;
@@ -338,6 +338,7 @@ void tmg_conn::splitBySj(const int j,
         || _rcV[j]._from_idx == _rcV[k]._to_idx) {
       continue;
     }
+    sj = &(_rcV[j]._shape);
     if (!sj->isVia() && _rcV[j]._is_vertical == _rcV[k]._is_vertical) {
       continue;
     }
@@ -427,7 +428,6 @@ void tmg_conn::splitTtop()
       for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
           splitBySj(j,
-                    sj,
                     layb->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
@@ -435,7 +435,6 @@ void tmg_conn::splitTtop()
                     via_y + b->yMax());
         } else if (b->getTechLayer() == layt) {
           splitBySj(j,
-                    sj,
                     layt->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
@@ -445,7 +444,7 @@ void tmg_conn::splitTtop()
       }
     } else {
       const int rt = sj->getTechLayer()->getRoutingLevel();
-      splitBySj(j, sj, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
+      splitBySj(j, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
     }
   }
 }
