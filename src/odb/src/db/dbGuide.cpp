@@ -279,7 +279,7 @@ void dbGuide::addConnectedITerm(dbITerm* iterm)
 void dbGuide::addConnectedBTerm(dbBTerm* bterm)
 {
   _dbGuide* guide = (_dbGuide*) this;
-  guide->connected_iterms_.push_back(bterm->getId());
+  guide->connected_bterms_.push_back(bterm->getId());
 }
 
 std::vector<dbITerm*> dbGuide::getConnectedITerms()
