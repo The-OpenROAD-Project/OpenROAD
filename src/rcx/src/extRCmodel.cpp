@@ -868,7 +868,6 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   _widthTableAllocFlag = true;
   int widthCnt = 12;
   _widthTable = new Ath__array1D<int>(widthCnt);
-  _widthCnt = widthCnt;
 
   if (!skip_width_map_table) {
     widthCnt = widthTable->getCnt();
@@ -908,6 +907,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
     }
   }
 
+  _widthCnt = widthCnt;
   _rcDistTable = new extDistRCTable**[_metCnt];
   for (uint jj = 0; jj < _metCnt; jj++) {
     _rcDistTable[jj] = new extDistRCTable*[widthCnt];
