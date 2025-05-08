@@ -1296,6 +1296,7 @@ void Grid::getBbox(Box* bb)
 
 void Grid::freeTracksAndTables()
 {
+  free(_subTrackCnt);
   delete[] _trackTable;
   delete[] _blockedTrackTable;
 }
