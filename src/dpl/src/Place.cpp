@@ -1196,11 +1196,12 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   cell->setOrient(grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite()));
   if (journal_) {
-    MoveCellAction action;
-    action.setNode(cell);
-    action.setWasPlaced(was_placed);
-    action.setOrigLocation(original_x, original_y);
-    action.setNewLocation(cell->getLeft(), cell->getBottom());
+    MoveCellAction action(cell,
+                          original_x,
+                          original_y,
+                          cell->getLeft(),
+                          cell->getBottom(),
+                          was_placed);
     journal_->addAction(action);
   }
 }
@@ -1211,9 +1212,7 @@ void Opendp::unplaceCell(Node* cell)
     return;
   }
   if (journal_) {
-    UnplaceCellAction action;
-    action.setNode(cell);
-    action.setWasHold(cell->isHold());
+    UnplaceCellAction action(cell, cell->isHold());
     journal_->addAction(action);
   }
   grid_->erasePixel(cell);

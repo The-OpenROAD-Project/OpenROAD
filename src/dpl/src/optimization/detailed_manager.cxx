@@ -3066,7 +3066,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::clearMoveList()
 {
-  journal.clearJournal();
+  journal.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3105,12 +3105,8 @@ bool DetailedMgr::addToMoveList(Node* ndi,
     addCellToSegment(ndi, newSeg);
   }
 
-  MoveCellAction action;
-  action.setNode(ndi);
-  action.setOrigLocation(curLeft, curBottom);
-  action.setOrigSegs({curSeg});
-  action.setNewLocation(newLeft, newBottom);
-  action.setNewSegs({newSeg});
+  MoveCellAction action(
+      ndi, curLeft, curBottom, newLeft, newBottom, true, {curSeg}, {newSeg});
   journal.addAction(action);
   return true;
 }
@@ -3140,12 +3136,8 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   for (const auto& newSeg : newSegs) {
     addCellToSegment(ndi, newSeg);
   }
-  MoveCellAction action;
-  action.setNode(ndi);
-  action.setOrigLocation(curLeft, curBottom);
-  action.setOrigSegs(curSegs);
-  action.setNewLocation(newLeft, newBottom);
-  action.setNewSegs(newSegs);
+  MoveCellAction action(
+      ndi, curLeft, curBottom, newLeft, newBottom, true, curSegs, newSegs);
   journal.addAction(action);
   return true;
 }
@@ -3161,11 +3153,7 @@ void DetailedMgr::acceptMove()
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::rejectMove()
 {
-  while (!journal.isEmpty()) {
-    const auto& action = journal.getLastAction();
-    journal.undo(action);
-    journal.removeLastAction();
-  }
+  journal.undo();
   clearMoveList();
 }
 

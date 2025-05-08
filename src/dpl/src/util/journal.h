@@ -12,7 +12,7 @@ namespace dpl {
 class Grid;
 
 class DetailedMgr;
-enum JournalActionTypeEnum
+enum class JournalActionTypeEnum
 {
   MOVE_CELL,
   UNPLACE_CELL
@@ -21,27 +21,28 @@ class JournalAction
 {
  public:
   virtual JournalActionTypeEnum typeId() const = 0;
-
- protected:
 };
 class MoveCellAction : public JournalAction
 {
  public:
-  MoveCellAction() = default;
-  void setOrigLocation(const DbuX x, const DbuY y)
+  MoveCellAction(Node* node,
+                 const DbuX orig_x,
+                 const DbuY orig_y,
+                 const DbuX new_x,
+                 const DbuY new_y,
+                 const bool was_placed,
+                 const std::vector<int>& orig_segs = {},
+                 const std::vector<int>& new_segs = {})
+      : node_(node),
+        orig_x_(orig_x),
+        orig_y_(orig_y),
+        new_x_(new_x),
+        new_y_(new_y),
+        was_placed_(was_placed),
+        orig_segs_(orig_segs),
+        new_segs_(new_segs)
   {
-    orig_x_ = x;
-    orig_y_ = y;
   }
-  void setNewLocation(const DbuX x, const DbuY y)
-  {
-    new_x_ = x;
-    new_y_ = y;
-  }
-  void setOrigSegs(const std::vector<int>& segs) { orig_segs_ = segs; }
-  void setNewSegs(const std::vector<int>& segs) { new_segs_ = segs; }
-  void setNode(Node* node) { node_ = node; }
-  void setWasPlaced(bool was_placed) { was_placed_ = was_placed; }
   // getters
   Node* getNode() const { return node_; }
   DbuX getOrigLeft() const { return orig_x_; }
@@ -57,22 +58,21 @@ class MoveCellAction : public JournalAction
   }
 
  private:
-  Node* node_{nullptr};
-  DbuX orig_x_{0};
-  DbuY orig_y_{0};
-  DbuX new_x_{0};
-  DbuY new_y_{0};
-  std::vector<int> orig_segs_;
-  std::vector<int> new_segs_;
-  bool was_placed_{true};
+  Node* node_;
+  const DbuX orig_x_;
+  const DbuY orig_y_;
+  const DbuX new_x_;
+  const DbuY new_y_;
+  const bool was_placed_;
+  const std::vector<int> orig_segs_;
+  const std::vector<int> new_segs_;
 };
 class UnplaceCellAction : public JournalAction
 {
  public:
-  UnplaceCellAction() = default;
-  void setNode(Node* node) { node_ = node; }
+  UnplaceCellAction(Node* node, const bool was_hold)
+      : node_(node), was_hold_(was_hold) {};
   Node* getNode() const { return node_; }
-  void setWasHold(bool was_hold) { was_hold_ = was_hold; }
   bool wasHold() const { return was_hold_; }
   JournalActionTypeEnum typeId() const override
   {
@@ -80,8 +80,8 @@ class UnplaceCellAction : public JournalAction
   }
 
  private:
-  Node* node_{nullptr};
-  bool was_hold_{false};
+  Node* node_;
+  const bool was_hold_;
 };
 class Journal
 {
@@ -105,23 +105,25 @@ class Journal
     actions_.push_back(std::make_unique<UnplaceCellAction>(action));
   }
   // getters
-  JournalAction* getLastAction() const { return actions_.back().get(); }
-  bool isEmpty() const { return actions_.empty(); }
+  bool empty() const { return actions_.empty(); }
   size_t size() const { return actions_.size(); }
   const std::set<Node*>& getAffectedNodes() const { return affected_nodes_; }
   const std::set<Edge*>& getAffectedEdges() const { return affected_edges_; }
+  // other
+  void clear();
+  void undo(bool positions_only = false) const;
+  void redo(bool positions_only = false) const;
+
+ private:
+  JournalAction* getLastAction() const { return actions_.back().get(); }
   const std::vector<std::unique_ptr<JournalAction>>& getActions() const
   {
     return actions_;
   }
-  // other
   void removeLastAction() { actions_.pop_back(); }
-  void clearJournal();
   void undo(const JournalAction* action, bool positions_only = false) const;
   void redo(const JournalAction* action, bool positions_only = false) const;
-  void undoAll();
 
- private:
   Grid* grid_{nullptr};
   DetailedMgr* mgr_{nullptr};
   std::vector<std::unique_ptr<JournalAction>> actions_;

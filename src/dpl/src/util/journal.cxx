@@ -7,7 +7,7 @@
 #include "optimization/detailed_manager.h"
 
 namespace dpl {
-void Journal::clearJournal()
+void Journal::clear()
 {
   actions_.clear();
   affected_nodes_.clear();
@@ -68,13 +68,12 @@ void Journal::undo(const JournalAction* action, const bool positions_only) const
   }
 }
 ////////////////////////////////////////////////////////////////////////////////
-void Journal::undoAll()
+void Journal::undo(bool positions_only) const
 {
   for (auto it = actions_.rbegin(); it != actions_.rend(); ++it) {
     auto action = (*it).get();
-    undo(action, false);
+    undo(action, positions_only);
   }
-  clearJournal();
 }
 ////////////////////////////////////////////////////////////////////////////////
 void Journal::redo(const JournalAction* action, const bool positions_only) const
@@ -117,5 +116,14 @@ void Journal::redo(const JournalAction* action, const bool positions_only) const
       break;
   }
 }
+////////////////////////////////////////////////////////////////////////////////
+void Journal::redo(bool positions_only) const
+{
+  for (auto it = actions_.begin(); it != actions_.end(); ++it) {
+    auto action = (*it).get();
+    redo(action, positions_only);
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
 
 }  // namespace dpl
