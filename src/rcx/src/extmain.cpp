@@ -109,7 +109,7 @@ extMain::extMain()
 }
 extMain::~extMain()
 {
-  delete _search;
+  _search.reset();
   delete _modelTable;
   removeDgContextArray();
   removeContextArray();
