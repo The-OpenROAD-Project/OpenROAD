@@ -193,12 +193,12 @@ class FlexPA
   int genPinAccess(T* pin, frInstTerm* inst_term = nullptr);
 
   void createViaSpecificAccessPoints(
-    frInstTerm* inst_term,
-    std::set<std::pair<Point, frLayerNum>>& apset,
-    std::vector<std::unique_ptr<frAccessPoint>>& common_aps,
-    LayerToRectCoordsMap& common_layer_rect_to_coords,
-    const frViaDef* via_def);
-  
+      frInstTerm* inst_term,
+      std::set<std::pair<Point, frLayerNum>>& apset,
+      std::vector<std::unique_ptr<frAccessPoint>>& via_aps,
+      LayerToRectCoordsMap& common_layer_rect_to_coords,
+      const frViaDef* via_def);
+
   /**
    * @brief determines if the current access points are enough to say PA is done
    * with this pin.

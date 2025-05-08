@@ -1204,7 +1204,7 @@ bool FlexPA::EnoughAccessPoints(
 void FlexPA::createViaSpecificAccessPoints(
     frInstTerm* inst_term,
     std::set<std::pair<Point, frLayerNum>>& apset,
-    std::vector<std::unique_ptr<frAccessPoint>>& common_aps,
+    std::vector<std::unique_ptr<frAccessPoint>>& via_aps,
     LayerToRectCoordsMap& common_layer_rect_to_coords,
     const frViaDef* via_def)
 {
@@ -1220,9 +1220,8 @@ void FlexPA::createViaSpecificAccessPoints(
       genViaEnclosedCoords(via_x_coords, rect, via_def, layer->isHorizontal());
       genViaEnclosedCoords(via_y_coords, rect, via_def, !layer->isHorizontal());
 
-      std::vector<std::unique_ptr<frAccessPoint>> common_x_via_y_aps;
       createMultipleAccessPoints(inst_term,
-                                 common_x_via_y_aps,
+                                 via_aps,
                                  apset,
                                  rect,
                                  layer_num,
@@ -1230,9 +1229,8 @@ void FlexPA::createViaSpecificAccessPoints(
                                  via_y_coords,
                                  frAccessPointEnum::EncOpt,
                                  frAccessPointEnum::EncOpt);
-      std::vector<std::unique_ptr<frAccessPoint>> common_y_via_x_aps;
       createMultipleAccessPoints(inst_term,
-                                 common_y_via_x_aps,
+                                 via_aps,
                                  apset,
                                  rect,
                                  layer_num,
@@ -1240,9 +1238,8 @@ void FlexPA::createViaSpecificAccessPoints(
                                  common_y_coords,
                                  frAccessPointEnum::EncOpt,
                                  frAccessPointEnum::EncOpt);
-      std::vector<std::unique_ptr<frAccessPoint>> full_via_aps;
       createMultipleAccessPoints(inst_term,
-                                 full_via_aps,
+                                 via_aps,
                                  apset,
                                  rect,
                                  layer_num,
