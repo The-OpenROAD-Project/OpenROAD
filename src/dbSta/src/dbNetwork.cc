@@ -1359,7 +1359,6 @@ Port* dbNetwork::port(const Pin* pin) const
   } else if (modbterm) {
     ret = dbToSta(modbterm);
   }
-  assert(ret != nullptr);
   return ret;
 }
 
@@ -1663,6 +1662,7 @@ bool dbNetwork::isPower(const Net* net) const
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::POWER);
   // TODO: make this work for modnets
+  // by uncommenting code below
   /*
   dbNet* db_net;
   dbModNet* db_modnet;
@@ -1686,6 +1686,7 @@ bool dbNetwork::isGround(const Net* net) const
   return (dnet->getSigType() == dbSigType::GROUND);
 
   // TODO: make this work for modnets
+  // by uncommenting code below
   /*
   dbNet* db_net;
   dbModNet* db_modnet;
@@ -1986,6 +1987,18 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
       if (lib_port) {
         cport->setLibertyPort(lib_port);
         lib_port->setExtPort(mterm);
+
+        if (lib_port->isClock() && mterm->getSigType() != dbSigType::CLOCK) {
+          debugPrint(logger_,
+                     utl::ORD,
+                     "dbNetwork",
+                     1,
+                     "Updating LEF pin {}/{} from {} to CLOCK from Liberty",
+                     mterm->getMaster()->getName(),
+                     mterm->getName(),
+                     mterm->getSigType().getString());
+          mterm->setSigType(dbSigType::CLOCK);
+        }
       } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name)) {
         logger_->warn(ORD,
                       2001,
@@ -3556,7 +3569,10 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         dest_mod_net = dest_moditerm->getModNet();
       }
       if (dest_mod_net) {
-        dest_pin->connect(dest_mod_net);
+        dbNet* dest_flat_net = flatNet((Pin*) dest_pin);
+        disconnectPin((Pin*) dest_pin);
+        connectPin((Pin*) dest_pin, (Net*) dest_flat_net, (Net*) dest_mod_net);
+        //        dest_pin->connect(dest_mod_net);
         return;
       }
     }
@@ -3636,7 +3652,13 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         source_db_mod_net
             = dbModNet::create(highest_common_module, connection_name);
         top_mod_dest->connect(source_db_mod_net);
-        source_pin->connect(source_db_mod_net);
+
+        dbNet* source_pin_flat_net = flatNet((Pin*) source_pin);
+        disconnectPin((Pin*) source_pin);
+        connectPin((Pin*) source_pin,
+                   (Net*) source_pin_flat_net,
+                   (Net*) source_db_mod_net);
+        // source_pin->connect(source_db_mod_net);
       } else {
         top_mod_dest->connect(top_net);
       }
@@ -3663,6 +3685,13 @@ void dbNetwork::hierarchicalConnect(dbITerm* source_pin,
         }
       }
     }
+  }
+}
+
+void dbNetwork::removeUnusedPortsAndPinsOnModuleInstances()
+{
+  for (auto mi : block()->getModInsts()) {
+    mi->RemoveUnusedPortsAndPins();
   }
 }
 
@@ -3741,8 +3770,15 @@ void ModDbNetAssociation::operator()(const Pin* pin)
     return;
   }
 
+  if (db_network_->isDriver(pin)) {
+    return;
+  }
+
   dbNet* cur_flat_net = db_network_->flatNet(pin);
 
+  if (cur_flat_net == new_flat_net_) {
+    return;
+  }
   if (cur_flat_net == orig_flat_net_ || orig_flat_net_ == nullptr) {
     Pin* pin1 = const_cast<Pin*>(pin);
     db_network_->disconnectPin(pin1, db_network_->dbToSta(cur_flat_net));
@@ -3791,12 +3827,19 @@ void DbModNetAssociation::operator()(const Pin* pin)
     return;
   }
 
+  if (db_network_->isDriver(pin)) {
+    return;
+  }
+
   if (iterm) {
     dbInst* owning_inst = iterm->getInst();
     dbModule* parent_module = owning_inst->getModule();
     if (parent_module == owning_module_) {
       dbModNet* existing_mod_net = db_network_->hierNet(pin);
       if (existing_mod_net) {
+        if (existing_mod_net == mod_net_) {
+          return;
+        }
         db_network_->disconnectPin(const_cast<Pin*>(pin),
                                    db_network_->dbToSta(existing_mod_net));
       }
@@ -3831,8 +3874,14 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   dbBTerm* io_bterm = bterm_visitor.bterm();
 
   if (io_bterm) {
-    std::string new_name = io_bterm->getName();
-    mod_net->rename(new_name.c_str());
+    Pin* ignore;
+    dbModule* scope
+        = getNetDriverParentModule(dbToSta(new_flat_net), ignore, false);
+    (void) ignore;
+    if (mod_net->getParent() == scope) {
+      std::string new_name = io_bterm->getName();
+      mod_net->rename(new_name.c_str());
+    }
   }
 
   // reassociate the mod_net to use the flat net.
@@ -3844,6 +3893,7 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   // reassociate the flat nets at this level. Get the fanout of the
   // new_flat net and mark as being associated with modnet.
   //
+
   DbModNetAssociation visitordb(this, mod_net);
   NetSet visited_dbnets(this);
   visitConnectedPins(dbToSta(new_flat_net), visitordb, visited_dbnets);

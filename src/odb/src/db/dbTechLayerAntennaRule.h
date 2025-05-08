@@ -173,7 +173,7 @@ class _dbTechAntennaPinModel : public _dbObject
 
   _dbTechAntennaPinModel(_dbDatabase*, const _dbTechAntennaPinModel& m);
   _dbTechAntennaPinModel(_dbDatabase*) {}
-  ~_dbTechAntennaPinModel() {}
+  ~_dbTechAntennaPinModel();
 
   bool operator==(const _dbTechAntennaPinModel& rhs) const;
   bool operator!=(const _dbTechAntennaPinModel& rhs) const

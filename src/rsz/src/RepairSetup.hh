@@ -186,7 +186,7 @@ class RepairSetup : public sta::dbStaState
                       int level,
                       Instance* parent,
                       odb::dbITerm* mod_net_drvr,
-                      odb::dbModNet* mod_net);
+                      odb::dbModNet* mod_net_in);
   BufferedNetPtr addWire(const BufferedNetPtr& p,
                          const Point& wire_end,
                          int wire_layer,

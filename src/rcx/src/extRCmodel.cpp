@@ -2162,6 +2162,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
 
 extRCModel::~extRCModel()
 {
+  free(_ruleFileName);
   delete _resOver;
   delete _capOver;
   delete _capUnder;
@@ -2175,14 +2176,12 @@ extRCModel::~extRCModel()
   delete[] _solverFileName;
   delete[] _wireFileName;
 
-  if (_modelCnt > 0) {
-    for (uint ii = 0; ii < _modelCnt; ii++) {
-      delete _modelTable[ii];
-    }
-
-    delete[] _modelTable;
-    delete _dataRateTable;
+  for (uint ii = 0; ii < _modelCnt; ii++) {
+    delete _modelTable[ii];
   }
+
+  delete[] _modelTable;
+  delete _dataRateTable;
 }
 
 void extRCModel::setExtMain(extMain* x)
@@ -2363,7 +2362,6 @@ void extMeasure::allocOUpool()
 
 extMeasure::~extMeasure()
 {
-  return;
   for (auto& ii : _rc) {
     delete ii;
   }
