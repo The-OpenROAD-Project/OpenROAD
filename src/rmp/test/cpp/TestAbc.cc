@@ -204,7 +204,7 @@ class AbcTestAsap7 : public AbcTest
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
+    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
 
     std::vector<std::string> liberty_paths
