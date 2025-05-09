@@ -422,15 +422,28 @@ void dbModule::destroy(dbModule* module)
   dbSet<dbModBTerm> modbterms = module->getModBTerms();
   dbSet<dbModBTerm>::iterator modbterm_itr;
   for (modbterm_itr = modbterms.begin(); modbterm_itr != modbterms.end();) {
+    dbModBTerm* modbterm = *modbterm_itr;
+    // as a side effect this will journal the disconnection
+    // so it can be undone.
+    modbterm->disconnect();
     modbterm_itr = dbModBTerm::destroy(modbterm_itr);
   }
 
+  // destroy the modnets last. At this point we expect them
+  // to be totally disconnected (we have disconnected them
+  // from any dbModules, dbModInst and dbITerm/dbBTerm.
+  //
   dbSet<dbModNet> modnets = module->getModNets();
   dbSet<dbModNet>::iterator modnet_itr;
   for (modnet_itr = modnets.begin(); modnet_itr != modnets.end();) {
     modnet_itr = dbModNet::destroy(modnet_itr);
   }
 
+  dbProperty::destroyProperties(_module);
+
+  // Journal the deletion of the dbModule after its ports
+  // and properties deleted, so that on restore we have
+  // dbModule to hang objects on.
   if (block->_journal) {
     block->_journal->beginAction(dbJournal::DELETE_OBJECT);
     block->_journal->pushParam(dbModuleObj);
@@ -439,7 +452,6 @@ void dbModule::destroy(dbModule* module)
     block->_journal->endAction();
   }
 
-  dbProperty::destroyProperties(_module);
   block->_module_hash.remove(_module);
   block->_module_tbl->destroy(_module);
 }
@@ -536,7 +548,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
     return module;
   }
 
-  std::map<std::string, int>& name_id_map
+  std::unordered_map<std::string, int>& name_id_map
       = ((_dbBlock*) block)->_module_name_id_map;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
@@ -717,11 +729,11 @@ void dbModule::copyModuleInsts(dbModule* old_module,
                          ? std::move(old_inst_name).substr(first_idx + 1)
                          : std::move(old_inst_name);
 
-    dbInst* new_inst = dbInst::create(new_module->getOwner(),
-                                      old_inst->getMaster(),
-                                      new_inst_name.c_str(),
-                                      /* phyical only */ false,
-                                      new_module);
+    dbInst* new_inst = dbInst::makeUniqueDbInst(new_module->getOwner(),
+                                                old_inst->getMaster(),
+                                                new_inst_name.c_str(),
+                                                /* phyical only */ false,
+                                                new_module);
     if (new_inst) {
       debugPrint(logger,
                  utl::ODB,
@@ -950,26 +962,28 @@ bool dbModule::copyToChildBlock(dbModule* module)
   // This block contains only one module
   dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
   std::string block_name = module->getName();
-  // TODO: strip out instance name from block name
   dbTech* tech = top_block->getTech();
+  // TODO: strip out instance name from block name
   dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
-  child_block->setDefUnits(tech->getLefUnits());
-  child_block->setBusDelimiters('[', ']');
-  dbModule* new_module = child_block->getTopModule();
-  if (!new_module) {
-    logger->error(utl::ODB,
-                  476,
-                  "Top module {} could not be found under child block {}",
-                  block_name,
-                  block_name);
-    return false;
-  }
+  if (child_block) {
+    child_block->setDefUnits(tech->getLefUnits());
+    child_block->setBusDelimiters('[', ']');
+    dbModule* new_module = child_block->getTopModule();
+    if (!new_module) {
+      logger->error(utl::ODB,
+                    476,
+                    "Top module {} could not be found under child block {}",
+                    block_name,
+                    block_name);
+      return false;
+    }
 
-  modBTMap mod_bt_map;
-  copyModulePorts(module, new_module, mod_bt_map);
-  ITMap it_map;
-  copyModuleInsts(module, new_module, nullptr, it_map);
-  copyModuleModNets(module, new_module, mod_bt_map, it_map);
+    modBTMap mod_bt_map;
+    copyModulePorts(module, new_module, mod_bt_map);
+    ITMap it_map;
+    copyModuleInsts(module, new_module, nullptr, it_map);
+    copyModuleModNets(module, new_module, mod_bt_map, it_map);
+  }
   return true;
 }
 

@@ -471,7 +471,7 @@ class dbDatabase : public dbObject
   /// as knowing when the data is fully loaded into odb.
   ///
   void triggerPostReadLef(dbTech* tech, dbLib* library);
-  void triggerPostReadDef(dbBlock* block);
+  void triggerPostReadDef(dbBlock* block, bool floorplan);
   void triggerPostReadDb();
 
   ///
@@ -2331,7 +2331,7 @@ class dbNet : public dbObject
   void clearSpecial();
 
   ///
-  /// Returns true if this dbNet have its pins connected by abutment
+  /// Returns true if this dbNet has its pins connected by abutment
   ///
   bool isConnectedByAbutment();
 
@@ -3271,9 +3271,13 @@ class dbInst : public dbObject
                         const char* name,
                         dbRegion* region,
                         bool physical_only = false,
-                        dbModule* parent_module = nullptr
+                        dbModule* parent_module = nullptr);
 
-  );
+  static dbInst* makeUniqueDbInst(dbBlock* block,
+                                  dbMaster* master,
+                                  const char* name,
+                                  bool physical_only,
+                                  dbModule* target_module);
 
   ///
   /// Create a new instance of child_block in top_block.
@@ -3529,6 +3533,11 @@ class dbITerm : public dbObject
   /// Returns all access points for each pin.
   ///
   std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
+
+  ///
+  /// Destroys all access points of each pin.
+  ///
+  void clearPrefAccessPoints();
 
   ///
   /// Translate a database-id back to a pointer.
@@ -5649,7 +5658,7 @@ class dbMaster : public dbObject
   ///
   /// Set _sequential of this master.
   ///
-  void setSequential(uint v);
+  void setSequential(bool v);
 
   ///
   /// Returns _sequential this master
@@ -5757,6 +5766,11 @@ class dbMTerm : public dbObject
   /// Get the signal type of this master-terminal.
   ///
   dbSigType getSigType();
+
+  ///
+  /// Set the signal type of this master-terminal.
+  ///
+  void setSigType(dbSigType type);
 
   ///
   /// Get the IO direction of this master-terminal.
@@ -8056,6 +8070,7 @@ class dbModInst : public dbObject
                            dbModule* masterModule,
                            const char* name);
 
+  // This destroys this modinst but does not destroy the master dbModule.
   static void destroy(dbModInst* modinst);
 
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);
@@ -8102,7 +8117,7 @@ class dbModNet : public dbObject
   dbSet<dbModBTerm> getModBTerms();
   dbSet<dbITerm> getITerms();
   dbSet<dbBTerm> getBTerms();
-
+  unsigned connectionCount();
   const char* getName() const;
   void rename(const char* new_name);
   static dbModNet* getModNet(dbBlock* block, uint id);

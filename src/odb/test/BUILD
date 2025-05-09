@@ -24,6 +24,7 @@ COMPULSORY_TESTS = [
     "bterm_hier_create",
     "check_routing_tracks",
     "create_sboxes",
+    "def_dup_net",
     "def_parser",
     "design_is_routed1",
     "design_is_routed2",
@@ -38,6 +39,7 @@ COMPULSORY_TESTS = [
     "edit_via_params",
     "floorplan_initialize",
     "floorplan_initialize2",
+    "floorplan_initialize3",
     "gcd_abstract_lef",
     "gcd_abstract_lef_with_power",
     "gcd_def_access",
@@ -170,12 +172,13 @@ filegroup(
         "sky130hd/sky130hd_vt.tlef",
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
+    visibility = ["//src/odb/test/cpp:__subpackages__"],
 )
 
 [
     filegroup(
         name = test_name + "_resources",
-        data = [
+        srcs = [
             ":regression_resources",
             "//src/odb/test/data/sky130hd:lef-test-data",
         ] + glob(

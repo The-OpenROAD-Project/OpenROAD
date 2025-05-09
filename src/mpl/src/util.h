@@ -6,6 +6,8 @@
 #include <string>
 #include <utility>
 
+#include "shapes.h"
+
 namespace mpl {
 
 struct SACoreWeights
@@ -33,10 +35,21 @@ struct PenaltyData
   float normalization_factor{0.0f};
 };
 
-inline bool isFirstSmaller(const std::pair<float, float>& p1,
-                           const std::pair<float, float>& p2)
+// Utility to help sorting width intervals.
+inline bool isMinWidthSmaller(const Interval& width_interval_a,
+                              const Interval& width_interval_b)
 {
-  return p1.first < p2.first;
+  return width_interval_a.min < width_interval_b.min;
+}
+
+// Utility to help sorting tilings.
+inline bool isAreaSmaller(const Tiling& tiling_a, const Tiling& tiling_b)
+{
+  if (tiling_a.area() != tiling_b.area()) {
+    return tiling_a.area() < tiling_b.area();
+  }
+
+  return tiling_a.width() < tiling_b.width();
 }
 
 }  // namespace mpl

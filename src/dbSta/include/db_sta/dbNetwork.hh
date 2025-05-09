@@ -175,6 +175,7 @@ class dbNetwork : public ConcreteNetwork
                                     std::vector<dbModule*>& itree2);
   Instance* findHierInstance(const char* name);
   void replaceHierModule(dbModInst* mod_inst, dbModule* module);
+  void removeUnusedPortsAndPinsOnModuleInstances();
 
   ////////////////////////////////////////////////////////////////
   //
@@ -216,6 +217,9 @@ class dbNetwork : public ConcreteNetwork
   void setAttribute(Instance* instance,
                     const std::string& key,
                     const std::string& value) override;
+  bool findRelatedModNet(const dbNet*, std::set<dbModNet*>& modnet_set) const;
+  dbNet* findRelatedDbNet(const dbModNet*) const;
+  dbModNet* findModNetForPin(const Pin*);
   dbModNet* findRelatedModNet(const dbNet*) const;
 
   ////////////////////////////////////////////////////////////////
@@ -321,6 +325,7 @@ class dbNetwork : public ConcreteNetwork
   void setHierarchy() { hierarchy_ = true; }
   void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
+  bool hasHierarchicalElements() const;
   void reassociateHierFlatNet(dbModNet* mod_net,
                               dbNet* new_flat_net,
                               dbNet* orig_flat_net);

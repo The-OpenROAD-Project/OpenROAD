@@ -1681,7 +1681,16 @@ void dbJournal::undo_createObject()
       _log.pop(master_id);
       _log.pop(name);
       _log.pop(inst_id);
+
       dbInst* inst = dbInst::getInst(_block, inst_id);
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: create instance {} at id {}",
+                 name,
+                 inst_id);
+
       dbInst::destroy(inst);
       break;
     }
@@ -1880,6 +1889,14 @@ void dbJournal::undo_deleteObject()
         auto region = dbRegion::getRegion(_block, region_id);
         region->addInst(inst);
       }
+      debugPrint(_logger,
+                 utl::ODB,
+                 "DB_ECO",
+                 3,
+                 "UNDO ECO: delete dbInst {} {}",
+                 name.c_str(),
+                 master_id);
+
       break;
     }
     case dbNetObj: {
@@ -1912,15 +1929,20 @@ void dbJournal::undo_deleteObject()
       uint obj_id;
       uint master_module_id;
       uint parent_module_id;
+      uint group_id;
       _log.pop(name);
       _log.pop(obj_id);
       _log.pop(parent_module_id);
       _log.pop(master_module_id);
+      _log.pop(group_id);
       dbModule* parent_module = dbModule::getModule(_block, parent_module_id);
       dbModule* master_module = dbModule::getModule(_block, master_module_id);
       auto mod_inst
           = dbModInst::create(parent_module, master_module, name.c_str());
-      (void) mod_inst;
+      if (group_id != 0) {
+        auto group = dbGroup::getGroup(_block, group_id);
+        group->addModInst(mod_inst);
+      }
       break;
     }
 
@@ -2044,11 +2066,19 @@ void dbJournal::undo_connectObject()
       uint mnet_id;
       _log.pop(net_id);   // the db net
       _log.pop(mnet_id);  // the modnet
-      (void) (net_id);
-      (void) (mnet_id);
-      // disconnects everything: modnet and dbnet
-      iterm->disconnect();
-
+      //
+      // we signal which net to disconnect
+      // by the id, if non zero. if zero
+      // do not disconnect. For example if we are just
+      // disconnecting the dbNet then in the journalling for
+      // the caller we set the mnet_id to zero.
+      //
+      if (net_id != 0) {
+        iterm->disconnectDbNet();
+      }
+      if (mnet_id != 0) {
+        iterm->disconnectModNet();
+      }
       break;
     }
 
@@ -2085,13 +2115,13 @@ void dbJournal::undo_disconnectObject()
       uint iterm_id;
       _log.pop(iterm_id);
       dbITerm* iterm = dbITerm::getITerm(_block, iterm_id);
-      uint net_id;
+      uint net_id = 0U;
       _log.pop(net_id);
       if (net_id != 0) {
         dbNet* net = dbNet::getNet(_block, net_id);
         iterm->connect(net);
       }
-      uint mnet_id;
+      uint mnet_id = 0U;
       _log.pop(mnet_id);
       if (mnet_id != 0) {
         dbModNet* mod_net = dbModNet::getModNet(_block, mnet_id);

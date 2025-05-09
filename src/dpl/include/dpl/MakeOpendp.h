@@ -3,16 +3,25 @@
 
 #pragma once
 
-namespace dpl {
-class Opendp;
+#include <tcl.h>
+
+namespace odb {
+class dbDatabase;
 }
 
-namespace ord {
+namespace utl {
+class Logger;
+}
 
-class OpenRoad;
+namespace dpl {
+
+class Opendp;
 
 dpl::Opendp* makeOpendp();
-void initOpendp(OpenRoad* openroad);
+void initOpendp(dpl::Opendp* dpl,
+                odb::dbDatabase* db,
+                utl::Logger* logger,
+                Tcl_Interp* tcl_interp);
 void deleteOpendp(dpl::Opendp* opendp);
 
-}  // namespace ord
+}  // namespace dpl
