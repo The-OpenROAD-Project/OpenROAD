@@ -70,9 +70,9 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::resynth()
+void Restructure::resynth(sta::Corner* corner)
 {
-  ZeroSlackStrategy zero_slack_strategy;
+  ZeroSlackStrategy zero_slack_strategy(corner);
   zero_slack_strategy.OptimizeDesign(open_sta_, name_generator_, logger_);
 }
 

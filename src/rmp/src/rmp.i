@@ -23,9 +23,11 @@ using ord::getRestructure;
 using ord::getOpenRoad;
 using odb::dbInst;
 using sta::LibertyPort;
+using sta::Corner;
 %}
 
 %include "../../Exception.i"
+%include "tcl/StaTclTypes.i"
 
 %inline %{
 
@@ -40,8 +42,8 @@ void set_tiehi_port_cmd(LibertyPort* tieHiport)
   getRestructure()->setTieHiPort(tieHiport);
 }
 
-void resynth_cmd() {
-  getRestructure()->resynth();
+void resynth_cmd(Corner* corner) {
+  getRestructure()->resynth(corner);
 }
 
 void

@@ -11,6 +11,7 @@
 #include "db_sta/dbSta.hh"
 #include "rmp/unique_name.h"
 #include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
 
 namespace abc {
 }  // namespace abc
@@ -57,7 +58,7 @@ class Restructure
             odb::dbDatabase* db,
             rsz::Resizer* resizer);
   void reset();
-  void resynth();
+  void resynth(sta::Corner* corner);
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,

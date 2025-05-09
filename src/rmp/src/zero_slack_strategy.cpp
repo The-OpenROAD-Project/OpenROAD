@@ -67,7 +67,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
 
   AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
-  factory.SetCorner(sta->cmdCorner());
+  factory.SetCorner(corner_);
   AbcLibrary abc_library = factory.Build();
 
   // Disable incremental timing.

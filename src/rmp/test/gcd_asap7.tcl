@@ -28,18 +28,16 @@ report_tns
 
 puts "-- After --\n"
 
-resynth
+resynth -corner fast
 report_timing_histogram
 report_cell_usage
 report_checks
 report_wns
 report_tns
 
-resynth
+resynth -corner fast
 report_timing_histogram
 report_cell_usage
 report_checks
 report_wns
 report_tns
-
-write_verilog /tmp/gcd_asap7.v
