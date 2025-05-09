@@ -2734,7 +2734,7 @@ class extMain
 
   Ath__array1D<SEQ*>*** _dgContextArray = nullptr;
   uint _dgContextDepth;
-  uint _dgContextPlanes;
+  uint _dgContextPlanes = 0;
   uint _dgContextTracks;
   uint _dgContextBaseLvl;
   int _dgContextLowLvl;
@@ -2746,7 +2746,7 @@ class extMain
 
   Ath__array1D<int>** _ccContextArray = nullptr;
   Ath__array1D<int>** _ccMergedContextArray = nullptr;
-  uint _ccContextPlanes;
+  uint _ccContextPlanes = 0;
 
   uint _extRun = 0;
   odb::dbExtControl* _prevControl = nullptr;
