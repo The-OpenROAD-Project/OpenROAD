@@ -275,7 +275,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    int max_repairs_per_pass,
                    bool match_cell_footprint,
                    bool verbose,
-                   const std::vector<MoveType> & sequence,
+                   const std::vector<MoveType>& sequence,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_buffering,
@@ -811,7 +811,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   BufferMove* buffer_move = nullptr;
   SizeMove* size_move = nullptr;
   SwapPinsMove* swap_pins_move = nullptr;
-  UnbufferMove* unbuffer_move= nullptr;
+  UnbufferMove* unbuffer_move = nullptr;
 
   friend class BufferedNet;
   friend class GateCloner;

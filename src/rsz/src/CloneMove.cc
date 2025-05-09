@@ -73,23 +73,26 @@ bool CloneMove::doMove(const Path* drvr_path,
   const int fanout = this->fanout(drvr_vertex);
   if (fanout <= split_load_min_fanout_) {
     return false;
-    }
+  }
   const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
   if (tristate_drvr) {
     return false;
-    }
+  }
   const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
   if (resizer_->dontTouch(net)) {
     return false;
-    }
+  }
   // We can probably relax this with the new ECO code
-  if (resizer_->buffer_move->hasPendingMoves(db_network_->instance(drvr_pin)) > 0) {
+  if (resizer_->buffer_move->hasPendingMoves(db_network_->instance(drvr_pin))
+      > 0) {
     return false;
-    }
+  }
   // We can probably relax this with the new ECO code
-  if (resizer_->split_load_move->hasPendingMoves(db_network_->instance(drvr_pin)) > 0) {
+  if (resizer_->split_load_move->hasPendingMoves(
+          db_network_->instance(drvr_pin))
+      > 0) {
     return false;
-}
+  }
 
   // Divide and conquer.
   debugPrint(logger_,

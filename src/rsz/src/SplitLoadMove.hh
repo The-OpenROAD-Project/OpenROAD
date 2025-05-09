@@ -28,7 +28,6 @@ class SplitLoadMove : public BaseMove
               float setup_slack_margin) override;
 
   const char* name() override { return "SplitLoadMove"; }
-
 };
 
 }  // namespace rsz

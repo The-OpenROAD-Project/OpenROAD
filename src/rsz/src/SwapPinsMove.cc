@@ -130,12 +130,10 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
   return false;
 }
 
-
 void SwapPinsMove::swapPins(Instance* inst,
-                       LibertyPort* port1,
-                       LibertyPort* port2)
+                            LibertyPort* port1,
+                            LibertyPort* port2)
 {
-
   Pin *found_pin1, *found_pin2;
   Net *net1, *net2;
 
@@ -188,14 +186,15 @@ void SwapPinsMove::swapPins(Instance* inst,
 
     // Invalidate the parasitics on these two nets.
     if (resizer_->haveEstimatedParasitics()) {
-      resizer_->invalidateParasitics(found_pin2,
-                           db_network_->dbToSta(flat_net_pin1));  // net1);
-      resizer_->invalidateParasitics(found_pin1,
-                           db_network_->dbToSta(flat_net_pin2));  // net2);
+      resizer_->invalidateParasitics(
+          found_pin2,
+          db_network_->dbToSta(flat_net_pin1));  // net1);
+      resizer_->invalidateParasitics(
+          found_pin1,
+          db_network_->dbToSta(flat_net_pin2));  // net2);
     }
   }
 }
-
 
 // Lets just look at the first list for now.
 // We may want to cache this information somwhere (by building it up for the

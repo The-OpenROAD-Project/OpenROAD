@@ -4290,22 +4290,22 @@ MoveType Resizer::parseMove(const std::string& s)
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
   if (lower == "buffer") {
     return rsz::MoveType::BUFFER;
-    }
+  }
   if (lower == "unbuffer") {
     return rsz::MoveType::UNBUFFER;
-    }
+  }
   if (lower == "swap") {
     return rsz::MoveType::SWAP;
-    }
+  }
   if (lower == "size") {
     return rsz::MoveType::SIZE;
-    }
+  }
   if (lower == "clone") {
     return rsz::MoveType::CLONE;
-    }
+  }
   if (lower == "split") {
     return rsz::MoveType::SPLIT;
-    }
+  }
   throw std::invalid_argument("Invalid move type: " + s);
 }
 

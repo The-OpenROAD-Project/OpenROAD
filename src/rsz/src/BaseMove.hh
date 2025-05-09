@@ -83,8 +83,7 @@ using TgtSlews = std::array<Slew, RiseFall::index_count>;
 struct SlackEstimatorParams
 {
   SlackEstimatorParams(const float margin, const Corner* corner)
-      : setup_slack_margin(margin), 
-        corner(corner)
+      : setup_slack_margin(margin), corner(corner)
   {
   }
 
@@ -97,7 +96,6 @@ struct SlackEstimatorParams
   LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
   const Corner* corner;
-
 };
 
 class BaseMove : public sta::dbStaState

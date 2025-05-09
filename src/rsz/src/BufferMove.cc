@@ -42,23 +42,23 @@ bool BufferMove::doMove(const Path* drvr_path,
   const int fanout = this->fanout(drvr_vertex);
   if (fanout <= 1) {
     return false;
-    }
+  }
   // Rebuffer blows up on large fanout nets.
   if (fanout >= rebuffer_max_fanout_) {
     return false;
-    }
+  }
   const bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
   if (tristate_drvr) {
     return false;
-    }
+  }
   const Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
   if (resizer_->dontTouch(net)) {
     return false;
-    }
+  }
   dbNet* db_net = db_network_->staToDb(net);
   if (db_net->isConnectedByAbutment()) {
     return false;
-    }
+  }
 
   const int rebuffer_count = rebuffer(drvr_pin);
   if (rebuffer_count > 0) {

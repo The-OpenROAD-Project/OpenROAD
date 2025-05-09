@@ -73,7 +73,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const int max_passes,
                               const int max_repairs_per_pass,
                               const bool verbose,
-                              const std::vector<MoveType> &sequence,
+                              const std::vector<MoveType>& sequence,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
                               const bool skip_buffering,
@@ -115,21 +115,21 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     move_sequence.clear();
     if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move);
-        }
+    }
     // Always  have sizing
     move_sequence.push_back(resizer_->size_move);
     if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move);
-        }
+    }
     if (!skip_buffering) {
       move_sequence.push_back(resizer_->buffer_move);
-        }
+    }
     if (!skip_gate_cloning) {
       move_sequence.push_back(resizer_->clone_move);
-        }
+    }
     if (!skip_buffering) {
       move_sequence.push_back(resizer_->split_load_move);
-        }
+    }
   }
 
   string repair_moves = "Repair move sequence: ";
@@ -431,13 +431,13 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     repaired = true;
     if (split_load_moves_ == 0) {
       logger_->info(RSZ, 40, "Inserted {} buffers.", buffer_moves_);
-        } else {
+    } else {
       logger_->info(RSZ,
                     45,
                     "Inserted {} buffers, {} to split loads.",
                     buffer_moves_ + split_load_moves_,
                     split_load_moves_);
-        }
+    }
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves_ + split_load_moves_);
@@ -646,14 +646,14 @@ bool RepairSetup::repairPath(Path* path,
           }
           // Move on to the next gate
           break;
-        } 
-      debugPrint(logger_,
-                 RSZ,
-                 "moves",
-                 2,
-                 "Move {} failed for {}",
-                 move->name(),
-                 network_->pathName(drvr_pin));
+        }
+        debugPrint(logger_,
+                   RSZ,
+                   "moves",
+                   2,
+                   "Move {} failed for {}",
+                   move->name(),
+                   network_->pathName(drvr_pin));
       }
     }
   }
