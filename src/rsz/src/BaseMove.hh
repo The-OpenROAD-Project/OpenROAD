@@ -83,25 +83,18 @@ using TgtSlews = std::array<Slew, RiseFall::index_count>;
 struct SlackEstimatorParams
 {
   SlackEstimatorParams(const float margin, const Corner* corner)
-      : driver_pin(nullptr),
-        prev_driver_pin(nullptr),
-        driver_input_pin(nullptr),
-        driver(nullptr),
-        driver_path(nullptr),
-        prev_driver_path(nullptr),
-        driver_cell(nullptr),
-        setup_slack_margin(margin), 
+      : setup_slack_margin(margin), 
         corner(corner)
   {
   }
 
-  Pin* driver_pin;
-  Pin* prev_driver_pin;
-  Pin* driver_input_pin;
-  Instance* driver;
-  const Path* driver_path;
-  const Path* prev_driver_path;
-  LibertyCell* driver_cell;
+  Pin* driver_pin{nullptr};
+  Pin* prev_driver_pin{nullptr};
+  Pin* driver_input_pin{nullptr};
+  Instance* driver{nullptr};
+  const Path* driver_path{nullptr};
+  const Path* prev_driver_path{nullptr};
+  LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
   const Corner* corner;
 
