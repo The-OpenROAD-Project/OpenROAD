@@ -153,12 +153,22 @@ extDistRCTable::extDistRCTable(uint distCnt)
   _measureTable = new Ath__array1D<extDistRC*>(n);
 
   _computeTable = nullptr;
+
+  for (int i = 0; i < 16; i++) {
+    _measureTableR[i] = nullptr;
+  }
 }
 
 extDistRCTable::~extDistRCTable()
 {
   delete _measureTable;
   delete _computeTable;
+
+  for (int i = 0; i < 16; i++) {
+    if (_measureTableR[i] != _measureTable) {
+      delete _measureTableR[i];
+    }
+  }
 }
 
 uint extDistRCTable::mapExtrapolate(uint loDist,
