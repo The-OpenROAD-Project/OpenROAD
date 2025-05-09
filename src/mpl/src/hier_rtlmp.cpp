@@ -874,7 +874,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
 
 void HierRTLMP::searchForAvailableRegionsForPins()
 {
-  if (!treeHasOnlyUnconstrainedIOs()) {
+  if (treeHasConstrainedIOs()) {
     return;
   }
 
@@ -904,8 +904,7 @@ void HierRTLMP::createPinAccessBlockages()
     return;
   }
 
-  if (treeHasOnlyUnconstrainedIOs()
-      && block_->getBlockedRegionsForPins().empty()) {
+  if (!treeHasConstrainedIOs() && block_->getBlockedRegionsForPins().empty()) {
     // If there are no constraints at all, we give freedom to SA so it
     // doesn't have to deal with pin access blockages across the entire
     // extension of all edges of the die area. This should help SA not
@@ -940,15 +939,15 @@ void HierRTLMP::computePinAccessDepthLimits()
   pin_access_depth_limits_.vertical = max_depth_proportion * die.getHeight();
 }
 
-bool HierRTLMP::treeHasOnlyUnconstrainedIOs() const
+bool HierRTLMP::treeHasConstrainedIOs() const
 {
   std::vector<Cluster*> io_clusters = getClustersOfUnplacedIOPins();
   for (Cluster* io_cluster : io_clusters) {
     if (!io_cluster->isClusterOfUnconstrainedIOPins()) {
-      return false;
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 void HierRTLMP::createBlockagesForAvailableRegions()

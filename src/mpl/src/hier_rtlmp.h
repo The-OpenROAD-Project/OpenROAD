@@ -155,7 +155,7 @@ class HierRTLMP
       BoundaryToRegionsMap& boundary_to_blocked_regions) const;
   void createPinAccessBlockages();
   void computePinAccessDepthLimits();
-  bool treeHasOnlyUnconstrainedIOs() const;
+  bool treeHasConstrainedIOs() const;
   std::vector<Cluster*> getClustersOfUnplacedIOPins() const;
   void createPinAccessBlockage(const BoundaryRegion& region, float depth);
   float computePinAccessBaseDepth(double io_span) const;
