@@ -60,7 +60,7 @@ all paths to zero slack. It's an improved version of restructure. If you have mu
 corners you need to specify witch `-corner` you want to use.
 
 ```tcl
-resynth 
+resynth [-corner corner]
 ```
 
 #### Options
