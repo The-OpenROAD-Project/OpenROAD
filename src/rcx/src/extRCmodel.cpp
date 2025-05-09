@@ -151,6 +151,7 @@ extDistRCTable::extDistRCTable(uint distCnt)
 {
   uint n = 16 * (distCnt / 16 + 1);
   _measureTable = new Ath__array1D<extDistRC*>(n);
+  _measureInR = false;
 
   _computeTable = nullptr;
 }
@@ -432,6 +433,11 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     table = new Ath__array1D<extDistRC*>(cnt);
   }
 
+  if (!_measureInR) {
+    delete _measureTable;
+  }
+  _measureInR = false;
+
   Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
   int cnt1 = 0;
   int kk = 0;
@@ -513,6 +519,11 @@ uint extDistRCTable::readRules(Ath__parser* parser,
   if (ignore) {
     return cnt;
   }
+
+  if (!_measureInR) {
+    delete _measureTable;
+  }
+  _measureInR = false;
 
   _measureTable = table;
 
