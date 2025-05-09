@@ -21,6 +21,7 @@
 #include "map/scl/sclCon.h"
 // clang-format on
 #include "map/scl/sclLib.h"
+#include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
@@ -311,19 +312,41 @@ AbcLibraryFactory& AbcLibraryFactory::AddDbSta(sta::dbSta* db_sta)
   return *this;
 }
 
+AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Corner* corner)
+{
+  corner_ = corner;
+  return *this;
+}
+
 AbcLibrary AbcLibraryFactory::Build()
 {
   if (!db_sta_) {
     logger_->error(utl::RMP, 15, "Build called with null sta library");
   }
 
-  abc::SC_Lib* abc_library = abc::Abc_SclLibAlloc();
-  std::unique_ptr<sta::LibertyLibraryIterator> library_iter(
-      db_sta_->network()->libertyLibraryIterator());
-  while (library_iter->hasNext()) {
-    sta::LibertyLibrary* library = library_iter->next();
-    PopulateAbcSclLibFromSta(abc_library, library);
+  if (db_sta_->corners()->count() > 1 && !corner_) {
+    logger_->error(utl::RMP,
+                   1031,
+                   "More than one corner is loaded, and no corner was set");
   }
+
+  if (!corner_) {
+    corner_ = db_sta_->corners()->corners()[0];
+  }
+
+  // Populate units from default liberty
+  abc::SC_Lib* abc_library = abc::Abc_SclLibAlloc();
+  sta::LibertyLibrary* default_library
+      = db_sta_->network()->defaultLibertyLibrary();
+  PopulateLibraryDetails(abc_library, default_library);
+
+  // Grab cells from requested corner.
+  std::vector<sta::LibertyCell*> liberty_cells
+      = GetLibertyCellsFromCorner(corner_);
+
+  PopulateAbcSclLibFromSta(
+      abc_library, liberty_cells, default_library->units());
+
   abc::Abc_SclLibNormalize(abc_library);
   abc::Abc_SclHashCells(abc_library);
   abc::Abc_SclLinkCells(abc_library);
@@ -332,13 +355,29 @@ AbcLibrary AbcLibraryFactory::Build()
       abc_library, [](abc::SC_Lib* lib) { abc::Abc_SclLibFree(lib); }));
 }
 
-void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
-                                                 sta::LibertyLibrary* library)
+std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(
+    sta::Corner* corner)
+{
+  std::vector<sta::LibertyCell*> result;
+  const sta::LibertySeq& libraries
+      = corner->libertyLibraries(sta::MinMax::max());
+  for (sta::LibertyLibrary* library : libraries) {
+    sta::LibertyCellIterator cell_iterator(library);
+    while (cell_iterator.hasNext()) {
+      sta::LibertyCell* liberty_cell = cell_iterator.next();
+      result.push_back(liberty_cell);
+    }
+  }
+
+  return result;
+}
+
+void AbcLibraryFactory::PopulateLibraryDetails(abc::SC_Lib* sc_library,
+                                               sta::LibertyLibrary* library)
 {
   sta::Units* units = library->units();
   sta::Unit* time_unit = units->timeUnit();
   sta::Unit* cap_unit = units->capacitanceUnit();
-  sta::Unit* power_unit = units->powerUnit();
 
   if (!sc_library->pName) {
     sc_library->pName = strdup(library->name());
@@ -369,13 +408,16 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
   } else {
     sc_library->default_max_out_slew = -1.0;
   }
+}
 
+void AbcLibraryFactory::PopulateAbcSclLibFromSta(
+    abc::SC_Lib* sc_library,
+    std::vector<sta::LibertyCell*>& cells,
+    sta::Units* units)
+{
   // Loop through all of the cells in STA and create equivalents in
   // the ABC structure.
-  sta::LibertyCellIterator cell_iterator(library);
-  while (cell_iterator.hasNext()) {
-    sta::LibertyCell* cell = cell_iterator.next();
-
+  for (sta::LibertyCell* cell : cells) {
     if (!isCompatibleWithAbc(cell)) {
       continue;
     }
@@ -403,12 +445,14 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(abc::SC_Lib* sc_library,
     bool leakage_power_exists;
     float leakage_power = 0;
     cell->leakagePower(leakage_power, leakage_power_exists);
+    sta::Unit* power_unit = units->powerUnit();
     if (leakage_power_exists) {
       abc_cell->leakage = power_unit->staToUser(leakage_power);
     } else if (average_leakage) {
       // We know we'll always have at least one leakage power since average
       // is present.
-      abc_cell->leakage = average_leakage.value() / leakage_powers->size();
+      abc_cell->leakage = power_unit->staToUser(average_leakage.value()
+                                                / leakage_powers->size());
     } else {
       logger_->warn(utl::RMP,
                     22,

@@ -12,6 +12,8 @@ or_integration_tests(
     blif_writer_sequential
     const_cell_removal
     gcd_restructure
+    aes_asap7
+    gcd_asap7
 )
 
 # Skipped

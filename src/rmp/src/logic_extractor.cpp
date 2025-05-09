@@ -299,9 +299,19 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
   sta::PinSet filtered_pin_set(network);
 
   for (sta::Pin* pin : primary_outputs) {
-    sta::PinSet* pin_iterator = network->drivers(pin);
-    for (const sta::Pin* connected_pin : *pin_iterator) {
+    auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
+        network->connectedPinIterator(pin));
+    while (pin_iterator->hasNext()) {
+      const sta::Pin* connected_pin = pin_iterator->next();
       sta::Instance* connected_instance = network->instance(connected_pin);
+
+      if (!network->direction(connected_pin)->isOutput()) {
+        continue;
+      }
+
+      if (!connected_instance) {
+        continue;
+      }
       // Output pin is driven by something in the cutset. Keep it.
       if (cut_instances.find(connected_instance) != cut_instances.end()) {
         filtered_pin_set.insert(pin);
@@ -326,7 +336,15 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   std::unordered_set<sta::Net*> primary_input_nets;
   primary_input_nets.reserve(primary_io_pins.size());
   for (sta::Pin* pin : primary_io_pins) {
-    sta::Net* net = network->net(pin);
+    sta::Net* net = nullptr;
+    // check if this pin is a terminal
+    sta::Term* term = network->term(pin);
+    if (term) {
+      net = network->net(term);
+    } else {
+      net = network->net(pin);
+    }
+
     if (!net) {
       logger_->error(utl::RMP,
                      1023,

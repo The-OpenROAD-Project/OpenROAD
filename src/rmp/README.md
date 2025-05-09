@@ -56,7 +56,8 @@ restructure
 ### Resynth
 
 Resynthesis can be performed with the resynthesis command it will attempt to drive
-all paths to zero slack. It's an improved version of restructure.
+all paths to zero slack. It's an improved version of restructure. If you have multiple
+corners this command with use what's set in `sta::cmd_corner` and can be set with `sta::set_cmd_corner`
 
 ```tcl
 resynth 

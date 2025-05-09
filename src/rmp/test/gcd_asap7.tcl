@@ -41,3 +41,5 @@ report_cell_usage
 report_checks
 report_wns
 report_tns
+
+write_verilog /tmp/gcd_asap7.v
