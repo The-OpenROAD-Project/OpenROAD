@@ -183,6 +183,21 @@ struct TechAndDesign
 
 static TechAndDesign the_tech_and_design;
 
+void clear_openroad_ctx()
+{
+  the_tech_and_design.tech.reset();
+  the_tech_and_design.design.reset();
+}
+
+#ifdef ENABLE_KOKKOS
+void initialize_kokkos()
+{
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
+      ord::OpenRoad::openRoad()->getThreadCount()));
+  Kokkos::push_finalize_hook(clear_openroad_ctx);
+}
+#endif
+
 static void handler(int sig)
 {
   if (fatal_error_in_progress) {
@@ -279,8 +294,7 @@ int main(int argc, char* argv[])
     }
 
 #ifdef ENABLE_KOKKOS
-    Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
-        ord::OpenRoad::openRoad()->getThreadCount()));
+    initialize_kokkos();
 #endif
 
 #if PY_VERSION_HEX >= 0x03080000
@@ -451,10 +465,8 @@ static int tclAppInit(int& argc,
       ord::OpenRoad::openRoad()->setThreadCount(
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
-
 #ifdef ENABLE_KOKKOS
-    Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(
-        ord::OpenRoad::openRoad()->getThreadCount()));
+    initialize_kokkos();
 #endif
 
     const bool gui_enabled = gui::Gui::enabled();
