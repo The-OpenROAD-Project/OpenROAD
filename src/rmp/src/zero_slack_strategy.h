@@ -14,8 +14,7 @@ namespace rmp {
 class ZeroSlackStrategy : public ResynthesisStrategy
 {
  public:
-  explicit ZeroSlackStrategy(sta::Corner* corner = nullptr)
-      : corner_(corner) {};
+  explicit ZeroSlackStrategy(sta::Corner* corner = nullptr) : corner_(corner) {}
   void OptimizeDesign(sta::dbSta* sta,
                       UniqueName& name_generator,
                       utl::Logger* logger) override;
