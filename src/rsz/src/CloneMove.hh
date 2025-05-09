@@ -36,7 +36,7 @@ class CloneMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() const override { return "CloneMove"; }
+  const char* name() { return "CloneMove"; }
 
  private:
   Point computeCloneGateLocation(

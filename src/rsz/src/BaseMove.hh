@@ -83,15 +83,16 @@ using TgtSlews = std::array<Slew, RiseFall::index_count>;
 struct SlackEstimatorParams
 {
   SlackEstimatorParams(const float margin, const Corner* corner)
-      : setup_slack_margin(margin), corner(corner)
+      : driver_pin(nullptr),
+        prev_driver_pin(nullptr),
+        driver_input_pin(nullptr),
+        driver(nullptr),
+        driver_path(nullptr),
+        prev_driver_path(nullptr),
+        driver_cell(nullptr),
+        setup_slack_margin(margin), 
+        corner(corner)
   {
-    driver_pin{nullptr};
-    prev_driver_pin{nullptr};
-    driver_input_pin{nullptr};
-    driver{nullptr};
-    driver_path{nullptr};
-    prev_driver_path{nullptr};
-    driver_cell{nullptr};
   }
 
   Pin* driver_pin;
@@ -125,25 +126,20 @@ class BaseMove : public sta::dbStaState
 
   void init();
 
-  // Analysis functions
-  // virtual double deltaSlack() = 0;
-  // virtual double deltaPower() = 0;
-  // virtual douele deltaArea() = 0;
-
   // Accept the pending optimizations
   void commitMoves();
   // Abandon the pending optimizations
-  void restoreMoves();
+  void undoMoves();
   // Total pending optimizations (since last checkpoint)
-  int pendingMoves() const;
+  int numPendingMoves() const;
   // Whether this optimization is pending
-  int pendingMoves(Instance* inst) const;
+  int hasPendingMoves(Instance* inst) const;
   // Total optimizations
-  int committedMoves() const;
+  int numCommittedMoves() const;
   // Whether this optimization is committed or pending
-  int countMoves(Instance* inst) const;
+  int hasMoves(Instance* inst) const;
   // Total accepted and pending optimizations
-  int countMoves() const;
+  int numMoves() const;
   // Add a new pending optimization
   void addMove(Instance* inst, int count = 1);
 

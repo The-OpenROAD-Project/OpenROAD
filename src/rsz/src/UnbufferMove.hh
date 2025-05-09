@@ -29,7 +29,7 @@ class UnbufferMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() const override { return "UnbufferMove"; }
+  const char* name() { return "UnbufferMove"; }
 
   bool removeBufferIfPossible(Instance* buffer, bool honorDontTouchFixed);
 

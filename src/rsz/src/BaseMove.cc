@@ -77,42 +77,34 @@ void BaseMove::init()
   all_inst_set_.clear();
 }
 
-void BaseMove::restoreMoves()
+void BaseMove::undoMoves()
 {
   pending_count_ = 0;
   pending_inst_set_.clear();
 }
 
-int BaseMove::countMoves(Instance* inst) const
+int BaseMove::hasMoves(Instance* inst) const
 {
   return all_inst_set_.count(inst);
 }
 
-int BaseMove::pendingMoves(Instance* inst) const
+int BaseMove::hasPendingMoves(Instance* inst) const
 {
   return pending_inst_set_.count(inst);
 }
 
-int BaseMove::pendingMoves() const
+int BaseMove::numPendingMoves() const
 {
   return pending_count_;
 }
 
-int BaseMove::committedMoves() const
+int BaseMove::numCommittedMoves() const
 {
   return all_count_;
 }
 
-int BaseMove::countMoves() const
+int BaseMove::numMoves() const
 {
-  debugPrint(logger_,
-             RSZ,
-             "moves",
-             1,
-             "counts {} all_count_ {} pending_count_ {}",
-             name(),
-             all_count_,
-             pending_count_);
   return all_count_ + pending_count_;
 }
 

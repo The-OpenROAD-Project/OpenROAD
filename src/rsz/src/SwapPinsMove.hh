@@ -30,7 +30,7 @@ class SwapPinsMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() const override { return "SwapPinsMove"; }
+  const char* name() { return "SwapPinsMove"; }
 
   void reportSwappablePins();
 

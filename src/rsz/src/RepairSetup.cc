@@ -416,12 +416,12 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   printProgress(opto_iteration, true, true, false, num_viols);
 
-  int buffer_moves_ = resizer_->buffer_move->committedMoves();
-  int size_moves_ = resizer_->size_move->committedMoves();
-  int swap_pins_moves_ = resizer_->swap_pins_move->committedMoves();
-  int clone_moves_ = resizer_->clone_move->committedMoves();
-  int split_load_moves_ = resizer_->split_load_move->committedMoves();
-  int unbuffer_moves_ = resizer_->unbuffer_move->committedMoves();
+  int buffer_moves_ = resizer_->buffer_move->numCommittedMoves();
+  int size_moves_ = resizer_->size_move->numCommittedMoves();
+  int swap_pins_moves_ = resizer_->swap_pins_move->numCommittedMoves();
+  int clone_moves_ = resizer_->clone_move->numCommittedMoves();
+  int split_load_moves_ = resizer_->split_load_move->numCommittedMoves();
+  int unbuffer_moves_ = resizer_->unbuffer_move->numCommittedMoves();
 
   if (unbuffer_moves_ > 0) {
     repaired = true;
@@ -487,21 +487,21 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  int unbuffer_moves_ = resizer_->unbuffer_move->committedMoves();
+  int unbuffer_moves_ = resizer_->unbuffer_move->numCommittedMoves();
   if (unbuffer_moves_ > 0) {
     logger_->info(RSZ, 61, "Removed {} buffers.", unbuffer_moves_);
   }
-  int buffer_moves_ = resizer_->buffer_move->committedMoves();
-  int split_load_moves_ = resizer_->split_load_move->countMoves();
+  int buffer_moves_ = resizer_->buffer_move->numCommittedMoves();
+  int split_load_moves_ = resizer_->split_load_move->numMoves();
   if (buffer_moves_ + split_load_moves_ > 0) {
     logger_->info(
         RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
   }
-  int size_moves_ = resizer_->size_move->countMoves();
+  int size_moves_ = resizer_->size_move->numMoves();
   if (size_moves_ > 0) {
     logger_->info(RSZ, 31, "Resized {} instances.", size_moves_);
   }
-  int swap_pins_moves_ = resizer_->swap_pins_move->countMoves();
+  int swap_pins_moves_ = resizer_->swap_pins_move->numMoves();
   if (swap_pins_moves_ > 0) {
     logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pins_moves_);
   }
@@ -701,12 +701,12 @@ void RepairSetup::printProgress(const int iteration,
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
-        resizer_->unbuffer_move->countMoves(),
-        resizer_->size_move->countMoves(),
-        resizer_->buffer_move->countMoves()
-            + resizer_->split_load_move->countMoves(),
-        resizer_->clone_move->countMoves(),
-        resizer_->swap_pins_move->countMoves(),
+        resizer_->unbuffer_move->numMoves(),
+        resizer_->size_move->numMoves(),
+        resizer_->buffer_move->numMoves()
+            + resizer_->split_load_move->numMoves(),
+        resizer_->clone_move->numMoves(),
+        resizer_->swap_pins_move->numMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),

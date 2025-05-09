@@ -30,7 +30,7 @@ class SplitLoadMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() const override { return "SplitLoadMove"; }
+  const char* name() { return "SplitLoadMove"; }
 
 };
 

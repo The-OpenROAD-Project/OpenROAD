@@ -82,7 +82,7 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
 
     // Check if we have already dealt with this instance
     // and prevent any further swaps.
-    if (countMoves(drvr) > 0) {
+    if (hasMoves(drvr) > 0) {
       return false;
     }
 

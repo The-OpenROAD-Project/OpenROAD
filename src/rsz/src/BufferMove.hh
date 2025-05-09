@@ -37,7 +37,7 @@ class BufferMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() const override { return "BufferMove"; }
+  const char* name() { return "BufferMove"; }
 
   void rebufferNet(const Pin* drvr_pin);
 

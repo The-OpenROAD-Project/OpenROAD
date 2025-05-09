@@ -18,7 +18,7 @@ class SizeMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() const override { return "SizeMove"; }
+  const char* name() { return "SizeMove"; }
 
  private:
   LibertyCell* upsizeCell(LibertyPort* in_port,
