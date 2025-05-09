@@ -5,18 +5,17 @@
 
 namespace rsz {
 
+using std::string;
 
- using std::string;
-
- using sta::ArcDelay;
- using sta::Instance;
- using sta::InstancePinIterator;
- using sta::LoadPinIndexMap;
- using sta::NetConnectedPinIterator;
- using sta::Path;
- using sta::PathExpanded;
- using sta::Slack;
- using sta::Slew;
+using sta::ArcDelay;
+using sta::Instance;
+using sta::InstancePinIterator;
+using sta::LoadPinIndexMap;
+using sta::NetConnectedPinIterator;
+using sta::Path;
+using sta::PathExpanded;
+using sta::Slack;
+using sta::Slew;
 
 class UnbufferMove : public BaseMove
 {

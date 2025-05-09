@@ -1,30 +1,25 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include <cmath>
-#include <memory>
-#include <tuple>
-#include <vector>
-
 #include "BaseMove.hh"
 
 namespace rsz {
 
- using std::string;
+using std::string;
 
- using sta::ArcDelay;
- using sta::Instance;
- using sta::InstancePinIterator;
- using sta::LoadPinIndexMap;
- using sta::Net;
- using sta::NetConnectedPinIterator;
- using sta::Path;
- using sta::PathExpanded;
- using sta::Pin;
- using sta::RiseFallBoth;
- using sta::Slack;
- using sta::Slew;
- using sta::Vertex;
+using sta::ArcDelay;
+using sta::Instance;
+using sta::InstancePinIterator;
+using sta::LoadPinIndexMap;
+using sta::Net;
+using sta::NetConnectedPinIterator;
+using sta::Path;
+using sta::PathExpanded;
+using sta::Pin;
+using sta::RiseFallBoth;
+using sta::Slack;
+using sta::Slew;
+using sta::Vertex;
 
 class BufferMove : public BaseMove
 {

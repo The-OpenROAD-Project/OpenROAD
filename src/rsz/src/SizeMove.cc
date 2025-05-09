@@ -11,28 +11,28 @@
 
 namespace rsz {
 
- using std::string;
+using std::string;
 
- using odb::dbInst;
- using odb::dbMaster;
- 
- using utl::RSZ;
+using odb::dbInst;
+using odb::dbMaster;
 
- using sta::ArcDelay;
- using sta::Cell;
- using sta::DcalcAnalysisPt;
- using sta::Instance;
- using sta::InstancePinIterator;
- using sta::LibertyCell;
- using sta::LibertyPort;
- using sta::LoadPinIndexMap;
- using sta::Net;
- using sta::NetConnectedPinIterator;
- using sta::Path;
- using sta::PathExpanded;
- using sta::Pin;
- using sta::Slack;
- using sta::Slew;
+using utl::RSZ;
+
+using sta::ArcDelay;
+using sta::Cell;
+using sta::DcalcAnalysisPt;
+using sta::Instance;
+using sta::InstancePinIterator;
+using sta::LibertyCell;
+using sta::LibertyPort;
+using sta::LoadPinIndexMap;
+using sta::Net;
+using sta::NetConnectedPinIterator;
+using sta::Path;
+using sta::PathExpanded;
+using sta::Pin;
+using sta::Slack;
+using sta::Slew;
 
 bool SizeMove::doMove(const Path* drvr_path,
                       int drvr_index,

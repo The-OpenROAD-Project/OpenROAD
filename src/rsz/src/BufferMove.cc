@@ -11,23 +11,23 @@
 
 namespace rsz {
 
- using std::string;
+using std::string;
 
- using utl::RSZ;
+using utl::RSZ;
 
- using sta::ArcDelay;
- using sta::Instance;
- using sta::InstancePinIterator;
- using sta::LoadPinIndexMap;
- using sta::Net;
- using sta::NetConnectedPinIterator;
- using sta::Path;
- using sta::PathExpanded;
- using sta::Pin;
- using sta::Slack;
- using sta::Slew;
- using sta::TimingArc;
- using sta::Vertex;
+using sta::ArcDelay;
+using sta::Instance;
+using sta::InstancePinIterator;
+using sta::LoadPinIndexMap;
+using sta::Net;
+using sta::NetConnectedPinIterator;
+using sta::Path;
+using sta::PathExpanded;
+using sta::Pin;
+using sta::Slack;
+using sta::Slew;
+using sta::TimingArc;
+using sta::Vertex;
 
 bool BufferMove::doMove(const Path* drvr_path,
                         int drvr_index,

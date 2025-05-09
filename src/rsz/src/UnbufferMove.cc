@@ -16,30 +16,30 @@
 
 namespace rsz {
 
- using std::string;
+using std::string;
 
- using odb::dbInst;
+using odb::dbInst;
 
- using utl::RSZ;
+using utl::RSZ;
 
- using sta::ArcDelay;
- using sta::Corner;
- using sta::DcalcAnalysisPt;
- using sta::GraphDelayCalc;
- using sta::Instance;
- using sta::InstancePinIterator;
- using sta::LibertyCell;
- using sta::LibertyPort;
- using sta::LoadPinIndexMap;
- using sta::Net;
- using sta::NetConnectedPinIterator;
- using sta::Path;
- using sta::PathExpanded;
- using sta::Pin;
- using sta::RiseFall;
- using sta::Slack;
- using sta::Slew;
- using sta::Vertex;
+using sta::ArcDelay;
+using sta::Corner;
+using sta::DcalcAnalysisPt;
+using sta::GraphDelayCalc;
+using sta::Instance;
+using sta::InstancePinIterator;
+using sta::LibertyCell;
+using sta::LibertyPort;
+using sta::LoadPinIndexMap;
+using sta::Net;
+using sta::NetConnectedPinIterator;
+using sta::Path;
+using sta::PathExpanded;
+using sta::Pin;
+using sta::RiseFall;
+using sta::Slack;
+using sta::Slew;
+using sta::Vertex;
 
 // Remove driver if
 // 1) it is a buffer without attributes like dont-touch
