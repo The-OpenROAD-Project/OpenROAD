@@ -19,45 +19,38 @@ using ClusterToBoundaryRegionMap = std::map<Cluster*, BoundaryRegion>;
 using BoundaryRegionList = std::vector<BoundaryRegion>;
 
 // One of the edges of the die area.
-enum Boundary
+enum class Boundary
 {
-  NONE,
   B,
   L,
   T,
   R
 };
 
-inline std::string toString(const Boundary& pin_access)
+inline std::string toString(const Boundary& boundary)
 {
-  switch (pin_access) {
-    case L:
-      return std::string("L");
-    case T:
-      return std::string("T");
-    case R:
-      return std::string("R");
-    case B:
-      return std::string("B");
-    default:
-      return std::string("NONE");
-  }
-}
+  std::string string;
 
-inline Boundary opposite(const Boundary& pin_access)
-{
-  switch (pin_access) {
-    case L:
-      return R;
-    case T:
-      return B;
-    case R:
-      return L;
-    case B:
-      return T;
-    default:
-      return NONE;
+  switch (boundary) {
+    case (Boundary::L): {
+      string = 'L';
+      break;
+    }
+    case (Boundary::T): {
+      string = 'T';
+      break;
+    }
+    case (Boundary::R): {
+      string = 'R';
+      break;
+    }
+    case (Boundary::B): {
+      string = 'B';
+      break;
+    }
   }
+
+  return string;
 }
 
 struct SACoreWeights
@@ -95,7 +88,7 @@ struct BoundaryRegion
   }
 
   odb::Line line;
-  Boundary boundary;
+  Boundary boundary = Boundary::L;
 };
 
 // Utility to help sorting width intervals.
@@ -118,21 +111,20 @@ inline bool isAreaSmaller(const Tiling& tiling_a, const Tiling& tiling_b)
 inline Boundary getBoundary(odb::dbBlock* block, const odb::Rect& region)
 {
   const odb::Rect& die = block->getDieArea();
-  Boundary boundary = NONE;
+
   if (region.dx() == 0) {
     if (region.xMin() == die.xMin()) {
-      boundary = L;
-    } else {
-      boundary = R;
+      return Boundary::L;
     }
-  } else {
-    if (region.yMin() == die.yMin()) {
-      boundary = B;
-    } else {
-      boundary = T;
-    }
+
+    return Boundary::R;
   }
-  return boundary;
+
+  if (region.yMin() == die.yMin()) {
+    return Boundary::B;
+  }
+
+  return Boundary::T;
 }
 
 inline odb::Rect lineToRect(const odb::Line line)
@@ -153,21 +145,22 @@ inline odb::Line rectToLine(odb::dbBlock* block,
 
   odb::Line line;
   switch (getBoundary(block, rect)) {
-    case L:
-      return line = {rect.ll(), rect.ul()};
-    case R:
-      return line = {rect.lr(), rect.ur()};
-    case T:
-      return line = {rect.ul(), rect.ur()};
-    case B:
-      return line = {rect.ll(), rect.lr()};
-    case NONE:
-      logger->error(utl::MPL,
-                    61,
-                    "Couldn't convert rect {} to line. The is region outside "
-                    "of the die {} boundaries.",
-                    rect,
-                    block->getDieArea());
+    case (Boundary::L): {
+      line = {rect.ll(), rect.ul()};
+      break;
+    }
+    case (Boundary::R): {
+      line = {rect.lr(), rect.ur()};
+      break;
+    }
+    case (Boundary::T): {
+      line = {rect.ul(), rect.ur()};
+      break;
+    }
+    case (Boundary::B): {
+      line = {rect.ll(), rect.lr()};
+      break;
+    }
   }
 
   return line;
@@ -176,24 +169,25 @@ inline odb::Line rectToLine(odb::dbBlock* block,
 inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
                                               const odb::Point& target)
 {
-  if (region.boundary == L || region.boundary == R) {
-    if (target.y() >= region.line.pt1().y()) {
-      return odb::Point(region.line.pt0().x(), region.line.pt1().y());
+  const odb::Line& line = region.line;
+  if (region.boundary == Boundary::L || region.boundary == Boundary::R) {
+    if (target.y() >= line.pt1().y()) {
+      return odb::Point(line.pt0().x(), line.pt1().y());
     }
-    if (target.y() <= region.line.pt0().y()) {
-      return odb::Point(region.line.pt0().x(), region.line.pt0().y());
+    if (target.y() <= line.pt0().y()) {
+      return odb::Point(line.pt0().x(), line.pt0().y());
     }
-    return odb::Point(region.line.pt0().x(), target.y());
+    return odb::Point(line.pt0().x(), target.y());
   }
 
   // Top or Bottom
-  if (target.x() >= region.line.pt1().x()) {
-    return odb::Point(region.line.pt1().x(), region.line.pt0().y());
+  if (target.x() >= line.pt1().x()) {
+    return odb::Point(line.pt1().x(), line.pt0().y());
   }
-  if (target.x() <= region.line.pt0().x()) {
-    return odb::Point(region.line.pt0().x(), region.line.pt0().y());
+  if (target.x() <= line.pt0().x()) {
+    return odb::Point(line.pt0().x(), line.pt0().y());
   }
-  return odb::Point(target.x(), region.line.pt0().y());
+  return odb::Point(target.x(), line.pt0().y());
 }
 
 // The distance in DBU from the source to the nearest point of the nearest

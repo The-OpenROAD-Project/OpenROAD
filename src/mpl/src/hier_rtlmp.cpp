@@ -1011,10 +1011,10 @@ BoundaryToRegionsMap HierRTLMP::getBoundaryToBlockedRegionsMap(
   BoundaryToRegionsMap boundary_to_blocked_regions;
   std::queue<odb::Rect> blocked_regions;
 
-  boundary_to_blocked_regions[L] = blocked_regions;
-  boundary_to_blocked_regions[R] = blocked_regions;
-  boundary_to_blocked_regions[B] = blocked_regions;
-  boundary_to_blocked_regions[T] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::L] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::R] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::B] = blocked_regions;
+  boundary_to_blocked_regions[Boundary::T] = blocked_regions;
 
   for (const odb::Rect& blocked_region : blocked_regions_for_pins) {
     Boundary boundary = getBoundary(block_, blocked_region);
@@ -1099,27 +1099,21 @@ void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
 
   Rect blockage = dbuToMicrons(lineToRect(region.line));
   switch (region.boundary) {
-    case L: {
+    case (Boundary::L): {
       blockage.setXMax(blockage.xMin() + blockage_depth);
       break;
     }
-    case R: {
+    case (Boundary::R): {
       blockage.setXMin(blockage.xMax() - blockage_depth);
       break;
     }
-    case B: {
+    case (Boundary::B): {
       blockage.setYMax(blockage.yMin() + blockage_depth);
       break;
     }
-    case T: {
+    case (Boundary::T): {
       blockage.setYMin(blockage.yMax() - blockage_depth);
       break;
-    }
-    case NONE: {
-      logger_->critical(MPL,
-                        48,
-                        "Attempting to create pin access blockage for cluster "
-                        "of unconstrained IOs!");
     }
   }
 
@@ -2994,7 +2988,7 @@ std::vector<odb::Rect> HierRTLMP::subtractOverlapRegion(
 
 bool HierRTLMP::isVertical(Boundary boundary) const
 {
-  return boundary == L || boundary == R;
+  return boundary == Boundary::L || boundary == Boundary::R;
 }
 
 odb::Rect HierRTLMP::getRect(Boundary boundary) const
@@ -3002,21 +2996,19 @@ odb::Rect HierRTLMP::getRect(Boundary boundary) const
   odb::Rect boundary_rect = block_->getDieArea();
 
   switch (boundary) {
-    case NONE:
-      break;
-    case L: {
+    case (Boundary::L): {
       boundary_rect.set_xhi(boundary_rect.xMin());
       break;
     }
-    case R: {
+    case (Boundary::R): {
       boundary_rect.set_xlo(boundary_rect.xMax());
       break;
     }
-    case T: {
+    case (Boundary::T): {
       boundary_rect.set_ylo(boundary_rect.yMax());
       break;
     }
-    case B: {
+    case (Boundary::B): {
       boundary_rect.set_yhi(boundary_rect.yMin());
       break;
     }
@@ -3167,10 +3159,10 @@ std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
   int smaller_hor_distance = 0;
 
   if (distance_to_left < distance_to_right) {
-    hor_boundary_to_push = L;
+    hor_boundary_to_push = Boundary::L;
     smaller_hor_distance = distance_to_left;
   } else {
-    hor_boundary_to_push = R;
+    hor_boundary_to_push = Boundary::R;
     smaller_hor_distance = distance_to_right;
   }
 
@@ -3185,10 +3177,10 @@ std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
   int smaller_ver_distance = 0;
 
   if (distance_to_bottom < distance_to_top) {
-    ver_boundary_to_push = B;
+    ver_boundary_to_push = Boundary::B;
     smaller_ver_distance = distance_to_bottom;
   } else {
-    ver_boundary_to_push = T;
+    ver_boundary_to_push = Boundary::T;
     smaller_ver_distance = distance_to_top;
   }
 
@@ -3253,21 +3245,19 @@ void Pusher::moveMacroClusterBox(odb::Rect& cluster_box,
                                  const int distance)
 {
   switch (boundary) {
-    case NONE:
-      return;
-    case L: {
+    case (Boundary::L): {
       cluster_box.moveDelta(-distance, 0);
       break;
     }
-    case R: {
+    case (Boundary::R): {
       cluster_box.moveDelta(distance, 0);
       break;
     }
-    case T: {
+    case (Boundary::T): {
       cluster_box.moveDelta(0, distance);
       break;
     }
-    case B: {
+    case (Boundary::B): {
       cluster_box.moveDelta(0, -distance);
       break;
     }
@@ -3279,21 +3269,19 @@ void Pusher::moveHardMacro(HardMacro* hard_macro,
                            const int distance)
 {
   switch (boundary) {
-    case NONE:
-      return;
-    case L: {
+    case (Boundary::L): {
       hard_macro->setXDBU(hard_macro->getXDBU() - distance);
       break;
     }
-    case R: {
+    case (Boundary::R): {
       hard_macro->setXDBU(hard_macro->getXDBU() + distance);
       break;
     }
-    case T: {
+    case (Boundary::T): {
       hard_macro->setYDBU(hard_macro->getYDBU() + distance);
       break;
     }
-    case B: {
+    case (Boundary::B): {
       hard_macro->setYDBU(hard_macro->getYDBU() - distance);
       break;
     }
