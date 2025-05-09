@@ -318,7 +318,8 @@ uint extMain::initSearchForNets(int* X1,
   }
   const uint layerCnt = n + 1;
 
-  _search = std::make_unique<GridTable>(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
+  _search
+      = std::make_unique<GridTable>(&maxRect, 2, layerCnt, pitchTable, X1, Y1);
   _search->setBlock(_block);
 
   return layerCnt;
