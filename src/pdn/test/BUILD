@@ -60,6 +60,7 @@ COMPULSORY_TESTS = [
     "macros",
     "macros_add_twice",
     "macro_channel_with_secondary_repair",
+    "macros_channel_recursive_repair",
     "macros_cells",
     "macros_cells_dont_touch",
     "macros_cells_extend_boundary",
