@@ -1,40 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "RepairHold.hh"
 
+#include <algorithm>
+#include <string>
 #include <vector>
 
 #include "RepairDesign.hh"
@@ -49,8 +19,6 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -392,23 +360,29 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  PathRef end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  if (!end_path.isNull()) {
+  Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  if (end_path) {
     debugPrint(logger_,
                RSZ,
                "repair_hold",
                3,
                "repair end {} hold_slack={} setup_slack={}",
                end_vertex->name(network_),
-               delayAsString(end_path.slack(sta_), sta_),
+               delayAsString(end_path->slack(sta_), sta_),
                delayAsString(sta_->vertexSlack(end_vertex, max_), sta_));
-    PathExpanded expanded(&end_path, sta_);
+    PathExpanded expanded(end_path, sta_);
     sta::SearchPredNonLatch2 pred(sta_);
     const int path_length = expanded.size();
     if (path_length > 1) {
+      sta::VertexSeq path_vertices;
+      // Inserting bufferes invalidates the paths so copy out the vertices
+      // in the path.
       for (int i = expanded.startIndex(); i < path_length; i++) {
-        const PathRef* path = expanded.path(i);
-        Vertex* path_vertex = path->vertex(sta_);
+        path_vertices.push_back(expanded.path(i)->vertex(sta_));
+      }
+      // Stop one short of the end so we can get the load.
+      for (int i = 0; i < path_vertices.size() - 1; i++) {
+        Vertex* path_vertex = path_vertices[i];
         Pin* path_pin = path_vertex->pin();
         // explicitly force getting the flat net.
         odb::dbNet* db_path_net
@@ -480,7 +454,7 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                            > buffer_delays[rise_index_]
                     && (slacks[fall_index_][max_index_] - setup_margin)
                            > buffer_delays[fall_index_])) {
-              Vertex* path_load = expanded.path(i + 1)->vertex(sta_);
+              Vertex* path_load = path_vertices[i + 1];
               Point path_load_loc = db_network_->location(path_load->pin());
               Point drvr_loc = db_network_->location(path_vertex->pin());
               Point buffer_loc((drvr_loc.x() + path_load_loc.x()) / 2,
@@ -508,11 +482,8 @@ void RepairHold::repairEndHold(Vertex* end_vertex,
                   || (!allow_setup_violations
                       && fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
-                resizer_->journalRestore(resize_count_,
-                                         inserted_buffer_count_,
-                                         cloned_gate_count_,
-                                         swap_pin_count_,
-                                         removed_buffer_count_);
+                resizer_->journalRestore();
+                inserted_buffer_count_ = 0;
               } else {
                 resizer_->journalEnd();
               }

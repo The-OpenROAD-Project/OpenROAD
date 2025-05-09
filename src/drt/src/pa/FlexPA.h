@@ -1,35 +1,18 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <cstdint>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "FlexPA_unique.h"
@@ -50,9 +33,23 @@ class access;
 
 namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower, via name
+// lowerArea, not align lower
 using ViaRawPriorityTuple
     = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
+
+struct frInstLocationComp
+{
+  bool operator()(const frInst* lhs, const frInst* rhs) const
+  {
+    Point lp = lhs->getBoundaryBBox().ll(), rp = rhs->getBoundaryBBox().ll();
+    if (lp.getY() != rp.getY()) {
+      return lp.getY() < rp.getY();
+    }
+    return lp.getX() < rp.getX();
+  }
+};
+
+using frInstLocationSet = std::set<frInst*, frInstLocationComp>;
 
 class FlexPinAccessPattern;
 class FlexDPNode;
@@ -100,7 +97,8 @@ class FlexPA
   int macro_cell_pin_valid_planar_ap_cnt_ = 0;
   int macro_cell_pin_valid_via_ap_cnt_ = 0;
   int macro_cell_pin_no_ap_cnt_ = 0;
-  std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
+  std::unordered_map<frInst*,
+                     std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       unique_inst_patterns_;
 
   UniqueInsts unique_insts_;
@@ -113,6 +111,7 @@ class FlexPA
            std::map<int, std::map<ViaRawPriorityTuple, const frViaDef*>>>
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
+  frInstLocationSet insts_set_;
 
   std::string remote_host_;
   uint16_t remote_port_ = -1;
@@ -144,6 +143,8 @@ class FlexPA
 
   bool isStdCell(frInst* unique_inst);
   bool isMacroCell(frInst* unique_inst);
+
+  void deleteInst(frInst* inst);
 
   /**
    * @brief generates all access points of a single unique instance
@@ -325,6 +326,12 @@ class FlexPA
                      frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
+
+  void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
+                            const gtl::rectangle_data<frCoord>& rect,
+                            const frViaDef* via_def,
+                            frLayerNum layer_num,
+                            bool is_curr_layer_horz);
 
   /**
    * @brief Generates an Enclosed Boundary access point
@@ -631,11 +638,11 @@ class FlexPA
    */
   int prepPatternInstHelper(frInst* unique_inst, bool use_x);
 
-  int genPatterns(frInst* inst,
+  int genPatterns(frInst* unique_inst,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
 
   int genPatternsHelper(
-      frInst* inst,
+      frInst* unique_inst,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
@@ -665,7 +672,7 @@ class FlexPA
    * @brief Determines the value of all the paths of the DP problem
    */
   void genPatternsPerform(
-      frInst* inst,
+      frInst* unique_inst,
       std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::vector<int>& vio_edges,
@@ -676,7 +683,7 @@ class FlexPA
   /**
    * @brief Determines the edge cost between two DP nodes
    */
-  int getEdgeCost(frInst* inst,
+  int getEdgeCost(frInst* unique_inst,
                   FlexDPNode* prev_node,
                   FlexDPNode* curr_node,
                   const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
@@ -689,6 +696,7 @@ class FlexPA
    * @brief Extracts the access patterns given the graph nodes composing the
    * access points relationship
    *
+   * @param inst instance
    * @param nodes {pin,access_point} nodes of the access pattern graph
    * @param pins vector of pins of the unique instance
    * @param used_access_points a set of all used access points
@@ -697,6 +705,7 @@ class FlexPA
    * access_pattern[pin_idx] = access_point_idx of the pin
    */
   std::vector<int> extractAccessPatternFromNodes(
+      frInst* inst,
       const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       std::set<std::pair<int, int>>& used_access_points);
@@ -705,7 +714,7 @@ class FlexPA
    * @brief Commits to the best path (solution) on the DP graph
    */
   bool genPatternsCommit(
-      frInst* inst,
+      frInst* unique_inst,
       const std::vector<std::vector<std::unique_ptr<FlexDPNode>>>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& is_valid,
@@ -747,7 +756,32 @@ class FlexPA
       PatternType pattern_type,
       std::set<frBlockObject*>* owners = nullptr);
 
-  void getInsts(std::vector<frInst*>& insts);
+  /**
+   * @brief populates the insts_set_ data structure
+   */
+  void buildInstsSet();
+
+  /**
+   * @brief organizes all the insts in a vector of clusters, each cluster being
+   * a vector of insts a adjacent insts
+   *
+   * @returns the vector of vectors of insts
+   */
+  std::vector<std::vector<frInst*>> computeInstRows();
+
+  /**
+   * @brief Verifies if both instances are abuting
+   *
+   * @returns true if the instances abute
+   */
+  bool instancesAreAbuting(frInst* inst_1, frInst* inst_2) const;
+
+  /**
+   * @brief Find a cluster of instances that are touching the passed instance
+   *
+   * @returns a vector of the clusters of touching insts
+   */
+  std::vector<frInst*> getAdjacentInstancesCluster(frInst* inst) const;
 
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
 

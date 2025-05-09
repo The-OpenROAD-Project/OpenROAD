@@ -1,38 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "SACoreSoftMacro.h"
 
+#include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
+#include <cmath>
+#include <map>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -738,15 +714,17 @@ void SACoreSoftMacro::calNotchPenalty()
 
 void SACoreSoftMacro::resizeOneCluster()
 {
-  // TODO: See for explanation
-  // https://github.com/The-OpenROAD-Project/OpenROAD/pull/6649
-  float random_variable_0_1;
-  do {
-    random_variable_0_1 = distribution_(generator_);
-  } while (random_variable_0_1 >= 1.0);
+  if (pos_seq_.empty()) {
+    logger_->error(
+        utl::MPL,
+        51,
+        "Position sequence array is empty, please report this internal error");
+  }
 
-  const int idx
-      = static_cast<int>(std::floor(random_variable_0_1 * pos_seq_.size()));
+  boost::random::uniform_int_distribution<> index_distribution(
+      0, pos_seq_.size() - 1);
+  const int idx = index_distribution(generator_);
+
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
@@ -773,7 +751,8 @@ void SACoreSoftMacro::resizeOneCluster()
   if (option <= 0.25) {
     // Change the width of soft block to Rb = e.x2 - b.x1
     float e_x2 = outline_.getWidth();
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 > ux && cur_x2 < e_x2) {
         e_x2 = cur_x2;
@@ -782,7 +761,8 @@ void SACoreSoftMacro::resizeOneCluster()
     src_macro.setWidth(e_x2 - lx);
   } else if (option <= 0.5) {
     float d_x2 = lx;
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_x2 = macro.getX() + macro.getWidth();
       if (cur_x2 < ux && cur_x2 > d_x2) {
         d_x2 = cur_x2;
@@ -795,7 +775,8 @@ void SACoreSoftMacro::resizeOneCluster()
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
     float a_y2 = outline_.getHeight();
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 > uy && cur_y2 < a_y2) {
         a_y2 = cur_y2;
@@ -805,7 +786,8 @@ void SACoreSoftMacro::resizeOneCluster()
   } else {
     // Change the height of soft block to Bb = c.y2 - b.y1
     float c_y2 = ly;
-    for (const auto& macro : macros_) {
+    for (const int macro_id : pos_seq_) {
+      SoftMacro& macro = macros_[macro_id];
       const float cur_y2 = macro.getY() + macro.getHeight();
       if (cur_y2 < uy && cur_y2 > c_y2) {
         c_y2 = cur_y2;
@@ -818,16 +800,13 @@ void SACoreSoftMacro::resizeOneCluster()
   }
 }
 
-void SACoreSoftMacro::shrink()
-{
-  for (auto& macro_id : pos_seq_) {
-    macros_[macro_id].shrinkArea(shrink_factor_);
-  }
-}
-
 void SACoreSoftMacro::printResults() const
 {
   reportCoreWeights();
+  report({"Boundary",
+          boundary_weight_,
+          boundary_penalty_,
+          norm_boundary_penalty_});
   report({"Macro Blockage",
           macro_blockage_weight_,
           macro_blockage_penalty_,

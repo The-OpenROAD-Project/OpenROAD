@@ -1,57 +1,22 @@
-/////////////////////////////////////////////////////////////////////////////
-// Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
-// Woo(mwoo@eng.ucsd.edu)
-//          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
-// Rewrite by James Cherry, Parallax Software, Inc.
-//
-// Copyright (c) 2019, The Regents of the University of California
-// Copyright (c) 2018, SangGi Do and Mingyu Woo
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include "dpl/Opendp.h"
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <cfloat>
 #include <cmath>
-#include <iostream>
-#include <limits>
-#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "DplObserver.h"
-#include "Objects.h"
-#include "dpl/Grid.h"
+#include "PlacementDRC.h"
 #include "dpl/OptMirror.h"
-#include "dpl/Padding.h"
+#include "graphics/DplObserver.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -64,21 +29,19 @@ using utl::DPL;
 
 using odb::Rect;
 
-using utl::format_as;
-
 ////////////////////////////////////////////////////////////////
 
-bool Opendp::isMultiRow(const Cell* cell) const
+bool Opendp::isMultiRow(const Node* cell) const
 {
-  return db_master_map_.at(cell->db_inst_->getMaster()).is_multi_row;
+  return network_->getMaster(cell->getDbInst()->getMaster())->isMultiRow();
 }
 
 ////////////////////////////////////////////////////////////////
 
 Opendp::Opendp()
 {
-  dummy_cell_ = std::make_unique<Cell>();
-  dummy_cell_->is_placed_ = true;
+  dummy_cell_ = std::make_unique<Node>();
+  dummy_cell_->setPlaced(true);
 }
 
 Opendp::~Opendp() = default;
@@ -90,6 +53,8 @@ void Opendp::init(dbDatabase* db, Logger* logger)
   padding_ = std::make_shared<Padding>();
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
+  network_ = std::make_unique<Network>();
+  arch_ = std::make_unique<Architecture>();
 }
 
 void Opendp::setPaddingGlobal(const int left, const int right)
@@ -117,6 +82,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const std::string& report_file_name)
 {
   importDb();
+  adjustNodesOrient();
 
   if (have_fillers_) {
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
@@ -156,15 +122,15 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
 void Opendp::updateDbInstLocations()
 {
-  for (Cell& cell : cells_) {
-    if (!cell.isFixed() && cell.isStdCell()) {
-      dbInst* db_inst_ = cell.db_inst_;
+  for (auto& cell : network_->getNodes()) {
+    if (!cell->isFixed() && cell->isStdCell()) {
+      dbInst* db_inst_ = cell->getDbInst();
       // Only move the instance if necessary to avoid triggering callbacks.
-      if (db_inst_->getOrient() != cell.orient_) {
-        db_inst_->setOrient(cell.orient_);
+      if (db_inst_->getOrient() != cell->getOrient()) {
+        db_inst_->setOrient(cell->getOrient());
       }
-      const DbuX x = grid_->getCore().xMin() + cell.x_;
-      const DbuY y = grid_->getCore().yMin() + cell.y_;
+      const DbuX x = core_.xMin() + cell->getLeft();
+      const DbuY y = core_.yMin() + cell->getBottom();
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
       if (x != inst_x || y != inst_y) {
@@ -213,16 +179,18 @@ void Opendp::findDisplacementStats()
   displacement_avg_ = 0;
   displacement_sum_ = 0;
   displacement_max_ = 0;
-
-  for (const Cell& cell : cells_) {
-    const int displacement = disp(&cell);
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() != Node::CELL) {
+      continue;
+    }
+    const int displacement = disp(cell.get());
     displacement_sum_ += displacement;
     if (displacement > displacement_max_) {
       displacement_max_ = displacement;
     }
   }
-  if (!cells_.empty()) {
-    displacement_avg_ = displacement_sum_ / cells_.size();
+  if (network_->getNumCells() != 0) {
+    displacement_avg_ = displacement_sum_ / network_->getNumCells();
   } else {
     displacement_avg_ = 0.0;
   }
@@ -236,10 +204,10 @@ void Opendp::optimizeMirroring()
   opt.run();
 }
 
-int Opendp::disp(const Cell* cell) const
+int Opendp::disp(const Node* cell) const
 {
   const DbuPt init = initialLocation(cell, false);
-  return sumXY(abs(init.x - cell->x_), abs(init.y - cell->y_));
+  return sumXY(abs(init.x - cell->getLeft()), abs(init.y - cell->getBottom()));
 }
 
 int Opendp::padGlobalLeft() const
@@ -274,7 +242,7 @@ void Opendp::deleteGrid()
 }
 
 void Opendp::findOverlapInRtree(const bgBox& queryBox,
-                                vector<bgBox>& overlaps) const
+                                std::vector<bgBox>& overlaps) const
 {
   overlaps.clear();
   regions_rtree_.query(boost::geometry::index::intersects(queryBox),
@@ -283,19 +251,19 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
 
 void Opendp::setFixedGridCells()
 {
-  for (Cell& cell : cells_) {
-    if (cell.isFixed()) {
+  for (auto& cell : network_->getNodes()) {
+    if (cell->getType() == Node::CELL && cell->isFixed()) {
       grid_->visitCellPixels(
-          cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+          *cell, true, [&](Pixel* pixel) { setGridCell(*cell, pixel); });
     }
   }
 }
 
-void Opendp::setGridCell(Cell& cell, Pixel* pixel)
+void Opendp::setGridCell(Node& cell, Pixel* pixel)
 {
   pixel->cell = &cell;
   pixel->util = 1.0;
-  if ((&cell)->isBlock()) {
+  if (cell.isBlock()) {
     // Try the is_hopeless strategy to get off of a block
     pixel->is_hopeless = true;
   }
@@ -307,13 +275,13 @@ void Opendp::groupAssignCellRegions()
   const GridX row_site_count = grid_->getRowSiteCount();
   const GridY row_count = grid_->getRowCount();
 
-  for (Group& group : groups_) {
+  for (auto& group : arch_->getRegions()) {
     int64_t total_site_area = 0;
-    if (!group.cells_.empty()) {
+    if (!group->getCells().empty()) {
       for (GridX x{0}; x < row_site_count; x++) {
         for (GridY y{0}; y < row_count; y++) {
           const Pixel* pixel = grid_->gridPixel(x, y);
-          if (pixel->is_valid && pixel->group == &group) {
+          if (pixel->is_valid && pixel->group == group) {
             total_site_area += grid_->rowHeight(y).v * site_width;
           }
         }
@@ -321,19 +289,19 @@ void Opendp::groupAssignCellRegions()
     }
 
     double cell_area = 0;
-    for (Cell* cell : group.cells_) {
+    for (Node* cell : group->getCells()) {
       cell_area += cell->area();
 
-      for (Rect& rect : group.region_boundaries) {
+      for (const auto& rect : group->getRects()) {
         if (isInside(cell, rect)) {
-          cell->region_ = &rect;
+          cell->setRegion(&rect);
         }
       }
-      if (cell->region_ == nullptr) {
-        cell->region_ = group.region_boundaries.data();
+      if (cell->getRegion() == nullptr) {
+        cell->setRegion(group->getRects().data());
       }
     }
-    group.util = total_site_area ? cell_area / total_site_area : 0.0;
+    group->setUtil(total_site_area ? cell_area / total_site_area : 0.0);
   }
 }
 
@@ -346,8 +314,8 @@ void Opendp::groupInitPixels2()
                      (x + 1).v * grid_->getSiteWidth().v,
                      grid_->gridYToDbu(y + 1).v);
       Pixel* pixel = grid_->gridPixel(x, y);
-      for (Group& group : groups_) {
-        for (Rect& rect : group.region_boundaries) {
+      for (auto& group : arch_->getRegions()) {
+        for (const Rect& rect : group->getRects()) {
           if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
             pixel->util = 0.0;
             pixel->cell = dummy_cell_.get();
@@ -357,8 +325,8 @@ void Opendp::groupInitPixels2()
                        "group",
                        1,
                        "Block pixel [({}, {}) on region boundary",
-                       x,
-                       y);
+                       x.v,
+                       y.v);
           }
         }
       }
@@ -368,13 +336,12 @@ void Opendp::groupInitPixels2()
 
 dbInst* Opendp::getAdjacentInstance(dbInst* inst, bool left) const
 {
-  const Rect core = grid_->getCore();
   const Rect inst_rect = inst->getBBox()->getBox();
   DbuX x_dbu = left ? DbuX{inst_rect.xMin() - 1} : DbuX{inst_rect.xMax() + 1};
-  x_dbu -= core.xMin();
+  x_dbu -= core_.xMin();
   GridX x = grid_->gridX(x_dbu);
 
-  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core.yMin()});
+  GridY y = grid_->gridSnapDownY(DbuY{inst_rect.yMin() - core_.yMin()});
 
   Pixel* pixel = grid_->gridPixel(x, y);
 
@@ -435,23 +402,26 @@ void Opendp::groupInitPixels()
       pixel->util = 0.0;
     }
   }
-  for (Group& group : groups_) {
-    if (group.cells_.empty()) {
-      logger_->warn(DPL, 42, "No cells found in group {}. ", group.name);
+  for (auto& group : arch_->getRegions()) {
+    if (group->getCells().empty()) {
+      if (group->getId() != 0) {
+        logger_->warn(
+            DPL, 42, "No cells found in group {}. ", group->getName());
+      }
       continue;
     }
     const DbuX site_width = grid_->getSiteWidth();
-    for (const DbuRect rect : group.region_boundaries) {
+    for (const DbuRect rect : group->getRects()) {
       debugPrint(logger_,
                  DPL,
                  "detailed",
                  1,
                  "Group {} region [x{} y{}] [x{} y{}]",
-                 group.name,
-                 rect.xl,
-                 rect.yl,
-                 rect.xh,
-                 rect.yh);
+                 group->getName(),
+                 rect.xl.v,
+                 rect.yl.v,
+                 rect.xh.v,
+                 rect.yh.v);
       const GridRect grid_rect{grid_->gridWithin(rect)};
 
       for (GridY k{grid_rect.ylo}; k < grid_rect.yhi; k++) {
@@ -471,7 +441,7 @@ void Opendp::groupInitPixels()
         }
       }
     }
-    for (const DbuRect rect : group.region_boundaries) {
+    for (const DbuRect rect : group->getRects()) {
       const GridRect grid_rect{grid_->gridWithin(rect)};
 
       for (GridY k{grid_rect.ylo}; k < grid_rect.yhi; k++) {
@@ -479,7 +449,7 @@ void Opendp::groupInitPixels()
           // Assign group to each pixel.
           Pixel* pixel = grid_->gridPixel(l, k);
           if (pixel->util == 1.0) {
-            pixel->group = &group;
+            pixel->group = group;
             pixel->is_valid = true;
             pixel->util = 1.0;
           } else if (pixel->util > 0.0 && pixel->util < 1.0) {

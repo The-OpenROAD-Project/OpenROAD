@@ -5,8 +5,8 @@
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 Design area 670 u^2 10% utilization.
-worst slack 0.15
-worst slack 1.34
+worst slack min 0.15
+worst slack max 1.34
 [INFO RSZ-0046] Found 35 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
@@ -18,5 +18,5 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
 [ERROR RSZ-0050] Max utilization reached.
 RSZ-0050
 Design area 998 u^2 16% utilization.
-worst slack 0.37
-worst slack 1.03
+worst slack min 0.37
+worst slack max 1.03

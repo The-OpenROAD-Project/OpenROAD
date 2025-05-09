@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "tap/tapcell.h"
 
@@ -41,6 +9,7 @@
 #include <cstddef>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -216,9 +185,10 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   }
 
   const odb::Rect row_bb = row->getBBox();
-
+  odb::Rect query_box;
+  row_bb.bloat(-1, query_box);
   std::set<odb::dbInst*> row_insts(
-      fixed_instances.qbegin(boost::geometry::index::covered_by(row_bb)),
+      fixed_instances.qbegin(boost::geometry::index::intersects(query_box)),
       fixed_instances.qend());
 
   const int llx = row_bb.xMin();
@@ -1338,12 +1308,13 @@ EndcapCellOptions Tapcell::correctEndcapOptions(
 {
   EndcapCellOptions bopts = options;
 
-  auto set_single_master
-      = [this](odb::dbMaster*& master, const odb::dbMasterType& type) {
-          if (master == nullptr) {
-            master = getMasterByType(type);
-          }
-        };
+  auto set_single_master = [this](odb::dbMaster*& master,
+                                  const odb::dbMasterType& type,
+                                  const std::string& option_name) {
+    if (master == nullptr) {
+      master = getMasterByType(type, option_name);
+    }
+  };
 
   auto set_multiple_master = [this](std::vector<odb::dbMaster*>& masters,
                                     const odb::dbMasterType& type) {
@@ -1378,28 +1349,41 @@ EndcapCellOptions Tapcell::correctEndcapOptions(
     }
   };
 
-  set_single_master(bopts.right_top_corner,
-                    odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER);
-  set_single_master(bopts.left_top_corner,
-                    odb::dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER);
-  set_single_master(bopts.right_bottom_corner,
-                    odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER);
-  set_single_master(bopts.left_bottom_corner,
-                    odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER);
-  set_single_master(bopts.right_top_edge,
-                    odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE);
-  set_single_master(bopts.left_top_edge,
-                    odb::dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE);
-  set_single_master(bopts.right_bottom_edge,
-                    odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE);
-  set_single_master(bopts.left_bottom_edge,
-                    odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE);
-  set_single_master(bopts.left_edge, odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE);
+  const bool tapcell_cmd = options.tapcell_cmd;
+  set_single_master(bopts.left_edge,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE,
+                    tapcell_cmd ? "endcap_master" : "left_edge/-endcap");
   set_single_master(bopts.right_edge,
-                    odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE);
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE,
+                    tapcell_cmd ? "endcap_master" : "right_edge/-endcap");
   set_multiple_master(bopts.top_edge, odb::dbMasterType::ENDCAP_LEF58_TOPEDGE);
   set_multiple_master(bopts.bottom_edge,
                       odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+  set_single_master(bopts.right_top_corner,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER,
+                    tapcell_cmd ? "cnrcap_nwout_master" : "right_top_corner");
+  set_single_master(bopts.left_top_corner,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER,
+                    tapcell_cmd ? "cnrcap_nwout_master" : "left_top_corner");
+  set_single_master(bopts.right_bottom_corner,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER,
+                    tapcell_cmd ? "cnrcap_nwin_master" : "right_bottom_corner");
+  set_single_master(bopts.left_bottom_corner,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER,
+                    tapcell_cmd ? "cnrcap_nwin_master" : "left_bottom_corner");
+  set_single_master(bopts.right_top_edge,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE,
+                    tapcell_cmd ? "incnrcap_nwin_master" : "right_top_edge");
+  set_single_master(bopts.left_top_edge,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE,
+                    tapcell_cmd ? "incnrcap_nwin_master" : "left_top_edge");
+  set_single_master(
+      bopts.right_bottom_edge,
+      odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE,
+      tapcell_cmd ? "incnrcap_nwout_master" : "right_bottom_edge");
+  set_single_master(bopts.left_bottom_edge,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE,
+                    tapcell_cmd ? "incnrcap_nwout_master" : "left_bottom_edge");
 
   set_corner_master(bopts.right_top_corner,
                     bopts.left_top_corner,
@@ -1426,15 +1410,23 @@ EndcapCellOptions Tapcell::correctEndcapOptions(
   return bopts;
 }
 
-odb::dbMaster* Tapcell::getMasterByType(const odb::dbMasterType& type) const
+odb::dbMaster* Tapcell::getMasterByType(const odb::dbMasterType& type,
+                                        const std::string& option_name) const
 {
   const std::set<odb::dbMaster*> masters = findMasterByType(type);
 
   if (masters.size() > 1) {
+    std::string masters_names;
+    for (odb::dbMaster* master : masters) {
+      masters_names += " " + master->getName();
+    }
     logger_->error(utl::TAP,
                    104,
-                   "Unable to find a single master for {}",
-                   type.getString());
+                   "Found multiple masters for {}. Use -{} "
+                   "to specify one of the following cells: {}",
+                   type.getString(),
+                   option_name,
+                   masters_names);
   }
   if (masters.empty()) {
     return nullptr;
@@ -1492,6 +1484,7 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
   bopts.left_bottom_edge = options.incnrcap_nwout_master;
   bopts.right_top_edge = options.incnrcap_nwin_master;
   bopts.right_bottom_edge = options.incnrcap_nwout_master;
+  bopts.tapcell_cmd = true;
 
   return bopts;
 }

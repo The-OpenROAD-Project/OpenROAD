@@ -1,37 +1,19 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "io/io.h"
 
+#include <algorithm>
+#include <cmath>
 #include <exception>
 #include <fstream>
 #include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "db/tech/frConstraint.h"
@@ -982,6 +964,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
 {
   bool is_special = db_net->isSpecial();
   bool has_jumpers = db_net->hasJumpers();
+  bool is_abuted = db_net->isConnectedByAbutment();
   if (!is_special && db_net->getSigType().isSupply()) {
     logger_->error(DRT,
                    305,
@@ -990,31 +973,30 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
                    db_net->getName(),
                    db_net->getSigType().getString());
   }
-  std::unique_ptr<frNet> uNetIn
+  std::unique_ptr<frNet> net_in
       = std::make_unique<frNet>(db_net->getName(), router_cfg_);
-  auto netIn = uNetIn.get();
   if (db_net->getNonDefaultRule()) {
-    uNetIn->updateNondefaultRule(
+    net_in->updateNondefaultRule(
         getTech()->getNondefaultRule(db_net->getNonDefaultRule()->getName()));
   }
   if (db_net->getSigType() == dbSigType::CLOCK) {
-    uNetIn->updateIsClock(true);
+    net_in->updateIsClock(true);
   }
   if (is_special) {
-    uNetIn->setIsSpecial(true);
+    net_in->setIsSpecial(true);
   }
-  if (has_jumpers) {
-    uNetIn->setHasJumpers(has_jumpers);
-  }
-  updateNetRouting(netIn, db_net);
-  netIn->setType(db_net->getSigType());
+  net_in->setHasJumpers(has_jumpers);
+  net_in->setIsConnectedByAbutment(is_abuted);
+  updateNetRouting(net_in.get(), db_net);
+  net_in->setType(db_net->getSigType());
+  frNet* raw_net_in = net_in.get();
   if (is_special) {
-    getBlock()->addSNet(std::move(uNetIn));
+    getBlock()->addSNet(std::move(net_in));
   } else {
-    getBlock()->addNet(std::move(uNetIn));
+    getBlock()->addNet(std::move(net_in));
   }
 
-  return netIn;
+  return raw_net_in;
 }
 
 void updatefrAccessPoint(odb::dbAccessPoint* db_ap,

@@ -1,46 +1,23 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "cts/TritonCTS.h"
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <iterator>
+#include <limits>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Clock.h"
@@ -680,17 +657,52 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     }
     for (sta::LibertyCell* buffer : *lib->buffers()) {
       if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
+        // "is_clock_cell: true"
         selected_buffers.emplace_back(buffer);
-        // clang-format off
-        debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
+        debugPrint(logger_,
+                   CTS,
+                   "buffering",
+                   1,
+                   "{} has clock cell attribute",
                    buffer->name());
-        // clang-format on
       }
     }
   }
   delete lib_iter;
 
-  // second, look for all buffers with name CLKBUF or clkbuf
+  // second, look for buffers with an input port that has
+  // LEF USE as "CLOCK"
+  if (selected_buffers.empty()) {
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      if (options_->isCtsLibrarySet()
+          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
+        continue;
+      }
+      for (sta::LibertyCell* buffer : *lib->buffers()) {
+        odb::dbMaster* master = db_->findMaster(buffer->name());
+        for (odb::dbMTerm* mterm : master->getMTerms()) {
+          if (mterm->getIoType() == odb::dbIoType::INPUT
+              && mterm->getSigType() == odb::dbSigType::CLOCK
+              && isClockCellCandidate(buffer)) {
+            // input port with LEF USE as "CLOCK"
+            selected_buffers.emplace_back(buffer);
+            debugPrint(logger_,
+                       CTS,
+                       "buffering",
+                       1,
+                       "{} has input port {} with LEF USE as CLOCK",
+                       buffer->name(),
+                       mterm->getName());
+          }
+        }
+      }
+    }
+    delete lib_iter;
+  }
+
+  // third, look for all buffers with name CLKBUF or clkbuf
   if (selected_buffers.empty()) {
     sta::PatternMatch patternClkBuf(".*CLKBUF.*",
                                     /* is_regexp */ true,
@@ -706,6 +718,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternClkBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+          debugPrint(logger_,
+                     CTS,
+                     "buffering",
+                     1,
+                     "{} found by 'CLKBUF' pattern match",
+                     buffer->name());
           selected_buffers.emplace_back(buffer);
         }
       }
@@ -713,7 +731,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     delete lib_iter;
   }
 
-  // third, look for all buffers with name BUF or buf
+  // fourth, look for all buffers with name BUF or buf
   if (selected_buffers.empty()) {
     sta::PatternMatch patternBuf(".*BUF.*",
                                  /* is_regexp */ true,
@@ -729,6 +747,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
         if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
+          debugPrint(logger_,
+                     CTS,
+                     "buffering",
+                     1,
+                     "{} found by 'BUF' pattern match",
+                     buffer->name());
           selected_buffers.emplace_back(buffer);
         }
       }
@@ -738,6 +762,12 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   // abandon attributes & name patterns, just look for all buffers
   if (selected_buffers.empty()) {
+    debugPrint(logger_,
+               CTS,
+               "buffering",
+               1,
+               "No buffers with clock atributes or name patterns found, using "
+               "all buffers");
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
@@ -765,14 +795,15 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 
   for (sta::LibertyCell* buffer : selected_buffers) {
     buffers.emplace_back(buffer->name());
+    debugPrint(logger_,
+               CTS,
+               "buffering",
+               1,
+               "{} has been inferred as clock buffer",
+               buffer->name());
   }
 
   options_->setBufferListInferred(true);
-  if (logger_->debugCheck(utl::CTS, "buffering", 1)) {
-    for (const std::string& bufName : buffers) {
-      logger_->report("{} has been inferred as clock buffer", bufName);
-    }
-  }
 }
 
 std::string toLowerCase(std::string str)
@@ -1190,7 +1221,8 @@ bool TritonCTS::separateMacroRegSinks(
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
-    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()) {
+    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()
+        && inst->getSourceType() == odb::dbSourceType::TIMING) {
       logger_->warn(CTS,
                     105,
                     "Net \"{}\" already has clock buffer {}. Skipping...",
@@ -1209,6 +1241,7 @@ bool TritonCTS::separateMacroRegSinks(
       }
     }
   }
+
   return true;
 }
 
@@ -2164,7 +2197,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
     const sta::Clock* clock = path->clock(openSta_);
     if (clock) {
       sta::PathExpanded expand(path, openSta_);
-      const sta::PathRef* start = expand.startPath();
+      const sta::Path* start = expand.startPath();
 
       odb::dbNet* pathStartNet = nullptr;
 
@@ -2180,7 +2213,7 @@ float TritonCTS::getVertexClkArrival(sta::Vertex* sinkVertex,
         pathStartNet = port->getNet();
       }
       if (pathStartNet == topNet) {
-        clkPathArrival = path->arrival(openSta_);
+        clkPathArrival = path->arrival();
         return clkPathArrival;
       }
     }
@@ -2259,7 +2292,8 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         odb::dbITerm* outTerm = inst->getFirstOutput();
         if (outTerm) {
           odb::dbNet* outNet = outTerm->getNet();
-          if (outNet) {
+          bool propagate = propagateClock(iterm);
+          if (outNet && propagate) {
             odb::dbSet<odb::dbITerm> iterms = outNet->getITerms();
             odb::dbSet<odb::dbITerm>::iterator iter;
             for (iter = iterms.begin(); iter != iterms.end(); ++iter) {
@@ -2274,6 +2308,34 @@ void TritonCTS::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
       }
     }
   }
+}
+
+bool TritonCTS::propagateClock(odb::dbITerm* input)
+{
+  odb::dbInst* inst = input->getInst();
+  sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+  if (!libertyCell) {
+    return false;
+  }
+  // Clock tree buffers
+  if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+    return true;
+  }
+  // Combinational components
+  if (!libertyCell->hasSequentials()) {
+    return true;
+  }
+  sta::LibertyPort* inputPort
+      = libertyCell->findLibertyPort(input->getMTerm()->getConstName());
+
+  // Clock Gater / Latch improvised as clock gater
+  if (inputPort) {
+    return inputPort->isClockGateClock() || libertyCell->isLatchData(inputPort);
+  }
+
+  return false;
 }
 
 // Balance latencies between macro tree and register tree

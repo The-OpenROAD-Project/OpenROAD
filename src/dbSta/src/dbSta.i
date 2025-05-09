@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
 %{
 
 #include "odb/db.h"
@@ -50,14 +53,6 @@ find_logic_constants()
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->findLogicConstants();
-}
-
-void
-highlight_path_cmd(PathRef *path)
-{
-  ord::OpenRoad *openroad = ord::getOpenRoad();
-  sta::dbSta *sta = openroad->getSta();
-  sta->highlight(path);
 }
 
 std::vector<odb::dbNet*>
@@ -185,6 +180,16 @@ report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
   sta->reportTimingHistogram(num_bins, min_max);
 }
 
+void
+report_logic_depth_histogram_cmd(int num_bins, bool exclude_buffers,
+                         bool exclude_inverters)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureLinked();
+  sta->reportLogicDepthHistogram(num_bins, exclude_buffers, exclude_inverters);
+}
+
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
 // that is in the same file.
 void
@@ -207,7 +212,7 @@ replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
-  db_network->replaceHierModule(mod_inst, module);
+  (void) db_network->replaceHierModule(mod_inst, module);
 }
 
 %} // inline

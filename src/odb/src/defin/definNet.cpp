@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "definNet.h"
 
@@ -70,9 +41,6 @@ definNet::definNet()
   init();
   _skip_signal_connections = false;
   _skip_wires = false;
-  _replace_wires = false;
-  _names_are_ids = false;
-  _assembly_mode = false;
 }
 
 definNet::~definNet()
@@ -82,7 +50,6 @@ definNet::~definNet()
 void definNet::init()
 {
   definBase::init();
-  _found_new_routing = false;
   _net_cnt = 0;
   _update_cnt = 0;
   _net_iterm_cnt = 0;
@@ -105,43 +72,19 @@ void definNet::begin(const char* name)
 {
   assert(_cur_net == nullptr);
 
-  if (_replace_wires == false) {
-    _cur_net = _block->findNet(name);
+  _cur_net = _block->findNet(name);
 
-    if (_cur_net == nullptr) {
-      _cur_net = dbNet::create(_block, name);
+  if (_cur_net == nullptr) {
+    _cur_net = dbNet::create(_block, name);
+  } else if (!_skip_wires) {
+    dbWire* wire = _cur_net->getWire();
+    if (wire) {
+      dbWire::destroy(wire);
     }
-
-    _non_default_rule = nullptr;
-  } else {
-    if (_names_are_ids == false) {
-      _cur_net = _block->findNet(name);
-    } else {
-      uint netid = get_net_dbid(name);
-
-      if (netid) {
-        _cur_net = dbNet::getNet(_block, netid);
-      }
-    }
-
-    if (_cur_net == nullptr) {
-      _logger->warn(utl::ODB, 96, "net {} does not exist", name);
-      ++_errors;
-    } else {
-      if (!_assembly_mode) {
-        dbWire* wire = _cur_net->getWire();
-
-        if (wire) {
-          dbWire::destroy(wire);
-        }
-      }
-    }
-
-    // As per Glenn, in replace mode, use the current non-default-rule.
-    // WRoute does not write the rule in the DEF.
-    // This may cause problems with other routers.
-    _non_default_rule = _cur_net->getNonDefaultRule();
   }
+
+  _non_default_rule = nullptr;
+
   if (_mode == defin::FLOORPLAN) {
     _update_cnt++;
   } else {
@@ -150,7 +93,6 @@ void definNet::begin(const char* name)
 
   _wire = nullptr;
   _rule_for_path = nullptr;
-  _found_new_routing = false;
   if (_net_cnt != 0 && _net_cnt % 100000 == 0) {
     _logger->info(utl::ODB, 97, "\t\tCreated {} Nets", _net_cnt);
   }
@@ -160,20 +102,18 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
 {
   assert(_cur_net == nullptr);
 
-  if (_replace_wires == false) {
-    char buf[BUFSIZ];
-    sprintf(buf, "__%d__mustjoin\n", _net_cnt);
+  char buf[BUFSIZ];
+  sprintf(buf, "__%d__mustjoin\n", _net_cnt);
 
-    _cur_net = _block->findNet(buf);
+  _cur_net = _block->findNet(buf);
 
-    if (_cur_net == nullptr) {
-      _logger->warn(utl::ODB, 98, "duplicate must-join net found ({})", buf);
-      ++_errors;
-    }
-
-    _cur_net = dbNet::create(_block, buf);
-    connection(iname, tname);
+  if (_cur_net == nullptr) {
+    _logger->warn(utl::ODB, 98, "duplicate must-join net found ({})", buf);
+    ++_errors;
   }
+
+  _cur_net = dbNet::create(_block, buf);
+  connection(iname, tname);
 
   _net_cnt++;
   _wire = nullptr;
@@ -187,7 +127,7 @@ void definNet::connection(const char* iname, const char* tname)
     return;
   }
 
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -249,59 +189,20 @@ void definNet::nonDefaultRule(const char* rule)
     return;
   }
 
-  if (_replace_wires == true) {
-    // As per Glenn, in "replace" mode, ignore the
-    // non default rule, because wroute does not write it (even if it exists).
-    // Issue an error, if the rules do not match.
-    dbTechNonDefaultRule* net_rule = _cur_net->getNonDefaultRule();
-    dbTechNonDefaultRule* def_rule = findNonDefaultRule(rule);
+  _non_default_rule = findNonDefaultRule(rule);
 
-    if (def_rule == nullptr) {
-      _logger->warn(utl::ODB,
-                    136,
-                    "error: undefined NONDEFAULTRULE ({}) referenced",
-                    rule);
-      ++_errors;
-    }
-
-    else if (net_rule != def_rule) {
-      std::string net_name = _cur_net->getName();
-      const char* net_rule_name = "(nullptr)";
-      std::string n;
-
-      if (net_rule != nullptr) {
-        n = net_rule->getName();
-        net_rule_name = n.c_str();
-      }
-
-      _logger->warn(
-          utl::ODB,
-          102,
-          "error: NONDEFAULTRULE ({}) of net ({}) does not match DEF rule "
-          "({}).",
-          net_name.c_str(),
-          net_rule_name,
-          rule);
-      ++_errors;
-    }
+  if (_non_default_rule == nullptr) {
+    _logger->warn(
+        utl::ODB, 103, "error: undefined NONDEFAULTRULE ({}) referenced", rule);
+    ++_errors;
   } else {
-    _non_default_rule = findNonDefaultRule(rule);
-
-    if (_non_default_rule == nullptr) {
-      _logger->warn(utl::ODB,
-                    103,
-                    "error: undefined NONDEFAULTRULE ({}) referenced",
-                    rule);
-      ++_errors;
-    } else {
-      _cur_net->setNonDefaultRule(_non_default_rule);
-    }
+    _cur_net->setNonDefaultRule(_non_default_rule);
   }
 }
 
 void definNet::use(dbSigType type)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -310,7 +211,7 @@ void definNet::use(dbSigType type)
 
 void definNet::source(dbSourceType source)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -319,7 +220,7 @@ void definNet::source(dbSourceType source)
 
 void definNet::weight(int weight)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -328,7 +229,7 @@ void definNet::weight(int weight)
 
 void definNet::fixedbump()
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -337,7 +238,7 @@ void definNet::fixedbump()
 
 void definNet::xtalk(int value)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -351,15 +252,7 @@ void definNet::wire(dbWireType type)
   }
 
   if (_wire == nullptr) {
-    if (!_assembly_mode) {
-      _wire = dbWire::create(_cur_net);
-    } else {
-      _wire = _cur_net->getWire();
-
-      if (_wire == nullptr) {
-        _wire = dbWire::create(_cur_net);
-      }
-    }
+    _wire = dbWire::create(_cur_net);
     _wire_encoder.begin(_wire);
   }
 
@@ -659,7 +552,7 @@ void definNet::wireEnd()
 
 void definNet::property(const char* name, const char* value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -673,7 +566,7 @@ void definNet::property(const char* name, const char* value)
 
 void definNet::property(const char* name, int value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -687,7 +580,7 @@ void definNet::property(const char* name, int value)
 
 void definNet::property(const char* name, double value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -706,30 +599,20 @@ void definNet::end()
     return;
   }
 
-  if (!_replace_wires) {
-    dbSet<dbITerm> iterms = _cur_net->getITerms();
+  dbSet<dbITerm> iterms = _cur_net->getITerms();
 
-    if (iterms.reversible() && iterms.orderReversed()) {
-      iterms.reverse();
-    }
+  if (iterms.reversible() && iterms.orderReversed()) {
+    iterms.reverse();
+  }
 
-    dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
+  dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
 
-    if (!props.empty() && props.orderReversed()) {
-      props.reverse();
-    }
+  if (!props.empty() && props.orderReversed()) {
+    props.reverse();
   }
 
   if (_wire) {
-    if (_assembly_mode && !_found_new_routing) {
-      _wire_encoder.clear();
-    } else {
-      _wire_encoder.end();
-
-      if (_replace_wires) {
-        _cur_net->setWireAltered(true);
-      }
-    }
+    _wire_encoder.end();
   }
   _cur_net = nullptr;
 }

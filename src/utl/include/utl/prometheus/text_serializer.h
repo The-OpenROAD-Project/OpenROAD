@@ -25,7 +25,9 @@
 #include <array>
 #include <cmath>
 #include <iosfwd>
+#include <limits>
 #include <ostream>
+#include <string>
 #include <vector>
 
 #include "metric_family.h"

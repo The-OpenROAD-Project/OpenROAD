@@ -1,39 +1,15 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
+
 #include "graphics.h"
 
+#include <cmath>
+#include <limits>
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "object.h"
@@ -637,14 +613,12 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     return;
   }
 
-  Cluster* io_cluster = io.getCluster();
-
   const int x1 = block_->micronsToDbu(macro.getPinX());
   const int y1 = block_->micronsToDbu(macro.getPinY());
   odb::Point from(x1, y1);
 
   odb::Point to;
-  Boundary constraint_boundary = io_cluster->getConstraintBoundary();
+  Boundary constraint_boundary = io.getCluster()->getConstraintBoundary();
 
   if (constraint_boundary == Boundary::L
       || constraint_boundary == Boundary::R) {
@@ -659,12 +633,14 @@ void Graphics::drawDistToIoConstraintBoundary(gui::Painter& painter,
     to.setX(x2);
     to.setY(y2);
   } else {
-    // For NONE, the shape of the io cluster is the die area.
-    const Rect die = io_cluster->getBBox();
+    // We need to use the bbox of the SoftMacro to get the necessary
+    // offset compensation (the cluster bbox is the bbox w.r.t. to the
+    // actual die area).
+    const Rect offset_die = io.getBBox();
     Boundary closest_unblocked_boundary
-        = getClosestUnblockedBoundary(macro, die);
+        = getClosestUnblockedBoundary(macro, offset_die);
 
-    to = getClosestBoundaryPoint(macro, die, closest_unblocked_boundary);
+    to = getClosestBoundaryPoint(macro, offset_die, closest_unblocked_boundary);
   }
 
   addOutlineOffsetToLine(from, to);
@@ -695,19 +671,15 @@ odb::Point Graphics::getClosestBoundaryPoint(const T& macro,
   if (closest_boundary == Boundary::L) {
     to.setX(block_->micronsToDbu(die.xMin()));
     to.setY(block_->micronsToDbu(macro.getPinY()));
-    to.addX(-outline_.xMin());
   } else if (closest_boundary == Boundary::R) {
     to.setX(block_->micronsToDbu(die.xMax()));
     to.setY(block_->micronsToDbu(macro.getPinY()));
-    to.addX(-outline_.xMin());
   } else if (closest_boundary == Boundary::B) {
     to.setX(block_->micronsToDbu(macro.getPinX()));
     to.setY(block_->micronsToDbu(die.yMin()));
-    to.addY(-outline_.yMin());
   } else {  // Top
     to.setX(block_->micronsToDbu(macro.getPinX()));
     to.setY(block_->micronsToDbu(die.yMax()));
-    to.addY(-outline_.yMin());
   }
 
   return to;

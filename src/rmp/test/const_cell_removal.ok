@@ -6,7 +6,7 @@
 Design area 128 u^2 100% utilization.
 Removed 27 instances with constant outputs.
 Number of paths for restructure are 30
-Found 58 end points for restructure
+Found 30 end points for restructure
 Found 129 pins in extracted logic.
 Found 41 instances for restructuring.
 [INFO RMP-0002] Blif writer successfully dumped file with 41 instances.

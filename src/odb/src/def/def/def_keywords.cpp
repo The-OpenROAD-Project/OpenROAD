@@ -36,6 +36,8 @@
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <map>
+#include <string>
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"
@@ -43,7 +45,6 @@
 #include "defrCallBacks.hpp"
 #include "defrData.hpp"
 #include "defrSettings.hpp"
-#include "lex.h"
 
 #ifdef WIN32
 #include <direct.h>

@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -44,8 +12,8 @@
 #include <vector>
 
 #include "GRoute.h"
-#include "RoutePt.h"
-#include "ant/AntennaChecker.hh"
+#include "ant/GlobalRouteSource.hh"
+#include "grt/PinGridLocation.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -78,12 +46,12 @@ class Opendp;
 
 namespace rsz {
 class Resizer;
-class SpefWriter;
 }  // namespace rsz
 
 namespace sta {
 class dbSta;
 class dbNetwork;
+class SpefWriter;
 }  // namespace sta
 
 namespace grt {
@@ -126,15 +94,6 @@ enum class NetType
   Signal,
   Antenna,
   All
-};
-
-struct PinGridLocation
-{
-  PinGridLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm, odb::Point pt);
-
-  odb::dbITerm* iterm_;
-  odb::dbBTerm* bterm_;
-  odb::Point pt_;
 };
 
 using Guides = std::vector<std::pair<int, odb::Rect>>;
@@ -202,7 +161,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
-  void estimateRC(rsz::SpefWriter* spef_writer = nullptr);
+  void estimateRC(sta::SpefWriter* spef_writer = nullptr);
   void estimateRC(odb::dbNet* db_net);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
@@ -438,7 +397,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initGrid(int max_layer);
   void computeCapacities(int max_layer);
   void findTrackPitches(int max_layer);
-  std::vector<Net*> findNets();
+  std::vector<Net*> findNets(bool init_clock_nets);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
@@ -497,8 +456,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
-  // TODO: remove this flag after support incremental updates on DRT PA
-  bool skip_drt_aps_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

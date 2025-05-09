@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "tmg_conn_g.h"
 
@@ -50,7 +21,7 @@ tmg_conn_graph::tmg_conn_graph()
   _eNmax = 1024;
   _ptV = (tcg_pt*) malloc(_ptNmax * sizeof(tcg_pt));
   _path_vis = (int*) malloc(_ptNmax * sizeof(int));
-  _eV = (tcg_edge*) malloc(2 * _ptNmax * sizeof(tcg_edge));
+  _eV = (tcg_edge*) malloc(2UL * _ptNmax * sizeof(tcg_edge));
   _stackV = (tcg_edge**) malloc(_shortNmax * sizeof(tcg_edge*));
 }
 
@@ -98,16 +69,16 @@ tcg_edge* tmg_conn_graph::newEdge(const tmg_conn* conn,
   tcg_edge* e = _eV + _eN++;
   e->k = -1;
   e->skip = false;
-  const int ndx = conn->_ptV[to]._x;
-  const int ndy = conn->_ptV[to]._y;
+  const int ndx = conn->pt(to)._x;
+  const int ndy = conn->pt(to)._y;
   tcg_edge* prev_edge = nullptr;
   tcg_edge* edge = _ptV[fr].edges;
-  while (edge && !edge->s && ndx > conn->_ptV[edge->to]._x) {
+  while (edge && !edge->s && ndx > conn->pt(edge->to)._x) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && !edge->s && ndx == conn->_ptV[edge->to]._x
-         && ndy > conn->_ptV[edge->to]._y) {
+  while (edge && !edge->s && ndx == conn->pt(edge->to)._x
+         && ndy > conn->pt(edge->to)._y) {
     prev_edge = edge;
     edge = edge->next;
   }
@@ -128,8 +99,8 @@ tcg_edge* tmg_conn_graph::newShortEdge(const tmg_conn* conn,
   e->k = -1;
   e->skip = false;
   const int ned = conn->ptDist(fr, to);
-  const int ndx = conn->_ptV[to]._x;
-  const int ndy = conn->_ptV[to]._y;
+  const int ndx = conn->pt(to)._x;
+  const int ndy = conn->pt(to)._y;
   tcg_edge* prev_edge = nullptr;
   tcg_edge* edge = _ptV[fr].edges;
   while (edge && ned > conn->ptDist(edge->fr, edge->to)) {
@@ -137,12 +108,12 @@ tcg_edge* tmg_conn_graph::newShortEdge(const tmg_conn* conn,
     edge = edge->next;
   }
   while (edge && ned == conn->ptDist(edge->fr, edge->to)
-         && ndx > conn->_ptV[edge->to]._x) {
+         && ndx > conn->pt(edge->to)._x) {
     prev_edge = edge;
     edge = edge->next;
   }
   while (edge && ned == conn->ptDist(edge->fr, edge->to)
-         && ndx == conn->_ptV[edge->to]._x && ndy > conn->_ptV[edge->to]._y) {
+         && ndx == conn->pt(edge->to)._x && ndy > conn->pt(edge->to)._y) {
     prev_edge = edge;
     edge = edge->next;
   }
@@ -165,41 +136,41 @@ void tmg_conn_graph::clearVisited()
   }
 }
 
-void tmg_conn_graph::getEdgeRefCoord(tmg_conn* conn,
+void tmg_conn_graph::getEdgeRefCoord(const tmg_conn* conn,
                                      tcg_edge* pe,
                                      int& rx,
                                      int& ry)
 {
-  rx = conn->_ptV[pe->to]._x;
-  ry = conn->_ptV[pe->to]._y;
+  rx = conn->pt(pe->to)._x;
+  ry = conn->pt(pe->to)._y;
   if (pe->s == nullptr) {
     return;
   }
-  tcg_edge* se = _ptV[pe->to].edges;
+  tcg_edge* se = pt(pe->to).edges;
   while (se && se->s) {
     se = se->next;
   }
   if (se == nullptr) {
     return;
   }
-  rx = conn->_ptV[se->to]._x;
-  ry = conn->_ptV[se->to]._y;
+  rx = conn->pt(se->to)._x;
+  ry = conn->pt(se->to)._y;
 }
 
-bool tmg_conn_graph::isBadShort(tcg_edge* pe, tmg_conn* conn)
+bool tmg_conn_graph::isBadShort(tcg_edge* pe, const tmg_conn* conn)
 {
   if (pe->s == nullptr) {
     return false;
   }
-  const tmg_rcpt& from = conn->_ptV[pe->fr];
-  const tmg_rcpt& to = conn->_ptV[pe->to];
+  const tmg_rcpt& from = conn->pt(pe->fr);
+  const tmg_rcpt& to = conn->pt(pe->to);
   return from._x != to._x || from._y != to._y;
 }
 
 void tmg_conn_graph::relocateShorts(tmg_conn* conn)
 {
   for (int jp = 0; jp < _ptN; jp++) {
-    tcg_edge* pe = _ptV[jp].edges;
+    tcg_edge* pe = pt(jp).edges;
     if (pe == nullptr || pe->next == nullptr) {
       continue;
     }
@@ -210,7 +181,7 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
       bool firstCheck = true;
       tcg_edge* pppe = nullptr;
       tcg_edge* ppe = nullptr;
-      for (pe = _ptV[jp].edges; pe != nullptr; pe = pe->next) {
+      for (pe = pt(jp).edges; pe != nullptr; pe = pe->next) {
         if (ppe == nullptr) {
           ppe = pe;
           continue;
@@ -236,7 +207,7 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
           if (pppe) {
             pppe->next = pe;
           } else {
-            _ptV[jp].edges = pe;
+            pt(jp).edges = pe;
           }
           pppe = pe;
           pe->next = ppe;
@@ -258,7 +229,7 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
     int shortn = 0;
     tcg_edge* plast = nullptr;
     tcg_edge* last = nullptr;
-    for (tcg_edge* pe = _ptV[jp].edges; pe != nullptr; pe = pe->next) {
+    for (tcg_edge* pe = pt(jp).edges; pe != nullptr; pe = pe->next) {
       if (!pe->s) {
         noshortn++;
         continue;
@@ -289,7 +260,7 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
     }
     // plast->to and last->to is the short pair to skip
     // do skip new pair;
-    tcg_edge* nse = _ptV[plast->to].edges;
+    tcg_edge* nse = pt(plast->to).edges;
     while (nse != nullptr && nse->to != last->to) {
       nse = nse->next;
     }
@@ -309,10 +280,10 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
 
 tcg_edge* tmg_conn_graph::getFirstNonShortEdge(int& jstart)
 {
-  if (_ptV[jstart].visited || !_ptV[jstart].edges) {
+  if (pt(jstart).visited || !pt(jstart).edges) {
     return nullptr;
   }
-  tcg_edge* e = _ptV[jstart].edges;
+  tcg_edge* e = pt(jstart).edges;
   while (e && (e->visited || e->skip)) {
     e = e->next;
   }
@@ -322,7 +293,7 @@ tcg_edge* tmg_conn_graph::getFirstNonShortEdge(int& jstart)
   uint loops = 16;
   while (loops && e->s) {
     jstart = jstart == e->s->_i0 ? e->s->_i1 : e->s->_i0;
-    e = _ptV[jstart].edges;
+    e = pt(jstart).edges;
     loops--;
   }
   if (loops == 0) {
@@ -340,10 +311,10 @@ tcg_edge* tmg_conn_graph::getFirstNonShortEdge(int& jstart)
 
 tcg_edge* tmg_conn_graph::getFirstEdge(const int jstart)
 {
-  if (_ptV[jstart].visited || !_ptV[jstart].edges) {
+  if (pt(jstart).visited || !pt(jstart).edges) {
     return nullptr;
   }
-  tcg_edge* e = _ptV[jstart].edges;
+  tcg_edge* e = pt(jstart).edges;
   while (e && (e->visited || e->skip)) {
     e = e->next;
   }
@@ -360,7 +331,7 @@ tcg_edge* tmg_conn_graph::getNextEdge(const bool ok_to_descend)
   tcg_edge* e = _stackV[_stackN - 1];
 
   if (ok_to_descend) {
-    tcg_edge* e2 = _ptV[e->to].edges;
+    tcg_edge* e2 = pt(e->to).edges;
     while (e2 && (e2->visited || e2->skip)) {
       e2 = e2->next;
     }
@@ -375,8 +346,8 @@ tcg_edge* tmg_conn_graph::getNextEdge(const bool ok_to_descend)
   }
   // sibling
   // avoid resetting loop node
-  if (_ptV[e->to].visited > _ptV[e->fr].visited) {
-    _ptV[e->to].visited = 1;
+  if (pt(e->to).visited > pt(e->fr).visited) {
+    pt(e->to).visited = 1;
   }
   e = e->next;
   while (e && (e->visited || e->skip)) {
@@ -389,7 +360,7 @@ tcg_edge* tmg_conn_graph::getNextEdge(const bool ok_to_descend)
   // ascend
   while (--_stackN > 0) {
     e = _stackV[_stackN - 1];
-    _ptV[e->to].visited = 1;
+    pt(e->to).visited = 1;
     e = e->next;
     while (e && (e->visited || e->skip)) {
       e = e->next;
@@ -410,25 +381,25 @@ void tmg_conn::relocateShorts()
 void tmg_conn::removeShortLoops()
 {
   if (!_graph) {
-    _graph = new tmg_conn_graph();
+    _graph = std::make_unique<tmg_conn_graph>();
   }
-  _graph->init(_ptV.size(), _shortN);
+  _graph->init(_ptV.size(), _shortV.size());
   tcg_pt* pgV = _graph->_ptV;
 
   // setup paths
   int npath = -1;
   for (size_t j = 0; j < _rcV.size(); j++) {
-    if (j == 0 || _rcV[j]._ifr != _rcV[j - 1]._ito) {
+    if (j == 0 || _rcV[j]._from_idx != _rcV[j - 1]._to_idx) {
       ++npath;
     }
-    pgV[_rcV[j]._ifr].ipath = npath;
-    pgV[_rcV[j]._ito].ipath = npath;
+    pgV[_rcV[j]._from_idx].ipath = npath;
+    pgV[_rcV[j]._to_idx].ipath = npath;
   }
   npath++;
 
   // remove shorts to same path
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -437,8 +408,8 @@ void tmg_conn::removeShortLoops()
     }
   }
 
-  for (int j = 0; j < _shortN; j++) {
-    tmg_rcshort* s = _shortV + j;
+  for (int j = 0; j < _shortV.size(); j++) {
+    tmg_rcshort* s = &_shortV[j];
     if (s->_skip) {
       continue;
     }
@@ -556,7 +527,7 @@ void tmg_conn::removeWireLoops()
   }
   // add all path edges
   for (size_t j = 0; j < _rcV.size(); j++) {
-    _graph->addEdges(this, _rcV[j]._ifr, _rcV[j]._ito, j);
+    _graph->addEdges(this, _rcV[j]._from_idx, _rcV[j]._to_idx, j);
   }
 
   // remove loops that have shorts by removing
@@ -593,8 +564,8 @@ void tmg_conn::removeWireLoops()
             if (!eloop->s) {
               continue;
             }
-            const int dist = abs(_ptV[eloop->fr]._x - _ptV[eloop->to]._x)
-                             + abs(_ptV[eloop->fr]._y - _ptV[eloop->to]._y);
+            const int dist = abs(pt(eloop->fr)._x - pt(eloop->to)._x)
+                             + abs(pt(eloop->fr)._y - pt(eloop->to)._y);
             if (dist >= max_dist) {
               max_dist = dist;
               max_k = k;
@@ -710,9 +681,9 @@ bool tmg_conn::dfsNext(int* from,
   return _graph->dfsNext(from, to, k, is_short, is_loop);
 }
 
-int tmg_conn::isVisited(int j)
+int tmg_conn::isVisited(int j) const
 {
-  return _graph->_ptV[j].visited;
+  return _graph->pt(j).visited;
 }
 
 void tmg_conn::checkVisited()
@@ -729,15 +700,15 @@ void tmg_conn::checkVisited()
 int tmg_conn::getDisconnectedStart()
 {
   for (int j = 0; j < _ptV.size(); j++) {
-    if (!_graph->_ptV[j].visited) {
-      if (_graph->_ptV[j].edges && !_graph->_ptV[j].edges->next) {
+    if (!_graph->pt(j).visited) {
+      if (_graph->pt(j).edges && !_graph->pt(j).edges->next) {
         return j;
       }
     }
   }
   for (int j = 0; j < _ptV.size(); j++) {
-    if (!_graph->_ptV[j].visited) {
-      if (_graph->_ptV[j].edges) {
+    if (!_graph->pt(j).visited) {
+      if (_graph->pt(j).edges) {
         return j;
       }
     }
@@ -747,11 +718,11 @@ int tmg_conn::getDisconnectedStart()
 
 void tmg_conn::copyWireIdToVisitedShorts(const int j)
 {
-  // copy _ptV[j]._dbwire_id to visited points shorted to j
-  const int wire_id = _ptV[j]._dbwire_id;
-  tmg_rcpt* x0 = &_ptV[j];
+  // copy pt(j)._dbwire_id to visited points shorted to j
+  const int wire_id = pt(j)._dbwire_id;
+  tmg_rcpt* x0 = &pt(j);
   for (tmg_rcpt* x = x0->_sring; x && x != x0; x = x->_sring) {
-    if (x->_dbwire_id < 0 && _graph->_ptV[x - _ptV.data()].visited) {
+    if (x->_dbwire_id < 0 && _graph->pt(x - _ptV.data()).visited) {
       x->_dbwire_id = wire_id;
     }
   }

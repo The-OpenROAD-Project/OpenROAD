@@ -1,51 +1,21 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "db_sta/dbReadVerilog.hh"
 
 #include <odb/dbSet.h>
 
+#include <cstddef>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkCmp.hh"
@@ -119,17 +89,16 @@ dbVerilogNetwork* makeDbVerilogNetwork()
   return new dbVerilogNetwork;
 }
 
-void initDbVerilogNetwork(ord::OpenRoad* openroad)
+void initDbVerilogNetwork(dbVerilogNetwork* network, sta::dbSta* sta)
 {
-  sta::dbSta* sta = openroad->getSta();
-  openroad->getVerilogNetwork()->init(sta->getDbNetwork());
+  network->init(sta->getDbNetwork());
 }
 
-void setDbNetworkLinkFunc(ord::OpenRoad* openroad,
+void setDbNetworkLinkFunc(dbVerilogNetwork* network,
                           VerilogReader* verilog_reader)
 {
   if (verilog_reader) {
-    openroad->getVerilogNetwork()->setLinkFunc(
+    network->setLinkFunc(
         [=](const char* top_cell_name, bool make_black_boxes) -> Instance* {
           return verilog_reader->linkNetwork(
               top_cell_name,
@@ -176,7 +145,8 @@ class Verilog2db
   Verilog2db(Network* verilog_network,
              dbDatabase* db,
              Logger* logger,
-             bool hierarchy);
+             bool hierarchy,
+             bool omit_filename_prop);
   void makeBlock();
   void makeUnusedBlock(const char* name);
   void makeDbNetlist();
@@ -230,6 +200,7 @@ class Verilog2db
   // creating iterms; as iterms can't be added to a dont_touch inst
   std::vector<dbInst*> dont_touch_insts;
   bool hierarchy_ = false;
+  bool omit_filename_prop_ = false;
   static const std::regex line_info_re;
   std::vector<ConcreteCell*> unused_cells_;
 };
@@ -241,7 +212,8 @@ bool dbLinkDesign(const char* top_cell_name,
                   dbVerilogNetwork* verilog_network,
                   dbDatabase* db,
                   Logger* logger,
-                  bool hierarchy)
+                  bool hierarchy,
+                  bool omit_filename_prop)
 {
   debugPrint(
       logger, utl::ODB, "dbReadVerilog", 1, "dbLinkDesign {}", top_cell_name);
@@ -249,7 +221,7 @@ bool dbLinkDesign(const char* top_cell_name,
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
-    Verilog2db v2db(verilog_network, db, logger, hierarchy);
+    Verilog2db v2db(verilog_network, db, logger, hierarchy, omit_filename_prop);
     v2db.makeBlock();
     v2db.makeDbNetlist();
     // Link unused modules in case if we want to swap to such modules later
@@ -263,8 +235,13 @@ bool dbLinkDesign(const char* top_cell_name,
 Verilog2db::Verilog2db(Network* network,
                        dbDatabase* db,
                        Logger* logger,
-                       bool hierarchy)
-    : network_(network), db_(db), logger_(logger), hierarchy_(hierarchy)
+                       bool hierarchy,
+                       bool omit_filename_prop)
+    : network_(network),
+      db_(db),
+      logger_(logger),
+      hierarchy_(hierarchy),
+      omit_filename_prop_(omit_filename_prop)
 {
 }
 
@@ -301,7 +278,7 @@ void Verilog2db::makeBlock()
   }
   dbTech* tech = db_->getTech();
   block_->setDefUnits(tech->getLefUnits());
-  block_->setBusDelimeters('[', ']');
+  block_->setBusDelimiters('[', ']');
 }
 
 void Verilog2db::makeDbNetlist()
@@ -333,8 +310,16 @@ void Verilog2db::recordBusPortsOrder()
       const char* cell_name = network_->name(top_cell);
       int from = network_->fromIndex(port);
       int to = network_->toIndex(port);
-      string key = std::string("bus_msb_first ") + port_name + " " + cell_name;
+      std::string key
+          = std::string("bus_msb_first ") + port_name + " " + cell_name;
       odb::dbBoolProperty::create(block_, key.c_str(), from > to);
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 1,
+                 "Created bool prop {} {}",
+                 key.c_str(),
+                 from > to);
     }
   }
 }
@@ -359,9 +344,28 @@ void Verilog2db::storeLineInfo(const std::string& attribute, dbInst* db_inst)
       const auto id_string = fmt::format("src_file_{}", file_id);
       odb::dbStringProperty::create(
           block_, id_string.c_str(), file_name.c_str());
+      debugPrint(logger_,
+                 utl::ODB,
+                 "dbReadVerilog",
+                 1,
+                 "Created string prop {} {}",
+                 id_string.c_str(),
+                 file_name.c_str());
     }
     odb::dbIntProperty::create(db_inst, "src_file_id", file_id);
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Created int prop src_file_id {}",
+               file_id);
     odb::dbIntProperty::create(db_inst, "src_file_line", stoi(match[2]));
+    debugPrint(logger_,
+               utl::ODB,
+               "dbReadVerilog",
+               1,
+               "Created int prop src_file_line {}",
+               stoi(match[2]));
   }
 }
 
@@ -403,7 +407,7 @@ void Verilog2db::makeDbModule(
     if (modinst == nullptr) {
       logger_->error(ORD,
                      2023,
-                     "hierachical instance creation failed for {} of {}",
+                     "hierarchical instance creation failed for {} of {}",
                      network_->name(inst),
                      network_->name(cell));
     }
@@ -490,18 +494,19 @@ void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
     // we do not need to store the pin names.. But they are
     // assumed to exist in the STA world.
     //
-    dbModITerm* moditerm = dbModITerm::create(modinst, pin_name_string.c_str());
+
     dbModBTerm* modbterm;
-    std::string port_name_str = std::move(pin_name_string);
+    std::string port_name_str = pin_name_string;  // intentionally make copy
     const size_t last_idx = port_name_str.find_last_of('/');
-    if (last_idx != string::npos) {
+    if (last_idx != std::string::npos) {
       port_name_str = port_name_str.substr(last_idx + 1);
     }
     dbModule* module = modinst->getMaster();
     modbterm = module->findModBTerm(port_name_str.c_str());
-    moditerm->setChildModBTerm(modbterm);
-    modbterm->setParentModITerm(moditerm);
-
+    // pass the modbterm into the moditerm creator
+    // so that during journalling we keep the moditerm/modbterm correlation
+    dbModITerm* moditerm
+        = dbModITerm::create(modinst, pin_name_string.c_str(), modbterm);
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -557,7 +562,9 @@ void Verilog2db::makeChildInsts(Instance* inst,
 
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
-      storeLineInfo(network_->getAttribute(child, "src"), db_inst);
+      if (!omit_filename_prop_) {
+        storeLineInfo(network_->getAttribute(child, "src"), db_inst);
+      }
 
       const auto dont_touch = network_->getAttribute(child, "dont_touch");
       if (!dont_touch.empty()) {
@@ -615,7 +622,7 @@ bool Verilog2db::staToDb(dbModule* module,
     if (cur_inst) {
       std::string instance_name = network_->pathName(cur_inst);
       size_t last_idx = instance_name.find_last_of('/');
-      if (last_idx != string::npos) {
+      if (last_idx != std::string::npos) {
         instance_name = instance_name.substr(last_idx + 1);
       }
       dbModInst* mod_inst = module->findModInst(instance_name.c_str());
@@ -634,7 +641,7 @@ bool Verilog2db::staToDb(dbModule* module,
       // we store just the pin name on the db inst iterm
       std::string instance_name = network_->pathName(cur_inst);
       size_t last_idx = pin_name.find_last_of('/');
-      if (last_idx != string::npos) {
+      if (last_idx != std::string::npos) {
         pin_name = pin_name.substr(last_idx + 1);
       }
       // we store the full instance name for db insts
@@ -840,7 +847,7 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
       }
       std::string pin_name = network_->name(below_term);
       size_t last_idx = pin_name.find_last_of('/');
-      if (last_idx != string::npos) {
+      if (last_idx != std::string::npos) {
         pin_name = pin_name.substr(last_idx + 1);
       }
       dbModBTerm* mod_bterm = child_module->findModBTerm(pin_name.c_str());
@@ -1097,7 +1104,7 @@ void Verilog2db::makeUnusedBlock(const char* name)
   dbTech* tech = db_->getTech();
   block_ = dbBlock::create(top_block_, name, tech, network_->pathDivider());
   block_->setDefUnits(tech->getLefUnits());
-  block_->setBusDelimeters('[', ']');
+  block_->setBusDelimiters('[', ']');
   debugPrint(logger_,
              utl::ODB,
              "dbReadVerilog",

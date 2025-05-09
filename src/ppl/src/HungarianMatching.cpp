@@ -1,40 +1,11 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "HungarianMatching.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <limits>
 #include <vector>
 
 #include "utl/Logger.h"
@@ -76,25 +47,42 @@ void HungarianMatching::findAssignment()
 void HungarianMatching::createMatrix()
 {
   hungarian_matrix_.resize(non_blocked_slots_);
-  int slot_index = 0;
-  for (int i = begin_slot_; i <= end_slot_; ++i) {
-    int pinIndex = 0;
-    const Point& slot_pos = slots_[i].pos;
-    if (slots_[i].blocked) {
-      continue;
-    }
-    hungarian_matrix_[slot_index].resize(num_io_pins_,
-                                         std::numeric_limits<int>::max());
-    for (int idx : pin_indices_) {
-      IOPin& io_pin = netlist_->getIoPin(idx);
-      if (!io_pin.isInGroup()) {
-        int hpwl = netlist_->computeIONetHPWL(idx, slot_pos)
-                   + getMirroredPinCost(io_pin, slot_pos);
-        hungarian_matrix_[slot_index][pinIndex] = hpwl;
-        pinIndex++;
+  int pin_index = 0;
+
+  for (int idx : pin_indices_) {
+    IOPin& io_pin = netlist_->getIoPin(idx);
+    if (!io_pin.isInGroup()) {
+      bool is_mirrored = false;
+      std::vector<int> larger_costs;
+      int slot_index = 0;
+      for (int i = begin_slot_; i <= end_slot_; ++i) {
+        const Point& slot_pos = slots_[i].pos;
+        if (slots_[i].blocked) {
+          continue;
+        }
+        hungarian_matrix_[slot_index].resize(num_io_pins_,
+                                             std::numeric_limits<int>::max());
+        const int io_net_hpwl = netlist_->computeIONetHPWL(idx, slot_pos);
+        const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
+        const int hpwl = io_net_hpwl + mirrored_cost;
+        larger_costs.push_back(std::max(io_net_hpwl, mirrored_cost));
+        hungarian_matrix_[slot_index][pin_index] = hpwl;
+        is_mirrored = is_mirrored || mirrored_cost != 0;
+        slot_index++;
       }
+
+      if (is_mirrored) {
+        std::vector<uint8_t> rank = getTieBreakRank(larger_costs);
+        for (int idx = 0; idx < slot_index; idx++) {
+          const int hpwl = hungarian_matrix_[idx][pin_index];
+          if ((hpwl >> 24) != 0) {
+            logger_->critical(utl::PPL, 210, "Cost for pin exceeds 24 bits.");
+          }
+          hungarian_matrix_[idx][pin_index] = (hpwl << 8) | rank[idx];
+        }
+      }
+      pin_index++;
     }
-    slot_index++;
   }
 }
 
@@ -237,31 +225,47 @@ void HungarianMatching::createMatrixForGroups()
     }
 
     hungarian_matrix_.resize(group_slots_);
-    int slot_index = 0;
-    for (int i : valid_starting_slots_) {
-      int groupIndex = 0;
-      const Point& slot_pos = slots_[i].pos;
-
-      hungarian_matrix_[slot_index].resize(num_pin_groups_,
-                                           std::numeric_limits<int>::max());
-      for (const auto& [pins, order] : pin_groups_) {
+    int group_index = 0;
+    for (const auto& [pins, order] : pin_groups_) {
+      int slot_index = 0;
+      bool is_mirrored = false;
+      std::vector<int> larger_costs(valid_starting_slots_.size(), 0);
+      for (int i : valid_starting_slots_) {
         int group_hpwl = 0;
         for (const int io_idx : pins) {
+          const Point& slot_pos = slots_[i].pos;
+
+          hungarian_matrix_[slot_index].resize(num_pin_groups_,
+                                               std::numeric_limits<int>::max());
           IOPin& io_pin = netlist_->getIoPin(io_idx);
           int pin_hpwl = netlist_->computeIONetHPWL(io_idx, slot_pos);
           if (pin_hpwl == hungarian_fail_) {
             group_hpwl = hungarian_fail_;
             break;
           }
-          group_hpwl += pin_hpwl + getMirroredPinCost(io_pin, slot_pos);
+          const int mirrored_cost = getMirroredPinCost(io_pin, slot_pos);
+          group_hpwl += pin_hpwl + mirrored_cost;
+          larger_costs[slot_index] += std::max(pin_hpwl, mirrored_cost);
+          is_mirrored = is_mirrored || mirrored_cost != 0;
         }
         if (pins.size() > group_slot_capacity[slot_index]) {
           group_hpwl = std::numeric_limits<int>::max();
         }
-        hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
-        groupIndex++;
+        hungarian_matrix_[slot_index][group_index] = group_hpwl;
+        slot_index++;
       }
-      slot_index++;
+
+      if (is_mirrored) {
+        std::vector<uint8_t> rank = getTieBreakRank(larger_costs);
+        for (int idx = 0; idx < slot_index; idx++) {
+          const int hpwl = hungarian_matrix_[idx][group_index];
+          if ((hpwl >> 24) != 0) {
+            logger_->critical(utl::PPL, 211, "Cost for pin exceeds 24 bits.");
+          }
+          hungarian_matrix_[idx][group_index] = (hpwl << 8) | rank[idx];
+        }
+      }
+      group_index++;
     }
 
     if (hungarian_matrix_.empty()) {
@@ -386,6 +390,19 @@ Edge HungarianMatching::getMirroredEdge(const Edge& edge)
   }
 
   return mirrored_edge;
+}
+
+std::vector<uint8_t> HungarianMatching::getTieBreakRank(
+    const std::vector<int>& costs)
+{
+  std::vector<uint8_t> rank(costs.size());
+  uint8_t ranking = 1;
+  for (int i : sortIndexes(costs)) {
+    rank[i] = ranking;
+    ranking++;
+  }
+
+  return rank;
 }
 
 }  // namespace ppl

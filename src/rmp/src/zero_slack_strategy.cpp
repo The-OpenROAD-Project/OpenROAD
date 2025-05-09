@@ -1,8 +1,5 @@
-// Copyright 2025 Google LLC
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
-// https://developers.google.com/open-source/licenses/bsd
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025-2025, The OpenROAD Authors
 
 #include "zero_slack_strategy.h"
 
@@ -77,7 +74,7 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta, utl::Logger* logger)
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
         = cut.BuildMappedAbcNetwork(abc_library, network, logger);
 
-    DelayOptimizationStrategy strategy(sta);
+    DelayOptimizationStrategy strategy;
     utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
         = strategy.Optimize(mapped_abc_network.get(), abc_library, logger);
 

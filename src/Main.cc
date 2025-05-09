@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <libgen.h>
 #include <tcl.h>
@@ -45,6 +13,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <string>
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
@@ -68,6 +37,7 @@
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
+#include "utl/decode.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
@@ -88,7 +58,6 @@ using std::string;
   X(tap)                                 \
   X(cts)                                 \
   X(drt)                                 \
-  X(dpo)                                 \
   X(fin)                                 \
   X(par)                                 \
   X(rcx)                                 \
@@ -96,11 +65,10 @@ using std::string;
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
-  X(odb)
+  X(odb)                                 \
+  X(ord)
 
-#define FOREACH_TOOL(X)            \
-  FOREACH_TOOL_WITHOUT_OPENROAD(X) \
-  X(openroad_swig)
+#define FOREACH_TOOL(X) FOREACH_TOOL_WITHOUT_OPENROAD(X)
 
 extern "C" {
 #define X(name) extern PyObject* PyInit__##name##_py();
@@ -122,14 +90,15 @@ static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
 
 #ifdef ENABLE_PYTHON3
-namespace sta {
-#define X(name) extern const char* name##_py_python_inits[];
+#define X(name)                                \
+  namespace name {                             \
+  extern const char* name##_py_python_inits[]; \
+  }
 FOREACH_TOOL(X)
 #undef X
-}  // namespace sta
 
 #if PY_VERSION_HEX >= 0x03080000
-static void initPython(int argc, char* argv[])
+static void initPython(int argc, char* argv[], const bool exit_after_cmd_file)
 #else
 static void initPython()
 #endif
@@ -142,32 +111,30 @@ static void initPython()
   FOREACH_TOOL(X)
 #undef X
 #if PY_VERSION_HEX >= 0x03080000
-  bool inspect = !findCmdLineFlag(argc, argv, "-exit");
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
   PyConfig_SetBytesArgv(&config, argc, argv);
-  config.inspect = inspect;
+  config.inspect = !exit_after_cmd_file;
   Py_InitializeFromConfig(&config);
   PyConfig_Clear(&config);
 #else
   Py_Initialize();
 #endif
-#define X(name)                                                       \
-  {                                                                   \
-    char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
-    PyObject* code                                                    \
-        = Py_CompileString(unencoded, #name "_py.py", Py_file_input); \
-    if (code == nullptr) {                                            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not compile " #name "_py\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    if (PyImport_ExecCodeModule(#name, code) == nullptr) {            \
-      PyErr_Print();                                                  \
-      fprintf(stderr, "Error: could not add module " #name "\n");     \
-      exit(1);                                                        \
-    }                                                                 \
-    delete[] unencoded;                                               \
+#define X(name)                                                               \
+  {                                                                           \
+    std::string unencoded = utl::base64_decode(name::name##_py_python_inits); \
+    PyObject* code                                                            \
+        = Py_CompileString(unencoded.c_str(), #name "_py.py", Py_file_input); \
+    if (code == nullptr) {                                                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not compile " #name "_py\n");             \
+      exit(1);                                                                \
+    }                                                                         \
+    if (PyImport_ExecCodeModule(#name, code) == nullptr) {                    \
+      PyErr_Print();                                                          \
+      fprintf(stderr, "Error: could not add module " #name "\n");             \
+      exit(1);                                                                \
+    }                                                                         \
   }
   FOREACH_TOOL_WITHOUT_OPENROAD(X)
 #undef X
@@ -177,9 +144,9 @@ static void initPython()
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
   {
-    char* unencoded = sta::unencode(sta::openroad_swig_py_python_inits);
-
-    PyObject* code = Py_CompileString(unencoded, "openroad.py", Py_file_input);
+    std::string unencoded = utl::base64_decode(ord::ord_py_python_inits);
+    PyObject* code
+        = Py_CompileString(unencoded.c_str(), "openroad.py", Py_file_input);
     if (code == nullptr) {
       PyErr_Print();
       fprintf(stderr, "Error: could not compile openroad.py\n");
@@ -191,8 +158,6 @@ static void initPython()
       fprintf(stderr, "Error: could not add module openroad\n");
       exit(1);
     }
-
-    delete[] unencoded;
   }
 }
 #endif
@@ -284,7 +249,8 @@ int main(int argc, char* argv[])
     the_tech_and_design.design
         = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
     ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
-    ord::initOpenRoad(interp, log_filename, metrics_filename);
+    const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
+    ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
       showSplash();
     }
@@ -308,11 +274,10 @@ int main(int argc, char* argv[])
     }
 
 #if PY_VERSION_HEX >= 0x03080000
-    initPython(cmd_argc, cmd_argv);
+    initPython(cmd_argc, cmd_argv, exit);
     return Py_RunMain();
 #else
     initPython();
-    bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
     if (!exit) {
@@ -453,7 +418,8 @@ static int tclAppInit(int& argc,
     }
 #endif
 
-    ord::initOpenRoad(interp, log_filename, metrics_filename);
+    ord::initOpenRoad(
+        interp, log_filename, metrics_filename, exit_after_cmd_file);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {
@@ -473,7 +439,7 @@ static int tclAppInit(int& argc,
 
     const char* home = getenv("HOME");
     if (!findCmdLineFlag(argc, argv, "-no_init") && home) {
-      const char* restore_state_cmd = "source -echo -verbose {{{}}}";
+      const char* restore_state_cmd = "include -echo -verbose {{{}}}";
       std::filesystem::path init(home);
       init /= init_filename;
       if (std::filesystem::is_regular_file(init)) {
@@ -490,6 +456,7 @@ static int tclAppInit(int& argc,
 
     if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
       showUsage(argv[0], init_filename);
+      exit(1);
     } else {
       if (argc == 2) {
         char* cmd_file = argv[1];
@@ -579,7 +546,11 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
+#ifdef BAZEL_CURRENT_REPOSITORY
+      strcasecmp(BUILD_TYPE, "opt") == 0
+#else
       strcasecmp(BUILD_TYPE, "release") == 0
+#endif
           ? ""
           : fmt::format(" : {}", BUILD_TYPE));
   logger->report(

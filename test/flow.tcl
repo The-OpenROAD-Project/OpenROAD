@@ -39,7 +39,7 @@ read_verilog $synth_verilog
 link_design $top_module
 read_sdc $sdc_file
 
-set_thread_count [exec getconf _NPROCESSORS_ONLN]
+set_thread_count [cpu_count]
 # Temporarily disable sta's threading due to random failures
 sta::set_thread_count 1
 

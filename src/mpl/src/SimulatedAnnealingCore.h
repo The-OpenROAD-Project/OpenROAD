@@ -1,40 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <map>
 #include <random>
+#include <set>
+#include <string>
 #include <vector>
 
 #include "MplObserver.h"
@@ -56,7 +28,7 @@ class Graphics;
 // to placement.
 //
 // SoftMacro:
-//   - Generate shape curves of std cell or mixed clusters;
+//   - Generate tilings of mixed clusters;
 //   - Cluster Placement.
 //
 // HardMacro:
@@ -126,6 +98,7 @@ class SimulatedAnnealingCore
   void fastSA();
 
   void initSequencePair();
+  void setDieArea(const Rect& die_area);
   void setBlockedBoundariesForIOs();
   void updateBestValidResult();
   void useBestValidResult();
@@ -135,7 +108,7 @@ class SimulatedAnnealingCore
   void calOutlinePenalty();
   void calWirelength();
   void addBoundaryDistToWirelength(const T& macro,
-                                   const T& io,
+                                   const T& unplaced_ios,
                                    float net_weight);
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
@@ -151,8 +124,6 @@ class SimulatedAnnealingCore
   void exchangeMacros();
   void generateRandomIndices(int& index1, int& index2);
 
-  virtual void shrink() = 0;  // Shrink the size of macros
-
   // utilities
   static float calAverage(std::vector<float>& value_list);
 
@@ -162,11 +133,8 @@ class SimulatedAnnealingCore
   void reportLocations() const;
   void report(const PenaltyData& penalty) const;
 
-  /////////////////////////////////////////////
-  // private member variables
-  /////////////////////////////////////////////
-  // boundary constraints
   Rect outline_;
+  Rect die_area_;  // Offset to the current outline.
 
   // Boundaries blocked for IO pins
   std::set<Boundary> blocked_boundaries_;
@@ -188,10 +156,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-
-  // shrink_factor for dynamic weight
-  const float shrink_factor_ = 0.8;
-  const float shrink_freq_ = 0.1;
 
   // seed for reproduciabilty
   std::mt19937 generator_;

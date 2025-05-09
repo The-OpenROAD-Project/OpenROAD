@@ -117,7 +117,7 @@ double defiGroup_propNumber(const ::defiGroup* obj, int index)
   return ((DefParser::defiGroup*) obj)->propNumber(index);
 }
 
-const char defiGroup_propType(const ::defiGroup* obj, int index)
+char defiGroup_propType(const ::defiGroup* obj, int index)
 {
   return ((const DefParser::defiGroup*) obj)->propType(index);
 }

@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include "staGuiInterface.h"
 
@@ -219,7 +187,7 @@ void TimingPath::populateNodeList(sta::Path* path,
     const bool pin_is_clock = sta->isClock(pin);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
-    const auto arrival = ref->arrival(sta);
+    const auto arrival = ref->arrival();
 
     // based on:
     // https://github.com/The-OpenROAD-Project/OpenSTA/blob/a48199d52df23732164c378b6c5dcea5b1b301a1/search/ReportPath.cc#L2756
@@ -687,20 +655,20 @@ void ClockTree::addPath(sta::PathExpanded& path,
     return;
   }
 
-  const sta::PathRef* ref = path.path(idx);
+  const sta::Path* ref = path.path(idx);
   sta::Vertex* vertex = ref->vertex(sta);
   sta::Pin* pin = vertex->pin();
   sta::Net* net = getNet(pin);
 
   ClockTree* add_to_tree = getTree(net);
-  if (add_to_tree->addVertex(vertex, ref->arrival(sta))) {
+  if (add_to_tree->addVertex(vertex, ref->arrival())) {
     add_to_tree->addPath(path, idx + 1, sta);
   }
 }
 
 void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
 {
-  const sta::PathRef* start = path.startPath();
+  const sta::Path* start = path.startPath();
   if (start->clkEdge(sta)->transition() != sta::RiseFall::rise()) {
     // only populate with rising edges
     return;
@@ -1382,7 +1350,7 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
   for (sta::Vertex* src_vertex : *graph->regClkVertices()) {
     sta::VertexPathIterator path_iter(src_vertex, sta_);
     while (path_iter.hasNext()) {
-      sta::PathVertex* path = path_iter.next();
+      sta::Path* path = path_iter.next();
 
       if (path->dcalcAnalysisPt(sta_)->corner() != corner_) {
         continue;

@@ -1,0 +1,284 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
+
+"""Source Tracking for OpenROAD"""
+
+# This file should go away eventually. It hides crucial information
+# for developers and tools.
+#
+# Right now, there is a lot of duplicate use of the same dependencies
+# and sources in the toplevel BUILD file, this is why these
+# variables exist.
+#
+# Once this is a well-defined bazel project, there is no need for
+# variables anymore.
+
+OPENROAD_BINARY_SRCS_WITHOUT_MAIN = [
+    #Root OpenRoad
+    ":openroad_swig",
+    ":openroad_tcl",
+    #Utility
+    "//src/utl:swig",
+    "//src/utl:tcl",
+    #InitFp
+    ":init_floorplan_swig",
+    ":init_floorplan_tcl",
+    #OpenDB
+    "//src/odb:tcl",
+    "//src/odb:swig",
+    #UPF
+    ":upf_swig",
+    ":upf_tcl",
+    #DbSTA
+    "//src/dbSta:tcl",
+    "//src/dbSta:swig",
+    #ioPlacer
+    ":ioplacer_tcl",
+    ":ioplacer_swig",
+    #Resizer
+    "//src/rsz:swig",
+    "//src/rsz:tcl",
+    #OpenDP
+    "//src/dpl:swig",
+    "//src/dpl:tcl",
+    #finale
+    ":finale_swig",
+    ":finale_tcl",
+    #antenna_checker
+    "//src/ant:swig",
+    "//src/ant:tcl",
+    #FastRoute
+    "//src/grt:fastroute_swig",
+    "//src/grt:fastroute_tcl",
+    #Replace
+    ":replace_swig",
+    ":replace_tcl",
+    #TritonCTS
+    "//src/cts:tcl",
+    "//src/cts:swig",
+    #Tapcell
+    ":tapcell_swig",
+    ":tapcell_tcl",
+    #OpenRCX
+    ":rcx_swig",
+    ":rcx_tcl",
+    #TritonRoute
+    ":triton_route_swig",
+    ":triton_route_tcl",
+    #PDNSim
+    ":pdn_sim_swig",
+    ":pdn_sim_tcl",
+    #PartitionManager
+    ":partition_manager_swig",
+    ":partition_manager_tcl",
+    #PDNGen
+    ":pdngen_tcl",
+    ":pdngen_swig",
+    #MPL
+    ":mpl_swig",
+    ":mpl_tcl",
+    #RMP
+    ":rmp_swig",
+    ":rmp_tcl",
+    #STT
+    "//src/stt:swig",
+    "//src/stt:tcl",
+    #Distributed
+    ":dst_swig",
+    ":dst_tcl",
+    #Pad
+    ":pad_swig",
+    ":pad_tcl",
+    #dft
+    ":dft_swig",
+    ":dft_tcl",
+]
+
+OPENROAD_LIBRARY_HDRS_INCLUDE = [
+    #InitFp
+    "src/ifp/include/ifp/*.hh",
+    #STA
+    "src/sta/include/sta/*.hh",
+    #ioPlacer
+    "src/ppl/include/ppl/*.h",
+    #finale
+    "src/fin/include/fin/*.h",
+    #TritonMP
+    "src/mpl/include/mpl/*.h",
+    #Replace
+    "src/gpl/include/gpl/*.h",
+    #Tapcell
+    "src/tap/include/tap/*.h",
+    #OpenRCX
+    "src/rcx/include/rcx/*.h",
+    #TritonRoute
+    "src/drt/include/triton_route/*.h",
+    "src/drt/src/db/infra/*.hpp",
+    #PDNSim
+    "src/psm/include/psm/*.h",
+    "src/psm/include/psm/*.hh",
+    #PartitionManager
+    "src/par/src/*.h",
+    "src/par/include/par/*.h",
+    #PDNGen
+    "src/pdn/include/pdn/*.hh",
+    #MPL
+    "src/mpl/include/mpl/*.h",
+    #RMP
+    "src/rmp/src/*.h",
+    "src/rmp/include/rmp/*.h",
+    #Distributed
+    "src/dst/include/dst/*.h",
+    #pad
+    "src/pad/include/pad/*.h",
+    #dft
+    "src/dft/include/dft/*.hh",
+    #upf
+    "src/upf/include/upf/*.h",
+    "src/upf/src/*.h",
+]
+
+# Once we properly include headers relative to project-root,
+# this will not be needed anymore.
+OPENROAD_LIBRARY_INCLUDES = [
+    #Root OpenRoad
+    "include",
+    #OpenDB
+    "src/odb/include/odb",
+    #OpenDBTCL
+    "src/odb/src/swig/common",
+    #STA
+    "src/sta",
+    "src/sta/include/sta",
+    #GUI
+    "src/gui/include",
+    #InitFp
+    "src/ifp/include",
+    #ioPlacer
+    "src/ppl/include",
+    "src/ppl/include/ppl",
+    "src/ppl/src",
+    #Resizer
+    "src/rsz/include",
+    "src/rsz/include/rsz",
+    "src/rsz/src",
+    #finale
+    "src/fin/include",
+    "src/fin/include/fin",
+    #TritonMP
+    "src/mpl/include",
+    "src/mpl/include/mpl",
+    #Replace
+    "src/gpl/include/gpl",
+    "src/gpl/include",
+    #TritonCTS
+    "src/cts/src",
+    #Tapcell
+    "src/tap/include/tap",
+    "src/tap/include",
+    #OpenRCX
+    "src/rcx/include/rcx",
+    "src/rcx/include",
+    #TritonRoute
+    "src/drt/include/triton_route",
+    "src/drt/src",
+    "src/drt/include",
+    #PDNSim
+    "src/psm/include/psm",
+    "src/psm/include",
+    #PartitionManager
+    "src/par/include",
+    "src/par/include/par",
+    #PDNGen
+    "src/pdn/include",
+    "src/pdn/include/pdn",
+    #MPL
+    "src/mpl/include",
+    "src/mpl/src",
+    #RMP
+    "src/rmp/include",
+    #Distributed
+    "src/dst/include",
+    "src/dst/include/dst",
+    #pad
+    "src/pad/include",
+    #utl
+    "src/utl/src",
+    #dft
+    "src/dft/include",
+    "src/dft/src/clock_domain",
+    "src/dft/src/config",
+    "src/dft/src/utils",
+    "src/dft/src/cells",
+    "src/dft/src/replace",
+    "src/dft/src/architect",
+    "src/dft/src/stitch",
+    #upf
+    "src/upf/include",
+]
+
+OPENROAD_LIBRARY_SRCS_EXCLUDE = [
+    "src/Main.cc",
+    "src/OpenRoad.cc",
+]
+
+OPENROAD_LIBRARY_SRCS_INCLUDE = [
+    #Root OpenRoad
+    "src/*.cc",
+    "src/*.cpp",
+    #Utility
+    "src/utl/src/*.cpp",
+    "src/utl/src/*.h",
+    #InitFp
+    "src/ifp/src/*.cc",
+    #ioPlacer
+    "src/ppl/src/*.cpp",
+    "src/ppl/src/*.h",
+    #finale
+    "src/fin/src/*.cpp",
+    "src/fin/src/*.h",
+    #TritionMP
+    "src/mpl/src/*.cpp",
+    "src/mpl/src/*.h",
+    #Replace
+    "src/gpl/src/*.cpp",
+    "src/gpl/src/*.h",
+    #Tapcell
+    "src/tap/src/*.cpp",
+    #OpenRCX
+    "src/rcx/src/*.cpp",
+    "src/rcx/src/*.h",
+    #TritonRoute
+    "src/drt/src/*.cpp",
+    "src/drt/src/*.h",
+    "src/drt/src/**/*.h",
+    "src/drt/src/**/*.cpp",
+    "src/drt/src/**/*.cc",
+    #PDNSim
+    "src/psm/src/*.cpp",
+    "src/psm/src/*.h",
+    #PartitionManager
+    "src/par/src/*.cpp",
+    #PDNGen
+    "src/pdn/src/*.cc",
+    "src/pdn/src/*.cpp",
+    "src/pdn/src/*.h",
+    #mpl
+    "src/mpl/src/*.cpp",
+    "src/mpl/src/*.h",
+    #RMP
+    "src/rmp/src/*.cpp",
+    #Distributed
+    "src/dst/src/*.cc",
+    "src/dst/src/*.h",
+    #pad
+    "src/pad/src/*.cpp",
+    "src/pad/src/*.h",
+    #upf
+    "src/upf/src/*.cpp",
+    #utl
+    "src/utl/*.h",
+    #dft
+    "src/dft/src/**/*.cpp",
+    "src/dft/src/**/*.hh",
+]

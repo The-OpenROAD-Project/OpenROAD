@@ -1,45 +1,20 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include "dbDescriptors.h"
 
 #include <QInputDialog>
 #include <QStringList>
 #include <boost/algorithm/string.hpp>
+#include <cmath>
+#include <functional>
 #include <iomanip>
 #include <limits>
+#include <optional>
 #include <queue>
 #include <regex>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "bufferTreeDescriptor.h"
@@ -123,53 +98,63 @@ static void populateODBProperties(Descriptor::Properties& props,
 
 std::string Descriptor::convertUnits(const double value,
                                      const bool area,
-                                     int digits)
+                                     const int digits)
 {
+  auto format = [area, value, digits](int log_units) {
+    double unit_scale = 1.0;
+    std::string unit;
+    if (log_units <= -18) {
+      unit_scale = 1e18;
+      unit = "a";
+    } else if (log_units <= -15) {
+      unit_scale = 1e15;
+      unit = "f";
+    } else if (log_units <= -12) {
+      unit_scale = 1e12;
+      unit = "p";
+    } else if (log_units <= -9) {
+      unit_scale = 1e9;
+      unit = "n";
+    } else if (log_units <= -6) {
+      unit_scale = 1e6;
+      const char* micron = "μ";
+      unit = micron;
+    } else if (log_units <= -3) {
+      unit_scale = 1e3;
+      unit = "m";
+    } else if (log_units <= 0) {
+    } else if (log_units <= 3) {
+      unit_scale = 1e-3;
+      unit = "k";
+    } else if (log_units <= 6) {
+      unit_scale = 1e-6;
+      unit = "M";
+    } else if (log_units <= 9) {
+      unit_scale = 1e-9;
+      unit = "G";
+    }
+    if (area) {
+      unit_scale *= unit_scale;
+    }
+
+    auto str = utl::to_numeric_string(value * unit_scale, digits);
+    return std::make_pair(str, unit);
+  };
+
   double log_value = value;
   if (area) {
     log_value = std::sqrt(log_value);
   }
-  int log_units = std::floor(std::log10(log_value) / 3.0) * 3;
-  double unit_scale = 1.0;
-  std::string unit;
-  if (log_units <= -18) {
-    unit_scale = 1e18;
-    unit = "a";
-  } else if (log_units <= -15) {
-    unit_scale = 1e15;
-    unit = "f";
-  } else if (log_units <= -12) {
-    unit_scale = 1e12;
-    unit = "p";
-  } else if (log_units <= -9) {
-    unit_scale = 1e9;
-    unit = "n";
-  } else if (log_units <= -6) {
-    unit_scale = 1e6;
-    const char* micron = "μ";
-    unit = micron;
-  } else if (log_units <= -3) {
-    unit_scale = 1e3;
-    unit = "m";
-  } else if (log_units <= 0) {
-  } else if (log_units <= 3) {
-    unit_scale = 1e-3;
-    unit = "k";
-  } else if (log_units <= 6) {
-    unit_scale = 1e-6;
-    unit = "M";
-  } else if (log_units <= 9) {
-    unit_scale = 1e-9;
-    unit = "G";
-  }
-  if (area) {
-    unit_scale *= unit_scale;
-  }
+  // Try both ways and see what produces the better result.
+  auto [s1, u1] = format(std::trunc(std::log10(log_value) / 3.0) * 3);
+  auto [s2, u2] = format(std::floor(std::log10(log_value) / 3.0) * 3);
 
-  auto str = utl::to_numeric_string(value * unit_scale, digits);
-  str += " " + unit;
-
-  return str;
+  // Don't include the unit size in the comparison as the micron
+  // symbol counts as two characters.
+  if (s1.size() < s2.size()) {
+    return s1 + " " + u1;
+  }
+  return s2 + " " + u2;
 }
 
 // renames an object
@@ -184,7 +169,7 @@ static void addRenameEditor(T obj, Descriptor::Editors& editor)
            return false;
          }
          // check for illegal characters
-         for (const char ch : {obj->getBlock()->getHierarchyDelimeter()}) {
+         for (const char ch : {obj->getBlock()->getHierarchyDelimiter()}) {
            if (new_name.find(ch) != std::string::npos) {
              return false;
            }
@@ -998,46 +983,57 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return has_box;
 }
 
-void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
-                                          const odb::dbObject* sink,
-                                          std::vector<GraphTarget>& sources,
-                                          std::vector<GraphTarget>& sinks) const
+void DbNetDescriptor::findSourcesAndSinks(
+    odb::dbNet* net,
+    const odb::dbObject* sink,
+    std::vector<std::set<GraphTarget>>& sources,
+    std::vector<std::set<GraphTarget>>& sinks) const
 {
   // gets all the shapes that make up the iterm
-  auto get_graph_iterm_targets = [](odb::dbMTerm* mterm,
-                                    const odb::dbTransform& transform,
-                                    std::vector<GraphTarget>& targets) {
-    for (auto* mpin : mterm->getMPins()) {
-      for (auto* box : mpin->getGeometry()) {
-        if (box->isVia()) {
-          odb::dbTechVia* tech_via = box->getTechVia();
-          if (tech_via == nullptr) {
-            continue;
-          }
+  auto get_graph_iterm_targets
+      = [](odb::dbMTerm* mterm,
+           const odb::dbTransform& transform,
+           std::vector<std::set<GraphTarget>>& targets) {
+          for (auto* mpin : mterm->getMPins()) {
+            std::set<GraphTarget> term_targets;
+            for (auto* box : mpin->getGeometry()) {
+              if (box->isVia()) {
+                odb::dbTechVia* tech_via = box->getTechVia();
+                if (tech_via == nullptr) {
+                  continue;
+                }
 
-          const odb::dbTransform via_transform(box->getViaXY());
-          for (auto* via_box : tech_via->getBoxes()) {
-            odb::Rect box_rect = via_box->getBox();
-            via_transform.apply(box_rect);
-            transform.apply(box_rect);
-            targets.emplace_back(box_rect, via_box->getTechLayer());
+                const odb::dbTransform via_transform(box->getViaXY());
+                for (auto* via_box : tech_via->getBoxes()) {
+                  odb::Rect box_rect = via_box->getBox();
+                  via_transform.apply(box_rect);
+                  transform.apply(box_rect);
+                  term_targets.emplace(box_rect, via_box->getTechLayer());
+                }
+              } else {
+                odb::Rect rect = box->getBox();
+                transform.apply(rect);
+                term_targets.emplace(rect, box->getTechLayer());
+              }
+            }
+
+            if (!term_targets.empty()) {
+              targets.push_back(term_targets);
+            }
           }
-        } else {
-          odb::Rect rect = box->getBox();
-          transform.apply(rect);
-          targets.emplace_back(rect, box->getTechLayer());
-        }
-      }
-    }
-  };
+        };
 
   // gets all the shapes that make up the bterm
   auto get_graph_bterm_targets
-      = [](odb::dbBTerm* bterm, std::vector<GraphTarget>& targets) {
+      = [](odb::dbBTerm* bterm, std::vector<std::set<GraphTarget>>& targets) {
           for (auto* bpin : bterm->getBPins()) {
+            std::set<GraphTarget> term_targets;
             for (auto* box : bpin->getBoxes()) {
               odb::Rect rect = box->getBox();
-              targets.emplace_back(rect, box->getTechLayer());
+              term_targets.emplace(rect, box->getTechLayer());
+            }
+            if (!term_targets.empty()) {
+              targets.push_back(term_targets);
             }
           }
         };
@@ -1070,16 +1066,23 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
   }
 }
 
-void DbNetDescriptor::findSourcesAndSinksInGraph(odb::dbNet* net,
-                                                 const odb::dbObject* sink,
-                                                 odb::dbWireGraph* graph,
-                                                 NodeList& source_nodes,
-                                                 NodeList& sink_nodes) const
+void DbNetDescriptor::findSourcesAndSinksInGraph(
+    odb::dbNet* net,
+    const odb::dbObject* sink,
+    odb::dbWireGraph* graph,
+    std::set<NodeList>& source_nodes,
+    std::set<NodeList>& sink_nodes) const
 {
   // find sources and sinks on this net
-  std::vector<GraphTarget> sources;
-  std::vector<GraphTarget> sinks;
+  std::vector<std::set<GraphTarget>> sources;
+  std::vector<std::set<GraphTarget>> sinks;
   findSourcesAndSinks(net, sink, sources, sinks);
+
+  // Preserve mapping of nodes to pin sets
+  std::vector<NodeList> sources_nodes;
+  sources_nodes.resize(sources.size());
+  std::vector<NodeList> sinks_nodes;
+  sinks_nodes.resize(sinks.size());
 
   // find the nodes on the wire graph that intersect the sinks identified
   for (auto itr = graph->begin_nodes(); itr != graph->end_nodes(); itr++) {
@@ -1089,18 +1092,25 @@ void DbNetDescriptor::findSourcesAndSinksInGraph(odb::dbNet* net,
     const odb::Point node_pt(x, y);
     const odb::dbTechLayer* node_layer = node->layer();
 
-    for (const auto& [source_rect, source_layer] : sources) {
-      if (source_rect.intersects(node_pt) && source_layer == node_layer) {
-        source_nodes.insert(node);
+    for (std::size_t i = 0; i < sources.size(); i++) {
+      for (const auto& [source_rect, source_layer] : sources[i]) {
+        if (source_rect.intersects(node_pt) && source_layer == node_layer) {
+          sources_nodes[i].insert(node);
+        }
       }
     }
 
-    for (const auto& [sink_rect, sink_layer] : sinks) {
-      if (sink_rect.intersects(node_pt) && sink_layer == node_layer) {
-        sink_nodes.insert(node);
+    for (std::size_t i = 0; i < sinks.size(); i++) {
+      for (const auto& [sink_rect, sink_layer] : sinks[i]) {
+        if (sink_rect.intersects(node_pt) && sink_layer == node_layer) {
+          sinks_nodes[i].insert(node);
+        }
       }
     }
   }
+
+  source_nodes.insert(sources_nodes.begin(), sources_nodes.end());
+  sink_nodes.insert(sinks_nodes.begin(), sinks_nodes.end());
 }
 
 void DbNetDescriptor::drawPathSegment(odb::dbNet* net,
@@ -1111,8 +1121,8 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net,
   graph.decode(net->getWire());
 
   // find the nodes on the wire graph that intersect the sinks identified
-  NodeList source_nodes;
-  NodeList sink_nodes;
+  std::set<NodeList> source_nodes;
+  std::set<NodeList> sink_nodes;
   findSourcesAndSinksInGraph(net, sink, &graph, source_nodes, sink_nodes);
 
   if (source_nodes.empty() || sink_nodes.empty()) {
@@ -1128,33 +1138,52 @@ void DbNetDescriptor::drawPathSegment(odb::dbNet* net,
 
   painter.saveState();
   painter.setPen(highlight_color, true, 4);
-  for (const auto* source_node : source_nodes) {
-    for (const auto* sink_node : sink_nodes) {
-      // find the shortest path from source to sink
-      std::vector<odb::Point> path;
-      findPath(node_map, source_node, sink_node, path);
 
-      if (!path.empty()) {
-        odb::Point prev_pt = path[0];
-        for (const auto& pt : path) {
-          if (pt == prev_pt) {
-            continue;
+  std::vector<std::pair<odb::Point, odb::Point>> flywires;
+
+  for (const auto& src_nodes : source_nodes) {
+    for (const auto& sink_node_set : sink_nodes) {
+      bool drawn = false;
+      std::vector<std::pair<odb::Point, odb::Point>> flywires_pair;
+      for (const auto* source_node : src_nodes) {
+        for (const auto* sink_node : sink_node_set) {
+          // find the shortest path from source to sink
+          std::vector<odb::Point> path;
+          findPath(node_map, source_node, sink_node, path);
+
+          if (!path.empty()) {
+            odb::Point prev_pt = path[0];
+            for (const auto& pt : path) {
+              if (pt == prev_pt) {
+                continue;
+              }
+
+              painter.drawLine(prev_pt, pt);
+              prev_pt = pt;
+            }
+            drawn = true;
+          } else {
+            // unable to find path so just draw a fly-wire
+            int x, y;
+            source_node->xy(x, y);
+            const odb::Point source_pt(x, y);
+            sink_node->xy(x, y);
+            const odb::Point sink_pt(x, y);
+            flywires_pair.emplace_back(source_pt, sink_pt);
           }
-
-          painter.drawLine(prev_pt, pt);
-          prev_pt = pt;
         }
-      } else {
-        // unable to find path so just draw a fly-wire
-        int x, y;
-        source_node->xy(x, y);
-        odb::Point source_pt(x, y);
-        sink_node->xy(x, y);
-        odb::Point sink_pt(x, y);
-        painter.drawLine(source_pt, sink_pt);
+      }
+      if (!drawn) {
+        flywires.insert(
+            flywires.end(), flywires_pair.begin(), flywires_pair.end());
       }
     }
   }
+
+  for (const auto& [source_pt, sink_pt] : flywires) {
+    painter.drawLine(source_pt, sink_pt);
+  }
+
   painter.restoreState();
 }
 
@@ -2265,6 +2294,16 @@ Descriptor::Properties DbBlockageDescriptor::getDBProperties(
       {"Max density", std::to_string(blockage->getMaxDensity()) + "%"}};
 
   return props;
+}
+
+Descriptor::Actions DbBlockageDescriptor::getActions(std::any object) const
+{
+  auto blk = std::any_cast<odb::dbBlockage*>(object);
+  return Actions(
+      {{"Delete", [blk]() {
+          odb::dbBlockage::destroy(blk);
+          return Selected();  // unselect since this object is now gone
+        }}});
 }
 
 Descriptor::Editors DbBlockageDescriptor::getEditors(std::any object) const

@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -49,7 +20,10 @@
 #include <QVBoxLayout>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
+#include <string>
+#include <tuple>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -183,6 +157,7 @@ class DisplayControls : public QDockWidget,
   void setControlByPath(const std::string& path,
                         bool is_visible,
                         Qt::CheckState value);
+  void setControlByPath(const std::string& path, const QColor& color);
   bool checkControlByPath(const std::string& path, bool is_visible);
 
   void registerRenderer(Renderer* renderer);
@@ -194,6 +169,7 @@ class DisplayControls : public QDockWidget,
   void restoreTclCommands(std::vector<std::string>& cmds);
 
   // From the Options API
+  QColor background() override;
   QColor color(const odb::dbTechLayer* layer) override;
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
   QColor placementBlockageColor() override;
@@ -264,6 +240,7 @@ class DisplayControls : public QDockWidget,
  signals:
   // The display options have changed and clients need to update
   void changed();
+  void colorChanged();
 
   // Emit a selected tech layer
   void selected(const Selected& selected);
@@ -396,6 +373,7 @@ class DisplayControls : public QDockWidget,
     ModelRow module;
     ModelRow manufacturing_grid;
     ModelRow gcell_grid;
+    ModelRow background;
   };
 
   struct InstanceShapeModels
@@ -443,7 +421,7 @@ class DisplayControls : public QDockWidget,
   void makeLeafItem(ModelRow& row,
                     const QString& text,
                     QStandardItem* parent,
-                    Qt::CheckState checked,
+                    std::optional<Qt::CheckState> checked,
                     bool add_selectable = false,
                     const QColor& color = Qt::transparent,
                     const QVariant& user_data = QVariant());
@@ -502,6 +480,10 @@ class DisplayControls : public QDockWidget,
 
   void checkLiberty(bool assume_loaded = false);
 
+  std::tuple<QColor*, Qt::BrushStyle*, bool> lookupColor(
+      QStandardItem* item,
+      const QModelIndex* index = nullptr);
+
   QTreeView* view_;
   DisplayControlModel* model_;
   QMenu* routing_layers_menu_;
@@ -557,6 +539,8 @@ class DisplayControls : public QDockWidget,
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;
 
   std::map<const odb::dbSite*, QColor> site_color_;
+
+  QColor background_color_;
 
   QColor placement_blockage_color_;
   Qt::BrushStyle placement_blockage_pattern_;

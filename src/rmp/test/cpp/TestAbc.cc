@@ -8,11 +8,13 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "abc_library_factory.h"
 #include "base/abc/abc.h"
@@ -66,7 +68,7 @@ class AbcTest : public ::testing::Test
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
+    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
@@ -164,7 +166,7 @@ class AbcTestSky130 : public AbcTest
       abc::Abc_Start();
     });
     db_->setLogger(&logger_);
-    sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
+    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical(
         "./sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
@@ -549,7 +551,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> mapped_abc_network
       = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
 
-  DelayOptimizationStrategy strat(sta_.get());
+  DelayOptimizationStrategy strat;
   utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> remapped
       = strat.Optimize(mapped_abc_network.get(), abc_library, &logger_);
 

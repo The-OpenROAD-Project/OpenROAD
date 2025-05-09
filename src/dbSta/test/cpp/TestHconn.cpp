@@ -8,12 +8,14 @@
 #include <unistd.h>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -272,7 +274,7 @@ class TestHconn : public ::testing::Test
     db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                      &odb::dbDatabase::destroy);
     std::call_once(init_sta_flag, []() { sta::initSta(); });
-    sta_ = std::unique_ptr<sta::dbSta>(ord::makeDbSta());
+    sta_ = std::unique_ptr<sta::dbSta>(sta::makeDbSta());
     sta_->initVars(Tcl_CreateInterp(), db_.get(), &logger_);
     auto path = std::filesystem::canonical("./Nangate45/Nangate45_typ.lib");
     library_ = sta_->readLiberty(path.string().c_str(),
@@ -315,8 +317,10 @@ class TestHconn : public ::testing::Test
     inv1_mod_inst
         = dbModInst::create(root_mod, inv1_mod_master, "inv1_mod_inst");
 
-    inv1_mod_inst_i0_miterm = dbModITerm::create(inv1_mod_inst, "i0");
-    inv1_mod_inst_o0_miterm = dbModITerm::create(inv1_mod_inst, "o0");
+    inv1_mod_inst_i0_miterm
+        = dbModITerm::create(inv1_mod_inst, "i0", inv1_mod_i0_port);
+    inv1_mod_inst_o0_miterm
+        = dbModITerm::create(inv1_mod_inst, "o0", inv1_mod_o0_port);
     // correlate the iterms and bterms
     inv1_mod_inst_i0_miterm->setChildModBTerm(inv1_mod_i0_port);
     inv1_mod_i0_port->setParentModITerm(inv1_mod_inst_i0_miterm);
@@ -1027,6 +1031,30 @@ TEST_F(TestHconn, ConnectionMade)
 
   EXPECT_EQ(restored_mod_net_count, initial_mod_net_count);
   EXPECT_EQ(restored_db_net_count, initial_db_net_count);
+
+  // Test deletion of a dbModInst
+  size_t num_mod_insts_before_delete = block->getModInsts().size();
+  size_t num_mod_iterms_before_delete = block->getModITerms().size();
+  dbModInst::destroy(inv1_mod_inst);
+  size_t num_mod_insts_after_delete = block->getModInsts().size();
+  size_t num_mod_iterms_after_delete = block->getModITerms().size();
+
+  // Test deletion of a dbModule
+  size_t num_mods_before_delete = block->getModules().size();
+  size_t num_mod_bterms_before_delete = block->getModBTerms().size();
+  dbModule::destroy(inv1_mod_master);
+  size_t num_mods_after_delete = block->getModules().size();
+  size_t num_mod_bterms_after_delete = block->getModBTerms().size();
+
+  // we have killed one module instance
+  EXPECT_EQ((num_mods_before_delete - num_mods_after_delete), 1);
+  // we have killed one module
+  EXPECT_EQ((num_mod_insts_before_delete - num_mod_insts_after_delete), 1);
+  // we are deleting an inverter, so expect to delete 2 ports
+  EXPECT_EQ((num_mod_bterms_before_delete - num_mod_bterms_after_delete), 2);
+  // and the number of moditerms reduced should be the same (2)
+  EXPECT_EQ((num_mod_iterms_before_delete - num_mod_iterms_after_delete),
+            (num_mod_bterms_before_delete - num_mod_bterms_after_delete));
 }
 
 }  // namespace odb

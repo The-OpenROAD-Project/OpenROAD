@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TestJournal
 #include <boost/test/included/unit_test.hpp>
+#include <functional>
 #include <iostream>
 #include <string>
 
@@ -61,6 +62,46 @@ BOOST_FIXTURE_TEST_CASE(test_undo_inst_destroy, F_DEFAULT)
   BOOST_TEST(inst->getGroup() == group);
   BOOST_TEST(inst->getModule() == module);
   BOOST_TEST(inst->getRegion() == region);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_undo_mod_inst_destroy, F_DEFAULT)
+{
+  auto flat_net = dbNet::create(block, "n");
+  // Make module and contents
+  auto module = dbModule::create(block, "test");
+  auto mod_net = dbModNet::create(module, "lower_net");
+  auto mod_bterm = dbModBTerm::create(module, "bterm");
+  mod_bterm->connect(mod_net);
+  auto leaf_inst = dbInst::create(block, and2, "i1", false, module);
+  auto iterm = leaf_inst->findITerm("b");
+  iterm->connect(flat_net, mod_net);
+
+  // Instantiate the module and connect it
+  auto top = block->getTopModule();
+  dbModNet* top_net = dbModNet::create(top, "top_net");
+  auto inst = dbModInst::create(top, module, "mod_inst");
+  auto mod_iterm = dbModITerm::create(inst, "b", mod_bterm);
+  mod_iterm->connect(top_net);
+
+  auto group = dbGroup::create(block, "g");
+  group->addModInst(inst);
+
+  in_eco([&]() {
+    dbModInst::destroy(inst);
+    BOOST_TEST(block->getModInsts().size() == 0);
+  });
+
+  BOOST_TEST(block->findModInst("mod_inst") == inst);
+  BOOST_TEST(inst->getGroup() == group);
+  BOOST_TEST(inst->getParent() == top);
+  BOOST_TEST(inst->getMaster() == module);
+  BOOST_TEST(inst->getModITerms().size() == 1);
+  BOOST_TEST(*inst->getModITerms().begin() == mod_iterm);
+  BOOST_TEST(mod_iterm->getModNet() == top_net);
+  BOOST_TEST(block->getInsts().size() == 1);
+  BOOST_TEST(*block->getInsts().begin() == leaf_inst);
+  BOOST_TEST(block->getModInsts().size() == 1);
+  BOOST_TEST(*block->getModInsts().begin() == inst);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_undo_net_create, F_DEFAULT)

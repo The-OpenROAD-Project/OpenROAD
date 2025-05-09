@@ -1,38 +1,17 @@
-/* Authors: Lutong Wang and Bangqi Xu */
-/*
- * Copyright (c) 2019, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <memory>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "dr/FlexDR.h"
 
 namespace drt {
 
-void FlexDRWorker::endGetModNets(std::set<frNet*, frBlockObjectComp>& modNets)
+void FlexDRWorker::endGetModNets(frOrderedIdSet<frNet*>& modNets)
 {
   for (auto& net : nets_) {
     if (net->isModified()) {
@@ -81,11 +60,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     // -------------------
     if (isInitDR()
         && (begin.x() == routeBox.xMin() || begin.x() == routeBox.xMax())) {
-      if (begin.y() < routeBox.yMin() || end.y() > routeBox.yMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
@@ -164,11 +139,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   } else if (begin.y() == end.y()) {
     if (isInitDR()
         && (begin.y() == routeBox.yMin() || begin.y() == routeBox.yMax())) {
-      if (begin.x() < routeBox.xMin() || end.x() > routeBox.xMax()
-          || pathSeg->getBeginStyle() != frcTruncateEndStyle
-          || pathSeg->getEndStyle() != frcTruncateEndStyle) {
-        return;
-      }
+      return;
     }
     // if cross routeBBox
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
@@ -282,9 +253,8 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
 
 void FlexDRWorker::endRemoveNets(
     frDesign* design,
-    std::set<frNet*, frBlockObjectComp>& modNets,
-    std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        boundPts)
+    frOrderedIdSet<frNet*>& modNets,
+    frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts)
 {
   std::vector<frBlockObject*> result;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
@@ -610,8 +580,7 @@ void FlexDRWorker::endAddNets_updateExtFigs(drNet* net)
 }
 void FlexDRWorker::endAddNets(
     frDesign* design,
-    std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        boundPts)
+    frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>>& boundPts)
 {
   for (auto& net : nets_) {
     if (!net->isModified()) {
@@ -716,11 +685,10 @@ bool FlexDRWorker::end(frDesign* design)
     return false;
   }
   save_updates_ = dist_on_;
-  std::set<frNet*, frBlockObjectComp> modNets;
+  frOrderedIdSet<frNet*> modNets;
   endGetModNets(modNets);
   // get lock
-  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-      boundPts;
+  frOrderedIdMap<frNet*, std::set<std::pair<Point, frLayerNum>>> boundPts;
   endRemoveNets(design, modNets, boundPts);
   endAddNets(design, boundPts);  // if two subnets have diff isModified()
                                  // status, then should always write back

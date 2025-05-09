@@ -1,45 +1,18 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "HTreeBuilder.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "Clustering.h"
@@ -57,6 +30,17 @@ void HTreeBuilder::preSinkClustering(
     const unsigned clusterSize,
     const bool secondLevel)
 {
+  bool maxDiameterSet = (type_ == TreeType::MacroTree)
+                            ? options_->isMacroMaxDiameterSet()
+                            : options_->isMaxDiameterSet();
+  unsigned clusterSizeSet = (type_ == TreeType::MacroTree)
+                                ? options_->isMacroSinkClusteringSizeSet()
+                                : options_->isSinkClusteringSizeSet();
+
+  unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
+
   const std::vector<std::pair<float, float>>& points = sinks;
   if (!secondLevel) {
     clock_.forEachSink([&](ClockInst& inst) {
@@ -75,7 +59,7 @@ void HTreeBuilder::preSinkClustering(
     });
   }
 
-  if (sinks.size() <= min_clustering_sinks_
+  if (sinks.size() <= min_clustering_sinks
       || !(options_->getSinkClustering())) {
     topLevelSinksClustered_ = sinks;
     return;
@@ -97,23 +81,22 @@ void HTreeBuilder::preSinkClustering(
 
   unsigned bestClusterSize = 0;
   float bestDiameter = 0.0;
-  if (options_->isSinkClusteringSizeSet() && options_->isMaxDiameterSet()) {
+  if (clusterSizeSet && maxDiameterSet) {
     // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize, options_->getMaxDiameter(), wireSegmentUnit_);
+                 clusterSize, maxDiameter, wireSegmentUnit_);
     // clang-format on
     matching.run(clusterSize,
                  maxDiameter,
                  wireSegmentUnit_,
                  bestClusterSize,
                  bestDiameter);
-  } else if (!options_->isSinkClusteringSizeSet()
-             && options_->isMaxDiameterSet()) {
+  } else if (!clusterSizeSet && maxDiameterSet) {
     // only diameter is set, try clustering sizes of 10, 20 and 30
     for (unsigned clusterSize2 : clusterSizes()) {
       // clang-format off
       debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
-                 clusterSize2, options_->getMaxDiameter(), wireSegmentUnit_);
+                 clusterSize2, maxDiameter, wireSegmentUnit_);
       // clang-format on
       matching.run(clusterSize2,
                    maxDiameter,
@@ -121,8 +104,7 @@ void HTreeBuilder::preSinkClustering(
                    bestClusterSize,
                    bestDiameter);
     }
-  } else if (options_->isSinkClusteringSizeSet()
-             && !options_->isMaxDiameterSet()) {
+  } else if (clusterSizeSet && !maxDiameterSet) {
     // only clustering size is set, try diameters of 50, 100 and 200 um
     for (unsigned clusterDiameter2 : clusterDiameters()) {
       // clang-format off
@@ -157,7 +139,7 @@ void HTreeBuilder::preSinkClustering(
     }
   }
 
-  if (options_->isSinkClusteringSizeSet() || options_->isMaxDiameterSet()) {
+  if (clusterSizeSet || maxDiameterSet) {
     logger_->info(
         CTS,
         204,
@@ -267,6 +249,16 @@ void HTreeBuilder::initSinkRegion()
   const int dbUnits = options_->getDbUnits();
   wireSegmentUnit_ = wireSegmentUnitInDbu;
 
+  double clusterDiameter = (type_ == TreeType::MacroTree)
+                               ? options_->getMacroMaxDiameter()
+                               : options_->getMaxDiameter();
+  unsigned clusterSize = (type_ == TreeType::MacroTree)
+                             ? options_->getMacroSinkClusteringSize()
+                             : options_->getSinkClusteringSize();
+  unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
+
   logger_->info(CTS,
                 20,
                 " Wire segment unit: {}  dbu ({} um).",
@@ -297,18 +289,16 @@ void HTreeBuilder::initSinkRegion()
   std::vector<const ClockInst*> sinkInsts;
   initTopLevelSinks(topLevelSinks, sinkInsts);
 
-  const float maxDiameter
-      = (options_->getMaxDiameter() * dbUnits) / wireSegmentUnit_;
+  const float maxDiameter = (clusterDiameter * dbUnits) / wireSegmentUnit_;
   // clang-format off
   debugPrint(logger_, CTS, "clustering", 1, "maxDiameter={:0.3f} = "
              "origMaxDiam={} * dbUnits={} / wireSegmentUnit_={}",
-             maxDiameter, options_->getMaxDiameter(), dbUnits,
+             maxDiameter, clusterDiameter, dbUnits,
              wireSegmentUnit_);
   // clang-format on
 
-  preSinkClustering(
-      topLevelSinks, sinkInsts, maxDiameter, options_->getSinkClusteringSize());
-  if (topLevelSinks.size() <= min_clustering_sinks_
+  preSinkClustering(topLevelSinks, sinkInsts, maxDiameter, clusterSize);
+  if (topLevelSinks.size() <= min_clustering_sinks
       || !(options_->getSinkClustering())) {
     Box<int> sinkRegionDbu = clock_.computeSinkRegion();
     logger_->info(CTS, 23, " Original sink region: {}.", sinkRegionDbu);
@@ -323,7 +313,7 @@ void HTreeBuilder::initSinkRegion()
       preSinkClustering(secondLevelLocs,
                         secondLevelInsts,
                         maxDiameter * 4,
-                        std::ceil(std::sqrt(options_->getSinkClusteringSize())),
+                        std::ceil(std::sqrt(clusterSize)),
                         true);
     }
     sinkRegion_ = clock_.computeSinkRegionClustered(topLevelSinksClustered_);
@@ -990,11 +980,13 @@ void HTreeBuilder::legalizeDummy()
       Point<double>& branchPoint = topology.getBranchingPoint(idx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
 
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                       parentIdx);
+      // clang-format on
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);
@@ -1076,11 +1068,13 @@ void HTreeBuilder::legalize()
       Point<double>& branchPoint = topology.getBranchingPoint(bufferIdx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(bufferIdx);
 
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? newTopBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                       parentIdx);
+      // clang-format on
 
       odb::Direction2D::Value branch_point_dir;
       if (isHorizontal(levelIdx + 1)) {
@@ -1153,8 +1147,8 @@ void HTreeBuilder::legalize()
                                            branch_point_dir);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 3,
-		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} "
-		   "parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
+		   "adjustBeyondBlockage applied to legal branchPt:"
+		   "{}=>{} parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
 		   parentPoint, computeDist(newLocation, parentPoint));
         // clang-format on
         commitMoveLoc(branchPoint, newLocation);
@@ -1177,20 +1171,32 @@ void HTreeBuilder::legalize()
 
 void HTreeBuilder::run()
 {
+  double clusterDiameter = (type_ == TreeType::MacroTree)
+                               ? options_->getMacroMaxDiameter()
+                               : options_->getMaxDiameter();
+  unsigned clusterSize = (type_ == TreeType::MacroTree)
+                             ? options_->getMacroSinkClusteringSize()
+                             : options_->getSinkClusteringSize();
+  bool useMaxCap = (type_ == TreeType::MacroTree)
+                       ? false
+                       : options_->getSinkClusteringUseMaxCap();
+
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
   if (options_->getSinkClustering()) {
-    if (options_->getSinkClusteringUseMaxCap()) {
+    if (useMaxCap) {
       logger_->info(
           CTS, 90, " Sinks will be clustered based on buffer max cap.");
     } else {
-      logger_->info(CTS,
-                    29,
-                    " Sinks will be clustered in groups of up to {} and with "
-                    "maximum cluster diameter of {:.1f} um.",
-                    options_->getSinkClusteringSize(),
-                    options_->getMaxDiameter());
+      logger_->info(
+          CTS,
+          29,
+          " {} sinks will be clustered in groups of up to {} and with "
+          "maximum cluster diameter of {:.1f} um.",
+          type_ == TreeType::MacroTree ? "Macro " : "Register",
+          clusterSize,
+          clusterDiameter);
     }
   }
   logger_->info(
@@ -1285,6 +1291,7 @@ std::string HTreeBuilder::plotHTree()
   for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
     LevelTopology& topology = topologyForEachLevel_[levelIdx];
 
+    // clang-format off
     topology.forEachBranchingPoint(
         [&](unsigned idx, Point<double> branchPoint) {
           unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
@@ -1308,6 +1315,7 @@ std::string HTreeBuilder::plotHTree()
           file << levelIdx << " " << x1 << " " << y1 << " " << x2 << " " << y2;
           file << " " << name << '\n';
         });
+    // clang-format on
   }
 
   LevelTopology& leafTopology = topologyForEachLevel_.back();
@@ -1336,8 +1344,11 @@ std::string HTreeBuilder::plotHTree()
 unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
     const unsigned level) const
 {
+  unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
+                                      ? min_clustering_macro_sinks_
+                                      : min_clustering_sinks_;
   unsigned totalNumSinks = 0;
-  if (clock_.getNumSinks() > min_clustering_sinks_
+  if (clock_.getNumSinks() > min_clustering_sinks
       && options_->getSinkClustering()) {
     totalNumSinks = topLevelSinksClustered_.size();
   } else {
@@ -2079,11 +2090,13 @@ void HTreeBuilder::printHTree()
       Point<double>& branchPoint = topology.getBranchingPoint(idx);
       unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
 
+      // clang-format off
       Point<double> parentPoint
           = (levelIdx == 0)
                 ? topLevelBufferLoc
                 : topologyForEachLevel_[levelIdx - 1].getBranchingPoint(
                       parentIdx);
+      // clang-format on
 
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(idx);

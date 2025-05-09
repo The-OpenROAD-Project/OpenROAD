@@ -43,7 +43,6 @@ OpenRoad::OpenRoad()
       resizer_(nullptr),
       ioPlacer_(nullptr),
       opendp_(nullptr),
-      optdp_(nullptr),
       finale_(nullptr),
       macro_placer_(nullptr),
       global_router_(nullptr),
@@ -73,14 +72,6 @@ void OpenRoad::writeDb(const char*)
 }
 
 void OpenRoad::readDb(const char*, bool)
-{
-}
-
-void OpenRoad::addObserver(OpenRoadObserver* observer)
-{
-}
-
-void OpenRoad::removeObserver(OpenRoadObserver* observer)
 {
 }
 

@@ -1,44 +1,20 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "AbstractIOPlacerRenderer.h"
@@ -56,12 +32,11 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr)
+IOPlacer::IOPlacer() : top_grid_(nullptr), ioplacer_renderer_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
   parms_ = std::make_unique<Parameters>();
-  top_grid_ = std::make_unique<TopLayerGrid>();
 }
 
 IOPlacer::~IOPlacer() = default;
@@ -92,7 +67,6 @@ void IOPlacer::clear()
 {
   hor_layers_.clear();
   ver_layers_.clear();
-  *top_grid_ = TopLayerGrid();
   zero_sink_ios_.clear();
   sections_.clear();
   slots_.clear();
@@ -100,11 +74,6 @@ void IOPlacer::clear()
   assignment_.clear();
   excluded_intervals_.clear();
   *parms_ = Parameters();
-}
-
-odb::dbTechLayer* IOPlacer::getTopLayer() const
-{
-  return getTech()->findRoutingLayer(top_grid_->layer);
 }
 
 void IOPlacer::clearConstraints()
@@ -373,13 +342,14 @@ void IOPlacer::randomPlacement(const std::vector<int>& pin_indices,
         if (slot_idx < 0) {
           odb::dbTechLayer* layer
               = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-          logger_->error(utl::PPL,
-                         85,
-                         "Mirrored position ({}, {}) at layer {} is not a "
-                         "valid position for pin placement.",
-                         mirrored_pos.getX(),
-                         mirrored_pos.getY(),
-                         layer->getName());
+          logger_->error(
+              utl::PPL,
+              85,
+              "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not a "
+              "valid position for pin placement.",
+              getBlock()->dbuToMicrons(mirrored_pos.getX()),
+              getBlock()->dbuToMicrons(mirrored_pos.getY()),
+              layer->getName());
         }
         slots[slot_idx].used = true;
         slots[slot_idx].blocked = true;
@@ -522,14 +492,15 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment)
   if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-    logger_->error(utl::PPL,
-                   91,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin {} placement.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA",
-                   mirrored_pin.getName());
+    logger_->error(
+        utl::PPL,
+        91,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not a "
+        "valid position for pin {} placement.",
+        getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        layer ? layer->getName() : "NA",
+        mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }
@@ -547,12 +518,13 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
   }
 
   if (slot_idx == -1) {
-    logger_->error(utl::PPL,
-                   101,
-                   "Slot for position ({}, {}) in layer {} not found",
-                   position.getX(),
-                   position.getY(),
-                   layer);
+    logger_->error(
+        utl::PPL,
+        101,
+        "Slot for position ({:.2f}um, {:.2f}um) in layer {} not found",
+        getBlock()->dbuToMicrons(position.getX()),
+        getBlock()->dbuToMicrons(position.getY()),
+        layer);
   }
 
   return slot_idx;
@@ -1122,16 +1094,6 @@ void IOPlacer::defineSlots()
         getBlock()->dbuToMicrons(die_margin),
         getBlock()->dbuToMicrons(new_margin));
   }
-
-  if (top_layer_pins_count_ > top_layer_slots_.size()) {
-    logger_->error(PPL,
-                   11,
-                   "Number of IO pins assigned to the top layer ({}) exceeds "
-                   "maximum number of available "
-                   "top layer positions ({}).",
-                   top_layer_pins_count_,
-                   top_layer_slots_.size());
-  }
 }
 
 void IOPlacer::findSections(int begin,
@@ -1377,19 +1339,27 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
   if (!first_pin.isAssignedToSection() && !first_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
+    std::vector<int64_t> larger_cost(sections.size(), 0);
+    std::vector<int64_t> used_slots(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
         IOPin& pin = net->getIoPin(pin_idx);
+        bool has_mirrored_pin = pin.getBTerm()->hasMirroredBTerm();
         int pin_hpwl = net->computeIONetHPWL(pin_idx, sections[i].pos);
         if (pin_hpwl == std::numeric_limits<int>::max()) {
           dst[i] = pin_hpwl;
           break;
         }
-        dst[i] += pin_hpwl + getMirroredPinCost(pin, sections[i].pos);
+        const int mirrored_pin_cost = getMirroredPinCost(pin, sections[i].pos);
+        dst[i] += pin_hpwl + mirrored_pin_cost;
+        if (has_mirrored_pin) {
+          larger_cost[i] += std::max(pin_hpwl, mirrored_pin_cost);
+        }
       }
+      used_slots[i] = sections[i].used_slots;
     }
 
-    for (auto i : sortIndexes(dst)) {
+    for (auto i : sortIndexes(dst, larger_cost, used_slots)) {
       int section_available_slots
           = sections[i].num_slots - sections[i].used_slots;
 
@@ -1525,15 +1495,25 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
                                   std::vector<Section>& sections)
 {
   bool pin_assigned = false;
+  bool has_mirrored_pin = io_pin.getBTerm()->hasMirroredBTerm();
 
   if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()
       && !io_pin.inFallback()) {
     std::vector<int> dst(sections.size());
+    std::vector<int> larger_cost(sections.size());
+    std::vector<int> used_slots(sections.size());
+
     for (int i = 0; i < sections.size(); i++) {
-      dst[i] = netlist_->computeIONetHPWL(idx, sections[i].pos)
-               + getMirroredPinCost(io_pin, sections[i].pos);
+      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, sections[i].pos);
+      const int mirrored_pin_cost = getMirroredPinCost(io_pin, sections[i].pos);
+      dst[i] = io_net_hpwl + mirrored_pin_cost;
+
+      if (has_mirrored_pin) {
+        larger_cost[i] = std::max(io_net_hpwl, mirrored_pin_cost);
+        used_slots[i] = sections[i].used_slots;
+      }
     }
-    for (auto i : sortIndexes(dst)) {
+    for (auto i : sortIndexes(dst, larger_cost, used_slots)) {
       if (sections[i].used_slots < sections[i].num_slots) {
         sections[i].pin_indices.push_back(idx);
         sections[i].used_slots++;
@@ -1642,7 +1622,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
     logger_->error(PPL, 20, "Manufacturing grid is not defined.");
   }
 
-  if (pin.getLayer() != top_grid_->layer) {
+  if (top_grid_ == nullptr
+      || pin.getLayer() != top_grid_->layer->getRoutingLevel()) {
     int required_min_area = 0;
 
     if (hor_layers_.find(pin.getLayer()) == hor_layers_.end()
@@ -1788,30 +1769,6 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
-void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
-{
-  Constraint constraint(*pins, Direction::invalid, region);
-  std::string pin_names = getPinSetOrListString(*pins);
-
-  logger_->info(utl::PPL,
-                60,
-                "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
-                "{:.2f}u) at routing layer {}.",
-                pin_names,
-                getBlock()->dbuToMicrons(region.xMin()),
-                getBlock()->dbuToMicrons(region.yMin()),
-                getBlock()->dbuToMicrons(region.xMax()),
-                getBlock()->dbuToMicrons(region.yMax()),
-                getTopLayer()->getConstName());
-
-  constraints_.push_back(constraint);
-  for (odb::dbBTerm* bterm : *pins) {
-    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
-      top_layer_pins_count_++;
-    }
-  }
-}
-
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
 {
   hor_layers_.insert(layer->getRoutingLevel());
@@ -1927,14 +1884,38 @@ Interval IOPlacer::findIntervalFromRect(const odb::Rect& rect)
 void IOPlacer::getConstraintsFromDB()
 {
   std::unordered_map<Interval, PinSet, IntervalHash> pins_per_interval;
+  std::unordered_map<Rect, PinSet, RectHash> pins_per_rect;
   for (odb::dbBTerm* bterm : getBlock()->getBTerms()) {
     auto constraint_region = bterm->getConstraintRegion();
     // Constraints derived from mirrored pins are not taken into account here.
     // Only pins with constraints directly assigned by the user should be
     // considered.
     if (constraint_region && !bterm->isMirrored()) {
-      Interval interval = findIntervalFromRect(constraint_region.value());
-      pins_per_interval[interval].insert(bterm);
+      Rect region = constraint_region.value();
+      if (region.xMin() == region.xMax() || region.yMin() == region.yMax()) {
+        Interval interval = findIntervalFromRect(constraint_region.value());
+        pins_per_interval[interval].insert(bterm);
+      } else {
+        // TODO: support rectilinear shapes
+        if (top_grid_ == nullptr) {
+          logger_->error(utl::PPL, 121, "Top layer grid not found.");
+        }
+        if (top_grid_->region.isRect()) {
+          const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
+          if (!top_grid_region.contains(region)) {
+            logger_->error(utl::PPL,
+                           25,
+                           "Constraint region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+                           "{:.2f}u) at top "
+                           "layer is not contained in the top layer grid.",
+                           getBlock()->dbuToMicrons(region.xMin()),
+                           getBlock()->dbuToMicrons(region.yMin()),
+                           getBlock()->dbuToMicrons(region.xMax()),
+                           getBlock()->dbuToMicrons(region.yMax()));
+          }
+          pins_per_rect[region].insert(bterm);
+        }
+      }
     }
   }
 
@@ -1950,13 +1931,43 @@ void IOPlacer::getConstraintsFromDB()
         getEdgeString(interval.getEdge()));
     constraints_.emplace_back(pins, Direction::invalid, interval);
   }
+
+  top_layer_pins_count_ = 0;
+  if (top_grid_ != nullptr) {
+    for (const auto& [region, pins] : pins_per_rect) {
+      std::string pin_names = getPinSetOrListString(pins);
+      logger_->info(
+          utl::PPL,
+          60,
+          "Restrict pins [ {} ] to region ({:.2f}u, {:.2f}u)-({:.2f}u, "
+          "{:.2f}u) at routing layer {}.",
+          pin_names,
+          getBlock()->dbuToMicrons(region.xMin()),
+          getBlock()->dbuToMicrons(region.yMin()),
+          getBlock()->dbuToMicrons(region.xMax()),
+          getBlock()->dbuToMicrons(region.yMax()),
+          top_grid_->layer->getConstName());
+      top_layer_pins_count_ += pins.size();
+      constraints_.emplace_back(pins, Direction::invalid, region);
+    }
+  }
 }
 
 void IOPlacer::initConstraints(bool annealing)
 {
+  constraints_.clear();
   getConstraintsFromDB();
   int constraint_idx = 0;
   int constraints_no_slots = 0;
+  if (top_layer_pins_count_ > top_layer_slots_.size()) {
+    logger_->error(PPL,
+                   11,
+                   "Number of IO pins assigned to the top layer ({}) exceeds "
+                   "maximum number of available "
+                   "top layer positions ({}).",
+                   top_layer_pins_count_,
+                   top_layer_slots_.size());
+  }
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -2210,10 +2221,10 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections,
 void IOPlacer::updateSlots()
 {
   for (Slot& slot : slots_) {
-    slot.blocked = slot.used;
+    slot.blocked = slot.blocked || slot.used;
   }
   for (Slot& slot : top_layer_slots_) {
-    slot.blocked = slot.used;
+    slot.blocked = slot.blocked || slot.used;
   }
 }
 
@@ -2413,14 +2424,14 @@ void IOPlacer::checkPinPlacement()
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == pin.getPosition()) {
           odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-          logger_->warn(
-              PPL,
-              106,
-              "At least 2 pins in position ({}, {}), layer {}, port {}.",
-              pos.x(),
-              pos.y(),
-              tech_layer->getName(),
-              pin.getName().c_str());
+          logger_->warn(PPL,
+                        106,
+                        "At least 2 pins in position ({:.2f}um, {:.2f}um), "
+                        "layer {}, port {}.",
+                        getBlock()->dbuToMicrons(pos.x()),
+                        getBlock()->dbuToMicrons(pos.y()),
+                        tech_layer->getName(),
+                        pin.getName().c_str());
           invalid = true;
         }
       }
@@ -2467,14 +2478,19 @@ bool IOPlacer::checkPinConstraints()
           invalid = true;
         }
       } else {
-        if (!constraint.box.overlaps(pin.getPosition())) {
+        if (!constraint.box.intersects(pin.getPosition())) {
           logger_->warn(
               PPL,
               105,
-              "Pin {} is not placed in the upper layer grid region {}. {}",
+              "Pin {} is not placed in the upper layer grid region ({:.2f}um, "
+              "{:.2f}um) ({:.2f}um, {:.2f}um). ({:.2f}um, {:.2f}um)",
               pin.getName(),
-              constraint.box,
-              pin.getPosition());
+              getBlock()->dbuToMicrons(constraint.box.xMin()),
+              getBlock()->dbuToMicrons(constraint.box.yMin()),
+              getBlock()->dbuToMicrons(constraint.box.xMax()),
+              getBlock()->dbuToMicrons(constraint.box.yMax()),
+              getBlock()->dbuToMicrons(pin.getPosition().x()),
+              getBlock()->dbuToMicrons(pin.getPosition().y()));
           invalid = true;
         }
       }
@@ -2667,12 +2683,18 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   excludeInterval(interval);
 
-  logger_->info(PPL,
-                70,
-                "Pin {} placed at ({:.2f}um, {:.2f}um).",
-                bterm->getName(),
-                getBlock()->dbuToMicrons(pos.x()),
-                getBlock()->dbuToMicrons(pos.y()));
+  if (pos != Point(x, y)) {
+    logger_->info(PPL,
+                  70,
+                  "Pin {} placed at ({:.2f}um, {:.2f}um) instead of ({:.2f}um, "
+                  "{:.2f}um). Pin was snapped to a routing track, to the "
+                  "manufacturing grid or moved away from blocked region.",
+                  bterm->getName(),
+                  getBlock()->dbuToMicrons(pos.x()),
+                  getBlock()->dbuToMicrons(pos.y()),
+                  getBlock()->dbuToMicrons(x),
+                  getBlock()->dbuToMicrons(y));
+  }
 }
 
 void IOPlacer::movePinToTrack(odb::Point& pos,
@@ -2693,7 +2715,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
   odb::dbTrackGrid* track_grid = getBlock()->findTrackGrid(tech_layer);
   int min_spacing, init_track, num_track;
 
-  if (layer != top_grid_->layer) {  // pin is placed in the die boundaries
+  // pin is placed in the die boundaries
+  if (top_grid_ == nullptr || layer != top_grid_->layer->getRoutingLevel()) {
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
       pos.setY(round(static_cast<double>((pos.y() - init_track)) / min_spacing)
@@ -2833,32 +2856,44 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
                 database_unit);
 }
 
-void IOPlacer::addTopLayerPinPattern(odb::dbTechLayer* layer,
-                                     int x_step,
-                                     int y_step,
-                                     const Rect& region,
-                                     int pin_width,
-                                     int pin_height,
-                                     int keepout)
+void IOPlacer::initTopLayerGrid()
 {
-  *top_grid_ = {layer->getRoutingLevel(),
-                x_step,
-                y_step,
-                region,
-                pin_width,
-                pin_height,
-                keepout};
+  auto top_layer_grid = getBlock()->getBTermTopLayerGrid();
+  if (top_layer_grid) {
+    top_grid_ = std::make_unique<odb::dbBlock::dbBTermTopLayerGrid>(
+        top_layer_grid.value());
+  }
 }
 
 void IOPlacer::findSlotsForTopLayer()
 {
-  if (top_layer_slots_.empty() && top_grid_->pin_width > 0) {
-    for (int x = top_grid_->llx(); x < top_grid_->urx();
-         x += top_grid_->x_step) {
-      for (int y = top_grid_->lly(); y < top_grid_->ury();
-           y += top_grid_->y_step) {
-        top_layer_slots_.push_back(
-            {false, false, Point(x, y), top_grid_->layer, Edge::invalid});
+  initTopLayerGrid();
+  const odb::Rect& die_area = getBlock()->getDieArea();
+
+  if (top_grid_ != nullptr && top_layer_slots_.empty()
+      && top_grid_->pin_width > 0) {
+    if (top_grid_->region.isRect()) {
+      const int half_width = top_grid_->pin_width / 2;
+      const int half_height = top_grid_->pin_height / 2;
+      const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
+      for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
+           x += top_grid_->x_step) {
+        for (int y = top_grid_region.yMin(); y < top_grid_region.yMax();
+             y += top_grid_->y_step) {
+          Point ll(x - half_width, y - half_height);
+          Point lr(x + half_width, y - half_height);
+          Point ul(x - half_width, y + half_height);
+          Point ur(x + half_width, y + half_height);
+          bool blocked = !die_area.intersects(ll) || !die_area.intersects(lr)
+                         || !die_area.intersects(ul)
+                         || !die_area.intersects(ur);
+
+          top_layer_slots_.push_back({blocked,
+                                      false,
+                                      Point(x, y),
+                                      top_grid_->layer->getRoutingLevel(),
+                                      Edge::invalid});
+        }
       }
     }
 
@@ -2868,13 +2903,15 @@ void IOPlacer::findSlotsForTopLayer()
 
 void IOPlacer::filterObstructedSlotsForTopLayer()
 {
-  // Collect top_grid_ obstructions
+  // Collect top_grid obstructions
   std::vector<odb::Rect> obstructions;
 
   // Get routing obstructions
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
     odb::dbBox* box = obstruction->getBBox();
-    if (box->getTechLayer()->getRoutingLevel() == top_grid_->layer) {
+    if (top_grid_ != nullptr && top_grid_->layer != nullptr
+        && box->getTechLayer()->getRoutingLevel()
+               == top_grid_->layer->getRoutingLevel()) {
       odb::Rect obstruction_rect = box->getBox();
       obstructions.push_back(obstruction_rect);
     }
@@ -2886,7 +2923,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* wire : swire->getWires()) {
           if (!wire->isVia()) {
-            if (wire->getTechLayer()->getRoutingLevel() == top_grid_->layer) {
+            if (top_grid_ != nullptr && top_grid_->layer != nullptr
+                && wire->getTechLayer()->getRoutingLevel()
+                       == top_grid_->layer->getRoutingLevel()) {
               odb::Rect obstruction_rect = wire->getBox();
               obstructions.push_back(obstruction_rect);
             }
@@ -2901,7 +2940,9 @@ void IOPlacer::filterObstructedSlotsForTopLayer()
     for (odb::dbBPin* pin : term->getBPins()) {
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
-          if (box->getTechLayer()->getRoutingLevel() == top_grid_->layer) {
+          if (top_grid_ != nullptr && top_grid_->layer != nullptr
+              && box->getTechLayer()->getRoutingLevel()
+                     == top_grid_->layer->getRoutingLevel()) {
             odb::Rect obstruction_rect = box->getBox();
             obstructions.push_back(obstruction_rect);
           }
@@ -2948,48 +2989,52 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
   int ub_y = region.yMax();
 
   std::vector<Section> sections;
-  for (int x = top_grid_->llx(); x < top_grid_->urx(); x += top_grid_->x_step) {
-    if (x < lb_x || x > ub_x) {
-      continue;
-    }
-    std::vector<Slot>::iterator it = std::find_if(
-        top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
-          return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
-        });
-    int edge_begin = it - top_layer_slots_.begin();
-    int edge_x = top_layer_slots_[edge_begin].pos.x();
-
-    it = std::find_if(top_layer_slots_.begin() + edge_begin,
-                      top_layer_slots_.end(),
-                      [&](Slot s) {
-                        return s.pos.x() != edge_x || s.pos.x() >= ub_x
-                               || s.pos.y() >= ub_y;
-                      });
-    int edge_end = it - top_layer_slots_.begin() - 1;
-    int end_slot = 0;
-
-    while (end_slot < edge_end) {
-      int blocked_slots = 0;
-      end_slot = edge_begin + slots_per_section_ - 1;
-      if (end_slot > edge_end) {
-        end_slot = edge_end;
+  if (top_grid_->region.isRect()) {
+    const Rect& top_grid_region = top_grid_->region.getEnclosingRect();
+    for (int x = top_grid_region.xMin(); x < top_grid_region.xMax();
+         x += top_grid_->x_step) {
+      if (x < lb_x || x > ub_x) {
+        continue;
       }
-      for (int i = edge_begin; i <= end_slot; ++i) {
-        if (top_layer_slots_[i].blocked) {
-          blocked_slots++;
+      std::vector<Slot>::iterator it = std::find_if(
+          top_layer_slots_.begin(), top_layer_slots_.end(), [&](Slot s) {
+            return (s.pos.x() >= x && s.pos.x() >= lb_x && s.pos.y() >= lb_y);
+          });
+      int edge_begin = it - top_layer_slots_.begin();
+      int edge_x = top_layer_slots_[edge_begin].pos.x();
+
+      it = std::find_if(top_layer_slots_.begin() + edge_begin,
+                        top_layer_slots_.end(),
+                        [&](Slot s) {
+                          return s.pos.x() != edge_x || s.pos.x() >= ub_x
+                                 || s.pos.y() >= ub_y;
+                        });
+      int edge_end = it - top_layer_slots_.begin() - 1;
+      int end_slot = 0;
+
+      while (end_slot < edge_end) {
+        int blocked_slots = 0;
+        end_slot = edge_begin + slots_per_section_ - 1;
+        if (end_slot > edge_end) {
+          end_slot = edge_end;
         }
-      }
-      int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec;
-      n_sec.pos = top_layer_slots_.at(half_length_pt).pos;
-      n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
-      n_sec.begin_slot = edge_begin;
-      n_sec.end_slot = end_slot;
-      n_sec.used_slots = 0;
-      n_sec.edge = Edge::invalid;
+        for (int i = edge_begin; i <= end_slot; ++i) {
+          if (top_layer_slots_[i].blocked) {
+            blocked_slots++;
+          }
+        }
+        int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
+        Section n_sec;
+        n_sec.pos = top_layer_slots_.at(half_length_pt).pos;
+        n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
+        n_sec.begin_slot = edge_begin;
+        n_sec.end_slot = end_slot;
+        n_sec.used_slots = 0;
+        n_sec.edge = Edge::invalid;
 
-      sections.push_back(n_sec);
-      edge_begin = ++end_slot;
+        sections.push_back(n_sec);
+        edge_begin = ++end_slot;
+      }
     }
   }
 

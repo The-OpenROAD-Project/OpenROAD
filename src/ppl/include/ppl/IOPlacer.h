@@ -1,42 +1,12 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -68,7 +38,6 @@ class SimulatedAnnealing;
 struct Constraint;
 struct Section;
 struct Slot;
-struct TopLayerGrid;
 
 using odb::Point;
 using odb::Rect;
@@ -124,17 +93,8 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addTopLayerPinPattern(odb::dbTechLayer* layer,
-                             int x_step,
-                             int y_step,
-                             const Rect& region,
-                             int pin_width,
-                             int pin_height,
-                             int keepout);
-  odb::dbTechLayer* getTopLayer() const;
   void placePin(odb::dbBTerm* bterm,
                 odb::dbTechLayer* layer,
                 int x,
@@ -170,7 +130,6 @@ class IOPlacer
   bool checkMirroredPins();
   void reportHPWL();
   void printConfig(bool annealing = false);
-  void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
@@ -196,6 +155,7 @@ class IOPlacer
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
   std::vector<Point> findLayerSlots(int layer, Edge edge);
+  void initTopLayerGrid();
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
   std::vector<Section> findSectionsForTopLayer(const odb::Rect& region);
@@ -312,7 +272,7 @@ class IOPlacer
   std::vector<IOPin> zero_sink_ios_;
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
-  std::unique_ptr<TopLayerGrid> top_grid_;
+  std::unique_ptr<odb::dbBlock::dbBTermTopLayerGrid> top_grid_;
 
   std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
 

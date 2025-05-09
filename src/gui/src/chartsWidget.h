@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2021, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
 
@@ -42,10 +13,12 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "gui/gui.h"
 #include "staGuiInterface.h"
+#include "utl/histogram.h"
 
 namespace sta {
 class Pin;
@@ -59,8 +32,6 @@ struct SlackHistogramData
 {
   StaPins constrained_pins;
   std::set<sta::Clock*> clocks;
-  float min = std::numeric_limits<float>::max();
-  float max = std::numeric_limits<float>::lowest();
 };
 
 struct Buckets
@@ -101,18 +72,16 @@ class HistogramView : public QChartView
   void contextMenuEvent(QContextMenuEvent* event) override;
 
  private:
-  void setBucketInterval();
-  int computeSnapBucketInterval(float exact_interval);
+  float computeBucketInterval();
+  float computeSnapBucketInterval(float exact_interval);
   float computeSnapBucketDecimalInterval(float minimum_interval);
-  int computeNumberofBuckets(int bucket_interval,
-                             float max_slack,
-                             float min_slack);
-  int computeNumberOfDigits(int value);
+  int computeNumberOfDigits(float value);
 
+  void populateBins();
+  void populateBuckets(
+      const std::vector<std::vector<const sta::Pin*>>& pin_bins);
   void setVisualConfig();
 
-  void populateBuckets(const StaPins* end_points,
-                       const EndPointSlackMap* end_point_to_slack);
   std::pair<QBarSet*, QBarSet*> createBarSets();
   void populateBarSets(QBarSet& neg_set, QBarSet& pos_set);
 
@@ -122,8 +91,6 @@ class HistogramView : public QChartView
   int computeYInterval(int largest_slack_count);
   int computeMaxYSnap(int largest_slack_count);
   int computeFirstDigit(int value, int digits);
-
-  void setLimits(const EndPointSlackMap& end_point_to_slack);
 
   utl::Logger* logger_;
   STAGuiInterface* sta_{nullptr};
@@ -135,16 +102,15 @@ class HistogramView : public QChartView
   QMenu* menu_;
 
   // Settings
-  float max_slack_;
-  float min_slack_;
-  float bucket_interval_;
   int precision_count_;  // Used to configure the x labels.
 
   // Data
   std::set<sta::Clock*> clocks_;
   Buckets buckets_;
+  std::unique_ptr<utl::Histogram<float>> histogram_;
 
   static constexpr int default_number_of_buckets_ = 15;
+  static constexpr int minimum_number_of_buckets_ = 8;
 };
 
 class ChartsWidget : public QDockWidget

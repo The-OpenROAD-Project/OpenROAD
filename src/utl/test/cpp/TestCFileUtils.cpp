@@ -34,7 +34,9 @@
 #include <boost/beast.hpp>
 #include <ctime>
 #include <filesystem>
+#include <memory>
 #include <numeric>
+#include <string>
 #include <vector>
 
 #include "gmock/gmock.h"

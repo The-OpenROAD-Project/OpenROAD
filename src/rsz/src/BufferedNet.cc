@@ -1,42 +1,14 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "BufferedNet.hh"
 
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <memory>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "rsz/Resizer.hh"
@@ -53,6 +25,7 @@
 // Resizer::makeBufferedNetGroute
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
+#include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
 #include "sta/Hash.hh"
 
@@ -84,24 +57,13 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   type_ = BufferedNetType::load;
   location_ = location;
   load_pin_ = load_pin;
-  buffer_cell_ = nullptr;
-  layer_ = null_layer;
-  ref_ = nullptr;
-  ref2_ = nullptr;
 
   LibertyPort* load_port = resizer->network()->libertyPort(load_pin);
   if (load_port) {
     cap_ = resizer->portCapacitance(load_port, corner);
     fanout_ = resizer->portFanoutLoad(load_port);
     max_load_slew_ = resizer->maxInputSlew(load_port, corner);
-  } else {
-    cap_ = 0.0;
-    fanout_ = 1;
-    max_load_slew_ = INF;
   }
-
-  required_path_.init();
-  required_delay_ = 0.0;
 }
 
 // junc
@@ -117,8 +79,6 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   }
   type_ = BufferedNetType::junction;
   location_ = location;
-  load_pin_ = nullptr;
-  buffer_cell_ = nullptr;
   layer_ = null_layer;
   ref_ = ref;
   ref2_ = ref2;
@@ -127,8 +87,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = ref->fanout() + ref2->fanout();
   max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
 
-  required_path_.init();
-  required_delay_ = 0.0;
+  area_ = ref->area() + ref2->area();
 }
 
 // wire
@@ -145,11 +104,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   }
   type_ = BufferedNetType::wire;
   location_ = location;
-  load_pin_ = nullptr;
-  buffer_cell_ = nullptr;
   layer_ = layer;
   ref_ = ref;
-  ref2_ = nullptr;
 
   double wire_res, wire_cap;
   wireRC(corner, resizer, wire_res, wire_cap);
@@ -157,8 +113,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = ref->fanout();
   max_load_slew_ = ref->maxLoadSlew();
 
-  required_path_.init();
-  required_delay_ = 0.0;
+  area_ = ref->area();
 }
 
 // buffer
@@ -175,11 +130,9 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   }
   type_ = BufferedNetType::buffer;
   location_ = location;
-  load_pin_ = nullptr;
   buffer_cell_ = buffer_cell;
   layer_ = null_layer;
   ref_ = ref;
-  ref2_ = nullptr;
 
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
@@ -187,8 +140,7 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   fanout_ = resizer->portFanoutLoad(input);
   max_load_slew_ = resizer->maxInputSlew(input, corner);
 
-  required_path_.init();
-  required_delay_ = 0.0;
+  area_ = ref->area() + 1;
 }
 
 void BufferedNet::reportTree(const Resizer* resizer) const
@@ -213,7 +165,7 @@ void BufferedNet::reportTree(const int level, const Resizer* resizer) const
   }
 }
 
-string BufferedNet::to_string(const Resizer* resizer) const
+std::string BufferedNet::to_string(const Resizer* resizer) const
 {
   Network* sdc_network = resizer->sdcNetwork();
   Units* units = resizer->units();
@@ -225,33 +177,33 @@ string BufferedNet::to_string(const Resizer* resizer) const
   switch (type_) {
     case BufferedNetType::load:
       // {:{}s} format indents level spaces.
-      return fmt::format("load {} ({}, {}) cap {} req {}",
+      return fmt::format("load {} ({}, {}) cap {} slack {}",
                          sdc_network->pathName(load_pin_),
                          x,
                          y,
                          cap,
-                         delayAsString(required(resizer), resizer));
+                         delayAsString(slack(), resizer));
     case BufferedNetType::wire:
-      return fmt::format("wire ({}, {}) cap {} req {} buffers {}",
+      return fmt::format("wire ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(required(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
     case BufferedNetType::buffer:
-      return fmt::format("buffer ({}, {}) {} cap {} req {} buffers {}",
+      return fmt::format("buffer ({}, {}) {} cap {} slack {} buffers {}",
                          x,
                          y,
                          buffer_cell_->name(),
                          cap,
-                         delayAsString(required(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
     case BufferedNetType::junction:
-      return fmt::format("junction ({}, {}) cap {} req {} buffers {}",
+      return fmt::format("junction ({}, {}) cap {} slack {} buffers {}",
                          x,
                          y,
                          cap,
-                         delayAsString(required(resizer), resizer),
+                         delayAsString(slack(), resizer),
                          bufferCount());
   }
   // suppress gcc warning
@@ -278,22 +230,24 @@ void BufferedNet::setMaxLoadSlew(float max_slew)
   max_load_slew_ = max_slew;
 }
 
-void BufferedNet::setRequiredPath(const PathRef& path_ref)
+void BufferedNet::setSlackTransition(const sta::RiseFallBoth* transitions)
 {
-  required_path_ = path_ref;
+  slack_transitions_ = transitions;
 }
 
-Required BufferedNet::required(const StaState* sta) const
+void BufferedNet::setSlack(Delay slack)
 {
-  if (required_path_.isNull()) {
-    return INF;
-  }
-  return required_path_.required(sta) - required_delay_;
+  slack_ = slack;
 }
 
-void BufferedNet::setRequiredDelay(Delay delay)
+void BufferedNet::setDelay(Delay delay)
 {
-  required_delay_ = delay;
+  delay_ = delay;
+}
+
+void BufferedNet::setArrivalDelay(Delay delay)
+{
+  arrival_delay_ = delay;
 }
 
 int BufferedNet::bufferCount() const
@@ -336,10 +290,10 @@ void BufferedNet::wireRC(const Corner* corner,
     resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   }
   if (layer_ == BufferedNet::null_layer) {
-    double dx
+    const double dx
         = resizer->dbuToMeters(std::abs(location_.x() - ref_->location().x()))
           / resizer->dbuToMeters(length());
-    double dy
+    const double dy
         = resizer->dbuToMeters(std::abs(location_.y() - ref_->location().y()))
           / resizer->dbuToMeters(length());
     res = dx * resizer->wireSignalHResistance(corner)
@@ -384,7 +338,7 @@ BufferedNetPtr Resizer::makeBufferedNet(const Pin* drvr_pin,
   return nullptr;
 }
 
-using SteinerPtAdjacents = vector<vector<SteinerPt>>;
+using SteinerPtAdjacents = std::vector<std::vector<SteinerPt>>;
 using SteinerPtPinVisited = std::unordered_set<Point, PointHash, PointEqual>;
 
 static BufferedNetPtr makeBufferedNetFromTree(
@@ -433,7 +387,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
     }
   }
   // Steiner pt.
-  for (int adj : adjacents[to]) {
+  for (const int adj : adjacents[to]) {
     if (adj != from) {
       BufferedNetPtr bnet1 = makeBufferedNetFromTree(tree,
                                                      to,
@@ -474,16 +428,16 @@ static BufferedNetPtr makeBufferedNetFromTree(
 BufferedNetPtr Resizer::makeBufferedNetSteiner(const Pin* drvr_pin,
                                                const Corner* corner)
 {
-  BufferedNetPtr bnet = nullptr;
+  BufferedNetPtr bnet;
   SteinerTree* tree = makeSteinerTree(drvr_pin);
   if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt();
+    const SteinerPt drvr_pt = tree->drvrPt();
     if (drvr_pt != SteinerTree::null_pt) {
-      int branch_count = tree->branchCount();
+      const int branch_count = tree->branchCount();
       SteinerPtAdjacents adjacents(branch_count);
       for (int i = 0; i < branch_count; i++) {
-        stt::Branch& branch_pt = tree->branch(i);
-        SteinerPt j = branch_pt.n;
+        const stt::Branch& branch_pt = tree->branch(i);
+        const SteinerPt j = branch_pt.n;
         if (j != i) {
           adjacents[i].push_back(j);
           adjacents[j].push_back(i);
@@ -522,8 +476,8 @@ class RoutePtEqual
   bool operator()(const RoutePt& pt1, const RoutePt& pt2) const;
 };
 
-using GRoutePtAdjacents
-    = std::unordered_map<RoutePt, vector<RoutePt>, RoutePtHash, RoutePtEqual>;
+using GRoutePtAdjacents = std::
+    unordered_map<RoutePt, std::vector<RoutePt>, RoutePtHash, RoutePtEqual>;
 
 size_t RoutePtHash::operator()(const RoutePt& pt) const
 {

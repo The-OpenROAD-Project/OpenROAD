@@ -1,39 +1,11 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbDatabase.h"
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -330,12 +302,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   }
 
   // Fix up the owner id of properties of this db, this value changes.
-  dbSet<_dbProperty> props(&db, db._prop_tbl);
-  dbSet<_dbProperty>::iterator itr;
-  uint oid = db.getId();
+  const uint oid = db.getId();
 
-  for (itr = props.begin(); itr != props.end(); ++itr) {
-    _dbProperty* p = *itr;
+  for (_dbProperty* p : dbSet<_dbProperty>(&db, db._prop_tbl)) {
     p->_owner = oid;
   }
 
@@ -359,14 +328,9 @@ dbSet<dbLib> dbDatabase::getLibs()
 
 dbLib* dbDatabase::findLib(const char* name)
 {
-  dbSet<dbLib> libs = getLibs();
-  dbSet<dbLib>::iterator itr;
-
-  for (itr = libs.begin(); itr != libs.end(); ++itr) {
-    _dbLib* lib = (_dbLib*) *itr;
-
-    if (strcmp(lib->_name, name) == 0) {
-      return (dbLib*) lib;
+  for (dbLib* lib : getLibs()) {
+    if (strcmp(lib->getConstName(), name) == 0) {
+      return lib;
     }
   }
 
@@ -393,10 +357,7 @@ dbTech* dbDatabase::findTech(const char* name)
 
 dbMaster* dbDatabase::findMaster(const char* name)
 {
-  dbSet<dbLib> libs = getLibs();
-  dbSet<dbLib>::iterator it;
-  for (it = libs.begin(); it != libs.end(); it++) {
-    dbLib* lib = *it;
+  for (dbLib* lib : getLibs()) {
     dbMaster* master = lib->findMaster(name);
     if (master) {
       return master;
@@ -486,6 +447,7 @@ void dbDatabase::read(std::istream& file)
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db;
+  ((dbDatabase*) db)->triggerPostReadDb();
 }
 
 void dbDatabase::write(std::ostream& file)
@@ -706,6 +668,49 @@ void dbDatabase::report()
       };
   auto total_size = print(root, "dbDatabase", 1);
   logger->report("Total size = {}", total_size);
+}
+
+void dbDatabase::addObserver(dbDatabaseObserver* observer)
+{
+  observer->setUnregisterObserver(
+      [this, observer] { removeObserver(observer); });
+  _dbDatabase* db = (_dbDatabase*) this;
+  db->observers_.insert(observer);
+}
+
+void dbDatabase::removeObserver(dbDatabaseObserver* observer)
+{
+  observer->setUnregisterObserver(nullptr);
+  _dbDatabase* db = (_dbDatabase*) this;
+  db->observers_.erase(observer);
+}
+
+void dbDatabase::triggerPostReadLef(dbTech* tech, dbLib* library)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postReadLef(tech, library);
+  }
+}
+
+void dbDatabase::triggerPostReadDef(dbBlock* block, const bool floorplan)
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    if (floorplan) {
+      observer->postReadFloorplanDef(block);
+    } else {
+      observer->postReadDef(block);
+    }
+  }
+}
+
+void dbDatabase::triggerPostReadDb()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postReadDb(this);
+  }
 }
 
 }  // namespace odb

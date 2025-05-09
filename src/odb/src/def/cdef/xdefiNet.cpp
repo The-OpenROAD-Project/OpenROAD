@@ -243,7 +243,7 @@ double defiNet_propNumber(const ::defiNet* obj, int index)
   return ((DefParser::defiNet*) obj)->propNumber(index);
 }
 
-const char defiNet_propType(const ::defiNet* obj, int index)
+char defiNet_propType(const ::defiNet* obj, int index)
 {
   return ((const DefParser::defiNet*) obj)->propType(index);
 }
@@ -631,7 +631,7 @@ const char* defiNet_viaName(const ::defiNet* obj, int index)
   return ((const DefParser::defiNet*) obj)->viaName(index);
 }
 
-const int defiNet_viaOrient(const ::defiNet* obj, int index)
+int defiNet_viaOrient(const ::defiNet* obj, int index)
 {
   return ((const DefParser::defiNet*) obj)->viaOrient(index);
 }
@@ -641,17 +641,17 @@ const char* defiNet_viaOrientStr(const ::defiNet* obj, int index)
   return ((const DefParser::defiNet*) obj)->viaOrientStr(index);
 }
 
-const int defiNet_topMaskNum(const ::defiNet* obj, int index)
+int defiNet_topMaskNum(const ::defiNet* obj, int index)
 {
   return ((const DefParser::defiNet*) obj)->topMaskNum(index);
 }
 
-const int defiNet_cutMaskNum(const ::defiNet* obj, int index)
+int defiNet_cutMaskNum(const ::defiNet* obj, int index)
 {
   return ((const DefParser::defiNet*) obj)->cutMaskNum(index);
 }
 
-const int defiNet_bottomMaskNum(const ::defiNet* obj, int index)
+int defiNet_bottomMaskNum(const ::defiNet* obj, int index)
 {
   return ((const DefParser::defiNet*) obj)->bottomMaskNum(index);
 }

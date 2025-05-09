@@ -1,34 +1,5 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "definReader.h"
 
@@ -37,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -191,70 +163,47 @@ void populateScanInst(definReader* reader,
 definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 {
   _db = db;
-  parent_ = nullptr;
-  _continue_on_errors = false;
-  hier_delimeter_ = 0;
-  left_bus_delimeter_ = 0;
-  right_bus_delimeter_ = 0;
 
   definBase::setLogger(logger);
   definBase::setMode(mode);
 
-  _blockageR = new definBlockage;
-  _componentR = new definComponent;
-  _componentMaskShift = new definComponentMaskShift;
-  _fillR = new definFill;
-  _gcellR = new definGCell;
-  _netR = new definNet;
-  _pinR = new definPin;
-  _rowR = new definRow;
-  _snetR = new definSNet;
-  _tracksR = new definTracks;
-  _viaR = new definVia;
-  _regionR = new definRegion;
-  _groupR = new definGroup;
-  _non_default_ruleR = new definNonDefaultRule;
-  _prop_defsR = new definPropDefs;
-  _pin_propsR = new definPinProps;
+  _blockageR = std::make_unique<definBlockage>();
+  _componentR = std::make_unique<definComponent>();
+  _componentMaskShift = std::make_unique<definComponentMaskShift>();
+  _fillR = std::make_unique<definFill>();
+  _gcellR = std::make_unique<definGCell>();
+  _netR = std::make_unique<definNet>();
+  _pinR = std::make_unique<definPin>();
+  _rowR = std::make_unique<definRow>();
+  _snetR = std::make_unique<definSNet>();
+  _tracksR = std::make_unique<definTracks>();
+  _viaR = std::make_unique<definVia>();
+  _regionR = std::make_unique<definRegion>();
+  _groupR = std::make_unique<definGroup>();
+  _non_default_ruleR = std::make_unique<definNonDefaultRule>();
+  _prop_defsR = std::make_unique<definPropDefs>();
+  _pin_propsR = std::make_unique<definPinProps>();
 
-  _interfaces.push_back(_blockageR);
-  _interfaces.push_back(_componentR);
-  _interfaces.push_back(_componentMaskShift);
-  _interfaces.push_back(_fillR);
-  _interfaces.push_back(_gcellR);
-  _interfaces.push_back(_netR);
-  _interfaces.push_back(_pinR);
-  _interfaces.push_back(_rowR);
-  _interfaces.push_back(_snetR);
-  _interfaces.push_back(_tracksR);
-  _interfaces.push_back(_viaR);
-  _interfaces.push_back(_regionR);
-  _interfaces.push_back(_groupR);
-  _interfaces.push_back(_non_default_ruleR);
-  _interfaces.push_back(_prop_defsR);
-  _interfaces.push_back(_pin_propsR);
+  _interfaces.push_back(_blockageR.get());
+  _interfaces.push_back(_componentR.get());
+  _interfaces.push_back(_componentMaskShift.get());
+  _interfaces.push_back(_fillR.get());
+  _interfaces.push_back(_gcellR.get());
+  _interfaces.push_back(_netR.get());
+  _interfaces.push_back(_pinR.get());
+  _interfaces.push_back(_rowR.get());
+  _interfaces.push_back(_snetR.get());
+  _interfaces.push_back(_tracksR.get());
+  _interfaces.push_back(_viaR.get());
+  _interfaces.push_back(_regionR.get());
+  _interfaces.push_back(_groupR.get());
+  _interfaces.push_back(_non_default_ruleR.get());
+  _interfaces.push_back(_prop_defsR.get());
+  _interfaces.push_back(_pin_propsR.get());
   init();
 }
 
-definReader::~definReader()
-{
-  delete _blockageR;
-  delete _componentR;
-  delete _componentMaskShift;
-  delete _fillR;
-  delete _gcellR;
-  delete _netR;
-  delete _pinR;
-  delete _rowR;
-  delete _snetR;
-  delete _tracksR;
-  delete _viaR;
-  delete _regionR;
-  delete _groupR;
-  delete _non_default_ruleR;
-  delete _prop_defsR;
-  delete _pin_propsR;
-}
+definReader::~definReader() = default;
 
 int definReader::errors()
 {
@@ -299,23 +248,6 @@ void definReader::skipFillWires()
 void definReader::continueOnErrors()
 {
   _continue_on_errors = true;
-}
-
-void definReader::replaceWires()
-{
-  _netR->replaceWires();
-  _snetR->replaceWires();
-}
-
-void definReader::namesAreDBIDs()
-{
-  _netR->namesAreDBIDs();
-  _snetR->namesAreDBIDs();
-}
-
-void definReader::setAssemblyMode()
-{
-  _netR->setAssemblyMode();
 }
 
 void definReader::useBlockName(const char* name)
@@ -407,8 +339,8 @@ int definReader::divideCharCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->hier_delimeter_ = value[0];
-  if (reader->hier_delimeter_ == 0) {
+  reader->hier_delimiter_ = value[0];
+  if (reader->hier_delimiter_ == 0) {
     reader->error("Syntax error in DIVIDERCHAR statment");
     return PARSE_ERROR;
   }
@@ -420,10 +352,10 @@ int definReader::busBitCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  reader->left_bus_delimeter_ = value[0];
-  reader->right_bus_delimeter_ = value[1];
-  if ((reader->left_bus_delimeter_ == 0)
-      || (reader->right_bus_delimeter_ == 0)) {
+  reader->left_bus_delimiter_ = value[0];
+  reader->right_bus_delimiter_ = value[1];
+  if ((reader->left_bus_delimiter_ == 0)
+      || (reader->right_bus_delimiter_ == 0)) {
     reader->error("Syntax error in BUSBITCHARS statment");
     return PARSE_ERROR;
   }
@@ -456,13 +388,13 @@ int definReader::designCallback(
         reader->_block = dbBlock::create(reader->parent_,
                                          new_name.c_str(),
                                          reader->_tech,
-                                         reader->hier_delimeter_);
+                                         reader->hier_delimiter_);
       }
     } else {
       reader->_block = dbBlock::create(reader->parent_,
                                        block_name.c_str(),
                                        reader->_tech,
-                                       reader->hier_delimeter_);
+                                       reader->hier_delimiter_);
     }
   } else {
     dbChip* chip = reader->_db->getChip();
@@ -470,12 +402,12 @@ int definReader::designCallback(
       reader->_block = chip->getBlock();
     } else {
       reader->_block = dbBlock::create(
-          chip, block_name.c_str(), reader->_tech, reader->hier_delimeter_);
+          chip, block_name.c_str(), reader->_tech, reader->hier_delimiter_);
     }
   }
   if (reader->_mode == defin::DEFAULT) {
-    reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
-                                     reader->right_bus_delimeter_);
+    reader->_block->setBusDelimiters(reader->left_bus_delimiter_,
+                                     reader->right_bus_delimiter_);
   }
   reader->_logger->info(utl::ODB, 128, "Design: {}", design);
   assert(reader->_block);
@@ -490,7 +422,7 @@ int definReader::blockageCallback(
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definBlockage* blockageR = reader->_blockageR;
+  definBlockage* blockageR = reader->_blockageR.get();
 
   if (blockage->hasMask()) {
     UNSUPPORTED("MASK on blockage is unsupported");
@@ -579,7 +511,7 @@ int definReader::componentsCallback(
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definComponent* componentR = reader->_componentR;
+  definComponent* componentR = reader->_componentR.get();
   std::string id = comp->id();
   if (reader->_mode != defin::DEFAULT) {
     if (reader->_block->findInst(id.c_str()) == nullptr) {
@@ -677,41 +609,8 @@ int definReader::dieAreaCallback(
       Rect r(p0.getX(), p0.getY(), p1.getX(), p1.getY());
       reader->_block->setDieArea(r);
     } else {
-      reader->_logger->warn(
-          utl::ODB,
-          124,
-          "warning: Polygon DIEAREA statement not supported.  The bounding "
-          "box will be used instead");
-      int xmin = INT_MAX;
-      int ymin = INT_MAX;
-      int xmax = INT_MIN;
-      int ymax = INT_MIN;
-      std::vector<Point>::iterator itr;
-
-      for (itr = P.begin(); itr != P.end(); ++itr) {
-        Point& p = *itr;
-        int x = p.getX();
-        int y = p.getY();
-
-        if (x < xmin) {
-          xmin = x;
-        }
-
-        if (y < ymin) {
-          ymin = y;
-        }
-
-        if (x > xmax) {
-          xmax = x;
-        }
-
-        if (y > ymax) {
-          ymax = y;
-        }
-      }
-
-      Rect r(xmin, ymin, xmax, ymax);
-      reader->_block->setDieArea(r);
+      Polygon die_area_poly(P);
+      reader->_block->setDieArea(die_area_poly);
     }
   }
   return PARSE_OK;
@@ -740,7 +639,7 @@ int definReader::fillCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definFill* fillR = reader->_fillR;
+  definFill* fillR = reader->_fillR.get();
 
   if (fill->hasVia() || fill->hasViaOpc()) {
     UNSUPPORTED("Via fill is unsupported");
@@ -812,7 +711,7 @@ int definReader::groupCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definGroup* groupR = reader->_groupR;
+  definGroup* groupR = reader->_groupR.get();
   if (group->hasRegionName()) {
     groupR->region(group->regionName());
   }
@@ -838,7 +737,7 @@ int definReader::netCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definNet* netR = reader->_netR;
+  definNet* netR = reader->_netR.get();
   if (reader->_mode == defin::FLOORPLAN
       && reader->_block->findNet(net->name()) == nullptr) {
     reader->_logger->warn(
@@ -1025,7 +924,7 @@ int definReader::nonDefaultRuleCallback(
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definNonDefaultRule* ruleR = reader->_non_default_ruleR;
+  definNonDefaultRule* ruleR = reader->_non_default_ruleR.get();
 
   ruleR->beginRule(rule->name());
 
@@ -1076,7 +975,7 @@ int definReader::pinCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definPin* pinR = reader->_pinR;
+  definPin* pinR = reader->_pinR.get();
   if (reader->_mode != defin::DEFAULT
       && reader->_block->findBTerm(pin->pinName()) == nullptr) {
     std::string modeStr
@@ -1247,7 +1146,8 @@ int definReader::pinPropCallback(
     DefParser::defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  definPinProps* propR = reader->_pin_propsR;
+  CHECKBLOCK
+  definPinProps* propR = reader->_pin_propsR.get();
 
   propR->begin(prop->isPin() ? "PIN" : prop->instName(), prop->pinName());
   handle_props(prop, propR);
@@ -1273,7 +1173,7 @@ int definReader::propCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definPropDefs* prop_defsR = reader->_prop_defsR;
+  definPropDefs* prop_defsR = reader->_prop_defsR.get();
 
   defPropType data_type;
   switch (prop->dataType()) {
@@ -1363,7 +1263,7 @@ int definReader::regionCallback(
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definRegion* regionR = reader->_regionR;
+  definRegion* regionR = reader->_regionR.get();
 
   regionR->begin(region->name());
 
@@ -1395,7 +1295,7 @@ int definReader::rowCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definRow* rowR = reader->_rowR;
+  definRow* rowR = reader->_rowR.get();
 
   defRow dir = DEF_HORIZONTAL;
   int num_sites = 1;
@@ -1633,7 +1533,7 @@ int definReader::viaCallback(DefParser::defrCallbackType_e /* unused: type */,
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definVia* viaR = reader->_viaR;
+  definVia* viaR = reader->_viaR.get();
 
   if (via->numPolygons() > 0) {
     UNSUPPORTED("POLYGON in via is unsupported");
@@ -1730,7 +1630,7 @@ int definReader::specialNetCallback(
 {
   definReader* reader = (definReader*) data;
   CHECKBLOCK
-  definSNet* snetR = reader->_snetR;
+  definSNet* snetR = reader->_snetR.get();
   if (reader->_mode == defin::FLOORPLAN
       && reader->_block->findNet(net->name()) == nullptr) {
     reader->_logger->warn(
@@ -1921,7 +1821,15 @@ void definReader::contextLogFunctionCallback(DefParser::defiUserData data,
                                              const char* msg)
 {
   definReader* reader = (definReader*) data;
-  reader->_logger->warn(utl::ODB, 1003, msg);
+  reader->_logger->warn(utl::ODB, 3, msg);
+}
+
+void definReader::contextWarningLogFunctionCallback(
+    DefParser::defiUserData data,
+    const char* msg)
+{
+  definReader* reader = (definReader*) data;
+  reader->_logger->warn(utl::ODB, 4, msg);
 }
 
 void definReader::line(int line_num)
@@ -2014,6 +1922,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   }
 
   _logger->info(utl::ODB, 134, "Finished DEF file: {}", file);
+
+  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
+
   return chip;
 }
 
@@ -2064,34 +1975,9 @@ dbBlock* definReader::createBlock(dbBlock* parent,
 
   _logger->info(utl::ODB, 142, "Finished DEF file: {}", def_file);
 
+  _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
+
   return _block;
-}
-
-bool definReader::replaceWires(dbBlock* block, const char* def_file)
-{
-  init();
-  setBlock(block);
-  setTech(_db->getTech());
-
-  _logger->info(utl::ODB, 143, "Reading DEF file: {}", def_file);
-
-  if (!replaceWires(def_file)) {
-    // dbBlock::destroy(_block);
-    _logger->warn(utl::ODB, 144, "Error: Failed to read DEF file");
-    return false;
-  }
-
-  if (_snetR->_snet_cnt) {
-    _logger->info(
-        utl::ODB, 145, "    Processed {} special nets.", _snetR->_snet_cnt);
-  }
-
-  if (_netR->_net_cnt) {
-    _logger->info(utl::ODB, 146, "    Processed {} nets.", _netR->_net_cnt);
-  }
-
-  _logger->info(utl::ODB, 147, "Finished DEF file: {}", def_file);
-  return errors() == 0;
 }
 
 static inline bool hasSuffix(const std::string& str, const std::string& suffix)
@@ -2118,6 +2004,8 @@ bool definReader::createBlock(const char* file)
   defrSetPinEndCbk(pinsEndCallback);
   defrSetPinPropCbk(pinPropCallback);
   DefParser::defrSetContextLogFunction(contextLogFunctionCallback);
+  DefParser::defrSetContextWarningLogFunction(
+      contextWarningLogFunctionCallback);
 
   if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
     defrSetDieAreaCbk(dieAreaCallback);
@@ -2194,42 +2082,6 @@ bool definReader::createBlock(const char* file)
 
   return true;
   // 1220 return errors() == 0;
-}
-
-bool definReader::replaceWires(const char* file)
-{
-  FILE* f = fopen(file, "r");
-
-  if (f == nullptr) {
-    _logger->warn(utl::ODB, 150, "error: Cannot open DEF file {}", file);
-    return false;
-  }
-
-  replaceWires();
-
-  DefParser::defrInit();
-  DefParser::defrReset();
-
-  DefParser::defrInitSession();
-
-  defrSetNetCbk(netCallback);
-  defrSetSNetCbk(specialNetCallback);
-
-  DefParser::defrSetAddPathToNet();
-
-  int res = DefParser::defrRead(
-      f, file, (DefParser::defiUserData) this, /* case sensitive */ 1);
-  if (res != 0) {
-    if (!_continue_on_errors) {
-      _logger->error(utl::ODB, 422, "DEF parser returns an error!");
-    } else {
-      _logger->warn(utl::ODB, 151, "DEF parser returns an error!");
-    }
-  }
-
-  DefParser::defrClear();
-
-  return true;
 }
 
 }  // namespace odb

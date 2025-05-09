@@ -1,40 +1,12 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "definSNet.h"
 
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <map>
 #include <vector>
 
 #include "create_box.h"
@@ -73,8 +45,6 @@ definSNet::definSNet()
   _skip_shields = false;
   _skip_block_wires = false;
   _skip_fill_wires = false;
-  _replace_wires = false;
-  _names_are_ids = false;
 }
 
 definSNet::~definSNet()
@@ -104,48 +74,13 @@ void definSNet::begin(const char* name)
 {
   assert(_cur_net == nullptr);
 
-  if (!_replace_wires) {
-    _cur_net = _block->findNet(name);
+  _cur_net = _block->findNet(name);
 
-    if (_cur_net == nullptr) {
-      _cur_net = dbNet::create(_block, name);
-    }
-
-    _cur_net->setSpecial();
-  } else {
-    if (_names_are_ids == false) {
-      _cur_net = _block->findNet(name);
-    } else {
-      uint netid = get_net_dbid(name);
-
-      if (netid) {
-        _cur_net = dbNet::getNet(_block, netid);
-      } else {
-        _cur_net = nullptr;
-      }
-    }
-
-    if (_cur_net == nullptr) {
-      _logger->warn(utl::ODB, 156, "special net {} does not exist", name);
-      ++_errors;
-    } else {
-      dbWire* wire = _cur_net->getWire();
-
-      if (wire) {
-        dbWire::destroy(wire);
-      }
-
-      dbSet<dbSWire> swires = _cur_net->getSWires();
-      dbSet<dbSWire>::iterator itr;
-
-      for (itr = swires.begin(); itr != swires.end(); itr = swires.begin()) {
-        dbSWire* swire = *itr;
-        dbSWire::destroy(swire);
-      }
-
-      _cur_net->setSpecial();
-    }
+  if (_cur_net == nullptr) {
+    _cur_net = dbNet::create(_block, name);
   }
+
+  _cur_net->setSpecial();
 
   _snet_cnt++;
   _swire = nullptr;
@@ -155,7 +90,7 @@ void definSNet::connection(const char* iname,
                            const char* tname,
                            bool /* unused: synth */)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -210,7 +145,7 @@ void definSNet::connection(const char* iname,
 
 void definSNet::use(dbSigType type)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -219,7 +154,7 @@ void definSNet::use(dbSigType type)
 
 void definSNet::source(dbSourceType source)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -228,7 +163,7 @@ void definSNet::source(dbSourceType source)
 
 void definSNet::weight(int weight)
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -237,7 +172,7 @@ void definSNet::weight(int weight)
 
 void definSNet::fixedbump()
 {
-  if ((_cur_net == nullptr) || (_replace_wires == true)) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -594,7 +529,7 @@ void definSNet::wireEnd()
 
 void definSNet::property(const char* name, const char* value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -608,7 +543,7 @@ void definSNet::property(const char* name, const char* value)
 
 void definSNet::property(const char* name, int value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -622,7 +557,7 @@ void definSNet::property(const char* name, int value)
 
 void definSNet::property(const char* name, double value)
 {
-  if ((_cur_net == nullptr) || _replace_wires) {
+  if (_cur_net == nullptr) {
     return;
   }
 
@@ -641,18 +576,16 @@ void definSNet::end()
     return;
   }
 
-  if (_replace_wires == false) {
-    dbSet<dbITerm> iterms = _cur_net->getITerms();
+  dbSet<dbITerm> iterms = _cur_net->getITerms();
 
-    if (iterms.reversible() && iterms.orderReversed()) {
-      iterms.reverse();
-    }
+  if (iterms.reversible() && iterms.orderReversed()) {
+    iterms.reverse();
+  }
 
-    dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
+  dbSet<dbProperty> props = dbProperty::getProperties(_cur_net);
 
-    if (!props.empty() && props.orderReversed()) {
-      props.reverse();
-    }
+  if (!props.empty() && props.orderReversed()) {
+    props.reverse();
   }
 
   dbSet<dbSWire> swires = _cur_net->getSWires();

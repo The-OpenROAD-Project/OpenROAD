@@ -1,38 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, Nefelus Inc
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "dbInst.h"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -451,6 +423,11 @@ void dbInst::setOrigin(int x, int y)
     block->_journal->endAction();
   }
 
+  for (auto iterm_idx : inst->_iterms) {
+    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
+    iterm->clearPrefAccessPoints();
+  }
+
   block->_flags._valid_bbox = 0;
   for (auto callback : block->_callbacks) {
     callback->inDbPostMoveInst(this);
@@ -537,6 +514,11 @@ void dbInst::setOrient(dbOrientType orient)
                orient.getValue());
     block->_journal->updateField(
         this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
+  }
+
+  for (auto iterm_idx : inst->_iterms) {
+    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
+    iterm->clearPrefAccessPoints();
   }
 
   block->_flags._valid_bbox = 0;
@@ -881,11 +863,7 @@ dbBox* dbInst::getHalo()
 void dbInst::getConnectivity(std::vector<dbInst*>& result,
                              dbSigType::Value type)
 {
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iterm_itr;
-
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    dbITerm* iterm = *iterm_itr;
+  for (dbITerm* iterm : getITerms()) {
     dbNet* net = iterm->getNet();
 
     if (net == nullptr) {
@@ -896,12 +874,7 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
       continue;
     }
 
-    dbSet<dbITerm> net_iterms = net->getITerms();
-    dbSet<dbITerm>::iterator net_iterm_itr;
-
-    for (net_iterm_itr = net_iterms.begin(); net_iterm_itr != net_iterms.end();
-         ++net_iterm_itr) {
-      dbITerm* net_iterm = *net_iterm_itr;
+    for (dbITerm* net_iterm : net->getITerms()) {
       dbInst* inst = net_iterm->getInst();
 
       if (inst != this) {
@@ -912,15 +885,13 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
 
   // remove duplicates
   std::sort(result.begin(), result.end());
-  std::vector<dbInst*>::iterator end_itr;
-  end_itr = std::unique(result.begin(), result.end());
+  auto end_itr = std::unique(result.begin(), result.end());
   result.erase(end_itr, result.end());
 }
 
 bool dbInst::resetHierarchy(bool verbose)
 {
   _dbInst* inst = (_dbInst*) this;
-  //_dbBlock * block = (_dbBlock *) block_;
 
   if (inst->_hierarchy) {
     if (verbose) {
@@ -1125,30 +1096,23 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     block->_journal->endAction();
   }
 
-  // Notification - payam 01/18/2006
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbInstSwapMasterBefore(
-        this, new_master_);  // client ECO initialization - payam
+  for (auto cb : block->_callbacks) {
+    cb->inDbInstSwapMasterBefore(this, new_master_);
   }
 
   //
   // Ensure the mterms are equivalent
   //
-  dbSet<dbMTerm>::iterator itr;
-  dbSet<dbMTerm> mterms = new_master_->getMTerms();
   std::vector<_dbMTerm*> new_terms;
 
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    new_terms.push_back((_dbMTerm*) *itr);
+  for (dbMTerm* mterm : new_master_->getMTerms()) {
+    new_terms.push_back((_dbMTerm*) mterm);
   }
 
-  mterms = old_master_->getMTerms();
   std::vector<_dbMTerm*> old_terms;
 
-  for (itr = mterms.begin(); itr != mterms.end(); ++itr) {
-    old_terms.push_back((_dbMTerm*) *itr);
+  for (dbMTerm* mterm : old_master_->getMTerms()) {
+    old_terms.push_back((_dbMTerm*) mterm);
   }
 
   if (old_terms.size() != new_terms.size()) {
@@ -1187,6 +1151,11 @@ bool dbInst::swapMaster(dbMaster* new_master_)
                                  newMasterName,
                                  this->getConstName());
     return false;
+  }
+
+  for (auto iterm_idx : inst->_iterms) {
+    dbITerm* iterm = (dbITerm*) block->_iterm_tbl->getPtr(iterm_idx);
+    iterm->clearPrefAccessPoints();
   }
 
   // remove reference to inst_hdr
@@ -1232,9 +1201,8 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   std::sort(inst->_iterms.begin(), inst->_iterms.end(), itermCmp);
 
   // Notification
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (*cbitr)->inDbInstSwapMasterAfter(this);
+  for (auto cb : block->_callbacks) {
+    cb->inDbInstSwapMasterAfter(this);
   }
 
   return true;
@@ -1269,20 +1237,15 @@ dbInst* dbInst::create(dbBlock* block_,
                        dbModule* parent_module)
 {
   _dbBlock* block = (_dbBlock*) block_;
+  if (block->_inst_hash.hasMember(name_)) {
+    return nullptr;
+  }
+
   _dbMaster* master = (_dbMaster*) master_;
   _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master->_id);
-
   if (inst_hdr == nullptr) {
     inst_hdr
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
-  }
-
-  if (block->_inst_hash.hasMember(name_)) {
-    block->getImpl()->getLogger()->error(
-        utl::ODB,
-        385,
-        "Attempt to create instance with duplicate name: {}",
-        name_);
   }
 
   _dbInst* inst = block->_inst_tbl->create();
@@ -1401,6 +1364,35 @@ dbInst* dbInst::create(dbBlock* top_block,
   return inst;
 }
 
+dbInst* dbInst::makeUniqueDbInst(dbBlock* block,
+                                 dbMaster* master,
+                                 const char* name,
+                                 bool physical_only,
+                                 dbModule* target_module)
+{
+  dbInst* inst
+      = dbInst::create(block, master, name, physical_only, target_module);
+  if (inst) {
+    return inst;
+  }
+
+  std::unordered_map<std::string, int>& name_id_map
+      = ((_dbBlock*) block)->_inst_name_id_map;
+  std::string inst_base_name(name);
+  do {
+    std::string full_name = inst_base_name;
+    int& id = name_id_map[inst_base_name];
+    if (id > 0) {
+      full_name += "_" + std::to_string(id);
+    }
+    ++id;
+    inst = dbInst::create(
+        block, master, full_name.c_str(), physical_only, target_module);
+  } while (inst == nullptr);
+
+  return inst;
+}
+
 void dbInst::destroy(dbInst* inst_)
 {
   _dbInst* inst = (_dbInst*) inst_;
@@ -1438,15 +1430,8 @@ void dbInst::destroy(dbInst* inst_)
 
     // Notify when pins are deleted (assumption: pins are destroyed only when
     // the related instance is destroyed)
-    std::list<dbBlockCallBackObj*>::iterator cbitr;
-    for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-         ++cbitr) {
-      (**cbitr)().inDbITermDestroy((dbITerm*) _iterm);
-    }
-
-    dbModule* module = inst_->getModule();
-    if (module) {
-      ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
+    for (auto cb : block->_callbacks) {
+      cb->inDbITermDestroy((dbITerm*) _iterm);
     }
 
     dbProperty::destroyProperties(_iterm);
@@ -1454,14 +1439,10 @@ void dbInst::destroy(dbInst* inst_)
     inst->_iterms.pop_back();
   }
 
-  //    Move this part after inDbInstDestroy
-  //    ----------------------------------------
-  //    _dbMaster * master = (_dbMaster *) inst_->getMaster();
-  //    _dbInstHdr * inst_hdr = block->_inst_hdr_hash.find(master->_id);
-  //    inst_hdr->_inst_cnt--;
-  //
-  //    if ( inst_hdr->_inst_cnt == 0 )
-  //        dbInstHdr::destroy( (dbInstHdr *) inst_hdr );
+  dbModule* module = inst_->getModule();
+  if (module) {
+    ((_dbModule*) module)->_dbinst_hash.erase(inst_->getName());
+  }
 
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
@@ -1492,7 +1473,6 @@ void dbInst::destroy(dbInst* inst_)
     region->removeInst(inst_);
   }
 
-  dbModule* module = inst_->getModule();
   if (module) {
     ((_dbModule*) module)->removeInst(inst_);
   }
@@ -1501,10 +1481,8 @@ void dbInst::destroy(dbInst* inst_)
     inst_->getGroup()->removeInst(inst_);
   }
 
-  std::list<dbBlockCallBackObj*>::iterator cbitr;
-  for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
-       ++cbitr) {
-    (**cbitr)().inDbInstDestroy(inst_);  // client ECO optimization - payam
+  for (auto cb : block->_callbacks) {
+    cb->inDbInstDestroy(inst_);
   }
 
   _dbMaster* master = (_dbMaster*) inst_->getMaster();
@@ -1554,14 +1532,8 @@ dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
 }
 dbITerm* dbInst::getFirstOutput()
 {
-  dbSet<dbITerm> iterms = getITerms();
-  dbSet<dbITerm>::iterator iitr;
-
-  for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-    dbITerm* tr = *iitr;
-
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER)) {
+  for (dbITerm* tr : getITerms()) {
+    if (tr->getSigType().isSupply()) {
       continue;
     }
 

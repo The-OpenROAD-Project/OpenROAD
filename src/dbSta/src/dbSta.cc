@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// BSD 3-Clause License
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 // dbSta, OpenSTA on OpenDB
 
@@ -47,13 +15,14 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <regex>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "AbstractPathRenderer.h"
-#include "AbstractPowerDensityDataSource.h"
 #include "boost/json.hpp"
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
@@ -67,27 +36,24 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/PathRef.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/StaMain.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/histogram.h"
 
 ////////////////////////////////////////////////////////////////
 
-namespace ord {
-
-using sta::dbSta;
+namespace sta {
 
 dbSta* makeDbSta()
 {
   return new dbSta;
 }
-}  // namespace ord
-
-namespace sta {
 
 namespace {
 // Holds the usage information of a specific cell which includes (i) name of
@@ -232,6 +198,7 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
                      utl::Logger* logger)
 {
   db_ = db;
+  db->addObserver(this);
   logger_ = logger;
   makeComponents();
   if (tcl_interp) {
@@ -259,17 +226,6 @@ void dbSta::registerStaState(dbStaState* state)
 void dbSta::unregisterStaState(dbStaState* state)
 {
   sta_states_.erase(state);
-}
-
-void dbSta::setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer)
-{
-  path_renderer_ = std::move(path_renderer);
-}
-
-void dbSta::setPowerDensityDataSource(
-    std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source)
-{
-  power_density_data_source_ = std::move(power_density_data_source);
 }
 
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
@@ -692,57 +648,50 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
 void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
 {
-  if (num_bins <= 0) {
-    logger_->warn(STA, 70, "The number of bins must be positive.");
-    return;
-  }
-  const int max_bin_width = 50;  // Maximum number of chars to print for a bin.
+  utl::Histogram<float> histogram(logger_);
 
-  // Get and sort the slacks.
   sta::Unit* time_unit = sta_->units()->timeUnit();
-  std::vector<float> slacks;
   for (sta::Vertex* vertex : *sta_->endpoints()) {
     float slack = sta_->vertexSlack(vertex, min_max);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
-      slacks.push_back(time_unit->staToUser(slack));
+      histogram.addData(time_unit->staToUser(slack));
     }
-  }
-  if (slacks.empty()) {
-    logger_->warn(STA, 71, "No constrained slacks found.");
-    return;
-  }
-  std::sort(slacks.begin(), slacks.end());
-
-  // Populate each bin with count.
-  std::vector<int> bins(num_bins, 0);
-  const float min_slack = slacks.front();
-  const float bin_range = (slacks.back() - min_slack) / num_bins;
-  for (const float& slack : slacks) {
-    int bin = static_cast<int>((slack - min_slack) / bin_range);
-    if (bin >= num_bins) {  // Special case for paths with the maximum slack.
-      bin = num_bins - 1;
-    }
-    bins[bin]++;
   }
 
-  // Print the histogram.
-  const int largest_bin = *std::max_element(bins.begin(), bins.end());
-  for (int bin = 0; bin < num_bins; ++bin) {
-    const float bin_start = min_slack + bin * bin_range;
-    const float bin_end = min_slack + (bin + 1) * bin_range;
-    int bar_length  // Round the bar length to its closest value.
-        = (max_bin_width * bins[bin] + largest_bin / 2) / largest_bin;
-    if (bar_length == 0 && bins[bin] > 0) {
-      bar_length = 1;  // Better readability when non-zero bins have a bar.
+  histogram.generateBins(num_bins);
+  histogram.report(/*precision=*/3);
+}
+
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  utl::Histogram<int> histogram(logger_);
+
+  sta_->worstSlack(MinMax::max());  // Update timing.
+  for (sta::Vertex* vertex : *sta_->endpoints()) {
+    int path_length = 0;
+    Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
+    dbInst* prev_inst = nullptr;  // Used to count only unique OR instances.
+    while (path) {
+      Pin* pin = path->vertex(sta_)->pin();
+      Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
+      dbInst* inst = db_network_->staToDb(sta_inst);
+      if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
+        prev_inst = inst;
+        LibertyCell* lib_cell = db_network_->libertyCell(inst);
+        if (lib_cell && (!exclude_buffers || !lib_cell->isBuffer())
+            && (!exclude_inverters || !lib_cell->isInverter())) {
+          path_length++;
+        }
+      }
+      path = path->prevPath();
     }
-    logger_->report("[{:>6.3f}, {:>6.3f}{}: {} ({})",
-                    bin_start,
-                    bin_end,
-                    // The final bin is also closed from the right.
-                    bin == num_bins - 1 ? "]" : ")",
-                    std::string(bar_length, '*'),
-                    bins[bin]);
+    histogram.addData(path_length);
   }
+
+  histogram.generateBins(num_bins);
+  histogram.report();
 }
 
 BufferUse dbSta::getBufferUse(sta::LibertyCell* buffer)
@@ -1055,14 +1004,6 @@ void dbStaCbk::inDbBTermSetSigType(dbBTerm* bterm, const dbSigType& sig_type)
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
-}
-
-////////////////////////////////////////////////////////////////
-
-// Highlight path in the gui.
-void dbSta::highlight(PathRef* path)
-{
-  path_renderer_->highlight(path);
 }
 
 ////////////////////////////////////////////////////////////////

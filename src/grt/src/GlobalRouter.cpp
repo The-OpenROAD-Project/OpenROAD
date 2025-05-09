@@ -1,37 +1,5 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include "grt/GlobalRouter.h"
 
@@ -41,8 +9,12 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <istream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <random>
 #include <set>
 #include <sstream>
@@ -57,8 +29,10 @@
 #include "FastRoute.h"
 #include "Grid.h"
 #include "MakeWireParasitics.h"
+#include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -68,7 +42,6 @@
 #include "odb/geom_boost.h"
 #include "odb/wOrder.h"
 #include "rsz/Resizer.hh"
-#include "rsz/SpefWriter.hh"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
@@ -186,7 +159,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
 
-  std::vector<Net*> nets = findNets();
+  std::vector<Net*> nets = findNets(true);
   checkPinPlacement();
   initNetlist(nets);
 
@@ -316,7 +289,6 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
-    skip_drt_aps_ = true;
   } else {
     try {
       if (end_incremental) {
@@ -324,7 +296,6 @@ void GlobalRouter::globalRoute(bool save_guides,
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
         grouter_cbk_ = nullptr;
-        skip_drt_aps_ = false;
       } else {
         clear();
         block_ = db_->getChip()->getBlock();
@@ -524,7 +495,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   return routes;
 }
 
-void GlobalRouter::estimateRC(rsz::SpefWriter* spef_writer)
+void GlobalRouter::estimateRC(sta::SpefWriter* spef_writer)
 {
   // Remove any existing parasitics.
   sta_->deleteParasitics();
@@ -560,6 +531,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
+  loadGuidesFromDB();
   MakeWireParasitics builder(
       logger_, resizer_, sta_, db_->getTech(), block_, this);
   return builder.routeLayerLengths(db_net);
@@ -923,12 +895,6 @@ bool GlobalRouter::findPinAccessPointPositions(
     }
   } else {
     access_points = pin.getITerm()->getPrefAccessPoints();
-    if (access_points.empty()) {
-      // get all APs if there are no preferred access points
-      for (const auto& [mpin, aps] : pin.getITerm()->getAccessPoints()) {
-        access_points.insert(access_points.end(), aps.begin(), aps.end());
-      }
-    }
   }
 
   if (access_points.empty()) {
@@ -962,9 +928,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 
   // temporarily ignore odb access points when incremental changes
   // are made, in order to avoid getting invalid APs
-  // TODO: remove the !skip_drt_aps_ flag and update APs incrementally in odb
-  has_access_points
-      = findPinAccessPointPositions(pin, ap_positions) && !skip_drt_aps_;
+  has_access_points = findPinAccessPointPositions(pin, ap_positions);
 
   std::vector<odb::Point> positions_on_grid;
 
@@ -1157,15 +1121,14 @@ bool GlobalRouter::pinPositionsChanged(Net* net)
   std::map<RoutePt, int> cnt_pos;
   const std::multiset<RoutePt>& last_pos = net->getLastPinPositions();
   for (const Pin& pin : net->getPins()) {
-    cnt_pos[RoutePt(pin.getOnGridPosition().getX(),
-                    pin.getOnGridPosition().getY(),
-                    pin.getConnectionLayer())]++;
+    const odb::Point& pos = pin.getOnGridPosition();
+    cnt_pos[RoutePt(pos.getX(), pos.getY(), pin.getConnectionLayer())]++;
   }
   for (const RoutePt& last : last_pos) {
     cnt_pos[last]--;
   }
-  for (const auto& it : cnt_pos) {
-    if (it.second != 0) {
+  for (const auto& [pos, count] : cnt_pos) {
+    if (count != 0) {
       is_diferent = true;
       break;
     }
@@ -2050,6 +2013,8 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  nets_to_route_.clear();
+  db_net_map_.clear();
   if (getMaxRoutingLayer() == -1) {
     setMaxRoutingLayer(computeMaxRoutingLayer());
   }
@@ -2063,7 +2028,7 @@ void GlobalRouter::initGridAndNets()
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
-  std::vector<Net*> nets = findNets();
+  std::vector<Net*> nets = findNets(false);
   initNetlist(nets);
 }
 
@@ -2201,7 +2166,6 @@ void GlobalRouter::loadGuidesFromDB()
   if (!routes_.empty()) {
     return;
   }
-  skip_drt_aps_ = true;
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
@@ -3487,9 +3451,11 @@ static bool nameLess(const Net* a, const Net* b)
   return a->getName() < b->getName();
 }
 
-std::vector<Net*> GlobalRouter::findNets()
+std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 {
-  initClockNets();
+  if (init_clock_nets) {
+    initClockNets();
+  }
 
   std::vector<odb::dbNet*> db_nets;
   if (nets_to_route_.empty()) {
@@ -4257,11 +4223,17 @@ int GlobalRouter::findTopLayerOverPosition(const odb::Point& pin_pos,
     odb::Point pt1(seg.init_x, seg.init_y);
     odb::Point pt2(seg.final_x, seg.final_y);
     int layer = std::max(seg.init_layer, seg.final_layer);
-    if (pt1 == pin_pos && layer > top_layer) {
-      top_layer = layer;
+    if (pt1 == pin_pos || pt2 == pin_pos) {
+      top_layer = std::max(top_layer, layer);
     }
   }
 
+  if (top_layer == -1) {
+    logger_->error(GRT,
+                   703,
+                   "No segment was found in the routing that connects to the "
+                   "pin position.");
+  }
   return top_layer;
 }
 
@@ -4785,18 +4757,7 @@ std::vector<PinGridLocation> GlobalRouter::getPinGridPositions(
   return pin_locs;
 }
 
-PinGridLocation::PinGridLocation(odb::dbITerm* iterm,
-                                 odb::dbBTerm* bterm,
-                                 odb::Point pt)
-    : iterm_(iterm), bterm_(bterm), pt_(pt)
-{
-}
-
 ////////////////////////////////////////////////////////////////
-
-RoutePt::RoutePt(int x, int y, int layer) : x_(x), y_(y), layer_(layer)
-{
-}
 
 bool operator<(const RoutePt& p1, const RoutePt& p2)
 {

@@ -79,12 +79,14 @@ or_integration_tests(
     repair_setup4
     repair_setup4_flat
     repair_setup4_hier
+    repair_setup4_sequence
     repair_setup4_verbose
     repair_setup5
     repair_setup6
     repair_setup7
     repair_setup7_limit
     repair_setup8
+    repair_setup9
     repair_setup_undo
     repair_slew1
     repair_slew2

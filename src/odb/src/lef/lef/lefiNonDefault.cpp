@@ -1060,7 +1060,7 @@ double lefiNonDefault::propNumber(int index) const
   return dvalues_[index];
 }
 
-const char lefiNonDefault::propType(int index) const
+char lefiNonDefault::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProps_) {

@@ -4,6 +4,7 @@ or_integration_tests(
     levelshifter
     write
     isolation
+    isolation_select
 )
 
 # Skipped

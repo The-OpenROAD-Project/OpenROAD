@@ -1,42 +1,14 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// BSD 3-Clause License
-//
-// Copyright (c) 2020, The Regents of the University of California
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// * Redistributions of source code must retain the above copyright notice, this
-//   list of conditions and the following disclaimer.
-//
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-//
-// * Neither the name of the copyright holder nor the names of its
-//   contributors may be used to endorse or promote products derived from
-//   this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
 
 #include <limits>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
@@ -75,17 +47,13 @@ class SACoreHardMacro;
 
 // The parameters necessary to compute one coordinate of the new
 // origin for aligning the macros' pins to the track-grid
-struct LayerParameters
+struct PatternParameters
 {
+  odb::dbITerm* iterm;
   int offset = 0;
   int pitch = 0;
-  int pin_width = 0;
   int pin_offset = 0;
-  int lower_left_to_first_pin = 0;
 };
-
-using LayersWithPinsMap = std::map<odb::dbTechLayer*, odb::dbITerm*>;
-using LayerParametersMap = std::map<odb::dbTechLayer*, LayerParameters>;
 
 // Hierarchical RTL-MP
 // Support Multi-Level Clustering.
@@ -170,6 +138,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  IntervalList computeWidthIntervals(const TilingList& tilings);
   void setTightPackingTilings(Cluster* macro_array);
   void setPinAccessBlockages();
   std::vector<Cluster*> getClustersOfUnplacedIOPins();
@@ -245,6 +214,11 @@ class HierRTLMP
   odb::Rect micronsToDbu(const Rect& micron_rect);
   Rect dbuToMicrons(const odb::Rect& dbu_rect);
 
+  template <typename Macro>
+  void createFixedTerminal(Cluster* cluster,
+                           const Rect& outline,
+                           std::vector<Macro>& macros);
+
   // For debugging
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
@@ -259,9 +233,6 @@ class HierRTLMP
   std::unique_ptr<PhysicalHierarchy> tree_;
 
   std::unique_ptr<ClusteringEngine> clustering_engine_;
-
-  // flag variables
-  const bool dynamic_congestion_weight_flag_ = false;
 
   // Parameters related to macro placement
   std::string report_directory_;
@@ -283,17 +254,13 @@ class HierRTLMP
 
   float pin_access_th_ = 0.1;  // each pin access is modeled as a SoftMacro
   float pin_access_th_orig_ = 0.1;
-  float pin_access_net_width_ratio_
-      = 0.1;  // define the ratio of number of connections
-              // related to IOs to the range of these IO spans
   float notch_v_th_ = 10.0;
   float notch_h_th_ = 10.0;
 
   // For cluster and macro placement.
   SACoreWeights placement_core_weights_;
 
-  // For generation of shape curves for Mixed / Std Cell clusters
-  // and generation of tilings for Macro clusters.
+  // For generation of the coarse shape (tiling) of clusters with macros.
   const SACoreWeights shaping_core_weights_{1.0f /* area */,
                                             1000.0f /* outline */,
                                             0.0f /* wirelength */,
@@ -372,13 +339,6 @@ class Pusher
   std::vector<HardMacro*> hard_macros_;
 };
 
-struct SameDirectionLayersData
-{
-  LayersWithPinsMap layer_to_pin;
-  LayerParametersMap layer_to_params;
-  odb::dbTechLayer* snap_layer = nullptr;
-};
-
 class Snapper
 {
  public:
@@ -389,31 +349,42 @@ class Snapper
   void snapMacro();
 
  private:
+  struct LayerData
+  {
+    odb::dbTrackGrid* track_grid;
+    std::vector<int> available_positions;
+    // ordered by pin centers
+    std::vector<odb::dbITerm*> pins;
+  };
+  // ordered by TrackGrid layer number
+  using LayerDataList = std::vector<LayerData>;
+  using TrackGridToPinListMap
+      = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
+
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  bool pinsAreAlignedWithTrackGrid(odb::dbITerm* pin,
-                                   const LayerParameters& layer_params,
-                                   const odb::dbTechLayerDir& target_direction);
+  int totalAlignedPins(const LayerDataList& layers_data_list,
+                       const odb::dbTechLayerDir& direction,
+                       bool report_unaligned_pins = false);
+  void reportUnalignedPins(const LayerDataList& layers_data_list,
+                           const odb::dbTechLayerDir& direction);
 
-  SameDirectionLayersData computeSameDirectionLayersData(
+  LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);
-  LayerParameters computeLayerParameters(
-      odb::dbTechLayer* layer,
-      odb::dbITerm* pin,
-      const odb::dbTechLayerDir& target_direction);
-  void getTrackGrid(odb::dbTrackGrid* track_grid,
-                    int& origin,
-                    int& step,
-                    const odb::dbTechLayerDir& target_direction);
-  int getPinWidth(odb::dbITerm* pin,
-                  const odb::dbTechLayerDir& target_direction);
-  int getPinToLowerLeftDistance(odb::dbITerm* pin,
-                                const odb::dbTechLayerDir& target_direction);
-  void attemptSnapToExtraLayers(int origin,
-                                const SameDirectionLayersData& layers_data,
-                                const LayerParameters& snap_layer_params,
-                                const odb::dbTechLayerDir& target_direction);
+  odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
+  void getTrackGridPattern(odb::dbTrackGrid* track_grid,
+                           int pattern_idx,
+                           int& origin,
+                           int& step,
+                           const odb::dbTechLayerDir& target_direction);
+  int getPinOffset(odb::dbITerm* pin, const odb::dbTechLayerDir& direction);
+  void snapPinToPosition(odb::dbITerm* pin,
+                         int position,
+                         const odb::dbTechLayerDir& direction);
+  void attemptSnapToExtraPatterns(int start_index,
+                                  const LayerDataList& layers_data_list,
+                                  const odb::dbTechLayerDir& target_direction);
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
