@@ -934,10 +934,10 @@ void HierRTLMP::createPinAccessBlockages()
 void HierRTLMP::computePinAccessDepthLimits()
 {
   const Rect die = dbuToMicrons(block_->getDieArea());
-  constexpr float max_depth_percentage = 0.20;
+  constexpr float max_depth_proportion = 0.20;
 
-  pin_access_depth_limits_.horizontal = max_depth_percentage * die.getWidth();
-  pin_access_depth_limits_.vertical = max_depth_percentage * die.getHeight();
+  pin_access_depth_limits_.horizontal = max_depth_proportion * die.getWidth();
+  pin_access_depth_limits_.vertical = max_depth_proportion * die.getHeight();
 }
 
 bool HierRTLMP::treeHasOnlyUnconstrainedIOs() const

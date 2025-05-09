@@ -143,27 +143,7 @@ inline odb::Line rectToLine(odb::dbBlock* block,
                   rect);
   }
 
-  odb::Line line;
-  switch (getBoundary(block, rect)) {
-    case (Boundary::L): {
-      line = {rect.ll(), rect.ul()};
-      break;
-    }
-    case (Boundary::R): {
-      line = {rect.lr(), rect.ur()};
-      break;
-    }
-    case (Boundary::T): {
-      line = {rect.ul(), rect.ur()};
-      break;
-    }
-    case (Boundary::B): {
-      line = {rect.ll(), rect.lr()};
-      break;
-    }
-  }
-
-  return line;
+  return {rect.ll(), rect.ur()};
 }
 
 inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
@@ -172,22 +152,22 @@ inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
   const odb::Line& line = region.line;
   if (region.boundary == Boundary::L || region.boundary == Boundary::R) {
     if (target.y() >= line.pt1().y()) {
-      return odb::Point(line.pt0().x(), line.pt1().y());
+      return line.pt1();
     }
     if (target.y() <= line.pt0().y()) {
-      return odb::Point(line.pt0().x(), line.pt0().y());
+      return line.pt0();
     }
-    return odb::Point(line.pt0().x(), target.y());
+    return {line.pt0().x(), target.y()};
   }
 
   // Top or Bottom
   if (target.x() >= line.pt1().x()) {
-    return odb::Point(line.pt1().x(), line.pt0().y());
+    return line.pt1();
   }
   if (target.x() <= line.pt0().x()) {
-    return odb::Point(line.pt0().x(), line.pt0().y());
+    return line.pt0();
   }
-  return odb::Point(target.x(), line.pt0().y());
+  return {target.x(), line.pt0().y()};
 }
 
 // The distance in DBU from the source to the nearest point of the nearest
@@ -197,12 +177,14 @@ inline double computeDistToNearestRegion(
     const std::vector<BoundaryRegion>& regions,
     odb::Point* nearest_point)
 {
-  double smallest_distance = std::numeric_limits<double>::max();
+  int64_t smallest_distance = std::numeric_limits<int64_t>::max();
+
   for (const BoundaryRegion& region : regions) {
-    odb::Point nearest_point_in_region
+    const odb::Point nearest_point_in_region
         = computeNearestPointInRegion(region, source);
-    const double dist_to_nearest_point = std::sqrt(
-        odb::Point::squaredDistance(source, nearest_point_in_region));
+    const int64_t dist_to_nearest_point
+        = odb::Point::squaredDistance(source, nearest_point_in_region);
+
     if (dist_to_nearest_point < smallest_distance) {
       smallest_distance = dist_to_nearest_point;
       if (nearest_point) {
@@ -211,7 +193,7 @@ inline double computeDistToNearestRegion(
     }
   }
 
-  return smallest_distance;
+  return std::sqrt(smallest_distance);
 }
 
 }  // namespace mpl
