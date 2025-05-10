@@ -2762,7 +2762,7 @@ class extMain
   std::vector<odb::dbBTerm*> _connectedBTerm;
   std::vector<odb::dbITerm*> _connectedITerm;
 
-  GridTable* _search = nullptr;
+  std::unique_ptr<GridTable> _search;
 
   int _noVariationIndex;
 
