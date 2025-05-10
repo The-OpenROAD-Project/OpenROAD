@@ -121,6 +121,7 @@ extMain::~extMain()
   delete[] _tmpSumResTable;
   removeDgContextArray();
   removeContextArray();
+  cleanCornerTables();
 }
 
 void extMain::initDgContextArray()
