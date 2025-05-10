@@ -290,11 +290,11 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
   std::map<Shape*, Shape*> replace_shapes;
   for (const auto& via : vias_) {
     // ensure shapes belong to something
-    const auto& lower_shape = via->getLowerShape();
+    const auto& lower_shape = via->getLowerShape()->lock();
     if (lower_shape->getGridComponent() == nullptr) {
       continue;
     }
-    const auto& upper_shape = via->getUpperShape();
+    const auto& upper_shape = via->getUpperShape()->lock();
     if (upper_shape->getGridComponent() == nullptr) {
       continue;
     }
@@ -793,8 +793,8 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   vias_.clear();
   for (auto& via : vias) {
     vias_.insert(via);
-    via->getLowerShape()->addVia(via);
-    via->getUpperShape()->addVia(via);
+    via->getLowerShape()->lock()->addVia(via);
+    via->getUpperShape()->lock()->addVia(via);
   }
 }
 

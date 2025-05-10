@@ -706,9 +706,9 @@ class Via
   odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getArea() const { return area_; }
   void setLowerShape(const ShapePtr& shape) { lower_ = shape; }
-  const ShapePtr& getLowerShape() const { return lower_.lock(); }
+  const WeakShapePtr& getLowerShape() const { return lower_; }
   void setUpperShape(const ShapePtr& shape) { upper_ = shape; }
-  const ShapePtr& getUpperShape() const { return upper_.lock(); }
+  const WeakShapePtr& getUpperShape() const { return upper_; }
   odb::dbTechLayer* getLowerLayer() const;
   odb::dbTechLayer* getUpperLayer() const;
 
