@@ -462,6 +462,7 @@ class extRCTable
 {
  public:
   extRCTable(bool over, uint layerCnt);
+  ~extRCTable();
   uint addCapOver(uint met, uint metUnder, extDistRC* rc);
   extDistRC* getCapOver(uint met, uint metUnder);
 
