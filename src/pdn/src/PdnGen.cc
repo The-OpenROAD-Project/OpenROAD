@@ -167,8 +167,8 @@ void PdnGen::updateVias()
     grid->getVias(all_vias);
 
     for (const auto& via : all_vias) {
-      via->getLowerShape()->lock()->addVia(via);
-      via->getUpperShape()->lock()->addVia(via);
+      via->getLowerShape().lock()->addVia(via);
+      via->getUpperShape().lock()->addVia(via);
     }
   }
 }
