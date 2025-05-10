@@ -238,7 +238,7 @@ class Shape
 
   GridComponent* grid_component_;
 
-  std::vector<WeakViaPtr> vias_;
+  std::vector<ViaPtr> vias_;
   std::set<odb::Rect> iterm_connections_;
   std::set<odb::Rect> bterm_connections_;
 
