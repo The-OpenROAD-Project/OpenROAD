@@ -114,6 +114,9 @@ extMain::~extMain()
   }
 
   delete _modelTable;
+  delete _btermTable;
+  delete _itermTable;
+  delete _nodeTable;
   delete[] _tmpResTable;
   delete[] _tmpSumResTable;
   removeDgContextArray();
