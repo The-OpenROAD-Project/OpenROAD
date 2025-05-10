@@ -167,8 +167,8 @@ void PdnGen::updateVias()
     grid->getVias(all_vias);
 
     for (const auto& via : all_vias) {
-      via->getLowerShape()->addVia(via);
-      via->getUpperShape()->addVia(via);
+      via->getLowerShape().lock()->addVia(via);
+      via->getUpperShape().lock()->addVia(via);
     }
   }
 }
@@ -222,6 +222,8 @@ void PdnGen::trimShapes()
         } else {
           if (!is_pin_layer) {
             component->replaceShape(shape.get(), {new_shape});
+          } else {
+            delete new_shape;
           }
         }
       }
