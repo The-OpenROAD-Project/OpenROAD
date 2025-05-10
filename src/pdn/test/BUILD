@@ -248,6 +248,12 @@ filegroup(
         ) + {
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
+            "macros_channel_recursive_repair": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
+                "ihp_ethmac/floorplan.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
