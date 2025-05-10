@@ -58,6 +58,13 @@ class AbstractPAGraphics;
 class FlexPA
 {
  public:
+  // If something is not required it should be marked as true
+  struct pa_requirements_met
+  {
+    bool sparse_points = false;
+    bool far_from_edge = false;
+  };
+
   enum PatternType
   {
     Edge,
@@ -185,7 +192,30 @@ class FlexPA
    * @returns True if the current aps are enough for the pin
    */
   bool EnoughAccessPoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                          frInstTerm* inst_term,
+                          pa_requirements_met& reqs);
+
+  /**
+   * @brief determines if the current access points meet the minimum sparse
+   * points requirement.
+   * @param aps the list of candidate access points
+   * @param inst_term terminal related to the pin
+   *
+   * @returns True if the requirement is met
+   */
+  bool EnoughSparsePoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                           frInstTerm* inst_term);
+
+  /**
+   * @brief determines if the current access points meet the minimum aps far
+   * from edge requirement.
+   * @param aps the list of candidate access points
+   * @param inst_term terminal related to the pin
+   *
+   * @returns True if the requirement is met
+   */
+  bool EnoughPointsFarFromEdge(std::vector<std::unique_ptr<frAccessPoint>>& aps,
+                               frInstTerm* inst_term);
 
   /**
    * @brief initializes the pin accesses of a given pin only considering a given
@@ -209,7 +239,8 @@ class FlexPA
       T* pin,
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
-      frAccessPointEnum upper_type);
+      frAccessPointEnum upper_type,
+      pa_requirements_met& reqs);
 
   void getViasFromMetalWidthMap(
       const Point& pt,
