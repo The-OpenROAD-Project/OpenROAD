@@ -1385,4 +1385,24 @@ void TritonRoute::reportDRC(const std::string& file_name,
   tool_category->writeTR(file_name);
 }
 
+std::vector<int> TritonRoute::routeLayerLengths(odb::dbWire* wire) const
+{
+  std::vector<int> lengths;
+  lengths.resize(db_->getTech()->getLayerCount());
+  odb::dbWireShapeItr shapes;
+  odb::dbShape s;
+
+  for (shapes.begin(wire); shapes.next(s);) {
+    if (!s.isVia()) {
+      lengths[s.getTechLayer()->getNumber()] += s.getLength();
+    } else {
+      if (s.getTechVia()) {
+        lengths[s.getTechVia()->getBottomLayer()->getNumber() + 1] += 1;
+      }
+    }
+  }
+
+  return lengths;
+}
+
 }  // namespace drt
