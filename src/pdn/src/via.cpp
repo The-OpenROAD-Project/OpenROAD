@@ -3040,9 +3040,9 @@ bool Via::isValid() const
 void Via::removeShape(Shape* shape)
 {
   if (lower_.lock().get() == shape) {
-    lower_ = nullptr;
+    lower_ = WeakShapePtr();
   } else if (upper_.lock().get() == shape) {
-    upper_ = nullptr;
+    upper_ = WeakShapePtr();
   }
 }
 
