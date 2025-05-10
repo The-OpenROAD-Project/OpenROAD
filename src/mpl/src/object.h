@@ -18,10 +18,10 @@
 #include "odb/dbTypes.h"
 #include "odb/odb.h"
 #include "shapes.h"
+#include "util.h"
 
 namespace odb {
 class Rect;
-class Point;
 class dbInst;
 class dbModule;
 class dbDatabase;
@@ -74,24 +74,6 @@ using Point = std::pair<float, float>;
 // (fixed position, preferred locations, and others) are on macros.  This means
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
-
-// Define the position of pin access blockage
-// It can be {bottom, left, top, right} boundary of the cluster
-// Each pin access blockage is modeled by a movable hard macro
-// along the corresponding { B, L, T, R } boundary
-// The size of the hard macro blockage is determined the by the
-// size of that cluster
-enum Boundary
-{
-  NONE,
-  B,
-  L,
-  T,
-  R
-};
-
-std::string toString(const Boundary& pin_access);
-Boundary opposite(const Boundary& pin_access);
 
 // Define the type for clusters
 // StdCellCluster only has std cells. In the cluster type, it
@@ -180,17 +162,12 @@ class Cluster
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
   bool isIOCluster() const;
-
-  bool isClusterOfUnplacedIOPins() const
-  {
-    return is_cluster_of_unplaced_io_pins_;
-  }
+  bool isClusterOfUnconstrainedIOPins() const;
+  bool isClusterOfUnplacedIOPins() const;
   void setAsClusterOfUnplacedIOPins(const std::pair<float, float>& pos,
                                     float width,
                                     float height,
-                                    Boundary constraint_boundary);
-  Boundary getConstraintBoundary() const { return constraint_boundary_; }
-
+                                    bool is_cluster_of_unconstrained_io_pins);
   bool isIOPadCluster() const { return is_io_pad_cluster_; }
   void setAsIOPadCluster(const std::pair<float, float>& pos,
                          float width,
@@ -282,8 +259,8 @@ class Cluster
   std::vector<HardMacro*> hard_macros_;
 
   bool is_cluster_of_unplaced_io_pins_{false};
+  bool is_cluster_of_unconstrained_io_pins_{false};
   bool is_io_pad_cluster_{false};
-  Boundary constraint_boundary_ = NONE;
 
   bool is_array_of_interconnected_macros = false;
 
@@ -347,7 +324,7 @@ class HardMacro
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
   bool isClusterOfUnplacedIOPins() const;
-  Rect getBBox() const;
+  bool isClusterOfUnconstrainedIOPins() const;
 
   // Get Physical Information
   // Note that the default X and Y include halo_width
@@ -514,6 +491,7 @@ class SoftMacro
   bool isStdCellCluster() const;
   bool isMixedCluster() const;
   bool isClusterOfUnplacedIOPins() const;
+  bool isClusterOfUnconstrainedIOPins() const;
   void setLocationF(float x, float y);
   void setShapeF(float width, float height);
   int getNumMacro() const;
