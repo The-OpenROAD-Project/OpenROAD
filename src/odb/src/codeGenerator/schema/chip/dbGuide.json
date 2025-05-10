@@ -37,6 +37,18 @@
         "parent":"dbBlock"
       },
       {
+        "name":"connected_iterms_",
+        "type":"std::vector<dbId<_dbITerm>>",
+        "schema":"db_schema_guide_connected_terms",
+        "flags":["no-set","no-get"]
+      },
+      {
+        "name":"connected_bterms_",
+        "type":"std::vector<dbId<_dbBTerm>>",
+        "schema":"db_schema_guide_connected_terms",
+        "flags":["no-set","no-get"]
+      },
+      {
       "name":"is_congested_",
       "type":"bool",
       "schema":"db_schema_db_guide_congested",
@@ -56,6 +68,8 @@
       }
     ],
     "cpp_includes": [
+      "dbBTerm.h",
+      "dbITerm.h",
       "dbTechLayer.h",
       "dbNet.h"
     ]

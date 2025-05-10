@@ -4,7 +4,11 @@
 // Generator Code Begin Cpp
 #include "dbGuide.h"
 
+#include <vector>
+
+#include "dbBTerm.h"
 #include "dbDatabase.h"
+#include "dbITerm.h"
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -64,6 +68,12 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
     stream >> obj.via_layer_;
   }
   stream >> obj.guide_next_;
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream >> obj.connected_iterms_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream >> obj.connected_bterms_;
+  }
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
     stream >> obj.is_congested_;
   }
@@ -82,6 +92,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
     stream << obj.via_layer_;
   }
   stream << obj.guide_next_;
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream << obj.connected_iterms_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_guide_connected_terms)) {
+    stream << obj.connected_bterms_;
+  }
   if (obj.getDatabase()->isSchema(db_schema_db_guide_congested)) {
     stream << obj.is_congested_;
   }
@@ -252,6 +268,44 @@ void dbGuide::setIsJumper(bool jumper)
   if (db->isSchema(db_schema_has_jumpers)) {
     guide->is_jumper_ = jumper;
   }
+}
+
+void dbGuide::addConnectedITerm(dbITerm* iterm)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  guide->connected_iterms_.emplace_back(iterm->getId());
+}
+
+void dbGuide::addConnectedBTerm(dbBTerm* bterm)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  guide->connected_bterms_.emplace_back(bterm->getId());
+}
+
+std::vector<dbITerm*> dbGuide::getConnectedITerms()
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  _dbBlock* block = (_dbBlock*) guide->getImpl()->getOwner();
+  std::vector<dbITerm*> connected_iterms;
+  connected_iterms.reserve(guide->connected_iterms_.size());
+  for (const auto& iterm_id : guide->connected_iterms_) {
+    connected_iterms.push_back((dbITerm*) block->_iterm_tbl->getPtr(iterm_id));
+  }
+
+  return connected_iterms;
+}
+
+std::vector<dbBTerm*> dbGuide::getConnectedBTerms()
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  _dbBlock* block = (_dbBlock*) guide->getImpl()->getOwner();
+  std::vector<dbBTerm*> connected_bterms;
+  connected_bterms.reserve(guide->connected_bterms_.size());
+  for (const auto& bterm_id : guide->connected_bterms_) {
+    connected_bterms.push_back((dbBTerm*) block->_bterm_tbl->getPtr(bterm_id));
+  }
+
+  return connected_bterms;
 }
 
 // User Code End dbGuidePublicMethods
