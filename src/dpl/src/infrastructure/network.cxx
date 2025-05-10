@@ -33,6 +33,16 @@ Node* Network::getNode(odb::dbBTerm* term)
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+Edge* Network::getEdge(odb::dbNet* net) const
+{
+  auto it = net_to_edge_idx_.find(net);
+  if (it == net_to_edge_idx_.end()) {
+    return nullptr;
+  }
+  return edges_[it->second].get();
+}
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Master* Network::getMaster(odb::dbMaster* db_master)
 {
   auto it = master_to_idx_.find(db_master);
@@ -97,7 +107,7 @@ void Network::addEdge(odb::dbNet* net)
   ////////////////////////
   net_to_edge_idx_[net] = id;
   // Name of edge.
-  setEdgeName(id, net->getName().c_str());
+  setEdgeName(id, net->getName());
 
   for (auto iterm : net->getITerms()) {
     if (!iterm->getInst()->getMaster()->isCoreAutoPlaceable()) {
@@ -265,6 +275,7 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   const int id = masters_.size();
   masters_.emplace_back(std::move(umaster));
   master_to_idx_[db_master] = id;
+  master->setDbMaster(db_master);
   Rect bbox;
   db_master->getPlacementBoundary(bbox);
   master->setBBox(bbox);
@@ -336,13 +347,12 @@ void Network::addNode(odb::dbInst* inst)
   Node ndi;
   const int id = nodes_.size();
   ndi.setId(id);
-  setNodeName(ndi.getId(), inst->getName().c_str());
   ndi.setDbInst(inst);
   ndi.setType(Node::CELL);
   auto master = getMaster(inst->getMaster());
   ndi.setMaster(master);
   ndi.setFixed(inst->isFixed());
-  ndi.setPlaced(inst->isFixed());
+  ndi.setPlaced(inst->isPlaced());
 
   ndi.setOrient(odb::dbOrientType::R0);
   ndi.setHeight(DbuY{(int) inst->getMaster()->getHeight()});
@@ -366,8 +376,7 @@ void Network::addNode(odb::dbBTerm* bterm)
   Node ndi;
   const int id = nodes_.size();
   ndi.setId(id);
-  setNodeName(ndi.getId(), bterm->getName().c_str());
-
+  ndi.setBTerm(bterm);
   // Fill in data.
   ndi.setType(Node::TERMINAL);
   ndi.setFixed(true);
@@ -413,7 +422,6 @@ void Network::addFillerNode(const DbuX left,
   ndi.setBottom(bottom);
   ndi.setLeft(left);
   nodes_.emplace_back(std::make_unique<Node>(ndi));
-  setNodeName(id, "FILLER_" + std::to_string(filler_cnt_++));
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -425,14 +433,12 @@ void Network::clear()
   pins_.clear();
   blockages_.clear();
   edgeNames_.clear();
-  nodeNames_.clear();
   inst_to_node_idx_.clear();
   term_to_node_idx_.clear();
   master_to_idx_.clear();
   net_to_edge_idx_.clear();
   cells_cnt_ = 0;
   terminals_cnt_ = 0;
-  filler_cnt_ = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

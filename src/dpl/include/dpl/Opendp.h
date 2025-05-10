@@ -50,6 +50,7 @@ class GridInfo;
 class Padding;
 class PixelPt;
 class PlacementDRC;
+class Journal;
 
 template <typename T>
 struct TypedCoordinate;
@@ -133,6 +134,9 @@ class Opendp
   void improvePlacement(int seed,
                         int max_displacement_x,
                         int max_displacement_y);
+  // Journalling
+  Journal* getJournal() const;
+  void setJournal(Journal* journal);
 
  private:
   using bgPoint
@@ -195,7 +199,7 @@ class Opendp
                    GridY y,
                    GridX x_end,
                    GridY y_end) const;
-  void shiftMove(Node* cell);
+  bool shiftMove(Node* cell);
   bool mapMove(Node* cell);
   bool mapMove(Node* cell, const GridPt& grid_pt);
   int distChange(const Node* cell, DbuX x, DbuY y) const;
@@ -315,6 +319,7 @@ class Opendp
   std::unique_ptr<Network> network_;    // The netlist, cells, etc.
   std::shared_ptr<Padding> padding_;
   std::unique_ptr<PlacementDRC> drc_engine_;
+  Journal* journal_ = nullptr;
 
   bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites

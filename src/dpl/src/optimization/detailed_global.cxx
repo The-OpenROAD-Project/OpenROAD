@@ -147,6 +147,7 @@ void DetailedGlobalSwap::globalSwap()
     nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
     if (nextHpwl <= currHpwl) {
+      hpwlObj.accept();
       mgr_->acceptMove();
       currHpwl = nextHpwl;
     } else {
