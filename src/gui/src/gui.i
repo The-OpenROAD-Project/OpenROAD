@@ -2,6 +2,8 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
+#include <optional>
+
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 #include "gui/gui.h"
@@ -132,6 +134,48 @@ void highlight_net(const char* name, int highlight_group = 0)
   }
   auto gui = gui::Gui::get();
   gui->addNetToHighlightSet(name, highlight_group);
+}
+
+const std::string add_label(
+  double x,
+  double y,
+  const std::string& text,
+  int size = 0,
+  const std::string& name = "")
+{
+  if (!check_gui("add_label")) {
+    return "";
+  }
+  odb::Point pt = make_point(x, y);
+  auto gui = gui::Gui::get();
+
+  std::optional<int> pass_size;
+  if (size > 0) {
+    pass_size = size;
+  }
+  std::optional<std::string> pass_name;
+  if (!name.empty()) {
+    pass_name = name;
+  }
+  return gui->addLabel(pt.x(), pt.y(), text, pass_size, {}, pass_name);
+}
+
+void delete_label(const std::string& name)
+{
+  if (!check_gui("delete_label")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->deleteLabel(name);
+}
+
+void clear_labels()
+{
+  if (!check_gui("clear_labels")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->clearLabels();
 }
 
 const std::string add_ruler(

@@ -392,6 +392,21 @@ void Gui::animateSelection(int repeat)
   main_window->getLayoutViewer()->selectionAnimation(repeat);
 }
 
+std::string Gui::addLabel(int x,
+                          int y,
+                          const std::string& text,
+                          const std::optional<int> size,
+                          const std::optional<Painter::Anchor> anchor,
+                          const std::optional<std::string> name)
+{
+  return main_window->addLabel(x, y, text, size, anchor, name);
+}
+
+void Gui::deleteLabel(const std::string& name)
+{
+  main_window->deleteLabel(name);
+}
+
 std::string Gui::addRuler(int x0,
                           int y0,
                           int x1,
@@ -530,6 +545,11 @@ void Gui::clearSelections()
 void Gui::clearHighlights(int highlight_group)
 {
   main_window->clearHighlighted(highlight_group);
+}
+
+void Gui::clearLabels()
+{
+  main_window->clearLabels();
 }
 
 void Gui::clearRulers()

@@ -459,6 +459,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   iterm_label_font_ = QApplication::font();  // use default font
   iterm_label_color_ = Qt::yellow;
 
+  label_font_ = QApplication::font();  // use default font
+  label_color_ = Qt::white;
+
   auto instance_shape
       = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
   makeLeafItem(instance_shapes_.names,
@@ -500,6 +503,11 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, false, label_color_);
+  setNameItemDoubleClickAction(misc_.labels, [this]() {
+    label_font_ = QFontDialog::getFont(
+        nullptr, label_font_, this, "User label font");
+  });
   makeLeafItem(
       misc_.background, "Background", misc, {}, false, background_color_);
   toggleParent(misc_group_);
@@ -693,6 +701,7 @@ void DisplayControls::readSettings(QSettings* settings)
   getColor(
       blockages_.blockages, placement_blockage_color_, "blockages_placement");
   getColor(rulers_, ruler_color_, "ruler");
+  getColor(misc_.labels, label_color_, "label");
   getColor(instance_shapes_.names, instance_name_color_, "instance_name");
   getColor(instance_shapes_.iterm_labels, iterm_label_color_, "iterm_label");
   getColor(misc_.regions, region_color_, "region");
@@ -704,6 +713,7 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("font");
   getFont(pin_markers_font_, "pin_markers");
   getFont(ruler_font_, "ruler");
+  getFont(label_font_, "label");
   getFont(instance_name_font_, "instance_name");
   getFont(iterm_label_font_, "iterm_label");
   settings->endGroup();
@@ -766,6 +776,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("background", background_color_);
   settings->setValue("blockages_placement", placement_blockage_color_);
   settings->setValue("ruler", ruler_color_);
+  settings->setValue("label", label_color_);
   settings->setValue("instance_name", instance_name_color_);
   settings->setValue("iterm_label", iterm_label_color_);
   settings->setValue("region", region_color_);
@@ -779,6 +790,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->beginGroup("font");
   settings->setValue("pin_markers", pin_markers_font_);
   settings->setValue("ruler", ruler_font_);
+  settings->setValue("label", label_font_);
   settings->setValue("instance_name", instance_name_font_);
   settings->setValue("iterm_label", iterm_label_font_);
   settings->endGroup();
@@ -1016,6 +1028,9 @@ std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
   }
   if (item == rulers_.swatch) {
     return {&ruler_color_, nullptr, false};
+  }
+  if (item == misc_.labels.swatch) {
+    return {&label_color_, nullptr, false};
   }
   QVariant tech_layer_data = item->data(user_data_item_idx_);
   if (!tech_layer_data.isValid()) {
@@ -1682,6 +1697,21 @@ QColor DisplayControls::rulerColor()
 QFont DisplayControls::rulerFont()
 {
   return ruler_font_;
+}
+
+bool DisplayControls::areLabelsVisible()
+{
+  return isModelRowVisible(&misc_.labels);
+}
+
+QColor DisplayControls::labelColor()
+{
+  return label_color_;
+}
+
+QFont DisplayControls::labelFont()
+{
+  return label_font_;
 }
 
 bool DisplayControls::areBlockagesVisible()

@@ -35,6 +35,7 @@
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "highlightGroupDialog.h"
+#include "label.h"
 #include "mainWindow.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -87,6 +88,7 @@ LayoutViewer::LayoutViewer(
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
+    const std::vector<std::unique_ptr<Label>>& labels,
     const std::map<odb::dbModule*, ModuleSettings>& module_settings,
     const std::set<odb::dbNet*>& focus_nets,
     const std::set<odb::dbNet*>& route_guides,
@@ -103,6 +105,7 @@ LayoutViewer::LayoutViewer(
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
+      labels_(labels),
       scroller_(nullptr),
       pixels_per_dbu_(1.0),
       fit_pixels_per_dbu_(1.0),
@@ -1880,7 +1883,7 @@ void LayoutViewer::fullRepaint()
     rect.translate(scroller_->horizontalScrollBar()->value(),
                    scroller_->verticalScrollBar()->value());
     setLoadingState();
-    viewer_thread_.render(rect, selected_, highlighted_, rulers_);
+    viewer_thread_.render(rect, selected_, highlighted_, rulers_, labels_);
   }
 }
 
@@ -2100,6 +2103,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                       selected_,
                       highlighted_,
                       rulers_,
+                      labels_,
                       render_ratio,
                       options_->background());
   pixels_per_dbu_ = old_pixels_per_dbu;

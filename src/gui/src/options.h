@@ -68,6 +68,10 @@ class Options
   virtual bool areRulersVisible() = 0;
   virtual bool areRulersSelectable() = 0;
 
+  virtual QColor labelColor() = 0;
+  virtual QFont labelFont() = 0;
+  virtual bool areLabelsVisible() = 0;
+
   virtual bool isDetailedVisibility() = 0;
 
   virtual bool areSelectedVisible() = 0;

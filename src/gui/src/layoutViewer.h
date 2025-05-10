@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "label.h"
 #include "options.h"
 #include "renderThread.h"
 #include "search.h"
@@ -117,6 +118,7 @@ class LayoutViewer : public QWidget
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const Rulers& rulers,
+               const Labels& labels,
                const std::map<odb::dbModule*, ModuleSettings>& module_settings,
                const std::set<odb::dbNet*>& focus_nets,
                const std::set<odb::dbNet*>& route_guides,
@@ -342,6 +344,7 @@ class LayoutViewer : public QWidget
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
   const Rulers& rulers_;
+  const Labels& labels_;
   LayoutScroll* scroller_;
 
   // Use to avoid painting while a command is executing unless paused.

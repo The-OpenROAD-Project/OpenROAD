@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -24,6 +25,8 @@
 #include "odb/db.h"
 
 struct Tcl_Interp;
+
+class QFont;
 
 namespace sta {
 class dbSta;
@@ -162,6 +165,8 @@ class Painter
     DOTS
   };
   virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
+
+  virtual void setFont(const QFont* font) = 0;
 
   // Set the pen to an RGBA value and the brush
   void setPenAndBrush(const Color& color,
@@ -582,6 +587,15 @@ class Gui
   int selectPrevious();
   void animateSelection(int repeat = 0);
 
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       const std::optional<int> size = {},
+                       const std::optional<Painter::Anchor> anchor = {},
+                       const std::optional<std::string> name = {});
+  void deleteLabel(const std::string& name);
+  void clearLabels();
+
   std::string addRuler(int x0,
                        int y0,
                        int x1,
@@ -590,10 +604,10 @@ class Gui
                        const std::string& name = "",
                        bool euclidian = true);
   void deleteRuler(const std::string& name);
+  void clearRulers();
 
   void clearSelections();
   void clearHighlights(int highlight_group = 0);
-  void clearRulers();
 
   int select(const std::string& type,
              const std::string& name_filter = "",
