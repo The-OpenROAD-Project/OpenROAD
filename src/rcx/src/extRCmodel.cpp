@@ -432,6 +432,7 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     table = new Ath__array1D<extDistRC*>(cnt);
   }
 
+  delete _measureTable;
   Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
   int cnt1 = 0;
   int kk = 0;
