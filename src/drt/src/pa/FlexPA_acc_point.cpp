@@ -614,7 +614,7 @@ bool FlexPA::isPointOutsideShapes(
 }
 
 template <typename T>
-void FlexPA::filterPlanarAccess(
+bool FlexPA::filterPlanarAccess(
     frAccessPoint* ap,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir,
@@ -624,7 +624,7 @@ void FlexPA::filterPlanarAccess(
   const Point begin_point = ap->getPoint();
   // skip viaonly access
   if (!ap->hasAccess(dir)) {
-    return;
+    return false;
   }
   const bool is_block
       = inst_term
@@ -635,7 +635,7 @@ void FlexPA::filterPlanarAccess(
   // skip if two width within shape for standard cell
   if (!is_outside) {
     ap->setAccess(dir, false);
-    return;
+    return false;
   }
   // TODO: EDIT HERE Wrongdirection segments
   frLayer* layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
@@ -666,6 +666,8 @@ void FlexPA::filterPlanarAccess(
   const bool no_drv
       = isPlanarViolationFree(ap, pin, ps.get(), inst_term, begin_point, layer);
   ap->setAccess(dir, no_drv);
+
+  return no_drv;
 }
 
 template <typename T>
@@ -783,20 +785,20 @@ void FlexPA::getViasFromMetalWidthMap(
 }
 
 template <typename T>
-void FlexPA::filterViaAccess(
+bool FlexPA::validateAPForVia(
     frAccessPoint* ap,
+    const frViaDef* via_def,
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     const gtl::polygon_90_set_data<frCoord>& polyset,
     T* pin,
-    frInstTerm* inst_term,
-    bool deep_search)
+    frInstTerm* inst_term)
 {
+  if (!ap->isViaAllowed()) {
+    return false;
+  }
+
   const Point begin_point = ap->getPoint();
   const auto layer_num = ap->getLayerNum();
-  // skip planar only access
-  if (!ap->isViaAllowed()) {
-    return;
-  }
 
   bool via_in_pin = false;
   const auto lower_type = ap->getType(true);
@@ -822,77 +824,70 @@ void FlexPA::filterViaAccess(
       is_side_bound = true;
     }
   }
-  const int max_num_via_trial = 2;
-  // use std:pair to ensure deterministic behavior
-  std::vector<std::pair<int, const frViaDef*>> via_defs;
-  getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
-  if (via_defs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-      via_defs.emplace_back(via_defs.size(), via_def);
-      if (via_defs.size() >= max_num_via_trial && !deep_search) {
-        break;
-      }
+  auto via = std::make_unique<frVia>(via_def);
+  via->setOrigin(begin_point);
+  const Rect box = via->getLayer1BBox();
+  if (inst_term) {
+    if (!boundary_bbox.contains(box)) {
+      return false;
+    }
+    Rect layer2_boundary_box = via->getLayer2BBox();
+    if (!boundary_bbox.contains(layer2_boundary_box)) {
+      return false;
     }
   }
 
-  std::set<std::tuple<frCoord, int, const frViaDef*>> valid_via_defs;
-  for (auto& [idx, via_def] : via_defs) {
-    auto via = std::make_unique<frVia>(via_def);
-    via->setOrigin(begin_point);
-    const Rect box = via->getLayer1BBox();
-    if (inst_term) {
-      if (!boundary_bbox.contains(box)) {
-        continue;
-      }
-      Rect layer2_boundary_box = via->getLayer2BBox();
-      if (!boundary_bbox.contains(layer2_boundary_box)) {
-        continue;
-      }
+  frCoord max_ext = 0;
+  const gtl::rectangle_data<frCoord> viarect(
+      box.xMin(), box.yMin(), box.xMax(), box.yMax());
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator&=;
+  gtl::polygon_90_set_data<frCoord> intersection;
+  intersection += viarect;
+  intersection &= polyset;
+  // via ranking criteria: max extension distance beyond pin shape
+  std::vector<gtl::rectangle_data<frCoord>> int_rects;
+  intersection.get_rectangles(int_rects, gtl::orientation_2d_enum::HORIZONTAL);
+  for (const auto& r : int_rects) {
+    max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
+    max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
+  }
+  if (!is_side_bound) {
+    if (int_rects.size() > 1) {
+      int_rects.clear();
+      intersection.get_rectangles(int_rects,
+                                  gtl::orientation_2d_enum::VERTICAL);
     }
-
-    frCoord max_ext = 0;
-    const gtl::rectangle_data<frCoord> viarect(
-        box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    using boost::polygon::operators::operator+=;
-    using boost::polygon::operators::operator&=;
-    gtl::polygon_90_set_data<frCoord> intersection;
-    intersection += viarect;
-    intersection &= polyset;
-    // via ranking criteria: max extension distance beyond pin shape
-    std::vector<gtl::rectangle_data<frCoord>> int_rects;
-    intersection.get_rectangles(int_rects,
-                                gtl::orientation_2d_enum::HORIZONTAL);
     for (const auto& r : int_rects) {
-      max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
-      max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
-    }
-    if (!is_side_bound) {
-      if (int_rects.size() > 1) {
-        int_rects.clear();
-        intersection.get_rectangles(int_rects,
-                                    gtl::orientation_2d_enum::VERTICAL);
-      }
-      for (const auto& r : int_rects) {
-        max_ext = std::max(max_ext, box.yMax() - gtl::yh(r));
-        max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
-      }
-    }
-    if (via_in_pin && max_ext) {
-      continue;
-    }
-    if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
-      valid_via_defs.insert({max_ext, idx, via_def});
-      if (valid_via_defs.size() >= max_num_via_trial) {
-        break;
-      }
+      max_ext = std::max(max_ext, box.yMax() - gtl::yh(r));
+      max_ext = std::max(max_ext, gtl::yl(r) - box.yMin());
     }
   }
-  ap->setAccess(frDirEnum::U, !valid_via_defs.empty());
-  for (auto& [ext, idx, via_def] : valid_via_defs) {
-    ap->addViaDef(via_def);
+  if (via_in_pin && max_ext) {
+    return false;
   }
+  if (!checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
+    return false;
+  }
+  ap->setAccess(frDirEnum::U);
+  ap->addViaDef(via_def);
+  return true;
+}
+
+template <typename T>
+bool FlexPA::validateAPForPlanarAccess(
+    frAccessPoint* ap,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
+    T* pin,
+    frInstTerm* inst_term)
+{
+  bool allow_planar_access = false;
+  for (const frDirEnum dir : frDirEnumPlanar) {
+    allow_planar_access |= filterPlanarAccess(
+        ap, layer_polys[ap->getLayerNum()], dir, pin, inst_term);
+  }
+  return allow_planar_access;
 }
 
 template <typename T>
@@ -1033,61 +1028,67 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
 }
 
 template <typename T>
-void FlexPA::filterSingleAPAccesses(
-    frAccessPoint* ap,
-    const gtl::polygon_90_set_data<frCoord>& polyset,
-    const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-    T* pin,
-    frInstTerm* inst_term,
-    bool deep_search)
-{
-  if (!deep_search) {
-    for (const frDirEnum dir : frDirEnumPlanar) {
-      filterPlanarAccess(ap, polys, dir, pin, inst_term);
-    }
-  }
-  filterViaAccess(ap, polys, polyset, pin, inst_term, deep_search);
-}
-
-template <typename T>
-void FlexPA::filterMultipleAPAccesses(
+void FlexPA::filterMultipleViaAccess(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
     T* pin,
     frInstTerm* inst_term,
     const bool& is_std_cell_pin)
 {
-  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
-      pin_shapes.size());
-  for (int i = 0; i < (int) pin_shapes.size(); i++) {
-    pin_shapes[i].get_polygons(layer_polys[i]);
-  }
   bool has_access = false;
+  const int max_num_via_trial = 2;
+
   for (auto& ap : aps) {
-    const auto layer_num = ap->getLayerNum();
-    filterSingleAPAccesses(ap.get(),
-                           pin_shapes[layer_num],
-                           layer_polys[layer_num],
-                           pin,
-                           inst_term);
-    if (is_std_cell_pin) {
-      has_access |= ((layer_num == router_cfg_->VIA_ACCESS_LAYERNUM
-                      && ap->hasAccess(frDirEnum::U))
-                     || (layer_num != router_cfg_->VIA_ACCESS_LAYERNUM
-                         && ap->hasAccess()));
-    } else {
-      has_access |= ap->hasAccess();
+    if (!ap->isViaAllowed()) {
+      continue;
     }
-  }
-  if (!has_access) {
-    for (auto& ap : aps) {
-      const auto layer_num = ap->getLayerNum();
-      filterSingleAPAccesses(ap.get(),
-                             pin_shapes[layer_num],
-                             layer_polys[layer_num],
-                             pin,
-                             inst_term,
-                             true);
+
+    int valid_via_defs = 0;
+    const Point begin_point = ap->getPoint();
+    const auto layer_num = ap->getLayerNum();
+    // use std:pair to ensure deterministic behavior
+    std::vector<std::pair<int, const frViaDef*>> via_defs;
+    getViasFromMetalWidthMap(
+        begin_point, layer_num, pin_shapes[layer_num], via_defs);
+
+    if (via_defs.empty()) {  // no via map entry
+      // hardcode first two single vias
+      for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
+        via_defs.emplace_back(via_defs.size(), via_def);
+      }
+    }
+
+    int via_trial = 0;
+    for (auto& [idx, via_def] : via_defs) {
+      via_trial++;
+      if (!validateAPForVia(ap.get(),
+                            via_def,
+                            layer_polys[layer_num],
+                            pin_shapes[layer_num],
+                            pin,
+                            inst_term)) {
+        continue;
+      }
+      valid_via_defs++;
+
+      if (is_std_cell_pin && layer_num == router_cfg_->VIA_ACCESS_LAYERNUM) {
+        has_access |= ap->hasAccess(frDirEnum::U);
+      } else {
+        has_access |= ap->hasAccess();
+      }
+
+      if (!has_access) {
+        continue;
+      }
+
+      if (valid_via_defs > 0 && via_trial <= max_num_via_trial) {
+        break;
+      }
+
+      if (valid_via_defs >= max_num_via_trial) {
+        break;
+      }
     }
   }
 }
@@ -1193,7 +1194,8 @@ template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     std::set<std::pair<Point, frLayerNum>>& apset,
-    std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
     T* pin,
     frInstTerm* inst_term,
     const frAccessPointEnum lower_type,
@@ -1206,8 +1208,14 @@ bool FlexPA::genPinAccessCostBounded(
   std::vector<std::unique_ptr<frAccessPoint>> new_aps;
   genAPsFromPinShapes(
       new_aps, apset, pin, inst_term, pin_shapes, lower_type, upper_type);
-  filterMultipleAPAccesses(
-      new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
+
+  for (auto& ap : new_aps) {
+    ap->setAccess(frDirEnum::U, false);
+    validateAPForPlanarAccess(ap.get(), layer_polys, pin, inst_term);
+  }
+
+  filterMultipleViaAccess(
+      new_aps, pin_shapes, layer_polys, pin, inst_term, is_std_cell_pin);
   if (is_std_cell_pin) {
 #pragma omp atomic
     std_cell_pin_gen_ap_cnt_ += new_aps.size();
@@ -1352,6 +1360,12 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
+  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
+      pin_shapes.size());
+  for (int i = 0; i < (int) pin_shapes.size(); i++) {
+    pin_shapes[i].get_polygons(layer_polys[i]);
+  }
+
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
                      frAccessPointEnum::Center,
@@ -1366,8 +1380,14 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, pin, inst_term, lower, upper)) {
+      if (genPinAccessCostBounded(aps,
+                                  apset,
+                                  pin_shapes,
+                                  layer_polys,
+                                  pin,
+                                  inst_term,
+                                  lower,
+                                  upper)) {
         return aps.size();
       }
     }
