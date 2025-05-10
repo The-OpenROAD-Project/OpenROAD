@@ -222,6 +222,8 @@ void PdnGen::trimShapes()
         } else {
           if (!is_pin_layer) {
             component->replaceShape(shape.get(), {new_shape});
+          } else {
+            delete new_shape;
           }
         }
       }

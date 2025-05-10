@@ -29,6 +29,7 @@ class Shape;
 class Via;
 
 using ShapePtr = std::shared_ptr<Shape>;
+using WeakShapePtr = std::weak_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
 
 using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapePtr>>;
@@ -237,7 +238,7 @@ class Shape
 
   GridComponent* grid_component_;
 
-  std::vector<ViaPtr> vias_;
+  std::vector<WeakViaPtr> vias_;
   std::set<odb::Rect> iterm_connections_;
   std::set<odb::Rect> bterm_connections_;
 
