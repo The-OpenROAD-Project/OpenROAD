@@ -3553,6 +3553,7 @@ bool extRCModel::readRules_v1(char* name,
 {
   _OUREVERSEORDER = false;
   diag = false;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   parser.addSeparator("\r");
