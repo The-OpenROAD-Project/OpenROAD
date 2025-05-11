@@ -27,6 +27,8 @@ Label::Label(const odb::Point& pt,
     static int label_idx = 0;
     name_ = "label" + std::to_string(label_idx++);
   }
+
+  outline_.mergeInit();
 }
 
 ////////////
@@ -58,21 +60,11 @@ void LabelDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto label = std::any_cast<Label*>(object);
 
-  painter.saveState();
-  const auto size = label->getSize();
-  QFont font = painter.getOptions()->labelFont();
-  if (size) {
-    font.setPixelSize(size.value());
+  if (label->getOutline().isInverted()) {
+    return;
   }
-  painter.setFont(&font);
 
-  const auto bounds = painter.stringBoundaries(label->getPt().x(),
-                                               label->getPt().y(),
-                                               label->getAnchor(),
-                                               label->getText());
-  painter.drawRect(bounds);
-
-  painter.restoreState();
+  painter.drawRect(label->getOutline());
 }
 
 Descriptor::Properties LabelDescriptor::getProperties(std::any object) const

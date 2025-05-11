@@ -219,6 +219,7 @@ class DisplayControls : public QDockWidget,
   QColor labelColor() override;
   QFont labelFont() override;
   bool areLabelsVisible() override;
+  bool areLabelsSelectable() override;
 
   bool isDetailedVisibility() override;
 

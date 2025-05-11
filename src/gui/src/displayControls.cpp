@@ -503,7 +503,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
-  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, false, label_color_);
+  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true, label_color_);
   setNameItemDoubleClickAction(misc_.labels, [this]() {
     label_font_ = QFontDialog::getFont(
         nullptr, label_font_, this, "User label font");
@@ -1702,6 +1702,11 @@ QFont DisplayControls::rulerFont()
 bool DisplayControls::areLabelsVisible()
 {
   return isModelRowVisible(&misc_.labels);
+}
+
+bool DisplayControls::areLabelsSelectable()
+{
+  return isModelRowSelectable(&misc_.labels);
 }
 
 QColor DisplayControls::labelColor()

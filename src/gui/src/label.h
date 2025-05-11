@@ -36,6 +36,9 @@ class Label
   const std::optional<int>& getSize() const { return size_; }
   void setSize(const std::optional<int>& size) { size_ = size; }
 
+  const odb::Rect& getOutline() const { return outline_; }
+  void setOutline(const odb::Rect& outline) { outline_ = outline; }
+
  private:
   odb::Point pt_;
   std::string text_;
@@ -43,6 +46,8 @@ class Label
   Painter::Anchor anchor_;
 
   std::string name_;
+
+  odb::Rect outline_;
 };
 
 using Labels = std::vector<std::unique_ptr<Label>>;

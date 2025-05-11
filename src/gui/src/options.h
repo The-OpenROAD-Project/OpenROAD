@@ -71,6 +71,7 @@ class Options
   virtual QColor labelColor() = 0;
   virtual QFont labelFont() = 0;
   virtual bool areLabelsVisible() = 0;
+  virtual bool areLabelsSelectable() = 0;
 
   virtual bool isDetailedVisibility() = 0;
 
