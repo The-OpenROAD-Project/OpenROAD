@@ -599,6 +599,7 @@ bool RepairSetup::repairPath(Path* path,
           && fanout < rebuffer_max_fanout_ && !tristate_drvr
           && !resizer_->dontTouch(net) && !db_net->isConnectedByAbutment()) {
         const int rebuffer_count = rebuffer(drvr_pin);
+
         if (rebuffer_count > 0) {
           debugPrint(logger_,
                      RSZ,

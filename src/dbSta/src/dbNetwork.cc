@@ -1661,9 +1661,11 @@ bool dbNetwork::isPower(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::POWER);
+
+  /*
   // TODO: make this work for modnets
   // by uncommenting code below
-  /*
+
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1684,10 +1686,10 @@ bool dbNetwork::isGround(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::GROUND);
-
+  /*
   // TODO: make this work for modnets
   // by uncommenting code below
-  /*
+
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -3737,7 +3739,8 @@ class ModDbNetAssociation : public PinVisitor
   ModDbNetAssociation(dbNetwork* nwk,
                       Logger* logger,
                       dbNet* new_flat_net,
-                      dbNet* orig_flat_net);
+                      dbNet* orig_flat_net,
+                      dbModNet* cur_mod_net);
   void operator()(const Pin* pin) override;
 
  private:
@@ -3745,16 +3748,19 @@ class ModDbNetAssociation : public PinVisitor
   dbNetwork* db_network_;
   dbNet* new_flat_net_;
   dbNet* orig_flat_net_;
+  dbModNet* mod_net_;
 };
 
 ModDbNetAssociation::ModDbNetAssociation(dbNetwork* nwk,
                                          Logger* logger,
                                          dbNet* new_flat_net,
-                                         dbNet* orig_flat_net)
+                                         dbNet* orig_flat_net,
+                                         dbModNet* cur_mod_net)
     : logger_(logger),
       db_network_(nwk),
       new_flat_net_(new_flat_net),
-      orig_flat_net_(orig_flat_net)
+      orig_flat_net_(orig_flat_net),
+      mod_net_(cur_mod_net)
 {
 }
 
@@ -3776,6 +3782,21 @@ void ModDbNetAssociation::operator()(const Pin* pin)
 
   dbNet* cur_flat_net = db_network_->flatNet(pin);
 
+  dbModNet* mod_net = db_network_->hierNet(pin);
+
+  /*
+  if (!(mod_net && mod_net_ && mod_net == mod_net_)) {
+    printf("Encountered hierarchy crossing (which is ok !)\n");
+    printf("Load pin %s\n", db_network_->name(pin));
+    printf("Load  mod net %s\n", mod_net->getName());
+    printf("Source  mod net %s\n", mod_net_->getName());
+    printf("Load  flat net %s\n", cur_flat_net->getName().c_str());
+    printf("Net  flat net %s\n", new_flat_net_->getName().c_str());
+
+    printf("Owner of load mod net %s\n", mod_net->getParent()->getName());
+    printf("Owner of source mod net %s\n", mod_net_->getParent()->getName());
+  }
+  */
   if (cur_flat_net == new_flat_net_) {
     return;
   }
@@ -3885,7 +3906,8 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   }
 
   // reassociate the mod_net to use the flat net.
-  ModDbNetAssociation visitor(this, logger_, new_flat_net, orig_flat_net);
+  ModDbNetAssociation visitor(
+      this, logger_, new_flat_net, orig_flat_net, mod_net);
   NetSet visited_nets(this);
   visitConnectedPins(dbToSta(mod_net), visitor, visited_nets);
 
@@ -3990,18 +4012,17 @@ void PinModDbNetConnection::operator()(const Pin* pin)
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
         // TODO: uncomment error: 2030, once all cases pass.
-        /*
-        logger_->error(
+        logger_->warn(
             ORD,
             2030,
             "Flat net logical inconsistency, badly formed hierarchical "
             "netlist. "
-            "Only expect one flat net reachable per pin. Nets are {} and {} "
+            "Only expect one flat net reachable per pin. Flat Nets are {} and "
+            "{} "
             "modnet is {}",
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),
             db_network_->name(search_net_));
-        */
       }
     }
     dbnet_ = candidate_flat_net;
@@ -4103,6 +4124,26 @@ bool dbNetwork::hasHierarchicalElements() const
     return true;
   }
   return false;
+}
+
+bool dbNetwork::AxiomCheck()
+{
+  static int debug;
+  debug++;
+  printf("Axiom check %d\n", debug);
+  // check that each dbModNet has exactly one dbNet
+  dbSet<dbModNet> mod_nets = block()->getModNets();
+  for (auto modnet : mod_nets) {
+    dbNet* related_net = findRelatedDbNet(modnet);
+  }
+
+  dbSet<dbITerm> iterms = block()->getITerms();
+  for (auto iterm : iterms) {
+    dbInst* iterm_inst = iterm->getInst();
+    (void) (iterm_inst);
+  }
+  printf("Exiting Axiom check %d\n", debug);
+  return true;
 }
 
 }  // namespace sta

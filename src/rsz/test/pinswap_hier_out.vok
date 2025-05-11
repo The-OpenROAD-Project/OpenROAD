@@ -18,39 +18,35 @@ module td1 (a1,
  output y2;
 
 
- BUF_X1 rebuffer3 (.A(net1),
-    .Z(net5));
- BUF_X4 rebuffer2 (.A(net1),
-    .Z(net4));
- BUF_X4 rebuffer1 (.A(net5),
+ BUF_X2 rebuffer1 (.A(net9),
     .Z(net2));
  NAND2_X4 U3 (.A1(a2),
     .A2(a1),
     .ZN(n1));
  AND2_X4 U5 (.A1(a3),
     .A2(n1),
-    .ZN(net1));
+    .ZN(net9));
  BUF_X8 wire1 (.A(net2),
     .Z(y1));
- pinswap U4 (.ip0(a6),
+ pinswap U4 (.ip3_i(net9),
+    .ip0(a6),
     .ip1(a4),
     .ip2(a5),
-    .ip3(net2),
     .op0(y2));
 endmodule
-module pinswap (ip0,
+module pinswap (ip3_i,
+    ip0,
     ip1,
     ip2,
-    ip3,
     op0);
+ input ip3_i;
  input ip0;
  input ip1;
  input ip2;
- input ip3;
  output op0;
 
 
- AND4_X4 PS1 (.A1(ip3),
+ AND4_X4 PS1 (.A1(ip3_i),
     .A2(ip1),
     .A3(ip2),
     .A4(ip0),

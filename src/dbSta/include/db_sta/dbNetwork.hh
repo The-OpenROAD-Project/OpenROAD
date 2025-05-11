@@ -322,6 +322,7 @@ class dbNetwork : public ConcreteNetwork
   int metersToDbu(double dist) const;
 
   // hierarchy handler, set in openroad tested in network child traverserser
+  bool AxiomCheck();
   void setHierarchy() { hierarchy_ = true; }
   void disableHierarchy() { hierarchy_ = false; }
   bool hasHierarchy() const { return hierarchy_; }
