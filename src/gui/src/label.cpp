@@ -16,9 +16,10 @@ namespace gui {
 Label::Label(const odb::Point& pt,
              const std::string& text,
              const Painter::Anchor& anchor,
+             const Painter::Color& color,
              const std::optional<int> size,
              const std::optional<std::string> name)
-    : pt_(pt), text_(text), size_(size), anchor_(anchor)
+    : pt_(pt), text_(text), color_(color), size_(size), anchor_(anchor)
 {
   // update name if empty
   if (name.has_value()) {
@@ -35,8 +36,9 @@ Label::Label(const odb::Point& pt,
 
 LabelDescriptor::LabelDescriptor(
     const std::vector<std::unique_ptr<Label>>& labels,
-    odb::dbDatabase* db)
-    : labels_(labels), db_(db)
+    odb::dbDatabase* db,
+    utl::Logger* logger)
+    : labels_(labels), db_(db), logger_(logger)
 {
 }
 
@@ -78,6 +80,7 @@ Descriptor::Properties LabelDescriptor::getProperties(std::any object) const
 
   props.push_back({"Size", label->getSize().value_or(-1)});
   props.push_back({"Anchor", anchorToString(label->getAnchor())});
+  props.push_back({"Color", Painter::colorToString(label->getColor())});
 
   return props;
 }
@@ -141,6 +144,11 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
                  return true;
                },
                anchor_options)},
+          {"Color", makeEditor([this, label](std::any value) {
+             label->setColor(Painter::stringToColor(
+                 std::any_cast<const std::string>(value), logger_));
+             return true;
+           })},
           {"x", makeEditor([label, dbu_per_uu_](const std::any& value) {
              return LabelDescriptor::editPoint(
                  value, dbu_per_uu_, label->getPt(), true);

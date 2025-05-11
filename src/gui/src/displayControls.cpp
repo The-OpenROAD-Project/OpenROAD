@@ -460,7 +460,6 @@ DisplayControls::DisplayControls(QWidget* parent)
   iterm_label_color_ = Qt::yellow;
 
   label_font_ = QApplication::font();  // use default font
-  label_color_ = Qt::white;
 
   auto instance_shape
       = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
@@ -503,7 +502,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
-  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true, label_color_);
+  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
   setNameItemDoubleClickAction(misc_.labels, [this]() {
     label_font_ = QFontDialog::getFont(
         nullptr, label_font_, this, "User label font");
@@ -701,7 +700,6 @@ void DisplayControls::readSettings(QSettings* settings)
   getColor(
       blockages_.blockages, placement_blockage_color_, "blockages_placement");
   getColor(rulers_, ruler_color_, "ruler");
-  getColor(misc_.labels, label_color_, "label");
   getColor(instance_shapes_.names, instance_name_color_, "instance_name");
   getColor(instance_shapes_.iterm_labels, iterm_label_color_, "iterm_label");
   getColor(misc_.regions, region_color_, "region");
@@ -776,7 +774,6 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("background", background_color_);
   settings->setValue("blockages_placement", placement_blockage_color_);
   settings->setValue("ruler", ruler_color_);
-  settings->setValue("label", label_color_);
   settings->setValue("instance_name", instance_name_color_);
   settings->setValue("iterm_label", iterm_label_color_);
   settings->setValue("region", region_color_);
@@ -1028,9 +1025,6 @@ std::tuple<QColor*, Qt::BrushStyle*, bool> DisplayControls::lookupColor(
   }
   if (item == rulers_.swatch) {
     return {&ruler_color_, nullptr, false};
-  }
-  if (item == misc_.labels.swatch) {
-    return {&label_color_, nullptr, false};
   }
   QVariant tech_layer_data = item->data(user_data_item_idx_);
   if (!tech_layer_data.isValid()) {
@@ -1707,11 +1701,6 @@ bool DisplayControls::areLabelsVisible()
 bool DisplayControls::areLabelsSelectable()
 {
   return isModelRowSelectable(&misc_.labels);
-}
-
-QColor DisplayControls::labelColor()
-{
-  return label_color_;
 }
 
 QFont DisplayControls::labelFont()

@@ -140,6 +140,7 @@ const std::string add_label(
   double x,
   double y,
   const std::string& text,
+  const std::string& color = "",
   int size = 0,
   const std::string& name = "")
 {
@@ -157,7 +158,11 @@ const std::string add_label(
   if (!name.empty()) {
     pass_name = name;
   }
-  return gui->addLabel(pt.x(), pt.y(), text, pass_size, {}, pass_name);
+  std::optional<gui::Painter::Color> pass_color;
+  if (!color.empty()) {
+    pass_color = gui::Painter::stringToColor(color, ord::OpenRoad::openRoad()->getLogger());
+  }
+  return gui->addLabel(pt.x(), pt.y(), text, pass_color, pass_size, {}, pass_name);
 }
 
 void delete_label(const std::string& name)
@@ -367,88 +372,10 @@ void set_display_controls(const char* name, const char* display_type, const char
     bool bval = str_value == "true" || str_value == "1";
     gui->setDisplayControlsSelectable(name, bval);
   } else if (disp_type == "color") {
-    gui::Painter::Color color = gui::Painter::black;
     if (str_value.empty()) {
       logger->error(GUI, 41, "Color is required");
     }
-    if (str_value[0] == '#' && (str_value.size() == 7 || str_value.size() == 9)) {
-      uint hex_color = 0;
-      for (int i = 1; i < str_value.size(); i++) {
-        const char c = std::tolower(str_value[i]);
-        hex_color *= 16;
-        if (c >= '0' && c <= '9') {
-          hex_color += c - '0';
-        } else if (c >= 'a' && c <= 'f') {
-          hex_color += c - 'a' + 10;
-        } else {
-          logger->error(GUI, 43, "Unable to decode color: {}", str_value);
-        }
-      }
-      if (str_value.size() == 7) {
-        hex_color *= 256;
-        hex_color += 255;
-      }
-      color.r = (hex_color & 0xff000000) >> 24;
-      color.g = (hex_color & 0x00ff0000) >> 16;
-      color.b = (hex_color & 0x0000ff00) >> 8;
-      color.a = hex_color & 0x000000ff;
-    } else if (str_value == "black") {
-      color = gui::Painter::black;
-    } else if (str_value == "white") {
-      color = gui::Painter::white;
-    } else if (str_value == "dark_gray") {
-      color = gui::Painter::dark_gray;
-    } else if (str_value == "gray") {
-      color = gui::Painter::gray;
-    } else if (str_value == "light_gray") {
-      color = gui::Painter::light_gray;
-    } else if (str_value == "red") {
-      color = gui::Painter::red;
-    } else if (str_value == "green") {
-      color = gui::Painter::green;
-    } else if (str_value == "blue") {
-      color = gui::Painter::blue;
-    } else if (str_value == "cyan") {
-      color = gui::Painter::cyan;
-    } else if (str_value == "magenta") {
-      color = gui::Painter::magenta;
-    } else if (str_value == "yellow") {
-      color = gui::Painter::yellow;
-    } else if (str_value == "dark_red") {
-      color = gui::Painter::dark_red;
-    } else if (str_value == "dark_green") {
-      color = gui::Painter::dark_green;
-    } else if (str_value == "dark_blue") {
-      color = gui::Painter::dark_blue;
-    } else if (str_value == "dark_cyan") {
-      color = gui::Painter::dark_cyan;
-    } else if (str_value == "dark_magenta") {
-      color = gui::Painter::dark_magenta;
-    } else if (str_value == "dark_yellow") {
-      color = gui::Painter::dark_yellow;
-    } else if (str_value == "orange") {
-      color = gui::Painter::orange;
-    } else if (str_value == "purple") {
-      color = gui::Painter::purple;
-    } else if (str_value == "lime") {
-      color = gui::Painter::lime;
-    } else if (str_value == "teal") {
-      color = gui::Painter::teal;
-    } else if (str_value == "pink") {
-      color = gui::Painter::pink;
-    } else if (str_value == "brown") {
-      color = gui::Painter::brown;
-    } else if (str_value == "indigo") {
-      color = gui::Painter::indigo;
-    } else if (str_value == "turquoise") {
-      color = gui::Painter::turquoise;
-    } else if (str_value == "transparent") {
-      color = gui::Painter::transparent;
-    } else {
-      logger->error(GUI, 42, "Color not recognized: {}", str_value);
-    }
-
-    gui->setDisplayControlsColor(name, color);
+    gui->setDisplayControlsColor(name, gui::Painter::stringToColor(str_value, logger));
   } else {
     logger->error(GUI, 7, "Unknown display control type: {}", display_type);
   }

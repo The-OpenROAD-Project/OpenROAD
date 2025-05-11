@@ -112,6 +112,10 @@ class Painter
   static inline const Color turquoise{0x40, 0xe0, 0xd0, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
 
+  static std::map<std::string, Color> colors();
+  static Color stringToColor(const std::string& color, utl::Logger* logger);
+  static std::string colorToString(const Color& color);
+
   static inline const std::array<Painter::Color, num_highlight_set>
       highlightColors{Color(Painter::green, 100),
                       Color(Painter::yellow, 100),
@@ -590,6 +594,7 @@ class Gui
   std::string addLabel(int x,
                        int y,
                        const std::string& text,
+                       const std::optional<Painter::Color> color = {},
                        const std::optional<int> size = {},
                        const std::optional<Painter::Anchor> anchor = {},
                        const std::optional<std::string> name = {});

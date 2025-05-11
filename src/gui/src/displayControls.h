@@ -216,7 +216,6 @@ class DisplayControls : public QDockWidget,
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
 
-  QColor labelColor() override;
   QFont labelFont() override;
   bool areLabelsVisible() override;
   bool areLabelsSelectable() override;
@@ -559,7 +558,6 @@ class DisplayControls : public QDockWidget,
   QColor ruler_color_;
   QFont ruler_font_;
 
-  QColor label_color_;
   QFont label_font_;
 
   QColor region_color_;

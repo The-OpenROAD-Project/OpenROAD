@@ -448,18 +448,14 @@ void RenderThread::drawLabels(Painter& painter, const Labels& labels)
     return;
   }
 
-  painter.saveState();
-
-  const QColor color_qt = viewer_->options_->labelColor();
-  const Painter::Color color(
-      color_qt.red(), color_qt.green(), color_qt.blue(), color_qt.alpha());
-  const QFont font = viewer_->options_->labelFont();
-
-  painter.setPen(color, true);
-  painter.setBrush(color);
-
   for (auto& label : labels) {
     painter.saveState();
+
+    const Painter::Color color = label->getColor();
+    const QFont font = viewer_->options_->labelFont();
+
+    painter.setPen(color, true);
+    painter.setBrush(color);
 
     const auto size = label->getSize();
     if (size) {
@@ -476,8 +472,6 @@ void RenderThread::drawLabels(Painter& painter, const Labels& labels)
 
     painter.restoreState();
   }
-
-  painter.restoreState();
 }
 
 // Draw the instances bounds

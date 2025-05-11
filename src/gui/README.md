@@ -654,6 +654,7 @@ Returns: name of the newly created label.
 gui::add_label
     x y
     text
+    [color]
     [size]
     [name]
 ```
@@ -664,6 +665,7 @@ gui::add_label
 | ---- | ---- |
 | `x, y,` | point of the label in microns. |
 | `text` | text for the label. |
+| `color` | color to use for the label. |
 | `size` | size of the label. |
 | `name` | name of the label. |
 
@@ -680,7 +682,7 @@ gui::delete_label
 
 | Switch Name | Description |
 | ---- | ---- |
-| `name` | name of the ruler. |
+| `name` | name of the label. |
 
 ### Clear All Labels
 

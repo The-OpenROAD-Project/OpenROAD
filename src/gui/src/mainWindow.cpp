@@ -534,7 +534,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
-  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, db_));
+  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, db_, logger_));
   gui->registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db_));
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
@@ -1135,6 +1135,7 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
 std::string MainWindow::addLabel(int x,
                                  int y,
                                  const std::string& text,
+                                 const std::optional<Painter::Color> color,
                                  const std::optional<int> size,
                                  const std::optional<Painter::Anchor> anchor,
                                  const std::optional<std::string> name)
@@ -1143,6 +1144,7 @@ std::string MainWindow::addLabel(int x,
       = std::make_unique<Label>(odb::Point(x, y),
                                 text,
                                 anchor.value_or(Painter::Anchor::CENTER),
+                                color.value_or(gui::Painter::white),
                                 size,
                                 name);
   std::string new_name = new_label->getName();
