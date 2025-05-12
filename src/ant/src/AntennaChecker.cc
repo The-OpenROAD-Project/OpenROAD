@@ -486,14 +486,12 @@ void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
           node_info.CSR += sumVia.PSR;
           node_info.diff_CAR += sumVia.diff_PAR;
           node_info.diff_CSR += sumVia.diff_PSR;
-          node_info.iterm_diff_area = sumVia.iterm_diff_area;
         } else {
           sumWire += node_info;
           node_info.CAR += sumWire.PAR;
           node_info.CSR += sumWire.PSR;
           node_info.diff_CAR += sumWire.diff_PAR;
           node_info.diff_CSR += sumWire.diff_PSR;
-          node_info.iterm_diff_area = sumWire.iterm_diff_area;
         }
       }
       iter_layer = iter_layer->getUpperLayer();

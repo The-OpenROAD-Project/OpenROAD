@@ -59,7 +59,6 @@ struct NodeInfo
     diff_PSR += a.diff_PSR;
     area += a.area;
     side_area += a.side_area;
-    iterm_diff_area += a.iterm_diff_area;
     return *this;
   }
   NodeInfo()
