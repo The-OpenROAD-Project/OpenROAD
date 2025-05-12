@@ -216,7 +216,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
     getPeakMemory("End WiresOnSearch Dir: ", dir);
 
-    mrc->_search = this->_search;
+    mrc->_search = this->_search.get();
 
     // Create single lists of wires on every track/level/direction
     mrc->ConnectWires(dir);
@@ -330,7 +330,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
           dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
       // TODO move up
-      mrc->_search = this->_search;
+      mrc->_search = this->_search.get();
 
       // Create single lists of wires on every track/level/direction
       // Set Boundaries for all tracks
