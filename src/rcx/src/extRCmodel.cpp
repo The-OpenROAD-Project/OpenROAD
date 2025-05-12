@@ -153,12 +153,26 @@ extDistRCTable::extDistRCTable(uint distCnt)
   _measureTable = new Ath__array1D<extDistRC*>(n);
 
   _computeTable = nullptr;
+
+  for (int i = 0; i < 16; i++) {
+    _measureTableR[i] = nullptr;
+    _computeTableR[i] = nullptr;
+  }
 }
 
 extDistRCTable::~extDistRCTable()
 {
   delete _measureTable;
   delete _computeTable;
+
+  for (int i = 0; i < 16; i++) {
+    if (_measureTableR[i] != _measureTable) {
+      delete _measureTableR[i];
+    }
+    if (_computeTableR[i] != _computeTable) {
+      delete _computeTableR[i];
+    }
+  }
 }
 
 uint extDistRCTable::mapExtrapolate(uint loDist,
@@ -432,6 +446,7 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     table = new Ath__array1D<extDistRC*>(cnt);
   }
 
+  delete _measureTable;
   Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
   int cnt1 = 0;
   int kk = 0;
@@ -2162,6 +2177,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
 
 extRCModel::~extRCModel()
 {
+  free(_ruleFileName);
   delete _resOver;
   delete _capOver;
   delete _capUnder;
@@ -2175,14 +2191,12 @@ extRCModel::~extRCModel()
   delete[] _solverFileName;
   delete[] _wireFileName;
 
-  if (_modelCnt > 0) {
-    for (uint ii = 0; ii < _modelCnt; ii++) {
-      delete _modelTable[ii];
-    }
-
-    delete[] _modelTable;
-    delete _dataRateTable;
+  for (uint ii = 0; ii < _modelCnt; ii++) {
+    delete _modelTable[ii];
   }
+
+  delete[] _modelTable;
+  delete _dataRateTable;
 }
 
 void extRCModel::setExtMain(extMain* x)
@@ -2363,7 +2377,6 @@ void extMeasure::allocOUpool()
 
 extMeasure::~extMeasure()
 {
-  return;
   for (auto& ii : _rc) {
     delete ii;
   }
@@ -3554,6 +3567,7 @@ bool extRCModel::readRules_v1(char* name,
 {
   _OUREVERSEORDER = false;
   diag = false;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   parser.addSeparator("\r");

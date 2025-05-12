@@ -76,6 +76,7 @@ node {
                         }
                     }
                     stage('Save GPL Results') {
+                        sh label: 'Save gpl results', script: "exec tar zcvf src/gpl/test/results.tgz src/gpl/test/results";
                         archiveArtifacts "**/*.tar.gz, **/*.log";
                     }
                 }

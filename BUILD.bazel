@@ -117,6 +117,7 @@ cc_binary(
     srcs = OPENROAD_BINARY_SRCS_WITHOUT_MAIN + [
         "src/Main.cc",
         "src/OpenRoad.cc",
+        "//bazel:runfiles",
     ] + select({
         ":platform_cli": [],
     }),
@@ -605,12 +606,14 @@ tcl_wrap_cc(
     srcs = [
         "src/rmp/src/rmp.i",
         ":error_swig",
+        "//:sta_swig_files",
     ],
     module = "rmp",
     namespace_prefix = "rmp",
     root_swig_src = "src/rmp/src/rmp.i",
     swig_includes = [
         "src/rmp/src",
+        "src/sta",
     ],
 )
 
@@ -912,6 +915,7 @@ cc_binary(
         "src/sta/app/Main.cc",
         ":StaApp",
         ":StaTclInitVar",
+        "//bazel:runfiles",
     ],
     copts = [
         "-fexceptions",
@@ -937,6 +941,7 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":opensta_lib",
+        "@rules_cc//cc/runfiles",
         "@tk_tcl//:tcl",
     ],
 )

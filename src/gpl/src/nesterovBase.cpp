@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -28,8 +29,6 @@ namespace gpl {
 
 using odb::dbBlock;
 using utl::GPL;
-
-static int fastModulo(int input, int ceil);
 
 static float calculateBiVariateNormalCDF(biNormalParameters i);
 
@@ -691,12 +690,12 @@ int BinGrid::binCntY() const
   return binCntY_;
 }
 
-int BinGrid::binSizeX() const
+double BinGrid::binSizeX() const
 {
   return binSizeX_;
 }
 
-int BinGrid::binSizeY() const
+double BinGrid::binSizeY() const
 {
   return binSizeY_;
 }
@@ -799,8 +798,8 @@ void BinGrid::initBins()
   log_->info(
       GPL, 28, "{:21} {:7d} , {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
 
-  binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
-  binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
+  binSizeX_ = static_cast<double>((ux_ - lx_)) / binCntX_;
+  binSizeY_ = static_cast<double>((uy_ - ly_)) / binCntY_;
 
   log_->info(GPL,
              29,
@@ -814,13 +813,24 @@ void BinGrid::initBins()
 #pragma omp parallel for num_threads(num_threads_)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
-      const int x = lx_ + idxX * binSizeX_;
-      const int y = ly_ + idxY * binSizeY_;
-      const int sizeX = std::min(ux_ - x, binSizeX_);
-      const int sizeY = std::min(uy_ - y, binSizeY_);
-
-      bins_[idxY * binCntX_ + idxX]
-          = Bin(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
+      const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
+      const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
+      const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
+      const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
+      const int bin_index = idxY * binCntX_ + idxX;
+      bins_[bin_index]
+          = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
+      auto& bin = bins_[bin_index];
+      if (bin.dx() < 0 || bin.dy() < 0) {
+        log_->warn(GPL,
+                   34,
+                   "Bin (center: {},{}, index: {}) has negative size: {}, {}",
+                   bin.cx(),
+                   bin.cy(),
+                   bin_index,
+                   bin.dx(),
+                   bin.dy());
+      }
     }
   }
 
@@ -977,9 +987,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
 {
   int lowerIdx = (gcell->dLx() - lx()) / binSizeX_;
-  int upperIdx = (fastModulo((gcell->dUx() - lx()), binSizeX_) == 0)
-                     ? (gcell->dUx() - lx()) / binSizeX_
-                     : (gcell->dUx() - lx()) / binSizeX_ + 1;
+  int upperIdx = std::ceil((gcell->dUx() - lx()) / binSizeX_);
 
   lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntX_);
@@ -989,9 +997,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
 std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
 {
   int lowerIdx = (gcell->dLy() - ly()) / binSizeY_;
-  int upperIdx = (fastModulo((gcell->dUy() - ly()), binSizeY_) == 0)
-                     ? (gcell->dUy() - ly()) / binSizeY_
-                     : (gcell->dUy() - ly()) / binSizeY_ + 1;
+  int upperIdx = std::ceil((gcell->dUy() - ly()) / binSizeY_);
 
   lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntY_);
@@ -1001,9 +1007,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
 std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
 {
   int lowerIdx = (inst->lx() - lx()) / binSizeX_;
-  int upperIdx = (fastModulo((inst->ux() - lx()), binSizeX_) == 0)
-                     ? (inst->ux() - lx()) / binSizeX_
-                     : (inst->ux() - lx()) / binSizeX_ + 1;
+  int upperIdx = std::ceil((inst->ux() - lx()) / binSizeX_);
 
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntX_));
 }
@@ -1011,9 +1015,7 @@ std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
 std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 {
   int lowerIdx = (inst->ly() - ly()) / binSizeY_;
-  int upperIdx = (fastModulo((inst->uy() - ly()), binSizeY_) == 0)
-                     ? (inst->uy() - ly()) / binSizeY_
-                     : (inst->uy() - ly()) / binSizeY_ + 1;
+  int upperIdx = std::ceil((inst->uy() - ly()) / binSizeY_);
 
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntY_));
 }
@@ -1900,12 +1902,12 @@ int NesterovBase::binCntY() const
   return bg_.binCntY();
 }
 
-int NesterovBase::binSizeX() const
+double NesterovBase::binSizeX() const
 {
   return bg_.binSizeX();
 }
 
-int NesterovBase::binSizeY() const
+double NesterovBase::binSizeY() const
 {
   return bg_.binSizeY();
 }
@@ -3367,12 +3369,6 @@ void NesterovBaseCommon::printGPins()
   for (auto& gpin : gPinStor_) {
     gpin.print(log_);
   }
-}
-
-// https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
-static int fastModulo(const int input, const int ceil)
-{
-  return input >= ceil ? input % ceil : input;
 }
 
 static float getOverlapDensityArea(const Bin& bin, const GCell* cell)

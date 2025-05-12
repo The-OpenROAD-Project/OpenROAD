@@ -79,6 +79,7 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
                       double data_area,
                       double intersection_area,
                       double rect_area) override;
+  void populateXYGrid() override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();

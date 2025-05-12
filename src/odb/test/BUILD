@@ -39,6 +39,7 @@ COMPULSORY_TESTS = [
     "edit_via_params",
     "floorplan_initialize",
     "floorplan_initialize2",
+    "floorplan_initialize3",
     "gcd_abstract_lef",
     "gcd_abstract_lef_with_power",
     "gcd_def_access",
@@ -177,7 +178,7 @@ filegroup(
 [
     filegroup(
         name = test_name + "_resources",
-        data = [
+        srcs = [
             ":regression_resources",
             "//src/odb/test/data/sky130hd:lef-test-data",
         ] + glob(
