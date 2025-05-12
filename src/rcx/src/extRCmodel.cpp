@@ -153,12 +153,26 @@ extDistRCTable::extDistRCTable(uint distCnt)
   _measureTable = new Ath__array1D<extDistRC*>(n);
 
   _computeTable = nullptr;
+
+  for (int i = 0; i < 16; i++) {
+    _measureTableR[i] = nullptr;
+    _computeTableR[i] = nullptr;
+  }
 }
 
 extDistRCTable::~extDistRCTable()
 {
   delete _measureTable;
   delete _computeTable;
+
+  for (int i = 0; i < 16; i++) {
+    if (_measureTableR[i] != _measureTable) {
+      delete _measureTableR[i];
+    }
+    if (_computeTableR[i] != _computeTable) {
+      delete _computeTableR[i];
+    }
+  }
 }
 
 uint extDistRCTable::mapExtrapolate(uint loDist,
@@ -432,6 +446,7 @@ uint extDistRCTable::readRules_res2(Ath__parser* parser,
     table = new Ath__array1D<extDistRC*>(cnt);
   }
 
+  delete _measureTable;
   Ath__array1D<extDistRC*>* table0 = new Ath__array1D<extDistRC*>(8);
   int cnt1 = 0;
   int kk = 0;
@@ -3552,6 +3567,7 @@ bool extRCModel::readRules_v1(char* name,
 {
   _OUREVERSEORDER = false;
   diag = false;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   parser.addSeparator("\r");
