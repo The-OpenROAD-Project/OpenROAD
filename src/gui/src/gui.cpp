@@ -9,6 +9,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "chartsWidget.h"
@@ -481,7 +482,8 @@ std::string Gui::addLabel(int x,
                           std::optional<Painter::Anchor> anchor,
                           std::optional<std::string> name)
 {
-  return main_window->addLabel(x, y, text, color, size, anchor, name);
+  return main_window->addLabel(
+      x, y, text, color, size, anchor, std::move(name));
 }
 
 void Gui::deleteLabel(const std::string& name)

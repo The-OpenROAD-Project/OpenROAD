@@ -21,6 +21,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "GUIProgress.h"
@@ -1146,7 +1147,7 @@ std::string MainWindow::addLabel(int x,
                                 anchor.value_or(Painter::Anchor::CENTER),
                                 color.value_or(gui::Painter::white),
                                 size,
-                                name);
+                                std::move(name));
   std::string new_name = new_label->getName();
 
   // check if ruler name is unique
