@@ -13,7 +13,7 @@
 #include "gui/gui.h"
 
 // empty gif writer class
-class GifWriter
+struct GifWriter
 {
 };
 
