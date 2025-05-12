@@ -17,8 +17,8 @@ Label::Label(const odb::Point& pt,
              const std::string& text,
              const Painter::Anchor& anchor,
              const Painter::Color& color,
-             const std::optional<int> size,
-             const std::optional<std::string> name)
+             std::optional<int> size,
+             std::optional<std::string> name)
     : pt_(pt), text_(text), color_(color), size_(size), anchor_(anchor)
 {
   // update name if empty
@@ -116,7 +116,7 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
              label->setName(new_name);
              return true;
            })},
-          {"Text", makeEditor([this, label](std::any value) {
+          {"Text", makeEditor([label](std::any value) {
              auto new_text = std::any_cast<const std::string>(value);
              if (new_text.empty()) {
                return false;
@@ -124,7 +124,7 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
              label->setText(new_text);
              return true;
            })},
-          {"Size", makeEditor([this, label](std::any value) {
+          {"Size", makeEditor([label](std::any value) {
              try {
                auto new_size = static_cast<int>(std::any_cast<double>(value));
                if (new_size <= 0) {
@@ -138,7 +138,7 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
            })},
           {"Anchor",
            makeEditor(
-               [this, label](std::any value) {
+               [label](std::any value) {
                  auto anchor = std::any_cast<Painter::Anchor>(value);
                  label->setAnchor(anchor);
                  return true;

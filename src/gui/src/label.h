@@ -27,14 +27,14 @@ class Label
         const std::string& text,
         const Painter::Anchor& anchor,
         const Painter::Color& color,
-        const std::optional<int> size = {},
-        const std::optional<std::string> name = {});
+        std::optional<int> size = {},
+        std::optional<std::string> name = {});
 
   odb::Point& getPt() { return pt_; }
   odb::Point getPt() const { return pt_; }
-  const std::string getName() const { return name_; }
+  const std::string& getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
-  const std::string getText() const { return text_; }
+  const std::string& getText() const { return text_; }
   void setText(const std::string& text) { text_ = text; }
   Painter::Anchor getAnchor() const { return anchor_; }
   void setAnchor(const Painter::Anchor& anchor) { anchor_ = anchor; }

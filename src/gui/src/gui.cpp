@@ -476,10 +476,10 @@ void Gui::animateSelection(int repeat)
 std::string Gui::addLabel(int x,
                           int y,
                           const std::string& text,
-                          const std::optional<Painter::Color> color,
-                          const std::optional<int> size,
-                          const std::optional<Painter::Anchor> anchor,
-                          const std::optional<std::string> name)
+                          std::optional<Painter::Color> color,
+                          std::optional<int> size,
+                          std::optional<Painter::Anchor> anchor,
+                          std::optional<std::string> name)
 {
   return main_window->addLabel(x, y, text, color, size, anchor, name);
 }
