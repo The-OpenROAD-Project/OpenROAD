@@ -1598,9 +1598,8 @@ extRCTable::extRCTable(bool over, uint layerCnt)
 
 extRCTable::~extRCTable()
 {
-  uint max;
   for (uint jj = 1; jj < _maxCnt1; jj++) {
-    max = _over ? jj : _maxCnt1;
+    const uint max = _over ? jj : _maxCnt1;
 
     for (uint kk = 0; kk < max; kk++) {
       delete _inTable[jj][kk];
