@@ -57,17 +57,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |     +3.8% |       1 |       0 |             0 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.029 |       -0.0 |      1 | y2
-       10 |       0 |       5 |        2 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
-       10 |       0 |       5 |        2 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
-      10* |       0 |       5 |        2 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
-      11* |       0 |       5 |        2 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
-    final |       0 |       5 |        2 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
+       10 |       0 |       5 |        1 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
+       10 |       0 |       5 |        1 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
+      10* |       0 |       5 |        1 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
+      11* |       0 |       5 |        1 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
+    final |       0 |       5 |        1 |      0 |     3 |   +77.8% |   -0.007 |       -0.0 |      1 | y2
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 1 buffers.
 [INFO RSZ-0041] Resized 5 instances.

@@ -8,8 +8,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "BufferMove.hh"
 #include "BufferedNet.hh"
-#include "RepairSetup.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
@@ -154,7 +154,7 @@ static const RiseFallBoth* commonTransition(const RiseFallBoth* a,
   return RiseFallBoth::riseFall();
 }
 
-void RepairSetup::annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex)
+void BufferMove::annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex)
 {
   using BnetType = BufferedNetType;
   using BnetPtr = BufferedNetPtr;
@@ -206,7 +206,7 @@ void RepairSetup::annotateLoadSlacks(BufferedNetPtr& bnet, Vertex* root_vertex)
 }
 
 // Find initial timing-optimized rebuffering choice
-BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
+BufferedNetPtr BufferMove::rebufferForTiming(const BufferedNetPtr& bnet)
 {
   using BnetType = BufferedNetType;
   using BnetSeq = BufferedNetSeq;
@@ -301,9 +301,9 @@ BufferedNetPtr RepairSetup::rebufferForTiming(const BufferedNetPtr& bnet)
 }
 
 // Recover area on a rebuffering choice without regressing timing
-BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
-                                        const Delay slack_target,
-                                        const float alpha)
+BufferedNetPtr BufferMove::recoverArea(const BufferedNetPtr& bnet,
+                                       const Delay slack_target,
+                                       const float alpha)
 {
   using BnetType = BufferedNetType;
   using BnetSeq = BufferedNetSeq;
@@ -511,7 +511,7 @@ BufferedNetPtr RepairSetup::recoverArea(const BufferedNetPtr& bnet,
   return nullptr;
 }
 
-Delay requiredDelay(const BufferedNetPtr& bnet)
+Delay BufferMove::requiredDelay(const BufferedNetPtr& bnet)
 {
   using BnetType = BufferedNetType;
   using BnetPtr = BufferedNetPtr;
@@ -540,7 +540,7 @@ Delay requiredDelay(const BufferedNetPtr& bnet)
 }
 
 // Return inserted buffer count.
-int RepairSetup::rebuffer(const Pin* drvr_pin)
+int BufferMove::rebuffer(const Pin* drvr_pin)
 {
   //  db_network_ -> AxiomCheck();
   int inserted_buffer_count = 0;
@@ -664,14 +664,14 @@ int RepairSetup::rebuffer(const Pin* drvr_pin)
   return inserted_buffer_count;
 }
 
-Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet)
+Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet)
 {
   return slackAtDriverPin(bnet, -1);
 }
 
 // Returns: driver pin gate delay; slack correction to account for changed
 // driver pin load
-std::tuple<Delay, Delay> RepairSetup::drvrPinTiming(const BufferedNetPtr& bnet)
+std::tuple<Delay, Delay> BufferMove::drvrPinTiming(const BufferedNetPtr& bnet)
 {
   if (bnet->slackTransition() == nullptr) {
     return {0, 0};
@@ -717,9 +717,9 @@ std::tuple<Delay, Delay> RepairSetup::drvrPinTiming(const BufferedNetPtr& bnet)
   return {delay, correction};
 }
 
-Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet,
-                                    // Only used for debug print.
-                                    const int index)
+Slack BufferMove::slackAtDriverPin(const BufferedNetPtr& bnet,
+                                   // Only used for debug print.
+                                   const int index)
 {
   const Delay slack = bnet->slack() + std::get<1>(drvrPinTiming(bnet));
   if (index >= 0) {
@@ -737,18 +737,18 @@ Slack RepairSetup::slackAtDriverPin(const BufferedNetPtr& bnet,
 }
 
 // For testing.
-void RepairSetup::rebufferNet(const Pin* drvr_pin)
+void BufferMove::rebufferNet(const Pin* drvr_pin)
 {
   init();
   resizer_->incrementalParasiticsBegin();
-  inserted_buffer_count_ = rebuffer(drvr_pin);
+  int inserted_buffer_count_ = rebuffer(drvr_pin);
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
   logger_->report("Inserted {} buffers.", inserted_buffer_count_);
 }
 
-bool RepairSetup::hasTopLevelOutputPort(Net* net)
+bool BufferMove::hasTopLevelOutputPort(Net* net)
 {
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
@@ -762,10 +762,10 @@ bool RepairSetup::hasTopLevelOutputPort(Net* net)
   return false;
 }
 
-BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
-                                    const Point& wire_end,
-                                    const int wire_layer,
-                                    const int level)
+BufferedNetPtr BufferMove::addWire(const BufferedNetPtr& p,
+                                   const Point& wire_end,
+                                   const int wire_layer,
+                                   const int level)
 {
   BufferedNetPtr z = make_shared<BufferedNet>(
       BufferedNetType::wire, wire_end, wire_layer, p, corner_, resizer_);
@@ -795,9 +795,9 @@ BufferedNetPtr RepairSetup::addWire(const BufferedNetPtr& p,
   return z;
 }
 
-Delay RepairSetup::bufferDelay(LibertyCell* cell,
-                               const RiseFallBoth* rf,
-                               float load_cap)
+Delay BufferMove::bufferDelay(LibertyCell* cell,
+                              const RiseFallBoth* rf,
+                              float load_cap)
 {
   Delay delay = 0;
 
@@ -820,7 +820,7 @@ Delay RepairSetup::bufferDelay(LibertyCell* cell,
   return delay;
 }
 
-void RepairSetup::addBuffers(
+void BufferMove::addBuffers(
     BufferedNetSeq& Z1,
     const int level,
     const bool area_oriented /*=false*/,
@@ -921,14 +921,22 @@ void RepairSetup::addBuffers(
   }
 }
 
-int RepairSetup::rebufferTopDown(
-    const BufferedNetPtr& choice,
-    Net* net,  // output of buffer, always a flat net
-    const int level,
-    Instance* parent_in,
-    odb::dbITerm* mod_net_drvr,
-    odb::dbModNet* mod_net_in)
+float BufferMove::bufferInputCapacitance(LibertyCell* buffer_cell,
+                                         const DcalcAnalysisPt* dcalc_ap)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  const int lib_ap = dcalc_ap->libertyIndex();
+  const LibertyPort* corner_input = input->cornerPort(lib_ap);
+  return corner_input->capacitance();
+}
 
+int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
+                                Net* net,  // output of buffer.
+                                const int level,
+                                Instance* parent_in,
+                                odb::dbITerm* mod_net_drvr,
+                                odb::dbModNet* mod_net_in)
 {
   // HFix, pass in the parent
   Instance* parent = parent_in;
