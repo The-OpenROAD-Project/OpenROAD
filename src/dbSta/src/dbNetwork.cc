@@ -3784,19 +3784,6 @@ void ModDbNetAssociation::operator()(const Pin* pin)
 
   dbModNet* mod_net = db_network_->hierNet(pin);
 
-  /*
-  if (!(mod_net && mod_net_ && mod_net == mod_net_)) {
-    printf("Encountered hierarchy crossing (which is ok !)\n");
-    printf("Load pin %s\n", db_network_->name(pin));
-    printf("Load  mod net %s\n", mod_net->getName());
-    printf("Source  mod net %s\n", mod_net_->getName());
-    printf("Load  flat net %s\n", cur_flat_net->getName().c_str());
-    printf("Net  flat net %s\n", new_flat_net_->getName().c_str());
-
-    printf("Owner of load mod net %s\n", mod_net->getParent()->getName());
-    printf("Owner of source mod net %s\n", mod_net_->getParent()->getName());
-  }
-  */
   if (cur_flat_net == new_flat_net_) {
     return;
   }
@@ -4012,7 +3999,8 @@ void PinModDbNetConnection::operator()(const Pin* pin)
       (void) owning_instance;
       if (dbnet_ != nullptr && dbnet_ != candidate_flat_net) {
         // TODO: uncomment error: 2030, once all cases pass.
-        logger_->warn(
+        /*
+        logger_->error(
             ORD,
             2030,
             "Flat net logical inconsistency, badly formed hierarchical "
@@ -4023,6 +4011,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),
             db_network_->name(search_net_));
+        */
       }
     }
     dbnet_ = candidate_flat_net;
