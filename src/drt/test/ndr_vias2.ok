@@ -55,6 +55,4 @@
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] met5 guide region query size = 30.
 [INFO DRT-0179] Init gr pin query.
-Differences found at line 576.
-      + ROUTED met1 ( 158010 191590 ) ( * 192610 )
-      + ROUTED met1 ( 158010 191590 ) ( 158470 * )
+No differences found.

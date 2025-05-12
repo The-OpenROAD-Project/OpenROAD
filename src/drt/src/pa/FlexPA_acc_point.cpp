@@ -1395,7 +1395,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 
   if (inst_term) {
     std::string unmet_requirements;
-    if (!reqs.far_from_edge) {
+    if (!reqs.sparse_points) {
       unmet_requirements
           += "\n\tAt least "
              + (isStdCell(inst_term->getInst())
