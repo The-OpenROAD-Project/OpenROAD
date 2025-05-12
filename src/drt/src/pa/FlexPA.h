@@ -454,13 +454,11 @@ class FlexPA
                                frAccessPointEnum upper_type);
 
   /**
-   * @brief Filters the accesses of all access points
+   * @brief Filters the via accesses of all access points
    *
-   * @details Receives every access point with their default
-   * accesses to every direction. It will check if any access set as true is
-   * valid, e.g. not cause DRVs. If it finds it to be invalid it will set that
-   * access as false. If all accesses of an access point are found to be false
-   * it will be deleted/disconsidered by the function that calls this.
+   * @details Receives a list of access points and checks which vias can use it.
+   * If any access point can't be used by any via its via access will be set as
+   * False. Valid vias will also be added to valid via defs.
    *
    * @param aps vector of access points of the pin
    * @param pin_shapes vector of pin shapes of the pin
@@ -487,6 +485,8 @@ class FlexPA
    * @param dir candidate dir to the access
    * @param pin access pin
    * @param inst_term terminal
+   *
+   * @returns True if the access points can use planar access.
    */
   template <typename T>
   bool filterPlanarAccess(
