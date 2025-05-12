@@ -3739,8 +3739,7 @@ class ModDbNetAssociation : public PinVisitor
   ModDbNetAssociation(dbNetwork* nwk,
                       Logger* logger,
                       dbNet* new_flat_net,
-                      dbNet* orig_flat_net,
-                      dbModNet* cur_mod_net);
+                      dbNet* orig_flat_net);
   void operator()(const Pin* pin) override;
 
  private:
@@ -3748,19 +3747,16 @@ class ModDbNetAssociation : public PinVisitor
   dbNetwork* db_network_;
   dbNet* new_flat_net_;
   dbNet* orig_flat_net_;
-  dbModNet* mod_net_;
 };
 
 ModDbNetAssociation::ModDbNetAssociation(dbNetwork* nwk,
                                          Logger* logger,
                                          dbNet* new_flat_net,
-                                         dbNet* orig_flat_net,
-                                         dbModNet* cur_mod_net)
+                                         dbNet* orig_flat_net)
     : logger_(logger),
       db_network_(nwk),
       new_flat_net_(new_flat_net),
-      orig_flat_net_(orig_flat_net),
-      mod_net_(cur_mod_net)
+      orig_flat_net_(orig_flat_net)
 {
 }
 
@@ -3891,8 +3887,7 @@ void dbNetwork::reassociateHierFlatNet(dbModNet* mod_net,
   }
 
   // reassociate the mod_net to use the flat net.
-  ModDbNetAssociation visitor(
-      this, logger_, new_flat_net, orig_flat_net, mod_net);
+  ModDbNetAssociation visitor(this, logger_, new_flat_net, orig_flat_net);
   NetSet visited_nets(this);
   visitConnectedPins(dbToSta(mod_net), visitor, visited_nets);
 
