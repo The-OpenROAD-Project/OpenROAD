@@ -148,8 +148,8 @@ void DetailedVerticalSwap::verticalSwap()
     const double nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
     if (nextHpwl <= currHpwl) {
+      hpwlObj.accept();
       mgr_->acceptMove();
-
       currHpwl = nextHpwl;
     } else {
       mgr_->rejectMove();
