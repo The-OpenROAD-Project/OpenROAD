@@ -2864,7 +2864,7 @@ odb::dbTechLayer* Via::getUpperLayer() const
 
 Via* Via::copy() const
 {
-  return new Via(connect_, net_, area_, lower_.lock(), upper_.lock());
+  return new Via(connect_, net_, area_, lower_, upper_);
 }
 
 bool Via::overlaps(const ViaPtr& via) const
@@ -2881,17 +2881,15 @@ void Via::writeToDb(odb::dbSWire* wire,
                     odb::dbBlock* block,
                     const Shape::ObstructionTreeMap& obstructions)
 {
-  auto lower = lower_.lock();
-  auto upper = upper_.lock();
-  odb::dbWireShapeType type = lower->getType();
+  odb::dbWireShapeType type = lower_->getType();
 
-  if (lower->getType() != upper->getType()) {
+  if (lower->getType() != upper_->getType()) {
     // If both shapes are not the same, use stripe
     type = odb::dbWireShapeType::STRIPE;
   }
 
   DbVia::ViaLayerShape shapes;
-  connect_->makeVia(wire, lower, upper, type, shapes);
+  connect_->makeVia(wire, lower_, upper_, type, shapes);
 
   if (shapes.bottom.empty() && shapes.middle.empty() && shapes.top.empty()) {
     markFailed(failedViaReason::BUILD);
@@ -2962,9 +2960,9 @@ void Via::writeToDb(odb::dbSWire* wire,
   };
 
   const std::set<odb::dbSBox*> ripup_shapes_bottom
-      = check_shapes(lower, shapes.bottom);
+      = check_shapes(lower_, shapes.bottom);
   const std::set<odb::dbSBox*> ripup_shapes_top
-      = check_shapes(upper, shapes.top);
+      = check_shapes(upper_, shapes.top);
 
   std::set<odb::dbSBox*> ripup_shapes;
   ripup_shapes.insert(ripup_shapes_bottom.begin(), ripup_shapes_bottom.end());
@@ -2983,7 +2981,7 @@ void Via::writeToDb(odb::dbSWire* wire,
   ripup_shapes.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
 
   if (!ripup_shapes.empty()) {
-    const TechLayer tech_layer(lower->getLayer());
+    const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
     int ripup_count = 0;
@@ -3008,11 +3006,11 @@ void Via::writeToDb(odb::dbSWire* wire,
         195,
         "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
         ripup_count,
-        lower->getLayer()->getName(),
-        upper->getLayer()->getName(),
+        lower_->getLayer()->getName(),
+        upper_->getLayer()->getName(),
         tech_layer.dbuToMicron(x / ripup_count),
         tech_layer.dbuToMicron(y / ripup_count),
-        lower->getNet()->getName());
+        lower_->getNet()->getName());
     markFailed(failedViaReason::RIPUP);
   }
 }
@@ -3040,9 +3038,9 @@ bool Via::isValid() const
 void Via::removeShape(Shape* shape)
 {
   if (lower_.lock().get() == shape) {
-    lower_ = WeakShapePtr();
+    lower_ = nullptr;
   } else if (upper_.lock().get() == shape) {
-    upper_ = WeakShapePtr();
+    upper_ = nullptr;
   }
 }
 

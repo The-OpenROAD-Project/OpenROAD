@@ -706,9 +706,9 @@ class Via
   odb::dbNet* getNet() const { return net_; }
   const odb::Rect& getArea() const { return area_; }
   void setLowerShape(const ShapePtr& shape) { lower_ = shape; }
-  const WeakShapePtr& getLowerShape() const { return lower_; }
+  const ShapePtr& getLowerShape() const { return lower_; }
   void setUpperShape(const ShapePtr& shape) { upper_ = shape; }
-  const WeakShapePtr& getUpperShape() const { return upper_; }
+  const ShapePtr& getUpperShape() const { return upper_; }
   odb::dbTechLayer* getLowerLayer() const;
   odb::dbTechLayer* getUpperLayer() const;
 
@@ -740,8 +740,8 @@ class Via
  private:
   odb::dbNet* net_;
   odb::Rect area_;
-  WeakShapePtr lower_;
-  WeakShapePtr upper_;
+  ShapePtr lower_;
+  ShapePtr upper_;
 
   Connect* connect_;
 

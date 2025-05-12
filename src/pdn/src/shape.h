@@ -29,7 +29,6 @@ class Shape;
 class Via;
 
 using ShapePtr = std::shared_ptr<Shape>;
-using WeakShapePtr = std::weak_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
 
 using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapePtr>>;
