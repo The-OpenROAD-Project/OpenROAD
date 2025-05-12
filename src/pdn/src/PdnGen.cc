@@ -157,7 +157,9 @@ void PdnGen::updateVias()
   const auto grids = getGrids();
 
   for (auto* grid : grids) {
-    for (const auto& [layer, shapes] : grid->getShapes()) {
+    const auto grid_shapes = grid->getShapes(); // Keep alive a shared reference to the shapes
+    // so that they aren't deleted before L172
+    for (const auto& [layer, shapes] : grid_shapes) {
       for (const auto& shape : shapes) {
         shape->clearVias();
       }
