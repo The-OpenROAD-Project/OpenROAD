@@ -4108,24 +4108,4 @@ bool dbNetwork::hasHierarchicalElements() const
   return false;
 }
 
-bool dbNetwork::AxiomCheck()
-{
-  static int debug;
-  debug++;
-  printf("Axiom check %d\n", debug);
-  // check that each dbModNet has exactly one dbNet
-  dbSet<dbModNet> mod_nets = block()->getModNets();
-  for (auto modnet : mod_nets) {
-    dbNet* related_net = findRelatedDbNet(modnet);
-    (void) related_net;
-  }
-  dbSet<dbITerm> iterms = block()->getITerms();
-  for (auto iterm : iterms) {
-    dbInst* iterm_inst = iterm->getInst();
-    (void) (iterm_inst);
-  }
-  printf("Exiting Axiom check %d\n", debug);
-  return true;
-}
-
 }  // namespace sta

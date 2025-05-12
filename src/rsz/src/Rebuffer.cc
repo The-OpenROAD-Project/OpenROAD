@@ -542,7 +542,6 @@ Delay BufferMove::requiredDelay(const BufferedNetPtr& bnet)
 // Return inserted buffer count.
 int BufferMove::rebuffer(const Pin* drvr_pin)
 {
-  //  db_network_ -> AxiomCheck();
   int inserted_buffer_count = 0;
   Net* net;
 
