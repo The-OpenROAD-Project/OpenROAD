@@ -1005,7 +1005,6 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
         // add the modnet to the new output
         buffer_op_iterm->disconnect();
 
-        // can this ever have a bad connection ?
         db_network_->connectPin(buffer_op_pin, (Net*) net2, (Net*) mod_net_in);
         //        buffer_op_iterm->connect(mod_net_in);
       }
@@ -1069,18 +1068,6 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
       odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
       odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
       odb::dbModNet* db_mod_net = db_network_->hierNet((Pin*) mod_net_drvr);
-      /*
-      if (((Net*)(db_net)) != net){
-        printf("At error point\n");
-        if (db_net){
-          printf("Db net driver net %s\n",db_net -> getName().c_str());
-        }
-        if (net){
-          printf("Net name %s\n", db_network_ -> name(net));
-        }
-      }
-      */
-      //      assert(((Net*) db_net) == net);
 
       if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
