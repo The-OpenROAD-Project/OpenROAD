@@ -167,10 +167,10 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   std::string addLabel(int x,
                        int y,
                        const std::string& text,
-                       const std::optional<Painter::Color> color = {},
-                       const std::optional<int> size = {},
-                       const std::optional<Painter::Anchor> anchor = {},
-                       const std::optional<std::string> name = {});
+                       std::optional<Painter::Color> color = {},
+                       std::optional<int> size = {},
+                       std::optional<Painter::Anchor> anchor = {},
+                       std::optional<std::string> name = {});
 
   // Delete Label from Layout View
   void deleteLabel(const std::string& name);
