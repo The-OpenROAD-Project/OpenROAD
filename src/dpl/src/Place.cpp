@@ -2,10 +2,12 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
 #include <memory>
+#include <random>
 #include <set>
 #include <string>
 #include <vector>
@@ -489,13 +491,17 @@ int Opendp::groupRefine(const Group* group)
 // This is NOT annealing. It is random swapping. -cherry
 int Opendp::anneal(Group* group)
 {
-  srand(rand_seed_);
+  std::mt19937 rand_gen(rand_seed_);
   int count = 0;
 
   // magic number alert
-  for (int i = 0; i < 100 * group->getCells().size(); i++) {
-    Node* cell1 = group->getCells()[rand() % group->getCells().size()];
-    Node* cell2 = group->getCells()[rand() % group->getCells().size()];
+  using idx_range = boost::random::uniform_int_distribution<int>;
+  const size_t num_cells = group->getCells().size();
+  for (int i = 0; i < 100 * num_cells; i++) {
+    const auto cell1_idx = idx_range(0, num_cells - 1)(rand_gen);
+    const auto cell2_idx = idx_range(0, num_cells - 1)(rand_gen);
+    Node* cell1 = group->getCells()[cell1_idx];
+    Node* cell2 = group->getCells()[cell2_idx];
     if (swapCells(cell1, cell2)) {
       count++;
     }

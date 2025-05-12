@@ -44,7 +44,7 @@ class Master
 
  private:
   Rect boundary_box_;
-  bool is_multi_row_ = false;
+  bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;
   int bottom_pwr_{0};
   int top_pwr_{0};
@@ -127,7 +127,7 @@ class Node
   bool adjustCurrOrient(const dbOrientType& newOrient);
 
  protected:
-  int id_ = 0;
+  int id_{0};
   odb::dbInst* db_inst_{nullptr};
   // Current position; bottom corner.
   DbuX left_{0};
@@ -177,7 +177,7 @@ class Group
   void setUtil(double in);
 
  private:
-  int id_;
+  int id_{0};
   std::string name_;
   std::vector<Rect> region_boundaries_;
   std::vector<Node*> cells_;
@@ -196,7 +196,7 @@ class Edge
   uint64_t hpwl() const;
 
  private:
-  int id_ = 0;
+  int id_{0};
   std::vector<Pin*> pins_;
 };
 
@@ -234,12 +234,12 @@ class Pin
   DbuX pinWidth_{0};
   DbuY pinHeight_{0};
   // Direction.
-  int dir_ = Dir_INOUT;
+  int dir_{Dir_INOUT};
   // Layer.
-  int pinLayer_ = 0;
+  int pinLayer_{0};
   // Node and edge for pin.
-  Node* node_ = nullptr;
-  Edge* edge_ = nullptr;
+  Node* node_{nullptr};
+  Edge* edge_{nullptr};
   // Offsets from cell center.
   DbuX offsetX_{0};
   DbuY offsetY_{0};
