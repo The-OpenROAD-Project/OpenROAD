@@ -504,8 +504,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
   setNameItemDoubleClickAction(misc_.labels, [this]() {
-    label_font_ = QFontDialog::getFont(
-        nullptr, label_font_, this, "User label font");
+    label_font_
+        = QFontDialog::getFont(nullptr, label_font_, this, "User label font");
   });
   makeLeafItem(
       misc_.background, "Background", misc, {}, false, background_color_);
