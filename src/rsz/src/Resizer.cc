@@ -2313,10 +2313,12 @@ bool Resizer::hasMultipleOutputs(const Instance* inst)
     if (network_->direction(pin)->isAnyOutput() && network_->net(pin)) {
       output_count++;
       if (output_count > 1) {
+        delete pin_iter;
         return true;
       }
     }
   }
+  delete pin_iter;
   return false;
 }
 
