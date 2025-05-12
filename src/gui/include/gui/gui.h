@@ -597,7 +597,7 @@ class Gui
                        std::optional<Painter::Color> color = {},
                        std::optional<int> size = {},
                        std::optional<Painter::Anchor> anchor = {},
-                       std::optional<std::string> name = {});
+                       const std::optional<std::string>& name = {});
   void deleteLabel(const std::string& name);
   void clearLabels();
 

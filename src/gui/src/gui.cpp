@@ -480,7 +480,7 @@ std::string Gui::addLabel(int x,
                           std::optional<Painter::Color> color,
                           std::optional<int> size,
                           std::optional<Painter::Anchor> anchor,
-                          std::optional<std::string> name)
+                          const std::optional<std::string>& name)
 {
   return main_window->addLabel(
       x, y, text, color, size, anchor, std::move(name));
