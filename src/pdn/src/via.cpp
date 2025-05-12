@@ -2883,7 +2883,7 @@ void Via::writeToDb(odb::dbSWire* wire,
 {
   odb::dbWireShapeType type = lower_->getType();
 
-  if (lower_->getType() != upper_->getType()) {
+  if (lower->getType() != upper_->getType()) {
     // If both shapes are not the same, use stripe
     type = odb::dbWireShapeType::STRIPE;
   }
@@ -3032,14 +3032,14 @@ std::string Via::getDisplayText() const
 
 bool Via::isValid() const
 {
-  return lower_ != nullptr && upper_ != nullptr;
+  return lower_.lock() != nullptr && upper_.lock() != nullptr;
 }
 
 void Via::removeShape(Shape* shape)
 {
-  if (lower_.get() == shape) {
+  if (lower_.lock().get() == shape) {
     lower_ = nullptr;
-  } else if (upper_.get() == shape) {
+  } else if (upper_.lock().get() == shape) {
     upper_ = nullptr;
   }
 }
