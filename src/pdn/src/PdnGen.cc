@@ -204,7 +204,7 @@ void PdnGen::trimShapes()
         // check if vias and shape form a stack without any other connections
         bool effectively_vias_stack = true;
         for (const auto& via : shape->getVias()) {
-          if (via->getArea() != new_rect) {
+          if (via.lock()->getArea() != new_rect) {
             effectively_vias_stack = false;
             break;
           }
