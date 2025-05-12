@@ -102,6 +102,7 @@ class Grid
   DbuY rowHeight(GridY index);
 
   void paintPixel(Node* cell, GridX grid_x, GridY grid_y);
+  void paintPixel(Node* cell);
   void erasePixel(Node* cell);
   void visitCellPixels(Node& cell,
                        bool padded,

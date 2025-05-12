@@ -18,8 +18,8 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/dbTransform.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
-
 // #define ODP_DEBUG
 
 namespace dpl {
@@ -574,7 +574,7 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
   return false;
 }
 
-void Opendp::shiftMove(Node* cell)
+bool Opendp::shiftMove(Node* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, true);
   // magic number alert
@@ -612,6 +612,7 @@ void Opendp::shiftMove(Node* cell)
       placement_failures_.push_back(cell);
     }
   }
+  return placement_failures_.empty();
 }
 
 bool Opendp::swapCells(Node* cell1, Node* cell2)
@@ -1040,6 +1041,7 @@ void Opendp::initMacrosAndGrid()
 
 void Opendp::convertDbToCell(dbInst* db_inst, Node& cell)
 {
+  cell.setType(Node::CELL);
   cell.setDbInst(db_inst);
   Rect bbox = getBbox(db_inst);
   cell.setWidth(DbuX{bbox.dx()});
@@ -1185,15 +1187,34 @@ void Opendp::setGridPaddedLoc(Node* cell, const GridX x, const GridY y)
 }
 void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
 {
+  const DbuX original_x = cell->getLeft();
+  const DbuY original_y = cell->getBottom();
+  const bool was_placed = cell->isPlaced();
   grid_->paintPixel(cell, x, y);
   setGridPaddedLoc(cell, x, y);
   cell->setPlaced(true);
   cell->setOrient(grid_->gridPixel(x, y)->sites.at(
       cell->getDbInst()->getMaster()->getSite()));
+  if (journal_) {
+    MoveCellAction action(cell,
+                          original_x,
+                          original_y,
+                          cell->getLeft(),
+                          cell->getBottom(),
+                          was_placed);
+    journal_->addAction(action);
+  }
 }
 
 void Opendp::unplaceCell(Node* cell)
 {
+  if (cell->isFixed() || !cell->isPlaced()) {
+    return;
+  }
+  if (journal_) {
+    UnplaceCellAction action(cell, cell->isHold());
+    journal_->addAction(action);
+  }
   grid_->erasePixel(cell);
   cell->setPlaced(false);
   cell->setHold(false);
