@@ -209,7 +209,7 @@ void GifPartitionByMedian(uint8_t* image,
                           int neededCenter)
 {
   if (left < right - 1) {
-    int pivotValue = image[(neededCenter) *4 + com];
+    int pivotValue = image[(neededCenter) * 4 + com];
     GifSwapPixels(image, neededCenter, right - 1);
     int pivotIndex = GifPartition(image, left, right - 1, com, pivotValue);
     GifSwapPixels(image, pivotIndex, right - 1);
@@ -471,7 +471,7 @@ void GifDitherImage(const uint8_t* lastFrame,
 
   for (int ii = 0; ii < numPixels * 4; ++ii) {
     uint8_t pix = nextFrame[ii];
-    int32_t pix16 = (int32_t) (pix) *256;
+    int32_t pix16 = (int32_t) (pix) * 256;
     quantPixels[ii] = pix16;
   }
 
