@@ -15,6 +15,7 @@
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "gif.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "helpWidget.h"
@@ -1354,6 +1355,119 @@ bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
 #else
   return strcmp(a.name(), b.name()) == 0;
 #endif
+}
+
+void Gui::gifStart(const std::string& filename)
+{
+  if (!enabled()) {
+    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enanbled");
+  }
+
+  gif_ = std::make_unique<GIF>();
+  gif_->filename = filename;
+  gif_->writer = nullptr;
+}
+
+void Gui::gifAddFrame(const odb::Rect& region,
+                      int width_px,
+                      double dbu_per_pixel,
+                      const std::map<std::string, bool>& display_settings,
+                      std::optional<int> delay)
+{
+  if (gif_ == nullptr) {
+    return;
+  }
+
+  if (db_ == nullptr) {
+    logger_->error(utl::GUI, 50, "No design loaded.");
+  }
+  odb::Rect save_region = region;
+  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
+  const bool is_offscreen
+      = main_window == nullptr
+        || main_window->testAttribute(
+            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
+  if (is_offscreen
+      && use_die_area) {  // if gui is active and interactive the visible are of
+                          // the layout viewer will be used.
+    auto* chip = db_->getChip();
+    if (chip == nullptr) {
+      logger_->error(utl::GUI, 79, "No design loaded.");
+    }
+
+    auto* block = chip->getBlock();
+    if (block == nullptr) {
+      logger_->error(utl::GUI, 80, "No design loaded.");
+    }
+
+    save_region
+        = block->getBBox()
+              ->getBox();  // get die area since screen area is not reliable
+    const double bloat_by = 0.05;  // 5%
+    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
+
+    save_region.bloat(bloat, save_region);
+  }
+
+  // save current display settings and apply new
+  main_window->getControls()->save();
+  for (const auto& [control, value] : display_settings) {
+    setDisplayControlsVisible(control, value);
+  }
+
+  QImage img = main_window->getLayoutViewer()->createImage(
+      save_region, width_px, dbu_per_pixel);
+  // restore settings
+  main_window->getControls()->restore();
+
+  if (gif_->writer == nullptr) {
+    gif_->writer = std::make_unique<GifWriter>();
+    gif_->width = img.width();
+    gif_->height = img.height();
+    GifBegin(gif_->writer.get(),
+             gif_->filename.c_str(),
+             gif_->width,
+             gif_->height,
+             delay.value_or(default_gif_delay_));
+  } else {
+    // scale IMG if not matched
+    img = img.scaled(gif_->width, gif_->height, Qt::KeepAspectRatio);
+  }
+
+  std::vector<uint8_t> frame(gif_->width * gif_->height * 4, 0);
+  for (int x = 0; x < img.width(); x++) {
+    if (x >= gif_->width) {
+      continue;
+    }
+    for (int y = 0; y < img.height(); y++) {
+      if (y >= gif_->height) {
+        continue;
+      }
+
+      const QRgb pixel = img.pixel(x, y);
+      const int frame_offset = (y * gif_->width + x) * 4;
+      frame[frame_offset + 0] = qRed(pixel);
+      frame[frame_offset + 1] = qGreen(pixel);
+      frame[frame_offset + 2] = qBlue(pixel);
+      frame[frame_offset + 3] = qAlpha(pixel);
+    }
+  }
+
+  GifWriteFrame(gif_->writer.get(),
+                frame.data(),
+                gif_->width,
+                gif_->height,
+                delay.value_or(default_gif_delay_));
+}
+
+void Gui::gifEnd()
+{
+  if (gif_ == nullptr) {
+    return;
+  }
+
+  GifEnd(gif_->writer.get());
+  gif_ = nullptr;
 }
 
 class SafeApplication : public QApplication

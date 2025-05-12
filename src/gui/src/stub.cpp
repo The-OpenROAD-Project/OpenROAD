@@ -12,6 +12,11 @@
 
 #include "gui/gui.h"
 
+// empty gif writer class
+class GifWriter
+{
+};
+
 namespace gui {
 
 Gui* Gui::singleton_ = nullptr;

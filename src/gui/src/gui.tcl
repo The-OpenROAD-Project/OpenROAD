@@ -137,6 +137,92 @@ proc save_image { args } {
   rename $options ""
 }
 
+sta::define_cmd_args "save_gif" {[-area {x0 y0 x1 y1}] \
+                                 [-width width] \
+                                 [-resolution microns_per_pixel] \
+                                 [-display_option option] \
+                                 [-delay delay] \
+                                 [path]
+} ;# checker off
+
+proc save_gif { args } {
+  ord::parse_list_args "save_image" args list {-display_option}
+  sta::parse_key_args "save_image" args \
+    keys {-area -width -resolution -delay} flags {-start -end -add} ;# checker off
+
+  set options [gui::DisplayControlMap]
+  foreach opt $list(-display_option) {
+    if { [llength $opt] != 2 } {
+      utl::error GUI 45 "Display option must have 2 elements {control name} {value}."
+    }
+
+    set key [lindex $opt 0]
+    set val [lindex $opt 1]
+
+    $options set $key $val
+  }
+
+  set resolution 0
+  if { [info exists keys(-resolution)] } {
+    sta::check_positive_float "-resolution" $keys(-resolution)
+    set tech [ord::get_db_tech]
+    if { $tech == "NULL" } {
+      utl::error GUI 46 "No technology loaded."
+    }
+    set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
+    if { $resolution < 1 } {
+      set resolution 1.0
+      set res_per_pixel [expr $resolution / [$tech getLefUnits]]
+      utl::warn GUI 47 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
+    }
+  }
+
+  set area "0 0 0 0"
+  if { [info exists keys(-area)] } {
+    set area $keys(-area)
+    if { [llength $area] != 4 } {
+      utl::error GUI 48 "Area must contain 4 elements."
+    }
+  }
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    if { $resolution != 0 } {
+      utl::error GUI 99 "Cannot set -width if -resolution has already been specified."
+    }
+    sta::check_positive_int "-width" $keys(-width)
+    set width $keys(-width)
+    if { $width == 0 } {
+      utl::error GUI 105 "Specified -width cannot be zero."
+    }
+  }
+
+  set delay 0
+  if { [info exists keys(-delay)] } {
+    set delay $keys(-delay)
+  }
+
+  if {[info exists flags(-start)]} {
+    sta::check_argc_eq1 "save_gif" $args
+    set path [lindex $args 0]
+
+    gui::gif_start $path
+  } elseif {[info exists flags(-add)]} {
+    sta::check_argc_eq0 "save_gif" $args
+
+    gui::gif_add {*}$area $width $resolution $options $delay
+  } elseif {[info exists flags(-end)]} {
+    sta::check_argc_eq0 "save_gif" $args
+
+    gui::gif_end
+  } else {
+    utl::error GUI 106 "-start, -end, or -add is required"
+  }
+
+  # delete map
+  rename $options ""
+}
+
 sta::define_cmd_args "save_clocktree_image" {
   [-width width] \
   [-height height] \

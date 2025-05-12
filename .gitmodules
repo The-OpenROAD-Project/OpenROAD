@@ -4,6 +4,3 @@
 [submodule "src/abc"]
 	path = third-party/abc
 	url = ../../The-OpenROAD-Project/abc.git
-[submodule "third-party/gif-h"]
-	path = third-party/gif-h
-	url = https://github.com/charlietangora/gif-h
