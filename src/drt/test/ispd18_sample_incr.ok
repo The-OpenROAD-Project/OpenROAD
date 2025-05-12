@@ -85,4 +85,6 @@
 [INFO DRT-0036] Via8 guide region query size = 0.
 [INFO DRT-0036] Metal9 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
-No differences found.
+Differences found at line 58.
+      + ROUTED Metal2 ( 92200 73530 ) ( * 78470 )
+      + ROUTED Metal2 ( 92200 73530 ) ( * 78850 )

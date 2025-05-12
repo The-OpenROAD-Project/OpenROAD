@@ -39,7 +39,7 @@
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] met5 shape region query size = 0.
 [WARNING DRT-0088] Access point generation for _279_/A did not meet :
-	At least 1 access point far from inst edge
+	At least 3 sparse access points
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] FR_MASTERSLICE guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
@@ -55,4 +55,6 @@
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] met5 guide region query size = 30.
 [INFO DRT-0179] Init gr pin query.
-No differences found.
+Differences found at line 576.
+      + ROUTED met1 ( 158010 191590 ) ( * 192610 )
+      + ROUTED met1 ( 158010 191590 ) ( 158470 * )
