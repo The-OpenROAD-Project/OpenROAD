@@ -203,7 +203,8 @@ void GridComponent::replaceShape(Shape* shape,
       continue;
     }
 
-    for (const auto& via : vias) {
+    for (const auto& via_weak : vias) {
+      const auto via = via_weak.lock();
       if (via->getArea().intersects(new_shape_ptr->getRect())) {
         Connect* connect = via->getConnect();
         if (connect->getLowerLayer() == new_shape_ptr->getLayer()) {

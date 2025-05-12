@@ -107,7 +107,7 @@ int Shape::getNumberOfConnectionsBelow() const
 {
   int connections = 0;
   for (const auto& via : vias_) {
-    if (via->getUpperLayer() == layer_) {
+    if (via.lock()->getUpperLayer() == layer_) {
       connections++;
     }
   }
@@ -119,7 +119,7 @@ int Shape::getNumberOfConnectionsAbove() const
 {
   int connections = 0;
   for (const auto& via : vias_) {
-    if (via->getLowerLayer() == layer_) {
+    if (via.lock()->getLowerLayer() == layer_) {
       connections++;
     }
   }
@@ -191,7 +191,7 @@ odb::Rect Shape::getMinimumRect() const
 
   // merge all vias
   for (auto& via : vias_) {
-    intersected_rect.merge(via->getArea());
+    intersected_rect.merge(via.lock()->getArea());
   }
 
   return intersected_rect;
@@ -320,7 +320,8 @@ bool Shape::hasDBConnectivity() const
   }
 
   for (const auto& via : vias_) {
-    if (!via->isFailed()) {
+    const auto via_strong = via.lock();
+    if (via_strong && !via_strong->isFailed()) {
       return true;
     }
   }
