@@ -3783,6 +3783,7 @@ void ModDbNetAssociation::operator()(const Pin* pin)
   dbNet* cur_flat_net = db_network_->flatNet(pin);
 
   dbModNet* mod_net = db_network_->hierNet(pin);
+  (void) mod_net;
 
   if (cur_flat_net == new_flat_net_) {
     return;
@@ -3831,6 +3832,7 @@ void DbModNetAssociation::operator()(const Pin* pin)
   dbModITerm* moditerm;
   db_network_->staToDb(pin, iterm, bterm, moditerm, modbterm);
 
+  (void) mod_net_;
   if (moditerm || modbterm) {
     return;
   }
@@ -4124,6 +4126,7 @@ bool dbNetwork::AxiomCheck()
   dbSet<dbModNet> mod_nets = block()->getModNets();
   for (auto modnet : mod_nets) {
     dbNet* related_net = findRelatedDbNet(modnet);
+    (void) related_net;
   }
 
   dbSet<dbITerm> iterms = block()->getITerms();
