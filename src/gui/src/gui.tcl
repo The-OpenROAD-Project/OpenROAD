@@ -137,7 +137,8 @@ proc save_image { args } {
   rename $options ""
 }
 
-sta::define_cmd_args "save_gif" {[-area {x0 y0 x1 y1}] \
+sta::define_cmd_args "save_gif" {-start|-add|-end \
+                                 [-area {x0 y0 x1 y1}] \
                                  [-width width] \
                                  [-resolution microns_per_pixel] \
                                  [-display_option option] \
