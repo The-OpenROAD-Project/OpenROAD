@@ -177,10 +177,7 @@ ShapePtr GridComponent::addShape(Shape* shape)
 void GridComponent::removeShape(Shape* shape)
 {
   for (const auto& via : shape->getVias()) {
-    const auto via_strong = via.lock();
-    if (via_strong) {
-      via_strong->removeShape(shape);
-    }
+    via->removeShape(shape);
   }
 
   auto& shapes = shapes_[shape->getLayer()];
