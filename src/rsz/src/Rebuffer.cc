@@ -1105,10 +1105,14 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
           if (load_parent_inst != parent_in) {
             // make the flat connection
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
-            std::string preferred_connection_name
-                = db_mod_net ? db_mod_net->getName()
-                             : db_mod_load_net ? db_mod_load_net->getName()
-                                               : resizer_->makeUniqueNetName();
+            std::string preferred_connection_name;
+            if (db_mod_net) {
+              preferred_connection_name = db_mod_net->getName();
+            } else if (db_mod_load_net) {
+              preferred_connection_name = db_mod_load_net->getName();
+            } else {
+              preferred_connection_name = resizer_->makeUniqueNetName();
+            }
 
             db_network_->hierarchicalConnect(
                 mod_net_drvr, load_iterm, preferred_connection_name.c_str());
