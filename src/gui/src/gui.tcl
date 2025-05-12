@@ -203,16 +203,16 @@ proc save_gif { args } {
     set delay $keys(-delay)
   }
 
-  if {[info exists flags(-start)]} {
+  if { [info exists flags(-start)] } {
     sta::check_argc_eq1 "save_gif" $args
     set path [lindex $args 0]
 
     gui::gif_start $path
-  } elseif {[info exists flags(-add)]} {
+  } elseif { [info exists flags(-add)] } {
     sta::check_argc_eq0 "save_gif" $args
 
     gui::gif_add {*}$area $width $resolution $options $delay
-  } elseif {[info exists flags(-end)]} {
+  } elseif { [info exists flags(-end)] } {
     sta::check_argc_eq0 "save_gif" $args
 
     gui::gif_end
