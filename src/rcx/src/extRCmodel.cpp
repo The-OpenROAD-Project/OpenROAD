@@ -120,11 +120,9 @@ void extRCTable::makeCapTableOver()
 
   for (uint jj = 1; jj < _maxCnt1; jj++) {
     _inTable[jj] = new Ath__array1D<extDistRC*>*[jj];
-    _table[jj] = new Ath__array1D<extDistRC*>*[jj];
 
     for (uint kk = 0; kk < jj; kk++) {
       _inTable[jj][kk] = new Ath__array1D<extDistRC*>(32);
-      _table[jj][kk] = new Ath__array1D<extDistRC*>(512);
     }
   }
 }
@@ -134,15 +132,12 @@ void extRCTable::makeCapTableUnder()
   _over = false;
   for (uint jj = 1; jj < _maxCnt1; jj++) {
     _inTable[jj] = new Ath__array1D<extDistRC*>*[_maxCnt1];
-    _table[jj] = new Ath__array1D<extDistRC*>*[_maxCnt1];
 
-    for (uint ii = 0; ii < jj; ii++) {
+    for (uint ii = 0; ii <= jj; ii++) {
       _inTable[jj][ii] = nullptr;
-      _table[jj][ii] = nullptr;
     }
     for (uint kk = jj + 1; kk < _maxCnt1; kk++) {
       _inTable[jj][kk] = new Ath__array1D<extDistRC*>(32);
-      _table[jj][kk] = new Ath__array1D<extDistRC*>(512);
     }
   }
 }
@@ -1526,6 +1521,7 @@ void extMetRCTable::allocDiagUnderTable(uint met,
                                         int diagDistCnt,
                                         double dbFactor)
 {
+  delete _capDiagUnder[met];
   _capDiagUnder[met] = new extDistWidthRCTable(false,
                                                met,
                                                _layerCnt,
@@ -1552,6 +1548,7 @@ void extMetRCTable::allocDiagUnderTable(uint met,
                                         Ath__array1D<double>* wTable,
                                         double dbFactor)
 {
+  delete _capDiagUnder[met];
   _capDiagUnder[met] = new extDistWidthRCTable(false,
                                                met,
                                                _layerCnt,
@@ -1566,6 +1563,7 @@ void extMetRCTable::allocUnderTable(uint met,
                                     Ath__array1D<double>* wTable,
                                     double dbFactor)
 {
+  delete _capUnder[met];
   _capUnder[met] = new extDistWidthRCTable(false,
                                            met,
                                            _layerCnt,
@@ -1585,6 +1583,7 @@ void extMetRCTable::allocOverUnderTable(uint met,
   }
 
   int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
+  delete _capOverUnder[met];
   _capOverUnder[met] = new extDistWidthRCTable(false,
                                                met,
                                                _layerCnt,
@@ -1599,13 +1598,26 @@ extRCTable::extRCTable(bool over, uint layerCnt)
 {
   _maxCnt1 = layerCnt + 1;
   _inTable = new Ath__array1D<extDistRC*>**[_maxCnt1];
-  _table = new Ath__array1D<extDistRC*>**[_maxCnt1];
 
   if (over) {
     makeCapTableOver();
   } else {
     makeCapTableUnder();
   }
+}
+
+extRCTable::~extRCTable()
+{
+  for (uint jj = 1; jj < _maxCnt1; jj++) {
+    const uint max = _over ? jj : _maxCnt1;
+
+    for (uint kk = 0; kk < max; kk++) {
+      delete _inTable[jj][kk];
+    }
+    delete[] _inTable[jj];
+  }
+
+  delete[] _inTable;
 }
 
 extDistRC* extRCTable::getCapOver(uint met, uint metUnder)

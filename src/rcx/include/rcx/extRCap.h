@@ -465,6 +465,7 @@ class extRCTable
 {
  public:
   extRCTable(bool over, uint layerCnt);
+  ~extRCTable();
   uint addCapOver(uint met, uint metUnder, extDistRC* rc);
   extDistRC* getCapOver(uint met, uint metUnder);
 
@@ -475,7 +476,6 @@ class extRCTable
   bool _over;
   uint _maxCnt1;
   Ath__array1D<extDistRC*>*** _inTable;  // per metal per width
-  Ath__array1D<extDistRC*>*** _table;
 };
 
 class extMain;
