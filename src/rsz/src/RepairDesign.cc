@@ -55,7 +55,10 @@ RepairDesign::RepairDesign(Resizer* resizer) : resizer_(resizer)
 {
 }
 
-RepairDesign::~RepairDesign() = default;
+RepairDesign::~RepairDesign()
+{
+  delete pre_checks_;
+}
 
 void RepairDesign::init()
 {
@@ -63,6 +66,7 @@ void RepairDesign::init()
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
+  delete pre_checks_;
   pre_checks_ = new PreChecks(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
