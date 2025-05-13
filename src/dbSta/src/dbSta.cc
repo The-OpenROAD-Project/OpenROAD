@@ -244,21 +244,18 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 void dbSta::makeReport()
 {
-  delete report_;
   db_report_ = new dbStaReport();
   report_ = db_report_;
 }
 
 void dbSta::makeNetwork()
 {
-  delete network_;
   db_network_ = new class dbNetwork();
   network_ = db_network_;
 }
 
 void dbSta::makeSdcNetwork()
 {
-  delete sdc_network_;
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
