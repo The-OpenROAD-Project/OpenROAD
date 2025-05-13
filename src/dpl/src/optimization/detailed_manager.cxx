@@ -772,7 +772,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
           }
         }
         if (best2.empty() || (dx.v + dy.v < disp2)) {
-          if (nd->getWidth() <= width + 1.0e-3) {
+          if (nd->getWidth() <= width) {
             best2 = candidates_i;
             disp2 = dx.v + dy.v;
           }

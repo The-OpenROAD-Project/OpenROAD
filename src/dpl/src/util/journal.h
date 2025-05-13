@@ -20,6 +20,7 @@ enum class JournalActionTypeEnum
 class JournalAction
 {
  public:
+  virtual ~JournalAction() = default;
   virtual JournalActionTypeEnum typeId() const = 0;
 };
 class MoveCellAction : public JournalAction
