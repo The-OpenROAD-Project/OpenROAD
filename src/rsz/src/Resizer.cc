@@ -137,6 +137,14 @@ Resizer::~Resizer()
   delete repair_design_;
   delete repair_setup_;
   delete repair_hold_;
+  delete target_load_map_;
+  delete incr_groute_;
+  delete buffer_move;
+  delete clone_move;
+  delete size_move;
+  delete split_load_move;
+  delete swap_pins_move;
+  delete unbuffer_move;
 }
 
 void Resizer::init(Logger* logger,
