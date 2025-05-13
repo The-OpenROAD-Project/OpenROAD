@@ -282,20 +282,19 @@ void MakeWireParasitics::makeParasiticsToPin(
     float res, cap;
     layerRC(wire_length_dbu, layer, corner, res, cap);
     sta::Units* units = sta_->units();
-    debugPrint(
-        logger_,
-        GRT,
-        "est_rc",
-        1,
-        "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} c={}",
-        parasitics_->name(grid_node),
-        parasitics_->name(pin_node),
-        block_->dbuToMicrons(pt.getX()),
-        block_->dbuToMicrons(pt.getY()),
-        block_->dbuToMicrons(wire_length_dbu),
-        layer,
-        units->resistanceUnit()->asString(res),
-        units->capacitanceUnit()->asString(cap));
+    debugPrint(logger_,
+               GRT,
+               "est_rc",
+               1,
+               "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} c={}",
+               parasitics_->name(grid_node),
+               parasitics_->name(pin_node),
+               block_->dbuToMicrons(pt.getX()),
+               block_->dbuToMicrons(pt.getY()),
+               block_->dbuToMicrons(wire_length_dbu),
+               layer,
+               units->resistanceUnit()->asString(res),
+               units->capacitanceUnit()->asString(cap));
 
     debugPrint(logger_,
                GRT,
