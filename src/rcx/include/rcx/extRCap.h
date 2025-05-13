@@ -473,7 +473,6 @@ class extRCTable
   bool _over;
   uint _maxCnt1;
   Ath__array1D<extDistRC*>*** _inTable;  // per metal per width
-  Ath__array1D<extDistRC*>*** _table;
 };
 
 class extMain;

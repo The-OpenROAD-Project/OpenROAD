@@ -120,11 +120,9 @@ void extRCTable::makeCapTableOver()
 
   for (uint jj = 1; jj < _maxCnt1; jj++) {
     _inTable[jj] = new Ath__array1D<extDistRC*>*[jj];
-    _table[jj] = new Ath__array1D<extDistRC*>*[jj];
 
     for (uint kk = 0; kk < jj; kk++) {
       _inTable[jj][kk] = new Ath__array1D<extDistRC*>(32);
-      _table[jj][kk] = new Ath__array1D<extDistRC*>(512);
     }
   }
 }
@@ -134,15 +132,12 @@ void extRCTable::makeCapTableUnder()
   _over = false;
   for (uint jj = 1; jj < _maxCnt1; jj++) {
     _inTable[jj] = new Ath__array1D<extDistRC*>*[_maxCnt1];
-    _table[jj] = new Ath__array1D<extDistRC*>*[_maxCnt1];
 
     for (uint ii = 0; ii < jj; ii++) {
       _inTable[jj][ii] = nullptr;
-      _table[jj][ii] = nullptr;
     }
     for (uint kk = jj + 1; kk < _maxCnt1; kk++) {
       _inTable[jj][kk] = new Ath__array1D<extDistRC*>(32);
-      _table[jj][kk] = new Ath__array1D<extDistRC*>(512);
     }
   }
 }
@@ -1587,7 +1582,6 @@ extRCTable::extRCTable(bool over, uint layerCnt)
 {
   _maxCnt1 = layerCnt + 1;
   _inTable = new Ath__array1D<extDistRC*>**[_maxCnt1];
-  _table = new Ath__array1D<extDistRC*>**[_maxCnt1];
 
   if (over) {
     makeCapTableOver();
@@ -1603,14 +1597,11 @@ extRCTable::~extRCTable()
 
     for (uint kk = 0; kk < max; kk++) {
       delete _inTable[jj][kk];
-      delete _table[jj][kk];
     }
     delete[] _inTable[jj];
-    delete[] _table[jj];
   }
 
   delete[] _inTable;
-  delete[] _table;
 }
 
 extDistRC* extRCTable::getCapOver(uint met, uint metUnder)
