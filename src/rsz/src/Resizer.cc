@@ -2009,7 +2009,7 @@ bool Resizer::replaceCell(Instance* inst,
 bool Resizer::hasMultipleOutputs(const Instance* inst)
 {
   int output_count = 0;
-  InstancePinIterator* pin_iter = network_->pinIterator(inst);
+  std::unique_ptr<InstancePinIterator> pin_iter(network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isAnyOutput() && network_->net(pin)) {
