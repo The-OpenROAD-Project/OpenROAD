@@ -32,9 +32,7 @@ class Ath__array1D
   }
   ~Ath__array1D()
   {
-    if (array_ != nullptr) {
-      ::free(array_);
-    }
+    ::free(array_);
   }
   int add(T t)
   {
