@@ -98,9 +98,11 @@ cc_library(
         "def/defrSettings.cpp",
         "def/defwWriter.cpp",
         "def/defwWriterCalls.cpp",
-        ":def_bison",
     ],
     hdrs = DEF_HEADERS,
+    deps = [
+        ":def_bison_lib",
+    ],
     includes = ["def"],
 )
 
