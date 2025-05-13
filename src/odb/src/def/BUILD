@@ -53,7 +53,7 @@ cc_library(
     ],
     hdrs = DEF_HEADERS + ["def/def_parser.hpp"],
     # Ignore warnings in generated code
-    copts = ["-Wno-unused-but-set-variable"],
+    copts = ["-Wno-unused-but-set-variable", "-Wno-modules-import-nested-redundant"],
     includes = ["def"],
 )
 
