@@ -244,6 +244,21 @@ class FlexPA
       frAccessPointEnum upper_type,
       pa_requirements_met& reqs);
 
+  /**
+   * @brief If there is a LEF58 MetalWitdhViaMap and the ap does not map to the
+   * via def, returns False.
+   *
+   * @param via_def via def
+   * @param ap access point
+   * @param polyset the pin polygons on the access point layer
+   *
+   * @returns False if there is a MetalWitdhViaMap and does not map the ap to
+   * the via.
+   */
+  bool isViaCompatibleWithAP(const frViaDef* via_def,
+                             const frAccessPoint* ap,
+                             const gtl::polygon_90_set_data<frCoord>& polyset);
+
   void getViasFromMetalWidthMap(
       const Point& pt,
       frLayerNum layer_num,

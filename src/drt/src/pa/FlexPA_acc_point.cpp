@@ -724,6 +724,25 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   return design_rule_checker.getMarkers().empty();
 }
 
+bool FlexPA::isViaCompatibleWithAP(
+    const frViaDef* via_def,
+    const frAccessPoint* ap,
+    const gtl::polygon_90_set_data<frCoord>& polyset)
+{
+  std::vector<std::pair<int, const frViaDef*>> allowed_via_defs;
+  getViasFromMetalWidthMap(
+      ap->getPoint(), ap->getLayerNum(), polyset, allowed_via_defs);
+  if (allowed_via_defs.empty()) {
+    return true;
+  }
+  for (const auto& [priority, allowed_via_def] : allowed_via_defs) {
+    if (allowed_via_def == via_def) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void FlexPA::getViasFromMetalWidthMap(
     const Point& pt,
     const frLayerNum layer_num,
@@ -741,6 +760,18 @@ void FlexPA::getViasFromMetalWidthMap(
   const auto width_orient
       = tech->isHorizontalLayer(layer_num) ? gtl::VERTICAL : gtl::HORIZONTAL;
   frCoord bottom_width = -1;
+
+  if (bottom_width < 0) {  // compute bottom_width once
+    std::vector<gtl::rectangle_data<frCoord>> maxrects;
+    gtl::get_max_rectangles(maxrects, polyset);
+    for (auto& rect : maxrects) {
+      if (contains(rect, gtl::point_data<frCoord>(pt.x(), pt.y()))) {
+        const frCoord width = delta(rect, width_orient);
+        bottom_width = std::max(bottom_width, width);
+      }
+    }
+  }
+
   auto viaMap = cut_layer->getTech()->getMetalWidthViaMap();
   for (auto entry : viaMap) {
     if (entry->getCutLayer() != cut_layer) {
@@ -764,17 +795,6 @@ void FlexPA::getViasFromMetalWidthMap(
       continue;
     }
 
-    if (bottom_width < 0) {  // compute bottom_width once
-      std::vector<gtl::rectangle_data<frCoord>> maxrects;
-      gtl::get_max_rectangles(maxrects, polyset);
-      for (auto& rect : maxrects) {
-        if (contains(rect, gtl::point_data<frCoord>(pt.x(), pt.y()))) {
-          const frCoord width = delta(rect, width_orient);
-          bottom_width = std::max(bottom_width, width);
-        }
-      }
-    }
-
     if (entry->getBelowLayerWidthLow() > bottom_width
         || entry->getBelowLayerWidthHigh() < bottom_width) {
       continue;
@@ -794,6 +814,10 @@ bool FlexPA::validateAPForVia(
     frInstTerm* inst_term)
 {
   if (!ap->isViaAllowed()) {
+    return false;
+  }
+
+  if (!isViaCompatibleWithAP(via_def, ap, polyset)) {
     return false;
   }
 
@@ -1045,22 +1069,10 @@ void FlexPA::filterMultipleViaAccess(
     }
 
     int valid_via_defs = 0;
-    const Point begin_point = ap->getPoint();
     const auto layer_num = ap->getLayerNum();
-    // use std:pair to ensure deterministic behavior
-    std::vector<std::pair<int, const frViaDef*>> via_defs;
-    getViasFromMetalWidthMap(
-        begin_point, layer_num, pin_shapes[layer_num], via_defs);
-
-    if (via_defs.empty()) {  // no via map entry
-      // hardcode first two single vias
-      for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-        via_defs.emplace_back(via_defs.size(), via_def);
-      }
-    }
 
     int via_trial = 0;
-    for (auto& [idx, via_def] : via_defs) {
+    for (auto& [idx, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
       via_trial++;
       if (!validateAPForVia(ap.get(),
                             via_def,
@@ -1401,8 +1413,15 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, layer_polys, pin, inst_term, lower, upper, reqs)) {
+      if (genPinAccessCostBounded(aps,
+                                  apset,
+                                  pin_shapes,
+                                  layer_polys,
+                                  pin,
+                                  inst_term,
+                                  lower,
+                                  upper,
+                                  reqs)) {
         return aps.size();
       }
     }
