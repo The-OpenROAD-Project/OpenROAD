@@ -58,8 +58,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                            pbVec,
                                            nbVec,
                                            npVars_.debug_draw_bins,
-                                           npVars.debug_inst,
-                                           npVars.debug_start_iter);
+                                           npVars.debug_inst);
   }
   init();
 }
