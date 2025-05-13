@@ -216,7 +216,7 @@ uint extMain::couplingFlow_v2(Rect& extRect, uint ccDist, extMeasure* m1)
 
     getPeakMemory("End WiresOnSearch Dir: ", dir);
 
-    mrc->_search = this->_search;
+    mrc->_search = this->_search.get();
 
     // Create single lists of wires on every track/level/direction
     mrc->ConnectWires(dir);
@@ -330,7 +330,7 @@ uint extMain::couplingFlow_v2_opt(Rect& extRect, uint ccDist, extMeasure* m1)
           dir, bounds.lo_search, bounds.hi_search, 9);  // sigtype = 9
 
       // TODO move up
-      mrc->_search = this->_search;
+      mrc->_search = this->_search.get();
 
       // Create single lists of wires on every track/level/direction
       // Set Boundaries for all tracks
@@ -684,6 +684,7 @@ bool extRCModel::spotModelsInRules(char* name,
                                    bool& overunder1,
                                    bool& via_res)
 {
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -764,6 +765,7 @@ bool extRCModel::readRules(char* name,
 
   diag = false;
   uint cnt = 0;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);
@@ -1054,6 +1056,7 @@ bool extRCModel::readRules_v2(char* name,
 
   diag = false;
   uint cnt = 0;
+  free(_ruleFileName);
   _ruleFileName = strdup(name);
   Ath__parser parser(logger_);
   // parser.setDbg(1);

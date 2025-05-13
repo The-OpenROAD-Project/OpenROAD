@@ -345,6 +345,9 @@ class extDistWidthRCTable
   extDistRCTable*** _rcDistTable;  // per over/under metal, per width
   extDistRCTable***** _rcDiagDistTable;
   uint _metCnt;  // if _over==false _metCnt???
+  uint _widthCnt;
+  uint _diagWidthCnt;
+  uint _diagDistCnt;
 
   AthPool<extDistRC>* _rcPoolPtr;
   extDistRC* _rc31;
@@ -2763,7 +2766,7 @@ class extMain
   std::vector<odb::dbBTerm*> _connectedBTerm;
   std::vector<odb::dbITerm*> _connectedITerm;
 
-  GridTable* _search = nullptr;
+  std::unique_ptr<GridTable> _search;
 
   int _noVariationIndex;
 

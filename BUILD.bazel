@@ -606,12 +606,14 @@ tcl_wrap_cc(
     srcs = [
         "src/rmp/src/rmp.i",
         ":error_swig",
+        "//:sta_swig_files",
     ],
     module = "rmp",
     namespace_prefix = "rmp",
     root_swig_src = "src/rmp/src/rmp.i",
     swig_includes = [
         "src/rmp/src",
+        "src/sta",
     ],
 )
 
