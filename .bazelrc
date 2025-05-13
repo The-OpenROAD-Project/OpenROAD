@@ -24,8 +24,11 @@ build --copt "-Wall"               --host_copt "-Wall"
 build --copt "-Wextra"             --host_copt "-Wextra"
 
 # ... and disable the warnings we're not interested in.
-build --copt "-Wno-sign-compare"      --host_copt "-Wno-sign-compare"
-build --copt "-Wno-unused-parameter"  --host_copt "-Wno-unused-parameter"
+build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
+build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
+build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
+build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
+build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
