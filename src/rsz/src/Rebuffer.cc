@@ -1101,7 +1101,9 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
           // disconnect removes everything.
           sta_->disconnectPin(const_cast<Pin*>(load_pin));
 
-          if (load_parent_inst != parent_in) {
+          if (load_parent_inst && parent_in
+              && db_network_->hasHierarchicalElements()
+              && load_parent_inst != parent_in) {
             // make the flat connection
             db_network_->connectPin(const_cast<Pin*>(load_pin), net);
             std::string preferred_connection_name;
