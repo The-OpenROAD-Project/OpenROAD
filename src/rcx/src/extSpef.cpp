@@ -88,7 +88,7 @@ extSpef::~extSpef()
   free(_msgBuf1);
   free(_msgBuf2);
 
-  for (uint ii = 0; ii < 1024; ii++) {
+  for (uint ii = 0; ii < _hcnrc->getSize(); ii++) {
     delete _hcnrc->geti(ii);
   }
   delete _hcnrc;
