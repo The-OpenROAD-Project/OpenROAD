@@ -150,18 +150,14 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
              return true;
            })},
           {"x", makeEditor([label, dbu_per_uu_](const std::any& value) {
-             return LabelDescriptor::editPoint(
-                 value, label->getPt(), true);
+             return LabelDescriptor::editPoint(value, label->getPt(), true);
            })},
           {"y", makeEditor([label, dbu_per_uu_](const std::any& value) {
-             return LabelDescriptor::editPoint(
-                 value, label->getPt(), false);
+             return LabelDescriptor::editPoint(value, label->getPt(), false);
            })}};
 }
 
-bool LabelDescriptor::editPoint(std::any value,
-                                odb::Point& pt,
-                                bool is_x)
+bool LabelDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
 {
   bool accept;
   const int new_val = Descriptor::Property::convert_string(

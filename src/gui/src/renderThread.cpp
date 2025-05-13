@@ -458,7 +458,8 @@ void RenderThread::drawLabels(Painter& painter, const Labels& labels)
     painter.setBrush(color);
 
     const auto size = label->getSize();
-    const Painter::Font font(qfont.family().toStdString(), size.value_or(qfont.pointSize()));
+    const Painter::Font font(qfont.family().toStdString(),
+                             size.value_or(qfont.pointSize()));
     painter.setFont(font);
 
     painter.drawString(label->getPt().x(),

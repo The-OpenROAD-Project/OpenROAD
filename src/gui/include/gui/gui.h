@@ -62,9 +62,7 @@ class Painter
  public:
   struct Font
   {
-    Font(const std::string& name, int size) : name(name), size(size)
-    {
-    }
+    Font(const std::string& name, int size) : name(name), size(size) {}
 
     std::string name;
     int size;
