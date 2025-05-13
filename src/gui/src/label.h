@@ -83,7 +83,6 @@ class LabelDescriptor : public Descriptor
 
  private:
   static bool editPoint(std::any value, odb::Point& pt, bool is_x);
-  static std::string anchorToString(const Painter::Anchor& anchor);
 
   const Labels& labels_;
   odb::dbDatabase* db_;

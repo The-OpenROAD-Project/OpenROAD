@@ -79,7 +79,7 @@ Descriptor::Properties LabelDescriptor::getProperties(std::any object) const
       {"y", Property::convert_dbu(label->getPt().y(), true)}};
 
   props.push_back({"Size", label->getSize().value_or(-1)});
-  props.push_back({"Anchor", anchorToString(label->getAnchor())});
+  props.push_back({"Anchor", Painter::anchorToString(label->getAnchor())});
   props.push_back({"Color", Painter::colorToString(label->getColor())});
 
   return props;
@@ -90,16 +90,8 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
   auto label = std::any_cast<Label*>(object);
 
   std::vector<Descriptor::EditorOption> anchor_options;
-  for (const auto& anc : {Painter::Anchor::BOTTOM_LEFT,
-                          Painter::Anchor::BOTTOM_RIGHT,
-                          Painter::Anchor::TOP_LEFT,
-                          Painter::Anchor::TOP_RIGHT,
-                          Painter::Anchor::CENTER,
-                          Painter::Anchor::BOTTOM_CENTER,
-                          Painter::Anchor::TOP_CENTER,
-                          Painter::Anchor::LEFT_CENTER,
-                          Painter::Anchor::RIGHT_CENTER}) {
-    anchor_options.push_back({anchorToString(anc), anc});
+  for (const auto& [name, anchor] : Painter::anchors()) {
+    anchor_options.push_back({name, anchor});
   }
 
   return {{"Name", makeEditor([this, label](std::any value) {
@@ -170,32 +162,6 @@ bool LabelDescriptor::editPoint(std::any value, odb::Point& pt, bool is_x)
     pt.setY(new_val);
   }
   return true;
-}
-
-std::string LabelDescriptor::anchorToString(const Painter::Anchor& anchor)
-{
-  switch (anchor) {
-    case Painter::Anchor::BOTTOM_LEFT:
-      return "bottom left";
-    case Painter::Anchor::BOTTOM_RIGHT:
-      return "bottom right";
-    case Painter::Anchor::TOP_LEFT:
-      return "top left";
-    case Painter::Anchor::TOP_RIGHT:
-      return "top right";
-    case Painter::Anchor::CENTER:
-      return "center";
-    case Painter::Anchor::BOTTOM_CENTER:
-      return "bottom center";
-    case Painter::Anchor::TOP_CENTER:
-      return "top center";
-    case Painter::Anchor::LEFT_CENTER:
-      return "left center";
-    case Painter::Anchor::RIGHT_CENTER:
-      return "right center";
-  }
-
-  return "";
 }
 
 Descriptor::Actions LabelDescriptor::getActions(std::any object) const

@@ -140,6 +140,7 @@ const std::string add_label(
   double x,
   double y,
   const std::string& text,
+  const std::string& anchor = "",
   const std::string& color = "",
   int size = 0,
   const std::string& name = "")
@@ -162,7 +163,11 @@ const std::string add_label(
   if (!color.empty()) {
     pass_color = gui::Painter::stringToColor(color, ord::OpenRoad::openRoad()->getLogger());
   }
-  return gui->addLabel(pt.x(), pt.y(), text, pass_color, pass_size, {}, pass_name);
+  std::optional<gui::Painter::Anchor> pass_anchor;
+  if (!anchor.empty()) {
+    pass_anchor = gui::Painter::stringToAnchor(anchor, ord::OpenRoad::openRoad()->getLogger());
+  }
+  return gui->addLabel(pt.x(), pt.y(), text, pass_color, pass_size, pass_anchor, pass_name);
 }
 
 void delete_label(const std::string& name)

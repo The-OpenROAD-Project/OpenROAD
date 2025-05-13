@@ -236,6 +236,9 @@ class Painter
     LEFT_CENTER,
     RIGHT_CENTER
   };
+  static std::map<std::string, Anchor> anchors();
+  static Anchor stringToAnchor(const std::string& anchor, utl::Logger* logger);
+  static std::string anchorToString(const Anchor& anchor);
   virtual void drawString(int x,
                           int y,
                           Anchor anchor,

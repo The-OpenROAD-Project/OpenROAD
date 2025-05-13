@@ -341,3 +341,55 @@ proc focus_net { args } {
     gui::focus_net $net
   }
 }
+
+sta::define_cmd_args "add_label" {-position {x y}
+                                  [-anchor anchor]
+                                  [-color color]
+                                  [-size size]
+                                  [-name name]
+                                  text
+}
+
+proc add_label { args } {
+  sta::parse_key_args "add_label" args \
+    keys {-position -anchor -color -size -name} flags {}
+
+  sta::check_argc_eq1 "add_label" $args
+
+  if { ![info exists keys(-position)] } {
+    utl::error GUI 46 "-position is required"
+  }
+  set pos $keys(-position)
+  if { [llength $pos] != 2 } {
+    utl::error GUI 47 "-position must contain x and y"
+  }
+
+  set anchor ""
+  if { [info exists keys(-anchor)] } {
+    set anchor $keys(-anchor)
+  }
+
+  set color ""
+  if { [info exists keys(-color)] } {
+    set color $keys(-color)
+  }
+
+  set size 0
+  if { [info exists keys(-size)] } {
+    set size $keys(-size)
+  }
+
+  set name ""
+  if { [info exists keys(-name)] } {
+    set name $keys(-name)
+  }
+
+  return [gui::add_label \
+    [lindex $pos 0] \
+    [lindex $pos 1] \
+    [lindex $args 0] \
+    $anchor \
+    $color \
+    $size \
+    $name]
+}

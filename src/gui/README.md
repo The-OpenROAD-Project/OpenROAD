@@ -651,23 +651,24 @@ To add a label to the layout use the following command:
 Returns: name of the newly created label.
 
 ```tcl
-gui::add_label
-    x y
-    text
-    [color]
-    [size]
-    [name]
+add_label -position {x y}
+          [-anchor anchor]
+          [-color color]
+          [-size size]
+          [-name name]
+          text
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ---- | ---- |
-| `x, y,` | point of the label in microns. |
+| `-position` | point of the label in microns. |
+| `-anchor` | anchor point for text, default is center. |
+| `-color` | color to use for the label, default is white. |
+| `size` | size of the label, default is determined by the default GUI font. |
+| `name` | name of the label, one will be generated if not provided. |
 | `text` | text for the label. |
-| `color` | color to use for the label. |
-| `size` | size of the label. |
-| `name` | name of the label. |
 
 ### Delete a single label
 

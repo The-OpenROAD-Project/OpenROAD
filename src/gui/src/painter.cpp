@@ -90,6 +90,43 @@ std::string Painter::colorToString(const Color& color)
       "#{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
 }
 
+std::map<std::string, Painter::Anchor> Painter::anchors()
+{
+  return {{"bottom left", Painter::Anchor::BOTTOM_LEFT},
+          {"bottom right", Painter::Anchor::BOTTOM_RIGHT},
+          {"top left", Painter::Anchor::TOP_LEFT},
+          {"top right", Painter::Anchor::TOP_RIGHT},
+          {"center", Painter::Anchor::CENTER},
+          {"bottom center", Painter::Anchor::BOTTOM_CENTER},
+          {"top center", Painter::Anchor::TOP_CENTER},
+          {"left center", Painter::Anchor::LEFT_CENTER},
+          {"right center", Painter::Anchor::RIGHT_CENTER}};
+}
+
+Painter::Anchor Painter::stringToAnchor(const std::string& anchor,
+                                        utl::Logger* logger)
+{
+  const auto defined_anchors = anchors();
+  auto find_anchor = defined_anchors.find(anchor);
+  if (find_anchor != defined_anchors.end()) {
+    return find_anchor->second;
+  }
+
+  logger->error(utl::GUI, 45, "Anchor not recognized: {}", anchor);
+
+  return Anchor::CENTER;
+}
+
+std::string Painter::anchorToString(const Anchor& anchor)
+{
+  for (const auto& [name, c] : anchors()) {
+    if (c == anchor) {
+      return name;
+    }
+  }
+
+  return "unknown";
+}
 //////////////////////////////////////////////////////////////////////////
 
 odb::Point GuiPainter::determineStringOrigin(int x,
