@@ -3128,20 +3128,20 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
       odb::dbInst* swapped_inst = nb_gcells_[gcell_index]->insts()[0]->dbInst();
       db_inst_to_nb_index_map_.erase(swapped_inst);
       db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
-      std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
+    }
 
-      if (replacer.first != nullptr) {
-        auto it = db_inst_to_nb_index_map_.find(replacer.first);
-        if (it != db_inst_to_nb_index_map_.end()) {
-          nb_gcells_[it->second].updateIndex(replacer.second);
-        } else {
-          debugPrint(log_,
-                     GPL,
-                     "callbacks",
-                     1,
-                     "warn replacer dbInst {} not found in NB map!",
-                     replacer.first->getName());
-        }
+    std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
+    if (replacer.first != nullptr) {
+      auto it = db_inst_to_nb_index_map_.find(replacer.first);
+      if (it != db_inst_to_nb_index_map_.end()) {
+        nb_gcells_[it->second].updateIndex(replacer.second);
+      } else {
+        debugPrint(log_,
+                   GPL,
+                   "callbacks",
+                   1,
+                   "warn replacer dbInst {} not found in NB map!",
+                   replacer.first->getName());
       }
     }
   } else {
