@@ -88,7 +88,6 @@ Descriptor::Properties LabelDescriptor::getProperties(std::any object) const
 Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
 {
   auto label = std::any_cast<Label*>(object);
-  const int dbu_per_uu_ = db_->getChip()->getBlock()->getDbUnitsPerMicron();
 
   std::vector<Descriptor::EditorOption> anchor_options;
   for (const auto& anc : {Painter::Anchor::BOTTOM_LEFT,
@@ -149,10 +148,10 @@ Descriptor::Editors LabelDescriptor::getEditors(std::any object) const
                  std::any_cast<const std::string>(value), logger_));
              return true;
            })},
-          {"x", makeEditor([label, dbu_per_uu_](const std::any& value) {
+          {"x", makeEditor([label](const std::any& value) {
              return LabelDescriptor::editPoint(value, label->getPt(), true);
            })},
-          {"y", makeEditor([label, dbu_per_uu_](const std::any& value) {
+          {"y", makeEditor([label](const std::any& value) {
              return LabelDescriptor::editPoint(value, label->getPt(), false);
            })}};
 }
