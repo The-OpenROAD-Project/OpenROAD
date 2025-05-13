@@ -3107,8 +3107,15 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     size_t gcell_index = db_it->second;
 
     GCellHandle& handle = nb_gcells_[gcell_index];
-    // TODO delete fillers
-    bool is_filler = handle->isFiller();
+
+    if(handle->isFiller()) {
+      debugPrint(log_,
+                GPL,
+                "callbacks",
+                1,
+                "error: trying to destroy filler gcell during callback!");
+      return;
+    }
 
     if (gcell_index != last_index) {
       std::swap(nb_gcells_[gcell_index], nb_gcells_[last_index]);
@@ -3118,13 +3125,10 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     db_inst_to_nb_index_map_.erase(db_it);
 
     if (gcell_index != last_index) {
-      if (!is_filler) {
-        odb::dbInst* swapped_inst
-            = nb_gcells_[gcell_index]->insts()[0]->dbInst();
-        db_inst_to_nb_index_map_.erase(swapped_inst);
-        db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
-      }
-
+      odb::dbInst* swapped_inst
+          = nb_gcells_[gcell_index]->insts()[0]->dbInst();
+      db_inst_to_nb_index_map_.erase(swapped_inst);
+      db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
       std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
 
       if (replacer.first != nullptr) {
@@ -3140,15 +3144,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
                      replacer.first->getName());
         }
       }
-    } else {
-      debugPrint(log_,
-                 GPL,
-                 "callbacks",
-                 1,
-                 "warning: trying to destroy filler gcell!");
-      destroyFillerGCell(handle.getIndex());
     }
-
   } else {
     debugPrint(
         log_,
