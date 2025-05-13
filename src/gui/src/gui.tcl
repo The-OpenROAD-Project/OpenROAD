@@ -154,7 +154,7 @@ proc save_gif { args } {
   set options [gui::DisplayControlMap]
   foreach opt $list(-display_option) {
     if { [llength $opt] != 2 } {
-      utl::error GUI 45 "Display option must have 2 elements {control name} {value}."
+      utl::error GUI 51 "Display option must have 2 elements {control name} {value}."
     }
 
     set key [lindex $opt 0]
@@ -168,13 +168,13 @@ proc save_gif { args } {
     sta::check_positive_float "-resolution" $keys(-resolution)
     set tech [ord::get_db_tech]
     if { $tech == "NULL" } {
-      utl::error GUI 46 "No technology loaded."
+      utl::error GUI 52 "No technology loaded."
     }
     set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
     if { $resolution < 1 } {
       set resolution 1.0
       set res_per_pixel [expr $resolution / [$tech getLefUnits]]
-      utl::warn GUI 47 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
+      utl::warn GUI 55 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
 
