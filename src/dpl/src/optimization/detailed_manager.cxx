@@ -772,7 +772,7 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
           }
         }
         if (best2.empty() || (dx.v + dy.v < disp2)) {
-          if (nd->getWidth() <= width + 1.0e-3) {
+          if (nd->getWidth() <= width) {
             best2 = candidates_i;
             disp2 = dx.v + dy.v;
           }
@@ -1238,7 +1238,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
       const int padding = leftPadding + rightPadding;
 
       if (hasEdgeSpacingViolation(ndl)) {
-        logger_->report("Violation in {}", network_->getNodeName(ndl->getId()));
+        logger_->report("Violation in {}", ndl->name());
         ++err_n;
       }
       if (gap < padding) {
@@ -3066,7 +3066,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::clearMoveList()
 {
-  journal.clearJournal();
+  journal.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3105,13 +3105,8 @@ bool DetailedMgr::addToMoveList(Node* ndi,
     addCellToSegment(ndi, newSeg);
   }
 
-  JournalAction action;
-  action.setType(JournalAction::MOVE_CELL);
-  action.setNode(ndi);
-  action.setOrigLocation(curLeft, curBottom);
-  action.setOrigSegs({curSeg});
-  action.setNewLocation(newLeft, newBottom);
-  action.setNewSegs({newSeg});
+  MoveCellAction action(
+      ndi, curLeft, curBottom, newLeft, newBottom, true, {curSeg}, {newSeg});
   journal.addAction(action);
   return true;
 }
@@ -3141,13 +3136,8 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   for (const auto& newSeg : newSegs) {
     addCellToSegment(ndi, newSeg);
   }
-  JournalAction action;
-  action.setType(JournalAction::MOVE_CELL);
-  action.setNode(ndi);
-  action.setOrigLocation(curLeft, curBottom);
-  action.setOrigSegs(curSegs);
-  action.setNewLocation(newLeft, newBottom);
-  action.setNewSegs(newSegs);
+  MoveCellAction action(
+      ndi, curLeft, curBottom, newLeft, newBottom, true, curSegs, newSegs);
   journal.addAction(action);
   return true;
 }
@@ -3163,11 +3153,7 @@ void DetailedMgr::acceptMove()
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::rejectMove()
 {
-  while (!journal.isEmpty()) {
-    const auto& action = journal.getLastAction();
-    journal.undo(action);
-    journal.removeLastAction();
-  }
+  journal.undo();
   clearMoveList();
 }
 

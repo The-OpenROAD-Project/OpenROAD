@@ -1655,7 +1655,6 @@ bool extMain::setCorners(const char* rulesFileName)
                          extDbCnt,
                          cornerTable,
                          dbFactor))) {
-        delete m;
         return false;
       }
     } else {
@@ -1668,7 +1667,6 @@ bool extMain::setCorners(const char* rulesFileName)
                             extDbCnt,
                             cornerTable,
                             dbFactor))) {
-        delete m;
         return false;
       }
     }
@@ -2017,7 +2015,9 @@ void extMain::makeBlockRCsegs(const char* netNames,
     }
 
   */
-  _modelTable->resetCnt(0);
+  while (_modelTable->notEmpty()) {
+    delete _modelTable->pop();
+  }
   if (_batchScaleExt) {
     genScaledExt();
   }

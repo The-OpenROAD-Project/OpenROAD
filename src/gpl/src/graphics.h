@@ -49,8 +49,7 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
            std::vector<std::shared_ptr<PlacerBase>>& pbVec,
            std::vector<std::shared_ptr<NesterovBase>>& nbVec,
            bool draw_bins,
-           odb::dbInst* inst,
-           int start_iter);
+           odb::dbInst* inst);
 
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false);
@@ -116,7 +115,6 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   LineSegs mbff_edges_;
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
-  int start_iter_ = 0;
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);

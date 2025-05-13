@@ -137,6 +137,14 @@ Resizer::~Resizer()
   delete repair_design_;
   delete repair_setup_;
   delete repair_hold_;
+  delete target_load_map_;
+  delete incr_groute_;
+  delete buffer_move;
+  delete clone_move;
+  delete size_move;
+  delete split_load_move;
+  delete swap_pins_move;
+  delete unbuffer_move;
 }
 
 void Resizer::init(Logger* logger,
@@ -2009,7 +2017,7 @@ bool Resizer::replaceCell(Instance* inst,
 bool Resizer::hasMultipleOutputs(const Instance* inst)
 {
   int output_count = 0;
-  InstancePinIterator* pin_iter = network_->pinIterator(inst);
+  std::unique_ptr<InstancePinIterator> pin_iter(network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isAnyOutput() && network_->net(pin)) {

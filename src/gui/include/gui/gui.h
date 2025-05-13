@@ -10,6 +10,7 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -68,6 +69,19 @@ using StringToDBU = std::function<int(const std::string&, bool*)>;
 class Painter
 {
  public:
+  struct Font
+  {
+    Font(const std::string& name, int size) : name(name), size(size) {}
+
+    std::string name;
+    int size;
+
+    bool operator==(const Font& other) const
+    {
+      return (name == other.name) && (size == other.size);
+    }
+  };
+
   struct Color
   {
     constexpr Color() : r(0), g(0), b(0), a(255) {}
@@ -117,6 +131,10 @@ class Painter
   static inline const Color indigo{0x4b, 0x00, 0x82, 0xff};
   static inline const Color turquoise{0x40, 0xe0, 0xd0, 0xff};
   static inline const Color transparent{0x00, 0x00, 0x00, 0x00};
+
+  static std::map<std::string, Color> colors();
+  static Color stringToColor(const std::string& color, utl::Logger* logger);
+  static std::string colorToString(const Color& color);
 
   static inline const std::array<Painter::Color, num_highlight_set>
       highlightColors{Color(Painter::green, 100),
@@ -172,6 +190,8 @@ class Painter
   };
   virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
 
+  virtual void setFont(const Font& font) = 0;
+
   // Set the pen to an RGBA value and the brush
   void setPenAndBrush(const Color& color,
                       bool cosmetic = false,
@@ -225,6 +245,9 @@ class Painter
     LEFT_CENTER,
     RIGHT_CENTER
   };
+  static std::map<std::string, Anchor> anchors();
+  static Anchor stringToAnchor(const std::string& anchor, utl::Logger* logger);
+  static std::string anchorToString(const Anchor& anchor);
   virtual void drawString(int x,
                           int y,
                           Anchor anchor,
@@ -591,6 +614,16 @@ class Gui
   int selectPrevious();
   void animateSelection(int repeat = 0);
 
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       std::optional<Painter::Color> color = {},
+                       std::optional<int> size = {},
+                       std::optional<Painter::Anchor> anchor = {},
+                       const std::optional<std::string>& name = {});
+  void deleteLabel(const std::string& name);
+  void clearLabels();
+
   std::string addRuler(int x0,
                        int y0,
                        int x1,
@@ -599,10 +632,10 @@ class Gui
                        const std::string& name = "",
                        bool euclidian = true);
   void deleteRuler(const std::string& name);
+  void clearRulers();
 
   void clearSelections();
   void clearHighlights(int highlight_group = 0);
-  void clearRulers();
 
   int select(const std::string& type,
              const std::string& name_filter = "",
