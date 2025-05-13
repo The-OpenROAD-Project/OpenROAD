@@ -79,7 +79,6 @@ class RulerDescriptor : public Descriptor
 
  private:
   static bool editPoint(std::any value,
-                        int dbu_per_uu,
                         odb::Point& pt,
                         bool is_x);
 
