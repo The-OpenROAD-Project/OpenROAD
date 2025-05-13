@@ -133,7 +133,7 @@ void extRCTable::makeCapTableUnder()
   for (uint jj = 1; jj < _maxCnt1; jj++) {
     _inTable[jj] = new Ath__array1D<extDistRC*>*[_maxCnt1];
 
-    for (uint ii = 0; ii < jj; ii++) {
+    for (uint ii = 0; ii <= jj; ii++) {
       _inTable[jj][ii] = nullptr;
     }
     for (uint kk = jj + 1; kk < _maxCnt1; kk++) {
