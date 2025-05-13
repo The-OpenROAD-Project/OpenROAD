@@ -11,11 +11,11 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
+#include "grt/GlobalRouter.h"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
-#include "grt/GlobalRouter.h"
 
 namespace grt {
 class GlobalRouter;
