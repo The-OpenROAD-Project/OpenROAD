@@ -140,6 +140,7 @@ GlobalRouter::~GlobalRouter()
     delete net;
   }
   delete repair_antennas_;
+  delete rudy_;
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
