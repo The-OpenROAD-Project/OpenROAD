@@ -9,7 +9,6 @@ package(
 )
 
 DEF_HEADERS = [
-    "def/def_parser.hpp",
     "def/defiAlias.hpp",
     "def/defiAssertion.hpp",
     "def/defiBlockage.hpp",
@@ -52,9 +51,9 @@ cc_library(
     srcs = [
         ":def_bison",
     ],
-    hdrs = DEF_HEADERS,
+    hdrs = DEF_HEADERS + ["def/def_parser.hpp"],
     # Ignore warnings in generated code
-    copts = ["-Wno-unused-but-set-variable"],
+    copts = ["-Wno-unused-but-set-variable", "-Wno-modules-import-nested-redundant"],
     includes = ["def"],
 )
 
@@ -98,10 +97,12 @@ cc_library(
         "def/defrSettings.cpp",
         "def/defwWriter.cpp",
         "def/defwWriterCalls.cpp",
-        ":def_bison",
     ],
     hdrs = DEF_HEADERS,
     includes = ["def"],
+    deps = [
+        ":def_bison_lib",
+    ],
 )
 
 genyacc(
