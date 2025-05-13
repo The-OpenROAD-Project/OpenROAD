@@ -15,6 +15,7 @@
 #include "sta/Path.hh"
 #include "sta/UnorderedSet.hh"
 #include "utl/Logger.h"
+#include "grt/GlobalRouter.h"
 
 namespace grt {
 class GlobalRouter;
