@@ -3108,12 +3108,12 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 
     GCellHandle& handle = nb_gcells_[gcell_index];
 
-    if(handle->isFiller()) {
+    if (handle->isFiller()) {
       debugPrint(log_,
-                GPL,
-                "callbacks",
-                1,
-                "error: trying to destroy filler gcell during callback!");
+                 GPL,
+                 "callbacks",
+                 1,
+                 "error: trying to destroy filler gcell during callback!");
       return;
     }
 
@@ -3125,8 +3125,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     db_inst_to_nb_index_map_.erase(db_it);
 
     if (gcell_index != last_index) {
-      odb::dbInst* swapped_inst
-          = nb_gcells_[gcell_index]->insts()[0]->dbInst();
+      odb::dbInst* swapped_inst = nb_gcells_[gcell_index]->insts()[0]->dbInst();
       db_inst_to_nb_index_map_.erase(swapped_inst);
       db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
       std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
