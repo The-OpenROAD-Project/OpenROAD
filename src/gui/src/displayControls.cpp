@@ -459,6 +459,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   iterm_label_font_ = QApplication::font();  // use default font
   iterm_label_color_ = Qt::yellow;
 
+  label_font_ = QApplication::font();  // use default font
+
   auto instance_shape
       = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
   makeLeafItem(instance_shapes_.names,
@@ -500,6 +502,11 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
+  setNameItemDoubleClickAction(misc_.labels, [this]() {
+    label_font_
+        = QFontDialog::getFont(nullptr, label_font_, this, "User label font");
+  });
   makeLeafItem(
       misc_.background, "Background", misc, {}, false, background_color_);
   toggleParent(misc_group_);
@@ -704,6 +711,7 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("font");
   getFont(pin_markers_font_, "pin_markers");
   getFont(ruler_font_, "ruler");
+  getFont(label_font_, "label");
   getFont(instance_name_font_, "instance_name");
   getFont(iterm_label_font_, "iterm_label");
   settings->endGroup();
@@ -779,6 +787,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->beginGroup("font");
   settings->setValue("pin_markers", pin_markers_font_);
   settings->setValue("ruler", ruler_font_);
+  settings->setValue("label", label_font_);
   settings->setValue("instance_name", instance_name_font_);
   settings->setValue("iterm_label", iterm_label_font_);
   settings->endGroup();
@@ -1682,6 +1691,21 @@ QColor DisplayControls::rulerColor()
 QFont DisplayControls::rulerFont()
 {
   return ruler_font_;
+}
+
+bool DisplayControls::areLabelsVisible()
+{
+  return isModelRowVisible(&misc_.labels);
+}
+
+bool DisplayControls::areLabelsSelectable()
+{
+  return isModelRowSelectable(&misc_.labels);
+}
+
+QFont DisplayControls::labelFont()
+{
+  return label_font_;
 }
 
 bool DisplayControls::areBlockagesVisible()

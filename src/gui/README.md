@@ -644,6 +644,55 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
+### Add Label to Layout
+
+To add a label to the layout use the following command:
+
+Returns: name of the newly created label.
+
+```tcl
+add_label -position {x y}
+          [-anchor anchor]
+          [-color color]
+          [-size size]
+          [-name name]
+          text
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-position` | point of the label in microns. |
+| `-anchor` | anchor point for text, default is center. |
+| `-color` | color to use for the label, default is white. |
+| `size` | size of the label, default is determined by the default GUI font. |
+| `name` | name of the label, one will be generated if not provided. |
+| `text` | text for the label. |
+
+### Delete a single label
+
+To remove a single label:
+
+```tcl
+gui::delete_label
+    name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `name` | name of the label. |
+
+### Clear All Labels
+
+To remove all the labels:
+
+```tcl
+gui::clear_labels
+```
+
 ### Display help
 
 To display the help for a specific command or messasge.

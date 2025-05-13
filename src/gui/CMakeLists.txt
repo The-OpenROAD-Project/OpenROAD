@@ -56,6 +56,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/drcWidget.cpp
     src/helpWidget.cpp
     src/ruler.cpp
+    src/label.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
     src/heatMapPinDensity.cpp
