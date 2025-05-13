@@ -448,9 +448,9 @@ void RenderThread::drawLabels(Painter& painter, const Labels& labels)
     return;
   }
 
-  for (auto& label : labels) {
-    painter.saveState();
+  painter.saveState();
 
+  for (auto& label : labels) {
     const Painter::Color color = label->getColor();
     const QFont font = viewer_->options_->labelFont();
 
@@ -469,9 +469,9 @@ void RenderThread::drawLabels(Painter& painter, const Labels& labels)
                        label->getPt().y(),
                        label->getAnchor(),
                        label->getText());
-
-    painter.restoreState();
   }
+
+  painter.restoreState();
 }
 
 // Draw the instances bounds

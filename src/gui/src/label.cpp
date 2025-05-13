@@ -225,10 +225,10 @@ Selected LabelDescriptor::makeSelected(std::any object) const
 
 bool LabelDescriptor::lessThan(std::any l, std::any r) const
 {
-  auto l_ruler = std::any_cast<Label*>(l);
-  auto r_ruler = std::any_cast<Label*>(r);
+  auto l_label = std::any_cast<Label*>(l);
+  auto r_label = std::any_cast<Label*>(r);
 
-  return l_ruler->getName() < r_ruler->getName();
+  return l_label->getName() < r_label->getName();
 }
 
 bool LabelDescriptor::getAllObjects(SelectionSet& objects) const

@@ -1151,8 +1151,8 @@ std::string MainWindow::addLabel(int x,
   std::string new_name = new_label->getName();
 
   // check if ruler name is unique
-  for (const auto& ruler : rulers_) {
-    if (new_name == ruler->getName()) {
+  for (const auto& label : labels_) {
+    if (new_name == label->getName()) {
       logger_->warn(
           utl::GUI, 44, "Label with name \"{}\" already exists", new_name);
       return "";
