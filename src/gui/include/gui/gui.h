@@ -26,8 +26,6 @@
 
 struct Tcl_Interp;
 
-class QFont;
-
 namespace sta {
 class dbSta;
 }
@@ -62,6 +60,21 @@ using StringToDBU = std::function<int(const std::string&, bool*)>;
 class Painter
 {
  public:
+  struct Font
+  {
+    Font(const std::string& name, int size) : name(name), size(size)
+    {
+    }
+
+    std::string name;
+    int size;
+
+    bool operator==(const Font& other) const
+    {
+      return (name == other.name) && (size == other.size);
+    }
+  };
+
   struct Color
   {
     constexpr Color() : r(0), g(0), b(0), a(255) {}
@@ -170,7 +183,7 @@ class Painter
   };
   virtual void setBrush(const Color& color, const Brush& style = SOLID) = 0;
 
-  virtual void setFont(const QFont* font) = 0;
+  virtual void setFont(const Font& font) = 0;
 
   // Set the pen to an RGBA value and the brush
   void setPenAndBrush(const Color& color,

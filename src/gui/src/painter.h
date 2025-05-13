@@ -102,7 +102,7 @@ class GuiPainter : public Painter
     painter_->setBrush(QBrush(qcolor, brush_pattern));
   }
 
-  void setFont(const QFont* font) override { painter_->setFont(*font); }
+  void setFont(const Font& font) override;
 
   void saveState() override { painter_->save(); }
 

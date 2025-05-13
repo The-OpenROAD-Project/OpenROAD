@@ -3,6 +3,7 @@
 
 #include "painter.h"
 
+#include <QFont>
 #include <cmath>
 #include <string>
 
@@ -286,6 +287,13 @@ void GuiPainter::drawRuler(int x0,
   painter_->setFont(restore_font);
 
   painter_->setTransform(initial_xfm);
+}
+
+void GuiPainter::setFont(const Font& font)
+{
+  const QFont qfont(QString::fromStdString(font.name), font.size);
+
+  painter_->setFont(qfont);
 }
 
 }  // namespace gui

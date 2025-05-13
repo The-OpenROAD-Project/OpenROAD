@@ -450,21 +450,17 @@ void RenderThread::drawLabels(Painter& painter, const Labels& labels)
 
   painter.saveState();
 
+  const QFont qfont = viewer_->options_->labelFont();
   for (auto& label : labels) {
     const Painter::Color color = label->getColor();
-    const QFont font = viewer_->options_->labelFont();
 
     painter.setPen(color, true);
     painter.setBrush(color);
 
     const auto size = label->getSize();
-    if (size) {
-      QFont new_font = font;
-      new_font.setPixelSize(size.value());
-      painter.setFont(&new_font);
-    } else {
-      painter.setFont(&font);
-    }
+    const Painter::Font font(qfont.family().toStdString(), size.value_or(qfont.pointSize()));
+    painter.setFont(font);
+
     painter.drawString(label->getPt().x(),
                        label->getPt().y(),
                        label->getAnchor(),
