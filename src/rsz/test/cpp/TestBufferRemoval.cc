@@ -238,7 +238,7 @@ TEST_F(BufRemTest, SlackImproves)
   sta::Instance* sta_inst2 = db_network_->dbToSta(inst2);
   insts->emplace_back(sta_inst2);
 
-  resizer_->removeBuffers(*insts, /* recordJournal */ true);
+  resizer_->removeBuffers(*insts);
 
   resizer_->journalRestoreTest();
 

@@ -4,6 +4,7 @@ load("//test:regression.bzl", "regression_test")
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
     "blif_reader_sequential",
@@ -14,6 +15,8 @@ COMPULSORY_TESTS = [
     "blif_writer_sequential",
     "const_cell_removal",
     "gcd_restructure",
+    "aes_asap7",
+    "gcd_asap7",
 ]
 
 # Disabled in CMakeLists.txt

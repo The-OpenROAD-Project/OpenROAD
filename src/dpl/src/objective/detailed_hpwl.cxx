@@ -10,9 +10,7 @@ namespace dpl {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 DetailedHPWL::DetailedHPWL(Network* network)
-    : DetailedObjective("hpwl"),
-      network_(network),
-      edgeMask_(network_->getNumEdges(), traversal_)
+    : DetailedObjective("hpwl"), network_(network)
 {
 }
 
@@ -20,9 +18,8 @@ DetailedHPWL::DetailedHPWL(Network* network)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedHPWL::init()
 {
-  traversal_ = 0;
-  edgeMask_.resize(network_->getNumEdges());
-  std::fill(edgeMask_.begin(), edgeMask_.end(), traversal_);
+  edge_hpwl_.clear();
+  edge_hpwl_.resize(network_->getNumEdges(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +42,9 @@ double DetailedHPWL::curr()
     if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
       continue;
     }
-    hpwl += edi->hpwl();
+    auto edi_hpwl = edi->hpwl();
+    edge_hpwl_[edi->getId()] = edi_hpwl;
+    hpwl += edi_hpwl;
   }
   return hpwl;
 }
@@ -54,61 +53,33 @@ double DetailedHPWL::curr()
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedHPWL::delta(const Journal& journal)
 {
-  // Given a list of nodes with their old positions and new positions, compute
-  // the change in WL. Note that we need to know the orientation information and
-  // might need to adjust pin information...
   uint64_t old_wl = 0.;
   uint64_t new_wl = 0.;
-
-  const auto& changes = journal.getActions();
-  for (int i = changes.size() - 1; i >= 0; i--) {
-    journal.undo(changes[i], true);
-  }
-
-  ++traversal_;
-  for (const auto ndi : journal.getAffectedNodes()) {
-    for (Pin* pini : ndi->getPins()) {
-      Edge* edi = pini->getEdge();
-
-      int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
-        continue;
-      }
-      if (edgeMask_[edi->getId()] == traversal_) {
-        continue;
-      }
-      edgeMask_[edi->getId()] = traversal_;
-      old_wl += edi->hpwl();
+  auto affected_edges = journal.getAffectedEdges();
+  for (const auto& edge : affected_edges) {
+    int npins = edge->getNumPins();
+    if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
+      continue;
     }
-  }
-
-  // Put cells into their "new positions and orientations".
-  for (const auto& change : changes) {
-    journal.redo(change, true);
-  }
-
-  ++traversal_;
-  for (const auto ndi : journal.getAffectedNodes()) {
-    for (int pi = 0; pi < ndi->getNumPins(); pi++) {
-      Pin* pini = ndi->getPins()[pi];
-
-      Edge* edi = pini->getEdge();
-
-      int npins = edi->getNumPins();
-      if (npins <= 1 || npins >= skipNetsLargerThanThis_) {
-        continue;
-      }
-      if (edgeMask_[edi->getId()] == traversal_) {
-        continue;
-      }
-      edgeMask_[edi->getId()] = traversal_;
-      new_wl += edi->hpwl();
-    }
+    affected_edges_.emplace_back(edge->getId());
+    old_wl += edge_hpwl_[edge->getId()];
+    new_wl += edge->hpwl();
   }
   // +ve means improvement.
   return (double) old_wl - new_wl;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void DetailedHPWL::accept()
+{
+  // Accept the changes.
+  for (const auto& edge_id : affected_edges_) {
+    const Edge* edge = network_->getEdge(edge_id);
+    edge_hpwl_[edge->getId()] = edge->hpwl();
+  }
+  affected_edges_.clear();
+}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 }  // namespace dpl

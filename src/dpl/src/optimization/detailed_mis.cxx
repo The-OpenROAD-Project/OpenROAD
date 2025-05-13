@@ -684,13 +684,14 @@ void DetailedMis::solveMatch()
           mgrPtr_->addCellToSegment(ndi, segId);
         }
         {
-          JournalAction action;
-          action.setType(JournalAction::MOVE_CELL);
-          action.setNode(ndi);
-          action.setOrigLocation(pos[i].first, pos[i].second);
-          action.setNewLocation(pos[j].first, pos[j].second);
-          action.setOrigSegs(old_seg_ids);
-          action.setNewSegs(new_seg_ids);
+          MoveCellAction action(ndi,
+                                pos[i].first,
+                                pos[i].second,
+                                pos[j].first,
+                                pos[j].second,
+                                true,
+                                old_seg_ids,
+                                new_seg_ids);
           journal.addAction(action);
         }
       }
@@ -704,11 +705,8 @@ void DetailedMis::solveMatch()
     }
   }
   if (viol) {
-    while (!journal.isEmpty()) {
-      const auto& action = journal.getLastAction();
-      journal.undo(action);
-      journal.removeLastAction();
-    }
+    journal.undo();
+    journal.clear();
   }
 }
 

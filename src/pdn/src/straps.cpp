@@ -2250,6 +2250,10 @@ void RepairChannelStraps::repairGridChannels(
     renderer->pause();
   }
 
+  if (channels.empty()) {
+    return;
+  }
+
   // check for recurring channels
   for (const auto& channel : channels) {
     for (const auto& strap : grid->getStraps()) {
@@ -2351,8 +2355,8 @@ void RepairChannelStraps::repairGridChannels(
     grid->makeVias(global_shapes, obstructions);
   }
 
-  if (channels.size() != areas_repaired.size() && !areas_repaired.empty()) {
-    // channels were skipped so, try again
+  if (!areas_repaired.empty()) {
+    // channels changed so try again
     repairGridChannels(grid, global_shapes, obstructions, allow, renderer);
   } else {
     const auto remaining_channels = findRepairChannels(grid);
