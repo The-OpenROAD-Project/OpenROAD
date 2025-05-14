@@ -3219,8 +3219,7 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
   int64_t availableFillerArea = fillerArea * fillerStor_.size();
   int64_t originalInflationArea = inflationArea;
 
-  for (int i = 0; i < nb_gcells_.size() && removed_count < maxFillersToRemove;
-       ++i) {
+  for (int i = nb_gcells_.size() - 1; i >= 0 && removed_count < maxFillersToRemove; --i) {
     if (nb_gcells_[i]->isFiller()) {
       destroyFillerGCell(i);
       availableFillerArea -= fillerArea;
@@ -3228,6 +3227,7 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
       ++removed_count;
     }
   }
+  
 
   totalFillerArea_ = availableFillerArea;
 
@@ -3258,7 +3258,7 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
       log_->report("Not enough fillers to fully compensate inflation.");
     }
     int64_t totalGCellArea
-        = nesterovInstsArea() + totalFillerArea_ + remainingInflationArea;
+        = nesterovInstsArea() + removedFillerArea + totalFillerArea_ + remainingInflationArea;
     setTargetDensity(static_cast<float>(totalGCellArea)
                      / static_cast<float>(whiteSpaceArea()));
   }
