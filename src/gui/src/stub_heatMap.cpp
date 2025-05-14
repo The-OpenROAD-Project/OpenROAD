@@ -216,7 +216,7 @@ Renderer::Settings HeatMapRenderer::getSettings()
   return {};
 }
 
-void setSettings(const Settings& settings)
+void HeatMapRenderer::setSettings(const Renderer::Settings& settings)
 {
 }
 
