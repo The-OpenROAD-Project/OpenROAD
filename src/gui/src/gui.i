@@ -822,7 +822,7 @@ void gif_start(const char* filename)
   gui->gifStart(filename);
 }
 
-void gif_add(double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {}, int delay = 0)
+void gif_add(double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, int delay = 0)
 {
   if (!check_gui("gif_add")) {
     return;
@@ -832,7 +832,7 @@ void gif_add(double xlo, double ylo, double xhi, double yhi, int width_px = 0, d
   if (delay > 0) {
     delay_pass = delay;
   }
-  gui->gifAddFrame(make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, display_settings, delay_pass);
+  gui->gifAddFrame(make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, delay_pass);
 }
 
 void gif_end()

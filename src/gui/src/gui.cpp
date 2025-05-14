@@ -1383,7 +1383,7 @@ bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
 void Gui::gifStart(const std::string& filename)
 {
   if (!enabled()) {
-    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enanbled");
+    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
   }
 
   gif_ = std::make_unique<GIF>();
@@ -1394,10 +1394,10 @@ void Gui::gifStart(const std::string& filename)
 void Gui::gifAddFrame(const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
-                      const std::map<std::string, bool>& display_settings,
                       std::optional<int> delay)
 {
   if (gif_ == nullptr) {
+    logger_->warn(utl::GUI, 51, "GIF not active");
     return;
   }
 
@@ -1432,16 +1432,8 @@ void Gui::gifAddFrame(const odb::Rect& region,
     save_region.bloat(bloat, save_region);
   }
 
-  // save current display settings and apply new
-  main_window->getControls()->save();
-  for (const auto& [control, value] : display_settings) {
-    setDisplayControlsVisible(control, value);
-  }
-
   QImage img = main_window->getLayoutViewer()->createImage(
       save_region, width_px, dbu_per_pixel);
-  // restore settings
-  main_window->getControls()->restore();
 
   if (gif_->writer == nullptr) {
     gif_->writer = std::make_unique<GifWriter>();
@@ -1486,6 +1478,7 @@ void Gui::gifAddFrame(const odb::Rect& region,
 void Gui::gifEnd()
 {
   if (gif_ == nullptr) {
+    logger_->warn(utl::GUI, 58, "GIF not active");
     return;
   }
 

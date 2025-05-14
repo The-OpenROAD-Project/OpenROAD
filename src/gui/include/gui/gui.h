@@ -777,7 +777,6 @@ class Gui
   void gifAddFrame(const odb::Rect& region = odb::Rect(),
                    int width_px = 0,
                    double dbu_per_pixel = 0,
-                   const std::map<std::string, bool>& display_settings = {},
                    std::optional<int> delay = {});
   void gifEnd();
 
