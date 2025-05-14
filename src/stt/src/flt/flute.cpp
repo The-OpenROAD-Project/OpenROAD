@@ -70,7 +70,7 @@ inline T ADIFF(T x, T y)
 ////////////////////////////////////////////////////////////////
 
 #if LUT_SOURCE == LUT_FILE || LUT_SOURCE == LUT_VAR_CHECK
-static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
+static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln, LUT_ALLOC_TYPE LUT_alloc)
 {
   unsigned char charnum[256], line[32], *linep, c;
   FILE *fpwv, *fprt;
@@ -115,10 +115,12 @@ static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
         fgetc(fpwv);  // '/n'
         numsoln[d][k] = numsoln[d][kk];
         LUT[d][k] = LUT[d][kk];
+        LUT_alloc[d][k] = false;
       } else {
         fgetc(fpwv);  // '\n'
         numsoln[d][k] = ns;
         p = (struct csoln*) malloc(ns * sizeof(struct csoln));
+        LUT_alloc[d][k] = true;
         LUT[d][k] = p;
         for (i = 1; i <= ns; i++) {
           linep = (unsigned char*) fgets((char*) line, 32, fpwv);
@@ -171,46 +173,59 @@ extern const char* powv9[];
 
 void Flute::readLUT()
 {
-  makeLUT(LUT, numsoln);
+  makeLUT(LUT, numsoln, LUT_alloc);
 
 #if LUT_SOURCE == LUT_FILE
-  readLUTfiles(LUT, numsoln);
+  readLUTfiles(LUT, numsoln, LUT_alloc);
   lut_valid_d = FLUTE_D;
 
 #elif LUT_SOURCE == LUT_VAR
   // Only init to d=8 on startup because d=9 is big and slow.
-  initLUT(lut_initial_d, LUT, numsoln);
+  initLUT(lut_initial_d, LUT, numsoln, LUT_alloc);
 
 #elif LUT_SOURCE == LUT_VAR_CHECK
-  readLUTfiles(LUT, numsoln);
+  readLUTfiles(LUT, numsoln, LUT_alloc);
   // Temporaries to compare to file results.
   LUT_TYPE LUT_;
   NUMSOLN_TYPE numsoln_;
-  makeLUT(LUT_, numsoln_);
-  initLUT(FLUTE_D, LUT_, numsoln_);
+  LUT_ALLOC_TYPE LUT_alloc_;
+  makeLUT(LUT_, numsoln_, LUT_alloc_);
+  initLUT(FLUTE_D, LUT_, numsoln_, LUT_alloc_);
   checkLUT(LUT, numsoln, LUT_, numsoln_);
+  deleteLUT(LUT_, numsoln_, LUT_alloc_, true);
 #endif
 }
 
-void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
+void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE LUT_alloc)
 {
   LUT = new struct csoln**[FLUTE_D + 1];
   numsoln = new int*[FLUTE_D + 1];
+  LUT_alloc = new bool*[FLUTE_D + 1];
   for (int d = 4; d <= FLUTE_D; d++) {
     LUT[d] = new struct csoln*[MGROUP];
     numsoln[d] = new int[MGROUP];
+    LUT_alloc[d] = new bool[MGROUP];
   }
 }
 
 void Flute::deleteLUT()
 {
-  deleteLUT(LUT, numsoln);
+  deleteLUT(LUT, numsoln, LUT_alloc, LUT_SOURCE == LUT_VAR);
 }
 
-void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln)
+void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, const LUT_ALLOC_TYPE LUT_alloc, const bool use_delete)
 {
   if (LUT) {
     for (int d = 4; d <= FLUTE_D; d++) {
+      for (int k = 0; k < MGROUP; k++) {
+        if (LUT_alloc[d][k]) {
+          if (use_delete) {
+            delete[] LUT[d][k];
+          } else {
+            free(LUT[d][k]);
+          }
+        }
+      }
       delete[] LUT[d];
       delete[] numsoln[d];
     }
@@ -250,7 +265,7 @@ inline const char* readDecimalInt(const char* s, int& value)
 }
 
 // Init LUTs from base64 encoded string variables.
-void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
+void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln, LUT_ALLOC_TYPE LUT_alloc)
 {
   std::string pwv_string = utl::base64_decode(powv9);
   const char* pwv = pwv_string.c_str();
@@ -278,10 +293,12 @@ void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
         pwv = readDecimalInt(pwv, kk) + 1;
         numsoln[d][k] = numsoln[d][kk];
         LUT[d][k] = LUT[d][kk];
+        LUT_alloc[d][k] = false;
       } else {
         pwv++;  // '\n'
         numsoln[d][k] = ns;
         struct csoln* p = new struct csoln[ns];
+        LUT_alloc[d][k] = true;
         LUT[d][k] = p;
         for (int i = 1; i <= ns; i++) {
           p->parent = charNum(*pwv++);
@@ -332,7 +349,7 @@ void Flute::ensureLUT(int d)
     readLUT();
   }
   if (d > lut_valid_d && d <= FLUTE_D) {
-    initLUT(FLUTE_D, LUT, numsoln);
+    initLUT(FLUTE_D, LUT, numsoln, LUT_alloc);
   }
 }
 

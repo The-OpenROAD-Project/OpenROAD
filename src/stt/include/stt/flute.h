@@ -34,6 +34,7 @@ class Flute
  private:
   using LUT_TYPE = struct csoln***;
   using NUMSOLN_TYPE = int**;
+  using LUT_ALLOC_TYPE = bool**;
 
  public:
   Flute() = default;
@@ -59,11 +60,11 @@ class Flute
 
  private:
   void readLUT();
-  void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
-  void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln);
+  void makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE& LUT_alloc);
+  void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln, LUT_ALLOC_TYPE LUT_alloc);
   void ensureLUT(int d);
   void deleteLUT();
-  void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln);
+  void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, const LUT_ALLOC_TYPE LUT_alloc, const bool use_delete);
 
   int flute_wl(int d,
                const std::vector<int>& x,
@@ -166,6 +167,7 @@ class Flute
   // Dynamically allocate LUTs.
   LUT_TYPE LUT = nullptr;
   NUMSOLN_TYPE numsoln = nullptr;
+  LUT_ALLOC_TYPE LUT_alloc = nullptr;
   // LUTs are initialized to this order at startup.
   const int lut_initial_d = 8;
   int lut_valid_d = 0;
