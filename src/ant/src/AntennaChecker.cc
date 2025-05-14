@@ -526,8 +526,8 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
   bool violation = false;
   double calculated_value = 0.0;
   double required_value = 0.0;
-  // if net has diffusion area, compare with diffusion area ratio
-  // othercase compare with area ratio
+  // If node is connected to diffusion area, compare with diffusion area ratio.
+  // Otherwise compare with area ratio
   if (info.iterm_diff_area != 0) {
     if (diff_PAR_PWL_ratio != 0) {
       violation = info.diff_PAR > diff_PAR_PWL_ratio;
@@ -583,8 +583,8 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
   bool violation = false;
   double calculate_value = 0.0;
   double required_value = 0.0;
-  // if net has diffusion side area, compare with diffusion side area ratio
-  // othercase compare with side area ratio
+  // If node is connected to diffusion area, compare with diffusion side area
+  // ratio. Otherwise compare with side area ratio
   if (info.iterm_diff_area != 0) {
     if (diff_PSR_PWL_ratio != 0) {
       violation = info.diff_PSR > diff_PSR_PWL_ratio;
@@ -635,8 +635,8 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
   bool violation = false;
   double calculate_value = 0.0;
   double required_value = 0.0;
-  // if net has diffusion side area, compare with diffusion side area ratio
-  // othercase compare with side area ratio
+  // If node is connected to diffusion area, compare with cum diffusion area
+  // ratio. Otherwise compare with cumulative area ratio
   if (info.iterm_diff_area != 0) {
     if (diff_CAR_PWL_ratio != 0) {
       violation = info.diff_CAR > diff_CAR_PWL_ratio;
@@ -683,8 +683,8 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
   bool violation = false;
   double calculate_value = 0.0;
   double required_value = 0.0;
-  // if net has diffusion side area, compare with diffusion side area ratio
-  // othercase compare with side area ratio
+  // If node is connected to diffusion area, compare with cum diffusion side
+  // area ratio. Otherwise compare with cumulative side area ratio
   if (info.iterm_diff_area != 0) {
     if (diff_CSR_PWL_ratio != 0) {
       violation = info.diff_CSR > diff_CSR_PWL_ratio;
