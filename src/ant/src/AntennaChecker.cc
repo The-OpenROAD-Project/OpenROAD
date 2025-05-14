@@ -473,6 +473,7 @@ void AntennaChecker::calculatePAR(GateToLayerToNodeInfo& gate_info)
 void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
 {
   for (auto& [gate, layer_to_node_info] : gate_info) {
+    // Variables to store the accumulated values for vias and wires
     NodeInfo sumWire, sumVia;
     // iterate from first_layer -> last layer, cumulate sum for wires and vias
     odb::dbTech* tech = db_->getTech();
@@ -481,13 +482,17 @@ void AntennaChecker::calculateCAR(GateToLayerToNodeInfo& gate_info)
       if (layer_to_node_info.find(iter_layer) != layer_to_node_info.end()) {
         NodeInfo& node_info = layer_to_node_info[iter_layer];
         if (iter_layer->getRoutingLevel() == 0) {
+          // Accumulating the PAR of vias in sumVia
           sumVia += node_info;
+          // Updating the node with the accumulated values
           node_info.CAR += sumVia.PAR;
           node_info.CSR += sumVia.PSR;
           node_info.diff_CAR += sumVia.diff_PAR;
           node_info.diff_CSR += sumVia.diff_PSR;
         } else {
+          // Accumulating the PAR of wires in sumWire
           sumWire += node_info;
+          // Updating the node with the accumulated values
           node_info.CAR += sumWire.PAR;
           node_info.CSR += sumWire.PSR;
           node_info.diff_CAR += sumWire.diff_PAR;
