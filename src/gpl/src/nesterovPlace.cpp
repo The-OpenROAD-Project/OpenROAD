@@ -467,11 +467,32 @@ int NesterovPlace::doNesterovPlace(int start_iter)
           // 3. updateareas
           // 4. updateDensitySize
 
-          nesterov->setTargetDensity(
-              static_cast<float>(nbc_->getDeltaArea()
-                                 + nesterov->nesterovInstsArea()
-                                 + nesterov->getTotalFillerArea())
-              / static_cast<float>(nesterov->whiteSpaceArea()));
+          // nesterov->setTargetDensity(
+          //     static_cast<float>(nbc_->getDeltaArea()
+          //                        + nesterov->nesterovInstsArea()
+          //                        + nesterov->getTotalFillerArea())
+          //     / static_cast<float>(nesterov->whiteSpaceArea()));
+
+
+int64_t deltaArea = nbc_->getDeltaArea();
+int64_t instArea = nesterov->nesterovInstsArea();
+int64_t fillerArea = nesterov->getTotalFillerArea();
+int64_t wsArea = nesterov->whiteSpaceArea();
+
+int64_t totalGCellArea = deltaArea + instArea + fillerArea;
+float newTargetDensity = static_cast<float>(totalGCellArea)
+                         / static_cast<float>(wsArea);
+
+log_->report("Density update breakdown (original method):");
+log_->report("  deltaArea (inflatedAreaDelta_): {}", block->dbuAreaToMicrons(deltaArea));
+log_->report("  nesterovInstsArea: {}", block->dbuAreaToMicrons(instArea));
+log_->report("  totalFillerArea: {}", block->dbuAreaToMicrons(fillerArea));
+log_->report("  whiteSpaceArea: {}", block->dbuAreaToMicrons(wsArea));
+log_->report("  totalGCellArea: {}", block->dbuAreaToMicrons(totalGCellArea));
+log_->report("  New target density: {}", newTargetDensity);
+
+
+          nesterov->cutFillerCells(nbc_->getDeltaArea());
 
           float rsz_delta_area_microns
               = block->dbuAreaToMicrons(nbc_->getDeltaArea());

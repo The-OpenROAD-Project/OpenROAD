@@ -3206,6 +3206,11 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
 void NesterovBase::cutFillerCells(int64_t inflationArea)
 {
   dbBlock* block = pb_->db()->getChip()->getBlock();
+  if(inflationArea < 0) {
+    log_->warn(GPL,313, "Negative area provided to remove fillers: {}. Expected positive value, ignoring.", block->dbuAreaToMicrons(inflationArea));
+    return;
+  }
+  
   int removed_count = 0;
   const int64_t fillerArea = getFillerCellArea();
   const int64_t maxFillersToRemove = std::min(
@@ -3261,6 +3266,17 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
         = nesterovInstsArea() + removedFillerArea + totalFillerArea_ + remainingInflationArea;
     setTargetDensity(static_cast<float>(totalGCellArea)
                      / static_cast<float>(whiteSpaceArea()));
+
+float newTargetDensity = static_cast<float>(totalGCellArea)
+    / static_cast<float>(whiteSpaceArea());
+log_->report("Density update breakdown:");
+log_->report("  nesterovInstsArea: {}", block->dbuAreaToMicrons(nesterovInstsArea()));
+log_->report("  removedFillerArea: {}", block->dbuAreaToMicrons(removedFillerArea));
+log_->report("  remaining fillers area (totalFillerArea_): {}", block->dbuAreaToMicrons(totalFillerArea_));
+log_->report("  remainingInflationArea: {}", block->dbuAreaToMicrons(remainingInflationArea));
+log_->report("  whiteSpaceArea: {}", block->dbuAreaToMicrons(whiteSpaceArea()));
+log_->report("  totalGCellArea: {}", block->dbuAreaToMicrons(totalGCellArea));
+log_->report("  New target density: {}", newTargetDensity);
   }
 }
 

@@ -671,11 +671,19 @@ std::pair<bool, bool> RouteBase::routability()
              "Placement target density:",
              nbVec_[0]->targetDensity());
 
-  int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
-                           + nbVec_[0]->getTotalFillerArea();
+  double prev_white_space_area = nbVec_[0]->whiteSpaceArea();
+  double prev_movable_area = nbVec_[0]->movableArea();
+  double prev_total_filler_area = nbVec_[0]->getTotalFillerArea();
+  double prev_total_gcells_area
+      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
+  double prev_expected_gcells_area
+      = inflatedAreaDelta_ + prev_total_gcells_area;
 
   nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
 
+
+  // int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
+  // + nbVec_[0]->getTotalFillerArea();
   // newly set Density
   // nbVec_[0]->setTargetDensity(
   //     static_cast<float>(totalGCellArea)
@@ -725,14 +733,6 @@ std::pair<bool, bool> RouteBase::routability()
 
     return std::make_pair(false, true);
   }
-
-  double prev_white_space_area = nbVec_[0]->whiteSpaceArea();
-  double prev_movable_area = nbVec_[0]->movableArea();
-  double prev_total_filler_area = nbVec_[0]->getTotalFillerArea();
-  double prev_total_gcells_area
-      = nbVec_[0]->nesterovInstsArea() + nbVec_[0]->getTotalFillerArea();
-  double prev_expected_gcells_area
-      = inflatedAreaDelta_ + prev_total_gcells_area;
 
   // cut filler cells accordingly
   //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
