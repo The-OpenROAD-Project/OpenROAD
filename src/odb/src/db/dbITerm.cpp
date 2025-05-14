@@ -821,6 +821,7 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
             });
 
   std::vector<dbAccessPoint*> aps;
+  aps.reserve(sorted_aps.size());
   for (auto& [pin_id, ap_id] : sorted_aps) {
     aps.push_back((dbAccessPoint*) block->ap_tbl_->getPtr(ap_id));
   }
