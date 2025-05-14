@@ -1129,71 +1129,72 @@ void FlexPA::updatePinStats(
   }
 }
 
-bool FlexPA::EnoughSparsePoints(
+bool FlexPA::improveAnyRequirements(
+    frAccessPoint* candidate_ap,
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    frInstTerm* inst_term)
+    frInstTerm* inst_term,
+    PARequirements& reqs,
+    bool accept_progress)
 {
-  const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
-  const bool is_macro_cell_pin = inst_term && isMacroCell(inst_term->getInst());
+  bool candidate_ap_makes_progress = false;
+
+  if (reqs.sparse_points.current < reqs.sparse_points.goal) {
+    if (isPointSparse(candidate_ap, aps)) {
+      candidate_ap_makes_progress = true;
+      if (accept_progress) {
+        reqs.sparse_points.current++;
+      }
+    }
+  }
+
+  if (reqs.far_from_edge.current < reqs.far_from_edge.goal) {
+    if (isPointFarFromEdge(candidate_ap, inst_term)) {
+      candidate_ap_makes_progress = true;
+      if (accept_progress) {
+        reqs.far_from_edge.current++;
+      }
+    }
+  }
+  return candidate_ap_makes_progress;
+}
+
+bool FlexPA::isPointSparse(frAccessPoint* ap,
+                           std::vector<std::unique_ptr<frAccessPoint>>& aps)
+{
   /* This is a Max Clique problem, each ap is a node, draw an edge between two
    aps if they are far away as to not intersect. n_sparse_access_points,
    ideally, is the Max Clique of this graph. the current implementation gives a
    very rough approximation, it works, but I think it can be improved.
    */
-  int n_sparse_access_points = (int) aps.size();
-  for (int i = 0; i < (int) aps.size(); i++) {
-    const int colision_dist
-        = design_->getTech()->getLayer(aps[i]->getLayerNum())->getWidth() / 2;
-    Rect ap_colision_box;
-    Rect(aps[i]->getPoint(), aps[i]->getPoint())
-        .bloat(colision_dist, ap_colision_box);
-    for (int j = i + 1; j < (int) aps.size(); j++) {
-      if (aps[i]->getLayerNum() == aps[j]->getLayerNum()
-          && ap_colision_box.intersects(aps[j]->getPoint())) {
-        n_sparse_access_points--;
-        break;
-      }
+  const int colision_dist
+      = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() / 2;
+  Rect ap_colision_box;
+  Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
+  for (const auto& other_ap : aps) {
+    if (other_ap->getLayerNum() != other_ap->getLayerNum()) {
+      continue;
+    }
+    if (ap_colision_box.intersects(other_ap->getPoint())) {
+      return false;
     }
   }
-
-  if (is_std_cell_pin
-      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
-    return true;
-  }
-  if (is_macro_cell_pin
-      && n_sparse_access_points
-             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    return true;
-  }
-  return false;
+  return true;
 }
 
-bool FlexPA::EnoughPointsFarFromEdge(
-    std::vector<std::unique_ptr<frAccessPoint>>& aps,
-    frInstTerm* inst_term)
+bool FlexPA::isPointFarFromEdge(frAccessPoint* ap, frInstTerm* inst_term)
 {
-  const int far_from_edge_requirement = 1;
   Rect cell_box = inst_term->getInst()->getBBox();
-  int total_far_from_edge = 0;
-  for (auto& ap : aps) {
-    const int colision_dist
-        = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
-    Rect ap_colision_box;
-    Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
-    if (cell_box.contains(ap_colision_box)) {
-      total_far_from_edge++;
-      if (total_far_from_edge >= far_from_edge_requirement) {
-        return true;
-      }
-    }
-  }
-  return false;
+  const int colision_dist
+      = design_->getTech()->getLayer(ap->getLayerNum())->getWidth() * 2;
+  Rect ap_colision_box;
+  Rect(ap->getPoint(), ap->getPoint()).bloat(colision_dist, ap_colision_box);
+  return cell_box.contains(ap_colision_box);
 }
 
 bool FlexPA::EnoughAccessPoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     frInstTerm* inst_term,
-    pa_requirements_met& reqs)
+    PARequirements& reqs)
 {
   const bool is_io_pin = (inst_term == nullptr);
 
@@ -1201,9 +1202,15 @@ bool FlexPA::EnoughAccessPoints(
     return !aps.empty();
   }
 
-  reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
+  if (reqs.sparse_points.current < reqs.sparse_points.goal) {
+    return false;
+  }
 
-  return (reqs.sparse_points);
+  if (reqs.far_from_edge.current < reqs.far_from_edge.goal) {
+    return false;
+  }
+
+  return true;
 }
 
 template <typename T>
@@ -1215,7 +1222,7 @@ bool FlexPA::genPinAccessCostBounded(
     frInstTerm* inst_term,
     const frAccessPointEnum lower_type,
     const frAccessPointEnum upper_type,
-    pa_requirements_met& reqs)
+    PARequirements& reqs)
 {
   const bool is_std_cell_pin = inst_term && isStdCell(inst_term->getInst());
   ;
@@ -1370,7 +1377,13 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   std::vector<gtl::polygon_90_set_data<frCoord>> pin_shapes
       = mergePinShapes(pin, inst_term);
 
-  pa_requirements_met reqs;
+  PARequirements reqs;
+  reqs.far_from_edge.goal = 1;
+  if (isMacroCell(inst_term->getInst())) {
+    reqs.sparse_points.goal = router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN
+  } else if (isStdCell(inst_term->getInst())) {
+    reqs.sparse_points.goal = router_cfg_->MINNUMACCESSPOINT_STDCELLPIN
+  }
 
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
