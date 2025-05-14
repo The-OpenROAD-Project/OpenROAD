@@ -196,7 +196,7 @@ void Flute::readLUT()
 #endif
 }
 
-void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE LUT_alloc)
+void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE& LUT_alloc)
 {
   LUT = new struct csoln**[FLUTE_D + 1];
   numsoln = new int*[FLUTE_D + 1];
