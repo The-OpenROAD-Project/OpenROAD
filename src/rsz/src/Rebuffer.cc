@@ -996,13 +996,16 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
       // Hierarchy handling
       if (mod_net_drvr && mod_net_in) {
         // save original dbnet
-        dbNet* orig_db_net = mod_net_drvr->getNet();
+        dbNet* orig_db_net = db_network_->flatNet((Pin*) mod_net_drvr);
         // disconnect everything
         mod_net_drvr->disconnect();
         // restore dbnet
         mod_net_drvr->connect(orig_db_net);
         // add the modnet to the new output
-        buffer_op_iterm->connect(mod_net_in);
+        buffer_op_iterm->disconnect();
+
+        db_network_->connectPin(buffer_op_pin, (Net*) net2, (Net*) mod_net_in);
+        //        buffer_op_iterm->connect(mod_net_in);
       }
 
       const int buffer_count = rebufferTopDown(
@@ -1016,6 +1019,7 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
 
       db_network_->staToDb(net2, db_net, db_modnet);
       resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
+
       return buffer_count + 1;
     }
 
@@ -1026,6 +1030,7 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
 
     case BufferedNetType::junction: {
       debugPrint(logger_, RSZ, "rebuffer", 3, "{:{}s}junction", "", level);
+
       return rebufferTopDown(choice->ref(),
                              net,
                              level + 1,
@@ -1055,19 +1060,15 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
         return 0;
       }
 
-      odb::dbNet* db_net = nullptr;
-      odb::dbModNet* db_modnet = nullptr;
-      db_network_->staToDb(net, db_net, db_modnet);
-
       // only access at dbnet level
-      Net* load_net = network_->net(load_pin);
+      //      Net* load_net = network_->net(load_pin);
 
-      dbNet* db_load_net;
-      odb::dbModNet* db_mod_load_net;
-      db_network_->staToDb(load_net, db_load_net, db_mod_load_net);
-      (void) db_load_net;
+      dbNet* db_load_net = db_network_->flatNet(load_pin);
+      odb::dbModNet* db_mod_load_net = db_network_->hierNet(load_pin);
+      odb::dbNet* db_net = db_network_->flatNet((Pin*) mod_net_drvr);
+      odb::dbModNet* db_mod_net = db_network_->hierNet((Pin*) mod_net_drvr);
 
-      if (load_net != net) {
+      if ((Net*) db_load_net != net) {
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
         odb::dbModITerm* load_moditerm = nullptr;
@@ -1075,30 +1076,61 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
         db_network_->staToDb(
             load_pin, load_iterm, load_bterm, load_moditerm, load_modbterm);
 
-        debugPrint(logger_,
-                   RSZ,
-                   "rebuffer",
-                   3,
-                   "{:{}s}connect load {} to {}",
-                   "",
-                   level,
-                   sdc_network_->pathName(load_pin),
-                   sdc_network_->pathName(load_net));
+        Instance* load_parent_inst = nullptr;
+        if (load_iterm) {
+          dbInst* load_inst = load_iterm->getInst();
+          if (load_inst) {
+            auto top_module = db_network_->block()->getTopModule();
+            if (load_inst->getModule() == top_module) {
+              load_parent_inst = db_network_->topInstance();
+            } else {
+              load_parent_inst
+                  = (Instance*) (load_inst->getModule()->getModInst());
+            }
+          }
+          debugPrint(logger_,
+                     RSZ,
+                     "rebuffer",
+                     3,
+                     "{:{}s}connect load {} to {}",
+                     "",
+                     level,
+                     sdc_network_->pathName(load_pin),
+                     sdc_network_->pathName((Net*) db_load_net));
 
-        // disconnect removes everything.
-        sta_->disconnectPin(const_cast<Pin*>(load_pin));
-        // prepare for hierarchy
-        load_iterm->connect(db_net);
-        // preserve the mod net.
-        if (db_mod_load_net) {
-          load_iterm->connect(db_mod_load_net);
+          // disconnect removes everything.
+          sta_->disconnectPin(const_cast<Pin*>(load_pin));
+
+          if (load_parent_inst && parent_in
+              && db_network_->hasHierarchicalElements()
+              && load_parent_inst != parent_in) {
+            // make the flat connection
+            db_network_->connectPin(const_cast<Pin*>(load_pin), net);
+            std::string preferred_connection_name;
+            if (db_mod_net) {
+              preferred_connection_name = db_mod_net->getName();
+            } else if (db_mod_load_net) {
+              preferred_connection_name = db_mod_load_net->getName();
+            } else {
+              preferred_connection_name = resizer_->makeUniqueNetName();
+            }
+
+            db_network_->hierarchicalConnect(
+                mod_net_drvr, load_iterm, preferred_connection_name.c_str());
+          } else if (db_mod_net) {  // input hierarchical net
+            db_network_->connectPin(
+                const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) db_mod_net);
+
+          } else {  // flat case
+            load_iterm->connect(db_net);
+          }
+
+          // sta_->connectPin(load_inst, load_port, net);
+          resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
+          // resizer_->parasiticsInvalid(load_net);
         }
-
-        // sta_->connectPin(load_inst, load_port, net);
-        resizer_->parasiticsInvalid(db_network_->dbToSta(db_net));
-        // resizer_->parasiticsInvalid(load_net);
+        return 0;
       }
-      return 0;
     }
   }
   return 0;

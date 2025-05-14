@@ -1661,9 +1661,11 @@ bool dbNetwork::isPower(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::POWER);
+
+  /*
   // TODO: make this work for modnets
   // by uncommenting code below
-  /*
+
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -1684,10 +1686,10 @@ bool dbNetwork::isGround(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
   return (dnet->getSigType() == dbSigType::GROUND);
-
+  /*
   // TODO: make this work for modnets
   // by uncommenting code below
-  /*
+
   dbNet* db_net;
   dbModNet* db_modnet;
   staToDb(net, db_net, db_modnet);
@@ -3996,7 +3998,8 @@ void PinModDbNetConnection::operator()(const Pin* pin)
             2030,
             "Flat net logical inconsistency, badly formed hierarchical "
             "netlist. "
-            "Only expect one flat net reachable per pin. Nets are {} and {} "
+            "Only expect one flat net reachable per pin. Flat Nets are {} and "
+            "{} "
             "modnet is {}",
             db_network_->name(db_network_->dbToSta(dbnet_)),
             db_network_->name(db_network_->dbToSta(candidate_flat_net)),

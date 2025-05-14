@@ -101,6 +101,8 @@ OPENROAD_COPTS = [
     "-Wformat-security",
     "-Wno-sign-compare",
     "-Wno-unused-parameter",
+    # FIXME reenable when warnings are fixed
+    "-Wno-unused-but-set-variable",
 ]
 
 OPENROAD_DEFINES = [
