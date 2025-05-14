@@ -618,12 +618,8 @@ int BufferMove::rebuffer(const Pin* drvr_pin)
         odb::dbITerm* drvr_op_iterm = nullptr;
         odb::dbBTerm* drvr_op_bterm = nullptr;
         odb::dbModITerm* drvr_op_moditerm = nullptr;
-        odb::dbModBTerm* drvr_op_modbterm = nullptr;
-        db_network_->staToDb(drvr_pin,
-                             drvr_op_iterm,
-                             drvr_op_bterm,
-                             drvr_op_moditerm,
-                             drvr_op_modbterm);
+        db_network_->staToDb(
+            drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
         if (db_net && db_modnet) {
           // as we move the modnet and dbnet around we will get a clash
@@ -982,12 +978,8 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
       odb::dbITerm* buffer_op_iterm = nullptr;
       odb::dbBTerm* buffer_op_bterm = nullptr;
       odb::dbModITerm* buffer_op_moditerm = nullptr;
-      odb::dbModBTerm* buffer_op_modbterm = nullptr;
-      db_network_->staToDb(buffer_op_pin,
-                           buffer_op_iterm,
-                           buffer_op_bterm,
-                           buffer_op_moditerm,
-                           buffer_op_modbterm);
+      db_network_->staToDb(
+          buffer_op_pin, buffer_op_iterm, buffer_op_bterm, buffer_op_moditerm);
 
       // disconnect modnet from original driver
       // connect the output to the modnet.
@@ -1072,9 +1064,7 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
         odb::dbITerm* load_iterm = nullptr;
         odb::dbBTerm* load_bterm = nullptr;
         odb::dbModITerm* load_moditerm = nullptr;
-        odb::dbModBTerm* load_modbterm = nullptr;
-        db_network_->staToDb(
-            load_pin, load_iterm, load_bterm, load_moditerm, load_modbterm);
+        db_network_->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
 
         Instance* load_parent_inst = nullptr;
         if (load_iterm) {
