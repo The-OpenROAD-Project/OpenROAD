@@ -37,7 +37,7 @@ build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extensio
 # these warnings in code they are not working on.
 build --copt "-Wno-unused-private-field"  --host_copt "-Wno-unused-private-field"
 build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
-build --copt "-Wunused-but-set-variable"  --host_copt "-Wunused-but-set-variable"
+build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
