@@ -2040,25 +2040,13 @@ void LayoutViewer::viewportUpdated()
   fullRepaint();
 }
 
-void LayoutViewer::saveImage(const QString& filepath,
-                             const Rect& region,
-                             int width_px,
-                             double dbu_per_pixel)
+QImage LayoutViewer::createImage(const Rect& region,
+                                 int width_px,
+                                 double dbu_per_pixel)
 {
   if (!hasDesign()) {
-    return;
+    return QImage();
   }
-
-  QString save_filepath = filepath;
-  if (filepath.isEmpty()) {
-    save_filepath = Utils::requestImageSavePath(this, "Save layout");
-  }
-
-  if (save_filepath.isEmpty()) {
-    return;
-  }
-
-  save_filepath = Utils::fixImagePath(save_filepath, logger_);
 
   Rect save_area = region;
   if (region.dx() == 0 || region.dy() == 0) {
@@ -2131,6 +2119,30 @@ void LayoutViewer::saveImage(const QString& filepath,
                       render_ratio,
                       options_->background());
   pixels_per_dbu_ = old_pixels_per_dbu;
+
+  return img;
+}
+
+void LayoutViewer::saveImage(const QString& filepath,
+                             const Rect& region,
+                             int width_px,
+                             double dbu_per_pixel)
+{
+  if (!hasDesign()) {
+    return;
+  }
+
+  QString save_filepath = filepath;
+  if (filepath.isEmpty()) {
+    save_filepath = Utils::requestImageSavePath(this, "Save layout");
+  }
+
+  if (save_filepath.isEmpty()) {
+    return;
+  }
+  save_filepath = Utils::fixImagePath(save_filepath, logger_);
+
+  QImage img = createImage(region, width_px, dbu_per_pixel);
 
   if (!img.save(save_filepath)) {
     logger_->warn(

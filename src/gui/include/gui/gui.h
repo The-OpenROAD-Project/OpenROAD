@@ -25,6 +25,7 @@
 #include "odb/db.h"
 
 struct Tcl_Interp;
+struct GifWriter;
 
 namespace sta {
 class dbSta;
@@ -42,6 +43,14 @@ class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
+
+struct GIF
+{
+  std::string filename;
+  std::unique_ptr<GifWriter> writer;
+  int height = -1;
+  int width = -1;
+};
 
 // A collection of selected objects
 
@@ -763,6 +772,14 @@ class Gui
 
   const Selected& getInspectorSelection();
 
+  // GIF API
+  void gifStart(const std::string& filename);
+  void gifAddFrame(const odb::Rect& region = odb::Rect(),
+                   int width_px = 0,
+                   double dbu_per_pixel = 0,
+                   std::optional<int> delay = {});
+  void gifEnd();
+
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
                          const Renderer::Setting& value);
@@ -878,6 +895,9 @@ class Gui
   std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
   std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
+
+  std::unique_ptr<GIF> gif_;
+  static constexpr int default_gif_delay_ = 250;
 
   static Gui* singleton_;
 

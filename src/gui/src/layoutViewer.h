@@ -148,6 +148,9 @@ class LayoutViewer : public QWidget
                  const odb::Rect& region = odb::Rect(),
                  int width_px = 0,
                  double dbu_per_pixel = 0);
+  QImage createImage(const odb::Rect& region = odb::Rect(),
+                     int width_px = 0,
+                     double dbu_per_pixel = 0);
 
   // From QWidget
   void paintEvent(QPaintEvent* event) override;
