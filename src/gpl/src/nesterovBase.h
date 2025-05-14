@@ -1041,7 +1041,6 @@ class NesterovBase
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
-  void cutFillerCoordinates();
 
   void snapshot();
 
@@ -1206,10 +1205,13 @@ class biNormalParameters
 class GCellHandle
 {
  public:
-  GCellHandle(NesterovBaseCommon* nbc, size_t idx) : storage_(nbc), storage_index_(idx)
+  GCellHandle(NesterovBaseCommon* nbc, size_t idx)
+      : storage_(nbc), storage_index_(idx)
   {
   }
-  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx) {}
+  GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
+  {
+  }
 
   // Non-const versions
   GCell* operator->() { return &getGCell(); }

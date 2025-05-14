@@ -676,7 +676,6 @@ std::pair<bool, bool> RouteBase::routability()
 
   nbVec_[0]->cutFillerCells(inflatedAreaDelta_);
 
-
   // newly set Density
   // nbVec_[0]->setTargetDensity(
   //     static_cast<float>(totalGCellArea)
@@ -773,12 +772,13 @@ std::pair<bool, bool> RouteBase::routability()
              block->dbuAreaToMicrons(nbVec_[0]->movableArea()),
              percentDiff(prev_movable_area, nbVec_[0]->movableArea()));
 
-  log_->info(GPL,
-             60,
-             format_label_um2_with_delta,
-             "Total filler area:",
-             block->dbuAreaToMicrons(nbVec_[0]->getTotalFillerArea()),
-             percentDiff(prev_total_filler_area, nbVec_[0]->getTotalFillerArea()));
+  log_->info(
+      GPL,
+      60,
+      format_label_um2_with_delta,
+      "Total filler area:",
+      block->dbuAreaToMicrons(nbVec_[0]->getTotalFillerArea()),
+      percentDiff(prev_total_filler_area, nbVec_[0]->getTotalFillerArea()));
 
   log_->info(GPL,
              61,
