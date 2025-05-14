@@ -523,7 +523,7 @@ bool AntennaChecker::checkPAR(odb::dbNet* db_net,
   double required_value = 0.0;
   // if net has diffusion area, compare with diffusion area ratio
   // othercase compare with area ratio
-  if (info.iterm_diff_area != 0 && info.diff_PAR != 0) {
+  if (info.iterm_diff_area != 0) {
     if (diff_PAR_PWL_ratio != 0) {
       violation = info.diff_PAR > diff_PAR_PWL_ratio;
       info.excess_ratio_PAR
@@ -580,7 +580,7 @@ bool AntennaChecker::checkPSR(odb::dbNet* db_net,
   double required_value = 0.0;
   // if net has diffusion side area, compare with diffusion side area ratio
   // othercase compare with side area ratio
-  if (info.iterm_diff_area != 0 && info.diff_PSR != 0) {
+  if (info.iterm_diff_area != 0) {
     if (diff_PSR_PWL_ratio != 0) {
       violation = info.diff_PSR > diff_PSR_PWL_ratio;
       info.excess_ratio_PSR
@@ -632,7 +632,7 @@ bool AntennaChecker::checkCAR(odb::dbNet* db_net,
   double required_value = 0.0;
   // if net has diffusion side area, compare with diffusion side area ratio
   // othercase compare with side area ratio
-  if (info.iterm_diff_area != 0 && info.diff_CAR != 0) {
+  if (info.iterm_diff_area != 0) {
     if (diff_CAR_PWL_ratio != 0) {
       violation = info.diff_CAR > diff_CAR_PWL_ratio;
     }
@@ -680,7 +680,7 @@ bool AntennaChecker::checkCSR(odb::dbNet* db_net,
   double required_value = 0.0;
   // if net has diffusion side area, compare with diffusion side area ratio
   // othercase compare with side area ratio
-  if (info.iterm_diff_area != 0 && info.diff_CSR != 0) {
+  if (info.iterm_diff_area != 0) {
     if (diff_CSR_PWL_ratio != 0) {
       violation = info.diff_CSR > diff_CSR_PWL_ratio;
     }
