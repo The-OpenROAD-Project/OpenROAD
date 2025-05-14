@@ -30,7 +30,12 @@ class Ath__array1D
     }
     iter_cnt_ = 0;
   }
-  ~Ath__array1D() { ::free(array_); }
+  ~Ath__array1D()
+  {
+    if (array_ != nullptr) {
+      ::free(array_);
+    }
+  }
   int add(T t)
   {
     if (current_ >= size_) {
