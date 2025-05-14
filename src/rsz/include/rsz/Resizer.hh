@@ -640,11 +640,6 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    bool journal);
 
   void findResizeSlacks1();
-  bool removeBufferIfPossible(Instance* buffer,
-                              bool honorDontTouchFixed = true,
-                              bool recordJournal = false);
-  bool canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed = true);
-  void removeBuffer(Instance* buffer, bool recordJournal = false);
   Instance* makeInstance(LibertyCell* cell,
                          const char* name,
                          Instance* parent,
