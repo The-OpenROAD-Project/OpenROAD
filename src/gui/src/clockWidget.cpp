@@ -74,10 +74,9 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
       sta::Net* net = network->net(output_pin);
       odb::dbITerm* iterm;
       odb::dbBTerm* bterm;
-      odb::dbModBTerm* modbterm;
       odb::dbModITerm* moditerm;
 
-      network->staToDb(output_pin, iterm, bterm, moditerm, modbterm);
+      network->staToDb(output_pin, iterm, bterm, moditerm);
       descriptor->highlight(
           DbNetDescriptor::NetWithSink{network->staToDb(net), iterm}, painter);
     }
@@ -1172,10 +1171,9 @@ ClockNodeGraphicsViewItem* ClockTreeView::addRootToScene(
 {
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  odb::dbModBTerm* modbterm;
   odb::dbModITerm* moditerm;
 
-  network->staToDb(output_pin.pin, iterm, bterm, moditerm, modbterm);
+  network->staToDb(output_pin.pin, iterm, bterm, moditerm);
 
   ClockNodeGraphicsViewItem* node = nullptr;
   if (iterm != nullptr) {
@@ -1200,9 +1198,8 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
   odb::dbModITerm* moditerm;
-  odb::dbModBTerm* modbterm;
 
-  network->staToDb(input_pin.pin, iterm, bterm, moditerm, modbterm);
+  network->staToDb(input_pin.pin, iterm, bterm, moditerm);
 
   // distinguish between registers and macros
   ClockLeafNodeGraphicsViewItem* node;
@@ -1265,8 +1262,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     odb::dbModITerm* moditerm;
-    odb::dbModBTerm* modbterm;
-    network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+    network->staToDb(pin, iterm, bterm, moditerm);
     return iterm;
   };
 
