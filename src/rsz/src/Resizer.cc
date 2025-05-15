@@ -4111,9 +4111,18 @@ float Resizer::maxInputSlew(const LibertyPort* input,
   float limit;
   bool exists;
   sta_->findSlewLimit(input, corner, MinMax::max(), limit, exists);
-  // umich brain damage control
   if (!exists || limit == 0.0) {
-    limit = INF;
+    // Fixup for nangate45: This library doesn't specify any max transition on
+    // input pins which indirectly causes issues for the resizer when repairing
+    // driver pin transitions.
+    //
+    // To address, if there's no max tran on the port directly, use the library
+    // default (the default only applies to output pins per the Liberty spec,
+    // as a workaround we apply it to input pins too).
+    input->libertyLibrary()->defaultMaxSlew(limit, exists);
+    if (!exists) {
+      limit = INF;
+    }
   }
   return limit;
 }
@@ -4138,6 +4147,29 @@ void Resizer::checkLoadSlews(const Pin* drvr_pin,
       float limit1, slack1;
       sta_->checkSlew(
           pin, nullptr, max_, false, corner1, tr1, slew1, limit1, slack1);
+      if (!corner1) {
+        // Fixup for nangate45: see comment in maxInputSlew
+        if (!corner1) {
+          LibertyPort* port = network_->libertyPort(pin);
+          if (port) {
+            bool exists;
+            port->libertyLibrary()->defaultMaxSlew(limit1, exists);
+            if (exists) {
+              slew1 = 0.0;
+              corner1 = tgt_slew_corner_;
+              for (const RiseFall* rf : RiseFall::range()) {
+                const DcalcAnalysisPt* dcalc_ap
+                    = corner1->findDcalcAnalysisPt(max_);
+                const Vertex* vertex = graph_->pinLoadVertex(pin);
+                Slew slew2 = sta_->graph()->slew(vertex, rf, dcalc_ap->index());
+                if (slew2 > slew1) {
+                  slew1 = slew2;
+                }
+              }
+            }
+          }
+        }
+      }
       if (corner1) {
         limit1 *= (1.0 - slew_margin / 100.0);
         limit = min(limit, limit1);
