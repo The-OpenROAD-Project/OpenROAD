@@ -59,6 +59,9 @@ class Progress
   // get all current reporters
   std::vector<std::shared_ptr<ProgressReporter>> getReporters();
 
+  // In batch mode no ctrl-c handler is installed.
+  static void setBatchMode(bool value) { batch_mode_ = value; }
+
  protected:
   // called at the start of a new reporter
   virtual void start(std::shared_ptr<ProgressReporter>& reporter) = 0;
@@ -74,14 +77,16 @@ class Progress
   friend class ProgressReporter;
 
  private:
+  void addReporter(std::shared_ptr<ProgressReporter>& reporter);
+  bool removeReporter(ProgressReporter* reporter);
+
   ProgressHalt signal_halt_;
   ProgressHalt* prev_signal_halt_ = nullptr;
 
   std::mutex reporters_lock_;
   std::vector<std::weak_ptr<ProgressReporter>> reporters_;
 
-  void addReporter(std::shared_ptr<ProgressReporter>& reporter);
-  bool removeReporter(ProgressReporter* reporter);
+  static bool batch_mode_;
 };
 
 class ProgressReporter

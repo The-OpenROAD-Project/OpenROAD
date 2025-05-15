@@ -57,15 +57,14 @@ class LogicExtractorFactory
   std::vector<sta::Pin*> GetPrimaryOutputs(
       std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Vertex*> GetCutVertices(AbcLibrary& abc_network);
-  std::unordered_set<sta::Instance*> GetCutInstances(
-      std::vector<sta::Vertex*>& cut_vertices);
+  sta::InstanceSet GetCutInstances(std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Pin*> FilterUndrivenOutputs(
       std::vector<sta::Pin*>& primary_outputs,
-      std::unordered_set<sta::Instance*>& cut_instances);
+      sta::InstanceSet& cut_instances);
   std::vector<sta::Net*> ConvertIoPinsToNets(
       std::vector<sta::Pin*>& primary_io_pins);
   void RemovePrimaryOutputInstances(
-      std::unordered_set<sta::Instance*>& cut_instances,
+      sta::InstanceSet& cut_instances,
       std::vector<sta::Pin*>& primary_output_pins);
   std::vector<sta::Vertex*> AddMissingVertices(
       std::vector<sta::Vertex*>& cut_vertices,

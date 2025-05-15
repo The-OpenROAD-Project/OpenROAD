@@ -3,22 +3,17 @@
 
 #include "rcx/MakeOpenRCX.h"
 
-#include "ord/OpenRoad.hh"
 #include "rcx/ext.h"
 #include "utl/decode.h"
 
-namespace rcx {
-// Tcl files encoded into strings.
-extern const char* rcx_tcl_inits[];
-}  // namespace rcx
-
-namespace rcx {
 extern "C" {
 extern int Rcx_Init(Tcl_Interp* interp);
 }
-}  // namespace rcx
 
-namespace ord {
+namespace rcx {
+
+// Tcl files encoded into strings.
+extern const char* rcx_tcl_inits[];
 
 rcx::Ext* makeOpenRCX()
 {
@@ -30,16 +25,16 @@ void deleteOpenRCX(rcx::Ext* extractor)
   delete extractor;
 }
 
-void initOpenRCX(OpenRoad* openroad)
+void initOpenRCX(rcx::Ext* extractor,
+                 odb::dbDatabase* db,
+                 utl::Logger* logger,
+                 const char* spef_version,
+                 Tcl_Interp* tcl_interp)
 {
-  openroad->getOpenRCX()->init(openroad->getDb(),
-                               openroad->getLogger(),
-                               ord::OpenRoad::getVersion(),
-                               [openroad] {
-                                 rcx::Rcx_Init(openroad->tclInterp());
-                                 utl::evalTclInit(openroad->tclInterp(),
-                                                  rcx::rcx_tcl_inits);
-                               });
+  Rcx_Init(tcl_interp);
+  utl::evalTclInit(tcl_interp, rcx::rcx_tcl_inits);
+
+  extractor->init(db, logger, spef_version);
 }
 
-}  // namespace ord
+}  // namespace rcx

@@ -209,6 +209,15 @@ buffer_ports
 | `-inputs`, `-outputs` | Insert a buffer between the input and load, output and load respectively. The default behavior is `-inputs` and `-outputs` set if neither is specified. |
 | `-max_utilization` | Defines the percentage of core area used. |
 
+#### Instance Name Prefixes
+
+`buffer_ports` uses the following prefixes for the buffer instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| input | Buffering primary inputs |
+| output | Buffering primary outputs |
+
 ### Remove Buffers
 
 Use the `remove_buffers` command to remove buffers inserted by synthesis. This
@@ -267,6 +276,19 @@ repair_design
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
+#### Instance Name Prefixes
+
+`repair_design` uses the following prefixes for the buffer instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| fanout | Fixing max fanout |
+| gain | Gain based buffering |
+| load_slew | Fixing max transition violations |
+| max_cap | Fixing max capacitance |
+| max_length | Fixing max length |
+| wire | Repairs load slew, length, and max capacitance violations in net wire segment |
+
 ### Repair Tie Fanout
 
 The `repair_tie_fanout` command connects each tie high/low load to a copy
@@ -308,6 +330,7 @@ repair_timing
     [-slack_margin slack_margin]
     [-libraries libs]
     [-allow_setup_violations]
+    [-sequence]
     [-skip_pin_swap]
     [-skip_gate_cloning]
     [-skip_buffering]
@@ -332,6 +355,7 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
+| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,buffer,swap,size,clone,split". Ignores skip flags when used. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
@@ -347,6 +371,17 @@ repair_timing
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that
 this option be used with global routing based parasitics. 
+
+#### Instance Name Prefixes
+
+`repair_timing` uses the following prefixes for the buffer and gate instances that it inserts:
+
+| Instance Prefix | Purpose |
+| ----- | ----- |
+| clone | Gate cloning |
+| hold | Hold fixing |
+| rebuffer | Buffering for setup fixing |
+| split | Split off non-critical loads behind a buffer to reduce load |
 
 ### Repair Clock Nets
 

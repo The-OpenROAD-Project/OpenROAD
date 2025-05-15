@@ -3,10 +3,131 @@
 
 #include "painter.h"
 
+#include <QFont>
 #include <cmath>
 #include <string>
 
 namespace gui {
+
+std::map<std::string, Painter::Color> Painter::colors()
+{
+  return {{"black", Painter::black},
+          {"white", Painter::white},
+          {"dark_gray", Painter::dark_gray},
+          {"gray", Painter::gray},
+          {"light_gray", Painter::light_gray},
+          {"red", Painter::red},
+          {"green", Painter::green},
+          {"blue", Painter::blue},
+          {"cyan", Painter::cyan},
+          {"magenta", Painter::magenta},
+          {"yellow", Painter::yellow},
+          {"dark_red", Painter::dark_red},
+          {"dark_green", Painter::dark_green},
+          {"dark_blue", Painter::dark_blue},
+          {"dark_cyan", Painter::dark_cyan},
+          {"dark_magenta", Painter::dark_magenta},
+          {"dark_yellow", Painter::dark_yellow},
+          {"orange", Painter::orange},
+          {"purple", Painter::purple},
+          {"lime", Painter::lime},
+          {"teal", Painter::teal},
+          {"pink", Painter::pink},
+          {"brown", Painter::brown},
+          {"indigo", Painter::indigo},
+          {"turquoise", Painter::turquoise},
+          {"transparent", Painter::transparent}};
+}
+
+Painter::Color Painter::stringToColor(const std::string& color,
+                                      utl::Logger* logger)
+{
+  const auto defined_colors = colors();
+  auto find_color = defined_colors.find(color);
+  if (find_color != defined_colors.end()) {
+    return find_color->second;
+  }
+
+  if (color[0] == '#' && (color.size() == 7 || color.size() == 9)) {
+    uint hex_color = 0;
+    for (int i = 1; i < color.size(); i++) {
+      const char c = std::tolower(color[i]);
+      hex_color *= 16;
+      if (c >= '0' && c <= '9') {
+        hex_color += c - '0';
+      } else if (c >= 'a' && c <= 'f') {
+        hex_color += c - 'a' + 10;
+      } else {
+        logger->error(utl::GUI, 43, "Unable to decode color: {}", color);
+      }
+    }
+    if (color.size() == 7) {
+      hex_color *= 256;
+      hex_color += 255;
+    }
+    Painter::Color new_color;
+    new_color.r = (hex_color & 0xff000000) >> 24;
+    new_color.g = (hex_color & 0x00ff0000) >> 16;
+    new_color.b = (hex_color & 0x0000ff00) >> 8;
+    new_color.a = hex_color & 0x000000ff;
+
+    return new_color;
+  }
+  logger->error(utl::GUI, 42, "Color not recognized: {}", color);
+
+  return Painter::black;
+}
+
+std::string Painter::colorToString(const Color& color)
+{
+  for (const auto& [name, c] : colors()) {
+    if (c == color) {
+      return name;
+    }
+  }
+
+  return fmt::format(
+      "#{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
+}
+
+std::map<std::string, Painter::Anchor> Painter::anchors()
+{
+  return {{"bottom left", Painter::Anchor::BOTTOM_LEFT},
+          {"bottom right", Painter::Anchor::BOTTOM_RIGHT},
+          {"top left", Painter::Anchor::TOP_LEFT},
+          {"top right", Painter::Anchor::TOP_RIGHT},
+          {"center", Painter::Anchor::CENTER},
+          {"bottom center", Painter::Anchor::BOTTOM_CENTER},
+          {"top center", Painter::Anchor::TOP_CENTER},
+          {"left center", Painter::Anchor::LEFT_CENTER},
+          {"right center", Painter::Anchor::RIGHT_CENTER}};
+}
+
+Painter::Anchor Painter::stringToAnchor(const std::string& anchor,
+                                        utl::Logger* logger)
+{
+  const auto defined_anchors = anchors();
+  auto find_anchor = defined_anchors.find(anchor);
+  if (find_anchor != defined_anchors.end()) {
+    return find_anchor->second;
+  }
+
+  logger->error(utl::GUI, 45, "Anchor not recognized: {}", anchor);
+
+  return Anchor::CENTER;
+}
+
+std::string Painter::anchorToString(const Anchor& anchor)
+{
+  for (const auto& [name, c] : anchors()) {
+    if (c == anchor) {
+      return name;
+    }
+  }
+
+  return "unknown";
+}
+//////////////////////////////////////////////////////////////////////////
 
 odb::Point GuiPainter::determineStringOrigin(int x,
                                              int y,
@@ -203,6 +324,13 @@ void GuiPainter::drawRuler(int x0,
   painter_->setFont(restore_font);
 
   painter_->setTransform(initial_xfm);
+}
+
+void GuiPainter::setFont(const Font& font)
+{
+  const QFont qfont(QString::fromStdString(font.name), font.size);
+
+  painter_->setFont(qfont);
 }
 
 }  // namespace gui

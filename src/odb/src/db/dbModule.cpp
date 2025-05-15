@@ -548,7 +548,7 @@ dbModule* dbModule::makeUniqueDbModule(const char* cell_name,
     return module;
   }
 
-  std::map<std::string, int>& name_id_map
+  std::unordered_map<std::string, int>& name_id_map
       = ((_dbBlock*) block)->_module_name_id_map;
   std::string orig_cell_name(cell_name);
   std::string module_name = orig_cell_name + '_' + std::string(inst_name);
@@ -729,11 +729,11 @@ void dbModule::copyModuleInsts(dbModule* old_module,
                          ? std::move(old_inst_name).substr(first_idx + 1)
                          : std::move(old_inst_name);
 
-    dbInst* new_inst = dbInst::create(new_module->getOwner(),
-                                      old_inst->getMaster(),
-                                      new_inst_name.c_str(),
-                                      /* phyical only */ false,
-                                      new_module);
+    dbInst* new_inst = dbInst::makeUniqueDbInst(new_module->getOwner(),
+                                                old_inst->getMaster(),
+                                                new_inst_name.c_str(),
+                                                /* phyical only */ false,
+                                                new_module);
     if (new_inst) {
       debugPrint(logger,
                  utl::ODB,
@@ -962,26 +962,28 @@ bool dbModule::copyToChildBlock(dbModule* module)
   // This block contains only one module
   dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
   std::string block_name = module->getName();
-  // TODO: strip out instance name from block name
   dbTech* tech = top_block->getTech();
+  // TODO: strip out instance name from block name
   dbBlock* child_block = dbBlock::create(top_block, block_name.c_str(), tech);
-  child_block->setDefUnits(tech->getLefUnits());
-  child_block->setBusDelimiters('[', ']');
-  dbModule* new_module = child_block->getTopModule();
-  if (!new_module) {
-    logger->error(utl::ODB,
-                  476,
-                  "Top module {} could not be found under child block {}",
-                  block_name,
-                  block_name);
-    return false;
-  }
+  if (child_block) {
+    child_block->setDefUnits(tech->getLefUnits());
+    child_block->setBusDelimiters('[', ']');
+    dbModule* new_module = child_block->getTopModule();
+    if (!new_module) {
+      logger->error(utl::ODB,
+                    476,
+                    "Top module {} could not be found under child block {}",
+                    block_name,
+                    block_name);
+      return false;
+    }
 
-  modBTMap mod_bt_map;
-  copyModulePorts(module, new_module, mod_bt_map);
-  ITMap it_map;
-  copyModuleInsts(module, new_module, nullptr, it_map);
-  copyModuleModNets(module, new_module, mod_bt_map, it_map);
+    modBTMap mod_bt_map;
+    copyModulePorts(module, new_module, mod_bt_map);
+    ITMap it_map;
+    copyModuleInsts(module, new_module, nullptr, it_map);
+    copyModuleModNets(module, new_module, mod_bt_map, it_map);
+  }
   return true;
 }
 

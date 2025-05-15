@@ -58,8 +58,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                            pbVec,
                                            nbVec,
                                            npVars_.debug_draw_bins,
-                                           npVars.debug_inst,
-                                           npVars.debug_start_iter);
+                                           npVars.debug_inst);
   }
   init();
 }
@@ -339,7 +338,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       if (num_region_diverged_ > 0) {
-        divergeMsg_ = "RePlAce diverged at newStepLength.";
+        divergeMsg_
+            = "RePlAce diverged during gradient descent calculation, resulting "
+              "in an invalid step length (Inf or NaN). This is often caused by "
+              "numerical instability or high placement density. Consider "
+              "reducing placement density to potentially resolve the issue.";
         divergeCode_ = 305;
         break;
       }

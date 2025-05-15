@@ -29,6 +29,7 @@
 #include "FastRoute.h"
 #include "Grid.h"
 #include "MakeWireParasitics.h"
+#include "Net.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
 #include "db_sta/SpefWriter.hh"
@@ -139,6 +140,7 @@ GlobalRouter::~GlobalRouter()
     delete net;
   }
   delete repair_antennas_;
+  delete rudy_;
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
@@ -288,7 +290,6 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
-    incremental_ = true;
   } else {
     try {
       if (end_incremental) {
@@ -296,7 +297,6 @@ void GlobalRouter::globalRoute(bool save_guides,
         grouter_cbk_->removeOwner();
         delete grouter_cbk_;
         grouter_cbk_ = nullptr;
-        incremental_ = false;
       } else {
         clear();
         block_ = db_->getChip()->getBlock();
@@ -402,7 +402,6 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "routing source is detailed routing.");
   }
 
-  incremental_ = true;
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -445,7 +444,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     repair_antennas_->clearViolations();
     itr++;
   }
-  incremental_ = false;
+
   logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides();
   return total_diodes_count_;
@@ -898,12 +897,6 @@ bool GlobalRouter::findPinAccessPointPositions(
     }
   } else {
     access_points = pin.getITerm()->getPrefAccessPoints();
-    if (access_points.empty()) {
-      // get all APs if there are no preferred access points
-      for (const auto& [mpin, aps] : pin.getITerm()->getAccessPoints()) {
-        access_points.insert(access_points.end(), aps.begin(), aps.end());
-      }
-    }
   }
 
   if (access_points.empty()) {
@@ -937,10 +930,7 @@ std::vector<odb::Point> GlobalRouter::findOnGridPositions(
 
   // temporarily ignore odb access points when incremental changes
   // are made, in order to avoid getting invalid APs
-  // TODO: remove the !incremental_ flag and update APs incrementally in odb
-
-  has_access_points
-      = findPinAccessPointPositions(pin, ap_positions) && !incremental_;
+  has_access_points = findPinAccessPointPositions(pin, ap_positions);
 
   std::vector<odb::Point> positions_on_grid;
 
@@ -1133,15 +1123,14 @@ bool GlobalRouter::pinPositionsChanged(Net* net)
   std::map<RoutePt, int> cnt_pos;
   const std::multiset<RoutePt>& last_pos = net->getLastPinPositions();
   for (const Pin& pin : net->getPins()) {
-    cnt_pos[RoutePt(pin.getOnGridPosition().getX(),
-                    pin.getOnGridPosition().getY(),
-                    pin.getConnectionLayer())]++;
+    const odb::Point& pos = pin.getOnGridPosition();
+    cnt_pos[RoutePt(pos.getX(), pos.getY(), pin.getConnectionLayer())]++;
   }
   for (const RoutePt& last : last_pos) {
     cnt_pos[last]--;
   }
-  for (const auto& it : cnt_pos) {
-    if (it.second != 0) {
+  for (const auto& [pos, count] : cnt_pos) {
+    if (count != 0) {
       is_diferent = true;
       break;
     }
@@ -2179,7 +2168,6 @@ void GlobalRouter::loadGuidesFromDB()
   if (!routes_.empty()) {
     return;
   }
-  incremental_ = true;
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
@@ -4771,18 +4759,7 @@ std::vector<PinGridLocation> GlobalRouter::getPinGridPositions(
   return pin_locs;
 }
 
-PinGridLocation::PinGridLocation(odb::dbITerm* iterm,
-                                 odb::dbBTerm* bterm,
-                                 odb::Point pt)
-    : iterm_(iterm), bterm_(bterm), pt_(pt)
-{
-}
-
 ////////////////////////////////////////////////////////////////
-
-RoutePt::RoutePt(int x, int y, int layer) : x_(x), y_(y), layer_(layer)
-{
-}
 
 bool operator<(const RoutePt& p1, const RoutePt& p2)
 {

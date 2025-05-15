@@ -12,6 +12,11 @@
 
 #include "gui/gui.h"
 
+// empty gif writer class
+struct GifWriter
+{
+};
+
 namespace gui {
 
 Gui* Gui::singleton_ = nullptr;
@@ -162,10 +167,6 @@ int startGui(int& argc,
   return 1;  // return unix err
 }
 
-}  // namespace gui
-
-namespace ord {
-
 void initGui(Tcl_Interp* interp,
              odb::dbDatabase* db,
              sta::dbSta* sta,
@@ -194,4 +195,4 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, enabled_supported.c_str());
 }
 
-}  // namespace ord
+}  // namespace gui

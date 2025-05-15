@@ -21,6 +21,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "GUIProgress.h"
@@ -69,6 +70,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           selected_,
           highlighted_,
           rulers_,
+          labels_,
           Gui::get(),
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
@@ -180,6 +182,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   connect(
       this, &MainWindow::highlightChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(this, &MainWindow::rulersChanged, viewers_, &LayoutTabs::fullRepaint);
+  connect(this, &MainWindow::labelsChanged, viewers_, &LayoutTabs::fullRepaint);
 
   connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
     setSelected(selected);
@@ -422,6 +425,7 @@ MainWindow::~MainWindow()
   auto* gui = Gui::get();
   // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
+  gui->unregisterDescriptor<Label*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
   gui->unregisterDescriptor<BufferTree>();
@@ -531,6 +535,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, db_, logger_));
   gui->registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db_));
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
@@ -1128,6 +1133,55 @@ void MainWindow::addHighlighted(const SelectionSet& highlights,
   emit highlightChanged();
 }
 
+std::string MainWindow::addLabel(int x,
+                                 int y,
+                                 const std::string& text,
+                                 std::optional<Painter::Color> color,
+                                 std::optional<int> size,
+                                 std::optional<Painter::Anchor> anchor,
+                                 std::optional<std::string> name)
+{
+  auto new_label
+      = std::make_unique<Label>(odb::Point(x, y),
+                                text,
+                                anchor.value_or(Painter::Anchor::CENTER),
+                                color.value_or(gui::Painter::white),
+                                size,
+                                std::move(name));
+  std::string new_name = new_label->getName();
+
+  // check if ruler name is unique
+  for (const auto& label : labels_) {
+    if (new_name == label->getName()) {
+      logger_->warn(
+          utl::GUI, 44, "Label with name \"{}\" already exists", new_name);
+      return "";
+    }
+  }
+
+  labels_.push_back(std::move(new_label));
+  emit labelsChanged();
+  return new_name;
+}
+
+void MainWindow::deleteLabel(const std::string& name)
+{
+  auto label_find
+      = std::find_if(labels_.begin(), labels_.end(), [name](const auto& l) {
+          return l->getName() == name;
+        });
+  if (label_find != labels_.end()) {
+    // remove from selected set
+    auto remove_selected = Gui::get()->makeSelected(label_find->get());
+    if (selected_.find(remove_selected) != selected_.end()) {
+      selected_.erase(remove_selected);
+      emit selectionChanged();
+    }
+    labels_.erase(label_find);
+    emit labelsChanged();
+  }
+}
+
 std::string MainWindow::addRuler(int x0,
                                  int y0,
                                  int x1,
@@ -1227,6 +1281,16 @@ void MainWindow::clearHighlighted(int highlight_group)
   if (num_items_cleared > 0) {
     emit highlightChanged();
   }
+}
+
+void MainWindow::clearLabels()
+{
+  if (labels_.empty()) {
+    return;
+  }
+  Gui::get()->removeSelected<Label*>();
+  labels_.clear();
+  emit labelsChanged();
 }
 
 void MainWindow::clearRulers()

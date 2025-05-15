@@ -4,12 +4,9 @@
 #include "detailed_reorder.h"
 
 #include <algorithm>
-#include <boost/tokenizer.hpp>
 #include <cstddef>
 #include <limits>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 #include "detailed_manager.h"
 #include "infrastructure/architecture.h"
@@ -73,6 +70,9 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
   uint64_t hpwl_x, hpwl_y;
   int64_t curr_hpwl = Utility::hpwl(network_, hpwl_x, hpwl_y);
   const int64_t init_hpwl = curr_hpwl;
+  if (init_hpwl == 0) {
+    return;
+  }
   for (int p = 1; p <= passes; p++) {
     const int64_t last_hpwl = curr_hpwl;
 
@@ -85,14 +85,13 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr,
                                "Pass {:3d} of reordering; objective is {:.6e}.",
                                p,
                                (double) curr_hpwl);
-
-    if (std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
+    if (last_hpwl == 0
+        || std::abs(curr_hpwl - last_hpwl) / (double) last_hpwl <= tol) {
       // std::cout << "Terminating due to low improvement." << std::endl;
       break;
     }
   }
   mgrPtr_->resortSegments();
-
   const double curr_imp
       = (((init_hpwl - curr_hpwl) / (double) init_hpwl) * 100.);
   mgrPtr_->getLogger()->info(

@@ -63,7 +63,6 @@ bool extMeasureRC::DiagCap(FILE* fp,
   uint rsegId1 = w->getRsegId();
 
   uint pitch = w->getPitch();
-  maxDist = trackLimitCnt * pitch;
   for (uint ii = 0; ii < segTable->getCnt(); ii++) {
     extSegment* s = segTable->get(0);
     Wire* w2 = lookUp ? s->_up : s->_down;
