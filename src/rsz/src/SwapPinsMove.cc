@@ -143,7 +143,7 @@ void SwapPinsMove::swapPins(Instance* inst,
   odb::dbModNet* mod_net_pin2 = nullptr;
   odb::dbNet* flat_net_pin2 = nullptr;
 
-  InstancePinIterator* pin_iter = network_->pinIterator(inst);
+  std::unique_ptr<InstancePinIterator> pin_iter(network_->pinIterator(inst));
   found_pin1 = found_pin2 = nullptr;
   net1 = net2 = nullptr;
   while (pin_iter->hasNext()) {

@@ -421,8 +421,9 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
   Net* output_net = network_->net(params.driver_pin);
-  NetConnectedPinIterator* pin_iter
-      = network_->connectedPinIterator(output_net);
+  std::unique_ptr<NetConnectedPinIterator> pin_iter(
+      network_->connectedPinIterator(output_net)
+  );
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (pin == params.driver_pin) {
@@ -456,7 +457,7 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   // Check side fanout paths.  Side fanout paths get no delay benefit from
   // buffer removal.
   Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = network_->connectedPinIterator(input_net);
+  pin_iter = std::unique_ptr<NetConnectedPinIterator>(network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();
     if (side_input_pin == params.prev_driver_pin
@@ -510,7 +511,7 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
                                        bool accept_if_slack_improves)
 {
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  InstancePinIterator* pin_iter = network_->pinIterator(instance);
+  std::unique_ptr<InstancePinIterator> pin_iter(network_->pinIterator(instance));
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (!network_->direction(pin)->isOutput()) {
