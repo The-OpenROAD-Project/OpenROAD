@@ -1,15 +1,10 @@
 name: Check that OK files are up to date
 
 on:
-  push:
-    branches:
-    - master
   pull_request:
-    branches:
-    - master
 
 jobs:
-  format:
+  diffs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code
@@ -18,8 +13,8 @@ jobs:
           fetch-depth: 0
       - name: Check ok files
         run: |
-          find -name "*.ok" | xargs grep -n "Differences found " > diffs
-          cat diffs
-          if [ -s diffs ]; then
+          set +e
+          grep --include="*.ok" -Rn "Differences found "
+          if [[ "$?" == "0" ]]; then
             exit 1
           fi
