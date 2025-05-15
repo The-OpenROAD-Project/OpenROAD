@@ -2979,9 +2979,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
   new_instances.clear();
 }
 
-void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
-                                  size_t stor_index,
-                                  RouteBase* rb)
+void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 {
   debugPrint(log_,
              GPL,
@@ -3018,7 +3016,6 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
       snapshotSLPSumGrads_.emplace_back();
     }
 
-    rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
     debugPrint(log_,
                GPL,
@@ -3028,7 +3025,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
   }
 }
 
-size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
+size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst, RouteBase* rb)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NBC createGCell");
   Instance gpl_inst(db_inst,
@@ -3040,6 +3037,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
+  rb->pushBackMinRcCellSize(gcell.dx(), gcell.dy());
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;

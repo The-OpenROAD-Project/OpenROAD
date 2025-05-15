@@ -828,7 +828,7 @@ class NesterovBaseCommon
   GCell* getGCellByIndex(size_t i);
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
-  size_t createCbkGCell(odb::dbInst* db_inst);
+  size_t createCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
   void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
   void createCbkITerm(odb::dbITerm* iTerm);
   std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
@@ -1060,7 +1060,7 @@ class NesterovBase
 
   bool isDiverged() const { return isDiverged_; }
 
-  void createCbkGCell(odb::dbInst* db_inst, size_t stor_index, RouteBase* rb);
+  void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   void destroyCbkGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
@@ -1089,7 +1089,6 @@ class NesterovBase
   int64_t macroInstsArea_ = 0;
 
   std::vector<GCell> fillerStor_;
-
   std::vector<GCellHandle> nb_gcells_;
 
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
@@ -1129,6 +1128,19 @@ class NesterovBase
   // save initial coordinates -- needed for RD
   std::vector<FloatPoint> initCoordi_;
 
+  // Snapshot data for routability, parallel vectors
+  std::vector<FloatPoint> snapshotCoordi_;
+  std::vector<FloatPoint> snapshotSLPCoordi_;
+  std::vector<FloatPoint> snapshotSLPSumGrads_;
+  float snapshotDensityPenalty_ = 0;
+  float snapshotStepLength_ = 0;
+
+  // For destroying elements in parallel vectors
+  void swapAndPop(std::vector<FloatPoint>& vec,
+                  size_t remove_index,
+                  size_t last_index);
+  void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
+
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
 
@@ -1161,19 +1173,7 @@ class NesterovBase
   bool isConverged_ = false;
   bool reprint_iter_header;
 
-  // Snapshot data for routability, parallel vectors
-  std::vector<FloatPoint> snapshotCoordi_;
-  std::vector<FloatPoint> snapshotSLPCoordi_;
-  std::vector<FloatPoint> snapshotSLPSumGrads_;
-  float snapshotDensityPenalty_ = 0;
-  float snapshotStepLength_ = 0;
-
   void initFillerGCells();
-
-  void swapAndPop(std::vector<FloatPoint>& vec,
-                  size_t remove_index,
-                  size_t last_index);
-  void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
 };
 
 inline std::vector<Bin>& NesterovBase::bins()

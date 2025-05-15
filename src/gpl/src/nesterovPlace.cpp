@@ -775,11 +775,11 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 
 void NesterovPlace::createGCell(odb::dbInst* db_inst)
 {
-  auto gcell_index = nbc_->createCbkGCell(db_inst);
+  auto gcell_index = nbc_->createCbkGCell(db_inst, rb_.get());
   for (auto& nesterov : nbVec_) {
     // TODO: manage regions, not every NB should create a
     // gcell.
-    nesterov->createCbkGCell(db_inst, gcell_index, rb_.get());
+    nesterov->createCbkGCell(db_inst, gcell_index);
   }
 }
 
