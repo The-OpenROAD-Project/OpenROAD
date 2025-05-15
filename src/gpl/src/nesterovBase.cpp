@@ -1932,9 +1932,9 @@ int NesterovBase::fillerDy() const
   return fillerDy_;
 }
 
-int NesterovBase::fillerCnt() const
+int NesterovBase::getFillerCnt() const
 {
-  return static_cast<int>(gCellFillers_.size());
+  return static_cast<int>(fillerStor_.size());
 }
 
 int64_t NesterovBase::fillerCellArea() const
@@ -2711,27 +2711,6 @@ void NesterovBase::nesterovAdjustPhi()
     isMaxPhiCoefChanged_ = true;
     npVars_->maxPhiCoef *= 0.99;
   }
-}
-
-void NesterovBase::cutFillerCoordinates()
-{
-  curSLPCoordi_.resize(fillerCnt());
-  curSLPWireLengthGrads_.resize(fillerCnt());
-  curSLPDensityGrads_.resize(fillerCnt());
-  curSLPSumGrads_.resize(fillerCnt());
-
-  nextSLPCoordi_.resize(fillerCnt());
-  nextSLPWireLengthGrads_.resize(fillerCnt());
-  nextSLPDensityGrads_.resize(fillerCnt());
-  nextSLPSumGrads_.resize(fillerCnt());
-
-  prevSLPCoordi_.resize(fillerCnt());
-  prevSLPWireLengthGrads_.resize(fillerCnt());
-  prevSLPDensityGrads_.resize(fillerCnt());
-  prevSLPSumGrads_.resize(fillerCnt());
-
-  curCoordi_.resize(fillerCnt());
-  nextCoordi_.resize(fillerCnt());
 }
 
 void NesterovBase::snapshot()

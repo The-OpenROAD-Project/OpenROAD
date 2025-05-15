@@ -905,8 +905,6 @@ class NesterovBase
   GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
-  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
-  const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
   float getSumOverflow() const { return sumOverflow_; }
   float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
@@ -935,7 +933,7 @@ class NesterovBase
   // will be used in Routability-driven loop
   int fillerDx() const;
   int fillerDy() const;
-  int fillerCnt() const;
+  int getFillerCnt() const;
   int64_t fillerCellArea() const;
   int64_t whiteSpaceArea() const;
   int64_t movableArea() const;
@@ -1040,7 +1038,6 @@ class NesterovBase
   void updateNextIter(int iter);
   void setTrueReprintIterHeader() { reprint_iter_header = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
-  void cutFillerCoordinates();
 
   void snapshot();
 
@@ -1094,8 +1091,6 @@ class NesterovBase
   std::vector<GCell> fillerStor_;
 
   std::vector<GCellHandle> nb_gcells_;
-  std::vector<GCell*> gCellInsts_;
-  std::vector<GCell*> gCellFillers_;
 
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_map_;
 
@@ -1133,9 +1128,6 @@ class NesterovBase
 
   // save initial coordinates -- needed for RD
   std::vector<FloatPoint> initCoordi_;
-
-  // densityPenalty stor
-  std::vector<float> densityPenaltyStor_;
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;

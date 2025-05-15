@@ -654,8 +654,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       // if routability is needed
       if (is_routability_need_ || isRevertInitNeeded) {
-        // cutFillerCoordinates();
-
         // revert back the current density penality
         curA = route_snapshotA;
         wireLengthCoefX_ = route_snapshot_WlCoefX;

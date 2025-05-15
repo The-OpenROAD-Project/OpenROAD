@@ -124,8 +124,6 @@ class NesterovPlace
   int recursionCntWlCoef_ = 0;
   int recursionCntInitSLPCoef_ = 0;
 
-  void cutFillerCoordinates();
-
   void init();
   void reset();
 
