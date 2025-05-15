@@ -2590,7 +2590,7 @@ void dbNetwork::staToDb(const Instance* instance,
       db_inst = nullptr;
       mod_inst = static_cast<dbModInst*>(obj);
     } else {
-      logger_->critical(ORD, 2016, "instance is not Inst or ModInst");
+      logger_->error(ORD, 2016, "Instance is not dbInst or dbModInst");
     }
   } else {
     db_inst = nullptr;
@@ -2626,6 +2626,8 @@ void dbNetwork::staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const
       dnet = static_cast<dbNet*>(obj);
     } else if (type == odb::dbModNetObj) {
       modnet = static_cast<dbModNet*>(obj);
+    } else {
+      logger_->error(ORD, 2034, "Net is not dbNet or dbModNet");
     }
   }
 }
@@ -2688,8 +2690,7 @@ void dbNetwork::staToDb(const Pin* pin,
     } else if (type == dbModITermObj) {
       moditerm = static_cast<dbModITerm*>(obj);
     } else {
-      logger_->warn(
-          ORD, 2018, "pin is not ITerm or BTerm or modITerm or ModBTerm");
+      logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
     }
   }
 }
@@ -2716,6 +2717,8 @@ void dbNetwork::staToDb(const Term* term,
       bterm = static_cast<dbBTerm*>(obj);
     } else if (type == dbModBTermObj) {
       modbterm = static_cast<dbModBTerm*>(obj);
+    } else {
+      logger_->error(ORD, 2033, "Term is not ITerm or BTerm or modBTerm.");
     }
   }
 }
@@ -2795,6 +2798,8 @@ void dbNetwork::staToDb(const Port* port,
   } else if (type == dbBTermObj) {
     Port* port_unconst = const_cast<Port*>(port);
     bterm = reinterpret_cast<dbBTerm*>(port_unconst);
+  } else {
+    logger_->error(ORD, 2035, "Port is not BTerm or modBTerm.");
   }
 }
 
