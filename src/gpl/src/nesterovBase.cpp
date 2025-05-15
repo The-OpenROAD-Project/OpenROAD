@@ -3124,13 +3124,20 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     nb_gcells_.pop_back();
     db_inst_to_nb_index_map_.erase(db_it);
 
-    if (gcell_index != last_index) {
-      odb::dbInst* swapped_inst = nb_gcells_[gcell_index]->insts()[0]->dbInst();
-      db_inst_to_nb_index_map_.erase(swapped_inst);
-      db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
+    // From now on gcell_index is the index for the replacement (previous last
+    // element)
+    size_t replacer_index = gcell_index;
+    if (replacer_index != last_index
+        && !nb_gcells_[replacer_index]->isFiller()) {
+      odb::dbInst* replacer_inst
+          = nb_gcells_[replacer_index]->insts()[0]->dbInst();
+      // Update new replacer reference on map
+      db_inst_to_nb_index_map_.erase(replacer_inst);
+      db_inst_to_nb_index_map_[replacer_inst] = replacer_index;
     }
 
     std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
+
     if (replacer.first != nullptr) {
       auto it = db_inst_to_nb_index_map_.find(replacer.first);
       if (it != db_inst_to_nb_index_map_.end()) {
@@ -3144,6 +3151,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
                    replacer.first->getName());
       }
     }
+
   } else {
     debugPrint(
         log_,
@@ -3181,6 +3189,10 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
 
     replacement = {swapped_inst, index_remove};
   }
+
+  int64_t area_change = static_cast<int64_t>(gCellStor_.back().dx())
+                        * static_cast<int64_t>(gCellStor_.back().dy());
+  delta_area_ -= area_change;
 
   gCellStor_.pop_back();
   return replacement;
@@ -3325,7 +3337,7 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
   // Avoid modifying this if snapshot has not been saved yet.
-  if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
+  if (curSLPCoordi_.size() - 1 == snapshotCoordi_.size()) {
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
