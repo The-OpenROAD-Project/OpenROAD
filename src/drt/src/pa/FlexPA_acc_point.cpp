@@ -253,48 +253,23 @@ void FlexPA::createSingleAccessPoint(
   if ((lower_type == frAccessPointEnum::NearbyGrid
        || upper_type == frAccessPointEnum::NearbyGrid)) {
     Point end;
-    const int half_width
+    const int hwidth
         = design_->getTech()->getLayer(ap->getLayerNum())->getMinWidth() / 2;
-    if (fpt.x() < gtl::xl(maxrect) + half_width) {
-      end.setX(gtl::xl(maxrect) + half_width);
-    } else if (fpt.x() > gtl::xh(maxrect) - half_width) {
-      end.setX(gtl::xh(maxrect) - half_width);
-    } else {
-      end.setX(fpt.x());
-    }
-    if (fpt.y() < gtl::yl(maxrect) + half_width) {
-      end.setY(gtl::yl(maxrect) + half_width);
-    } else if (fpt.y() > gtl::yh(maxrect) - half_width) {
-      end.setY(gtl::yh(maxrect) - half_width);
-    } else {
-      end.setY(fpt.y());
-    }
 
-    Point e = fpt;
-    if (fpt.x() != end.x()) {
-      e.setX(end.x());
-    } else if (fpt.y() != end.y()) {
-      e.setY(end.y());
-    }
-    if (!(e == fpt)) {
+    end.setX(std::clamp(
+        fpt.x(), gtl::xl(maxrect) + hwidth, gtl::xh(maxrect) - hwidth));
+    end.setY(std::clamp(
+        fpt.y(), gtl::yl(maxrect) + hwidth, gtl::yh(maxrect) - hwidth));
+
+    if (end != fpt) {
       frPathSeg ps;
-      ps.setPoints_safe(fpt, e);
+      ps.setPoints_safe(fpt, end);
       if (ps.getBeginPoint() == end) {
         ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
-      } else if (ps.getEndPoint() == end) {
+      } else {
         ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
       }
       ap->addPathSeg(ps);
-      if (!(e == end)) {
-        fpt = e;
-        ps.setPoints_safe(fpt, end);
-        if (ps.getBeginPoint() == end) {
-          ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
-        } else {
-          ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
-        }
-        ap->addPathSeg(ps);
-      }
     }
   }
   aps.push_back(std::move(ap));
