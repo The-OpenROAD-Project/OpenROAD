@@ -126,8 +126,7 @@ void Restructure::getBlob(unsigned max_depth)
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
       odb::dbModITerm* moditerm = nullptr;
-      odb::dbModBTerm* modbterm = nullptr;
-      open_sta_->getDbNetwork()->staToDb(pin, term, port, moditerm, modbterm);
+      open_sta_->getDbNetwork()->staToDb(pin, term, port, moditerm);
       if (term && !term->getInst()->getMaster()->isBlock())
         path_insts_.insert(term->getInst());
     }

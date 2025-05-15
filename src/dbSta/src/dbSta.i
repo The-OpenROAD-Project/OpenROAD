@@ -106,8 +106,7 @@ sta_to_db_port(Port *port)
   dbITerm *iterm;
   dbBTerm *bterm;
   dbModITerm *moditerm;
-  dbModBTerm *modbterm;
-  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+  db_network->staToDb(pin, iterm, bterm, moditerm);
   return bterm;
 }
 
@@ -119,8 +118,7 @@ sta_to_db_pin(Pin *pin)
   dbITerm *iterm;
   dbBTerm *bterm;
   dbModITerm *moditerm;
-  dbModBTerm* modbterm;
-  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
+  db_network->staToDb(pin, iterm, bterm, moditerm);
   return iterm;
 }
 
