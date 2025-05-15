@@ -25,6 +25,4 @@ Cell type report:                       Count       Area
 Cell instance report:
   snl_bufx1                                 2    2000.00
   snl_ffqx1                                 1    1000.00
-Differences found at line 14.
-	"design__instance__count__class:buffer__in_module:block1.b2": 2,
-	"design__instance__count__class:buffer__in_module:block1_b2": 2,
+No differences found.

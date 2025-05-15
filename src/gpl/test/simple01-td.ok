@@ -152,6 +152,4 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.6396
 [INFO GPL-1009]     - For 50% usage of free space: 1.0234
 worst slack max 1.40
-Differences found at line 63.
-    - _276_ NOR2_X4 + PLACED ( 9098 31400 ) N ;
-    - _276_ NOR2_X4 + PLACED ( 9983 31947 ) N ;
+No differences found.
