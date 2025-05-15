@@ -169,15 +169,6 @@ class RouteBase
   int64_t inflatedAreaDelta() const;
   int numCall() const;
 
-  // void revertGCellSizeToMinRc();
-  // void pushBackMinRcCellSize(int dx, int dy)
-  // {
-  //   minRcCellSize_.emplace_back(dx, dy);
-  // }
-
-  // std::vector<std::pair<int, int> > getMinRcCellSize() { return
-  // minRcCellSize_; }
-
  private:
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
