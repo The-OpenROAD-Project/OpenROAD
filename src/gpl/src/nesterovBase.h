@@ -828,15 +828,51 @@ class NesterovBaseCommon
   GCell* getGCellByIndex(size_t i);
 
   void setCbk(nesterovDbCbk* cbk) { db_cbk_ = cbk; }
-  size_t createCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
+  size_t createCbkGCell(odb::dbInst* db_inst);
   void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
   void createCbkITerm(odb::dbITerm* iTerm);
-  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
+  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
   void destroyCbkGNet(odb::dbNet*);
   void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
+
+  void resetMinRcCellSize()
+  {
+    minRcCellSize_.clear();
+    minRcCellSize_.shrink_to_fit();
+  }
+
+  void resizeMinRcCellSize()
+  {
+    minRcCellSize_.resize(nbc_gcells_.size(), std::make_pair(0, 0));
+  }
+  void updateMinRcCellSize()
+  {
+    for (auto& gCell : nbc_gcells_) {
+      if (!gCell->isStdInstance()) {
+        continue;
+      }
+
+      minRcCellSize_[&gCell - nbc_gcells_.data()]
+          = std::make_pair(gCell->dx(), gCell->dy());
+    }
+  }
+
+  void revertGCellSizeToMinRc()
+  {
+    // revert back the gcell sizes
+    for (auto& gCell : nbc_gcells_) {
+      if (!gCell->isStdInstance()) {
+        continue;
+      }
+
+      int idx = &gCell - nbc_gcells_.data();
+
+      gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
+    }
+  }
 
   GCell& getGCell(size_t index) { return gCellStor_[index]; }
 
@@ -866,7 +902,8 @@ class NesterovBaseCommon
   std::vector<GPin> gPinStor_;
 
   std::vector<GCell*> nbc_gcells_;
-  
+  // For usage in routability mode, parallel to nbc_gcells_
+  std::vector<std::pair<int, int>> minRcCellSize_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -1062,7 +1099,7 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  void destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
+  void destroyCbkGCell(odb::dbInst* db_inst);
   void destroyFillerGCell(size_t index_remove);
 
   // Resets all pointers to storages of gcells, gpins, and gnets.

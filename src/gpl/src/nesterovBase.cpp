@@ -3025,7 +3025,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
   }
 }
 
-size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst, RouteBase* rb)
+size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
   Instance gpl_inst(db_inst,
@@ -3037,7 +3037,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst, RouteBase* rb)
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
-  rb->pushBackMinRcCellSize(gcell.dx(), gcell.dy());
+  minRcCellSize_.emplace_back(gcell.dx(), gcell.dy());
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;
@@ -3075,7 +3075,7 @@ void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 
 // assuming fixpointers will be called later
 //  maintaining consistency in NBC::gcellStor_ and NB::gCells_
-void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb)
+void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_, GPL, "callbacks", 2, "NesterovBase::destroyGCel");
   auto db_it = db_inst_to_nb_index_map_.find(db_inst);
@@ -3113,7 +3113,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb)
       db_inst_to_nb_index_map_[replacer_inst] = replacer_index;
     }
 
-    std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst, rb);
+    std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
 
     if (replacer.first != nullptr) {
       auto it = db_inst_to_nb_index_map_.find(replacer.first);
@@ -3141,7 +3141,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb)
 }
 
 std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
-    odb::dbInst* db_inst, RouteBase* rb)
+    odb::dbInst* db_inst)
 {
   auto it = db_inst_to_nbc_index_map_.find(db_inst);
   if (it == db_inst_to_nbc_index_map_.end()) {
@@ -3159,7 +3159,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
 
   if (index_remove != last_index) {
     std::swap(gCellStor_[index_remove], gCellStor_[last_index]);
-    std::swap(rb->getMinRcCellSize()[index_remove], rb->getMinRcCellSize()[last_index]);
+    std::swap(minRcCellSize_[index_remove], minRcCellSize_[last_index]);
 
     odb::dbInst* swapped_inst = gCellStor_[index_remove].insts()[0]->dbInst();
     db_inst_to_nbc_index_map_[swapped_inst] = index_remove;
@@ -3171,7 +3171,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   delta_area_ -= area_change;
 
   gCellStor_.pop_back();
-  rb->getMinRcCellSize().pop_back();
+  minRcCellSize_.pop_back();
   return replacement;
 }
 
