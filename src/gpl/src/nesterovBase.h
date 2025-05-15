@@ -831,7 +831,7 @@ class NesterovBaseCommon
   size_t createCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
   void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
   void createCbkITerm(odb::dbITerm* iTerm);
-  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
+  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
   void destroyCbkGNet(odb::dbNet*);
   void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
@@ -866,6 +866,7 @@ class NesterovBaseCommon
   std::vector<GPin> gPinStor_;
 
   std::vector<GCell*> nbc_gcells_;
+  
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
@@ -1061,7 +1062,7 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  void destroyCbkGCell(odb::dbInst* db_inst);
+  void destroyCbkGCell(odb::dbInst* db_inst, RouteBase* rb);
   void destroyFillerGCell(size_t index_remove);
 
   // Resets all pointers to storages of gcells, gpins, and gnets.

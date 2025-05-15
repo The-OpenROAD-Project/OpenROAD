@@ -174,6 +174,8 @@ class RouteBase
   {
     minRcCellSize_.emplace_back(dx, dy);
   }
+  
+  std::vector<std::pair<int, int> > getMinRcCellSize() { return minRcCellSize_; }
 
  private:
   RouteBaseVars rbVars_;
@@ -197,7 +199,7 @@ class RouteBase
   float minRc_ = 1e30;
   float minRcTargetDensity_ = 0;
   int minRcViolatedCnt_ = 0;
-  std::vector<std::pair<int, int>> minRcCellSize_;
+  std::vector<std::pair<int, int> > minRcCellSize_;
 
   void init();
   void reset();
