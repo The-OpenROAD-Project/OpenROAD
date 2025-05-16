@@ -64,7 +64,7 @@ class Flute
   void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln, LUT_ALLOC_TYPE LUT_alloc);
   void ensureLUT(int d);
   void deleteLUT();
-  void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE LUT_alloc, bool use_delete);
+  void deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, const LUT_ALLOC_TYPE LUT_alloc, const bool use_delete);
 
   int flute_wl(int d,
                const std::vector<int>& x,
