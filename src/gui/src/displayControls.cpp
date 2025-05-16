@@ -1241,8 +1241,20 @@ void DisplayControls::save()
 
 void DisplayControls::restore()
 {
+  // Collect current controls in case some were removed after save was called.
+  std::map<std::string, QStandardItem*> all_controls;
+  collectControls(model_->invisibleRootItem(), Visible, all_controls);
+  collectControls(model_->invisibleRootItem(), Selectable, all_controls);
+  std::set<QStandardItem*> controls;
+
+  for (auto& [control_name, control] : all_controls) {
+    controls.insert(control);
+  }
+
   for (auto& [control, state] : saved_state_) {
-    control->setCheckState(state);
+    if (controls.find(control) != controls.end()) {
+      control->setCheckState(state);
+    }
   }
 }
 
