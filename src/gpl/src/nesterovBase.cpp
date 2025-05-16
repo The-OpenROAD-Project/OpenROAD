@@ -282,11 +282,9 @@ void GCell::print(utl::Logger* logger, bool print_only_name = true) const
   }
 }
 
-void GCell::printToFile(const std::string& filename,
-                        bool print_only_name = true) const
+void GCell::printToFile(std::ostream& out, bool print_only_name) const
 {
-  std::ofstream out(filename, std::ios::app);
-  if (!out.is_open()) {
+  if (!out) {
     return;
   }
 
@@ -307,8 +305,6 @@ void GCell::printToFile(const std::string& filename,
                        gradientX_,
                        gradientY_);
   }
-
-  out.close();
 }
 
 ////////////////////////////////////////////////
@@ -1461,6 +1457,43 @@ int64_t NesterovBaseCommon::getHpwl()
   return hpwl;
 }
 
+void NesterovBaseCommon::resetMinRcCellSize()
+{
+  minRcCellSize_.clear();
+  minRcCellSize_.shrink_to_fit();
+}
+
+void NesterovBaseCommon::resizeMinRcCellSize()
+{
+  minRcCellSize_.resize(nbc_gcells_.size(), std::make_pair(0, 0));
+}
+
+void NesterovBaseCommon::updateMinRcCellSize()
+{
+  for (auto& gCell : nbc_gcells_) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+
+    minRcCellSize_[&gCell - nbc_gcells_.data()]
+        = std::make_pair(gCell->dx(), gCell->dy());
+  }
+}
+
+void NesterovBaseCommon::revertGCellSizeToMinRc()
+{
+  // revert back the gcell sizes
+  for (auto& gCell : nbc_gcells_) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+
+    int idx = &gCell - nbc_gcells_.data();
+
+    gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
+  }
+}
+
 GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
 {
   if (i >= gCellStor_.size()) {
@@ -1932,9 +1965,9 @@ int NesterovBase::fillerDy() const
   return fillerDy_;
 }
 
-int NesterovBase::fillerCnt() const
+int NesterovBase::getFillerCnt() const
 {
-  return static_cast<int>(gCellFillers_.size());
+  return static_cast<int>(fillerStor_.size());
 }
 
 int64_t NesterovBase::fillerCellArea() const
@@ -2713,27 +2746,6 @@ void NesterovBase::nesterovAdjustPhi()
   }
 }
 
-void NesterovBase::cutFillerCoordinates()
-{
-  curSLPCoordi_.resize(fillerCnt());
-  curSLPWireLengthGrads_.resize(fillerCnt());
-  curSLPDensityGrads_.resize(fillerCnt());
-  curSLPSumGrads_.resize(fillerCnt());
-
-  nextSLPCoordi_.resize(fillerCnt());
-  nextSLPWireLengthGrads_.resize(fillerCnt());
-  nextSLPDensityGrads_.resize(fillerCnt());
-  nextSLPSumGrads_.resize(fillerCnt());
-
-  prevSLPCoordi_.resize(fillerCnt());
-  prevSLPWireLengthGrads_.resize(fillerCnt());
-  prevSLPDensityGrads_.resize(fillerCnt());
-  prevSLPSumGrads_.resize(fillerCnt());
-
-  curCoordi_.resize(fillerCnt());
-  nextCoordi_.resize(fillerCnt());
-}
-
 void NesterovBase::snapshot()
 {
   if (isConverged_) {
@@ -3000,9 +3012,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
   new_instances.clear();
 }
 
-void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
-                                  size_t stor_index,
-                                  RouteBase* rb)
+void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 {
   debugPrint(log_,
              GPL,
@@ -3039,7 +3049,6 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
       snapshotSLPSumGrads_.emplace_back();
     }
 
-    rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
     debugPrint(log_,
                GPL,
@@ -3051,7 +3060,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
 
 size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
-  debugPrint(log_, GPL, "callbacks", 2, "NBC createGCell");
+  debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
   Instance gpl_inst(db_inst,
                     pbc_->padLeft() * pbc_->siteSizeX(),
                     pbc_->padRight() * pbc_->siteSizeX(),
@@ -3061,6 +3070,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
+  minRcCellSize_.emplace_back(gcell.dx(), gcell.dy());
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;
@@ -3175,18 +3185,17 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   }
 
   size_t index_remove = it->second;
-  size_t last_index = gCellStor_.size() - 1;
-
   db_inst_to_nbc_index_map_.erase(it);
 
   std::pair<odb::dbInst*, size_t> replacement;
+  size_t last_index = gCellStor_.size() - 1;
 
   if (index_remove != last_index) {
     std::swap(gCellStor_[index_remove], gCellStor_[last_index]);
+    std::swap(minRcCellSize_[index_remove], minRcCellSize_[last_index]);
 
     odb::dbInst* swapped_inst = gCellStor_[index_remove].insts()[0]->dbInst();
     db_inst_to_nbc_index_map_[swapped_inst] = index_remove;
-
     replacement = {swapped_inst, index_remove};
   }
 
@@ -3195,6 +3204,7 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   delta_area_ -= area_change;
 
   gCellStor_.pop_back();
+  minRcCellSize_.pop_back();
   return replacement;
 }
 
@@ -3353,7 +3363,9 @@ void NesterovBaseCommon::printGCells()
   }
 }
 
-void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
+void NesterovBaseCommon::printGCellsToFile(const std::string& filename,
+                                           bool print_only_name,
+                                           bool also_print_minRc)
 {
   std::ofstream out(filename);
   if (!out.is_open()) {
@@ -3361,13 +3373,34 @@ void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
   }
 
   out << "gCellStor_.size(): " << gCellStor_.size() << "\n";
-  out.close();  // reuse printToFile which appends
+  out.close();
+
+  std::ofstream out_append(filename, std::ios::app);
+  if (!out_append.is_open()) {
+    return;
+  }
 
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    std::ofstream out_idx(filename, std::ios::app);
-    out_idx << fmt::format("idx:{}\n", i);
-    out_idx.close();
-    gCellStor_[i].printToFile(filename);
+    out_append << fmt::format("idx:{}\n", i);
+    gCellStor_[i].printToFile(out_append, print_only_name);
+  }
+
+  out_append.close();
+
+  if (also_print_minRc) {
+    std::string minrc_filename = filename + ".minrc";
+    std::ofstream minrc_out(minrc_filename);
+    if (!minrc_out.is_open()) {
+      return;
+    }
+
+    for (size_t i = 0; i < minRcCellSize_.size(); ++i) {
+      const auto& min_rc = minRcCellSize_[i];
+      minrc_out << fmt::format(
+          "idx:{} minRc: {} {}\n", i, min_rc.first, min_rc.second);
+    }
+
+    minrc_out.close();
   }
 }
 
