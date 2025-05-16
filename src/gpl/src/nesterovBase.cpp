@@ -1461,6 +1461,43 @@ int64_t NesterovBaseCommon::getHpwl()
   return hpwl;
 }
 
+void NesterovBaseCommon::resetMinRcCellSize()
+{
+  minRcCellSize_.clear();
+  minRcCellSize_.shrink_to_fit();
+}
+
+void NesterovBaseCommon::resizeMinRcCellSize()
+{
+  minRcCellSize_.resize(nbc_gcells_.size(), std::make_pair(0, 0));
+}
+
+void NesterovBaseCommon::updateMinRcCellSize()
+{
+  for (auto& gCell : nbc_gcells_) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+
+    minRcCellSize_[&gCell - nbc_gcells_.data()]
+        = std::make_pair(gCell->dx(), gCell->dy());
+  }
+}
+
+void NesterovBaseCommon::revertGCellSizeToMinRc()
+{
+  // revert back the gcell sizes
+  for (auto& gCell : nbc_gcells_) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+
+    int idx = &gCell - nbc_gcells_.data();
+
+    gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
+  }
+}
+
 GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
 {
   if (i >= gCellStor_.size()) {

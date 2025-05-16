@@ -838,41 +838,10 @@ class NesterovBaseCommon
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
 
-  void resetMinRcCellSize()
-  {
-    minRcCellSize_.clear();
-    minRcCellSize_.shrink_to_fit();
-  }
-
-  void resizeMinRcCellSize()
-  {
-    minRcCellSize_.resize(nbc_gcells_.size(), std::make_pair(0, 0));
-  }
-  void updateMinRcCellSize()
-  {
-    for (auto& gCell : nbc_gcells_) {
-      if (!gCell->isStdInstance()) {
-        continue;
-      }
-
-      minRcCellSize_[&gCell - nbc_gcells_.data()]
-          = std::make_pair(gCell->dx(), gCell->dy());
-    }
-  }
-
-  void revertGCellSizeToMinRc()
-  {
-    // revert back the gcell sizes
-    for (auto& gCell : nbc_gcells_) {
-      if (!gCell->isStdInstance()) {
-        continue;
-      }
-
-      int idx = &gCell - nbc_gcells_.data();
-
-      gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
-    }
-  }
+  void resetMinRcCellSize();
+  void resizeMinRcCellSize();
+  void updateMinRcCellSize();
+  void revertGCellSizeToMinRc();
 
   GCell& getGCell(size_t index) { return gCellStor_[index]; }
 
