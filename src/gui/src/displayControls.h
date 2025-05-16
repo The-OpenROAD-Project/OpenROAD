@@ -531,6 +531,7 @@ class DisplayControls : public QDockWidget,
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<const odb::dbSite*, ModelRow> site_controls_;
+  int custom_controls_start_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
