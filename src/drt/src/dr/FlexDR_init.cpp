@@ -2868,12 +2868,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
           }
           for (auto& ap :
                pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints()) {
-            if (ap->hasAccess(frDirEnum::E) || ap->hasAccess(frDirEnum::W)) {
-              accessHorz = true;
-            }
-            if (ap->hasAccess(frDirEnum::N) || ap->hasAccess(frDirEnum::S)) {
-              accessVert = true;
-            }
+            accessHorz = ap->hasHorzAccess();
+            accessVert = ap->hasVertAccess();
           }
         }
       } else {
@@ -2993,10 +2989,8 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
                 if (ap->getLayerNum() != layerNum) {
                   continue;
                 }
-                hasVerticalAccess |= ap->hasAccess(frDirEnum::N);
-                hasVerticalAccess |= ap->hasAccess(frDirEnum::S);
-                hasHorizontalAccess |= ap->hasAccess(frDirEnum::W);
-                hasHorizontalAccess |= ap->hasAccess(frDirEnum::E);
+                hasVerticalAccess |= ap->hasVertAccess();
+                hasHorizontalAccess |= ap->hasHorzAccess();
               }
             }
           }
