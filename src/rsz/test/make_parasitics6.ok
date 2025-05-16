@@ -4,6 +4,64 @@
 [INFO ODB-0131]     Created 8 components and 39 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 16 connections.
 [INFO ODB-0133]     Created 10 nets and 20 connections.
+Corner: ff
+   Layer   | Unit Resistance | Unit Capacitance 
+           |       (kohm/um) |          (fF/um)
+------------------------------------------------
+    metal1 |        4.34e-03 |         4.81e-02
+    metal2 |        3.57e-03 |         8.08e-02
+    metal3 |        3.57e-03 |         7.52e-02
+    metal4 |        1.50e-03 |         9.66e-02
+    metal5 |        1.50e-03 |         8.39e-02
+    metal6 |        1.50e-03 |         7.30e-02
+    metal7 |        1.88e-04 |         1.11e-01
+    metal8 |        1.88e-04 |         8.53e-02
+    metal9 |        3.78e-05 |         9.06e-02
+   metal10 |        3.78e-05 |         6.64e-02
+------------------------------------------------
+
+   Layer   | Via Resistance 
+           |         (kohm) 
+----------------------------
+      via1 |       0.00e+00 
+      via2 |       0.00e+00 
+      via3 |       0.00e+00 
+      via4 |       0.00e+00 
+      via5 |       0.00e+00 
+      via6 |       0.00e+00 
+      via7 |       0.00e+00 
+      via8 |       0.00e+00 
+      via9 |       0.00e+00 
+----------------------------
+Corner: ss
+   Layer   | Unit Resistance | Unit Capacitance 
+           |       (kohm/um) |          (fF/um)
+------------------------------------------------
+    metal1 |        6.52e-03 |         7.22e-02
+    metal2 |        3.57e-03 |         8.08e-02
+    metal3 |        3.57e-03 |         7.52e-02
+    metal4 |        1.50e-03 |         9.66e-02
+    metal5 |        1.50e-03 |         8.39e-02
+    metal6 |        1.50e-03 |         7.30e-02
+    metal7 |        1.88e-04 |         1.11e-01
+    metal8 |        1.88e-04 |         8.53e-02
+    metal9 |        3.78e-05 |         9.06e-02
+   metal10 |        3.78e-05 |         6.64e-02
+------------------------------------------------
+
+   Layer   | Via Resistance 
+           |         (kohm) 
+----------------------------
+      via1 |       0.00e+00 
+      via2 |       0.00e+00 
+      via3 |       0.00e+00 
+      via4 |       0.00e+00 
+      via5 |       0.00e+00 
+      via6 |       0.00e+00 
+      via7 |       0.00e+00 
+      via8 |       0.00e+00 
+      via9 |       0.00e+00 
+----------------------------
 Net r1q
  Pin capacitance: 0.92-0.92
  Wire capacitance: 9.76-9.76
