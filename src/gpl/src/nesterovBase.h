@@ -111,7 +111,7 @@ class GCell
   bool contains(odb::dbInst* db_inst) const;
 
   void print(utl::Logger* logger, bool print_only_name) const;
-  void printToFile(const std::string& filename, bool print_only_name) const;
+  void printToFile(std::ostream& out, bool print_only_name = true) const;
 
  private:
   std::vector<Instance*> insts_;
@@ -851,7 +851,9 @@ class NesterovBaseCommon
   }
 
   void printGCells();
-  void printGCellsToFile(const std::string& filename);
+  void printGCellsToFile(const std::string& filename,
+                         bool print_only_name = true,
+                         bool also_print_minRc = false);
   void printGPins();
 
   // TODO do this for each region? Also, manage this properly if other callbacks

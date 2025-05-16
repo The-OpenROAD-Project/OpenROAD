@@ -282,11 +282,9 @@ void GCell::print(utl::Logger* logger, bool print_only_name = true) const
   }
 }
 
-void GCell::printToFile(const std::string& filename,
-                        bool print_only_name = true) const
+void GCell::printToFile(std::ostream& out, bool print_only_name) const
 {
-  std::ofstream out(filename, std::ios::app);
-  if (!out.is_open()) {
+  if (!out) {
     return;
   }
 
@@ -307,8 +305,6 @@ void GCell::printToFile(const std::string& filename,
                        gradientX_,
                        gradientY_);
   }
-
-  out.close();
 }
 
 ////////////////////////////////////////////////
@@ -3367,7 +3363,9 @@ void NesterovBaseCommon::printGCells()
   }
 }
 
-void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
+void NesterovBaseCommon::printGCellsToFile(const std::string& filename,
+                                           bool print_only_name,
+                                           bool also_print_minRc)
 {
   std::ofstream out(filename);
   if (!out.is_open()) {
@@ -3375,13 +3373,34 @@ void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
   }
 
   out << "gCellStor_.size(): " << gCellStor_.size() << "\n";
-  out.close();  // reuse printToFile which appends
+  out.close();
+
+  std::ofstream out_append(filename, std::ios::app);
+  if (!out_append.is_open()) {
+    return;
+  }
 
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    std::ofstream out_idx(filename, std::ios::app);
-    out_idx << fmt::format("idx:{}\n", i);
-    out_idx.close();
-    gCellStor_[i].printToFile(filename);
+    out_append << fmt::format("idx:{}\n", i);
+    gCellStor_[i].printToFile(out_append, print_only_name);
+  }
+
+  out_append.close();
+
+  if (also_print_minRc) {
+    std::string minrc_filename = filename + ".minrc";
+    std::ofstream minrc_out(minrc_filename);
+    if (!minrc_out.is_open()) {
+      return;
+    }
+
+    for (size_t i = 0; i < minRcCellSize_.size(); ++i) {
+      const auto& min_rc = minRcCellSize_[i];
+      minrc_out << fmt::format(
+          "idx:{} minRc: {} {}\n", i, min_rc.first, min_rc.second);
+    }
+
+    minrc_out.close();
   }
 }
 
