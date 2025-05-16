@@ -70,9 +70,7 @@ inline T ADIFF(T x, T y)
 ////////////////////////////////////////////////////////////////
 
 #if LUT_SOURCE == LUT_FILE || LUT_SOURCE == LUT_VAR_CHECK
-static void readLUTfiles(LUT_TYPE LUT,
-                         NUMSOLN_TYPE numsoln,
-                         LUT_ALLOC_TYPE LUT_alloc)
+static void readLUTfiles(LUT_TYPE LUT, NUMSOLN_TYPE numsoln, LUT_ALLOC_TYPE LUT_alloc)
 {
   unsigned char charnum[256], line[32], *linep, c;
   FILE *fpwv, *fprt;
@@ -198,9 +196,7 @@ void Flute::readLUT()
 #endif
 }
 
-void Flute::makeLUT(LUT_TYPE& LUT,
-                    NUMSOLN_TYPE& numsoln,
-                    LUT_ALLOC_TYPE& LUT_alloc)
+void Flute::makeLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE& LUT_alloc)
 {
   LUT = new struct csoln**[FLUTE_D + 1];
   numsoln = new int*[FLUTE_D + 1];
@@ -217,10 +213,7 @@ void Flute::deleteLUT()
   deleteLUT(LUT, numsoln, LUT_alloc, LUT_SOURCE == LUT_VAR);
 }
 
-void Flute::deleteLUT(LUT_TYPE& LUT,
-                      NUMSOLN_TYPE& numsoln,
-                      LUT_ALLOC_TYPE LUT_alloc,
-                      const bool use_delete)
+void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE LUT_alloc, const bool use_delete)
 {
   if (LUT) {
     for (int d = 4; d <= FLUTE_D; d++) {
@@ -272,10 +265,7 @@ inline const char* readDecimalInt(const char* s, int& value)
 }
 
 // Init LUTs from base64 encoded string variables.
-void Flute::initLUT(int to_d,
-                    LUT_TYPE LUT,
-                    NUMSOLN_TYPE numsoln,
-                    LUT_ALLOC_TYPE LUT_alloc)
+void Flute::initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln, LUT_ALLOC_TYPE LUT_alloc)
 {
   std::string pwv_string = utl::base64_decode(powv9);
   const char* pwv = pwv_string.c_str();
