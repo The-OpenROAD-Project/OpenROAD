@@ -444,6 +444,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     repair_antennas_->clearViolations();
     itr++;
   }
+
   logger_->metric("antenna_diodes_count", total_diodes_count_);
   saveGuides();
   return total_diodes_count_;
