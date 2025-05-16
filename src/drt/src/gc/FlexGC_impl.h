@@ -21,6 +21,7 @@ class dbTechLayerCutSpacingTableDefRule;
 }
 
 namespace drt {
+using gcArena = Arena<gcNet, gcPin, gcRect, gcSegment, gcCorner>;
 class FlexGCWorkerRegionQuery
 {
  public:
@@ -85,11 +86,10 @@ class FlexGCWorker::Impl
   }
   gcNet* addNet(frBlockObject* owner = nullptr)
   {
-    auto uNet = std::make_unique<gcNet>(getTech()->getLayers().size());
-    auto net = uNet.get();
+    auto net = gcArena_.make<gcNet>(getTech()->getLayers().size());
     net->setOwner(owner);
     net->setId(nets_.size());
-    nets_.push_back(std::move(uNet));
+    nets_.push_back(net);
     owner2nets_[owner] = net;
     return net;
   }
@@ -104,7 +104,7 @@ class FlexGCWorker::Impl
   frTechObject* getTech() const { return tech_; }
   FlexDRWorker* getDRWorker() const { return drWorker_; }
   const Rect& getExtBox() const { return extBox_; }
-  std::vector<std::unique_ptr<gcNet>>& getNets() { return nets_; }
+  std::vector<gcNet*>& getNets() { return nets_; }
   // others
   void init(const frDesign* design);
   int main();
@@ -121,12 +121,13 @@ class FlexGCWorker::Impl
   Logger* logger_;
   RouterConfiguration* router_cfg_;
   FlexDRWorker* drWorker_;
+  gcArena gcArena_;
 
   Rect extBox_;
   Rect drcBox_;
 
   std::map<frBlockObject*, gcNet*> owner2nets_;  // no order is assumed
-  std::vector<std::unique_ptr<gcNet>> nets_;
+  std::vector<gcNet*> nets_;
 
   std::vector<std::unique_ptr<frMarker>> markers_;
   std::map<MarkerId, frMarker*> mapMarkers_;
