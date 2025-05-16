@@ -47,11 +47,16 @@ namespace gui {
 ClockTreeRenderer::ClockTreeRenderer(ClockTree* tree)
     : tree_(tree), max_depth_(1), path_to_(nullptr)
 {
+  addDisplayControl(render_label_, true);
 }
 
 void ClockTreeRenderer::drawObjects(Painter& painter)
 {
   if (tree_ == nullptr) {
+    return;
+  }
+
+  if (!checkDisplayControl(render_label_)) {
     return;
   }
 
