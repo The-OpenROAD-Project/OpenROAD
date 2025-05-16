@@ -295,6 +295,45 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->resetMinSumOverflow();
   }
 
+  namespace fs = std::filesystem;
+
+  std::string reports_dir;
+  if (npVars_.debug_images_path == "REPORTS_DIR") {
+    const char* reports_dir_env = std::getenv("REPORTS_DIR");
+    reports_dir = reports_dir_env ? reports_dir_env : "reports";
+  } else {
+    reports_dir = npVars_.debug_images_path;
+  }
+
+  std::string gif_frames_dir = reports_dir + "/gpl_gif_frames";
+  std::string special_modes_dir = reports_dir + "/gpl_special_modes";
+  std::string gif_output = reports_dir + "/placement.gif";
+
+  auto clean_directory
+      = [](const fs::path& dir, const std::string& exclude = "") {
+          if (!fs::exists(dir)) {
+            fs::create_directories(dir);
+            return;
+          }
+          for (const auto& entry : fs::directory_iterator(dir)) {
+            if (exclude.empty() || entry.path().filename() != exclude) {
+              fs::remove_all(entry.path());
+            }
+          }
+        };
+
+  if (graphics_ && npVars_.debug_generate_images) {
+    clean_directory(special_modes_dir);
+    clean_directory(gif_frames_dir);
+    fs::path placement_gif_file = fs::path(reports_dir) / "placement.gif";
+    if (fs::exists(placement_gif_file)) {
+      fs::remove(placement_gif_file);
+    }
+  }
+
+  int routabilityDrivenCount = 0;
+  int timingDrivenCount = 0;
+
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {
@@ -374,10 +413,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     updateNextIter(iter);
 
     // For JPEG Saving
-    // debug
-    if (npVars_.debug && npVars_.debug_update_db_every_iteration) {
+    // graphics_ is only true if debug mode is active
+    if (graphics_ && npVars_.debug_update_db_every_iteration) {
       updateDb();
     }
+
     const int debug_start_iter = npVars_.debug_start_iter;
     if (graphics_ && (debug_start_iter == 0 || iter + 1 >= debug_start_iter)) {
       bool update
@@ -387,6 +427,40 @@ int NesterovPlace::doNesterovPlace(int start_iter)
             = (iter == 0 || (iter + 1) % npVars_.debug_pause_iterations == 0);
         graphics_->cellPlot(pause);
       }
+    }
+
+    if (graphics_ && npVars_.debug_generate_images && iter % 10 == 0) {
+      std::string raw = fmt::format("{}/full_{:05d}.png", gif_frames_dir, iter);
+      std::string scaled
+          = fmt::format("{}/iter_{:05d}.png", gif_frames_dir, iter);
+      std::string label = fmt::format("Iter {} | R: {} | T: {}",
+                                      iter,
+                                      routabilityDrivenCount,
+                                      timingDrivenCount);
+
+      graphics_->saveGuiImage(raw);
+      graphics_->scaleAndAnnotateImage(raw, scaled, label);
+    }
+
+    // If a timing-driven iteration previously happened, save image.
+    if (graphics_ && npVars_.debug_generate_images && timing_driven_) {
+      std::string raw
+          = fmt::format("{}/special_raw_{:05d}.png", special_modes_dir, iter);
+      std::string special
+          = fmt::format("{}/timing_iter_{:05d}.png", special_modes_dir, iter);
+      std::string label = fmt::format("Iter {} | R: {} | T: {}",
+                                      iter,
+                                      routabilityDrivenCount,
+                                      timingDrivenCount);
+
+      // TODO: this throws an error from gui if we do not have any buffer
+      // inserted by rsz. Check number of buffers inserted here?
+      graphics_->getGuiObjectFromGraphics()->select(
+          "Inst", "", "Description", "Timing Repair Buffer", true, -1);
+      graphics_->saveGuiImage(raw);
+      graphics_->scaleAndAnnotateImage(raw, special, label, "yellow");
+      graphics_->getGuiObjectFromGraphics()->clearSelections();
+      timing_driven_ = false;
     }
 
     // timing driven feature
@@ -447,6 +521,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
       nbVec_[0]->setTrueReprintIterHeader();
+      timing_driven_ = true;
+      ++timingDrivenCount;
 
       for (auto& nb : nbVec_) {
         nb_gcells_after_td += nb->getGCells().size();
@@ -644,8 +720,34 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     // check routability using RUDY or GR
     if (npVars_.routability_driven_mode && is_routability_need_
-        && npVars_.routability_end_overflow >= average_overflow_unscaled_) {
+        && average_overflow_unscaled_ <= npVars_.routability_end_overflow) {
       nbVec_[0]->setTrueReprintIterHeader();
+      ++routabilityDrivenCount;
+
+      if (graphics_ && npVars_.debug_generate_images) {
+        std::string density_img = fmt::format(
+            "{}/rout_density_{:05d}.png", special_modes_dir, iter);
+        std::string rudy_img
+            = fmt::format("{}/rout_rudy_{:05d}.png", special_modes_dir, iter);
+        std::string special
+            = fmt::format("{}/rout_iter_{:05d}.png", special_modes_dir, iter);
+        std::string label = fmt::format("Iter {} | R: {} | T: {}",
+                                        iter,
+                                        routabilityDrivenCount,
+                                        timingDrivenCount);
+
+        graphics_->saveGuiImageWithHeatmaps(density_img, rudy_img);
+
+        std::string density_tmp = density_img + ".tmp.png";
+        graphics_->scaleAndAnnotateImage(
+            density_img, density_tmp, label, "white");
+        std::filesystem::rename(density_tmp, density_img);
+
+        std::string rudy_tmp = rudy_img + ".tmp.png";
+        graphics_->scaleAndAnnotateImage(rudy_img, rudy_tmp, label, "white");
+        std::filesystem::rename(rudy_tmp, rudy_img);
+      }
+
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
@@ -677,6 +779,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (numConverge == nbVec_.size()) {
+      if (graphics_ && npVars_.debug_generate_images) {
+        std::string gifCmd = fmt::format(
+            "convert -delay 15 -loop 0 {}/iter_*.png {}/placement.gif",
+            gif_frames_dir,
+            reports_dir);
+        int ret = std::system(gifCmd.c_str());
+        if (ret != 0) {
+          log_->report("GIF generation command failed with exit code {}", ret);
+        }
+      }
       break;
     }
   }
@@ -688,7 +800,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  if (graphics_) {
+  if (graphics_ && npVars_.debug_generate_images) {
     graphics_->status("End placement");
     graphics_->cellPlot(true);
   }
