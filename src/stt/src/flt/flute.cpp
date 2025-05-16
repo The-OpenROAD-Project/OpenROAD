@@ -213,7 +213,7 @@ void Flute::deleteLUT()
   deleteLUT(LUT, numsoln, LUT_alloc, LUT_SOURCE == LUT_VAR);
 }
 
-void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, const LUT_ALLOC_TYPE LUT_alloc, const bool use_delete)
+void Flute::deleteLUT(LUT_TYPE& LUT, NUMSOLN_TYPE& numsoln, LUT_ALLOC_TYPE LUT_alloc, const bool use_delete)
 {
   if (LUT) {
     for (int d = 4; d <= FLUTE_D; d++) {
