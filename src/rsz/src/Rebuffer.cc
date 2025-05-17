@@ -996,8 +996,9 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
         // add the modnet to the new output
         buffer_op_iterm->disconnect();
 
+        // hierarchy fix: simultaneously connect flat and hieararchical net
+        // to force reassociation
         db_network_->connectPin(buffer_op_pin, (Net*) net2, (Net*) mod_net_in);
-        //        buffer_op_iterm->connect(mod_net_in);
       }
 
       const int buffer_count = rebufferTopDown(
@@ -1110,7 +1111,6 @@ int BufferMove::rebufferTopDown(const BufferedNetPtr& choice,
           } else if (db_mod_net) {  // input hierarchical net
             db_network_->connectPin(
                 const_cast<Pin*>(load_pin), (Net*) db_net, (Net*) db_mod_net);
-
           } else {  // flat case
             load_iterm->connect(db_net);
           }

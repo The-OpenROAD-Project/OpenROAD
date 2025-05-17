@@ -197,11 +197,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     Vertex* load_vertex = fanout_slack.first;
     Pin* load_pin = load_vertex->pin();
 
-    odb::dbITerm* load_iterm;
-    odb::dbBTerm* load_bterm;
-    odb::dbModITerm* load_moditerm;
-
-    db_network_->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
+    odb::dbITerm* load_iterm = nullptr;
+    load_iterm = db_network_->flatPin(load_pin);
 
     // Leave ports connected to original net so verilog port names are
     // preserved.
@@ -235,10 +232,14 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
                                            unique_connection_name.c_str());
         }
       } else {
-        odb::dbITerm* iterm;
-        iterm = db_network_->flatPin(load_pin);
-        if (iterm && db_mod_load_net) {
-          iterm->connect(db_mod_load_net);
+        if (load_iterm && db_mod_load_net) {
+          // For hierarchical case, we simultaneously connect the
+          // hierarchical net and the modnet to make sure they
+          // get reassociated. (so all modnet pins refer to flat net).
+          load_iterm->disconnect();
+          db_network_->connectPin(
+              load_pin, (Net*) out_net, (Net*) db_mod_load_net);
+          //          iterm->connect(db_mod_load_net);
         }
       }
     }
