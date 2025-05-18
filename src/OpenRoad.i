@@ -361,10 +361,10 @@ read_db_cmd(const char *filename, bool hierarchy)
 }
 
 void
-write_db_cmd(const char *filename)
+write_db_cmd(const char *filename, bool gzip)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->writeDb(filename);
+  ord->writeDb(filename, gzip);
 }
 
 void

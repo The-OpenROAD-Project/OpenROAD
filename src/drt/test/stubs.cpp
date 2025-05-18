@@ -67,7 +67,7 @@ OpenRoad* OpenRoad::openRoad()
   return nullptr;
 }
 
-void OpenRoad::writeDb(const char*)
+void OpenRoad::writeDb(const char*, bool)
 {
 }
 

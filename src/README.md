@@ -14,7 +14,7 @@ The following commands are used to read and write design data.
       read_verilog filename
       write_verilog filename
       read_db filename
-      write_db filename
+      write_db [-gzip] filename
       write_abstract_lef filename
 
    .. code-tab:: python

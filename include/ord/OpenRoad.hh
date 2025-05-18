@@ -201,7 +201,7 @@ class OpenRoad
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);
-  void writeDb(const char* filename);
+  void writeDb(const char* filename, bool gzip = false);
 
   void setThreadCount(int threads, bool printInfo = true);
   void setThreadCount(const char* threads, bool printInfo = true);

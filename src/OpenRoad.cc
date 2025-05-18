@@ -3,6 +3,8 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -448,8 +450,20 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 {
   std::ifstream stream;
   stream.open(filename, std::ios::binary);
+
   try {
-    readDb(stream);
+    try {
+      boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+      inbuf.push(boost::iostreams::gzip_decompressor());
+      inbuf.push(stream);
+      std::istream zstd_uncompressed(&inbuf);
+
+      readDb(zstd_uncompressed);
+    } catch (const boost::iostreams::gzip_error&) {
+      // reset stream and read normally
+      stream.seekg(0);
+      readDb(stream);
+    }
   } catch (const std::ios_base::failure& f) {
     logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
   }
@@ -481,11 +495,20 @@ void OpenRoad::writeDb(std::ostream& stream)
   db_->write(stream);
 }
 
-void OpenRoad::writeDb(const char* filename)
+void OpenRoad::writeDb(const char* filename, bool gzip)
 {
   utl::StreamHandler stream_handler(filename, true);
 
-  db_->write(stream_handler.getStream());
+  if (gzip) {
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
+    outbuf.push(boost::iostreams::gzip_compressor());
+    outbuf.push(stream_handler.getStream());
+    std::ostream zstd_compressed(&outbuf);
+
+    writeDb(zstd_compressed);
+  } else {
+    writeDb(stream_handler.getStream());
+  }
 }
 
 void OpenRoad::readVerilog(const char* filename)
