@@ -42,11 +42,6 @@
 [INFO DRT-0033] metal9 shape region query size = 0.
 [INFO DRT-0033] via9 shape region query size = 0.
 [INFO DRT-0033] metal10 shape region query size = 0.
-[WARNING DRT-0088] Access point generation for b/disolved_block\/leaf/A did not meet :
-	At least 3 sparse access points
-	At least 1 access point far from inst edge
-[WARNING DRT-0088] Access point generation for b/disolved_block\/leaf/ZN did not meet :
-	At least 3 sparse access points
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
@@ -77,6 +72,6 @@
 [INFO RCX-0040] Final 1 rc segments
 [INFO RCX-0439] Coupling Cap extraction top ...
 [INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
-[INFO RCX-0442] 100% of 3 wires extracted
+[INFO RCX-0442] 100% of 1 wires extracted
 [INFO RCX-0045] Extract -1 nets, 2 rsegs, 2 caps, 0 ccs
 [INFO RCX-0443] 1 nets finished

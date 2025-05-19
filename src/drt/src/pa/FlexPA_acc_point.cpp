@@ -1204,9 +1204,7 @@ bool FlexPA::EnoughAccessPoints(
 
   reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
 
-  reqs.far_from_edge = EnoughPointsFarFromEdge(aps, inst_term);
-
-  return (reqs.sparse_points && reqs.far_from_edge);
+  return (reqs.sparse_points);
 }
 
 template <typename T>
@@ -1401,8 +1399,15 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
         // nangate45/aes is resolved).
         continue;
       }
-      if (genPinAccessCostBounded(
-              aps, apset, pin_shapes, layer_polys, pin, inst_term, lower, upper, reqs)) {
+      if (genPinAccessCostBounded(aps,
+                                  apset,
+                                  pin_shapes,
+                                  layer_polys,
+                                  pin,
+                                  inst_term,
+                                  lower,
+                                  upper,
+                                  reqs)) {
         return aps.size();
       }
     }
@@ -1410,7 +1415,7 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 
   if (inst_term) {
     std::string unmet_requirements;
-    if (!reqs.far_from_edge) {
+    if (!reqs.sparse_points) {
       unmet_requirements
           += "\n\tAt least "
              + (isStdCell(inst_term->getInst())
@@ -1418,10 +1423,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                     : std::to_string(
                           router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN))
              + " sparse access points";
-    }
-    if (!reqs.sparse_points) {
-      unmet_requirements += "\n\tAt least " + std::to_string(1)
-                            + " access point far from inst edge";
     }
     logger_->warn(DRT,
                   88,

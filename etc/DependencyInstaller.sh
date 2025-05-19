@@ -55,7 +55,7 @@ _installCommonDev() {
     # tools versions
     osName="linux"
     if [[ "${arch}" == "aarch64" ]]; then
-        cmakeChecksum="6a6af752af4b1eae175e1dd0459ec850"
+        cmakeChecksum="938ea8e8ecbcef24f33a7d286a00541c"
     else
         cmakeChecksum="f4d3e86abf624d73ee8dae826bbd6121"
     fi

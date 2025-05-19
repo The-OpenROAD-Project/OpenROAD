@@ -219,7 +219,7 @@ bool UnbufferMove::bufferBetweenPorts(Instance* buffer)
 bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 {
   LibertyCell* lib_cell = network_->libertyCell(buffer);
-  if (!lib_cell || !lib_cell->isBuffer()) {
+  if (!lib_cell || !resizer_->isLogicStdCell(buffer) || !lib_cell->isBuffer()) {
     return false;
   }
   // Do not remove buffers connected to input/output ports

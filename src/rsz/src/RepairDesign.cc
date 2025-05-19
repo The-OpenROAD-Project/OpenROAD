@@ -63,7 +63,7 @@ void RepairDesign::init()
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
-  pre_checks_ = new PreChecks(resizer_);
+  pre_checks_ = std::make_unique<PreChecks>(resizer_);
   parasitics_src_ = resizer_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
 }

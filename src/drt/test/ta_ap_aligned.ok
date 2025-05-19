@@ -45,12 +45,6 @@
 [INFO DRT-0033] metal9 shape region query size = 0.
 [INFO DRT-0033] via9 shape region query size = 0.
 [INFO DRT-0033] metal10 shape region query size = 0.
-[WARNING DRT-0088] Access point generation for inv_M2_1/A did not meet :
-	At least 3 sparse access points
-	At least 1 access point far from inst edge
-[WARNING DRT-0088] Access point generation for inv_M2_2/A did not meet :
-	At least 3 sparse access points
-	At least 1 access point far from inst edge
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.

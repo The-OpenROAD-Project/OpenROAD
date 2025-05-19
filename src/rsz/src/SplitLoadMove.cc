@@ -200,10 +200,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     odb::dbITerm* load_iterm;
     odb::dbBTerm* load_bterm;
     odb::dbModITerm* load_moditerm;
-    odb::dbModBTerm* load_modbterm;
 
-    db_network_->staToDb(
-        load_pin, load_iterm, load_bterm, load_moditerm, load_modbterm);
+    db_network_->staToDb(load_pin, load_iterm, load_bterm, load_moditerm);
 
     // Leave ports connected to original net so verilog port names are
     // preserved.
