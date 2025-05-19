@@ -452,16 +452,15 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
   stream.open(filename, std::ios::binary);
 
   try {
-    try {
+    const std::string name(filename);
+    if (name.compare(name.length() - 3, 3, ".gz") == 0) {
       boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
       inbuf.push(boost::iostreams::gzip_decompressor());
       inbuf.push(stream);
       std::istream zstd_uncompressed(&inbuf);
 
       readDb(zstd_uncompressed);
-    } catch (const boost::iostreams::gzip_error&) {
-      // reset stream and read normally
-      stream.seekg(0);
+    } else {
       readDb(stream);
     }
   } catch (const std::ios_base::failure& f) {
