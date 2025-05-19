@@ -267,6 +267,8 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   auto* root = model_->invisibleRootItem();
 
+  custom_controls_start_ = -1;
+
   auto layers
       = makeParentItem(layers_group_, "Layers", root, Qt::Checked, true);
   view_->expand(layers->index());
@@ -459,6 +461,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   iterm_label_font_ = QApplication::font();  // use default font
   iterm_label_color_ = Qt::yellow;
 
+  label_font_ = QApplication::font();  // use default font
+
   auto instance_shape
       = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
   makeLeafItem(instance_shapes_.names,
@@ -500,6 +504,11 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
+  makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
+  setNameItemDoubleClickAction(misc_.labels, [this]() {
+    label_font_
+        = QFontDialog::getFont(nullptr, label_font_, this, "User label font");
+  });
   makeLeafItem(
       misc_.background, "Background", misc, {}, false, background_color_);
   toggleParent(misc_group_);
@@ -528,6 +537,9 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   connect(
       this, &DisplayControls::colorChanged, this, &DisplayControls::changed);
+
+  custom_controls_start_ = root->rowCount();
+
   // register renderers
   if (gui::Gui::get() != nullptr) {
     for (auto renderer : gui::Gui::get()->renderers()) {
@@ -704,6 +716,7 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("font");
   getFont(pin_markers_font_, "pin_markers");
   getFont(ruler_font_, "ruler");
+  getFont(label_font_, "label");
   getFont(instance_name_font_, "instance_name");
   getFont(iterm_label_font_, "iterm_label");
   settings->endGroup();
@@ -779,6 +792,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->beginGroup("font");
   settings->setValue("pin_markers", pin_markers_font_);
   settings->setValue("ruler", ruler_font_);
+  settings->setValue("label", label_font_);
   settings->setValue("instance_name", instance_name_font_);
   settings->setValue("iterm_label", iterm_label_font_);
   settings->endGroup();
@@ -1232,8 +1246,20 @@ void DisplayControls::save()
 
 void DisplayControls::restore()
 {
+  // Collect current controls in case some were removed after save was called.
+  std::map<std::string, QStandardItem*> all_controls;
+  collectControls(model_->invisibleRootItem(), Visible, all_controls);
+  collectControls(model_->invisibleRootItem(), Selectable, all_controls);
+  std::set<QStandardItem*> controls;
+
+  for (auto& [control_name, control] : all_controls) {
+    controls.insert(control);
+  }
+
   for (auto& [control, state] : saved_state_) {
-    control->setCheckState(state);
+    if (controls.find(control) != controls.end()) {
+      control->setCheckState(state);
+    }
   }
 }
 
@@ -1684,6 +1710,21 @@ QFont DisplayControls::rulerFont()
   return ruler_font_;
 }
 
+bool DisplayControls::areLabelsVisible()
+{
+  return isModelRowVisible(&misc_.labels);
+}
+
+bool DisplayControls::areLabelsSelectable()
+{
+  return isModelRowSelectable(&misc_.labels);
+}
+
+QFont DisplayControls::labelFont()
+{
+  return label_font_;
+}
+
 bool DisplayControls::areBlockagesVisible()
 {
   return isModelRowVisible(&blockages_.blockages);
@@ -1888,6 +1929,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     }
 
     auto& add_rows = custom_controls_[renderer];
+
     add_rows.insert(add_rows.begin(), rows.begin(), rows.end());
   }
 
@@ -1898,6 +1940,22 @@ void DisplayControls::registerRenderer(Renderer* renderer)
     if (setting != custom_controls_settings_.end()) {
       renderer->setSettings(setting->second);
     }
+  }
+
+  // Sort custom_controls
+  std::vector<QList<QStandardItem*>> custom_controls;
+  while (model_->invisibleRootItem()->rowCount() > custom_controls_start_) {
+    custom_controls.push_back(
+        model_->takeRow(model_->invisibleRootItem()->rowCount() - 1));
+  }
+  std::stable_sort(custom_controls.begin(),
+                   custom_controls.end(),
+                   [](const QList<QStandardItem*>& list0,
+                      const QList<QStandardItem*>& list1) {
+                     return list0[Name]->text() < list1[Name]->text();
+                   });
+  for (const auto& row : custom_controls) {
+    model_->appendRow(row);
   }
 }
 

@@ -101,6 +101,8 @@ OPENROAD_COPTS = [
     "-Wformat-security",
     "-Wno-sign-compare",
     "-Wno-unused-parameter",
+    # FIXME reenable when warnings are fixed
+    "-Wno-unused-but-set-variable",
 ]
 
 OPENROAD_DEFINES = [
@@ -606,12 +608,14 @@ tcl_wrap_cc(
     srcs = [
         "src/rmp/src/rmp.i",
         ":error_swig",
+        "//:sta_swig_files",
     ],
     module = "rmp",
     namespace_prefix = "rmp",
     root_swig_src = "src/rmp/src/rmp.i",
     swig_includes = [
         "src/rmp/src",
+        "src/sta",
     ],
 )
 

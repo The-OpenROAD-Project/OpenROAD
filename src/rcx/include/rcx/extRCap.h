@@ -190,6 +190,7 @@ class extDistRCTable
   Ath__array1D<extDistRC*>* _computeTable;
   Ath__array1D<extDistRC*>* _measureTableR[16];
   Ath__array1D<extDistRC*>* _computeTableR[16];  // OPTIMIZE
+  bool _measureInR;
   int _maxDist;
   uint _distCnt;
   uint _unit;
@@ -344,6 +345,9 @@ class extDistWidthRCTable
   extDistRCTable*** _rcDistTable;  // per over/under metal, per width
   extDistRCTable***** _rcDiagDistTable;
   uint _metCnt;  // if _over==false _metCnt???
+  uint _widthCnt;
+  uint _diagWidthCnt;
+  uint _diagDistCnt;
 
   AthPool<extDistRC>* _rcPoolPtr;
   extDistRC* _rc31;
@@ -462,6 +466,7 @@ class extRCTable
 {
  public:
   extRCTable(bool over, uint layerCnt);
+  ~extRCTable();
   uint addCapOver(uint met, uint metUnder, extDistRC* rc);
   extDistRC* getCapOver(uint met, uint metUnder);
 
@@ -472,7 +477,6 @@ class extRCTable
   bool _over;
   uint _maxCnt1;
   Ath__array1D<extDistRC*>*** _inTable;  // per metal per width
-  Ath__array1D<extDistRC*>*** _table;
 };
 
 class extMain;
@@ -2762,7 +2766,7 @@ class extMain
   std::vector<odb::dbBTerm*> _connectedBTerm;
   std::vector<odb::dbITerm*> _connectedITerm;
 
-  GridTable* _search = nullptr;
+  std::unique_ptr<GridTable> _search;
 
   int _noVariationIndex;
 
