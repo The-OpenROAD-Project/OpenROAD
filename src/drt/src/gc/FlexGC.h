@@ -29,6 +29,7 @@ class FlexGCWorker
   void setExtBox(const Rect& in);
   void setDrcBox(const Rect& in);
   bool setTargetNet(frBlockObject* in);
+  bool setTargetNet(drNet* in);
   gcNet* getTargetNet();
   void resetTargetNet();
   void addTargetObj(frBlockObject* in);

@@ -48,17 +48,12 @@
 
 ////////////////////////////////////////////////////////////////
 
-namespace ord {
-
-using sta::dbSta;
+namespace sta {
 
 dbSta* makeDbSta()
 {
   return new dbSta;
 }
-}  // namespace ord
-
-namespace sta {
 
 namespace {
 // Holds the usage information of a specific cell which includes (i) name of
@@ -236,7 +231,6 @@ void dbSta::unregisterStaState(dbStaState* state)
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 {
   auto clone = std::make_unique<dbSta>();
-  clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
   clone->getDbNetwork()->setDefaultLibertyLibrary(

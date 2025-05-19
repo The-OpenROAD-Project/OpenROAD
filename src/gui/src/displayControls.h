@@ -216,6 +216,10 @@ class DisplayControls : public QDockWidget,
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
 
+  QFont labelFont() override;
+  bool areLabelsVisible() override;
+  bool areLabelsSelectable() override;
+
   bool isDetailedVisibility() override;
 
   bool areSelectedVisible() override;
@@ -373,6 +377,7 @@ class DisplayControls : public QDockWidget,
     ModelRow module;
     ModelRow manufacturing_grid;
     ModelRow gcell_grid;
+    ModelRow labels;
     ModelRow background;
   };
 
@@ -526,6 +531,7 @@ class DisplayControls : public QDockWidget,
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<const odb::dbSite*, ModelRow> site_controls_;
+  int custom_controls_start_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
@@ -552,6 +558,8 @@ class DisplayControls : public QDockWidget,
 
   QColor ruler_color_;
   QFont ruler_font_;
+
+  QFont label_font_;
 
   QColor region_color_;
   Qt::BrushStyle region_pattern_;

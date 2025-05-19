@@ -79,6 +79,7 @@ or_integration_tests(
     repair_setup4
     repair_setup4_flat
     repair_setup4_hier
+    repair_setup4_sequence
     repair_setup4_verbose
     repair_setup5
     repair_setup6

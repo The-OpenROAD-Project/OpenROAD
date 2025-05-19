@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <random>
@@ -28,8 +29,6 @@ namespace gpl {
 
 using odb::dbBlock;
 using utl::GPL;
-
-static int fastModulo(int input, int ceil);
 
 static float calculateBiVariateNormalCDF(biNormalParameters i);
 
@@ -283,11 +282,9 @@ void GCell::print(utl::Logger* logger, bool print_only_name = true) const
   }
 }
 
-void GCell::printToFile(const std::string& filename,
-                        bool print_only_name = true) const
+void GCell::printToFile(std::ostream& out, bool print_only_name) const
 {
-  std::ofstream out(filename, std::ios::app);
-  if (!out.is_open()) {
+  if (!out) {
     return;
   }
 
@@ -308,8 +305,6 @@ void GCell::printToFile(const std::string& filename,
                        gradientX_,
                        gradientY_);
   }
-
-  out.close();
 }
 
 ////////////////////////////////////////////////
@@ -691,12 +686,12 @@ int BinGrid::binCntY() const
   return binCntY_;
 }
 
-int BinGrid::binSizeX() const
+double BinGrid::binSizeX() const
 {
   return binSizeX_;
 }
 
-int BinGrid::binSizeY() const
+double BinGrid::binSizeY() const
 {
   return binSizeY_;
 }
@@ -799,8 +794,8 @@ void BinGrid::initBins()
   log_->info(
       GPL, 28, "{:21} {:7d} , {:6d}", "Bin count (X, Y):", binCntX_, binCntY_);
 
-  binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
-  binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
+  binSizeX_ = static_cast<double>((ux_ - lx_)) / binCntX_;
+  binSizeY_ = static_cast<double>((uy_ - ly_)) / binCntY_;
 
   log_->info(GPL,
              29,
@@ -814,13 +809,24 @@ void BinGrid::initBins()
 #pragma omp parallel for num_threads(num_threads_)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
-      const int x = lx_ + idxX * binSizeX_;
-      const int y = ly_ + idxY * binSizeY_;
-      const int sizeX = std::min(ux_ - x, binSizeX_);
-      const int sizeY = std::min(uy_ - y, binSizeY_);
-
-      bins_[idxY * binCntX_ + idxX]
-          = Bin(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
+      const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
+      const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
+      const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
+      const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
+      const int bin_index = idxY * binCntX_ + idxX;
+      bins_[bin_index]
+          = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
+      auto& bin = bins_[bin_index];
+      if (bin.dx() < 0 || bin.dy() < 0) {
+        log_->warn(GPL,
+                   34,
+                   "Bin (center: {},{}, index: {}) has negative size: {}, {}",
+                   bin.cx(),
+                   bin.cy(),
+                   bin_index,
+                   bin.dx(),
+                   bin.dy());
+      }
     }
   }
 
@@ -977,9 +983,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
 {
   int lowerIdx = (gcell->dLx() - lx()) / binSizeX_;
-  int upperIdx = (fastModulo((gcell->dUx() - lx()), binSizeX_) == 0)
-                     ? (gcell->dUx() - lx()) / binSizeX_
-                     : (gcell->dUx() - lx()) / binSizeX_ + 1;
+  int upperIdx = std::ceil((gcell->dUx() - lx()) / binSizeX_);
 
   lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntX_);
@@ -989,9 +993,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
 std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
 {
   int lowerIdx = (gcell->dLy() - ly()) / binSizeY_;
-  int upperIdx = (fastModulo((gcell->dUy() - ly()), binSizeY_) == 0)
-                     ? (gcell->dUy() - ly()) / binSizeY_
-                     : (gcell->dUy() - ly()) / binSizeY_ + 1;
+  int upperIdx = std::ceil((gcell->dUy() - ly()) / binSizeY_);
 
   lowerIdx = std::max(lowerIdx, 0);
   upperIdx = std::min(upperIdx, binCntY_);
@@ -1001,9 +1003,7 @@ std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
 std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
 {
   int lowerIdx = (inst->lx() - lx()) / binSizeX_;
-  int upperIdx = (fastModulo((inst->ux() - lx()), binSizeX_) == 0)
-                     ? (inst->ux() - lx()) / binSizeX_
-                     : (inst->ux() - lx()) / binSizeX_ + 1;
+  int upperIdx = std::ceil((inst->ux() - lx()) / binSizeX_);
 
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntX_));
 }
@@ -1011,9 +1011,7 @@ std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
 std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 {
   int lowerIdx = (inst->ly() - ly()) / binSizeY_;
-  int upperIdx = (fastModulo((inst->uy() - ly()), binSizeY_) == 0)
-                     ? (inst->uy() - ly()) / binSizeY_
-                     : (inst->uy() - ly()) / binSizeY_ + 1;
+  int upperIdx = std::ceil((inst->uy() - ly()) / binSizeY_);
 
   return std::make_pair(std::max(lowerIdx, 0), std::min(upperIdx, binCntY_));
 }
@@ -1457,6 +1455,43 @@ int64_t NesterovBaseCommon::getHpwl()
     hpwl += gNet->hpwl();
   }
   return hpwl;
+}
+
+void NesterovBaseCommon::resetMinRcCellSize()
+{
+  minRcCellSize_.clear();
+  minRcCellSize_.shrink_to_fit();
+}
+
+void NesterovBaseCommon::resizeMinRcCellSize()
+{
+  minRcCellSize_.resize(nbc_gcells_.size(), std::make_pair(0, 0));
+}
+
+void NesterovBaseCommon::updateMinRcCellSize()
+{
+  for (auto& gCell : nbc_gcells_) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+
+    minRcCellSize_[&gCell - nbc_gcells_.data()]
+        = std::make_pair(gCell->dx(), gCell->dy());
+  }
+}
+
+void NesterovBaseCommon::revertGCellSizeToMinRc()
+{
+  // revert back the gcell sizes
+  for (auto& gCell : nbc_gcells_) {
+    if (!gCell->isStdInstance()) {
+      continue;
+    }
+
+    int idx = &gCell - nbc_gcells_.data();
+
+    gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
+  }
 }
 
 GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
@@ -1933,12 +1968,12 @@ int NesterovBase::binCntY() const
   return bg_.binCntY();
 }
 
-int NesterovBase::binSizeX() const
+double NesterovBase::binSizeX() const
 {
   return bg_.binSizeX();
 }
 
-int NesterovBase::binSizeY() const
+double NesterovBase::binSizeY() const
 {
   return bg_.binSizeY();
 }
@@ -1963,9 +1998,9 @@ int NesterovBase::fillerDy() const
   return fillerDy_;
 }
 
-int NesterovBase::fillerCnt() const
+int NesterovBase::getFillerCnt() const
 {
-  return static_cast<int>(gCellFillers_.size());
+  return static_cast<int>(fillerStor_.size());
 }
 
 int64_t NesterovBase::getFillerCellArea() const
@@ -3012,9 +3047,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
   new_instances.clear();
 }
 
-void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
-                                  size_t stor_index,
-                                  RouteBase* rb)
+void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 {
   debugPrint(log_,
              GPL,
@@ -3051,7 +3084,6 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
       snapshotSLPSumGrads_.emplace_back();
     }
 
-    rb->pushBackMinRcCellSize(gcell->dx(), gcell->dy());
   } else {
     debugPrint(log_,
                GPL,
@@ -3063,7 +3095,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst,
 
 size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 {
-  debugPrint(log_, GPL, "callbacks", 2, "NBC createGCell");
+  debugPrint(log_, GPL, "callbacks", 2, "NBC createCbkGCell");
   Instance gpl_inst(db_inst,
                     pbc_->padLeft() * pbc_->siteSizeX(),
                     pbc_->padRight() * pbc_->siteSizeX(),
@@ -3073,6 +3105,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   pb_insts_stor_.push_back(gpl_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
+  minRcCellSize_.emplace_back(gcell.dx(), gcell.dy());
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;
@@ -3119,8 +3152,15 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     size_t gcell_index = db_it->second;
 
     GCellHandle& handle = nb_gcells_[gcell_index];
-    // TODO delete fillers
-    bool is_filler = handle->isFiller();
+
+    if (handle->isFiller()) {
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "error: trying to destroy filler gcell during callback!");
+      return;
+    }
 
     if (gcell_index != last_index) {
       std::swap(nb_gcells_[gcell_index], nb_gcells_[last_index]);
@@ -3129,36 +3169,32 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     nb_gcells_.pop_back();
     db_inst_to_nb_index_map_.erase(db_it);
 
-    if (gcell_index != last_index) {
-      if (!is_filler) {
-        odb::dbInst* swapped_inst
-            = nb_gcells_[gcell_index]->insts()[0]->dbInst();
-        db_inst_to_nb_index_map_.erase(swapped_inst);
-        db_inst_to_nb_index_map_[swapped_inst] = gcell_index;
-      }
+    // From now on gcell_index is the index for the replacement (previous last
+    // element)
+    size_t replacer_index = gcell_index;
+    if (replacer_index != last_index
+        && !nb_gcells_[replacer_index]->isFiller()) {
+      odb::dbInst* replacer_inst
+          = nb_gcells_[replacer_index]->insts()[0]->dbInst();
+      // Update new replacer reference on map
+      db_inst_to_nb_index_map_.erase(replacer_inst);
+      db_inst_to_nb_index_map_[replacer_inst] = replacer_index;
+    }
 
-      std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
+    std::pair<odb::dbInst*, size_t> replacer = nbc_->destroyCbkGCell(db_inst);
 
-      if (replacer.first != nullptr) {
-        auto it = db_inst_to_nb_index_map_.find(replacer.first);
-        if (it != db_inst_to_nb_index_map_.end()) {
-          nb_gcells_[it->second].updateIndex(replacer.second);
-        } else {
-          debugPrint(log_,
-                     GPL,
-                     "callbacks",
-                     1,
-                     "warn replacer dbInst {} not found in NB map!",
-                     replacer.first->getName());
-        }
+    if (replacer.first != nullptr) {
+      auto it = db_inst_to_nb_index_map_.find(replacer.first);
+      if (it != db_inst_to_nb_index_map_.end()) {
+        nb_gcells_[it->second].updateIndex(replacer.second);
+      } else {
+        debugPrint(log_,
+                   GPL,
+                   "callbacks",
+                   1,
+                   "warn replacer dbInst {} not found in NB map!",
+                   replacer.first->getName());
       }
-    } else {
-      debugPrint(log_,
-                 GPL,
-                 "callbacks",
-                 1,
-                 "warning: trying to destroy filler gcell!");
-      destroyFillerGCell(handle.getStorageIndex());
     }
 
   } else {
@@ -3184,22 +3220,26 @@ std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
   }
 
   size_t index_remove = it->second;
-  size_t last_index = gCellStor_.size() - 1;
-
   db_inst_to_nbc_index_map_.erase(it);
 
   std::pair<odb::dbInst*, size_t> replacement;
+  size_t last_index = gCellStor_.size() - 1;
 
   if (index_remove != last_index) {
     std::swap(gCellStor_[index_remove], gCellStor_[last_index]);
+    std::swap(minRcCellSize_[index_remove], minRcCellSize_[last_index]);
 
     odb::dbInst* swapped_inst = gCellStor_[index_remove].insts()[0]->dbInst();
     db_inst_to_nbc_index_map_[swapped_inst] = index_remove;
-
     replacement = {swapped_inst, index_remove};
   }
 
+  int64_t area_change = static_cast<int64_t>(gCellStor_.back().dx())
+                        * static_cast<int64_t>(gCellStor_.back().dy());
+  delta_area_ -= area_change;
+
   gCellStor_.pop_back();
+  minRcCellSize_.pop_back();
   return replacement;
 }
 
@@ -3443,8 +3483,7 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
   // Avoid modifying this if snapshot has not been saved yet.
-  // if (curSLPCoordi_.size() == snapshotCoordi_.size())
-  {
+  if (curSLPCoordi_.size() - 1 == snapshotCoordi_.size()) {
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
@@ -3460,7 +3499,9 @@ void NesterovBaseCommon::printGCells()
   }
 }
 
-void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
+void NesterovBaseCommon::printGCellsToFile(const std::string& filename,
+                                           bool print_only_name,
+                                           bool also_print_minRc)
 {
   std::ofstream out(filename);
   if (!out.is_open()) {
@@ -3468,13 +3509,34 @@ void NesterovBaseCommon::printGCellsToFile(const std::string& filename)
   }
 
   out << "gCellStor_.size(): " << gCellStor_.size() << "\n";
-  out.close();  // reuse printToFile which appends
+  out.close();
+
+  std::ofstream out_append(filename, std::ios::app);
+  if (!out_append.is_open()) {
+    return;
+  }
 
   for (size_t i = 0; i < gCellStor_.size(); ++i) {
-    std::ofstream out_idx(filename, std::ios::app);
-    out_idx << fmt::format("idx:{}\n", i);
-    out_idx.close();
-    gCellStor_[i].printToFile(filename);
+    out_append << fmt::format("idx:{}\n", i);
+    gCellStor_[i].printToFile(out_append, print_only_name);
+  }
+
+  out_append.close();
+
+  if (also_print_minRc) {
+    std::string minrc_filename = filename + ".minrc";
+    std::ofstream minrc_out(minrc_filename);
+    if (!minrc_out.is_open()) {
+      return;
+    }
+
+    for (size_t i = 0; i < minRcCellSize_.size(); ++i) {
+      const auto& min_rc = minRcCellSize_[i];
+      minrc_out << fmt::format(
+          "idx:{} minRc: {} {}\n", i, min_rc.first, min_rc.second);
+    }
+
+    minrc_out.close();
   }
 }
 
@@ -3483,12 +3545,6 @@ void NesterovBaseCommon::printGPins()
   for (auto& gpin : gPinStor_) {
     gpin.print(log_);
   }
-}
-
-// https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
-static int fastModulo(const int input, const int ceil)
-{
-  return input >= ceil ? input % ceil : input;
 }
 
 static float getOverlapDensityArea(const Bin& bin, const GCell* cell)

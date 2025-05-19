@@ -59,6 +59,7 @@ cc_library(
         "@boost.algorithm",
         "@boost.bind",
         "@boost.config",
+        "@boost.container",
         "@boost.fusion",
         "@boost.geometry",
         "@boost.lambda",

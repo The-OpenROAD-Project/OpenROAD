@@ -58,8 +58,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                            pbVec,
                                            nbVec,
                                            npVars_.debug_draw_bins,
-                                           npVars.debug_inst,
-                                           npVars.debug_start_iter);
+                                           npVars.debug_inst);
   }
   init();
 }
@@ -339,7 +338,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
 
       if (num_region_diverged_ > 0) {
-        divergeMsg_ = "RePlAce diverged at newStepLength.";
+        divergeMsg_
+            = "RePlAce diverged during gradient descent calculation, resulting "
+              "in an invalid step length (Inf or NaN). This is often caused by "
+              "numerical instability or high placement density. Consider "
+              "reducing placement density to potentially resolve the issue.";
         divergeCode_ = 305;
         break;
       }
@@ -672,8 +675,6 @@ log_->report("  New target density: {}", newTargetDensity);
 
       // if routability is needed
       if (is_routability_need_ || isRevertInitNeeded) {
-        // cutFillerCoordinates();
-
         // revert back the current density penality
         curA = route_snapshotA;
         wireLengthCoefX_ = route_snapshot_WlCoefX;
@@ -793,13 +794,13 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 {
 }
 
-void NesterovPlace::createGCell(odb::dbInst* db_inst)
+void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 {
   auto gcell_index = nbc_->createCbkGCell(db_inst);
   for (auto& nesterov : nbVec_) {
     // TODO: manage regions, not every NB should create a
     // gcell.
-    nesterov->createCbkGCell(db_inst, gcell_index, rb_.get());
+    nesterov->createCbkGCell(db_inst, gcell_index);
   }
 }
 
@@ -862,7 +863,7 @@ void nesterovDbCbk::inDbPostMoveInst(odb::dbInst* db_inst)
 
 void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst)
 {
-  nesterov_place_->createGCell(db_inst);
+  nesterov_place_->createCbkGCell(db_inst);
 }
 
 // TODO: use the region to create new gcell.

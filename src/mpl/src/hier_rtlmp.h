@@ -364,8 +364,11 @@ class Snapper
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  int totalPinsAligned(const LayerDataList& layers_data_list,
-                       const odb::dbTechLayerDir& direction);
+  int totalAlignedPins(const LayerDataList& layers_data_list,
+                       const odb::dbTechLayerDir& direction,
+                       bool report_unaligned_pins = false);
+  void reportUnalignedPins(const LayerDataList& layers_data_list,
+                           const odb::dbTechLayerDir& direction);
 
   LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);

@@ -9,19 +9,16 @@
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
-#include "ord/OpenRoad.hh"
 #include "utl/decode.h"
-
-namespace grt {
-// Tcl files encoded into strings.
-extern const char* grt_tcl_inits[];
-}  // namespace grt
 
 extern "C" {
 extern int Grt_Init(Tcl_Interp* interp);
 }
 
-namespace ord {
+namespace grt {
+
+// Tcl files encoded into strings.
+extern const char* grt_tcl_inits[];
 
 grt::GlobalRouter* makeGlobalRouter()
 {
@@ -33,25 +30,28 @@ void deleteGlobalRouter(grt::GlobalRouter* global_router)
   delete global_router;
 }
 
-void initGlobalRouter(OpenRoad* openroad)
+void initGlobalRouter(grt::GlobalRouter* grt,
+                      odb::dbDatabase* db,
+                      sta::dbSta* sta,
+                      rsz::Resizer* resizer,
+                      ant::AntennaChecker* antenna_checker,
+                      dpl::Opendp* dpl,
+                      stt::SteinerTreeBuilder* stt_builder,
+                      utl::Logger* logger,
+                      Tcl_Interp* tcl_interp)
 {
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
   utl::evalTclInit(tcl_interp, grt::grt_tcl_inits);
-  openroad->getGlobalRouter()->init(
-      openroad->getLogger(),
-      openroad->getSteinerTreeBuilder(),
-      openroad->getDb(),
-      openroad->getSta(),
-      openroad->getResizer(),
-      openroad->getAntennaChecker(),
-      openroad->getOpendp(),
-      std::make_unique<grt::RoutingCongestionDataSource>(openroad->getLogger(),
-                                                         openroad->getDb()),
-      std::make_unique<grt::RUDYDataSource>(openroad->getLogger(),
-                                            openroad->getGlobalRouter(),
-                                            openroad->getDb()));
+  grt->init(logger,
+            stt_builder,
+            db,
+            sta,
+            resizer,
+            antenna_checker,
+            dpl,
+            std::make_unique<grt::RoutingCongestionDataSource>(logger, db),
+            std::make_unique<grt::RUDYDataSource>(logger, grt, db));
 }
 
-}  // namespace ord
+}  // namespace grt

@@ -29,10 +29,6 @@
 #include <tclExtend.h>
 #endif
 
-#ifdef BAZEL_CURRENT_REPOSITORY
-#include "rules_cc/cc/runfiles/runfiles.h"
-#endif
-
 #include "gui/gui.h"
 #include "ord/Design.h"
 #include "ord/InitOpenRoad.hh"
@@ -102,7 +98,7 @@ FOREACH_TOOL(X)
 #undef X
 
 #if PY_VERSION_HEX >= 0x03080000
-static void initPython(int argc, char* argv[])
+static void initPython(int argc, char* argv[], const bool exit_after_cmd_file)
 #else
 static void initPython()
 #endif
@@ -115,11 +111,10 @@ static void initPython()
   FOREACH_TOOL(X)
 #undef X
 #if PY_VERSION_HEX >= 0x03080000
-  bool inspect = !findCmdLineFlag(argc, argv, "-exit");
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
   PyConfig_SetBytesArgv(&config, argc, argv);
-  config.inspect = inspect;
+  config.inspect = !exit_after_cmd_file;
   Py_InitializeFromConfig(&config);
   PyConfig_Clear(&config);
 #else
@@ -199,33 +194,6 @@ static void handler(int sig)
   raise(sig);
 }
 
-#ifdef BAZEL_CURRENT_REPOSITORY
-
-// Avoid adding any dependencies like boost.filesystem
-//
-// Returns path to running binary if possible, otherwise nullopt.
-static std::optional<std::string> getProgramLocation()
-{
-#if defined(_WIN32)
-  char result[MAX_PATH + 1] = {'\0'};
-  auto path_len = GetModuleFileNameA(NULL, result, MAX_PATH);
-#elif defined(__APPLE__)
-  char result[MAXPATHLEN + 1] = {'\0'};
-  uint32_t path_len = MAXPATHLEN;
-  if (_NSGetExecutablePath(result, &path_len) != 0) {
-    path_len = readlink("/proc/self/exe", result, MAXPATHLEN);
-  }
-#else
-  char result[PATH_MAX + 1] = {'\0'};
-  ssize_t path_len = readlink("/proc/self/exe", result, PATH_MAX);
-#endif
-  if (path_len > 0) {
-    return result;
-  }
-  return std::nullopt;
-}
-#endif
-
 int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
@@ -237,19 +205,6 @@ int main(int argc, char* argv[])
       break;
     }
   }
-
-#ifdef BAZEL_CURRENT_REPOSITORY
-  using rules_cc::cc::runfiles::Runfiles;
-  std::string error;
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
-      getProgramLocation().value(), BAZEL_CURRENT_REPOSITORY, &error));
-  if (!runfiles) {
-    std::cerr << error << std::endl;
-    return 1;
-  }
-  std::string path = runfiles->Rlocation("tk_tcl/library/");
-  setenv("TCL_LIBRARY", path.c_str(), 0);
-#endif
 
   // Generate a stacktrace on crash
   signal(SIGABRT, handler);
@@ -294,7 +249,8 @@ int main(int argc, char* argv[])
     the_tech_and_design.design
         = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
     ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
-    ord::initOpenRoad(interp, log_filename, metrics_filename);
+    const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
+    ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
       showSplash();
     }
@@ -318,11 +274,10 @@ int main(int argc, char* argv[])
     }
 
 #if PY_VERSION_HEX >= 0x03080000
-    initPython(cmd_argc, cmd_argv);
+    initPython(cmd_argc, cmd_argv, exit);
     return Py_RunMain();
 #else
     initPython();
-    bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
     if (!exit) {
@@ -463,7 +418,8 @@ static int tclAppInit(int& argc,
     }
 #endif
 
-    ord::initOpenRoad(interp, log_filename, metrics_filename);
+    ord::initOpenRoad(
+        interp, log_filename, metrics_filename, exit_after_cmd_file);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {
