@@ -1077,10 +1077,6 @@ proc check_max_wire_length { max_wire_length } {
         set wire_length_fmt [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]]
         utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
       }
-    } else {
-      set max_wire_length $min_delay_max_wire_length
-      set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
-      utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
     }
   }
   return $max_wire_length
