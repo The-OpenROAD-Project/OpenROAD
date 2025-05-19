@@ -166,13 +166,12 @@ proc read_db { args } {
   ord::read_db_cmd $filename $hierarchy
 }
 
-sta::define_cmd_args "write_db" {filename [-gzip]}
+sta::define_cmd_args "write_db" {filename}
 
 proc write_db { args } {
-  sta::parse_key_args "write_db" args keys {} flags {-gzip}
   sta::check_argc_eq1 "write_db" $args
   set filename [file nativename [lindex $args 0]]
-  ord::write_db_cmd $filename [info exists flags(-gzip)]
+  ord::write_db_cmd $filename
 }
 
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }

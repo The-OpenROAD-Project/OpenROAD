@@ -495,11 +495,12 @@ void OpenRoad::writeDb(std::ostream& stream)
   db_->write(stream);
 }
 
-void OpenRoad::writeDb(const char* filename, bool gzip)
+void OpenRoad::writeDb(const char* filename)
 {
   utl::StreamHandler stream_handler(filename, true);
 
-  if (gzip) {
+  const std::string name(filename);
+  if (name.compare(name.length() - 3, 3, ".gz") == 0) {
     boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
     outbuf.push(boost::iostreams::gzip_compressor());
     outbuf.push(stream_handler.getStream());
