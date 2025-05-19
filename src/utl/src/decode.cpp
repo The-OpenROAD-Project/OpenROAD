@@ -27,9 +27,9 @@
 
 #include "utl/decode.h"
 
-#include <stdlib.h>
 #include <tcl.h>
 
+#include <cstdlib>
 #include <string>
 
 namespace utl {
