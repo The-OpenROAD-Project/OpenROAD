@@ -59,6 +59,7 @@ or_integration_tests(
     macros
     macros_add_twice
     macro_channel_with_secondary_repair
+    macros_channel_recursive_repair
     macros_cells
     macros_cells_dont_touch
     macros_cells_extend_boundary
@@ -102,6 +103,7 @@ or_integration_tests(
     region_non_rect
     region_secondary_nets
     region_temp_sensor
+    region_temp_sensor_different_region_name
     repair_channel_inf_loop
     repair_vias
     report

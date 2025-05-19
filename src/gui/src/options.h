@@ -21,6 +21,7 @@ class Options
 {
  public:
   virtual ~Options() {}
+  virtual QColor background() = 0;
   virtual QColor color(const odb::dbTechLayer* layer) = 0;
   virtual Qt::BrushStyle pattern(const odb::dbTechLayer* layer) = 0;
   virtual QColor placementBlockageColor() = 0;
@@ -66,6 +67,10 @@ class Options
   virtual QFont rulerFont() = 0;
   virtual bool areRulersVisible() = 0;
   virtual bool areRulersSelectable() = 0;
+
+  virtual QFont labelFont() = 0;
+  virtual bool areLabelsVisible() = 0;
+  virtual bool areLabelsSelectable() = 0;
 
   virtual bool isDetailedVisibility() = 0;
 

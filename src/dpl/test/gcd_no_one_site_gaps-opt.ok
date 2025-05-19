@@ -1,0 +1,59 @@
+[INFO ODB-0227] LEF file: Nangate45_data/Nangate45-opt.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+Detailed placement improvement.
+[INFO DPL-0401] Setting random seed to 1.
+[INFO DPL-0402] Setting maximum displacement 0 0 to 479560 479560 units.
+[INFO DPL-0320] Collected 309 fixed cells.
+[INFO DPL-0318] Collected 294 single height cells.
+[INFO DPL-0321] Collected 0 wide cells.
+[INFO DPL-0322] Image (28000, 28000) - (267780, 266000)
+[INFO DPL-0310] Assigned 294 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
+[INFO DPL-0313] Found 0 cells in wrong regions.
+[INFO DPL-0315] Found 0 row alignment problems.
+[INFO DPL-0314] Found 0 site alignment problems.
+[INFO DPL-0311] Found 0 overlaps between adjacent cells.
+[INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
+[INFO DPL-0303] Running algorithm for independent set matching.
+[INFO DPL-0300] Set matching objective is wirelength.
+[INFO DPL-0301] Pass   1 of matching; objective is 1.541902e+07.
+[INFO DPL-0302] End of matching; objective is 1.532718e+07, improvement is 0.60 percent.
+[INFO DPL-0303] Running algorithm for global swaps.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 1.517573e+07.
+[INFO DPL-0307] End of global swaps; objective is 1.517573e+07, improvement is 0.99 percent.
+[INFO DPL-0303] Running algorithm for vertical swaps.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 1.511948e+07.
+[INFO DPL-0309] End of vertical swaps; objective is 1.511948e+07, improvement is 0.37 percent.
+[INFO DPL-0303] Running algorithm for reordering.
+[INFO DPL-0304] Pass   1 of reordering; objective is 1.495610e+07.
+[INFO DPL-0304] Pass   2 of reordering; objective is 1.493592e+07.
+[INFO DPL-0305] End of reordering; objective is 1.493592e+07, improvement is 1.21 percent.
+[INFO DPL-0303] Running algorithm for random improvement.
+[INFO DPL-0324] Random improver is using displacement generator.
+[INFO DPL-0325] Random improver is using hpwl objective.
+[INFO DPL-0326] Random improver cost string is (a).
+[INFO DPL-0332] End of pass, Generator displacement called 5880 times.
+[INFO DPL-0335] Generator displacement, Cumulative attempts 5880, swaps 1644, moves  3989 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 1.493592e+07, Scratch cost 1.478720e+07, Incremental cost 1.478720e+07, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 1.478720e+07.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 1.00 percent.
+[INFO DPL-0328] End of random improver; improvement is 0.995654 percent.
+[INFO DPL-0303] Running algorithm for disallow_one_site_gaps.
+[INFO DPL-0380] Cell flipping.
+[INFO DPL-0382] Changed 0 cell orientations for row compatibility.
+[INFO DPL-0383] Performed 113 cell flips.
+[INFO DPL-0384] End of flipping; objective is 1.464031e+07, improvement is 0.99 percent.
+[INFO DPL-0313] Found 0 cells in wrong regions.
+[INFO DPL-0315] Found 0 row alignment problems.
+[INFO DPL-0314] Found 0 site alignment problems.
+[INFO DPL-0311] Found 0 overlaps between adjacent cells.
+[INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
+Detailed Improvement Results
+------------------------------------------
+Original HPWL             7709.2 u (    3935.1,     3774.1)
+Final HPWL                7324.5 u (    3639.8,     3684.7)
+Delta HPWL                  -5.0 % (      -7.5,       -2.4)
+
+No differences found.

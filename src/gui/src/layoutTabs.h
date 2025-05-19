@@ -17,6 +17,7 @@ class LayoutScroll;
 class LayoutViewer;
 class Options;
 class Ruler;
+class Label;
 class ScriptWidget;
 
 class LayoutTabs : public QTabWidget
@@ -29,6 +30,7 @@ class LayoutTabs : public QTabWidget
              const SelectionSet& selected,
              const HighlightSet& highlighted,
              const std::vector<std::unique_ptr<Ruler>>& rulers,
+             const std::vector<std::unique_ptr<Label>>& labels,
              Gui* gui,
              std::function<bool()> usingDBU,
              std::function<bool()> usingPolyDecompView,
@@ -77,6 +79,8 @@ class LayoutTabs : public QTabWidget
 
  public slots:
   void tabChange(int index);
+  void updateBackgroundColors();
+  void updateBackgroundColor(LayoutViewer* viewer);
 
   // These are just forwarding to the current LayoutViewer
   void zoomIn();
@@ -112,6 +116,7 @@ class LayoutTabs : public QTabWidget
   const SelectionSet& selected_;
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
+  const std::vector<std::unique_ptr<Label>>& labels_;
   std::map<odb::dbModule*, LayoutViewer::ModuleSettings> modules_;
   Gui* gui_;
   std::function<bool()> usingDBU_;

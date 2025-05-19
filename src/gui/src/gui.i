@@ -2,6 +2,8 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
+#include <optional>
+
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 #include "gui/gui.h"
@@ -132,6 +134,58 @@ void highlight_net(const char* name, int highlight_group = 0)
   }
   auto gui = gui::Gui::get();
   gui->addNetToHighlightSet(name, highlight_group);
+}
+
+const std::string add_label(
+  double x,
+  double y,
+  const std::string& text,
+  const std::string& anchor = "",
+  const std::string& color = "",
+  int size = 0,
+  const std::string& name = "")
+{
+  if (!check_gui("add_label")) {
+    return "";
+  }
+  odb::Point pt = make_point(x, y);
+  auto gui = gui::Gui::get();
+
+  std::optional<int> pass_size;
+  if (size > 0) {
+    pass_size = size;
+  }
+  std::optional<std::string> pass_name;
+  if (!name.empty()) {
+    pass_name = name;
+  }
+  std::optional<gui::Painter::Color> pass_color;
+  if (!color.empty()) {
+    pass_color = gui::Painter::stringToColor(color, ord::OpenRoad::openRoad()->getLogger());
+  }
+  std::optional<gui::Painter::Anchor> pass_anchor;
+  if (!anchor.empty()) {
+    pass_anchor = gui::Painter::stringToAnchor(anchor, ord::OpenRoad::openRoad()->getLogger());
+  }
+  return gui->addLabel(pt.x(), pt.y(), text, pass_color, pass_size, pass_anchor, pass_name);
+}
+
+void delete_label(const std::string& name)
+{
+  if (!check_gui("delete_label")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->deleteLabel(name);
+}
+
+void clear_labels()
+{
+  if (!check_gui("clear_labels")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->clearLabels();
 }
 
 const std::string add_ruler(
@@ -301,25 +355,33 @@ void clear_highlights(int highlight_group = 0)
   gui->clearHighlights(highlight_group);
 }
 
-void set_display_controls(const char* name, const char* display_type, bool value)
+void set_display_controls(const char* name, const char* display_type, const char* value)
 {
   if (!check_gui("set_display_controls")) {
     return;
   }
   auto gui = gui::Gui::get();
+  auto logger = ord::OpenRoad::openRoad()->getLogger();
   
   std::string disp_type = display_type;
+  std::string str_value = value;
   // make lower case
   std::transform(disp_type.begin(), 
                  disp_type.end(), 
                  disp_type.begin(), 
                  [](char c) { return std::tolower(c); });
   if (disp_type == "visible") {
-    gui->setDisplayControlsVisible(name, value);
+    bool bval = str_value == "true" || str_value == "1";
+    gui->setDisplayControlsVisible(name, bval);
   } else if (disp_type == "selectable") {
-    gui->setDisplayControlsSelectable(name, value);
+    bool bval = str_value == "true" || str_value == "1";
+    gui->setDisplayControlsSelectable(name, bval);
+  } else if (disp_type == "color") {
+    if (str_value.empty()) {
+      logger->error(GUI, 41, "Color is required");
+    }
+    gui->setDisplayControlsColor(name, gui::Painter::stringToColor(str_value, logger));
   } else {
-    auto logger = ord::OpenRoad::openRoad()->getLogger();
     logger->error(GUI, 7, "Unknown display control type: {}", display_type);
   }
 }
@@ -749,6 +811,37 @@ void set_title(std::string title)
 {
   auto gui = gui::Gui::get();
   gui->setMainWindowTitle(title);
+}
+
+void gif_start(const char* filename)
+{
+  if (!check_gui("gif_start")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->gifStart(filename);
+}
+
+void gif_add(double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, int delay = 0)
+{
+  if (!check_gui("gif_add")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  std::optional<int> delay_pass;
+  if (delay > 0) {
+    delay_pass = delay;
+  }
+  gui->gifAddFrame(make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, delay_pass);
+}
+
+void gif_end()
+{
+  if (!check_gui("gif_end")) {
+    return;
+  }
+  auto gui = gui::Gui::get();
+  gui->gifEnd();
 }
 
 %} // inline

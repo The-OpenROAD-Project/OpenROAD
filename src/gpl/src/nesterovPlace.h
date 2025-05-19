@@ -67,13 +67,13 @@ class NesterovPlace
   void resizeGCell(odb::dbInst*);
   void moveGCell(odb::dbInst*);
 
-  void createGCell(odb::dbInst*);
+  void createCbkGCell(odb::dbInst*);
   void createGNet(odb::dbNet*);
-  void createITerm(odb::dbITerm*);
+  void createCbkITerm(odb::dbITerm*);
 
-  void destroyGCell(odb::dbInst*);
-  void destroyGNet(odb::dbNet*);
-  void destroyITerm(odb::dbITerm*);
+  void destroyCbkGCell(odb::dbInst*);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
 
  private:
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -123,8 +123,6 @@ class NesterovPlace
 
   int recursionCntWlCoef_ = 0;
   int recursionCntInitSLPCoef_ = 0;
-
-  void cutFillerCoordinates();
 
   void init();
   void reset();

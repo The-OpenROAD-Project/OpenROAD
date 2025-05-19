@@ -253,8 +253,8 @@ void FlexPA::setDistributed(const std::string& rhost,
   cloud_sz_ = cloud_sz;
 }
 
-// Skip power pins, pins connected to special nets, and dangling pins
-// (since we won't route these).
+// Skip power pins, pins connected to special nets, dangling pins and pins
+// connected by abuttment (since we won't route these).
 //
 // Checks only this inst_term and not an equivalent ones.  This
 // is a helper to isSkipInstTerm and initSkipInstTerm.
@@ -265,6 +265,9 @@ bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
     return true;
   }
   auto in_net = in->getNet();
+  if (in_net && in_net->isConnectedByAbutment()) {
+    return true;
+  }
   if (in_net && !in_net->isSpecial()) {
     return false;
   }

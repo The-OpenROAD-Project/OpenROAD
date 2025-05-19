@@ -18,6 +18,7 @@ LayoutTabs::LayoutTabs(Options* options,
                        const SelectionSet& selected,
                        const HighlightSet& highlighted,
                        const std::vector<std::unique_ptr<Ruler>>& rulers,
+                       const std::vector<std::unique_ptr<Label>>& labels,
                        Gui* gui,
                        std::function<bool()> usingDBU,
                        std::function<bool()> usingPolyDecompView,
@@ -31,6 +32,7 @@ LayoutTabs::LayoutTabs(Options* options,
       selected_(selected),
       highlighted_(highlighted),
       rulers_(rulers),
+      labels_(labels),
       gui_(gui),
       usingDBU_(std::move(usingDBU)),
       usingPolyDecompView_(std::move(usingPolyDecompView)),
@@ -41,6 +43,22 @@ LayoutTabs::LayoutTabs(Options* options,
 {
   setTabBarAutoHide(true);
   connect(this, &QTabWidget::currentChanged, this, &LayoutTabs::tabChange);
+}
+
+void LayoutTabs::updateBackgroundColors()
+{
+  for (LayoutViewer* viewer : viewers_) {
+    updateBackgroundColor(viewer);
+    viewer->fullRepaint();
+  }
+}
+
+void LayoutTabs::updateBackgroundColor(LayoutViewer* viewer)
+{
+  QPalette palette;
+  palette.setColor(QPalette::Window, options_->background());
+  viewer->setPalette(palette);
+  viewer->setAutoFillBackground(true);
 }
 
 void LayoutTabs::blockLoaded(odb::dbBlock* block)
@@ -58,6 +76,7 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  selected_,
                                  highlighted_,
                                  rulers_,
+                                 labels_,
                                  modules_,
                                  focus_nets_,
                                  route_guides_,
@@ -80,12 +99,7 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
   const auto name = fmt::format("{} ({})", block->getName(), tech->getName());
   addTab(scroll, name.c_str());
 
-  // This has to be done after addTab.  For unexplained reasons it
-  // doesn't work for all users if done in LayoutViewer::LayoutViewer.
-  QPalette palette;
-  palette.setColor(QPalette::Window, LayoutViewer::background());
-  viewer->setPalette(palette);
-  viewer->setAutoFillBackground(true);
+  updateBackgroundColor(viewer);
 
   // forward signals from the viewer upward
   connect(viewer, &LayoutViewer::location, this, &LayoutTabs::location);

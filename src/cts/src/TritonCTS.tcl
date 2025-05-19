@@ -47,6 +47,8 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-clustering_unbalance_ratio] \
                                              [-sink_clustering_size] \
                                              [-sink_clustering_max_diameter] \
+                                             [-macro_clustering_size] \
+                                             [-macro_clustering_max_diameter] \
                                              [-sink_clustering_enable] \
                                              [-balance_levels] \
                                              [-sink_clustering_levels levels] \
@@ -68,6 +70,7 @@ proc clock_tree_synthesis { args } {
           -distance_between_buffers -branching_point_buffers_distance \
           -clustering_exponent \
           -clustering_unbalance_ratio -sink_clustering_max_diameter \
+          -macro_clustering_size -macro_clustering_max_diameter \
           -sink_clustering_levels -tree_buf \
           -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
@@ -96,6 +99,16 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-sink_clustering_max_diameter)] } {
     set distance $keys(-sink_clustering_max_diameter)
     cts::set_clustering_diameter $distance
+  }
+
+  if { [info exists keys(-macro_clustering_size)] } {
+    set size $keys(-macro_clustering_size)
+    cts::set_macro_clustering_size $size
+  }
+
+  if { [info exists keys(-macro_clustering_max_diameter)] } {
+    set distance $keys(-macro_clustering_max_diameter)
+    cts::set_macro_clustering_diameter $distance
   }
 
   cts::set_balance_levels [info exists flags(-balance_levels)]

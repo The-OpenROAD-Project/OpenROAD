@@ -44,8 +44,7 @@ Graphics::Graphics(utl::Logger* logger,
                    std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                    std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                    bool draw_bins,
-                   odb::dbInst* inst,
-                   int start_iter)
+                   odb::dbInst* inst)
     : HeatMapDataSource(logger, "gpl", "gpl"),
       pbc_(std::move(pbc)),
       nbc_(std::move(nbc)),
@@ -59,7 +58,7 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nbc_->gCells()) {
+    for (GCell* cell : nbc_->getGCells()) {
       if (cell->contains(inst)) {
         selected_ = cell;
         break;
@@ -249,9 +248,9 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
-  drawCells(nbc_->gCells(), painter);
+  drawCells(nbc_->getGCells(), painter);
   for (const auto& nb : nbVec_) {
-    drawCells(nb->gCells(), painter);
+    drawCells(nb->getGCells(), painter);
   }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
@@ -387,7 +386,7 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nbc_->gCells()) {
+  for (GCell* cell : nbc_->getGCells()) {
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -490,6 +489,33 @@ bool Graphics::populateMap()
   }
 
   return true;
+}
+
+void Graphics::populateXYGrid()
+{
+  BinGrid& grid = nbVec_[0]->getBinGrid();
+  std::vector<Bin>& bin = grid.bins();
+  int x_grid = grid.binCntX();
+  int y_grid = grid.binCntY();
+
+  std::vector<int> x_grid_set, y_grid_set;
+  x_grid_set.reserve(x_grid + 1);
+  y_grid_set.reserve(y_grid + 1);
+
+  x_grid_set.push_back(bin[0].lx());
+  y_grid_set.push_back(bin[0].ly());
+
+  for (int x = 0; x < x_grid && x < static_cast<int>(bin.size()); x++) {
+    x_grid_set.push_back(bin[x].ux());
+  }
+
+  for (int y = 0; y < y_grid; y++) {
+    size_t index = static_cast<size_t>(y) * static_cast<size_t>(x_grid);
+    if (index < bin.size()) {
+      y_grid_set.push_back(bin[index].uy());
+    }
+  }
+  setXYMapGrid(x_grid_set, y_grid_set);
 }
 
 void Graphics::combineMapData(bool base_has_value,

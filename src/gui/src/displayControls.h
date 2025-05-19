@@ -20,8 +20,10 @@
 #include <QVBoxLayout>
 #include <functional>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -155,6 +157,7 @@ class DisplayControls : public QDockWidget,
   void setControlByPath(const std::string& path,
                         bool is_visible,
                         Qt::CheckState value);
+  void setControlByPath(const std::string& path, const QColor& color);
   bool checkControlByPath(const std::string& path, bool is_visible);
 
   void registerRenderer(Renderer* renderer);
@@ -166,6 +169,7 @@ class DisplayControls : public QDockWidget,
   void restoreTclCommands(std::vector<std::string>& cmds);
 
   // From the Options API
+  QColor background() override;
   QColor color(const odb::dbTechLayer* layer) override;
   Qt::BrushStyle pattern(const odb::dbTechLayer* layer) override;
   QColor placementBlockageColor() override;
@@ -212,6 +216,10 @@ class DisplayControls : public QDockWidget,
   bool areRulersVisible() override;
   bool areRulersSelectable() override;
 
+  QFont labelFont() override;
+  bool areLabelsVisible() override;
+  bool areLabelsSelectable() override;
+
   bool isDetailedVisibility() override;
 
   bool areSelectedVisible() override;
@@ -236,6 +244,7 @@ class DisplayControls : public QDockWidget,
  signals:
   // The display options have changed and clients need to update
   void changed();
+  void colorChanged();
 
   // Emit a selected tech layer
   void selected(const Selected& selected);
@@ -368,6 +377,8 @@ class DisplayControls : public QDockWidget,
     ModelRow module;
     ModelRow manufacturing_grid;
     ModelRow gcell_grid;
+    ModelRow labels;
+    ModelRow background;
   };
 
   struct InstanceShapeModels
@@ -415,7 +426,7 @@ class DisplayControls : public QDockWidget,
   void makeLeafItem(ModelRow& row,
                     const QString& text,
                     QStandardItem* parent,
-                    Qt::CheckState checked,
+                    std::optional<Qt::CheckState> checked,
                     bool add_selectable = false,
                     const QColor& color = Qt::transparent,
                     const QVariant& user_data = QVariant());
@@ -474,6 +485,10 @@ class DisplayControls : public QDockWidget,
 
   void checkLiberty(bool assume_loaded = false);
 
+  std::tuple<QColor*, Qt::BrushStyle*, bool> lookupColor(
+      QStandardItem* item,
+      const QModelIndex* index = nullptr);
+
   QTreeView* view_;
   DisplayControlModel* model_;
   QMenu* routing_layers_menu_;
@@ -516,6 +531,7 @@ class DisplayControls : public QDockWidget,
 
   std::map<const odb::dbTechLayer*, ModelRow> layer_controls_;
   std::map<const odb::dbSite*, ModelRow> site_controls_;
+  int custom_controls_start_;
   std::map<Renderer*, std::vector<ModelRow>> custom_controls_;
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
@@ -530,6 +546,8 @@ class DisplayControls : public QDockWidget,
 
   std::map<const odb::dbSite*, QColor> site_color_;
 
+  QColor background_color_;
+
   QColor placement_blockage_color_;
   Qt::BrushStyle placement_blockage_pattern_;
 
@@ -540,6 +558,8 @@ class DisplayControls : public QDockWidget,
 
   QColor ruler_color_;
   QFont ruler_font_;
+
+  QFont label_font_;
 
   QColor region_color_;
   Qt::BrushStyle region_pattern_;
