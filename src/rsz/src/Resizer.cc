@@ -25,6 +25,7 @@
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
 #include "ResizerObserver.hh"
+#include "SizeDownMove.hh"
 #include "SizeMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
@@ -172,6 +173,7 @@ void Resizer::init(Logger* logger,
 
   buffer_move = new BufferMove(this);
   clone_move = new CloneMove(this);
+  size_down_move = new SizeDownMove(this);
   size_move = new SizeMove(this);
   split_load_move = new SplitLoadMove(this);
   swap_pins_move = new SwapPinsMove(this);
@@ -3834,6 +3836,7 @@ void Resizer::journalBegin()
   }
 
   buffer_move->undoMoves();
+  size_down_move->undoMoves();
   size_move->undoMoves();
   clone_move->undoMoves();
   split_load_move->undoMoves();
@@ -3852,6 +3855,7 @@ void Resizer::journalEnd()
   odb::dbDatabase::endEco(block_);
 
   buffer_move->commitMoves();
+  size_down_move->commitMoves();
   size_move->commitMoves();
   clone_move->commitMoves();
   split_load_move->commitMoves();
@@ -3923,12 +3927,13 @@ void Resizer::journalRestore()
              "journal",
              1,
              "Undid {} sizing {} buffering {} cloning {} swaps {} buf removal",
-             size_move->numPendingMoves(),
+             size_move->numPendingMoves()+size_down_move->numPendingMoves(),
              inserted_buffer_count_,
              clone_move->numPendingMoves(),
              swap_pins_move->numPendingMoves(),
              unbuffer_move->numPendingMoves());
 
+  size_down_move->undoMoves();
   size_move->undoMoves();
   buffer_move->undoMoves();
   clone_move->undoMoves();
@@ -4298,8 +4303,11 @@ MoveType Resizer::parseMove(const std::string& s)
   if (lower == "swap") {
     return rsz::MoveType::SWAP;
   }
-  if (lower == "size") {
+  if (lower == "sizeup") {
     return rsz::MoveType::SIZE;
+  }
+  if (lower == "sizedown") {
+    return rsz::MoveType::SIZEDOWN;
   }
   if (lower == "clone") {
     return rsz::MoveType::CLONE;

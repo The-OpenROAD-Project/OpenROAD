@@ -71,9 +71,9 @@ bool BufferMove::doMove(const Path* drvr_path,
                rebuffer_count);
     debugPrint(logger_,
                RSZ,
-               "moves",
+               "buffer",
                1,
-               "rebuffer {} inserted {}",
+               "ACCEPT rebuffer {} inserted {}",
                network_->pathName(drvr_pin),
                rebuffer_count);
     addMove(drvr_inst, rebuffer_count);

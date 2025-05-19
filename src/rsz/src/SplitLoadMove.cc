@@ -78,7 +78,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
 
   debugPrint(logger_,
              RSZ,
-             "moves",
+             "split_load",
              3,
              "split loads {} -> {}",
              network_->pathName(drvr_pin),
@@ -99,7 +99,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       const Slack slack_margin = fanout_slack - drvr_slack;
       debugPrint(logger_,
                  RSZ,
-                 "moves",
+                 "split_load",
                  4,
                  " fanin {} slack_margin = {}",
                  network_->pathName(fanout_vertex->pin()),
@@ -136,9 +136,15 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
       = makeBuffer(buffer_cell, buffer_name.c_str(), parent, drvr_loc);
   debugPrint(logger_,
              RSZ,
-             "moves",
+             "split_load",
              1,
-             "split_load_move make_buffer {}",
+             "ACCEPT make_buffer {}",
+             network_->pathName(buffer));
+  debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             3,
+             "split_load make_buffer {}",
              network_->pathName(buffer));
   addMove(buffer);
 

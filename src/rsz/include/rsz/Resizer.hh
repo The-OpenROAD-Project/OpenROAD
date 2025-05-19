@@ -114,6 +114,7 @@ class ResizerObserver;
 class CloneMove;
 class BufferMove;
 class SplitLoadMove;
+class SizeDownMove;
 class SizeMove;
 class SwapPinsMove;
 class UnbufferMove;
@@ -153,6 +154,7 @@ enum class MoveType
   UNBUFFER,
   SWAP,
   SIZE,
+  SIZEDOWN,
   CLONE,
   SPLIT
 };
@@ -810,6 +812,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   CloneMove* clone_move = nullptr;
   SplitLoadMove* split_load_move = nullptr;
   BufferMove* buffer_move = nullptr;
+  SizeDownMove* size_down_move = nullptr;
   SizeMove* size_move = nullptr;
   SwapPinsMove* swap_pins_move = nullptr;
   UnbufferMove* unbuffer_move = nullptr;
@@ -824,6 +827,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class SteinerTree;
   friend class BaseMove;
   friend class BufferMove;
+  friend class SizeDownMove;
   friend class SizeMove;
   friend class SplitLoadMove;
   friend class CloneMove;

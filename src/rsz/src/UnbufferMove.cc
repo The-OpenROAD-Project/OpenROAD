@@ -335,8 +335,18 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
-  debugPrint(
-      logger_, RSZ, "moves", 1, "unbuffer_move {}", network_->pathName(buffer));
+  debugPrint(logger_, 
+             RSZ, 
+             "unbuffer", 
+             1, 
+             "ACCEPT {}", 
+             network_->pathName(buffer));
+  debugPrint(logger_, 
+             RSZ, 
+             "repair_setup", 
+             3, 
+             "remove_buffer{}", 
+             network_->pathName(buffer));
   addMove(buffer);
 
   LibertyCell* lib_cell = network_->libertyCell(buffer);

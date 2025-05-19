@@ -14,6 +14,7 @@
 #include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
+#include "SizeDownMove.hh"
 #include "SizeMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
@@ -102,6 +103,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         case MoveType::SIZE:
           move_sequence.push_back(resizer_->size_move);
           break;
+        case MoveType::SIZEDOWN:
+          move_sequence.push_back(resizer_->size_down_move);
+          break;
         case MoveType::CLONE:
           move_sequence.push_back(resizer_->clone_move);
           break;
@@ -116,6 +120,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     if (!skip_buffer_removal) {
       move_sequence.push_back(resizer_->unbuffer_move);
     }
+    move_sequence.push_back(resizer_->size_down_move);
     // Always  have sizing
     move_sequence.push_back(resizer_->size_move);
     if (!skip_pin_swap) {
@@ -418,6 +423,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
 
   int buffer_moves_ = resizer_->buffer_move->numCommittedMoves();
   int size_moves_ = resizer_->size_move->numCommittedMoves();
+  int size_down_moves_ = resizer_->size_down_move->numCommittedMoves();
   int swap_pins_moves_ = resizer_->swap_pins_move->numCommittedMoves();
   int clone_moves_ = resizer_->clone_move->numCommittedMoves();
   int split_load_moves_ = resizer_->split_load_move->numCommittedMoves();
@@ -443,7 +449,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                   buffer_moves_ + split_load_moves_);
   if (size_moves_ > 0) {
     repaired = true;
-    logger_->info(RSZ, 41, "Resized {} instances.", size_moves_);
+    if (size_down_moves_ == 0) {
+        logger_->info(RSZ, 41, "Resized {} instances.", size_moves_);
+    } else {
+        logger_->info(RSZ, 51, "Resized {} instances, {} sized up, {} sized down.",
+                      size_moves_ + size_down_moves_,
+                      size_moves_,
+                      size_down_moves_);
+    }
   }
   if (swap_pins_moves_ > 0) {
     repaired = true;
@@ -477,6 +490,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   resizer_->incrementalParasiticsBegin();
   move_sequence.clear();
   move_sequence = {resizer_->unbuffer_move,
+                   resizer_->size_down_move,
                    resizer_->size_move,
                    resizer_->swap_pins_move,
                    resizer_->buffer_move,
@@ -498,8 +512,16 @@ void RepairSetup::repairSetup(const Pin* end_pin)
         RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
   }
   int size_moves_ = resizer_->size_move->numMoves();
+  int size_down_moves_ = resizer_->size_down_move->numMoves();
   if (size_moves_ > 0) {
-    logger_->info(RSZ, 31, "Resized {} instances.", size_moves_);
+    if (size_down_moves_ == 0) {
+        logger_->info(RSZ, 31, "Resized {} instances.", size_moves_);
+    } else {
+        logger_->info(RSZ, 38, "Resized {} instances, {} sized up, {} sized down.",
+                      size_moves_ + size_down_moves_,
+                      size_moves_,
+                      size_down_moves_);
+    }
   }
   int swap_pins_moves_ = resizer_->swap_pins_move->numMoves();
   if (swap_pins_moves_ > 0) {
@@ -626,8 +648,8 @@ bool RepairSetup::repairPath(Path* path,
       for (BaseMove* move : move_sequence) {
         debugPrint(logger_,
                    RSZ,
-                   "moves",
-                   2,
+                   "repair_setup",
+                   1,
                    "Considering {} for {}",
                    move->name(),
                    network_->pathName(drvr_pin));
@@ -649,8 +671,8 @@ bool RepairSetup::repairPath(Path* path,
         }
         debugPrint(logger_,
                    RSZ,
-                   "moves",
-                   2,
+                   "repair_setup",
+                   1,
                    "Move {} failed for {}",
                    move->name(),
                    network_->pathName(drvr_pin));
@@ -701,12 +723,13 @@ void RepairSetup::printProgress(const int iteration,
         "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
-        resizer_->unbuffer_move->numMoves(),
-        resizer_->size_move->numMoves(),
-        resizer_->buffer_move->numMoves()
-            + resizer_->split_load_move->numMoves(),
-        resizer_->clone_move->numMoves(),
-        resizer_->swap_pins_move->numMoves(),
+        resizer_->unbuffer_move->numCommittedMoves(),
+        resizer_->size_move->numCommittedMoves() 
+            + resizer_->size_down_move->numCommittedMoves(),
+        resizer_->buffer_move->numCommittedMoves()
+            + resizer_->split_load_move->numCommittedMoves(),
+        resizer_->clone_move->numCommittedMoves(),
+        resizer_->swap_pins_move->numCommittedMoves(),
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, sta_, 3),
         delayAsString(tns, sta_, 1),

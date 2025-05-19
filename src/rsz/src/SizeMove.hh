@@ -19,14 +19,6 @@ class SizeMove : public BaseMove
               float setup_slack_margin) override;
 
   const char* name() override { return "SizeMove"; }
-
- private:
-  LibertyCell* upsizeCell(LibertyPort* in_port,
-                          LibertyPort* drvr_port,
-                          float load_cap,
-                          float prev_drive,
-                          const DcalcAnalysisPt* dcalc_ap);
-  bool replaceCell(Instance* inst, const LibertyCell* replacement);
 };
 
 }  // namespace rsz

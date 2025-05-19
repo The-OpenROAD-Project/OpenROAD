@@ -213,10 +213,19 @@ class BaseMove : public sta::dbStaState
   void getBufferPins(Instance* buffer, Pin*& ip, Pin*& op);
   int fanout(Vertex* vertex);
 
+  LibertyCell* upsizeCell(LibertyPort* in_port,
+                          LibertyPort* drvr_port,
+                          float load_cap,
+                          float prev_drive,
+                          const DcalcAnalysisPt* dcalc_ap);
+  bool replaceCell(Instance* inst, const LibertyCell* replacement);
+
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr int buffer_removal_max_fanout_ = 10;
   static constexpr float rebuffer_relaxation_factor_ = 0.03;
+
+  vector<const Pin*> getFanouts(const Instance* inst);
 };
 
 }  // namespace rsz
