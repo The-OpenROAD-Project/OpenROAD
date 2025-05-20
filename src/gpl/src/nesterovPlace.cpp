@@ -670,6 +670,7 @@ log_->report("  New target density: {}", newTargetDensity);
       // recover the densityPenalty values
       // if further routability-driven is needed
       std::pair<bool, bool> result = rb_->routability();
+      nbVec_[0]->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
       is_routability_need_ = result.first;
       bool isRevertInitNeeded = result.second;
 

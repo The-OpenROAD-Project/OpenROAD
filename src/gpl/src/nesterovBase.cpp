@@ -1494,13 +1494,23 @@ void NesterovBaseCommon::revertGCellSizeToMinRc()
   }
 }
 
-GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
+// GCell* NesterovBaseCommon::getGCellByIndex(size_t i)
+// {
+//   if (i >= gCellStor_.size()) {
+//     return nullptr;
+//   }
+//   return &gCellStor_[i];
+// }
+
+GCell* NesterovBaseCommon::getGCellByIndex(size_t idx)
 {
-  if (i >= gCellStor_.size()) {
+  if (idx >= gCellStor_.size()) {
+    log_->error(GPL, 315, "getGCellByIndex out of bounds: idx = {}, size = {}", idx, gCellStor_.size());
     return nullptr;
   }
-  return &gCellStor_[i];
+  return &gCellStor_[idx];
 }
+
 
 // fixPointers() member functions assumes there was push_backs to storage
 // vectors, invalidating them. This function resets the pointers and maintain
@@ -2087,7 +2097,12 @@ void NesterovBase::updateAreas()
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
+  // int i =0;
+  // log_->report("updateAreas(), nb_gcells_.size(): {}", nb_gcells_.size());
+  // log_->report("updateAreas(), fillerStor_.size(): {}", fillerStor_.size());
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
+    // if(print)
+    // log_->report("{}",++i);
     auto& gCell = *it;  // old-style loop for old OpenMP
     if (!gCell) {
       continue;
@@ -2106,19 +2121,19 @@ void NesterovBase::updateAreas()
 
   movableArea_ = whiteSpaceArea_ * targetDensity_;
   totalFillerArea_ = movableArea_ - nesterovInstsArea();
-  uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
-                          / static_cast<float>(whiteSpaceArea_);
+  // uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
+  //                         / static_cast<float>(whiteSpaceArea_);
 
   if (totalFillerArea_ < 0) {
-    log_->warn(GPL,
-               303,
-               "Consider increasing the target density or re-floorplanning "
-               "with a larger core area.\n"
-               "Given target density: {:.2f}\n"
-               "Suggested target density: {:.2f} (uniform density)",
-               targetDensity_,
-               uniformTargetDensity_);
-    log_->report("totalFillerArea_:{}", totalFillerArea_);
+    // log_->warn(GPL,
+    //            303,
+    //            "Consider increasing the target density or re-floorplanning "
+    //            "with a larger core area.\n"
+    //            "Given target density: {:.2f}\n"
+    //            "Suggested target density: {:.2f} (uniform density)",
+    //            targetDensity_,
+    //            uniformTargetDensity_);
+    log_->report("No more filler cells to remove (empty space), density is being modified to compensate for area modification. Desired filler area to be removed:{}", totalFillerArea_);
     totalFillerArea_ = 0;
   }
 }
@@ -3059,30 +3074,11 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
   if (gcell != nullptr) {
     new_instances.push_back(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
+    log_->report("createcbkgcell index for nbc_gcells_: {}, nbc_gcells.size(): {}", stor_index, nbc_->getGCells().size());
+    log_->report("createcbkgcell index for nb_gcells_:  {}, nb_gcells_.size(): {}", stor_index, nb_gcells_.size());
     size_t gcells_index = nb_gcells_.size() - 1;
     db_inst_to_nb_index_map_[db_inst] = gcells_index;
-
-    curSLPCoordi_.emplace_back();
-    curSLPWireLengthGrads_.emplace_back();
-    curSLPDensityGrads_.emplace_back();
-    curSLPSumGrads_.emplace_back();
-    nextSLPCoordi_.emplace_back();
-    nextSLPWireLengthGrads_.emplace_back();
-    nextSLPDensityGrads_.emplace_back();
-    nextSLPSumGrads_.emplace_back();
-    prevSLPCoordi_.emplace_back();
-    prevSLPWireLengthGrads_.emplace_back();
-    prevSLPDensityGrads_.emplace_back();
-    prevSLPSumGrads_.emplace_back();
-    curCoordi_.emplace_back();
-    nextCoordi_.emplace_back();
-    initCoordi_.emplace_back();
-    // check if snapshot has been saved already.
-    if (curSLPCoordi_.size() == snapshotCoordi_.size() + 1) {
-      snapshotCoordi_.emplace_back();
-      snapshotSLPCoordi_.emplace_back();
-      snapshotSLPSumGrads_.emplace_back();
-    }
+    appendParallelVectors();
 
   } else {
     debugPrint(log_,
@@ -3186,7 +3182,7 @@ void NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
     if (replacer.first != nullptr) {
       auto it = db_inst_to_nb_index_map_.find(replacer.first);
       if (it != db_inst_to_nb_index_map_.end()) {
-        nb_gcells_[it->second].updateIndex(replacer.second);
+        nb_gcells_[it->second].updateHandle(nbc_.get(), replacer.second);
       } else {
         debugPrint(log_,
                    GPL,
@@ -3266,6 +3262,8 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
 
   for (int i = nb_gcells_.size() - 1; i >= 0 && removed_count < maxFillersToRemove; --i) {
     if (nb_gcells_[i]->isFiller()) {
+      const GCell& removed = fillerStor_[nb_gcells_[i].getStorageIndex()];
+      removed_fillers_.push_back(removed);
       destroyFillerGCell(i);
       availableFillerArea -= fillerArea;
       inflationArea -= fillerArea;
@@ -3273,7 +3271,6 @@ void NesterovBase::cutFillerCells(int64_t inflationArea)
     }
   }
   
-
   totalFillerArea_ = availableFillerArea;
 
   if (fillerArea * fillerStor_.size() != totalFillerArea_) {
@@ -3330,7 +3327,7 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
                GPL,
                "callbacks",
                1,
-               "trying to destroy filler, but gcell ({})is not filler!",
+               "trying to destroy filler, but gcell ({}) is not filler!",
                gcell_remove->getName());
     return;
   }
@@ -3353,8 +3350,19 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 
   size_t nb_last_index = nb_gcells_.size() - 1;
   if (nb_index_remove != nb_last_index) {
+    bool is_replacer_filler = nb_gcells_[nb_last_index]->isFiller();
+    size_t replacer_stor_index = 0;
+    if (!is_replacer_filler) {
+      replacer_stor_index = nb_gcells_[nb_last_index].getStorageIndex();
+    }    
+
     std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);
-    nb_gcells_[nb_index_remove].updateIndex(stor_index_remove);
+
+    if(is_replacer_filler) {
+      nb_gcells_[nb_index_remove].updateHandle(this, stor_index_remove);
+    } else {
+      nb_gcells_[nb_index_remove].updateHandle(nbc_.get(), replacer_stor_index);
+    }
   }
   swapAndPopParallelVectors(nb_index_remove, nb_last_index);
   nb_gcells_.pop_back();
@@ -3467,6 +3475,13 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
              "last_index {}",
              remove_index,
              last_index);
+
+  // Avoid modifying this if snapshot has not been saved yet.
+  if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
+    swapAndPop(snapshotCoordi_, remove_index, last_index);
+    swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
+    swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
+  }
   swapAndPop(curSLPCoordi_, remove_index, last_index);
   swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
   swapAndPop(curSLPDensityGrads_, remove_index, last_index);
@@ -3482,12 +3497,6 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(curCoordi_, remove_index, last_index);
   swapAndPop(nextCoordi_, remove_index, last_index);
   swapAndPop(initCoordi_, remove_index, last_index);
-  // Avoid modifying this if snapshot has not been saved yet.
-  if (curSLPCoordi_.size() - 1 == snapshotCoordi_.size()) {
-    swapAndPop(snapshotCoordi_, remove_index, last_index);
-    swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
-    swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
-  }
 }
 
 void NesterovBaseCommon::printGCells()

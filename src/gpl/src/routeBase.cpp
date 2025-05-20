@@ -562,6 +562,7 @@ std::pair<bool, bool> RouteBase::routability()
     minRc_ = curRc;
     minRcTargetDensity_ = nbVec_[0]->targetDensity();
     minRcViolatedCnt_ = 0;
+    nbVec_[0]->clearRemovedFillers();
 
     // save cell size info
     nbc_->updateMinRcCellSize();
@@ -677,7 +678,6 @@ std::pair<bool, bool> RouteBase::routability()
 
   // int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
   // + nbVec_[0]->getTotalFillerArea();
-  // newly set Density
   // nbVec_[0]->setTargetDensity(
   //     static_cast<float>(totalGCellArea)
   //     / static_cast<float>(nbVec_[0]->whiteSpaceArea()));
@@ -721,8 +721,11 @@ std::pair<bool, bool> RouteBase::routability()
 
     nbVec_[0]->setTargetDensity(minRcTargetDensity_);
     nbc_->revertGCellSizeToMinRc();
+    nbVec_[0]->restoreRemovedFillers();
     nbVec_[0]->updateDensitySize();
     resetRoutabilityResources();
+    // nbc_->fixPointers();
+
 
     return std::make_pair(false, true);
   }

@@ -843,7 +843,16 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  GCell& getGCell(size_t index) { return gCellStor_[index]; }
+  GCell& getGCell(size_t index) {
+    if (index >= gCellStor_.size()) {
+      log_->error(utl::GPL,
+                  316,
+                  "getGCell: index {} out of bounds (gCellStor_.size() = {}).",
+                  index,
+                  gCellStor_.size());
+    }
+    return gCellStor_[index];
+  }
 
   size_t getGCellIndex(const GCell* gCell) const
   {
@@ -911,7 +920,17 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index) { return fillerStor_[index]; }
+  GCell& getFillerGCell(size_t index) {
+    if (index >= fillerStor_.size()) {
+      log_->error(utl::GPL,
+                  314,
+                  "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
+                  index,
+                  fillerStor_.size());
+    }
+    return fillerStor_[index];
+  }
+  
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -1070,14 +1089,30 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  void destroyCbkGCell(odb::dbInst* db_inst);
-  void destroyFillerGCell(size_t index_remove);
+  void destroyCbkGCell(odb::dbInst* db_inst);  
 
-  // Resets all pointers to storages of gcells, gpins, and gnets.
-  void fixPointers(std::vector<size_t> new_gcells);
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
   void updateGCellState(float wlCoeffX, float wlCoeffY);
+
+
+  void destroyFillerGCell(size_t index_remove);
+  void restoreRemovedFillers() { 
+    log_->report("restoring removed fillers: {}", removed_fillers_.size());
+    while (!removed_fillers_.empty()) {
+      GCell gcellCopy = removed_fillers_.back();
+      removed_fillers_.pop_back();
+  
+      fillerStor_.push_back(gcellCopy);
+      size_t new_index = fillerStor_.size() - 1;
+      nb_gcells_.emplace_back(this, new_index);
+      appendParallelVectors();
+      totalFillerArea_ += getFillerCellArea();
+    }
+    log_->report("fillerStor_.size(): {}", fillerStor_.size());
+  }
+  void clearRemovedFillers() { removed_fillers_.clear(); 
+  }
 
  private:
   NesterovBaseVars nbVars_;
@@ -1149,6 +1184,29 @@ class NesterovBase
                   size_t remove_index,
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
+  void appendParallelVectors() {
+    // log_->report("curSLPCoordi_.size(): {}, snapshotCoordi_.size(): {}",curSLPCoordi_.size(), snapshotCoordi_.size());
+    if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
+      snapshotCoordi_.emplace_back();
+      snapshotSLPCoordi_.emplace_back();
+      snapshotSLPSumGrads_.emplace_back();
+    }
+    curSLPCoordi_.emplace_back();
+    curSLPWireLengthGrads_.emplace_back();
+    curSLPDensityGrads_.emplace_back();
+    curSLPSumGrads_.emplace_back();
+    nextSLPCoordi_.emplace_back();
+    nextSLPWireLengthGrads_.emplace_back();
+    nextSLPDensityGrads_.emplace_back();
+    nextSLPSumGrads_.emplace_back();
+    prevSLPCoordi_.emplace_back();
+    prevSLPWireLengthGrads_.emplace_back();
+    prevSLPDensityGrads_.emplace_back();
+    prevSLPSumGrads_.emplace_back();
+    curCoordi_.emplace_back();
+    nextCoordi_.emplace_back();
+    initCoordi_.emplace_back();
+  }
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1183,6 +1241,7 @@ class NesterovBase
   bool reprint_iter_header;
 
   void initFillerGCells();
+  std::vector<GCell> removed_fillers_;
 };
 
 inline std::vector<Bin>& NesterovBase::bins()
@@ -1229,7 +1288,16 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  void updateIndex(size_t new_index) { storage_index_ = new_index; }
+  void updateHandle(NesterovBaseCommon* nbc, size_t new_index) {
+    storage_ = nbc;
+    storage_index_ = new_index;
+  }
+  
+  void updateHandle(NesterovBase* nb, size_t new_index) {
+    storage_ = nb;
+    storage_index_ = new_index;
+  }
+
   size_t getStorageIndex() const { return storage_index_; }
 
  private:
