@@ -261,15 +261,31 @@ void FlexPA::createSingleAccessPoint(
     end.setY(std::clamp(
         fpt.y(), gtl::yl(maxrect) + hwidth, gtl::yh(maxrect) - hwidth));
 
-    if (end != fpt) {
+    Point e = fpt;
+    if (fpt.x() != end.x()) {
+      e.setX(end.x());
+    } else if (fpt.y() != end.y()) {
+      e.setY(end.y());
+    }
+    if (e != fpt) {
       frPathSeg ps;
-      ps.setPoints_safe(fpt, end);
+      ps.setPoints_safe(fpt, e);
       if (ps.getBeginPoint() == end) {
         ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
-      } else {
+      } else if (ps.getEndPoint() == end) {
         ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
       }
       ap->addPathSeg(ps);
+      if (e != end) {
+        fpt = e;
+        ps.setPoints_safe(fpt, end);
+        if (ps.getBeginPoint() == end) {
+          ps.setBeginStyle(frEndStyle(frcTruncateEndStyle));
+        } else {
+          ps.setEndStyle(frEndStyle(frcTruncateEndStyle));
+        }
+        ap->addPathSeg(ps);
+      }
     }
   }
   aps.push_back(std::move(ap));
