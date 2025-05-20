@@ -235,7 +235,9 @@ class FlexPA
   bool genPinAccessCostBounded(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       std::set<std::pair<Point, frLayerNum>>& apset,
-      std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term,
       frAccessPointEnum lower_type,
@@ -452,46 +454,28 @@ class FlexPA
                                frAccessPointEnum upper_type);
 
   /**
-   * @brief Filters the accesses of all access points
+   * @brief Filters the via accesses of all access points
    *
-   * @details Receives every access point with their default
-   * accesses to every direction. It will check if any access set as true is
-   * valid, e.g. not cause DRVs. If it finds it to be invalid it will set that
-   * access as false. If all accesses of an access point are found to be false
-   * it will be deleted/disconsidered by the function that calls this.
+   * @details Receives a list of access points and checks which vias can use it.
+   * If any access point can't be used by any via its via access will be set as
+   * False. Valid vias will also be added to valid via defs.
    *
    * @param aps vector of access points of the pin
    * @param pin_shapes vector of pin shapes of the pin
+   * @param layer_polys another representation of pin shapes
    * @param pin the pin
    * @param inst_term terminal
    * @param is_std_cell_pin if the pin if from a standard cell
    */
   template <typename T>
-  void filterMultipleAPAccesses(
+  void filterMultipleViaAccess(
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
       T* pin,
       frInstTerm* inst_term,
       const bool& is_std_cell_pin);
-
-  /**
-   * @brief Filters the accesses of a single access point
-   *
-   * @param ap access point
-   * @param polyset polys auxilary set (same information as polys)
-   * @param polys a vector of pin shapes on all layers of the current pin
-   * @param pin access pin
-   * @param inst_term terminal
-   * @param deep_search TODO: not sure
-   */
-  template <typename T>
-  void filterSingleAPAccesses(
-      frAccessPoint* ap,
-      const gtl::polygon_90_set_data<frCoord>& polyset,
-      const std::vector<gtl::polygon_90_data<frCoord>>& polys,
-      T* pin,
-      frInstTerm* inst_term,
-      bool deep_search = false);
 
   /**
    * @brief Filters access in a given planar direction.
@@ -501,9 +485,11 @@ class FlexPA
    * @param dir candidate dir to the access
    * @param pin access pin
    * @param inst_term terminal
+   *
+   * @returns True if the access points can use planar access.
    */
   template <typename T>
-  void filterPlanarAccess(
+  bool filterPlanarAccess(
       frAccessPoint* ap,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       frDirEnum dir,
@@ -556,28 +542,45 @@ class FlexPA
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys);
 
   /**
-   * @brief Filters access through via on the access point
+   * @brief checks if a via can be used to access the access point, modifies the
+   * ap to use it if it can.
    *
-   * @details Besides checking if the via can even exist, this will also check
-   * later if a planar access can be done on upper layer to reach the via.
-   * Access through only 1 of the cardinal directions is enough.
+   * @param ap Access point
+   * @param via_def Via Def
+   * @param layer_polys A vector of polygons organized by layer
+   * @param polyset Another representation of the polygons
+   * @param pin Pin
+   * @param inst_term the instance terminal object
    *
-   * @param ap access point
-   * @param layer_polys Pin Polygons on the layer (used for a check)
-   * @param polyset polys auxilary set (same information as polys)
-   * @param pin access pin
-   * @param inst_term instance terminal
-   * @param deep_search TODO: I understand one of its uses but not why "deep
-   * search"
+   * @returns True if the via usage was valid.
    */
   template <typename T>
-  void filterViaAccess(
+  bool validateAPForVia(
       frAccessPoint* ap,
+      const frViaDef* via_def,
       const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       T* pin,
-      frInstTerm* inst_term,
-      bool deep_search = false);
+      frInstTerm* inst_term);
+
+  /**
+   * @brief checks if an access point can have planar access, alters the point
+   * to allow it and returns true if planar access is valid.
+   *
+   * @param ap Access point
+   * @param layer_polys A vector of polygons organized by layer
+   * @param pin Pin
+   * @param inst_term the instance terminal object
+   *
+   * @returns True if the point can have planar access.
+   */
+  template <typename T>
+  bool validateAPForPlanarAccess(
+      frAccessPoint* ap,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
+      T* pin,
+      frInstTerm* inst_term);
 
   /**
    * @brief Checks if a Via has at least one valid planar access
