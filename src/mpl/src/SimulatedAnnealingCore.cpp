@@ -61,7 +61,8 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
   macros_ = macros;
 
   setDieArea(tree->die_area);
-  setAvailableRegionForPins(tree->available_regions_for_pins);
+  setAvailableRegionsForUnconstrainedPins(
+      tree->available_regions_for_unconstrained_pins);
 
   io_cluster_to_constraint_ = tree->io_cluster_to_constraint;
 }
@@ -75,14 +76,14 @@ void SimulatedAnnealingCore<T>::setDieArea(const Rect& die_area)
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::setAvailableRegionForPins(
+void SimulatedAnnealingCore<T>::setAvailableRegionsForUnconstrainedPins(
     const BoundaryRegionList& regions)
 {
-  available_regions_for_pins_ = regions;
+  available_regions_for_unconstrained_pins_ = regions;
 
-  for (BoundaryRegion& region : available_regions_for_pins_) {
+  for (BoundaryRegion& region : available_regions_for_unconstrained_pins_) {
     region.line.addX(-block_->micronsToDbu(outline_.xMin()));
-    region.line.addY(-block_->micronsToDbu(outline_.xMin()));
+    region.line.addY(-block_->micronsToDbu(outline_.yMin()));
   }
 }
 
@@ -318,7 +319,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
                                   block_->micronsToDbu(macro.getPinY()));
   double smallest_distance;
   if (unplaced_ios.getCluster()->isClusterOfUnconstrainedIOPins()) {
-    if (available_regions_for_pins_.empty()) {
+    if (available_regions_for_unconstrained_pins_.empty()) {
       logger_->critical(
           utl::MPL,
           47,
@@ -326,7 +327,7 @@ void SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
     }
 
     smallest_distance = computeDistToNearestRegion(
-        macro_location, available_regions_for_pins_, nullptr);
+        macro_location, available_regions_for_unconstrained_pins_, nullptr);
   } else {
     Cluster* cluster = unplaced_ios.getCluster();
     const BoundaryRegion& constraint = io_cluster_to_constraint_.at(cluster);

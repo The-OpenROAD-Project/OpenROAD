@@ -593,7 +593,8 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
 
   odb::Point to;
   if (io.getCluster()->isClusterOfUnconstrainedIOPins()) {
-    computeDistToNearestRegion(from, available_regions_for_pins_, &to);
+    computeDistToNearestRegion(
+        from, available_regions_for_unconstrained_pins_, &to);
   } else {
     computeDistToNearestRegion(
         from, {io_cluster_to_constraint_.at(io.getCluster())}, &to);
@@ -719,9 +720,10 @@ void Graphics::setBlockedRegionsForPins(
   blocked_regions_for_pins_ = blocked_regions_for_pins;
 }
 
-void Graphics::setAvailableRegionsForPins(const BoundaryRegionList& regions)
+void Graphics::setAvailableRegionsForUnconstrainedPins(
+    const BoundaryRegionList& regions)
 {
-  available_regions_for_pins_ = regions;
+  available_regions_for_unconstrained_pins_ = regions;
 }
 
 void Graphics::eraseDrawing()

@@ -90,7 +90,7 @@ struct PhysicalHierarchy
   std::unique_ptr<Cluster> root;
   PhysicalHierarchyMaps maps;
 
-  BoundaryRegionList available_regions_for_pins;
+  BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
   float halo_width{0.0f};

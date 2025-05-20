@@ -317,7 +317,7 @@ void HierRTLMP::runCoarseShaping()
 
   calculateChildrenTilings(tree_->root.get());
 
-  searchForAvailableRegionsForPins();
+  searchAvailableRegionsForUnconstrainedPins();
   createPinAccessBlockages();
   setPlacementBlockages();
 }
@@ -872,7 +872,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
   macro_array->setTilings(tight_packing_tilings);
 }
 
-void HierRTLMP::searchForAvailableRegionsForPins()
+void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
 {
   if (treeHasConstrainedIOs()) {
     return;
@@ -886,15 +886,17 @@ void HierRTLMP::searchForAvailableRegionsForPins()
   std::vector<odb::Rect> available_regions
       = computeAvailableRegions(boundary_to_blocked_regions);
 
-  tree_->available_regions_for_pins.reserve(available_regions.size());
+  tree_->available_regions_for_unconstrained_pins.reserve(
+      available_regions.size());
   for (const odb::Rect& region : available_regions) {
-    tree_->available_regions_for_pins.emplace_back(
+    tree_->available_regions_for_unconstrained_pins.emplace_back(
         rectToLine(block_, region, logger_), getBoundary(block_, region));
   }
 
   if (graphics_) {
     graphics_->setBlockedRegionsForPins(blocked_regions_for_pins);
-    graphics_->setAvailableRegionsForPins(tree_->available_regions_for_pins);
+    graphics_->setAvailableRegionsForUnconstrainedPins(
+        tree_->available_regions_for_unconstrained_pins);
   }
 }
 
@@ -923,7 +925,7 @@ void HierRTLMP::createPinAccessBlockages()
 
   computePinAccessDepthLimits();
 
-  if (!tree_->available_regions_for_pins.empty()) {
+  if (!tree_->available_regions_for_unconstrained_pins.empty()) {
     createBlockagesForAvailableRegions();
   } else {
     createBlockagesForConstraintRegions();
@@ -953,14 +955,16 @@ bool HierRTLMP::treeHasConstrainedIOs() const
 void HierRTLMP::createBlockagesForAvailableRegions()
 {
   double io_span = 0.0;
-  for (const BoundaryRegion& region : tree_->available_regions_for_pins) {
+  for (const BoundaryRegion& region :
+       tree_->available_regions_for_unconstrained_pins) {
     io_span += std::sqrt(
         odb::Point::squaredDistance(region.line.pt0(), region.line.pt1()));
   }
 
   const float depth = computePinAccessBaseDepth(block_->dbuToMicrons(io_span));
 
-  for (const BoundaryRegion region : tree_->available_regions_for_pins) {
+  for (const BoundaryRegion region :
+       tree_->available_regions_for_unconstrained_pins) {
     createPinAccessBlockage(region, depth);
   }
 }
@@ -2754,9 +2758,10 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           computeDistToNearestRegion(
               macro_pin->getBBox().center(), {constraint}, &nearest_point);
         } else {
-          computeDistToNearestRegion(macro_pin->getBBox().center(),
-                                     tree_->available_regions_for_pins,
-                                     &nearest_point);
+          computeDistToNearestRegion(
+              macro_pin->getBBox().center(),
+              tree_->available_regions_for_unconstrained_pins,
+              &nearest_point);
         }
         odb::Rect point_rect(nearest_point, nearest_point);
         net_box.merge(point_rect);

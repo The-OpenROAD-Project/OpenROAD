@@ -98,7 +98,8 @@ class SimulatedAnnealingCore
 
   void fastSA();
 
-  void setAvailableRegionForPins(const BoundaryRegionList& regions);
+  void setAvailableRegionsForUnconstrainedPins(
+      const BoundaryRegionList& regions);
   void initSequencePair();
   void setDieArea(const Rect& die_area);
   void updateBestValidResult();
@@ -137,7 +138,7 @@ class SimulatedAnnealingCore
   Rect outline_;
   Rect die_area_;  // Offset to the current outline.
 
-  BoundaryRegionList available_regions_for_pins_;
+  BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
 
   // Number of macros that will actually be part of the sequence pair
