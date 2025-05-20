@@ -1250,7 +1250,7 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   level_++;
   updateSizeThresholds();
 
-  if (force_split_root || (parent->getNumStdCell() > max_std_cell_)) {
+  if (force_split_root || (parent->getNumStdCell() > max_std_cell_) || (parent->getNumMacro() > max_macro_)) {
     breakCluster(parent);
     updateSubTree(parent);
 
@@ -1475,7 +1475,7 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
   for (int i = 0; i < new_children.size(); ++i) {
     auto& child = new_children[i];
     child->setParent(parent);
-    if (child->getNumStdCell() > max_std_cell_) {
+    if (child->getNumStdCell() > max_std_cell_ || child->getNumMacro() > max_macro_) {
       breakLargeFlatCluster(child.get());
     }
   }
@@ -1490,7 +1490,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 {
   // Check if the cluster is a large flat cluster
   if (!parent->getDbModules().empty()
-      || parent->getLeafStdCells().size() < max_std_cell_) {
+      || (parent->getLeafStdCells().size() < max_std_cell_ && parent->getLeafMacros().size() < max_macro_)) {
     return;
   }
   updateInstancesAssociation(parent);
