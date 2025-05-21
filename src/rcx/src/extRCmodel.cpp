@@ -1114,7 +1114,7 @@ void extDistWidthRCTable::setDiagUnderTables(
 extDistWidthRCTable::~extDistWidthRCTable()
 {
   uint ii, jj, kk, ll;
-  if (_rcDistTable) {
+  if (_rcDistTable != nullptr) {
     for (jj = 0; jj < _metCnt; jj++) {
       for (ii = 0; ii < _widthCnt; ii++) {
         delete _rcDistTable[jj][ii];
@@ -1124,7 +1124,7 @@ extDistWidthRCTable::~extDistWidthRCTable()
     delete[] _rcDistTable;
   }
 
-  if (_rcDiagDistTable) {
+  if (_rcDiagDistTable != nullptr) {
     for (jj = 0; jj < _metCnt; jj++) {
       for (ii = 0; ii < _widthCnt; ii++) {
         for (kk = 0; kk < _diagWidthCnt; kk++) {
@@ -3399,37 +3399,33 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
   }
 }
 */
-void extMetRCTable::allocateInitialTables(uint layerCnt,
-                                          uint widthCnt,
+void extMetRCTable::allocateInitialTables(uint widthCnt,
                                           bool over,
                                           bool under,
                                           bool diag)
 {
-  _layerCnt = layerCnt;
-  _wireCnt = 2;
-
   for (uint met = 1; met < _layerCnt; met++) {
     if (over && under && (met > 1) && (met < _layerCnt - 1)) {
-      int n = extRCModel::getMaxMetIndexOverUnder(met, layerCnt);
+      int n = extRCModel::getMaxMetIndexOverUnder(met, _layerCnt);
       _capOverUnder[met] = new extDistWidthRCTable(
-          false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+          false, met, _layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
       for (uint jj = 0; jj < _wireCnt; jj++)
         _capOverUnder_open[met][jj] = new extDistWidthRCTable(
-            false, met, layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+            false, met, _layerCnt, n + 1, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
     }
     if (over) {
       _capOver[met] = new extDistWidthRCTable(
-          true, met, layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+          true, met, _layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
       _resOver[met] = new extDistWidthRCTable(
-          true, met, layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+          true, met, _layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
       for (uint jj = 0; jj < _wireCnt; jj++)
         _capOver_open[met][jj] = new extDistWidthRCTable(
-            true, met, layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
+            true, met, _layerCnt, met, widthCnt, _rcPoolPtr, _OUREVERSEORDER);
     }
     if (under) {
       _capUnder[met] = new extDistWidthRCTable(false,
                                                met,
-                                               layerCnt,
+                                               _layerCnt,
                                                _layerCnt - met - 1,
                                                widthCnt,
                                                _rcPoolPtr,
@@ -3437,7 +3433,7 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
       for (uint jj = 0; jj < _wireCnt; jj++)
         _capUnder_open[met][jj] = new extDistWidthRCTable(false,
                                                           met,
-                                                          layerCnt,
+                                                          _layerCnt,
                                                           _layerCnt - met - 1,
                                                           widthCnt,
                                                           _rcPoolPtr,
@@ -3446,7 +3442,7 @@ void extMetRCTable::allocateInitialTables(uint layerCnt,
     if (diag) {
       _capDiagUnder[met] = new extDistWidthRCTable(false,
                                                    met,
-                                                   layerCnt,
+                                                   _layerCnt,
                                                    _layerCnt - met - 1,
                                                    widthCnt,
                                                    _rcPoolPtr,
@@ -3619,7 +3615,7 @@ bool extRCModel::readRules_v1(char* name,
         _dataRateTable->add(0.0);
       }
 
-      _modelTable[0]->allocateInitialTables(_layerCnt, 10, true, true, true);
+      _modelTable[0]->allocateInitialTables(10, true, true, true);
 
       _modelTable[0]->readRCstats(&parser);
 
