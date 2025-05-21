@@ -23,7 +23,7 @@ add_library(rsz_lib
     Rebuffer.cc
     SteinerTree.cc
     SizeDownMove.cc
-    SizeMove.cc
+    SizeUpMove.cc
     SplitLoadMove.cc
     SwapPinsMove.cc
     UnbufferMove.cc

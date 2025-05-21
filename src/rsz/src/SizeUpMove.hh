@@ -7,7 +7,7 @@
 
 namespace rsz {
 
-class SizeMove : public BaseMove
+class SizeUpMove : public BaseMove
 {
  public:
   using BaseMove::BaseMove;
@@ -18,7 +18,7 @@ class SizeMove : public BaseMove
               PathExpanded* expanded,
               float setup_slack_margin) override;
 
-  const char* name() override { return "SizeMove"; }
+  const char* name() override { return "SizeUpMove"; }
 };
 
 }  // namespace rsz

@@ -10,7 +10,7 @@
 #include "BaseMove.hh"
 #include "BufferMove.hh"
 #include "CloneMove.hh"
-#include "SizeMove.hh"
+#include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 
@@ -74,7 +74,7 @@ bool UnbufferMove::doMove(const Path* drvr_path,
       reason = "it was from split load buffering";
     } else if (resizer_->buffer_move->hasMoves(drvr)) {
       reason = "it was from rebuffering";
-    } else if (resizer_->size_move->hasMoves(drvr)) {
+    } else if (resizer_->size_up_move->hasMoves(drvr)) {
       reason = "it has been resized";
     }
     if (!reason.empty()) {

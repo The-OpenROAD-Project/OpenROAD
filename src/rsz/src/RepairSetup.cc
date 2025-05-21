@@ -15,7 +15,7 @@
 #include "BufferMove.hh"
 #include "CloneMove.hh"
 #include "SizeDownMove.hh"
-#include "SizeMove.hh"
+#include "SizeUpMove.hh"
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
@@ -111,10 +111,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
           if (!skip_size_down) {
             move_sequence.push_back(resizer_->size_down_move);
           }
-          move_sequence.push_back(resizer_->size_move);
+          move_sequence.push_back(resizer_->size_up_move);
           break;
         case MoveType::SIZEUP:
-          move_sequence.push_back(resizer_->size_move);
+          move_sequence.push_back(resizer_->size_up_move);
           break;
         case MoveType::SIZEDOWN:
           if (!skip_size_down) {
@@ -141,7 +141,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     }
     move_sequence.push_back(resizer_->size_down_move);
     // Always  have sizing
-    move_sequence.push_back(resizer_->size_move);
+    move_sequence.push_back(resizer_->size_up_move);
     if (!skip_pin_swap) {
       move_sequence.push_back(resizer_->swap_pins_move);
     }
@@ -441,7 +441,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   printProgress(opto_iteration, true, true, false, num_viols);
 
   int buffer_moves_ = resizer_->buffer_move->numCommittedMoves();
-  int size_moves_ = resizer_->size_move->numCommittedMoves();
+  int size_up_moves_ = resizer_->size_up_move->numCommittedMoves();
   int size_down_moves_ = resizer_->size_down_move->numCommittedMoves();
   int swap_pins_moves_ = resizer_->swap_pins_move->numCommittedMoves();
   int clone_moves_ = resizer_->clone_move->numCommittedMoves();
@@ -466,14 +466,14 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves_ + split_load_moves_);
-  if (size_moves_ > 0) {
+  if (size_up_moves_ + size_down_moves_ > 0) {
     repaired = true;
     if (size_down_moves_ == 0) {
-        logger_->info(RSZ, 41, "Resized {} instances.", size_moves_);
+        logger_->info(RSZ, 41, "Resized {} instances.", size_up_moves_);
     } else {
         logger_->info(RSZ, 51, "Resized {} instances, {} sized up, {} sized down.",
-                      size_moves_ + size_down_moves_,
-                      size_moves_,
+                      size_up_moves_ + size_down_moves_,
+                      size_up_moves_,
                       size_down_moves_);
     }
   }
@@ -510,7 +510,7 @@ void RepairSetup::repairSetup(const Pin* end_pin)
   move_sequence.clear();
   move_sequence = {resizer_->unbuffer_move,
                    resizer_->size_down_move,
-                   resizer_->size_move,
+                   resizer_->size_up_move,
                    resizer_->swap_pins_move,
                    resizer_->buffer_move,
                    resizer_->clone_move,
@@ -530,15 +530,15 @@ void RepairSetup::repairSetup(const Pin* end_pin)
     logger_->info(
         RSZ, 30, "Inserted {} buffers.", buffer_moves_ + split_load_moves_);
   }
-  int size_moves_ = resizer_->size_move->numMoves();
+  int size_up_moves_ = resizer_->size_up_move->numMoves();
   int size_down_moves_ = resizer_->size_down_move->numMoves();
-  if (size_moves_ > 0) {
+  if (size_up_moves_ + size_down_moves_ > 0) {
     if (size_down_moves_ == 0) {
-        logger_->info(RSZ, 31, "Resized {} instances.", size_moves_);
+        logger_->info(RSZ, 31, "Resized {} instances.", size_up_moves_);
     } else {
         logger_->info(RSZ, 38, "Resized {} instances, {} sized up, {} sized down.",
-                      size_moves_ + size_down_moves_,
-                      size_moves_,
+                      size_up_moves_ + size_down_moves_,
+                      size_up_moves_,
                       size_down_moves_);
     }
   }
@@ -743,7 +743,7 @@ void RepairSetup::printProgress(const int iteration,
         "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >6d} | {}",
         itr_field,
         resizer_->unbuffer_move->numCommittedMoves(),
-        resizer_->size_move->numCommittedMoves() 
+        resizer_->size_up_move->numCommittedMoves() 
             + resizer_->size_down_move->numCommittedMoves(),
         resizer_->buffer_move->numCommittedMoves()
             + resizer_->split_load_move->numCommittedMoves(),

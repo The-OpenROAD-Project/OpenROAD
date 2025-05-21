@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "SizeMove.hh"
+#include "SizeUpMove.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -34,7 +34,7 @@ using sta::Pin;
 using sta::Slack;
 using sta::Slew;
 
-bool SizeMove::doMove(const Path* drvr_path,
+bool SizeUpMove::doMove(const Path* drvr_path,
                       int drvr_index,
                       Slack drvr_slack,
                       PathExpanded* expanded,

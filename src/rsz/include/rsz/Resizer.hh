@@ -115,7 +115,7 @@ class CloneMove;
 class BufferMove;
 class SplitLoadMove;
 class SizeDownMove;
-class SizeMove;
+class SizeUpMove;
 class SwapPinsMove;
 class UnbufferMove;
 
@@ -815,7 +815,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   SplitLoadMove* split_load_move = nullptr;
   BufferMove* buffer_move = nullptr;
   SizeDownMove* size_down_move = nullptr;
-  SizeMove* size_move = nullptr;
+  SizeUpMove* size_up_move = nullptr;
   SwapPinsMove* swap_pins_move = nullptr;
   UnbufferMove* unbuffer_move = nullptr;
   int accepted_move_count_ = 0;
@@ -832,7 +832,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
   friend class BaseMove;
   friend class BufferMove;
   friend class SizeDownMove;
-  friend class SizeMove;
+  friend class SizeUpMove;
   friend class SplitLoadMove;
   friend class CloneMove;
   friend class SwapPinsMove;
