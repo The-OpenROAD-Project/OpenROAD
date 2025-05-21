@@ -1206,7 +1206,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     secondBuilder->setTopInputNet(clkInputNet);
   }
 
-  return secondBuilder;
+  return firstBuilder;
 }
 
 // Separate sinks into registers (no insertion delay) and macros (insertion
