@@ -225,7 +225,7 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
     // Get fanouts based on Liberty since STA arcs are not present in DFFs
     vector<const Pin*> fanouts = getFanouts(fanout_inst);
 
-    int max_fanout_id;
+    int max_fanout_id = 0;
     float fanout_load_cap = -1.0;
     // Find the output pin with max cap load and use that if more than one.
     // We might want to use the most critical one instead?
