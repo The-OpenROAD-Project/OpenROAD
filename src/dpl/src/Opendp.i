@@ -60,6 +60,10 @@ tclListSeqdbMaster(Tcl_Obj *const source,
   $1 = dpl::tclListSeqdbMaster($input, interp);
 }
 
+%typemap(freearg) dpl::dbMasterSeq * {
+  delete $1;
+}
+
 %inline %{
 
 namespace dpl {
