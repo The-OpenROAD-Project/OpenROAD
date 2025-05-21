@@ -705,13 +705,12 @@ vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     if (network_->direction(pin)->isOutput()) {
-        fanouts.push_back(pin);
+      fanouts.push_back(pin);
     }
   }
 
   return fanouts;
 }
-
 
 ////////////////////////////////////////////////////////////////
 // namespace rsz

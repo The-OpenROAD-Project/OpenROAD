@@ -197,7 +197,6 @@ bool CloneMove::doMove(const Path* drvr_path,
   // move.
   addMove(drvr_inst, 0);
 
-
   // Hierarchy fix, make out_net in parent.
 
   //  Net* out_net = resizer_->makeUniqueNet();

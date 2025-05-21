@@ -12,7 +12,6 @@ namespace rsz {
 
 using std::string;
 
-
 using utl::RSZ;
 
 using sta::ArcDelay;
@@ -30,10 +29,10 @@ using sta::Slack;
 using sta::Slew;
 
 bool SizeUpMove::doMove(const Path* drvr_path,
-                      int drvr_index,
-                      Slack drvr_slack,
-                      PathExpanded* expanded,
-                      float setup_slack_margin)
+                        int drvr_index,
+                        Slack drvr_slack,
+                        PathExpanded* expanded,
+                        float setup_slack_margin)
 {
   bool size_up = false;
 
@@ -69,38 +68,37 @@ bool SizeUpMove::doMove(const Path* drvr_path,
         = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
 
     if (upsize && !resizer_->dontTouch(drvr) && replaceCell(drvr, upsize)) {
-        debugPrint(logger_,
-                   RSZ,
-                   "opt_moves",
-                   1,
-                   "ACCEPT size_up {} {} -> {}",
-                   network_->pathName(drvr_pin),
-                   drvr_port->libertyCell()->name(),
-                   upsize->name());
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   3,
-                   "size_up {} {} -> {}",
-                   network_->pathName(drvr_pin),
-                   drvr_port->libertyCell()->name(),
-                   upsize->name());
-        addMove(drvr);
-        size_up = true;
-      } else {
-          debugPrint(logger_,
-                     RSZ,
-                     "opt_moves",
-                     3,
-                     "REJECT size_up {} {}",
-                     network_->pathName(drvr_pin),
-                     drvr_port->libertyCell()->name());
-        }
+      debugPrint(logger_,
+                 RSZ,
+                 "opt_moves",
+                 1,
+                 "ACCEPT size_up {} {} -> {}",
+                 network_->pathName(drvr_pin),
+                 drvr_port->libertyCell()->name(),
+                 upsize->name());
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_setup",
+                 3,
+                 "size_up {} {} -> {}",
+                 network_->pathName(drvr_pin),
+                 drvr_port->libertyCell()->name(),
+                 upsize->name());
+      addMove(drvr);
+      size_up = true;
+    } else {
+      debugPrint(logger_,
+                 RSZ,
+                 "opt_moves",
+                 3,
+                 "REJECT size_up {} {}",
+                 network_->pathName(drvr_pin),
+                 drvr_port->libertyCell()->name());
+    }
   }
 
   return size_up;
 }
-
 
 // namespace rsz
 }  // namespace rsz

@@ -85,7 +85,7 @@ bool BufferMove::doMove(const Path* drvr_path,
                "REJECT buffer {} inserted {}",
                network_->pathName(drvr_pin),
                rebuffer_count);
-    }
+  }
   return rebuffer_count > 0;
 }
 
