@@ -540,7 +540,7 @@ proc repair_timing { args } {
             -libraries -max_utilization -max_buffer_percent -sequence \
             -recover_power -repair_tns -max_passes -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-           -skip,size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
+           -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
             -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
