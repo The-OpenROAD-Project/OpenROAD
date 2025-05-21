@@ -34,7 +34,8 @@ class SizeDownMove : public BaseMove
                                           const Pin* drvr_pin,
                                             const LibertyPort* fanout_port,
                                           const Pin* fanout_pin,
-                                      const DcalcAnalysisPt* dcalc_ap);
+                                      const DcalcAnalysisPt* dcalc_ap,
+                                        float fanout_slack);
 
 };
 

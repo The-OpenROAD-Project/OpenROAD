@@ -74,9 +74,9 @@ bool SizeMove::doMove(const Path* drvr_path,
     if (upsize && !resizer_->dontTouch(drvr) && replaceCell(drvr, upsize)) {
         debugPrint(logger_,
                    RSZ,
-                   "size_up",
+                   "opt_moves",
                    1,
-                   "ACCEPT {} {} -> {}",
+                   "ACCEPT size_up {} {} -> {}",
                    network_->pathName(drvr_pin),
                    drvr_port->libertyCell()->name(),
                    upsize->name());
@@ -93,12 +93,11 @@ bool SizeMove::doMove(const Path* drvr_path,
       } else {
           debugPrint(logger_,
                      RSZ,
-                     "size_up",
-                     2,
-                     "REJECT {} {} -> {}",
+                     "opt_moves",
+                     3,
+                     "REJECT size_up {} {}",
                      network_->pathName(drvr_pin),
-                     drvr_port->libertyCell()->name(),
-                     upsize->name());
+                     drvr_port->libertyCell()->name());
         }
   }
 

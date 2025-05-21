@@ -179,8 +179,21 @@ bool UnbufferMove::doMove(const Path* drvr_path,
     }
 
     if (canRemoveBuffer(drvr, /* honorDontTouch */ true)) {
+      debugPrint(logger_, 
+                 RSZ, 
+                 "opt_moves", 
+                 1, 
+                 "ACCEPT unbuffer {}", 
+                 network_->pathName(drvr));
       removeBuffer(drvr);
       return true;
+    } else {
+      debugPrint(logger_, 
+                 RSZ, 
+                 "opt_moves", 
+                 3, 
+                 "REJECT unbuffer {}", 
+                 network_->pathName(drvr));
     }
   }
 
@@ -335,12 +348,6 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
 
 void UnbufferMove::removeBuffer(Instance* buffer)
 {
-  debugPrint(logger_, 
-             RSZ, 
-             "unbuffer", 
-             1, 
-             "ACCEPT {}", 
-             network_->pathName(buffer));
   debugPrint(logger_, 
              RSZ, 
              "repair_setup", 

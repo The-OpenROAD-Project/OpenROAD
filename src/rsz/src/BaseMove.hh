@@ -127,6 +127,8 @@ class BaseMove : public sta::dbStaState
   int hasPendingMoves(Instance* inst) const;
   // Total optimizations
   int numCommittedMoves() const;
+  // Total rejected count
+  int numRejectedMoves() const;
   // Whether this optimization is committed or pending
   int hasMoves(Instance* inst) const;
   // Total accepted and pending optimizations
@@ -154,6 +156,8 @@ class BaseMove : public sta::dbStaState
   InstanceSet pending_inst_set_;
   int pending_count_ = 0;
   int all_count_ = 0;
+  int rejected_count_ = 0;
+  int accepted_count_ = 0;
 
   // Use actual input slews for accurate delay/slew estimation
   sta::UnorderedMap<LibertyPort*, InputSlews> input_slew_map_;

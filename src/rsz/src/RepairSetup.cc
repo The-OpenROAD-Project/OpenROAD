@@ -77,6 +77,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const std::vector<MoveType>& sequence,
                               const bool skip_pin_swap,
                               const bool skip_gate_cloning,
+                              const bool skip_size_down,
                               const bool skip_buffering,
                               const bool skip_buffer_removal,
                               const bool skip_last_gasp)
@@ -92,25 +93,43 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     for (MoveType move : sequence) {
       switch (move) {
         case MoveType::BUFFER:
-          move_sequence.push_back(resizer_->buffer_move);
+          if (!skip_buffering) {
+            move_sequence.push_back(resizer_->buffer_move);
+          }
           break;
         case MoveType::UNBUFFER:
-          move_sequence.push_back(resizer_->unbuffer_move);
+          if (!skip_buffer_removal) {
+            move_sequence.push_back(resizer_->unbuffer_move);
+          }
           break;
         case MoveType::SWAP:
-          move_sequence.push_back(resizer_->swap_pins_move);
+          if (!skip_pin_swap) {
+            move_sequence.push_back(resizer_->swap_pins_move);
+          }
           break;
         case MoveType::SIZE:
+          if (!skip_size_down) {
+            move_sequence.push_back(resizer_->size_down_move);
+          }
+          move_sequence.push_back(resizer_->size_move);
+          break;
+        case MoveType::SIZEUP:
           move_sequence.push_back(resizer_->size_move);
           break;
         case MoveType::SIZEDOWN:
-          move_sequence.push_back(resizer_->size_down_move);
+          if (!skip_size_down) {
+            move_sequence.push_back(resizer_->size_down_move);
+          }
           break;
         case MoveType::CLONE:
-          move_sequence.push_back(resizer_->clone_move);
+          if (!skip_gate_cloning) {
+            move_sequence.push_back(resizer_->clone_move);
+          }
           break;
         case MoveType::SPLIT:
-          move_sequence.push_back(resizer_->split_load_move);
+          if (!skip_buffering) {
+            move_sequence.push_back(resizer_->split_load_move);
+          }
           break;
       }
     }
@@ -672,7 +691,7 @@ bool RepairSetup::repairPath(Path* path,
         debugPrint(logger_,
                    RSZ,
                    "repair_setup",
-                   1,
+                   2,
                    "Move {} failed for {}",
                    move->name(),
                    network_->pathName(drvr_pin));

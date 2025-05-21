@@ -154,6 +154,7 @@ enum class MoveType
   UNBUFFER,
   SWAP,
   SIZE,
+  SIZEUP,
   SIZEDOWN,
   CLONE,
   SPLIT
@@ -281,6 +282,7 @@ class Resizer : public dbStaState, public dbNetworkObserver
                    const std::vector<MoveType>& sequence,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
+                   bool skip_size_down,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp);
@@ -816,6 +818,8 @@ class Resizer : public dbStaState, public dbNetworkObserver
   SizeMove* size_move = nullptr;
   SwapPinsMove* swap_pins_move = nullptr;
   UnbufferMove* unbuffer_move = nullptr;
+  int accepted_move_count_ = 0;
+  int rejected_move_count_ = 0;
 
   friend class BufferedNet;
   friend class GateCloner;

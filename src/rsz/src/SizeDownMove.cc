@@ -146,13 +146,13 @@ bool SizeDownMove::doMove(const Path* drvr_path,
       continue;
     }
 
-    LibertyCell *new_cell = downsizeFanout(drvr_port, drvr_pin, load_port, load_pin, dcalc_ap);
+    LibertyCell *new_cell = downsizeFanout(drvr_port, drvr_pin, load_port, load_pin, dcalc_ap, fanout_slack.second);
     if (new_cell && replaceCell(load_inst, new_cell)) {
        debugPrint(logger_,
                   RSZ,
-                  "size_down",
+                  "opt_moves",
                   1,
-                  "ACCEPT {} -> {} ({} -> {}) slack={}",
+                  "ACCEPT size_down {} -> {} ({} -> {}) slack={}",
                   network_->pathName(drvr_pin),
                   network_->pathName(load_pin),
                   load_cell->name(),
@@ -174,9 +174,9 @@ bool SizeDownMove::doMove(const Path* drvr_path,
       } else {
        debugPrint(logger_,
                   RSZ,
-                  "size_down",
-                  2,
-                  "REJECT {} -> {} ({} -> {}) slack={}",
+                  "opt_moves",
+                  3,
+                  "REJECT size_down {} -> {} ({} -> {}) slack={}",
                   network_->pathName(drvr_pin),
                   network_->pathName(load_pin),
                   load_cell->name(),
@@ -194,7 +194,8 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
                                           const Pin* drvr_pin,
                                             const LibertyPort* fanout_port,
                                           const Pin* fanout_pin,
-                                      const DcalcAnalysisPt* dcalc_ap)
+                                      const DcalcAnalysisPt* dcalc_ap,
+                                          float fanout_slack)
 {
   // We want to allow a little margin for the delay to be worse
   float delay_margin = 1.05;
@@ -249,17 +250,16 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
 
     const float drvr_delay = resizer_->gateDelay(drvr_port, drvr_load_cap, dcalc_ap);
     const float fanout_delay = resizer_->gateDelay(fanout_output_port, fanout_load_cap, dcalc_ap);
-    const float delay = drvr_delay + fanout_delay;
     debugPrint(logger_,
                RSZ,
                "size_down",
                3,
-               "base delay {} FO={} {} + {} = {}",
+               "base delay {} FO={} drvr_delay={} fanout_delay={} fanout_slack={}",
                network_->pathName(fanout_pin),
                fanout_cell->name(),
-               drvr_delay,
-               fanout_delay,
-               delay);
+               delayAsString(drvr_delay, sta_, 3),
+               delayAsString(fanout_delay, sta_, 3),
+               delayAsString(fanout_slack, sta_, 3));
 
 
     best_cell = fanout_cell;
@@ -277,24 +277,38 @@ LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,
 
         // Only evalute delay if needed
         if (new_fanout_cap > best_cap || new_area > best_area) {
+            debugPrint(logger_,
+                       RSZ,
+                       "size_down",
+                       3,
+                       " skip based on cap/area {} FO={} cap={}>{} area={}>{}",
+                       network_->pathName(fanout_pin),
+                       swappable->name(),
+                       new_fanout_cap,
+                       best_cap,
+                       new_area,
+                       best_area);
             continue;
         }
 
         float new_drvr_delay = resizer_->gateDelay(drvr_port, new_drvr_load_cap, dcalc_ap); 
         float new_fanout_delay = resizer_->gateDelay(new_fanout_output_port, fanout_load_cap, dcalc_ap);
-        float new_delay = new_drvr_delay + new_fanout_delay;
         debugPrint(logger_,
                    RSZ,
                    "size_down",
                    3,
-                   " new delay {} FO={} {} + {} = {}",
+                   " new delay {} FO={} drvr_delay {}<{}, fanout_delay: {}<{} ({}+{}) ",
                    network_->pathName(fanout_pin),
                    swappable->name(),
-                   new_drvr_delay,
-                   new_fanout_delay,
-                   new_delay);
-        // As long as it doesn't worsen the delay much, it is ok
-        if (new_delay <= delay * delay_margin) {
+                   delayAsString(new_drvr_delay, sta_, 3),
+                   delayAsString(drvr_delay, sta_, 3),
+                   delayAsString(new_fanout_delay, sta_, 3),
+                   delayAsString(fanout_delay-fanout_slack, sta_, 3),
+                   delayAsString(fanout_delay, sta_, 3),
+                   delayAsString(fanout_slack, sta_, 3));
+        // Check if the new delay is better than the old one
+        // and if the new fanout gate doesn't eat up all the fanout slack
+        if (new_drvr_delay <= drvr_delay && new_fanout_delay <= fanout_delay + fanout_slack) {
                 best_cell = swappable;
                 best_cap = new_fanout_cap;
                 best_area = new_area;

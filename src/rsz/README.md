@@ -355,7 +355,7 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,buffer,swap,size,clone,split". Ignores skip flags when used. |
+| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,buffer,swap,sizeup,clone,split". Obeys skip flags also. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |

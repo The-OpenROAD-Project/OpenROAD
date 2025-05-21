@@ -57,7 +57,8 @@ BaseMove::BaseMove(Resizer* resizer)
   dbu_ = resizer_->dbu_;
   opendp_ = resizer_->opendp_;
 
-  all_count_ = 0;
+  accepted_count_ = 0;
+  rejected_count_ = 0;
   all_inst_set_ = InstanceSet(db_network_);
   pending_count_ = 0;
   pending_inst_set_ = InstanceSet(db_network_);
@@ -65,7 +66,7 @@ BaseMove::BaseMove(Resizer* resizer)
 
 void BaseMove::commitMoves()
 {
-  all_count_ += pending_count_;
+  accepted_count_ += pending_count_;
   pending_count_ = 0;
   pending_inst_set_.clear();
 }
@@ -73,13 +74,15 @@ void BaseMove::commitMoves()
 void BaseMove::init()
 {
   pending_count_ = 0;
-  all_count_ = 0;
+  rejected_count_ = 0;
+  accepted_count_ = 0;
   pending_inst_set_.clear();
   all_inst_set_.clear();
 }
 
 void BaseMove::undoMoves()
 {
+  rejected_count_ += pending_count_;
   pending_count_ = 0;
   pending_inst_set_.clear();
 }
@@ -101,12 +104,17 @@ int BaseMove::numPendingMoves() const
 
 int BaseMove::numCommittedMoves() const
 {
-  return all_count_;
+  return accepted_count_;
+}
+
+int BaseMove::numRejectedMoves() const
+{
+  return rejected_count_;
 }
 
 int BaseMove::numMoves() const
 {
-  return all_count_ + pending_count_;
+  return accepted_count_ + pending_count_;
 }
 
 void BaseMove::addMove(Instance* inst, int count)

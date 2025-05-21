@@ -144,6 +144,12 @@ bool CloneMove::doMove(const Path* drvr_path,
   Instance* drvr_inst = db_network_->instance(drvr_pin);
 
   if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT clone {}",
+               network_->pathName(drvr_pin));
     return false;
   }
 
@@ -170,9 +176,9 @@ bool CloneMove::doMove(const Path* drvr_path,
 
   debugPrint(logger_,
              RSZ,
-             "clone",
+             "opt_moves",
              1,
-             "ACCEPT {} ({}) -> {} ({})",
+             "ACCEPT clone {} ({}) -> {} ({})",
              network_->pathName(drvr_pin),
              original_cell->name(),
              network_->pathName(clone_inst),
