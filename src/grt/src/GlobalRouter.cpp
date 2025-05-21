@@ -330,6 +330,7 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
     if (save_guides) {
       std::vector<odb::dbNet*> nets;
+      nets.reserve(block_->getNets().size());
       for (odb::dbNet* db_net : block_->getNets()) {
         nets.push_back(db_net);
       }
@@ -2405,7 +2406,7 @@ void GlobalRouter::saveGuidesFromFile(
   }
 }
 
-void GlobalRouter::saveGuides(std::vector<odb::dbNet*> nets)
+void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
 {
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
@@ -4817,6 +4818,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   std::vector<Net*> dirty_nets;
   if (!dirty_nets_.empty()) {
     std::vector<odb::dbNet*> modified_nets;
+    modified_nets.reserve(dirty_nets.size());
     for (const Net* net : dirty_nets) {
       modified_nets.push_back(net->getDbNet());
     }
