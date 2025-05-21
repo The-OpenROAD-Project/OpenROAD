@@ -3,7 +3,6 @@
 
 #include "SizeUpMove.hh"
 
-#include <algorithm>
 #include <cmath>
 
 #include "BaseMove.hh"
@@ -13,20 +12,16 @@ namespace rsz {
 
 using std::string;
 
-using odb::dbInst;
-using odb::dbMaster;
 
 using utl::RSZ;
 
 using sta::ArcDelay;
-using sta::Cell;
 using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
-using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;
@@ -40,6 +35,8 @@ bool SizeUpMove::doMove(const Path* drvr_path,
                       PathExpanded* expanded,
                       float setup_slack_margin)
 {
+  bool size_up = false;
+
   Pin* drvr_pin = drvr_path->pin(this);
   Instance* drvr = network_->instance(drvr_pin);
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
@@ -89,7 +86,7 @@ bool SizeUpMove::doMove(const Path* drvr_path,
                    drvr_port->libertyCell()->name(),
                    upsize->name());
         addMove(drvr);
-        return true;
+        size_up = true;
       } else {
           debugPrint(logger_,
                      RSZ,
@@ -101,7 +98,7 @@ bool SizeUpMove::doMove(const Path* drvr_path,
         }
   }
 
-  return false;
+  return size_up;
 }
 
 

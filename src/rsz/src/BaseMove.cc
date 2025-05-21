@@ -28,7 +28,6 @@ using sta::Instance;
 using sta::InstancePinIterator;
 using sta::InstanceSet;
 using sta::LibertyCell;
-using sta::LibertyCellPortIterator;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
 using sta::Net;
