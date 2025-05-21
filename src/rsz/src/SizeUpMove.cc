@@ -34,8 +34,6 @@ bool SizeUpMove::doMove(const Path* drvr_path,
                         PathExpanded* expanded,
                         float setup_slack_margin)
 {
-  bool size_up = false;
-
   Pin* drvr_pin = drvr_path->pin(this);
   Instance* drvr = network_->instance(drvr_pin);
   const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
@@ -85,19 +83,18 @@ bool SizeUpMove::doMove(const Path* drvr_path,
                  drvr_port->libertyCell()->name(),
                  upsize->name());
       addMove(drvr);
-      size_up = true;
-    } else {
-      debugPrint(logger_,
-                 RSZ,
-                 "opt_moves",
-                 3,
-                 "REJECT size_up {} {}",
-                 network_->pathName(drvr_pin),
-                 drvr_port->libertyCell()->name());
+      return true;
     }
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT size_up {} {}",
+               network_->pathName(drvr_pin),
+               drvr_port->libertyCell()->name());
   }
 
-  return size_up;
+  return false;
 }
 
 // namespace rsz

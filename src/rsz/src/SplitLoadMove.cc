@@ -257,7 +257,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   resizer_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
   resizer_->parasiticsInvalid(out_net);
 
-  return (true);
+  return true;
 }
 
 }  // namespace rsz

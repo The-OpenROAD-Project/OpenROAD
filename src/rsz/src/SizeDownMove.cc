@@ -40,8 +40,6 @@ bool SizeDownMove::doMove(const Path* drvr_path,
                           PathExpanded* expanded,
                           float setup_slack_margin)
 {
-  bool add_cell = false;
-
   Pin* drvr_pin = drvr_path->pin(this);
   Vertex* drvr_vertex = drvr_path->vertex(sta_);
   const Path* load_path = expanded->path(drvr_index + 1);
@@ -171,22 +169,21 @@ bool SizeDownMove::doMove(const Path* drvr_path,
                  delayAsString(fanout_slack.second, sta_, 3));
 
       addMove(load_inst);
-      add_cell = true;
-    } else {
-      debugPrint(logger_,
-                 RSZ,
-                 "opt_moves",
-                 3,
-                 "REJECT size_down {} -> {} ({} -> {}) slack={}",
-                 network_->pathName(drvr_pin),
-                 network_->pathName(load_pin),
-                 load_cell->name(),
-                 new_cell ? new_cell->name() : "none",
-                 delayAsString(fanout_slack.second, sta_, 3));
+      return true;
     }
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT size_down {} -> {} ({} -> {}) slack={}",
+               network_->pathName(drvr_pin),
+               network_->pathName(load_pin),
+               load_cell->name(),
+               new_cell ? new_cell->name() : "none",
+               delayAsString(fanout_slack.second, sta_, 3));
   }
 
-  return add_cell;
+  return false;
 }
 
 LibertyCell* SizeDownMove::downsizeFanout(const LibertyPort* drvr_port,

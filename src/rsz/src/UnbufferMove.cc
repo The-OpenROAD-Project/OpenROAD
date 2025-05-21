@@ -187,14 +187,13 @@ bool UnbufferMove::doMove(const Path* drvr_path,
                  network_->pathName(drvr));
       removeBuffer(drvr);
       return true;
-    } else {
-      debugPrint(logger_,
-                 RSZ,
-                 "opt_moves",
-                 3,
-                 "REJECT unbuffer {}",
-                 network_->pathName(drvr));
     }
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               3,
+               "REJECT unbuffer {}",
+               network_->pathName(drvr));
   }
 
   return false;
