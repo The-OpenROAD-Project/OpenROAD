@@ -2437,7 +2437,9 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   if (layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP) {
     return;
   }
+  bool firstCutLayer = false;
   if (readLayerCnt_ == 0) {
+    firstCutLayer = true;
     addDefaultMasterSliceLayer();
   }
   auto* lowerlayer = layer->getLowerLayer();
@@ -2458,6 +2460,9 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   getTech()->addUConstraint(std::move(shortConstraint));
 
   // read spacing constraint
+  if (firstCutLayer) {
+    return;
+  }
   for (odb::dbTechLayerSpacingRule* rule : layer->getV54SpacingRules()) {
     std::unique_ptr<frCutSpacingConstraint> cutSpacingConstraint;
     frCoord cutArea = rule->getCutArea();
