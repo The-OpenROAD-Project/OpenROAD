@@ -2415,13 +2415,8 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
 void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
-  std::string topBufferName;
-  if (builder->getTreeType() == TreeType::RegisterTree) {
-    topBufferName = builder->getTopBufferName();
-  } else {
-    topBufferName = "clkbuf_0_" + clock.getName();
-  }
-  odb::dbInst* topBuffer = block_->findInst(topBufferName.c_str());
+  odb::dbInst* topBuffer
+      = block_->findInst(builder->getTopBufferName().c_str());
   if (topBuffer) {
     builder->setTopBuffer(topBuffer);
     odb::dbITerm* inputTerm = getFirstInput(topBuffer);
