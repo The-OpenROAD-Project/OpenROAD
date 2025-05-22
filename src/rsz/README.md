@@ -333,6 +333,7 @@ repair_timing
     [-sequence]
     [-skip_pin_swap]
     [-skip_gate_cloning]
+    [-skip_size_down]
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_last_gasp]
